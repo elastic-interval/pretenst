@@ -1,0 +1,156 @@
+# See http://help.github.com/ignore-files/ for more about ignoring files.
+
+# compiled output
+/dist
+/tmp
+/compodoc
+
+# dependencies
+/node_modules
+/node_modules_bak
+
+# IDEs and editors
+/.idea/*
+!/.idea/runConfigurations
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+
+# IDE - VSCode
+.vscode/
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# misc
+/.sass-cache
+/connect.lock
+/coverage/*
+/libpeerconnection.log
+npm-debug.log
+testem.log
+/typings
+
+# e2e
+/e2e/*.js
+/e2e/*.map
+
+#System Files
+.DS_Store
+Thumbs.db
+
+#IntelliJ
+*.iml
+.gradle
+nomad_db.trace.db
+
+
+# Created by https://www.gitignore.io/api/intellij,intellij+iml
+
+### Intellij ###
+# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
+# Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+
+# User-specific stuff:
+.idea/workspace.xml
+.idea/tasks.xml
+
+# Sensitive or high-churn files:
+.idea/dataSources/
+.idea/dataSources.ids
+.idea/dataSources.xml
+.idea/dataSources.local.xml
+.idea/sqlDataSources.xml
+.idea/dynamic.xml
+.idea/uiDesigner.xml
+
+# Gradle:
+.idea/gradle.xml
+.idea/libraries
+
+# Mongo Explorer plugin:
+.idea/mongoSettings.xml
+
+## File-based project format:
+*.iws
+
+## Plugin-specific files:
+
+# IntelliJ
+/out/
+
+# mpeltonen/sbt-idea plugin
+.idea_modules/
+
+# JIRA plugin
+atlassian-ide-plugin.xml
+
+# Crashlytics plugin (for Android Studio and IntelliJ)
+com_crashlytics_export_strings.xml
+crashlytics.properties
+crashlytics-build.properties
+fabric.properties
+
+### Intellij Patch ###
+# Comment Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-215987721
+
+# *.iml
+# modules.xml
+# .idea/misc.xml
+# *.ipr
+
+
+### Intellij+iml ###
+# Covers JetBrains IDEs: IntelliJ, RubyMine, PhpStorm, AppCode, PyCharm, CLion, Android Studio and Webstorm
+# Reference: https://intellij-support.jetbrains.com/hc/en-us/articles/206544839
+
+# User-specific stuff:
+
+# Sensitive or high-churn files:
+
+# Gradle:
+
+# Mongo Explorer plugin:
+
+## File-based project format:
+
+## Plugin-specific files:
+
+# IntelliJ
+
+# mpeltonen/sbt-idea plugin
+
+# JIRA plugin
+
+# Crashlytics plugin (for Android Studio and IntelliJ)
+
+### Intellij+iml Patch ###
+# Reason: https://github.com/joeblau/gitignore.io/issues/186#issuecomment-249601023
+
+modules.xml
+.idea/misc.xml
+*.ipr
+
+# End of https://www.gitignore.io/api/intellij,intellij+iml
+api/build
+api/*.db
+api/out/
+
+#Intentional ignores
+__*
+
+docker/\.idea/
+
+docker/_resources/
+
+/build/
+
+lib/
+local.log
+testresults/*.xml
+
+target
+project
