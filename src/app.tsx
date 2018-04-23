@@ -1,13 +1,13 @@
 import * as React from 'react';
 import './app.css';
 
-import TokenView from './token-view';
+import PatchView from './patch-view';
 
 class App extends React.Component {
     public render() {
         return (
             <div className="App">
-                <TokenView/>
+                <PatchView/>
             </div>
         );
     }
