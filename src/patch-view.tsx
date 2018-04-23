@@ -1,20 +1,31 @@
 import * as React from 'react';
 import {HEXAGON_POINTS} from './patch-token/constants';
 import './app.css'
+import {Patch} from './patch-token/patch';
 
-class PatchView extends React.Component {
+class PatchView extends React.Component<any, any> {
 
-    public sayHello(event: React.MouseEvent<SVGPolygonElement>): void {
-        console.log('hello!', event);
+    private patch: Patch;
+
+    constructor(props: any) {
+        super(props);
+        this.patch = props.patch;
     }
 
     public render() {
         return (
-            <svg className="TokenView" viewBox="-1,-1,2,2"
-                 width={window.innerWidth} height={window.innerHeight}>
+            <svg className="TokenView" viewBox={this.mainViewBox} width={window.innerWidth} height={window.innerHeight}>
                 <polygon points={HEXAGON_POINTS} onClick={this.sayHello}/>
             </svg>
         );
+    }
+
+    private sayHello = (event: React.MouseEvent<SVGPolygonElement>): void => {
+        console.log('hello!', this.patch);
+    };
+
+    private get mainViewBox() {
+        return this.patch ? this.patch.mainViewBox : '-1,-1,2,2';
     }
 }
 
