@@ -13,6 +13,8 @@
   "rules": {
     "no-bitwise": false,
     "no-console": false,
-    "ordered-imports": false
+    "ordered-imports": false,
+    "jsx-no-lambda": false,
+    "object-literal-sort-keys": false
   }
 }

@@ -31,3 +31,127 @@
 .TokenView {
   background-color: gray;
 }
+
+:host {
+  display: block;
+  height: 100%;
+  max-height: 100%;
+}
+
+.whole-screen {
+  height: 100%;
+  width: 100%;
+}
+
+.main-panel {
+  background-color: darkblue;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 85%;
+  height: 90%;
+}
+
+/*
+/*$background: rgba(28, 28, 29, 0.98);*/
+/*$primary: #229184;*/
+
+/*$light-lit: #93b2b8;*/
+/*$light-lit-dim: #334046;*/
+/*$light-border: #e9e5ce;*/
+
+/*$text-lit: #000000;*/
+/*$text-not-lit: #6e6e6e;*/
+
+/*$token-background: #5f5f5f;*/
+/*$token-free: #c2bc3d;*/
+/*$token-taken: #a40018;*/
+/*$token-owned: #ffd7f3;*/
+/*$token-available: #317917;*/
+
+
+
+.light {
+  stroke: white;
+  stroke-width: 0.02px;
+}
+
+.light-lit {
+  fill: #93b2b8;
+}
+
+.light-lit-dim {
+  fill: #334046;
+}
+
+.light-background {
+  fill: #46131c;
+}
+
+.light-token-highlighted {
+  stroke-width: 0.1px;
+}
+
+.light-token-available {
+  color: #317917;
+  stroke: #317917;
+}
+
+.light-toggle-enabled {
+  color: yellow;
+  stroke: yellow;
+}
+
+.light-token-center-free {
+  color: white;
+  stroke: white;
+}
+
+.light-token-center-taken {
+  color: #a40018;
+  stroke: #a40018;
+}
+
+.light-token-center-owned {
+  color: #a40018;
+  stroke: #a40018;
+}
+
+.token-highlight {
+  fill: black;
+  stroke-width: 0.03px;
+}
+
+.token-highlight-free {
+  stroke: #c2bc3d;
+}
+
+.token-highlight-owned {
+  stroke: #ffd7f3;
+}
+
+.token-highlight-taken {
+    stroke: #a40018;
+}
+
+.token-background {
+    fill: black;
+}
+
+.token-background-free {
+  fill: #c2bc3d;
+}
+
+.light-text {
+  font-size: 5pt;
+  font-weight: bold;
+  font-family: sans-serif;
+}
+
+.light-text-not-lit {
+  fill: #c2bc3d;
+}
+
+.light-text-lit {
+  fill: #c2bc3d;
+}

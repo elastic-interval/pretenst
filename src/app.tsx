@@ -5,20 +5,26 @@ import PatchView from './patch-view';
 import {Patch} from './patch-token/patch';
 import {IPatchPattern} from './patch-token/constants';
 
-class App extends React.Component<any, any> {
+interface IAppState {
+    patch: Patch;
+    owner: string;
+}
 
-    private patch: Patch;
+class App extends React.Component<any, IAppState> {
 
     constructor(props: any) {
         super(props);
         const pattern: IPatchPattern = {patches: '0', lights: '0'};
-        this.patch = new Patch(pattern, this.ownerLookup);
+        this.state = {
+            patch: new Patch(pattern, this.ownerLookup),
+            owner: 'gumby'
+        };
     }
 
     public render() {
         return (
             <div className="App">
-                <PatchView patch={this.patch}/>
+                <PatchView patch={this.state.patch} owner={this.state.owner}/>
             </div>
         );
     }
