@@ -108,7 +108,7 @@ export class Patch {
         const rootToken: PatchToken | undefined = this.tokens.find(token => token.nonce === 0);
         this.tokens.forEach(token => token.visited = false);
         const patches = rootToken ? rootToken.generateOctalTreePattern([]).join('') : '0';
-        const lights = lightsToHexString(this.lights.sort(lightSortOnCoords));
+        const lights = lightsToHexString(this.lights.slice().sort(lightSortOnCoords));
         return {patches, lights};
     }
 
