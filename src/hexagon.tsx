@@ -10,24 +10,33 @@ interface IHexagonProps {
     lightEnter: (inside: boolean) => void;
 }
 
-export class Hexagon extends React.Component<IHexagonProps, any> {
+interface IHexagonState {
+    light: Light;
+}
+
+export class Hexagon extends React.Component<IHexagonProps, IHexagonState> {
 
     constructor(props: IHexagonProps) {
         super(props);
+        this.state = {light: props.light};
     }
 
     public render() {
-        return <polygon key={this.props.light.coords.x}
+        const lightClicked = () => {
+            this.setState({light: this.props.light});
+            this.props.lightClicked();
+        };
+        return <polygon key={this.state.light.coords.x}
                         points={HEXAGON_POINTS}
-                        transform={this.props.light.transform}
+                        transform={this.state.light.transform}
                         className={this.className}
-                        onClick={this.props.lightClicked}
+                        onClick={lightClicked}
                         onMouseEnter={e => this.props.lightEnter(true)}
                         onMouseLeave={e => this.props.lightEnter(false)}/>;
     }
 
     private get className() {
-        const light = this.props.light;
+        const light = this.state.light;
         const onOff = light.lit ? 'on' : 'off';
         const insideOutside = this.props.tokenMode ? 'inside' : 'outside';
         const baseClass = `light-${onOff}-${insideOutside}`;
