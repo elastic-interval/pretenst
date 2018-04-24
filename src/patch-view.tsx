@@ -8,20 +8,19 @@ import {Hexagon} from './hexagon';
 interface IPatchViewProps {
     patch: Patch;
     owner: string;
+    setPatch: (patch: Patch) => void;
 }
 
 interface IPatchViewState {
-    patch: Patch;
     selectedToken?: PatchToken;
     tokenMode: boolean;
 }
 
 class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
 
-    constructor(props: any) {
+    constructor(props: IPatchViewProps) {
         super(props);
         this.state = {
-            patch: props.patch,
             tokenMode: false
         };
     }
@@ -31,7 +30,7 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
             <div>
                 {this.selectedToken}
                 <svg className="TokenView"
-                     viewBox={this.state.patch.mainViewBox}
+                     viewBox={this.props.patch.mainViewBox}
                      width={window.innerWidth}
                      height={window.innerHeight}>
                     {this.lights}
@@ -49,34 +48,29 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
     }
 
     private get lights() {
-        return this.state.patch.lights.map((light: Light, index: number) => {
-            const lightEnter = (inside: boolean) => {
-                if (inside) {
-                    const tokenMode = !!light.centerOfToken || light.canBeNewToken || light.free;
-                    this.setState({tokenMode});
-                }
-                if (light.centerOfToken) {
-                    const selectedToken = inside ? light.centerOfToken : undefined;
-                    this.setState({selectedToken});
-                }
-            };
-            const lightClicked = () => {
-                if (light.free) {
-                    light.lit = !light.lit;
-                    this.state.patch.refreshPattern();
-                } else if (light.canBeNewToken) {
-                    const selectedToken = this.state.patch.patchTokenAroundLight(light);
-                    if (selectedToken) {
-                        this.setState({selectedToken});
-                        this.state.patch.refreshViewBox();
-                        this.state.patch.refreshPattern();
-                    }
-                } else {
-                    const selectedToken = light.centerOfToken;
-                    this.setState({selectedToken});
-                }
-                this.state.patch.refreshOwnership();
-            };
+        const lightEnter = (light: Light, inside: boolean) => {
+            if (inside) {
+                const tokenMode = !!light.centerOfToken || light.canBeNewToken || light.free;
+                this.setState({tokenMode});
+            }
+            if (light.centerOfToken) {
+                const selectedToken = inside ? light.centerOfToken : undefined;
+                this.setState({selectedToken});
+            }
+        };
+        const lightClicked = (light: Light) => {
+            if (light.free) {
+                light.lit = !light.lit;
+                this.props.setPatch(this.props.patch);
+            } else if (light.canBeNewToken) {
+                const patch = this.props.patch.withTokenAroundLight(light);
+                this.props.setPatch(patch);
+            } else {
+                const selectedToken = light.centerOfToken;
+                this.setState({selectedToken});
+            }
+        };
+        return this.props.patch.lights.map((light: Light, index: number) => {
             return <Hexagon key={index}
                             light={light}
                             isSelf={(owner: string) => owner === this.props.owner}

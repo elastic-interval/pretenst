@@ -6,8 +6,8 @@ interface IHexagonProps {
     light: Light;
     isSelf: (owner: string) => boolean;
     tokenMode: boolean;
-    lightClicked: () => void;
-    lightEnter: (inside: boolean) => void;
+    lightClicked: (light: Light) => void;
+    lightEnter: (light: Light, inside: boolean) => void;
 }
 
 interface IHexagonState {
@@ -22,17 +22,17 @@ export class Hexagon extends React.Component<IHexagonProps, IHexagonState> {
     }
 
     public render() {
-        const lightClicked = () => {
-            this.props.lightClicked();
-            this.setState({light: this.props.light});
+        const lightClicked = (light: Light) => {
+            this.props.lightClicked(light);
+            this.setState({light: this.props.light}); // forcing repaint
         };
         return <polygon key={this.state.light.coords.x}
                         points={HEXAGON_POINTS}
                         transform={this.state.light.transform}
                         className={this.className}
-                        onClick={lightClicked}
-                        onMouseEnter={e => this.props.lightEnter(true)}
-                        onMouseLeave={e => this.props.lightEnter(false)}/>;
+                        onClick={e => lightClicked(this.state.light)}
+                        onMouseEnter={e => this.props.lightEnter(this.state.light, true)}
+                        onMouseLeave={e => this.props.lightEnter(this.state.light, false)}/>;
     }
 
     private get className() {
