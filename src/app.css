@@ -57,14 +57,10 @@
 
 .light-on-outside {
     fill: #fff950;
-    stroke: white;
-    stroke-width: 0.02px;
 }
 
 .light-off-outside {
-    fill: #46131c;
-    stroke: white;
-    stroke-width: 0.02px;
+    fill: #2a2a2a;
 }
 
 .light-on-inside {
@@ -72,53 +68,25 @@
 }
 
 .light-off-inside {
-    fill: #46131c;
+    fill: #444444;
 }
 
-.light-on-inside-self-owned {
-    fill: #93b2b8;
+.light-self-owned {
     stroke: white;
     stroke-width: 0.04px;
 }
 
-.light-off-inside-self-owned {
-    fill: #46131c;
-    stroke: white;
+.light-other-owned {
+    stroke: #ff0024;
+    stroke-width: 0.02px;
+}
+
+.light-free {
+    stroke: #fff950;
+    stroke-width: 0.02px;
+}
+
+.light-new {
+    stroke: #1bff37;
     stroke-width: 0.04px;
-}
-
-.light-on-inside-other-owned {
-    fill: #93b2b8;
-    stroke: white;
-    stroke-width: 0.02px;
-}
-
-.light-off-inside-other-owned {
-    fill: #46131c;
-    stroke: white;
-    stroke-width: 0.02px;
-}
-
-.light-on-inside-free {
-    fill: #93b2b8;
-    stroke: #1bff37;
-    stroke-width: 0.02px;
-}
-
-.light-off-inside-free {
-    fill: #46131c;
-    stroke: #1bff37;
-    stroke-width: 0.02px;
-}
-
-.light-on-inside-new {
-    fill: #93b2b8;
-    stroke: #fff950;
-    stroke-width: 0.02px;
-}
-
-.light-off-inside-new {
-    fill: #46131c;
-    stroke: #fff950;
-    stroke-width: 0.02px;
 }

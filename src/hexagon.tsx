@@ -23,8 +23,8 @@ export class Hexagon extends React.Component<IHexagonProps, IHexagonState> {
 
     public render() {
         const lightClicked = () => {
-            this.setState({light: this.props.light});
             this.props.lightClicked();
+            this.setState({light: this.props.light});
         };
         return <polygon key={this.state.light.coords.x}
                         points={HEXAGON_POINTS}
@@ -44,9 +44,9 @@ export class Hexagon extends React.Component<IHexagonProps, IHexagonState> {
             if (light.centerOfToken) {
                 const owner = light.centerOfToken.owner;
                 const ownership = owner ? this.props.isSelf(owner) ? 'self-owned' : 'other-owned' : 'free';
-                return `${baseClass}-${ownership}`;
+                return `${baseClass} light-${ownership}`;
             } else if (light.canBeNewToken) {
-                return `${baseClass}-new`;
+                return `${baseClass} light-new`;
             } else {
                 return baseClass;
             }

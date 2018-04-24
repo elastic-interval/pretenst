@@ -12,10 +12,8 @@ interface IPatchViewProps {
 
 interface IPatchViewState {
     patch: Patch;
-    owner: string;
     selectedToken?: PatchToken;
     tokenMode: boolean;
-    purchaseEnabled: boolean;
 }
 
 class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
@@ -24,9 +22,7 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
         super(props);
         this.state = {
             patch: props.patch,
-            owner: props.owner,
-            tokenMode: false,
-            purchaseEnabled: false
+            tokenMode: false
         };
     }
 
@@ -56,7 +52,7 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
         return this.state.patch.lights.map((light: Light, index: number) => {
             const lightEnter = (inside: boolean) => {
                 if (inside) {
-                    const tokenMode = !!light.centerOfToken;// || light.canBeNewToken || light.free;
+                    const tokenMode = !!light.centerOfToken || light.canBeNewToken || light.free;
                     this.setState({tokenMode});
                 }
                 if (light.centerOfToken) {
@@ -69,20 +65,14 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
                     light.lit = !light.lit;
                     this.state.patch.refreshPattern();
                 } else if (light.canBeNewToken) {
-                    const patchToken = this.state.patch.patchTokenAroundLight(light);
-                    if (patchToken) {
-                        this.setState({
-                            selectedToken: patchToken,
-                            purchaseEnabled: patchToken.canBePurchased
-                        });
+                    const selectedToken = this.state.patch.patchTokenAroundLight(light);
+                    if (selectedToken) {
+                        this.setState({selectedToken});
                         this.state.patch.refreshViewBox();
                     }
                 } else {
                     const selectedToken = light.centerOfToken;
-                    this.setState({
-                        selectedToken,
-                        purchaseEnabled: selectedToken ? selectedToken.canBePurchased : false
-                    });
+                    this.setState({selectedToken});
                 }
                 this.state.patch.refreshOwnership();
             };
