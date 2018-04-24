@@ -81,9 +81,14 @@
     stroke-width: 0.02px;
 }
 
-.light-free {
+.light-token-free {
     stroke: #fff950;
-    stroke-width: 0.02px;
+    stroke-width: 0.05px;
+}
+
+.light-free {
+    stroke: #fff4f4;
+    stroke-width: 0.05px;
 }
 
 .light-new {

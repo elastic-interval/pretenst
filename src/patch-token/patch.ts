@@ -2,7 +2,9 @@ import {Light} from './light';
 import {
     BRANCH_STEP,
     createMainViewBox,
-    equals, ICoords, IPatchPattern,
+    equals,
+    ICoords,
+    IPatchPattern,
     lightSortOnCoords,
     lightsToHexString,
     PATCH_TOKEN_SHAPE,
@@ -20,7 +22,9 @@ export class Patch {
     public tokens: PatchToken[] = [];
     public freeTokens: PatchToken[] = [];
 
-    constructor(pattern: IPatchPattern, private ownerLookup: (fingerprint: string) => string) {
+    constructor(pattern: IPatchPattern,
+                private setPattern: (pattern: IPatchPattern) => void,
+                private ownerLookup: (fingerprint: string) => string) {
         if (pattern && pattern.patches !== '-' && pattern.lights !== '-') {
             let token: PatchToken | undefined = this.getOrCreatePatchToken(undefined, zero);
             const stepStack = pattern.patches.split('').reverse().map(stepChar => Number(stepChar));
@@ -65,7 +69,6 @@ export class Patch {
             this.getOrCreatePatchToken(undefined, zero);
         }
         this.refreshOwnership();
-        this.refreshPattern();
         this.refreshViewBox();
     }
 
@@ -93,6 +96,7 @@ export class Patch {
         this.tokens.forEach(token => token.visited = false);
         this.pattern.patches = rootToken ? rootToken.generateOctalTreePattern([]).join('') : '0';
         this.pattern.lights = lightsToHexString(this.lights.sort(lightSortOnCoords));
+        this.setPattern(this.pattern);
     }
 
     public refreshOwnership() {

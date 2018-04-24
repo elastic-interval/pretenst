@@ -69,6 +69,7 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
                     if (selectedToken) {
                         this.setState({selectedToken});
                         this.state.patch.refreshViewBox();
+                        this.state.patch.refreshPattern();
                     }
                 } else {
                     const selectedToken = light.centerOfToken;

@@ -43,15 +43,17 @@ export class Hexagon extends React.Component<IHexagonProps, IHexagonState> {
         if (this.props.tokenMode) {
             if (light.centerOfToken) {
                 const owner = light.centerOfToken.owner;
-                const ownership = owner ? this.props.isSelf(owner) ? 'self-owned' : 'other-owned' : 'free';
+                const ownership = owner ? this.props.isSelf(owner) ? 'self-owned' : 'other-owned' : 'token-free';
                 return `${baseClass} light-${ownership}`;
             } else if (light.canBeNewToken) {
                 return `${baseClass} light-new`;
+            } else if (light.free) {
+                return `${baseClass} light-free`;
             } else {
                 return baseClass;
             }
         } else {
-            return baseClass;
+            return light.free ? `${baseClass} light-free` : baseClass;
         }
     }
 }

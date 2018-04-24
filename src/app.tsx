@@ -12,15 +12,16 @@ interface IAppState {
 
 class App extends React.Component<any, IAppState> {
 
-    private ownershipCache = new Map<string, string>();
+    private ownershipCache: Map<string, string>;
 
     constructor(props: any) {
         super(props);
-        const pattern: IPatchPattern = {patches: '0', lights: '0'};
-        this.state = {
-            patch: new Patch(pattern, this.ownerLookup),
-            owner: 'gumby'
-        };
+        const existingOwner = localStorage.getItem('owner');
+        const owner = existingOwner ? existingOwner : 'gumby';
+        const existingPattern = localStorage.getItem(owner);
+        const pattern: IPatchPattern = existingPattern ? JSON.parse(existingPattern) : {patches: '0', lights: '0'};
+        const patch = new Patch(pattern, this.setPattern, this.ownerLookup);
+        this.state = {patch, owner};
     }
 
     public render() {
@@ -57,19 +58,9 @@ class App extends React.Component<any, IAppState> {
         return this.ownershipCache;
     }
 
-    private ownerLookup = (fingerprint: string) => {
-        if (this.ownershipCache) {
-            return this.ownershipCache[fingerprint];
-        } else {
-            const ownership = localStorage.getItem('ownership');
-            if (ownership) {
-                this.ownershipCache = JSON.parse(ownership);
-                return this.ownershipCache[fingerprint];
-            } else {
-                return null;
-            }
-        }
-    };
+    private setPattern = (pattern: IPatchPattern) => localStorage.setItem(this.state.owner, JSON.stringify(pattern));
+
+    private ownerLookup = (fingerprint: string) => this.owns[fingerprint];
 }
 
 export default App;
