@@ -1,55 +1,126 @@
 .App {
-  text-align: center;
+    text-align: center;
 }
 
 .App-logo {
-  animation: App-logo-spin infinite 20s linear;
-  height: 80px;
+    animation: App-logo-spin infinite 20s linear;
+    height: 80px;
 }
 
 .App-header {
-  background-color: #222;
-  height: 150px;
-  padding: 20px;
-  color: white;
+    background-color: #222;
+    height: 150px;
+    padding: 20px;
+    color: white;
 }
 
 .App-title {
-  font-size: 1.5em;
+    font-size: 1.5em;
 }
 
 .App-intro {
-  font-size: large;
+    font-size: large;
 }
 
 @keyframes App-logo-spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
 }
 
-
 .TokenView {
-  background-color: gray;
+    background-color: gray;
 }
 
 :host {
-  display: block;
-  height: 100%;
-  max-height: 100%;
+    display: block;
+    height: 100%;
+    max-height: 100%;
 }
 
 .whole-screen {
-  height: 100%;
-  width: 100%;
+    height: 100%;
+    width: 100%;
 }
 
 .main-panel {
-  background-color: darkblue;
-  position: absolute;
-  left: 0;
-  top: 0;
-  width: 85%;
-  height: 90%;
+    background-color: darkblue;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 85%;
+    height: 90%;
+}
+
+.light-on-outside {
+    fill: #fff950;
+    stroke: white;
+    stroke-width: 0.02px;
+}
+
+.light-off-outside {
+    fill: #46131c;
+    stroke: white;
+    stroke-width: 0.02px;
+}
+
+.light-on-inside {
+    fill: #93b2b8;
+}
+
+.light-off-inside {
+    fill: #46131c;
+}
+
+.light-on-inside-self-owned {
+    fill: #93b2b8;
+    stroke: white;
+    stroke-width: 0.04px;
+}
+
+.light-off-inside-self-owned {
+    fill: #46131c;
+    stroke: white;
+    stroke-width: 0.04px;
+}
+
+.light-on-inside-other-owned {
+    fill: #93b2b8;
+    stroke: white;
+    stroke-width: 0.02px;
+}
+
+.light-off-inside-other-owned {
+    fill: #46131c;
+    stroke: white;
+    stroke-width: 0.02px;
+}
+
+.light-on-inside-free {
+    fill: #93b2b8;
+    stroke: #1bff37;
+    stroke-width: 0.02px;
+}
+
+.light-off-inside-free {
+    fill: #46131c;
+    stroke: #1bff37;
+    stroke-width: 0.02px;
+}
+
+.light-on-inside-new {
+    fill: #93b2b8;
+    stroke: #fff950;
+    stroke-width: 0.02px;
+}
+
+.light-off-inside-new {
+    fill: #46131c;
+    stroke: #fff950;
+    stroke-width: 0.02px;
 }
 
 /*
@@ -60,74 +131,69 @@
 /*$light-lit-dim: #334046;*/
 /*$light-border: #e9e5ce;*/
 
-/*$text-lit: #000000;*/
-/*$text-not-lit: #6e6e6e;*/
-
 /*$token-background: #5f5f5f;*/
 /*$token-free: #c2bc3d;*/
 /*$token-taken: #a40018;*/
 /*$token-owned: #ffd7f3;*/
 /*$token-available: #317917;*/
 
-
-
 .light {
-  stroke: white;
-  stroke-width: 0.02px;
+    stroke: white;
+    stroke-width: 0.02px;
 }
 
 .light-lit {
-  fill: #93b2b8;
+    fill: #93b2b8;
 }
 
 .light-lit-dim {
-  fill: #334046;
+    fill: #334046;
 }
 
 .light-background {
-  fill: #46131c;
+    fill: #46131c;
 }
 
 .light-token-highlighted {
-  stroke-width: 0.1px;
+    stroke-width: 0.1px;
 }
 
 .light-token-available {
-  color: #317917;
-  stroke: #317917;
+    color: #317917;
+    stroke: #317917;
 }
 
 .light-toggle-enabled {
-  color: yellow;
-  stroke: yellow;
+    color: yellow;
+    stroke: yellow;
 }
 
 .light-token-center-free {
-  color: white;
-  stroke: white;
+    color: white;
+    stroke: white;
 }
 
 .light-token-center-taken {
-  color: #a40018;
-  stroke: #a40018;
+    color: #a40018;
+    stroke: #a40018;
 }
 
 .light-token-center-owned {
-  color: #a40018;
-  stroke: #a40018;
+    color: #a40018;
+    stroke: #a40018;
 }
 
 .token-highlight {
-  fill: black;
-  stroke-width: 0.03px;
+    fill: black;
+    stroke-width: 0.03px;
 }
 
 .token-highlight-free {
-  stroke: #c2bc3d;
+    stroke: #c2bc3d;
 }
 
 .token-highlight-owned {
-  stroke: #ffd7f3;
+    stroke: #ffd7f3;
 }
 
 .token-highlight-taken {
@@ -139,19 +205,19 @@
 }
 
 .token-background-free {
-  fill: #c2bc3d;
+    fill: #c2bc3d;
 }
 
 .light-text {
-  font-size: 5pt;
-  font-weight: bold;
-  font-family: sans-serif;
+    font-size: 5pt;
+    font-weight: bold;
+    font-family: sans-serif;
 }
 
 .light-text-not-lit {
-  fill: #c2bc3d;
+    fill: #c2bc3d;
 }
 
 .light-text-lit {
-  fill: #c2bc3d;
+    fill: #c2bc3d;
 }

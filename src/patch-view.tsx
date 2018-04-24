@@ -1,9 +1,9 @@
 import * as React from 'react';
-import {HEXAGON_POINTS} from './patch-token/constants';
 import './app.css'
 import {Light} from './patch-token/light';
 import {Patch} from './patch-token/patch';
 import {PatchToken} from './patch-token/patch-token';
+import {Hexagon} from './hexagon';
 
 interface IPatchViewProps {
     patch: Patch;
@@ -14,8 +14,7 @@ interface IPatchViewState {
     patch: Patch;
     owner: string;
     selectedToken?: PatchToken;
-    detailMode: boolean;
-    lightMode: boolean;
+    tokenMode: boolean;
     purchaseEnabled: boolean;
 }
 
@@ -26,8 +25,7 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
         this.state = {
             patch: props.patch,
             owner: props.owner,
-            detailMode: false,
-            lightMode: false,
+            tokenMode: false,
             purchaseEnabled: false
         };
     }
@@ -56,89 +54,46 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
 
     private get lights() {
         return this.state.patch.lights.map((light: Light, index: number) => {
-            return <polygon key={index}
-                            points={HEXAGON_POINTS}
-                            transform={light.transform}
-                            className={this.getLightClassses(light)}
-                            onClick={e => this.lightClicked(light)}
-                            onMouseEnter={e => this.lightEnter(light, true)}
-                            onMouseLeave={e => this.lightEnter(light, false)}/>;
+            const lightEnter = (inside: boolean) => {
+                if (inside) {
+                    const tokenMode = !!light.centerOfToken;// || light.canBeNewToken || light.free;
+                    this.setState({tokenMode});
+                }
+                if (light.centerOfToken) {
+                    const selectedToken = inside ? light.centerOfToken : undefined;
+                    this.setState({selectedToken});
+                }
+            };
+            const lightClicked = () => {
+                if (light.free) {
+                    light.lit = !light.lit;
+                    this.state.patch.refreshPattern();
+                } else if (light.canBeNewToken) {
+                    const patchToken = this.state.patch.patchTokenAroundLight(light);
+                    if (patchToken) {
+                        this.setState({
+                            selectedToken: patchToken,
+                            purchaseEnabled: patchToken.canBePurchased
+                        });
+                        this.state.patch.refreshViewBox();
+                    }
+                } else {
+                    const selectedToken = light.centerOfToken;
+                    this.setState({
+                        selectedToken,
+                        purchaseEnabled: selectedToken ? selectedToken.canBePurchased : false
+                    });
+                }
+                this.state.patch.refreshOwnership();
+            };
+            return <Hexagon key={index}
+                            light={light}
+                            isSelf={(owner: string) => owner === this.props.owner}
+                            tokenMode={this.state.tokenMode}
+                            lightClicked={lightClicked}
+                            lightEnter={lightEnter}/>
         })
     }
-
-    private lightEnter(light: Light, inside: boolean): void {
-        if (inside) {
-            this.setState({
-                detailMode: !!light.centerOfToken || light.canBeNewToken || light.free,
-                lightMode: light.free
-            });
-        }
-        if (light.centerOfToken) {
-            this.setState({
-                selectedToken: inside ? light.centerOfToken : undefined
-            });
-        }
-    };
-
-    private lightClicked(light: Light) {
-        if (light.free) {
-            light.lit = !light.lit;
-            this.state.patch.refreshPattern();
-        } else if (light.canBeNewToken) {
-            const patchToken = this.state.patch.patchTokenAroundLight(light);
-            if (patchToken) {
-                this.setState({
-                    selectedToken: patchToken,
-                    purchaseEnabled: patchToken.canBePurchased
-                });
-                this.state.patch.refreshViewBox();
-            }
-        } else {
-            const selectedToken = light.centerOfToken;
-            this.setState({
-                selectedToken,
-                purchaseEnabled: selectedToken ? selectedToken.canBePurchased : false
-            });
-        }
-        this.state.patch.refreshOwnership();
-    }
-
-    private getLightClassses(light: Light): string {
-        const map = {'light': true};
-        if (this.state.detailMode) {
-            if (this.state.lightMode) {
-                map['light-lit'] = light.lit;
-
-                map['light-background'] = !light.lit;
-            } else {
-                map['light-lit-dim'] = light.lit;
-                map['light-background'] = !light.lit;
-                const possible = light.canBeNewToken;
-                map[`light-token-available`] = possible;
-                map['light-token-highlighted'] = possible || light.centerOfToken;
-                if (light.centerOfToken) {
-                    if (light.centerOfToken.owner) {
-                        map['light-token-center-taken'] = light.centerOfToken.owner !== this.state.owner;
-                        map[`light-token-center-owned`] = light.centerOfToken.owner === this.state.owner;
-                    } else {
-                        map['light-token-center-free'] = true;
-                    }
-                }
-            }
-            if (light.free && !this.state.patch.isSingleToken) {
-                map['light-token-highlighted'] = true;
-                map['light-toggle-enabled'] = true;
-            }
-        } else {
-            map['light-lit'] = light.lit;
-            // map['light-background'] = !light.lit;
-            const thickness = light.memberOfToken.length > 80 ? 80 : light.memberOfToken.length;
-            map[`light-background-${thickness}`] = !light.lit;
-        }
-        return Object.keys(map).filter(key => map[key]).join(' ');
-    }
-
-
 }
 
 export default PatchView;
