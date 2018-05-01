@@ -1,4 +1,4 @@
-import {Light} from './light';
+import {Cell} from './cell';
 import {
     BRANCH_STEP,
     createMainViewBox,
@@ -17,12 +17,12 @@ import {PatchToken} from './patch-token';
 
 export class Patch {
     public mainViewBox: string;
-    public lights: Light[] = [];
+    public cells: Cell[] = [];
     public tokens: PatchToken[] = [];
     public freeTokens: PatchToken[] = [];
 
     constructor(private ownerLookup: (fingerprint: string) => string) {
-        if (!this.lights.length) {
+        if (!this.cells.length) {
             this.getOrCreatePatchToken(undefined, zero);
         }
         this.refreshOwnership();
@@ -51,7 +51,7 @@ export class Patch {
                 case 5:
                 case 6:
                     if (token) {
-                        token = this.tokenAroundLight(token.lights[step]);
+                        token = this.tokenAroundCell(token.lights[step]);
                     }
                     break;
                 default:
@@ -67,7 +67,7 @@ export class Patch {
             return [b0, b1, b2, b3];
         });
         const litStack = [].concat.apply([], booleanArrays).reverse();
-        this.lights.sort(lightSortOnCoords).forEach(light => light.lit = litStack.pop());
+        this.cells.sort(lightSortOnCoords).forEach(cell => cell.lit = litStack.pop());
         this.refreshOwnership();
         this.refreshViewBox();
     }
@@ -80,7 +80,7 @@ export class Patch {
         const patch = new Patch(this.ownerLookup);
         patch.mainViewBox = this.mainViewBox;
         patch.tokens = this.tokens.slice();
-        patch.lights = this.lights.slice();
+        patch.cells = this.cells.slice();
         patch.refreshOwnership();
         return patch;
     }
@@ -88,7 +88,7 @@ export class Patch {
     public withoutFreeTokens(): Patch {
         const patch = this.dumbClone;
         patch.tokens.filter(token => !token.owner).forEach(token => token.destroy().forEach(lightToRemove => {
-            patch.lights = patch.lights.filter(light => !equals(lightToRemove.coords, light.coords));
+            patch.cells = patch.cells.filter(cell => !equals(lightToRemove.coords, cell.coords));
         }));
         patch.tokens = patch.tokens.filter(token => token.owner);
         patch.refreshOwnership();
@@ -96,9 +96,9 @@ export class Patch {
         return patch;
     }
 
-    public withTokenAroundLight(light: Light): Patch {
+    public withTokenAroundCell(cell: Cell): Patch {
         const patch = this.dumbClone;
-        patch.tokenAroundLight(light);
+        patch.tokenAroundCell(cell);
         patch.refreshOwnership();
         patch.refreshViewBox();
         return patch;
@@ -108,7 +108,7 @@ export class Patch {
         const rootToken: PatchToken | undefined = this.tokens.find(token => token.nonce === 0);
         this.tokens.forEach(token => token.visited = false);
         const patches = rootToken ? rootToken.generateOctalTreePattern([]).join('') : '0';
-        const lights = lightsToHexString(this.lights.slice().sort(lightSortOnCoords));
+        const lights = lightsToHexString(this.cells.slice().sort(lightSortOnCoords));
         return {patches, lights};
     }
 
@@ -117,19 +117,19 @@ export class Patch {
     private refreshOwnership() {
         this.tokens.forEach(token => token.owner = this.ownerLookup(token.createFingerprint()));
         this.freeTokens = this.tokens.filter(token => !token.owner);
-        this.lights.forEach(light => light.updateFreeFlag());
+        this.cells.forEach(cell => cell.updateFreeFlag());
     }
 
-    private tokenAroundLight(light: Light): PatchToken {
-        const adjacentMaxNonce = withMaxNonce(light.adjacentTokens);
-        return this.getOrCreatePatchToken(adjacentMaxNonce, light.coords);
+    private tokenAroundCell(cell: Cell): PatchToken {
+        const adjacentMaxNonce = withMaxNonce(cell.adjacentTokens);
+        return this.getOrCreatePatchToken(adjacentMaxNonce, cell.coords);
     }
 
     private refreshViewBox() {
-        if (this.lights.length === 0) {
+        if (this.cells.length === 0) {
             return '-1,-1,2,2';
         }
-        this.mainViewBox = createMainViewBox(this.lights.map(p => p.coords));
+        this.mainViewBox = createMainViewBox(this.cells.map(p => p.coords));
         return this.mainViewBox;
     }
 
@@ -144,13 +144,13 @@ export class Patch {
         return patchToken;
     }
 
-    private getOrCreateLight(coords: ICoords): Light {
-        const existing = this.lights.find(p => equals(p.coords, coords));
+    private getOrCreateLight(coords: ICoords): Cell {
+        const existing = this.cells.find(p => equals(p.coords, coords));
         if (existing) {
             return existing;
         }
-        const light = new Light(coords);
-        this.lights.push(light);
-        return light;
+        const cell = new Cell(coords);
+        this.cells.push(cell);
+        return cell;
     }
 }

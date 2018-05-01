@@ -1,7 +1,7 @@
 import {PatchToken} from './patch-token';
 import {getLightTransform, ICoords} from './constants';
 
-export class Light {
+export class Cell {
     public lit = false;
     public free = false;
     public transform: string;

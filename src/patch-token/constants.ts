@@ -1,5 +1,4 @@
-
-import {Light} from './light';
+import {Cell} from './cell';
 import {PatchToken} from './patch-token';
 
 export const SCALE = 0.08;
@@ -310,7 +309,7 @@ export const maximumNumber = (a: number, b: number) => (a > b) ? a : b;
 
 export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0;
 
-export const lightSortOnCoords = (a: Light, b: Light): number => coordSort(a.coords, b.coords);
+export const lightSortOnCoords = (a: Cell, b: Cell): number => coordSort(a.coords, b.coords);
 
 export const tokenSortOnNonces = (a: PatchToken, b: PatchToken): number => a.nonce < b.nonce ? -1 : a.nonce > b.nonce ? 1 : 0;
 
@@ -332,14 +331,14 @@ export const ringIndex = (coords: ICoords, origin: ICoords): number => {
     return 0;
 };
 
-export const lightsToHexString = (lights: Light[]) => {
-    const lit = lights.map(light => light.lit ? '1' : '0');
+export const lightsToHexString = (cells: Cell[]) => {
+    const lit = cells.map(cell => cell.lit ? '1' : '0');
     const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
     return nybbleChars.join('');
 };
 
-export const fingerprintToLights = (hexString: string, lights: Light[]) => {
+export const fingerprintToLights = (hexString: string, cells: Cell[]) => {
     const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
     const booleanArrays = numbers.map(nyb => {
         const b0 = (nyb & 8) !== 0;
@@ -349,7 +348,7 @@ export const fingerprintToLights = (hexString: string, lights: Light[]) => {
         return [b0, b1, b2, b3];
     });
     const litStack = [].concat.apply([], booleanArrays).reverse();
-    lights.forEach(light => light.lit = litStack.pop());
+    cells.forEach(cell => cell.lit = litStack.pop());
 };
 
 // basics
@@ -420,7 +419,7 @@ export const validPatchPattern = (pattern: IPatchPattern): boolean => {
 };
 
 export const tokenFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): PatchToken => {
-    const token = new PatchToken(undefined, {x: 0, y: 0}, PATCH_TOKEN_SHAPE.map(c => new Light(c)), index);
+    const token = new PatchToken(undefined, {x: 0, y: 0}, PATCH_TOKEN_SHAPE.map(c => new Cell(c)), index);
     fingerprintToLights(fingerprint, token.lights);
     token.owner = ownerLookup(fingerprint);
     return token;

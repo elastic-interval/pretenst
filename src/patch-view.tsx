@@ -1,10 +1,10 @@
 import * as React from 'react';
 import './app.css'
-import {Light} from './patch-token/light';
+import {Cell} from './patch-token/cell';
 import {Patch} from './patch-token/patch';
 import {PatchToken} from './patch-token/patch-token';
-import {Hexagon} from './hexagon';
 import {HEXAGON_POINTS} from './patch-token/constants';
+import {CellHexagon} from './cell-hexagon';
 
 interface IPatchViewProps {
     patch: Patch;
@@ -56,77 +56,37 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
     }
 
     private get lights() {
-        const lightEnter = (light: Light, inside: boolean) => {
+        const cellEnter = (cell: Cell, inside: boolean) => {
             if (inside) {
-                const tokenMode = !!light.centerOfToken || light.canBeNewToken || light.free;
+                const tokenMode = !!cell.centerOfToken || cell.canBeNewToken || cell.free;
                 this.setState({tokenMode});
             }
-            if (light.centerOfToken) {
-                const selectedToken = inside ? light.centerOfToken : undefined;
+            if (cell.centerOfToken) {
+                const selectedToken = inside ? cell.centerOfToken : undefined;
                 this.setState({selectedToken});
             }
         };
-        const lightClicked = (light: Light) => {
-            if (light.free) {
-                light.lit = !light.lit;
+        const cellClicked = (cell: Cell) => {
+            if (cell.free) {
+                cell.lit = !cell.lit;
                 this.props.setPatch(this.props.patch);
-            } else if (light.canBeNewToken) {
-                const patch = this.props.patch.withTokenAroundLight(light);
+            } else if (cell.canBeNewToken) {
+                const patch = this.props.patch.withTokenAroundCell(cell);
                 this.props.setPatch(patch);
             } else {
-                const selectedToken = light.centerOfToken;
+                const selectedToken = cell.centerOfToken;
                 this.setState({selectedToken});
             }
         };
-        return this.props.patch.lights.map((light: Light, index: number) => {
-            return <Hexagon key={index}
-                            light={light}
-                            isSelf={(owner: string) => owner === this.props.owner}
-                            tokenMode={this.state.tokenMode}
-                            lightClicked={lightClicked}
-                            lightEnter={lightEnter}/>
+        return this.props.patch.cells.map((cell: Cell, index: number) => {
+            return <CellHexagon key={index}
+                                cell={cell}
+                                isSelf={(owner: string) => owner === this.props.owner}
+                                tokenMode={this.state.tokenMode}
+                                cellClicked={cellClicked}
+                                cellEntered={cellEnter}/>
         })
     }
 }
 
 export default PatchView;
-
-/*
-
-<svg [attr.viewBox]="mainViewBox" (click)="clickBackground()" class="main-panel">
-  <g *ngIf="selectedToken && !patch.isSingleToken" [attr.transform]="selectedToken.transform" [ngClass]="selectedTokenClassMap">
-    <polygon id="selected" [attr.points]="hexagonPoints"/>
-  </g>
-  <g *ngFor="let light of lights; let lightIndex=index;">
-    <g [ngClass]="patchViewClassMap(light)" (click)="clickLight(light, $event)"
-           (mouseenter)="lightEnter(light, true)" (mouseleave)="lightEnter(light, false)">
-      <polygon
-        [id]="'hex' + lightIndex"
-        [attr.transform]="light.transform"
-        [attr.points]="hexagonPoints"/>
-    </g>
-  </g>
-</svg>
-
-<div className="token-container">
-  <svg  xmlns:svg="http://www.w3.org/2000/svg" [attr.viewBox]="tokenViewBox" class="token-panel">
-    <g *ngFor="let frame of tokenFrames; let frameIndex = index;" (click)="clickToken(frame)">
-      <g *ngIf="frame" [attr.transform]="frame.transform">
-        <polygon
-          [ngClass]="{'token-background': frame.owner === owner, 'token-background-free': !frame.owner }"
-          [id]="'frame' + frameIndex"
-          transform="rotate(30) scale(1.47)"
-          [attr.points]="hexagonPoints"/>
-        <g *ngFor="let light of frame.lights; let lightIndex=index;">
-          <g [ngClass]="tokenViewClassMap(light)">
-            <polygon
-              [id]="'tlight' + lightIndex"
-              [attr.transform]="light.transform"
-              [attr.points]="hexagonPoints"/>
-          </g>
-        </g>
-      </g>
-    </g>
-  </svg>
-</div>
- */

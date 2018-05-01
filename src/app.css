@@ -69,43 +69,43 @@
     height: 90%;
 }
 
-.light-on-outside {
+.cell-on-outside {
     fill: #fff950;
 }
 
-.light-off-outside {
+.cell-off-outside {
     fill: #2a2a2a;
 }
 
-.light-on-inside {
+.cell-on-inside {
     fill: #93b2b8;
 }
 
-.light-off-inside {
+.cell-off-inside {
     fill: #444444;
 }
 
-.light-self-owned {
+.cell-self-owned {
     stroke: white;
     stroke-width: 0.04px;
 }
 
-.light-other-owned {
+.cell-other-owned {
     stroke: #ff0024;
     stroke-width: 0.02px;
 }
 
-.light-token-free {
+.cell-token-free {
     stroke: #fff950;
     stroke-width: 0.05px;
 }
 
-.light-free {
+.cell-free {
     stroke: #fff4f4;
     stroke-width: 0.05px;
 }
 
-.light-new {
+.cell-new {
     stroke: #1bff37;
     stroke-width: 0.04px;
 }

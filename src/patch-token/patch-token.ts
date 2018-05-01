@@ -1,10 +1,15 @@
 import {
-    BRANCH_STEP, equals, ERROR_STEP,
+    BRANCH_STEP,
+    equals,
+    ERROR_STEP,
     getListTokenTransform,
-    getPatchTokenTransform, ICoords, lightsToHexString,
-    ringIndex, STOP_STEP
+    getPatchTokenTransform,
+    ICoords,
+    lightsToHexString,
+    ringIndex,
+    STOP_STEP
 } from './constants';
-import {Light} from './light';
+import {Cell} from './cell';
 
 export class PatchToken {
     public owner: string;
@@ -15,7 +20,7 @@ export class PatchToken {
 
     constructor(public parentToken: PatchToken | undefined,
                 public coords: ICoords,
-                public lights: Light[],
+                public lights: Cell[],
                 index: number) {
         this.lights[0].centerOfToken = this;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
@@ -40,18 +45,15 @@ export class PatchToken {
     // get rotated(): PatchToken {
     //   return new PatchToken(
     //     this.parentToken, this.coords,
-    //     this.lights.map((p: Light, index: number, lookup: Array<Light>) => lookup[ROTATE[index]]),
+    //     this.cells.map((p: Cell, index: number, lookup: Array<Cell>) => lookup[ROTATE[index]]),
     //     this.ownerLookup
     //   );
     // }
 
-    public destroy(): Light[] {
+    public destroy(): Cell[] {
         if (this.lights.length === 0) {
             return [];
         }
-        // this.childTokens.forEach(child => child.destroy().forEach(lightToRemove => {
-        //   this.lights = this.lights.filter(light => !equals(lightToRemove.coords, light.coords));
-        // }));
         if (this.parentToken) {
             this.parentToken.childTokens = this.parentToken.childTokens.filter(token => !equals(this.coords, token.coords));
         }
