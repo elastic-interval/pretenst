@@ -400,7 +400,7 @@ export const getLightTransform = (coords: ICoords, text: boolean): string => {
 export const getPatchTokenTransform = (coords: ICoords): string => {
     const x = coords.x * SCALE_X;
     const y = coords.y * SCALE_Y;
-    return `translate(${x},${y}) scale(${SCALE * SPREAD * 16}) rotate(30)`;
+    return `translate(${x},${y}) scale(${SCALE * SPREAD * 16.5}) rotate(30)`;
 };
 
 export const getListTokenTransform = (index: number): string => {

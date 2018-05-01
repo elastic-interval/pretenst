@@ -35,7 +35,7 @@
     position: absolute;
     left: 0;
     top: 0;
-    background-color: gray;
+    background-color: #83857f;
     width: 100%;
     height: 90%;
 }
@@ -55,20 +55,6 @@
     max-height: 100%;
 }
 
-.whole-screen {
-    height: 100%;
-    width: 100%;
-}
-
-.main-panel {
-    background-color: darkblue;
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 85%;
-    height: 90%;
-}
-
 .cell-on-outside {
     fill: #fff950;
 }
@@ -82,17 +68,17 @@
 }
 
 .cell-off-inside {
-    fill: #444444;
+    fill: #676767;
 }
 
 .cell-self-owned {
     stroke: white;
-    stroke-width: 0.04px;
+    stroke-width: 0.03px;
 }
 
 .cell-other-owned {
     stroke: #ff0024;
-    stroke-width: 0.02px;
+    stroke-width: 0.03px;
 }
 
 .cell-token-free {
@@ -101,7 +87,7 @@
 }
 
 .cell-free {
-    stroke: #fff4f4;
+    stroke: #fff950;
     stroke-width: 0.05px;
 }
 
@@ -112,27 +98,17 @@
 
 .token-highlight {
     fill: black;
-    stroke-width: 0.03px;
 }
 
 .token-highlight-free {
-    stroke: #c2bc3d;
+    fill: yellow;
 }
 
 .token-highlight-owned {
-    stroke: #ffd7f3;
+    fill: white;
 }
 
 .token-highlight-taken {
-    stroke: #a40018;
+    fill: red;
 }
-
-.token-background {
-    fill: #5f5f5f;
-}
-
-.token-background-free {
-    fill: #c2bc3d;
-}
-
 
