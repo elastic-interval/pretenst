@@ -29,7 +29,7 @@ class App extends React.Component<any, IAppState> {
         return (
             <div className="App">
                 <PatchView patch={this.state.patch} owner={this.state.owner} setPatch={this.setPatch}/>
-                <div>
+                <div className="BottomView">
                     <button onClick={() => this.purchaseFreeTokens()}
                             disabled={this.purchaseDisabled}>Purchase free tokens
                     </button>

@@ -4,6 +4,7 @@ import {Light} from './patch-token/light';
 import {Patch} from './patch-token/patch';
 import {PatchToken} from './patch-token/patch-token';
 import {Hexagon} from './hexagon';
+import {HEXAGON_POINTS} from './patch-token/constants';
 
 interface IPatchViewProps {
     patch: Patch;
@@ -28,11 +29,11 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
     public render() {
         return (
             <div>
-                {this.selectedToken}
                 <svg className="TokenView"
                      viewBox={this.props.patch.mainViewBox}
                      width={window.innerWidth}
                      height={window.innerHeight}>
+                    {this.selectedToken}
                     {this.lights}
                 </svg>
             </div>
@@ -41,9 +42,16 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
 
     private get selectedToken() {
         if (this.state.selectedToken) {
-            return <h3>selected</h3>
+            const token = this.state.selectedToken;
+            const className = 'token-highlight ' + (token.owner ?
+                token.owner === this.props.owner ?
+                    'token-highlight-owned' : 'token-highlight-taken' : 'token-highlight-free');
+            return <polygon key={this.state.selectedToken.coords.x}
+                            points={HEXAGON_POINTS}
+                            transform={this.state.selectedToken.transform}
+                            className={className}/>
         } else {
-            return <h3>nope</h3>
+            return null
         }
     }
 
