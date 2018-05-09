@@ -1,5 +1,6 @@
 package PatchTokens
 
+import PatchTokens.Vocabulary.Patch
 import akka.actor.ActorLogging
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 
@@ -18,11 +19,14 @@ object PatchActor {
 
   case class PatchSnapshot(everything: String)
 
+
 }
 
 class PatchActor extends PersistentActor with ActorLogging {
 
   import PatchActor._
+
+  var patches = Seq.empty[Patch]
 
   override def persistenceId: String = "patch"
 
