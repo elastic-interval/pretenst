@@ -138,13 +138,13 @@ export class Patch {
         if (existing) {
             return existing;
         }
-        const lights = PATCH_TOKEN_SHAPE.map(c => this.getOrCreateLight(plus(c, coords)));
-        const patchToken = new PatchToken(parent, coords, lights, -1);
+        const cells = PATCH_TOKEN_SHAPE.map(c => this.getOrCreateCell(plus(c, coords)));
+        const patchToken = new PatchToken(parent, coords, cells, -1);
         this.tokens.push(patchToken);
         return patchToken;
     }
 
-    private getOrCreateLight(coords: ICoords): Cell {
+    private getOrCreateCell(coords: ICoords): Cell {
         const existing = this.cells.find(p => equals(p.coords, coords));
         if (existing) {
             return existing;
