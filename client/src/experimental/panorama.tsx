@@ -1,7 +1,6 @@
 import * as React from 'react';
 import * as THREE from 'three';
-import {Mesh, PerspectiveCamera, Renderer, Scene} from 'react-three'
-import {setInterval} from "timers";
+import {Mesh, PerspectiveCamera, Renderer, Scene} from 'react-three';
 
 interface IPanoramaViewProps {
     width: number;
@@ -40,6 +39,12 @@ export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewS
             Math.sin(this.state.cameraAngle) * -far,
             Math.sin(this.state.cameraAngle) * far
         );
+        const mesh = !this.material ? null : React.createElement(Mesh, {
+            geometry: this.geometry,
+            material: this.material,
+            matrixAutoUpdate: false,
+            scale: this.scale
+        });
         return (
             <Renderer width={this.props.width} height={this.props.height}>
                 <Scene width={this.props.width} height={this.props.height} camera="maincamera">
@@ -52,13 +57,7 @@ export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewS
                         position={position}
                         lookat={new THREE.Vector3(0, 0, 0)}
                     />
-                    {!this.material ? null :
-                        <Mesh
-                            geometry={this.geometry}
-                            material={this.material}
-                            scale={this.scale}
-                        />
-                    }
+                    {mesh}
                 </Scene>
             </Renderer>
         );
