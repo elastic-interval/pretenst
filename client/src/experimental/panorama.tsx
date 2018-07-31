@@ -37,8 +37,9 @@ export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewS
     }
 
     public render() {
-        const lookat = new THREE.Vector3(
-            Math.cos(this.state.cameraAngle), 0, Math.sin(this.state.cameraAngle)
+        const far = 18.0;
+        const position = new THREE.Vector3(
+            Math.cos(this.state.cameraAngle) * far, 0, Math.sin(this.state.cameraAngle) * far
         );
         return (
             <Renderer width={this.props.width} height={this.props.height}>
@@ -49,8 +50,8 @@ export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewS
                         aspect={this.props.width / this.props.height}
                         near={1}
                         far={5000}
-                        position={new THREE.Vector3(0, 0, 0)}
-                        lookat={lookat}
+                        position={position}
+                        lookat={new THREE.Vector3(0, 0, 0)}
                     />
                     {
                         !this.state.material ? null :
@@ -58,7 +59,7 @@ export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewS
                                 geometry={new THREE.SphereGeometry(100, 32, 32)}
                                 material={this.state.material}
                                 position={new THREE.Vector3(0, 0, 0)}
-                                scale={new THREE.Vector3(1, 1, -1)}
+                                scale={new THREE.Vector3(0.1, 0.1, 0.1)}
                             />
                     }
                 </Scene>
