@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@types/react": "^16.3.12",
-    "@types/react-dom": "^16.0.5",
+    "@types/react": "^16.4.7",
+    "@types/react-dom": "^16.0.6",
     "ajv": "^6.5.2",
     "gl-matrix-ts": "^2.3.3",
     "react": "^15.4.1",
@@ -21,7 +21,7 @@
   },
   "devDependencies": {
     "@types/jest": "^22.2.3",
-    "@types/node": "^9.6.6",
-    "typescript": "^2.8.3"
+    "@types/node": "^9.6.24",
+    "typescript": "^2.9.2"
   }
 }
