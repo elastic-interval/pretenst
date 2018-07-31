@@ -7,11 +7,11 @@
     "@types/react-dom": "^16.0.5",
     "ajv": "^6.5.2",
     "gl-matrix-ts": "^2.3.3",
-    "react": "^16.3.2",
-    "react-dom": "^16.3.2",
+    "react": "^15.4.1",
+    "react-dom": "^15.4.1",
     "react-scripts-ts": "2.15.1",
     "react-three": "^0.9.7",
-    "three": "^0.94.0"
+    "three": "^0.83.0"
   },
   "scripts": {
     "start": "react-scripts-ts start",

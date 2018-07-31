@@ -1,27 +1,38 @@
-import * as React from 'react';
 import {CellHexagon} from './cell-hexagon';
 import {Patch} from './patch';
 import {PatchToken} from './patch-token';
 import {Cell} from './cell';
-import {HEXAGON_POINTS} from './constants';
+import {HEXAGON_POINTS, IPatchPattern} from './constants';
+import * as React from 'react';
 
 interface IPatchViewProps {
-    patch: Patch;
-    owner: string;
-    setPatch: (patch: Patch) => void;
+    hello: string;
 }
 
 interface IPatchViewState {
     selectedToken?: PatchToken;
     tokenMode: boolean;
+    patch: Patch;
+    owner: string
 }
 
 class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
 
+    private ownershipCache: Map<string, string>;
+
     constructor(props: IPatchViewProps) {
         super(props);
+        const existingOwner = localStorage.getItem('owner');
+        const owner = existingOwner ? existingOwner : 'gumby';
+        const existingPattern = localStorage.getItem(owner);
+        const patch = new Patch(this.ownerLookup);
+        const pattern: IPatchPattern = existingPattern ? JSON.parse(existingPattern) : {patches: '0', lights: '0'};
+        patch.apply(pattern);
+
         this.state = {
-            tokenMode: false
+            tokenMode: false,
+            patch,
+            owner
         };
     }
 
@@ -29,21 +40,45 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
         return (
             <div>
                 <svg className="TokenView"
-                     viewBox={this.props.patch.mainViewBox}
+                     viewBox={this.state.patch.mainViewBox}
                      width={window.innerWidth}
                      height={window.innerHeight}>
                     {this.selectedToken}
                     {this.lights}
                 </svg>
+                <div className="BottomView">
+                    <button onClick={() => this.purchaseFreeTokens()}
+                            disabled={this.purchaseDisabled}>Purchase free tokens
+                    </button>
+                </div>
             </div>
         );
+    }
+
+    private get purchaseDisabled(): boolean {
+        return this.state.patch.freeTokens.length === 0;
+    }
+
+    private purchaseFreeTokens() {
+        const owns = this.owns;
+        this.state.patch.freeTokens.forEach(token => owns[token.createFingerprint()] = this.state.owner);
+        localStorage.setItem('ownership', JSON.stringify(this.ownershipCache));
+        this.setState({patch: this.state.patch.dumbClone}); // force repaint
+    }
+
+    private get owns(): Map<string, string> {
+        if (!this.ownershipCache) {
+            const ownership = localStorage.getItem('ownership');
+            this.ownershipCache = ownership ? JSON.parse(ownership) : new Map<string, string>();
+        }
+        return this.ownershipCache;
     }
 
     private get selectedToken() {
         if (this.state.selectedToken) {
             const token = this.state.selectedToken;
             const className = 'token-highlight ' + (token.owner ?
-                token.owner === this.props.owner ?
+                token.owner === this.state.owner ?
                     'token-highlight-owned' : 'token-highlight-taken' : 'token-highlight-free');
             return <polygon key={this.state.selectedToken.coords.x}
                             points={HEXAGON_POINTS}
@@ -68,24 +103,34 @@ class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
         const cellClicked = (cell: Cell) => {
             if (cell.free) {
                 cell.lit = !cell.lit;
-                this.props.setPatch(this.props.patch);
+                this.setPatch(this.state.patch);
             } else if (cell.canBeNewToken) {
-                const patch = this.props.patch.withTokenAroundCell(cell);
-                this.props.setPatch(patch);
+                const patch = this.state.patch.withTokenAroundCell(cell);
+                this.setPatch(patch);
             } else {
                 const selectedToken = cell.centerOfToken;
                 this.setState({selectedToken});
             }
         };
-        return this.props.patch.cells.map((cell: Cell, index: number) => {
+        return this.state.patch.cells.map((cell: Cell, index: number) => {
             return <CellHexagon key={index}
                                 cell={cell}
-                                isSelf={(owner: string) => owner === this.props.owner}
+                                isSelf={(owner: string) => owner === this.state.owner}
                                 tokenMode={this.state.tokenMode}
                                 cellClicked={cellClicked}
                                 cellEntered={cellEnter}/>
         })
     }
+
+    private ownerLookup = (fingerprint: string) => this.owns[fingerprint];
+
+    private setPatch = (patch: Patch) => {
+        setTimeout(() => {
+            localStorage.setItem(this.state.owner, JSON.stringify(patch.pattern))
+        });
+        this.setState({patch});
+    };
+
 }
 
 export default PatchView;
