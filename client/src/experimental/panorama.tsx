@@ -10,29 +10,26 @@ interface IPanoramaViewProps {
 
 interface IPanoramaViewState {
     cameraAngle: number;
-    geometry: any;
-    material?: any;
+    textureLoaded: boolean;
 }
 
 export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
+
+    private geometry = new THREE.SphereGeometry(1, 11, 11);
+    private scale = new THREE.Vector3(0.1, 1, 0.1);
+    private material: any;
 
     constructor(props: IPanoramaViewProps) {
         super(props);
         this.state = {
             cameraAngle: 0,
-            geometry: new THREE.SphereGeometry(1, 9, 9)
+            textureLoaded: false
         };
         new THREE.TextureLoader().load(
             '/spherePanorama.jpg',
-            this.textureLoaded,
+            this.onTextureLoaded,
             (xhr: any) => console.log((xhr.loaded / xhr.total * 100) + '% loaded'),
             () => console.log('An error happened')
-        );
-        setInterval(
-            () => {
-                this.setState({cameraAngle: this.state.cameraAngle + 0.1});
-            },
-            100
         );
     }
 
@@ -55,29 +52,28 @@ export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewS
                         position={position}
                         lookat={new THREE.Vector3(0, 0, 0)}
                     />
-                    {
-                        !this.state.material ? null :
-                            <Mesh
-                                geometry={this.state.geometry}
-                                material={this.state.material}
-                                scale={new THREE.Vector3(0.1, 1, 0.1)}
-                            />
+                    {!this.material ? null :
+                        <Mesh
+                            geometry={this.geometry}
+                            material={this.material}
+                            scale={this.scale}
+                        />
                     }
                 </Scene>
             </Renderer>
         );
     }
 
-    private textureLoaded = (texture: any) => {
+    private onTextureLoaded = (texture: any) => {
         // do something with the texture
         texture.wrapS = THREE.RepeatWrapping;
         texture.wrapT = THREE.RepeatWrapping;
         texture.offset.x = 90 / (2 * Math.PI);
-        // material.map = texture; // set the material's map when when the texture is loaded
-        this.setState({
-            material: new THREE.MeshBasicMaterial({
-                map: texture
-            })
-        });
+        this.material = new THREE.MeshBasicMaterial({map: texture});
+        this.setState({textureLoaded: true});
+        setInterval(
+            () => this.setState({cameraAngle: this.state.cameraAngle + 0.1}),
+            50
+        );
     };
 }
