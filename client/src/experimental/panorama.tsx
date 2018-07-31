@@ -10,6 +10,7 @@ interface IPanoramaViewProps {
 
 interface IPanoramaViewState {
     cameraAngle: number;
+    geometry: any;
     material?: any;
 }
 
@@ -17,29 +18,30 @@ export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewS
 
     constructor(props: IPanoramaViewProps) {
         super(props);
-        this.state = {cameraAngle: 0};
+        this.state = {
+            cameraAngle: 0,
+            geometry: new THREE.SphereGeometry(1, 9, 9)
+        };
         new THREE.TextureLoader().load(
             '/spherePanorama.jpg',
             this.textureLoaded,
-            (xhr: any) => {
-                console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-            },
-            () => {
-                console.log('An error happened');
-            }
+            (xhr: any) => console.log((xhr.loaded / xhr.total * 100) + '% loaded'),
+            () => console.log('An error happened')
         );
         setInterval(
             () => {
-                this.setState({cameraAngle: this.state.cameraAngle + 0.001});
+                this.setState({cameraAngle: this.state.cameraAngle + 0.1});
             },
             100
         );
     }
 
     public render() {
-        const far = 18.0;
+        const far = 1.5;
         const position = new THREE.Vector3(
-            Math.cos(this.state.cameraAngle) * far, 0, Math.sin(this.state.cameraAngle) * far
+            Math.cos(this.state.cameraAngle) * far,
+            Math.sin(this.state.cameraAngle) * -far,
+            Math.sin(this.state.cameraAngle) * far
         );
         return (
             <Renderer width={this.props.width} height={this.props.height}>
@@ -56,10 +58,9 @@ export class Panorama extends React.Component<IPanoramaViewProps, IPanoramaViewS
                     {
                         !this.state.material ? null :
                             <Mesh
-                                geometry={new THREE.SphereGeometry(100, 32, 32)}
+                                geometry={this.state.geometry}
                                 material={this.state.material}
-                                position={new THREE.Vector3(0, 0, 0)}
-                                scale={new THREE.Vector3(0.1, 0.1, 0.1)}
+                                scale={new THREE.Vector3(0.1, 1, 0.1)}
                             />
                     }
                 </Scene>
