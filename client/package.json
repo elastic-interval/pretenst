@@ -3,9 +3,15 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@types/react": "^16.3.12",
+    "@types/react-dom": "^16.0.5",
+    "ajv": "^6.5.2",
+    "gl-matrix-ts": "^2.3.3",
     "react": "^16.3.2",
     "react-dom": "^16.3.2",
-    "react-scripts-ts": "2.15.1"
+    "react-scripts-ts": "2.15.1",
+    "react-three": "^0.9.7",
+    "three": "^0.94.0"
   },
   "scripts": {
     "start": "react-scripts-ts start",
@@ -16,8 +22,6 @@
   "devDependencies": {
     "@types/jest": "^22.2.3",
     "@types/node": "^9.6.6",
-    "@types/react": "^16.3.12",
-    "@types/react-dom": "^16.0.5",
     "typescript": "^2.8.3"
   }
 }

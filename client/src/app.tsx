@@ -1,9 +1,9 @@
 import * as React from 'react';
 import './app.css';
 
-import PatchView from './patch-view';
 import {Patch} from './patch-token/patch';
 import {IPatchPattern} from './patch-token/constants';
+import PatchView from './patch-token/patch-view';
 
 interface IAppState {
     patch: Patch;

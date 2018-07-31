@@ -1,6 +1,6 @@
 import * as React from 'react';
-import {Cell} from './patch-token/cell';
-import {HEXAGON_POINTS} from './patch-token/constants';
+import {Cell} from './cell';
+import {HEXAGON_POINTS} from './constants';
 
 interface IHexagonProps {
     cell: Cell;

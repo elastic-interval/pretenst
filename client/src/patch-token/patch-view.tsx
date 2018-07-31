@@ -1,10 +1,9 @@
 import * as React from 'react';
-import './app.css'
-import {Cell} from './patch-token/cell';
-import {Patch} from './patch-token/patch';
-import {PatchToken} from './patch-token/patch-token';
-import {HEXAGON_POINTS} from './patch-token/constants';
 import {CellHexagon} from './cell-hexagon';
+import {Patch} from './patch';
+import {PatchToken} from './patch-token';
+import {Cell} from './cell';
+import {HEXAGON_POINTS} from './constants';
 
 interface IPatchViewProps {
     patch: Patch;
