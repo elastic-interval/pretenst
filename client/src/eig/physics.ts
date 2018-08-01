@@ -85,6 +85,7 @@ export class Physics {
     }
 
     private elastic(interval: Interval) {
+        interval.calculate();
         interval.stress = this.constraints.elasticFactor.value * (interval.span - interval.idealSpan) * interval.idealSpan * interval.idealSpan;
         interval.alpha.force.addScaledVector(interval.unit, interval.stress / 2);
         interval.omega.force.addScaledVector(interval.unit, -interval.stress / 2);

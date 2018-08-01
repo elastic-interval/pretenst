@@ -10,7 +10,7 @@ export class VerticalConstraints implements IConstraints {
 
     public JOINT_RADIUS = 0.01;
     public airDrag: IPhysicsValue = {name: "airDrag", value: 0.002};
-    public airGravity: IPhysicsValue = {name: "airGravity", value: 0.000001};
+    public airGravity: IPhysicsValue = {name: "airGravity", value: 0.00001};
     public landDrag: IPhysicsValue = {name: "landDrag", value: 20};
     public landGravity: IPhysicsValue = {name: "landGravity", value: 60};
     public elasticFactor: IPhysicsValue = {name: "elasticFactor", value: 0.4};

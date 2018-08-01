@@ -28,9 +28,15 @@ export class Fabric {
         this.interval(0, 1);
         this.interval(1, 2);
         this.interval(2, 3);
-        this.interval(0, 2);
+        this.interval(2, 0);
         this.interval(0, 3);
-        this.interval(1, 3);
+        this.interval(3, 1);
+        this.calculate();
         return this;
     }
+
+    private calculate() {
+        this.intervals.forEach(interval => interval.calculate());
+    }
+
 }

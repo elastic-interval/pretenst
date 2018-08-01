@@ -21,7 +21,6 @@ interface IPanoramaViewState {
 export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
 
     private geometry = new SphereGeometry(1, 11, 11);
-    private ellipsoidScale = new Vector3(0.1, 1.2, 0.1);
     private ellipsoidUnitVector = new Vector3(0, 1, 0);
     private sphereScale = new Vector3(0.03, 0.03, 0.03);
     private physics = new Physics(new VerticalConstraints(), 16);
@@ -46,22 +45,23 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         const cameraDistance = 3;
         const cameraPosition = new Vector3(
             Math.cos(this.state.cameraAngle) * cameraDistance,
-            Math.sin(this.state.cameraAngle) * -cameraDistance,
+            1,
             Math.sin(this.state.cameraAngle) * cameraDistance
         );
-        const intervalToEllipsoid = (interval: Interval): React.ReactElement<any> => {
-            interval.calculate();
+        const intervalToEllipsoid = (interval: Interval, index: number): React.ReactElement<any> => {
             return React.createElement(R3.Mesh, {
+                key: `I${index}`,
                 geometry: this.geometry,
                 material: this.material,
                 matrixAutoUpdate: false,
-                scale: this.ellipsoidScale,
+                scale: new Vector3(0.05 * interval.span, interval.span * 0.5, 0.05 * interval.span),
                 position: interval.location,
                 quaternion: new Quaternion().setFromUnitVectors(this.ellipsoidUnitVector, interval.unit)
             });
         };
-        const jointToSphere = (joint: Joint): React.ReactElement<any> => {
+        const jointToSphere = (joint: Joint, index: number): React.ReactElement<any> => {
             return React.createElement(R3.Mesh, {
+                key: `J${index}`,
                 geometry: this.geometry,
                 material: this.material,
                 matrixAutoUpdate: false,
@@ -98,9 +98,11 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         this.setState({textureLoaded: true});
         setInterval(
             () => {
-                // this.setState({cameraAngle: this.state.cameraAngle + 0.01});
                 this.physics.transform(this.state.fabric);
-                this.setState({fabric: this.state.fabric});
+                this.setState({
+                    cameraAngle: this.state.cameraAngle + 0.01,
+                    fabric: this.state.fabric
+                });
             },
             30
         );
