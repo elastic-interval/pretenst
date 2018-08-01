@@ -20,7 +20,13 @@ export class Fabric {
 
     public tetra(): Fabric {
         let name = 0;
-        const joint = (x: number, y: number, z: number) => this.joint((name++).toString(), x, y, z);
+        const shake = () => (Math.random() - 0.5) * 0.1;
+        const joint = (x: number, y: number, z: number) => this.joint(
+            (name++).toString(),
+            x + shake(),
+            y + shake(),
+            z + shake()
+        );
         joint(1, -1, 1);
         joint(-1, 1, 1);
         joint(-1, -1, -1);
@@ -32,7 +38,7 @@ export class Fabric {
         this.interval(0, 3);
         this.interval(3, 1);
         this.calculate();
-        this.setAltitude(0.5);
+        this.setAltitude(1);
         return this;
     }
 
