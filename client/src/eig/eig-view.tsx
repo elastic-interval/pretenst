@@ -23,7 +23,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     private geometry = new SphereGeometry(1, 11, 11);
     private ellipsoidUnitVector = new Vector3(0, 1, 0);
     private sphereScale = new Vector3(0.03, 0.03, 0.03);
-    private physics = new Physics(new VerticalConstraints(), 16);
+    private physics = new Physics(new VerticalConstraints());
     private material: any;
 
     constructor(props: IPanoramaViewProps) {
@@ -98,7 +98,9 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         this.setState({textureLoaded: true});
         setInterval(
             () => {
-                this.physics.transform(this.state.fabric);
+                for (let tick=0; tick<8; tick++) {
+                    this.physics.iterate(this.state.fabric);
+                }
                 this.setState({
                     cameraAngle: this.state.cameraAngle + 0.01,
                     fabric: this.state.fabric

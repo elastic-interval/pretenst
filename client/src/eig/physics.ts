@@ -17,7 +17,6 @@ export interface IPhysicsValue {
 export interface IConstraints {
     elasticFactor: IPhysicsValue;
     exertJointPhysics: (joint: Joint, fabric: Fabric) => void;
-    postIterate: (fabric: Fabric) => void;
 }
 
 export class Physics {
@@ -33,17 +32,10 @@ export class Physics {
     private alphaProjection = new Vector3();
     private omegaProjection = new Vector3();
 
-    constructor(public constraints: IConstraints, private iterations: number) {
+    constructor(public constraints: IConstraints) {
     }
 
-    public transform(fabric: Fabric) {
-        for (let walk=0; walk<this.iterations; walk++) {
-            this.iterate(fabric);
-        }
-        this.constraints.postIterate(fabric);
-    }
-
-    private iterate(fabric: Fabric) {
+    public iterate(fabric: Fabric) {
         fabric.intervals.forEach(interval => {
             this.elastic(interval);
         });
@@ -104,6 +96,5 @@ export class Physics {
         interval.alpha.absorbVelocity.add(this.projection);
         interval.omega.absorbVelocity.add(this.projection);
     }
-
 
 }
