@@ -43,30 +43,29 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
 
         const loader = new TextureLoader();
         this.ellipsoidMaterial = new MeshBasicMaterial({
-            map: loader.load('/spherePanorama.jpg',(texture: any) => {
+            map: loader.load('/spherePanorama.jpg', (texture: any) => {
                 texture.wrapS = RepeatWrapping;
                 texture.wrapT = RepeatWrapping;
                 texture.offset.x = 90 / (2 * Math.PI);
             })
         });
         this.floorMaterial = new MeshBasicMaterial({
-            map: loader.load('/water.jpg',(texture: any) => {
+            map: loader.load('/water.jpg', (texture: any) => {
                 texture.wrapS = RepeatWrapping;
                 texture.wrapT = RepeatWrapping;
             })
         });
-        setInterval(
-            () => {
-                for (let tick=0; tick<8; tick++) {
-                    this.physics.iterate(this.state.fabric);
-                }
-                this.setState({
-                    cameraAngle: this.state.cameraAngle + 0.001,
-                    fabric: this.state.fabric
-                });
-            },
-            20
-        );
+        const step = () => {
+            for (let tick = 0; tick < 12; tick++) {
+                this.physics.iterate(this.state.fabric);
+            }
+            this.setState({
+                cameraAngle: this.state.cameraAngle + 0.001,
+                fabric: this.state.fabric
+            });
+            requestAnimationFrame(step);
+        };
+        requestAnimationFrame(step);
     }
 
     public render() {
@@ -101,10 +100,10 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         const sphereArray = !this.ellipsoidMaterial ? null : this.state.fabric.joints.map(jointToSphere);
         const floor = !this.ellipsoidMaterial ? null : React.createElement(R3.Mesh, {
             key: 'Floor',
-            geometry: new PlaneGeometry(1,1),
-            scale: new Vector3(20,20, 20),
+            geometry: new PlaneGeometry(1, 1),
+            scale: new Vector3(20, 20, 20),
             material: this.floorMaterial,
-            quaternion: new Quaternion().setFromAxisAngle(new Vector3(-1,0,0), Math.PI/2)
+            quaternion: new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2)
         });
         return (
             <R3.Renderer width={this.props.width} height={this.props.height}>
