@@ -1,5 +1,5 @@
 import {Joint} from './joint';
-import {EigFabric} from './eig-fabric';
+import {Fabric} from './fabric';
 import {Interval} from './interval';
 import {Vector3} from 'three';
 
@@ -16,8 +16,8 @@ export interface IPhysicsValue {
 
 export interface IConstraints {
     elasticFactor: IPhysicsValue;
-    exertJointPhysics: (joint: Joint, fabric: EigFabric) => void;
-    postIterate: (fabric: EigFabric) => void;
+    exertJointPhysics: (joint: Joint, fabric: Fabric) => void;
+    postIterate: (fabric: Fabric) => void;
 }
 
 export class Physics {
@@ -36,14 +36,14 @@ export class Physics {
     constructor(public constraints: IConstraints, private iterations: number) {
     }
 
-    public transform(fabric: EigFabric) {
+    public transform(fabric: Fabric) {
         for (let walk=0; walk<this.iterations; walk++) {
             this.iterate(fabric);
         }
         this.constraints.postIterate(fabric);
     }
 
-    private iterate(fabric: EigFabric) {
+    private iterate(fabric: Fabric) {
         fabric.intervals.forEach(interval => {
             this.elastic(interval);
         });

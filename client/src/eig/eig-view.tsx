@@ -3,7 +3,7 @@ import * as R3 from 'react-three';
 import {MeshBasicMaterial, Quaternion, RepeatWrapping, SphereGeometry, TextureLoader, Vector3} from 'three';
 import {Interval} from './interval';
 import {Joint} from './joint';
-import {EigFabric} from './eig-fabric';
+import {Fabric} from './fabric';
 import {Physics} from './physics';
 import {VerticalConstraints} from './vertical-constraints';
 
@@ -15,7 +15,7 @@ interface IPanoramaViewProps {
 interface IPanoramaViewState {
     cameraAngle: number;
     textureLoaded: boolean;
-    fabric: EigFabric;
+    fabric: Fabric;
 }
 
 export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
@@ -32,7 +32,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         this.state = {
             cameraAngle: 0,
             textureLoaded: false,
-            fabric: new EigFabric().tetra()
+            fabric: new Fabric().tetra()
         };
         new TextureLoader().load(
             '/spherePanorama.jpg',

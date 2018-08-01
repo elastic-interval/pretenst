@@ -1,11 +1,11 @@
 import {Joint} from './joint';
-import {EigFabric} from './eig-fabric';
+import {Fabric} from './fabric';
 import {IConstraints, IPhysicsValue} from './physics';
 
 export class VerticalConstraints implements IConstraints {
 
     private static exertGravity(joint: Joint, value: number) {
-        joint.velocity.z -= value;
+        joint.velocity.y -= value;
     }
 
     public JOINT_RADIUS = 0.01;
@@ -15,8 +15,8 @@ export class VerticalConstraints implements IConstraints {
     public landGravity: IPhysicsValue = {name: "landGravity", value: 60};
     public elasticFactor: IPhysicsValue = {name: "elasticFactor", value: 0.4};
 
-    public exertJointPhysics(joint: Joint, fabric: EigFabric) {
-        const altitude = joint.location.z;
+    public exertJointPhysics(joint: Joint, fabric: Fabric) {
+        const altitude = joint.location.y;
         if (altitude > this.JOINT_RADIUS) {
             VerticalConstraints.exertGravity(joint, this.airGravity.value);
             joint.velocity.multiplyScalar(1 - this.airDrag.value);
@@ -34,7 +34,7 @@ export class VerticalConstraints implements IConstraints {
         }
     }
 
-    public postIterate(fabric: EigFabric) {
+    public postIterate(fabric: Fabric) {
         return this.elasticFactor;
     }
 }
