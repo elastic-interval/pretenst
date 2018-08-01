@@ -8,11 +8,11 @@ export class VerticalConstraints implements IConstraints {
         joint.velocity.y -= value;
     }
 
-    public airDrag: IPhysicsValue = {name: "airDrag", value: 0.002};
+    public airDrag: IPhysicsValue = {name: "airDrag", value: 0.00005};
     public airGravity: IPhysicsValue = {name: "airGravity", value: 0.0001};
     public landDrag: IPhysicsValue = {name: "landDrag", value: 20};
-    public landGravity: IPhysicsValue = {name: "landGravity", value: 60};
-    public elasticFactor: IPhysicsValue = {name: "elasticFactor", value: 0.4};
+    public landGravity: IPhysicsValue = {name: "landGravity", value: 30};
+    public elasticFactor: IPhysicsValue = {name: "elasticFactor", value: 0.07};
 
     public exertJointPhysics(joint: Joint, fabric: Fabric) {
         const altitude = joint.location.y;

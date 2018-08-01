@@ -75,10 +75,10 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     }
 
     public render() {
-        const cameraDistance = 8;
+        const cameraDistance = 12;
         const cameraPosition = new Vector3(
             Math.cos(this.state.cameraAngle) * cameraDistance,
-            1,
+            3,
             Math.sin(this.state.cameraAngle) * cameraDistance
         );
         const intervalToEllipsoid = (interval: Interval, index: number): React.ReactElement<any> => {
