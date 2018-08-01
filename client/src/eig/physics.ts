@@ -3,6 +3,7 @@ import {Fabric} from './fabric';
 import {Interval} from './interval';
 import {Vector3} from 'three';
 
+export const JOINT_RADIUS = 0.15;
 const AMBIENT_JOINT_MASS = 0.1;
 const CABLE_MASS_FACTOR = 0.05;
 const SPRING_SMOOTH = 0.03;

@@ -12,7 +12,7 @@ import {
 import {Interval} from './interval';
 import {Joint} from './joint';
 import {Fabric} from './fabric';
-import {Physics} from './physics';
+import {JOINT_RADIUS, Physics} from './physics';
 import {VerticalConstraints} from './vertical-constraints';
 
 interface IPanoramaViewProps {
@@ -29,7 +29,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
 
     private geometry = new SphereGeometry(1, 11, 11);
     private ellipsoidUnitVector = new Vector3(0, 1, 0);
-    private sphereScale = new Vector3(0.03, 0.03, 0.03);
+    private sphereScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS);
     private physics = new Physics(new VerticalConstraints());
     private ellipsoidMaterial: any;
     private floorMaterial: any;
