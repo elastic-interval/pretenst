@@ -34,7 +34,7 @@ export class VerticalConstraints implements IConstraints {
         }
     }
 
-    public postIterate(fabric: Fabric) {
-        return this.elasticFactor;
-    }
+    public elastic = () => {
+        return this.elasticFactor.value;
+    };
 }

@@ -42,7 +42,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     }
 
     public render() {
-        const cameraDistance = 3;
+        const cameraDistance = 8;
         const cameraPosition = new Vector3(
             Math.cos(this.state.cameraAngle) * cameraDistance,
             1,
@@ -76,7 +76,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                 <R3.Scene width={this.props.width} height={this.props.height} camera="maincamera">
                     <R3.PerspectiveCamera
                         name="maincamera"
-                        fov={75}
+                        fov={50}
                         aspect={this.props.width / this.props.height}
                         near={1}
                         far={5000}

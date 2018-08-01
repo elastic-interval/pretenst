@@ -32,11 +32,21 @@ export class Fabric {
         this.interval(0, 3);
         this.interval(3, 1);
         this.calculate();
+        this.setAltitude(0.5);
         return this;
     }
 
+    private setAltitude(altitude: number) {
+        // todo: should be in constraints
+        const lowest = this.joints.reduce((minAltitude: number, curr: Joint) => Math.min(minAltitude, curr.location.y), Number.MAX_VALUE);
+        this.joints.forEach(joint => joint.location.y = joint.location.y - lowest + altitude);
+    }
+
     private calculate() {
-        this.intervals.forEach(interval => interval.calculate());
+        this.intervals.forEach(interval => {
+            interval.calculate();
+            interval.idealSpan = interval.span;
+        });
     }
 
 }

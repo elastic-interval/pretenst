@@ -15,7 +15,7 @@ export interface IPhysicsValue {
 }
 
 export interface IConstraints {
-    elasticFactor: IPhysicsValue;
+    elastic: () => number;
     exertJointPhysics: (joint: Joint, fabric: Fabric) => void;
 }
 
@@ -78,7 +78,7 @@ export class Physics {
 
     private elastic(interval: Interval) {
         interval.calculate();
-        interval.stress = this.constraints.elasticFactor.value * (interval.span - interval.idealSpan) * interval.idealSpan * interval.idealSpan;
+        interval.stress = this.constraints.elastic()* (interval.span - interval.idealSpan) * interval.idealSpan * interval.idealSpan;
         interval.alpha.force.addScaledVector(interval.unit, interval.stress / 2);
         interval.omega.force.addScaledVector(interval.unit, -interval.stress / 2);
         const canPush = true;
