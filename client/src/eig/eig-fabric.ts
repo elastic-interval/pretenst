@@ -2,7 +2,7 @@ import {Joint} from './joint';
 import {Interval} from './interval';
 import {Vector3} from 'three';
 
-export class Fabric {
+export class EigFabric {
 
     constructor(
         public joints: Joint[] = [],
@@ -18,7 +18,7 @@ export class Fabric {
         this.intervals.push(new Interval(this.joints[a], this.joints[b]));
     }
 
-    public tetra(): Fabric {
+    public tetra(): EigFabric {
         let name = 0;
         const joint = (x: number, y: number, z: number) => this.joint((name++).toString(), x, y, z);
         joint(1, -1, 1);

@@ -4,6 +4,7 @@ import {Joint} from './joint';
 export class Interval {
     public span = 1;
     public idealSpan = 1;
+    public stress = 0;
     public location = new Vector3();
     public unit = new Vector3();
 

@@ -3,7 +3,9 @@ import * as R3 from 'react-three';
 import {MeshBasicMaterial, Quaternion, RepeatWrapping, SphereGeometry, TextureLoader, Vector3} from 'three';
 import {Interval} from './interval';
 import {Joint} from './joint';
-import {Fabric} from './fabric';
+import {EigFabric} from './eig-fabric';
+import {Physics} from './physics';
+import {VerticalConstraints} from './vertical-constraints';
 
 interface IPanoramaViewProps {
     width: number;
@@ -13,6 +15,7 @@ interface IPanoramaViewProps {
 interface IPanoramaViewState {
     cameraAngle: number;
     textureLoaded: boolean;
+    fabric: EigFabric;
 }
 
 export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
@@ -21,14 +24,15 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     private ellipsoidScale = new Vector3(0.1, 1.2, 0.1);
     private ellipsoidUnitVector = new Vector3(0, 1, 0);
     private sphereScale = new Vector3(0.03, 0.03, 0.03);
-    private fabric: Fabric = new Fabric().tetra();
+    private physics = new Physics(new VerticalConstraints(), 16);
     private material: any;
 
     constructor(props: IPanoramaViewProps) {
         super(props);
         this.state = {
             cameraAngle: 0,
-            textureLoaded: false
+            textureLoaded: false,
+            fabric: new EigFabric().tetra()
         };
         new TextureLoader().load(
             '/spherePanorama.jpg',
@@ -65,8 +69,8 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                 position: joint.location
             });
         };
-        const ellipsoidArray = !this.material ? null : this.fabric.intervals.map(intervalToEllipsoid);
-        const sphereArray = !this.material ? null : this.fabric.joints.map(jointToSphere);
+        const ellipsoidArray = !this.material ? null : this.state.fabric.intervals.map(intervalToEllipsoid);
+        const sphereArray = !this.material ? null : this.state.fabric.joints.map(jointToSphere);
         return (
             <R3.Renderer width={this.props.width} height={this.props.height}>
                 <R3.Scene width={this.props.width} height={this.props.height} camera="maincamera">
@@ -93,7 +97,11 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         this.material = new MeshBasicMaterial({map: texture});
         this.setState({textureLoaded: true});
         setInterval(
-            () => this.setState({cameraAngle: this.state.cameraAngle + 0.01}),
+            () => {
+                // this.setState({cameraAngle: this.state.cameraAngle + 0.01});
+                this.physics.transform(this.state.fabric);
+                this.setState({fabric: this.state.fabric});
+            },
             30
         );
     };
