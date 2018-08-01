@@ -1,6 +1,6 @@
 import * as React from 'react';
 import './app.css';
-import {Panorama} from './experimental/panorama';
+import {EigView} from './eig/eig-view';
 
 // import PatchView from './patch-token/patch-view';
 
@@ -18,7 +18,7 @@ class App extends React.Component<any, IAppState> {
     public render() {
         return (
             <div className="App">
-                <Panorama width={window.innerWidth} height={window.innerHeight}/>
+                <EigView width={window.innerWidth} height={window.innerHeight}/>
                 {/*<PatchView hello={this.state.hello}/>*/}
             </div>
         );
