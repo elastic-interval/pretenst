@@ -56,14 +56,19 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
             })
         });
         const step = () => {
-            for (let tick = 0; tick < 12; tick++) {
-                this.physics.iterate(this.state.fabric);
-            }
-            this.setState({
-                cameraAngle: this.state.cameraAngle + 0.001,
-                fabric: this.state.fabric
-            });
-            requestAnimationFrame(step);
+            setTimeout(
+                () => {
+                    for (let tick = 0; tick < 12; tick++) {
+                        this.physics.iterate(this.state.fabric);
+                    }
+                    this.setState({
+                        cameraAngle: this.state.cameraAngle + 0.001,
+                        fabric: this.state.fabric
+                    });
+                    requestAnimationFrame(step);
+                },
+                20
+            );
         };
         requestAnimationFrame(step);
     }
