@@ -31,8 +31,9 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     private ellipsoidUnitVector = new Vector3(0, 1, 0);
     private sphereScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS);
     private physics = new Physics(new VerticalConstraints());
-    private ellipsoidMaterial: any;
-    private floorMaterial: any;
+    private sphereMaterial: MeshBasicMaterial = new MeshBasicMaterial({color: 0x00FF00});
+    private ellipsoidMaterial: MeshBasicMaterial;
+    private floorMaterial: MeshBasicMaterial;
 
     constructor(props: IPanoramaViewProps) {
         super(props);
@@ -43,10 +44,10 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
 
         const loader = new TextureLoader();
         this.ellipsoidMaterial = new MeshBasicMaterial({
-            map: loader.load('/spherePanorama.jpg', (texture: any) => {
-                texture.wrapS = RepeatWrapping;
-                texture.wrapT = RepeatWrapping;
-                texture.offset.x = 90 / (2 * Math.PI);
+            map: loader.load('/blue-red.png', (texture: any) => {
+                // texture.wrapS = RepeatWrapping;
+                // texture.wrapT = RepeatWrapping;
+                // texture.offset.x = 90 / (2 * Math.PI);
             })
         });
         this.floorMaterial = new MeshBasicMaterial({
@@ -95,7 +96,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
             return React.createElement(R3.Mesh, {
                 key: `J${index}`,
                 geometry: this.geometry,
-                material: this.ellipsoidMaterial,
+                material: this.sphereMaterial,
                 matrixAutoUpdate: false,
                 scale: this.sphereScale,
                 position: joint.location
