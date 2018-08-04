@@ -15,6 +15,11 @@ export class Interval {
         this.idealSpan = this.unit.subVectors(this.omega.location, this.alpha.location).length();
     }
 
+    public withIdealSpan(idealSpan: number): Interval {
+        this.idealSpan = idealSpan;
+        return this;
+    }
+
     public calculate() {
         this.span = this.unit.subVectors(this.omega.location, this.alpha.location).length();
         this.unit.multiplyScalar(1.0/this.span);

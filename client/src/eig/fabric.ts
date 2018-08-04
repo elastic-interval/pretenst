@@ -32,7 +32,12 @@ export class Fabric {
         this.faces = this.faces.filter(f => f.name !== face.name);
         const apexJoint = new Joint(face.name, face.apex);
         this.joints.push(apexJoint);
-        face.joints.map(j => new Interval(j, apexJoint)).forEach(i => this.intervals.push(i));
+        const diff = new Vector3();
+        const l0 = diff.subVectors(face.joints[0].location, face.joints[1].location).length();
+        const l1 = diff.subVectors(face.joints[1].location, face.joints[2].location).length();
+        const l2 = diff.subVectors(face.joints[2].location, face.joints[0].location).length();
+        const idealSpan = (l0 + l1 + l2) / 3;
+        face.joints.map(j => new Interval(j, apexJoint).withIdealSpan(idealSpan)).forEach(i => this.intervals.push(i));
         this.faces.push(new Face(face.joints[0], face.joints[1], apexJoint));
         this.faces.push(new Face(face.joints[1], face.joints[2], apexJoint));
         this.faces.push(new Face(face.joints[2], face.joints[0], apexJoint));

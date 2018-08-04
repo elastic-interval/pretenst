@@ -12,9 +12,8 @@ import {
     Vector3
 } from 'three';
 import {Interval} from './interval';
-import {Joint} from './joint';
 import {Fabric} from './fabric';
-import {JOINT_RADIUS, Physics} from './physics';
+import {Physics} from './physics';
 import {VerticalConstraints} from './vertical-constraints';
 import {Face} from './face';
 
@@ -34,9 +33,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     private OrbitControls = require('three-orbit-controls')(this.THREE);
     private geometry = new SphereGeometry(1, 11, 11);
     private ellipsoidUnitVector = new Vector3(0, 1, 0);
-    private sphereScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS);
     private physics = new Physics(new VerticalConstraints());
-    private jointMaterial = new MeshBasicMaterial({color: 0x00FF00});
     private intervalMaterial: MeshBasicMaterial;
     private floorMaterial: MeshBasicMaterial;
     private perspectiveCamera: PerspectiveCamera;
@@ -126,20 +123,9 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
 
     public render() {
         return (
-            <div onMouseMove={(e: any) => this.mouseMove(e)} onClick={(e: any) => this.mouseClick(e)}>
+            <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.mouseClick(e)}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        {this.state.fabric.joints.map((joint: Joint, index: number) =>
-                            <R3.Mesh
-                                key={`J${index}`}
-                                name={joint.name}
-                                geometry={this.geometry}
-                                material={this.jointMaterial}
-                                matrixAutoUpdate={false}
-                                scale={this.sphereScale}
-                                position={joint.location}
-                            />
-                        )}
                         {this.state.fabric.intervals.map((interval: Interval, index: number) =>
                             <R3.Mesh
                                 key={`I${index}`}
