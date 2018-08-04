@@ -76,41 +76,8 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
 
     public render() {
         const cameraDistance = 12;
-        const cameraPosition = new Vector3(
-            Math.cos(this.state.cameraAngle) * cameraDistance,
-            3,
-            Math.sin(this.state.cameraAngle) * cameraDistance
-        );
-        const intervalToEllipsoid = (interval: Interval, index: number): React.ReactElement<any> => {
-            return React.createElement(R3.Mesh, {
-                key: `I${index}`,
-                geometry: this.geometry,
-                material: this.ellipsoidMaterial,
-                matrixAutoUpdate: false,
-                scale: new Vector3(0.05 * interval.span, interval.span * 0.5, 0.05 * interval.span),
-                position: interval.location,
-                quaternion: new Quaternion().setFromUnitVectors(this.ellipsoidUnitVector, interval.unit)
-            });
-        };
-        const jointToSphere = (joint: Joint, index: number): React.ReactElement<any> => {
-            return React.createElement(R3.Mesh, {
-                key: `J${index}`,
-                geometry: this.geometry,
-                material: this.sphereMaterial,
-                matrixAutoUpdate: false,
-                scale: this.sphereScale,
-                position: joint.location
-            });
-        };
-        const ellipsoidArray = !this.ellipsoidMaterial ? null : this.state.fabric.intervals.map(intervalToEllipsoid);
-        const sphereArray = !this.ellipsoidMaterial ? null : this.state.fabric.joints.map(jointToSphere);
-        const floor = !this.ellipsoidMaterial ? null : React.createElement(R3.Mesh, {
-            key: 'Floor',
-            geometry: new PlaneGeometry(1, 1),
-            scale: new Vector3(20, 20, 20),
-            material: this.floorMaterial,
-            quaternion: new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2)
-        });
+        const cos = Math.cos(this.state.cameraAngle);
+        const sin = Math.sin(this.state.cameraAngle);
         return (
             <R3.Renderer width={this.props.width} height={this.props.height}>
                 <R3.Scene width={this.props.width} height={this.props.height} camera="maincamera">
@@ -120,12 +87,37 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                         aspect={this.props.width / this.props.height}
                         near={1}
                         far={5000}
-                        position={cameraPosition}
+                        position={new Vector3(cos * cameraDistance,3,sin * cameraDistance)}
                         lookat={new Vector3(0, 0, 0)}
                     />
-                    {sphereArray}
-                    {ellipsoidArray}
-                    {floor}
+                    {this.state.fabric.joints.map((joint: Joint, index: number) =>
+                        <R3.Mesh
+                            key={`J${index}`}
+                            geometry={this.geometry}
+                            material={this.sphereMaterial}
+                            matrixAutoUpdate={false}
+                            scale={this.sphereScale}
+                            position={joint.location}
+                        />
+                    )}
+                    {this.state.fabric.intervals.map((interval: Interval, index: number): React.ReactElement<any> =>
+                        <R3.Mesh
+                            key={`I${index}`}
+                            geometry={this.geometry}
+                            material={this.ellipsoidMaterial}
+                            matrixAutoUpdate={false}
+                            scale={new Vector3(0.05 * interval.span, interval.span * 0.5, 0.05 * interval.span)}
+                            position={interval.location}
+                            quaternion={new Quaternion().setFromUnitVectors(this.ellipsoidUnitVector, interval.unit)}
+                        />
+                    )}
+                    <R3.Mesh
+                        key="Floor"
+                        geometry={new PlaneGeometry(1, 1)}
+                        scale={new Vector3(20, 20, 20)}
+                        material={this.floorMaterial}
+                        quaternion={new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2)}
+                    />
                 </R3.Scene>
             </R3.Renderer>
         );
