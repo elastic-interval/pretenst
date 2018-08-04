@@ -2,6 +2,7 @@ import * as React from 'react';
 import * as R3 from 'react-three';
 import {
     MeshBasicMaterial,
+    PerspectiveCamera,
     PlaneGeometry,
     Quaternion,
     RepeatWrapping,
@@ -21,12 +22,12 @@ interface IPanoramaViewProps {
 }
 
 interface IPanoramaViewState {
-    cameraAngle: number;
     fabric: Fabric;
 }
 
 export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
-
+    private THREE = require('three');
+    private OrbitControls = require('three-orbit-controls')(this.THREE);
     private geometry = new SphereGeometry(1, 11, 11);
     private ellipsoidUnitVector = new Vector3(0, 1, 0);
     private sphereScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS);
@@ -34,14 +35,12 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     private sphereMaterial: MeshBasicMaterial = new MeshBasicMaterial({color: 0x00FF00});
     private ellipsoidMaterial: MeshBasicMaterial;
     private floorMaterial: MeshBasicMaterial;
+    private perspectiveCamera: PerspectiveCamera;
+    private orbitControls: any;
 
     constructor(props: IPanoramaViewProps) {
         super(props);
-        this.state = {
-            cameraAngle: 0,
-            fabric: new Fabric().tetra()
-        };
-
+        this.state = {fabric: new Fabric().tetra()};
         const loader = new TextureLoader();
         this.ellipsoidMaterial = new MeshBasicMaterial({
             map: loader.load('/blue-red.png', (texture: any) => {
@@ -56,16 +55,19 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                 texture.wrapT = RepeatWrapping;
             })
         });
+        this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 5000);
+        this.perspectiveCamera.position.set(12, 3, 0);
+        this.perspectiveCamera.lookAt(new Vector3(0, 0, 0));
+        this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
+        this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         const step = () => {
             setTimeout(
                 () => {
                     for (let tick = 0; tick < 12; tick++) {
                         this.physics.iterate(this.state.fabric);
                     }
-                    this.setState({
-                        cameraAngle: this.state.cameraAngle + 0.001,
-                        fabric: this.state.fabric
-                    });
+                    this.setState({fabric: this.state.fabric});
+                    this.orbitControls.update();
                     requestAnimationFrame(step);
                 },
                 20
@@ -75,21 +77,9 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     }
 
     public render() {
-        const cameraDistance = 12;
-        const cos = Math.cos(this.state.cameraAngle);
-        const sin = Math.sin(this.state.cameraAngle);
         return (
             <R3.Renderer width={this.props.width} height={this.props.height}>
-                <R3.Scene width={this.props.width} height={this.props.height} camera="maincamera">
-                    <R3.PerspectiveCamera
-                        name="maincamera"
-                        fov={50}
-                        aspect={this.props.width / this.props.height}
-                        near={1}
-                        far={5000}
-                        position={new Vector3(cos * cameraDistance,3,sin * cameraDistance)}
-                        lookat={new Vector3(0, 0, 0)}
-                    />
+                <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                     {this.state.fabric.joints.map((joint: Joint, index: number) =>
                         <R3.Mesh
                             key={`J${index}`}
