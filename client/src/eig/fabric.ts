@@ -71,6 +71,15 @@ export class Fabric {
         return this;
     }
 
+    public centralize() {
+        const middle = this.joints.reduce((total, joint) => total.add(joint.location), new Vector3()).multiplyScalar(1 / this.joints.length);
+        middle.y = 0;
+        this.joints.forEach(joint => {
+            joint.location.sub(middle);
+            joint.velocity.set(0, 0, 0);
+        });
+    }
+
     private setAltitude(altitude: number) {
         // todo: should be in constraints
         const lowest = this.joints.reduce((minAltitude: number, curr: Joint) => Math.min(minAltitude, curr.location.y), Number.MAX_VALUE);

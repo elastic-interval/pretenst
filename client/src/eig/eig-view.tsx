@@ -26,7 +26,7 @@ interface IPanoramaViewState {
     fabric: Fabric;
 }
 
-const faceMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.6});
+const faceMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.5});
 
 export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
     private THREE = require('three');
@@ -117,6 +117,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
             return;
         }
         this.state.fabric.tetraFace(this.selectedFace);
+        this.state.fabric.centralize();
         this.selectedFace.selected = false;
         this.selectedFace = undefined;
     }
