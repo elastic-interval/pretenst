@@ -5,7 +5,6 @@ import {
     PerspectiveCamera,
     PlaneGeometry,
     Quaternion,
-    RepeatWrapping,
     SphereGeometry,
     TextureLoader,
     Vector3
@@ -50,9 +49,12 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
             })
         });
         this.floorMaterial = new MeshBasicMaterial({
-            map: loader.load('/water.jpg', (texture: any) => {
-                texture.wrapS = RepeatWrapping;
-                texture.wrapT = RepeatWrapping;
+            map: loader.load('/grass.jpg', (texture: any) => {
+                texture.transparent = true;
+                texture.opacity = 0.9;
+                // texture.wrapS = RepeatWrapping;
+                // texture.wrapT = RepeatWrapping;
+                // texture.repeat.set( 12, 12 );
             })
         });
         this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 5000);
@@ -104,7 +106,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                     <R3.Mesh
                         key="Floor"
                         geometry={new PlaneGeometry(1, 1)}
-                        scale={new Vector3(20, 20, 20)}
+                        scale={new Vector3(10, 10, 10)}
                         material={this.floorMaterial}
                         quaternion={new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2)}
                     />
