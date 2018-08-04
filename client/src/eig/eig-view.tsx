@@ -5,8 +5,10 @@ import {
     PerspectiveCamera,
     PlaneGeometry,
     Quaternion,
+    Raycaster,
     SphereGeometry,
     TextureLoader,
+    Vector2,
     Vector3
 } from 'three';
 import {Interval} from './interval';
@@ -35,7 +37,10 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     private ellipsoidMaterial: MeshBasicMaterial;
     private floorMaterial: MeshBasicMaterial;
     private perspectiveCamera: PerspectiveCamera;
+    private mouse = new Vector2();
     private orbitControls: any;
+    private rayCaster: any;
+    private jointsObject: any;
 
     constructor(props: IPanoramaViewProps) {
         super(props);
@@ -62,6 +67,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         this.perspectiveCamera.lookAt(new Vector3(0, 0, 0));
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
         this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
+        this.rayCaster = new Raycaster();
         const step = () => {
             setTimeout(
                 () => {
@@ -78,40 +84,56 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         requestAnimationFrame(step);
     }
 
+    public handleClick(event: any) {
+        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
+        const intersect = this.rayCaster.intersectObjects(this.jointsObject.children);
+        if (intersect.length > 0) {
+            const hit = intersect[0].object;
+            console.log(`Hit joint ${hit.name}`);
+        }
+    }
+
     public render() {
         return (
-            <R3.Renderer width={this.props.width} height={this.props.height}>
-                <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                    {this.state.fabric.joints.map((joint: Joint, index: number) =>
+            <div onClick={(e: any) => this.handleClick(e)}>
+                <R3.Renderer width={this.props.width} height={this.props.height}>
+                    <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
+                        <R3.Object3D ref={(node: any) => this.jointsObject = node}>
+                            {this.state.fabric.joints.map((joint: Joint, index: number) =>
+                                <R3.Mesh
+                                    key={`J${index}`}
+                                    name={joint.name}
+                                    geometry={this.geometry}
+                                    material={this.sphereMaterial}
+                                    matrixAutoUpdate={false}
+                                    scale={this.sphereScale}
+                                    position={joint.location}
+                                />
+                            )}
+                        </R3.Object3D>
+                        {this.state.fabric.intervals.map((interval: Interval, index: number): React.ReactElement<any> =>
+                            <R3.Mesh
+                                key={`I${index}`}
+                                geometry={this.geometry}
+                                material={this.ellipsoidMaterial}
+                                matrixAutoUpdate={false}
+                                scale={new Vector3(0.05 * interval.span, interval.span * 0.5, 0.05 * interval.span)}
+                                position={interval.location}
+                                quaternion={new Quaternion().setFromUnitVectors(this.ellipsoidUnitVector, interval.unit)}
+                            />
+                        )}
                         <R3.Mesh
-                            key={`J${index}`}
-                            geometry={this.geometry}
-                            material={this.sphereMaterial}
-                            matrixAutoUpdate={false}
-                            scale={this.sphereScale}
-                            position={joint.location}
+                            key="Floor"
+                            geometry={new PlaneGeometry(1, 1)}
+                            scale={new Vector3(10, 10, 10)}
+                            material={this.floorMaterial}
+                            quaternion={new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2)}
                         />
-                    )}
-                    {this.state.fabric.intervals.map((interval: Interval, index: number): React.ReactElement<any> =>
-                        <R3.Mesh
-                            key={`I${index}`}
-                            geometry={this.geometry}
-                            material={this.ellipsoidMaterial}
-                            matrixAutoUpdate={false}
-                            scale={new Vector3(0.05 * interval.span, interval.span * 0.5, 0.05 * interval.span)}
-                            position={interval.location}
-                            quaternion={new Quaternion().setFromUnitVectors(this.ellipsoidUnitVector, interval.unit)}
-                        />
-                    )}
-                    <R3.Mesh
-                        key="Floor"
-                        geometry={new PlaneGeometry(1, 1)}
-                        scale={new Vector3(10, 10, 10)}
-                        material={this.floorMaterial}
-                        quaternion={new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2)}
-                    />
-                </R3.Scene>
-            </R3.Renderer>
+                    </R3.Scene>
+                </R3.Renderer>
+            </div>
         );
     }
 }

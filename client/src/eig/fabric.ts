@@ -38,7 +38,7 @@ export class Fabric {
         this.interval(0, 3);
         this.interval(3, 1);
         this.calculate();
-        this.setAltitude(8);
+        this.setAltitude(2);
         return this;
     }
 
