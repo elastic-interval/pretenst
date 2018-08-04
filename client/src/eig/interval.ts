@@ -12,6 +12,7 @@ export class Interval {
         public alpha: Joint,
         public omega: Joint
     ) {
+        this.idealSpan = this.unit.subVectors(this.omega.location, this.alpha.location).length();
     }
 
     public calculate() {

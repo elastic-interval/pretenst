@@ -1,12 +1,14 @@
 import {Joint} from './joint';
 import {Interval} from './interval';
 import {Vector3} from 'three';
+import {Face} from './face';
 
 export class Fabric {
 
     constructor(
         public joints: Joint[] = [],
-        public intervals: Interval[] = []
+        public intervals: Interval[] = [],
+        public faces: Face[] = []
     ) {
     }
 
@@ -16,6 +18,24 @@ export class Fabric {
 
     public interval(a: number, b: number) {
         this.intervals.push(new Interval(this.joints[a], this.joints[b]));
+    }
+
+    public face(j0: number, j1: number, j2: number) {
+        this.faces.push(new Face(this.joints[j0], this.joints[j1], this.joints[j2]))
+    }
+
+    public findFace(name: string) {
+        return this.faces.find(f => f.name === name);
+    }
+
+    public tetraFace(face: Face) {
+        this.faces = this.faces.filter(f => f.name !== face.name);
+        const apexJoint = new Joint(face.name, face.apex);
+        this.joints.push(apexJoint);
+        face.joints.map(j => new Interval(j, apexJoint)).forEach(i => this.intervals.push(i));
+        this.faces.push(new Face(face.joints[0], face.joints[1], apexJoint));
+        this.faces.push(new Face(face.joints[1], face.joints[2], apexJoint));
+        this.faces.push(new Face(face.joints[2], face.joints[0], apexJoint));
     }
 
     public tetra(): Fabric {
@@ -37,6 +57,10 @@ export class Fabric {
         this.interval(2, 0);
         this.interval(0, 3);
         this.interval(3, 1);
+        this.face(0, 1, 2);
+        this.face(1, 3, 2);
+        this.face(1, 0, 3);
+        this.face(2, 3, 0);
         this.calculate();
         this.setAltitude(2);
         return this;

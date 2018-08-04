@@ -16,6 +16,7 @@ import {Joint} from './joint';
 import {Fabric} from './fabric';
 import {JOINT_RADIUS, Physics} from './physics';
 import {VerticalConstraints} from './vertical-constraints';
+import {Face} from './face';
 
 interface IPanoramaViewProps {
     width: number;
@@ -26,6 +27,8 @@ interface IPanoramaViewState {
     fabric: Fabric;
 }
 
+const faceMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.6});
+
 export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
     private THREE = require('three');
     private OrbitControls = require('three-orbit-controls')(this.THREE);
@@ -33,20 +36,21 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     private ellipsoidUnitVector = new Vector3(0, 1, 0);
     private sphereScale = new Vector3(JOINT_RADIUS, JOINT_RADIUS, JOINT_RADIUS);
     private physics = new Physics(new VerticalConstraints());
-    private sphereMaterial: MeshBasicMaterial = new MeshBasicMaterial({color: 0x00FF00});
-    private ellipsoidMaterial: MeshBasicMaterial;
+    private jointMaterial = new MeshBasicMaterial({color: 0x00FF00});
+    private intervalMaterial: MeshBasicMaterial;
     private floorMaterial: MeshBasicMaterial;
     private perspectiveCamera: PerspectiveCamera;
     private mouse = new Vector2();
     private orbitControls: any;
     private rayCaster: any;
-    private jointsObject: any;
+    private nodesForSelection: any;
+    private selectedFace?: Face;
 
     constructor(props: IPanoramaViewProps) {
         super(props);
         this.state = {fabric: new Fabric().tetra()};
         const loader = new TextureLoader();
-        this.ellipsoidMaterial = new MeshBasicMaterial({
+        this.intervalMaterial = new MeshBasicMaterial({
             map: loader.load('/blue-red.png', (texture: any) => {
                 // texture.wrapS = RepeatWrapping;
                 // texture.wrapT = RepeatWrapping;
@@ -74,6 +78,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                     for (let tick = 0; tick < 12; tick++) {
                         this.physics.iterate(this.state.fabric);
                     }
+                    this.state.fabric.faces.forEach(f => f.update());
                     this.setState({fabric: this.state.fabric});
                     this.orbitControls.update();
                     requestAnimationFrame(step);
@@ -84,46 +89,78 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         requestAnimationFrame(step);
     }
 
-    public handleClick(event: any) {
+    public mouseMove(event: any) {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
-        const intersect = this.rayCaster.intersectObjects(this.jointsObject.children);
+        const intersect = this.rayCaster.intersectObjects(this.nodesForSelection.children);
         if (intersect.length > 0) {
-            const hit = intersect[0].object;
-            console.log(`Hit joint ${hit.name}`);
+            const faceMesh = intersect[0].object;
+            if (!this.selectedFace) {
+                this.selectedFace = this.state.fabric.findFace(faceMesh.name);
+                if (this.selectedFace) {
+                    this.selectedFace.selected = true;
+                }
+            }
+            else if (faceMesh.name !== this.selectedFace.name) {
+                this.selectedFace.selected = false;
+                this.selectedFace = this.state.fabric.findFace(faceMesh.name);
+                if (this.selectedFace) {
+                    this.selectedFace.selected = true;
+                }
+            }
+        } else if (this.selectedFace) {
+            this.selectedFace.selected = false;
+            this.selectedFace = undefined;
         }
+    }
+
+    public mouseClick(event: any) {
+        if (!this.selectedFace) {
+            return;
+        }
+        this.state.fabric.tetraFace(this.selectedFace);
+        this.selectedFace.selected = false;
+        this.selectedFace = undefined;
     }
 
     public render() {
         return (
-            <div onClick={(e: any) => this.handleClick(e)}>
+            <div onMouseMove={(e: any) => this.mouseMove(e)} onClick={(e: any) => this.mouseClick(e)}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <R3.Object3D ref={(node: any) => this.jointsObject = node}>
-                            {this.state.fabric.joints.map((joint: Joint, index: number) =>
-                                <R3.Mesh
-                                    key={`J${index}`}
-                                    name={joint.name}
-                                    geometry={this.geometry}
-                                    material={this.sphereMaterial}
-                                    matrixAutoUpdate={false}
-                                    scale={this.sphereScale}
-                                    position={joint.location}
-                                />
-                            )}
-                        </R3.Object3D>
-                        {this.state.fabric.intervals.map((interval: Interval, index: number): React.ReactElement<any> =>
+                        {this.state.fabric.joints.map((joint: Joint, index: number) =>
+                            <R3.Mesh
+                                key={`J${index}`}
+                                name={joint.name}
+                                geometry={this.geometry}
+                                material={this.jointMaterial}
+                                matrixAutoUpdate={false}
+                                scale={this.sphereScale}
+                                position={joint.location}
+                            />
+                        )}
+                        {this.state.fabric.intervals.map((interval: Interval, index: number) =>
                             <R3.Mesh
                                 key={`I${index}`}
                                 geometry={this.geometry}
-                                material={this.ellipsoidMaterial}
+                                material={this.intervalMaterial}
                                 matrixAutoUpdate={false}
                                 scale={new Vector3(0.05 * interval.span, interval.span * 0.5, 0.05 * interval.span)}
                                 position={interval.location}
                                 quaternion={new Quaternion().setFromUnitVectors(this.ellipsoidUnitVector, interval.unit)}
                             />
                         )}
+                        <R3.Object3D ref={(node: any) => this.nodesForSelection = node}>
+                            {this.state.fabric.faces.map((face: Face, index: number) =>
+                                <R3.Mesh
+                                    key={face.name}
+                                    name={face.name}
+                                    geometry={face.geometry}
+                                    material={faceMaterial}
+                                />
+                            )}
+                        </R3.Object3D>
                         <R3.Mesh
                             key="Floor"
                             geometry={new PlaneGeometry(1, 1)}
