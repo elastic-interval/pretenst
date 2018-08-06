@@ -1,6 +1,6 @@
 import {Joint} from './joint';
 import {Interval} from './interval';
-import {Vector3} from 'three';
+import {BufferAttribute, BufferGeometry, Vector3} from 'three';
 import {Face} from './face';
 
 export class Fabric {
@@ -78,6 +78,22 @@ export class Fabric {
             joint.location.sub(middle);
             joint.velocity.set(0, 0, 0);
         });
+    }
+
+    public get lineSegmentGeometry(): BufferGeometry {
+        const g = new BufferGeometry();
+        const positions = new Float32Array(this.intervals.length * 6);
+        g.addAttribute('position', new BufferAttribute(positions, 3));
+        let index = 0;
+        this.intervals.forEach((interval: Interval) => {
+            positions[index++] = interval.alpha.location.x;
+            positions[index++] = interval.alpha.location.y;
+            positions[index++] = interval.alpha.location.z;
+            positions[index++] = interval.omega.location.x;
+            positions[index++] = interval.omega.location.y;
+            positions[index++] = interval.omega.location.z;
+        });
+        return g;
     }
 
     private setAltitude(altitude: number) {
