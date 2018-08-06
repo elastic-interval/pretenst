@@ -1,0 +1,7 @@
+// for now this is convenient: only works in the root dir
+{
+  "extends": "../node_modules/assemblyscript/std/assembly.json",
+  "include": [
+    "./**/*.ts"
+  ]
+}
