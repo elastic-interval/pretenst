@@ -80,7 +80,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                     this.orbitControls.update();
                     requestAnimationFrame(step);
                 },
-                20
+                30
             );
         };
         requestAnimationFrame(step);
