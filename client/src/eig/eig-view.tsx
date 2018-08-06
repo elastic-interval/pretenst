@@ -1,17 +1,16 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {
+    LineBasicMaterial,
     MeshBasicMaterial,
     PerspectiveCamera,
     PlaneGeometry,
     Quaternion,
     Raycaster,
-    SphereGeometry,
     TextureLoader,
     Vector2,
     Vector3
 } from 'three';
-import {Interval} from './interval';
 import {Fabric} from './fabric';
 import {Physics} from './physics';
 import {VerticalConstraints} from './vertical-constraints';
@@ -26,15 +25,14 @@ interface IPanoramaViewState {
     fabric: Fabric;
 }
 
-const faceMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.5});
+const faceInvisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.1});
+const faceVisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.5});
+const lineMaterial = new LineBasicMaterial({color: 0xff0000});
 
 export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
     private THREE = require('three');
     private OrbitControls = require('three-orbit-controls')(this.THREE);
-    private geometry = new SphereGeometry(1, 11, 11);
-    private ellipsoidUnitVector = new Vector3(0, 1, 0);
     private physics = new Physics(new VerticalConstraints());
-    private intervalMaterial: MeshBasicMaterial;
     private floorMaterial: MeshBasicMaterial;
     private perspectiveCamera: PerspectiveCamera;
     private mouse = new Vector2();
@@ -47,13 +45,6 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         super(props);
         this.state = {fabric: new Fabric().tetra()};
         const loader = new TextureLoader();
-        this.intervalMaterial = new MeshBasicMaterial({
-            map: loader.load('/blue-red.png', (texture: any) => {
-                // texture.wrapS = RepeatWrapping;
-                // texture.wrapT = RepeatWrapping;
-                // texture.offset.x = 90 / (2 * Math.PI);
-            })
-        });
         this.floorMaterial = new MeshBasicMaterial({
             map: loader.load('/grass.jpg', (texture: any) => {
                 texture.transparent = true;
@@ -75,7 +66,6 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                     for (let tick = 0; tick < 12; tick++) {
                         this.physics.iterate(this.state.fabric);
                     }
-                    this.state.fabric.faces.forEach(f => f.update());
                     this.setState({fabric: this.state.fabric});
                     this.orbitControls.update();
                     requestAnimationFrame(step);
@@ -93,21 +83,10 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         const intersect = this.rayCaster.intersectObjects(this.nodesForSelection.children);
         if (intersect.length > 0) {
             const faceMesh = intersect[0].object;
-            if (!this.selectedFace) {
+            if (!this.selectedFace || faceMesh.name !== this.selectedFace.name) {
                 this.selectedFace = this.state.fabric.findFace(faceMesh.name);
-                if (this.selectedFace) {
-                    this.selectedFace.selected = true;
-                }
-            }
-            else if (faceMesh.name !== this.selectedFace.name) {
-                this.selectedFace.selected = false;
-                this.selectedFace = this.state.fabric.findFace(faceMesh.name);
-                if (this.selectedFace) {
-                    this.selectedFace.selected = true;
-                }
             }
         } else if (this.selectedFace) {
-            this.selectedFace.selected = false;
             this.selectedFace = undefined;
         }
     }
@@ -118,7 +97,6 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
         }
         this.state.fabric.tetraFace(this.selectedFace);
         this.state.fabric.centralize();
-        this.selectedFace.selected = false;
         this.selectedFace = undefined;
     }
 
@@ -127,27 +105,37 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
             <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.mouseClick(e)}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        {this.state.fabric.intervals.map((interval: Interval, index: number) =>
-                            <R3.Mesh
-                                key={`I${index}`}
-                                geometry={this.geometry}
-                                material={this.intervalMaterial}
-                                matrixAutoUpdate={false}
-                                scale={new Vector3(0.05 * interval.span, interval.span * 0.5, 0.05 * interval.span)}
-                                position={interval.location}
-                                quaternion={new Quaternion().setFromUnitVectors(this.ellipsoidUnitVector, interval.unit)}
-                            />
-                        )}
+                        <R3.LineSegments
+                            key="Fabric"
+                            geometry={this.state.fabric.lineSegmentGeometry}
+                            material={lineMaterial}
+                        />
                         <R3.Object3D ref={(node: any) => this.nodesForSelection = node}>
-                            {this.state.fabric.faces.map((face: Face, index: number) =>
-                                <R3.Mesh
-                                    key={face.name}
-                                    name={face.name}
-                                    geometry={face.geometry}
-                                    material={faceMaterial}
-                                />
+                            {this.state.fabric.faces.map((face: Face, index: number) => {
+                                    if (this.selectedFace && face.name === this.selectedFace.name) {
+                                        return [
+                                            <R3.Mesh
+                                                key={face.name} name={face.name}
+                                                geometry={face.triangleGeometry}
+                                                material={faceVisibleMaterial}
+                                            />,
+                                            <R3.LineSegments
+                                                key={face.name + 'T'} name={face.name}
+                                                geometry={face.tripodGeometry}
+                                                material={lineMaterial}
+                                            />
+                                        ]
+                                    } else {
+                                        return <R3.Mesh
+                                            key={face.name} name={face.name}
+                                            geometry={face.triangleGeometry}
+                                            material={(this.selectedFace && face.name === this.selectedFace.name) ? faceVisibleMaterial : faceInvisibleMaterial}
+                                        />
+                                    }
+                                }
                             )}
                         </R3.Object3D>
+                        {/*geometry={(this.selectedFace && face.name === this.selectedFace.name) ? face.tripodGeometry : face.triangleGeometry}*/}
                         <R3.Mesh
                             key="Floor"
                             geometry={new PlaneGeometry(1, 1)}
