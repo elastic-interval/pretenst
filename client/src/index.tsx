@@ -8,7 +8,6 @@ import {IEigWasm} from './eig-wasm';
 declare const eigWasmPromise: Promise<IEigWasm>;
 
 eigWasmPromise.then((eigWasm: IEigWasm) => {
-    console.log('buffer', eigWasm.memory.buffer);
     const arr = new Float64Array(eigWasm.memory.buffer);
     const first50 = arr.subarray(0, 50);
     console.log('first 50', first50);

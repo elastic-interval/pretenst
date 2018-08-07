@@ -18,9 +18,9 @@ let SPRING_SMOOTH = 0.03;
 // let BAR_SMOOTH = 0.6;
 // let CABLE_SMOOTH = 0.01;
 
-let jointCount = 0;
-let intervalCount = 0;
-let faceCount = 0;
+let jointCount: u32 = 0;
+let intervalCount: u32 = 0;
+let faceCount: u32 = 0;
 
 memory.grow(10);
 
@@ -284,20 +284,20 @@ let landDrag: f64 = 50;
 let landGravity: f64 = 30;
 
 function tick(): void {
-    for (let intervalIndex: i32 = 0; intervalIndex < intervalCount; intervalIndex++) {
+    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
         elastic(intervalIndex);
     }
-    for (let intervalIndex: i32 = 0; intervalIndex < intervalCount; intervalIndex++) {
+    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
         smoothVelocity(intervalIndex, SPRING_SMOOTH);
     }
-    for (let jointIndex: i32 = 0; jointIndex < jointCount; jointIndex++) {
+    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
         exertJointPhysics(jointIndex);
         addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getFloat(intervalMassPtr(jointIndex)));
         zero(forcePtr(jointIndex));
         add(velocityPtr(jointIndex), absorbVelocityPtr(jointIndex));
         zero(absorbVelocityPtr(jointIndex));
     }
-    for (let intervalIndex: i32 = 0; intervalIndex < intervalCount; intervalIndex++) {
+    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let alphaAltitude = getFloat(altitudePtr(getAlphaIndex(intervalIndex)));
         let omegaAltitude = getFloat(altitudePtr(getOmegaIndex(intervalIndex)));
         let straddle = (alphaAltitude > 0 && omegaAltitude <= 0) || (alphaAltitude <= 0 && omegaAltitude > 0);
@@ -319,7 +319,7 @@ function tick(): void {
         add(velocityPtr(getAlphaIndex(intervalIndex)), gravPtr);
         add(velocityPtr(getOmegaIndex(intervalIndex)), gravPtr);
     }
-    for (let jointIndex: i32 = 0; jointIndex < jointCount; jointIndex++) {
+    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
         add(locationPtr(jointIndex), velocityPtr(jointIndex));
         setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
     }
@@ -348,7 +348,6 @@ function exertGravity(jointIndex: u32, value: f64): void {
     let velocity = velocityPtr(jointIndex);
     setY(velocity, getY(velocity) - value);
 }
-
 
 function smoothVelocity(intervalIndex: u32, degree: f64): void {
     splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, degree);
@@ -380,12 +379,12 @@ function elastic(intervalIndex: u32): void {
 
 export function setFabricAltitude(altitude: f64): void {
     let lowest: f64 = 10000;
-    for (let jointIndex: i32 = 0; jointIndex < jointCount; jointIndex++) {
+    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
         if (getY(jointPtr(jointIndex)) < lowest) {
             lowest = getY(jointPtr(jointIndex));
         }
     }
-    for (let jointIndex: i32 = 0; jointIndex < jointCount; jointIndex++) {
+    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
         setY(jointPtr(jointIndex), getY(jointPtr(jointIndex)) - lowest + altitude);
     }
 }
@@ -393,13 +392,13 @@ export function setFabricAltitude(altitude: f64): void {
 export function centralize(): void {
     let x: f64 = 0;
     let z: f64 = 0;
-    for (let jointIndex: i32 = 0; jointIndex < jointCount; jointIndex++) {
+    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
         x += getX(jointPtr(jointIndex));
         z += getZ(jointPtr(jointIndex));
     }
     x = x / <f64>jointCount;
     z = z / <f64>jointCount;
-    for (let jointIndex: i32 = 0; jointIndex < jointCount; jointIndex++) {
+    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
         setX(jointPtr(jointIndex), getX(jointPtr(jointIndex)) - x);
         setZ(jointPtr(jointIndex), getZ(jointPtr(jointIndex)) - z);
     }
