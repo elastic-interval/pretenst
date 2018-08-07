@@ -23,10 +23,17 @@
 </head>
 <body>
 <script>
+    const importObject = {
+        env: {
+            abort: (a, b, c, d) => {
+                alert('abort!', a, b, c, d);
+            }
+        }
+    };
     const eigWasmPromise = fetch("eig.wasm")
         .then(response => response.arrayBuffer())
-        .then(bytes => WebAssembly.instantiate(bytes, {imports: {}}))
-        .then(results => results.instance.exports);
+        .then(bytes => WebAssembly.instantiate(bytes, importObject))
+        .then(response => response.instance.exports);
 </script>
 <noscript>
     You need to enable JavaScript to run this app.

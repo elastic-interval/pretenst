@@ -1,7 +1,7 @@
 import * as React from 'react';
 import './app.css';
 import {EigView} from './eig/eig-view';
-import {IEigWasm} from './index';
+import {IEigWasm} from './eig-wasm';
 
 interface IAppProps {
     eigWasm: IEigWasm;

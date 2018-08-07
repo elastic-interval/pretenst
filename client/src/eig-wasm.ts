@@ -1,4 +1,10 @@
+export interface IMemory {
+    buffer: ArrayBuffer;
+}
+
 export interface IEigWasm {
+
+    memory: IMemory;
 
     createTetra(): void;
 
