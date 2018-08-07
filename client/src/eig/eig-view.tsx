@@ -46,7 +46,8 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     constructor(props: IPanoramaViewProps) {
         super(props);
         props.eigWasm.createTetra();
-        props.eigWasm.iterate(1);
+        props.eigWasm.centralize(2);
+        props.eigWasm.iterate(100);
         console.log('tetra created and iterated');
         this.state = {fabric: new Fabric().tetra()};
         const loader = new TextureLoader();

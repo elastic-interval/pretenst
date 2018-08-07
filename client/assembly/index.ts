@@ -129,16 +129,18 @@ function lerp(vPtr: u32, v: u32, interpolation: f64): void {
 
 function quadrance(vPtr: u32): f64 {
     let x = getX(vPtr);
-    let y = getX(vPtr);
-    let z = getX(vPtr);
-    return x * x + y * y + z * z;
+    let y = getY(vPtr);
+    let z = getZ(vPtr);
+    return x * x + y * y + z * z + 0.00000001;
 }
 
 function length(vPtr: u32): f64 {
     return Math.sqrt(quadrance(vPtr));
 }
 
-// joint
+// joint: size is (5 x 3 + 2) = 17 float64s * 8 = 136 bytes
+//   vectors: location, velocity absorbVelocity, force, gravity,
+//   floats: intervalMass, altitude
 
 function jointPtr(index: u32): u32 {
     return JOINTS_OFFSET + index * JOINT_SIZE;
@@ -179,10 +181,14 @@ function createJoint(x: f64, y: f64, z: f64): u32 {
     zero(velocityPtr(jointIndex));
     zero(gravityPtr(jointIndex));
     zero(absorbVelocityPtr(jointIndex));
+    setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
     return jointIndex;
 }
 
-// interval
+// interval: size is 2 unsigned32 + unit (3 f64s) + span + idealSpan
+//      alpha, omega: u32
+//      unit: vector
+//      span, idealSpan: f64
 
 function intervalPtr(index: u32): u32 {
     return INTERVALS_OFFSET + index * INTERVAL_SIZE;
@@ -361,8 +367,7 @@ function smoothVelocity(intervalIndex: u32, degree: f64): void {
 }
 
 function elastic(intervalIndex: u32): void {
-    calculateSpan(intervalIndex);
-    let span = getFloat(spanPtr(intervalIndex));
+    let span = calculateSpan(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
     let stress = ELASTIC * (span - idealSpan) * idealSpan * idealSpan;
     addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
@@ -377,30 +382,25 @@ function elastic(intervalIndex: u32): void {
 
 // =================================
 
-export function setFabricAltitude(altitude: f64): void {
-    let lowest: f64 = 10000;
-    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
-        if (getY(jointPtr(jointIndex)) < lowest) {
-            lowest = getY(jointPtr(jointIndex));
-        }
-    }
-    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
-        setY(jointPtr(jointIndex), getY(jointPtr(jointIndex)) - lowest + altitude);
-    }
-}
-
-export function centralize(): void {
+export function centralize(altitude: f64): void {
     let x: f64 = 0;
+    let lowY: f64 = 10000;
     let z: f64 = 0;
     for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
         x += getX(jointPtr(jointIndex));
+        let y = getY(jointPtr(jointIndex));
+        if (y < lowY) {
+            lowY = y;
+        }
         z += getZ(jointPtr(jointIndex));
     }
     x = x / <f64>jointCount;
     z = z / <f64>jointCount;
     for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
-        setX(jointPtr(jointIndex), getX(jointPtr(jointIndex)) - x);
-        setZ(jointPtr(jointIndex), getZ(jointPtr(jointIndex)) - z);
+        let jPtr = jointPtr(jointIndex);
+        setX(jPtr, getX(jPtr) - x);
+        setY(jPtr, getY(jPtr) - lowY + altitude);
+        setZ(jPtr, getZ(jPtr) - z);
     }
 }
 
