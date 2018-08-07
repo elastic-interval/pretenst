@@ -143,3 +143,6 @@ testresults/*.xml
 
 target
 project
+
+eig.wasm
+eig.wasm.map
