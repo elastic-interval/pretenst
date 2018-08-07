@@ -1,24 +1,22 @@
 import * as React from 'react';
 import './app.css';
 import {EigView} from './eig/eig-view';
+import {IEigWasm} from './index';
 
-// import PatchView from './patch-token/patch-view';
-
-interface IAppState {
-    hello: string;
+interface IAppProps {
+    eigWasm: IEigWasm;
 }
 
-class App extends React.Component<any, IAppState> {
+class App extends React.Component<IAppProps, any> {
 
-    constructor(props: any) {
+    constructor(props: IAppProps) {
         super(props);
-        this.state = {hello: 'hello'};
     }
 
     public render() {
         return (
             <div className="App">
-                <EigView width={window.innerWidth} height={window.innerHeight}/>
+                <EigView width={window.innerWidth} height={window.innerHeight} eigWasm={this.props.eigWasm}/>
                 {/*<PatchView hello={this.state.hello}/>*/}
             </div>
         );

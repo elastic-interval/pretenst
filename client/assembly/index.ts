@@ -15,59 +15,49 @@ const JOINT_RADIUS = 0.15;
 const AMBIENT_JOINT_MASS = 0.1;
 const CABLE_MASS_FACTOR = 0.05;
 const SPRING_SMOOTH = 0.03;
-const BAR_SMOOTH = 0.6;
-const CABLE_SMOOTH = 0.01;
+// const BAR_SMOOTH = 0.6;
+// const CABLE_SMOOTH = 0.01;
 
 let jointCount = 0;
 let intervalCount = 0;
 let faceCount = 0;
 
-@inline
 function getIndex(vPtr: u32): f64 {
     return load<f64>(vPtr);
 }
 
-@inline
 function setIndex(vPtr: u32, index: u32): void {
     store<u32>(vPtr, index);
 }
 
-@inline
 function getFloat(vPtr: u32): f64 {
     return load<f64>(vPtr);
 }
 
-@inline
 function setFloat(vPtr: u32, v: f64): void {
     store<f64>(vPtr, v);
 }
 
-@inline
 function getX(vPtr: u32): f64 {
     return getFloat(vPtr);
 }
 
-@inline
 function setX(vPtr: u32, v: f64): void {
     setFloat(vPtr, v);
 }
 
-@inline
 function getY(vPtr: u32): f64 {
     return load<f64>(vPtr, FLOAT_SIZE);
 }
 
-@inline
 function setY(vPtr: u32, v: f64): void {
     store<f64>(vPtr, v, FLOAT_SIZE);
 }
 
-@inline
 function getZ(vPtr: u32): f64 {
     return load<f64>(vPtr, FLOAT_SIZE * 2);
 }
 
-@inline
 function setZ(vPtr: u32, v: f64): void {
     store<f64>(vPtr, v, FLOAT_SIZE * 2);
 }
@@ -85,7 +75,7 @@ function setVector(vPtr: u32, v: u32): void {
 }
 
 function zero(vPtr: u32): void {
-    set(vPtr, 0, 0, 0);
+    setAll(vPtr, 0, 0, 0);
 }
 
 function addVectors(vPtr: u32, a: u32, b: u32): void {
@@ -148,7 +138,6 @@ function length(vPtr: u32): f64 {
 
 // joint
 
-@inline
 function jointPtr(index: u32): u32 {
     return JOINTS_OFFSET + index * JOINT_SIZE;
 }
@@ -452,3 +441,6 @@ function tetra(): void {
 //     this.faces.push(new Face([face.joints[2], face.joints[0], apexJoint]));
 // }
 
+export function summa(a: f64, b: f64): f64 {
+    return a + b;
+}

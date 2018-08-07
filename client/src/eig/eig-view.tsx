@@ -15,10 +15,12 @@ import {Fabric} from './fabric';
 import {Physics} from './physics';
 import {VerticalConstraints} from './vertical-constraints';
 import {Face} from './face';
+import {IEigWasm} from '../index';
 
 interface IPanoramaViewProps {
     width: number;
     height: number;
+    eigWasm: IEigWasm;
 }
 
 interface IPanoramaViewState {
@@ -43,6 +45,7 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
 
     constructor(props: IPanoramaViewProps) {
         super(props);
+        console.log('summa from eig view eleven', props.eigWasm.summa(5, 6));
         this.state = {fabric: new Fabric().tetra()};
         const loader = new TextureLoader();
         this.floorMaterial = new MeshBasicMaterial({
@@ -73,6 +76,13 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
                 30
             );
         };
+        // fetch(‘fib.wasm’).then(response =>
+        //     response.arrayBuffer()
+        // ).then(bytes =>
+        //     WebAssembly.instantiate(bytes, {imports: {}})
+        // ).then(results => {
+        //     window.fib = results.instance.exports.fib;
+        // });
         requestAnimationFrame(step);
     }
 
