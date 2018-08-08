@@ -35,7 +35,7 @@ let gravPtr: u32 = 0;
 
 let ELASTIC: f32 = 0.05;
 let airDrag: f32 = 0.0004;
-let airGravity: f32 = 0.0001;
+let airGravity: f32 = 0.00001;
 let landDrag: f32 = 50;
 let landGravity: f32 = 30;
 
@@ -404,46 +404,46 @@ function exertJointPhysics(jointIndex: u32): void {
 }
 
 function tick(): void {
-    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        elastic(intervalIndex);
+    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+        elastic(thisInterval);
     }
-    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        smoothVelocity(intervalIndex, SPRING_SMOOTH);
+    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+        smoothVelocity(thisInterval, SPRING_SMOOTH);
     }
-    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
-        exertJointPhysics(jointIndex);
-        addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getFloat(intervalMassPtr(jointIndex)));
-        zero(forcePtr(jointIndex));
-        add(velocityPtr(jointIndex), absorbVelocityPtr(jointIndex));
-        zero(absorbVelocityPtr(jointIndex));
+    for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
+        exertJointPhysics(thisJoint);
+        addScaledVector(velocityPtr(thisJoint), forcePtr(thisJoint), 1.0 / getFloat(intervalMassPtr(thisJoint)));
+        zero(forcePtr(thisJoint));
+        add(velocityPtr(thisJoint), absorbVelocityPtr(thisJoint));
+        zero(absorbVelocityPtr(thisJoint));
     }
-    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        let alphaAltitude = getFloat(altitudePtr(getAlphaIndex(intervalIndex)));
-        let omegaAltitude = getFloat(altitudePtr(getOmegaIndex(intervalIndex)));
+    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+        let alphaAltitude = getFloat(altitudePtr(getAlphaIndex(thisInterval)));
+        let omegaAltitude = getFloat(altitudePtr(getOmegaIndex(thisInterval)));
         let straddle = (alphaAltitude > 0 && omegaAltitude <= 0) || (alphaAltitude <= 0 && omegaAltitude > 0);
         if (straddle) {
             let absAlphaAltitude = abs(alphaAltitude);
             let absOmegaAltitude = abs(omegaAltitude);
             let totalAltitude = absAlphaAltitude + absOmegaAltitude;
             if (totalAltitude > 0.001) {
-                setVector(gravPtr, gravityPtr(getAlphaIndex(intervalIndex)));
-                lerp(gravPtr, gravityPtr(getOmegaIndex(intervalIndex)), absOmegaAltitude / totalAltitude);
+                setVector(gravPtr, gravityPtr(getAlphaIndex(thisInterval)));
+                lerp(gravPtr, gravityPtr(getOmegaIndex(thisInterval)), absOmegaAltitude / totalAltitude);
             }
             else {
-                addVectors(gravPtr, gravityPtr(getAlphaIndex(intervalIndex)), gravityPtr(getAlphaIndex(intervalIndex)));
+                addVectors(gravPtr, gravityPtr(getAlphaIndex(thisInterval)), gravityPtr(getAlphaIndex(thisInterval)));
                 multiplyScalar(gravPtr, 0.5);
             }
         }
         else {
-            addVectors(gravPtr, gravityPtr(getAlphaIndex(intervalIndex)), gravityPtr(getAlphaIndex(intervalIndex)));
+            addVectors(gravPtr, gravityPtr(getAlphaIndex(thisInterval)), gravityPtr(getAlphaIndex(thisInterval)));
             multiplyScalar(gravPtr, 0.5);
         }
-        add(velocityPtr(getAlphaIndex(intervalIndex)), gravPtr);
-        add(velocityPtr(getOmegaIndex(intervalIndex)), gravPtr);
+        add(velocityPtr(getAlphaIndex(thisInterval)), gravPtr);
+        add(velocityPtr(getOmegaIndex(thisInterval)), gravPtr);
     }
-    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
-        add(locationPtr(jointIndex), velocityPtr(jointIndex));
-        setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
+    for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
+        add(locationPtr(thisJoint), velocityPtr(thisJoint));
+        setFloat(intervalMassPtr(thisJoint), AMBIENT_JOINT_MASS);
     }
 }
 
@@ -480,18 +480,18 @@ export function centralize(altitude: f32): void {
     let x: f32 = 0;
     let lowY: f32 = 10000;
     let z: f32 = 0;
-    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
-        x += getX(jointPtr(jointIndex));
-        let y = getY(jointPtr(jointIndex));
+    for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
+        x += getX(jointPtr(thisJoint));
+        let y = getY(jointPtr(thisJoint));
         if (y < lowY) {
             lowY = y;
         }
-        z += getZ(jointPtr(jointIndex));
+        z += getZ(jointPtr(thisJoint));
     }
     x = x / <f32>jointCount;
     z = z / <f32>jointCount;
-    for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
-        let jPtr = jointPtr(jointIndex);
+    for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
+        let jPtr = jointPtr(thisJoint);
         setX(jPtr, getX(jPtr) - x);
         if (altitude > 0) {
             setY(jPtr, getY(jPtr) - lowY + altitude);
@@ -518,15 +518,15 @@ export function createTetra(): void {
 }
 
 export function iterate(ticks: u32): void {
-    for (let walk: u32 = 0; walk < ticks; walk++) {
+    for (let thisTick: u32 = 0; thisTick < ticks; thisTick++) {
         tick();
     }
-    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        setVector(lineAlphaPtr(intervalIndex), locationPtr(getAlphaIndex(intervalIndex)));
-        setVector(lineOmegaPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)));
+    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+        setVector(lineAlphaPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
+        setVector(lineOmegaPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
     }
-    for (let faceIndex: u32 = 0; faceIndex < faceCount; faceIndex++) {
-        calculateFace(faceIndex);
+    for (let thisFace: u32 = 0; thisFace < faceCount; thisFace++) {
+        calculateFace(thisFace);
     }
 }
 
@@ -539,13 +539,13 @@ export function tetraFromFace(faceIndex: u32): void {
     let l12 = distance(locationPtr(j1), locationPtr(j2));
     let l20 = distance(locationPtr(j2), locationPtr(j0));
     let average = (l01 + l12 + l20) / 3;
-    for (let faceWalk: u32 = faceIndex; faceWalk < faceCount - 1; faceWalk++) {
-        let nextFace = faceIndex + 1;
-        setVector(midpointPtr(faceIndex), midpointPtr(nextFace));
-        setVector(normalPtr(faceIndex), normalPtr(nextFace));
-        setJointIndexOfFace(faceIndex, 0, jointIndexOfFace(nextFace, 0));
-        setJointIndexOfFace(faceIndex, 1, jointIndexOfFace(nextFace, 1));
-        setJointIndexOfFace(faceIndex, 2, jointIndexOfFace(nextFace, 2));
+    for (let thisFace: u32 = faceIndex; thisFace < faceCount - 1; thisFace++) {
+        let nextFace = thisFace + 1;
+        setVector(midpointPtr(thisFace), midpointPtr(nextFace));
+        setVector(normalPtr(thisFace), normalPtr(nextFace));
+        setJointIndexOfFace(thisFace, 0, jointIndexOfFace(nextFace, 0));
+        setJointIndexOfFace(thisFace, 1, jointIndexOfFace(nextFace, 1));
+        setJointIndexOfFace(thisFace, 2, jointIndexOfFace(nextFace, 2));
     }
     faceCount--;
     let apex = createJoint(getX(projectionPtr), getY(projectionPtr), getZ(projectionPtr));
