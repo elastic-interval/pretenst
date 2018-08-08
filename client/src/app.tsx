@@ -1,10 +1,10 @@
 import * as React from 'react';
 import './app.css';
 import {EigView} from './eig/eig-view';
-import {IEigWasm} from './eig-wasm';
+import {IFabric} from './fabric';
 
 interface IAppProps {
-    eigWasm: IEigWasm;
+    fabricFactory: () => Promise<IFabric>;
 }
 
 class App extends React.Component<IAppProps, any> {
@@ -16,7 +16,11 @@ class App extends React.Component<IAppProps, any> {
     public render() {
         return (
             <div className="App">
-                <EigView width={window.innerWidth} height={window.innerHeight} eigWasm={this.props.eigWasm}/>
+                <EigView
+                    width={window.innerWidth}
+                    height={window.innerHeight}
+                    fabricFactory={this.props.fabricFactory}
+                />
                 {/*<PatchView hello={this.state.hello}/>*/}
             </div>
         );

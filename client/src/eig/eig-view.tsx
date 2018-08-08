@@ -15,15 +15,15 @@ import {Fabric} from './fabric';
 import {Physics} from './physics';
 import {VerticalConstraints} from './vertical-constraints';
 import {Face} from './face';
-import {IEigWasm} from '../eig-wasm';
+import {IFabric} from '../fabric';
 
-interface IPanoramaViewProps {
+interface IEigViewProps {
     width: number;
     height: number;
-    eigWasm: IEigWasm;
+    fabricFactory: () => Promise<IFabric>;
 }
 
-interface IPanoramaViewState {
+interface IEigViewState {
     fabric: Fabric;
 }
 
@@ -31,7 +31,7 @@ const faceInvisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparen
 const faceVisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.5});
 const lineMaterial = new LineBasicMaterial({color: 0xff0000});
 
-export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewState> {
+export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private THREE = require('three');
     private OrbitControls = require('three-orbit-controls')(this.THREE);
     private physics = new Physics(new VerticalConstraints());
@@ -43,11 +43,19 @@ export class EigView extends React.Component<IPanoramaViewProps, IPanoramaViewSt
     private nodesForSelection: any;
     private selectedFace?: Face;
 
-    constructor(props: IPanoramaViewProps) {
+    constructor(props: IEigViewProps) {
         super(props);
-        props.eigWasm.createTetra();
-        props.eigWasm.centralize(2);
-        props.eigWasm.iterate(100);
+        props.fabricFactory().then(fabric => {
+
+            const arr = new Float64Array(fabric.memory.buffer);
+            const first50 = arr.subarray(0, 50);
+            console.log('first 50', first50);
+            console.log('WASM memory bytes', fabric.memory.buffer.byteLength);
+
+            fabric.createTetra();
+            fabric.centralize(2);
+            fabric.iterate(100);
+        });
         console.log('tetra created and iterated');
         this.state = {fabric: new Fabric().tetra()};
         const loader = new TextureLoader();

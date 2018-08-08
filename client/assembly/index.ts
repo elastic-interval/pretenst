@@ -185,7 +185,7 @@ function createJoint(x: f64, y: f64, z: f64): u32 {
     return jointIndex;
 }
 
-// interval: size is 2 unsigned32 + unit (3 f64s) + span + idealSpan
+// interval: size is 2 unsigned32 + unit (3 f64s) + span + idealSpan, 5float + 2int = 48 bytes
 //      alpha, omega: u32
 //      unit: vector
 //      span, idealSpan: f64
@@ -271,7 +271,7 @@ function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32): u32 {
     return faceIndex;
 }
 
-// letruction
+// construction and physics
 
 function splitVectors(vectorPtr: u32, basisPtr: u32, projectionPtr: u32, howMuch: f64): void {
     let agreement = dot(vectorPtr, basisPtr);

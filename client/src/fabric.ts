@@ -2,7 +2,7 @@ export interface IMemory {
     buffer: ArrayBuffer;
 }
 
-export interface IEigWasm {
+export interface IFabric {
 
     memory: IMemory;
 

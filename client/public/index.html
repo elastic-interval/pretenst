@@ -23,17 +23,40 @@
 </head>
 <body>
 <script>
-    const importObject = {
-        env: {
-            abort: (a, b, c, d) => {
-                alert('abort!', a, b, c, d);
-            }
-        }
-    };
-    const eigWasmPromise = fetch("eig.wasm")
-        .then(response => response.arrayBuffer())
-        .then(bytes => WebAssembly.instantiate(bytes, importObject))
-        .then(response => response.instance.exports);
+    const eigCodePromise = fetch("eig.wasm").then(response => response.arrayBuffer());
+
+    function fabricFactory() {
+        return eigCodePromise
+            .then(code => {
+                console.log('got the code');
+                return WebAssembly.instantiate(code, {
+                    env: {
+                        abort: (a, b, c, d) => {
+                            alert('abort!', a, b, c, d);
+                        }
+                    }
+                });
+            }).then(instantiation => {
+                console.log('instantiation', instantiation);
+                return instantiation.instance.exports;
+            });
+    }
+
+    // function fabricFactory() {
+    //     console.log('fab factory called');
+    //     const instantiation = eigCodePromise.then(code => {
+    //         console.log('got the code');
+    //         WebAssembly.instantiate(code, {
+    //             env: {
+    //                 abort: (a, b, c, d) => {
+    //                     alert('abort!', a, b, c, d);
+    //                 }
+    //             }
+    //         });
+    //     });
+    //     console.log('instantiation', instantiation);
+    //     return instantiation.instance.exports;
+    // }
 </script>
 <noscript>
     You need to enable JavaScript to run this app.
