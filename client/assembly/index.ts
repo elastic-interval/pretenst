@@ -4,6 +4,7 @@ let VECTOR_SIZE: u32 = FLOAT_SIZE * 3;
 let JOINT_SIZE: u32 = VECTOR_SIZE * 5 + FLOAT_SIZE * 2;
 let INTERVAL_SIZE: u32 = INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
 let FACE_SIZE: u32 = INDEX_SIZE * 3 + VECTOR_SIZE * 2;
+let LINE_SIZE: u32 = VECTOR_SIZE * 2;
 let METADATA_SIZE: u32 = VECTOR_SIZE * 3;
 let JOINT_RADIUS: f32 = 0.15;
 let AMBIENT_JOINT_MASS: f32 = 0.1;
@@ -28,6 +29,12 @@ let projectionPtr: u32 = 0;
 let alphaProjectionPtr: u32 = 0;
 let omegaProjectionPtr: u32 = 0;
 let gravPtr: u32 = 0;
+
+let ELASTIC: f32 = 0.05;
+let airDrag: f32 = 0.0002;
+let airGravity: f32 = 0.0001;
+let landDrag: f32 = 50;
+let landGravity: f32 = 30;
 
 function getIndex(vPtr: u32): u32 {
     return load<u32>(vPtr);
@@ -141,6 +148,16 @@ function quadrance(vPtr: u32): f32 {
 
 function length(vPtr: u32): f32 {
     return <f32>Math.sqrt(quadrance(vPtr));
+}
+
+// line: size is 2 vectors, or 6 floats, or 24 bytes
+
+function lineAlphaPtr(index: u32): u32 {
+    return index * LINE_SIZE;
+}
+
+function lineOmegaPtr(index: u32): u32 {
+    return index * LINE_SIZE + VECTOR_SIZE;
 }
 
 // joint: size is (5 x 3 + 2) = 17 float64s * 8 = 136 bytes
@@ -288,12 +305,6 @@ function abs(val: f32): f32 {
     return val < 0 ? -val : val;
 }
 
-let ELASTIC: f32 = 0.05;
-let airDrag: f32 = 0.0002;
-let airGravity: f32 = 0.0001;
-let landDrag: f32 = 50;
-let landGravity: f32 = 30;
-
 function tick(): void {
     for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
         elastic(intervalIndex);
@@ -393,10 +404,10 @@ export function init(joints: u32, intervals: u32, faces: u32): u32 {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
-    let bytes = joints * JOINT_SIZE + intervals * INTERVAL_SIZE * faces * FACE_SIZE;
+    let bytes = intervals * VECTOR_SIZE * 2 + joints * JOINT_SIZE + intervals * INTERVAL_SIZE * faces * FACE_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks > 0 ? blocks : 1);
-    jointOffset = 0;
+    jointOffset = intervalCountMax * VECTOR_SIZE * 2;
     intervalOffset = jointOffset + jointCountMax * JOINT_SIZE;
     faceOffset = intervalOffset + intervalCountMax * INTERVAL_SIZE;
     metadataOffset = faceOffset + faceCountMax * FACE_SIZE;
@@ -449,6 +460,10 @@ export function createTetra(): void {
 export function iterate(ticks: u32): void {
     for (let walk: u32 = 0; walk < ticks; walk++) {
         tick();
+    }
+    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        setVector(lineAlphaPtr(intervalIndex), locationPtr(getAlphaIndex(intervalIndex)));
+        setVector(lineOmegaPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)));
     }
 }
 

@@ -15,12 +15,12 @@ import {Fabric} from './fabric';
 import {Physics} from './physics';
 import {VerticalConstraints} from './vertical-constraints';
 import {Face} from './face';
-import {IFabric} from '../fabric';
+import {EigFabric, IFabricExports} from '../fabric';
 
 interface IEigViewProps {
     width: number;
     height: number;
-    fabricFactory: () => Promise<IFabric>;
+    fabricFactory: () => Promise<IFabricExports>;
 }
 
 interface IEigViewState {
@@ -45,18 +45,15 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
 
     constructor(props: IEigViewProps) {
         super(props);
-        props.fabricFactory().then(fabric => {
-            const bytes = fabric.init(4,6, 4);
-            console.log(`${bytes} bytes`);
-            const arr = new Float32Array(fabric.memory.buffer);
-            const first50 = arr.subarray(0, 50);
-            console.log('first 50', first50);
-            console.log('WASM memory bytes', fabric.memory.buffer.byteLength);
+        props.fabricFactory().then(fabricExports => {
+            const fabric = new EigFabric(fabricExports, 4, 6, 4);
+            console.log(`${fabric.initBytes} init bytes, ${fabric.bytes} memory bytes`);
+            console.log('lines', fabric.lines);
             fabric.createTetra();
             fabric.centralize(2);
             fabric.iterate(100);
+            console.log('tetra created and iterated');
         });
-        console.log('tetra created and iterated');
         this.state = {fabric: new Fabric().tetra()};
         const loader = new TextureLoader();
         this.floorMaterial = new MeshBasicMaterial({

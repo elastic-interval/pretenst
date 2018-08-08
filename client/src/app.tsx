@@ -1,10 +1,10 @@
 import * as React from 'react';
 import './app.css';
 import {EigView} from './eig/eig-view';
-import {IFabric} from './fabric';
+import {IFabricExports} from './fabric';
 
 interface IAppProps {
-    fabricFactory: () => Promise<IFabric>;
+    fabricFactory: () => Promise<IFabricExports>;
 }
 
 class App extends React.Component<IAppProps, any> {

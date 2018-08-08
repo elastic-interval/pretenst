@@ -81,9 +81,7 @@ export class Fabric {
     }
 
     public get lineSegmentGeometry(): BufferGeometry {
-        const g = new BufferGeometry();
         const positions = new Float32Array(this.intervals.length * 6);
-        g.addAttribute('position', new BufferAttribute(positions, 3));
         let index = 0;
         this.intervals.forEach((interval: Interval) => {
             positions[index++] = interval.alpha.location.x;
@@ -93,7 +91,7 @@ export class Fabric {
             positions[index++] = interval.omega.location.y;
             positions[index++] = interval.omega.location.z;
         });
-        return g;
+        return new BufferGeometry().addAttribute('position', new BufferAttribute(positions, 3));
     }
 
     private setAltitude(altitude: number) {
