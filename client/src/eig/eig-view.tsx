@@ -73,7 +73,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             setTimeout(
                 () => {
                     if (this.state.fabric) {
-                        this.state.fabric.iterate(12);
+                        this.state.fabric.iterate(20);
                     }
                     this.setState({fabric: this.state.fabric});
                     this.orbitControls.update();

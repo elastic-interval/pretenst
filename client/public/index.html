@@ -23,6 +23,8 @@
 </head>
 <body>
 <script>
+    let batch = [];
+
     const eigCodePromise = fetch("eig.wasm").then(response => response.arrayBuffer());
 
     function fabricFactory() {
@@ -30,6 +32,15 @@
             env: {
                 abort: (a, b, c, d) => {
                     alert('abort!', a, b, c, d);
+                }
+            },
+            index: {
+                logFloat: (i, f) => {
+                    console.log(i + ':' + f.toFixed(5));
+                    if (batch.length >= 600) {
+                        console.log(batch.join(', '));
+                        batch = [];
+                    }
                 }
             }
         };

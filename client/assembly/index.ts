@@ -1,8 +1,9 @@
+
 let INDEX_SIZE: u32 = sizeof<u32>();
 let FLOAT_SIZE: u32 = sizeof<f32>();
 let VECTOR_SIZE: u32 = FLOAT_SIZE * 3;
 let JOINT_SIZE: u32 = VECTOR_SIZE * 5 + FLOAT_SIZE * 2;
-let INTERVAL_SIZE: u32 = INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
+let INTERVAL_SIZE: u32 = INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
 let FACE_SIZE: u32 = INDEX_SIZE * 3 + VECTOR_SIZE * 2;
 let LINE_SIZE: u32 = VECTOR_SIZE * 2;
 let METADATA_SIZE: u32 = VECTOR_SIZE * 3;
@@ -35,6 +36,8 @@ let airDrag: f32 = 0.0002;
 let airGravity: f32 = 0.0001;
 let landDrag: f32 = 50;
 let landGravity: f32 = 30;
+
+declare function logFloat(idx: u32, f: f32): void;
 
 function getIndex(vPtr: u32): u32 {
     return load<u32>(vPtr);
@@ -295,6 +298,12 @@ function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32): u32 {
 }
 
 // construction and physics
+
+function logIdealSpans():void {
+    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        logFloat(intervalIndex, getFloat(idealSpanPtr(intervalIndex)));
+    }
+}
 
 function abs(val: f32): f32 {
     return val < 0 ? -val : val;
