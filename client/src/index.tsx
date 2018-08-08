@@ -5,19 +5,10 @@ import './index.css';
 import registerServiceWorker from './service-worker';
 import {IFabric} from './fabric';
 
-declare const fabricFactory: () => Promise<IFabric>;
+declare const fabricFactory: () => Promise<IFabric>; // implementation: index.html
 
 ReactDOM.render(
     <App fabricFactory={fabricFactory}/>,
     document.getElementById('root') as HTMLElement
 );
 registerServiceWorker();
-
-// eigWasmPromise.then((fabric: IFabric) => {
-//     const arr = new Float64Array(fabric.memory.buffer);
-//     const first50 = arr.subarray(0, 50);
-//     console.log('first 50', first50);
-//     console.log('WASM memory bytes',  fabric.memory.buffer.byteLength);
-// });
-
-

@@ -46,12 +46,12 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     constructor(props: IEigViewProps) {
         super(props);
         props.fabricFactory().then(fabric => {
-
+            const bytes = fabric.init(4,6, 4);
+            console.log(`${bytes} bytes`);
             const arr = new Float64Array(fabric.memory.buffer);
             const first50 = arr.subarray(0, 50);
             console.log('first 50', first50);
             console.log('WASM memory bytes', fabric.memory.buffer.byteLength);
-
             fabric.createTetra();
             fabric.centralize(2);
             fabric.iterate(100);

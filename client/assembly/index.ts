@@ -4,25 +4,30 @@ let VECTOR_SIZE = FLOAT_SIZE * 3;
 let JOINT_SIZE = VECTOR_SIZE * 5 + FLOAT_SIZE * 2;
 let INTERVAL_SIZE = INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
 let FACE_SIZE = INDEX_SIZE * 3 + VECTOR_SIZE * 2;
-let MAX_JOINTS = 200;
-let MAX_INTERVALS = 500;
-let MAX_FACES = 200;
-let JOINTS_OFFSET = 0;
-let INTERVALS_OFFSET = MAX_JOINTS * JOINT_SIZE;
-let FACES_OFFSET = INTERVALS_OFFSET + MAX_INTERVALS * INTERVAL_SIZE;
-let METADATA_OFFSET = FACES_OFFSET + MAX_FACES * FACE_SIZE;
+let METADATA_SIZE = VECTOR_SIZE * 3;
 let JOINT_RADIUS = 0.15;
 let AMBIENT_JOINT_MASS = 0.1;
 let CABLE_MASS_FACTOR = 0.05;
 let SPRING_SMOOTH = 0.03;
-// let BAR_SMOOTH = 0.6;
-// let CABLE_SMOOTH = 0.01;
+let BAR_SMOOTH = 0.6;
+let CABLE_SMOOTH = 0.01;
 
 let jointCount: u32 = 0;
+let jointCountMax: u32 = 0;
 let intervalCount: u32 = 0;
+let intervalCountMax: u32 = 0;
 let faceCount: u32 = 0;
+let faceCountMax: u32 = 0;
 
-memory.grow(10);
+let jointOffset = 0;
+let intervalOffset = 0;
+let faceOffset = 0;
+let metadataOffset = 0;
+
+let projectionPtr = 0;
+let alphaProjectionPtr = 0;
+let omegaProjectionPtr = 0;
+let gravPtr = 0;
 
 function getIndex(vPtr: u32): u32 {
     return load<u32>(vPtr);
@@ -143,7 +148,7 @@ function length(vPtr: u32): f64 {
 //   floats: intervalMass, altitude
 
 function jointPtr(index: u32): u32 {
-    return JOINTS_OFFSET + index * JOINT_SIZE;
+    return jointOffset + index * JOINT_SIZE;
 }
 
 function locationPtr(jointIndex: u32): u32 {
@@ -191,7 +196,7 @@ function createJoint(x: f64, y: f64, z: f64): u32 {
 //      span, idealSpan: f64
 
 function intervalPtr(index: u32): u32 {
-    return INTERVALS_OFFSET + index * INTERVAL_SIZE;
+    return intervalOffset + index * INTERVAL_SIZE;
 }
 
 function getAlphaIndex(intervalIndex: u32): u32 {
@@ -242,7 +247,7 @@ function createInterval(alphaIndex: u32, omegaIndex: u32): u32 {
 // face
 
 function facePtr(index: u32): u32 {
-    return FACES_OFFSET + index * FACE_SIZE;
+    return faceOffset + index * FACE_SIZE;
 }
 
 function getFaceJointIndex(faceIndex: u32, index: u32): u32 {
@@ -279,10 +284,6 @@ function splitVectors(vectorPtr: u32, basisPtr: u32, projectionPtr: u32, howMuch
     multiplyScalar(projectionPtr, agreement * howMuch);
 }
 
-let projectionPtr = METADATA_OFFSET;
-let alphaProjectionPtr = projectionPtr + VECTOR_SIZE;
-let omegaProjectionPtr = alphaProjectionPtr + VECTOR_SIZE;
-let gravPtr = omegaProjectionPtr + VECTOR_SIZE;
 let ELASTIC: f64 = 0.05;
 let airDrag: f64 = 0.0002;
 let airGravity: f64 = 0.0001;
@@ -381,6 +382,24 @@ function elastic(intervalIndex: u32): void {
 }
 
 // =================================
+
+export function init(joints: u32, intervals: u32, faces: u32): u32 {
+    jointCountMax = joints;
+    intervalCountMax = intervals;
+    faceCountMax = faces;
+    let bytes = joints * JOINT_SIZE + intervals * INTERVAL_SIZE * faces * FACE_SIZE;
+    let blocks = bytes >> 16;
+    memory.grow(blocks > 0 ? blocks : 1);
+    jointOffset = 0;
+    intervalOffset = jointOffset + jointCountMax * JOINT_SIZE;
+    faceOffset = intervalOffset + intervalCountMax * INTERVAL_SIZE;
+    metadataOffset = faceOffset + faceCountMax * FACE_SIZE;
+    projectionPtr = metadataOffset;
+    alphaProjectionPtr = projectionPtr + VECTOR_SIZE;
+    omegaProjectionPtr = alphaProjectionPtr + VECTOR_SIZE;
+    gravPtr = omegaProjectionPtr + VECTOR_SIZE;
+    return bytes;
+}
 
 export function centralize(altitude: f64): void {
     let x: f64 = 0;

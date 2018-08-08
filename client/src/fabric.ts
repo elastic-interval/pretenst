@@ -6,6 +6,8 @@ export interface IFabric {
 
     memory: IMemory;
 
+    init(joints: number, intervals: number, faces: number): void;
+
     createTetra(): void;
 
     iterate(ticks: number): void;
