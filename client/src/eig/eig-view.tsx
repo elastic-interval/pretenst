@@ -48,7 +48,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         props.fabricFactory().then(fabric => {
             const bytes = fabric.init(4,6, 4);
             console.log(`${bytes} bytes`);
-            const arr = new Float64Array(fabric.memory.buffer);
+            const arr = new Float32Array(fabric.memory.buffer);
             const first50 = arr.subarray(0, 50);
             console.log('first 50', first50);
             console.log('WASM memory bytes', fabric.memory.buffer.byteLength);
