@@ -26,7 +26,7 @@ export class EigFabric implements IFabricExports {
         private faces: number
     ) {
         this.responseFromInit = fabricExports.init(joints, intervals, faces);
-        this.linePairs = new Float32Array(fabricExports.memory.buffer, 0, intervals * 2 * 3 * 4);
+        this.linePairs = new Float32Array(fabricExports.memory.buffer, 0, intervals * 2 * 3);
     }
 
     public get initBytes() {
