@@ -1,10 +1,9 @@
-
 let INDEX_SIZE: u32 = sizeof<u32>();
 let FLOAT_SIZE: u32 = sizeof<f32>();
 let VECTOR_SIZE: u32 = FLOAT_SIZE * 3;
 let JOINT_SIZE: u32 = VECTOR_SIZE * 5 + FLOAT_SIZE * 2;
 let INTERVAL_SIZE: u32 = INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
-let FACE_SIZE: u32 = INDEX_SIZE * 3 + VECTOR_SIZE * 2;
+let FACE_SIZE: u32 = INDEX_SIZE * 3;
 let LINE_SIZE: u32 = VECTOR_SIZE * 2;
 let METADATA_SIZE: u32 = VECTOR_SIZE * 3;
 let JOINT_RADIUS: f32 = 0.15;
@@ -21,7 +20,10 @@ let intervalCountMax: u32 = 0;
 let faceCount: u32 = 0;
 let faceCountMax: u32 = 0;
 
+let lineOffset: u32 = 0;
 let jointOffset: u32 = 0;
+let faceMidpointOffset: u32 = 0;
+let faceNormalOffset: u32 = 0;
 let intervalOffset: u32 = 0;
 let faceOffset: u32 = 0;
 let metadataOffset: u32 = 0;
@@ -38,6 +40,7 @@ let landDrag: f32 = 50;
 let landGravity: f32 = 30;
 
 declare function logFloat(idx: u32, f: f32): void;
+declare function logInt(idx: u32, i: u32): void;
 
 function getIndex(vPtr: u32): u32 {
     return load<u32>(vPtr);
@@ -151,6 +154,18 @@ function quadrance(vPtr: u32): f32 {
 
 function length(vPtr: u32): f32 {
     return <f32>Math.sqrt(quadrance(vPtr));
+}
+
+function crossVectors(vPtr: u32, a: u32, b: u32): void {
+    let ax = getX(a);
+    let ay = getY(a);
+    let az = getZ(a);
+    let bx = getX(b);
+    let by = getY(b);
+    let bz = getZ(b);
+    setX(vPtr, ay * bz - az * by);
+    setY(vPtr, az * bx - ax * bz);
+    setZ(vPtr, ax * by - ay * bx);
 }
 
 // line: size is 2 vectors, or 6 floats, or 24 bytes
@@ -271,35 +286,52 @@ function facePtr(index: u32): u32 {
     return faceOffset + index * FACE_SIZE;
 }
 
-function getFaceJointIndex(faceIndex: u32, index: u32): u32 {
+function jointIndexOfFace(faceIndex: u32, index: u32): u32 {
     return getIndex(facePtr(faceIndex) + index * INDEX_SIZE);
 }
 
-function setFaceJointIndex(faceIndex: u32, index: u32, v: u32): void {
+function setJointIndexOfFace(faceIndex: u32, index: u32, v: u32): void {
     setIndex(facePtr(faceIndex) + index * INDEX_SIZE, v);
 }
 
-function middlePtr(faceIndex: u32): u32 {
-    return facePtr(faceIndex) + INDEX_SIZE * 3;
+function midpointPtr(faceIndex: u32): u32 {
+    return faceMidpointOffset + faceIndex * VECTOR_SIZE;
 }
 
-function apexPtr(faceIndex: u32): u32 {
-    return facePtr(faceIndex) + INDEX_SIZE * 3 + VECTOR_SIZE;
+function normalPtr(faceIndex: u32): u32 {
+    return faceNormalOffset + faceIndex * VECTOR_SIZE;
 }
 
 function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32): u32 {
     let faceIndex = faceCount++;
-    setFaceJointIndex(faceIndex, 0, joint0Index);
-    setFaceJointIndex(faceIndex, 1, joint1Index);
-    setFaceJointIndex(faceIndex, 2, joint2Index);
-    zero(middlePtr(faceIndex));
-    zero(apexPtr(faceIndex));
+    setJointIndexOfFace(faceIndex, 0, joint0Index);
+    setJointIndexOfFace(faceIndex, 1, joint1Index);
+    setJointIndexOfFace(faceIndex, 2, joint2Index);
+    zero(midpointPtr(faceIndex));
+    zero(normalPtr(faceIndex));
     return faceIndex;
+}
+
+function calculateFace(faceIndex: u32): void {
+    let loc0 = locationPtr(jointIndexOfFace(faceIndex, 0));
+    let loc1 = locationPtr(jointIndexOfFace(faceIndex, 1));
+    let loc2 = locationPtr(jointIndexOfFace(faceIndex, 2));
+    subVectors(alphaProjectionPtr, loc1, loc0);
+    subVectors(omegaProjectionPtr, loc2, loc0);
+    let normal = normalPtr(faceIndex);
+    crossVectors(normal, alphaProjectionPtr, omegaProjectionPtr);
+    multiplyScalar(normal, 1 / length(normal));
+    let midpoint = midpointPtr(faceIndex);
+    zero(midpoint);
+    add(midpoint, loc0);
+    add(midpoint, loc1);
+    add(midpoint, loc2);
+    multiplyScalar(midpoint, 1 / 3.0);
 }
 
 // construction and physics
 
-function logIdealSpans():void {
+function logIdealSpans(): void {
     for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
         logFloat(intervalIndex, getFloat(idealSpanPtr(intervalIndex)));
     }
@@ -414,17 +446,26 @@ export function init(joints: u32, intervals: u32, faces: u32): u32 {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
-    let bytes = intervals * VECTOR_SIZE * 2 + joints * JOINT_SIZE + intervals * INTERVAL_SIZE * faces * FACE_SIZE;
-    let blocks = bytes >> 16;
-    memory.grow(blocks > 0 ? blocks : 1);
-    jointOffset = intervalCountMax * VECTOR_SIZE * 2;
-    intervalOffset = jointOffset + jointCountMax * JOINT_SIZE;
-    faceOffset = intervalOffset + intervalCountMax * INTERVAL_SIZE;
-    metadataOffset = faceOffset + faceCountMax * FACE_SIZE;
+    let sizeOfLines = intervalCountMax * VECTOR_SIZE * 2;
+    let sizeOfMidpointsNormals = faceCountMax * VECTOR_SIZE;
+    let sizeOfJoints = jointCountMax * JOINT_SIZE;
+    let sizeOfIntervals = intervalCountMax * INTERVAL_SIZE;
+    let sizeOfFaces = faceCountMax * FACE_SIZE;
+    // offsets
+    faceMidpointOffset = lineOffset + sizeOfLines;
+    faceNormalOffset = faceMidpointOffset + sizeOfMidpointsNormals;
+    jointOffset = faceNormalOffset + sizeOfMidpointsNormals;
+    intervalOffset = jointOffset + sizeOfJoints;
+    faceOffset = intervalOffset + sizeOfIntervals;
+    metadataOffset = faceOffset + sizeOfFaces;
     projectionPtr = metadataOffset;
     alphaProjectionPtr = projectionPtr + VECTOR_SIZE;
     omegaProjectionPtr = alphaProjectionPtr + VECTOR_SIZE;
     gravPtr = omegaProjectionPtr + VECTOR_SIZE;
+    // prep
+    let bytes = gravPtr + VECTOR_SIZE;
+    let blocks = bytes >> 16;
+    memory.grow(blocks > 0 ? blocks : 1);
     return bytes;
 }
 
@@ -474,6 +515,9 @@ export function iterate(ticks: u32): void {
     for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(lineAlphaPtr(intervalIndex), locationPtr(getAlphaIndex(intervalIndex)));
         setVector(lineOmegaPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)));
+    }
+    for (let faceIndex: u32 = 0; faceIndex < faceCount; faceIndex++) {
+        calculateFace(faceIndex);
     }
 }
 

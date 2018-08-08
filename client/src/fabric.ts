@@ -18,6 +18,8 @@ export interface IFabricExports {
 export class EigFabric implements IFabricExports {
     private responseFromInit: number;
     private linePairs: Float32Array;
+    private faceMidpoints: Float32Array;
+    private faceNormals: Float32Array;
 
     constructor(
         private fabricExports: IFabricExports,
@@ -25,8 +27,14 @@ export class EigFabric implements IFabricExports {
         private intervals: number,
         private faces: number
     ) {
+        const linePairFloats = intervals * 2 * 3;
+        const midpointOffset = linePairFloats * Float32Array.BYTES_PER_ELEMENT;
+        const faceFloats = faces * 3;
+        const normalOffset = midpointOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
         this.responseFromInit = fabricExports.init(joints, intervals, faces);
-        this.linePairs = new Float32Array(fabricExports.memory.buffer, 0, intervals * 2 * 3);
+        this.linePairs = new Float32Array(fabricExports.memory.buffer, 0, linePairFloats);
+        this.faceMidpoints = new Float32Array(fabricExports.memory.buffer, midpointOffset, faceFloats);
+        this.faceNormals = new Float32Array(fabricExports.memory.buffer, normalOffset, faceFloats);
     }
 
     public get initBytes() {
@@ -51,6 +59,14 @@ export class EigFabric implements IFabricExports {
 
     public get lines(): Float32Array {
         return this.linePairs;
+    }
+
+    public get midpoints(): Float32Array {
+        return this.faceMidpoints;
+    }
+
+    public get normals(): Float32Array {
+        return this.faceNormals;
     }
 
     // from IFabricExports ==========

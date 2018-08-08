@@ -3,6 +3,7 @@ import * as R3 from 'react-three';
 import {
     BufferAttribute,
     BufferGeometry,
+    CircleGeometry,
     LineBasicMaterial,
     MeshBasicMaterial,
     PerspectiveCamera,
@@ -13,7 +14,6 @@ import {
     Vector2,
     Vector3
 } from 'three';
-import {Face} from './face';
 import {EigFabric, IFabricExports} from '../fabric';
 
 interface IEigViewProps {
@@ -26,8 +26,10 @@ interface IEigViewState {
     fabric?: EigFabric;
 }
 
+const upVector = new Vector3(0, 0, 1);
+const faceGeometry = new CircleGeometry(0.5, 24);
 // const faceInvisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.1});
-// const faceVisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.5});
+const faceVisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.5});
 const lineMaterial = new LineBasicMaterial({color: 0xff0000});
 
 export class EigView extends React.Component<IEigViewProps, IEigViewState> {
@@ -38,18 +40,16 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private mouse = new Vector2();
     private orbitControls: any;
     private rayCaster: any;
-    // private nodesForSelection: any;
-    private selectedFace?: Face;
+    private nodesForSelection: any;
+    private selectedFaceIndex = -1;
 
     constructor(props: IEigViewProps) {
         super(props);
         props.fabricFactory().then(fabricExports => {
-            const fabric = new EigFabric(fabricExports, 4, 6, 4);
-            console.log(`${fabric.initBytes} init bytes, ${fabric.bytes} memory bytes`);
-            console.log('lines', fabric.lines);
+            const fabric = new EigFabric(fabricExports, 100, 200, 100);
+            console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
             fabric.createTetra();
             fabric.centralize(2);
-            console.log('tetra created');
             this.state = {fabric};
         });
         this.state = {};
@@ -89,66 +89,66 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
         this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
         this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
-        // const intersect = this.rayCaster.intersectObjects(this.nodesForSelection.children);
-        // if (intersect.length > 0) {
-        //     const faceMesh = intersect[0].object;
-        //     if (!this.selectedFace || faceMesh.name !== this.selectedFace.name) {
-        //         this.selectedFace = this.state.fabric.findFace(faceMesh.name);
-        //     }
-        // } else if (this.selectedFace) {
-        //     this.selectedFace = undefined;
-        // }
+        const intersect = this.rayCaster.intersectObjects(this.nodesForSelection.children);
+        if (intersect.length > 0) {
+            const faceMesh = intersect[0].object;
+            const faceIndex = parseInt(faceMesh.name, 10);
+            if (this.selectedFaceIndex < 0 || faceIndex !== this.selectedFaceIndex) {
+                this.selectedFaceIndex = faceIndex;
+            }
+        } else if (this.selectedFaceIndex >= 0) {
+            this.selectedFaceIndex = -1;
+        }
     }
 
     public mouseClick(event: any) {
-        if (!this.selectedFace) {
+        if (this.selectedFaceIndex < 0) {
             return;
         }
+        console.log(`YES! ${this.selectedFaceIndex}`);
         // this.state.fabric.tetraFace(this.selectedFace);
         // this.state.fabric.centralize();
-        this.selectedFace = undefined;
+        this.selectedFaceIndex = -1;
     }
 
     public render() {
-        const geometry = new BufferGeometry();
-        if (this.state.fabric) {
-            geometry.addAttribute('position', new BufferAttribute(this.state.fabric.lines, 3));
+        const fabricGeometry = new BufferGeometry();
+        const fabric = this.state.fabric;
+        const faces: any[] = [];
+        if (fabric) {
+            fabricGeometry.addAttribute('position', new BufferAttribute(fabric.lines, 3));
+            const midpoints = fabric.midpoints;
+            const normals = fabric.normals;
+            const faceCount = 4;
+            for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
+                const faceBase = faceIndex * 3;
+                const midpoint = new Vector3(midpoints[faceBase], midpoints[faceBase + 1], midpoints[faceBase + 2]);
+                const normal = new Vector3(normals[faceBase], normals[faceBase + 1], normals[faceBase + 2]);
+                faces.push({
+                    name: `F${faceIndex}`,
+                    position: midpoint,
+                    quaternion: new Quaternion().setFromUnitVectors(upVector, normal)
+                });
+            }
         }
+        const faceMeshes = faces.map((face: any, index: number) => {
+            // if (this.selectedFace && face.name === this.selectedFace.name) {
+            return <R3.Mesh
+                key={face.name} name={index}
+                geometry={faceGeometry}
+                material={faceVisibleMaterial}
+                position={face.position}
+                quaternion={face.quaternion}
+            />
+        });
         return (
             <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.mouseClick(e)}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <R3.LineSegments
-                            key="Fabric"
-                            geometry={geometry}
-                            material={lineMaterial}
-                        />
-                        {/*<R3.Object3D ref={(node: any) => this.nodesForSelection = node}>*/}
-                        {/*{this.state.fabric.faces.map((face: Face, index: number) => {*/}
-                        {/*if (this.selectedFace && face.name === this.selectedFace.name) {*/}
-                        {/*return [*/}
-                        {/*<R3.Mesh*/}
-                        {/*key={face.name} name={face.name}*/}
-                        {/*geometry={face.triangleGeometry}*/}
-                        {/*material={faceVisibleMaterial}*/}
-                        {/*/>,*/}
-                        {/*<R3.LineSegments*/}
-                        {/*key={face.name + 'T'} name={face.name}*/}
-                        {/*geometry={face.tripodGeometry}*/}
-                        {/*material={lineMaterial}*/}
-                        {/*/>*/}
-                        {/*]*/}
-                        {/*} else {*/}
-                        {/*return <R3.Mesh*/}
-                        {/*key={face.name} name={face.name}*/}
-                        {/*geometry={face.triangleGeometry}*/}
-                        {/*material={(this.selectedFace && face.name === this.selectedFace.name) ? faceVisibleMaterial : faceInvisibleMaterial}*/}
-                        {/*/>*/}
-                        {/*}*/}
-                        {/*}*/}
-                        {/*)}*/}
-                        {/*</R3.Object3D>*/}
-                        {/*geometry={(this.selectedFace && face.name === this.selectedFace.name) ? face.tripodGeometry : face.triangleGeometry}*/}
+                        <R3.LineSegments key="Fabric" geometry={fabricGeometry} material={lineMaterial}/>
+                        <R3.Object3D key="Faces" ref={(node: any) => this.nodesForSelection = node}>
+                            {faceMeshes}
+                        </R3.Object3D>
                         <R3.Mesh
                             key="Floor"
                             geometry={new PlaneGeometry(1, 1)}
@@ -162,3 +162,4 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         );
     }
 }
+
