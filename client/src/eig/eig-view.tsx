@@ -46,7 +46,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     constructor(props: IEigViewProps) {
         super(props);
         props.fabricFactory().then(fabricExports => {
-            const fabric = new EigFabric(fabricExports, 100, 200, 100);
+            const fabric = new EigFabric(fabricExports, 200, 300, 200);
             console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
             fabric.createTetra();
             fabric.centralize(2);
