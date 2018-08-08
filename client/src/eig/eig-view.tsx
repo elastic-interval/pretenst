@@ -73,7 +73,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             setTimeout(
                 () => {
                     if (this.state.fabric) {
-                        this.state.fabric.iterate(20);
+                        this.state.fabric.iterate(100);
                     }
                     this.setState({fabric: this.state.fabric});
                     this.orbitControls.update();
@@ -105,9 +105,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         if (this.selectedFaceIndex < 0) {
             return;
         }
-        console.log(`YES! ${this.selectedFaceIndex}`);
-        // this.state.fabric.tetraFace(this.selectedFace);
-        // this.state.fabric.centralize();
+        const fabric = this.state.fabric;
+        if (fabric) {
+            fabric.tetraFromFace(this.selectedFaceIndex);
+            fabric.centralize(-1);
+        }
         this.selectedFaceIndex = -1;
     }
 
@@ -119,7 +121,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             fabricGeometry.addAttribute('position', new BufferAttribute(fabric.lines, 3));
             const midpoints = fabric.midpoints;
             const normals = fabric.normals;
-            const faceCount = 4;
+            const faceCount = fabric.faces();
             for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
                 const faceBase = faceIndex * 3;
                 const midpoint = new Vector3(midpoints[faceBase], midpoints[faceBase + 1], midpoints[faceBase + 2]);

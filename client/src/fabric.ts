@@ -8,7 +8,15 @@ export interface IFabricExports {
 
     init(joints: number, intervals: number, faces: number): number;
 
+    joints(): number;
+
+    intervals(): number;
+
+    faces(): number;
+
     createTetra(): void;
+
+    tetraFromFace(face: number): void;
 
     iterate(ticks: number): void;
 
@@ -23,15 +31,15 @@ export class EigFabric implements IFabricExports {
 
     constructor(
         private fabricExports: IFabricExports,
-        private joints: number,
-        private intervals: number,
-        private faces: number
+        private jointCountMax: number,
+        private intervalCountMax: number,
+        private faceCountMax: number
     ) {
-        const linePairFloats = intervals * 2 * 3;
+        const linePairFloats = intervalCountMax * 2 * 3;
         const midpointOffset = linePairFloats * Float32Array.BYTES_PER_ELEMENT;
-        const faceFloats = faces * 3;
+        const faceFloats = faceCountMax * 3;
         const normalOffset = midpointOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
-        this.responseFromInit = fabricExports.init(joints, intervals, faces);
+        this.responseFromInit = fabricExports.init(jointCountMax, intervalCountMax, faceCountMax);
         this.linePairs = new Float32Array(fabricExports.memory.buffer, 0, linePairFloats);
         this.faceMidpoints = new Float32Array(fabricExports.memory.buffer, midpointOffset, faceFloats);
         this.faceNormals = new Float32Array(fabricExports.memory.buffer, normalOffset, faceFloats);
@@ -45,16 +53,16 @@ export class EigFabric implements IFabricExports {
         return this.fabricExports.memory.buffer.byteLength;
     }
 
-    public get jointCount() {
-        return this.joints;
+    public get jointMax() {
+        return this.jointCountMax;
     }
 
-    public get intervalCount() {
-        return this.intervals;
+    public get intervalMax() {
+        return this.intervalCountMax;
     }
 
-    public get faceCount() {
-        return this.faces;
+    public get faceMax() {
+        return this.faceCountMax;
     }
 
     public get lines(): Float32Array {
@@ -79,8 +87,24 @@ export class EigFabric implements IFabricExports {
         return this.fabricExports.init(joints, intervals, faces);
     }
 
+    public joints(): number {
+        return this.fabricExports.joints();
+    }
+
+    public intervals(): number {
+        return this.fabricExports.intervals();
+    }
+
+    public faces(): number {
+        return this.fabricExports.faces();
+    }
+
     public createTetra(): void {
         this.fabricExports.createTetra();
+    }
+
+    public tetraFromFace(face: number): void {
+        this.fabricExports.tetraFromFace(face);
     }
 
     public iterate(ticks: number): void {

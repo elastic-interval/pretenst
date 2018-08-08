@@ -34,12 +34,13 @@ let omegaProjectionPtr: u32 = 0;
 let gravPtr: u32 = 0;
 
 let ELASTIC: f32 = 0.05;
-let airDrag: f32 = 0.0002;
+let airDrag: f32 = 0.0004;
 let airGravity: f32 = 0.0001;
 let landDrag: f32 = 50;
 let landGravity: f32 = 30;
 
 declare function logFloat(idx: u32, f: f32): void;
+
 declare function logInt(idx: u32, i: u32): void;
 
 function getIndex(vPtr: u32): u32 {
@@ -150,6 +151,13 @@ function quadrance(vPtr: u32): f32 {
     let y = getY(vPtr);
     let z = getZ(vPtr);
     return x * x + y * y + z * z + 0.00000001;
+}
+
+function distance(a: u32, b: u32): f32 {
+    let dx = getX(a) - getX(b);
+    let dy = getY(a) - getY(b);
+    let dz = getZ(a) - getZ(b);
+    return <f32>Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 function length(vPtr: u32): f32 {
@@ -271,12 +279,11 @@ function calculateSpan(intervalIndex: u32): f32 {
     return span;
 }
 
-function createInterval(alphaIndex: u32, omegaIndex: u32): u32 {
+function createInterval(alphaIndex: u32, omegaIndex: u32, idealSpan: f32): u32 {
     let intervalIndex = intervalCount++;
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
-    let span = calculateSpan(intervalIndex);
-    setFloat(idealSpanPtr(intervalIndex), span);
+    setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
     return intervalIndex;
 }
 
@@ -486,7 +493,9 @@ export function centralize(altitude: f32): void {
     for (let jointIndex: u32 = 0; jointIndex < jointCount; jointIndex++) {
         let jPtr = jointPtr(jointIndex);
         setX(jPtr, getX(jPtr) - x);
-        setY(jPtr, getY(jPtr) - lowY + altitude);
+        if (altitude > 0) {
+            setY(jPtr, getY(jPtr) - lowY + altitude);
+        }
         setZ(jPtr, getZ(jPtr) - z);
     }
 }
@@ -496,12 +505,12 @@ export function createTetra(): void {
     createJoint(-1, 1, 1);
     createJoint(-1, -1, -1);
     createJoint(1, 1, -1);
-    createInterval(0, 1);
-    createInterval(1, 2);
-    createInterval(2, 3);
-    createInterval(2, 0);
-    createInterval(0, 3);
-    createInterval(3, 1);
+    createInterval(0, 1, -1);
+    createInterval(1, 2, -1);
+    createInterval(2, 3, -1);
+    createInterval(2, 0, -1);
+    createInterval(0, 3, -1);
+    createInterval(3, 1, -1);
     createFace(0, 1, 2);
     createFace(1, 3, 2);
     createFace(1, 0, 3);
@@ -521,21 +530,42 @@ export function iterate(ticks: u32): void {
     }
 }
 
-// public tetraFace(face: Face): void {
-//     this.faces = this.faces.filter((f: Face): boolean => f.name !== face.name);
-//     let apexJoint = new Joint('apex', face.apex);
-//     this.joints.push(apexJoint);
-//     let diff = new Vector3(0, 0, 0);
-//     let l0 = diff.subVectors(face.joints[0].location, face.joints[1].location).length();
-//     let l1 = diff.subVectors(face.joints[1].location, face.joints[2].location).length();
-//     let l2 = diff.subVectors(face.joints[2].location, face.joints[0].location).length();
-//     let idealSpan = (l0 + l1 + l2) / 3;
-//     face.joints
-//         .map((j: Joint): Interval => new Interval(j, apexJoint).withIdealSpan(idealSpan))
-//         .forEach((i: Interval): void => {
-//             this.intervals.push(i)
-//         });
-//     this.faces.push(new Face([face.joints[0], face.joints[1], apexJoint]));
-//     this.faces.push(new Face([face.joints[1], face.joints[2], apexJoint]));
-//     this.faces.push(new Face([face.joints[2], face.joints[0], apexJoint]));
-// }
+export function tetraFromFace(faceIndex: u32): void {
+    let j0 = jointIndexOfFace(faceIndex, 0);
+    let j1 = jointIndexOfFace(faceIndex, 1);
+    let j2 = jointIndexOfFace(faceIndex, 2);
+    addVectors(projectionPtr, midpointPtr(faceIndex), normalPtr(faceIndex));
+    let l01 = distance(locationPtr(j0), locationPtr(j1));
+    let l12 = distance(locationPtr(j1), locationPtr(j2));
+    let l20 = distance(locationPtr(j2), locationPtr(j0));
+    let average = (l01 + l12 + l20) / 3;
+    for (let faceWalk: u32 = faceIndex; faceWalk < faceCount - 1; faceWalk++) {
+        let nextFace = faceIndex + 1;
+        setVector(midpointPtr(faceIndex), midpointPtr(nextFace));
+        setVector(normalPtr(faceIndex), normalPtr(nextFace));
+        setJointIndexOfFace(faceIndex, 0, jointIndexOfFace(nextFace, 0));
+        setJointIndexOfFace(faceIndex, 1, jointIndexOfFace(nextFace, 1));
+        setJointIndexOfFace(faceIndex, 2, jointIndexOfFace(nextFace, 2));
+    }
+    faceCount--;
+    let apex = createJoint(getX(projectionPtr), getY(projectionPtr), getZ(projectionPtr));
+    createInterval(j0, apex, average);
+    createInterval(j1, apex, average);
+    createInterval(j2, apex, average);
+    createFace(j0, j1, apex);
+    createFace(j1, j2, apex);
+    createFace(j2, j0, apex);
+}
+
+export function joints(): u32 {
+    return jointCount;
+}
+
+export function intervals(): u32 {
+    return intervalCount;
+}
+
+export function faces(): u32 {
+    return faceCount;
+}
+
