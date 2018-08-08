@@ -245,10 +245,11 @@ function idealSpanPtr(intervalIndex: u32): u32 {
 }
 
 function calculateSpan(intervalIndex: u32): f32 {
-    subVectors(unitPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)), locationPtr(getAlphaIndex(intervalIndex)));
-    let span = length(unitPtr(intervalIndex));
+    let unit = unitPtr(intervalIndex);
+    subVectors(unit, locationPtr(getOmegaIndex(intervalIndex)), locationPtr(getAlphaIndex(intervalIndex)));
+    let span = length(unit);
     setFloat(spanPtr(intervalIndex), span);
-    multiplyScalar(unitPtr(intervalIndex), 1 / span);
+    multiplyScalar(unit, 1 / span);
     return span;
 }
 
@@ -295,14 +296,63 @@ function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32): u32 {
 
 // construction and physics
 
+function abs(val: f32): f32 {
+    return val < 0 ? -val : val;
+}
+
+function elastic(intervalIndex: u32): void {
+    let span = calculateSpan(intervalIndex);
+    let idealSpan = getFloat(idealSpanPtr(intervalIndex));
+    let stress = ELASTIC * (span - idealSpan) * idealSpan * idealSpan;
+    addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
+    addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
+    let canPush = true;
+    let mass = canPush ? idealSpan * idealSpan * idealSpan : span * CABLE_MASS_FACTOR;
+    let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex));
+    setFloat(alphaMass, getFloat(alphaMass) + mass / 2);
+    let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex));
+    setFloat(omegaMass, getFloat(omegaMass) + mass / 2);
+}
+
 function splitVectors(vectorPtr: u32, basisPtr: u32, projectionPtr: u32, howMuch: f32): void {
     let agreement = dot(vectorPtr, basisPtr);
     setVector(projectionPtr, basisPtr);
     multiplyScalar(projectionPtr, agreement * howMuch);
 }
 
-function abs(val: f32): f32 {
-    return val < 0 ? -val : val;
+function smoothVelocity(intervalIndex: u32, degree: f32): void {
+    splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, degree);
+    splitVectors(velocityPtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), omegaProjectionPtr, degree);
+    addVectors(projectionPtr, alphaProjectionPtr, omegaProjectionPtr);
+    multiplyScalar(projectionPtr, 0.5);
+    sub(absorbVelocityPtr(getAlphaIndex(intervalIndex)), alphaProjectionPtr);
+    sub(absorbVelocityPtr(getOmegaIndex(intervalIndex)), omegaProjectionPtr);
+    add(absorbVelocityPtr(getAlphaIndex(intervalIndex)), projectionPtr);
+    add(absorbVelocityPtr(getOmegaIndex(intervalIndex)), projectionPtr);
+}
+
+function exertGravity(jointIndex: u32, value: f32): void {
+    let velocity = velocityPtr(jointIndex);
+    setY(velocity, getY(velocity) - value);
+}
+
+function exertJointPhysics(jointIndex: u32): void {
+    let altitude = getY(locationPtr(jointIndex));
+    if (altitude > JOINT_RADIUS) {
+        exertGravity(jointIndex, airGravity);
+        multiplyScalar(velocityPtr(jointIndex), 1 - airDrag);
+    }
+    else if (altitude < -JOINT_RADIUS) {
+        exertGravity(jointIndex, -airGravity * landGravity);
+        multiplyScalar(velocityPtr(jointIndex), 1 - airDrag * landDrag);
+    }
+    else {
+        let degree = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
+        let gravityValue = airGravity * degree + -airGravity * landGravity * (1 - degree);
+        exertGravity(jointIndex, gravityValue);
+        let drag = airDrag * degree + airDrag * landDrag * (1 - degree);
+        multiplyScalar(velocityPtr(jointIndex), 1 - drag);
+    }
 }
 
 function tick(): void {
@@ -347,55 +397,6 @@ function tick(): void {
         add(locationPtr(jointIndex), velocityPtr(jointIndex));
         setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
     }
-}
-
-function exertJointPhysics(jointIndex: u32): void {
-    let altitude = getY(locationPtr(jointIndex));
-    if (altitude > JOINT_RADIUS) {
-        exertGravity(jointIndex, airGravity);
-        multiplyScalar(velocityPtr(jointIndex), 1 - airDrag);
-    }
-    else if (altitude < -JOINT_RADIUS) {
-        exertGravity(jointIndex, -airGravity * landGravity);
-        multiplyScalar(velocityPtr(jointIndex), 1 - airDrag * landDrag);
-    }
-    else {
-        let degree = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
-        let gravityValue = airGravity * degree + -airGravity * landGravity * (1 - degree);
-        exertGravity(jointIndex, gravityValue);
-        let drag = airDrag * degree + airDrag * landDrag * (1 - degree);
-        multiplyScalar(velocityPtr(jointIndex), 1 - drag);
-    }
-}
-
-function exertGravity(jointIndex: u32, value: f32): void {
-    let velocity = velocityPtr(jointIndex);
-    setY(velocity, getY(velocity) - value);
-}
-
-function smoothVelocity(intervalIndex: u32, degree: f32): void {
-    splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, degree);
-    splitVectors(velocityPtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), omegaProjectionPtr, degree);
-    addVectors(projectionPtr, alphaProjectionPtr, omegaProjectionPtr);
-    multiplyScalar(projectionPtr, 0.5);
-    sub(absorbVelocityPtr(getAlphaIndex(intervalIndex)), alphaProjectionPtr);
-    sub(absorbVelocityPtr(getOmegaIndex(intervalIndex)), omegaProjectionPtr);
-    add(absorbVelocityPtr(getAlphaIndex(intervalIndex)), projectionPtr);
-    add(absorbVelocityPtr(getOmegaIndex(intervalIndex)), projectionPtr);
-}
-
-function elastic(intervalIndex: u32): void {
-    let span = calculateSpan(intervalIndex);
-    let idealSpan = getFloat(idealSpanPtr(intervalIndex));
-    let stress = ELASTIC * (span - idealSpan) * idealSpan * idealSpan;
-    addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
-    addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
-    let canPush = true;
-    let mass = canPush ? idealSpan * idealSpan * idealSpan : span * CABLE_MASS_FACTOR;
-    let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex));
-    setFloat(alphaMass, getFloat(alphaMass) + mass / 2);
-    let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex));
-    setFloat(omegaMass, getFloat(omegaMass) + mass / 2);
 }
 
 // =================================

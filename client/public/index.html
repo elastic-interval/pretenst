@@ -24,6 +24,7 @@
 <body>
 <script>
     const eigCodePromise = fetch("eig.wasm").then(response => response.arrayBuffer());
+
     function fabricFactory() {
         const importObject = {
             env: {
