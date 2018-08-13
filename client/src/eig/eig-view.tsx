@@ -15,7 +15,6 @@ import {
     Vector3
 } from 'three';
 import {EigFabric, IFabricExports} from '../fabric';
-import {createTetrahedron} from './eig-factory';
 
 interface IEigViewProps {
     width: number;
@@ -49,7 +48,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         props.fabricFactory().then(fabricExports => {
             const fabric = new EigFabric(fabricExports, 200, 600, 400);
             console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
-            createTetrahedron(fabric);
+            fabric.createOctahedron();
+            // fabric.createTetrahedron();
             fabric.centralize(2);
             this.state = {fabric};
         });
@@ -65,8 +65,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             })
         });
         this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 5000);
-        this.perspectiveCamera.position.set(12, 3, 0);
-        this.perspectiveCamera.lookAt(new Vector3(0, 0, 0));
+        this.perspectiveCamera.position.set(6, 1, 0);
+        this.perspectiveCamera.lookAt(new Vector3(0, 1, 0));
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
         this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         this.rayCaster = new Raycaster();

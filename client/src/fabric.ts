@@ -1,3 +1,5 @@
+import {createOctahedron, createTetrahedron} from './eig/eig-factory';
+
 export interface IMemory {
     buffer: ArrayBuffer;
 }
@@ -94,6 +96,14 @@ export class EigFabric implements IFabricExports {
 
     public get normals(): Float32Array {
         return this.faceNormals;
+    }
+
+    public createTetrahedron(): void {
+        createTetrahedron(this);
+    }
+
+    public createOctahedron(): void {
+        createOctahedron(this);
     }
 
     // from IFabricExports ==========
