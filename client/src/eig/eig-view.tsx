@@ -17,12 +17,12 @@ import {
 import {EigFabric, IFabricExports} from '../fabric';
 
 interface IEigViewProps {
-    width: number;
-    height: number;
     fabricFactory: () => Promise<IFabricExports>;
 }
 
 interface IEigViewState {
+    width: number;
+    height: number;
     fabric?: EigFabric;
 }
 
@@ -51,9 +51,9 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             fabric.createOctahedron();
             // fabric.createTetrahedron();
             fabric.centralize(2);
-            this.state = {fabric};
+            this.setState({fabric});
         });
-        this.state = {};
+        this.state = {width: window.innerWidth, height: window.innerHeight};
         const loader = new TextureLoader();
         this.floorMaterial = new MeshBasicMaterial({
             map: loader.load('/grass.jpg', (texture: any) => {
@@ -64,7 +64,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 // texture.repeat.set( 12, 12 );
             })
         });
-        this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 5000);
+        this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 5000);
         this.perspectiveCamera.position.set(6, 1, 0);
         this.perspectiveCamera.lookAt(new Vector3(0, 1, 0));
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
@@ -87,8 +87,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     }
 
     public mouseMove(event: any) {
-        this.mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
-        this.mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
+        this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
         this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
         const intersect = this.rayCaster.intersectObjects(this.nodesForSelection.children);
         if (intersect.length > 0) {
@@ -153,8 +153,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         });
         return (
             <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.mouseClick(e)}>
-                <R3.Renderer width={this.props.width} height={this.props.height}>
-                    <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
+                <R3.Renderer width={this.state.width} height={this.state.height}>
+                    <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         <R3.LineSegments key="Fabric" geometry={fabricGeometry} material={lineMaterial}/>
                         <R3.Object3D key="Faces" ref={(node: any) => this.nodesForSelection = node}>
                             {faceMeshes}
@@ -171,5 +171,19 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             </div>
         );
     }
+
+    public componentDidMount() {
+        window.addEventListener("resize", this.updateDimensions);
+    }
+
+    public componentWillUnmount() {
+        window.removeEventListener("resize", this.updateDimensions);
+    }
+
+    private updateDimensions = () => {
+        this.setState({width: window.innerWidth, height: window.innerHeight});
+        this.perspectiveCamera.aspect = this.state.width / this.state.height;
+        this.perspectiveCamera.updateProjectionMatrix();
+    };
 }
 

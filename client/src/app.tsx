@@ -16,11 +16,7 @@ class App extends React.Component<IAppProps, any> {
     public render() {
         return (
             <div className="App">
-                <EigView
-                    width={window.innerWidth}
-                    height={window.innerHeight}
-                    fabricFactory={this.props.fabricFactory}
-                />
+                <EigView fabricFactory={this.props.fabricFactory}/>
                 {/*<PatchView hello={this.state.hello}/>*/}
             </div>
         );
