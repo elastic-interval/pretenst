@@ -1,4 +1,4 @@
-import {createOctahedron, createTetrahedron} from './eig/eig-factory';
+import {Vector3} from 'three';
 
 export interface IMemory {
     buffer: ArrayBuffer;
@@ -16,8 +16,6 @@ export interface IFabricExports {
 
     faces(): number;
 
-    tetraFromFace(face: number): void;
-
     iterate(ticks: number): void;
 
     centralize(altitude: number): void;
@@ -28,7 +26,13 @@ export interface IFabricExports {
 
     createFace(joint0Index: number, joint1Index: number, joint2Index: number): number;
 
+    removeFace(faceIndex: number): void;
+
+    getFaceJointIndex(faceIndex: number, jointNumber: number): number;
+
     getFaceLaterality(faceIndex: number): number;
+
+    getFaceAverageIdealSpan(faceIndex: number): number;
 }
 
 export const BILATERAL_MIDDLE = 0;
@@ -46,14 +50,24 @@ export const ROLE_HORIZONTAL_CABLE = 8;
 export const ROLE_RING_CABLE = 9;
 export const ROLE_VERTICAL_CABLE = 10;
 
-export class EigFabric implements IFabricExports {
+export interface IFace {
+    fabric: EigFabric;
+    index: number;
+    laterality: number;
+    midpoint: Vector3;
+    normal: Vector3;
+    jointIndex: number[];
+    averageIdealSpan: number;
+}
+
+export class EigFabric {
     private responseFromInit: number;
     private linePairs: Float32Array;
     private faceMidpoints: Float32Array;
     private faceNormals: Float32Array;
 
     constructor(
-        private fabricExports: IFabricExports,
+        private fab: IFabricExports,
         private jointCountMax: number,
         private intervalCountMax: number,
         private faceCountMax: number
@@ -62,10 +76,10 @@ export class EigFabric implements IFabricExports {
         const midpointOffset = linePairFloats * Float32Array.BYTES_PER_ELEMENT;
         const faceFloats = faceCountMax * 3;
         const normalOffset = midpointOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
-        this.responseFromInit = fabricExports.init(jointCountMax, intervalCountMax, faceCountMax);
-        this.linePairs = new Float32Array(fabricExports.memory.buffer, 0, linePairFloats);
-        this.faceMidpoints = new Float32Array(fabricExports.memory.buffer, midpointOffset, faceFloats);
-        this.faceNormals = new Float32Array(fabricExports.memory.buffer, normalOffset, faceFloats);
+        this.responseFromInit = fab.init(jointCountMax, intervalCountMax, faceCountMax);
+        this.linePairs = new Float32Array(fab.memory.buffer, 0, linePairFloats);
+        this.faceMidpoints = new Float32Array(fab.memory.buffer, midpointOffset, faceFloats);
+        this.faceNormals = new Float32Array(fab.memory.buffer, normalOffset, faceFloats);
     }
 
     public get initBytes() {
@@ -73,7 +87,7 @@ export class EigFabric implements IFabricExports {
     }
 
     public get bytes() {
-        return this.fabricExports.memory.buffer.byteLength;
+        return this.fab.memory.buffer.byteLength;
     }
 
     public get jointMax() {
@@ -101,61 +115,121 @@ export class EigFabric implements IFabricExports {
     }
 
     public createTetrahedron(): void {
-        createTetrahedron(this);
+        let jointTagCount = 0;
+        const R = Math.sqrt(2) / 2;
+        this.createJoint(BILATERAL_MIDDLE, jointTagCount++, R, -R, R);
+        this.createJoint(BILATERAL_MIDDLE, jointTagCount++, -R, R, R);
+        this.createJoint(BILATERAL_MIDDLE, jointTagCount++, -R, -R, -R);
+        this.createJoint(BILATERAL_MIDDLE, jointTagCount++, R, R, -R);
+        this.createInterval(ROLE_SPRING, 0, 1, -1);
+        this.createInterval(ROLE_SPRING, 1, 2, -1);
+        this.createInterval(ROLE_SPRING, 2, 3, -1);
+        this.createInterval(ROLE_SPRING, 2, 0, -1);
+        this.createInterval(ROLE_SPRING, 0, 3, -1);
+        this.createInterval(ROLE_SPRING, 3, 1, -1);
+        this.createFace(0, 1, 2);
+        this.createFace(1, 3, 2);
+        this.createFace(1, 0, 3);
+        this.createFace(2, 3, 0);
     }
 
     public createOctahedron(): void {
-        createOctahedron(this);
+        let jointTagCount = 0;
+        const R = Math.sqrt(2) / 2;
+        for (let walk = 0; walk < 4; walk++) {
+            const angle = walk * Math.PI / 2 + Math.PI / 4;
+            this.createJoint(BILATERAL_MIDDLE, jointTagCount++, R * Math.cos(angle), 0, R + R * Math.sin(angle));
+        }
+        const left = this.createJoint(BILATERAL_LEFT, jointTagCount, 0, -R, R);
+        const right = this.createJoint(BILATERAL_RIGHT, jointTagCount, 0, R, R);
+        for (let walk = 0; walk < 4; walk++) {
+            this.createInterval(ROLE_SPRING, walk, (walk + 1) % 4, -1);
+            this.createInterval(ROLE_SPRING, walk, left, -1);
+            this.createInterval(ROLE_SPRING, walk, right, -1);
+        }
+        for (let walk = 0; walk < 4; walk++) {
+            this.createFace(left, walk, (walk + 1) % 4);
+            this.createFace(right, (walk + 1) % 4, walk);
+        }
+    }
+
+    public createTetraFromFace(face: IFace) {
+        this.removeFace(face.index);
+        const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
+        const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan / 2).add(midpoint);
+        const apex = this.createJoint(face.laterality, 100, apexLocation.x, apexLocation.y, apexLocation.z);
+        this.createInterval(ROLE_SPRING, face.jointIndex[0], apex, face.averageIdealSpan);
+        this.createInterval(ROLE_SPRING, face.jointIndex[1], apex, face.averageIdealSpan);
+        this.createInterval(ROLE_SPRING, face.jointIndex[2], apex, face.averageIdealSpan);
+        this.createFace(face.jointIndex[0], face.jointIndex[1], apex);
+        this.createFace(face.jointIndex[1], face.jointIndex[2], apex);
+        this.createFace(face.jointIndex[2], face.jointIndex[0], apex);
     }
 
     // from IFabricExports ==========
 
     public get memory(): IMemory {
-        return this.fabricExports.memory;
+        return this.fab.memory;
     }
 
     public init(joints: number, intervals: number, faces: number): number {
-        return this.fabricExports.init(joints, intervals, faces);
+        return this.fab.init(joints, intervals, faces);
     }
 
     public joints(): number {
-        return this.fabricExports.joints();
+        return this.fab.joints();
     }
 
     public intervals(): number {
-        return this.fabricExports.intervals();
+        return this.fab.intervals();
     }
 
     public faces(): number {
-        return this.fabricExports.faces();
-    }
-
-    public tetraFromFace(face: number): void {
-        this.fabricExports.tetraFromFace(face);
+        return this.fab.faces();
     }
 
     public iterate(ticks: number): void {
-        this.fabricExports.iterate(ticks);
+        this.fab.iterate(ticks);
     }
 
     public centralize(altitude: number): void {
-        this.fabricExports.centralize(altitude);
+        this.fab.centralize(altitude);
     }
 
     public createJoint(laterality: number, jointName: number, x: number, y: number, z: number): number {
-        return this.fabricExports.createJoint(laterality, jointName, x, y, z);
+        return this.fab.createJoint(laterality, jointName, x, y, z);
     }
 
     public createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.fabricExports.createInterval(role, alphaIndex, omegaIndex, span);
+        return this.fab.createInterval(role, alphaIndex, omegaIndex, span);
     }
 
     public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
-        return this.fabricExports.createFace(joint0Index, joint1Index, joint2Index);
+        return this.fab.createFace(joint0Index, joint1Index, joint2Index);
     }
 
-    public getFaceLaterality(faceIndex: number): number {
-        return this.fabricExports.getFaceLaterality(faceIndex);
+    public removeFace(faceIndex: number): void {
+        this.fab.removeFace(faceIndex);
     }
 
+    public getFace(faceIndex: number): IFace {
+        const faceOffset = faceIndex * 3;
+        return {
+            fabric: this,
+            index: faceIndex,
+            laterality: this.fab.getFaceLaterality(faceIndex),
+            midpoint: new Vector3(
+                this.faceMidpoints[faceOffset],
+                this.faceMidpoints[faceOffset + 1],
+                this.faceMidpoints[faceOffset + 2],
+            ),
+            normal: new Vector3(
+                this.faceNormals[faceOffset],
+                this.faceNormals[faceOffset + 1],
+                this.faceNormals[faceOffset + 2],
+            ),
+            jointIndex: [0, 1, 2].map(index => this.fab.getFaceJointIndex(faceIndex, index)),
+            averageIdealSpan: this.fab.getFaceAverageIdealSpan(faceIndex)
+        }
+    }
 }

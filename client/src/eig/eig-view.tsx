@@ -108,7 +108,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         }
         const fabric = this.state.fabric;
         if (fabric) {
-            fabric.tetraFromFace(this.selectedFaceIndex);
+            const face = fabric.getFace(this.selectedFaceIndex);
+            fabric.createTetraFromFace(face);
             fabric.centralize(-1);
         }
         this.selectedFaceIndex = -1;

@@ -356,6 +356,17 @@ function removeInterval(intervalIndex: u32): void {
     intervalCount--;
 }
 
+function findIntervalIndex(joint0: u32, joint1: u32): u32 {
+    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+        let alpha = getAlphaIndex(thisInterval);
+        let omega = getOmegaIndex(thisInterval);
+        if (alpha === joint0 && omega === joint1 || alpha === joint1 && omega === joint0) {
+            return thisInterval;
+        }
+    }
+    return intervalCount + 1; // should throw an exception somehow?
+}
+
 // face
 
 function facePtr(index: u32): u32 {
@@ -599,18 +610,43 @@ export function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32)
     return faceIndex;
 }
 
-export function getFaceJointIndex(faceIndex: u32, index: u32): u32 {
-    return getIndex(facePtr(faceIndex) + index * JOINT_INDEX_SIZE);
+export function removeFace(faceIndex: u32): void {
+    for (let thisFace: u32 = faceIndex; thisFace < faceCount - 1; thisFace++) {
+        let nextFace = thisFace + 1;
+        setVector(midpointPtr(thisFace), midpointPtr(nextFace));
+        setVector(normalPtr(thisFace), normalPtr(nextFace));
+        setJointIndexOfFace(thisFace, 0, getFaceJointIndex(nextFace, 0));
+        setJointIndexOfFace(thisFace, 1, getFaceJointIndex(nextFace, 1));
+        setJointIndexOfFace(thisFace, 2, getFaceJointIndex(nextFace, 2));
+    }
+    faceCount--;
+}
+
+export function getFaceJointIndex(faceIndex: u32, jointNumber: u32): u32 {
+    return getIndex(facePtr(faceIndex) + jointNumber * JOINT_INDEX_SIZE);
 }
 
 export function getFaceLaterality(faceIndex: u32): u8 {
-    for (let jointWalk:u32 = 0; jointWalk<3; jointWalk++) { // face inherits laterality
+    for (let jointWalk: u32 = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
         let jointLaterality = getJointLaterality(getFaceJointIndex(faceIndex, jointWalk));
         if (jointLaterality !== BILATERAL_MIDDLE) {
             return jointLaterality;
         }
     }
     return BILATERAL_MIDDLE;
+}
+
+export function getFaceAverageIdealSpan(faceIndex: u32): f32 {
+    let joint0 = getFaceJointIndex(faceIndex, 0);
+    let joint1 = getFaceJointIndex(faceIndex, 1);
+    let joint2 = getFaceJointIndex(faceIndex, 2);
+    let interval0 = findIntervalIndex(joint0, joint1);
+    let interval1 = findIntervalIndex(joint1, joint2);
+    let interval2 = findIntervalIndex(joint2, joint0);
+    let ideal0 = getFloat(idealSpanPtr(interval0));
+    let ideal1 = getFloat(idealSpanPtr(interval1));
+    let ideal2 = getFloat(idealSpanPtr(interval2));
+    return (ideal0 + ideal1 + ideal2) / 3;
 }
 
 export function iterate(ticks: u32): void {
@@ -624,33 +660,6 @@ export function iterate(ticks: u32): void {
     for (let thisFace: u32 = 0; thisFace < faceCount; thisFace++) {
         calculateFace(thisFace);
     }
-}
-
-export function tetraFromFace(faceIndex: u32): void {
-    let j0 = getFaceJointIndex(faceIndex, 0);
-    let j1 = getFaceJointIndex(faceIndex, 1);
-    let j2 = getFaceJointIndex(faceIndex, 2);
-    addVectors(projectionPtr, midpointPtr(faceIndex), normalPtr(faceIndex));
-    let l01 = distance(locationPtr(j0), locationPtr(j1));
-    let l12 = distance(locationPtr(j1), locationPtr(j2));
-    let l20 = distance(locationPtr(j2), locationPtr(j0));
-    let average = (l01 + l12 + l20) / 3;
-    for (let thisFace: u32 = faceIndex; thisFace < faceCount - 1; thisFace++) {
-        let nextFace = thisFace + 1;
-        setVector(midpointPtr(thisFace), midpointPtr(nextFace));
-        setVector(normalPtr(thisFace), normalPtr(nextFace));
-        setJointIndexOfFace(thisFace, 0, getFaceJointIndex(nextFace, 0));
-        setJointIndexOfFace(thisFace, 1, getFaceJointIndex(nextFace, 1));
-        setJointIndexOfFace(thisFace, 2, getFaceJointIndex(nextFace, 2));
-    }
-    faceCount--;
-    let apex = createJoint(BILATERAL_MIDDLE, jointTagCount++, getX(projectionPtr), getY(projectionPtr), getZ(projectionPtr));
-    createInterval(ROLE_SPRING, j0, apex, average);
-    createInterval(ROLE_SPRING, j1, apex, average);
-    createInterval(ROLE_SPRING, j2, apex, average);
-    createFace(j0, j1, apex);
-    createFace(j1, j2, apex);
-    createFace(j2, j0, apex);
 }
 
 export function joints(): u32 {
