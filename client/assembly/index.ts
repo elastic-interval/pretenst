@@ -58,7 +58,7 @@ function canPush(role: u8): boolean {
     }
 }
 
-const UNILATERAL: u8 = 0;
+const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
 const BILATERAL_LEFT: u8 = 2;
 
@@ -278,12 +278,11 @@ function altitudePtr(jointIndex: u32): u32 {
     return jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE;
 }
 
-
-function getLaterality(jointIndex: u32): u8 {
+function getJointLaterality(jointIndex: u32): u8 {
     return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2);
 }
 
-function setLaterality(jointIndex: u32, laterality: u8): void {
+function setJointLaterality(jointIndex: u32, laterality: u8): void {
     store<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2, laterality);
 }
 
@@ -294,7 +293,6 @@ function getTag(jointIndex: u32): u16 {
 function setTag(jointIndex: u32, tag: u16): void {
     store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE, tag);
 }
-
 
 // interval: size role u8 plus is 2 unsigned32 + unit (3 f32s) + span + idealSpan, u8 + 5float + 2int = 49 bytes
 //      role: u8
@@ -364,10 +362,6 @@ function facePtr(index: u32): u32 {
     return faceOffset + index * FACE_SIZE;
 }
 
-function jointIndexOfFace(faceIndex: u32, index: u32): u32 {
-    return getIndex(facePtr(faceIndex) + index * JOINT_INDEX_SIZE);
-}
-
 function setJointIndexOfFace(faceIndex: u32, index: u32, v: u32): void {
     setIndex(facePtr(faceIndex) + index * JOINT_INDEX_SIZE, v);
 }
@@ -381,9 +375,9 @@ function normalPtr(faceIndex: u32): u32 {
 }
 
 function calculateFace(faceIndex: u32): void {
-    let loc0 = locationPtr(jointIndexOfFace(faceIndex, 0));
-    let loc1 = locationPtr(jointIndexOfFace(faceIndex, 1));
-    let loc2 = locationPtr(jointIndexOfFace(faceIndex, 2));
+    let loc0 = locationPtr(getFaceJointIndex(faceIndex, 0));
+    let loc1 = locationPtr(getFaceJointIndex(faceIndex, 1));
+    let loc2 = locationPtr(getFaceJointIndex(faceIndex, 2));
     subVectors(alphaProjectionPtr, loc1, loc0);
     subVectors(omegaProjectionPtr, loc2, loc0);
     let normal = normalPtr(faceIndex);
@@ -581,7 +575,7 @@ export function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): u
     zero(gravityPtr(jointIndex));
     zero(absorbVelocityPtr(jointIndex));
     setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
-    setLaterality(jointIndex, laterality);
+    setJointLaterality(jointIndex, laterality);
     setTag(jointIndex, tag);
     return jointIndex;
 }
@@ -605,6 +599,20 @@ export function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32)
     return faceIndex;
 }
 
+export function getFaceJointIndex(faceIndex: u32, index: u32): u32 {
+    return getIndex(facePtr(faceIndex) + index * JOINT_INDEX_SIZE);
+}
+
+export function getFaceLaterality(faceIndex: u32): u8 {
+    for (let jointWalk:u32 = 0; jointWalk<3; jointWalk++) { // face inherits laterality
+        let jointLaterality = getJointLaterality(getFaceJointIndex(faceIndex, jointWalk));
+        if (jointLaterality !== BILATERAL_MIDDLE) {
+            return jointLaterality;
+        }
+    }
+    return BILATERAL_MIDDLE;
+}
+
 export function iterate(ticks: u32): void {
     for (let thisTick: u32 = 0; thisTick < ticks; thisTick++) {
         tick();
@@ -619,9 +627,9 @@ export function iterate(ticks: u32): void {
 }
 
 export function tetraFromFace(faceIndex: u32): void {
-    let j0 = jointIndexOfFace(faceIndex, 0);
-    let j1 = jointIndexOfFace(faceIndex, 1);
-    let j2 = jointIndexOfFace(faceIndex, 2);
+    let j0 = getFaceJointIndex(faceIndex, 0);
+    let j1 = getFaceJointIndex(faceIndex, 1);
+    let j2 = getFaceJointIndex(faceIndex, 2);
     addVectors(projectionPtr, midpointPtr(faceIndex), normalPtr(faceIndex));
     let l01 = distance(locationPtr(j0), locationPtr(j1));
     let l12 = distance(locationPtr(j1), locationPtr(j2));
@@ -631,12 +639,12 @@ export function tetraFromFace(faceIndex: u32): void {
         let nextFace = thisFace + 1;
         setVector(midpointPtr(thisFace), midpointPtr(nextFace));
         setVector(normalPtr(thisFace), normalPtr(nextFace));
-        setJointIndexOfFace(thisFace, 0, jointIndexOfFace(nextFace, 0));
-        setJointIndexOfFace(thisFace, 1, jointIndexOfFace(nextFace, 1));
-        setJointIndexOfFace(thisFace, 2, jointIndexOfFace(nextFace, 2));
+        setJointIndexOfFace(thisFace, 0, getFaceJointIndex(nextFace, 0));
+        setJointIndexOfFace(thisFace, 1, getFaceJointIndex(nextFace, 1));
+        setJointIndexOfFace(thisFace, 2, getFaceJointIndex(nextFace, 2));
     }
     faceCount--;
-    let apex = createJoint(UNILATERAL, jointTagCount++, getX(projectionPtr), getY(projectionPtr), getZ(projectionPtr));
+    let apex = createJoint(BILATERAL_MIDDLE, jointTagCount++, getX(projectionPtr), getY(projectionPtr), getZ(projectionPtr));
     createInterval(ROLE_SPRING, j0, apex, average);
     createInterval(ROLE_SPRING, j1, apex, average);
     createInterval(ROLE_SPRING, j2, apex, average);

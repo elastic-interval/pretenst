@@ -27,9 +27,11 @@ export interface IFabricExports {
     createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number;
 
     createFace(joint0Index: number, joint1Index: number, joint2Index: number): number;
+
+    getFaceLaterality(faceIndex: number): number;
 }
 
-export const UNILATERAL = 0;
+export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
 
@@ -151,4 +153,9 @@ export class EigFabric implements IFabricExports {
     public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
         return this.fabricExports.createFace(joint0Index, joint1Index, joint2Index);
     }
+
+    public getFaceLaterality(faceIndex: number): number {
+        return this.fabricExports.getFaceLaterality(faceIndex);
+    }
+
 }

@@ -27,7 +27,7 @@ interface IEigViewState {
 }
 
 const upVector = new Vector3(0, 0, 1);
-const faceGeometry = new CircleGeometry(0.5, 24);
+const faceGeometry = new CircleGeometry(0.25, 24);
 // const faceInvisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.1});
 const faceVisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.5});
 const lineMaterial = new LineBasicMaterial({color: 0xff0000});
