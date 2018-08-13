@@ -1,17 +1,92 @@
-let INDEX_SIZE: u32 = sizeof<u32>();
-let FLOAT_SIZE: u32 = sizeof<f32>();
-let VECTOR_SIZE: u32 = FLOAT_SIZE * 3;
-let JOINT_SIZE: u32 = VECTOR_SIZE * 5 + FLOAT_SIZE * 2;
-let INTERVAL_SIZE: u32 = INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
-let FACE_SIZE: u32 = INDEX_SIZE * 3;
-let LINE_SIZE: u32 = VECTOR_SIZE * 2;
-let METADATA_SIZE: u32 = VECTOR_SIZE * 3;
-let JOINT_RADIUS: f32 = 0.15;
-let AMBIENT_JOINT_MASS: f32 = 0.1;
-let CABLE_MASS_FACTOR: f32 = 0.05;
-let SPRING_SMOOTH: f32 = 0.03;
-let BAR_SMOOTH: f32 = 0.6;
-let CABLE_SMOOTH: f32 = 0.01;
+declare function logFloat(idx: u32, f: f32): void;
+
+declare function logInt(idx: u32, i: u32): void;
+
+const ROLE_SIZE: u32 = sizeof<u8>();
+const INDEX_SIZE: u32 = sizeof<u32>();
+const FLOAT_SIZE: u32 = sizeof<f32>();
+const VECTOR_SIZE: u32 = FLOAT_SIZE * 3;
+
+const JOINT_SIZE: u32 = VECTOR_SIZE * 5 + FLOAT_SIZE * 2;
+const INTERVAL_SIZE: u32 = ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
+const FACE_SIZE: u32 = INDEX_SIZE * 3;
+const LINE_SIZE: u32 = VECTOR_SIZE * 2;
+const METADATA_SIZE: u32 = VECTOR_SIZE * 3;
+
+const JOINT_RADIUS: f32 = 0.15;
+const AMBIENT_JOINT_MASS: f32 = 0.1;
+const CABLE_MASS_FACTOR: f32 = 0.05;
+const SPRING_SMOOTH: f32 = 0.03;
+const BAR_SMOOTH: f32 = 0.6;
+const CABLE_SMOOTH: f32 = 0.01;
+const TEMPORARY_TICK_REDUCTION: f32 = 0.01;
+
+const ROLE_SPRING: i8 = 1;
+const ROLE_MUSCLE: i8 = 2;
+const ROLE_BAR: i8 = 3;
+const ROLE_CABLE: i8 = 4;
+const ROLE_TEMPORARY: i8 = 5;
+const ROLE_RING_SPRING: i8 = 6;
+const ROLE_COUNTER_CABLE: i8 = 7;
+const ROLE_HORIZONTAL_CABLE: i8 = 8;
+const ROLE_RING_CABLE: i8 = 9;
+const ROLE_VERTICAL_CABLE: i8 = 10;
+
+function getSmoothDegree(role: u8): f32 {
+    switch (role) {
+        case ROLE_SPRING:
+        case ROLE_RING_SPRING:
+        case ROLE_MUSCLE:
+            return SPRING_SMOOTH;
+        case ROLE_BAR:
+            return BAR_SMOOTH;
+        default:
+            return CABLE_SMOOTH;
+    }
+}
+
+function canPush(role: u8): boolean {
+    switch (role) {
+        case ROLE_SPRING:
+        case ROLE_RING_SPRING:
+        case ROLE_MUSCLE:
+        case ROLE_BAR:
+            return true;
+        default:
+            return false;
+    }
+}
+
+/*
+    public enum Role {
+        SPRING(true, SPRING_SMOOTH),
+        RING_SPRING(true, SPRING_SMOOTH),
+        MUSCLE(true, SPRING_SMOOTH),
+        BAR(true, BAR_SMOOTH),
+        CABLE(false, CABLE_SMOOTH),
+        COUNTER_CABLE(false, CABLE_SMOOTH),
+        HORIZONTAL_CABLE(false, CABLE_SMOOTH),
+        RING_CABLE(false, CABLE_SMOOTH),
+        VERTICAL_CABLE(false, CABLE_SMOOTH),
+        TEMPORARY(false, CABLE_SMOOTH),
+        ELIMINATED(false, CABLE_SMOOTH);
+
+        public final boolean canPush;
+        public final double smoothVelocity;
+
+        Role(boolean canPush, double smoothVelocity) {
+            this.canPush = canPush;
+            this.smoothVelocity = smoothVelocity;
+        }
+    }
+
+ */
+
+const ELASTIC: f32 = 0.05;
+const AIR_DRAG: f32 = 0.0004;
+const AIR_GRAVITY: f32 = 0.00001;
+const LAND_DRAG: f32 = 50;
+const LAND_GRAVITY: f32 = 30;
 
 let jointCount: u32 = 0;
 let jointCountMax: u32 = 0;
@@ -33,52 +108,52 @@ let alphaProjectionPtr: u32 = 0;
 let omegaProjectionPtr: u32 = 0;
 let gravPtr: u32 = 0;
 
-let ELASTIC: f32 = 0.05;
-let airDrag: f32 = 0.0004;
-let airGravity: f32 = 0.00001;
-let landDrag: f32 = 50;
-let landGravity: f32 = 30;
-
-declare function logFloat(idx: u32, f: f32): void;
-
-declare function logInt(idx: u32, i: u32): void;
-
+@inline()
 function getIndex(vPtr: u32): u32 {
     return load<u32>(vPtr);
 }
 
+@inline()
 function setIndex(vPtr: u32, index: u32): void {
     store<u32>(vPtr, index);
 }
 
+@inline()
 function getFloat(vPtr: u32): f32 {
     return load<f32>(vPtr);
 }
 
+// @inline()
 function setFloat(vPtr: u32, v: f32): void {
     store<f32>(vPtr, v);
 }
 
+@inline()
 function getX(vPtr: u32): f32 {
-    return getFloat(vPtr);
+    return load<f32>(vPtr);
 }
 
+@inline()
 function setX(vPtr: u32, v: f32): void {
-    setFloat(vPtr, v);
+    store<f32>(vPtr, v);
 }
 
+@inline()
 function getY(vPtr: u32): f32 {
     return load<f32>(vPtr + FLOAT_SIZE);
 }
 
+@inline()
 function setY(vPtr: u32, v: f32): void {
     store<f32>(vPtr + FLOAT_SIZE, v);
 }
 
+@inline()
 function getZ(vPtr: u32): f32 {
     return load<f32>(vPtr + FLOAT_SIZE * 2);
 }
 
+@inline()
 function setZ(vPtr: u32, v: f32): void {
     store<f32>(vPtr + FLOAT_SIZE * 2, v);
 }
@@ -233,7 +308,8 @@ function createJoint(x: f32, y: f32, z: f32): u32 {
     return jointIndex;
 }
 
-// interval: size is 2 unsigned32 + unit (3 f32s) + span + idealSpan, 5float + 2int = 48 bytes
+// interval: size role u8 plus is 2 unsigned32 + unit (3 f32s) + span + idealSpan, u8 + 5float + 2int = 49 bytes
+//      role: u8
 //      alpha, omega: u32
 //      unit: vector
 //      span, idealSpan: f32
@@ -242,32 +318,40 @@ function intervalPtr(index: u32): u32 {
     return intervalOffset + index * INTERVAL_SIZE;
 }
 
+function getRole(intervalIndex: u32): u8 {
+    return load<u8>(intervalPtr(intervalIndex));
+}
+
+function setRole(intervalIndex: u32, role: u8): void {
+    store<u8>(intervalPtr(intervalIndex), role);
+}
+
 function getAlphaIndex(intervalIndex: u32): u32 {
-    return getIndex(intervalPtr(intervalIndex));
+    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE);
 }
 
 function setAlphaIndex(intervalIndex: u32, v: u32): void {
-    setIndex(intervalPtr(intervalIndex), v);
+    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE, v);
 }
 
 function getOmegaIndex(intervalIndex: u32): u32 {
-    return getIndex(intervalPtr(intervalIndex) + INDEX_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE);
 }
 
 function setOmegaIndex(intervalIndex: u32, v: u32): void {
-    setIndex(intervalPtr(intervalIndex) + INDEX_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE, v);
 }
 
 function unitPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + INDEX_SIZE * 2;
+    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2;
 }
 
 function spanPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE;
+    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE;
 }
 
 function idealSpanPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
+    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
 }
 
 function calculateSpan(intervalIndex: u32): f32 {
@@ -279,12 +363,20 @@ function calculateSpan(intervalIndex: u32): f32 {
     return span;
 }
 
-function createInterval(alphaIndex: u32, omegaIndex: u32, idealSpan: f32): u32 {
+function createInterval(role: u8, alphaIndex: u32, omegaIndex: u32, idealSpan: f32): u32 {
     let intervalIndex = intervalCount++;
+    setRole(intervalIndex, role);
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
-    setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
+     setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
     return intervalIndex;
+}
+
+function removeInterval(intervalIndex: u32): void {
+    for (let walk: u32 = intervalIndex * INTERVAL_SIZE; walk < intervalIndex * INTERVAL_SIZE * intervalCount - 1; walk++) {
+        store<u8>(walk, load<u8>(walk + INTERVAL_SIZE));
+    }
+    intervalCount--;
 }
 
 // face
@@ -351,11 +443,13 @@ function abs(val: f32): f32 {
 function elastic(intervalIndex: u32): void {
     let span = calculateSpan(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
+    let push = canPush(getRole(intervalIndex));
     let stress = ELASTIC * (span - idealSpan) * idealSpan * idealSpan;
-    addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
-    addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
-    let canPush = true;
-    let mass = canPush ? idealSpan * idealSpan * idealSpan : span * CABLE_MASS_FACTOR;
+    if (push || stress > 0) {
+        addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
+        addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
+    }
+    let mass = push ? idealSpan * idealSpan * idealSpan : span * CABLE_MASS_FACTOR;
     let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex));
     setFloat(alphaMass, getFloat(alphaMass) + mass / 2);
     let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex));
@@ -387,28 +481,38 @@ function exertGravity(jointIndex: u32, value: f32): void {
 function exertJointPhysics(jointIndex: u32): void {
     let altitude = getY(locationPtr(jointIndex));
     if (altitude > JOINT_RADIUS) {
-        exertGravity(jointIndex, airGravity);
-        multiplyScalar(velocityPtr(jointIndex), 1 - airDrag);
+        exertGravity(jointIndex, AIR_GRAVITY);
+        multiplyScalar(velocityPtr(jointIndex), 1 - AIR_DRAG);
     }
     else if (altitude < -JOINT_RADIUS) {
-        exertGravity(jointIndex, -airGravity * landGravity);
-        multiplyScalar(velocityPtr(jointIndex), 1 - airDrag * landDrag);
+        exertGravity(jointIndex, -AIR_GRAVITY * LAND_GRAVITY);
+        multiplyScalar(velocityPtr(jointIndex), 1 - AIR_DRAG * LAND_DRAG);
     }
     else {
         let degree = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
-        let gravityValue = airGravity * degree + -airGravity * landGravity * (1 - degree);
+        let gravityValue = AIR_GRAVITY * degree + -AIR_GRAVITY * LAND_GRAVITY * (1 - degree);
         exertGravity(jointIndex, gravityValue);
-        let drag = airDrag * degree + airDrag * landDrag * (1 - degree);
+        let drag = AIR_DRAG * degree + AIR_DRAG * LAND_DRAG * (1 - degree);
         multiplyScalar(velocityPtr(jointIndex), 1 - drag);
     }
 }
 
 function tick(): void {
+    // fabric age ++
     for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+        // interval must see fabric age
         elastic(thisInterval);
+        if (getRole(thisInterval) === ROLE_TEMPORARY) {
+            let span = getFloat(spanPtr(thisInterval)) - TEMPORARY_TICK_REDUCTION;
+            if (span <= 0) {
+                removeInterval(thisInterval);
+            } else {
+                setFloat(spanPtr(thisInterval), span)
+            }
+        }
     }
     for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
-        smoothVelocity(thisInterval, SPRING_SMOOTH);
+        smoothVelocity(thisInterval, getSmoothDegree(getRole(thisInterval)));
     }
     for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
         exertJointPhysics(thisJoint);
@@ -505,12 +609,12 @@ export function createTetra(): void {
     createJoint(-1, 1, 1);
     createJoint(-1, -1, -1);
     createJoint(1, 1, -1);
-    createInterval(0, 1, -1);
-    createInterval(1, 2, -1);
-    createInterval(2, 3, -1);
-    createInterval(2, 0, -1);
-    createInterval(0, 3, -1);
-    createInterval(3, 1, -1);
+    createInterval(ROLE_SPRING, 0, 1, -1);
+    createInterval(ROLE_SPRING, 1, 2, -1);
+    createInterval(ROLE_SPRING, 2, 3, -1);
+    createInterval(ROLE_SPRING, 2, 0, -1);
+    createInterval(ROLE_SPRING, 0, 3, -1);
+    createInterval(ROLE_SPRING, 3, 1, -1);
     createFace(0, 1, 2);
     createFace(1, 3, 2);
     createFace(1, 0, 3);
@@ -549,9 +653,9 @@ export function tetraFromFace(faceIndex: u32): void {
     }
     faceCount--;
     let apex = createJoint(getX(projectionPtr), getY(projectionPtr), getZ(projectionPtr));
-    createInterval(j0, apex, average);
-    createInterval(j1, apex, average);
-    createInterval(j2, apex, average);
+    createInterval(ROLE_SPRING, j0, apex, average);
+    createInterval(ROLE_SPRING, j1, apex, average);
+    createInterval(ROLE_SPRING, j2, apex, average);
     createFace(j0, j1, apex);
     createFace(j1, j2, apex);
     createFace(j2, j0, apex);
