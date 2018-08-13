@@ -2,17 +2,17 @@ declare function logFloat(idx: u32, f: f32): void;
 
 declare function logInt(idx: u32, i: u32): void;
 
-const ENUM_SIZE: u32 = sizeof<u8>();
-const JOINT_NAME_SIZE: u32 = sizeof<u16>();
-const JOINT_INDEX_SIZE: u32 = sizeof<u32>();
-const FLOAT_SIZE: u32 = sizeof<f32>();
-const VECTOR_SIZE: u32 = FLOAT_SIZE * 3;
+const ENUM_SIZE: usize = sizeof<u8>();
+const JOINT_NAME_SIZE: usize = sizeof<u16>();
+const INDEX_SIZE: usize = sizeof<u16>();
+const FLOAT_SIZE: usize = sizeof<f32>();
+const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
 
-const JOINT_SIZE: u32 = VECTOR_SIZE * 5 + ENUM_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
-const INTERVAL_SIZE: u32 = ENUM_SIZE + JOINT_INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
-const FACE_SIZE: u32 = JOINT_INDEX_SIZE * 3;
-const LINE_SIZE: u32 = VECTOR_SIZE * 2;
-const METADATA_SIZE: u32 = VECTOR_SIZE * 3;
+const JOINT_SIZE: usize = VECTOR_SIZE * 5 + ENUM_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
+const INTERVAL_SIZE: usize = ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
+const FACE_SIZE: usize = INDEX_SIZE * 3;
+const LINE_SIZE: usize = VECTOR_SIZE * 2;
+const METADATA_SIZE: usize = VECTOR_SIZE * 3;
 
 const JOINT_RADIUS: f32 = 0.15;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
@@ -68,13 +68,13 @@ const AIR_GRAVITY: f32 = 0.00001;
 const LAND_DRAG: f32 = 50;
 const LAND_GRAVITY: f32 = 30;
 
-let jointCount: u32 = 0;
-let jointCountMax: u32 = 0;
+let jointCount: u16 = 0;
+let jointCountMax: u16 = 0;
 let jointTagCount: u16 = 0;
-let intervalCount: u32 = 0;
-let intervalCountMax: u32 = 0;
-let faceCount: u32 = 0;
-let faceCountMax: u32 = 0;
+let intervalCount: u16 = 0;
+let intervalCountMax: u16 = 0;
+let faceCount: u16 = 0;
+let faceCountMax: u16 = 0;
 
 let lineOffset: u32 = 0;
 let jointOffset: u32 = 0;
@@ -90,13 +90,13 @@ let omegaProjectionPtr: u32 = 0;
 let gravPtr: u32 = 0;
 
 @inline()
-function getIndex(vPtr: u32): u32 {
-    return load<u32>(vPtr);
+function getIndex(vPtr: usize): u16 {
+    return load<u16>(vPtr);
 }
 
 @inline()
-function setIndex(vPtr: u32, index: u32): void {
-    store<u32>(vPtr, index);
+function setIndex(vPtr: usize, index: u16): void {
+    store<u16>(vPtr, index);
 }
 
 @inline()
@@ -234,11 +234,11 @@ function crossVectors(vPtr: u32, a: u32, b: u32): void {
 
 // line: size is 2 vectors, or 6 floats, or 24 bytes
 
-function lineAlphaPtr(index: u32): u32 {
+function lineAlphaPtr(index: u16): u32 {
     return index * LINE_SIZE;
 }
 
-function lineOmegaPtr(index: u32): u32 {
+function lineOmegaPtr(index: u16): u32 {
     return index * LINE_SIZE + VECTOR_SIZE;
 }
 
@@ -246,51 +246,51 @@ function lineOmegaPtr(index: u32): u32 {
 //   vectors: location, velocity absorbVelocity, force, gravity,
 //   floats: intervalMass, altitude
 
-function jointPtr(index: u32): u32 {
-    return jointOffset + index * JOINT_SIZE;
+function jointPtr(jointIndex: u16): u32 {
+    return jointOffset + jointIndex * JOINT_SIZE;
 }
 
-function locationPtr(jointIndex: u32): u32 {
+function locationPtr(jointIndex: u16): u32 {
     return jointPtr(jointIndex);
 }
 
-function velocityPtr(jointIndex: u32): u32 {
+function velocityPtr(jointIndex: u16): u32 {
     return jointPtr(jointIndex) + VECTOR_SIZE;
 }
 
-function absorbVelocityPtr(jointIndex: u32): u32 {
+function absorbVelocityPtr(jointIndex: u16): u32 {
     return jointPtr(jointIndex) + VECTOR_SIZE * 2;
 }
 
-function forcePtr(jointIndex: u32): u32 {
+function forcePtr(jointIndex: u16): u32 {
     return jointPtr(jointIndex) + VECTOR_SIZE * 3;
 }
 
-function gravityPtr(jointIndex: u32): u32 {
+function gravityPtr(jointIndex: u16): u32 {
     return jointPtr(jointIndex) + VECTOR_SIZE * 4;
 }
 
-function intervalMassPtr(jointIndex: u32): u32 {
+function intervalMassPtr(jointIndex: u16): u32 {
     return jointPtr(jointIndex) + VECTOR_SIZE * 5;
 }
 
-function altitudePtr(jointIndex: u32): u32 {
+function altitudePtr(jointIndex: u16): u32 {
     return jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE;
 }
 
-function getJointLaterality(jointIndex: u32): u8 {
+function getJointLaterality(jointIndex: u16): u8 {
     return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2);
 }
 
-function setJointLaterality(jointIndex: u32, laterality: u8): void {
+function setJointLaterality(jointIndex: u16, laterality: u8): void {
     store<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2, laterality);
 }
 
-function getTag(jointIndex: u32): u16 {
+function getTag(jointIndex: u16): u16 {
     return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE);
 }
 
-function setTag(jointIndex: u32, tag: u16): void {
+function setTag(jointIndex: u16, tag: u16): void {
     store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE, tag);
 }
 
@@ -300,47 +300,47 @@ function setTag(jointIndex: u32, tag: u16): void {
 //      unit: vector
 //      span, idealSpan: f32
 
-function intervalPtr(index: u32): u32 {
-    return intervalOffset + index * INTERVAL_SIZE;
+function intervalPtr(intervalIndex: u16): u32 {
+    return intervalOffset + intervalIndex * INTERVAL_SIZE;
 }
 
-function getRole(intervalIndex: u32): u8 {
+function getRole(intervalIndex: u16): u8 {
     return load<u8>(intervalPtr(intervalIndex));
 }
 
-function setRole(intervalIndex: u32, role: u8): void {
+function setRole(intervalIndex: u16, role: u8): void {
     store<u8>(intervalPtr(intervalIndex), role);
 }
 
-function getAlphaIndex(intervalIndex: u32): u32 {
+function getAlphaIndex(intervalIndex: u16): u16 {
     return getIndex(intervalPtr(intervalIndex) + ENUM_SIZE);
 }
 
-function setAlphaIndex(intervalIndex: u32, v: u32): void {
+function setAlphaIndex(intervalIndex: u16, v: u16): void {
     setIndex(intervalPtr(intervalIndex) + ENUM_SIZE, v);
 }
 
-function getOmegaIndex(intervalIndex: u32): u32 {
-    return getIndex(intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE);
+function getOmegaIndex(intervalIndex: u16): u16 {
+    return getIndex(intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE);
 }
 
-function setOmegaIndex(intervalIndex: u32, v: u32): void {
-    setIndex(intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE, v);
+function setOmegaIndex(intervalIndex: u16, v: u16): void {
+    setIndex(intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE, v);
 }
 
-function unitPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE * 2;
+function unitPtr(intervalIndex: u16): u32 {
+    return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2;
 }
 
-function spanPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE * 2 + VECTOR_SIZE;
+function spanPtr(intervalIndex: u16): u32 {
+    return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE;
 }
 
-function idealSpanPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
+function idealSpanPtr(intervalIndex: u16): u32 {
+    return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
 }
 
-function calculateSpan(intervalIndex: u32): f32 {
+function calculateSpan(intervalIndex: u16): f32 {
     let unit = unitPtr(intervalIndex);
     subVectors(unit, locationPtr(getOmegaIndex(intervalIndex)), locationPtr(getAlphaIndex(intervalIndex)));
     let span = length(unit);
@@ -349,15 +349,15 @@ function calculateSpan(intervalIndex: u32): f32 {
     return span;
 }
 
-function removeInterval(intervalIndex: u32): void {
-    for (let walk: u32 = intervalIndex * INTERVAL_SIZE; walk < intervalIndex * INTERVAL_SIZE * intervalCount - 1; walk++) {
+function removeInterval(intervalIndex: u16): void {
+    for (let walk: u16 = intervalIndex * <u16>INTERVAL_SIZE; walk < intervalIndex * INTERVAL_SIZE * intervalCount - 1; walk++) {
         store<u8>(walk, load<u8>(walk + INTERVAL_SIZE));
     }
     intervalCount--;
 }
 
-function findIntervalIndex(joint0: u32, joint1: u32): u32 {
-    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+function findIntervalIndex(joint0: u16, joint1: u16): u16 {
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         let alpha = getAlphaIndex(thisInterval);
         let omega = getOmegaIndex(thisInterval);
         if (alpha === joint0 && omega === joint1 || alpha === joint1 && omega === joint0) {
@@ -369,23 +369,23 @@ function findIntervalIndex(joint0: u32, joint1: u32): u32 {
 
 // face
 
-function facePtr(index: u32): u32 {
-    return faceOffset + index * FACE_SIZE;
+function facePtr(faceIndex: u16): u32 {
+    return faceOffset + faceIndex * FACE_SIZE;
 }
 
-function setJointIndexOfFace(faceIndex: u32, index: u32, v: u32): void {
-    setIndex(facePtr(faceIndex) + index * JOINT_INDEX_SIZE, v);
+function setJointIndexOfFace(faceIndex: u16, index: u16, v: u16): void {
+    setIndex(facePtr(faceIndex) + index * INDEX_SIZE, v);
 }
 
-function midpointPtr(faceIndex: u32): u32 {
+function midpointPtr(faceIndex: u16): u32 {
     return faceMidpointOffset + faceIndex * VECTOR_SIZE;
 }
 
-function normalPtr(faceIndex: u32): u32 {
+function normalPtr(faceIndex: u16): u32 {
     return faceNormalOffset + faceIndex * VECTOR_SIZE;
 }
 
-function calculateFace(faceIndex: u32): void {
+function calculateFace(faceIndex: u16): void {
     let loc0 = locationPtr(getFaceJointIndex(faceIndex, 0));
     let loc1 = locationPtr(getFaceJointIndex(faceIndex, 1));
     let loc2 = locationPtr(getFaceJointIndex(faceIndex, 2));
@@ -405,7 +405,7 @@ function calculateFace(faceIndex: u32): void {
 // construction and physics
 
 function logIdealSpans(): void {
-    for (let intervalIndex: u32 = 0; intervalIndex < intervalCount; intervalIndex++) {
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         logFloat(intervalIndex, getFloat(idealSpanPtr(intervalIndex)));
     }
 }
@@ -414,7 +414,7 @@ function abs(val: f32): f32 {
     return val < 0 ? -val : val;
 }
 
-function elastic(intervalIndex: u32): void {
+function elastic(intervalIndex: u16): void {
     let span = calculateSpan(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
     let push = canPush(getRole(intervalIndex));
@@ -436,7 +436,7 @@ function splitVectors(vectorPtr: u32, basisPtr: u32, projectionPtr: u32, howMuch
     multiplyScalar(projectionPtr, agreement * howMuch);
 }
 
-function smoothVelocity(intervalIndex: u32, degree: f32): void {
+function smoothVelocity(intervalIndex: u16, degree: f32): void {
     splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, degree);
     splitVectors(velocityPtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), omegaProjectionPtr, degree);
     addVectors(projectionPtr, alphaProjectionPtr, omegaProjectionPtr);
@@ -447,12 +447,12 @@ function smoothVelocity(intervalIndex: u32, degree: f32): void {
     add(absorbVelocityPtr(getOmegaIndex(intervalIndex)), projectionPtr);
 }
 
-function exertGravity(jointIndex: u32, value: f32): void {
+function exertGravity(jointIndex: u16, value: f32): void {
     let velocity = velocityPtr(jointIndex);
     setY(velocity, getY(velocity) - value);
 }
 
-function exertJointPhysics(jointIndex: u32): void {
+function exertJointPhysics(jointIndex: u16): void {
     let altitude = getY(locationPtr(jointIndex));
     if (altitude > JOINT_RADIUS) {
         exertGravity(jointIndex, AIR_GRAVITY);
@@ -473,7 +473,7 @@ function exertJointPhysics(jointIndex: u32): void {
 
 function tick(): void {
     // fabric age ++
-    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         // interval must see fabric age
         elastic(thisInterval);
         if (getRole(thisInterval) === ROLE_TEMPORARY) {
@@ -485,17 +485,17 @@ function tick(): void {
             }
         }
     }
-    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         smoothVelocity(thisInterval, getSmoothDegree(getRole(thisInterval)));
     }
-    for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         exertJointPhysics(thisJoint);
         addScaledVector(velocityPtr(thisJoint), forcePtr(thisJoint), 1.0 / getFloat(intervalMassPtr(thisJoint)));
         zero(forcePtr(thisJoint));
         add(velocityPtr(thisJoint), absorbVelocityPtr(thisJoint));
         zero(absorbVelocityPtr(thisJoint));
     }
-    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         let alphaAltitude = getFloat(altitudePtr(getAlphaIndex(thisInterval)));
         let omegaAltitude = getFloat(altitudePtr(getOmegaIndex(thisInterval)));
         let straddle = (alphaAltitude > 0 && omegaAltitude <= 0) || (alphaAltitude <= 0 && omegaAltitude > 0);
@@ -519,7 +519,7 @@ function tick(): void {
         add(velocityPtr(getAlphaIndex(thisInterval)), gravPtr);
         add(velocityPtr(getOmegaIndex(thisInterval)), gravPtr);
     }
-    for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         add(locationPtr(thisJoint), velocityPtr(thisJoint));
         setFloat(intervalMassPtr(thisJoint), AMBIENT_JOINT_MASS);
     }
@@ -527,7 +527,7 @@ function tick(): void {
 
 // =================================
 
-export function init(joints: u32, intervals: u32, faces: u32): u32 {
+export function init(joints: u16, intervals: u16, faces: u16): u32 {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
@@ -558,7 +558,7 @@ export function centralize(altitude: f32): void {
     let x: f32 = 0;
     let lowY: f32 = 10000;
     let z: f32 = 0;
-    for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         x += getX(jointPtr(thisJoint));
         let y = getY(jointPtr(thisJoint));
         if (y < lowY) {
@@ -568,7 +568,7 @@ export function centralize(altitude: f32): void {
     }
     x = x / <f32>jointCount;
     z = z / <f32>jointCount;
-    for (let thisJoint: u32 = 0; thisJoint < jointCount; thisJoint++) {
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         let jPtr = jointPtr(thisJoint);
         setX(jPtr, getX(jPtr) - x);
         if (altitude > 0) {
@@ -591,7 +591,7 @@ export function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): u
     return jointIndex;
 }
 
-export function createInterval(role: u8, alphaIndex: u32, omegaIndex: u32, idealSpan: f32): u32 {
+export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): u32 {
     let intervalIndex = intervalCount++;
     setRole(intervalIndex, role);
     setAlphaIndex(intervalIndex, alphaIndex);
@@ -600,7 +600,7 @@ export function createInterval(role: u8, alphaIndex: u32, omegaIndex: u32, ideal
     return intervalIndex;
 }
 
-export function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32): u32 {
+export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): u32 {
     let faceIndex = faceCount++;
     setJointIndexOfFace(faceIndex, 0, joint0Index);
     setJointIndexOfFace(faceIndex, 1, joint1Index);
@@ -610,8 +610,8 @@ export function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32)
     return faceIndex;
 }
 
-export function removeFace(faceIndex: u32): void {
-    for (let thisFace: u32 = faceIndex; thisFace < faceCount - 1; thisFace++) {
+export function removeFace(faceIndex: u16): void {
+    for (let thisFace: u16 = faceIndex; thisFace < faceCount - 1; thisFace++) {
         let nextFace = thisFace + 1;
         setVector(midpointPtr(thisFace), midpointPtr(nextFace));
         setVector(normalPtr(thisFace), normalPtr(nextFace));
@@ -622,12 +622,12 @@ export function removeFace(faceIndex: u32): void {
     faceCount--;
 }
 
-export function getFaceJointIndex(faceIndex: u32, jointNumber: u32): u32 {
-    return getIndex(facePtr(faceIndex) + jointNumber * JOINT_INDEX_SIZE);
+export function getFaceJointIndex(faceIndex: u16, jointNumber: u32): u16 {
+    return getIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE);
 }
 
-export function getFaceLaterality(faceIndex: u32): u8 {
-    for (let jointWalk: u32 = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
+export function getFaceLaterality(faceIndex: u16): u8 {
+    for (let jointWalk: u16 = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
         let jointLaterality = getJointLaterality(getFaceJointIndex(faceIndex, jointWalk));
         if (jointLaterality !== BILATERAL_MIDDLE) {
             return jointLaterality;
@@ -636,7 +636,7 @@ export function getFaceLaterality(faceIndex: u32): u8 {
     return BILATERAL_MIDDLE;
 }
 
-export function getFaceAverageIdealSpan(faceIndex: u32): f32 {
+export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
     let joint0 = getFaceJointIndex(faceIndex, 0);
     let joint1 = getFaceJointIndex(faceIndex, 1);
     let joint2 = getFaceJointIndex(faceIndex, 2);
@@ -650,14 +650,14 @@ export function getFaceAverageIdealSpan(faceIndex: u32): f32 {
 }
 
 export function iterate(ticks: u32): void {
-    for (let thisTick: u32 = 0; thisTick < ticks; thisTick++) {
+    for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         tick();
     }
-    for (let thisInterval: u32 = 0; thisInterval < intervalCount; thisInterval++) {
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         setVector(lineAlphaPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
         setVector(lineOmegaPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
     }
-    for (let thisFace: u32 = 0; thisFace < faceCount; thisFace++) {
+    for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
         calculateFace(thisFace);
     }
 }
