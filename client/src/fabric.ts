@@ -20,7 +20,13 @@ export interface IFabricExports {
 
     centralize(altitude: number): void;
 
-    createJoint(laterality: number, jointName: number, x: number, y: number, z: number): number;
+    nextJointTag(): number;
+
+    createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number;
+
+    getJointTag(jointIndex: number): number;
+
+    getJointLaterality(jointIndex: number): number;
 
     createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number;
 
@@ -29,8 +35,6 @@ export interface IFabricExports {
     removeFace(faceIndex: number): void;
 
     getFaceJointIndex(faceIndex: number, jointNumber: number): number;
-
-    getFaceLaterality(faceIndex: number): number;
 
     getFaceAverageIdealSpan(faceIndex: number): number;
 }
@@ -57,6 +61,7 @@ export interface IFace {
     midpoint: Vector3;
     normal: Vector3;
     jointIndex: number[];
+    jointTag: string[];
     averageIdealSpan: number;
 }
 
@@ -115,12 +120,11 @@ export class EigFabric {
     }
 
     public createTetrahedron(): void {
-        let jointTagCount = 0;
         const R = Math.sqrt(2) / 2;
-        this.createJoint(BILATERAL_MIDDLE, jointTagCount++, R, -R, R);
-        this.createJoint(BILATERAL_MIDDLE, jointTagCount++, -R, R, R);
-        this.createJoint(BILATERAL_MIDDLE, jointTagCount++, -R, -R, -R);
-        this.createJoint(BILATERAL_MIDDLE, jointTagCount++, R, R, -R);
+        this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R, -R, R);
+        this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, -R, R, R);
+        this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, -R, -R, -R);
+        this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R, R, -R);
         this.createInterval(ROLE_SPRING, 0, 1, -1);
         this.createInterval(ROLE_SPRING, 1, 2, -1);
         this.createInterval(ROLE_SPRING, 2, 3, -1);
@@ -134,14 +138,14 @@ export class EigFabric {
     }
 
     public createOctahedron(): void {
-        let jointTagCount = 0;
         const R = Math.sqrt(2) / 2;
         for (let walk = 0; walk < 4; walk++) {
             const angle = walk * Math.PI / 2 + Math.PI / 4;
-            this.createJoint(BILATERAL_MIDDLE, jointTagCount++, R * Math.cos(angle), 0, R + R * Math.sin(angle));
+            this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R * Math.cos(angle), 0, R + R * Math.sin(angle));
         }
-        const left = this.createJoint(BILATERAL_LEFT, jointTagCount, 0, -R, R);
-        const right = this.createJoint(BILATERAL_RIGHT, jointTagCount, 0, R, R);
+        const jointPairName = this.fab.nextJointTag();
+        const left = this.createJoint(jointPairName, BILATERAL_LEFT, 0, -R, R);
+        const right = this.createJoint(jointPairName, BILATERAL_RIGHT, 0, R, R);
         for (let walk = 0; walk < 4; walk++) {
             this.createInterval(ROLE_SPRING, walk, (walk + 1) % 4, -1);
             this.createInterval(ROLE_SPRING, walk, left, -1);
@@ -157,7 +161,7 @@ export class EigFabric {
         this.removeFace(face.index);
         const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
         const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan / 2).add(midpoint);
-        const apex = this.createJoint(face.laterality, 100, apexLocation.x, apexLocation.y, apexLocation.z);
+        const apex = this.createJoint(this.fab.nextJointTag(), face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
         this.createInterval(ROLE_SPRING, face.jointIndex[0], apex, face.averageIdealSpan);
         this.createInterval(ROLE_SPRING, face.jointIndex[1], apex, face.averageIdealSpan);
         this.createInterval(ROLE_SPRING, face.jointIndex[2], apex, face.averageIdealSpan);
@@ -196,8 +200,8 @@ export class EigFabric {
         this.fab.centralize(altitude);
     }
 
-    public createJoint(laterality: number, jointName: number, x: number, y: number, z: number): number {
-        return this.fab.createJoint(laterality, jointName, x, y, z);
+    public createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number {
+        return this.fab.createJoint(jointTag, laterality, x, y, z);
     }
 
     public createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number {
@@ -213,11 +217,21 @@ export class EigFabric {
     }
 
     public getFace(faceIndex: number): IFace {
+        const getFaceLaterality = ()=> {
+            for (let jointWalk= 0; jointWalk < 3; jointWalk++) { // face inherits laterality
+                const jointLaterality = this.fab.getJointLaterality(this.fab.getFaceJointIndex(faceIndex, jointWalk));
+                if (jointLaterality !== BILATERAL_MIDDLE) {
+                    return jointLaterality;
+                }
+            }
+            return BILATERAL_MIDDLE;
+        };
         const faceOffset = faceIndex * 3;
+        const jointIndex = [0, 1, 2].map(index => this.fab.getFaceJointIndex(faceIndex, index));
         return {
             fabric: this,
             index: faceIndex,
-            laterality: this.fab.getFaceLaterality(faceIndex),
+            laterality: getFaceLaterality(),
             midpoint: new Vector3(
                 this.faceMidpoints[faceOffset],
                 this.faceMidpoints[faceOffset + 1],
@@ -228,7 +242,8 @@ export class EigFabric {
                 this.faceNormals[faceOffset + 1],
                 this.faceNormals[faceOffset + 2],
             ),
-            jointIndex: [0, 1, 2].map(index => this.fab.getFaceJointIndex(faceIndex, index)),
+            jointIndex,
+            jointTag: jointIndex.map(index => `${this.fab.getJointTag(index)}-${this.fab.getJointLaterality(index)}`),
             averageIdealSpan: this.fab.getFaceAverageIdealSpan(faceIndex)
         }
     }

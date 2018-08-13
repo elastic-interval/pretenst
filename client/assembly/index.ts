@@ -278,19 +278,11 @@ function altitudePtr(jointIndex: u16): usize {
     return jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE;
 }
 
-function getJointLaterality(jointIndex: u16): u8 {
-    return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2);
-}
-
 function setJointLaterality(jointIndex: u16, laterality: u8): void {
     store<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2, laterality);
 }
 
-function getTag(jointIndex: u16): u16 {
-    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE);
-}
-
-function setTag(jointIndex: u16, tag: u16): void {
+function setJointTag(jointIndex: u16, tag: u16): void {
     store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE, tag);
 }
 
@@ -578,7 +570,12 @@ export function centralize(altitude: f32): void {
     }
 }
 
-export function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): usize {
+export function nextJointTag(): u16 {
+    jointTagCount++;
+    return jointTagCount;
+}
+
+export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
     let jointIndex = jointCount++;
     setAll(locationPtr(jointIndex), x, y, z);
     zero(forcePtr(jointIndex));
@@ -587,8 +584,16 @@ export function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): u
     zero(absorbVelocityPtr(jointIndex));
     setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
     setJointLaterality(jointIndex, laterality);
-    setTag(jointIndex, tag);
+    setJointTag(jointIndex, jointTag);
     return jointIndex;
+}
+
+export function getJointLaterality(jointIndex: u16): u8 {
+    return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2);
+}
+
+export function getJointTag(jointIndex: u16): u16 {
+    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE);
 }
 
 export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
@@ -624,16 +629,6 @@ export function removeFace(faceIndex: u16): void {
 
 export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {
     return getIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE);
-}
-
-export function getFaceLaterality(faceIndex: u16): u8 {
-    for (let jointWalk: u16 = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
-        let jointLaterality = getJointLaterality(getFaceJointIndex(faceIndex, jointWalk));
-        if (jointLaterality !== BILATERAL_MIDDLE) {
-            return jointLaterality;
-        }
-    }
-    return BILATERAL_MIDDLE;
 }
 
 export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
