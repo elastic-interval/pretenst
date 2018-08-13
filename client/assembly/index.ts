@@ -1,3 +1,5 @@
+declare function logBoolean(idx: u32, b: boolean): void;
+
 declare function logFloat(idx: u32, f: f32): void;
 
 declare function logInt(idx: u32, i: u32): void;
@@ -365,8 +367,12 @@ function facePtr(faceIndex: u16): usize {
     return faceOffset + faceIndex * FACE_SIZE;
 }
 
-function setJointIndexOfFace(faceIndex: u16, index: u16, v: u16): void {
-    setIndex(facePtr(faceIndex) + index * INDEX_SIZE, v);
+function setJointIndexOfFace(faceIndex: u16, jointNumber: u16, v: u16): void {
+    setIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE, v);
+}
+
+function getFaceTag(faceIndex: u16, jointNumber: u16): u16 {
+    return getJointTag(getFaceJointIndex(faceIndex, jointNumber));
 }
 
 function midpointPtr(faceIndex: u16): usize {
@@ -395,12 +401,6 @@ function calculateFace(faceIndex: u16): void {
 }
 
 // construction and physics
-
-function logIdealSpans(): void {
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        logFloat(intervalIndex, getFloat(idealSpanPtr(intervalIndex)));
-    }
-}
 
 function abs(val: f32): f32 {
     return val < 0 ? -val : val;
@@ -625,6 +625,27 @@ export function removeFace(faceIndex: u16): void {
         setJointIndexOfFace(thisFace, 2, getFaceJointIndex(nextFace, 2));
     }
     faceCount--;
+}
+
+export function findOppositeFaceIndex(faceIndex: u16): u16 {
+    let tag0 = getFaceTag(faceIndex, 0);
+    let tag1 = getFaceTag(faceIndex, 1);
+    let tag2 = getFaceTag(faceIndex, 2);
+    for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
+        if (thisFace == faceIndex) {
+            continue;
+        }
+        let thisTag0 = getFaceTag(thisFace, 0);
+        let thisTag1 = getFaceTag(thisFace, 1);
+        let thisTag2 = getFaceTag(thisFace, 2);
+        let match0 = tag0 === thisTag0 || tag0 === thisTag1 || tag0 === thisTag2;
+        let match1 = tag1 === thisTag0 || tag1 === thisTag1 || tag1 === thisTag2;
+        let match2 = tag2 === thisTag0 || tag2 === thisTag1 || tag2 === thisTag2;
+        if (match0 && match1 && match2) {
+            return thisFace;
+        }
+    }
+    return faceCount + 1;
 }
 
 export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {

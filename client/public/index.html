@@ -33,11 +33,14 @@
                 }
             },
             index: {
+                logBoolean: (index, booleanValue) => {
+                    console.log(index + ': ' + (booleanValue ? 'true': 'false'));
+                },
                 logFloat: (index, floatValue) => {
-                    console.log(index + ':' + floatValue.toFixed(5));
+                    console.log(index + ': ' + floatValue.toFixed(5));
                 },
                 logInt: (index, intValue) => {
-                    console.log(index + ':' + intValue);
+                    console.log(index + ': ' + intValue);
                 }
             }
         };

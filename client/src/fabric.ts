@@ -34,6 +34,8 @@ export interface IFabricExports {
 
     removeFace(faceIndex: number): void;
 
+    findOppositeFaceIndex(faceIndex: number): number;
+
     getFaceJointIndex(faceIndex: number, jointNumber: number): number;
 
     getFaceAverageIdealSpan(faceIndex: number): number;
@@ -141,10 +143,10 @@ export class EigFabric {
         const R = Math.sqrt(2) / 2;
         for (let walk = 0; walk < 4; walk++) {
             const angle = walk * Math.PI / 2 + Math.PI / 4;
-            this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R * Math.cos(angle), 0, R + R * Math.sin(angle));
+            this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R * Math.sin(angle), R + R * Math.cos(angle), 0);
         }
         const jointPairName = this.fab.nextJointTag();
-        const left = this.createJoint(jointPairName, BILATERAL_LEFT, 0, -R, R);
+        const left = this.createJoint(jointPairName, BILATERAL_LEFT, 0, R, -R);
         const right = this.createJoint(jointPairName, BILATERAL_RIGHT, 0, R, R);
         for (let walk = 0; walk < 4; walk++) {
             this.createInterval(ROLE_SPRING, walk, (walk + 1) % 4, -1);
@@ -157,17 +159,26 @@ export class EigFabric {
         }
     }
 
-    public createTetraFromFace(face: IFace) {
-        this.removeFace(face.index);
+    public createTetraFromFace(face: IFace, knownApexTag?: number) {
         const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
         const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan / 2).add(midpoint);
-        const apex = this.createJoint(this.fab.nextJointTag(), face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
+        const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
+        const apex = this.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
         this.createInterval(ROLE_SPRING, face.jointIndex[0], apex, face.averageIdealSpan);
         this.createInterval(ROLE_SPRING, face.jointIndex[1], apex, face.averageIdealSpan);
         this.createInterval(ROLE_SPRING, face.jointIndex[2], apex, face.averageIdealSpan);
         this.createFace(face.jointIndex[0], face.jointIndex[1], apex);
         this.createFace(face.jointIndex[1], face.jointIndex[2], apex);
         this.createFace(face.jointIndex[2], face.jointIndex[0], apex);
+        if (!knownApexTag) {
+            const oppositeFaceIndex = this.fab.findOppositeFaceIndex(face.index);
+            if (oppositeFaceIndex < this.faces()) {
+                const oppositeFace = this.getFace(oppositeFaceIndex);
+                this.createTetraFromFace(oppositeFace, apexTag);
+                this.removeFace(oppositeFaceIndex);
+            }
+            this.removeFace(face.index);
+        }
     }
 
     // from IFabricExports ==========
@@ -217,8 +228,8 @@ export class EigFabric {
     }
 
     public getFace(faceIndex: number): IFace {
-        const getFaceLaterality = ()=> {
-            for (let jointWalk= 0; jointWalk < 3; jointWalk++) { // face inherits laterality
+        const getFaceLaterality = () => {
+            for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
                 const jointLaterality = this.fab.getJointLaterality(this.fab.getFaceJointIndex(faceIndex, jointWalk));
                 if (jointLaterality !== BILATERAL_MIDDLE) {
                     return jointLaterality;
@@ -243,7 +254,7 @@ export class EigFabric {
                 this.faceNormals[faceOffset + 2],
             ),
             jointIndex,
-            jointTag: jointIndex.map(index => `${this.fab.getJointTag(index)}-${this.fab.getJointLaterality(index)}`),
+            jointTag: jointIndex.map(index => `${this.fab.getJointTag(index)}[${this.fab.getJointLaterality(index)}]`),
             averageIdealSpan: this.fab.getFaceAverageIdealSpan(faceIndex)
         }
     }

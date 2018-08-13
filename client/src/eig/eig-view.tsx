@@ -96,6 +96,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             const faceIndex = parseInt(faceMesh.name, 10);
             if (this.selectedFaceIndex < 0 || faceIndex !== this.selectedFaceIndex) {
                 this.selectedFaceIndex = faceIndex;
+                // const fabric = this.state.fabric;
+                // if (fabric) {
+                //     const face = fabric.getFace(this.selectedFaceIndex);
+                //     console.log(`face ${face.index}`, face.jointTag);
+                // }
             }
         } else if (this.selectedFaceIndex >= 0) {
             this.selectedFaceIndex = -1;
@@ -109,7 +114,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         const fabric = this.state.fabric;
         if (fabric) {
             const face = fabric.getFace(this.selectedFaceIndex);
-            console.log('face', face);
+            console.log('create from face', face);
             fabric.createTetraFromFace(face);
             fabric.centralize(-1);
         }
