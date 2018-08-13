@@ -76,18 +76,18 @@ let intervalCountMax: u16 = 0;
 let faceCount: u16 = 0;
 let faceCountMax: u16 = 0;
 
-let lineOffset: u32 = 0;
-let jointOffset: u32 = 0;
-let faceMidpointOffset: u32 = 0;
-let faceNormalOffset: u32 = 0;
-let intervalOffset: u32 = 0;
-let faceOffset: u32 = 0;
-let metadataOffset: u32 = 0;
+let lineOffset: usize = 0;
+let jointOffset: usize = 0;
+let faceMidpointOffset: usize = 0;
+let faceNormalOffset: usize = 0;
+let intervalOffset: usize = 0;
+let faceOffset: usize = 0;
+let metadataOffset: usize = 0;
 
-let projectionPtr: u32 = 0;
-let alphaProjectionPtr: u32 = 0;
-let omegaProjectionPtr: u32 = 0;
-let gravPtr: u32 = 0;
+let projectionPtr: usize = 0;
+let alphaProjectionPtr: usize = 0;
+let omegaProjectionPtr: usize = 0;
+let gravPtr: usize = 0;
 
 @inline()
 function getIndex(vPtr: usize): u16 {
@@ -100,127 +100,127 @@ function setIndex(vPtr: usize, index: u16): void {
 }
 
 @inline()
-function getFloat(vPtr: u32): f32 {
+function getFloat(vPtr: usize): f32 {
     return load<f32>(vPtr);
 }
 
 // @inline()
-function setFloat(vPtr: u32, v: f32): void {
+function setFloat(vPtr: usize, v: f32): void {
     store<f32>(vPtr, v);
 }
 
 @inline()
-function getX(vPtr: u32): f32 {
+function getX(vPtr: usize): f32 {
     return load<f32>(vPtr);
 }
 
 @inline()
-function setX(vPtr: u32, v: f32): void {
+function setX(vPtr: usize, v: f32): void {
     store<f32>(vPtr, v);
 }
 
 @inline()
-function getY(vPtr: u32): f32 {
+function getY(vPtr: usize): f32 {
     return load<f32>(vPtr + FLOAT_SIZE);
 }
 
 @inline()
-function setY(vPtr: u32, v: f32): void {
+function setY(vPtr: usize, v: f32): void {
     store<f32>(vPtr + FLOAT_SIZE, v);
 }
 
 @inline()
-function getZ(vPtr: u32): f32 {
+function getZ(vPtr: usize): f32 {
     return load<f32>(vPtr + FLOAT_SIZE * 2);
 }
 
 @inline()
-function setZ(vPtr: u32, v: f32): void {
+function setZ(vPtr: usize, v: f32): void {
     store<f32>(vPtr + FLOAT_SIZE * 2, v);
 }
 
-function setAll(vPtr: u32, x: f32, y: f32, z: f32): void {
+function setAll(vPtr: usize, x: f32, y: f32, z: f32): void {
     setX(vPtr, x);
     setY(vPtr, y);
     setZ(vPtr, z);
 }
 
-function setVector(vPtr: u32, v: u32): void {
+function setVector(vPtr: usize, v: usize): void {
     setX(vPtr, getX(v));
     setY(vPtr, getY(v));
     setZ(vPtr, getZ(v));
 }
 
-function zero(vPtr: u32): void {
+function zero(vPtr: usize): void {
     setAll(vPtr, 0, 0, 0);
 }
 
-function addVectors(vPtr: u32, a: u32, b: u32): void {
+function addVectors(vPtr: usize, a: usize, b: usize): void {
     setX(vPtr, getX(a) + getX(b));
     setY(vPtr, getY(a) + getY(b));
     setZ(vPtr, getZ(a) + getZ(b));
 }
 
-function subVectors(vPtr: u32, a: u32, b: u32): void {
+function subVectors(vPtr: usize, a: usize, b: usize): void {
     setX(vPtr, getX(a) - getX(b));
     setY(vPtr, getY(a) - getY(b));
     setZ(vPtr, getZ(a) - getZ(b));
 }
 
-function add(vPtr: u32, v: u32): void {
+function add(vPtr: usize, v: usize): void {
     setX(vPtr, getX(vPtr) + getX(v));
     setY(vPtr, getY(vPtr) + getY(v));
     setZ(vPtr, getZ(vPtr) + getZ(v));
 }
 
-function sub(vPtr: u32, v: u32): void {
+function sub(vPtr: usize, v: usize): void {
     setX(vPtr, getX(vPtr) - getX(v));
     setY(vPtr, getY(vPtr) - getY(v));
     setZ(vPtr, getZ(vPtr) - getZ(v));
 }
 
-function addScaledVector(vPtr: u32, v: u32, s: f32): void {
+function addScaledVector(vPtr: usize, v: usize, s: f32): void {
     setX(vPtr, getX(vPtr) + getX(v) * s);
     setY(vPtr, getY(vPtr) + getY(v) * s);
     setZ(vPtr, getZ(vPtr) + getZ(v) * s);
 }
 
-function multiplyScalar(vPtr: u32, s: f32): void {
+function multiplyScalar(vPtr: usize, s: f32): void {
     setX(vPtr, getX(vPtr) * s);
     setY(vPtr, getY(vPtr) * s);
     setZ(vPtr, getZ(vPtr) * s);
 }
 
-function dot(vPtr: u32, v: u32): f32 {
+function dot(vPtr: usize, v: usize): f32 {
     return getX(vPtr) * getX(v) + getY(vPtr) * getY(v) + getZ(vPtr) * getZ(v);
 }
 
-function lerp(vPtr: u32, v: u32, interpolation: f32): void {
+function lerp(vPtr: usize, v: usize, interpolation: f32): void {
     let antiInterpolation = <f32>1.0 - interpolation;
     setX(vPtr, getX(vPtr) * antiInterpolation + getX(v) * interpolation);
     setY(vPtr, getY(vPtr) * antiInterpolation + getY(v) * interpolation);
     setX(vPtr, getZ(vPtr) * antiInterpolation + getZ(v) * interpolation);
 }
 
-function quadrance(vPtr: u32): f32 {
+function quadrance(vPtr: usize): f32 {
     let x = getX(vPtr);
     let y = getY(vPtr);
     let z = getZ(vPtr);
     return x * x + y * y + z * z + 0.00000001;
 }
 
-function distance(a: u32, b: u32): f32 {
+function distance(a: usize, b: usize): f32 {
     let dx = getX(a) - getX(b);
     let dy = getY(a) - getY(b);
     let dz = getZ(a) - getZ(b);
     return <f32>Math.sqrt(dx * dx + dy * dy + dz * dz);
 }
 
-function length(vPtr: u32): f32 {
+function length(vPtr: usize): f32 {
     return <f32>Math.sqrt(quadrance(vPtr));
 }
 
-function crossVectors(vPtr: u32, a: u32, b: u32): void {
+function crossVectors(vPtr: usize, a: usize, b: usize): void {
     let ax = getX(a);
     let ay = getY(a);
     let az = getZ(a);
@@ -234,11 +234,11 @@ function crossVectors(vPtr: u32, a: u32, b: u32): void {
 
 // line: size is 2 vectors, or 6 floats, or 24 bytes
 
-function lineAlphaPtr(index: u16): u32 {
+function lineAlphaPtr(index: u16): usize {
     return index * LINE_SIZE;
 }
 
-function lineOmegaPtr(index: u16): u32 {
+function lineOmegaPtr(index: u16): usize {
     return index * LINE_SIZE + VECTOR_SIZE;
 }
 
@@ -246,35 +246,35 @@ function lineOmegaPtr(index: u16): u32 {
 //   vectors: location, velocity absorbVelocity, force, gravity,
 //   floats: intervalMass, altitude
 
-function jointPtr(jointIndex: u16): u32 {
+function jointPtr(jointIndex: u16): usize {
     return jointOffset + jointIndex * JOINT_SIZE;
 }
 
-function locationPtr(jointIndex: u16): u32 {
+function locationPtr(jointIndex: u16): usize {
     return jointPtr(jointIndex);
 }
 
-function velocityPtr(jointIndex: u16): u32 {
+function velocityPtr(jointIndex: u16): usize {
     return jointPtr(jointIndex) + VECTOR_SIZE;
 }
 
-function absorbVelocityPtr(jointIndex: u16): u32 {
+function absorbVelocityPtr(jointIndex: u16): usize {
     return jointPtr(jointIndex) + VECTOR_SIZE * 2;
 }
 
-function forcePtr(jointIndex: u16): u32 {
+function forcePtr(jointIndex: u16): usize {
     return jointPtr(jointIndex) + VECTOR_SIZE * 3;
 }
 
-function gravityPtr(jointIndex: u16): u32 {
+function gravityPtr(jointIndex: u16): usize {
     return jointPtr(jointIndex) + VECTOR_SIZE * 4;
 }
 
-function intervalMassPtr(jointIndex: u16): u32 {
+function intervalMassPtr(jointIndex: u16): usize {
     return jointPtr(jointIndex) + VECTOR_SIZE * 5;
 }
 
-function altitudePtr(jointIndex: u16): u32 {
+function altitudePtr(jointIndex: u16): usize {
     return jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE;
 }
 
@@ -296,11 +296,11 @@ function setTag(jointIndex: u16, tag: u16): void {
 
 // interval: size role u8 plus is 2 unsigned32 + unit (3 f32s) + span + idealSpan, u8 + 5float + 2int = 49 bytes
 //      role: u8
-//      alpha, omega: u32
+//      alpha, omega: usize
 //      unit: vector
 //      span, idealSpan: f32
 
-function intervalPtr(intervalIndex: u16): u32 {
+function intervalPtr(intervalIndex: u16): usize {
     return intervalOffset + intervalIndex * INTERVAL_SIZE;
 }
 
@@ -328,15 +328,15 @@ function setOmegaIndex(intervalIndex: u16, v: u16): void {
     setIndex(intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE, v);
 }
 
-function unitPtr(intervalIndex: u16): u32 {
+function unitPtr(intervalIndex: u16): usize {
     return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2;
 }
 
-function spanPtr(intervalIndex: u16): u32 {
+function spanPtr(intervalIndex: u16): usize {
     return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE;
 }
 
-function idealSpanPtr(intervalIndex: u16): u32 {
+function idealSpanPtr(intervalIndex: u16): usize {
     return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
 }
 
@@ -369,7 +369,7 @@ function findIntervalIndex(joint0: u16, joint1: u16): u16 {
 
 // face
 
-function facePtr(faceIndex: u16): u32 {
+function facePtr(faceIndex: u16): usize {
     return faceOffset + faceIndex * FACE_SIZE;
 }
 
@@ -377,11 +377,11 @@ function setJointIndexOfFace(faceIndex: u16, index: u16, v: u16): void {
     setIndex(facePtr(faceIndex) + index * INDEX_SIZE, v);
 }
 
-function midpointPtr(faceIndex: u16): u32 {
+function midpointPtr(faceIndex: u16): usize {
     return faceMidpointOffset + faceIndex * VECTOR_SIZE;
 }
 
-function normalPtr(faceIndex: u16): u32 {
+function normalPtr(faceIndex: u16): usize {
     return faceNormalOffset + faceIndex * VECTOR_SIZE;
 }
 
@@ -430,7 +430,7 @@ function elastic(intervalIndex: u16): void {
     setFloat(omegaMass, getFloat(omegaMass) + mass / 2);
 }
 
-function splitVectors(vectorPtr: u32, basisPtr: u32, projectionPtr: u32, howMuch: f32): void {
+function splitVectors(vectorPtr: usize, basisPtr: usize, projectionPtr: usize, howMuch: f32): void {
     let agreement = dot(vectorPtr, basisPtr);
     setVector(projectionPtr, basisPtr);
     multiplyScalar(projectionPtr, agreement * howMuch);
@@ -527,7 +527,7 @@ function tick(): void {
 
 // =================================
 
-export function init(joints: u16, intervals: u16, faces: u16): u32 {
+export function init(joints: u16, intervals: u16, faces: u16): usize {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
@@ -578,7 +578,7 @@ export function centralize(altitude: f32): void {
     }
 }
 
-export function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): u32 {
+export function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): usize {
     let jointIndex = jointCount++;
     setAll(locationPtr(jointIndex), x, y, z);
     zero(forcePtr(jointIndex));
@@ -591,7 +591,7 @@ export function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): u
     return jointIndex;
 }
 
-export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): u32 {
+export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
     let intervalIndex = intervalCount++;
     setRole(intervalIndex, role);
     setAlphaIndex(intervalIndex, alphaIndex);
@@ -600,7 +600,7 @@ export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, ideal
     return intervalIndex;
 }
 
-export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): u32 {
+export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): usize {
     let faceIndex = faceCount++;
     setJointIndexOfFace(faceIndex, 0, joint0Index);
     setJointIndexOfFace(faceIndex, 1, joint1Index);
@@ -622,7 +622,7 @@ export function removeFace(faceIndex: u16): void {
     faceCount--;
 }
 
-export function getFaceJointIndex(faceIndex: u16, jointNumber: u32): u16 {
+export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {
     return getIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE);
 }
 
@@ -649,7 +649,7 @@ export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
     return (ideal0 + ideal1 + ideal2) / 3;
 }
 
-export function iterate(ticks: u32): void {
+export function iterate(ticks: usize): void {
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         tick();
     }
@@ -662,15 +662,15 @@ export function iterate(ticks: u32): void {
     }
 }
 
-export function joints(): u32 {
+export function joints(): usize {
     return jointCount;
 }
 
-export function intervals(): u32 {
+export function intervals(): usize {
     return intervalCount;
 }
 
-export function faces(): u32 {
+export function faces(): usize {
     return faceCount;
 }
 
