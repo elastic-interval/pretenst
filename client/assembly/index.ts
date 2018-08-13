@@ -2,14 +2,15 @@ declare function logFloat(idx: u32, f: f32): void;
 
 declare function logInt(idx: u32, i: u32): void;
 
-const ROLE_SIZE: u32 = sizeof<u8>();
-const INDEX_SIZE: u32 = sizeof<u32>();
+const ENUM_SIZE: u32 = sizeof<u8>();
+const JOINT_NAME_SIZE: u32 = sizeof<u16>();
+const JOINT_INDEX_SIZE: u32 = sizeof<u32>();
 const FLOAT_SIZE: u32 = sizeof<f32>();
 const VECTOR_SIZE: u32 = FLOAT_SIZE * 3;
 
-const JOINT_SIZE: u32 = VECTOR_SIZE * 5 + FLOAT_SIZE * 2;
-const INTERVAL_SIZE: u32 = ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
-const FACE_SIZE: u32 = INDEX_SIZE * 3;
+const JOINT_SIZE: u32 = VECTOR_SIZE * 5 + ENUM_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
+const INTERVAL_SIZE: u32 = ENUM_SIZE + JOINT_INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
+const FACE_SIZE: u32 = JOINT_INDEX_SIZE * 3;
 const LINE_SIZE: u32 = VECTOR_SIZE * 2;
 const METADATA_SIZE: u32 = VECTOR_SIZE * 3;
 
@@ -57,30 +58,9 @@ function canPush(role: u8): boolean {
     }
 }
 
-/*
-    public enum Role {
-        SPRING(true, SPRING_SMOOTH),
-        RING_SPRING(true, SPRING_SMOOTH),
-        MUSCLE(true, SPRING_SMOOTH),
-        BAR(true, BAR_SMOOTH),
-        CABLE(false, CABLE_SMOOTH),
-        COUNTER_CABLE(false, CABLE_SMOOTH),
-        HORIZONTAL_CABLE(false, CABLE_SMOOTH),
-        RING_CABLE(false, CABLE_SMOOTH),
-        VERTICAL_CABLE(false, CABLE_SMOOTH),
-        TEMPORARY(false, CABLE_SMOOTH),
-        ELIMINATED(false, CABLE_SMOOTH);
-
-        public final boolean canPush;
-        public final double smoothVelocity;
-
-        Role(boolean canPush, double smoothVelocity) {
-            this.canPush = canPush;
-            this.smoothVelocity = smoothVelocity;
-        }
-    }
-
- */
+const UNILATERAL: u8 = 0;
+const BILATERAL_RIGHT: u8 = 1;
+const BILATERAL_LEFT: u8 = 2;
 
 const ELASTIC: f32 = 0.05;
 const AIR_DRAG: f32 = 0.0004;
@@ -90,6 +70,7 @@ const LAND_GRAVITY: f32 = 30;
 
 let jointCount: u32 = 0;
 let jointCountMax: u32 = 0;
+let jointTagCount: u16 = 0;
 let intervalCount: u32 = 0;
 let intervalCountMax: u32 = 0;
 let faceCount: u32 = 0;
@@ -261,7 +242,7 @@ function lineOmegaPtr(index: u32): u32 {
     return index * LINE_SIZE + VECTOR_SIZE;
 }
 
-// joint: size is (5 x 3 + 2) = 17 float64s * 8 = 136 bytes
+// joint: size is u8 + u16 (5 x 3 + 2) = 17 float64s * 8 = 3 + 136 = 139 bytes
 //   vectors: location, velocity absorbVelocity, force, gravity,
 //   floats: intervalMass, altitude
 
@@ -297,7 +278,25 @@ function altitudePtr(jointIndex: u32): u32 {
     return jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE;
 }
 
-function createJoint(x: f32, y: f32, z: f32): u32 {
+
+function getLaterality(jointIndex: u32): u8 {
+    return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2);
+}
+
+function setLaterality(jointIndex: u32, laterality: u8): void {
+    store<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2, laterality);
+}
+
+function getTag(jointIndex: u32): u16 {
+    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE);
+}
+
+function setTag(jointIndex: u32, tag: u16): void {
+    store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE, tag);
+}
+
+
+function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): u32 {
     let jointIndex = jointCount++;
     setAll(locationPtr(jointIndex), x, y, z);
     zero(forcePtr(jointIndex));
@@ -305,6 +304,8 @@ function createJoint(x: f32, y: f32, z: f32): u32 {
     zero(gravityPtr(jointIndex));
     zero(absorbVelocityPtr(jointIndex));
     setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
+    setLaterality(jointIndex, laterality);
+    setTag(jointIndex, tag);
     return jointIndex;
 }
 
@@ -327,31 +328,31 @@ function setRole(intervalIndex: u32, role: u8): void {
 }
 
 function getAlphaIndex(intervalIndex: u32): u32 {
-    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + ENUM_SIZE);
 }
 
 function setAlphaIndex(intervalIndex: u32, v: u32): void {
-    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + ENUM_SIZE, v);
 }
 
 function getOmegaIndex(intervalIndex: u32): u32 {
-    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE);
 }
 
 function setOmegaIndex(intervalIndex: u32, v: u32): void {
-    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE, v);
 }
 
 function unitPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2;
+    return intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE * 2;
 }
 
 function spanPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE;
+    return intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE * 2 + VECTOR_SIZE;
 }
 
 function idealSpanPtr(intervalIndex: u32): u32 {
-    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
+    return intervalPtr(intervalIndex) + ENUM_SIZE + JOINT_INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
 }
 
 function calculateSpan(intervalIndex: u32): f32 {
@@ -368,7 +369,7 @@ function createInterval(role: u8, alphaIndex: u32, omegaIndex: u32, idealSpan: f
     setRole(intervalIndex, role);
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
-     setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
+    setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
     return intervalIndex;
 }
 
@@ -386,11 +387,11 @@ function facePtr(index: u32): u32 {
 }
 
 function jointIndexOfFace(faceIndex: u32, index: u32): u32 {
-    return getIndex(facePtr(faceIndex) + index * INDEX_SIZE);
+    return getIndex(facePtr(faceIndex) + index * JOINT_INDEX_SIZE);
 }
 
 function setJointIndexOfFace(faceIndex: u32, index: u32, v: u32): void {
-    setIndex(facePtr(faceIndex) + index * INDEX_SIZE, v);
+    setIndex(facePtr(faceIndex) + index * JOINT_INDEX_SIZE, v);
 }
 
 function midpointPtr(faceIndex: u32): u32 {
@@ -605,10 +606,10 @@ export function centralize(altitude: f32): void {
 }
 
 export function createTetra(): void {
-    createJoint(1, -1, 1);
-    createJoint(-1, 1, 1);
-    createJoint(-1, -1, -1);
-    createJoint(1, 1, -1);
+    createJoint(UNILATERAL, jointTagCount++, 1, -1, 1);
+    createJoint(UNILATERAL, jointTagCount++,-1, 1, 1);
+    createJoint(UNILATERAL, jointTagCount++,-1, -1, -1);
+    createJoint(UNILATERAL, jointTagCount++,1, 1, -1);
     createInterval(ROLE_SPRING, 0, 1, -1);
     createInterval(ROLE_SPRING, 1, 2, -1);
     createInterval(ROLE_SPRING, 2, 3, -1);
@@ -652,7 +653,7 @@ export function tetraFromFace(faceIndex: u32): void {
         setJointIndexOfFace(thisFace, 2, jointIndexOfFace(nextFace, 2));
     }
     faceCount--;
-    let apex = createJoint(getX(projectionPtr), getY(projectionPtr), getZ(projectionPtr));
+    let apex = createJoint(UNILATERAL, jointTagCount++, getX(projectionPtr), getY(projectionPtr), getZ(projectionPtr));
     createInterval(ROLE_SPRING, j0, apex, average);
     createInterval(ROLE_SPRING, j1, apex, average);
     createInterval(ROLE_SPRING, j2, apex, average);
