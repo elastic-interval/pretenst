@@ -15,6 +15,7 @@ import {
     Vector3
 } from 'three';
 import {EigFabric, IFabricExports} from '../fabric';
+import {createTetrahedron} from './eig-factory';
 
 interface IEigViewProps {
     width: number;
@@ -46,9 +47,9 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     constructor(props: IEigViewProps) {
         super(props);
         props.fabricFactory().then(fabricExports => {
-            const fabric = new EigFabric(fabricExports, 200, 300, 200);
+            const fabric = new EigFabric(fabricExports, 200, 600, 400);
             console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
-            fabric.createTetra();
+            createTetrahedron(fabric);
             fabric.centralize(2);
             this.state = {fabric};
         });

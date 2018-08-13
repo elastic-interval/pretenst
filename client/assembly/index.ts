@@ -296,19 +296,6 @@ function setTag(jointIndex: u32, tag: u16): void {
 }
 
 
-function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): u32 {
-    let jointIndex = jointCount++;
-    setAll(locationPtr(jointIndex), x, y, z);
-    zero(forcePtr(jointIndex));
-    zero(velocityPtr(jointIndex));
-    zero(gravityPtr(jointIndex));
-    zero(absorbVelocityPtr(jointIndex));
-    setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
-    setLaterality(jointIndex, laterality);
-    setTag(jointIndex, tag);
-    return jointIndex;
-}
-
 // interval: size role u8 plus is 2 unsigned32 + unit (3 f32s) + span + idealSpan, u8 + 5float + 2int = 49 bytes
 //      role: u8
 //      alpha, omega: u32
@@ -364,15 +351,6 @@ function calculateSpan(intervalIndex: u32): f32 {
     return span;
 }
 
-function createInterval(role: u8, alphaIndex: u32, omegaIndex: u32, idealSpan: f32): u32 {
-    let intervalIndex = intervalCount++;
-    setRole(intervalIndex, role);
-    setAlphaIndex(intervalIndex, alphaIndex);
-    setOmegaIndex(intervalIndex, omegaIndex);
-    setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
-    return intervalIndex;
-}
-
 function removeInterval(intervalIndex: u32): void {
     for (let walk: u32 = intervalIndex * INTERVAL_SIZE; walk < intervalIndex * INTERVAL_SIZE * intervalCount - 1; walk++) {
         store<u8>(walk, load<u8>(walk + INTERVAL_SIZE));
@@ -400,16 +378,6 @@ function midpointPtr(faceIndex: u32): u32 {
 
 function normalPtr(faceIndex: u32): u32 {
     return faceNormalOffset + faceIndex * VECTOR_SIZE;
-}
-
-function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32): u32 {
-    let faceIndex = faceCount++;
-    setJointIndexOfFace(faceIndex, 0, joint0Index);
-    setJointIndexOfFace(faceIndex, 1, joint1Index);
-    setJointIndexOfFace(faceIndex, 2, joint2Index);
-    zero(midpointPtr(faceIndex));
-    zero(normalPtr(faceIndex));
-    return faceIndex;
 }
 
 function calculateFace(faceIndex: u32): void {
@@ -605,21 +573,36 @@ export function centralize(altitude: f32): void {
     }
 }
 
-export function createTetra(): void {
-    createJoint(UNILATERAL, jointTagCount++, 1, -1, 1);
-    createJoint(UNILATERAL, jointTagCount++,-1, 1, 1);
-    createJoint(UNILATERAL, jointTagCount++,-1, -1, -1);
-    createJoint(UNILATERAL, jointTagCount++,1, 1, -1);
-    createInterval(ROLE_SPRING, 0, 1, -1);
-    createInterval(ROLE_SPRING, 1, 2, -1);
-    createInterval(ROLE_SPRING, 2, 3, -1);
-    createInterval(ROLE_SPRING, 2, 0, -1);
-    createInterval(ROLE_SPRING, 0, 3, -1);
-    createInterval(ROLE_SPRING, 3, 1, -1);
-    createFace(0, 1, 2);
-    createFace(1, 3, 2);
-    createFace(1, 0, 3);
-    createFace(2, 3, 0);
+export function createJoint(laterality: u8, tag: u16, x: f32, y: f32, z: f32): u32 {
+    let jointIndex = jointCount++;
+    setAll(locationPtr(jointIndex), x, y, z);
+    zero(forcePtr(jointIndex));
+    zero(velocityPtr(jointIndex));
+    zero(gravityPtr(jointIndex));
+    zero(absorbVelocityPtr(jointIndex));
+    setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
+    setLaterality(jointIndex, laterality);
+    setTag(jointIndex, tag);
+    return jointIndex;
+}
+
+export function createInterval(role: u8, alphaIndex: u32, omegaIndex: u32, idealSpan: f32): u32 {
+    let intervalIndex = intervalCount++;
+    setRole(intervalIndex, role);
+    setAlphaIndex(intervalIndex, alphaIndex);
+    setOmegaIndex(intervalIndex, omegaIndex);
+    setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
+    return intervalIndex;
+}
+
+export function createFace(joint0Index: u32, joint1Index: u32, joint2Index: u32): u32 {
+    let faceIndex = faceCount++;
+    setJointIndexOfFace(faceIndex, 0, joint0Index);
+    setJointIndexOfFace(faceIndex, 1, joint1Index);
+    setJointIndexOfFace(faceIndex, 2, joint2Index);
+    zero(midpointPtr(faceIndex));
+    zero(normalPtr(faceIndex));
+    return faceIndex;
 }
 
 export function iterate(ticks: u32): void {

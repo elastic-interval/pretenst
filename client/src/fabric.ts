@@ -14,14 +14,33 @@ export interface IFabricExports {
 
     faces(): number;
 
-    createTetra(): void;
-
     tetraFromFace(face: number): void;
 
     iterate(ticks: number): void;
 
     centralize(altitude: number): void;
+
+    createJoint(laterality: number, jointName: number, x: number, y: number, z: number): number;
+
+    createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number;
+
+    createFace(joint0Index: number, joint1Index: number, joint2Index: number): number;
 }
+
+export const UNILATERAL = 0;
+export const BILATERAL_RIGHT = 1;
+export const BILATERAL_LEFT = 2;
+
+export const ROLE_SPRING = 1;
+export const ROLE_MUSCLE = 2;
+export const ROLE_BAR = 3;
+export const ROLE_CABLE = 4;
+export const ROLE_TEMPORARY = 5;
+export const ROLE_RING_SPRING = 6;
+export const ROLE_COUNTER_CABLE = 7;
+export const ROLE_HORIZONTAL_CABLE = 8;
+export const ROLE_RING_CABLE = 9;
+export const ROLE_VERTICAL_CABLE = 10;
 
 export class EigFabric implements IFabricExports {
     private responseFromInit: number;
@@ -99,10 +118,6 @@ export class EigFabric implements IFabricExports {
         return this.fabricExports.faces();
     }
 
-    public createTetra(): void {
-        this.fabricExports.createTetra();
-    }
-
     public tetraFromFace(face: number): void {
         this.fabricExports.tetraFromFace(face);
     }
@@ -113,5 +128,17 @@ export class EigFabric implements IFabricExports {
 
     public centralize(altitude: number): void {
         this.fabricExports.centralize(altitude);
+    }
+
+    public createJoint(laterality: number, jointName: number, x: number, y: number, z: number): number {
+        return this.fabricExports.createJoint(laterality, jointName, x, y, z);
+    }
+
+    public createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number {
+        return this.fabricExports.createInterval(role, alphaIndex, omegaIndex, span);
+    }
+
+    public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
+        return this.fabricExports.createFace(joint0Index, joint1Index, joint2Index);
     }
 }
