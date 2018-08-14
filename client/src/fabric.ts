@@ -68,7 +68,7 @@ export interface IFace {
 }
 
 export class EigFabric {
-    private responseFromInit: number;
+    private fabricBytes: number;
     private linePairsArray: Float32Array;
     private faceMidpointsArray: Float32Array;
     private faceNormalsArray: Float32Array;
@@ -84,16 +84,16 @@ export class EigFabric {
         const faceFloats = faceCountMax * 3;
         const midpointOffset = linePairFloats * Float32Array.BYTES_PER_ELEMENT;
         const normalOffset = midpointOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
-        const locationOffset = normalOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
-        this.responseFromInit = fab.init(jointCountMax, intervalCountMax, faceCountMax);
+        const locationOffset = normalOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT * 3;
+        this.fabricBytes = fab.init(jointCountMax, intervalCountMax, faceCountMax);
         this.linePairsArray = new Float32Array(fab.memory.buffer, 0, linePairFloats);
         this.faceMidpointsArray = new Float32Array(fab.memory.buffer, midpointOffset, faceFloats);
-        this.faceNormalsArray = new Float32Array(fab.memory.buffer, normalOffset, faceFloats);
+        this.faceNormalsArray = new Float32Array(fab.memory.buffer, normalOffset, faceFloats * 3);
         this.faceLocationsArray = new Float32Array(fab.memory.buffer, locationOffset, faceFloats * 3);
     }
 
     public get initBytes() {
-        return this.responseFromInit;
+        return this.fabricBytes;
     }
 
     public get bytes() {

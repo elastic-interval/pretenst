@@ -1,9 +1,8 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {
-    BufferAttribute,
     BufferGeometry,
-    CircleGeometry,
+    Float32BufferAttribute,
     LineBasicMaterial,
     MeshBasicMaterial,
     PerspectiveCamera,
@@ -26,8 +25,8 @@ interface IEigViewState {
     fabric?: EigFabric;
 }
 
-const upVector = new Vector3(0, 0, 1);
-const faceGeometry = new CircleGeometry(0.25, 24);
+// const upVector = new Vector3(0, 0, 1);
+// const circleGeometry = new CircleGeometry(0.25, 24);
 // const faceInvisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.1});
 const faceVisibleMaterial = new MeshBasicMaterial({color: 0xFFFFFF, transparent: true, opacity: 0.5});
 const lineMaterial = new LineBasicMaterial({color: 0xff0000});
@@ -40,8 +39,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private mouse = new Vector2();
     private orbitControls: any;
     private rayCaster: any;
-    private nodesForSelection: any;
     private selectedFaceIndex = -1;
+    private facesMeshNode: any;
 
     constructor(props: IEigViewProps) {
         super(props);
@@ -90,17 +89,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
         this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
         this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
-        const intersect = this.rayCaster.intersectObjects(this.nodesForSelection.children);
+        const intersect = this.rayCaster.intersectObject(this.facesMeshNode);
         if (intersect.length > 0) {
-            const faceMesh = intersect[0].object;
-            const faceIndex = parseInt(faceMesh.name, 10);
-            if (this.selectedFaceIndex < 0 || faceIndex !== this.selectedFaceIndex) {
+            const faceIndex = intersect[0].faceIndex / 3;
+            if (faceIndex !== this.selectedFaceIndex) {
                 this.selectedFaceIndex = faceIndex;
-                // const fabric = this.state.fabric;
-                // if (fabric) {
-                //     const face = fabric.getFace(this.selectedFaceIndex);
-                //     console.log(`face ${face.index}`, face.jointTag);
-                // }
             }
         } else if (this.selectedFaceIndex >= 0) {
             this.selectedFaceIndex = -1;
@@ -122,43 +115,25 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     }
 
     public render() {
-        const fabricGeometry = new BufferGeometry();
+        const facesGeometry = new BufferGeometry();
+        const lineSegmentGeometry = new BufferGeometry();
         const fabric = this.state.fabric;
-        const faces: any[] = [];
         if (fabric) {
-            fabricGeometry.addAttribute('position', new BufferAttribute(fabric.linePairs, 3));
-            const midpoints = fabric.faceMidpoints;
-            const normals = fabric.faceNormals;
-            const faceCount = fabric.faces();
-            for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
-                const faceBase = faceIndex * 3;
-                const midpoint = new Vector3(midpoints[faceBase], midpoints[faceBase + 1], midpoints[faceBase + 2]);
-                const normal = new Vector3(normals[faceBase], normals[faceBase + 1], normals[faceBase + 2]);
-                faces.push({
-                    name: `F${faceIndex}`,
-                    position: midpoint,
-                    quaternion: new Quaternion().setFromUnitVectors(upVector, normal)
-                });
-            }
+            lineSegmentGeometry.addAttribute('position', new Float32BufferAttribute(fabric.linePairs, 3));
+            facesGeometry.addAttribute('position', new Float32BufferAttribute(fabric.faceLocations, 3));
+            facesGeometry.addAttribute('normal', new Float32BufferAttribute(fabric.faceNormals, 3));
         }
-        const faceMeshes = faces.map((face: any, index: number) => {
-            // if (this.selectedFace && face.name === this.selectedFace.name) {
-            return <R3.Mesh
-                key={face.name} name={index}
-                geometry={faceGeometry}
-                material={faceVisibleMaterial}
-                position={face.position}
-                quaternion={face.quaternion}
-            />
-        });
         return (
             <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.mouseClick(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
-                        <R3.LineSegments key="Fabric" geometry={fabricGeometry} material={lineMaterial}/>
-                        <R3.Object3D key="Faces" ref={(node: any) => this.nodesForSelection = node}>
-                            {faceMeshes}
-                        </R3.Object3D>
+                        <R3.Mesh
+                            ref={(node: any) => this.facesMeshNode = node}
+                            key="FabricFaces" name="Fabric"
+                            geometry={facesGeometry}
+                            material={faceVisibleMaterial}
+                        />
+                        <R3.LineSegments key="FabricLines" geometry={lineSegmentGeometry} material={lineMaterial}/>
                         <R3.Mesh
                             key="Floor"
                             geometry={new PlaneGeometry(1, 1)}

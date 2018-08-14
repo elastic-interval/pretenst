@@ -380,8 +380,8 @@ function outputMidpointPtr(faceIndex: u16): usize {
     return faceMidpointOffset + faceIndex * VECTOR_SIZE;
 }
 
-function outputNormalPtr(faceIndex: u16): usize {
-    return faceNormalOffset + faceIndex * VECTOR_SIZE;
+function outputNormalPtr(faceIndex: u16, jointNumber: u16): usize {
+    return faceNormalOffset + (faceIndex * 3 + jointNumber) * VECTOR_SIZE;
 }
 
 function outputLocationPtr(faceIndex: u16, jointNumber: u16): usize {
@@ -397,9 +397,12 @@ function outputFaceGeometry(faceIndex: u16): void {
     setVector(outputLocationPtr(faceIndex, 2), loc2);
     subVectors(alphaProjectionPtr, loc1, loc0);
     subVectors(omegaProjectionPtr, loc2, loc0);
-    let normal = outputNormalPtr(faceIndex);
+    let normal = outputNormalPtr(faceIndex, 0);
     crossVectors(normal, alphaProjectionPtr, omegaProjectionPtr);
     multiplyScalar(normal, 1 / length(normal));
+    // for now all three are the same
+    setVector(outputNormalPtr(faceIndex, 1), normal);
+    setVector(outputNormalPtr(faceIndex, 2), normal);
     let midpoint = outputMidpointPtr(faceIndex);
     zero(midpoint);
     add(midpoint, loc0);
@@ -549,7 +552,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                                     lineOffset
                                 ) + sizeOfIntervalLines
                             ) + sizeOfFaceVectors
-                        ) + sizeOfFaceVectors
+                        ) + sizeOfFaceVectors * 3
                     ) + sizeOfFaceVectors * 3
                 ) + sizeOfJoints
             ) + sizeOfIntervals
@@ -625,11 +628,13 @@ export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, ideal
 
 export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): usize {
     let faceIndex = faceCount++;
+    zero(outputMidpointPtr(faceIndex));
     setJointIndexOfFace(faceIndex, 0, joint0Index);
     setJointIndexOfFace(faceIndex, 1, joint1Index);
     setJointIndexOfFace(faceIndex, 2, joint2Index);
-    zero(outputMidpointPtr(faceIndex));
-    zero(outputNormalPtr(faceIndex));
+    zero(outputNormalPtr(faceIndex, 0));
+    zero(outputNormalPtr(faceIndex, 1));
+    zero(outputNormalPtr(faceIndex, 2));
     zero(outputLocationPtr(faceIndex, 0));
     zero(outputLocationPtr(faceIndex, 1));
     zero(outputLocationPtr(faceIndex, 2));
@@ -640,7 +645,9 @@ export function removeFace(faceIndex: u16): void {
     for (let thisFace: u16 = faceIndex; thisFace < faceCount - 1; thisFace++) {
         let nextFace = thisFace + 1;
         setVector(outputMidpointPtr(thisFace), outputMidpointPtr(nextFace));
-        setVector(outputNormalPtr(thisFace), outputNormalPtr(nextFace));
+        setVector(outputNormalPtr(thisFace,0), outputNormalPtr(nextFace,0));
+        setVector(outputNormalPtr(thisFace,1), outputNormalPtr(nextFace,1));
+        setVector(outputNormalPtr(thisFace,2), outputNormalPtr(nextFace,2));
         setJointIndexOfFace(thisFace, 0, getFaceJointIndex(nextFace, 0));
         setJointIndexOfFace(thisFace, 1, getFaceJointIndex(nextFace, 1));
         setJointIndexOfFace(thisFace, 2, getFaceJointIndex(nextFace, 2));
