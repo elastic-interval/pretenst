@@ -56,6 +56,8 @@ export const ROLE_HORIZONTAL_CABLE = 8;
 export const ROLE_RING_CABLE = 9;
 export const ROLE_VERTICAL_CABLE = 10;
 
+export const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
+
 export interface IFace {
     fabric: EigFabric;
     index: number;
@@ -166,9 +168,13 @@ export class EigFabric {
         }
     }
 
+    public getFaceMidpoint(faceIndex: number): Vector3 {
+        return new Vector3()
+    }
+
     public createTetraFromFace(face: IFace, knownApexTag?: number) {
         const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
-        const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan / 2).add(midpoint);
+        const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2/3)).add(midpoint);
         const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
         const apex = this.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
         this.createInterval(ROLE_SPRING, face.jointIndex[0], apex, face.averageIdealSpan);
@@ -182,9 +188,16 @@ export class EigFabric {
             if (oppositeFaceIndex < this.faces()) {
                 const oppositeFace = this.getFace(oppositeFaceIndex);
                 this.createTetraFromFace(oppositeFace, apexTag);
-                this.removeFace(oppositeFaceIndex);
+                if (oppositeFaceIndex < face.index) {
+                    this.removeFace(oppositeFaceIndex);
+                    this.removeFace(face.index - 1);
+                } else {
+                    this.removeFace(face.index);
+                    this.removeFace(oppositeFaceIndex - 1);
+                }
+            } else {
+                this.removeFace(face.index);
             }
-            this.removeFace(face.index);
         }
     }
 
@@ -244,22 +257,17 @@ export class EigFabric {
             }
             return BILATERAL_MIDDLE;
         };
-        const faceOffset = faceIndex * 3;
-        const jointIndex = [0, 1, 2].map(index => this.fab.getFaceJointIndex(faceIndex, index));
+        const jointNumbers = [0, 1, 2];
+        const jointIndex = jointNumbers.map(jointNumber => this.fab.getFaceJointIndex(faceIndex, jointNumber));
+        const normal = jointNumbers
+            .map(jointNumber => vectorFromIndex(this.faceNormalsArray, (faceIndex * 3 + jointNumber) * 3))
+            .reduce((prev, current) => prev.add(current), new Vector3()).multiplyScalar(1 / 3.0);
         return {
             fabric: this,
             index: faceIndex,
             laterality: getFaceLaterality(),
-            midpoint: new Vector3(
-                this.faceMidpointsArray[faceOffset],
-                this.faceMidpointsArray[faceOffset + 1],
-                this.faceMidpointsArray[faceOffset + 2],
-            ),
-            normal: new Vector3(
-                this.faceNormalsArray[faceOffset],
-                this.faceNormalsArray[faceOffset + 1],
-                this.faceNormalsArray[faceOffset + 2],
-            ),
+            midpoint: vectorFromIndex(this.faceMidpointsArray, faceIndex * 3),
+            normal,
             jointIndex,
             jointTag: jointIndex.map(index => `${this.fab.getJointTag(index)}[${this.fab.getJointLaterality(index)}]`),
             averageIdealSpan: this.fab.getFaceAverageIdealSpan(faceIndex)

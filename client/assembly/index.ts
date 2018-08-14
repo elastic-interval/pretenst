@@ -388,27 +388,52 @@ function outputLocationPtr(faceIndex: u16, jointNumber: u16): usize {
     return faceLocationOffset + (faceIndex * 3 + jointNumber) * VECTOR_SIZE;
 }
 
+export function getFaceLaterality(faceIndex: u16): u8 {
+    for (let jointWalk: u16 = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
+        let jointLaterality = getJointLaterality(getFaceJointIndex(faceIndex, jointWalk));
+        if (jointLaterality !== BILATERAL_MIDDLE) {
+            return jointLaterality;
+        }
+    }
+    return BILATERAL_MIDDLE;
+}
+
+function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
+    subVectors(projectionPtr, location, midpoint);
+    multiplyScalar(projectionPtr, 1 / length(projectionPtr));
+    addScaledVector(normal, projectionPtr, 0.6);
+    multiplyScalar(normal, 1 / length(normal));
+}
+
 function outputFaceGeometry(faceIndex: u16): void {
     let loc0 = locationPtr(getFaceJointIndex(faceIndex, 0));
     let loc1 = locationPtr(getFaceJointIndex(faceIndex, 1));
     let loc2 = locationPtr(getFaceJointIndex(faceIndex, 2));
+    // output the locations for rendering triangles
     setVector(outputLocationPtr(faceIndex, 0), loc0);
     setVector(outputLocationPtr(faceIndex, 1), loc1);
     setVector(outputLocationPtr(faceIndex, 2), loc2);
-    subVectors(alphaProjectionPtr, loc1, loc0);
-    subVectors(omegaProjectionPtr, loc2, loc0);
-    let normal = outputNormalPtr(faceIndex, 0);
-    crossVectors(normal, alphaProjectionPtr, omegaProjectionPtr);
-    multiplyScalar(normal, 1 / length(normal));
-    // for now all three are the same
-    setVector(outputNormalPtr(faceIndex, 1), normal);
-    setVector(outputNormalPtr(faceIndex, 2), normal);
+    // midpoint
     let midpoint = outputMidpointPtr(faceIndex);
     zero(midpoint);
     add(midpoint, loc0);
     add(midpoint, loc1);
     add(midpoint, loc2);
     multiplyScalar(midpoint, 1 / 3.0);
+    // normals for each vertex
+    let normal0 = outputNormalPtr(faceIndex, 0);
+    let normal1 = outputNormalPtr(faceIndex, 1);
+    let normal2 = outputNormalPtr(faceIndex, 2);
+    subVectors(alphaProjectionPtr, loc1, loc0);
+    subVectors(omegaProjectionPtr, loc2, loc0);
+    crossVectors(normal0, alphaProjectionPtr, omegaProjectionPtr);
+    multiplyScalar(normal0, 1 / length(normal0));
+    setVector(normal1, normal0);
+    setVector(normal2, normal0);
+    // adjust them
+    pushNormalTowardsJoint(normal0, loc0, midpoint);
+    pushNormalTowardsJoint(normal1, loc1, midpoint);
+    pushNormalTowardsJoint(normal2, loc2, midpoint);
 }
 
 // construction and physics
@@ -645,9 +670,9 @@ export function removeFace(faceIndex: u16): void {
     for (let thisFace: u16 = faceIndex; thisFace < faceCount - 1; thisFace++) {
         let nextFace = thisFace + 1;
         setVector(outputMidpointPtr(thisFace), outputMidpointPtr(nextFace));
-        setVector(outputNormalPtr(thisFace,0), outputNormalPtr(nextFace,0));
-        setVector(outputNormalPtr(thisFace,1), outputNormalPtr(nextFace,1));
-        setVector(outputNormalPtr(thisFace,2), outputNormalPtr(nextFace,2));
+        setVector(outputNormalPtr(thisFace, 0), outputNormalPtr(nextFace, 0));
+        setVector(outputNormalPtr(thisFace, 1), outputNormalPtr(nextFace, 1));
+        setVector(outputNormalPtr(thisFace, 2), outputNormalPtr(nextFace, 2));
         setJointIndexOfFace(thisFace, 0, getFaceJointIndex(nextFace, 0));
         setJointIndexOfFace(thisFace, 1, getFaceJointIndex(nextFace, 1));
         setJointIndexOfFace(thisFace, 2, getFaceJointIndex(nextFace, 2));
