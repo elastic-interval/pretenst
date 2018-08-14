@@ -62,13 +62,13 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         this.perspectiveCamera.position.set(6, 1, 0);
         this.perspectiveCamera.lookAt(new Vector3(0, 1, 0));
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
-        this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
+        // this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         this.rayCaster = new Raycaster();
         const step = () => {
             setTimeout(
                 () => {
                     if (this.state.fabric) {
-                        this.state.fabric.iterate(10);
+                        this.state.fabric.iterate(100);
                         this.setState({fabric: this.state.fabric});
                         this.orbitControls.update();
                     }
@@ -98,7 +98,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         }
     }
 
-    public mouseClick(event: any) {
+    public build(event: any) {
         if (!this.selectedFace) {
             return;
         }
@@ -134,7 +134,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         };
         const selectedFaceNormal = !this.selectedFace ? null : fabric ? faceNormalLineSegments(fabric, this.selectedFace) : null;
         return (
-            <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.mouseClick(e)}>
+            <div onMouseMove={(e: any) => this.mouseMove(e)}  onDoubleClick={(e: any) => this.build(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         <R3.Mesh
