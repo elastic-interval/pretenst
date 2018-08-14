@@ -30,6 +30,8 @@ interface IEigViewState {
 const faceVisibleMaterial = new MeshPhongMaterial({
     lights: true,
     color: new Color(0.9, 0.9, 0.9),
+    transparent: true,
+    opacity: 0.6,
     visible: true
 });
 const lineMaterial = new LineBasicMaterial({color: 0xff0000});
@@ -50,7 +52,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         props.fabricFactory().then(fabricExports => {
             const fabric = new EigFabric(fabricExports, 180, 400, 350);
             console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
-            fabric.createOctahedron();
+            fabric.createSeed(5);
             fabric.centralize(1);
             this.setState({fabric});
         });

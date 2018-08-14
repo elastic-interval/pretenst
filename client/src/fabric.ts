@@ -148,33 +148,30 @@ export class EigFabric {
         this.createFace(2, 3, 0);
     }
 
-    public createOctahedron(): void {
+    public createSeed(corners: number): void {
         const R = Math.sqrt(2) / 2;
-        for (let walk = 0; walk < 4; walk++) {
-            const angle = walk * Math.PI / 2 + Math.PI / 4;
+        for (let walk = 0; walk < corners; walk++) {
+            const angle = walk * Math.PI * 2 / corners;
             this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R * Math.sin(angle), R + R * Math.cos(angle), 0);
         }
         const jointPairName = this.fab.nextJointTag();
         const left = this.createJoint(jointPairName, BILATERAL_LEFT, 0, R, -R);
         const right = this.createJoint(jointPairName, BILATERAL_RIGHT, 0, R, R);
-        for (let walk = 0; walk < 4; walk++) {
-            this.createInterval(ROLE_SPRING, walk, (walk + 1) % 4, -1);
+        for (let walk = 0; walk < corners; walk++) {
+            this.createInterval(ROLE_SPRING, walk, (walk + 1) % corners, -1);
             this.createInterval(ROLE_SPRING, walk, left, -1);
             this.createInterval(ROLE_SPRING, walk, right, -1);
+            this.createInterval(ROLE_SPRING, left, right, -1);
         }
-        for (let walk = 0; walk < 4; walk++) {
-            this.createFace(left, walk, (walk + 1) % 4);
-            this.createFace(right, (walk + 1) % 4, walk);
+        for (let walk = 0; walk < corners; walk++) {
+            this.createFace(left, walk, (walk + 1) % corners);
+            this.createFace(right, (walk + 1) % corners, walk);
         }
-    }
-
-    public getFaceMidpoint(faceIndex: number): Vector3 {
-        return new Vector3()
     }
 
     public createTetraFromFace(face: IFace, knownApexTag?: number) {
         const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
-        const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2/3)).add(midpoint);
+        const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2 / 3)).add(midpoint);
         const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
         const apex = this.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
         this.createInterval(ROLE_SPRING, face.jointIndex[0], apex, face.averageIdealSpan);
