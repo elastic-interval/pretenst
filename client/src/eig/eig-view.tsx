@@ -46,7 +46,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     constructor(props: IEigViewProps) {
         super(props);
         props.fabricFactory().then(fabricExports => {
-            const fabric = new EigFabric(fabricExports, 200, 600, 400);
+            const fabric = new EigFabric(fabricExports, 180, 400, 350);
             console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
             fabric.createOctahedron();
             // fabric.createTetrahedron();
@@ -126,9 +126,9 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         const fabric = this.state.fabric;
         const faces: any[] = [];
         if (fabric) {
-            fabricGeometry.addAttribute('position', new BufferAttribute(fabric.lines, 3));
-            const midpoints = fabric.midpoints;
-            const normals = fabric.normals;
+            fabricGeometry.addAttribute('position', new BufferAttribute(fabric.linePairs, 3));
+            const midpoints = fabric.faceMidpoints;
+            const normals = fabric.faceNormals;
             const faceCount = fabric.faces();
             for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
                 const faceBase = faceIndex * 3;

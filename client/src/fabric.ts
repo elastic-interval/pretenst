@@ -69,9 +69,10 @@ export interface IFace {
 
 export class EigFabric {
     private responseFromInit: number;
-    private linePairs: Float32Array;
-    private faceMidpoints: Float32Array;
-    private faceNormals: Float32Array;
+    private linePairsArray: Float32Array;
+    private faceMidpointsArray: Float32Array;
+    private faceNormalsArray: Float32Array;
+    private faceLocationsArray: Float32Array;
 
     constructor(
         private fab: IFabricExports,
@@ -80,13 +81,15 @@ export class EigFabric {
         private faceCountMax: number
     ) {
         const linePairFloats = intervalCountMax * 2 * 3;
-        const midpointOffset = linePairFloats * Float32Array.BYTES_PER_ELEMENT;
         const faceFloats = faceCountMax * 3;
+        const midpointOffset = linePairFloats * Float32Array.BYTES_PER_ELEMENT;
         const normalOffset = midpointOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
+        const locationOffset = normalOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
         this.responseFromInit = fab.init(jointCountMax, intervalCountMax, faceCountMax);
-        this.linePairs = new Float32Array(fab.memory.buffer, 0, linePairFloats);
-        this.faceMidpoints = new Float32Array(fab.memory.buffer, midpointOffset, faceFloats);
-        this.faceNormals = new Float32Array(fab.memory.buffer, normalOffset, faceFloats);
+        this.linePairsArray = new Float32Array(fab.memory.buffer, 0, linePairFloats);
+        this.faceMidpointsArray = new Float32Array(fab.memory.buffer, midpointOffset, faceFloats);
+        this.faceNormalsArray = new Float32Array(fab.memory.buffer, normalOffset, faceFloats);
+        this.faceLocationsArray = new Float32Array(fab.memory.buffer, locationOffset, faceFloats * 3);
     }
 
     public get initBytes() {
@@ -109,16 +112,20 @@ export class EigFabric {
         return this.faceCountMax;
     }
 
-    public get lines(): Float32Array {
-        return this.linePairs;
+    public get linePairs(): Float32Array {
+        return this.linePairsArray;
     }
 
-    public get midpoints(): Float32Array {
-        return this.faceMidpoints;
+    public get faceMidpoints(): Float32Array {
+        return this.faceMidpointsArray;
     }
 
-    public get normals(): Float32Array {
-        return this.faceNormals;
+    public get faceNormals(): Float32Array {
+        return this.faceNormalsArray;
+    }
+
+    public get faceLocations(): Float32Array {
+        return this.faceLocationsArray;
     }
 
     public createTetrahedron(): void {
@@ -244,14 +251,14 @@ export class EigFabric {
             index: faceIndex,
             laterality: getFaceLaterality(),
             midpoint: new Vector3(
-                this.faceMidpoints[faceOffset],
-                this.faceMidpoints[faceOffset + 1],
-                this.faceMidpoints[faceOffset + 2],
+                this.faceMidpointsArray[faceOffset],
+                this.faceMidpointsArray[faceOffset + 1],
+                this.faceMidpointsArray[faceOffset + 2],
             ),
             normal: new Vector3(
-                this.faceNormals[faceOffset],
-                this.faceNormals[faceOffset + 1],
-                this.faceNormals[faceOffset + 2],
+                this.faceNormalsArray[faceOffset],
+                this.faceNormalsArray[faceOffset + 1],
+                this.faceNormalsArray[faceOffset + 2],
             ),
             jointIndex,
             jointTag: jointIndex.map(index => `${this.fab.getJointTag(index)}[${this.fab.getJointLaterality(index)}]`),

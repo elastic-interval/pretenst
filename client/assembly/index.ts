@@ -82,6 +82,7 @@ let lineOffset: usize = 0;
 let jointOffset: usize = 0;
 let faceMidpointOffset: usize = 0;
 let faceNormalOffset: usize = 0;
+let faceLocationOffset: usize = 0;
 let intervalOffset: usize = 0;
 let faceOffset: usize = 0;
 let metadataOffset: usize = 0;
@@ -236,11 +237,11 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 // line: size is 2 vectors, or 6 floats, or 24 bytes
 
-function lineAlphaPtr(index: u16): usize {
+function outputLineAlphaPtr(index: u16): usize {
     return index * LINE_SIZE;
 }
 
-function lineOmegaPtr(index: u16): usize {
+function outpuLineOmegaPtr(index: u16): usize {
     return index * LINE_SIZE + VECTOR_SIZE;
 }
 
@@ -375,24 +376,31 @@ function getFaceTag(faceIndex: u16, jointNumber: u16): u16 {
     return getJointTag(getFaceJointIndex(faceIndex, jointNumber));
 }
 
-function midpointPtr(faceIndex: u16): usize {
+function outputMidpointPtr(faceIndex: u16): usize {
     return faceMidpointOffset + faceIndex * VECTOR_SIZE;
 }
 
-function normalPtr(faceIndex: u16): usize {
+function outputNormalPtr(faceIndex: u16): usize {
     return faceNormalOffset + faceIndex * VECTOR_SIZE;
 }
 
-function calculateFace(faceIndex: u16): void {
+function outputLocationPtr(faceIndex: u16, jointNumber: u16): usize {
+    return faceLocationOffset + (faceIndex * 3 + jointNumber) * VECTOR_SIZE;
+}
+
+function outputFaceGeometry(faceIndex: u16): void {
     let loc0 = locationPtr(getFaceJointIndex(faceIndex, 0));
     let loc1 = locationPtr(getFaceJointIndex(faceIndex, 1));
     let loc2 = locationPtr(getFaceJointIndex(faceIndex, 2));
+    setVector(outputLocationPtr(faceIndex, 0), loc0);
+    setVector(outputLocationPtr(faceIndex, 1), loc1);
+    setVector(outputLocationPtr(faceIndex, 2), loc2);
     subVectors(alphaProjectionPtr, loc1, loc0);
     subVectors(omegaProjectionPtr, loc2, loc0);
-    let normal = normalPtr(faceIndex);
+    let normal = outputNormalPtr(faceIndex);
     crossVectors(normal, alphaProjectionPtr, omegaProjectionPtr);
     multiplyScalar(normal, 1 / length(normal));
-    let midpoint = midpointPtr(faceIndex);
+    let midpoint = outputMidpointPtr(faceIndex);
     zero(midpoint);
     add(midpoint, loc0);
     add(midpoint, loc1);
@@ -523,26 +531,36 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
-    let sizeOfLines = intervalCountMax * VECTOR_SIZE * 2;
-    let sizeOfMidpointsNormals = faceCountMax * VECTOR_SIZE;
+    let sizeOfIntervalLines = intervalCountMax * VECTOR_SIZE * 2;
+    let sizeOfFaceVectors = faceCountMax * VECTOR_SIZE;
     let sizeOfJoints = jointCountMax * JOINT_SIZE;
     let sizeOfIntervals = intervalCountMax * INTERVAL_SIZE;
     let sizeOfFaces = faceCountMax * FACE_SIZE;
+    let sizeOfMetadata = VECTOR_SIZE * 10; // 4 so far
     // offsets
-    faceMidpointOffset = lineOffset + sizeOfLines;
-    faceNormalOffset = faceMidpointOffset + sizeOfMidpointsNormals;
-    jointOffset = faceNormalOffset + sizeOfMidpointsNormals;
-    intervalOffset = jointOffset + sizeOfJoints;
-    faceOffset = intervalOffset + sizeOfIntervals;
-    metadataOffset = faceOffset + sizeOfFaces;
+    let bytes = (
+        metadataOffset = (
+            faceOffset = (
+                intervalOffset = (
+                    jointOffset = (
+                        faceLocationOffset = (
+                            faceNormalOffset = (
+                                faceMidpointOffset = (
+                                    lineOffset
+                                ) + sizeOfIntervalLines
+                            ) + sizeOfFaceVectors
+                        ) + sizeOfFaceVectors
+                    ) + sizeOfFaceVectors * 3
+                ) + sizeOfJoints
+            ) + sizeOfIntervals
+        ) + sizeOfFaces
+    ) + sizeOfMetadata;
+    let blocks = bytes >> 16;
+    memory.grow(blocks + 1);
     projectionPtr = metadataOffset;
     alphaProjectionPtr = projectionPtr + VECTOR_SIZE;
     omegaProjectionPtr = alphaProjectionPtr + VECTOR_SIZE;
     gravPtr = omegaProjectionPtr + VECTOR_SIZE;
-    // prep
-    let bytes = gravPtr + VECTOR_SIZE;
-    let blocks = bytes >> 16;
-    memory.grow(blocks > 0 ? blocks : 1);
     return bytes;
 }
 
@@ -610,16 +628,19 @@ export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16)
     setJointIndexOfFace(faceIndex, 0, joint0Index);
     setJointIndexOfFace(faceIndex, 1, joint1Index);
     setJointIndexOfFace(faceIndex, 2, joint2Index);
-    zero(midpointPtr(faceIndex));
-    zero(normalPtr(faceIndex));
+    zero(outputMidpointPtr(faceIndex));
+    zero(outputNormalPtr(faceIndex));
+    zero(outputLocationPtr(faceIndex, 0));
+    zero(outputLocationPtr(faceIndex, 1));
+    zero(outputLocationPtr(faceIndex, 2));
     return faceIndex;
 }
 
 export function removeFace(faceIndex: u16): void {
     for (let thisFace: u16 = faceIndex; thisFace < faceCount - 1; thisFace++) {
         let nextFace = thisFace + 1;
-        setVector(midpointPtr(thisFace), midpointPtr(nextFace));
-        setVector(normalPtr(thisFace), normalPtr(nextFace));
+        setVector(outputMidpointPtr(thisFace), outputMidpointPtr(nextFace));
+        setVector(outputNormalPtr(thisFace), outputNormalPtr(nextFace));
         setJointIndexOfFace(thisFace, 0, getFaceJointIndex(nextFace, 0));
         setJointIndexOfFace(thisFace, 1, getFaceJointIndex(nextFace, 1));
         setJointIndexOfFace(thisFace, 2, getFaceJointIndex(nextFace, 2));
@@ -670,11 +691,11 @@ export function iterate(ticks: usize): void {
         tick();
     }
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        setVector(lineAlphaPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
-        setVector(lineOmegaPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
+        setVector(outputLineAlphaPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
+        setVector(outpuLineOmegaPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
     }
     for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
-        calculateFace(thisFace);
+        outputFaceGeometry(thisFace);
     }
 }
 
