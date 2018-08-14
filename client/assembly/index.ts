@@ -64,7 +64,7 @@ const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
 const BILATERAL_LEFT: u8 = 2;
 
-const ELASTIC: f32 = 0.05;
+const ELASTIC: f32 = 0.1;
 const AIR_DRAG: f32 = 0.0004;
 const AIR_GRAVITY: f32 = 0.00001;
 const LAND_DRAG: f32 = 50;
