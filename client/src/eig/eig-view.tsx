@@ -13,7 +13,8 @@ import {
     Quaternion,
     Raycaster,
     Vector2,
-    Vector3
+    Vector3,
+    VertexColors
 } from 'three';
 import {EigFabric, IFabricExports, IFace, vectorFromIndex} from '../fabric';
 
@@ -34,7 +35,8 @@ const faceVisibleMaterial = new MeshPhongMaterial({
     opacity: 0.6,
     visible: true
 });
-const lineMaterial = new LineBasicMaterial({color: 0xff0000});
+const tripodMaterial = new LineBasicMaterial({color: 0xFFFFFF});
+const springMaterial = new LineBasicMaterial({vertexColors: VertexColors});
 
 export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private THREE = require('three');
@@ -117,7 +119,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         const lineSegmentGeometry = new BufferGeometry();
         const fabric = this.state.fabric;
         if (fabric) {
-            lineSegmentGeometry.addAttribute('position', new Float32BufferAttribute(fabric.linePairs, 3));
+            lineSegmentGeometry.addAttribute('position', new Float32BufferAttribute(fabric.lineLocations, 3));
+            lineSegmentGeometry.addAttribute('color', new Float32BufferAttribute(fabric.lineColors, 3));
             facesGeometry.addAttribute('position', new Float32BufferAttribute(fabric.faceLocations, 3));
             facesGeometry.addAttribute('normal', new Float32BufferAttribute(fabric.faceNormals, 3));
         }
@@ -132,11 +135,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 vectorFromIndex(fab.faceLocations, (faceOffset + 1) * 3), apex,
                 vectorFromIndex(fab.faceLocations, (faceOffset + 2) * 3), apex
             ];
-            return <R3.LineSegments key="FaceNormal" geometry={normalLine} material={lineMaterial}/>
+            return <R3.LineSegments key="FaceNormal" geometry={normalLine} material={tripodMaterial}/>
         };
-        const selectedFaceNormal = !this.selectedFace ? null : fabric ? faceNormalLineSegments(fabric, this.selectedFace) : null;
+        const selectedFaceTripod = !this.selectedFace ? null : fabric ? faceNormalLineSegments(fabric, this.selectedFace) : null;
         return (
-            <div onMouseMove={(e: any) => this.mouseMove(e)}  onDoubleClick={(e: any) => this.build(e)}>
+            <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.build(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         <R3.Mesh
@@ -145,8 +148,12 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                             geometry={facesGeometry}
                             material={faceVisibleMaterial}
                         />
-                        {selectedFaceNormal}
-                        <R3.LineSegments key="FabricLines" geometry={lineSegmentGeometry} material={lineMaterial}/>
+                        {selectedFaceTripod}
+                        <R3.LineSegments
+                            key="FabricLines"
+                            geometry={lineSegmentGeometry}
+                            material={springMaterial}
+                        />
                         <R3.Mesh
                             key="Floor"
                             geometry={new PlaneGeometry(1, 1)}

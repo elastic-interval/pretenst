@@ -73,7 +73,8 @@ export interface IFace {
 
 export class EigFabric {
     private fabricBytes: number;
-    private linePairsArray: Float32Array;
+    private lineLocationsArray: Float32Array;
+    private lineColorsArray: Float32Array;
     private faceMidpointsArray: Float32Array;
     private faceNormalsArray: Float32Array;
     private faceLocationsArray: Float32Array;
@@ -84,18 +85,29 @@ export class EigFabric {
         private fab: IFabricExports,
         private jointCountMax: number
     ) {
+        // good guesses
         this.intervalCountMax = jointCountMax * 4;
         this.faceCountMax = jointCountMax * 2;
-        const linePairFloats = this.intervalCountMax * 2 * 3;
-        const faceFloats = this.faceCountMax * 3;
-        const midpointOffset = linePairFloats * Float32Array.BYTES_PER_ELEMENT;
-        const normalOffset = midpointOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
-        const locationOffset = normalOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT * 3;
+        // sizes
+        const vectorsPerLine = 2;
+        const floatsInVector = 3;
+        const vectorsForFace = 3;
+        const lineLocationFloats = this.intervalCountMax * vectorsPerLine * floatsInVector;
+        const lineColorFloats = lineLocationFloats;
+        const faceVectorFloats = this.faceCountMax * floatsInVector;
+        const faceJointFloats = faceVectorFloats * vectorsForFace;
+        // offsets
+        const lineLocationOffset = 0;
+        const lineColorsOffset = lineLocationOffset + lineLocationFloats * Float32Array.BYTES_PER_ELEMENT;
+        const midpointOffset = lineColorsOffset + lineColorFloats * Float32Array.BYTES_PER_ELEMENT;
+        const normalOffset = midpointOffset + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT;
+        const locationOffset = normalOffset + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
         this.fabricBytes = fab.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
-        this.linePairsArray = new Float32Array(fab.memory.buffer, 0, linePairFloats);
-        this.faceMidpointsArray = new Float32Array(fab.memory.buffer, midpointOffset, faceFloats);
-        this.faceNormalsArray = new Float32Array(fab.memory.buffer, normalOffset, faceFloats * 3);
-        this.faceLocationsArray = new Float32Array(fab.memory.buffer, locationOffset, faceFloats * 3);
+        this.lineLocationsArray = new Float32Array(fab.memory.buffer, lineLocationOffset, lineLocationFloats);
+        this.lineColorsArray = new Float32Array(fab.memory.buffer, lineColorsOffset, lineColorFloats);
+        this.faceMidpointsArray = new Float32Array(fab.memory.buffer, midpointOffset, faceVectorFloats);
+        this.faceNormalsArray = new Float32Array(fab.memory.buffer, normalOffset, faceJointFloats);
+        this.faceLocationsArray = new Float32Array(fab.memory.buffer, locationOffset, faceJointFloats);
     }
 
     public get initBytes() {
@@ -118,8 +130,12 @@ export class EigFabric {
         return this.faceCountMax;
     }
 
-    public get linePairs(): Float32Array {
-        return this.linePairsArray;
+    public get lineLocations(): Float32Array {
+        return this.lineLocationsArray;
+    }
+
+    public get lineColors(): Float32Array {
+        return this.lineColorsArray;
     }
 
     public get faceMidpoints(): Float32Array {

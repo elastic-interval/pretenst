@@ -64,8 +64,8 @@ const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
 const BILATERAL_LEFT: u8 = 2;
 
-const ELASTIC: f32 = 0.3;
-const AIR_DRAG: f32 = 0.0002;
+const ELASTIC: f32 = 0.2;
+const AIR_DRAG: f32 = 0.0003;
 const AIR_GRAVITY: f32 = 0.000003;
 const LAND_DRAG: f32 = 50;
 const LAND_GRAVITY: f32 = 30;
@@ -78,7 +78,8 @@ let intervalCountMax: u16 = 0;
 let faceCount: u16 = 0;
 let faceCountMax: u16 = 0;
 
-let lineOffset: usize = 0;
+let lineLocationOffset: usize = 0;
+let lineColorOffset: usize = 0;
 let jointOffset: usize = 0;
 let faceMidpointOffset: usize = 0;
 let faceNormalOffset: usize = 0;
@@ -235,14 +236,24 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
     setZ(vPtr, ax * by - ay * bx);
 }
 
-// line: size is 2 vectors, or 6 floats, or 24 bytes
+// line locations: size is 2 vectors, or 6 floats, or 24 bytes
 
-function outputLineAlphaPtr(index: u16): usize {
-    return index * LINE_SIZE;
+function outputAlphaLocationPtr(intervalIndex: u16): usize {
+    return intervalIndex * LINE_SIZE;
 }
 
-function outpuLineOmegaPtr(index: u16): usize {
-    return index * LINE_SIZE + VECTOR_SIZE;
+function outputOmegaLocationPtr(intervalIndex: u16): usize {
+    return intervalIndex * LINE_SIZE + VECTOR_SIZE;
+}
+
+// line colors: size is 2 vectors, or 6 floats, or 24 bytes
+
+function outputAlphaColorPtr(intervalIndex: u16): usize {
+    return lineColorOffset + intervalIndex * LINE_SIZE;
+}
+
+function outputOmegaColorPtr(intervalIndex: u16): usize {
+    return lineColorOffset + intervalIndex * LINE_SIZE + VECTOR_SIZE;
 }
 
 // joint: size is u8 + u16 (5 x 3 + 2) = 17 float64s * 8 = 3 + 136 = 139 bytes
@@ -559,12 +570,14 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
-    let sizeOfIntervalLines = intervalCountMax * VECTOR_SIZE * 2;
-    let sizeOfFaceVectors = faceCountMax * VECTOR_SIZE;
-    let sizeOfJoints = jointCountMax * JOINT_SIZE;
-    let sizeOfIntervals = intervalCountMax * INTERVAL_SIZE;
-    let sizeOfFaces = faceCountMax * FACE_SIZE;
-    let sizeOfMetadata = VECTOR_SIZE * 10; // 4 so far
+    let intervalLinesSize = intervalCountMax * VECTOR_SIZE * 2;
+    let intervalColorsSize = intervalLinesSize;
+    let faceVectorsSize = faceCountMax * VECTOR_SIZE;
+    let faceJointVectorsSize = faceVectorsSize * 3;
+    let jointsSize = jointCountMax * JOINT_SIZE;
+    let intervalsSize = intervalCountMax * INTERVAL_SIZE;
+    let facesSize = faceCountMax * FACE_SIZE;
+    let metadataSize = VECTOR_SIZE * 10; // 4 so far
     // offsets
     let bytes = (
         metadataOffset = (
@@ -574,15 +587,17 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                         faceLocationOffset = (
                             faceNormalOffset = (
                                 faceMidpointOffset = (
-                                    lineOffset
-                                ) + sizeOfIntervalLines
-                            ) + sizeOfFaceVectors
-                        ) + sizeOfFaceVectors * 3
-                    ) + sizeOfFaceVectors * 3
-                ) + sizeOfJoints
-            ) + sizeOfIntervals
-        ) + sizeOfFaces
-    ) + sizeOfMetadata;
+                                    lineColorOffset = (
+                                        lineLocationOffset
+                                    ) + intervalLinesSize
+                                ) + intervalColorsSize
+                            ) + faceVectorsSize
+                        ) + faceJointVectorsSize
+                    ) + faceJointVectorsSize
+                ) + jointsSize
+            ) + intervalsSize
+        ) + facesSize
+    ) + metadataSize;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
     projectionPtr = metadataOffset;
@@ -757,8 +772,24 @@ export function iterate(ticks: usize): void {
         tick();
     }
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        setVector(outputLineAlphaPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
-        setVector(outpuLineOmegaPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
+        setVector(outputAlphaLocationPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
+        setVector(outputOmegaLocationPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
+        let red: f32 = 0.1;
+        let green: f32 = 0.1;
+        let blue: f32 = 0.1;
+        let role = getRole(thisInterval);
+        switch (role) {
+            case ROLE_SPRING:
+                red = 1;
+                break;
+            case ROLE_MUSCLE:
+                green = 1;
+                break;
+            default:
+                blue = 1;
+        }
+        setAll(outputAlphaColorPtr(thisInterval), red, green, blue);
+        setAll(outputOmegaColorPtr(thisInterval), red, green, blue);
     }
     for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
         outputFaceGeometry(thisFace);
