@@ -199,7 +199,7 @@ export class EigFabric {
         this.createInterval(ROLE_SPRING, face.jointIndex[1], apex, face.averageIdealSpan);
         this.createInterval(ROLE_SPRING, face.jointIndex[2], apex, face.averageIdealSpan);
         if (existingApexIndex < this.fab.joints()) {
-            this.createInterval(ROLE_MUSCLE, existingApexIndex, apex, face.averageIdealSpan * 2);
+            this.createInterval(ROLE_MUSCLE, existingApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
         }
         this.createFace(face.jointIndex[0], face.jointIndex[1], apex);
         this.createFace(face.jointIndex[1], face.jointIndex[2], apex);
