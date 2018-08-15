@@ -36,6 +36,8 @@ export interface IFabricExports {
 
     findOppositeFaceIndex(faceIndex: number): number;
 
+    findFaceApexIndex(faceIndex: number): number;
+
     getFaceJointIndex(faceIndex: number, jointNumber: number): number;
 
     getFaceAverageIdealSpan(faceIndex: number): number;
@@ -75,19 +77,21 @@ export class EigFabric {
     private faceMidpointsArray: Float32Array;
     private faceNormalsArray: Float32Array;
     private faceLocationsArray: Float32Array;
+    private intervalCountMax: number;
+    private faceCountMax: number;
 
     constructor(
         private fab: IFabricExports,
-        private jointCountMax: number,
-        private intervalCountMax: number,
-        private faceCountMax: number
+        private jointCountMax: number
     ) {
-        const linePairFloats = intervalCountMax * 2 * 3;
-        const faceFloats = faceCountMax * 3;
+        this.intervalCountMax = jointCountMax * 4;
+        this.faceCountMax = jointCountMax * 2;
+        const linePairFloats = this.intervalCountMax * 2 * 3;
+        const faceFloats = this.faceCountMax * 3;
         const midpointOffset = linePairFloats * Float32Array.BYTES_PER_ELEMENT;
         const normalOffset = midpointOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT;
         const locationOffset = normalOffset + faceFloats * Float32Array.BYTES_PER_ELEMENT * 3;
-        this.fabricBytes = fab.init(jointCountMax, intervalCountMax, faceCountMax);
+        this.fabricBytes = fab.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
         this.linePairsArray = new Float32Array(fab.memory.buffer, 0, linePairFloats);
         this.faceMidpointsArray = new Float32Array(fab.memory.buffer, midpointOffset, faceFloats);
         this.faceNormalsArray = new Float32Array(fab.memory.buffer, normalOffset, faceFloats * 3);
@@ -170,6 +174,7 @@ export class EigFabric {
     }
 
     public createTetraFromFace(face: IFace, knownApexTag?: number) {
+        const existingApexIndex = this.fab.findFaceApexIndex(face.index);
         const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
         const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2 / 3)).add(midpoint);
         const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
@@ -177,6 +182,9 @@ export class EigFabric {
         this.createInterval(ROLE_SPRING, face.jointIndex[0], apex, face.averageIdealSpan);
         this.createInterval(ROLE_SPRING, face.jointIndex[1], apex, face.averageIdealSpan);
         this.createInterval(ROLE_SPRING, face.jointIndex[2], apex, face.averageIdealSpan);
+        if (existingApexIndex < this.fab.joints()) {
+            this.createInterval(ROLE_MUSCLE, existingApexIndex, apex, face.averageIdealSpan * 2);
+        }
         this.createFace(face.jointIndex[0], face.jointIndex[1], apex);
         this.createFace(face.jointIndex[1], face.jointIndex[2], apex);
         this.createFace(face.jointIndex[2], face.jointIndex[0], apex);

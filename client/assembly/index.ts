@@ -64,9 +64,9 @@ const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
 const BILATERAL_LEFT: u8 = 2;
 
-const ELASTIC: f32 = 0.1;
-const AIR_DRAG: f32 = 0.0004;
-const AIR_GRAVITY: f32 = 0.00001;
+const ELASTIC: f32 = 0.3;
+const AIR_DRAG: f32 = 0.0002;
+const AIR_GRAVITY: f32 = 0.000003;
 const LAND_DRAG: f32 = 50;
 const LAND_GRAVITY: f32 = 30;
 
@@ -699,6 +699,40 @@ export function findOppositeFaceIndex(faceIndex: u16): u16 {
         }
     }
     return faceCount + 1;
+}
+
+export function findFaceApexIndex(faceIndex: u16): u16 {
+    let joint0 = getFaceJointIndex(faceIndex, 0);
+    let joint1 = getFaceJointIndex(faceIndex, 1);
+    let joint2 = getFaceJointIndex(faceIndex, 2);
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
+        if (thisJoint === joint0 || thisJoint === joint1 || thisJoint === joint2) {
+            continue;
+        }
+        let matches = 0;
+        for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
+            if (getRole(thisInterval) !== ROLE_SPRING) {
+                continue;
+            }
+            let alpha = getAlphaIndex(thisInterval);
+            let omega = getOmegaIndex(thisInterval);
+            if (thisJoint !== alpha && thisJoint != omega) {
+                continue;
+            }
+            let alphaHit = alpha === joint0 || alpha === joint1 || alpha === joint2;
+            if (alphaHit && thisJoint === omega) {
+                matches++;
+            }
+            let omegaHit = omega === joint0 || omega === joint1 || omega === joint2;
+            if (omegaHit && thisJoint === alpha) {
+                matches++;
+            }
+        }
+        if (matches === 3) {
+            return thisJoint;
+        }
+    }
+    return jointCount + 1;
 }
 
 export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {

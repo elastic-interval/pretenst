@@ -50,7 +50,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     constructor(props: IEigViewProps) {
         super(props);
         props.fabricFactory().then(fabricExports => {
-            const fabric = new EigFabric(fabricExports, 180, 400, 350);
+            const fabric = new EigFabric(fabricExports, 280);
             console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
             fabric.createSeed(5);
             fabric.centralize(1);
@@ -157,7 +157,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                         <R3.PointLight
                             name="Light"
                             key="Light"
-                            distance="20"
+                            distance="60"
+                            decay="2"
                             position={lightPosition}
                         />
                         <R3.HemisphereLight name="Hemi" color={new Color(0.4, 0.4, 0.4)}/>
