@@ -69,6 +69,7 @@ const AIR_DRAG: f32 = 0.0003;
 const AIR_GRAVITY: f32 = 0.000003;
 const LAND_DRAG: f32 = 50;
 const LAND_GRAVITY: f32 = 30;
+const STRESS_MAX: f32 = 0.003;
 
 let jointCount: u16 = 0;
 let jointCountMax: u16 = 0;
@@ -338,7 +339,7 @@ function unitPtr(intervalIndex: u16): usize {
     return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2;
 }
 
-function spanPtr(intervalIndex: u16): usize {
+function stressPtr(intervalIndex: u16): usize {
     return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE;
 }
 
@@ -350,7 +351,6 @@ function calculateSpan(intervalIndex: u16): f32 {
     let unit = unitPtr(intervalIndex);
     subVectors(unit, locationPtr(getOmegaIndex(intervalIndex)), locationPtr(getAlphaIndex(intervalIndex)));
     let span = length(unit);
-    setFloat(spanPtr(intervalIndex), span);
     multiplyScalar(unit, 1 / span);
     return span;
 }
@@ -458,6 +458,7 @@ function elastic(intervalIndex: u16): void {
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
     let push = canPush(getRole(intervalIndex));
     let stress = ELASTIC * (span - idealSpan) * idealSpan * idealSpan;
+    setFloat(stressPtr(intervalIndex), stress);
     if (push || stress > 0) {
         addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
         addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
@@ -516,11 +517,11 @@ function tick(): void {
         // interval must see fabric age
         elastic(thisInterval);
         if (getRole(thisInterval) === ROLE_TEMPORARY) {
-            let span = getFloat(spanPtr(thisInterval)) - TEMPORARY_TICK_REDUCTION;
+            let span = calculateSpan(thisInterval) - TEMPORARY_TICK_REDUCTION;
             if (span <= 0) {
                 removeInterval(thisInterval);
             } else {
-                setFloat(spanPtr(thisInterval), span)
+                setFloat(idealSpanPtr(thisInterval), span)
             }
         }
     }
@@ -774,19 +775,24 @@ export function iterate(ticks: usize): void {
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         setVector(outputAlphaLocationPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
         setVector(outputOmegaLocationPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
-        let red: f32 = 0.1;
-        let green: f32 = 0.1;
-        let blue: f32 = 0.1;
+        let stress = getFloat(stressPtr(thisInterval)) / STRESS_MAX;
+        if (stress > 1) {
+            stress = 1;
+        } else if (stress < -1) {
+            stress = -1;
+        }
+        let red: f32 = 0;
+        let green: f32 = 0;
+        let blue: f32 = 0;
         let role = getRole(thisInterval);
         switch (role) {
             case ROLE_SPRING:
-                red = 1;
+                red = 0.6 + -stress * 0.4;
+                blue = 0.6 + stress * 0.4;
                 break;
             case ROLE_MUSCLE:
-                green = 1;
+                red = green = blue = 0.8;
                 break;
-            default:
-                blue = 1;
         }
         setAll(outputAlphaColorPtr(thisInterval), red, green, blue);
         setAll(outputOmegaColorPtr(thisInterval), red, green, blue);
