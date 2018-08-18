@@ -847,7 +847,7 @@ const AIR_GRAVITY: f32 = 0.00001;
 const LAND_DRAG: f32 = 50;
 const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;
-const STRESS_MAX: f32 = 0.003;
+const STRESS_MAX: f32 = 0.001;
 
 export function iterate(ticks: usize): void {
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
