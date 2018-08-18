@@ -24,6 +24,16 @@
 <body>
 <script>
     const eigCodePromise = fetch("eig.wasm").then(response => response.arrayBuffer());
+    let batch = [];
+
+    function batchLog(msg) {
+        console.log(msg);
+        // batch.push(msg);
+        // if (batch.length === 100) {
+        //     console.log("wasm", batch);
+        //     batch = [];
+        // }
+    }
 
     function fabricFactory() {
         const importObject = {
@@ -34,13 +44,13 @@
             },
             index: {
                 logBoolean: (index, booleanValue) => {
-                    console.log(index + ': ' + (booleanValue ? 'true': 'false'));
+                    batchLog(index + ': ' + (booleanValue ? 'true': 'false'));
                 },
                 logFloat: (index, floatValue) => {
-                    console.log(index + ': ' + floatValue.toFixed(5));
+                    batchLog(index + ': ' + floatValue.toFixed(5));
                 },
                 logInt: (index, intValue) => {
-                    console.log(index + ': ' + intValue);
+                    batchLog(index + ': ' + intValue);
                 }
             },
             JSMath: Math

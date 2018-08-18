@@ -505,7 +505,7 @@ function outputFaceGeometry(faceIndex: u16): void {
 
 const ROLE_INDEX_MAX: u8 = 64;
 const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
-const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.1;
+const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.2;
 
 function behaviorTimePtr(roleIndex: u16, variationIndex: u8): u32 {
     return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE);
@@ -526,7 +526,7 @@ function getBehaviorSpanVariation(roleIndex: u16, variationIndex: u8): f32 {
 
 function initBehavior(roleIndex: u16): void {
     for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
-        let time = Math.random() * 65535;
+        let time = Math.random() * 65535.0;
         setIndex(behaviorTimePtr(roleIndex, thisVariation), <u16>time);
         let variation = (Math.random() - 0.5) * 2 * 32767;
         setVariation(behaviorSpanVariationPtr(roleIndex, thisVariation), <i16>variation);
@@ -535,26 +535,32 @@ function initBehavior(roleIndex: u16): void {
 }
 
 function sortVariations(roleIndex: u16): void {
-    for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT - 1; thisVariation++) {
-        let t0 = behaviorTimePtr(roleIndex, thisVariation);
-        let time0 = getIndex(t0);
-        let t1 = behaviorTimePtr(roleIndex, thisVariation + 1);
-        let time1 = getIndex(t0);
-        if (time0 > time1) {
-            setIndex(t0, time1);
-            setIndex(t1, time0);
-            let s0 = behaviorSpanVariationPtr(roleIndex, thisVariation);
-            let spanVariation0 = getVariation(s0);
-            let s1 = behaviorSpanVariationPtr(roleIndex, thisVariation + 1);
-            let spanVariation1 = getVariation(s1);
-            setVariation(s0, spanVariation1);
-            setVariation(s1, spanVariation0);
+    let unsorted = VARIATION_COUNT;
+    while (true) {
+        unsorted--;
+        for (let scan: u8 = 0; scan < unsorted; scan++) {
+            let t0 = behaviorTimePtr(roleIndex, scan);
+            let time0 = getIndex(t0);
+            let t1 = behaviorTimePtr(roleIndex, scan + 1);
+            let time1 = getIndex(t1);
+            if (time0 > time1) {
+                setIndex(t0, time1);
+                setIndex(t1, time0);
+                let s0 = behaviorSpanVariationPtr(roleIndex, scan);
+                let spanVariation0 = getVariation(s0);
+                let s1 = behaviorSpanVariationPtr(roleIndex, scan + 1);
+                let spanVariation1 = getVariation(s1);
+                setVariation(s0, spanVariation1);
+                setVariation(s1, spanVariation0);
+            }
+        }
+        if (unsorted == 0) {
+            break;
         }
     }
 }
 
-function currentSpan(intervalIndex: u16, timeIndex: u16): f32 {
-    let roleIndex = getRoleIndex(intervalIndex);
+function currentSpan(roleIndex: u8, idealSpan: f32, timeIndex: u16): f32 {
     let beforeTime: u16 = 0;
     let beforeVariation: f32 = 1;
     let variationNumber: u8 = 0;
@@ -580,7 +586,6 @@ function currentSpan(intervalIndex: u16, timeIndex: u16): f32 {
         }
         variationNumber--;
     }
-    let idealSpan = getFloat(idealSpanPtr(intervalIndex));
     let timeSpan = <f32>(afterTime - beforeTime);
     let currentVariation =
         <f32>(timeIndex - beforeTime) / timeSpan * afterVariation +
@@ -718,7 +723,7 @@ export function findOppositeFaceIndex(faceIndex: u16): u16 {
 
 // Physics =====================================================================================
 
-const TIME_INDEX_STEP: u16 = 1;
+const TIME_INDEX_STEP: u16 = 5;
 
 @inline
 function abs(val: f32): f32 {
@@ -731,7 +736,7 @@ function elasticBehavior(intervalIndex: u16, elasticFactor: f32): void {
         setTimeIndex(intervalIndex, timeIndex = 1);
     }
     let span = calculateSpan(intervalIndex);
-    let idealSpan = currentSpan(intervalIndex, timeIndex);
+    let idealSpan = currentSpan(getRoleIndex(intervalIndex), getFloat(idealSpanPtr(intervalIndex)), timeIndex);
     let stress = elasticFactor * (span - idealSpan) * idealSpan * idealSpan;
     setFloat(stressPtr(intervalIndex), stress);
     addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
