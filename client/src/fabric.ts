@@ -30,13 +30,11 @@ export interface IFabricExports {
 
     createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number;
 
-    createFace(joint0Index: number, joint1Index: number, joint2Index: number): number;
+    createFace(joint0Index: number, joint1Index: number, joint2Index: number, apexJointIndex: number): number;
 
     removeFace(faceIndex: number): void;
 
     findOppositeFaceIndex(faceIndex: number): number;
-
-    findFaceApexIndex(faceIndex: number): number;
 
     getFaceJointIndex(faceIndex: number, jointNumber: number): number;
 
@@ -152,10 +150,10 @@ export class EigFabric {
         this.createInterval(role, 2, 0, -1);
         this.createInterval(role, 0, 3, -1);
         this.createInterval(role, 3, 1, -1);
-        this.createFace(0, 1, 2);
-        this.createFace(1, 3, 2);
-        this.createFace(1, 0, 3);
-        this.createFace(2, 3, 0);
+        this.createFace(0, 1, 2, 3);
+        this.createFace(1, 3, 2, 0);
+        this.createFace(1, 0, 3, 2);
+        this.createFace(2, 3, 0, 1);
     }
 
     public createSeed(corners: number): void {
@@ -175,13 +173,12 @@ export class EigFabric {
             this.createInterval(role++, left, right, -1);
         }
         for (let walk = 0; walk < corners; walk++) {
-            this.createFace(left, walk, (walk + 1) % corners);
-            this.createFace(right, (walk + 1) % corners, walk);
+            this.createFace(left, walk, (walk + 1) % corners, this.jointCountMax);
+            this.createFace(right, (walk + 1) % corners, walk, this.jointCountMax);
         }
     }
 
     public createTetraFromFace(face: IFace, knownApexTag?: number) {
-        const existingApexIndex = this.fab.findFaceApexIndex(face.index);
         const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
         const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2 / 3)).add(midpoint);
         const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
@@ -190,12 +187,13 @@ export class EigFabric {
         this.createInterval(role, face.jointIndex[0], apex, face.averageIdealSpan);
         this.createInterval(role, face.jointIndex[1], apex, face.averageIdealSpan);
         this.createInterval(role, face.jointIndex[2], apex, face.averageIdealSpan);
-        if (existingApexIndex < this.fab.joints()) {
+        const existingApexIndex = face.jointIndex[3];
+        if (existingApexIndex < this.jointCountMax) {
             this.createInterval(role, existingApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
         }
-        this.createFace(face.jointIndex[0], face.jointIndex[1], apex);
-        this.createFace(face.jointIndex[1], face.jointIndex[2], apex);
-        this.createFace(face.jointIndex[2], face.jointIndex[0], apex);
+        this.createFace(face.jointIndex[0], face.jointIndex[1], apex, face.jointIndex[2]);
+        this.createFace(face.jointIndex[1], face.jointIndex[2], apex, face.jointIndex[0]);
+        this.createFace(face.jointIndex[2], face.jointIndex[0], apex, face.jointIndex[1]);
         if (!knownApexTag) {
             const oppositeFaceIndex = this.fab.findOppositeFaceIndex(face.index);
             if (oppositeFaceIndex < this.faces()) {
@@ -252,8 +250,8 @@ export class EigFabric {
         return this.fab.createInterval(role, alphaIndex, omegaIndex, span);
     }
 
-    public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
-        return this.fab.createFace(joint0Index, joint1Index, joint2Index);
+    public createFace(joint0Index: number, joint1Index: number, joint2Index: number, apexJointIndex: number): number {
+        return this.fab.createFace(joint0Index, joint1Index, joint2Index, apexJointIndex);
     }
 
     public removeFace(faceIndex: number): void {
@@ -270,9 +268,9 @@ export class EigFabric {
             }
             return BILATERAL_MIDDLE;
         };
-        const jointNumbers = [0, 1, 2];
-        const jointIndex = jointNumbers.map(jointNumber => this.fab.getFaceJointIndex(faceIndex, jointNumber));
-        const normal = jointNumbers
+        const jointIndex = [0, 1, 2, 3]
+            .map(jointNumber => this.fab.getFaceJointIndex(faceIndex, jointNumber));
+        const normal = [0, 1, 2]
             .map(jointNumber => vectorFromIndex(this.faceNormalsArray, (faceIndex * 3 + jointNumber) * 3))
             .reduce((prev, current) => prev.add(current), new Vector3()).multiplyScalar(1 / 3.0);
         return {

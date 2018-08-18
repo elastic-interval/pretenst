@@ -408,13 +408,17 @@ function outputOmegaColorPtr(intervalIndex: u16): usize {
 
 // Faces =====================================================================================
 
-const FACE_SIZE: usize = INDEX_SIZE * 3;
+const FACE_SIZE: usize = INDEX_SIZE * 4;
 
 function facePtr(faceIndex: u16): usize {
     return faceOffset + faceIndex * FACE_SIZE;
 }
 
-function setJointIndexOfFace(faceIndex: u16, jointNumber: u16, v: u16): void {
+export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {
+    return getIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE);
+}
+
+function setFaceJointIndex(faceIndex: u16, jointNumber: u16, v: u16): void {
     setIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE, v);
 }
 
@@ -449,6 +453,19 @@ function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize)
     multiplyScalar(projectionPtr, 1 / length(projectionPtr));
     addScaledVector(normal, projectionPtr, 0.6);
     multiplyScalar(normal, 1 / length(normal));
+}
+
+export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
+    let joint0 = getFaceJointIndex(faceIndex, 0);
+    let joint1 = getFaceJointIndex(faceIndex, 1);
+    let joint2 = getFaceJointIndex(faceIndex, 2);
+    let interval0 = findIntervalIndex(joint0, joint1);
+    let interval1 = findIntervalIndex(joint1, joint2);
+    let interval2 = findIntervalIndex(joint2, joint0);
+    let ideal0 = getFloat(idealSpanPtr(interval0));
+    let ideal1 = getFloat(idealSpanPtr(interval1));
+    let ideal2 = getFloat(idealSpanPtr(interval2));
+    return (ideal0 + ideal1 + ideal2) / 3;
 }
 
 // Triangles and normals depicting the faces =================================================
@@ -647,12 +664,13 @@ export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, ideal
     return intervalIndex;
 }
 
-export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): usize {
+export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16, apexJointIndex: u16): usize {
     let faceIndex = faceCount++;
+    setFaceJointIndex(faceIndex, 0, joint0Index);
+    setFaceJointIndex(faceIndex, 1, joint1Index);
+    setFaceJointIndex(faceIndex, 2, joint2Index);
+    setFaceJointIndex(faceIndex, 3, apexJointIndex);
     zero(outputMidpointPtr(faceIndex));
-    setJointIndexOfFace(faceIndex, 0, joint0Index);
-    setJointIndexOfFace(faceIndex, 1, joint1Index);
-    setJointIndexOfFace(faceIndex, 2, joint2Index);
     zero(outputNormalPtr(faceIndex, 0));
     zero(outputNormalPtr(faceIndex, 1));
     zero(outputNormalPtr(faceIndex, 2));
@@ -669,9 +687,10 @@ export function removeFace(faceIndex: u16): void {
         setVector(outputNormalPtr(thisFace, 0), outputNormalPtr(nextFace, 0));
         setVector(outputNormalPtr(thisFace, 1), outputNormalPtr(nextFace, 1));
         setVector(outputNormalPtr(thisFace, 2), outputNormalPtr(nextFace, 2));
-        setJointIndexOfFace(thisFace, 0, getFaceJointIndex(nextFace, 0));
-        setJointIndexOfFace(thisFace, 1, getFaceJointIndex(nextFace, 1));
-        setJointIndexOfFace(thisFace, 2, getFaceJointIndex(nextFace, 2));
+        setFaceJointIndex(thisFace, 0, getFaceJointIndex(nextFace, 0));
+        setFaceJointIndex(thisFace, 1, getFaceJointIndex(nextFace, 1));
+        setFaceJointIndex(thisFace, 2, getFaceJointIndex(nextFace, 2));
+        setFaceJointIndex(thisFace, 3, getFaceJointIndex(nextFace, 3));
     }
     faceCount--;
 }
@@ -695,54 +714,6 @@ export function findOppositeFaceIndex(faceIndex: u16): u16 {
         }
     }
     return faceCount + 1;
-}
-
-export function findFaceApexIndex(faceIndex: u16): u16 {
-    let joint0 = getFaceJointIndex(faceIndex, 0);
-    let joint1 = getFaceJointIndex(faceIndex, 1);
-    let joint2 = getFaceJointIndex(faceIndex, 2);
-    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        if (thisJoint === joint0 || thisJoint === joint1 || thisJoint === joint2) {
-            continue;
-        }
-        let matches = 0;
-        for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-            let alpha = getAlphaIndex(thisInterval);
-            let omega = getOmegaIndex(thisInterval);
-            if (thisJoint !== alpha && thisJoint != omega) {
-                continue;
-            }
-            let alphaHit = alpha === joint0 || alpha === joint1 || alpha === joint2;
-            if (alphaHit && thisJoint === omega) {
-                matches++;
-            }
-            let omegaHit = omega === joint0 || omega === joint1 || omega === joint2;
-            if (omegaHit && thisJoint === alpha) {
-                matches++;
-            }
-        }
-        if (matches === 3) {
-            return thisJoint;
-        }
-    }
-    return jointCount + 1;
-}
-
-export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {
-    return getIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE);
-}
-
-export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
-    let joint0 = getFaceJointIndex(faceIndex, 0);
-    let joint1 = getFaceJointIndex(faceIndex, 1);
-    let joint2 = getFaceJointIndex(faceIndex, 2);
-    let interval0 = findIntervalIndex(joint0, joint1);
-    let interval1 = findIntervalIndex(joint1, joint2);
-    let interval2 = findIntervalIndex(joint2, joint0);
-    let ideal0 = getFloat(idealSpanPtr(interval0));
-    let ideal1 = getFloat(idealSpanPtr(interval1));
-    let ideal2 = getFloat(idealSpanPtr(interval2));
-    return (ideal0 + ideal1 + ideal2) / 3;
 }
 
 // Physics =====================================================================================
@@ -866,8 +837,8 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
     }
 }
 
-const AIR_DRAG: f32 = 0.0003;
-const AIR_GRAVITY: f32 = 0.000003;
+const AIR_DRAG: f32 = 0.0005;
+const AIR_GRAVITY: f32 = 0.00001;
 const LAND_DRAG: f32 = 50;
 const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;
