@@ -19,8 +19,8 @@
     "build": "react-scripts-ts build",
     "test": "react-scripts-ts test --env=jsdom",
     "eject": "react-scripts-ts eject",
-    "asbuild:untouched": "asc assembly/index.ts -b build/untouched.wasm -t build/untouched.wat --sourceMap --validate",
-    "asbuild:optimized": "asc assembly/index.ts -b public/eig.wasm -t build/optimized.wat --sourceMap --validate --optimize --noDebug",
+    "asbuild:untouched": "asc assembly/index.ts -b build/untouched.wasm -t build/untouched.wat --use Math=JSMath --sourceMap --validate",
+    "asbuild:optimized": "asc assembly/index.ts -b public/eig.wasm -t build/optimized.wat --use Math=JSMath --sourceMap --validate --optimize --noDebug",
     "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
   },
   "devDependencies": {

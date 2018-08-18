@@ -167,12 +167,12 @@ export class EigFabric {
         const jointPairName = this.fab.nextJointTag();
         const left = this.createJoint(jointPairName, BILATERAL_LEFT, 0, R, -R);
         const right = this.createJoint(jointPairName, BILATERAL_RIGHT, 0, R, R);
-        const role = 0;
+        let role = 0;
         for (let walk = 0; walk < corners; walk++) {
-            this.createInterval(role, walk, (walk + 1) % corners, -1);
-            this.createInterval(role, walk, left, -1);
-            this.createInterval(role, walk, right, -1);
-            this.createInterval(role, left, right, -1);
+            this.createInterval(role++, walk, (walk + 1) % corners, -1);
+            this.createInterval(role++, walk, left, -1);
+            this.createInterval(role++, walk, right, -1);
+            this.createInterval(role++, left, right, -1);
         }
         for (let walk = 0; walk < corners; walk++) {
             this.createFace(left, walk, (walk + 1) % corners);

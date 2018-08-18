@@ -42,7 +42,8 @@
                 logInt: (index, intValue) => {
                     console.log(index + ': ' + intValue);
                 }
-            }
+            },
+            JSMath: Math
         };
         return eigCodePromise
             .then(code => WebAssembly.instantiate(code, importObject))
