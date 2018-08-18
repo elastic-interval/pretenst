@@ -47,17 +47,6 @@ export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
 
-export const ROLE_SPRING = 1;
-export const ROLE_MUSCLE = 2;
-export const ROLE_BAR = 3;
-export const ROLE_CABLE = 4;
-export const ROLE_TEMPORARY = 5;
-export const ROLE_RING_SPRING = 6;
-export const ROLE_COUNTER_CABLE = 7;
-export const ROLE_HORIZONTAL_CABLE = 8;
-export const ROLE_RING_CABLE = 9;
-export const ROLE_VERTICAL_CABLE = 10;
-
 export const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
 
 export interface IFace {
@@ -152,16 +141,17 @@ export class EigFabric {
 
     public createTetrahedron(): void {
         const R = Math.sqrt(2) / 2;
+        const role = 0;
         this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R, -R, R);
         this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, -R, R, R);
         this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, -R, -R, -R);
         this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R, R, -R);
-        this.createInterval(ROLE_SPRING, 0, 1, -1);
-        this.createInterval(ROLE_SPRING, 1, 2, -1);
-        this.createInterval(ROLE_SPRING, 2, 3, -1);
-        this.createInterval(ROLE_SPRING, 2, 0, -1);
-        this.createInterval(ROLE_SPRING, 0, 3, -1);
-        this.createInterval(ROLE_SPRING, 3, 1, -1);
+        this.createInterval(role, 0, 1, -1);
+        this.createInterval(role, 1, 2, -1);
+        this.createInterval(role, 2, 3, -1);
+        this.createInterval(role, 2, 0, -1);
+        this.createInterval(role, 0, 3, -1);
+        this.createInterval(role, 3, 1, -1);
         this.createFace(0, 1, 2);
         this.createFace(1, 3, 2);
         this.createFace(1, 0, 3);
@@ -177,11 +167,12 @@ export class EigFabric {
         const jointPairName = this.fab.nextJointTag();
         const left = this.createJoint(jointPairName, BILATERAL_LEFT, 0, R, -R);
         const right = this.createJoint(jointPairName, BILATERAL_RIGHT, 0, R, R);
+        const role = 0;
         for (let walk = 0; walk < corners; walk++) {
-            this.createInterval(ROLE_SPRING, walk, (walk + 1) % corners, -1);
-            this.createInterval(ROLE_SPRING, walk, left, -1);
-            this.createInterval(ROLE_SPRING, walk, right, -1);
-            this.createInterval(ROLE_SPRING, left, right, -1);
+            this.createInterval(role, walk, (walk + 1) % corners, -1);
+            this.createInterval(role, walk, left, -1);
+            this.createInterval(role, walk, right, -1);
+            this.createInterval(role, left, right, -1);
         }
         for (let walk = 0; walk < corners; walk++) {
             this.createFace(left, walk, (walk + 1) % corners);
@@ -195,11 +186,12 @@ export class EigFabric {
         const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2 / 3)).add(midpoint);
         const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
         const apex = this.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
-        this.createInterval(ROLE_SPRING, face.jointIndex[0], apex, face.averageIdealSpan);
-        this.createInterval(ROLE_SPRING, face.jointIndex[1], apex, face.averageIdealSpan);
-        this.createInterval(ROLE_SPRING, face.jointIndex[2], apex, face.averageIdealSpan);
+        const role = 0;
+        this.createInterval(role, face.jointIndex[0], apex, face.averageIdealSpan);
+        this.createInterval(role, face.jointIndex[1], apex, face.averageIdealSpan);
+        this.createInterval(role, face.jointIndex[2], apex, face.averageIdealSpan);
         if (existingApexIndex < this.fab.joints()) {
-            this.createInterval(ROLE_MUSCLE, existingApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
+            this.createInterval(role, existingApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
         }
         this.createFace(face.jointIndex[0], face.jointIndex[1], apex);
         this.createFace(face.jointIndex[1], face.jointIndex[2], apex);

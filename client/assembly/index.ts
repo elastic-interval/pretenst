@@ -4,72 +4,25 @@ declare function logFloat(idx: u32, f: f32): void;
 
 declare function logInt(idx: u32, i: u32): void;
 
-const ENUM_SIZE: usize = sizeof<u8>();
+const ROLE_SIZE: usize = sizeof<u8>();
 const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
+const SPAN_VARIATION_SIZE: usize = sizeof<i16>();
 const FLOAT_SIZE: usize = sizeof<f32>();
+const VARIATION_COUNT: u8 = 3;
 const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
-
-const JOINT_SIZE: usize = VECTOR_SIZE * 5 + ENUM_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
-const INTERVAL_SIZE: usize = ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
-const FACE_SIZE: usize = INDEX_SIZE * 3;
-const LINE_SIZE: usize = VECTOR_SIZE * 2;
 const METADATA_SIZE: usize = VECTOR_SIZE * 3;
 
 const JOINT_RADIUS: f32 = 0.15;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
-const CABLE_MASS_FACTOR: f32 = 0.05;
-const SPRING_SMOOTH: f32 = 0.03;
-const BAR_SMOOTH: f32 = 0.6;
-const CABLE_SMOOTH: f32 = 0.01;
+const SPRING_SMOOTH: f32 = 0.03; // const BAR_SMOOTH: f32 = 0.6; const CABLE_SMOOTH: f32 = 0.01;
 const TEMPORARY_TICK_REDUCTION: f32 = 0.01;
-
-const ROLE_SPRING: i8 = 1;
-const ROLE_MUSCLE: i8 = 2;
-const ROLE_BAR: i8 = 3;
-const ROLE_CABLE: i8 = 4;
-const ROLE_TEMPORARY: i8 = 5;
-const ROLE_RING_SPRING: i8 = 6;
-const ROLE_COUNTER_CABLE: i8 = 7;
-const ROLE_HORIZONTAL_CABLE: i8 = 8;
-const ROLE_RING_CABLE: i8 = 9;
-const ROLE_VERTICAL_CABLE: i8 = 10;
-
-function getSmoothDegree(role: u8): f32 {
-    switch (role) {
-        case ROLE_SPRING:
-        case ROLE_RING_SPRING:
-        case ROLE_MUSCLE:
-            return SPRING_SMOOTH;
-        case ROLE_BAR:
-            return BAR_SMOOTH;
-        default:
-            return CABLE_SMOOTH;
-    }
-}
-
-function canPush(role: u8): boolean {
-    switch (role) {
-        case ROLE_SPRING:
-        case ROLE_RING_SPRING:
-        case ROLE_MUSCLE:
-        case ROLE_BAR:
-            return true;
-        default:
-            return false;
-    }
-}
 
 const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
 const BILATERAL_LEFT: u8 = 2;
 
-const ELASTIC: f32 = 0.2;
-const AIR_DRAG: f32 = 0.0003;
-const AIR_GRAVITY: f32 = 0.000003;
-const LAND_DRAG: f32 = 50;
-const LAND_GRAVITY: f32 = 30;
-const STRESS_MAX: f32 = 0.003;
+// Dimensioning ================================================================================
 
 let jointCount: u16 = 0;
 let jointCountMax: u16 = 0;
@@ -87,12 +40,72 @@ let faceNormalOffset: usize = 0;
 let faceLocationOffset: usize = 0;
 let intervalOffset: usize = 0;
 let faceOffset: usize = 0;
+let behaviorOffset: usize = 0;
 let metadataOffset: usize = 0;
 
 let projectionPtr: usize = 0;
 let alphaProjectionPtr: usize = 0;
 let omegaProjectionPtr: usize = 0;
 let gravPtr: usize = 0;
+
+export function init(joints: u16, intervals: u16, faces: u16): usize {
+    jointCountMax = joints;
+    intervalCountMax = intervals;
+    faceCountMax = faces;
+    let intervalLinesSize = intervalCountMax * VECTOR_SIZE * 2;
+    let intervalColorsSize = intervalLinesSize;
+    let faceVectorsSize = faceCountMax * VECTOR_SIZE;
+    let faceJointVectorsSize = faceVectorsSize * 3;
+    let jointsSize = jointCountMax * JOINT_SIZE;
+    let intervalsSize = intervalCountMax * INTERVAL_SIZE;
+    let facesSize = faceCountMax * FACE_SIZE;
+    let behaviorSize = ROLE_INDEX_MAX * BEHAVIOR_SIZE;
+    let metadataSize = VECTOR_SIZE * 10; // 4 so far
+    // offsets
+    let bytes = (
+        metadataOffset = (
+            behaviorOffset = (
+                faceOffset = (
+                    intervalOffset = (
+                        jointOffset = (
+                            faceLocationOffset = (
+                                faceNormalOffset = (
+                                    faceMidpointOffset = (
+                                        lineColorOffset = (
+                                            lineLocationOffset
+                                        ) + intervalLinesSize
+                                    ) + intervalColorsSize
+                                ) + faceVectorsSize
+                            ) + faceJointVectorsSize
+                        ) + faceJointVectorsSize
+                    ) + jointsSize
+                ) + intervalsSize
+            ) + behaviorSize
+        ) + facesSize
+    ) + metadataSize;
+    let blocks = bytes >> 16;
+    memory.grow(blocks + 1);
+    projectionPtr = metadataOffset;
+    alphaProjectionPtr = projectionPtr + VECTOR_SIZE;
+    omegaProjectionPtr = alphaProjectionPtr + VECTOR_SIZE;
+    gravPtr = omegaProjectionPtr + VECTOR_SIZE;
+    for (let roleIndex: u8 = 0; roleIndex < ROLE_INDEX_MAX; roleIndex++) {
+        initBehavior(roleIndex);
+    }
+    return bytes;
+}
+
+// Peek and Poke ================================================================================
+
+@inline()
+function getVariation(vPtr: usize): i16 {
+    return load<i16>(vPtr);
+}
+
+@inline()
+function setVariation(vPtr: usize, variation: i16): void {
+    store<i16>(vPtr, variation);
+}
 
 @inline()
 function getIndex(vPtr: usize): u16 {
@@ -109,7 +122,7 @@ function getFloat(vPtr: usize): f32 {
     return load<f32>(vPtr);
 }
 
-// @inline()
+@inline()
 function setFloat(vPtr: usize, v: f32): void {
     store<f32>(vPtr, v);
 }
@@ -143,6 +156,8 @@ function getZ(vPtr: usize): f32 {
 function setZ(vPtr: usize, v: f32): void {
     store<f32>(vPtr + FLOAT_SIZE * 2, v);
 }
+
+// Vector3 ================================================================================
 
 function setAll(vPtr: usize, x: f32, y: f32, z: f32): void {
     setX(vPtr, x);
@@ -237,29 +252,9 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
     setZ(vPtr, ax * by - ay * bx);
 }
 
-// line locations: size is 2 vectors, or 6 floats, or 24 bytes
+// Joints =====================================================================================
 
-function outputAlphaLocationPtr(intervalIndex: u16): usize {
-    return intervalIndex * LINE_SIZE;
-}
-
-function outputOmegaLocationPtr(intervalIndex: u16): usize {
-    return intervalIndex * LINE_SIZE + VECTOR_SIZE;
-}
-
-// line colors: size is 2 vectors, or 6 floats, or 24 bytes
-
-function outputAlphaColorPtr(intervalIndex: u16): usize {
-    return lineColorOffset + intervalIndex * LINE_SIZE;
-}
-
-function outputOmegaColorPtr(intervalIndex: u16): usize {
-    return lineColorOffset + intervalIndex * LINE_SIZE + VECTOR_SIZE;
-}
-
-// joint: size is u8 + u16 (5 x 3 + 2) = 17 float64s * 8 = 3 + 136 = 139 bytes
-//   vectors: location, velocity absorbVelocity, force, gravity,
-//   floats: intervalMass, altitude
+const JOINT_SIZE: usize = VECTOR_SIZE * 5 + ROLE_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
 
 function jointPtr(jointIndex: u16): usize {
     return jointOffset + jointIndex * JOINT_SIZE;
@@ -298,53 +293,51 @@ function setJointLaterality(jointIndex: u16, laterality: u8): void {
 }
 
 function setJointTag(jointIndex: u16, tag: u16): void {
-    store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE, tag);
+    store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE, tag);
 }
 
-// interval: size role u8 plus is 2 unsigned32 + unit (3 f32s) + span + idealSpan, u8 + 5float + 2int = 49 bytes
-//      role: u8
-//      alpha, omega: usize
-//      unit: vector
-//      span, idealSpan: f32
+// Intervals =====================================================================================
+
+const INTERVAL_SIZE: usize = ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
 
 function intervalPtr(intervalIndex: u16): usize {
     return intervalOffset + intervalIndex * INTERVAL_SIZE;
 }
 
-function getRole(intervalIndex: u16): u8 {
+function getRoleIndex(intervalIndex: u16): u8 {
     return load<u8>(intervalPtr(intervalIndex));
 }
 
-function setRole(intervalIndex: u16, role: u8): void {
+function setRoleIndex(intervalIndex: u16, role: u8): void {
     store<u8>(intervalPtr(intervalIndex), role);
 }
 
 function getAlphaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + ENUM_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE);
 }
 
 function setAlphaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + ENUM_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE, v);
 }
 
 function getOmegaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE);
 }
 
 function setOmegaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE, v);
 }
 
 function unitPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2;
+    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2;
 }
 
 function stressPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE;
+    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE;
 }
 
 function idealSpanPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + ENUM_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
+    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE;
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -373,7 +366,29 @@ function findIntervalIndex(joint0: u16, joint1: u16): u16 {
     return intervalCount + 1; // should throw an exception somehow?
 }
 
-// face
+// Lines depicting the intervals ================================================================
+
+const LINE_SIZE: usize = VECTOR_SIZE * 2;
+
+function outputAlphaLocationPtr(intervalIndex: u16): usize {
+    return intervalIndex * LINE_SIZE;
+}
+
+function outputOmegaLocationPtr(intervalIndex: u16): usize {
+    return intervalIndex * LINE_SIZE + VECTOR_SIZE;
+}
+
+function outputAlphaColorPtr(intervalIndex: u16): usize {
+    return lineColorOffset + intervalIndex * LINE_SIZE;
+}
+
+function outputOmegaColorPtr(intervalIndex: u16): usize {
+    return lineColorOffset + intervalIndex * LINE_SIZE + VECTOR_SIZE;
+}
+
+// Faces =====================================================================================
+
+const FACE_SIZE: usize = INDEX_SIZE * 3;
 
 function facePtr(faceIndex: u16): usize {
     return faceOffset + faceIndex * FACE_SIZE;
@@ -416,6 +431,8 @@ function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize)
     multiplyScalar(normal, 1 / length(normal));
 }
 
+// Triangles and normals depicting the faces =================================================
+
 function outputFaceGeometry(faceIndex: u16): void {
     let loc0 = locationPtr(getFaceJointIndex(faceIndex, 0));
     let loc1 = locationPtr(getFaceJointIndex(faceIndex, 1));
@@ -447,166 +464,60 @@ function outputFaceGeometry(faceIndex: u16): void {
     pushNormalTowardsJoint(normal2, loc2, midpoint);
 }
 
-// construction and physics
+// Behavior =====================================================================================
 
-function abs(val: f32): f32 {
-    return val < 0 ? -val : val;
+const ROLE_INDEX_MAX: u8 = 64;
+const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
+
+function behaviorTimePtr(roleIndex: u16, variationIndex: u8): u32 {
+    return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE);
 }
 
-function elastic(intervalIndex: u16): void {
-    let span = calculateSpan(intervalIndex);
-    let idealSpan = getFloat(idealSpanPtr(intervalIndex));
-    let push = canPush(getRole(intervalIndex));
-    let stress = ELASTIC * (span - idealSpan) * idealSpan * idealSpan;
-    setFloat(stressPtr(intervalIndex), stress);
-    if (push || stress > 0) {
-        addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
-        addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
-    }
-    let mass = push ? idealSpan * idealSpan * idealSpan : span * CABLE_MASS_FACTOR;
-    let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex));
-    setFloat(alphaMass, getFloat(alphaMass) + mass / 2);
-    let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex));
-    setFloat(omegaMass, getFloat(omegaMass) + mass / 2);
+function behaviorSpanVariationPtr(roleIndex: u16, variationIndex: u8): u32 {
+    return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE) + 1;
 }
 
-function splitVectors(vectorPtr: usize, basisPtr: usize, projectionPtr: usize, howMuch: f32): void {
-    let agreement = dot(vectorPtr, basisPtr);
-    setVector(projectionPtr, basisPtr);
-    multiplyScalar(projectionPtr, agreement * howMuch);
+function intervalBehaviorTimePtr(intervalIndex: u16, variationIndex: u8): u32 {
+    return behaviorSpanVariationPtr(getRoleIndex(intervalIndex), variationIndex);
 }
 
-function smoothVelocity(intervalIndex: u16, degree: f32): void {
-    splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, degree);
-    splitVectors(velocityPtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), omegaProjectionPtr, degree);
-    addVectors(projectionPtr, alphaProjectionPtr, omegaProjectionPtr);
-    multiplyScalar(projectionPtr, 0.5);
-    sub(absorbVelocityPtr(getAlphaIndex(intervalIndex)), alphaProjectionPtr);
-    sub(absorbVelocityPtr(getOmegaIndex(intervalIndex)), omegaProjectionPtr);
-    add(absorbVelocityPtr(getAlphaIndex(intervalIndex)), projectionPtr);
-    add(absorbVelocityPtr(getOmegaIndex(intervalIndex)), projectionPtr);
+function intervalBehaviorSpanVariationPtr(intervalIndex: u16, variationIndex: u8): u32 {
+    return behaviorTimePtr(getRoleIndex(intervalIndex), variationIndex);
 }
 
-function exertGravity(jointIndex: u16, value: f32): void {
-    let velocity = velocityPtr(jointIndex);
-    setY(velocity, getY(velocity) - value);
-}
-
-function exertJointPhysics(jointIndex: u16): void {
-    let altitude = getY(locationPtr(jointIndex));
-    if (altitude > JOINT_RADIUS) {
-        exertGravity(jointIndex, AIR_GRAVITY);
-        multiplyScalar(velocityPtr(jointIndex), 1 - AIR_DRAG);
-    }
-    else if (altitude < -JOINT_RADIUS) {
-        exertGravity(jointIndex, -AIR_GRAVITY * LAND_GRAVITY);
-        multiplyScalar(velocityPtr(jointIndex), 1 - AIR_DRAG * LAND_DRAG);
-    }
-    else {
-        let degree = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
-        let gravityValue = AIR_GRAVITY * degree + -AIR_GRAVITY * LAND_GRAVITY * (1 - degree);
-        exertGravity(jointIndex, gravityValue);
-        let drag = AIR_DRAG * degree + AIR_DRAG * LAND_DRAG * (1 - degree);
-        multiplyScalar(velocityPtr(jointIndex), 1 - drag);
+function initBehavior(roleIndex: u16): void {
+    for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
+        setVariation(behaviorSpanVariationPtr(roleIndex, thisVariation), 0);
+        setIndex(behaviorTimePtr(roleIndex, thisVariation), 0);
     }
 }
 
-function tick(): void {
-    // fabric age ++
-    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        // interval must see fabric age
-        elastic(thisInterval);
-        if (getRole(thisInterval) === ROLE_TEMPORARY) {
-            let span = calculateSpan(thisInterval) - TEMPORARY_TICK_REDUCTION;
-            if (span <= 0) {
-                removeInterval(thisInterval);
-            } else {
-                setFloat(idealSpanPtr(thisInterval), span)
-            }
+function sortVariations(roleIndex: u16): void {
+    for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT - 1; thisVariation++) {
+        let t0 = behaviorTimePtr(roleIndex, thisVariation);
+        let time0 = getIndex(t0);
+        let t1 = behaviorTimePtr(roleIndex, thisVariation + 1);
+        let time1 = getIndex(t0);
+        if (time0 > time1) {
+            setIndex(t0, time1);
+            setIndex(t1, time0);
+            let s0 = behaviorSpanVariationPtr(roleIndex, thisVariation);
+            let spanVariation0 = getVariation(s0);
+            let s1 = behaviorSpanVariationPtr(roleIndex, thisVariation + 1);
+            let spanVariation1 = getVariation(s1);
+            setVariation(s0, spanVariation1);
+            setVariation(s1, spanVariation0);
         }
     }
-    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        smoothVelocity(thisInterval, getSmoothDegree(getRole(thisInterval)));
-    }
-    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        exertJointPhysics(thisJoint);
-        addScaledVector(velocityPtr(thisJoint), forcePtr(thisJoint), 1.0 / getFloat(intervalMassPtr(thisJoint)));
-        zero(forcePtr(thisJoint));
-        add(velocityPtr(thisJoint), absorbVelocityPtr(thisJoint));
-        zero(absorbVelocityPtr(thisJoint));
-    }
-    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        let alphaAltitude = getFloat(altitudePtr(getAlphaIndex(thisInterval)));
-        let omegaAltitude = getFloat(altitudePtr(getOmegaIndex(thisInterval)));
-        let straddle = (alphaAltitude > 0 && omegaAltitude <= 0) || (alphaAltitude <= 0 && omegaAltitude > 0);
-        if (straddle) {
-            let absAlphaAltitude = abs(alphaAltitude);
-            let absOmegaAltitude = abs(omegaAltitude);
-            let totalAltitude = absAlphaAltitude + absOmegaAltitude;
-            if (totalAltitude > 0.001) {
-                setVector(gravPtr, gravityPtr(getAlphaIndex(thisInterval)));
-                lerp(gravPtr, gravityPtr(getOmegaIndex(thisInterval)), absOmegaAltitude / totalAltitude);
-            }
-            else {
-                addVectors(gravPtr, gravityPtr(getAlphaIndex(thisInterval)), gravityPtr(getAlphaIndex(thisInterval)));
-                multiplyScalar(gravPtr, 0.5);
-            }
-        }
-        else {
-            addVectors(gravPtr, gravityPtr(getAlphaIndex(thisInterval)), gravityPtr(getAlphaIndex(thisInterval)));
-            multiplyScalar(gravPtr, 0.5);
-        }
-        add(velocityPtr(getAlphaIndex(thisInterval)), gravPtr);
-        add(velocityPtr(getOmegaIndex(thisInterval)), gravPtr);
-    }
-    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        add(locationPtr(thisJoint), velocityPtr(thisJoint));
-        setFloat(intervalMassPtr(thisJoint), AMBIENT_JOINT_MASS);
+}
+
+function getSpanVariation(roleIndex: u8, timeIndex: u16): f32 {
+    for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
+
     }
 }
 
-// =================================
-
-export function init(joints: u16, intervals: u16, faces: u16): usize {
-    jointCountMax = joints;
-    intervalCountMax = intervals;
-    faceCountMax = faces;
-    let intervalLinesSize = intervalCountMax * VECTOR_SIZE * 2;
-    let intervalColorsSize = intervalLinesSize;
-    let faceVectorsSize = faceCountMax * VECTOR_SIZE;
-    let faceJointVectorsSize = faceVectorsSize * 3;
-    let jointsSize = jointCountMax * JOINT_SIZE;
-    let intervalsSize = intervalCountMax * INTERVAL_SIZE;
-    let facesSize = faceCountMax * FACE_SIZE;
-    let metadataSize = VECTOR_SIZE * 10; // 4 so far
-    // offsets
-    let bytes = (
-        metadataOffset = (
-            faceOffset = (
-                intervalOffset = (
-                    jointOffset = (
-                        faceLocationOffset = (
-                            faceNormalOffset = (
-                                faceMidpointOffset = (
-                                    lineColorOffset = (
-                                        lineLocationOffset
-                                    ) + intervalLinesSize
-                                ) + intervalColorsSize
-                            ) + faceVectorsSize
-                        ) + faceJointVectorsSize
-                    ) + faceJointVectorsSize
-                ) + jointsSize
-            ) + intervalsSize
-        ) + facesSize
-    ) + metadataSize;
-    let blocks = bytes >> 16;
-    memory.grow(blocks + 1);
-    projectionPtr = metadataOffset;
-    alphaProjectionPtr = projectionPtr + VECTOR_SIZE;
-    omegaProjectionPtr = alphaProjectionPtr + VECTOR_SIZE;
-    gravPtr = omegaProjectionPtr + VECTOR_SIZE;
-    return bytes;
-}
+// Teleport =====================================================================================
 
 export function centralize(altitude: f32): void {
     let x: f32 = 0;
@@ -632,6 +543,20 @@ export function centralize(altitude: f32): void {
     }
 }
 
+// Construction =====================================================================================
+
+export function joints(): usize {
+    return jointCount;
+}
+
+export function intervals(): usize {
+    return intervalCount;
+}
+
+export function faces(): usize {
+    return faceCount;
+}
+
 export function nextJointTag(): u16 {
     jointTagCount++;
     return jointTagCount;
@@ -655,12 +580,12 @@ export function getJointLaterality(jointIndex: u16): u8 {
 }
 
 export function getJointTag(jointIndex: u16): u16 {
-    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ENUM_SIZE);
+    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE);
 }
 
 export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
     let intervalIndex = intervalCount++;
-    setRole(intervalIndex, role);
+    setRoleIndex(intervalIndex, role);
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
     setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
@@ -727,9 +652,6 @@ export function findFaceApexIndex(faceIndex: u16): u16 {
         }
         let matches = 0;
         for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-            if (getRole(thisInterval) !== ROLE_SPRING) {
-                continue;
-            }
             let alpha = getAlphaIndex(thisInterval);
             let omega = getOmegaIndex(thisInterval);
             if (thisJoint !== alpha && thisJoint != omega) {
@@ -768,9 +690,123 @@ export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
     return (ideal0 + ideal1 + ideal2) / 3;
 }
 
+// Physics =====================================================================================
+
+@inline
+function abs(val: f32): f32 {
+    return val < 0 ? -val : val;
+}
+
+function elastic(intervalIndex: u16, elasticFactor: f32): void {
+    let span = calculateSpan(intervalIndex);
+    let idealSpan = getFloat(idealSpanPtr(intervalIndex));
+    let stress = elasticFactor * (span - idealSpan) * idealSpan * idealSpan;
+    setFloat(stressPtr(intervalIndex), stress);
+    addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
+    addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
+    let mass = idealSpan * idealSpan * idealSpan;
+    let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex));
+    setFloat(alphaMass, getFloat(alphaMass) + mass / 2);
+    let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex));
+    setFloat(omegaMass, getFloat(omegaMass) + mass / 2);
+}
+
+function splitVectors(vectorPtr: usize, basisPtr: usize, projectionPtr: usize, howMuch: f32): void {
+    let agreement = dot(vectorPtr, basisPtr);
+    setVector(projectionPtr, basisPtr);
+    multiplyScalar(projectionPtr, agreement * howMuch);
+}
+
+function smoothVelocity(intervalIndex: u16): void {
+    splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, SPRING_SMOOTH);
+    splitVectors(velocityPtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), omegaProjectionPtr, SPRING_SMOOTH);
+    addVectors(projectionPtr, alphaProjectionPtr, omegaProjectionPtr);
+    multiplyScalar(projectionPtr, 0.5);
+    sub(absorbVelocityPtr(getAlphaIndex(intervalIndex)), alphaProjectionPtr);
+    sub(absorbVelocityPtr(getOmegaIndex(intervalIndex)), omegaProjectionPtr);
+    add(absorbVelocityPtr(getAlphaIndex(intervalIndex)), projectionPtr);
+    add(absorbVelocityPtr(getOmegaIndex(intervalIndex)), projectionPtr);
+}
+
+function exertGravity(jointIndex: u16, value: f32): void {
+    let velocity = velocityPtr(jointIndex);
+    setY(velocity, getY(velocity) - value);
+}
+
+function exertJointPhysics(jointIndex: u16, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32): void {
+    let altitude = getY(locationPtr(jointIndex));
+    if (altitude > JOINT_RADIUS) {
+        exertGravity(jointIndex, overGravity);
+        multiplyScalar(velocityPtr(jointIndex), 1 - overDrag);
+    }
+    else if (altitude < -JOINT_RADIUS) {
+        exertGravity(jointIndex, -overDrag * underGravity);
+        multiplyScalar(velocityPtr(jointIndex), 1 - overDrag * underDrag);
+    }
+    else {
+        let degree = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
+        let gravityValue = overGravity * degree + -overGravity * underGravity * (1 - degree);
+        exertGravity(jointIndex, gravityValue);
+        let drag = overDrag * degree + overDrag * underDrag * (1 - degree);
+        multiplyScalar(velocityPtr(jointIndex), 1 - drag);
+    }
+}
+
+function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32): void {
+    // fabric age ++
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
+        elastic(thisInterval, elasticFactor);
+    }
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
+        smoothVelocity(thisInterval);
+    }
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
+        exertJointPhysics(thisJoint, overGravity, overDrag, underGravity, underDrag);
+        addScaledVector(velocityPtr(thisJoint), forcePtr(thisJoint), 1.0 / getFloat(intervalMassPtr(thisJoint)));
+        zero(forcePtr(thisJoint));
+        add(velocityPtr(thisJoint), absorbVelocityPtr(thisJoint));
+        zero(absorbVelocityPtr(thisJoint));
+    }
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
+        let alphaAltitude = getFloat(altitudePtr(getAlphaIndex(thisInterval)));
+        let omegaAltitude = getFloat(altitudePtr(getOmegaIndex(thisInterval)));
+        let straddle = (alphaAltitude > 0 && omegaAltitude <= 0) || (alphaAltitude <= 0 && omegaAltitude > 0);
+        if (straddle) {
+            let absAlphaAltitude = abs(alphaAltitude);
+            let absOmegaAltitude = abs(omegaAltitude);
+            let totalAltitude = absAlphaAltitude + absOmegaAltitude;
+            if (totalAltitude > 0.001) {
+                setVector(gravPtr, gravityPtr(getAlphaIndex(thisInterval)));
+                lerp(gravPtr, gravityPtr(getOmegaIndex(thisInterval)), absOmegaAltitude / totalAltitude);
+            }
+            else {
+                addVectors(gravPtr, gravityPtr(getAlphaIndex(thisInterval)), gravityPtr(getAlphaIndex(thisInterval)));
+                multiplyScalar(gravPtr, 0.5);
+            }
+        }
+        else {
+            addVectors(gravPtr, gravityPtr(getAlphaIndex(thisInterval)), gravityPtr(getAlphaIndex(thisInterval)));
+            multiplyScalar(gravPtr, 0.5);
+        }
+        add(velocityPtr(getAlphaIndex(thisInterval)), gravPtr);
+        add(velocityPtr(getOmegaIndex(thisInterval)), gravPtr);
+    }
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
+        add(locationPtr(thisJoint), velocityPtr(thisJoint));
+        setFloat(intervalMassPtr(thisJoint), AMBIENT_JOINT_MASS);
+    }
+}
+
+const AIR_DRAG: f32 = 0.0003;
+const AIR_GRAVITY: f32 = 0.000003;
+const LAND_DRAG: f32 = 50;
+const LAND_GRAVITY: f32 = 30;
+const ELASTIC_FACTOR: f32 = 0.2;
+const STRESS_MAX: f32 = 0.003;
+
 export function iterate(ticks: usize): void {
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        tick();
+        tick(ELASTIC_FACTOR, AIR_GRAVITY, AIR_DRAG, LAND_GRAVITY, LAND_DRAG);
     }
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         setVector(outputAlphaLocationPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
@@ -781,19 +817,9 @@ export function iterate(ticks: usize): void {
         } else if (stress < -1) {
             stress = -1;
         }
-        let red: f32 = 0;
+        let red: f32 = 0.6 + -stress * 0.4;
         let green: f32 = 0;
-        let blue: f32 = 0;
-        let role = getRole(thisInterval);
-        switch (role) {
-            case ROLE_SPRING:
-                red = 0.6 + -stress * 0.4;
-                blue = 0.6 + stress * 0.4;
-                break;
-            case ROLE_MUSCLE:
-                red = green = blue = 0.8;
-                break;
-        }
+        let blue: f32 = 0.6 + stress * 0.4;
         setAll(outputAlphaColorPtr(thisInterval), red, green, blue);
         setAll(outputOmegaColorPtr(thisInterval), red, green, blue);
     }
@@ -801,16 +827,3 @@ export function iterate(ticks: usize): void {
         outputFaceGeometry(thisFace);
     }
 }
-
-export function joints(): usize {
-    return jointCount;
-}
-
-export function intervals(): usize {
-    return intervalCount;
-}
-
-export function faces(): usize {
-    return faceCount;
-}
-
