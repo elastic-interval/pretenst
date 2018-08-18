@@ -4,7 +4,7 @@ declare function logFloat(idx: u32, f: f32): void;
 
 declare function logInt(idx: u32, i: u32): void;
 
-const ROLE_SIZE: usize = sizeof<u8>();
+const ROLE_SIZE: usize = sizeof<i8>();
 const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
 const SPAN_VARIATION_SIZE: usize = sizeof<i16>();
@@ -95,6 +95,23 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
         initBehavior(roleIndex);
     }
     return bytes;
+}
+
+export function joints(): usize {
+    return jointCount;
+}
+
+export function intervals(): usize {
+    return intervalCount;
+}
+
+export function faces(): usize {
+    return faceCount;
+}
+
+export function nextJointTag(): u16 {
+    jointTagCount++;
+    return jointTagCount;
 }
 
 // Peek and Poke ================================================================================
@@ -268,6 +285,19 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 5 + ROLE_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
 
+export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
+    let jointIndex = jointCount++;
+    setAll(locationPtr(jointIndex), x, y, z);
+    zero(forcePtr(jointIndex));
+    zero(velocityPtr(jointIndex));
+    zero(gravityPtr(jointIndex));
+    zero(absorbVelocityPtr(jointIndex));
+    setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
+    setJointLaterality(jointIndex, laterality);
+    setJointTag(jointIndex, jointTag);
+    return jointIndex;
+}
+
 function jointPtr(jointIndex: u16): usize {
     return jointOffset + jointIndex * JOINT_SIZE;
 }
@@ -308,20 +338,62 @@ function setJointTag(jointIndex: u16, tag: u16): void {
     store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE, tag);
 }
 
+export function getJointLaterality(jointIndex: u16): u8 {
+    return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2);
+}
+
+export function getJointTag(jointIndex: u16): u16 {
+    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE);
+}
+
+export function centralize(altitude: f32): void {
+    let x: f32 = 0;
+    let lowY: f32 = 10000;
+    let z: f32 = 0;
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
+        x += getX(jointPtr(thisJoint));
+        let y = getY(jointPtr(thisJoint));
+        if (y < lowY) {
+            lowY = y;
+        }
+        z += getZ(jointPtr(thisJoint));
+    }
+    x = x / <f32>jointCount;
+    z = z / <f32>jointCount;
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
+        let jPtr = jointPtr(thisJoint);
+        setX(jPtr, getX(jPtr) - x);
+        if (altitude > 0) {
+            setY(jPtr, getY(jPtr) - lowY + altitude);
+        }
+        setZ(jPtr, getZ(jPtr) - z);
+    }
+}
+
 // Intervals =====================================================================================
 
 const INTERVAL_SIZE: usize = ROLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE + FLOAT_SIZE * 2;
+
+export function createInterval(role: i8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
+    let intervalIndex = intervalCount++;
+    setIntervalRole(intervalIndex, role);
+    setAlphaIndex(intervalIndex, alphaIndex);
+    setOmegaIndex(intervalIndex, omegaIndex);
+    setTimeIndex(intervalIndex, 0);
+    setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
+    return intervalIndex;
+}
 
 function intervalPtr(intervalIndex: u16): usize {
     return intervalOffset + intervalIndex * INTERVAL_SIZE;
 }
 
-function getRoleIndex(intervalIndex: u16): u8 {
-    return load<u8>(intervalPtr(intervalIndex));
+export function getIntervalRole(intervalIndex: u16): i8 {
+    return load<i8>(intervalPtr(intervalIndex));
 }
 
-function setRoleIndex(intervalIndex: u16, role: u8): void {
-    store<u8>(intervalPtr(intervalIndex), role);
+export function setIntervalRole(intervalIndex: u16, role: i8): void {
+    store<i8>(intervalPtr(intervalIndex), role);
 }
 
 function getAlphaIndex(intervalIndex: u16): u16 {
@@ -383,7 +455,25 @@ function findIntervalIndex(joint0: u16, joint1: u16): u16 {
             return thisInterval;
         }
     }
-    return intervalCount + 1; // should throw an exception somehow?
+    return intervalCountMax;
+}
+
+export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
+    let tagAlpha = getJointTag(getAlphaIndex(intervalIndex));
+    let tagOmega = getJointTag(getAlphaIndex(intervalIndex));
+    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
+        if (thisInterval == intervalIndex) {
+            continue;
+        }
+        let thisTagAlpha = getJointTag(getAlphaIndex(intervalIndex));
+        let thisTagOmega = getJointTag(getOmegaIndex(intervalIndex));
+        let matchAlpha = tagAlpha === thisTagAlpha || tagAlpha === thisTagOmega;
+        let matchOmega = tagOmega === thisTagOmega || tagOmega === thisTagAlpha;
+        if (matchAlpha && matchOmega) {
+            return thisInterval;
+        }
+    }
+    return intervalCountMax;
 }
 
 // Lines depicting the intervals ================================================================
@@ -501,172 +591,25 @@ function outputFaceGeometry(faceIndex: u16): void {
     pushNormalTowardsJoint(normal2, loc2, midpoint);
 }
 
-// Behavior =====================================================================================
-
-const ROLE_INDEX_MAX: u8 = 64;
-const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
-const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.2;
-
-function behaviorTimePtr(roleIndex: u16, variationIndex: u8): u32 {
-    return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE);
-}
-
-function getBehaviorTime(roleIndex: u16, variationIndex: u8): u16 {
-    return getIndex(behaviorTimePtr(roleIndex, variationIndex));
-}
-
-function behaviorSpanVariationPtr(roleIndex: u16, variationIndex: u8): u32 {
-    return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE) + INDEX_SIZE;
-}
-
-function getBehaviorSpanVariation(roleIndex: u16, variationIndex: u8): f32 {
-    let variationInt = getVariation(behaviorSpanVariationPtr(roleIndex, variationIndex));
-    return 1.0 + BEHAVIOR_SPAN_VARIATION_MAX * <f32>variationInt / 65536.0;
-}
-
-function initBehavior(roleIndex: u16): void {
-    for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
-        let time = Math.random() * 65535.0;
-        setIndex(behaviorTimePtr(roleIndex, thisVariation), <u16>time);
-        let variation = (Math.random() - 0.5) * 2 * 32767;
-        setVariation(behaviorSpanVariationPtr(roleIndex, thisVariation), <i16>variation);
-    }
-    sortVariations(roleIndex);
-}
-
-function sortVariations(roleIndex: u16): void {
-    let unsorted = VARIATION_COUNT;
-    while (true) {
-        unsorted--;
-        for (let scan: u8 = 0; scan < unsorted; scan++) {
-            let t0 = behaviorTimePtr(roleIndex, scan);
-            let time0 = getIndex(t0);
-            let t1 = behaviorTimePtr(roleIndex, scan + 1);
-            let time1 = getIndex(t1);
-            if (time0 > time1) {
-                setIndex(t0, time1);
-                setIndex(t1, time0);
-                let s0 = behaviorSpanVariationPtr(roleIndex, scan);
-                let spanVariation0 = getVariation(s0);
-                let s1 = behaviorSpanVariationPtr(roleIndex, scan + 1);
-                let spanVariation1 = getVariation(s1);
-                setVariation(s0, spanVariation1);
-                setVariation(s1, spanVariation0);
-            }
+export function findOppositeFaceIndex(faceIndex: u16): u16 {
+    let tag0 = getFaceTag(faceIndex, 0);
+    let tag1 = getFaceTag(faceIndex, 1);
+    let tag2 = getFaceTag(faceIndex, 2);
+    for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
+        if (thisFace == faceIndex) {
+            continue;
         }
-        if (unsorted == 0) {
-            break;
+        let thisTag0 = getFaceTag(thisFace, 0);
+        let thisTag1 = getFaceTag(thisFace, 1);
+        let thisTag2 = getFaceTag(thisFace, 2);
+        let match0 = tag0 === thisTag0 || tag0 === thisTag1 || tag0 === thisTag2;
+        let match1 = tag1 === thisTag0 || tag1 === thisTag1 || tag1 === thisTag2;
+        let match2 = tag2 === thisTag0 || tag2 === thisTag1 || tag2 === thisTag2;
+        if (match0 && match1 && match2) {
+            return thisFace;
         }
     }
-}
-
-function currentSpan(roleIndex: u8, idealSpan: f32, timeIndex: u16): f32 {
-    let beforeTime: u16 = 0;
-    let beforeVariation: f32 = 1;
-    let variationNumber: u8 = 0;
-    while (variationNumber < VARIATION_COUNT) {
-        let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
-        if (behaviorTime < timeIndex) {
-            beforeTime = behaviorTime;
-            beforeVariation = getBehaviorSpanVariation(roleIndex, variationNumber);
-        }
-        variationNumber++;
-    }
-    let afterTime: u16 = 65535;
-    let afterVariation: f32 = 1;
-    variationNumber = VARIATION_COUNT;
-    while (true) {
-        let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
-        if (behaviorTime > timeIndex) {
-            afterTime = behaviorTime;
-            afterVariation = getBehaviorSpanVariation(roleIndex, variationNumber);
-        }
-        if (variationNumber === 0) {
-            break;
-        }
-        variationNumber--;
-    }
-    let timeSpan = <f32>(afterTime - beforeTime);
-    let currentVariation =
-        <f32>(timeIndex - beforeTime) / timeSpan * afterVariation +
-        <f32>(afterTime - timeIndex) / timeSpan * beforeVariation;
-    return idealSpan * currentVariation;
-}
-
-// Teleport =====================================================================================
-
-export function centralize(altitude: f32): void {
-    let x: f32 = 0;
-    let lowY: f32 = 10000;
-    let z: f32 = 0;
-    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        x += getX(jointPtr(thisJoint));
-        let y = getY(jointPtr(thisJoint));
-        if (y < lowY) {
-            lowY = y;
-        }
-        z += getZ(jointPtr(thisJoint));
-    }
-    x = x / <f32>jointCount;
-    z = z / <f32>jointCount;
-    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        let jPtr = jointPtr(thisJoint);
-        setX(jPtr, getX(jPtr) - x);
-        if (altitude > 0) {
-            setY(jPtr, getY(jPtr) - lowY + altitude);
-        }
-        setZ(jPtr, getZ(jPtr) - z);
-    }
-}
-
-// Construction =====================================================================================
-
-export function joints(): usize {
-    return jointCount;
-}
-
-export function intervals(): usize {
-    return intervalCount;
-}
-
-export function faces(): usize {
-    return faceCount;
-}
-
-export function nextJointTag(): u16 {
-    jointTagCount++;
-    return jointTagCount;
-}
-
-export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
-    let jointIndex = jointCount++;
-    setAll(locationPtr(jointIndex), x, y, z);
-    zero(forcePtr(jointIndex));
-    zero(velocityPtr(jointIndex));
-    zero(gravityPtr(jointIndex));
-    zero(absorbVelocityPtr(jointIndex));
-    setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
-    setJointLaterality(jointIndex, laterality);
-    setJointTag(jointIndex, jointTag);
-    return jointIndex;
-}
-
-export function getJointLaterality(jointIndex: u16): u8 {
-    return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2);
-}
-
-export function getJointTag(jointIndex: u16): u16 {
-    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE);
-}
-
-export function createInterval(role: u8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
-    let intervalIndex = intervalCount++;
-    setRoleIndex(intervalIndex, role);
-    setAlphaIndex(intervalIndex, alphaIndex);
-    setOmegaIndex(intervalIndex, omegaIndex);
-    setTimeIndex(intervalIndex, 0);
-    setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
-    return intervalIndex;
+    return faceCount + 1;
 }
 
 export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16, apexJointIndex: u16): usize {
@@ -700,30 +643,112 @@ export function removeFace(faceIndex: u16): void {
     faceCount--;
 }
 
-export function findOppositeFaceIndex(faceIndex: u16): u16 {
-    let tag0 = getFaceTag(faceIndex, 0);
-    let tag1 = getFaceTag(faceIndex, 1);
-    let tag2 = getFaceTag(faceIndex, 2);
-    for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
-        if (thisFace == faceIndex) {
-            continue;
+// Behavior =====================================================================================
+
+const ROLE_INDEX_MAX: u8 = 64;
+const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
+const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.3;
+const TIME_INDEX_STEP: u16 = 50;
+
+function initBehavior(roleIndex: u16): void {
+    for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
+        let time = Math.random() * 65535.0;
+        setIndex(behaviorTimePtr(roleIndex, thisVariation), <u16>time);
+        let variation = (Math.random() - 0.5) * 2 * 32767;
+        setVariation(behaviorSpanVariationPtr(roleIndex, thisVariation), <i16>variation);
+    }
+    sortVariations(roleIndex);
+}
+
+function behaviorTimePtr(roleIndex: u16, variationIndex: u8): u32 {
+    return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE);
+}
+
+function getBehaviorTime(roleIndex: u16, variationIndex: u8): u16 {
+    return getIndex(behaviorTimePtr(roleIndex, variationIndex));
+}
+
+export function setBehaviorTime(roleIndex: u8, variationIndex: u8, behaviorTime: u16): void {
+    setIndex(behaviorTimePtr(roleIndex, variationIndex), behaviorTime);
+}
+
+function behaviorSpanVariationPtr(roleIndex: u16, variationIndex: u8): u32 {
+    return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE) + INDEX_SIZE;
+}
+
+function getBehaviorSpanVariation(role: i16, variationIndex: u8): f32 {
+    let oppositeRole = role < 0;
+    let roleIndex = oppositeRole ? -role : role;
+    let variationInt = getVariation(behaviorSpanVariationPtr(roleIndex, variationIndex));
+    let variationFloat = oppositeRole ? -<f32>variationInt : <f32>variationInt;
+    return 1.0 + BEHAVIOR_SPAN_VARIATION_MAX * variationFloat / 65536.0;
+}
+
+export function setBehaviorSpanVariation(roleIndex: u8, variationIndex: u8, behaviorSpanVariation: i16): void {
+    setVariation(behaviorTimePtr(roleIndex, variationIndex), behaviorSpanVariation);
+}
+
+function sortVariations(roleIndex: u16): void {
+    let unsorted = VARIATION_COUNT;
+    while (true) {
+        unsorted--;
+        for (let scan: u8 = 0; scan < unsorted; scan++) {
+            let t0 = behaviorTimePtr(roleIndex, scan);
+            let time0 = getIndex(t0);
+            let t1 = behaviorTimePtr(roleIndex, scan + 1);
+            let time1 = getIndex(t1);
+            if (time0 > time1) {
+                setIndex(t0, time1);
+                setIndex(t1, time0);
+                let s0 = behaviorSpanVariationPtr(roleIndex, scan);
+                let spanVariation0 = getVariation(s0);
+                let s1 = behaviorSpanVariationPtr(roleIndex, scan + 1);
+                let spanVariation1 = getVariation(s1);
+                setVariation(s0, spanVariation1);
+                setVariation(s1, spanVariation0);
+            }
         }
-        let thisTag0 = getFaceTag(thisFace, 0);
-        let thisTag1 = getFaceTag(thisFace, 1);
-        let thisTag2 = getFaceTag(thisFace, 2);
-        let match0 = tag0 === thisTag0 || tag0 === thisTag1 || tag0 === thisTag2;
-        let match1 = tag1 === thisTag0 || tag1 === thisTag1 || tag1 === thisTag2;
-        let match2 = tag2 === thisTag0 || tag2 === thisTag1 || tag2 === thisTag2;
-        if (match0 && match1 && match2) {
-            return thisFace;
+        if (unsorted == 0) {
+            break;
         }
     }
-    return faceCount + 1;
+}
+
+function interpolateCurrentSpan(role: i8, idealSpan: f32, timeIndex: u16): f32 {
+    let beforeTime: u16 = 0;
+    let beforeVariation: f32 = 1;
+    let variationNumber: u8 = 0;
+    let roleIndex: u8 = role > 0 ? role : -role;
+    while (variationNumber < VARIATION_COUNT) {
+        let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
+        if (behaviorTime < timeIndex) {
+            beforeTime = behaviorTime;
+            beforeVariation = getBehaviorSpanVariation(role, variationNumber);
+        }
+        variationNumber++;
+    }
+    let afterTime: u16 = 65535;
+    let afterVariation: f32 = 1;
+    variationNumber = VARIATION_COUNT;
+    while (true) {
+        let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
+        if (behaviorTime > timeIndex) {
+            afterTime = behaviorTime;
+            afterVariation = getBehaviorSpanVariation(role, variationNumber);
+        }
+        if (variationNumber === 0) {
+            break;
+        }
+        variationNumber--;
+    }
+    let timeSpan = <f32>(afterTime - beforeTime);
+    let currentVariation =
+        <f32>(timeIndex - beforeTime) / timeSpan * afterVariation +
+        <f32>(afterTime - timeIndex) / timeSpan * beforeVariation;
+    return idealSpan * currentVariation;
 }
 
 // Physics =====================================================================================
-
-const TIME_INDEX_STEP: u16 = 5;
 
 @inline
 function abs(val: f32): f32 {
@@ -736,7 +761,7 @@ function elasticBehavior(intervalIndex: u16, elasticFactor: f32): void {
         setTimeIndex(intervalIndex, timeIndex = 1);
     }
     let span = calculateSpan(intervalIndex);
-    let idealSpan = currentSpan(getRoleIndex(intervalIndex), getFloat(idealSpanPtr(intervalIndex)), timeIndex);
+    let idealSpan = interpolateCurrentSpan(getIntervalRole(intervalIndex), getFloat(idealSpanPtr(intervalIndex)), timeIndex);
     let stress = elasticFactor * (span - idealSpan) * idealSpan * idealSpan;
     setFloat(stressPtr(intervalIndex), stress);
     addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
@@ -842,9 +867,9 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
     }
 }
 
-const AIR_DRAG: f32 = 0.0005;
-const AIR_GRAVITY: f32 = 0.00001;
-const LAND_DRAG: f32 = 50;
+const AIR_DRAG: f32 = 0.005;
+const AIR_GRAVITY: f32 = 0.00003;
+const LAND_DRAG: f32 = 80;
 const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;
 const STRESS_MAX: f32 = 0.001;

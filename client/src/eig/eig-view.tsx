@@ -72,7 +72,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             setTimeout(
                 () => {
                     if (this.state.fabric) {
-                        this.state.fabric.iterate(100);
+                        this.state.fabric.iterate(60);
                         this.setState({fabric: this.state.fabric});
                         this.orbitControls.update();
                     }
@@ -102,16 +102,19 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         }
     }
 
-    public build(event: any) {
-        if (!this.selectedFace) {
-            return;
-        }
+    public doubleClick(event: any) {
         const fabric = this.state.fabric;
         if (fabric) {
-            fabric.createTetraFromFace(this.selectedFace);
-            fabric.centralize(-1);
+            if (this.selectedFace) {
+                fabric.createTetraFromFace(this.selectedFace);
+                fabric.centralize(-1);
+                this.selectedFace = null;
+            } else {
+                for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
+                    fabric.setRandomIntervalRole(intervalIndex);
+                }
+            }
         }
-        this.selectedFace = null;
     }
 
     public render() {
@@ -139,7 +142,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         };
         const selectedFaceTripod = !this.selectedFace ? null : fabric ? faceNormalLineSegments(fabric, this.selectedFace) : null;
         return (
-            <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.build(e)}>
+            <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.doubleClick(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         <R3.Mesh
