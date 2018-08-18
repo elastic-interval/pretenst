@@ -363,7 +363,7 @@ export function centralize(altitude: f32): void {
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         let jPtr = jointPtr(thisJoint);
         setX(jPtr, getX(jPtr) - x);
-        if (altitude > 0) {
+        if (altitude >= 0) {
             setY(jPtr, getY(jPtr) - lowY + altitude);
         }
         setZ(jPtr, getZ(jPtr) - z);
@@ -648,7 +648,7 @@ export function removeFace(faceIndex: u16): void {
 const ROLE_INDEX_MAX: u8 = 64;
 const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
 const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.3;
-const TIME_INDEX_STEP: u16 = 50;
+const TIME_INDEX_STEP: u16 = 15;
 
 function initBehavior(roleIndex: u16): void {
     for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
@@ -867,8 +867,8 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
     }
 }
 
-const AIR_DRAG: f32 = 0.005;
-const AIR_GRAVITY: f32 = 0.00003;
+const AIR_DRAG: f32 = 0.003;
+const AIR_GRAVITY: f32 = 0.00001;
 const LAND_DRAG: f32 = 80;
 const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;

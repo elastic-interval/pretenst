@@ -4,7 +4,7 @@ import {EigView} from './eig/eig-view';
 import {IFabricExports} from './fabric';
 
 interface IAppProps {
-    fabricFactory: () => Promise<IFabricExports>;
+    createFabric: () => Promise<IFabricExports>;
 }
 
 class App extends React.Component<IAppProps, any> {
@@ -16,7 +16,7 @@ class App extends React.Component<IAppProps, any> {
     public render() {
         return (
             <div className="App">
-                <EigView fabricFactory={this.props.fabricFactory}/>
+                <EigView createFabric={this.props.createFabric}/>
                 {/*<PatchView hello={this.state.hello}/>*/}
             </div>
         );

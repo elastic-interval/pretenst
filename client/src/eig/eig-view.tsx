@@ -19,24 +19,27 @@ import {
 import {EigFabric, IFabricExports, IFace, vectorFromIndex} from '../fabric';
 
 interface IEigViewProps {
-    fabricFactory: () => Promise<IFabricExports>;
+    createFabric: () => Promise<IFabricExports>;
 }
 
 interface IEigViewState {
     width: number;
     height: number;
+    paused: boolean;
+    selectedFace?: IFace;
     fabric?: EigFabric;
 }
 
-const faceVisibleMaterial = new MeshPhongMaterial({
+const FACE_MATERIAL = new MeshPhongMaterial({
     lights: true,
     color: new Color(0.9, 0.9, 0.9),
     transparent: true,
     opacity: 0.6,
     visible: true
 });
-const tripodMaterial = new LineBasicMaterial({color: 0xFFFFFF});
-const springMaterial = new LineBasicMaterial({vertexColors: VertexColors});
+const TRIPOD_MATERIAL = new LineBasicMaterial({color: 0xFFFFFF});
+const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
+const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
 
 export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private THREE = require('three');
@@ -46,20 +49,19 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private mouse = new Vector2();
     private orbitControls: any;
     private rayCaster: any;
-    private selectedFace: IFace | null = null;
     private facesMeshNode: any;
 
     constructor(props: IEigViewProps) {
         super(props);
-        props.fabricFactory().then(fabricExports => {
+        props.createFabric().then(fabricExports => {
             const fabric = new EigFabric(fabricExports, 200);
             console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
             fabric.createSeed(5);
             fabric.centralize(1);
             this.setState({fabric});
         });
-        this.state = {width: window.innerWidth, height: window.innerHeight};
-        this.floorMaterial = faceVisibleMaterial;
+        this.state = {width: window.innerWidth, height: window.innerHeight, paused: false};
+        this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 5000);
@@ -72,8 +74,10 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             setTimeout(
                 () => {
                     if (this.state.fabric) {
-                        this.state.fabric.iterate(60);
-                        this.setState({fabric: this.state.fabric});
+                        if (!this.state.paused) {
+                            this.state.fabric.iterate(60);
+                            this.setState({fabric: this.state.fabric});
+                        }
                         this.orbitControls.update();
                     }
                     requestAnimationFrame(step);
@@ -82,39 +86,52 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             );
         };
         requestAnimationFrame(step);
+        window.addEventListener("keypress", (event: any) => {
+            if (this.state.paused) {
+                const fabric = this.state.fabric;
+                if (fabric) {
+                    if (this.state.selectedFace) {
+                        fabric.createTetraFromFace(this.state.selectedFace);
+                        fabric.centralize(0);
+                        this.setState({selectedFace: undefined, paused: false});
+                    } else {
+                        for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
+                            fabric.setRandomIntervalRole(intervalIndex);
+                        }
+                        this.setState({paused: false});
+                    }
+                }
+            } else {
+                this.setState({paused: true});
+                this.trySelect();
+            }
+        })
     }
 
     public mouseMove(event: any) {
         this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
         this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
-        this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
-        const intersect = this.rayCaster.intersectObject(this.facesMeshNode);
-        if (intersect.length > 0) {
-            const faceIndex = intersect[0].faceIndex / 3;
-            const fabric = this.state.fabric;
-            if (fabric) {
-                if (!this.selectedFace || faceIndex !== this.selectedFace.index) {
-                    this.selectedFace = fabric.getFace(faceIndex);
-                }
+        if (this.state.paused) {
+            if (this.trySelect()) {
+                return;
             }
-        } else if (this.selectedFace) {
-            this.selectedFace = null;
         }
+        this.setState({selectedFace: undefined});
     }
 
-    public doubleClick(event: any) {
+    public trySelect(): boolean {
+        this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
+        const intersect = this.rayCaster.intersectObject(this.facesMeshNode);
+        const selectedFace = this.state.selectedFace;
         const fabric = this.state.fabric;
-        if (fabric) {
-            if (this.selectedFace) {
-                fabric.createTetraFromFace(this.selectedFace);
-                fabric.centralize(-1);
-                this.selectedFace = null;
-            } else {
-                for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
-                    fabric.setRandomIntervalRole(intervalIndex);
-                }
+        if (intersect.length > 0 && fabric) {
+            const faceIndex = intersect[0].faceIndex / 3;
+            if (!selectedFace || faceIndex !== selectedFace.index) {
+                this.setState({selectedFace: fabric.getFace(faceIndex)});
             }
+            return true;
         }
+        return false;
     }
 
     public render() {
@@ -127,7 +144,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             facesGeometry.addAttribute('position', new Float32BufferAttribute(fabric.faceLocations, 3));
             facesGeometry.addAttribute('normal', new Float32BufferAttribute(fabric.faceNormals, 3));
         }
-        const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(new Vector3(0, 3, 0));
+        const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
         const faceNormalLineSegments = (fab: EigFabric, oldFace: IFace) => {
             const normalLine = new Geometry();
             const face = fab.getFace(oldFace.index);
@@ -138,24 +155,25 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 vectorFromIndex(fab.faceLocations, (faceOffset + 1) * 3), apex,
                 vectorFromIndex(fab.faceLocations, (faceOffset + 2) * 3), apex
             ];
-            return <R3.LineSegments key="FaceNormal" geometry={normalLine} material={tripodMaterial}/>
+            return <R3.LineSegments key="FaceNormal" geometry={normalLine} material={TRIPOD_MATERIAL}/>
         };
-        const selectedFaceTripod = !this.selectedFace ? null : fabric ? faceNormalLineSegments(fabric, this.selectedFace) : null;
+        const selectedFace = this.state.selectedFace;
+        const selectedFaceTripod = !selectedFace ? null : fabric ? faceNormalLineSegments(fabric, selectedFace) : null;
         return (
-            <div onMouseMove={(e: any) => this.mouseMove(e)} onDoubleClick={(e: any) => this.doubleClick(e)}>
+            <div onMouseMove={(e: any) => this.mouseMove(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         <R3.Mesh
                             ref={(node: any) => this.facesMeshNode = node}
                             key="FabricFaces" name="Fabric"
                             geometry={facesGeometry}
-                            material={faceVisibleMaterial}
+                            material={FACE_MATERIAL}
                         />
                         {selectedFaceTripod}
                         <R3.LineSegments
                             key="FabricLines"
                             geometry={lineSegmentGeometry}
-                            material={springMaterial}
+                            material={SPRING_MATERIAL}
                         />
                         <R3.Mesh
                             key="Floor"

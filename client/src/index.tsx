@@ -5,10 +5,10 @@ import './index.css';
 import registerServiceWorker from './service-worker';
 import {IFabricExports} from './fabric';
 
-declare const fabricFactory: () => Promise<IFabricExports>; // implementation: index.html
+declare const createFabric: () => Promise<IFabricExports>; // implementation: index.html
 
 ReactDOM.render(
-    <App fabricFactory={fabricFactory}/>,
+    <App createFabric={createFabric}/>,
     document.getElementById('root') as HTMLElement
 );
 registerServiceWorker();
