@@ -66,6 +66,7 @@ export interface IFace {
     jointIndex: number[];
     jointTag: string[];
     averageIdealSpan: number;
+    createTetra: () => void;
 }
 
 export class EigFabric {
@@ -174,39 +175,6 @@ export class EigFabric {
         }
     }
 
-    public createTetraFromFace(face: IFace, knownApexTag?: number) {
-        const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
-        const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2 / 3)).add(midpoint);
-        const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
-        const apex = this.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
-        this.createInterval(face.jointIndex[0], apex, face.averageIdealSpan);
-        this.createInterval(face.jointIndex[1], apex, face.averageIdealSpan);
-        this.createInterval(face.jointIndex[2], apex, face.averageIdealSpan);
-        const existingApexIndex = face.jointIndex[3];
-        if (existingApexIndex < this.jointCountMax) {
-            this.createInterval(existingApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
-        }
-        this.createFace(face.jointIndex[0], face.jointIndex[1], apex, face.jointIndex[2]);
-        this.createFace(face.jointIndex[1], face.jointIndex[2], apex, face.jointIndex[0]);
-        this.createFace(face.jointIndex[2], face.jointIndex[0], apex, face.jointIndex[1]);
-        if (!knownApexTag) {
-            const oppositeFaceIndex = this.fab.findOppositeFaceIndex(face.index);
-            if (oppositeFaceIndex < this.faceCountMax) {
-                const oppositeFace = this.getFace(oppositeFaceIndex);
-                this.createTetraFromFace(oppositeFace, apexTag);
-                if (oppositeFaceIndex < face.index) {
-                    this.removeFace(oppositeFaceIndex);
-                    this.removeFace(face.index - 1);
-                } else {
-                    this.removeFace(face.index);
-                    this.removeFace(oppositeFaceIndex - 1);
-                }
-            } else {
-                this.removeFace(face.index);
-            }
-        }
-    }
-
     public init(joints: number, intervals: number, faces: number): number {
         return this.fab.init(joints, intervals, faces);
     }
@@ -254,7 +222,7 @@ export class EigFabric {
         const normal = [0, 1, 2]
             .map(jointNumber => vectorFromIndex(this.faceNormalsArray, (faceIndex * 3 + jointNumber) * 3))
             .reduce((prev, current) => prev.add(current), new Vector3()).multiplyScalar(1 / 3.0);
-        return {
+        const face: IFace = {
             fabric: this,
             index: faceIndex,
             laterality: getFaceLaterality(),
@@ -262,8 +230,10 @@ export class EigFabric {
             normal,
             jointIndex,
             jointTag: jointIndex.map(index => `${this.fab.getJointTag(index)}[${this.fab.getJointLaterality(index)}]`),
-            averageIdealSpan: this.fab.getFaceAverageIdealSpan(faceIndex)
-        }
+            averageIdealSpan: this.fab.getFaceAverageIdealSpan(faceIndex),
+            createTetra: () => this.createTetraFromFace(face)
+        };
+        return face;
     }
 
     // Mutations ============================================
@@ -286,6 +256,41 @@ export class EigFabric {
         } else {
             const behaviorVariation = Math.floor((Math.random() - 0.5) * 65536);
             this.fab.setBehaviorSpanVariation(behaviorIndex, variationIndexIndex, behaviorVariation);
+        }
+    }
+
+    // ==========================================================
+
+    private createTetraFromFace(face: IFace, knownApexTag?: number) {
+        const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
+        const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2 / 3)).add(midpoint);
+        const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
+        const apex = this.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
+        this.createInterval(face.jointIndex[0], apex, face.averageIdealSpan);
+        this.createInterval(face.jointIndex[1], apex, face.averageIdealSpan);
+        this.createInterval(face.jointIndex[2], apex, face.averageIdealSpan);
+        const existingApexIndex = face.jointIndex[3];
+        if (existingApexIndex < this.jointCountMax) {
+            this.createInterval(existingApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
+        }
+        this.createFace(face.jointIndex[0], face.jointIndex[1], apex, face.jointIndex[2]);
+        this.createFace(face.jointIndex[1], face.jointIndex[2], apex, face.jointIndex[0]);
+        this.createFace(face.jointIndex[2], face.jointIndex[0], apex, face.jointIndex[1]);
+        if (!knownApexTag) {
+            const oppositeFaceIndex = this.fab.findOppositeFaceIndex(face.index);
+            if (oppositeFaceIndex < this.faceCountMax) {
+                const oppositeFace = this.getFace(oppositeFaceIndex);
+                this.createTetraFromFace(oppositeFace, apexTag);
+                if (oppositeFaceIndex < face.index) {
+                    this.removeFace(oppositeFaceIndex);
+                    this.removeFace(face.index - 1);
+                } else {
+                    this.removeFace(face.index);
+                    this.removeFace(oppositeFaceIndex - 1);
+                }
+            } else {
+                this.removeFace(face.index);
+            }
         }
     }
 }
