@@ -652,8 +652,8 @@ export function removeFace(faceIndex: u16): void {
 
 const ROLE_INDEX_MAX: u8 = 64;
 const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
-const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.3;
-const TIME_INDEX_STEP: u16 = 15;
+const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.2;
+const TIME_INDEX_STEP: u16 = 10;
 
 function initBehavior(roleIndex: u16): void {
     for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {

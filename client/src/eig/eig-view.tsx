@@ -25,7 +25,7 @@ interface IEigViewState {
     width: number;
     height: number;
     paused: boolean;
-    fabrics: EigFabric[];
+    fabric?: EigFabric;
     selectedFace?: IFace;
 }
 
@@ -49,17 +49,20 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private orbitControls: any;
     private rayCaster: any;
     private facesMeshNode: any;
+    private fabrics: EigFabric[] = [];
 
     constructor(props: IEigViewProps) {
         super(props);
-        this.state = {width: window.innerWidth, height: window.innerHeight, paused: false, fabrics: []};
-        props.createFabric().then(fabricExports => {
-            const fabric = new EigFabric(fabricExports, 200);
-            console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
-            fabric.createSeed(5);
-            fabric.centralize(1);
-            this.setState({fabrics: [fabric]});
-        });
+        this.state = {width: window.innerWidth, height: window.innerHeight, paused: false};
+        for (let fabCount = 0; fabCount < 9; fabCount++) {
+            props.createFabric().then(fabricExports => {
+                const fabric = new EigFabric(fabricExports, 200);
+                console.log(`${fabCount}: ${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
+                fabric.createSeed(5);
+                fabric.centralize(1);
+                this.fabrics.push(fabric);
+            });
+        }
         this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
@@ -72,11 +75,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         const step = () => {
             setTimeout(
                 () => {
-                    if (this.state.fabrics.length) {
-                        if (!this.state.paused) {
-                            this.state.fabrics.forEach(fabric => fabric.iterate(60));
-                            this.forceUpdate();
+                    if (!this.state.paused) {
+                        if (this.state.fabric) {
+                            this.state.fabric.iterate(60);
                         }
+                        this.forceUpdate();
                     }
                     this.orbitControls.update();
                     requestAnimationFrame(step);
@@ -85,29 +88,42 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             );
         };
         requestAnimationFrame(step);
-        window.addEventListener("keypress", (event: any) => {
-            if (this.state.paused) {
-                const selectedFace = this.state.selectedFace;
-                if (selectedFace) {
-                    selectedFace.createTetra();
-                    selectedFace.fabric.centralize(0);
-                    this.setState({selectedFace: undefined, paused: false});
+        window.addEventListener("keypress", (event: KeyboardEvent) => {
+            if (event.code === 'Space') {
+                if (this.state.paused) {
+                    const selectedFace = this.state.selectedFace;
+                    if (selectedFace) {
+                        selectedFace.createTetra();
+                        selectedFace.fabric.centralize(0);
+                        this.setState({selectedFace: undefined, paused: false});
+                    } else {
+                        this.fabrics.forEach(fabric => {
+                            for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
+                                fabric.setRandomIntervalRole(intervalIndex);
+                            }
+                        });
+                        this.setState({paused: false});
+                    }
                 } else {
-                    this.state.fabrics.forEach(fabric => {
-                        for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
-                            fabric.setRandomIntervalRole(intervalIndex);
-                        }
-                    });
-                    this.setState({paused: false});
+                    this.setState({paused: true});
+                    this.trySelect();
                 }
-            } else {
-                this.setState({paused: true});
-                this.trySelect();
+            } else if (event.key) {
+                const keyNumber = parseInt(event.key, 10);
+                if (keyNumber) {
+                    const fabric = this.fabrics[keyNumber - 1];
+                    if (fabric) {
+                        this.setState({fabric});
+                    }
+                }
             }
         })
     }
 
     public mouseMove(event: any) {
+        if (!this.state.fabric && this.fabrics.length) {
+            this.setState({fabric: this.fabrics[0]});
+        }
         this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
         this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
         if (this.state.paused) {
@@ -122,11 +138,10 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
         const intersect = this.rayCaster.intersectObject(this.facesMeshNode);
         const selectedFace = this.state.selectedFace;
-        const fabric = this.state.fabrics[0]; // todo
-        if (intersect.length > 0 && fabric) {
+        if (intersect.length > 0 && this.state.fabric) {
             const faceIndex = intersect[0].faceIndex / 3;
             if (!selectedFace || faceIndex !== selectedFace.index) {
-                this.setState({selectedFace: fabric.getFace(faceIndex)});
+                this.setState({selectedFace: this.state.fabric.getFace(faceIndex)});
             }
             return true;
         }
@@ -134,9 +149,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     }
 
     public render() {
-        const fabric = this.state.fabrics.length ? this.state.fabrics[0] : null;
-        const facesGeometry = fabric ? fabric.facesGeometry : new BufferGeometry();
-        const lineSegmentGeometry = fabric ? fabric.lineSegmentsGeometry : new BufferGeometry();
+        const facesGeometry = this.state.fabric ? this.state.fabric.facesGeometry : new BufferGeometry();
+        const lineSegmentGeometry = this.state.fabric ? this.state.fabric.lineSegmentsGeometry : new BufferGeometry();
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
         const faceNormalLineSegments = (oldFace: IFace) => {
             const normalLine = new Geometry();
