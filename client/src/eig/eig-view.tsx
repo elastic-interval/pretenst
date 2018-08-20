@@ -3,7 +3,6 @@ import * as R3 from 'react-three';
 import {
     BufferGeometry,
     Color,
-    Float32BufferAttribute,
     Geometry,
     LineBasicMaterial,
     Material,
@@ -53,6 +52,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
 
     constructor(props: IEigViewProps) {
         super(props);
+        this.state = {width: window.innerWidth, height: window.innerHeight, paused: false, fabrics: []};
         props.createFabric().then(fabricExports => {
             const fabric = new EigFabric(fabricExports, 200);
             console.log(`${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
@@ -60,7 +60,6 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             fabric.centralize(1);
             this.setState({fabrics: [fabric]});
         });
-        this.state = {width: window.innerWidth, height: window.innerHeight, paused: false, fabrics:[]};
         this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
@@ -135,41 +134,36 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     }
 
     public render() {
-        const facesGeometry = new BufferGeometry();
-        const lineSegmentGeometry = new BufferGeometry();
-        const fabric = this.state.fabrics[0];
-        if (fabric) {
-            lineSegmentGeometry.addAttribute('position', new Float32BufferAttribute(fabric.lineLocations, 3));
-            lineSegmentGeometry.addAttribute('color', new Float32BufferAttribute(fabric.lineColors, 3));
-            facesGeometry.addAttribute('position', new Float32BufferAttribute(fabric.faceLocations, 3));
-            facesGeometry.addAttribute('normal', new Float32BufferAttribute(fabric.faceNormals, 3));
-        }
+        const fabric = this.state.fabrics.length ? this.state.fabrics[0] : null;
+        const facesGeometry = fabric ? fabric.facesGeometry : new BufferGeometry();
+        const lineSegmentGeometry = fabric ? fabric.lineSegmentsGeometry : new BufferGeometry();
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
-        const faceNormalLineSegments = (fab: EigFabric, oldFace: IFace) => {
+        const faceNormalLineSegments = (oldFace: IFace) => {
             const normalLine = new Geometry();
-            const face = fab.getFace(oldFace.index);
+            const face = oldFace.fabric.getFace(oldFace.index);
             const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, Math.sqrt(2 / 3));
             const faceOffset = face.index * 3;
+            const faceLocations = face.fabric.faceLocations;
             normalLine.vertices = [
-                vectorFromIndex(fab.faceLocations, faceOffset * 3), apex,
-                vectorFromIndex(fab.faceLocations, (faceOffset + 1) * 3), apex,
-                vectorFromIndex(fab.faceLocations, (faceOffset + 2) * 3), apex
+                vectorFromIndex(faceLocations, faceOffset * 3), apex,
+                vectorFromIndex(faceLocations, (faceOffset + 1) * 3), apex,
+                vectorFromIndex(faceLocations, (faceOffset + 2) * 3), apex
             ];
             return <R3.LineSegments key="FaceNormal" geometry={normalLine} material={TRIPOD_MATERIAL}/>
         };
         const selectedFace = this.state.selectedFace;
-        const selectedFaceTripod = !selectedFace ? null : fabric ? faceNormalLineSegments(fabric, selectedFace) : null;
+        const selectedFaceTripod = !selectedFace ? null : faceNormalLineSegments(selectedFace);
         return (
             <div onMouseMove={(e: any) => this.mouseMove(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
+                        {selectedFaceTripod}
                         <R3.Mesh
                             ref={(node: any) => this.facesMeshNode = node}
                             key="FabricFaces" name="Fabric"
                             geometry={facesGeometry}
                             material={FACE_MATERIAL}
                         />
-                        {selectedFaceTripod}
                         <R3.LineSegments
                             key="FabricLines"
                             geometry={lineSegmentGeometry}

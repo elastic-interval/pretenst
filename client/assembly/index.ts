@@ -458,6 +458,10 @@ function findIntervalIndex(joint0: u16, joint1: u16): u16 {
     return intervalCountMax;
 }
 
+export function triggerInterval(intervalIndex: u16): void {
+    setTimeIndex(intervalIndex, 1);
+}
+
 export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
     let tagAlpha = getJointTag(getAlphaIndex(intervalIndex));
     let tagOmega = getJointTag(getAlphaIndex(intervalIndex));
