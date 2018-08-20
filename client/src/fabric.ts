@@ -256,11 +256,11 @@ export class EigFabric {
     // Mutations ============================================
 
     public setRandomIntervalRole(intervalIndex: number): void {
-        const role = Math.floor(Math.random() * 64);
-        this.fab.setIntervalRole(intervalIndex, role);
-        this.fab.triggerInterval(intervalIndex);
         const oppositeIntervalIndex = this.fab.findOppositeIntervalIndex(intervalIndex);
         if (oppositeIntervalIndex < this.intervalCountMax) {
+            const role = Math.floor(Math.random() * 64);
+            this.fab.setIntervalRole(intervalIndex, role);
+            this.fab.triggerInterval(intervalIndex);
             this.fab.setIntervalRole(oppositeIntervalIndex, -role);
             this.fab.triggerInterval(oppositeIntervalIndex);
         }

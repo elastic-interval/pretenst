@@ -41,7 +41,6 @@ let faceLocationOffset: usize = 0;
 let intervalOffset: usize = 0;
 let faceOffset: usize = 0;
 let behaviorOffset: usize = 0;
-let metadataOffset: usize = 0;
 
 let projectionPtr: usize = 0;
 let alphaProjectionPtr: usize = 0;
@@ -61,36 +60,38 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     let intervalsSize = intervalCountMax * INTERVAL_SIZE;
     let facesSize = faceCountMax * FACE_SIZE;
     let behaviorSize = ROLE_INDEX_MAX * BEHAVIOR_SIZE;
-    let metadataSize = VECTOR_SIZE * 10; // 4 so far
     // offsets
     let bytes = (
-        metadataOffset = (
-            behaviorOffset = (
-                faceOffset = (
-                    intervalOffset = (
-                        jointOffset = (
-                            faceLocationOffset = (
-                                faceNormalOffset = (
-                                    faceMidpointOffset = (
-                                        lineColorOffset = (
-                                            lineLocationOffset
-                                        ) + intervalLinesSize
-                                    ) + intervalColorsSize
-                                ) + faceVectorsSize
-                            ) + faceJointVectorsSize
-                        ) + faceJointVectorsSize
-                    ) + jointsSize
-                ) + intervalsSize
-            ) + behaviorSize
-        ) + facesSize
-    ) + metadataSize;
+        agePtr = (
+            gravPtr = (
+                omegaProjectionPtr = (
+                    alphaProjectionPtr = (
+                        projectionPtr = (
+                            behaviorOffset = (
+                                faceOffset = (
+                                    intervalOffset = (
+                                        jointOffset = (
+                                            faceLocationOffset = (
+                                                faceNormalOffset = (
+                                                    faceMidpointOffset = (
+                                                        lineColorOffset = (
+                                                            lineLocationOffset
+                                                        ) + intervalLinesSize
+                                                    ) + intervalColorsSize
+                                                ) + faceVectorsSize
+                                            ) + faceJointVectorsSize
+                                        ) + faceJointVectorsSize
+                                    ) + jointsSize
+                                ) + intervalsSize
+                            ) + behaviorSize
+                        ) + facesSize
+                    ) + VECTOR_SIZE
+                ) + VECTOR_SIZE
+            ) + VECTOR_SIZE
+        ) + VECTOR_SIZE
+    ) + LONG_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
-    projectionPtr = metadataOffset;
-    alphaProjectionPtr = projectionPtr + VECTOR_SIZE;
-    omegaProjectionPtr = alphaProjectionPtr + VECTOR_SIZE;
-    gravPtr = omegaProjectionPtr + VECTOR_SIZE;
-    agePtr = gravPtr + VECTOR_SIZE;
     for (let roleIndex: u8 = 0; roleIndex < ROLE_INDEX_MAX; roleIndex++) {
         initBehavior(roleIndex);
     }
