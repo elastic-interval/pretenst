@@ -31,10 +31,11 @@ export class Fabric {
     }
 
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
-        const createGeometry = (fi: number) => {
+        const createGeometry = (index: number) => {
             const geometry = new Geometry();
-            const face = this.getFace(fi);
-            const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, Math.sqrt(2 / 3));
+            const face = this.getFace(index);
+            const apexHeight = face.averageIdealSpan * Math.sqrt(2 / 3);
+            const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, apexHeight);
             const faceOffset = face.index * 3;
             const faceLocations = face.fabric.kernel.faceLocations;
             geometry.vertices = [
@@ -86,7 +87,7 @@ export class Fabric {
     }
 
     public createSeed(corners: number): void {
-        const R = Math.sqrt(2) / 2;
+        const R = 1;
         for (let walk = 0; walk < corners; walk++) {
             const angle = walk * Math.PI * 2 / corners;
             this.fab.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R * Math.sin(angle), R + R * Math.cos(angle), 0);
