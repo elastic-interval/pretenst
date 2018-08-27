@@ -6,7 +6,6 @@ import {HEXAGON_POINTS, IPatchPattern} from './constants';
 import * as React from 'react';
 
 interface IPatchViewProps {
-    hello: string;
 }
 
 interface IPatchViewState {

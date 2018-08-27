@@ -26,10 +26,6 @@ export class Fabric {
         this.kernel = new FabricKernel(fab, jointCountMax, jointCountMax * 4, jointCountMax * 2);
     }
 
-    public get intervalCount(): number {
-        return this.fab.intervals();
-    }
-
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
         const createGeometry = (index: number) => {
             const geometry = new Geometry();
@@ -116,45 +112,8 @@ export class Fabric {
         this.fab.centralize(altitude);
     }
 
-    public createInterval(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.fab.createInterval(0, alphaIndex, omegaIndex, span);
-    }
-
-    public createFace(joint0Index: number, joint1Index: number, joint2Index: number, apexJointIndex: number): number {
-        return this.fab.createFace(joint0Index, joint1Index, joint2Index, apexJointIndex);
-    }
-
-    public removeFace(faceIndex: number): void {
-        this.fab.removeFace(faceIndex);
-    }
-
     public createTetra(faceIndex: number): void {
         this.createTetraFromFace(this.getFace(faceIndex));
-    }
-
-    // Mutations ============================================
-
-    public setRandomIntervalRole(intervalIndex: number): void {
-        const oppositeIntervalIndex = this.fab.findOppositeIntervalIndex(intervalIndex);
-        if (oppositeIntervalIndex < this.kernel.intervalCountMax) {
-            const role = Math.floor(Math.random() * 64);
-            this.fab.setIntervalRole(intervalIndex, role);
-            this.fab.triggerInterval(intervalIndex);
-            this.fab.setIntervalRole(oppositeIntervalIndex, -role);
-            this.fab.triggerInterval(oppositeIntervalIndex);
-        }
-    }
-
-    public setRandomBehaviorFeature(): void {
-        const behaviorIndex = Math.floor(Math.random() * 64);
-        const variationIndexIndex = Math.floor(Math.random() * 3);
-        if (Math.random() < 0.5) {
-            const behaviorTime = Math.floor(Math.random() * 65536);
-            this.fab.setBehaviorTime(behaviorIndex, variationIndexIndex, behaviorTime);
-        } else {
-            const behaviorVariation = Math.floor((Math.random() - 0.5) * 65536);
-            this.fab.setBehaviorSpanVariation(behaviorIndex, variationIndexIndex, behaviorVariation);
-        }
     }
 
     public toString(): string {
@@ -162,6 +121,18 @@ export class Fabric {
     }
 
     // ==========================================================
+
+    private createFace(joint0Index: number, joint1Index: number, joint2Index: number, apexJointIndex: number): number {
+        return this.fab.createFace(joint0Index, joint1Index, joint2Index, apexJointIndex);
+    }
+
+    private removeFace(faceIndex: number): void {
+        this.fab.removeFace(faceIndex);
+    }
+
+    private createInterval(alphaIndex: number, omegaIndex: number, span: number): number {
+        return this.fab.createInterval(0, alphaIndex, omegaIndex, span);
+    }
 
     private getFace(faceIndex: number): IFace {
         const getFaceLaterality = () => {

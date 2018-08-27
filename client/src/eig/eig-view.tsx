@@ -97,11 +97,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                         this.state.fabric.centralize(0);
                         this.setState({selectedFaceIndex: undefined, paused: false});
                     } else {
-                        this.fabrics.forEach(fabric => {
-                            for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
-                                fabric.setRandomIntervalRole(intervalIndex);
-                            }
-                        });
+                        // this.fabrics.forEach(fabric => {
+                        //     for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
+                        //         fabric.setRandomIntervalRole(intervalIndex);
+                        //     }
+                        // });
                         this.setState({paused: false});
                     }
                 } else {
