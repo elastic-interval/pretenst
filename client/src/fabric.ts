@@ -101,9 +101,10 @@ export class Fabric {
             this.createInterval(walk, right, -1);
             this.createInterval(left, right, -1);
         }
+        const nonexistentApex = this.kernel.jointCountMax;
         for (let walk = 0; walk < corners; walk++) {
-            this.createFace(left, walk, (walk + 1) % corners, this.kernel.jointCountMax);
-            this.createFace(right, (walk + 1) % corners, walk, this.kernel.jointCountMax);
+            this.createFace(left, walk, (walk + 1) % corners, nonexistentApex);
+            this.createFace(right, (walk + 1) % corners, walk, nonexistentApex);
         }
     }
 
