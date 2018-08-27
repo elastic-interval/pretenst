@@ -1,10 +1,10 @@
 import * as React from 'react';
 import './app.css';
 import {EigView} from './eig/eig-view';
-import {IFabricExports} from './fabric';
+import {IFabricExports} from './fabric-exports';
 
 interface IAppProps {
-    createFabric: () => Promise<IFabricExports>;
+    createFabricInstance: () => Promise<IFabricExports>;
 }
 
 class App extends React.Component<IAppProps, any> {
@@ -16,7 +16,7 @@ class App extends React.Component<IAppProps, any> {
     public render() {
         return (
             <div className="App">
-                <EigView createFabric={this.props.createFabric}/>
+                <EigView createFabricInstance={this.props.createFabricInstance}/>
                 {/*<PatchView hello={this.state.hello}/>*/}
             </div>
         );

@@ -3,12 +3,12 @@ import * as ReactDOM from 'react-dom';
 import App from './app';
 import './index.css';
 import registerServiceWorker from './service-worker';
-import {IFabricExports} from './fabric';
+import {IFabricExports} from './fabric-exports';
 
-declare const createFabric: () => Promise<IFabricExports>; // implementation: index.html
+declare const createFabricInstance: () => Promise<IFabricExports>; // implementation: index.html
 
 ReactDOM.render(
-    <App createFabric={createFabric}/>,
+    <App createFabricInstance={createFabricInstance}/>,
     document.getElementById('root') as HTMLElement
 );
 registerServiceWorker();

@@ -1,66 +1,15 @@
-import {BufferGeometry, Float32BufferAttribute, Vector3} from 'three';
-
-export interface IMemory {
-    buffer: ArrayBuffer;
-}
-
-export interface IFabricExports {
-
-    memory: IMemory;
-
-    init(joints: number, intervals: number, faces: number): number;
-
-    joints(): number;
-
-    intervals(): number;
-
-    faces(): number;
-
-    iterate(ticks: number): void;
-
-    centralize(altitude: number): void;
-
-    nextJointTag(): number;
-
-    createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number;
-
-    getJointTag(jointIndex: number): number;
-
-    getJointLaterality(jointIndex: number): number;
-
-    createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number;
-
-    getIntervalRole(intervalIndex: number): number;
-
-    setIntervalRole(intervalIndex: number, role: number): number;
-
-    findOppositeIntervalIndex(intervalIndex: number): number;
-
-    triggerInterval(intervalIndex: number): void;
-
-    createFace(joint0Index: number, joint1Index: number, joint2Index: number, apexJointIndex: number): number;
-
-    removeFace(faceIndex: number): void;
-
-    findOppositeFaceIndex(faceIndex: number): number;
-
-    getFaceJointIndex(faceIndex: number, jointNumber: number): number;
-
-    getFaceAverageIdealSpan(faceIndex: number): number;
-
-    setBehaviorTime(behaviorIndex: number, variationIndex: number, behaviorTime: number): void;
-
-    setBehaviorSpanVariation(behaviorIndex: number, variationIndex: number, behaviorVariation: number): void;
-}
+import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
+import {FabricKernel} from './fabric-kernel';
+import {IFabricExports} from './fabric-exports';
 
 export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
 
-export const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
+const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
 
-export interface IFace {
-    fabric: EigFabric;
+interface IFace {
+    fabric: Fabric;
     index: number;
     laterality: number;
     midpoint: Vector3;
@@ -68,97 +17,62 @@ export interface IFace {
     jointIndex: number[];
     jointTag: string[];
     averageIdealSpan: number;
-    createTetra: () => void;
 }
 
-export class EigFabric {
-    private arrayBuffer: ArrayBuffer;
-    private fabricBytes: number;
-    private intervalCountMax: number;
-    private faceCountMax: number;
-    private lineLocationOffset: number;
-    private lineColorsOffset: number;
-    private faceMidpointsOffset: number;
-    private faceNormalsOffset: number;
-    private faceLocationsOffset: number;
+export class Fabric {
+    private kernel: FabricKernel;
 
-    constructor(
-        private fab: IFabricExports,
-        private jointCountMax: number
-    ) {
-        // good guesses
-        this.intervalCountMax = jointCountMax * 4;
-        this.faceCountMax = jointCountMax * 2;
-        // sizes
-        const vectorsPerLine = 2;
-        const floatsInVector = 3;
-        const vectorsForFace = 3;
-        const lineLocationFloats = this.intervalCountMax * vectorsPerLine * floatsInVector;
-        const lineColorFloats = lineLocationFloats;
-        const faceVectorFloats = this.faceCountMax * floatsInVector;
-        const faceJointFloats = faceVectorFloats * vectorsForFace;
-        // offsets
-        this.faceLocationsOffset = (
-            this.faceNormalsOffset = (
-                this.faceMidpointsOffset = (
-                    this.lineColorsOffset = (
-                        this.lineLocationOffset = 0
-                    ) + lineLocationFloats * Float32Array.BYTES_PER_ELEMENT
-                ) + lineColorFloats * Float32Array.BYTES_PER_ELEMENT
-            ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
-        ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
-        this.fabricBytes = fab.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
-        this.arrayBuffer = fab.memory.buffer;
+    constructor(private fab: IFabricExports, jointCountMax: number) {
+        this.kernel = new FabricKernel(fab, jointCountMax, jointCountMax * 4, jointCountMax * 2);
     }
 
-    public get faceMidpoints(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceMidpointsOffset, this.fab.faces() * 3);
+    public get intervalCount(): number {
+        return this.fab.intervals();
     }
 
-    public get faceLocations(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceLocationsOffset, this.fab.faces() * 3 * 3);
-    }
-
-    public get faceNormals(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.fab.faces() * 3 * 3);
-    }
-
-    public get lineLocations(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.lineLocationOffset, this.fab.intervals() * 2 * 3);
-    }
-
-    public get lineColors(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.lineColorsOffset, this.fab.intervals() * 2 * 3);
+    public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
+        const createGeometry = (fi: number) => {
+            const geometry = new Geometry();
+            const face = this.getFace(fi);
+            const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, Math.sqrt(2 / 3));
+            const faceOffset = face.index * 3;
+            const faceLocations = face.fabric.kernel.faceLocations;
+            geometry.vertices = [
+                vectorFromIndex(faceLocations, faceOffset * 3), apex,
+                vectorFromIndex(faceLocations, (faceOffset + 1) * 3), apex,
+                vectorFromIndex(faceLocations, (faceOffset + 2) * 3), apex
+            ];
+            return geometry;
+        };
+        const geometries: Geometry[] = [];
+        geometries.push(createGeometry(faceIndex));
+        const oppositeFaceIndex = this.fab.findOppositeFaceIndex(faceIndex);
+        if (oppositeFaceIndex < this.fab.faces()) {
+            geometries.push(createGeometry(oppositeFaceIndex));
+        }
+        return geometries;
     }
 
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry();
-        geometry.addAttribute('position', new Float32BufferAttribute(this.faceLocations, 3));
-        geometry.addAttribute('normal', new Float32BufferAttribute(this.faceNormals, 3));
+        geometry.addAttribute('position', new Float32BufferAttribute(this.kernel.faceLocations, 3));
+        geometry.addAttribute('normal', new Float32BufferAttribute(this.kernel.faceNormals, 3));
         return geometry;
     }
 
     public get lineSegmentsGeometry(): BufferGeometry {
         const geometry = new BufferGeometry();
-        geometry.addAttribute('position', new Float32BufferAttribute(this.lineLocations, 3));
-        geometry.addAttribute('color', new Float32BufferAttribute(this.lineColors, 3));
+        geometry.addAttribute('position', new Float32BufferAttribute(this.kernel.lineLocations, 3));
+        geometry.addAttribute('color', new Float32BufferAttribute(this.kernel.lineColors, 3));
         return geometry;
-    }
-
-    public get initBytes() {
-        return this.fabricBytes;
-    }
-
-    public get bytes() {
-        return this.arrayBuffer.byteLength;
     }
 
     public createTetrahedron(): void {
         const R = Math.sqrt(2) / 2;
-        this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R, -R, R);
-        this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, -R, R, R);
-        this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, -R, -R, -R);
-        this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R, R, -R);
+        this.fab.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R, -R, R);
+        this.fab.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, -R, R, R);
+        this.fab.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, -R, -R, -R);
+        this.fab.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R, R, -R);
         this.createInterval(0, 1, -1);
         this.createInterval(1, 2, -1);
         this.createInterval(2, 3, -1);
@@ -175,11 +89,11 @@ export class EigFabric {
         const R = Math.sqrt(2) / 2;
         for (let walk = 0; walk < corners; walk++) {
             const angle = walk * Math.PI * 2 / corners;
-            this.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R * Math.sin(angle), R + R * Math.cos(angle), 0);
+            this.fab.createJoint(this.fab.nextJointTag(), BILATERAL_MIDDLE, R * Math.sin(angle), R + R * Math.cos(angle), 0);
         }
         const jointPairName = this.fab.nextJointTag();
-        const left = this.createJoint(jointPairName, BILATERAL_LEFT, 0, R, -R);
-        const right = this.createJoint(jointPairName, BILATERAL_RIGHT, 0, R, R);
+        const left = this.fab.createJoint(jointPairName, BILATERAL_LEFT, 0, R, -R);
+        const right = this.fab.createJoint(jointPairName, BILATERAL_RIGHT, 0, R, R);
         for (let walk = 0; walk < corners; walk++) {
             this.createInterval(walk, (walk + 1) % corners, -1);
             this.createInterval(walk, left, -1);
@@ -187,13 +101,9 @@ export class EigFabric {
             this.createInterval(left, right, -1);
         }
         for (let walk = 0; walk < corners; walk++) {
-            this.createFace(left, walk, (walk + 1) % corners, this.jointCountMax);
-            this.createFace(right, (walk + 1) % corners, walk, this.jointCountMax);
+            this.createFace(left, walk, (walk + 1) % corners, this.kernel.jointCountMax);
+            this.createFace(right, (walk + 1) % corners, walk, this.kernel.jointCountMax);
         }
-    }
-
-    public init(joints: number, intervals: number, faces: number): number {
-        return this.fab.init(joints, intervals, faces);
     }
 
     public iterate(ticks: number): void {
@@ -204,16 +114,8 @@ export class EigFabric {
         this.fab.centralize(altitude);
     }
 
-    public createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number {
-        return this.fab.createJoint(jointTag, laterality, x, y, z);
-    }
-
     public createInterval(alphaIndex: number, omegaIndex: number, span: number): number {
         return this.fab.createInterval(0, alphaIndex, omegaIndex, span);
-    }
-
-    public get intervalCount(): number {
-        return this.fab.intervals();
     }
 
     public createFace(joint0Index: number, joint1Index: number, joint2Index: number, apexJointIndex: number): number {
@@ -224,40 +126,15 @@ export class EigFabric {
         this.fab.removeFace(faceIndex);
     }
 
-    public getFace(faceIndex: number): IFace {
-        const getFaceLaterality = () => {
-            for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
-                const jointLaterality = this.fab.getJointLaterality(this.fab.getFaceJointIndex(faceIndex, jointWalk));
-                if (jointLaterality !== BILATERAL_MIDDLE) {
-                    return jointLaterality;
-                }
-            }
-            return BILATERAL_MIDDLE;
-        };
-        const jointIndex = [0, 1, 2, 3]
-            .map(jointNumber => this.fab.getFaceJointIndex(faceIndex, jointNumber));
-        const normal = [0, 1, 2]
-            .map(jointNumber => vectorFromIndex(this.faceNormals, (faceIndex * 3 + jointNumber) * 3))
-            .reduce((prev, current) => prev.add(current), new Vector3()).multiplyScalar(1 / 3.0);
-        const face: IFace = {
-            fabric: this,
-            index: faceIndex,
-            laterality: getFaceLaterality(),
-            midpoint: vectorFromIndex(this.faceMidpoints, faceIndex * 3),
-            normal,
-            jointIndex,
-            jointTag: jointIndex.map(index => `${this.fab.getJointTag(index)}[${this.fab.getJointLaterality(index)}]`),
-            averageIdealSpan: this.fab.getFaceAverageIdealSpan(faceIndex),
-            createTetra: () => this.createTetraFromFace(face)
-        };
-        return face;
+    public createTetra(faceIndex: number): void {
+        this.createTetraFromFace(this.getFace(faceIndex));
     }
 
     // Mutations ============================================
 
     public setRandomIntervalRole(intervalIndex: number): void {
         const oppositeIntervalIndex = this.fab.findOppositeIntervalIndex(intervalIndex);
-        if (oppositeIntervalIndex < this.intervalCountMax) {
+        if (oppositeIntervalIndex < this.kernel.intervalCountMax) {
             const role = Math.floor(Math.random() * 64);
             this.fab.setIntervalRole(intervalIndex, role);
             this.fab.triggerInterval(intervalIndex);
@@ -278,18 +155,49 @@ export class EigFabric {
         }
     }
 
+    public toString(): string {
+        return `${(this.kernel.blockBytes / 1024).toFixed(1)}k =becomes=> ${this.kernel.bufferBytes / 65536} block(s)`
+    }
+
     // ==========================================================
+
+    private getFace(faceIndex: number): IFace {
+        const getFaceLaterality = () => {
+            for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
+                const jointLaterality = this.fab.getJointLaterality(this.fab.getFaceJointIndex(faceIndex, jointWalk));
+                if (jointLaterality !== BILATERAL_MIDDLE) {
+                    return jointLaterality;
+                }
+            }
+            return BILATERAL_MIDDLE;
+        };
+        const jointIndex = [0, 1, 2, 3]
+            .map(jointNumber => this.fab.getFaceJointIndex(faceIndex, jointNumber));
+        const normal = [0, 1, 2]
+            .map(jointNumber => vectorFromIndex(this.kernel.faceNormals, (faceIndex * 3 + jointNumber) * 3))
+            .reduce((prev, current) => prev.add(current), new Vector3()).multiplyScalar(1 / 3.0);
+        return {
+            fabric: this,
+            index: faceIndex,
+            laterality: getFaceLaterality(),
+            midpoint: vectorFromIndex(this.kernel.faceMidpoints, faceIndex * 3),
+            normal,
+            jointIndex,
+            jointTag: jointIndex.map(index => `${this.fab.getJointTag(index)}[${this.fab.getJointLaterality(index)}]`),
+            averageIdealSpan: this.fab.getFaceAverageIdealSpan(faceIndex)
+        };
+    }
 
     private createTetraFromFace(face: IFace, knownApexTag?: number) {
         const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
         const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2 / 3)).add(midpoint);
         const apexTag = knownApexTag ? knownApexTag : this.fab.nextJointTag();
-        const apex = this.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
+        const apex = this.fab.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
         this.createInterval(face.jointIndex[0], apex, face.averageIdealSpan);
         this.createInterval(face.jointIndex[1], apex, face.averageIdealSpan);
         this.createInterval(face.jointIndex[2], apex, face.averageIdealSpan);
         const existingApexIndex = face.jointIndex[3];
-        if (existingApexIndex < this.jointCountMax) {
+        if (existingApexIndex < this.kernel.jointCountMax) {
             this.createInterval(existingApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
         }
         this.createFace(face.jointIndex[0], face.jointIndex[1], apex, face.jointIndex[2]);
@@ -297,7 +205,7 @@ export class EigFabric {
         this.createFace(face.jointIndex[2], face.jointIndex[0], apex, face.jointIndex[1]);
         if (!knownApexTag) {
             const oppositeFaceIndex = this.fab.findOppositeFaceIndex(face.index);
-            if (oppositeFaceIndex < this.faceCountMax) {
+            if (oppositeFaceIndex < this.kernel.faceCountMax) {
                 const oppositeFace = this.getFace(oppositeFaceIndex);
                 this.createTetraFromFace(oppositeFace, apexTag);
                 if (oppositeFaceIndex < face.index) {
@@ -312,5 +220,5 @@ export class EigFabric {
             }
         }
     }
-
 }
+

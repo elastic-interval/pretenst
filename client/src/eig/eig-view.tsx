@@ -15,18 +15,19 @@ import {
     Vector3,
     VertexColors
 } from 'three';
-import {EigFabric, IFabricExports, IFace, vectorFromIndex} from '../fabric';
+import {Fabric} from '../fabric';
+import {IFabricExports} from '../fabric-exports';
 
 interface IEigViewProps {
-    createFabric: () => Promise<IFabricExports>;
+    createFabricInstance: () => Promise<IFabricExports>;
 }
 
 interface IEigViewState {
     width: number;
     height: number;
     paused: boolean;
-    fabric?: EigFabric;
-    selectedFace?: IFace;
+    fabric?: Fabric;
+    selectedFaceIndex?: number;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -49,15 +50,15 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private orbitControls: any;
     private rayCaster: any;
     private facesMeshNode: any;
-    private fabrics: EigFabric[] = [];
+    private fabrics: Fabric[] = [];
 
     constructor(props: IEigViewProps) {
         super(props);
         this.state = {width: window.innerWidth, height: window.innerHeight, paused: false};
         for (let fabCount = 0; fabCount < 9; fabCount++) {
-            props.createFabric().then(fabricExports => {
-                const fabric = new EigFabric(fabricExports, 200);
-                console.log(`${fabCount}: ${(fabric.initBytes / 1024).toFixed(1)}k =becomes=> ${fabric.bytes / 65536} block(s)`);
+            props.createFabricInstance().then(fabricExports => {
+                const fabric = new Fabric(fabricExports, 200);
+                console.log(fabric.toString());
                 fabric.createSeed(5);
                 fabric.centralize(1);
                 this.fabrics.push(fabric);
@@ -91,11 +92,10 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             if (event.code === 'Space') {
                 if (this.state.paused) {
-                    const selectedFace = this.state.selectedFace;
-                    if (selectedFace) {
-                        selectedFace.createTetra();
-                        selectedFace.fabric.centralize(0);
-                        this.setState({selectedFace: undefined, paused: false});
+                    if (this.state.selectedFaceIndex !== undefined && this.state.fabric) {
+                        this.state.fabric.createTetra(this.state.selectedFaceIndex);
+                        this.state.fabric.centralize(0);
+                        this.setState({selectedFaceIndex: undefined, paused: false});
                     } else {
                         this.fabrics.forEach(fabric => {
                             for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
@@ -131,17 +131,16 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 return;
             }
         }
-        this.setState({selectedFace: undefined});
+        this.setState({selectedFaceIndex: undefined});
     }
 
     public trySelect(): boolean {
         this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
         const intersect = this.rayCaster.intersectObject(this.facesMeshNode);
-        const selectedFace = this.state.selectedFace;
         if (intersect.length > 0 && this.state.fabric) {
             const faceIndex = intersect[0].faceIndex / 3;
-            if (!selectedFace || faceIndex !== selectedFace.index) {
-                this.setState({selectedFace: this.state.fabric.getFace(faceIndex)});
+            if (this.state.selectedFaceIndex === undefined || faceIndex !== this.state.selectedFaceIndex) {
+                this.setState({selectedFaceIndex: faceIndex});
             }
             return true;
         }
@@ -152,26 +151,20 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         const facesGeometry = this.state.fabric ? this.state.fabric.facesGeometry : new BufferGeometry();
         const lineSegmentGeometry = this.state.fabric ? this.state.fabric.lineSegmentsGeometry : new BufferGeometry();
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
-        const faceNormalLineSegments = (oldFace: IFace) => {
-            const normalLine = new Geometry();
-            const face = oldFace.fabric.getFace(oldFace.index);
-            const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, Math.sqrt(2 / 3));
-            const faceOffset = face.index * 3;
-            const faceLocations = face.fabric.faceLocations;
-            normalLine.vertices = [
-                vectorFromIndex(faceLocations, faceOffset * 3), apex,
-                vectorFromIndex(faceLocations, (faceOffset + 1) * 3), apex,
-                vectorFromIndex(faceLocations, (faceOffset + 2) * 3), apex
-            ];
-            return <R3.LineSegments key="FaceNormal" geometry={normalLine} material={TRIPOD_MATERIAL}/>
+        const faceHighlights = () => {
+            if (this.state.fabric && this.state.selectedFaceIndex !== undefined) {
+                return this.state.fabric.getFaceHighlightGeometries(this.state.selectedFaceIndex).map((geometry: Geometry, index: number) => {
+                    return <R3.LineSegments key={`Highlight${index}`} geometry={geometry} material={TRIPOD_MATERIAL}/>
+                });
+            } else {
+                return null;
+            }
         };
-        const selectedFace = this.state.selectedFace;
-        const selectedFaceTripod = !selectedFace ? null : faceNormalLineSegments(selectedFace);
         return (
             <div onMouseMove={(e: any) => this.mouseMove(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
-                        {selectedFaceTripod}
+                        {faceHighlights()}
                         <R3.Mesh
                             ref={(node: any) => this.facesMeshNode = node}
                             key="FabricFaces" name="Fabric"
