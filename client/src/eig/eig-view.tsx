@@ -17,6 +17,8 @@ import {
 } from 'three';
 import {Fabric} from '../fabric';
 import {IFabricExports} from '../fabric-exports';
+import {Genome} from '../genome';
+import {GenomeInterpreter} from '../genome-interpreter';
 
 interface IEigViewProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -27,6 +29,8 @@ interface IEigViewState {
     height: number;
     paused: boolean;
     fabric?: Fabric;
+    genome?: Genome;
+    genomeInterpreter?: GenomeInterpreter;
     selectedFaceIndex?: number;
 }
 
@@ -50,26 +54,22 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private orbitControls: any;
     private rayCaster: any;
     private facesMeshNode: any;
-    private fabrics: Fabric[] = [];
+    private nextGenomeStep = 1000;
 
     constructor(props: IEigViewProps) {
         super(props);
-        this.state = {width: window.innerWidth, height: window.innerHeight, paused: false};
-        for (let fabCount = 0; fabCount < 9; fabCount++) {
-            props.createFabricInstance().then(fabricExports => {
-                const fabric = new Fabric(fabricExports, 200);
-                console.log(fabric.toString());
-                fabric.createSeed(5);
-                fabric.centralize(1);
-                this.fabrics.push(fabric);
-            });
-        }
+        this.state = {
+            width: window.innerWidth,
+            height: window.innerHeight,
+            paused: false
+        };
+        this.createFabricInstance();
         this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 5000);
-        this.perspectiveCamera.position.set(6, 1, 0);
-        this.perspectiveCamera.lookAt(new Vector3(0, 1, 0));
+        this.perspectiveCamera.position.set(8, 2, 8);
+        this.perspectiveCamera.lookAt(new Vector3(0, 4, 0));
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
         // this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         this.rayCaster = new Raycaster();
@@ -79,6 +79,15 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                     if (!this.state.paused) {
                         if (this.state.fabric) {
                             this.state.fabric.iterate(60);
+                            if (this.state.genomeInterpreter) {
+                                const age = this.state.fabric.age;
+                                if (age > this.nextGenomeStep) {
+                                    this.state.genomeInterpreter.step();
+                                    this.state.fabric.centralize(0.1);
+                                    this.nextGenomeStep = age + 200;
+                                }
+                            }
+
                         }
                         this.forceUpdate();
                     }
@@ -97,32 +106,19 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                         this.state.fabric.centralize(0);
                         this.setState({selectedFaceIndex: undefined, paused: false});
                     } else {
-                        // this.fabrics.forEach(fabric => {
-                        //     for (let intervalIndex = 0; intervalIndex < fabric.intervalCount; intervalIndex++) {
-                        //         fabric.setRandomIntervalRole(intervalIndex);
-                        //     }
-                        // });
-                        this.setState({paused: false});
+                        this.createFabricInstance();
                     }
                 } else {
                     this.setState({paused: true});
                     this.trySelect();
-                }
-            } else if (event.key) {
-                const keyNumber = parseInt(event.key, 10);
-                if (keyNumber) {
-                    const fabric = this.fabrics[keyNumber - 1];
-                    if (fabric) {
-                        this.setState({fabric});
-                    }
                 }
             }
         })
     }
 
     public mouseMove(event: any) {
-        if (!this.state.fabric && this.fabrics.length) {
-            this.setState({fabric: this.fabrics[0]});
+        if (!this.state.fabric) {
+            return;
         }
         this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
         this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
@@ -210,5 +206,23 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         this.perspectiveCamera.aspect = this.state.width / this.state.height;
         this.perspectiveCamera.updateProjectionMatrix();
     };
+
+    private createFabricInstance() {
+        this.props.createFabricInstance().then(fabricExports => {
+            const fabric = new Fabric(fabricExports, 220);
+            const genome = new Genome(20).randomize();
+            const reader = genome.createReader(() => this.setState({genomeInterpreter: undefined}));
+            console.log(fabric.toString());
+            fabric.createSeed(5);
+            fabric.centralize(1);
+            this.nextGenomeStep = 1000;
+            this.setState({
+                fabric,
+                genome,
+                genomeInterpreter: new GenomeInterpreter(fabric, reader),
+                paused: false
+            });
+        });
+    }
 }
 

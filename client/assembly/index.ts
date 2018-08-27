@@ -9,7 +9,7 @@ const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
 const SPAN_VARIATION_SIZE: usize = sizeof<i16>();
 const FLOAT_SIZE: usize = sizeof<f32>();
-const LONG_SIZE: usize = sizeof<u64>();
+const AGE_SIZE: usize = sizeof<u32>();
 const VARIATION_COUNT: u8 = 3;
 const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
 const METADATA_SIZE: usize = VECTOR_SIZE * 3;
@@ -89,7 +89,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                 ) + VECTOR_SIZE
             ) + VECTOR_SIZE
         ) + VECTOR_SIZE
-    ) + LONG_SIZE;
+    ) + AGE_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
     for (let roleIndex: u8 = 0; roleIndex < ROLE_INDEX_MAX; roleIndex++) {
@@ -118,13 +118,17 @@ export function nextJointTag(): u16 {
 // Peek and Poke ================================================================================
 
 @inline()
-function getAge(): i64 {
-    return load<i64>(agePtr);
+export function getAge(): i32 {
+    return load<i32>(agePtr);
+}
+
+export function age(): i32 {
+    return getAge();
 }
 
 @inline()
 function timePasses(): void {
-    store<i64>(agePtr, getAge() + 1);
+    store<i32>(agePtr, getAge() + 1);
 }
 
 @inline()
@@ -762,9 +766,6 @@ function abs(val: f32): f32 {
 
 function elasticBehavior(intervalIndex: u16, elasticFactor: f32): void {
     let timeIndex = getTimeIndex(intervalIndex);
-    if (timeIndex === 0) { // to keep things going for now
-        setTimeIndex(intervalIndex, timeIndex = 1);
-    }
     let span = calculateSpan(intervalIndex);
     let idealSpan = interpolateCurrentSpan(getIntervalRole(intervalIndex), getFloat(idealSpanPtr(intervalIndex)), timeIndex);
     let stress = elasticFactor * (span - idealSpan) * idealSpan * idealSpan;

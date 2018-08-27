@@ -5,9 +5,6 @@ import {Cell} from './cell';
 import {HEXAGON_POINTS, IPatchPattern} from './constants';
 import * as React from 'react';
 
-interface IPatchViewProps {
-}
-
 interface IPatchViewState {
     selectedToken?: PatchToken;
     tokenMode: boolean;
@@ -15,11 +12,11 @@ interface IPatchViewState {
     owner: string
 }
 
-class PatchView extends React.Component<IPatchViewProps, IPatchViewState> {
+class PatchView extends React.Component<any, IPatchViewState> {
 
     private ownershipCache: Map<string, string>;
 
-    constructor(props: IPatchViewProps) {
+    constructor(props: any) {
         super(props);
         const existingOwner = localStorage.getItem('owner');
         const owner = existingOwner ? existingOwner : 'gumby';

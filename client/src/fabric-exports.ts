@@ -8,6 +8,8 @@ export interface IFabricExports {
 
     init(joints: number, intervals: number, faces: number): number;
 
+    age(): number;
+
     joints(): number;
 
     intervals(): number;
