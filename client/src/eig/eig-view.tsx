@@ -54,7 +54,6 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private orbitControls: any;
     private rayCaster: any;
     private facesMeshNode: any;
-    private nextGenomeStep = 1000;
 
     constructor(props: IEigViewProps) {
         super(props);
@@ -78,16 +77,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 () => {
                     if (!this.state.paused) {
                         if (this.state.fabric) {
-                            this.state.fabric.iterate(60);
-                            if (this.state.genomeInterpreter) {
-                                const age = this.state.fabric.age;
-                                if (age > this.nextGenomeStep) {
-                                    this.state.genomeInterpreter.step();
-                                    this.state.fabric.centralize(0.1);
-                                    this.nextGenomeStep = age + 2000;
-                                }
+                            const maxTimeIndex = this.state.fabric.iterate(60);
+                            this.state.fabric.centralize(-1, 0.01);
+                            if (this.state.genomeInterpreter && maxTimeIndex === 0) {
+                                this.state.genomeInterpreter.step();
                             }
-
                         }
                         this.forceUpdate();
                     }
@@ -103,7 +97,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 if (this.state.paused) {
                     if (this.state.selectedFaceIndex !== undefined && this.state.fabric) {
                         this.state.fabric.createTetra(this.state.selectedFaceIndex);
-                        this.state.fabric.centralize(0);
+                        this.state.fabric.centralize(0, 1);
                         this.setState({selectedFaceIndex: undefined, paused: false});
                     } else {
                         this.createFabricInstance();
@@ -214,8 +208,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             const reader = genome.createReader(() => this.setState({genomeInterpreter: undefined}));
             console.log(fabric.toString());
             fabric.createSeed(5);
-            fabric.centralize(1);
-            this.nextGenomeStep = 1000;
+            fabric.centralize(1, 1);
             this.setState({
                 fabric,
                 genome,

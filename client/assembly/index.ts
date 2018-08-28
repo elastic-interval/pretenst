@@ -351,7 +351,7 @@ export function getJointTag(jointIndex: u16): u16 {
     return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE);
 }
 
-export function centralize(altitude: f32): void {
+export function centralize(altitude: f32, intensity: f32): void {
     let x: f32 = 0;
     let lowY: f32 = 10000;
     let z: f32 = 0;
@@ -367,11 +367,11 @@ export function centralize(altitude: f32): void {
     z = z / <f32>jointCount;
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         let jPtr = jointPtr(thisJoint);
-        setX(jPtr, getX(jPtr) - x);
+        setX(jPtr, getX(jPtr) - x * intensity);
         if (altitude >= 0) {
             setY(jPtr, getY(jPtr) - lowY + altitude);
         }
-        setZ(jPtr, getZ(jPtr) - z);
+        setZ(jPtr, getZ(jPtr) - z * intensity);
     }
 }
 
@@ -724,37 +724,47 @@ function sortVariations(roleIndex: u16): void {
 }
 
 function interpolateCurrentSpan(role: i8, idealSpan: f32, timeIndex: u16): f32 {
-    let beforeTime: u16 = 0;
-    let beforeVariation: f32 = 1;
-    let variationNumber: u8 = 0;
-    let roleIndex: u8 = role > 0 ? role : -role;
-    while (variationNumber < VARIATION_COUNT) {
-        let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
-        if (behaviorTime < timeIndex) {
-            beforeTime = behaviorTime;
-            beforeVariation = getBehaviorSpanVariation(role, variationNumber);
+    if (role === 0) {
+        if (timeIndex <= 0) {
+            return idealSpan;
+        } else {
+            let originalSpan = idealSpan * 0.05;
+            let progress = <f32>timeIndex / 65536;
+            return originalSpan * (1 - progress) + idealSpan * progress;
         }
-        variationNumber++;
+    } else {
+        let beforeTime: u16 = 0;
+        let beforeVariation: f32 = 1;
+        let variationNumber: u8 = 0;
+        let roleIndex: u8 = role > 0 ? role : -role;
+        while (variationNumber < VARIATION_COUNT) {
+            let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
+            if (behaviorTime < timeIndex) {
+                beforeTime = behaviorTime;
+                beforeVariation = getBehaviorSpanVariation(role, variationNumber);
+            }
+            variationNumber++;
+        }
+        let afterTime: u16 = 65535;
+        let afterVariation: f32 = 1;
+        variationNumber = VARIATION_COUNT;
+        while (true) {
+            let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
+            if (behaviorTime > timeIndex) {
+                afterTime = behaviorTime;
+                afterVariation = getBehaviorSpanVariation(role, variationNumber);
+            }
+            if (variationNumber === 0) {
+                break;
+            }
+            variationNumber--;
+        }
+        let timeSpan = <f32>(afterTime - beforeTime);
+        let currentVariation =
+            <f32>(timeIndex - beforeTime) / timeSpan * afterVariation +
+            <f32>(afterTime - timeIndex) / timeSpan * beforeVariation;
+        return idealSpan * currentVariation;
     }
-    let afterTime: u16 = 65535;
-    let afterVariation: f32 = 1;
-    variationNumber = VARIATION_COUNT;
-    while (true) {
-        let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
-        if (behaviorTime > timeIndex) {
-            afterTime = behaviorTime;
-            afterVariation = getBehaviorSpanVariation(role, variationNumber);
-        }
-        if (variationNumber === 0) {
-            break;
-        }
-        variationNumber--;
-    }
-    let timeSpan = <f32>(afterTime - beforeTime);
-    let currentVariation =
-        <f32>(timeIndex - beforeTime) / timeSpan * afterVariation +
-        <f32>(afterTime - timeIndex) / timeSpan * beforeVariation;
-    return idealSpan * currentVariation;
 }
 
 // Physics =====================================================================================
@@ -880,10 +890,11 @@ const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;
 const STRESS_MAX: f32 = 0.001;
 
-export function iterate(ticks: usize): void {
+export function iterate(ticks: usize): u16 {
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         tick(ELASTIC_FACTOR, AIR_GRAVITY, AIR_DRAG, LAND_GRAVITY, LAND_DRAG);
     }
+    let maxTimeIndex: u16 = 0;
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         setVector(outputAlphaLocationPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
         setVector(outputOmegaLocationPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
@@ -898,8 +909,12 @@ export function iterate(ticks: usize): void {
         let blue: f32 = 0.6 + stress * 0.4;
         setAll(outputAlphaColorPtr(thisInterval), red, green, blue);
         setAll(outputOmegaColorPtr(thisInterval), red, green, blue);
+        if (getTimeIndex(thisInterval) > maxTimeIndex) {
+            maxTimeIndex = getTimeIndex(thisInterval);
+        }
     }
     for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
         outputFaceGeometry(thisFace);
     }
+    return maxTimeIndex;
 }
