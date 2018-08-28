@@ -84,7 +84,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                                 if (age > this.nextGenomeStep) {
                                     this.state.genomeInterpreter.step();
                                     this.state.fabric.centralize(0.1);
-                                    this.nextGenomeStep = age + 200;
+                                    this.nextGenomeStep = age + 2000;
                                 }
                             }
 

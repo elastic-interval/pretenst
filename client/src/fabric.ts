@@ -8,14 +8,20 @@ export const BILATERAL_LEFT = 2;
 
 const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
 
+interface IFaceJoint {
+    jointIndex: number;
+    tag: number;
+    location: Vector3;
+}
+
 interface IFace {
     fabric: Fabric;
     index: number;
     laterality: number;
     midpoint: Vector3;
     normal: Vector3;
-    jointIndex: number[];
-    jointTag: string[];
+    joints: IFaceJoint[];
+    concaveApexIndex: number;
     averageIdealSpan: number;
 }
 
@@ -152,38 +158,48 @@ export class Fabric {
             }
             return BILATERAL_MIDDLE;
         };
-        const jointIndex = [0, 1, 2, 3]
-            .map(jointNumber => this.fabricExports.getFaceJointIndex(faceIndex, jointNumber));
-        const normal = [0, 1, 2]
-            .map(jointNumber => vectorFromIndex(this.kernel.faceNormals, (faceIndex * 3 + jointNumber) * 3))
-            .reduce((prev, current) => prev.add(current), new Vector3()).multiplyScalar(1 / 3.0);
+        const faceLaterality = getFaceLaterality();
+        const triangle = [0, 1, 2];
+        const joints: IFaceJoint[] = triangle
+            .map(jointOfFace => {
+                const jointIndex = this.fabricExports.getFaceJointIndex(faceIndex, jointOfFace);
+                const tag = this.fabricExports.getJointTag(jointIndex);
+                const location = vectorFromIndex(this.kernel.faceLocations, (faceIndex * 3 + jointOfFace) * 3);
+                return {jointIndex, tag, location} as IFaceJoint;
+            });
         return {
             fabric: this,
             index: faceIndex,
-            laterality: getFaceLaterality(),
+            laterality: faceLaterality,
             midpoint: vectorFromIndex(this.kernel.faceMidpoints, faceIndex * 3),
-            normal,
-            jointIndex,
-            jointTag: jointIndex.map(index => `${this.fabricExports.getJointTag(index)}[${this.fabricExports.getJointLaterality(index)}]`),
+            normal: triangle
+                .map(jointNumber => vectorFromIndex(
+                    this.kernel.faceNormals,
+                    (faceIndex * 3 + jointNumber) * 3
+                ))
+                .reduce((prev, current) => prev.add(current), new Vector3())
+                .multiplyScalar(1 / 3.0),
+            joints,
+            concaveApexIndex: this.fabricExports.getFaceJointIndex(faceIndex, 3),
             averageIdealSpan: this.fabricExports.getFaceAverageIdealSpan(faceIndex)
         };
     }
 
     private createTetraFromFace(face: IFace, knownApexTag?: number) {
+        const jointIndex = face.joints.map(faceJoint => faceJoint.jointIndex);
         const midpoint = new Vector3(face.midpoint.x, face.midpoint.y, face.midpoint.z);
         const apexLocation = new Vector3(face.normal.x, face.normal.y, face.normal.z).multiplyScalar(face.averageIdealSpan * Math.sqrt(2 / 3)).add(midpoint);
         const apexTag = knownApexTag ? knownApexTag : this.fabricExports.nextJointTag();
         const apex = this.fabricExports.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
-        this.createInterval(face.jointIndex[0], apex, face.averageIdealSpan);
-        this.createInterval(face.jointIndex[1], apex, face.averageIdealSpan);
-        this.createInterval(face.jointIndex[2], apex, face.averageIdealSpan);
-        const existingApexIndex = face.jointIndex[3];
-        if (existingApexIndex < this.kernel.jointCountMax) {
-            this.createInterval(existingApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
+        this.createInterval(jointIndex[0], apex, face.averageIdealSpan);
+        this.createInterval(jointIndex[1], apex, face.averageIdealSpan);
+        this.createInterval(jointIndex[2], apex, face.averageIdealSpan);
+        if (face.concaveApexIndex < this.kernel.jointCountMax) {
+            this.createInterval(face.concaveApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3));
         }
-        this.createFace(face.jointIndex[0], face.jointIndex[1], apex, face.jointIndex[2]);
-        this.createFace(face.jointIndex[1], face.jointIndex[2], apex, face.jointIndex[0]);
-        this.createFace(face.jointIndex[2], face.jointIndex[0], apex, face.jointIndex[1]);
+        this.createFace(jointIndex[0], jointIndex[1], apex, jointIndex[2]);
+        this.createFace(jointIndex[1], jointIndex[2], apex, jointIndex[0]);
+        this.createFace(jointIndex[2], jointIndex[0], apex, jointIndex[1]);
         if (!knownApexTag) {
             const oppositeFaceIndex = this.fabricExports.findOppositeFaceIndex(face.index);
             if (oppositeFaceIndex < this.kernel.faceCountMax) {
@@ -201,5 +217,8 @@ export class Fabric {
             }
         }
     }
+
+    // const sortOnTag = (a: IFaceJoint, b: IFaceJoint) => a.tag - b.tag;
+
 }
 
