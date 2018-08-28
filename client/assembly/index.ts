@@ -657,7 +657,7 @@ export function removeFace(faceIndex: u16): void {
 const ROLE_INDEX_MAX: u8 = 64;
 const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
 const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.2;
-const TIME_INDEX_STEP: u16 = 10;
+const TIME_INDEX_STEP: u16 = 64;
 
 function initBehavior(roleIndex: u16): void {
     for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
@@ -725,10 +725,10 @@ function sortVariations(roleIndex: u16): void {
 
 function interpolateCurrentSpan(role: i8, idealSpan: f32, timeIndex: u16): f32 {
     if (role === 0) {
-        if (timeIndex <= 0) {
+        if (timeIndex === 0) {
             return idealSpan;
         } else {
-            let originalSpan = idealSpan * 0.05;
+            let originalSpan = idealSpan * 0.1;
             let progress = <f32>timeIndex / 65536;
             return originalSpan * (1 - progress) + idealSpan * progress;
         }
