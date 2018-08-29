@@ -189,22 +189,33 @@ export class Fabric {
     private unfoldFace(face: IFace, knownApexTag?: number) {
         const jointIndex = face.joints.map(faceJoint => faceJoint.jointIndex);
         const joints = face.joints.sort((a: IFaceJoint, b: IFaceJoint) => b.tag - a.tag);
-        const chosenJoint = joints[0];
-        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(face.normal, face.averageIdealSpan * 0.1);
+        const chosenJoint = joints[2]; // oldest
+        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(face.normal, face.averageIdealSpan * 0.05);
         const apexTag = knownApexTag ? knownApexTag : this.fabricExports.nextJointTag();
         const apex = this.fabricExports.createJoint(apexTag, face.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
         joints.forEach(faceJoint => {
             if (faceJoint.jointNumber !== chosenJoint.jointNumber) {
-                this.createInterval(faceJoint.jointIndex, apex, face.averageIdealSpan);
+                const idealSpan = new Vector3().subVectors(faceJoint.location, apexLocation).length();
+                this.createInterval(faceJoint.jointIndex, apex, idealSpan);
             }
         });
         this.fabricExports.triggerInterval(this.createInterval(chosenJoint.jointIndex, apex, face.averageIdealSpan));
         // if (face.concaveApexIndex < this.kernel.jointCountMax) {
         //     this.fabricExports.triggerInterval(this.createInterval(face.concaveApexIndex, apex, face.averageIdealSpan * 2 * Math.sqrt(2 / 3)));
         // }
-        this.createFace(jointIndex[0], jointIndex[1], apex, jointIndex[2]);
-        this.createFace(jointIndex[1], jointIndex[2], apex, jointIndex[0]);
-        this.createFace(jointIndex[2], jointIndex[0], apex, jointIndex[1]);
+        joints.map(joint => joint.jointNumber).forEach(walk => { // youngest first
+            switch (walk) {
+                case 0:
+                    this.createFace(jointIndex[1], jointIndex[2], apex, jointIndex[0]);
+                    break;
+                case 1:
+                    this.createFace(jointIndex[2], jointIndex[0], apex, jointIndex[1]);
+                    break;
+                case 2:
+                    this.createFace(jointIndex[0], jointIndex[1], apex, jointIndex[2]);
+                    break;
+            }
+        });
         if (!knownApexTag) {
             const oppositeFaceIndex = this.fabricExports.findOppositeFaceIndex(face.index);
             if (oppositeFaceIndex < this.kernel.faceCountMax) {

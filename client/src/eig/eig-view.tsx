@@ -77,9 +77,9 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 () => {
                     if (!this.state.paused) {
                         if (this.state.fabric) {
-                            const maxTimeIndex = this.state.fabric.iterate(60);
-                            this.state.fabric.centralize(0, 0.01);
-                            if (this.state.genomeInterpreter && maxTimeIndex === 0 && this.state.fabric.age > 1000) {
+                            const maxTimeIndex = this.state.fabric.iterate(100);
+                            this.state.fabric.centralize(-1, 0.01);
+                            if (this.state.genomeInterpreter && maxTimeIndex === 0 && this.state.fabric.age > 100) {
                                 this.state.genomeInterpreter.step();
                             }
                         }

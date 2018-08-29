@@ -7,7 +7,8 @@ export class GenomeInterpreter {
     }
 
     public step() {
-        const faceIndex = this.fabric.faceCount - this.reader.nextChoice(10) - 1;
+        this.reader.nextChoice(6); // fake
+        const faceIndex = this.fabric.faceCount - 1;
         console.log(`face ${faceIndex} of ${this.fabric.faceCount}`);
         this.fabric.createTetra(faceIndex);
     }

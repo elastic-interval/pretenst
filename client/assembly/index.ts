@@ -550,7 +550,7 @@ export function getFaceLaterality(faceIndex: u16): u8 {
 function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
     subVectors(projectionPtr, location, midpoint);
     multiplyScalar(projectionPtr, 1 / length(projectionPtr));
-    addScaledVector(normal, projectionPtr, 0.6);
+    addScaledVector(normal, projectionPtr, 0.7);
     multiplyScalar(normal, 1 / length(normal));
 }
 
@@ -627,27 +627,18 @@ export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16,
     setFaceJointIndex(faceIndex, 1, joint1Index);
     setFaceJointIndex(faceIndex, 2, joint2Index);
     setFaceJointIndex(faceIndex, 3, apexJointIndex);
-    zero(outputMidpointPtr(faceIndex));
-    zero(outputNormalPtr(faceIndex, 0));
-    zero(outputNormalPtr(faceIndex, 1));
-    zero(outputNormalPtr(faceIndex, 2));
-    zero(outputLocationPtr(faceIndex, 0));
-    zero(outputLocationPtr(faceIndex, 1));
-    zero(outputLocationPtr(faceIndex, 2));
+    outputFaceGeometry(faceIndex);
     return faceIndex;
 }
 
-export function removeFace(faceIndex: u16): void {
-    for (let thisFace: u16 = faceIndex; thisFace < faceCount - 1; thisFace++) {
-        let nextFace = thisFace + 1;
-        setVector(outputMidpointPtr(thisFace), outputMidpointPtr(nextFace));
-        setVector(outputNormalPtr(thisFace, 0), outputNormalPtr(nextFace, 0));
-        setVector(outputNormalPtr(thisFace, 1), outputNormalPtr(nextFace, 1));
-        setVector(outputNormalPtr(thisFace, 2), outputNormalPtr(nextFace, 2));
-        setFaceJointIndex(thisFace, 0, getFaceJointIndex(nextFace, 0));
-        setFaceJointIndex(thisFace, 1, getFaceJointIndex(nextFace, 1));
-        setFaceJointIndex(thisFace, 2, getFaceJointIndex(nextFace, 2));
-        setFaceJointIndex(thisFace, 3, getFaceJointIndex(nextFace, 3));
+export function removeFace(deadFaceIndex: u16): void {
+    for (let faceIndex: u16 = deadFaceIndex; faceIndex < faceCount - 1; faceIndex++) {
+        let nextFace = faceIndex + 1;
+        setFaceJointIndex(faceIndex, 0, getFaceJointIndex(nextFace, 0));
+        setFaceJointIndex(faceIndex, 1, getFaceJointIndex(nextFace, 1));
+        setFaceJointIndex(faceIndex, 2, getFaceJointIndex(nextFace, 2));
+        setFaceJointIndex(faceIndex, 3, getFaceJointIndex(nextFace, 3));
+        outputFaceGeometry(faceIndex);
     }
     faceCount--;
 }
@@ -723,12 +714,20 @@ function sortVariations(roleIndex: u16): void {
     }
 }
 
-function interpolateCurrentSpan(role: i8, idealSpan: f32, timeIndex: u16): f32 {
+function interpolateCurrentSpan(intervalIndex: u16, timeIndex: u16): f32 {
+    let role = getIntervalRole(intervalIndex);
+    let idealSpan = getFloat(idealSpanPtr(intervalIndex));
     if (role === 0) {
         if (timeIndex === 0) {
             return idealSpan;
         } else {
-            let originalSpan = idealSpan * 0.1;
+            let originalSpan: f32 = 1;
+            if (timeIndex === 1) { // just triggered now, store span in stress (cheating)
+                originalSpan = calculateSpan(intervalIndex);
+                setFloat(stressPtr(intervalIndex), originalSpan);
+            } else {
+                originalSpan = getFloat(stressPtr(intervalIndex));
+            }
             let progress = <f32>timeIndex / 65536;
             return originalSpan * (1 - progress) + idealSpan * progress;
         }
@@ -776,12 +775,13 @@ function abs(val: f32): f32 {
 
 function elasticBehavior(intervalIndex: u16, elasticFactor: f32): void {
     let timeIndex = getTimeIndex(intervalIndex);
-    let span = calculateSpan(intervalIndex);
-    let idealSpan = interpolateCurrentSpan(getIntervalRole(intervalIndex), getFloat(idealSpanPtr(intervalIndex)), timeIndex);
-    let stress = elasticFactor * (span - idealSpan) * idealSpan * idealSpan;
-    setFloat(stressPtr(intervalIndex), stress);
+    let idealSpan = interpolateCurrentSpan(intervalIndex, timeIndex);
+    let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan;
     addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
     addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
+    if (timeIndex !== 1) {
+        setFloat(stressPtr(intervalIndex), stress);
+    }
     let mass = idealSpan * idealSpan * idealSpan;
     let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex));
     setFloat(alphaMass, getFloat(alphaMass) + mass / 2);
@@ -885,7 +885,7 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
 
 const AIR_DRAG: f32 = 0.001;
 const AIR_GRAVITY: f32 = 0.000002;
-const LAND_DRAG: f32 = 80;
+const LAND_DRAG: f32 = 800;
 const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;
 const STRESS_MAX: f32 = 0.001;
@@ -895,22 +895,25 @@ export function iterate(ticks: usize): u16 {
         tick(ELASTIC_FACTOR, AIR_GRAVITY, AIR_DRAG, LAND_GRAVITY, LAND_DRAG);
     }
     let maxTimeIndex: u16 = 0;
-    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        setVector(outputAlphaLocationPtr(thisInterval), locationPtr(getAlphaIndex(thisInterval)));
-        setVector(outputOmegaLocationPtr(thisInterval), locationPtr(getOmegaIndex(thisInterval)));
-        let stress = getFloat(stressPtr(thisInterval)) / STRESS_MAX;
-        if (stress > 1) {
-            stress = 1;
-        } else if (stress < -1) {
-            stress = -1;
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        setVector(outputAlphaLocationPtr(intervalIndex), locationPtr(getAlphaIndex(intervalIndex)));
+        setVector(outputOmegaLocationPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)));
+        let stress: f32 = 0;
+        if (getTimeIndex(intervalIndex) !== 1) {
+            stress = getFloat(stressPtr(intervalIndex)) / STRESS_MAX;
+            if (stress > 1) {
+                stress = 1;
+            } else if (stress < -1) {
+                stress = -1;
+            }
         }
         let red: f32 = 0.6 + -stress * 0.4;
         let green: f32 = 0;
         let blue: f32 = 0.6 + stress * 0.4;
-        setAll(outputAlphaColorPtr(thisInterval), red, green, blue);
-        setAll(outputOmegaColorPtr(thisInterval), red, green, blue);
-        if (getTimeIndex(thisInterval) > maxTimeIndex) {
-            maxTimeIndex = getTimeIndex(thisInterval);
+        setAll(outputAlphaColorPtr(intervalIndex), red, green, blue);
+        setAll(outputOmegaColorPtr(intervalIndex), red, green, blue);
+        if (getTimeIndex(intervalIndex) > maxTimeIndex) {
+            maxTimeIndex = getTimeIndex(intervalIndex);
         }
     }
     for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
