@@ -16,9 +16,9 @@ export interface IFabricExports {
 
     faces(): number;
 
-    iterate(ticks: number): number;
+    iterate(ticks: number, hanging: boolean): number;
 
-    centralize(altitude: number, intensity: number): void;
+    centralize(altitude: number, intensity: number): number;
 
     nextJointTag(): number;
 

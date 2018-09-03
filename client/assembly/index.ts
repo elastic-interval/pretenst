@@ -307,6 +307,14 @@ export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f3
     return jointIndex;
 }
 
+export function setJointLocation(jointIndex: u16, x: f32, y: f32, z: f32): void {
+    let xx = getX(locationPtr(jointIndex));
+    let yy = getY(locationPtr(jointIndex));
+    let zz = getZ(locationPtr(jointIndex));
+    let factor: f32 = 0.01;
+    setAll(velocityPtr(jointIndex), (x - xx) * factor, (y - yy) * factor, (z - zz) * factor);
+}
+
 function jointPtr(jointIndex: u16): usize {
     return jointOffset + jointIndex * JOINT_SIZE;
 }
@@ -355,7 +363,7 @@ export function getJointTag(jointIndex: u16): u16 {
     return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE);
 }
 
-export function centralize(altitude: f32, intensity: f32): void {
+export function centralize(altitude: f32, intensity: f32): f32 {
     let x: f32 = 0;
     let lowY: f32 = 10000;
     let z: f32 = 0;
@@ -373,10 +381,14 @@ export function centralize(altitude: f32, intensity: f32): void {
         let jPtr = jointPtr(thisJoint);
         setX(jPtr, getX(jPtr) - x * intensity);
         if (altitude >= 0) {
-            setY(jPtr, getY(jPtr) - lowY + altitude);
+            setY(jPtr, getY(jPtr) + altitude - lowY);
         }
         setZ(jPtr, getZ(jPtr) - z * intensity);
     }
+    // logFloat(0, getX(locationPtr(0)));
+    // logFloat(1, getY(locationPtr(0)));
+    // logFloat(2, getZ(locationPtr(0)));
+    return altitude - lowY;
 }
 
 // Intervals =====================================================================================
@@ -845,7 +857,7 @@ function exertJointPhysics(jointIndex: u16, overGravity: f32, overDrag: f32, und
     }
 }
 
-function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32, timeIndexStep: u16): void {
+function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32, timeIndexStep: u16, hanging: boolean): void {
     timePasses();
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         elasticBehavior(thisInterval, elasticFactor, timeIndexStep);
@@ -884,23 +896,23 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
         add(velocityPtr(getAlphaIndex(thisInterval)), gravPtr);
         add(velocityPtr(getOmegaIndex(thisInterval)), gravPtr);
     }
-    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
+    for (let thisJoint: u16 = hanging ? 1 : 0; thisJoint < jointCount; thisJoint++) {
         add(locationPtr(thisJoint), velocityPtr(thisJoint));
         setFloat(intervalMassPtr(thisJoint), AMBIENT_JOINT_MASS);
     }
 }
 
-const AIR_DRAG: f32 = 0.001;
+const AIR_DRAG: f32 = 0.0004;
 const AIR_GRAVITY: f32 = 0.000002;
-const LAND_DRAG: f32 = 800;
+const LAND_DRAG: f32 = 200;
 const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;
 const STRESS_MAX: f32 = 0.001;
 const TIME_INDEX_STEP: u16 = 37;
 
-export function iterate(ticks: usize): u16 {
+export function iterate(ticks: usize, hanging: boolean): u16 {
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        tick(ELASTIC_FACTOR, AIR_GRAVITY, AIR_DRAG, LAND_GRAVITY, LAND_DRAG, TIME_INDEX_STEP);
+        tick(ELASTIC_FACTOR, AIR_GRAVITY, AIR_DRAG, LAND_GRAVITY, LAND_DRAG, TIME_INDEX_STEP, hanging);
     }
     let maxTimeIndex: u16 = 0;
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {

@@ -44,6 +44,7 @@ const FACE_MATERIAL = new MeshPhongMaterial({
 const TRIPOD_MATERIAL = new LineBasicMaterial({color: 0xFFFFFF});
 const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
 const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
+const ALTITUDE = 10;
 
 export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private THREE = require('three');
@@ -54,6 +55,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private orbitControls: any;
     private rayCaster: any;
     private facesMeshNode: any;
+    private stayHanging = 200;
 
     constructor(props: IEigViewProps) {
         super(props);
@@ -67,9 +69,9 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 5000);
-        this.perspectiveCamera.position.set(8, 2, 8);
-        this.perspectiveCamera.lookAt(new Vector3(0, 4, 0));
+        this.perspectiveCamera.position.set(8, ALTITUDE, 8);
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
+        this.orbitControls.target = new Vector3(0, ALTITUDE, 0);
         // this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         this.rayCaster = new Raycaster();
         this.animate();
@@ -169,12 +171,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
 
     private createFabricInstance() {
         this.props.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, 110);
+            const fabric = new Fabric(fabricExports, 60);
             const genome = new Genome(500).randomize();
             const reader = genome.createReader(() => this.setState({genomeInterpreter: undefined}));
             console.log(fabric.toString());
-            fabric.createSeed(5);
-            fabric.centralize(1, 1);
+            fabric.createSeed(5, ALTITUDE - 2);
             this.setState({
                 fabric,
                 genome,
@@ -190,8 +191,15 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 () => {
                     if (!this.state.paused) {
                         if (this.state.fabric) {
-                            const maxTimeIndex = this.state.fabric.iterate(100);
-                            this.state.fabric.centralize(-1, 0.02);
+                            const hanging: boolean = !!this.state.genomeInterpreter || !!this.stayHanging;
+                            const maxTimeIndex = this.state.fabric.iterate(100, hanging);
+                            if (hanging) {
+                                if (!this.state.genomeInterpreter) {
+                                    this.stayHanging--;
+                                }
+                            } else {
+                                this.state.fabric.centralize(-1, 0.02);
+                            }
                             if (this.state.genomeInterpreter && maxTimeIndex === 0 && this.state.fabric.age > 100) {
                                 if (!this.state.genomeInterpreter.step()) {
                                     console.log('Interpreter zapped');
