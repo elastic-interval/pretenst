@@ -10,7 +10,7 @@ export class FabricKernel {
     private fabricBytes: number;
 
     constructor(
-        private fab: IFabricExports,
+        public exports: IFabricExports,
         public jointCountMax: number,
         public intervalCountMax: number,
         public faceCountMax: number
@@ -33,28 +33,28 @@ export class FabricKernel {
                 ) + lineColorFloats * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
-        this.fabricBytes = fab.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
-        this.arrayBuffer = fab.memory.buffer;
+        this.fabricBytes = exports.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
+        this.arrayBuffer = exports.memory.buffer;
     }
 
     public get faceMidpoints(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceMidpointsOffset, this.fab.faces() * 3);
+        return new Float32Array(this.arrayBuffer, this.faceMidpointsOffset, this.exports.faces() * 3);
     }
 
     public get faceLocations(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceLocationsOffset, this.fab.faces() * 3 * 3);
+        return new Float32Array(this.arrayBuffer, this.faceLocationsOffset, this.exports.faces() * 3 * 3);
     }
 
     public get faceNormals(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.fab.faces() * 3 * 3);
+        return new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.exports.faces() * 3 * 3);
     }
 
     public get lineLocations(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.lineLocationOffset, this.fab.intervals() * 2 * 3);
+        return new Float32Array(this.arrayBuffer, this.lineLocationOffset, this.exports.intervals() * 2 * 3);
     }
 
     public get lineColors(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.lineColorsOffset, this.fab.intervals() * 2 * 3);
+        return new Float32Array(this.arrayBuffer, this.lineColorsOffset, this.exports.intervals() * 2 * 3);
     }
 
     public get blockBytes() {

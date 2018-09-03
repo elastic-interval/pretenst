@@ -1,0 +1,97 @@
+import {Vector3} from 'three';
+import {BILATERAL_MIDDLE, Fabric, vectorFromIndex} from '../fabric';
+import {IFabricExports} from '../fabric-exports';
+import {FabricKernel} from '../fabric-kernel';
+
+export interface IJointSnapshot {
+    jointNumber: number;
+    jointIndex: number;
+    tag: number;
+    location: Vector3;
+}
+
+export const TRIANGLE = [0, 1, 2];
+
+export class FaceSnapshot {
+
+    private jointSnapshots: IJointSnapshot[];
+
+    constructor(
+        private fabric: Fabric,
+        private kernel: FabricKernel,
+        private fabricExports: IFabricExports,
+        private faceIndex: number
+    ) {
+        this.jointSnapshots = TRIANGLE
+            .map(jointNumber => {
+                const jointIndex = fabricExports.getFaceJointIndex(faceIndex, jointNumber);
+                const tag = fabricExports.getJointTag(jointIndex);
+                const location = vectorFromIndex(this.kernel.faceLocations, (faceIndex * 3 + jointNumber) * 3);
+                return {jointNumber, jointIndex, tag, location} as IJointSnapshot;
+            });
+    }
+
+    public get fresh(): FaceSnapshot {
+        // potentially walk back the index, due to deletions since last time
+        let faceIndex = this.faceIndex;
+        if (faceIndex >= this.fabricExports.faces()) {
+            faceIndex = this.fabricExports.faces() - 1;
+        }
+        while (faceIndex >= 0) {
+            const differentJoints = this.joints.filter(jointSnapshot => {
+                const currentJointIndex = this.fabricExports.getFaceJointIndex(faceIndex, jointSnapshot.jointNumber);
+                return currentJointIndex !== jointSnapshot.jointIndex;
+            });
+            if (differentJoints.length === 0) {
+                break;
+            }
+            faceIndex--;
+            if (faceIndex < 0) {
+                throw new Error("Face not found!");
+            }
+            console.log(`walking back index to ${faceIndex}`);
+        }
+        return new FaceSnapshot(this.fabric, this.kernel, this.fabricExports, faceIndex);
+    }
+
+    public get index(): number {
+        return this.faceIndex;
+    }
+
+    public get joints(): IJointSnapshot[] {
+        return this.jointSnapshots;
+    }
+
+    public get averageIdealSpan(): number {
+        return this.fabricExports.getFaceAverageIdealSpan(this.faceIndex);
+    }
+
+    public get midpoint(): Vector3 {
+        return vectorFromIndex(this.kernel.faceMidpoints, this.faceIndex * 3);
+    }
+
+    public get normal(): Vector3 {
+        return TRIANGLE
+            .map(jointNumber => vectorFromIndex(
+                this.kernel.faceNormals,
+                (this.faceIndex * 3 + jointNumber) * 3
+            ))
+            .reduce((prev, current) => prev.add(current), new Vector3())
+            .multiplyScalar(1 / 3.0);
+    }
+
+    public get laterality(): number {
+        for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
+            const jointLaterality = this.fabricExports.getJointLaterality(this.fabricExports.getFaceJointIndex(this.faceIndex, jointWalk));
+            if (jointLaterality !== BILATERAL_MIDDLE) {
+                return jointLaterality;
+            }
+        }
+        return BILATERAL_MIDDLE;
+    }
+
+    public remove() {
+        // maybe fresh first
+        this.fabricExports.removeFace(this.faceIndex);
+    }
+}

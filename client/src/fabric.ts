@@ -1,29 +1,13 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
 import {FabricKernel} from './fabric-kernel';
 import {IFabricExports} from './fabric-exports';
+import {FaceSnapshot, IJointSnapshot} from './eig/face-snapshot';
 
 export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
 
-const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
-
-export interface IJointSnapshot {
-    jointNumber: number;
-    jointIndex: number;
-    tag: number;
-    location: Vector3;
-}
-
-export interface IFaceSnapshot {
-    fabric: Fabric;
-    index: number;
-    laterality: number;
-    midpoint: Vector3;
-    normal: Vector3;
-    joints: IJointSnapshot[];
-    averageIdealSpan: number;
-}
+export const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
 
 export class Fabric {
     private kernel: FabricKernel;
@@ -55,7 +39,7 @@ export class Fabric {
             const apexHeight = face.averageIdealSpan * Math.sqrt(2 / 3);
             const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, apexHeight);
             const faceOffset = face.index * 3;
-            const faceLocations = face.fabric.kernel.faceLocations;
+            const faceLocations = this.kernel.faceLocations;
             geometry.vertices = [
                 vectorFromIndex(faceLocations, faceOffset * 3), apex,
                 vectorFromIndex(faceLocations, (faceOffset + 1) * 3), apex,
@@ -137,7 +121,7 @@ export class Fabric {
         this.fabricExports.centralize(altitude, intensity);
     }
 
-    public unfold(faceIndex: number, jointNumber: number): number [] {
+    public unfold(faceIndex: number, jointNumber: number): FaceSnapshot [] {
         const apexTag = this.fabricExports.nextJointTag();
         let oppositeFaceIndex = this.fabricExports.findOppositeFaceIndex(faceIndex);
         const freshFaces = this.unfoldFace(this.getFaceSnapshot(faceIndex), jointNumber, apexTag);
@@ -152,40 +136,8 @@ export class Fabric {
         }
     }
 
-    public getFaceSnapshot(faceIndex: number): IFaceSnapshot {
-        const getFaceLaterality = () => {
-            for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
-                const jointLaterality = this.fabricExports.getJointLaterality(this.fabricExports.getFaceJointIndex(faceIndex, jointWalk));
-                if (jointLaterality !== BILATERAL_MIDDLE) {
-                    return jointLaterality;
-                }
-            }
-            return BILATERAL_MIDDLE;
-        };
-        const faceLaterality = getFaceLaterality();
-        const triangle = [0, 1, 2];
-        const joints: IJointSnapshot[] = triangle
-            .map(jointNumber => {
-                const jointIndex = this.fabricExports.getFaceJointIndex(faceIndex, jointNumber);
-                const tag = this.fabricExports.getJointTag(jointIndex);
-                const location = vectorFromIndex(this.kernel.faceLocations, (faceIndex * 3 + jointNumber) * 3);
-                return {jointNumber, jointIndex, tag, location} as IJointSnapshot;
-            });
-        return {
-            fabric: this,
-            index: faceIndex,
-            laterality: faceLaterality,
-            midpoint: vectorFromIndex(this.kernel.faceMidpoints, faceIndex * 3),
-            normal: triangle
-                .map(jointNumber => vectorFromIndex(
-                    this.kernel.faceNormals,
-                    (faceIndex * 3 + jointNumber) * 3
-                ))
-                .reduce((prev, current) => prev.add(current), new Vector3())
-                .multiplyScalar(1 / 3.0),
-            joints,
-            averageIdealSpan: this.fabricExports.getFaceAverageIdealSpan(faceIndex)
-        };
+    public getFaceSnapshot(faceIndex: number): FaceSnapshot {
+        return new FaceSnapshot(this, this.kernel, this.fabricExports, faceIndex);
     }
 
     public toString(): string {
@@ -208,11 +160,11 @@ export class Fabric {
         }
     }
 
-    private unfoldFace(faceToReplace: IFaceSnapshot, faceJointIndex: number, apexTag: number): number [] {
+    private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
         const jointIndex = faceToReplace.joints.map(faceJoint => faceJoint.jointIndex);
         const sortedJoints = faceToReplace.joints.sort((a: IJointSnapshot, b: IJointSnapshot) => b.tag - a.tag);
         const chosenJoint = sortedJoints[faceJointIndex];
-        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplace.averageIdealSpan * 0.05);
+        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplace.averageIdealSpan * 0.1);
         const apexIndex = this.fabricExports.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
         if (apexIndex >= this.jointCountMax) {
             return [];
@@ -238,8 +190,10 @@ export class Fabric {
                     break;
             }
         });
-        this.fabricExports.removeFace(faceToReplace.index);
-        return createdFaceIndexes.map(index => index - 1); // after removal, since we're above
+        faceToReplace.remove();
+        return createdFaceIndexes
+            .map(index => index - 1) // after removal, since we're above
+            .map(index => new FaceSnapshot(this, this.kernel, this.fabricExports, index));
     }
 }
 

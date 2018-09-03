@@ -896,7 +896,7 @@ const LAND_DRAG: f32 = 800;
 const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;
 const STRESS_MAX: f32 = 0.001;
-const TIME_INDEX_STEP: u16 = 17;
+const TIME_INDEX_STEP: u16 = 37;
 
 export function iterate(ticks: usize): u16 {
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
