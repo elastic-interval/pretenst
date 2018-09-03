@@ -45,6 +45,7 @@ const TRIPOD_MATERIAL = new LineBasicMaterial({color: 0xFFFFFF});
 const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
 const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
 const ALTITUDE = 10;
+const HANG_DELAY = 70;
 
 export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private THREE = require('three');
@@ -55,7 +56,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private orbitControls: any;
     private rayCaster: any;
     private facesMeshNode: any;
-    private stayHanging = 200;
+    private stayHanging = HANG_DELAY;
 
     constructor(props: IEigViewProps) {
         super(props);
@@ -233,6 +234,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                         this.state.fabric.centralize(0, 1);
                         this.setState({selectedFaceIndex: undefined, paused: false});
                     } else {
+                        this.stayHanging = HANG_DELAY;
                         this.createFabricInstance();
                     }
                 } else {
