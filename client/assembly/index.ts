@@ -4,7 +4,7 @@ declare function logFloat(idx: u32, f: f32): void;
 
 declare function logInt(idx: u32, i: u32): void;
 
-const ERROR: u32 = 65535;
+const ERROR: usize = 65535;
 const ROLE_SIZE: usize = sizeof<i8>();
 const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
@@ -292,10 +292,10 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 const JOINT_SIZE: usize = VECTOR_SIZE * 5 + ROLE_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
-    let jointIndex = jointCount++;
-    if (jointIndex >= jointCountMax) {
+    if (jointCount + 1 >= jointCountMax) {
         return ERROR;
     }
+    let jointIndex = jointCount++;
     setAll(locationPtr(jointIndex), x, y, z);
     zero(forcePtr(jointIndex));
     zero(velocityPtr(jointIndex));
@@ -384,10 +384,10 @@ export function centralize(altitude: f32, intensity: f32): void {
 const INTERVAL_SIZE: usize = ROLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE + FLOAT_SIZE * 2;
 
 export function createInterval(role: i8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
-    let intervalIndex = intervalCount++;
-    if (intervalIndex >= intervalCountMax) {
+    if (intervalCount + 1 >= intervalCountMax) {
         return ERROR;
     }
+    let intervalIndex = intervalCount++;
     setIntervalRole(intervalIndex, role);
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
@@ -514,7 +514,7 @@ function outputOmegaColorPtr(intervalIndex: u16): usize {
 
 // Faces =====================================================================================
 
-const FACE_SIZE: usize = INDEX_SIZE * 4;
+const FACE_SIZE: usize = INDEX_SIZE * 3;
 
 function facePtr(faceIndex: u16): usize {
     return faceOffset + faceIndex * FACE_SIZE;
@@ -628,15 +628,14 @@ export function findOppositeFaceIndex(faceIndex: u16): u16 {
     return faceCount + 1;
 }
 
-export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16, apexJointIndex: u16): usize {
-    let faceIndex = faceCount++;
-    if (faceIndex >= faceCountMax) {
+export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): usize {
+    if (faceCount + 1 >= faceCountMax) {
         return ERROR;
     }
+    let faceIndex = faceCount++;
     setFaceJointIndex(faceIndex, 0, joint0Index);
     setFaceJointIndex(faceIndex, 1, joint1Index);
     setFaceJointIndex(faceIndex, 2, joint2Index);
-    setFaceJointIndex(faceIndex, 3, apexJointIndex);
     outputFaceGeometry(faceIndex);
     return faceIndex;
 }
@@ -647,7 +646,6 @@ export function removeFace(deadFaceIndex: u16): void {
         setFaceJointIndex(faceIndex, 0, getFaceJointIndex(nextFace, 0));
         setFaceJointIndex(faceIndex, 1, getFaceJointIndex(nextFace, 1));
         setFaceJointIndex(faceIndex, 2, getFaceJointIndex(nextFace, 2));
-        setFaceJointIndex(faceIndex, 3, getFaceJointIndex(nextFace, 3));
         outputFaceGeometry(faceIndex);
     }
     faceCount--;
@@ -658,7 +656,6 @@ export function removeFace(deadFaceIndex: u16): void {
 const ROLE_INDEX_MAX: u8 = 64;
 const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
 const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.2;
-const TIME_INDEX_STEP: u16 = 64;
 
 function initBehavior(roleIndex: u16): void {
     for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
@@ -783,7 +780,7 @@ function abs(val: f32): f32 {
     return val < 0 ? -val : val;
 }
 
-function elasticBehavior(intervalIndex: u16, elasticFactor: f32): void {
+function elasticBehavior(intervalIndex: u16, elasticFactor: f32, timeIndexStep: u16): void {
     let timeIndex = getTimeIndex(intervalIndex);
     let idealSpan = interpolateCurrentSpan(intervalIndex, timeIndex);
     let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan;
@@ -799,7 +796,7 @@ function elasticBehavior(intervalIndex: u16, elasticFactor: f32): void {
     setFloat(omegaMass, getFloat(omegaMass) + mass / 2);
     if (timeIndex > 0) {
         let currentTimeIndex = timeIndex;
-        timeIndex += TIME_INDEX_STEP;
+        timeIndex += timeIndexStep;
         if (timeIndex < currentTimeIndex) { // wrap around
             timeIndex = 0;
         }
@@ -848,10 +845,10 @@ function exertJointPhysics(jointIndex: u16, overGravity: f32, overDrag: f32, und
     }
 }
 
-function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32): void {
+function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32, timeIndexStep: u16): void {
     timePasses();
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        elasticBehavior(thisInterval, elasticFactor);
+        elasticBehavior(thisInterval, elasticFactor, timeIndexStep);
     }
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         smoothVelocity(thisInterval);
@@ -899,10 +896,11 @@ const LAND_DRAG: f32 = 800;
 const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.2;
 const STRESS_MAX: f32 = 0.001;
+const TIME_INDEX_STEP: u16 = 17;
 
 export function iterate(ticks: usize): u16 {
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        tick(ELASTIC_FACTOR, AIR_GRAVITY, AIR_DRAG, LAND_GRAVITY, LAND_DRAG);
+        tick(ELASTIC_FACTOR, AIR_GRAVITY, AIR_DRAG, LAND_GRAVITY, LAND_DRAG, TIME_INDEX_STEP);
     }
     let maxTimeIndex: u16 = 0;
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {

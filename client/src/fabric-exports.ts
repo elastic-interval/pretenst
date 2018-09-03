@@ -38,7 +38,7 @@ export interface IFabricExports {
 
     triggerInterval(intervalIndex: number): void;
 
-    createFace(joint0Index: number, joint1Index: number, joint2Index: number, apexJointIndex: number): number;
+    createFace(joint0Index: number, joint1Index: number, joint2Index: number): number;
 
     removeFace(faceIndex: number): void;
 

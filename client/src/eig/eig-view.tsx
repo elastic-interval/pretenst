@@ -170,7 +170,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private createFabricInstance() {
         this.props.createFabricInstance().then(fabricExports => {
             const fabric = new Fabric(fabricExports, 110);
-            const genome = new Genome(200).randomize();
+            const genome = new Genome(500).randomize();
             const reader = genome.createReader(() => this.setState({genomeInterpreter: undefined}));
             console.log(fabric.toString());
             fabric.createSeed(5);
@@ -191,7 +191,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                     if (!this.state.paused) {
                         if (this.state.fabric) {
                             const maxTimeIndex = this.state.fabric.iterate(100);
-                            this.state.fabric.centralize(-1, 0.01);
+                            this.state.fabric.centralize(-1, 0.02);
                             if (this.state.genomeInterpreter && maxTimeIndex === 0 && this.state.fabric.age > 100) {
                                 if (!this.state.genomeInterpreter.step()) {
                                     console.log('Interpreter zapped');
@@ -215,7 +215,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             if (event.code === 'Space') {
                 if (this.state.paused) {
                     if (this.state.selectedFaceIndex !== undefined && this.state.fabric) {
-                        this.state.fabric.createTetra(this.state.selectedFaceIndex, 2);
+                        this.state.fabric.unfold(this.state.selectedFaceIndex, 2);
                         this.state.fabric.centralize(0, 1);
                         this.setState({selectedFaceIndex: undefined, paused: false});
                     } else {
