@@ -4,6 +4,7 @@ declare function logFloat(idx: u32, f: f32): void;
 
 declare function logInt(idx: u32, i: u32): void;
 
+const ERROR: u32 = 65535;
 const ROLE_SIZE: usize = sizeof<i8>();
 const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
@@ -292,6 +293,9 @@ const JOINT_SIZE: usize = VECTOR_SIZE * 5 + ROLE_SIZE + JOINT_NAME_SIZE + FLOAT_
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
     let jointIndex = jointCount++;
+    if (jointIndex >= jointCountMax) {
+        return ERROR;
+    }
     setAll(locationPtr(jointIndex), x, y, z);
     zero(forcePtr(jointIndex));
     zero(velocityPtr(jointIndex));
@@ -381,6 +385,9 @@ const INTERVAL_SIZE: usize = ROLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE + FLOAT_SI
 
 export function createInterval(role: i8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
     let intervalIndex = intervalCount++;
+    if (intervalIndex >= intervalCountMax) {
+        return ERROR;
+    }
     setIntervalRole(intervalIndex, role);
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
@@ -623,6 +630,9 @@ export function findOppositeFaceIndex(faceIndex: u16): u16 {
 
 export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16, apexJointIndex: u16): usize {
     let faceIndex = faceCount++;
+    if (faceIndex >= faceCountMax) {
+        return ERROR;
+    }
     setFaceJointIndex(faceIndex, 0, joint0Index);
     setFaceJointIndex(faceIndex, 1, joint1Index);
     setFaceJointIndex(faceIndex, 2, joint2Index);

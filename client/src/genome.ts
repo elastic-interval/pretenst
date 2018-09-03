@@ -31,6 +31,10 @@ export class Genome {
             },
 
             nextChoice: (maxChoice: number) => {
+                // const zeroToOne = reader.next();
+                // const choice = Math.floor(maxChoice * zeroToOne);
+                // console.log(`${maxChoice} * ${zeroToOne} = ${choice}`);
+                // return choice;
                 return Math.floor(maxChoice * reader.next());
             },
 

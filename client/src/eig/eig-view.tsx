@@ -72,42 +72,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
         // this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         this.rayCaster = new Raycaster();
-        const step = () => {
-            setTimeout(
-                () => {
-                    if (!this.state.paused) {
-                        if (this.state.fabric) {
-                            const maxTimeIndex = this.state.fabric.iterate(100);
-                            this.state.fabric.centralize(-1, 0.01);
-                            if (this.state.genomeInterpreter && maxTimeIndex === 0 && this.state.fabric.age > 100) {
-                                this.state.genomeInterpreter.step();
-                            }
-                        }
-                        this.forceUpdate();
-                    }
-                    this.orbitControls.update();
-                    requestAnimationFrame(step);
-                },
-                30
-            );
-        };
-        requestAnimationFrame(step);
-        window.addEventListener("keypress", (event: KeyboardEvent) => {
-            if (event.code === 'Space') {
-                if (this.state.paused) {
-                    if (this.state.selectedFaceIndex !== undefined && this.state.fabric) {
-                        this.state.fabric.createTetra(this.state.selectedFaceIndex);
-                        this.state.fabric.centralize(0, 1);
-                        this.setState({selectedFaceIndex: undefined, paused: false});
-                    } else {
-                        this.createFabricInstance();
-                    }
-                } else {
-                    this.setState({paused: true});
-                    this.trySelect();
-                }
-            }
-        })
+        this.animate();
+        this.keyboardListener();
     }
 
     public mouseMove(event: any) {
@@ -203,8 +169,8 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
 
     private createFabricInstance() {
         this.props.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, 220);
-            const genome = new Genome(20).randomize();
+            const fabric = new Fabric(fabricExports, 110);
+            const genome = new Genome(200).randomize();
             const reader = genome.createReader(() => this.setState({genomeInterpreter: undefined}));
             console.log(fabric.toString());
             fabric.createSeed(5);
@@ -216,6 +182,51 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                 paused: false
             });
         });
+    }
+
+    private animate() {
+        const step = () => {
+            setTimeout(
+                () => {
+                    if (!this.state.paused) {
+                        if (this.state.fabric) {
+                            const maxTimeIndex = this.state.fabric.iterate(100);
+                            this.state.fabric.centralize(-1, 0.01);
+                            if (this.state.genomeInterpreter && maxTimeIndex === 0 && this.state.fabric.age > 100) {
+                                if (!this.state.genomeInterpreter.step()) {
+                                    console.log('Interpreter zapped');
+                                    this.setState({genomeInterpreter: undefined});
+                                }
+                            }
+                        }
+                        this.forceUpdate();
+                    }
+                    this.orbitControls.update();
+                    requestAnimationFrame(step);
+                },
+                30
+            );
+        };
+        requestAnimationFrame(step);
+    }
+
+    private keyboardListener() {
+        window.addEventListener("keypress", (event: KeyboardEvent) => {
+            if (event.code === 'Space') {
+                if (this.state.paused) {
+                    if (this.state.selectedFaceIndex !== undefined && this.state.fabric) {
+                        this.state.fabric.createTetra(this.state.selectedFaceIndex, 2);
+                        this.state.fabric.centralize(0, 1);
+                        this.setState({selectedFaceIndex: undefined, paused: false});
+                    } else {
+                        this.createFabricInstance();
+                    }
+                } else {
+                    this.setState({paused: true});
+                    this.trySelect();
+                }
+            }
+        })
     }
 }
 
