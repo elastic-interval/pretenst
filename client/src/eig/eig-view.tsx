@@ -196,6 +196,12 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                             if (hanging) {
                                 if (!this.state.genomeInterpreter) {
                                     this.stayHanging--;
+                                    if (!this.stayHanging) {
+                                        console.log(`going to remove hanger J=${this.state.fabric.jointCount} I=${this.state.fabric.intervalCount}`);
+                                        this.state.fabric.removeHanger();
+                                        this.setState({fabric: this.state.fabric});
+                                        console.log(`done removing hanger J=${this.state.fabric.jointCount} I=${this.state.fabric.intervalCount}`);
+                                    }
                                 }
                             } else {
                                 this.state.fabric.centralize(-1, 0.02);

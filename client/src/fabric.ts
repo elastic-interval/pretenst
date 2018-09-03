@@ -99,9 +99,9 @@ export class Fabric {
         const jointPairName = this.fabricExports.nextJointTag();
         const left = this.fabricExports.createJoint(jointPairName, BILATERAL_LEFT, 0, 0, -R);
         const right = this.fabricExports.createJoint(jointPairName, BILATERAL_RIGHT, 0, 0, R);
-        this.interval(left, right, -1);
         this.interval(hanger, left, -1);
         this.interval(hanger, right, -1);
+        this.interval(left, right, -1);
         for (let walk = 0; walk < corners; walk++) {
             this.interval(walk + 1, (walk + 1) % corners + 1, -1);
             this.interval(walk + 1, left, -1);
@@ -116,6 +116,10 @@ export class Fabric {
 
     public iterate(ticks: number, hanging: boolean): number {
         return this.fabricExports.iterate(ticks, hanging);
+    }
+
+    public removeHanger(): void {
+        this.fabricExports.removeHanger();
     }
 
     public get age(): number {

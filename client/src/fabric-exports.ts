@@ -20,6 +20,8 @@ export interface IFabricExports {
 
     centralize(altitude: number, intensity: number): number;
 
+    removeHanger(): void;
+
     nextJointTag(): number;
 
     createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number;

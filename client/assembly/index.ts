@@ -307,12 +307,16 @@ export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f3
     return jointIndex;
 }
 
-export function setJointLocation(jointIndex: u16, x: f32, y: f32, z: f32): void {
-    let xx = getX(locationPtr(jointIndex));
-    let yy = getY(locationPtr(jointIndex));
-    let zz = getZ(locationPtr(jointIndex));
-    let factor: f32 = 0.01;
-    setAll(velocityPtr(jointIndex), (x - xx) * factor, (y - yy) * factor, (z - zz) * factor);
+function copyJointFromNext(jointIndex: u16): void {
+    let nextIndex = jointIndex + 1;
+    setVector(locationPtr(jointIndex), locationPtr(nextIndex));
+    setVector(forcePtr(jointIndex), forcePtr(nextIndex));
+    setVector(velocityPtr(jointIndex), velocityPtr(nextIndex));
+    setVector(gravityPtr(jointIndex), gravityPtr(nextIndex));
+    setVector(absorbVelocityPtr(jointIndex), absorbVelocityPtr(nextIndex));
+    setFloat(intervalMassPtr(jointIndex), getFloat(intervalMassPtr(nextIndex)));
+    setJointLaterality(jointIndex, getJointLaterality(nextIndex));
+    setJointTag(jointIndex, getJointTag(nextIndex));
 }
 
 function jointPtr(jointIndex: u16): usize {
@@ -408,6 +412,15 @@ export function createInterval(role: i8, alphaIndex: u16, omegaIndex: u16, ideal
     return intervalIndex;
 }
 
+function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
+    let nextIndex = intervalIndex + offset;
+    setIntervalRole(intervalIndex, getIntervalRole(nextIndex));
+    setAlphaIndex(intervalIndex, getAlphaIndex(nextIndex));
+    setOmegaIndex(intervalIndex, getOmegaIndex(nextIndex));
+    setTimeIndex(intervalIndex, getTimeIndex(nextIndex));
+    setFloat(idealSpanPtr(intervalIndex), getFloat(idealSpanPtr(nextIndex)));
+}
+
 function intervalPtr(intervalIndex: u16): usize {
     return intervalOffset + intervalIndex * INTERVAL_SIZE;
 }
@@ -462,13 +475,6 @@ function calculateSpan(intervalIndex: u16): f32 {
     let span = length(unit);
     multiplyScalar(unit, 1 / span);
     return span;
-}
-
-function removeInterval(intervalIndex: u16): void {
-    for (let walk: u16 = intervalIndex * <u16>INTERVAL_SIZE; walk < intervalIndex * INTERVAL_SIZE * intervalCount - 1; walk++) {
-        store<u8>(walk, load<u8>(walk + INTERVAL_SIZE));
-    }
-    intervalCount--;
 }
 
 function findIntervalIndex(joint0: u16, joint1: u16): u16 {
@@ -940,4 +946,25 @@ export function iterate(ticks: usize, hanging: boolean): u16 {
         outputFaceGeometry(thisFace);
     }
     return maxTimeIndex;
+}
+
+export function removeHanger(): void {
+    jointCount--;
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        copyJointFromNext(jointIndex)
+    }
+    intervalCount -= 2;
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        copyIntervalFromOffset(intervalIndex, 2);
+    }
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        setAlphaIndex(intervalIndex, getAlphaIndex(intervalIndex) - 1);
+        setOmegaIndex(intervalIndex, getOmegaIndex(intervalIndex) - 1);
+    }
+    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
+        for (let jointNumber: u16 = 0; jointNumber < 3; jointNumber++) {
+            let jointIndex = getFaceJointIndex(faceIndex, jointNumber);
+            setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1);
+        }
+    }
 }
