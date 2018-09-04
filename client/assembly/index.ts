@@ -85,8 +85,8 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                                         ) + faceJointVectorsSize
                                     ) + jointsSize
                                 ) + intervalsSize
-                            ) + rolesSize
-                        ) + facesSize
+                            ) + facesSize
+                        ) + rolesSize
                     ) + VECTOR_SIZE
                 ) + VECTOR_SIZE
             ) + VECTOR_SIZE

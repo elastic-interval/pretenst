@@ -180,22 +180,18 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         const maxTimeIndex = this.state.fabric.iterate(100, hanging);
                         if (this.state.growthExecution) {
                             if (maxTimeIndex === 0) {
-                                if (!this.state.growthExecution.step()) {
-                                    console.log('growth done');
-                                    this.setState({growthExecution: undefined});
-                                } else {
-                                    console.log('step');
+                                if (this.state.growthExecution.step()) {
                                     this.setState({fabric: this.state.fabric});
+                                } else {
+                                    this.setState({growthExecution: undefined});
                                 }
                             } else {
-                                console.log('time');
                                 this.forceUpdate();
                             }
                         }
                         else if (this.stayHanging) {
                             this.stayHanging--;
                             if (!this.stayHanging) {
-                                console.log('remove hanger');
                                 this.state.fabric.removeHanger();
                             }
                             this.forceUpdate();
