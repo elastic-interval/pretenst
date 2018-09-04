@@ -32,7 +32,6 @@ export class Growth implements IGeneExecution {
                     this.growingFaces[growingFace] = unfoldedFaces[nextFace];
                 }
                 freshFaces.push(...unfoldedFaces);
-                console.log(`Crooked ${nextFace}`);
             } else {
                 for (let x = 0; x < count; x++) {
                     const faceIndex = this.growingFaces[growingFace].fresh.index;
@@ -42,10 +41,8 @@ export class Growth implements IGeneExecution {
                     }
                     freshFaces.push(...unfoldedFaces);
                 }
-                console.log(`Straight for ${count}`);
             }
         }
-        console.log(`J=${this.fabric.jointCount} I=${this.fabric.intervalCount} F=${this.fabric.faceCount}`);
         return freshFaces.length > 0;
     }
 }

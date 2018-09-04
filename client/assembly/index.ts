@@ -908,7 +908,7 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
     }
 }
 
-const AIR_DRAG: f32 = 0.0004;
+const AIR_DRAG: f32 = 0.0002;
 const AIR_GRAVITY: f32 = 0.000002;
 const LAND_DRAG: f32 = 200;
 const LAND_GRAVITY: f32 = 30;
@@ -917,8 +917,9 @@ const STRESS_MAX: f32 = 0.001;
 const TIME_INDEX_STEP: u16 = 37;
 
 export function iterate(ticks: usize, hanging: boolean): u16 {
+    let airDrag = AIR_DRAG * (hanging ? 4 : 1);
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        tick(ELASTIC_FACTOR, AIR_GRAVITY, AIR_DRAG, LAND_GRAVITY, LAND_DRAG, TIME_INDEX_STEP, hanging);
+        tick(ELASTIC_FACTOR, AIR_GRAVITY, airDrag, LAND_GRAVITY, LAND_DRAG, TIME_INDEX_STEP, hanging);
     }
     let maxTimeIndex: u16 = 0;
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {

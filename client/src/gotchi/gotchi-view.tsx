@@ -16,7 +16,7 @@ import {
 } from 'three';
 import {Fabric} from './fabric';
 import {IFabricExports} from './fabric-exports';
-import {Genome, IGenomeExecution} from '../genetics/genome';
+import {Genome, IGeneExecution} from '../genetics/genome';
 
 interface IGotchiViewProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -28,7 +28,8 @@ interface IGotchiViewState {
     paused: boolean;
     fabric?: Fabric;
     genome?: Genome;
-    genomeExecution?: IGenomeExecution;
+    growthExecution?: IGeneExecution;
+    behaviorExecution?: IGeneExecution;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -61,7 +62,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         super(props);
         this.state = {
             width: window.innerWidth,
-            height: window.innerHeight,
+            height: window.innerHeight - 30,
             paused: false
         };
         this.createFabricInstance(false);
@@ -159,12 +160,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.props.createFabricInstance().then(fabricExports => {
             const fabric = new Fabric(fabricExports, 80);
             const genome = (saveGenome && this.state.genome) ? this.state.genome : new Genome([], []);
-            console.log(fabric.toString());
             fabric.createSeed(5, HANGER_ALTITUDE);
             this.setState({
                 fabric,
                 genome,
-                genomeExecution: genome.createExecution(fabric),
+                growthExecution: genome.createGrowthExecution(fabric),
+                behaviorExecution: genome.createBehaviorExecution(fabric),
                 paused: false
             });
         });
@@ -174,31 +175,33 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const step = () => {
             setTimeout(
                 () => {
-                    if (!this.state.paused) {
-                        if (this.state.fabric && this.state.genomeExecution) {
-                            const hanging: boolean = this.state.genomeExecution.hanging || !!this.stayHanging;
-                            const maxTimeIndex = this.state.fabric.iterate(100, hanging);
-                            if (hanging) {
-                                if (!this.state.genomeExecution.hanging) {
-                                    this.stayHanging--;
-                                    if (!this.stayHanging) {
-                                        this.setState({fabric: this.state.fabric});
-                                    }
+                    if (!this.state.paused && this.state.fabric) {
+                        const hanging = !!this.state.growthExecution || !!this.stayHanging;
+                        const maxTimeIndex = this.state.fabric.iterate(100, hanging);
+                        if (this.state.growthExecution) {
+                            if (maxTimeIndex === 0) {
+                                if (!this.state.growthExecution.step()) {
+                                    this.setState({growthExecution: undefined});
+                                } else {
+                                    this.setState({fabric: this.state.fabric});
                                 }
-                            } else if (this.stayAlive > 0) {
-                                this.state.fabric.centralize(-1, 0.02);
-                                this.stayAlive--;
                             } else {
-                                this.createFabricInstance(true);
-                            }
-                            if (this.state.genomeExecution.hanging && maxTimeIndex === 0 && this.state.fabric.age > 100) {
-                                if (!this.state.genomeExecution.step()) {
-                                    console.log('Growth finished');
-                                    this.setState({genomeExecution: undefined});
-                                }
+                                this.forceUpdate();
                             }
                         }
-                        this.forceUpdate();
+                        else if (this.stayHanging) {
+                            this.stayHanging--;
+                            if (!this.stayHanging) {
+                                this.state.fabric.removeHanger();
+                            }
+                            this.forceUpdate();
+                        } else if (this.stayAlive) {
+                            this.state.fabric.centralize(-1, 0.02);
+                            this.forceUpdate();
+                            this.stayAlive--;
+                        } else {
+                            this.createFabricInstance(true);
+                        }
                     }
                     this.orbitControls.update();
                     requestAnimationFrame(step);
@@ -213,12 +216,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             if (event.code === 'Space') {
                 this.createFabricInstance(false);
-                // if (!this.state.paused) {
-                //     this.setState({paused: true});
-                // } else {
-                //     this.createFabricInstance(true);
-                //     this.setState({paused: false});
-                // }
             }
         })
     }
