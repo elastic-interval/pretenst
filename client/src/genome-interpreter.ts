@@ -11,9 +11,9 @@ export class GenomeInterpreter {
 
     constructor(private fabric: Fabric, private genomeReader: IGenomeReader) {
         this.growingFaces.push(fabric.getFaceSnapshot(0));
-        if (!this.genomeReader.nextChoice(2)) {
+        if (this.genomeReader.nextChoice(2)) {
             this.growingFaces.push(fabric.getFaceSnapshot(2));
-            if (!this.genomeReader.nextChoice(4)) {
+            if (!this.genomeReader.nextChoice(3)) {
                 this.growingFaces.push(fabric.getFaceSnapshot(4));
             }
         }
@@ -24,7 +24,8 @@ export class GenomeInterpreter {
         for (let growingFace = 0; growingFace < this.growingFaces.length; growingFace++) {
             const count: number = 1 + this.genomeReader.nextChoice(5);
             if (count < 3) { // maybe go crooked
-                const unfoldedFaces = this.fabric.unfold(this.growingFaces[growingFace].fresh.index, UNFOLD_JOINT);
+                const unfoldJoint = this.growingFaces[growingFace].isDerived ? UNFOLD_JOINT : this.genomeReader.nextChoice(3);
+                const unfoldedFaces = this.fabric.unfold(this.growingFaces[growingFace].fresh.index, unfoldJoint);
                 const nextFace: number = this.genomeReader.nextChoice(2);
                 if (unfoldedFaces.length > 0) {
                     this.growingFaces[growingFace] = unfoldedFaces[nextFace];

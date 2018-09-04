@@ -20,7 +20,8 @@ export class FaceSnapshot {
         private fabric: Fabric,
         private kernel: FabricKernel,
         private fabricExports: IFabricExports,
-        private faceIndex: number
+        private faceIndex: number,
+        private derived?: boolean
     ) {
         this.jointSnapshots = TRIANGLE
             .map(jointNumber => {
@@ -50,7 +51,11 @@ export class FaceSnapshot {
                 throw new Error("Face not found!");
             }
         }
-        return new FaceSnapshot(this.fabric, this.kernel, this.fabricExports, faceIndex);
+        return new FaceSnapshot(this.fabric, this.kernel, this.fabricExports, faceIndex, true);
+    }
+
+    public get isDerived(): boolean {
+        return !!this.derived;
     }
 
     public get index(): number {
