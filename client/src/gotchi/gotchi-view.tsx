@@ -16,8 +16,7 @@ import {
 } from 'three';
 import {Fabric} from './fabric';
 import {IFabricExports} from './fabric-exports';
-import {Genome} from './genome';
-import {GenomeInterpreter} from './genome-interpreter';
+import {Genome, IGeneExecution} from './genome';
 
 interface IGotchiViewProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -29,7 +28,8 @@ interface IGotchiViewState {
     paused: boolean;
     fabric?: Fabric;
     genome?: Genome;
-    genomeInterpreter?: GenomeInterpreter;
+    growthExecution?: IGeneExecution;
+    behaviorExecution?: IGeneExecution;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -159,14 +159,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.stayAlive = REBIRTH_DELAY;
         this.props.createFabricInstance().then(fabricExports => {
             const fabric = new Fabric(fabricExports, 80);
-            const genome = (saveGenome && this.state.genome) ? this.state.genome : new Genome(500).randomize();
-            const reader = genome.createReader(() => this.setState({genomeInterpreter: undefined}));
+            const genome = (saveGenome && this.state.genome) ? this.state.genome : new Genome([], []);
             console.log(fabric.toString());
             fabric.createSeed(5, HANGER_ALTITUDE);
             this.setState({
                 fabric,
                 genome,
-                genomeInterpreter: new GenomeInterpreter(fabric, reader),
+                growthExecution: genome.growthExecution(fabric),
+                behaviorExecution: genome.behaviorExecution(fabric),
                 paused: false
             });
         });
@@ -178,10 +178,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 () => {
                     if (!this.state.paused) {
                         if (this.state.fabric) {
-                            const hanging: boolean = !!this.state.genomeInterpreter || !!this.stayHanging;
+                            const hanging: boolean = !!this.state.growthExecution || !!this.stayHanging;
                             const maxTimeIndex = this.state.fabric.iterate(100, hanging);
                             if (hanging) {
-                                if (!this.state.genomeInterpreter) {
+                                if (!this.state.growthExecution) {
                                     this.stayHanging--;
                                     if (!this.stayHanging) {
                                         this.state.fabric.removeHanger();
@@ -194,10 +194,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             } else {
                                 this.createFabricInstance(false);
                             }
-                            if (this.state.genomeInterpreter && maxTimeIndex === 0 && this.state.fabric.age > 100) {
-                                if (!this.state.genomeInterpreter.step()) {
-                                    console.log('Interpreter zapped');
-                                    this.setState({genomeInterpreter: undefined});
+                            if (this.state.growthExecution && maxTimeIndex === 0 && this.state.fabric.age > 100) {
+                                if (!this.state.growthExecution.step()) {
+                                    console.log('Growth finished');
+                                    this.setState({growthExecution: undefined});
                                 }
                             }
                         }

@@ -1,67 +1,40 @@
-export interface IGenomeReader {
-    cursor: number;
-    next: () => number;
-    nextChoice: (maxChoice: number) => number;
-    nextVariation: () => number;
-    nextTimeSpan: () => number;
+import {GeneSequence} from './gene-sequence';
+import {Fabric} from './fabric';
+import {Growth} from './growth';
+import {Behavior} from './behavior';
+
+export interface IGeneExecution {
+    step(): boolean;
 }
 
 export const MAX_UINT16 = 65536.0;
-export const MAX_TIME = 3600;
-export const MAX_VARIATION = 1.618;
-export const MIN_VARIATION = 0.618;
+
+export const sequenceToArray = (sequence: number[]) => {
+    const uint16Array = new Uint16Array(sequence.length);
+    sequence.forEach((floating: number, index: number) => {
+        uint16Array[index] = Math.floor(floating * MAX_UINT16);
+    });
+    return uint16Array;
+};
 
 export class Genome {
-    private rawData: Uint16Array;
 
-    constructor(size: number) {
-        this.rawData = new Uint16Array(size)
+    constructor(private growthSequence: number[], private behaviorSequence: number[]) {
     }
 
-    public createReader(destruct: () => void): IGenomeReader {
-        const reader: IGenomeReader = {
-
-            cursor: 0,
-
-            next: () => {
-                if (reader.cursor === this.rawData.length - 1) {
-                    destruct();
-                }
-                return this.rawData[reader.cursor++] / MAX_UINT16;
-            },
-
-            nextChoice: (maxChoice: number) => {
-                // const zeroToOne = reader.next();
-                // const choice = Math.floor(maxChoice * zeroToOne);
-                // console.log(`${maxChoice} * ${zeroToOne} = ${choice}`);
-                // return choice;
-                return Math.floor(maxChoice * reader.next());
-            },
-
-            nextVariation: () => {
-                const zeroToOne = reader.next();
-                return MAX_VARIATION * zeroToOne + MIN_VARIATION * (1.0 - zeroToOne);
-            },
-
-            nextTimeSpan(): number {
-                return reader.nextChoice(MAX_TIME);
-            },
-        };
-        return reader;
+    public growthExecution(fabric: Fabric): IGeneExecution {
+        return new Growth(fabric, new GeneSequence(this.growthSequence));
     }
 
-    public randomize(): Genome {
-        for (let which = 0; which < this.rawData.length; which++) {
-            this.randomizeNuance(which);
-        }
-        return this;
+    public behaviorExecution(fabric: Fabric): IGeneExecution {
+        return new Behavior(fabric, new GeneSequence(this.behaviorSequence));
     }
 
-    public mutate(): void {
-        this.randomizeNuance(Math.floor(Math.random() * this.rawData.length));
+    public get growth(): Uint16Array {
+        return sequenceToArray(this.growthSequence);
     }
 
-    private randomizeNuance(which: number) {
-        this.rawData[which] = Math.floor(Math.random() * MAX_UINT16);
+    public get behavior(): Uint16Array {
+        return sequenceToArray(this.behaviorSequence);
     }
 }
