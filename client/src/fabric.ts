@@ -177,7 +177,7 @@ export class Fabric {
         const jointIndex = faceToReplace.joints.map(faceJoint => faceJoint.jointIndex);
         const sortedJoints = faceToReplace.joints.sort((a: IJointSnapshot, b: IJointSnapshot) => b.tag - a.tag);
         const chosenJoint = sortedJoints[faceJointIndex];
-        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplace.averageIdealSpan * 0.1);
+        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplace.averageIdealSpan * 0.2);
         const apexIndex = this.fabricExports.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z);
         if (apexIndex >= this.jointCountMax) {
             return [];

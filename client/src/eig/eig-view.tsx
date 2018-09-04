@@ -3,7 +3,6 @@ import * as R3 from 'react-three';
 import {
     BufferGeometry,
     Color,
-    Geometry,
     LineBasicMaterial,
     Material,
     MeshPhongMaterial,
@@ -31,7 +30,6 @@ interface IEigViewState {
     fabric?: Fabric;
     genome?: Genome;
     genomeInterpreter?: GenomeInterpreter;
-    selectedFaceIndex?: number;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -41,11 +39,12 @@ const FACE_MATERIAL = new MeshPhongMaterial({
     opacity: 0.6,
     visible: true
 });
-const TRIPOD_MATERIAL = new LineBasicMaterial({color: 0xFFFFFF});
 const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
 const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
-const ALTITUDE = 10;
+const HANGER_ALTITUDE = 6;
+const CAMERA_ALTITUDE = 4.5;
 const HANG_DELAY = 70;
+const REBIRTH_DELAY = 100;
 
 export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private THREE = require('three');
@@ -57,6 +56,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private rayCaster: any;
     private facesMeshNode: any;
     private stayHanging = HANG_DELAY;
+    private stayAlive = REBIRTH_DELAY;
 
     constructor(props: IEigViewProps) {
         super(props);
@@ -65,14 +65,14 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
             height: window.innerHeight,
             paused: false
         };
-        this.createFabricInstance();
+        this.createFabricInstance(false);
         this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 5000);
-        this.perspectiveCamera.position.set(8, ALTITUDE, 8);
+        this.perspectiveCamera.position.set(12, CAMERA_ALTITUDE, 8);
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
-        this.orbitControls.target = new Vector3(0, ALTITUDE, 0);
+        this.orbitControls.target = new Vector3(0, CAMERA_ALTITUDE, 0);
         // this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         this.rayCaster = new Raycaster();
         this.animate();
@@ -85,24 +85,18 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         }
         this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
         this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
-        if (this.state.paused) {
-            if (this.trySelect()) {
-                return;
-            }
-        }
-        this.setState({selectedFaceIndex: undefined});
     }
 
     public trySelect(): boolean {
         this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
-        const intersect = this.rayCaster.intersectObject(this.facesMeshNode);
-        if (intersect.length > 0 && this.state.fabric) {
-            const faceIndex = intersect[0].faceIndex / 3;
-            if (this.state.selectedFaceIndex === undefined || faceIndex !== this.state.selectedFaceIndex) {
-                this.setState({selectedFaceIndex: faceIndex});
-            }
-            return true;
-        }
+        // const intersect = this.rayCaster.intersectObject(this.facesMeshNode);
+        // if (intersect.length > 0 && this.state.fabric) {
+        //     const faceIndex = intersect[0].faceIndex / 3;
+        //     if (this.state.selectedFaceIndex === undefined || faceIndex !== this.state.selectedFaceIndex) {
+        //         this.setState({selectedFaceIndex: faceIndex});
+        //     }
+        //     return true;
+        // }
         return false;
     }
 
@@ -110,20 +104,10 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         const facesGeometry = this.state.fabric ? this.state.fabric.facesGeometry : new BufferGeometry();
         const lineSegmentGeometry = this.state.fabric ? this.state.fabric.lineSegmentsGeometry : new BufferGeometry();
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
-        const faceHighlights = () => {
-            if (this.state.fabric && this.state.selectedFaceIndex !== undefined) {
-                return this.state.fabric.getFaceHighlightGeometries(this.state.selectedFaceIndex).map((geometry: Geometry, index: number) => {
-                    return <R3.LineSegments key={`Highlight${index}`} geometry={geometry} material={TRIPOD_MATERIAL}/>
-                });
-            } else {
-                return null;
-            }
-        };
         return (
             <div onMouseMove={(e: any) => this.mouseMove(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
-                        {faceHighlights()}
                         <R3.Mesh
                             ref={(node: any) => this.facesMeshNode = node}
                             key="FabricFaces" name="Fabric"
@@ -170,13 +154,15 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
         this.perspectiveCamera.updateProjectionMatrix();
     };
 
-    private createFabricInstance() {
+    private createFabricInstance(saveGenome: boolean) {
+        this.stayHanging = HANG_DELAY;
+        this.stayAlive = REBIRTH_DELAY;
         this.props.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, 60);
-            const genome = new Genome(500).randomize();
+            const fabric = new Fabric(fabricExports, 80);
+            const genome = (saveGenome && this.state.genome) ? this.state.genome : new Genome(500).randomize();
             const reader = genome.createReader(() => this.setState({genomeInterpreter: undefined}));
             console.log(fabric.toString());
-            fabric.createSeed(5, ALTITUDE - 2);
+            fabric.createSeed(5, HANGER_ALTITUDE);
             this.setState({
                 fabric,
                 genome,
@@ -198,14 +184,15 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
                                 if (!this.state.genomeInterpreter) {
                                     this.stayHanging--;
                                     if (!this.stayHanging) {
-                                        console.log(`going to remove hanger J=${this.state.fabric.jointCount} I=${this.state.fabric.intervalCount}`);
                                         this.state.fabric.removeHanger();
                                         this.setState({fabric: this.state.fabric});
-                                        console.log(`done removing hanger J=${this.state.fabric.jointCount} I=${this.state.fabric.intervalCount}`);
                                     }
                                 }
-                            } else {
+                            } else if (this.stayAlive > 0) {
                                 this.state.fabric.centralize(-1, 0.02);
+                                this.stayAlive--;
+                            } else {
+                                this.createFabricInstance(false);
                             }
                             if (this.state.genomeInterpreter && maxTimeIndex === 0 && this.state.fabric.age > 100) {
                                 if (!this.state.genomeInterpreter.step()) {
@@ -228,18 +215,11 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private keyboardListener() {
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             if (event.code === 'Space') {
-                if (this.state.paused) {
-                    if (this.state.selectedFaceIndex !== undefined && this.state.fabric) {
-                        this.state.fabric.unfold(this.state.selectedFaceIndex, 2);
-                        this.state.fabric.centralize(0, 1);
-                        this.setState({selectedFaceIndex: undefined, paused: false});
-                    } else {
-                        this.stayHanging = HANG_DELAY;
-                        this.createFabricInstance();
-                    }
-                } else {
+                if (!this.state.paused) {
                     this.setState({paused: true});
-                    this.trySelect();
+                } else {
+                    this.createFabricInstance(true);
+                    this.setState({paused: false});
                 }
             }
         })

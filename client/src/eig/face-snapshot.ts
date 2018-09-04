@@ -49,7 +49,6 @@ export class FaceSnapshot {
             if (faceIndex < 0) {
                 throw new Error("Face not found!");
             }
-            console.log(`walking back index to ${faceIndex}`);
         }
         return new FaceSnapshot(this.fabric, this.kernel, this.fabricExports, faceIndex);
     }
