@@ -16,7 +16,7 @@ import {
 } from 'three';
 import {Fabric} from './fabric';
 import {IFabricExports} from './fabric-exports';
-import {Genome, IGeneExecution} from './genome';
+import {Genome, IGenomeExecution} from '../genetics/genome';
 
 interface IGotchiViewProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -28,8 +28,7 @@ interface IGotchiViewState {
     paused: boolean;
     fabric?: Fabric;
     genome?: Genome;
-    growthExecution?: IGeneExecution;
-    behaviorExecution?: IGeneExecution;
+    genomeExecution?: IGenomeExecution;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -165,8 +164,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             this.setState({
                 fabric,
                 genome,
-                growthExecution: genome.growthExecution(fabric),
-                behaviorExecution: genome.behaviorExecution(fabric),
+                genomeExecution: genome.createExecution(fabric),
                 paused: false
             });
         });
@@ -177,14 +175,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             setTimeout(
                 () => {
                     if (!this.state.paused) {
-                        if (this.state.fabric) {
-                            const hanging: boolean = !!this.state.growthExecution || !!this.stayHanging;
+                        if (this.state.fabric && this.state.genomeExecution) {
+                            const hanging: boolean = this.state.genomeExecution.hanging || !!this.stayHanging;
                             const maxTimeIndex = this.state.fabric.iterate(100, hanging);
                             if (hanging) {
-                                if (!this.state.growthExecution) {
+                                if (!this.state.genomeExecution.hanging) {
                                     this.stayHanging--;
                                     if (!this.stayHanging) {
-                                        this.state.fabric.removeHanger();
                                         this.setState({fabric: this.state.fabric});
                                     }
                                 }
@@ -192,12 +189,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                 this.state.fabric.centralize(-1, 0.02);
                                 this.stayAlive--;
                             } else {
-                                this.createFabricInstance(false);
+                                this.createFabricInstance(true);
                             }
-                            if (this.state.growthExecution && maxTimeIndex === 0 && this.state.fabric.age > 100) {
-                                if (!this.state.growthExecution.step()) {
+                            if (this.state.genomeExecution.hanging && maxTimeIndex === 0 && this.state.fabric.age > 100) {
+                                if (!this.state.genomeExecution.step()) {
                                     console.log('Growth finished');
-                                    this.setState({growthExecution: undefined});
+                                    this.setState({genomeExecution: undefined});
                                 }
                             }
                         }
@@ -215,12 +212,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private keyboardListener() {
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             if (event.code === 'Space') {
-                if (!this.state.paused) {
-                    this.setState({paused: true});
-                } else {
-                    this.createFabricInstance(true);
-                    this.setState({paused: false});
-                }
+                this.createFabricInstance(false);
+                // if (!this.state.paused) {
+                //     this.setState({paused: true});
+                // } else {
+                //     this.createFabricInstance(true);
+                //     this.setState({paused: false});
+                // }
             }
         })
     }

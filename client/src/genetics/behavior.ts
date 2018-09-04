@@ -1,6 +1,6 @@
-import {Fabric} from './fabric';
 import {GeneSequence} from './gene-sequence';
 import {IGeneExecution} from './genome';
+import {Fabric} from '../gotchi/fabric';
 
 export class Behavior implements IGeneExecution {
 
