@@ -11,7 +11,7 @@ export class GenomeInterpreter {
 
     constructor(private fabric: Fabric, private genomeReader: IGenomeReader) {
         this.growingFaces.push(fabric.getFaceSnapshot(0));
-        if (this.genomeReader.nextChoice(2)) {
+        if (this.genomeReader.nextChoice(3)) {
             this.growingFaces.push(fabric.getFaceSnapshot(2));
             if (!this.genomeReader.nextChoice(3)) {
                 this.growingFaces.push(fabric.getFaceSnapshot(4));
