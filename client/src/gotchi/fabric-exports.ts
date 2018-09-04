@@ -16,6 +16,8 @@ export interface IFabricExports {
 
     faces(): number;
 
+    roles(): number;
+
     iterate(ticks: number, hanging: boolean): number;
 
     centralize(altitude: number, intensity: number): number;
@@ -38,8 +40,6 @@ export interface IFabricExports {
 
     findOppositeIntervalIndex(intervalIndex: number): number;
 
-    triggerInterval(intervalIndex: number): void;
-
     createFace(joint0Index: number, joint1Index: number, joint2Index: number): number;
 
     removeFace(faceIndex: number): void;
@@ -50,7 +50,7 @@ export interface IFabricExports {
 
     getFaceAverageIdealSpan(faceIndex: number): number;
 
-    setBehaviorTime(behaviorIndex: number, variationIndex: number, behaviorTime: number): void;
+    setRoleState(roleIndex: number, stateIndex: number, time: number, spanVariation: number): void;
 
-    setBehaviorSpanVariation(behaviorIndex: number, variationIndex: number, behaviorVariation: number): void;
+    triggerRole(roleIndex: number): void;
 }

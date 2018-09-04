@@ -5,7 +5,8 @@ declare function logFloat(idx: u32, f: f32): void;
 declare function logInt(idx: u32, i: u32): void;
 
 const ERROR: usize = 65535;
-const ROLE_SIZE: usize = sizeof<i8>();
+const LATERALITY_SIZE: usize = sizeof<u8>();
+const INTERVAL_ROLE_SIZE: usize = sizeof<i16>();
 const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
 const SPAN_VARIATION_SIZE: usize = sizeof<i16>();
@@ -41,7 +42,7 @@ let faceNormalOffset: usize = 0;
 let faceLocationOffset: usize = 0;
 let intervalOffset: usize = 0;
 let faceOffset: usize = 0;
-let behaviorOffset: usize = 0;
+let rolesOffset: usize = 0;
 
 let projectionPtr: usize = 0;
 let alphaProjectionPtr: usize = 0;
@@ -60,7 +61,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     let jointsSize = jointCountMax * JOINT_SIZE;
     let intervalsSize = intervalCountMax * INTERVAL_SIZE;
     let facesSize = faceCountMax * FACE_SIZE;
-    let behaviorSize = ROLE_INDEX_MAX * BEHAVIOR_SIZE;
+    let rolesSize = ROLE_COUNT * ROLES_SIZE;
     // offsets
     let bytes = (
         agePtr = (
@@ -68,7 +69,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                 omegaProjectionPtr = (
                     alphaProjectionPtr = (
                         projectionPtr = (
-                            behaviorOffset = (
+                            rolesOffset = (
                                 faceOffset = (
                                     intervalOffset = (
                                         jointOffset = (
@@ -84,7 +85,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                                         ) + faceJointVectorsSize
                                     ) + jointsSize
                                 ) + intervalsSize
-                            ) + behaviorSize
+                            ) + rolesSize
                         ) + facesSize
                     ) + VECTOR_SIZE
                 ) + VECTOR_SIZE
@@ -93,8 +94,8 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     ) + AGE_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
-    for (let roleIndex: u8 = 0; roleIndex < ROLE_INDEX_MAX; roleIndex++) {
-        initBehavior(roleIndex);
+    for (let roleIndex: u16 = 0; roleIndex < ROLE_COUNT; roleIndex++) {
+        initRole(roleIndex);
     }
     return bytes;
 }
@@ -109,6 +110,10 @@ export function intervals(): usize {
 
 export function faces(): usize {
     return faceCount;
+}
+
+export function roles(): usize {
+    return ROLE_COUNT;
 }
 
 export function nextJointTag(): u16 {
@@ -289,7 +294,7 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 // Joints =====================================================================================
 
-const JOINT_SIZE: usize = VECTOR_SIZE * 5 + ROLE_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
+const JOINT_SIZE: usize = VECTOR_SIZE * 5 + LATERALITY_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2;
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
     if (jointCount + 1 >= jointCountMax) {
@@ -355,16 +360,16 @@ function setJointLaterality(jointIndex: u16, laterality: u8): void {
     store<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2, laterality);
 }
 
-function setJointTag(jointIndex: u16, tag: u16): void {
-    store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE, tag);
-}
-
 export function getJointLaterality(jointIndex: u16): u8 {
     return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2);
 }
 
+function setJointTag(jointIndex: u16, tag: u16): void {
+    store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + LATERALITY_SIZE, tag);
+}
+
 export function getJointTag(jointIndex: u16): u16 {
-    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + ROLE_SIZE);
+    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + LATERALITY_SIZE);
 }
 
 export function centralize(altitude: f32, intensity: f32): f32 {
@@ -397,17 +402,16 @@ export function centralize(altitude: f32, intensity: f32): f32 {
 
 // Intervals =====================================================================================
 
-const INTERVAL_SIZE: usize = ROLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE + FLOAT_SIZE * 2;
+const INTERVAL_SIZE: usize = INTERVAL_ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
 
-export function createInterval(role: i8, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
+export function createInterval(intervalRole: i16, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
     if (intervalCount + 1 >= intervalCountMax) {
         return ERROR;
     }
     let intervalIndex = intervalCount++;
-    setIntervalRole(intervalIndex, role);
+    setIntervalRole(intervalIndex, intervalRole);
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
-    setTimeIndex(intervalIndex, 0);
     setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
     return intervalIndex;
 }
@@ -417,7 +421,6 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setIntervalRole(intervalIndex, getIntervalRole(nextIndex));
     setAlphaIndex(intervalIndex, getAlphaIndex(nextIndex));
     setOmegaIndex(intervalIndex, getOmegaIndex(nextIndex));
-    setTimeIndex(intervalIndex, getTimeIndex(nextIndex));
     setFloat(idealSpanPtr(intervalIndex), getFloat(idealSpanPtr(nextIndex)));
 }
 
@@ -425,48 +428,45 @@ function intervalPtr(intervalIndex: u16): usize {
     return intervalOffset + intervalIndex * INTERVAL_SIZE;
 }
 
-export function getIntervalRole(intervalIndex: u16): i8 {
-    return load<i8>(intervalPtr(intervalIndex));
+export function getIntervalRole(intervalIndex: u16): i16 {
+    return load<i16>(intervalPtr(intervalIndex));
 }
 
-export function setIntervalRole(intervalIndex: u16, role: i8): void {
-    store<i8>(intervalPtr(intervalIndex), role);
+function getIntervalRoleIndex(intervalIndex: u16): u16 {
+    let intervalRole = getIntervalRole(intervalIndex);
+    return intervalRole < 0 ? -intervalRole : intervalRole;
+}
+
+export function setIntervalRole(intervalIndex: u16, intervalRole: i16): void {
+    store<i16>(intervalPtr(intervalIndex), intervalRole);
 }
 
 function getAlphaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE);
 }
 
 function setAlphaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE, v);
 }
 
 function getOmegaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE);
 }
 
 function setOmegaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE, v);
-}
-
-function getTimeIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2);
-}
-
-function setTimeIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 2, v);
+    setIndex(intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE, v);
 }
 
 function unitPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 3;
+    return intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE + INDEX_SIZE;
 }
 
 function stressPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE;
+    return intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE;
 }
 
 function idealSpanPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + ROLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE + FLOAT_SIZE;
+    return intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE;
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -486,10 +486,6 @@ function findIntervalIndex(joint0: u16, joint1: u16): u16 {
         }
     }
     return intervalCountMax;
-}
-
-export function triggerInterval(intervalIndex: u16): void {
-    setTimeIndex(intervalIndex, 1);
 }
 
 export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
@@ -669,48 +665,46 @@ export function removeFace(deadFaceIndex: u16): void {
     faceCount--;
 }
 
-// Behavior =====================================================================================
+// Roles =====================================================================================
 
-const ROLE_INDEX_MAX: u8 = 64;
-const BEHAVIOR_SIZE: usize = (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
-const BEHAVIOR_SPAN_VARIATION_MAX: f32 = 0.2;
+const ROLE_COUNT: u16 = 64;
+const ROLES_SIZE: usize = INDEX_SIZE + (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
+const SPAN_VARIATION_MAX: f32 = 0.2;
 
-function initBehavior(roleIndex: u16): void {
-    for (let thisVariation: u8 = 0; thisVariation < VARIATION_COUNT; thisVariation++) {
-        let time = Math.random() * 65535.0;
-        setIndex(behaviorTimePtr(roleIndex, thisVariation), <u16>time);
-        let variation = (Math.random() - 0.5) * 2 * 32767;
-        setVariation(behaviorSpanVariationPtr(roleIndex, thisVariation), <i16>variation);
-    }
-    sortVariations(roleIndex);
+function rolePtr(roleIndex: u16): usize {
+    return rolesOffset + roleIndex * ROLES_SIZE;
 }
 
-function behaviorTimePtr(roleIndex: u16, variationIndex: u8): u32 {
-    return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE);
+function getRoleTimeSweep(roleIndex: u16): u16 {
+    return getIndex(rolePtr(roleIndex));
 }
 
-function getBehaviorTime(roleIndex: u16, variationIndex: u8): u16 {
-    return getIndex(behaviorTimePtr(roleIndex, variationIndex));
+function setRoleTimeSweep(roleIndex: u16, v: u16): void {
+    setIndex(rolePtr(roleIndex), v);
 }
 
-export function setBehaviorTime(roleIndex: u8, variationIndex: u8, behaviorTime: u16): void {
-    setIndex(behaviorTimePtr(roleIndex, variationIndex), behaviorTime);
+function roleTimePtr(roleIndex: u16, stateIndex: u8): usize {
+    return rolePtr(roleIndex) + INDEX_SIZE + stateIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE);
 }
 
-function behaviorSpanVariationPtr(roleIndex: u16, variationIndex: u8): u32 {
-    return behaviorOffset + roleIndex * BEHAVIOR_SIZE + variationIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE) + INDEX_SIZE;
+function getRoleTime(roleIndex: u16, stateIndex: u8): u16 {
+    return getIndex(roleTimePtr(roleIndex, stateIndex));
 }
 
-function getBehaviorSpanVariation(role: i16, variationIndex: u8): f32 {
+function roleSpanVariationPtr(roleIndex: u16, stateIndex: u8): u32 {
+    return roleTimePtr(roleIndex, stateIndex) + INDEX_SIZE;
+}
+
+function initRole(roleIndex: u16): void {
+    setRoleTimeSweep(roleIndex, 0);
+}
+
+function getRoleSpanVariation(role: i16, stateIndex: u8): f32 {
     let oppositeRole = role < 0;
     let roleIndex = oppositeRole ? -role : role;
-    let variationInt = getVariation(behaviorSpanVariationPtr(roleIndex, variationIndex));
+    let variationInt = getVariation(roleSpanVariationPtr(roleIndex, stateIndex));
     let variationFloat = oppositeRole ? -<f32>variationInt : <f32>variationInt;
-    return 1.0 + BEHAVIOR_SPAN_VARIATION_MAX * variationFloat / 65536.0;
-}
-
-export function setBehaviorSpanVariation(roleIndex: u8, variationIndex: u8, behaviorSpanVariation: i16): void {
-    setVariation(behaviorTimePtr(roleIndex, variationIndex), behaviorSpanVariation);
+    return 1.0 + SPAN_VARIATION_MAX * variationFloat / 65536.0;
 }
 
 function sortVariations(roleIndex: u16): void {
@@ -718,16 +712,16 @@ function sortVariations(roleIndex: u16): void {
     while (true) {
         unsorted--;
         for (let scan: u8 = 0; scan < unsorted; scan++) {
-            let t0 = behaviorTimePtr(roleIndex, scan);
+            let t0 = roleTimePtr(roleIndex, scan);
             let time0 = getIndex(t0);
-            let t1 = behaviorTimePtr(roleIndex, scan + 1);
+            let t1 = roleTimePtr(roleIndex, scan + 1);
             let time1 = getIndex(t1);
             if (time0 > time1) {
                 setIndex(t0, time1);
                 setIndex(t1, time0);
-                let s0 = behaviorSpanVariationPtr(roleIndex, scan);
+                let s0 = roleSpanVariationPtr(roleIndex, scan);
                 let spanVariation0 = getVariation(s0);
-                let s1 = behaviorSpanVariationPtr(roleIndex, scan + 1);
+                let s1 = roleSpanVariationPtr(roleIndex, scan + 1);
                 let spanVariation1 = getVariation(s1);
                 setVariation(s0, spanVariation1);
                 setVariation(s1, spanVariation0);
@@ -739,56 +733,70 @@ function sortVariations(roleIndex: u16): void {
     }
 }
 
-function interpolateCurrentSpan(intervalIndex: u16, timeIndex: u16): f32 {
-    let role = getIntervalRole(intervalIndex);
+function interpolateCurrentSpan(intervalIndex: u16): f32 {
+    let intervalRoleIndex = getIntervalRoleIndex(intervalIndex);
+    let timeSweep = getRoleTimeSweep(intervalRoleIndex);
+    let intervalRole = getIntervalRole(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
-    if (role === 0) {
-        if (timeIndex === 0) {
+    if (intervalRole === 0) { // static
+        return idealSpan;
+    }
+    if (intervalRole === 1) { // grow role
+        if (timeSweep === 0) { // done growing
+            setIntervalRole(intervalIndex, 0); // back to static
             return idealSpan;
-        } else {
+        } else { // busy growing
             let originalSpan: f32 = 1;
-            if (timeIndex === 1) { // just triggered now, store span in stress (cheating)
+            if (timeSweep === 1) { // just triggered now, store span in stress (cheating)
                 originalSpan = calculateSpan(intervalIndex);
                 setFloat(stressPtr(intervalIndex), originalSpan);
             } else {
                 originalSpan = getFloat(stressPtr(intervalIndex));
             }
-            let progress = <f32>timeIndex / 65536;
+            let progress = <f32>timeSweep / 65536;
             return originalSpan * (1 - progress) + idealSpan * progress;
         }
-    } else {
-        let beforeTime: u16 = 0;
-        let beforeVariation: f32 = 1;
-        let variationNumber: u8 = 0;
-        let roleIndex: u8 = role > 0 ? role : -role;
-        while (variationNumber < VARIATION_COUNT) {
-            let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
-            if (behaviorTime < timeIndex) {
-                beforeTime = behaviorTime;
-                beforeVariation = getBehaviorSpanVariation(role, variationNumber);
-            }
-            variationNumber++;
-        }
-        let afterTime: u16 = 65535;
-        let afterVariation: f32 = 1;
-        variationNumber = VARIATION_COUNT;
-        while (true) {
-            let behaviorTime = getBehaviorTime(roleIndex, variationNumber);
-            if (behaviorTime > timeIndex) {
-                afterTime = behaviorTime;
-                afterVariation = getBehaviorSpanVariation(role, variationNumber);
-            }
-            if (variationNumber === 0) {
-                break;
-            }
-            variationNumber--;
-        }
-        let timeSpan = <f32>(afterTime - beforeTime);
-        let currentVariation =
-            <f32>(timeIndex - beforeTime) / timeSpan * afterVariation +
-            <f32>(afterTime - timeIndex) / timeSpan * beforeVariation;
-        return idealSpan * currentVariation;
     }
+    let beforeTime: u16 = 0;
+    let beforeVariation: f32 = 1;
+    let variationNumber: u8 = 0;
+    while (variationNumber < VARIATION_COUNT) {
+        let roleTime = getRoleTime(intervalRoleIndex, variationNumber);
+        if (roleTime < timeSweep) {
+            beforeTime = roleTime;
+            beforeVariation = getRoleSpanVariation(intervalRole, variationNumber);
+        }
+        variationNumber++;
+    }
+    let afterTime: u16 = 65535;
+    let afterVariation: f32 = 1;
+    variationNumber = VARIATION_COUNT;
+    while (true) {
+        let roleTime = getRoleTime(intervalRoleIndex, variationNumber);
+        if (roleTime > timeSweep) {
+            afterTime = roleTime;
+            afterVariation = getRoleSpanVariation(intervalRole, variationNumber);
+        }
+        if (variationNumber === 0) {
+            break;
+        }
+        variationNumber--;
+    }
+    let timeSpan = <f32>(afterTime - beforeTime);
+    let currentVariation =
+        <f32>(timeSweep - beforeTime) / timeSpan * afterVariation +
+        <f32>(afterTime - timeSweep) / timeSpan * beforeVariation;
+    return idealSpan * currentVariation;
+}
+
+export function triggerRole(roleIndex: u16): void {
+    setRoleTimeSweep(roleIndex, 1);
+}
+
+export function setRoleState(roleIndex: u16, stateIndex: u8, time: u16, variation: i16): void {
+    setIndex(roleTimePtr(roleIndex, stateIndex), time);
+    setVariation(roleSpanVariationPtr(roleIndex, stateIndex), variation);
+    sortVariations(roleIndex);
 }
 
 // Physics =====================================================================================
@@ -798,13 +806,12 @@ function abs(val: f32): f32 {
     return val < 0 ? -val : val;
 }
 
-function elasticBehavior(intervalIndex: u16, elasticFactor: f32, timeIndexStep: u16): void {
-    let timeIndex = getTimeIndex(intervalIndex);
-    let idealSpan = interpolateCurrentSpan(intervalIndex, timeIndex);
+function elastic(intervalIndex: u16, elasticFactor: f32): void {
+    let idealSpan = interpolateCurrentSpan(intervalIndex);
     let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan;
     addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
     addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
-    if (timeIndex !== 1) {
+    if (getRoleTimeSweep(getIntervalRoleIndex(intervalIndex)) !== 1) {
         setFloat(stressPtr(intervalIndex), stress);
     }
     let mass = idealSpan * idealSpan * idealSpan;
@@ -812,13 +819,17 @@ function elasticBehavior(intervalIndex: u16, elasticFactor: f32, timeIndexStep: 
     setFloat(alphaMass, getFloat(alphaMass) + mass / 2);
     let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex));
     setFloat(omegaMass, getFloat(omegaMass) + mass / 2);
-    if (timeIndex > 0) {
-        let currentTimeIndex = timeIndex;
-        timeIndex += timeIndexStep;
-        if (timeIndex < currentTimeIndex) { // wrap around
-            timeIndex = 0;
+}
+
+function advanceTimeSweep(roleIndex: u16, timeIndexStep: u16): void {
+    let timeSweep = getRoleTimeSweep(roleIndex);
+    if (timeSweep > 0) {
+        let currentTimeIndex = timeSweep;
+        timeSweep += timeIndexStep;
+        if (timeSweep < currentTimeIndex) { // wrap around
+            timeSweep = 0;
         }
-        setTimeIndex(intervalIndex, timeIndex);
+        setRoleTimeSweep(roleIndex, timeSweep);
     }
 }
 
@@ -866,7 +877,7 @@ function exertJointPhysics(jointIndex: u16, overGravity: f32, overDrag: f32, und
 function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32, timeIndexStep: u16, hanging: boolean): void {
     timePasses();
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        elasticBehavior(thisInterval, elasticFactor, timeIndexStep);
+        elastic(thisInterval, elasticFactor);
     }
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         smoothVelocity(thisInterval);
@@ -906,6 +917,9 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
         add(locationPtr(thisJoint), velocityPtr(thisJoint));
         setFloat(intervalMassPtr(thisJoint), AMBIENT_JOINT_MASS);
     }
+    for (let roleIndex: u16 = 0; roleIndex < ROLE_COUNT; roleIndex++) {
+        advanceTimeSweep(roleIndex, timeIndexStep);
+    }
 }
 
 const AIR_DRAG: f32 = 0.0002;
@@ -921,12 +935,11 @@ export function iterate(ticks: usize, hanging: boolean): u16 {
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         tick(ELASTIC_FACTOR, AIR_GRAVITY, airDrag, LAND_GRAVITY, LAND_DRAG, TIME_INDEX_STEP, hanging);
     }
-    let maxTimeIndex: u16 = 0;
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(outputAlphaLocationPtr(intervalIndex), locationPtr(getAlphaIndex(intervalIndex)));
         setVector(outputOmegaLocationPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)));
         let stress: f32 = 0;
-        if (getTimeIndex(intervalIndex) !== 1) {
+        if (getRoleTimeSweep(getIntervalRoleIndex(intervalIndex)) !== 1) {
             stress = getFloat(stressPtr(intervalIndex)) / STRESS_MAX;
             if (stress > 1) {
                 stress = 1;
@@ -939,14 +952,18 @@ export function iterate(ticks: usize, hanging: boolean): u16 {
         let blue: f32 = 0.6 + stress * 0.4;
         setAll(outputAlphaColorPtr(intervalIndex), red, green, blue);
         setAll(outputOmegaColorPtr(intervalIndex), red, green, blue);
-        if (getTimeIndex(intervalIndex) > maxTimeIndex) {
-            maxTimeIndex = getTimeIndex(intervalIndex);
+    }
+    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
+        outputFaceGeometry(faceIndex);
+    }
+    let maxTimeSweep: u16 = 0;
+    for (let roleIndex: u16 = 0; roleIndex < ROLE_COUNT; roleIndex++) {
+        let timeSweep = getRoleTimeSweep(roleIndex);
+        if (timeSweep > maxTimeSweep) {
+            maxTimeSweep = timeSweep;
         }
     }
-    for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
-        outputFaceGeometry(thisFace);
-    }
-    return maxTimeIndex;
+    return maxTimeSweep;
 }
 
 export function removeHanger(): void {

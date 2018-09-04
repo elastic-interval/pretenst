@@ -167,10 +167,9 @@ export class Fabric {
         return this.fabricExports.createInterval(0, alphaIndex, omegaIndex, span);
     }
 
-    private trigger(intervalIndex: number): void {
-        if (intervalIndex < this.intervalCountMax) {
-            this.fabricExports.triggerInterval(intervalIndex);
-        }
+    private intervalGrow(alphaIndex: number, omegaIndex: number, span: number): number {
+        this.fabricExports.triggerRole(1);
+        return this.fabricExports.createInterval(1, alphaIndex, omegaIndex, span);
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
@@ -188,7 +187,7 @@ export class Fabric {
                 this.interval(faceJoint.jointIndex, apexIndex, idealSpan);
             }
         });
-        this.trigger(this.interval(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan));
+        this.intervalGrow(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan);
         const createdFaceIndexes: number[] = [];
         sortedJoints.map(joint => joint.jointNumber).forEach((jointNumber: number, index: number) => { // youngest first
             switch (jointNumber) {

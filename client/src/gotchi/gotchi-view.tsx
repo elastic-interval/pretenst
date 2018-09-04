@@ -181,17 +181,21 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         if (this.state.growthExecution) {
                             if (maxTimeIndex === 0) {
                                 if (!this.state.growthExecution.step()) {
+                                    console.log('growth done');
                                     this.setState({growthExecution: undefined});
                                 } else {
+                                    console.log('step');
                                     this.setState({fabric: this.state.fabric});
                                 }
                             } else {
+                                console.log('time');
                                 this.forceUpdate();
                             }
                         }
                         else if (this.stayHanging) {
                             this.stayHanging--;
                             if (!this.stayHanging) {
+                                console.log('remove hanger');
                                 this.state.fabric.removeHanger();
                             }
                             this.forceUpdate();
