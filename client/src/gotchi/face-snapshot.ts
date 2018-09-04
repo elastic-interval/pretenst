@@ -1,7 +1,7 @@
 import {Vector3} from 'three';
-import {BILATERAL_MIDDLE, Fabric, vectorFromIndex} from '../fabric';
-import {IFabricExports} from '../fabric-exports';
-import {FabricKernel} from '../fabric-kernel';
+import {BILATERAL_MIDDLE, Fabric, vectorFromIndex} from './fabric';
+import {IFabricExports} from './fabric-exports';
+import {FabricKernel} from './fabric-kernel';
 
 export interface IJointSnapshot {
     jointNumber: number;

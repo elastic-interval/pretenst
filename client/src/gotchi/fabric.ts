@@ -1,7 +1,7 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
 import {FabricKernel} from './fabric-kernel';
 import {IFabricExports} from './fabric-exports';
-import {FaceSnapshot, IJointSnapshot} from './eig/face-snapshot';
+import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
 
 export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;

@@ -14,16 +14,16 @@ import {
     Vector3,
     VertexColors
 } from 'three';
-import {Fabric} from '../fabric';
-import {IFabricExports} from '../fabric-exports';
-import {Genome} from '../genome';
-import {GenomeInterpreter} from '../genome-interpreter';
+import {Fabric} from './fabric';
+import {IFabricExports} from './fabric-exports';
+import {Genome} from './genome';
+import {GenomeInterpreter} from './genome-interpreter';
 
-interface IEigViewProps {
+interface IGotchiViewProps {
     createFabricInstance: () => Promise<IFabricExports>;
 }
 
-interface IEigViewState {
+interface IGotchiViewState {
     width: number;
     height: number;
     paused: boolean;
@@ -46,7 +46,7 @@ const CAMERA_ALTITUDE = 4.5;
 const HANG_DELAY = 70;
 const REBIRTH_DELAY = 100;
 
-export class EigView extends React.Component<IEigViewProps, IEigViewState> {
+export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private THREE = require('three');
     private OrbitControls = require('three-orbit-controls')(this.THREE);
     private floorMaterial: Material;
@@ -58,7 +58,7 @@ export class EigView extends React.Component<IEigViewProps, IEigViewState> {
     private stayHanging = HANG_DELAY;
     private stayAlive = REBIRTH_DELAY;
 
-    constructor(props: IEigViewProps) {
+    constructor(props: IGotchiViewProps) {
         super(props);
         this.state = {
             width: window.innerWidth,

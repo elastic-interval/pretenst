@@ -1,6 +1,6 @@
 import {Fabric} from './fabric';
 import {IGenomeReader} from './genome';
-import {FaceSnapshot} from './eig/face-snapshot';
+import {FaceSnapshot} from './face-snapshot';
 
 const UNFOLD_JOINT = 2;
 const FACE_AHEAD = 2;
