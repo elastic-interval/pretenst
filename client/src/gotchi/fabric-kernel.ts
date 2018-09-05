@@ -8,6 +8,11 @@ export class FabricKernel {
     private faceNormalsOffset: number;
     private faceLocationsOffset: number;
     private fabricBytes: number;
+    private faceMidpointsArray: Float32Array | undefined;
+    private faceLocationsArray: Float32Array | undefined;
+    private faceNormalsArray: Float32Array | undefined;
+    private lineLocationsArray: Float32Array | undefined;
+    private lineColorsArray: Float32Array | undefined;
 
     constructor(
         public exports: IFabricExports,
@@ -37,24 +42,43 @@ export class FabricKernel {
         this.arrayBuffer = exports.memory.buffer;
     }
 
+    public refresh() {
+        this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = this.lineLocationsArray = this.lineColorsArray = undefined;
+    }
+
     public get faceMidpoints(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceMidpointsOffset, this.exports.faces() * 3);
+        if (!this.faceMidpointsArray) {
+            this.faceMidpointsArray = new Float32Array(this.arrayBuffer, this.faceMidpointsOffset, this.exports.faces() * 3);
+        }
+        return this.faceMidpointsArray;
     }
 
     public get faceLocations(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceLocationsOffset, this.exports.faces() * 3 * 3);
+        if (!this.faceLocationsArray) {
+            this.faceLocationsArray = new Float32Array(this.arrayBuffer, this.faceLocationsOffset, this.exports.faces() * 3 * 3);
+        }
+        return this.faceLocationsArray;
     }
 
     public get faceNormals(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.exports.faces() * 3 * 3);
+        if (!this.faceNormalsArray) {
+            this.faceNormalsArray = new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.exports.faces() * 3 * 3);
+        }
+        return this.faceNormalsArray;
     }
 
     public get lineLocations(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.lineLocationOffset, this.exports.intervals() * 2 * 3);
+        if (!this.lineLocationsArray) {
+            this.lineLocationsArray = new Float32Array(this.arrayBuffer, this.lineLocationOffset, this.exports.intervals() * 2 * 3);
+        }
+        return this.lineLocationsArray;
     }
 
     public get lineColors(): Float32Array {
-        return new Float32Array(this.arrayBuffer, this.lineColorsOffset, this.exports.intervals() * 2 * 3);
+        if (!this.lineColorsArray) {
+            this.lineColorsArray = new Float32Array(this.arrayBuffer, this.lineColorsOffset, this.exports.intervals() * 2 * 3);
+        }
+        return this.lineColorsArray;
     }
 
     public get blockBytes() {

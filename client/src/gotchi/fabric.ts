@@ -128,6 +128,7 @@ export class Fabric {
 
     public removeHanger(): void {
         this.fabricExports.removeHanger();
+        this.kernel.refresh();
     }
 
     public get age(): number {
@@ -242,6 +243,7 @@ export class Fabric {
             }
         });
         faceToReplace.remove();
+        this.kernel.refresh();
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
             .map(index => new FaceSnapshot(this, this.kernel, this.fabricExports, index));
