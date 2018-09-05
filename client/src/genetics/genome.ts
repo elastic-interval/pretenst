@@ -14,11 +14,19 @@ export const sequenceToArray = (sequence: number[]) => {
 };
 
 export class Genome {
+    private embryoSequence: number[] = [];
+    private behaviorSequence: number[] = [];
 
     constructor(
-        private embryoSequence: number[],
-        private behaviorSequence: number[]
+        embryoData?: Uint16Array,
+        behaviorData?: Uint16Array
     ) {
+        if (embryoData) {
+            embryoData.forEach(value => this.embryoSequence.push(value));
+        }
+        if (behaviorData) {
+            behaviorData.forEach(value => this.behaviorSequence.push(value));
+        }
     }
 
     public embryology(fabric: Fabric): Embryology {
@@ -29,7 +37,7 @@ export class Genome {
         return new Behavior(fabric, new GeneSequence(this.behaviorSequence));
     }
 
-    public get embryologyDat(): Uint16Array {
+    public get embryologyData(): Uint16Array {
         return sequenceToArray(this.embryoSequence);
     }
 

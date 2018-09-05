@@ -163,7 +163,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.stayAlive = REBIRTH_DELAY;
         this.props.createFabricInstance().then(fabricExports => {
             const fabric = new Fabric(fabricExports, 60);
-            const genome = (saveGenome && this.state.genome) ? this.state.genome : new Genome([], []);
+            const genome = (saveGenome && this.state.genome) ? this.state.genome : new Genome();
             fabric.createSeed(5, HANGER_ALTITUDE);
             this.setState({
                 fabric,
@@ -240,6 +240,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         this.state.behavior.attachRoleToIntervalPair();
                     }
                     this.stayAlive = LONG_LIFE_DELAY;
+                    break;
+                case 'KeyD':
+                    if (this.state.genome) {
+                        console.log('embryology:', this.state.genome.embryologyData.join(','));
+                        console.log('behavior:', this.state.genome.behaviorData.join(','));
+                    }
                     break;
                 case 'Space':
                     if (this.state.fabric) {
