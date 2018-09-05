@@ -17,6 +17,8 @@ export class Fabric {
     private kernel: FabricKernel;
     private intervalCountMax: number;
     private faceCountMax: number;
+    private facesGeometryStored: BufferGeometry|undefined;
+    private lineSegmentsGeometryStored: BufferGeometry|undefined;
 
     constructor(private fabricExports: IFabricExports, private jointCountMax: number) {
         this.intervalCountMax = jointCountMax * 3 + 30;
@@ -68,6 +70,11 @@ export class Fabric {
         const geometry = new BufferGeometry();
         geometry.addAttribute('position', new Float32BufferAttribute(this.kernel.faceLocations, 3));
         geometry.addAttribute('normal', new Float32BufferAttribute(this.kernel.faceNormals, 3));
+        if (this.facesGeometryStored) {
+            this.facesGeometryStored.dispose();
+            this.facesGeometryStored = undefined;
+        }
+        this.facesGeometryStored = geometry;
         return geometry;
     }
 
@@ -75,6 +82,11 @@ export class Fabric {
         const geometry = new BufferGeometry();
         geometry.addAttribute('position', new Float32BufferAttribute(this.kernel.lineLocations, 3));
         geometry.addAttribute('color', new Float32BufferAttribute(this.kernel.lineColors, 3));
+        if (this.lineSegmentsGeometryStored) {
+            this.lineSegmentsGeometryStored.dispose();
+            this.lineSegmentsGeometryStored = undefined;
+        }
+        this.lineSegmentsGeometryStored = geometry;
         return geometry;
     }
 
