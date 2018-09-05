@@ -14,7 +14,7 @@ import {
     Vector3,
     VertexColors
 } from 'three';
-import {Fabric} from './fabric';
+import {Fabric, ROLES_RESERVED} from './fabric';
 import {IFabricExports} from './fabric-exports';
 import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
@@ -46,7 +46,8 @@ const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
 const HANGER_ALTITUDE = 6;
 const CAMERA_ALTITUDE = 4.5;
 const HANG_DELAY = 70;
-const REBIRTH_DELAY = 100;
+const REBIRTH_DELAY = 1000;
+const LONG_LIFE_DELAY = 10000;
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private THREE = require('three');
@@ -160,7 +161,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.stayHanging = HANG_DELAY;
         this.stayAlive = REBIRTH_DELAY;
         this.props.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, 80);
+            const fabric = new Fabric(fabricExports, 60);
             const genome = (saveGenome && this.state.genome) ? this.state.genome : new Genome([], []);
             fabric.createSeed(5, HANGER_ALTITUDE);
             this.setState({
@@ -179,13 +180,16 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 () => {
                     if (!this.state.paused && this.state.fabric) {
                         const hanging = !!this.state.embryology || !!this.stayHanging;
-                        const maxTimeIndex = this.state.fabric.iterate(100, hanging);
+                        const maxTimeSweep = this.state.fabric.iterate(100, hanging);
                         if (this.state.embryology) {
-                            if (maxTimeIndex === 0) {
+                            if (maxTimeSweep === 0) {
                                 if (this.state.embryology.step()) {
                                     this.setState({fabric: this.state.fabric});
                                 } else {
                                     this.setState({embryology: undefined});
+                                    if (this.state.behavior) {
+                                        this.state.behavior.fillRoles();
+                                    }
                                 }
                             } else {
                                 this.forceUpdate();
@@ -224,6 +228,16 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     if (this.stayAlive && !this.stayHanging && this.state.behavior) {
                         this.state.behavior.attachRoleToIntervalPair();
                     }
+                    this.stayAlive = LONG_LIFE_DELAY;
+                    break;
+                case 'KeyA':
+                    if (this.state.fabric) {
+                        console.log('triggering');
+                        for (let roleIndex = ROLES_RESERVED; roleIndex < this.state.fabric.roleCount; roleIndex++) {
+                            this.state.fabric.triggerRole(roleIndex);
+                        }
+                    }
+                    this.stayAlive = LONG_LIFE_DELAY;
                     break;
             }
         })

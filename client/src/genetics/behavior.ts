@@ -7,10 +7,11 @@ export class Behavior {
     }
 
     public fillRoles(): void {
-        for (let roleIndex = 0; roleIndex < this.fabric.roleCount; roleIndex++) {
+        for (let roleIndex = ROLES_RESERVED; roleIndex < this.fabric.roleCount; roleIndex++) {
             for (let stateIndex = 0; stateIndex < ROLE_STATE_COUNT; stateIndex++) {
                 const time = this.behaviorGene.nextTime();
                 const spanVariation = this.behaviorGene.nextSpanVariation();
+                // console.log(`${roleIndex}/${stateIndex}: [${time}]${spanVariation}`);
                 this.fabric.setRoleState(roleIndex, stateIndex, time, spanVariation);
             }
         }

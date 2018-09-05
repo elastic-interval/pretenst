@@ -1,6 +1,4 @@
-export const MAX_TIME = 3600;
-export const MAX_VARIATION = 1.618;
-export const MIN_VARIATION = 0.618;
+export const MAX_TIME = 65536;
 
 export class GeneSequence {
     private cursor = 0;
@@ -25,7 +23,6 @@ export class GeneSequence {
     }
 
     public nextSpanVariation(): number {
-        const zeroToOne = this.next();
-        return MAX_VARIATION * zeroToOne + MIN_VARIATION * (1.0 - zeroToOne);
+        return (this.next() - 0.5) * 32767;
     }
 }

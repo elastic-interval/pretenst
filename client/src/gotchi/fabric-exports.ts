@@ -18,7 +18,7 @@ export interface IFabricExports {
 
     roles(): number;
 
-    iterate(ticks: number, hanging: boolean): number;
+    iterate(ticks: number, timeSweepStep: number, hanging: boolean): number;
 
     centralize(altitude: number, intensity: number): number;
 

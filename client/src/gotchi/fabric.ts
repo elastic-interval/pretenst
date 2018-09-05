@@ -122,7 +122,8 @@ export class Fabric {
     }
 
     public iterate(ticks: number, hanging: boolean): number {
-        return this.fabricExports.iterate(ticks, hanging);
+        const timeSweepStep = hanging ? 37 : 7;
+        return this.fabricExports.iterate(ticks, timeSweepStep, hanging);
     }
 
     public removeHanger(): void {
@@ -160,10 +161,11 @@ export class Fabric {
         return new FaceSnapshot(this, this.kernel, this.fabricExports, faceIndex);
     }
 
-    public setRoleState(roleIndex: number, stateIndex: number, time: number, spanVariation: number): void {
+    public setRoleState(roleIndex: number, stateIndex: number, time: number, spanVariationFloat: number): void {
         if (roleIndex < ROLES_RESERVED || roleIndex >= this.roleCount) {
-            throw new Error('Bad role index');
+            throw new Error(`Bad role index ${roleIndex}`);
         }
+        const spanVariation = Math.floor(Math.abs(spanVariationFloat));
         this.fabricExports.setRoleState(roleIndex, stateIndex, time, spanVariation);
     }
 
@@ -173,17 +175,21 @@ export class Fabric {
 
     public setIntervalRole(intervalIndex: number, intervalRole: number): void {
         if (intervalIndex < INTERVALS_RESERVED || intervalIndex >= this.intervalCount) {
-            throw new Error('Bad interval index index');
+            throw new Error(`Bad interval index index ${intervalIndex}`);
         }
         const roleIndex = intervalRole < 0 ? -intervalRole : intervalRole;
         if (roleIndex < ROLES_RESERVED || roleIndex >= this.roleCount) {
-            throw new Error('Bad role index');
+            throw new Error(`Bad role index ${roleIndex}`);
         }
         this.fabricExports.setIntervalRole(intervalIndex, intervalRole);
         const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
         if (oppositeIntervalIndex < this.intervalCount) {
             this.fabricExports.setIntervalRole(oppositeIntervalIndex, -intervalRole);
         }
+    }
+
+    public triggerRole(roleIndex: number): void {
+        this.fabricExports.triggerRole(roleIndex);
     }
 
     public toString(): string {
