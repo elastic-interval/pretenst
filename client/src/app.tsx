@@ -18,7 +18,7 @@ class App extends React.Component<IAppProps, any> {
             <div className="App">
                 <GotchiView createFabricInstance={this.props.createFabricInstance}/>
                 {/*<PatchView/>*/}
-                <div>Hit [space] for a fresh genome.</div>
+                <div>[R]=rebirth, [G]=new-genome, [M]=add-muscle, [space]=trigger-muscles</div>
             </div>
         );
     }

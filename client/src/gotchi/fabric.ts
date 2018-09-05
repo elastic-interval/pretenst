@@ -181,10 +181,10 @@ export class Fabric {
         if (roleIndex < ROLES_RESERVED || roleIndex >= this.roleCount) {
             throw new Error(`Bad role index ${roleIndex}`);
         }
-        this.fabricExports.setIntervalRole(intervalIndex, intervalRole);
+        this.fabricExports.setIntervalRole(intervalIndex, intervalRole); // intervalRole could be negative
         const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
         if (oppositeIntervalIndex < this.intervalCount) {
-            this.fabricExports.setIntervalRole(oppositeIntervalIndex, -intervalRole);
+            this.fabricExports.setIntervalRole(oppositeIntervalIndex, Math.abs(intervalRole)); // either same or opposite
         }
     }
 

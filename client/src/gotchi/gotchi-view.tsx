@@ -47,7 +47,7 @@ const HANGER_ALTITUDE = 6;
 const CAMERA_ALTITUDE = 4.5;
 const HANG_DELAY = 70;
 const REBIRTH_DELAY = 1000;
-const LONG_LIFE_DELAY = 10000;
+const LONG_LIFE_DELAY = 3000;
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private THREE = require('three');
@@ -60,6 +60,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private facesMeshNode: any;
     private stayHanging = HANG_DELAY;
     private stayAlive = REBIRTH_DELAY;
+    private timeSweepCount = 0;
 
     constructor(props: IGotchiViewProps) {
         super(props);
@@ -203,6 +204,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             this.forceUpdate();
                         } else if (this.stayAlive) {
                             this.state.fabric.centralize(-1, 0.02);
+                            if (this.timeSweepCount > 0 && maxTimeSweep === 0) {
+                                console.log(`trigger sweep ${this.timeSweepCount}`);
+                                for (let roleIndex = ROLES_RESERVED; roleIndex < this.state.fabric.roleCount; roleIndex++) {
+                                    this.state.fabric.triggerRole(roleIndex);
+                                }
+                                this.timeSweepCount--;
+                            }
                             this.forceUpdate();
                             this.stayAlive--;
                         } else {
@@ -221,8 +229,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private keyboardListener() {
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             switch (event.code) {
-                case 'Space':
+                case 'KeyG':
                     this.createFabricInstance(false);
+                    break;
+                case 'KeyR':
+                    this.createFabricInstance(true);
                     break;
                 case 'KeyM':
                     if (this.stayAlive && !this.stayHanging && this.state.behavior) {
@@ -230,12 +241,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     }
                     this.stayAlive = LONG_LIFE_DELAY;
                     break;
-                case 'KeyA':
+                case 'Space':
                     if (this.state.fabric) {
-                        console.log('triggering');
-                        for (let roleIndex = ROLES_RESERVED; roleIndex < this.state.fabric.roleCount; roleIndex++) {
-                            this.state.fabric.triggerRole(roleIndex);
-                        }
+                        this.timeSweepCount++;
+                        console.log(`add sweep ${this.timeSweepCount}`);
                     }
                     this.stayAlive = LONG_LIFE_DELAY;
                     break;

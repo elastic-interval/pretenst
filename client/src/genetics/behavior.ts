@@ -19,8 +19,11 @@ export class Behavior {
     }
 
     public attachRoleToIntervalPair(): void {
-        const intervalChoice = INTERVALS_RESERVED + this.behaviorGene.nextChoice(this.fabric.intervalCount - INTERVALS_RESERVED);
-        const roleChoice = ROLES_RESERVED + this.behaviorGene.nextChoice(this.fabric.roleCount - ROLES_RESERVED);
+        const maxIntervalChoice = this.fabric.intervalCount - INTERVALS_RESERVED;
+        const intervalChoice = INTERVALS_RESERVED + this.behaviorGene.nextChoice(maxIntervalChoice);
+        const maxRoleChoice = this.fabric.roleCount - ROLES_RESERVED;
+        const roleIndexChoice = this.behaviorGene.nextChoice(maxRoleChoice * 2) - maxRoleChoice;
+        const roleChoice = (roleIndexChoice < 0 ? 1 - ROLES_RESERVED : ROLES_RESERVED) + roleIndexChoice;
         console.log(`I[${intervalChoice}]=${roleChoice}`);
         this.fabric.setIntervalRole(intervalChoice, roleChoice);
     }
