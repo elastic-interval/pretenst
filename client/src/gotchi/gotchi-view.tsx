@@ -16,7 +16,9 @@ import {
 } from 'three';
 import {Fabric} from './fabric';
 import {IFabricExports} from './fabric-exports';
-import {Genome, IGeneExecution} from '../genetics/genome';
+import {Genome} from '../genetics/genome';
+import {Embryology} from '../genetics/embryology';
+import {Behavior} from '../genetics/behavior';
 
 interface IGotchiViewProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -28,8 +30,8 @@ interface IGotchiViewState {
     paused: boolean;
     fabric?: Fabric;
     genome?: Genome;
-    growthExecution?: IGeneExecution;
-    behaviorExecution?: IGeneExecution;
+    embryology?: Embryology;
+    behavior?: Behavior;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -164,8 +166,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             this.setState({
                 fabric,
                 genome,
-                growthExecution: genome.createGrowthExecution(fabric),
-                behaviorExecution: genome.createBehaviorExecution(fabric),
+                embryology: genome.embryology(fabric),
+                behavior: genome.behavior(fabric),
                 paused: false
             });
         });
@@ -176,14 +178,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             setTimeout(
                 () => {
                     if (!this.state.paused && this.state.fabric) {
-                        const hanging = !!this.state.growthExecution || !!this.stayHanging;
+                        const hanging = !!this.state.embryology || !!this.stayHanging;
                         const maxTimeIndex = this.state.fabric.iterate(100, hanging);
-                        if (this.state.growthExecution) {
+                        if (this.state.embryology) {
                             if (maxTimeIndex === 0) {
-                                if (this.state.growthExecution.step()) {
+                                if (this.state.embryology.step()) {
                                     this.setState({fabric: this.state.fabric});
                                 } else {
-                                    this.setState({growthExecution: undefined});
+                                    this.setState({embryology: undefined});
                                 }
                             } else {
                                 this.forceUpdate();
@@ -214,8 +216,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     private keyboardListener() {
         window.addEventListener("keypress", (event: KeyboardEvent) => {
-            if (event.code === 'Space') {
-                this.createFabricInstance(false);
+            switch (event.code) {
+                case 'Space':
+                    this.createFabricInstance(false);
+                    break;
+                case 'KeyM':
+                    if (this.stayAlive && !this.stayHanging && this.state.behavior) {
+                        this.state.behavior.attachRoleToIntervalPair();
+                    }
+                    break;
             }
         })
     }

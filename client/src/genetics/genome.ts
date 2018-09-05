@@ -1,11 +1,7 @@
 import {GeneSequence} from './gene-sequence';
-import {Growth} from './growth';
 import {Behavior} from './behavior';
 import {Fabric} from '../gotchi/fabric';
-
-export interface IGeneExecution {
-    step(): boolean;
-}
+import {Embryology} from './embryology';
 
 export const MAX_UINT16 = 65536.0;
 
@@ -20,21 +16,21 @@ export const sequenceToArray = (sequence: number[]) => {
 export class Genome {
 
     constructor(
-        private growthSequence: number[],
+        private embryoSequence: number[],
         private behaviorSequence: number[]
     ) {
     }
 
-    public createGrowthExecution(fabric: Fabric): IGeneExecution {
-        return new Growth(fabric, new GeneSequence(this.growthSequence));
+    public embryology(fabric: Fabric): Embryology {
+        return new Embryology(fabric, new GeneSequence(this.embryoSequence));
     }
 
-    public createBehaviorExecution(fabric: Fabric): IGeneExecution {
+    public behavior(fabric: Fabric): Behavior {
         return new Behavior(fabric, new GeneSequence(this.behaviorSequence));
     }
 
-    public get growthData(): Uint16Array {
-        return sequenceToArray(this.growthSequence);
+    public get embryologyDat(): Uint16Array {
+        return sequenceToArray(this.embryoSequence);
     }
 
     public get behaviorData(): Uint16Array {

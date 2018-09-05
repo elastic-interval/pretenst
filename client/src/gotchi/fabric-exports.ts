@@ -36,7 +36,7 @@ export interface IFabricExports {
 
     getIntervalRole(intervalIndex: number): number;
 
-    setIntervalRole(intervalIndex: number, role: number): number;
+    setIntervalRole(intervalIndex: number, intervalRole: number): number;
 
     findOppositeIntervalIndex(intervalIndex: number): number;
 
@@ -51,6 +51,8 @@ export interface IFabricExports {
     getFaceAverageIdealSpan(faceIndex: number): number;
 
     setRoleState(roleIndex: number, stateIndex: number, time: number, spanVariation: number): void;
+
+    prepareRoles(): void;
 
     triggerRole(roleIndex: number): void;
 }

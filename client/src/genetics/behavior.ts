@@ -1,16 +1,26 @@
 import {GeneSequence} from './gene-sequence';
-import {IGeneExecution} from './genome';
-import {Fabric} from '../gotchi/fabric';
+import {Fabric, INTERVALS_RESERVED, ROLE_STATE_COUNT, ROLES_RESERVED} from '../gotchi/fabric';
 
-export class Behavior implements IGeneExecution {
+export class Behavior {
 
     constructor(private fabric: Fabric, private behaviorGene: GeneSequence) {
     }
 
-    public step(): boolean {
-        if (this.fabric.intervalCount) {
-            this.behaviorGene.next();
+    public fillRoles(): void {
+        for (let roleIndex = 0; roleIndex < this.fabric.roleCount; roleIndex++) {
+            for (let stateIndex = 0; stateIndex < ROLE_STATE_COUNT; stateIndex++) {
+                const time = this.behaviorGene.nextTime();
+                const spanVariation = this.behaviorGene.nextSpanVariation();
+                this.fabric.setRoleState(roleIndex, stateIndex, time, spanVariation);
+            }
         }
-        return false;
+        this.fabric.prepareRoles();
+    }
+
+    public attachRoleToIntervalPair(): void {
+        const intervalChoice = INTERVALS_RESERVED + this.behaviorGene.nextChoice(this.fabric.intervalCount - INTERVALS_RESERVED);
+        const roleChoice = ROLES_RESERVED + this.behaviorGene.nextChoice(this.fabric.roleCount - ROLES_RESERVED);
+        console.log(`I[${intervalChoice}]=${roleChoice}`);
+        this.fabric.setIntervalRole(intervalChoice, roleChoice);
     }
 }

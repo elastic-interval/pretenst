@@ -6,6 +6,9 @@ import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
 export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
+export const ROLE_STATE_COUNT = 3;
+export const ROLES_RESERVED = 2;
+export const INTERVALS_RESERVED = 1;
 
 export const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
 
@@ -31,6 +34,10 @@ export class Fabric {
 
     public get faceCount() {
         return this.fabricExports.faces();
+    }
+
+    public get roleCount() {
+        return this.fabricExports.roles();
     }
 
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
@@ -151,6 +158,32 @@ export class Fabric {
 
     public getFaceSnapshot(faceIndex: number): FaceSnapshot {
         return new FaceSnapshot(this, this.kernel, this.fabricExports, faceIndex);
+    }
+
+    public setRoleState(roleIndex: number, stateIndex: number, time: number, spanVariation: number): void {
+        if (roleIndex < ROLES_RESERVED || roleIndex >= this.roleCount) {
+            throw new Error('Bad role index');
+        }
+        this.fabricExports.setRoleState(roleIndex, stateIndex, time, spanVariation);
+    }
+
+    public prepareRoles(): void {
+        this.fabricExports.prepareRoles();
+    }
+
+    public setIntervalRole(intervalIndex: number, intervalRole: number): void {
+        if (intervalIndex < INTERVALS_RESERVED || intervalIndex >= this.intervalCount) {
+            throw new Error('Bad interval index index');
+        }
+        const roleIndex = intervalRole < 0 ? -intervalRole : intervalRole;
+        if (roleIndex < ROLES_RESERVED || roleIndex >= this.roleCount) {
+            throw new Error('Bad role index');
+        }
+        this.fabricExports.setIntervalRole(intervalIndex, intervalRole);
+        const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
+        if (oppositeIntervalIndex < this.intervalCount) {
+            this.fabricExports.setIntervalRole(oppositeIntervalIndex, -intervalRole);
+        }
     }
 
     public toString(): string {

@@ -1,12 +1,11 @@
 import {GeneSequence} from './gene-sequence';
-import {IGeneExecution} from './genome';
 import {FaceSnapshot} from '../gotchi/face-snapshot';
 import {Fabric} from '../gotchi/fabric';
 
 const UNFOLD_JOINT = 2;
 const FACE_AHEAD = 2;
 
-export class Growth implements IGeneExecution {
+export class Embryology {
 
     private growingFaces: FaceSnapshot [] = [];
 

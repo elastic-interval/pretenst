@@ -20,12 +20,12 @@ export class GeneSequence {
         return Math.floor(maxChoice * this.next());
     }
 
-    public nextVariation(): number {
-        const zeroToOne = this.next();
-        return MAX_VARIATION * zeroToOne + MIN_VARIATION * (1.0 - zeroToOne);
+    public nextTime(): number {
+        return this.nextChoice(MAX_TIME);
     }
 
-    public nextTimeSpan(): number {
-        return this.nextChoice(MAX_TIME);
+    public nextSpanVariation(): number {
+        const zeroToOne = this.next();
+        return MAX_VARIATION * zeroToOne + MIN_VARIATION * (1.0 - zeroToOne);
     }
 }

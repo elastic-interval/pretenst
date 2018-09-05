@@ -12,7 +12,6 @@ const INDEX_SIZE: usize = sizeof<u16>();
 const SPAN_VARIATION_SIZE: usize = sizeof<i16>();
 const FLOAT_SIZE: usize = sizeof<f32>();
 const AGE_SIZE: usize = sizeof<u32>();
-const VARIATION_COUNT: u8 = 3;
 const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
 const METADATA_SIZE: usize = VECTOR_SIZE * 3;
 
@@ -143,7 +142,7 @@ function getVariation(vPtr: usize): i16 {
 }
 
 @inline()
-function setVariation(vPtr: usize, variation: i16): void {
+function setSpanVariation(vPtr: usize, variation: i16): void {
     store<i16>(vPtr, variation);
 }
 
@@ -667,8 +666,14 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Roles =====================================================================================
 
+// note the first two roles are reserved, and their states not really used.
+
+const ROLE_STATE_COUNT: u8 = 3;
 const ROLE_COUNT: u16 = 64;
-const ROLES_SIZE: usize = INDEX_SIZE + (INDEX_SIZE + SPAN_VARIATION_SIZE) * VARIATION_COUNT;
+const ROLES_RESERVED: u8 = 2;
+const ROLE_STATIC: i16 = 0;
+const ROLE_GROWING: i16 = 1;
+const ROLES_SIZE: usize = INDEX_SIZE + (INDEX_SIZE + SPAN_VARIATION_SIZE) * ROLE_STATE_COUNT;
 const SPAN_VARIATION_MAX: f32 = 0.2;
 
 function rolePtr(roleIndex: u16): usize {
@@ -707,8 +712,8 @@ function getRoleSpanVariation(role: i16, stateIndex: u8): f32 {
     return 1.0 + SPAN_VARIATION_MAX * variationFloat / 65536.0;
 }
 
-function sortVariations(roleIndex: u16): void {
-    let unsorted = VARIATION_COUNT;
+function sortRoleStates(roleIndex: u16): void {
+    let unsorted = ROLE_STATE_COUNT;
     while (true) {
         unsorted--;
         for (let scan: u8 = 0; scan < unsorted; scan++) {
@@ -723,8 +728,8 @@ function sortVariations(roleIndex: u16): void {
                 let spanVariation0 = getVariation(s0);
                 let s1 = roleSpanVariationPtr(roleIndex, scan + 1);
                 let spanVariation1 = getVariation(s1);
-                setVariation(s0, spanVariation1);
-                setVariation(s1, spanVariation0);
+                setSpanVariation(s0, spanVariation1);
+                setSpanVariation(s1, spanVariation0);
             }
         }
         if (unsorted == 0) {
@@ -738,12 +743,12 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
     let timeSweep = getRoleTimeSweep(intervalRoleIndex);
     let intervalRole = getIntervalRole(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
-    if (intervalRole === 0) { // static
+    if (intervalRole === ROLE_STATIC) {
         return idealSpan;
     }
-    if (intervalRole === 1) { // grow role
+    if (intervalRole === ROLE_GROWING) {
         if (timeSweep === 0) { // done growing
-            setIntervalRole(intervalIndex, 0); // back to static
+            setIntervalRole(intervalIndex, ROLE_STATIC); // back to static
             return idealSpan;
         } else { // busy growing
             let originalSpan: f32 = 1;
@@ -760,7 +765,7 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
     let beforeTime: u16 = 0;
     let beforeVariation: f32 = 1;
     let variationNumber: u8 = 0;
-    while (variationNumber < VARIATION_COUNT) {
+    while (variationNumber < ROLE_STATE_COUNT) {
         let roleTime = getRoleTime(intervalRoleIndex, variationNumber);
         if (roleTime < timeSweep) {
             beforeTime = roleTime;
@@ -770,7 +775,7 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
     }
     let afterTime: u16 = 65535;
     let afterVariation: f32 = 1;
-    variationNumber = VARIATION_COUNT;
+    variationNumber = ROLE_STATE_COUNT;
     while (true) {
         let roleTime = getRoleTime(intervalRoleIndex, variationNumber);
         if (roleTime > timeSweep) {
@@ -795,8 +800,13 @@ export function triggerRole(roleIndex: u16): void {
 
 export function setRoleState(roleIndex: u16, stateIndex: u8, time: u16, variation: i16): void {
     setIndex(roleTimePtr(roleIndex, stateIndex), time);
-    setVariation(roleSpanVariationPtr(roleIndex, stateIndex), variation);
-    sortVariations(roleIndex);
+    setSpanVariation(roleSpanVariationPtr(roleIndex, stateIndex), variation);
+}
+
+export function prepareRoles(): void {
+    for (let roleIndex: u16 = 0; roleIndex < ROLE_COUNT; roleIndex++) {
+        sortRoleStates(roleIndex);
+    }
 }
 
 // Physics =====================================================================================
