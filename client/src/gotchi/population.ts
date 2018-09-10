@@ -11,7 +11,7 @@ interface IFitness {
     length: number;
 }
 
-const midpointToFitness = (midpoint: Vector3, index: number):IFitness => {
+const midpointToFitness = (midpoint: Vector3, index: number): IFitness => {
     return {index, length: midpoint.length()};
 };
 
@@ -41,6 +41,14 @@ export class Population {
         // console.log(`fitness ${JSON.stringify(fitness)}`);
         // console.log(`kill ${JSON.stringify(fitness[0])}`);
         this.gotchiArray.splice(fitness[0].index, 1);
+    }
+
+    public iterate(): number[] {
+        const ages = this.gotchiArray.map(gotchi => gotchi.age);
+        const minAge = Math.min(...ages);
+        const maxAge = Math.max(...ages);
+        const alive = (minAge === maxAge) ? this.gotchiArray : this.gotchiArray.filter(gotchi => gotchi.age === minAge);
+        return alive.map(gotchi => gotchi.iterate(60));
     }
 
     public get gotchis(): Gotchi[] {

@@ -176,7 +176,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             setTimeout(
                 () => {
                     if (!this.state.paused) {
-                        const timeSweeps = this.state.population.gotchis.map(gotchi => gotchi.iterate(60));
+                        const timeSweeps = this.state.population.iterate();
                         if (this.timeSweepCount > 0 && Math.max(...timeSweeps) === 0) {
                             console.log(`trigger sweep ${this.timeSweepCount}`);
                             this.state.population.gotchis.forEach(gotchi => gotchi.triggerAllRoles());

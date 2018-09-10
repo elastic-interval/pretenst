@@ -16,6 +16,10 @@ export class Gotchi {
         this.behavior = genome.behavior(fabric);
     }
 
+    public get age() {
+        return this.fabric.age;
+    }
+
     public dispose() {
         this.fabric.dispose();
     }
