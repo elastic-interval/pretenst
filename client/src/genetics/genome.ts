@@ -1,6 +1,6 @@
 import {GeneSequence} from './gene-sequence';
 import {Behavior} from './behavior';
-import {Fabric} from '../gotchi/fabric';
+import {Fabric} from '../body/fabric';
 import {Embryology} from './embryology';
 
 export const MAX_UINT16 = 65536.0;

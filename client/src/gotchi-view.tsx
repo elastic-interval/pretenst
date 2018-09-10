@@ -14,11 +14,10 @@ import {
     Vector3,
     VertexColors
 } from 'three';
-import {Fabric, ROLES_RESERVED} from './fabric';
-import {IFabricExports} from './fabric-exports';
-import {Genome} from '../genetics/genome';
-import {Embryology} from '../genetics/embryology';
-import {Behavior} from '../genetics/behavior';
+import {Fabric, ROLES_RESERVED} from './body/fabric';
+import {IFabricExports} from './body/fabric-exports';
+import {Genome} from './genetics/genome';
+import {Gotchi} from './gotchi/gotchi';
 
 interface IGotchiViewProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -28,10 +27,7 @@ interface IGotchiViewState {
     width: number;
     height: number;
     paused: boolean;
-    fabric?: Fabric;
-    genome?: Genome;
-    embryology?: Embryology;
-    behavior?: Behavior;
+    gotchi?: Gotchi;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -84,7 +80,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public mouseMove(event: any) {
-        if (!this.state.fabric) {
+        if (!this.state.gotchi) {
             return;
         }
         this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
@@ -105,8 +101,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public render() {
-        const facesGeometry = this.state.fabric ? this.state.fabric.facesGeometry : new BufferGeometry();
-        const lineSegmentGeometry = this.state.fabric ? this.state.fabric.lineSegmentsGeometry : new BufferGeometry();
+        const facesGeometry = this.state.gotchi ? this.state.gotchi.fabric.facesGeometry : new BufferGeometry();
+        const lineSegmentGeometry = this.state.gotchi ? this.state.gotchi.fabric.lineSegmentsGeometry : new BufferGeometry();
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
         return (
             <div onMouseMove={(e: any) => this.mouseMove(e)}>
@@ -163,15 +159,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.stayAlive = REBIRTH_DELAY;
         this.props.createFabricInstance().then(fabricExports => {
             const fabric = new Fabric(fabricExports, 60);
-            const genome = (saveGenome && this.state.genome) ? this.state.genome : new Genome();
             fabric.createSeed(5, HANGER_ALTITUDE);
-            this.setState({
-                fabric,
-                genome,
-                embryology: genome.embryology(fabric),
-                behavior: genome.behavior(fabric),
-                paused: false
-            });
+            const gotchi = (saveGenome && this.state.gotchi) ? this.state.gotchi.withNewFabric(fabric) : new Gotchi(fabric, new Genome());
+            this.setState({gotchi, paused: false});
         });
     }
 
@@ -179,18 +169,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const step = () => {
             setTimeout(
                 () => {
-                    if (!this.state.paused && this.state.fabric) {
-                        const hanging = !!this.state.embryology || !!this.stayHanging;
-                        const maxTimeSweep = this.state.fabric.iterate(100, hanging);
-                        if (this.state.embryology) {
+                    if (!this.state.paused && this.state.gotchi) {
+                        const hanging = this.state.gotchi.growing || !!this.stayHanging;
+                        const maxTimeSweep = this.state.gotchi.fabric.iterate(100, hanging);
+                        if (this.state.gotchi.growing) {
                             if (maxTimeSweep === 0) {
-                                if (this.state.embryology.step()) {
-                                    this.setState({fabric: this.state.fabric});
+                                if (this.state.gotchi.embryoStep()) {
+                                    this.setState({gotchi: this.state.gotchi});
                                 } else {
-                                    this.setState({embryology: undefined});
-                                    if (this.state.behavior) {
-                                        this.state.behavior.fillRoles();
-                                    }
+                                    this.forceUpdate();
                                 }
                             } else {
                                 this.forceUpdate();
@@ -199,15 +186,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         else if (this.stayHanging) {
                             this.stayHanging--;
                             if (!this.stayHanging) {
-                                this.state.fabric.removeHanger();
+                                this.state.gotchi.fabric.removeHanger();
                             }
                             this.forceUpdate();
                         } else if (this.stayAlive) {
-                            this.state.fabric.centralize(-1, 0.02);
+                            this.state.gotchi.fabric.centralize(-1, 0.02);
                             if (this.timeSweepCount > 0 && maxTimeSweep === 0) {
                                 console.log(`trigger sweep ${this.timeSweepCount}`);
-                                for (let roleIndex = ROLES_RESERVED; roleIndex < this.state.fabric.roleCount; roleIndex++) {
-                                    this.state.fabric.triggerRole(roleIndex);
+                                for (let roleIndex = ROLES_RESERVED; roleIndex < this.state.gotchi.fabric.roleCount; roleIndex++) {
+                                    this.state.gotchi.fabric.triggerRole(roleIndex);
                                 }
                                 this.timeSweepCount--;
                             }
@@ -236,19 +223,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     this.createFabricInstance(true);
                     break;
                 case 'KeyM':
-                    if (this.stayAlive && !this.stayHanging && this.state.behavior) {
-                        this.state.behavior.attachRoleToIntervalPair();
+                    if (this.stayAlive && !this.stayHanging && this.state.gotchi) {
+                        this.state.gotchi.attachRoleToIntervalPair();
                     }
                     this.stayAlive = LONG_LIFE_DELAY;
                     break;
-                case 'KeyD':
-                    if (this.state.genome) {
-                        console.log('embryology:', this.state.genome.embryologyData.join(','));
-                        console.log('behavior:', this.state.genome.behaviorData.join(','));
-                    }
-                    break;
                 case 'Space':
-                    if (this.state.fabric) {
+                    if (this.state.gotchi) {
                         this.timeSweepCount++;
                         console.log(`add sweep ${this.timeSweepCount}`);
                     }

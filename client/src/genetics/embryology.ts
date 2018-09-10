@@ -1,6 +1,6 @@
 import {GeneSequence} from './gene-sequence';
-import {FaceSnapshot} from '../gotchi/face-snapshot';
-import {Fabric} from '../gotchi/fabric';
+import {FaceSnapshot} from '../body/face-snapshot';
+import {Fabric} from '../body/fabric';
 
 const UNFOLD_JOINT = 2;
 const FACE_AHEAD = 2;

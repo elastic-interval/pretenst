@@ -1,9 +1,9 @@
-import {CellHexagon} from './cell-hexagon';
-import {Cell} from './cell';
-import {HEXAGON_POINTS, IGotchPattern} from './constants';
+import {CellHexagon} from './island/cell-hexagon';
+import {Cell} from './island/cell';
+import {HEXAGON_POINTS, IGotchPattern} from './island/constants';
 import * as React from 'react';
-import {Gotch} from './gotch';
-import {Island} from './island';
+import {Gotch} from './island/gotch';
+import {Island} from './island/island';
 
 interface IslandViewState {
     selectedGotch?: Gotch;

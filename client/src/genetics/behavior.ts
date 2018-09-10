@@ -1,5 +1,5 @@
 import {GeneSequence} from './gene-sequence';
-import {Fabric, INTERVALS_RESERVED, ROLE_STATE_COUNT, ROLES_RESERVED} from '../gotchi/fabric';
+import {Fabric, INTERVALS_RESERVED, ROLE_STATE_COUNT, ROLES_RESERVED} from '../body/fabric';
 
 export class Behavior {
 
