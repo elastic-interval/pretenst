@@ -190,6 +190,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private keyboardListener() {
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             switch (event.code) {
+                case 'KeyR':
+                    this.state.population.reboot();
+                    break;
                 case 'KeyF':
                     this.state.population.birth();
                     break;

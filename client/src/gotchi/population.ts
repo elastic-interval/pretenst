@@ -27,13 +27,11 @@ export class Population {
         if (this.gotchiArray.length + 1 > MAX_POPULATION) {
             this.death();
         }
-        this.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, 60);
-            fabric.createSeed(5, HANGER_ALTITUDE);
+        this.createBody().then(fabric => {
             if (fromMember === undefined) {
                 console.log('Fresh gotchi genes');
                 this.gotchiArray.push(new Gotchi(fabric, new Genome()));
-            }else {
+            } else {
                 console.log(`mutated ${fromMember} of ${this.gotchiArray.length}`);
                 const gotchi = this.gotchiArray[fromMember]
                     .withNewFabric(fabric)
@@ -57,11 +55,19 @@ export class Population {
         this.gotchiArray.splice(fitness[0].index, 1);
     }
 
+    public reboot() {
+        this.gotchiArray.forEach((gotchi: Gotchi, index: number) => {
+            this.createBody().then(fabric => {
+                this.gotchiArray[index] = gotchi.withNewFabric(fabric);
+            });
+        });
+    }
+
     public iterate(): number[] {
         const ages = this.gotchiArray.map(gotchi => gotchi.age);
         const minAge = Math.min(...ages);
         const maxAge = Math.max(...ages);
-        const midAge = (minAge + maxAge)/2;
+        const midAge = (minAge + maxAge) / 2;
         const alive = (minAge === maxAge) ? this.gotchiArray : this.gotchiArray.filter(gotchi => gotchi.age < midAge);
         const ticks = (alive.length === this.gotchiArray.length) ? 60 : 120;
         // todo: this still sucks!
@@ -70,5 +76,13 @@ export class Population {
 
     public get gotchis(): Gotchi[] {
         return this.gotchiArray;
+    }
+
+    private createBody(): Promise<Fabric> {
+        return this.createFabricInstance().then(fabricExports => {
+            const fabric = new Fabric(fabricExports, 60);
+            fabric.createSeed(5, HANGER_ALTITUDE);
+            return fabric;
+        });
     }
 }

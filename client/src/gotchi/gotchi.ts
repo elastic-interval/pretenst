@@ -56,8 +56,10 @@ export class Gotchi {
 
     public iterate(ticks: number): number {
         const maxTimeSweep = this.fabric.iterate(ticks, this.hangingCountdown > 0);
-        if (!this.mature) {
-            if (maxTimeSweep === 0) {
+        if (maxTimeSweep === 0) {
+            if (this.mature) {
+                this.triggerAllRoles();
+            } else {
                 if (this.embryology) {
                     const successful = this.embryology.step();
                     if (!successful) {
@@ -71,15 +73,10 @@ export class Gotchi {
                 } else if (this.restCountdown > 0) {
                     this.restCountdown -= ticks;
                 } else {
-                    console.log('behavior');
                     this.behavior.apply();
                     this.triggerAllRoles();
                     this.mature = true;
                 }
-            }
-        } else {
-            if (maxTimeSweep === 0) {
-                this.triggerAllRoles();
             }
         }
         return maxTimeSweep;
