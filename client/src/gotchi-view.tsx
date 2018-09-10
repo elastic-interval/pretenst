@@ -23,6 +23,7 @@ interface IGotchiViewProps {
 interface IGotchiViewState {
     width: number;
     height: number;
+    xray: boolean;
     paused: boolean;
     population: Population;
 }
@@ -37,6 +38,8 @@ const FACE_MATERIAL = new MeshPhongMaterial({
 const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
 const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
 const CAMERA_ALTITUDE = 4.5;
+const TARGET_FRAME_RATE = 20;
+const FLOOR_QUATERNION = new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2);
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private THREE = require('three');
@@ -49,12 +52,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private timeSweepCount = 0;
     private frameTime = Date.now();
     private frameCount = 0;
+    private frameDelay = 20;
 
     constructor(props: IGotchiViewProps) {
         super(props);
         this.state = {
             width: window.innerWidth,
             height: window.innerHeight - 30,
+            xray: false,
             paused: false,
             population: new Population(props.createFabricInstance)
         };
@@ -91,12 +96,17 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     public render() {
         this.frameCount++;
-        if (this.frameCount === 100) {
+        if (this.frameCount === 30) {
             const frameTime = Date.now();
-            const millisPerFrame = (frameTime - this.frameTime) / this.frameCount;
-            console.log(`FPS: ${1000 / millisPerFrame}`);
+            const framesPerSecond = 1000 / ((frameTime - this.frameTime) / this.frameCount);
             this.frameTime = frameTime;
             this.frameCount = 0;
+            if (framesPerSecond > TARGET_FRAME_RATE) {
+                this.frameDelay++;
+            } else if (framesPerSecond < TARGET_FRAME_RATE) {
+                this.frameDelay /= 2;
+            }
+            console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
         return (
@@ -104,38 +114,42 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         {
-                            this.state.population.gotchis.map((gotchi: Gotchi, index: number) => {
-                                return <R3.Mesh
-                                    ref={(node: any) => this.facesMeshNode = node}
-                                    key={`Faces${index}`} name="Fabric"
-                                    geometry={gotchi.facesGeometry}
-                                    material={FACE_MATERIAL}
-                                />
-                            })
+                            this.state.xray ?
+                                this.state.population.gotchis.map((gotchi: Gotchi, index: number) => {
+                                    return <R3.LineSegments
+                                        key={`Lines${index}`}
+                                        geometry={gotchi.lineSegmentsGeometry}
+                                        material={SPRING_MATERIAL}
+                                    />
+                                })
+                                :
+                                this.state.population.gotchis.map((gotchi: Gotchi, index: number) => {
+                                    return <R3.Mesh
+                                        ref={(node: any) => this.facesMeshNode = node}
+                                        key={`Faces${index}`} name="Fabric"
+                                        geometry={gotchi.facesGeometry}
+                                        material={FACE_MATERIAL}
+                                    />
+                                })
                         }
-                        {
-                            this.state.population.gotchis.map((gotchi: Gotchi, index: number) => {
-                                return <R3.LineSegments
-                                    key={`Lines${index}`}
-                                    geometry={gotchi.lineSegmentsGeometry}
-                                    material={SPRING_MATERIAL}
-                                />
-                            })
+                        {this.state.xray ? null :
+                            <R3.Mesh
+                                key="Floor"
+                                geometry={new PlaneGeometry(1, 1)}
+                                scale={new Vector3(1000, 1000, 1000)}
+                                material={this.floorMaterial}
+                                quaternion={FLOOR_QUATERNION}
+                            />
                         }
-                        <R3.Mesh
-                            key="Floor"
-                            geometry={new PlaneGeometry(1, 1)}
-                            scale={new Vector3(1000, 1000, 1000)}
-                            material={this.floorMaterial}
-                            quaternion={new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2)}
-                        />
-                        <R3.PointLight
-                            name="Light"
-                            key="Light"
-                            distance="60"
-                            decay="2"
-                            position={lightPosition}
-                        />
+                        {this.state.xray ? null :
+                            <R3.PointLight
+                                name="Light"
+                                key="Light"
+                                distance="60"
+                                decay="2"
+                                position={lightPosition}
+                            />
+                        }
                         <R3.HemisphereLight name="Hemi" color={new Color(0.4, 0.4, 0.4)}/>
                     </R3.Scene>
                 </R3.Renderer>
@@ -162,7 +176,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             setTimeout(
                 () => {
                     if (!this.state.paused) {
-                        const timeSweeps = this.state.population.gotchis.map(gotchi => gotchi.iterate(30));
+                        const timeSweeps = this.state.population.gotchis.map(gotchi => gotchi.iterate(60));
                         if (this.timeSweepCount > 0 && Math.max(...timeSweeps) === 0) {
                             console.log(`trigger sweep ${this.timeSweepCount}`);
                             this.state.population.gotchis.forEach(gotchi => gotchi.triggerAllRoles());
@@ -173,7 +187,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     this.orbitControls.update();
                     requestAnimationFrame(step);
                 },
-                30
+                this.frameDelay
             );
         };
         requestAnimationFrame(step);
@@ -190,6 +204,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 //     break;
                 case 'KeyM':
                     this.state.population.gotchis.forEach(gotchi => gotchi.attachRoleToIntervalPair());
+                    break;
+                case 'KeyX':
+                    this.setState({xray: !this.state.xray});
                     break;
                 case 'Space':
                     this.timeSweepCount++;

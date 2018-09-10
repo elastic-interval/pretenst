@@ -935,10 +935,10 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
 }
 
 const AIR_DRAG: f32 = 0.0002;
-const AIR_GRAVITY: f32 = 0.000002;
+const AIR_GRAVITY: f32 = 0.000007;
 const LAND_DRAG: f32 = 200;
-const LAND_GRAVITY: f32 = 30;
-const ELASTIC_FACTOR: f32 = 0.4;
+const LAND_GRAVITY: f32 = 10;
+const ELASTIC_FACTOR: f32 = 0.5;
 const STRESS_MAX: f32 = 0.001;
 
 export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16 {
@@ -958,9 +958,9 @@ export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16
                 stress = -1;
             }
         }
-        let red: f32 = 0.6 + -stress * 0.4;
-        let green: f32 = 0;
-        let blue: f32 = 0.6 + stress * 0.4;
+        let red: f32 = 0.8 + -stress * 0.2;
+        let green: f32 = 0.5;
+        let blue: f32 = 0.8 + stress * 0.2;
         setAll(outputAlphaColorPtr(intervalIndex), red, green, blue);
         setAll(outputOmegaColorPtr(intervalIndex), red, green, blue);
     }
