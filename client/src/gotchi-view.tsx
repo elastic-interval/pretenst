@@ -49,7 +49,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private mouse = new Vector2();
     private orbitControls: any;
     private facesMeshNode: any;
-    private timeSweepCount = 0;
     private frameTime = Date.now();
     private frameCount = 0;
     private frameDelay = 20;
@@ -176,12 +175,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             setTimeout(
                 () => {
                     if (!this.state.paused) {
-                        const timeSweeps = this.state.population.iterate();
-                        if (this.timeSweepCount > 0 && Math.max(...timeSweeps) === 0) {
-                            console.log(`trigger sweep ${this.timeSweepCount}`);
-                            this.state.population.gotchis.forEach(gotchi => gotchi.triggerAllRoles());
-                            this.timeSweepCount--;
-                        }
+                        this.state.population.iterate();
                         this.forceUpdate();
                     }
                     this.orbitControls.update();
@@ -196,24 +190,21 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private keyboardListener() {
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             switch (event.code) {
-                case 'KeyB':
+                case 'KeyF':
                     this.state.population.birth();
+                    break;
+                case 'KeyB':
+                    if (this.state.population.gotchis.length === 0) {
+                        this.state.population.birth();
+                    } else {
+                        this.state.population.birth(Math.floor(this.state.population.gotchis.length * Math.random()));
+                    }
                     break;
                 case 'KeyD':
                     this.state.population.death();
                     break;
-                // case 'KeyR':
-                //     this.createFabricInstance(true);
-                //     break;
-                case 'KeyM':
-                    this.state.population.gotchis.forEach(gotchi => gotchi.attachRoleToIntervalPair());
-                    break;
                 case 'KeyX':
                     this.setState({xray: !this.state.xray});
-                    break;
-                case 'Space':
-                    this.timeSweepCount++;
-                    console.log(`add sweep ${this.timeSweepCount}`);
                     break;
             }
         })

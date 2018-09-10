@@ -6,7 +6,7 @@ export class Behavior {
     constructor(private fabric: Fabric, private behaviorGene: GeneSequence) {
     }
 
-    public fillRoles(): void {
+    public apply(): void {
         for (let roleIndex = ROLES_RESERVED; roleIndex < this.fabric.roleCount; roleIndex++) {
             for (let stateIndex = 0; stateIndex < ROLE_STATE_COUNT; stateIndex++) {
                 const time = this.behaviorGene.nextTime();
@@ -16,15 +16,14 @@ export class Behavior {
             }
         }
         this.fabric.prepareRoles();
-    }
-
-    public attachRoleToIntervalPair(): void {
-        const maxIntervalChoice = this.fabric.intervalCount - INTERVALS_RESERVED;
-        const intervalChoice = INTERVALS_RESERVED + this.behaviorGene.nextChoice(maxIntervalChoice);
-        const maxRoleChoice = this.fabric.roleCount - ROLES_RESERVED;
-        const roleIndexChoice = this.behaviorGene.nextChoice(maxRoleChoice * 2) - maxRoleChoice;
-        const roleChoice = (roleIndexChoice < 0 ? 1 - ROLES_RESERVED : ROLES_RESERVED) + roleIndexChoice;
-        console.log(`I[${intervalChoice}]=${roleChoice}`);
-        this.fabric.setIntervalRole(intervalChoice, roleChoice);
+        for (let interval = 0; interval < this.fabric.intervalCount / 4; interval++) {
+            const maxIntervalChoice = this.fabric.intervalCount - INTERVALS_RESERVED;
+            const intervalChoice = INTERVALS_RESERVED + this.behaviorGene.nextChoice(maxIntervalChoice);
+            const maxRoleChoice = this.fabric.roleCount - ROLES_RESERVED;
+            const roleIndexChoice = this.behaviorGene.nextChoice(maxRoleChoice * 2) - maxRoleChoice;
+            const roleChoice = (roleIndexChoice < 0 ? 1 - ROLES_RESERVED : ROLES_RESERVED) + roleIndexChoice;
+            console.log(`I[${intervalChoice}]=${roleChoice}`);
+            this.fabric.setIntervalRole(intervalChoice, roleChoice);
+        }
     }
 }

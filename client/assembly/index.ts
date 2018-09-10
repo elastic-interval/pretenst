@@ -936,10 +936,10 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
     }
 }
 
-const AIR_DRAG: f32 = 0.0002;
-const AIR_GRAVITY: f32 = 0.000007;
+const AIR_DRAG: f32 = 0.0003;
+const AIR_GRAVITY: f32 = 0.000003;
 const LAND_DRAG: f32 = 200;
-const LAND_GRAVITY: f32 = 10;
+const LAND_GRAVITY: f32 = 30;
 const ELASTIC_FACTOR: f32 = 0.5;
 const STRESS_MAX: f32 = 0.001;
 

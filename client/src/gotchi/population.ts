@@ -15,17 +15,31 @@ const midpointToFitness = (midpoint: Vector3, index: number): IFitness => {
     return {index, length: midpoint.length()};
 };
 
+const MAX_POPULATION = 10;
+
 export class Population {
     private gotchiArray: Gotchi[] = [];
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
     }
 
-    public birth() {
+    public birth(fromMember?: number) {
+        if (this.gotchiArray.length + 1 > MAX_POPULATION) {
+            this.death();
+        }
         this.createFabricInstance().then(fabricExports => {
             const fabric = new Fabric(fabricExports, 60);
             fabric.createSeed(5, HANGER_ALTITUDE);
-            this.gotchiArray.push(new Gotchi(fabric, new Genome()));
+            if (fromMember === undefined) {
+                console.log('Fresh gotchi genes');
+                this.gotchiArray.push(new Gotchi(fabric, new Genome()));
+            }else {
+                console.log(`mutated ${fromMember} of ${this.gotchiArray.length}`);
+                const gotchi = this.gotchiArray[fromMember]
+                    .withNewFabric(fabric)
+                    .mutateBehavior(10);
+                this.gotchiArray.push(gotchi);
+            }
         });
     }
 
@@ -47,8 +61,11 @@ export class Population {
         const ages = this.gotchiArray.map(gotchi => gotchi.age);
         const minAge = Math.min(...ages);
         const maxAge = Math.max(...ages);
-        const alive = (minAge === maxAge) ? this.gotchiArray : this.gotchiArray.filter(gotchi => gotchi.age === minAge);
-        return alive.map(gotchi => gotchi.iterate(60));
+        const midAge = (minAge + maxAge)/2;
+        const alive = (minAge === maxAge) ? this.gotchiArray : this.gotchiArray.filter(gotchi => gotchi.age < midAge);
+        const ticks = (alive.length === this.gotchiArray.length) ? 60 : 120;
+        // todo: this still sucks!
+        return alive.map(gotchi => gotchi.iterate(ticks));
     }
 
     public get gotchis(): Gotchi[] {
