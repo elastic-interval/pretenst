@@ -13,7 +13,6 @@ const SPAN_VARIATION_SIZE: usize = sizeof<i16>();
 const FLOAT_SIZE: usize = sizeof<f32>();
 const AGE_SIZE: usize = sizeof<u32>();
 const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
-const METADATA_SIZE: usize = VECTOR_SIZE * 3;
 
 const JOINT_RADIUS: f32 = 0.15;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
@@ -47,6 +46,7 @@ let projectionPtr: usize = 0;
 let alphaProjectionPtr: usize = 0;
 let omegaProjectionPtr: usize = 0;
 let gravPtr: usize = 0;
+let midpointPtr: usize = 0;
 let agePtr: usize = 0;
 
 export function init(joints: u16, intervals: u16, faces: u16): usize {
@@ -64,28 +64,30 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     // offsets
     let bytes = (
         agePtr = (
-            gravPtr = (
-                omegaProjectionPtr = (
-                    alphaProjectionPtr = (
-                        projectionPtr = (
-                            rolesOffset = (
-                                faceOffset = (
-                                    intervalOffset = (
-                                        jointOffset = (
-                                            faceLocationOffset = (
-                                                faceNormalOffset = (
-                                                    faceMidpointOffset = (
-                                                        lineColorOffset = (
-                                                            lineLocationOffset
-                                                        ) + intervalLinesSize
-                                                    ) + intervalColorsSize
-                                                ) + faceVectorsSize
+            midpointPtr = (
+                gravPtr = (
+                    omegaProjectionPtr = (
+                        alphaProjectionPtr = (
+                            projectionPtr = (
+                                rolesOffset = (
+                                    faceOffset = (
+                                        intervalOffset = (
+                                            jointOffset = (
+                                                faceLocationOffset = (
+                                                    faceNormalOffset = (
+                                                        faceMidpointOffset = (
+                                                            lineColorOffset = (
+                                                                lineLocationOffset
+                                                            ) + intervalLinesSize
+                                                        ) + intervalColorsSize
+                                                    ) + faceVectorsSize
+                                                ) + faceJointVectorsSize
                                             ) + faceJointVectorsSize
-                                        ) + faceJointVectorsSize
-                                    ) + jointsSize
-                                ) + intervalsSize
-                            ) + facesSize
-                        ) + rolesSize
+                                        ) + jointsSize
+                                    ) + intervalsSize
+                                ) + facesSize
+                            ) + rolesSize
+                        ) + VECTOR_SIZE
                     ) + VECTOR_SIZE
                 ) + VECTOR_SIZE
             ) + VECTOR_SIZE
@@ -974,6 +976,15 @@ export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16
             maxTimeSweep = timeSweep;
         }
     }
+    zero(midpointPtr);
+    let averageCount: f32 = 0;
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        if (getJointLaterality(jointIndex) === BILATERAL_MIDDLE) {
+            averageCount += 1.0;
+            add(midpointPtr, locationPtr(jointIndex));
+        }
+    }
+    multiplyScalar(midpointPtr, 1/averageCount);
     return maxTimeSweep;
 }
 

@@ -1,7 +1,7 @@
 import {Vector3} from 'three';
-import {BILATERAL_MIDDLE, Fabric, vectorFromIndex} from './fabric';
+import {BILATERAL_MIDDLE, Fabric} from './fabric';
 import {IFabricExports} from './fabric-exports';
-import {FabricKernel} from './fabric-kernel';
+import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';
 
 export interface IJointSnapshot {
     jointNumber: number;
@@ -27,7 +27,7 @@ export class FaceSnapshot {
             .map(jointNumber => {
                 const jointIndex = fabricExports.getFaceJointIndex(faceIndex, jointNumber);
                 const tag = fabricExports.getJointTag(jointIndex);
-                const location = vectorFromIndex(this.kernel.faceLocations, (faceIndex * 3 + jointNumber) * 3);
+                const location = vectorFromFloatArray(this.kernel.faceLocations, (faceIndex * 3 + jointNumber) * 3);
                 return {jointNumber, jointIndex, tag, location} as IJointSnapshot;
             });
     }
@@ -71,12 +71,12 @@ export class FaceSnapshot {
     }
 
     public get midpoint(): Vector3 {
-        return vectorFromIndex(this.kernel.faceMidpoints, this.faceIndex * 3);
+        return vectorFromFloatArray(this.kernel.faceMidpoints, this.faceIndex * 3);
     }
 
     public get normal(): Vector3 {
         return TRIANGLE
-            .map(jointNumber => vectorFromIndex(
+            .map(jointNumber => vectorFromFloatArray(
                 this.kernel.faceNormals,
                 (this.faceIndex * 3 + jointNumber) * 3
             ))

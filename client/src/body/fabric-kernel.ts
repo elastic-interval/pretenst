@@ -1,12 +1,16 @@
 import {IFabricExports} from './fabric-exports';
+import {Vector3} from 'three';
+
+export const vectorFromFloatArray = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
 
 export class FabricKernel {
     private arrayBuffer: ArrayBuffer;
     private lineLocationOffset: number;
     private lineColorsOffset: number;
     private faceMidpointsOffset: number;
-    private faceNormalsOffset: number;
+    private midpointOffset: number;
     private faceLocationsOffset: number;
+    private faceNormalsOffset: number;
     private fabricBytes: number;
     private faceMidpointsArray: Float32Array | undefined;
     private faceLocationsArray: Float32Array | undefined;
@@ -29,14 +33,16 @@ export class FabricKernel {
         const faceVectorFloats = this.faceCountMax * floatsInVector;
         const faceJointFloats = faceVectorFloats * vectorsForFace;
         // offsets
-        this.faceLocationsOffset = (
-            this.faceNormalsOffset = (
-                this.faceMidpointsOffset = (
-                    this.lineColorsOffset = (
-                        this.lineLocationOffset = 0
-                    ) + lineLocationFloats * Float32Array.BYTES_PER_ELEMENT
-                ) + lineColorFloats * Float32Array.BYTES_PER_ELEMENT
-            ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
+        this.midpointOffset = (
+            this.faceLocationsOffset = (
+                this.faceNormalsOffset = (
+                    this.faceMidpointsOffset = (
+                        this.lineColorsOffset = (
+                            this.lineLocationOffset = 0
+                        ) + lineLocationFloats * Float32Array.BYTES_PER_ELEMENT
+                    ) + lineColorFloats * Float32Array.BYTES_PER_ELEMENT
+                ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
+            ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
         this.fabricBytes = exports.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
         this.arrayBuffer = exports.memory.buffer;
@@ -44,6 +50,11 @@ export class FabricKernel {
 
     public refresh() {
         this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = this.lineLocationsArray = this.lineColorsArray = undefined;
+    }
+
+    public get midpoint(): Vector3 {
+        const midpointArray = new Float32Array(this.arrayBuffer, this.midpointOffset, 1);
+        return vectorFromFloatArray(midpointArray, 0);
     }
 
     public get faceMidpoints(): Float32Array {

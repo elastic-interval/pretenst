@@ -1,5 +1,5 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
-import {FabricKernel} from './fabric-kernel';
+import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';
 import {IFabricExports} from './fabric-exports';
 import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
 
@@ -9,8 +9,6 @@ export const BILATERAL_LEFT = 2;
 export const ROLE_STATE_COUNT = 3;
 export const ROLES_RESERVED = 2;
 export const INTERVALS_RESERVED = 1;
-
-export const vectorFromIndex = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
 
 export class Fabric {
     private hangerLocation = new Vector3(0, 3, 0);
@@ -24,6 +22,21 @@ export class Fabric {
         this.intervalCountMax = jointCountMax * 3 + 30;
         this.faceCountMax = jointCountMax * 2 + 20;
         this.kernel = new FabricKernel(fabricExports, this.jointCountMax, this.intervalCountMax, this.faceCountMax);
+    }
+
+    public dispose(): void {
+        if (this.facesGeometryStored) {
+            this.facesGeometryStored.dispose();
+            this.facesGeometryStored = undefined;
+        }
+        if (this.lineSegmentsGeometryStored) {
+            this.lineSegmentsGeometryStored.dispose();
+            this.lineSegmentsGeometryStored = undefined;
+        }
+    }
+
+    public get midpoint(): Vector3 {
+        return this.kernel.midpoint;
     }
 
     public get jointCount() {
@@ -51,9 +64,9 @@ export class Fabric {
             const faceOffset = face.index * 3;
             const faceLocations = this.kernel.faceLocations;
             geometry.vertices = [
-                vectorFromIndex(faceLocations, faceOffset * 3), apex,
-                vectorFromIndex(faceLocations, (faceOffset + 1) * 3), apex,
-                vectorFromIndex(faceLocations, (faceOffset + 2) * 3), apex
+                vectorFromFloatArray(faceLocations, faceOffset * 3), apex,
+                vectorFromFloatArray(faceLocations, (faceOffset + 1) * 3), apex,
+                vectorFromFloatArray(faceLocations, (faceOffset + 2) * 3), apex
             ];
             return geometry;
         };

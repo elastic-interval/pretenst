@@ -2,7 +2,7 @@ import {Fabric, ROLES_RESERVED} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
 import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
-import {BufferGeometry} from 'three';
+import {BufferGeometry, Vector3} from 'three';
 
 const HANG_DELAY = 7000;
 
@@ -16,8 +16,16 @@ export class Gotchi {
         this.behavior = genome.behavior(fabric);
     }
 
+    public dispose() {
+        this.fabric.dispose();
+    }
+
     public withNewFabric(fabric: Fabric): Gotchi {
         return new Gotchi(fabric, this.genome);
+    }
+
+    public get midpoint(): Vector3 {
+        return this.fabric.midpoint;
     }
 
     public get facesGeometry(): BufferGeometry {
