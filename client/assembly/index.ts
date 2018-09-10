@@ -938,7 +938,7 @@ const AIR_DRAG: f32 = 0.0002;
 const AIR_GRAVITY: f32 = 0.000002;
 const LAND_DRAG: f32 = 200;
 const LAND_GRAVITY: f32 = 30;
-const ELASTIC_FACTOR: f32 = 0.2;
+const ELASTIC_FACTOR: f32 = 0.4;
 const STRESS_MAX: f32 = 0.001;
 
 export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16 {

@@ -4,21 +4,20 @@ import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 import {BufferGeometry} from 'three';
 
+const HANG_DELAY = 7000;
+
 export class Gotchi {
     private embryology?: Embryology;
     private behavior: Behavior;
+    private hangingCountdown = HANG_DELAY;
 
     constructor(private fabric: Fabric, private genome: Genome) {
         this.embryology = genome.embryology(fabric);
         this.behavior = genome.behavior(fabric);
     }
 
-    public iterate(ticks: number, hanging: boolean): number {
-        return this.fabric.iterate(ticks, hanging);
-    }
-
-    public centralize(altitude: number, intensity: number): number {
-        return this.fabric.centralize(altitude, intensity);
+    public withNewFabric(fabric: Fabric): Gotchi {
+        return new Gotchi(fabric, this.genome);
     }
 
     public get facesGeometry(): BufferGeometry {
@@ -29,29 +28,32 @@ export class Gotchi {
         return this.fabric.lineSegmentsGeometry;
     }
 
-    public withNewFabric(fabric: Fabric): Gotchi {
-        return new Gotchi(fabric, this.genome);
+    public iterate(ticks: number): number {
+        if (!this.embryology && this.hangingCountdown > 0) {
+            this.hangingCountdown -= ticks;
+            if (this.hangingCountdown <= 0) {
+                this.fabric.removeHanger();
+            }
+        }
+        const maxTimeSweep = this.fabric.iterate(ticks, this.hangingCountdown > 0);
+        if (maxTimeSweep === 0) {
+            if (this.embryology) {
+                const successful = this.embryology.step();
+                if (!successful) {
+                    this.embryology = undefined;
+                    this.behavior.fillRoles();
+                }
+            }
+        }
+        return maxTimeSweep;
+    }
+
+    public centralize(altitude: number, intensity: number): number {
+        return this.fabric.centralize(altitude, intensity);
     }
 
     public get growing(): boolean {
         return !!this.embryology;
-    }
-
-    public embryoStep(): boolean {
-        if (this.embryology) {
-            const successful = this.embryology.step();
-            if (!successful) {
-                this.embryology = undefined;
-                this.behavior.fillRoles();
-            }
-            return successful;
-        } else {
-            return false;
-        }
-    }
-
-    public removeHanger() {
-        this.fabric.removeHanger();
     }
 
     public attachRoleToIntervalPair() {
