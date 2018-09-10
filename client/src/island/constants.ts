@@ -1,5 +1,5 @@
 import {Cell} from './cell';
-import {PatchToken} from './patch-token';
+import {Gotch} from './gotch';
 
 export const SCALE = 0.08;
 export const SPREAD = 1.05;
@@ -24,10 +24,10 @@ export const STOP_STEP = 0;
 export const BRANCH_STEP = 7;
 export const ERROR_STEP = 8;
 
-export const TOKEN_DISTANCE = 0.8;
-export const TOKEN_SCALE = SCALE * 3.8;
+export const GOTCH_DISTANCE = 0.8;
+export const GOTCH_SCALE = SCALE * 3.8;
 
-export const PATCH_TOKEN_SHAPE = [
+export const GOTCH_SHAPE = [
     // center
     {x: 0, y: 0},
     // layer 1
@@ -305,15 +305,15 @@ export const ROTATE = [
 export const minimumNumber = (a: number, b: number) => (a < b) ? a : b;
 export const maximumNumber = (a: number, b: number) => (a > b) ? a : b;
 
-// patch patterns
+// gotch patterns
 
 export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0;
 
 export const lightSortOnCoords = (a: Cell, b: Cell): number => coordSort(a.coords, b.coords);
 
-export const tokenSortOnNonces = (a: PatchToken, b: PatchToken): number => a.nonce < b.nonce ? -1 : a.nonce > b.nonce ? 1 : 0;
+export const gotchSortOnNonces = (a: Gotch, b: Gotch): number => a.nonce < b.nonce ? -1 : a.nonce > b.nonce ? 1 : 0;
 
-export const withMaxNonce = (tokens: PatchToken[]) => tokens.reduce((withMax, adjacent) => {
+export const withMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacent) => {
     if (withMax) {
         return adjacent.nonce > withMax.nonce ? adjacent : withMax;
     } else {
@@ -324,7 +324,7 @@ export const withMaxNonce = (tokens: PatchToken[]) => tokens.reduce((withMax, ad
 export const ringIndex = (coords: ICoords, origin: ICoords): number => {
     const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y};
     for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === PATCH_TOKEN_SHAPE[index].x && ringCoords.y === PATCH_TOKEN_SHAPE[index].y) {
+        if (ringCoords.x === GOTCH_SHAPE[index].x && ringCoords.y === GOTCH_SHAPE[index].y) {
             return index;
         }
     }
@@ -397,32 +397,32 @@ export const getLightTransform = (coords: ICoords, text: boolean): string => {
     return `translate(${x},${y}) scale(${scale})`;
 };
 
-export const getPatchTokenTransform = (coords: ICoords): string => {
+export const getGotchTransform = (coords: ICoords): string => {
     const x = coords.x * SCALE_X;
     const y = coords.y * SCALE_Y;
     return `translate(${x},${y}) scale(${SCALE * SPREAD * 16.5}) rotate(30)`;
 };
 
-export const getListTokenTransform = (index: number): string => {
-    return `translate(0.5,${0.5 + index * TOKEN_DISTANCE}) scale(${TOKEN_SCALE})`
+export const getListGotchTransform = (index: number): string => {
+    return `translate(0.5,${0.5 + index * GOTCH_DISTANCE}) scale(${GOTCH_SCALE})`
 };
 
-export interface IPatchPattern {
-    patches: string;
+export interface IGotchPattern {
+    gotches: string;
     lights: string;
 }
 
-export const validPatchPattern = (pattern: IPatchPattern): boolean => {
-    const patchesOk = /^[0-8]*$/.test(pattern.patches);
-    const lightsOk = /^[0-9a-f]*$/.test(pattern.patches);
-    return patchesOk && lightsOk;
+export const validGotchPattern = (pattern: IGotchPattern): boolean => {
+    const gotchesOk = /^[0-8]*$/.test(pattern.gotches);
+    const lightsOk = /^[0-9a-f]*$/.test(pattern.gotches);
+    return gotchesOk && lightsOk;
 };
 
-export const tokenFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): PatchToken => {
-    const token = new PatchToken(undefined, {x: 0, y: 0}, PATCH_TOKEN_SHAPE.map(c => new Cell(c)), index);
-    fingerprintToLights(fingerprint, token.lights);
-    token.owner = ownerLookup(fingerprint);
-    return token;
+export const gotchFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Gotch => {
+    const gotch = new Gotch(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Cell(c)), index);
+    fingerprintToLights(fingerprint, gotch.lights);
+    gotch.owner = ownerLookup(fingerprint);
+    return gotch;
 };
 
 export interface ICoords {

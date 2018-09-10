@@ -1,25 +1,25 @@
-import {PatchToken} from './patch-token';
 import {getLightTransform, ICoords} from './constants';
+import {Gotch} from './gotch';
 
 export class Cell {
     public lit = false;
     public free = false;
     public transform: string;
     public textTransform: string;
-    public memberOfToken: PatchToken[] = [];
-    public adjacentTokens: PatchToken[] = [];
-    public centerOfToken?: PatchToken;
+    public memberOfGotch: Gotch[] = [];
+    public adjacentGotches: Gotch[] = [];
+    public centerOfGotch?: Gotch;
 
     constructor(public coords: ICoords) {
         this.transform = getLightTransform(coords, false);
         this.textTransform = getLightTransform(coords, true);
     }
 
-    get canBeNewToken(): boolean {
-        return !this.centerOfToken && this.adjacentTokens.length > 0;
+    get canBeNewGotch(): boolean {
+        return !this.centerOfGotch && this.adjacentGotches.length > 0;
     }
 
     public updateFreeFlag() {
-        this.free = !this.memberOfToken.find(token => !!token.owner);
+        this.free = !this.memberOfGotch.find(gotch => !!gotch.owner);
     }
 }

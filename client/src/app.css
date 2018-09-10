@@ -31,7 +31,7 @@
     }
 }
 
-.TokenView {
+.GotchView {
     position: absolute;
     left: 0;
     top: 0;
@@ -81,7 +81,7 @@
     stroke-width: 0.03px;
 }
 
-.cell-token-free {
+.cell-gotch-free {
     stroke: #fff950;
     stroke-width: 0.05px;
 }
@@ -96,19 +96,19 @@
     stroke-width: 0.04px;
 }
 
-.token-highlight {
+.gotch-highlight {
     fill: black;
 }
 
-.token-highlight-free {
+.gotch-highlight-free {
     fill: yellow;
 }
 
-.token-highlight-owned {
+.gotch-highlight-owned {
     fill: white;
 }
 
-.token-highlight-taken {
+.gotch-highlight-taken {
     fill: red;
 }
 

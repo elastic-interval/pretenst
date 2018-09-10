@@ -5,7 +5,7 @@ import {HEXAGON_POINTS} from './constants';
 interface IHexagonProps {
     cell: Cell;
     isSelf: (owner: string) => boolean;
-    tokenMode: boolean;
+    gotchMode: boolean;
     cellClicked: (cell: Cell) => void;
     cellEntered: (cell: Cell, inside: boolean) => void;
 }
@@ -38,14 +38,14 @@ export class CellHexagon extends React.Component<IHexagonProps, IHexagonState> {
     private get className() {
         const cell = this.state.cell;
         const onOff = cell.lit ? 'on' : 'off';
-        const insideOutside = this.props.tokenMode ? 'inside' : 'outside';
+        const insideOutside = this.props.gotchMode ? 'inside' : 'outside';
         const baseClass = `cell-${onOff}-${insideOutside}`;
-        if (this.props.tokenMode) {
-            if (cell.centerOfToken) {
-                const owner = cell.centerOfToken.owner;
-                const ownership = owner ? this.props.isSelf(owner) ? 'self-owned' : 'other-owned' : 'token-free';
+        if (this.props.gotchMode) {
+            if (cell.centerOfGotch) {
+                const owner = cell.centerOfGotch.owner;
+                const ownership = owner ? this.props.isSelf(owner) ? 'self-owned' : 'other-owned' : 'gotch-free';
                 return `${baseClass} cell-${ownership}`;
-            } else if (cell.canBeNewToken) {
+            } else if (cell.canBeNewGotch) {
                 return `${baseClass} cell-new`;
             } else if (cell.free) {
                 return `${baseClass} cell-free`;

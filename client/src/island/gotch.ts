@@ -2,8 +2,8 @@ import {
     BRANCH_STEP,
     equals,
     ERROR_STEP,
-    getListTokenTransform,
-    getPatchTokenTransform,
+    getGotchTransform,
+    getListGotchTransform,
     ICoords,
     lightsToHexString,
     ringIndex,
@@ -11,40 +11,40 @@ import {
 } from './constants';
 import {Cell} from './cell';
 
-export class PatchToken {
+export class Gotch {
     public owner: string;
     public nonce = 0;
     public visited = false;
-    public childTokens: PatchToken[] = [];
+    public childGotches: Gotch[] = [];
     public transform: string;
 
-    constructor(public parentToken: PatchToken | undefined,
+    constructor(public parentGotch: Gotch | undefined,
                 public coords: ICoords,
                 public lights: Cell[],
                 index: number) {
-        this.lights[0].centerOfToken = this;
+        this.lights[0].centerOfGotch = this;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.lights[neighbor].adjacentTokens.push(this);
+            this.lights[neighbor].adjacentGotches.push(this);
         }
-        this.lights.forEach(p => p.memberOfToken.push(this));
-        if (parentToken) {
-            parentToken.childTokens.push(this);
-            this.nonce = parentToken.nonce + 1;
+        this.lights.forEach(p => p.memberOfGotch.push(this));
+        if (parentGotch) {
+            parentGotch.childGotches.push(this);
+            this.nonce = parentGotch.nonce + 1;
         }
-        this.transform = index < 0 ? getPatchTokenTransform(coords) : getListTokenTransform(index);
+        this.transform = index < 0 ? getGotchTransform(coords) : getListGotchTransform(index);
     }
 
     get canBePurchased(): boolean {
         const center = this.lights[0];
-        const noneAdjacent = center.adjacentTokens.length === 0;
-        const ownedAdjacentExists = !!center.adjacentTokens.find(token => !!token.owner);
+        const noneAdjacent = center.adjacentGotches.length === 0;
+        const ownedAdjacentExists = !!center.adjacentGotches.find(gotch => !!gotch.owner);
         const notOwned = !this.owner;
         return (noneAdjacent || ownedAdjacentExists) && notOwned;
     }
 
-    // get rotated(): PatchToken {
-    //   return new PatchToken(
-    //     this.parentToken, this.coords,
+    // get rotated(): Gotch {
+    //   return new Gotch(
+    //     this.parentGotch, this.coords,
     //     this.cells.map((p: Cell, index: number, lookup: Array<Cell>) => lookup[ROTATE[index]]),
     //     this.ownerLookup
     //   );
@@ -54,15 +54,15 @@ export class PatchToken {
         if (this.lights.length === 0) {
             return [];
         }
-        if (this.parentToken) {
-            this.parentToken.childTokens = this.parentToken.childTokens.filter(token => !equals(this.coords, token.coords));
+        if (this.parentGotch) {
+            this.parentGotch.childGotches = this.parentGotch.childGotches.filter(gotch => !equals(this.coords, gotch.coords));
         }
-        this.lights[0].centerOfToken = undefined;
+        this.lights[0].centerOfGotch = undefined;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.lights[neighbor].adjacentTokens = this.lights[neighbor].adjacentTokens.filter(token => !equals(this.coords, token.coords));
+            this.lights[neighbor].adjacentGotches = this.lights[neighbor].adjacentGotches.filter(gotch => !equals(this.coords, gotch.coords));
         }
-        this.lights.forEach(p => p.memberOfToken = p.memberOfToken.filter(token => !equals(this.coords, token.coords)));
-        const lightsToRemove = this.lights.filter(p => p.memberOfToken.length === 0);
+        this.lights.forEach(p => p.memberOfGotch = p.memberOfGotch.filter(gotch => !equals(this.coords, gotch.coords)));
+        const lightsToRemove = this.lights.filter(p => p.memberOfGotch.length === 0);
         this.lights = [];
         return lightsToRemove;
     }
@@ -72,20 +72,20 @@ export class PatchToken {
     }
 
     public generateOctalTreePattern(steps: number[]): number[] {
-        const remainingChildren = this.childTokens.filter(token => !token.visited)
-            .map(token => [ringIndex(token.coords, this.coords), token])
+        const remainingChildren = this.childGotches.filter(gotch => !gotch.visited)
+            .map(gotch => [ringIndex(gotch.coords, this.coords), gotch])
             .sort((a, b) => a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0);
         if (remainingChildren.length > 0) {
             while (remainingChildren.length > 0) {
                 const child = remainingChildren.pop();
                 if (child) {
-                    const childToken = child[1] as PatchToken;
+                    const childGotch = child[1] as Gotch;
                     const index = child[0] as number;
                     if (remainingChildren.length > 0) {
                         steps.push(BRANCH_STEP);
                     }
                     steps.push(index > 0 ? index : ERROR_STEP);
-                    childToken.generateOctalTreePattern(steps);
+                    childGotch.generateOctalTreePattern(steps);
                 }
             }
         }
