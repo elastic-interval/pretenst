@@ -14,7 +14,7 @@ import {
     Vector3,
     VertexColors
 } from 'three';
-import {Fabric, ROLES_RESERVED} from './body/fabric';
+import {Fabric} from './body/fabric';
 import {IFabricExports} from './body/fabric-exports';
 import {Genome} from './genetics/genome';
 import {Gotchi} from './gotchi/gotchi';
@@ -101,8 +101,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public render() {
-        const facesGeometry = this.state.gotchi ? this.state.gotchi.fabric.facesGeometry : new BufferGeometry();
-        const lineSegmentGeometry = this.state.gotchi ? this.state.gotchi.fabric.lineSegmentsGeometry : new BufferGeometry();
+        const facesGeometry = this.state.gotchi ? this.state.gotchi.facesGeometry : new BufferGeometry();
+        const lineSegmentGeometry = this.state.gotchi ? this.state.gotchi.lineSegmentsGeometry : new BufferGeometry();
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
         return (
             <div onMouseMove={(e: any) => this.mouseMove(e)}>
@@ -171,7 +171,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 () => {
                     if (!this.state.paused && this.state.gotchi) {
                         const hanging = this.state.gotchi.growing || !!this.stayHanging;
-                        const maxTimeSweep = this.state.gotchi.fabric.iterate(100, hanging);
+                        const maxTimeSweep = this.state.gotchi.iterate(100, hanging);
                         if (this.state.gotchi.growing) {
                             if (maxTimeSweep === 0) {
                                 if (this.state.gotchi.embryoStep()) {
@@ -186,16 +186,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         else if (this.stayHanging) {
                             this.stayHanging--;
                             if (!this.stayHanging) {
-                                this.state.gotchi.fabric.removeHanger();
+                                this.state.gotchi.removeHanger();
                             }
                             this.forceUpdate();
                         } else if (this.stayAlive) {
-                            this.state.gotchi.fabric.centralize(-1, 0.02);
+                            this.state.gotchi.centralize(-1, 0.02);
                             if (this.timeSweepCount > 0 && maxTimeSweep === 0) {
                                 console.log(`trigger sweep ${this.timeSweepCount}`);
-                                for (let roleIndex = ROLES_RESERVED; roleIndex < this.state.gotchi.fabric.roleCount; roleIndex++) {
-                                    this.state.gotchi.fabric.triggerRole(roleIndex);
-                                }
+                                this.state.gotchi.triggerAllRoles();
                                 this.timeSweepCount--;
                             }
                             this.forceUpdate();
