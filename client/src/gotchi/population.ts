@@ -5,6 +5,8 @@ import {Genome} from '../genetics/genome';
 import {Vector3} from 'three';
 
 const HANGER_ALTITUDE = 6;
+const NORMAL_TICKS = 60;
+const CATCH_UP_TICKS = 600;
 
 interface IFitness {
     index: number;
@@ -33,9 +35,8 @@ export class Population {
                 this.gotchiArray.push(new Gotchi(fabric, new Genome()));
             } else {
                 console.log(`mutated ${fromMember} of ${this.gotchiArray.length}`);
-                const gotchi = this.gotchiArray[fromMember]
-                    .withNewFabric(fabric)
-                    .mutateBehavior(10);
+                const gotchi = this.gotchiArray[fromMember].withNewBody(fabric);
+                gotchi.mutateBehavior(15);
                 this.gotchiArray.push(gotchi);
             }
         });
@@ -58,20 +59,21 @@ export class Population {
     public reboot() {
         this.gotchiArray.forEach((gotchi: Gotchi, index: number) => {
             this.createBody().then(fabric => {
-                this.gotchiArray[index] = gotchi.withNewFabric(fabric);
+                this.gotchiArray[index] = gotchi.withNewBody(fabric);
             });
         });
     }
 
     public iterate(): number[] {
-        const ages = this.gotchiArray.map(gotchi => gotchi.age);
-        const minAge = Math.min(...ages);
-        const maxAge = Math.max(...ages);
-        const midAge = (minAge + maxAge) / 2;
-        const alive = (minAge === maxAge) ? this.gotchiArray : this.gotchiArray.filter(gotchi => gotchi.age < midAge);
-        const ticks = (alive.length === this.gotchiArray.length) ? 60 : 120;
-        // todo: this still sucks!
-        return alive.map(gotchi => gotchi.iterate(ticks));
+        const maxAge = Math.max(...this.gotchiArray.map(gotchi => gotchi.age));
+        this.gotchiArray.forEach(gotchi => {
+            if (gotchi.age + CATCH_UP_TICKS < maxAge) {
+                gotchi.iterate(CATCH_UP_TICKS);
+            } else if (gotchi.age < NORMAL_TICKS * 2) {
+                gotchi.iterate(NORMAL_TICKS);
+            }
+        });
+        return this.gotchiArray.map(gotchi => gotchi.iterate(NORMAL_TICKS));
     }
 
     public get gotchis(): Gotchi[] {

@@ -147,7 +147,7 @@ export class Fabric {
     }
 
     public iterate(ticks: number, hanging: boolean): number {
-        const timeSweepStep = hanging ? 37 : 7;
+        const timeSweepStep = hanging ? 45 : 19;
         return this.fabricExports.iterate(ticks, timeSweepStep, hanging);
     }
 

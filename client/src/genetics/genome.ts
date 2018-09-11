@@ -44,5 +44,16 @@ export class Genome {
     public get behaviorData(): Uint16Array {
         return sequenceToArray(this.behaviorSequence);
     }
+
+    public withMutatedBehavior(mutations: number): Genome {
+        const genome = new Genome();
+        genome.embryoSequence = this.embryoSequence.slice();
+        genome.behaviorSequence = this.behaviorSequence.slice();
+        for (let hit = 0; hit < mutations; hit++) {
+            const geneNumber = Math.floor(Math.random() * genome.behaviorSequence.length);
+            genome.behaviorSequence[geneNumber] = Math.random();
+        }
+        return genome;
+    }
 }
 

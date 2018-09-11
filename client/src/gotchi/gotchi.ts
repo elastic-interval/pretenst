@@ -1,11 +1,11 @@
 import {Fabric, ROLES_RESERVED} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
-import {Genome, MAX_UINT16} from '../genetics/genome';
+import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 import {BufferGeometry, Vector3} from 'three';
 
-const HANG_DELAY = 6000;
-const REST_DELAY = 4000;
+const HANG_DELAY = 4000;
+const REST_DELAY = 3000;
 
 export class Gotchi {
     private embryology?: Embryology;
@@ -27,19 +27,12 @@ export class Gotchi {
         this.fabric.dispose();
     }
 
-    public withNewFabric(fabric: Fabric): Gotchi {
+    public withNewBody(fabric: Fabric): Gotchi {
         return new Gotchi(fabric, this.genome);
     }
 
-    public mutateBehavior(mutations: number): Gotchi {
-        const gene = this.genome.behaviorData;
-        for (let hit = 0; hit < mutations; hit++) {
-            const geneNumber = Math.floor(Math.random() * gene.length);
-            const newValue = Math.floor(Math.random() * MAX_UINT16);
-            console.log(`Gene[${geneNumber}] = ${newValue}`);
-            gene[geneNumber] = newValue;
-        }
-        return this;
+    public mutateBehavior(mutations: number): void {
+        this.genome = this.genome.withMutatedBehavior(mutations);
     }
 
     public get midpoint(): Vector3 {
