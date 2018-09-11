@@ -60,7 +60,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             height: window.innerHeight - 30,
             xray: false,
             paused: false,
-            population: new Population(props.createFabricInstance)
+            population: new Population(props.createFabricInstance).fill()
         };
         this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();

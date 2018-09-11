@@ -18,11 +18,20 @@ const midpointToFitness = (midpoint: Vector3, index: number): IFitness => {
 };
 
 const MAX_POPULATION = 10;
+const MAX_TRAVEL = 10;
 
 export class Population {
     private gotchiArray: Gotchi[] = [];
+    private toBeBorn = 0;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
+    }
+
+    public fill() {
+        for (let birth = 0; birth < MAX_POPULATION; birth++) {
+            this.birthRandom();
+        }
+        return this;
     }
 
     public birthRandom() {
@@ -41,7 +50,7 @@ export class Population {
         const member = Math.floor(this.gotchiArray.length * Math.random());
         this.createBody().then(fabric => {
             const gotchi = this.gotchiArray[member].withNewBody(fabric);
-            gotchi.mutateBehavior(20);
+            gotchi.mutateBehavior(10);
             this.gotchiArray.push(gotchi);
         });
     }
@@ -70,14 +79,36 @@ export class Population {
 
     public iterate(): number[] {
         const maxAge = Math.max(...this.gotchiArray.map(gotchi => gotchi.age));
+        let frozenCount = 0;
+        let catchUp = false;
         this.gotchiArray.forEach(gotchi => {
-            if (gotchi.age + CATCH_UP_TICKS < maxAge) {
-                gotchi.iterate(CATCH_UP_TICKS);
-            } else if (gotchi.age < NORMAL_TICKS * 2) {
-                gotchi.iterate(NORMAL_TICKS);
+            if (gotchi.frozen) {
+                frozenCount++;
+            } else {
+                if (gotchi.age + CATCH_UP_TICKS < maxAge) {
+                    gotchi.iterate(CATCH_UP_TICKS);
+                    catchUp = true;
+                } else if (gotchi.age + NORMAL_TICKS * 3 < maxAge) {
+                    // console.log('triple', index, gotchi.age, maxAge);
+                    gotchi.iterate(NORMAL_TICKS);
+                    catchUp = true;
+                }
+                if (gotchi.midpoint.length() >= MAX_TRAVEL) {
+                    gotchi.frozen = true;
+                    this.toBeBorn++;
+                }
             }
         });
-        return this.gotchiArray.map(gotchi => gotchi.iterate(NORMAL_TICKS));
+        if (!catchUp && this.toBeBorn > 0) {
+            this.toBeBorn--;
+            this.birthFromPopulation();
+        }
+        if (frozenCount > this.gotchiArray.length / 2) {
+            this.reboot();
+        }
+        return this.gotchiArray.map(gotchi => {
+            return gotchi.iterate(NORMAL_TICKS);
+        });
     }
 
     public get gotchis(): Gotchi[] {

@@ -8,6 +8,7 @@ const HANG_DELAY = 4000;
 const REST_DELAY = 3000;
 
 export class Gotchi {
+    public frozen = false;
     private embryology?: Embryology;
     private behavior: Behavior;
     private hangingCountdown = HANG_DELAY;
@@ -48,6 +49,9 @@ export class Gotchi {
     }
 
     public iterate(ticks: number): number {
+        if (this.frozen) {
+            return 0;
+        }
         const maxTimeSweep = this.fabric.iterate(ticks, this.hangingCountdown > 0);
         if (maxTimeSweep === 0) {
             if (this.mature) {
