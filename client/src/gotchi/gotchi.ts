@@ -1,4 +1,4 @@
-import {Fabric, ROLES_RESERVED} from '../body/fabric';
+import {Fabric} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
 import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
@@ -51,7 +51,7 @@ export class Gotchi {
         const maxTimeSweep = this.fabric.iterate(ticks, this.hangingCountdown > 0);
         if (maxTimeSweep === 0) {
             if (this.mature) {
-                this.triggerAllRoles();
+                this.triggerAllIntervals();
             } else {
                 if (this.embryology) {
                     const successful = this.embryology.step();
@@ -67,7 +67,7 @@ export class Gotchi {
                     this.restCountdown -= ticks;
                 } else {
                     this.behavior.apply();
-                    this.triggerAllRoles();
+                    this.triggerAllIntervals();
                     this.mature = true;
                 }
             }
@@ -83,14 +83,13 @@ export class Gotchi {
         return !!this.embryology;
     }
 
-    public triggerAllRoles() {
-        for (let roleIndex = ROLES_RESERVED; roleIndex < this.fabric.roleCount; roleIndex++) {
-            this.fabric.triggerRole(roleIndex);
+    public triggerAllIntervals() {
+        for (let intervalIndex = 0; intervalIndex < this.fabric.intervalCount; intervalIndex++) {
+            this.fabric.triggerInterval(intervalIndex);
         }
     }
 
     public get genomeString(): string {
         return [this.genome.behaviorData.join(','), this.genome.behaviorData.join(',')].join(';')
     }
-
 }

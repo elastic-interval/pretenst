@@ -23,6 +23,6 @@ export class GeneSequence {
     }
 
     public nextSpanVariation(): number {
-        return (this.next() - 0.5) * 32767;
+        return Math.floor((this.next() - 0.5) * 32767);
     }
 }

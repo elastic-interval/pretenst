@@ -6,7 +6,7 @@ declare function logInt(idx: u32, i: i32): void;
 
 const ERROR: usize = 65535;
 const LATERALITY_SIZE: usize = sizeof<u8>();
-const INTERVAL_ROLE_SIZE: usize = sizeof<i16>();
+const INTERVAL_MUSCLE_SIZE: usize = sizeof<i16>();
 const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
 const SPAN_VARIATION_SIZE: usize = sizeof<i16>();
@@ -40,7 +40,7 @@ let faceNormalOffset: usize = 0;
 let faceLocationOffset: usize = 0;
 let intervalOffset: usize = 0;
 let faceOffset: usize = 0;
-let rolesOffset: usize = 0;
+let muscleOffset: usize = 0;
 
 let projectionPtr: usize = 0;
 let alphaProjectionPtr: usize = 0;
@@ -60,7 +60,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     let jointsSize = jointCountMax * JOINT_SIZE;
     let intervalsSize = intervalCountMax * INTERVAL_SIZE;
     let facesSize = faceCountMax * FACE_SIZE;
-    let rolesSize = ROLE_COUNT * ROLES_SIZE;
+    let musclesSize = MUSCLE_STATE_COUNT * SPAN_VARIATION_SIZE;
     // offsets
     let bytes = (
         agePtr = (
@@ -69,7 +69,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                     omegaProjectionPtr = (
                         alphaProjectionPtr = (
                             projectionPtr = (
-                                rolesOffset = (
+                                muscleOffset = (
                                     faceOffset = (
                                         intervalOffset = (
                                             jointOffset = (
@@ -86,7 +86,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                                         ) + jointsSize
                                     ) + intervalsSize
                                 ) + facesSize
-                            ) + rolesSize
+                            ) + musclesSize
                         ) + VECTOR_SIZE
                     ) + VECTOR_SIZE
                 ) + VECTOR_SIZE
@@ -95,8 +95,8 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     ) + AGE_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
-    for (let roleIndex: u16 = 0; roleIndex < ROLE_COUNT; roleIndex++) {
-        initRole(roleIndex);
+    for (let muscleStateIndex: u16 = 0; muscleStateIndex < MUSCLE_STATE_COUNT; muscleStateIndex++) {
+        setMuscleState(muscleStateIndex, 0);
     }
     return bytes;
 }
@@ -113,8 +113,8 @@ export function faces(): usize {
     return faceCount;
 }
 
-export function roles(): usize {
-    return ROLE_COUNT;
+export function muscleStates(): usize {
+    return MUSCLE_STATE_COUNT;
 }
 
 export function nextJointTag(): u16 {
@@ -125,17 +125,17 @@ export function nextJointTag(): u16 {
 // Peek and Poke ================================================================================
 
 @inline()
-export function getAge(): i32 {
-    return load<i32>(agePtr);
+function getAge(): u32 {
+    return load<u32>(agePtr);
 }
 
-export function age(): i32 {
+export function age(): u32 {
     return getAge();
 }
 
 @inline()
-function timePasses(): void {
-    store<i32>(agePtr, getAge() + 1);
+function timePasses(ticks: usize): void {
+    store<u32>(agePtr, getAge() + ticks);
 }
 
 @inline()
@@ -400,14 +400,15 @@ export function centralize(altitude: f32, intensity: f32): f32 {
 
 // Intervals =====================================================================================
 
-const INTERVAL_SIZE: usize = INTERVAL_ROLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
+const INTERVAL_SIZE: usize = INTERVAL_MUSCLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE + FLOAT_SIZE * 2;
 
-export function createInterval(intervalRole: i16, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
+export function createInterval(intervalMuscle: i16, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
     if (intervalCount + 1 >= intervalCountMax) {
         return ERROR;
     }
     let intervalIndex = intervalCount++;
-    setIntervalRole(intervalIndex, intervalRole);
+    setIntervalMuscle(intervalIndex, intervalMuscle);
+    setTimeSweep(intervalIndex, 0);
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
     setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
@@ -416,7 +417,8 @@ export function createInterval(intervalRole: i16, alphaIndex: u16, omegaIndex: u
 
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset;
-    setIntervalRole(intervalIndex, getIntervalRole(nextIndex));
+    setIntervalMuscle(intervalIndex, getIntervalMuscle(nextIndex));
+    setTimeSweep(intervalIndex, getTimeSweep(nextIndex));
     setAlphaIndex(intervalIndex, getAlphaIndex(nextIndex));
     setOmegaIndex(intervalIndex, getOmegaIndex(nextIndex));
     setFloat(idealSpanPtr(intervalIndex), getFloat(idealSpanPtr(nextIndex)));
@@ -426,45 +428,57 @@ function intervalPtr(intervalIndex: u16): usize {
     return intervalOffset + intervalIndex * INTERVAL_SIZE;
 }
 
-export function getIntervalRole(intervalIndex: u16): i16 {
+export function getIntervalMuscle(intervalIndex: u16): i16 {
     return load<i16>(intervalPtr(intervalIndex));
 }
 
-function getIntervalRoleIndex(intervalIndex: u16): u16 {
-    let intervalRole = getIntervalRole(intervalIndex);
-    return intervalRole < 0 ? -intervalRole : intervalRole;
+function getIntervalMuscleIndex(intervalIndex: u16): u16 {
+    let intervalMuscle = getIntervalMuscle(intervalIndex);
+    return intervalMuscle < 0 ? -intervalMuscle : intervalMuscle;
 }
 
-export function setIntervalRole(intervalIndex: u16, intervalRole: i16): void {
-    store<i16>(intervalPtr(intervalIndex), intervalRole);
+export function setIntervalMuscle(intervalIndex: u16, intervalMuscle: i16): void {
+    store<i16>(intervalPtr(intervalIndex), intervalMuscle);
+}
+
+function getTimeSweep(intervalIndex: u16): u16 {
+    return getIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE);
+}
+
+function setTimeSweep(intervalIndex: u16, v: u16): void {
+    setIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE, v);
+}
+
+export function triggerInterval(intervalIndex: u16): void {
+    setTimeSweep(intervalIndex, 1);
 }
 
 function getAlphaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE);
 }
 
 function setAlphaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE, v);
 }
 
 function getOmegaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE);
 }
 
 function setOmegaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE, v);
 }
 
 function unitPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE + INDEX_SIZE;
+    return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + INDEX_SIZE;
 }
 
 function stressPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE;
+    return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE;
 }
 
 function idealSpanPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INTERVAL_ROLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE;
+    return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE;
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -663,91 +677,53 @@ export function removeFace(deadFaceIndex: u16): void {
     faceCount--;
 }
 
-// Roles =====================================================================================
+// Muscles =====================================================================================
 
-// note the first two roles are reserved, and their states not really used.
+// note the first two muscle indexes are reserved, and their states not really used.
 
-const ROLE_STATE_COUNT: u8 = 3;
-const ROLE_COUNT: u16 = 64;
-const ROLES_RESERVED: u8 = 2;
-const ROLE_STATIC: i16 = 0;
-const ROLE_GROWING: i16 = 1;
-const ROLES_SIZE: usize = INDEX_SIZE + (INDEX_SIZE + SPAN_VARIATION_SIZE) * ROLE_STATE_COUNT;
+const MUSCLE_INDEX_STATIC: i16 = 0;
+const MUSCLE_INDEX_GROWING: i16 = 1;
+const MUSCLE_RESERED: i16 = 2;
+
+const MUSCLE_SEQUENCE_LENGTH: u8 = 3;
+const MUSCLE_STATE_COUNT: u16 = 100;
 const SPAN_VARIATION_MAX: f32 = 0.5;
 
-function rolePtr(roleIndex: u16): usize {
-    return rolesOffset + roleIndex * ROLES_SIZE;
+function musclePtr(muscleIndex: u16, sequenceIndex: u8): usize {
+    let variationNumber = (muscleIndex + sequenceIndex) % MUSCLE_STATE_COUNT; // wrap around
+    return muscleOffset + variationNumber * SPAN_VARIATION_SIZE; // they overlap intentionally
 }
 
-function getRoleTimeSweep(roleIndex: u16): u16 {
-    return getIndex(rolePtr(roleIndex));
+function getMuscleSpanVariation(muscleIndex: u16, sequenceIndex: u8): i16 {
+    return getSpanVariation(musclePtr(muscleIndex, sequenceIndex));
 }
 
-function setRoleTimeSweep(roleIndex: u16, v: u16): void {
-    setIndex(rolePtr(roleIndex), v);
+function setMuscleSpanVariation(muscleIndex: u16, sequenceIndex: u8, spanVariation: i16): void {
+    setSpanVariation(musclePtr(muscleIndex, sequenceIndex), spanVariation);
 }
 
-function roleTimePtr(roleIndex: u16, stateIndex: u8): usize {
-    return rolePtr(roleIndex) + INDEX_SIZE + stateIndex * (INDEX_SIZE + SPAN_VARIATION_SIZE);
+export function setMuscleState(muscleStateIndex: u16, spanVariation: i16): void {
+    setSpanVariation(musclePtr(muscleStateIndex, 0), spanVariation);
 }
 
-function getRoleTime(roleIndex: u16, stateIndex: u8): u16 {
-    return getIndex(roleTimePtr(roleIndex, stateIndex));
-}
-
-function roleSpanVariationPtr(roleIndex: u16, stateIndex: u8): u32 {
-    return roleTimePtr(roleIndex, stateIndex) + INDEX_SIZE;
-}
-
-function initRole(roleIndex: u16): void {
-    setRoleTimeSweep(roleIndex, 0);
-}
-
-function getRoleSpanVariationFloat(intervalRole: i16, stateIndex: u8): f32 {
-    let oppositeRole = intervalRole < 0;
-    let roleIndex = oppositeRole ? -intervalRole : intervalRole;
-    let variationInt = getSpanVariation(roleSpanVariationPtr(roleIndex, stateIndex));
-    let variationFloat = <f32>variationInt / (oppositeRole ? -32767 : 32767);
+function getMuscleSpanVariationFloat(intervalMuscle: i16, sequenceIndex: u8): f32 {
+    let oppositeMuscle = intervalMuscle < 0;
+    let muscleIndex = oppositeMuscle ? -intervalMuscle : intervalMuscle;
+    let variationInt = getMuscleSpanVariation(muscleIndex, sequenceIndex);
+    let variationFloat = <f32>variationInt / (oppositeMuscle ? -32767 : 32767);
     return 1.0 + SPAN_VARIATION_MAX * variationFloat;
 }
 
-function sortRoleStates(roleIndex: u16): void {
-    let unsorted = ROLE_STATE_COUNT;
-    while (true) {
-        unsorted--;
-        for (let scan: u8 = 0; scan < unsorted; scan++) {
-            let t0 = roleTimePtr(roleIndex, scan);
-            let time0 = getIndex(t0);
-            let t1 = roleTimePtr(roleIndex, scan + 1);
-            let time1 = getIndex(t1);
-            if (time0 > time1) {
-                setIndex(t0, time1);
-                setIndex(t1, time0);
-                let s0 = roleSpanVariationPtr(roleIndex, scan);
-                let spanVariation0 = getSpanVariation(s0);
-                let s1 = roleSpanVariationPtr(roleIndex, scan + 1);
-                let spanVariation1 = getSpanVariation(s1);
-                setSpanVariation(s0, spanVariation1);
-                setSpanVariation(s1, spanVariation0);
-            }
-        }
-        if (unsorted == 0) {
-            break;
-        }
-    }
-}
-
 function interpolateCurrentSpan(intervalIndex: u16): f32 {
-    let intervalRoleIndex = getIntervalRoleIndex(intervalIndex);
-    let timeSweep = getRoleTimeSweep(intervalRoleIndex);
-    let intervalRole = getIntervalRole(intervalIndex);
+    let timeSweep = getTimeSweep(intervalIndex);
+    let intervalMuscle = getIntervalMuscle(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
-    if (intervalRole === ROLE_STATIC) {
+    if (intervalMuscle === MUSCLE_INDEX_STATIC) {
         return idealSpan;
     }
-    if (intervalRole === ROLE_GROWING) {
+    if (intervalMuscle === MUSCLE_INDEX_GROWING) {
         if (timeSweep === 0) { // done growing
-            setIntervalRole(intervalIndex, ROLE_STATIC); // back to static
+            setIntervalMuscle(intervalIndex, MUSCLE_INDEX_STATIC); // back to static
             return idealSpan;
         } else { // busy growing
             let originalSpan: f32 = 1;
@@ -761,56 +737,26 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
             return originalSpan * (1 - progress) + idealSpan * progress;
         }
     }
-    let beforeTime: u16 = 0;
-    let beforeVariation: f32 = 1;
-    let variationNumber: u8 = 0;
-    while (variationNumber < ROLE_STATE_COUNT) {
-        let roleTime = getRoleTime(intervalRoleIndex, variationNumber);
-        if (roleTime < timeSweep) {
-            beforeTime = roleTime;
-            beforeVariation = getRoleSpanVariationFloat(intervalRole, variationNumber);
-        }
-        variationNumber++;
-    }
-    let afterTime: u16 = 65535;
-    let afterVariation: f32 = 1;
-    variationNumber = ROLE_STATE_COUNT;
-    while (true) {
-        let roleTime = getRoleTime(intervalRoleIndex, variationNumber);
-        if (roleTime > timeSweep) {
-            afterTime = roleTime;
-            afterVariation = getRoleSpanVariationFloat(intervalRole, variationNumber);
-        }
-        if (variationNumber === 0) {
-            break;
-        }
-        variationNumber--;
-    }
-    let timeSpan = <f32>(afterTime - beforeTime);
+    // 0 ---sweepChunk------------------- 65536 (sweepChunk is 13107)
+    // 0 -----[ 1 ----- 2 ----- 3 ]-----   4 (4 is unreachable for before, only after)
+    let sweepChunk: u16 = <u16>65535 / <u16>(MUSCLE_SEQUENCE_LENGTH + 1) + 1; // +1 to avoid index overrun
+    let before: u8 = <u8>(timeSweep / sweepChunk); // [0..3]
+    let after: u8 = before + 1; // [1..4]
+    let muscleIndex = getIntervalMuscleIndex(intervalIndex);
+    let beforeVariation: f32 = (before === 0) ? 1 : getMuscleSpanVariationFloat(muscleIndex, before);
+    let afterVariation: f32 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 1 : getMuscleSpanVariationFloat(muscleIndex, after);
+    let beforeTime = before * sweepChunk;
+    let afterTime: u16 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 65535 : after * sweepChunk;
+    let timeSpan = <f32>sweepChunk;
     let currentVariation =
         <f32>(timeSweep - beforeTime) / timeSpan * afterVariation +
         <f32>(afterTime - timeSweep) / timeSpan * beforeVariation;
-    // if (timeSweep > 0) {
-    //     logInt(timeSweep, intervalRole);
-    //     logFloat(timeSweep, beforeVariation);
-    //     logFloat(timeSweep, afterVariation);
+    // if (timeSweep > 0 && intervalIndex === 15) {
+        // logFloat(timeSweep, currentVariation);
+        // logFloat(timeSweep, afterVariation);
+        // logFloat(timeSweep, currentVariation);
     // }
     return idealSpan * currentVariation;
-}
-
-export function triggerRole(roleIndex: u16): void {
-    setRoleTimeSweep(roleIndex, 1);
-}
-
-export function setRoleState(roleIndex: u16, stateIndex: u8, time: u16, variation: i16): void {
-    setIndex(roleTimePtr(roleIndex, stateIndex), time);
-    setSpanVariation(roleSpanVariationPtr(roleIndex, stateIndex), variation);
-}
-
-export function prepareRoles(): void {
-    for (let roleIndex: u16 = 0; roleIndex < ROLE_COUNT; roleIndex++) {
-        sortRoleStates(roleIndex);
-    }
 }
 
 // Physics =====================================================================================
@@ -825,7 +771,7 @@ function elastic(intervalIndex: u16, elasticFactor: f32): void {
     let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan;
     addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
     addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
-    if (getRoleTimeSweep(getIntervalRoleIndex(intervalIndex)) !== 1) {
+    if (getTimeSweep(intervalIndex) !== 1) {
         setFloat(stressPtr(intervalIndex), stress);
     }
     let mass = idealSpan * idealSpan * idealSpan;
@@ -835,16 +781,17 @@ function elastic(intervalIndex: u16, elasticFactor: f32): void {
     setFloat(omegaMass, getFloat(omegaMass) + mass / 2);
 }
 
-function advanceTimeSweep(roleIndex: u16, timeIndexStep: u16): void {
-    let timeSweep = getRoleTimeSweep(roleIndex);
+function advanceTimeSweep(intervalIndex: u16, timeSweepStep: u16): u16 {
+    let timeSweep = getTimeSweep(intervalIndex);
     if (timeSweep > 0) {
         let currentTimeIndex = timeSweep;
-        timeSweep += timeIndexStep;
+        timeSweep += timeSweepStep;
         if (timeSweep < currentTimeIndex) { // wrap around
             timeSweep = 0;
         }
-        setRoleTimeSweep(roleIndex, timeSweep);
+        setTimeSweep(intervalIndex, timeSweep);
     }
+    return timeSweep;
 }
 
 function splitVectors(vectorPtr: usize, basisPtr: usize, projectionPtr: usize, howMuch: f32): void {
@@ -888,10 +835,14 @@ function exertJointPhysics(jointIndex: u16, overGravity: f32, overDrag: f32, und
     }
 }
 
-function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32, timeSweepStep: u16, hanging: boolean): void {
-    timePasses();
+function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32, timeSweepStep: u16, hanging: boolean): u16 {
+    let maxTimeSweep: u16 = 0;
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         elastic(thisInterval, elasticFactor);
+        let timeSweep = advanceTimeSweep(thisInterval, timeSweepStep);
+        if (timeSweep > maxTimeSweep) {
+            maxTimeSweep = timeSweep;
+        }
     }
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         smoothVelocity(thisInterval);
@@ -931,9 +882,7 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
         add(locationPtr(thisJoint), velocityPtr(thisJoint));
         setFloat(intervalMassPtr(thisJoint), AMBIENT_JOINT_MASS);
     }
-    for (let roleIndex: u16 = 0; roleIndex < ROLE_COUNT; roleIndex++) {
-        advanceTimeSweep(roleIndex, timeSweepStep);
-    }
+    return maxTimeSweep;
 }
 
 const AIR_DRAG: f32 = 0.0003;
@@ -944,15 +893,20 @@ const ELASTIC_FACTOR: f32 = 0.5;
 const STRESS_MAX: f32 = 0.001;
 
 export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16 {
+    let maxTimeSweep: u16 = 0;
     let airDrag = AIR_DRAG * (hanging ? 4 : 1);
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        tick(ELASTIC_FACTOR, AIR_GRAVITY, airDrag, LAND_GRAVITY, LAND_DRAG, timeSweepStep, hanging);
+        let tickMaxTimeSweep = tick(ELASTIC_FACTOR, AIR_GRAVITY, airDrag, LAND_GRAVITY, LAND_DRAG, timeSweepStep, hanging);
+        if (tickMaxTimeSweep > maxTimeSweep) {
+            maxTimeSweep = tickMaxTimeSweep;
+        }
     }
+    timePasses(ticks);
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(outputAlphaLocationPtr(intervalIndex), locationPtr(getAlphaIndex(intervalIndex)));
         setVector(outputOmegaLocationPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)));
         let stress: f32 = 0;
-        if (getRoleTimeSweep(getIntervalRoleIndex(intervalIndex)) !== ROLE_GROWING) {
+        if (getTimeSweep(intervalIndex) !== MUSCLE_INDEX_GROWING) {
             stress = getFloat(stressPtr(intervalIndex)) / STRESS_MAX;
             if (stress > 1) {
                 stress = 1;
@@ -969,13 +923,6 @@ export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex);
     }
-    let maxTimeSweep: u16 = 0;
-    for (let roleIndex: u16 = 0; roleIndex < ROLE_COUNT; roleIndex++) {
-        let timeSweep = getRoleTimeSweep(roleIndex);
-        if (timeSweep > maxTimeSweep) {
-            maxTimeSweep = timeSweep;
-        }
-    }
     zero(midpointPtr);
     let averageCount: f32 = 0;
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
@@ -984,7 +931,7 @@ export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16
             add(midpointPtr, locationPtr(jointIndex));
         }
     }
-    multiplyScalar(midpointPtr, 1/averageCount);
+    multiplyScalar(midpointPtr, 1 / averageCount);
     return maxTimeSweep;
 }
 

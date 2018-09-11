@@ -6,8 +6,8 @@ import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
 export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
-export const ROLE_STATE_COUNT = 3;
-export const ROLES_RESERVED = 2;
+// export const ROLE_STATE_COUNT = 3;
+export const MUSCLE_STATES_RESERVED = 2;
 export const INTERVALS_RESERVED = 1;
 
 export class Fabric {
@@ -51,8 +51,8 @@ export class Fabric {
         return this.fabricExports.faces();
     }
 
-    public get roleCount() {
-        return this.fabricExports.roles();
+    public get muscleStateCount() {
+        return this.fabricExports.muscleStates();
     }
 
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
@@ -187,16 +187,12 @@ export class Fabric {
         return new FaceSnapshot(this, this.kernel, this.fabricExports, faceIndex);
     }
 
-    public setRoleState(roleIndex: number, stateIndex: number, time: number, spanVariationFloat: number): void {
-        if (roleIndex < ROLES_RESERVED || roleIndex >= this.roleCount) {
-            throw new Error(`Bad role index ${roleIndex}`);
+    public setMuscleState(muscleStateIndex: number, spanVariationFloat: number): void {
+        if (muscleStateIndex < 0 || muscleStateIndex >= this.muscleStateCount) {
+            throw new Error(`Bad muscle state index ${muscleStateIndex}`);
         }
         const spanVariation = Math.floor(Math.abs(spanVariationFloat));
-        this.fabricExports.setRoleState(roleIndex, stateIndex, time, spanVariation);
-    }
-
-    public prepareRoles(): void {
-        this.fabricExports.prepareRoles();
+        this.fabricExports.setMuscleState(muscleStateIndex, spanVariation);
     }
 
     public setIntervalRole(intervalIndex: number, intervalRole: number): void {
@@ -204,18 +200,18 @@ export class Fabric {
             throw new Error(`Bad interval index index ${intervalIndex}`);
         }
         const roleIndex = intervalRole < 0 ? -intervalRole : intervalRole;
-        if (roleIndex < ROLES_RESERVED || roleIndex >= this.roleCount) {
-            throw new Error(`Bad role index ${roleIndex}`);
+        if (roleIndex < MUSCLE_STATES_RESERVED || roleIndex >= this.muscleStateCount) {
+            throw new Error(`Bad muscle state index ${roleIndex}`);
         }
-        this.fabricExports.setIntervalRole(intervalIndex, intervalRole); // intervalRole could be negative
+        this.fabricExports.setIntervalMuscle(intervalIndex, intervalRole); // could be negative
         const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
         if (oppositeIntervalIndex < this.intervalCount) {
-            this.fabricExports.setIntervalRole(oppositeIntervalIndex, Math.abs(intervalRole)); // either same or opposite
+            this.fabricExports.setIntervalMuscle(oppositeIntervalIndex, Math.abs(intervalRole)); // either same or opposite
         }
     }
 
-    public triggerRole(roleIndex: number): void {
-        this.fabricExports.triggerRole(roleIndex);
+    public triggerInterval(intervalIndex: number): void {
+        this.fabricExports.triggerInterval(intervalIndex);
     }
 
     public toString(): string {
@@ -233,8 +229,9 @@ export class Fabric {
     }
 
     private intervalGrow(alphaIndex: number, omegaIndex: number, span: number): number {
-        this.fabricExports.triggerRole(1);
-        return this.fabricExports.createInterval(1, alphaIndex, omegaIndex, span);
+        const intervalIndex = this.fabricExports.createInterval(1, alphaIndex, omegaIndex, span);
+        this.fabricExports.triggerInterval(intervalIndex);
+        return intervalIndex;
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
