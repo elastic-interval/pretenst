@@ -4,11 +4,14 @@ import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 import {BufferGeometry, Vector3} from 'three';
 
-const HANG_DELAY = 4000;
-const REST_DELAY = 3000;
+const HANG_DELAY = 6000;
+const REST_DELAY = 4000;
 
 export class Gotchi {
     public frozen = false;
+    public replacementExpected = false;
+    public clone = false;
+    public replacement: Gotchi | null;
     private embryology?: Embryology;
     private behavior: Behavior;
     private hangingCountdown = HANG_DELAY;
@@ -70,6 +73,7 @@ export class Gotchi {
                 } else if (this.restCountdown > 0) {
                     this.restCountdown -= ticks;
                 } else {
+                    this.fabric.centralize(0, 1);
                     this.behavior.apply();
                     this.triggerAllIntervals();
                     this.mature = true;

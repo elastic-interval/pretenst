@@ -11,10 +11,10 @@ export class Embryology {
 
     constructor(private fabric: Fabric, private growthGene: GeneSequence) {
         this.growingFaces.push(fabric.getFaceSnapshot(0));
-        if (this.growthGene.nextChoice(3)) {
-            this.growingFaces.push(fabric.getFaceSnapshot(2));
+        if (this.growthGene.nextChoice(6)) {
+            this.growingFaces.push(fabric.getFaceSnapshot(4));
             if (!this.growthGene.nextChoice(3)) {
-                this.growingFaces.push(fabric.getFaceSnapshot(4));
+                this.growingFaces.push(fabric.getFaceSnapshot(2));
             }
         }
     }

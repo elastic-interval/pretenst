@@ -22,6 +22,46 @@ const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
 const BILATERAL_LEFT: u8 = 2;
 
+// Physics =====================================================================================
+
+let physicsDragAbove: f32 = 0.0002;
+
+export function adjustDragAbove(adjustment: f32): f32 {
+    return physicsDragAbove *= adjustment;
+}
+
+let physicsGravityAbove: f32 = 0.000001;
+
+export function adjustGravityAbove(adjustment: f32): f32 {
+    return physicsGravityAbove *= adjustment;
+}
+
+let physicsDragBelow: f32 = 1000;
+
+export function adjustDragBelow(adjustment: f32): f32 {
+    return physicsDragBelow *= adjustment;
+}
+
+let physicsGravityBelowFactor: f32 = 10;
+
+export function adjustGravityBelow(adjustment: f32): f32 {
+    return physicsGravityBelowFactor *= adjustment;
+}
+
+let physicsElasticFactor: f32 = 0.7;
+
+export function adjustElasticFactor(adjustment: f32): f32 {
+    return physicsElasticFactor *= adjustment;
+}
+
+let maxSpanVariation: f32 = 0.6;
+
+export function adjustMaxSpanVariation(adjustment: f32): f32 {
+    return maxSpanVariation *= adjustment;
+}
+
+const STRESS_MAX: f32 = 0.001;
+
 // Dimensioning ================================================================================
 
 let jointCount: u16 = 0;
@@ -120,6 +160,27 @@ export function muscleStates(): usize {
 export function nextJointTag(): u16 {
     jointTagCount++;
     return jointTagCount;
+}
+
+export function removeHanger(): void {
+    jointCount--;
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        copyJointFromNext(jointIndex)
+    }
+    intervalCount -= 2;
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        copyIntervalFromOffset(intervalIndex, 2);
+    }
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        setAlphaIndex(intervalIndex, getAlphaIndex(intervalIndex) - 1);
+        setOmegaIndex(intervalIndex, getOmegaIndex(intervalIndex) - 1);
+    }
+    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
+        for (let jointNumber: u16 = 0; jointNumber < 3; jointNumber++) {
+            let jointIndex = getFaceJointIndex(faceIndex, jointNumber);
+            setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1);
+        }
+    }
 }
 
 // Peek and Poke ================================================================================
@@ -686,8 +747,7 @@ const MUSCLE_INDEX_GROWING: i16 = 1;
 const MUSCLE_RESERED: i16 = 2;
 
 const MUSCLE_SEQUENCE_LENGTH: u8 = 3;
-const MUSCLE_STATE_COUNT: u16 = 100;
-const SPAN_VARIATION_MAX: f32 = 0.5;
+const MUSCLE_STATE_COUNT: u16 = 200;
 
 function musclePtr(muscleIndex: u16, sequenceIndex: u8): usize {
     let variationNumber = (muscleIndex + sequenceIndex) % MUSCLE_STATE_COUNT; // wrap around
@@ -711,7 +771,7 @@ function getMuscleSpanVariationFloat(intervalMuscle: i16, sequenceIndex: u8): f3
     let muscleIndex = oppositeMuscle ? -intervalMuscle : intervalMuscle;
     let variationInt = getMuscleSpanVariation(muscleIndex, sequenceIndex);
     let variationFloat = <f32>variationInt / (oppositeMuscle ? -32767 : 32767);
-    return 1.0 + SPAN_VARIATION_MAX * variationFloat;
+    return 1.0 + maxSpanVariation * variationFloat;
 }
 
 function interpolateCurrentSpan(intervalIndex: u16): f32 {
@@ -752,9 +812,9 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
         <f32>(timeSweep - beforeTime) / timeSpan * afterVariation +
         <f32>(afterTime - timeSweep) / timeSpan * beforeVariation;
     // if (timeSweep > 0 && intervalIndex === 15) {
-        // logFloat(timeSweep, currentVariation);
-        // logFloat(timeSweep, afterVariation);
-        // logFloat(timeSweep, currentVariation);
+    // logFloat(timeSweep, currentVariation);
+    // logFloat(timeSweep, afterVariation);
+    // logFloat(timeSweep, currentVariation);
     // }
     return idealSpan * currentVariation;
 }
@@ -816,29 +876,29 @@ function exertGravity(jointIndex: u16, value: f32): void {
     setY(velocity, getY(velocity) - value);
 }
 
-function exertJointPhysics(jointIndex: u16, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32): void {
+function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     let altitude = getY(locationPtr(jointIndex));
     if (altitude > JOINT_RADIUS) {
-        exertGravity(jointIndex, overGravity);
-        multiplyScalar(velocityPtr(jointIndex), 1 - overDrag);
+        exertGravity(jointIndex, physicsGravityAbove);
+        multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove);
     }
     else if (altitude < -JOINT_RADIUS) {
-        exertGravity(jointIndex, -overDrag * underGravity);
-        multiplyScalar(velocityPtr(jointIndex), 1 - overDrag * underDrag);
+        exertGravity(jointIndex, -dragAbove * physicsGravityBelowFactor);
+        multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove * physicsDragBelow);
     }
     else {
         let degree = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
-        let gravityValue = overGravity * degree + -overGravity * underGravity * (1 - degree);
+        let gravityValue = physicsGravityAbove * degree + -physicsGravityAbove * physicsGravityBelowFactor * (1 - degree);
         exertGravity(jointIndex, gravityValue);
-        let drag = overDrag * degree + overDrag * underDrag * (1 - degree);
+        let drag = dragAbove * degree + dragAbove * physicsDragBelow * (1 - degree);
         multiplyScalar(velocityPtr(jointIndex), 1 - drag);
     }
 }
 
-function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity: f32, underDrag: f32, timeSweepStep: u16, hanging: boolean): u16 {
+function tick(timeSweepStep: u16, hanging: boolean): u16 {
     let maxTimeSweep: u16 = 0;
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        elastic(thisInterval, elasticFactor);
+        elastic(thisInterval, hanging ? physicsElasticFactor * 0.1 : physicsElasticFactor);
         let timeSweep = advanceTimeSweep(thisInterval, timeSweepStep);
         if (timeSweep > maxTimeSweep) {
             maxTimeSweep = timeSweep;
@@ -848,7 +908,7 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
         smoothVelocity(thisInterval);
     }
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        exertJointPhysics(thisJoint, overGravity, overDrag, underGravity, underDrag);
+        exertJointPhysics(thisJoint, physicsDragAbove * (hanging ? 5 : 1));
         addScaledVector(velocityPtr(thisJoint), forcePtr(thisJoint), 1.0 / getFloat(intervalMassPtr(thisJoint)));
         zero(forcePtr(thisJoint));
         add(velocityPtr(thisJoint), absorbVelocityPtr(thisJoint));
@@ -885,18 +945,10 @@ function tick(elasticFactor: f32, overGravity: f32, overDrag: f32, underGravity:
     return maxTimeSweep;
 }
 
-const AIR_DRAG: f32 = 0.0003;
-const AIR_GRAVITY: f32 = 0.000003;
-const LAND_DRAG: f32 = 200;
-const LAND_GRAVITY: f32 = 30;
-const ELASTIC_FACTOR: f32 = 0.5;
-const STRESS_MAX: f32 = 0.001;
-
 export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16 {
     let maxTimeSweep: u16 = 0;
-    let airDrag = AIR_DRAG * (hanging ? 4 : 1);
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        let tickMaxTimeSweep = tick(ELASTIC_FACTOR, AIR_GRAVITY, airDrag, LAND_GRAVITY, LAND_DRAG, timeSweepStep, hanging);
+        let tickMaxTimeSweep = tick(timeSweepStep, hanging);
         if (tickMaxTimeSweep > maxTimeSweep) {
             maxTimeSweep = tickMaxTimeSweep;
         }
@@ -935,23 +987,3 @@ export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16
     return maxTimeSweep;
 }
 
-export function removeHanger(): void {
-    jointCount--;
-    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        copyJointFromNext(jointIndex)
-    }
-    intervalCount -= 2;
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        copyIntervalFromOffset(intervalIndex, 2);
-    }
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        setAlphaIndex(intervalIndex, getAlphaIndex(intervalIndex) - 1);
-        setOmegaIndex(intervalIndex, getOmegaIndex(intervalIndex) - 1);
-    }
-    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
-        for (let jointNumber: u16 = 0; jointNumber < 3; jointNumber++) {
-            let jointIndex = getFaceJointIndex(faceIndex, jointNumber);
-            setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1);
-        }
-    }
-}

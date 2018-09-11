@@ -11,12 +11,11 @@ export const MUSCLE_STATES_RESERVED = 2;
 export const INTERVALS_RESERVED = 1;
 
 export class Fabric {
-    private hangerLocation = new Vector3(0, 3, 0);
     private kernel: FabricKernel;
     private intervalCountMax: number;
     private faceCountMax: number;
-    private facesGeometryStored: BufferGeometry|undefined;
-    private lineSegmentsGeometryStored: BufferGeometry|undefined;
+    private facesGeometryStored: BufferGeometry | undefined;
+    private lineSegmentsGeometryStored: BufferGeometry | undefined;
 
     constructor(private fabricExports: IFabricExports, private jointCountMax: number) {
         this.intervalCountMax = jointCountMax * 3 + 30;
@@ -122,7 +121,8 @@ export class Fabric {
     // }
 
     public createSeed(corners: number, altitude: number): void {
-        const hanger = this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, this.hangerLocation.x, this.hangerLocation.y, this.hangerLocation.z);
+        const hangerLocation = new Vector3(0, 0, 0);
+        const hanger = this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, hangerLocation.x, hangerLocation.y, hangerLocation.z);
         const R = 1;
         for (let walk = 0; walk < corners; walk++) {
             const angle = walk * Math.PI * 2 / corners;
@@ -143,11 +143,11 @@ export class Fabric {
             this.face(left, walk + 1, (walk + 1) % corners + 1);
             this.face(right, (walk + 1) % corners + 1, walk + 1);
         }
-        this.hangerLocation.y += this.centralize(altitude, 1);
+        hangerLocation.y += this.centralize(altitude, 1);
     }
 
     public iterate(ticks: number, hanging: boolean): number {
-        const timeSweepStep = hanging ? 45 : 19;
+        const timeSweepStep = hanging ? 200 : 40;
         return this.fabricExports.iterate(ticks, timeSweepStep, hanging);
     }
 

@@ -17,8 +17,6 @@ class App extends React.Component<IAppProps, any> {
         return (
             <div className="App">
                 <GotchiView createFabricInstance={this.props.createFabricInstance}/>
-                <div>[R]=rebirth, [G]=new-genome, [M]=add-muscle, [space]=trigger-muscles</div>
-                {/*<IslandView/>*/}
             </div>
         );
     }

@@ -38,7 +38,7 @@ const FACE_MATERIAL = new MeshPhongMaterial({
 const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
 const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
 const CAMERA_ALTITUDE = 4.5;
-const TARGET_FRAME_RATE = 20;
+const TARGET_FRAME_RATE = 25;
 const FLOOR_QUATERNION = new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2);
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
@@ -95,7 +95,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     public render() {
         this.frameCount++;
-        if (this.frameCount === 30) {
+        if (this.frameCount === 300) {
             const frameTime = Date.now();
             const framesPerSecond = 1000 / ((frameTime - this.frameTime) / this.frameCount);
             this.frameTime = frameTime;
@@ -105,7 +105,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             } else if (framesPerSecond < TARGET_FRAME_RATE) {
                 this.frameDelay /= 2;
             }
-            // console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
+            console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
         return (
@@ -190,22 +190,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private keyboardListener() {
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             switch (event.code) {
-                case 'KeyR':
-                    this.state.population.reboot();
-                    break;
-                case 'KeyF':
-                    this.state.population.birthRandom();
-                    break;
-                case 'KeyB':
-                    if (this.state.population.gotchis.length === 0) {
-                        this.state.population.birthRandom();
-                    } else {
-                        this.state.population.birthFromPopulation();
-                    }
-                    break;
-                case 'KeyD':
-                    this.state.population.death();
-                    break;
                 case 'KeyX':
                     this.setState({xray: !this.state.xray});
                     break;

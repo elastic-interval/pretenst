@@ -4,9 +4,10 @@ import {Fabric} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Vector3} from 'three';
 
-const HANGER_ALTITUDE = 6;
-const NORMAL_TICKS = 60;
-const CATCH_UP_TICKS = 600;
+const HUNG_ALTITUDE = 7;
+const NORMAL_TICKS = 50;
+const CATCH_UP_TICKS = 300;
+const MAX_POPULATION = 15;
 
 interface IFitness {
     index: number;
@@ -17,11 +18,9 @@ const midpointToFitness = (midpoint: Vector3, index: number): IFitness => {
     return {index, length: midpoint.length()};
 };
 
-const MAX_POPULATION = 10;
-const MAX_TRAVEL = 10;
-
 export class Population {
     private gotchiArray: Gotchi[] = [];
+    private maxTravel = 6;
     private toBeBorn = 0;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
@@ -44,15 +43,14 @@ export class Population {
     }
 
     public birthFromPopulation() {
-        if (this.gotchiArray.length + 1 > MAX_POPULATION) {
+        while (this.gotchiArray.length + 1 > MAX_POPULATION) {
             this.death();
         }
-        const member = Math.floor(this.gotchiArray.length * Math.random());
-        this.createBody().then(fabric => {
-            const gotchi = this.gotchiArray[member].withNewBody(fabric);
-            gotchi.mutateBehavior(10);
-            this.gotchiArray.push(gotchi);
-        });
+        const fertile = this.gotchiArray.filter(gotchi => !gotchi.replacementExpected);
+        if (fertile.length) {
+            const luckyOne = fertile[Math.floor(fertile.length * Math.random())];
+            this.createReplacement(luckyOne, false);
+        }
     }
 
     public death() {
@@ -69,21 +67,30 @@ export class Population {
         this.gotchiArray.splice(fitness[0].index, 1);
     }
 
-    public reboot() {
-        this.gotchiArray.forEach((gotchi: Gotchi, index: number) => {
-            this.createBody().then(fabric => {
-                this.gotchiArray[index] = gotchi.withNewBody(fabric);
-            });
-        });
-    }
-
     public iterate(): number[] {
         const maxAge = Math.max(...this.gotchiArray.map(gotchi => gotchi.age));
+        const nursery: Gotchi[] = [];
+        let minFrozenAge = maxAge;
         let frozenCount = 0;
         let catchUp = false;
-        this.gotchiArray.forEach(gotchi => {
-            if (gotchi.frozen) {
+        this.gotchiArray = this.gotchiArray.map(gotchi => {
+            if (gotchi.replacementExpected) {
+                if (gotchi.replacement) {
+                    gotchi.replacementExpected = false;
+                    if (gotchi.clone) {
+                        return gotchi.replacement;
+                    } else {
+                        nursery.push(gotchi.replacement);
+                        gotchi.replacement = null;
+                        return gotchi;
+                    }
+                } else {
+                    return gotchi;
+                }
+            }
+            else if (gotchi.frozen) {
                 frozenCount++;
+                return gotchi;
             } else {
                 if (gotchi.age + CATCH_UP_TICKS < maxAge) {
                     gotchi.iterate(CATCH_UP_TICKS);
@@ -93,18 +100,28 @@ export class Population {
                     gotchi.iterate(NORMAL_TICKS);
                     catchUp = true;
                 }
-                if (gotchi.midpoint.length() >= MAX_TRAVEL) {
+                if (gotchi.midpoint.length() >= this.maxTravel) {
                     gotchi.frozen = true;
+                    if (gotchi.age < minFrozenAge) {
+                        minFrozenAge = gotchi.age;
+                    }
+                    console.log(`frozen at age ${gotchi.age}`);
                     this.toBeBorn++;
                 }
+                return gotchi;
             }
         });
+        this.gotchiArray.push(...nursery);
         if (!catchUp && this.toBeBorn > 0) {
             this.toBeBorn--;
             this.birthFromPopulation();
         }
-        if (frozenCount > this.gotchiArray.length / 2) {
-            this.reboot();
+        if (!catchUp && frozenCount > this.gotchiArray.length / 2) {
+            this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
+            if (minFrozenAge < 40000) {
+                this.maxTravel *= 1.3;
+                console.log(`maxTravel = ${this.maxTravel}`);
+            }
         }
         return this.gotchiArray.map(gotchi => {
             return gotchi.iterate(NORMAL_TICKS);
@@ -115,10 +132,37 @@ export class Population {
         return this.gotchiArray;
     }
 
+    private createReplacement(gotchi: Gotchi, clone: boolean): void {
+        if (gotchi.replacementExpected && !clone) {
+            return;
+        }
+        gotchi.replacementExpected = true;
+        gotchi.clone = clone;
+        this.createBody().then(fabric => {
+            gotchi.replacement = gotchi.withNewBody(fabric);
+            if (!clone) {
+                gotchi.replacement.mutateBehavior(15);
+            }
+        });
+    }
+
     private createBody(): Promise<Fabric> {
         return this.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, 60);
-            fabric.createSeed(5, HANGER_ALTITUDE);
+            const fabric = new Fabric(fabricExports, 42);
+            // const dragAbove =
+            fabricExports.adjustDragAbove(1);
+            // const gravityAbove =
+            fabricExports.adjustGravityAbove(1);
+            // const dragBelow =
+            fabricExports.adjustDragBelow(1);
+            // const gravityBelow =
+            fabricExports.adjustGravityBelow(1);
+            // const elasticFactor =
+            fabricExports.adjustElasticFactor(0.2);
+            // const maxSpanVariation =
+            fabricExports.adjustMaxSpanVariation(1);
+            // console.log('physics', {dragAbove, gravityAbove, dragBelow, gravityBelow, elasticFactor, maxSpanVariation});
+            fabric.createSeed(5, HUNG_ALTITUDE);
             return fabric;
         });
     }
