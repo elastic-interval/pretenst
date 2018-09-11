@@ -25,20 +25,24 @@ export class Population {
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
     }
 
-    public birth(fromMember?: number) {
+    public birthRandom() {
         if (this.gotchiArray.length + 1 > MAX_POPULATION) {
             this.death();
         }
         this.createBody().then(fabric => {
-            if (fromMember === undefined) {
-                console.log('Fresh gotchi genes');
-                this.gotchiArray.push(new Gotchi(fabric, new Genome()));
-            } else {
-                console.log(`mutated ${fromMember} of ${this.gotchiArray.length}`);
-                const gotchi = this.gotchiArray[fromMember].withNewBody(fabric);
-                gotchi.mutateBehavior(15);
-                this.gotchiArray.push(gotchi);
-            }
+            this.gotchiArray.push(new Gotchi(fabric, new Genome()));
+        });
+    }
+
+    public birthFromPopulation() {
+        if (this.gotchiArray.length + 1 > MAX_POPULATION) {
+            this.death();
+        }
+        const member = Math.floor(this.gotchiArray.length * Math.random());
+        this.createBody().then(fabric => {
+            const gotchi = this.gotchiArray[member].withNewBody(fabric);
+            gotchi.mutateBehavior(20);
+            this.gotchiArray.push(gotchi);
         });
     }
 

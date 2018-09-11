@@ -105,7 +105,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             } else if (framesPerSecond < TARGET_FRAME_RATE) {
                 this.frameDelay /= 2;
             }
-            console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
+            // console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
         return (
@@ -194,13 +194,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     this.state.population.reboot();
                     break;
                 case 'KeyF':
-                    this.state.population.birth();
+                    this.state.population.birthRandom();
                     break;
                 case 'KeyB':
                     if (this.state.population.gotchis.length === 0) {
-                        this.state.population.birth();
+                        this.state.population.birthRandom();
                     } else {
-                        this.state.population.birth(Math.floor(this.state.population.gotchis.length * Math.random()));
+                        this.state.population.birthFromPopulation();
                     }
                     break;
                 case 'KeyD':
