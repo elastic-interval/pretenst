@@ -26,33 +26,33 @@ const BILATERAL_LEFT: u8 = 2;
 
 const DRAG_ABOVE: f32 = 0.0002;
 const GRAVITY_ABOVE: f32 = 0.000001;
-const DRAG_BELOW: f32 = 1000;
-const GRAVITY_BELOW: f32 = 10;
+const DRAG_BELOW: f32 = 0.02;
+const GRAVITY_BELOW: f32 = -10 * GRAVITY_ABOVE;
 const ELASTIC_FACTOR: f32 = 0.7;
 const MAX_SPAN_VARIATION: f32 = 0.6;
 
-let physicsDragAbove: f32 = 0.0002;
+let physicsDragAbove: f32 = DRAG_ABOVE;
 
 export function setDragAbove(factor: f32): f32 {
     return physicsDragAbove = DRAG_ABOVE * factor;
 }
 
-let physicsGravityAbove: f32 = 0.000001;
+let physicsGravityAbove: f32 = GRAVITY_ABOVE;
 
 export function setGravityAbove(factor: f32): f32 {
     return physicsGravityAbove = GRAVITY_ABOVE * factor;
 }
 
-let physicsDragBelow: f32 = 1000;
+let physicsDragBelow: f32 = DRAG_BELOW;
 
 export function setDragBelow(factor: f32): f32 {
     return physicsDragBelow = DRAG_BELOW * factor;
 }
 
-let physicsGravityBelowFactor: f32 = 10;
+let physicsGravityBelow: f32 = GRAVITY_BELOW;
 
 export function setGravityBelow(factor: f32): f32 {
-    return physicsGravityBelowFactor = GRAVITY_BELOW * factor;
+    return physicsGravityBelow = GRAVITY_BELOW * factor;
 }
 
 let physicsElasticFactor: f32 = 0.7;
@@ -890,12 +890,12 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
         multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove);
     }
     else if (altitude < -JOINT_RADIUS) {
-        exertGravity(jointIndex, -dragAbove * physicsGravityBelowFactor);
-        multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove * physicsDragBelow);
+        exertGravity(jointIndex,  physicsGravityBelow);
+        multiplyScalar(velocityPtr(jointIndex), 1 - physicsDragBelow);
     }
     else {
         let degree = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
-        let gravityValue = physicsGravityAbove * degree + -physicsGravityAbove * physicsGravityBelowFactor * (1 - degree);
+        let gravityValue = physicsGravityAbove * degree + physicsGravityBelow * (1 - degree);
         exertGravity(jointIndex, gravityValue);
         let drag = dragAbove * degree + dragAbove * physicsDragBelow * (1 - degree);
         multiplyScalar(velocityPtr(jointIndex), 1 - drag);

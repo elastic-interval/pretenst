@@ -48,6 +48,11 @@
     margin-right: 10px;
 }
 
+.feature-value {
+    display: inline-block;
+    width: 300px;
+}
+
 :host {
     display: block;
     height: 100%;

@@ -73,7 +73,9 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
                             &nbsp;
                             <button onClick={() => this.featureDown()}>-</button>
                             &nbsp;&nbsp;&nbsp;
-                            <strong>{value}</strong>
+                            <strong className="feature-value">{value}</strong>
+                            &nbsp;
+                            <button onClick={() => this.featureReset()}>reset</button>
                         </span>
                 }
             </div>

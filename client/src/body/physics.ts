@@ -34,22 +34,22 @@ export class Physics {
             let currentValue = 0;
             switch (physicsFeature.feature) {
                 case PhysicsFeature.GravityAbove:
-                     currentValue = fabricExports.setGravityAbove(factor);
-                     break;
+                    currentValue = fabricExports.setGravityAbove(factor);
+                    break;
                 case PhysicsFeature.GravityBelow:
-                    currentValue= fabricExports.setGravityBelow(factor);
+                    currentValue = fabricExports.setGravityBelow(factor);
                     break;
                 case PhysicsFeature.DragAbove:
-                    currentValue= fabricExports.setDragAbove(factor);
+                    currentValue = fabricExports.setDragAbove(factor);
                     break;
                 case PhysicsFeature.DragBelow:
-                    currentValue= fabricExports.setDragBelow(factor);
+                    currentValue = fabricExports.setDragBelow(factor);
                     break;
                 case PhysicsFeature.ElasticFactor:
-                    currentValue= fabricExports.setElasticFactor(factor);
+                    currentValue = fabricExports.setElasticFactor(factor);
                     break;
                 case PhysicsFeature.MaxSpanVariation:
-                    currentValue= fabricExports.setMaxSpanVariation(factor);
+                    currentValue = fabricExports.setMaxSpanVariation(factor);
                     break;
                 default:
                     throw new Error();

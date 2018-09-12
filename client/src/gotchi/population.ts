@@ -8,7 +8,7 @@ import {Physics} from '../body/physics';
 const HUNG_ALTITUDE = 7;
 const NORMAL_TICKS = 50;
 const CATCH_UP_TICKS = 300;
-const MAX_POPULATION = 15;
+const MAX_POPULATION = 10;
 
 interface IFitness {
     index: number;
