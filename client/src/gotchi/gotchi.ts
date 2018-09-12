@@ -2,7 +2,6 @@ import {Fabric} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
 import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
-import {BufferGeometry, Vector3} from 'three';
 
 const HANG_DELAY = 6000;
 const REST_DELAY = 4000;
@@ -18,7 +17,7 @@ export class Gotchi {
     private restCountdown = REST_DELAY;
     private mature = false;
 
-    constructor(private fabric: Fabric, private genome: Genome) {
+    constructor(public fabric: Fabric, private genome: Genome) {
         this.embryology = genome.embryology(fabric);
         this.behavior = genome.behavior(fabric);
     }
@@ -27,28 +26,12 @@ export class Gotchi {
         return this.fabric.age;
     }
 
-    public dispose() {
-        this.fabric.dispose();
-    }
-
     public withNewBody(fabric: Fabric): Gotchi {
         return new Gotchi(fabric, this.genome);
     }
 
     public mutateBehavior(mutations: number): void {
         this.genome = this.genome.withMutatedBehavior(mutations);
-    }
-
-    public get midpoint(): Vector3 {
-        return this.fabric.midpoint;
-    }
-
-    public get facesGeometry(): BufferGeometry {
-        return this.fabric.facesGeometry;
-    }
-
-    public get lineSegmentsGeometry(): BufferGeometry {
-        return this.fabric.lineSegmentsGeometry;
     }
 
     public iterate(ticks: number): number {
@@ -81,10 +64,6 @@ export class Gotchi {
             }
         }
         return maxTimeSweep;
-    }
-
-    public centralize(altitude: number, intensity: number): number {
-        return this.fabric.centralize(altitude, intensity);
     }
 
     public get growing(): boolean {

@@ -12,12 +12,13 @@ import {
     Vector3,
     VertexColors
 } from 'three';
-import {IFabricExports} from './body/fabric-exports';
 import {Population} from './gotchi/population';
 import {Gotchi} from './gotchi/gotchi';
 
 interface IGotchiViewProps {
-    createFabricInstance: () => Promise<IFabricExports>;
+    width: number;
+    height: number;
+    population: Population;
 }
 
 interface IGotchiViewState {
@@ -25,7 +26,6 @@ interface IGotchiViewState {
     height: number;
     xray: boolean;
     paused: boolean;
-    population: Population;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -56,11 +56,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     constructor(props: IGotchiViewProps) {
         super(props);
         this.state = {
-            width: window.innerWidth,
-            height: window.innerHeight - 30,
+            width: props.width,
+            height: props.height,
             xray: false,
             paused: false,
-            population: new Population(props.createFabricInstance).fill()
         };
         this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
@@ -69,10 +68,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.perspectiveCamera.position.set(12, CAMERA_ALTITUDE, 8);
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
         this.orbitControls.target = new Vector3(0, CAMERA_ALTITUDE, 0);
+
         // this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         // this.rayCaster = new Raycaster();
         this.animate();
         this.keyboardListener();
+        this.updateDimensions();
     }
 
     public mouseMove(event: any) {
@@ -109,24 +110,24 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         }
         const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
         return (
-            <div onMouseMove={(e: any) => this.mouseMove(e)}>
+            <div id="gotchi-view" onMouseMove={(e: any) => this.mouseMove(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         {
                             this.state.xray ?
-                                this.state.population.gotchis.map((gotchi: Gotchi, index: number) => {
+                                this.props.population.forDisplay.map((gotchi: Gotchi, index: number) => {
                                     return <R3.LineSegments
                                         key={`Lines${index}`}
-                                        geometry={gotchi.lineSegmentsGeometry}
+                                        geometry={gotchi.fabric.lineSegmentsGeometry}
                                         material={SPRING_MATERIAL}
                                     />
                                 })
                                 :
-                                this.state.population.gotchis.map((gotchi: Gotchi, index: number) => {
+                                this.props.population.forDisplay.map((gotchi: Gotchi, index: number) => {
                                     return <R3.Mesh
                                         ref={(node: any) => this.facesMeshNode = node}
                                         key={`Faces${index}`} name="Fabric"
-                                        geometry={gotchi.facesGeometry}
+                                        geometry={gotchi.fabric.facesGeometry}
                                         material={FACE_MATERIAL}
                                     />
                                 })
@@ -165,9 +166,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     private updateDimensions = () => {
-        this.setState({width: window.innerWidth, height: window.innerHeight});
-        this.perspectiveCamera.aspect = this.state.width / this.state.height;
-        this.perspectiveCamera.updateProjectionMatrix();
+        const element = document.getElementById('gotchi-view');
+        if (element) {
+            this.setState({width: element.clientWidth, height: element.clientHeight});
+            console.log(`w=${this.state.width}, h=${this.state.height}`);
+            this.perspectiveCamera.aspect = this.state.width / this.state.height;
+            this.perspectiveCamera.updateProjectionMatrix();
+        }
     };
 
     private animate() {
@@ -175,7 +180,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             setTimeout(
                 () => {
                     if (!this.state.paused) {
-                        this.state.population.iterate();
+                        this.props.population.iterate();
                         this.forceUpdate();
                     }
                     this.orbitControls.update();
@@ -194,7 +199,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     this.setState({xray: !this.state.xray});
                     break;
             }
-        })
+        });
     }
 }
 

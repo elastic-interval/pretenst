@@ -3,6 +3,7 @@ import {Gotchi} from './gotchi';
 import {Fabric} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Vector3} from 'three';
+import {Physics} from '../body/physics';
 
 const HUNG_ALTITUDE = 7;
 const NORMAL_TICKS = 50;
@@ -19,52 +20,27 @@ const midpointToFitness = (midpoint: Vector3, index: number): IFitness => {
 };
 
 export class Population {
+    private physicsObject = new Physics();
     private gotchiArray: Gotchi[] = [];
     private maxTravel = 6;
     private toBeBorn = 0;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
-    }
-
-    public fill() {
         for (let birth = 0; birth < MAX_POPULATION; birth++) {
-            this.birthRandom();
-        }
-        return this;
-    }
-
-    public birthRandom() {
-        if (this.gotchiArray.length + 1 > MAX_POPULATION) {
-            this.death();
-        }
-        this.createBody().then(fabric => {
-            this.gotchiArray.push(new Gotchi(fabric, new Genome()));
-        });
-    }
-
-    public birthFromPopulation() {
-        while (this.gotchiArray.length + 1 > MAX_POPULATION) {
-            this.death();
-        }
-        const fertile = this.gotchiArray.filter(gotchi => !gotchi.replacementExpected);
-        if (fertile.length) {
-            const luckyOne = fertile[Math.floor(fertile.length * Math.random())];
-            this.createReplacement(luckyOne, false);
+            setTimeout(() => this.birthRandom(), 500 + 200 * birth);
         }
     }
 
-    public death() {
-        if (this.gotchiArray.length === 0) {
-            return;
-        }
-        const midpoints = this.gotchiArray.map(gotchi => gotchi.midpoint);
-        const fitness = midpoints.map(midpointToFitness);
-        fitness.sort((a, b) => a.length - b.length);
-        const dead = this.gotchiArray[fitness[0].index];
-        dead.dispose();
-        // console.log(`fitness ${JSON.stringify(fitness)}`);
-        // console.log(`kill ${JSON.stringify(fitness[0])}`);
-        this.gotchiArray.splice(fitness[0].index, 1);
+    public get physics() {
+        return this.physicsObject;
+    }
+
+    public applyPhysics() {
+        this.gotchiArray.forEach(gotchi => gotchi.fabric.apply(this.physicsObject));
+    }
+
+    public get forDisplay(): Gotchi[] {
+        return this.gotchiArray;
     }
 
     public iterate(): number[] {
@@ -100,7 +76,7 @@ export class Population {
                     gotchi.iterate(NORMAL_TICKS);
                     catchUp = true;
                 }
-                if (gotchi.midpoint.length() >= this.maxTravel) {
+                if (gotchi.fabric.midpoint.length() >= this.maxTravel) {
                     gotchi.frozen = true;
                     if (gotchi.age < minFrozenAge) {
                         minFrozenAge = gotchi.age;
@@ -128,9 +104,7 @@ export class Population {
         });
     }
 
-    public get gotchis(): Gotchi[] {
-        return this.gotchiArray;
-    }
+    // Privates =============================================================
 
     private createReplacement(gotchi: Gotchi, clone: boolean): void {
         if (gotchi.replacementExpected && !clone) {
@@ -149,21 +123,46 @@ export class Population {
     private createBody(): Promise<Fabric> {
         return this.createFabricInstance().then(fabricExports => {
             const fabric = new Fabric(fabricExports, 42);
-            // const dragAbove =
-            fabricExports.adjustDragAbove(1);
-            // const gravityAbove =
-            fabricExports.adjustGravityAbove(1);
-            // const dragBelow =
-            fabricExports.adjustDragBelow(1);
-            // const gravityBelow =
-            fabricExports.adjustGravityBelow(1);
-            // const elasticFactor =
-            fabricExports.adjustElasticFactor(0.2);
-            // const maxSpanVariation =
-            fabricExports.adjustMaxSpanVariation(1);
-            // console.log('physics', {dragAbove, gravityAbove, dragBelow, gravityBelow, elasticFactor, maxSpanVariation});
+            const currentPhysics = this.physicsObject.applyToFabric(fabricExports);
+            console.log('current physics', currentPhysics);
             fabric.createSeed(5, HUNG_ALTITUDE);
             return fabric;
         });
     }
+
+    private birthRandom() {
+        if (this.gotchiArray.length + 1 >= MAX_POPULATION) {
+            this.death();
+        }
+        this.createBody().then(fabric => {
+            this.gotchiArray.push(new Gotchi(fabric, new Genome()));
+        });
+    }
+
+    private birthFromPopulation() {
+        while (this.gotchiArray.length + 1 > MAX_POPULATION) {
+            this.death();
+        }
+        const fertile = this.gotchiArray.filter(gotchi => !gotchi.replacementExpected);
+        if (fertile.length) {
+            const luckyOne = fertile[Math.floor(fertile.length * Math.random())];
+            this.createReplacement(luckyOne, false);
+        }
+    }
+
+    private death() {
+        if (this.gotchiArray.length === 0) {
+            return;
+        }
+        const midpoints = this.gotchiArray.map(gotchi => gotchi.fabric.midpoint);
+        const fitness = midpoints.map(midpointToFitness);
+        fitness.sort((a, b) => a.length - b.length);
+        const dead = this.gotchiArray[fitness[0].index];
+        dead.fabric.dispose();
+        // console.log(`fitness ${JSON.stringify(fitness)}`);
+        // console.log(`kill ${JSON.stringify(fitness[0])}`);
+        this.gotchiArray.splice(fitness[0].index, 1);
+    }
+
+
 }

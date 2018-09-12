@@ -24,40 +24,47 @@ const BILATERAL_LEFT: u8 = 2;
 
 // Physics =====================================================================================
 
+const DRAG_ABOVE: f32 = 0.0002;
+const GRAVITY_ABOVE: f32 = 0.000001;
+const DRAG_BELOW: f32 = 1000;
+const GRAVITY_BELOW: f32 = 10;
+const ELASTIC_FACTOR: f32 = 0.7;
+const MAX_SPAN_VARIATION: f32 = 0.6;
+
 let physicsDragAbove: f32 = 0.0002;
 
-export function adjustDragAbove(adjustment: f32): f32 {
-    return physicsDragAbove *= adjustment;
+export function setDragAbove(factor: f32): f32 {
+    return physicsDragAbove = DRAG_ABOVE * factor;
 }
 
 let physicsGravityAbove: f32 = 0.000001;
 
-export function adjustGravityAbove(adjustment: f32): f32 {
-    return physicsGravityAbove *= adjustment;
+export function setGravityAbove(factor: f32): f32 {
+    return physicsGravityAbove = GRAVITY_ABOVE * factor;
 }
 
 let physicsDragBelow: f32 = 1000;
 
-export function adjustDragBelow(adjustment: f32): f32 {
-    return physicsDragBelow *= adjustment;
+export function setDragBelow(factor: f32): f32 {
+    return physicsDragBelow = DRAG_BELOW * factor;
 }
 
 let physicsGravityBelowFactor: f32 = 10;
 
-export function adjustGravityBelow(adjustment: f32): f32 {
-    return physicsGravityBelowFactor *= adjustment;
+export function setGravityBelow(factor: f32): f32 {
+    return physicsGravityBelowFactor = GRAVITY_BELOW * factor;
 }
 
 let physicsElasticFactor: f32 = 0.7;
 
-export function adjustElasticFactor(adjustment: f32): f32 {
-    return physicsElasticFactor *= adjustment;
+export function setElasticFactor(factor: f32): f32 {
+    return physicsElasticFactor = ELASTIC_FACTOR * factor;
 }
 
 let maxSpanVariation: f32 = 0.6;
 
-export function adjustMaxSpanVariation(adjustment: f32): f32 {
-    return maxSpanVariation *= adjustment;
+export function setMaxSpanVariation(factor: f32): f32 {
+    return maxSpanVariation = MAX_SPAN_VARIATION * factor;
 }
 
 const STRESS_MAX: f32 = 0.001;

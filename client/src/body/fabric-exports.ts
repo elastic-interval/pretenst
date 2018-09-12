@@ -6,17 +6,17 @@ export interface IFabricExports {
 
     memory: IMemory;
 
-    adjustDragAbove(adjustment: number): number;
+    setDragAbove(factor: number): number;
 
-    adjustGravityAbove(adjustment: number): number;
+    setGravityAbove(factor: number): number;
 
-    adjustDragBelow(adjustment: number): number
+    setDragBelow(factor: number): number
 
-    adjustGravityBelow(adjustment: number): number;
+    setGravityBelow(factor: number): number;
 
-    adjustElasticFactor(adjustment: number): number;
+    setElasticFactor(factor: number): number;
 
-    adjustMaxSpanVariation(adjustment: number): number;
+    setMaxSpanVariation(factor: number): number;
 
     init(joints: number, intervals: number, faces: number): number;
 
