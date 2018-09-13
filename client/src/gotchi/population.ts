@@ -91,12 +91,12 @@ export class Population {
         if (!catchUp && this.toBeBorn > 0) {
             this.toBeBorn--;
             this.birthFromPopulation();
-        }
-        if (!catchUp && frozenCount > this.gotchiArray.length / 2) {
-            this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
-            if (minFrozenAge < 40000) {
-                this.maxTravel *= 1.3;
-                console.log(`maxTravel = ${this.maxTravel}`);
+            if (frozenCount > this.gotchiArray.length / 2) {
+                this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
+                if (minFrozenAge < 40000) {
+                    this.maxTravel *= 1.3;
+                    console.log(`maxTravel = ${this.maxTravel}`);
+                }
             }
         }
         return this.gotchiArray.map(gotchi => {
