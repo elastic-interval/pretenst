@@ -22,7 +22,7 @@ const midpointToFitness = (midpoint: Vector3, index: number): IFitness => {
 export class Population {
     private physicsObject = new Physics();
     private gotchiArray: Gotchi[] = [];
-    private maxTravel = 6;
+    private maxTravel = 9;
     private toBeBorn = 0;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {

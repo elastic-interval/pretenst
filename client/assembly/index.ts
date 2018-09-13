@@ -30,6 +30,7 @@ const DRAG_BELOW: f32 = 0.02;
 const GRAVITY_BELOW: f32 = -10 * GRAVITY_ABOVE;
 const ELASTIC_FACTOR: f32 = 0.7;
 const MAX_SPAN_VARIATION: f32 = 0.6;
+const TIME_SWEEP_SPEED: f32 = 50.0;
 
 let physicsDragAbove: f32 = DRAG_ABOVE;
 
@@ -55,16 +56,22 @@ export function setGravityBelow(factor: f32): f32 {
     return physicsGravityBelow = GRAVITY_BELOW * factor;
 }
 
-let physicsElasticFactor: f32 = 0.7;
+let physicsElasticFactor: f32 = ELASTIC_FACTOR;
 
 export function setElasticFactor(factor: f32): f32 {
     return physicsElasticFactor = ELASTIC_FACTOR * factor;
 }
 
-let maxSpanVariation: f32 = 0.6;
+let maxSpanVariation: f32 = MAX_SPAN_VARIATION;
 
 export function setMaxSpanVariation(factor: f32): f32 {
     return maxSpanVariation = MAX_SPAN_VARIATION * factor;
+}
+
+let timeSweepSpeed: f32 = TIME_SWEEP_SPEED;
+
+export function setSpanVariationSpeed(factor: f32): f32 {
+    return timeSweepSpeed = TIME_SWEEP_SPEED * factor;
 }
 
 const STRESS_MAX: f32 = 0.001;
@@ -890,7 +897,7 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
         multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove);
     }
     else if (altitude < -JOINT_RADIUS) {
-        exertGravity(jointIndex,  physicsGravityBelow);
+        exertGravity(jointIndex, physicsGravityBelow);
         multiplyScalar(velocityPtr(jointIndex), 1 - physicsDragBelow);
     }
     else {
@@ -952,7 +959,8 @@ function tick(timeSweepStep: u16, hanging: boolean): u16 {
     return maxTimeSweep;
 }
 
-export function iterate(ticks: usize, timeSweepStep: u16, hanging: boolean): u16 {
+export function iterate(ticks: usize, hanging: boolean): u16 {
+    let timeSweepStep: u16 = <u16>timeSweepSpeed;
     let maxTimeSweep: u16 = 0;
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         let tickMaxTimeSweep = tick(timeSweepStep, hanging);

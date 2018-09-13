@@ -18,11 +18,13 @@ export interface IFabricExports {
 
     setMaxSpanVariation(factor: number): number;
 
+    setSpanVariationSpeed(factor: number): number;
+
     init(joints: number, intervals: number, faces: number): number;
 
     age(): number;
 
-    iterate(ticks: number, timeSweepStep: number, hanging: boolean): number;
+    iterate(ticks: number, hanging: boolean): number;
 
     centralize(altitude: number, intensity: number): number;
 
