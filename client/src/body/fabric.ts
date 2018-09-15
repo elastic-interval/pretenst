@@ -7,8 +7,9 @@ import {Physics} from './physics';
 export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
-// export const ROLE_STATE_COUNT = 3;
-export const MUSCLE_STATES_RESERVED = 2;
+export const INTERVAL_MUSCLE_STATIC = -32767;
+export const INTERVAL_MUSCLE_GROWING = -32766;
+
 export const INTERVALS_RESERVED = 1;
 
 export class Fabric {
@@ -199,18 +200,21 @@ export class Fabric {
         this.fabricExports.setMuscleState(muscleStateIndex, spanVariation);
     }
 
-    public setIntervalRole(intervalIndex: number, intervalRole: number): void {
+    public setIntervalMuscle(intervalIndex: number, intervalMuscle: number): void {
         if (intervalIndex < INTERVALS_RESERVED || intervalIndex >= this.intervalCount) {
             throw new Error(`Bad interval index index ${intervalIndex}`);
         }
-        const roleIndex = intervalRole < 0 ? -intervalRole : intervalRole;
-        if (roleIndex < MUSCLE_STATES_RESERVED || roleIndex >= this.muscleStateCount) {
-            throw new Error(`Bad muscle state index ${roleIndex}`);
+        const specialMuscle = intervalMuscle === INTERVAL_MUSCLE_STATIC || intervalMuscle === INTERVAL_MUSCLE_GROWING;
+        if (!specialMuscle && Math.abs(intervalMuscle) >= this.muscleStateCount) {
+            throw new Error(`Bad interval muscle: ${intervalMuscle}`);
         }
-        this.fabricExports.setIntervalMuscle(intervalIndex, intervalRole); // could be negative
+        // console.log(`I[${intervalIndex}]=${intervalMuscle}`);
+        this.fabricExports.setIntervalMuscle(intervalIndex, intervalMuscle); // could be negative
         const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
         if (oppositeIntervalIndex < this.intervalCount) {
-            this.fabricExports.setIntervalMuscle(oppositeIntervalIndex, Math.abs(intervalRole)); // either same or opposite
+            const oppositeIntervalMuscle = specialMuscle ? intervalMuscle : Math.abs(intervalMuscle); // same if positive, opposite if negative
+            // console.log(`O[${oppositeIntervalIndex}]=${oppositeIntervalMuscle}`);
+            this.fabricExports.setIntervalMuscle(oppositeIntervalIndex, oppositeIntervalMuscle);
         }
     }
 
@@ -229,11 +233,11 @@ export class Fabric {
     }
 
     private interval(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.fabricExports.createInterval(0, alphaIndex, omegaIndex, span);
+        return this.fabricExports.createInterval(INTERVAL_MUSCLE_STATIC, alphaIndex, omegaIndex, span);
     }
 
-    private intervalGrow(alphaIndex: number, omegaIndex: number, span: number): number {
-        const intervalIndex = this.fabricExports.createInterval(1, alphaIndex, omegaIndex, span);
+    private intervalGrowth(alphaIndex: number, omegaIndex: number, span: number): number {
+        const intervalIndex = this.fabricExports.createInterval(INTERVAL_MUSCLE_GROWING, alphaIndex, omegaIndex, span);
         this.fabricExports.triggerInterval(intervalIndex);
         return intervalIndex;
     }
@@ -253,7 +257,7 @@ export class Fabric {
                 this.interval(faceJoint.jointIndex, apexIndex, idealSpan);
             }
         });
-        this.intervalGrow(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan);
+        this.intervalGrowth(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan);
         const createdFaceIndexes: number[] = [];
         sortedJoints.map(joint => joint.jointNumber).forEach((jointNumber: number, index: number) => { // youngest first
             switch (jointNumber) {

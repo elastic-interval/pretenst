@@ -42,11 +42,11 @@ export interface IFabricExports {
 
     intervals(): number;
 
-    createInterval(role: number, alphaIndex: number, omegaIndex: number, span: number): number;
+    createInterval(intervalMuscle: number, alphaIndex: number, omegaIndex: number, span: number): number;
 
     getIntervalMuscle(intervalIndex: number): number;
 
-    setIntervalMuscle(intervalIndex: number, intervalRole: number): number;
+    setIntervalMuscle(intervalIndex: number, intervalMuscle: number): number;
 
     findOppositeIntervalIndex(intervalIndex: number): number;
 

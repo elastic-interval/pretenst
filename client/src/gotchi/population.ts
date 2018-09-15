@@ -131,7 +131,7 @@ export class Population {
     }
 
     private birthRandom() {
-        if (this.gotchiArray.length + 1 >= MAX_POPULATION) {
+        if (this.gotchiArray.length + 1 > MAX_POPULATION) {
             this.death();
         }
         this.createBody().then(fabric => {

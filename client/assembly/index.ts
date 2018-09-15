@@ -476,6 +476,8 @@ export function centralize(altitude: f32, intensity: f32): f32 {
 // Intervals =====================================================================================
 
 const INTERVAL_SIZE: usize = INTERVAL_MUSCLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE + FLOAT_SIZE * 2;
+const INTERVAL_MUSCLE_STATIC: i16 = -32767;
+const INTERVAL_MUSCLE_GROWING: i16 = -32766;
 
 export function createInterval(intervalMuscle: i16, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
     if (intervalCount + 1 >= intervalCountMax) {
@@ -756,10 +758,6 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // note the first two muscle indexes are reserved, and their states not really used.
 
-const MUSCLE_INDEX_STATIC: i16 = 0;
-const MUSCLE_INDEX_GROWING: i16 = 1;
-const MUSCLE_RESERED: i16 = 2;
-
 const MUSCLE_SEQUENCE_LENGTH: u8 = 3;
 const MUSCLE_STATE_COUNT: u16 = 200;
 
@@ -781,23 +779,26 @@ export function setMuscleState(muscleStateIndex: u16, spanVariation: i16): void 
 }
 
 function getMuscleSpanVariationFloat(intervalMuscle: i16, sequenceIndex: u8): f32 {
-    let oppositeMuscle = intervalMuscle < 0;
-    let muscleIndex = oppositeMuscle ? -intervalMuscle : intervalMuscle;
+    let muscleIndex = intervalMuscle < 0 ? -intervalMuscle : intervalMuscle;
     let variationInt = getMuscleSpanVariation(muscleIndex, sequenceIndex);
-    let variationFloat = <f32>variationInt / (oppositeMuscle ? -32767 : 32767);
-    return 1.0 + maxSpanVariation * variationFloat;
+    let variationFloat = <f32>variationInt / <f32>32767;
+    if (intervalMuscle < 0) {
+        return 1.0 - maxSpanVariation * variationFloat;
+    } else {
+        return 1.0 + maxSpanVariation * variationFloat;
+    }
 }
 
 function interpolateCurrentSpan(intervalIndex: u16): f32 {
     let timeSweep = getTimeSweep(intervalIndex);
     let intervalMuscle = getIntervalMuscle(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
-    if (intervalMuscle === MUSCLE_INDEX_STATIC) {
+    if (intervalMuscle === INTERVAL_MUSCLE_STATIC) {
         return idealSpan;
     }
-    if (intervalMuscle === MUSCLE_INDEX_GROWING) {
+    if (intervalMuscle === INTERVAL_MUSCLE_GROWING) {
         if (timeSweep === 0) { // done growing
-            setIntervalMuscle(intervalIndex, MUSCLE_INDEX_STATIC); // back to static
+            setIntervalMuscle(intervalIndex, INTERVAL_MUSCLE_STATIC); // back to static
             return idealSpan;
         } else { // busy growing
             let originalSpan: f32 = 1;
@@ -816,20 +817,14 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
     let sweepChunk: u16 = <u16>65535 / <u16>(MUSCLE_SEQUENCE_LENGTH + 1) + 1; // +1 to avoid index overrun
     let before: u8 = <u8>(timeSweep / sweepChunk); // [0..3]
     let after: u8 = before + 1; // [1..4]
-    let muscleIndex = getIntervalMuscleIndex(intervalIndex);
-    let beforeVariation: f32 = (before === 0) ? 1 : getMuscleSpanVariationFloat(muscleIndex, before);
-    let afterVariation: f32 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 1 : getMuscleSpanVariationFloat(muscleIndex, after);
+    let beforeVariation: f32 = (before === 0) ? 1 : getMuscleSpanVariationFloat(intervalMuscle, before);
+    let afterVariation: f32 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 1 : getMuscleSpanVariationFloat(intervalMuscle, after);
     let beforeTime = before * sweepChunk;
     let afterTime: u16 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 65535 : after * sweepChunk;
     let timeSpan = <f32>sweepChunk;
     let currentVariation =
         <f32>(timeSweep - beforeTime) / timeSpan * afterVariation +
         <f32>(afterTime - timeSweep) / timeSpan * beforeVariation;
-    // if (timeSweep > 0 && intervalIndex === 15) {
-    // logFloat(timeSweep, currentVariation);
-    // logFloat(timeSweep, afterVariation);
-    // logFloat(timeSweep, currentVariation);
-    // }
     return idealSpan * currentVariation;
 }
 
@@ -961,6 +956,9 @@ function tick(timeSweepStep: u16, hanging: boolean): u16 {
 
 export function iterate(ticks: usize, hanging: boolean): u16 {
     let timeSweepStep: u16 = <u16>timeSweepSpeed;
+    if (hanging) {
+        timeSweepStep *= 3;
+    }
     let maxTimeSweep: u16 = 0;
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         let tickMaxTimeSweep = tick(timeSweepStep, hanging);
@@ -973,7 +971,7 @@ export function iterate(ticks: usize, hanging: boolean): u16 {
         setVector(outputAlphaLocationPtr(intervalIndex), locationPtr(getAlphaIndex(intervalIndex)));
         setVector(outputOmegaLocationPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)));
         let stress: f32 = 0;
-        if (getTimeSweep(intervalIndex) !== MUSCLE_INDEX_GROWING) {
+        if (getTimeSweep(intervalIndex) !== INTERVAL_MUSCLE_GROWING) {
             stress = getFloat(stressPtr(intervalIndex)) / STRESS_MAX;
             if (stress > 1) {
                 stress = 1;
