@@ -8,7 +8,7 @@ import {Physics} from '../body/physics';
 const HUNG_ALTITUDE = 7;
 const NORMAL_TICKS = 50;
 const CATCH_UP_TICKS = 300;
-const MAX_POPULATION = 10;
+const MAX_POPULATION = 16;
 
 interface IFitness {
     index: number;
@@ -22,7 +22,7 @@ const midpointToFitness = (midpoint: Vector3, index: number): IFitness => {
 export class Population {
     private physicsObject = new Physics();
     private gotchiArray: Gotchi[] = [];
-    private maxTravel = 9;
+    private maxTravel = 7;
     private toBeBorn = 0;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {

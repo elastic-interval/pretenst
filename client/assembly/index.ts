@@ -16,7 +16,7 @@ const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
 
 const JOINT_RADIUS: f32 = 0.15;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
-const SPRING_SMOOTH: f32 = 0.03; // const BAR_SMOOTH: f32 = 0.6; const CABLE_SMOOTH: f32 = 0.01;
+const SPRING_SMOOTH: f32 = 0.06; // const BAR_SMOOTH: f32 = 0.6; const CABLE_SMOOTH: f32 = 0.01;
 
 const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
@@ -756,33 +756,25 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Muscles =====================================================================================
 
-// note the first two muscle indexes are reserved, and their states not really used.
-
 const MUSCLE_SEQUENCE_LENGTH: u8 = 3;
 const MUSCLE_STATE_COUNT: u16 = 200;
+const SWEEP_CHUNK = <u16>65535 / <u16>(MUSCLE_SEQUENCE_LENGTH + 1) + 1; // +1 to avoid index overrun
+const HALF_SWEEP = <u16>32767;
+const HALF_SWEEP_CHUNK = HALF_SWEEP / <u16>(MUSCLE_SEQUENCE_LENGTH + 1) + 1; // +1 to avoid index overrun
 
 function musclePtr(muscleIndex: u16, sequenceIndex: u8): usize {
     let variationNumber = (muscleIndex + sequenceIndex) % MUSCLE_STATE_COUNT; // wrap around
     return muscleOffset + variationNumber * SPAN_VARIATION_SIZE; // they overlap intentionally
 }
 
-function getMuscleSpanVariation(muscleIndex: u16, sequenceIndex: u8): i16 {
-    return getSpanVariation(musclePtr(muscleIndex, sequenceIndex));
-}
-
-function setMuscleSpanVariation(muscleIndex: u16, sequenceIndex: u8, spanVariation: i16): void {
-    setSpanVariation(musclePtr(muscleIndex, sequenceIndex), spanVariation);
-}
-
 export function setMuscleState(muscleStateIndex: u16, spanVariation: i16): void {
     setSpanVariation(musclePtr(muscleStateIndex, 0), spanVariation);
 }
 
-function getMuscleSpanVariationFloat(intervalMuscle: i16, sequenceIndex: u8): f32 {
-    let muscleIndex = intervalMuscle < 0 ? -intervalMuscle : intervalMuscle;
-    let variationInt = getMuscleSpanVariation(muscleIndex, sequenceIndex);
+function getMuscleSpanVariationFloat(muscleIndex: u16, sequenceIndex: u8, reverse: boolean): f32 {
+    let variationInt = getSpanVariation(musclePtr(muscleIndex, sequenceIndex));
     let variationFloat = <f32>variationInt / <f32>32767;
-    if (intervalMuscle < 0) {
+    if (reverse) {
         return 1.0 - maxSpanVariation * variationFloat;
     } else {
         return 1.0 + maxSpanVariation * variationFloat;
@@ -812,16 +804,23 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
             return originalSpan * (1 - progress) + idealSpan * progress;
         }
     }
-    // 0 ---sweepChunk------------------- 65536 (sweepChunk is 13107)
+    // 0 ---SWEEP_CHUNK------------------- 65536 (sweepChunk is 13107)
     // 0 -----[ 1 ----- 2 ----- 3 ]-----   4 (4 is unreachable for before, only after)
-    let sweepChunk: u16 = <u16>65535 / <u16>(MUSCLE_SEQUENCE_LENGTH + 1) + 1; // +1 to avoid index overrun
-    let before: u8 = <u8>(timeSweep / sweepChunk); // [0..3]
+
+    let reverseSweep = timeSweep > HALF_SWEEP;
+    if (reverseSweep) {
+        timeSweep -= HALF_SWEEP;
+    }
+    let opposingMuscle: boolean = (intervalMuscle < 0);
+    let muscleIndex: u16 = opposingMuscle ? -intervalMuscle : intervalMuscle;
+    let before: u8 = <u8>(timeSweep / HALF_SWEEP_CHUNK); // [0..3]
     let after: u8 = before + 1; // [1..4]
-    let beforeVariation: f32 = (before === 0) ? 1 : getMuscleSpanVariationFloat(intervalMuscle, before);
-    let afterVariation: f32 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 1 : getMuscleSpanVariationFloat(intervalMuscle, after);
-    let beforeTime = before * sweepChunk;
-    let afterTime: u16 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 65535 : after * sweepChunk;
-    let timeSpan = <f32>sweepChunk;
+    let reverseVariation = reverseSweep === opposingMuscle;
+    let beforeVariation: f32 = (before === 0) ? 1 : getMuscleSpanVariationFloat(muscleIndex, before, reverseVariation);
+    let afterVariation: f32 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 1 : getMuscleSpanVariationFloat(muscleIndex, after, reverseVariation);
+    let beforeTime = before * HALF_SWEEP_CHUNK;
+    let afterTime: u16 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? HALF_SWEEP : after * HALF_SWEEP_CHUNK;
+    let timeSpan = <f32>HALF_SWEEP_CHUNK;
     let currentVariation =
         <f32>(timeSweep - beforeTime) / timeSpan * afterVariation +
         <f32>(afterTime - timeSweep) / timeSpan * beforeVariation;
