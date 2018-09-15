@@ -916,7 +916,7 @@ function tick(timeSweepStep: u16, hanging: boolean): u16 {
         smoothVelocity(thisInterval);
     }
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        exertJointPhysics(thisJoint, physicsDragAbove * (hanging ? 5 : 1));
+        exertJointPhysics(thisJoint, physicsDragAbove * (hanging ? 8 : 1));
         addScaledVector(velocityPtr(thisJoint), forcePtr(thisJoint), 1.0 / getFloat(intervalMassPtr(thisJoint)));
         zero(forcePtr(thisJoint));
         add(velocityPtr(thisJoint), absorbVelocityPtr(thisJoint));

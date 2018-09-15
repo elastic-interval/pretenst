@@ -3,8 +3,8 @@ import {Behavior} from '../genetics/behavior';
 import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 
-const HANG_DELAY = 6000;
-const REST_DELAY = 6000;
+const HANG_DELAY = 4000;
+const REST_DELAY = 4000;
 
 export class Gotchi {
     public frozen = false;
