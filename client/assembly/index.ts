@@ -16,7 +16,6 @@ const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
 
 const JOINT_RADIUS: f32 = 0.15;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
-const SPRING_SMOOTH: f32 = 0.06; // const BAR_SMOOTH: f32 = 0.6; const CABLE_SMOOTH: f32 = 0.01;
 
 const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
@@ -29,6 +28,7 @@ const GRAVITY_ABOVE: f32 = 0.000001;
 const DRAG_BELOW: f32 = 0.02;
 const GRAVITY_BELOW: f32 = -10 * GRAVITY_ABOVE;
 const ELASTIC_FACTOR: f32 = 0.7;
+const STIFFNESS_FACTOR: f32 = 0.1;
 const MAX_SPAN_VARIATION: f32 = 0.6;
 const TIME_SWEEP_SPEED: f32 = 50.0;
 
@@ -60,6 +60,12 @@ let physicsElasticFactor: f32 = ELASTIC_FACTOR;
 
 export function setElasticFactor(factor: f32): f32 {
     return physicsElasticFactor = ELASTIC_FACTOR * factor;
+}
+
+let physicsStiffnessFactor: f32 = STIFFNESS_FACTOR;
+
+export function setStiffnessFactor(factor: f32): f32 {
+    return physicsStiffnessFactor = STIFFNESS_FACTOR * factor;
 }
 
 let maxSpanVariation: f32 = MAX_SPAN_VARIATION;
@@ -869,8 +875,8 @@ function splitVectors(vectorPtr: usize, basisPtr: usize, projectionPtr: usize, h
 }
 
 function smoothVelocity(intervalIndex: u16): void {
-    splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, SPRING_SMOOTH);
-    splitVectors(velocityPtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), omegaProjectionPtr, SPRING_SMOOTH);
+    splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, physicsStiffnessFactor);
+    splitVectors(velocityPtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), omegaProjectionPtr, physicsStiffnessFactor);
     addVectors(projectionPtr, alphaProjectionPtr, omegaProjectionPtr);
     multiplyScalar(projectionPtr, 0.5);
     sub(absorbVelocityPtr(getAlphaIndex(intervalIndex)), alphaProjectionPtr);

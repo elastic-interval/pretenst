@@ -13,7 +13,7 @@ export class Behavior {
             this.fabric.setMuscleState(muscleStateIndex, spanVariation);
             // console.log(`MS${muscleStateIndex}= ${spanVariation}`);
         }
-        const opposite = this.behaviorGene.next() > 0.5;
+        const opposite = this.behaviorGene.next() > 0.3;
         for (let interval = 0; interval < this.fabric.intervalCount / 4; interval++) {
             const maxIntervalChoice = this.fabric.intervalCount - INTERVALS_RESERVED;
             const intervalChoice = INTERVALS_RESERVED + this.behaviorGene.nextChoice(maxIntervalChoice);

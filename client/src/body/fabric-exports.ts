@@ -16,6 +16,8 @@ export interface IFabricExports {
 
     setElasticFactor(factor: number): number;
 
+    setStiffnessFactor(factor: number): number;
+
     setMaxSpanVariation(factor: number): number;
 
     setSpanVariationSpeed(factor: number): number;

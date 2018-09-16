@@ -6,6 +6,7 @@ export enum PhysicsFeature {
     DragAbove = 'Drag Above',
     DragBelow = 'Drag Below',
     ElasticFactor = 'Elastic Factor',
+    StiffnessFactor = 'Stiffness Factor',
     MaxSpanVariation = 'Maximum Span Variation',
     SpanVariationSpeed = 'Span Variation Speed'
 }
@@ -48,6 +49,9 @@ export class Physics {
                     break;
                 case PhysicsFeature.ElasticFactor:
                     currentValue = fabricExports.setElasticFactor(factor);
+                    break;
+                case PhysicsFeature.StiffnessFactor:
+                    currentValue = fabricExports.setStiffnessFactor(factor);
                     break;
                 case PhysicsFeature.MaxSpanVariation:
                     currentValue = fabricExports.setMaxSpanVariation(factor);
