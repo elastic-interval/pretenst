@@ -6,10 +6,8 @@ import {BufferGeometry, Float32BufferAttribute, Vector3} from 'three';
 import {Physics} from '../body/physics';
 
 const HUNG_ALTITUDE = 7;
-const WALL_STEP_DEGREES = 5;
-const WALL_ALTITUDE = 4;
+const WALL_STEP_DEGREES = 3;
 const FRONTIER = 9;
-const HOLE_RADIUS = 0.3;
 const NORMAL_TICKS = 30;
 const CATCH_UP_TICKS = 120;
 const MAX_POPULATION = 16;
@@ -182,24 +180,17 @@ export class Population {
             old.dispose();
         }
         const geometry = new BufferGeometry();
-        const positions = new Float32Array(360 * 12 / WALL_STEP_DEGREES);
+        const positions = new Float32Array(360 * 6 / WALL_STEP_DEGREES);
         let slot = 0;
         for (let degrees = 0; degrees < 360; degrees += WALL_STEP_DEGREES) {
             const r1 = Math.PI * 2 * degrees / 360;
             const r2 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES) / 360;
-            const r3 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES * 6) / 360;
             positions[slot++] = this.frontier * Math.sin(r1);
             positions[slot++] = 0;
             positions[slot++] = this.frontier * Math.cos(r1);
             positions[slot++] = this.frontier * Math.sin(r2);
-            positions[slot++] = WALL_ALTITUDE;
+            positions[slot++] = 0;
             positions[slot++] = this.frontier * Math.cos(r2);
-            positions[slot++] = this.frontier * Math.sin(r2);
-            positions[slot++] = WALL_ALTITUDE;
-            positions[slot++] = this.frontier * Math.cos(r2);
-            positions[slot++] = this.frontier * Math.sin(r3) * HOLE_RADIUS;
-            positions[slot++] = HUNG_ALTITUDE;
-            positions[slot++] = this.frontier * Math.cos(r3) * HOLE_RADIUS;
         }
         geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));
         this.frontierGeometry = geometry;
