@@ -999,14 +999,10 @@ export function iterate(ticks: usize, hanging: boolean): u16 {
         outputFaceGeometry(faceIndex);
     }
     zero(midpointPtr);
-    let averageCount: f32 = 0;
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        if (getJointLaterality(jointIndex) === BILATERAL_MIDDLE) {
-            averageCount += 1.0;
-            add(midpointPtr, locationPtr(jointIndex));
-        }
+        add(midpointPtr, locationPtr(jointIndex));
     }
-    multiplyScalar(midpointPtr, 1 / averageCount);
+    multiplyScalar(midpointPtr, 1.0 / <f32>jointCount);
     return maxTimeSweep;
 }
 

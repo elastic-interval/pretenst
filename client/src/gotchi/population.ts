@@ -2,13 +2,21 @@ import {IFabricExports} from '../body/fabric-exports';
 import {Gotchi} from './gotchi';
 import {Fabric} from '../body/fabric';
 import {Genome} from '../genetics/genome';
-import {Vector3} from 'three';
+import {BufferGeometry, Float32BufferAttribute, Vector3} from 'three';
 import {Physics} from '../body/physics';
 
 const HUNG_ALTITUDE = 7;
+const WALL_STEP_DEGREES = 5;
+const WALL_ALTITUDE = 4;
+const FRONTIER = 9;
+const HOLE_RADIUS = 0.3;
 const NORMAL_TICKS = 30;
-const CATCH_UP_TICKS = 90;
+const CATCH_UP_TICKS = 120;
 const MAX_POPULATION = 16;
+const FRONTIER_EXPANSION = 1.25;
+const FRONTIER_EXPANSION_AGE = 40000;
+const MAX_JOINT_COUNT = 50;
+const MUTATION_COUNT = 15;
 
 interface IFitness {
     index: number;
@@ -20,12 +28,14 @@ const midpointToFitness = (midpoint: Vector3, index: number): IFitness => {
 };
 
 export class Population {
+    public frontierGeometry?: BufferGeometry;
     private physicsObject = new Physics();
     private gotchiArray: Gotchi[] = [];
-    private maxTravel = 7;
+    private frontier = FRONTIER;
     private toBeBorn = 0;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
+        this.createFrontierGeometry();
         for (let birth = 0; birth < MAX_POPULATION; birth++) {
             setTimeout(() => this.birthRandom(), 500 + 200 * birth);
         }
@@ -68,6 +78,14 @@ export class Population {
                 frozenCount++;
                 return gotchi;
             } else {
+                if (gotchi.fabric.midpoint.length() >= this.frontier) {
+                    gotchi.frozen = true;
+                    if (gotchi.age < minFrozenAge) {
+                        minFrozenAge = gotchi.age;
+                    }
+                    console.log(`frozen at age ${gotchi.age}`);
+                    this.toBeBorn++;
+                }
                 if (gotchi.age + CATCH_UP_TICKS < maxAge) {
                     gotchi.iterate(CATCH_UP_TICKS);
                     catchUp = true;
@@ -75,14 +93,6 @@ export class Population {
                     // console.log('triple', index, gotchi.age, maxAge);
                     gotchi.iterate(NORMAL_TICKS);
                     catchUp = true;
-                }
-                if (gotchi.fabric.midpoint.length() >= this.maxTravel) {
-                    gotchi.frozen = true;
-                    if (gotchi.age < minFrozenAge) {
-                        minFrozenAge = gotchi.age;
-                    }
-                    console.log(`frozen at age ${gotchi.age}`);
-                    this.toBeBorn++;
                 }
                 return gotchi;
             }
@@ -93,9 +103,10 @@ export class Population {
             this.birthFromPopulation();
             if (frozenCount > this.gotchiArray.length / 2) {
                 this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
-                if (minFrozenAge < 40000) {
-                    this.maxTravel *= 1.3;
-                    console.log(`maxTravel = ${this.maxTravel}`);
+                if (minFrozenAge < FRONTIER_EXPANSION_AGE) {
+                    this.frontier *= FRONTIER_EXPANSION;
+                    this.createFrontierGeometry();
+                    console.log(`maxTravel = ${this.frontier}`);
                 }
             }
         }
@@ -115,14 +126,14 @@ export class Population {
         this.createBody().then(fabric => {
             gotchi.replacement = gotchi.withNewBody(fabric);
             if (!clone) {
-                gotchi.replacement.mutateBehavior(15);
+                gotchi.replacement.mutateBehavior(MUTATION_COUNT);
             }
         });
     }
 
     private createBody(): Promise<Fabric> {
         return this.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, 50);
+            const fabric = new Fabric(fabricExports, MAX_JOINT_COUNT);
             const currentPhysics = this.physicsObject.applyToFabric(fabricExports);
             console.log('current physics', currentPhysics);
             fabric.createSeed(3, HUNG_ALTITUDE);
@@ -164,5 +175,33 @@ export class Population {
         this.gotchiArray.splice(fitness[0].index, 1);
     }
 
-
+    private createFrontierGeometry(): void {
+        if (this.frontierGeometry) {
+            const old = this.frontierGeometry;
+            this.frontierGeometry = undefined;
+            old.dispose();
+        }
+        const geometry = new BufferGeometry();
+        const positions = new Float32Array(360 * 12 / WALL_STEP_DEGREES);
+        let slot = 0;
+        for (let degrees = 0; degrees < 360; degrees += WALL_STEP_DEGREES) {
+            const r1 = Math.PI * 2 * degrees / 360;
+            const r2 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES) / 360;
+            const r3 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES * 6) / 360;
+            positions[slot++] = this.frontier * Math.sin(r1);
+            positions[slot++] = 0;
+            positions[slot++] = this.frontier * Math.cos(r1);
+            positions[slot++] = this.frontier * Math.sin(r2);
+            positions[slot++] = WALL_ALTITUDE;
+            positions[slot++] = this.frontier * Math.cos(r2);
+            positions[slot++] = this.frontier * Math.sin(r2);
+            positions[slot++] = WALL_ALTITUDE;
+            positions[slot++] = this.frontier * Math.cos(r2);
+            positions[slot++] = this.frontier * Math.sin(r3) * HOLE_RADIUS;
+            positions[slot++] = HUNG_ALTITUDE;
+            positions[slot++] = this.frontier * Math.cos(r3) * HOLE_RADIUS;
+        }
+        geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));
+        this.frontierGeometry = geometry;
+    }
 }

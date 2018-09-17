@@ -53,7 +53,7 @@ export class FabricKernel {
     }
 
     public get midpoint(): Vector3 {
-        const midpointArray = new Float32Array(this.arrayBuffer, this.midpointOffset, 1);
+        const midpointArray = new Float32Array(this.arrayBuffer, this.midpointOffset, 3);
         return vectorFromFloatArray(midpointArray, 0);
     }
 

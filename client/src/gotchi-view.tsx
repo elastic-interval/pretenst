@@ -36,8 +36,10 @@ const FACE_MATERIAL = new MeshPhongMaterial({
     visible: true
 });
 const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
+const FRONTIER_MATERIAL = new LineBasicMaterial({color: 0xBBBBBB});
 const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
-const CAMERA_ALTITUDE = 4.5;
+const CAMERA_POSITION = new Vector3(0, 20, 0);
+const CAMERA_TARGET = new Vector3(0, 5, 0);
 const TARGET_FRAME_RATE = 25;
 const FLOOR_QUATERNION = new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2);
 
@@ -65,9 +67,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000);
-        this.perspectiveCamera.position.set(12, CAMERA_ALTITUDE, 8);
+        this.perspectiveCamera.position.add(CAMERA_POSITION);
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
-        this.orbitControls.target = new Vector3(0, CAMERA_ALTITUDE, 0);
+        this.orbitControls.target.add(CAMERA_TARGET);
 
         // this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
         // this.rayCaster = new Raycaster();
@@ -132,23 +134,33 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                     />
                                 })
                         }
-                        {this.state.xray ? null :
-                            <R3.Mesh
-                                key="Floor"
-                                geometry={new PlaneGeometry(1, 1)}
-                                scale={new Vector3(1000, 1000, 1000)}
-                                material={this.floorMaterial}
-                                quaternion={FLOOR_QUATERNION}
-                            />
+                        {
+                            this.state.xray ? null :
+                                <R3.Mesh
+                                    key="Floor"
+                                    geometry={new PlaneGeometry(1, 1)}
+                                    scale={new Vector3(1000, 1000, 1000)}
+                                    material={this.floorMaterial}
+                                    quaternion={FLOOR_QUATERNION}
+                                />
                         }
-                        {this.state.xray ? null :
-                            <R3.PointLight
-                                name="Light"
-                                key="Light"
-                                distance="60"
-                                decay="2"
-                                position={lightPosition}
-                            />
+                        {
+                            this.state.xray ? null :
+                                <R3.PointLight
+                                    name="Light"
+                                    key="Light"
+                                    distance="60"
+                                    decay="2"
+                                    position={lightPosition}
+                                />
+                        }
+                        {
+                            !this.props.population.frontierGeometry ? null :
+                                <R3.LineSegments
+                                    key="Frontier"
+                                    geometry={this.props.population.frontierGeometry}
+                                    material={FRONTIER_MATERIAL}
+                                />
                         }
                         <R3.HemisphereLight name="Hemi" color={new Color(0.4, 0.4, 0.4)}/>
                     </R3.Scene>

@@ -62,12 +62,12 @@ export class Fabric {
 
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
         const createGeometry = (index: number) => {
-            const geometry = new Geometry();
             const face = this.getFaceSnapshot(index);
             const apexHeight = face.averageIdealSpan * Math.sqrt(2 / 3);
             const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, apexHeight);
             const faceOffset = face.index * 3;
             const faceLocations = this.kernel.faceLocations;
+            const geometry = new Geometry();
             geometry.vertices = [
                 vectorFromFloatArray(faceLocations, faceOffset * 3), apex,
                 vectorFromFloatArray(faceLocations, (faceOffset + 1) * 3), apex,
