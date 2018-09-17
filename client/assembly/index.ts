@@ -885,27 +885,32 @@ function smoothVelocity(intervalIndex: u16): void {
     add(absorbVelocityPtr(getOmegaIndex(intervalIndex)), projectionPtr);
 }
 
-function exertGravity(jointIndex: u16, value: f32): void {
-    let velocity = velocityPtr(jointIndex);
-    setY(velocity, getY(velocity) - value);
-}
-
 function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
+    let velocityVectorPtr = velocityPtr(jointIndex);
+    let velocityY = getY(velocityVectorPtr);
     let altitude = getY(locationPtr(jointIndex));
     if (altitude > JOINT_RADIUS) {
-        exertGravity(jointIndex, physicsGravityAbove);
+        setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove);
         multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove);
     }
-    else if (altitude < -JOINT_RADIUS) {
-        exertGravity(jointIndex, physicsGravityBelow);
-        multiplyScalar(velocityPtr(jointIndex), 1 - physicsDragBelow);
+    else if (altitude > -JOINT_RADIUS) {
+        let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
+        let degreeBelow: f32 = 1.0 - degreeAbove;
+        if (velocityY < 0) {
+            multiplyScalar(velocityVectorPtr, degreeAbove); // zero at the bottom
+        }
+        let gravityValue: f32 = physicsGravityAbove * degreeAbove + physicsGravityBelow * degreeBelow;
+        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue);
+        let drag = dragAbove * degreeAbove + physicsDragBelow * degreeBelow;
+        multiplyScalar(velocityPtr(jointIndex), 1 - drag);
     }
     else {
-        let degree = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2);
-        let gravityValue = physicsGravityAbove * degree + physicsGravityBelow * (1 - degree);
-        exertGravity(jointIndex, gravityValue);
-        let drag = dragAbove * degree + dragAbove * physicsDragBelow * (1 - degree);
-        multiplyScalar(velocityPtr(jointIndex), 1 - drag);
+        if (velocityY < 0) {
+            zero(velocityVectorPtr);
+        } else {
+            setY(velocityVectorPtr, velocityY - physicsGravityBelow);
+        }
+        multiplyScalar(velocityPtr(jointIndex), 1 - physicsDragBelow);
     }
 }
 

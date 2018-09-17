@@ -64,7 +64,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
-        this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 5000);
+        this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000);
         this.perspectiveCamera.position.set(12, CAMERA_ALTITUDE, 8);
         this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
         this.orbitControls.target = new Vector3(0, CAMERA_ALTITUDE, 0);
