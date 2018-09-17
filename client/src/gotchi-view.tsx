@@ -25,7 +25,7 @@ interface IGotchiViewState {
     width: number;
     height: number;
     xray: boolean;
-    paused: boolean;
+    turbo: boolean;
 }
 
 const FACE_MATERIAL = new MeshPhongMaterial({
@@ -61,7 +61,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             width: props.width,
             height: props.height,
             xray: false,
-            paused: false,
+            turbo: false,
         };
         this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
@@ -191,10 +191,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const step = () => {
             setTimeout(
                 () => {
-                    if (!this.state.paused) {
-                        this.props.population.iterate();
-                        this.forceUpdate();
+                    if (this.state.turbo) {
+                        for (let walk = 0; walk < 29; walk++) {
+                            this.props.population.iterate();
+                        }
                     }
+                    this.props.population.iterate();
+                    this.forceUpdate();
                     this.orbitControls.update();
                     requestAnimationFrame(step);
                 },
@@ -209,6 +212,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             switch (event.code) {
                 case 'KeyX':
                     this.setState({xray: !this.state.xray});
+                    break;
+                case 'Space':
+                    this.setState({turbo: !this.state.turbo});
                     break;
             }
         });

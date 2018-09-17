@@ -19,7 +19,7 @@ export class Fabric {
     private facesGeometryStored: BufferGeometry | undefined;
     private lineSegmentsGeometryStored: BufferGeometry | undefined;
 
-    constructor(private fabricExports: IFabricExports, private jointCountMax: number) {
+    constructor(private fabricExports: IFabricExports, public jointCountMax: number) {
         this.intervalCountMax = jointCountMax * 3 + 30;
         this.faceCountMax = jointCountMax * 2 + 20;
         this.kernel = new FabricKernel(fabricExports, this.jointCountMax, this.intervalCountMax, this.faceCountMax);
