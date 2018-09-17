@@ -14,9 +14,9 @@ const NORMAL_TICKS = 30;
 const CATCH_UP_TICKS = 120;
 const MAX_POPULATION = 16;
 const FRONTIER_EXPANSION = 1.25;
-const INITIAL_JOINT_COUNT = 37;
+const INITIAL_JOINT_COUNT = 47;
 const MUTATION_COUNT = 10;
-const CHANCE_OF_GROWTH = 0.4;
+const CHANCE_OF_GROWTH = 0.1;
 
 interface IGotchiFitness {
     gotchi: Gotchi;
@@ -59,10 +59,12 @@ export class Population {
         const nursery: Gotchi[] = [];
         let minFrozenAge = maxAge;
         let maxFrozenAge = 0;
-        let frozenCount = 0;
-        const registerFrozen = (gotchi: Gotchi) => {
+        let frozenNotExpectingCount = 0;
+        const freeze = (gotchi: Gotchi) => {
             gotchi.frozen = true;
-            frozenCount++;
+            if (!gotchi.expecting) {
+                frozenNotExpectingCount++;
+            }
             if (minFrozenAge > gotchi.age) {
                 minFrozenAge = gotchi.age;
             }
@@ -80,11 +82,11 @@ export class Population {
                 return gotchi;
             }
             else if (gotchi.frozen) {
-                registerFrozen(gotchi);
+                freeze(gotchi);
                 return gotchi;
             } else {
                 if (gotchi.distance > this.frontier) {
-                    registerFrozen(gotchi);
+                    freeze(gotchi);
                     console.log(`frozen at age ${gotchi.age} with distance=${gotchi.distance}`);
                     this.toBeBorn++;
                 }
@@ -103,9 +105,9 @@ export class Population {
         if (this.toBeBorn > 0) {
             this.toBeBorn--;
             this.birthFromPopulation();
-        } else if (frozenCount > this.gotchiArray.length / 2) {
+        } else if (frozenNotExpectingCount > this.gotchiArray.length / 2) {
             this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
-            if (minFrozenAge * 2 > maxFrozenAge) {
+            if (minFrozenAge * 3 > maxFrozenAge * 2) {
                 this.frontier *= FRONTIER_EXPANSION;
                 this.createFrontierGeometry();
                 console.log(`fontier advanced to: ${this.frontier}`);
@@ -119,10 +121,14 @@ export class Population {
     // Privates =============================================================
 
     private createReplacement(gotchi: Gotchi, clone: boolean): void {
+        gotchi.expecting = true;
         const grow = !clone && gotchi.frozen && Math.random() < CHANCE_OF_GROWTH;
-        console.log(`grow=${grow}`);
+        if (grow) {
+            console.log('grow!');
+        }
         this.createBody(gotchi.fabric.jointCountMax + (grow ? 2 : 0)).then(fabric => {
             const freshGotchi = gotchi.withNewBody(fabric);
+            gotchi.expecting = false;
             if (clone) {
                 gotchi.rebornClone = freshGotchi;
             } else {

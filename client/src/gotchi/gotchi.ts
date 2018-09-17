@@ -5,6 +5,7 @@ import {Embryology} from '../genetics/embryology';
 
 export class Gotchi {
     public frozen = false;
+    public expecting = false;
     public catchingUp = false;
     public rebornClone?: Gotchi;
     public offspring?: Gotchi;
