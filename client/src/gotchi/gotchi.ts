@@ -3,9 +3,6 @@ import {Behavior} from '../genetics/behavior';
 import {Genome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 
-const HANG_DELAY = 4000;
-const REST_DELAY = 4000;
-
 export class Gotchi {
     public frozen = false;
     public replacementExpected = false;
@@ -13,13 +10,15 @@ export class Gotchi {
     public replacement: Gotchi | null;
     private embryology?: Embryology;
     private behavior: Behavior;
-    private hangingCountdown = HANG_DELAY;
-    private restCountdown = REST_DELAY;
+    private hangingCountdown: number;
+    private restCountdown: number;
     private mature = false;
 
-    constructor(public fabric: Fabric, private genome: Genome) {
+    constructor(public fabric: Fabric, private genome: Genome, private hangingDelay: number, private restDelay: number) {
         this.embryology = genome.embryology(fabric);
         this.behavior = genome.behavior(fabric);
+        this.hangingCountdown = hangingDelay;
+        this.restCountdown = restDelay
     }
 
     public get age() {
@@ -27,7 +26,7 @@ export class Gotchi {
     }
 
     public withNewBody(fabric: Fabric): Gotchi {
-        return new Gotchi(fabric, this.genome);
+        return new Gotchi(fabric, this.genome, this.hangingDelay, this.restDelay);
     }
 
     public mutateBehavior(mutations: number): void {

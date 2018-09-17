@@ -5,6 +5,8 @@ import {Genome} from '../genetics/genome';
 import {BufferGeometry, Float32BufferAttribute, Vector3} from 'three';
 import {Physics} from '../body/physics';
 
+const HANG_DELAY = 4000;
+const REST_DELAY = 3000;
 const HUNG_ALTITUDE = 7;
 const WALL_STEP_DEGREES = 3;
 const FRONTIER = 9;
@@ -144,7 +146,7 @@ export class Population {
             this.death();
         }
         this.createBody().then(fabric => {
-            this.gotchiArray.push(new Gotchi(fabric, new Genome()));
+            this.gotchiArray.push(new Gotchi(fabric, new Genome(), HANG_DELAY, REST_DELAY));
         });
     }
 

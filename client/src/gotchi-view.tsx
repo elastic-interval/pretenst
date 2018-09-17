@@ -150,7 +150,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                     name="Light"
                                     key="Light"
                                     distance="60"
-                                    decay="2"
+                                    decay="0.1"
                                     position={lightPosition}
                                 />
                         }
@@ -162,7 +162,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                     material={FRONTIER_MATERIAL}
                                 />
                         }
-                        <R3.HemisphereLight name="Hemi" color={new Color(0.4, 0.4, 0.4)}/>
+                        <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>
                     </R3.Scene>
                 </R3.Renderer>
             </div>
