@@ -9,15 +9,15 @@ const HANG_DELAY = 4000;
 const REST_DELAY = 3000;
 const HUNG_ALTITUDE = 7;
 const WALL_STEP_DEGREES = 3;
-const FRONTIER = 9;
+const INITIAL_FRONTIER = 8;
 const NORMAL_TICKS = 30;
 const CATCH_UP_TICKS = 120;
 const MAX_POPULATION = 16;
 const FRONTIER_EXPANSION = 1.25;
 const FRONTIER_EXPANSION_AGE = 40000;
-const INITIAL_JOINT_COUNT = 24;
-const MUTATION_COUNT = 15;
-const CHANCE_OF_GROWTH = 0.2;
+const INITIAL_JOINT_COUNT = 31;
+const MUTATION_COUNT = 10;
+const CHANCE_OF_GROWTH = 0.3;
 
 interface IGotchiFitness {
     gotchi: Gotchi;
@@ -33,7 +33,7 @@ export class Population {
     public frontierGeometry?: BufferGeometry;
     private physicsObject = new Physics();
     private gotchiArray: Gotchi[] = [];
-    private frontier = FRONTIER;
+    private frontier = INITIAL_FRONTIER;
     private toBeBorn = 0;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
