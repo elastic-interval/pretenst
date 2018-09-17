@@ -11,18 +11,14 @@ export class Embryology {
 
     constructor(private fabric: Fabric, private growthGene: GeneSequence) {
         this.growingFaces.push(fabric.getFaceSnapshot(0));
-        if (this.growthGene.nextChoice(6)) {
-            this.growingFaces.push(fabric.getFaceSnapshot(4));
-            if (!this.growthGene.nextChoice(3)) {
-                this.growingFaces.push(fabric.getFaceSnapshot(2));
-            }
-        }
+        this.growingFaces.push(fabric.getFaceSnapshot(2));
+        this.growingFaces.push(fabric.getFaceSnapshot(6));
     }
 
     public step(): boolean {
         const freshFaces: FaceSnapshot[] = [];
         for (let growingFace = 0; growingFace < this.growingFaces.length; growingFace++) {
-            const count: number = 1 + this.growthGene.nextChoice(5);
+            const count: number = 1 + this.growthGene.nextChoice(6);
             if (count < 3) { // maybe go crooked
                 const unfoldJoint = this.growingFaces[growingFace].isDerived ? UNFOLD_JOINT : this.growthGene.nextChoice(3);
                 const unfoldedFaces = this.fabric.unfold(this.growingFaces[growingFace].fresh.index, unfoldJoint);
