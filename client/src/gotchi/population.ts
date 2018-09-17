@@ -125,7 +125,7 @@ export class Population {
             const fabric = new Fabric(fabricExports, 50);
             const currentPhysics = this.physicsObject.applyToFabric(fabricExports);
             console.log('current physics', currentPhysics);
-            fabric.createSeed(5, HUNG_ALTITUDE);
+            fabric.createSeed(3, HUNG_ALTITUDE);
             return fabric;
         });
     }

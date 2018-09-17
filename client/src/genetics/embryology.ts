@@ -12,7 +12,7 @@ export class Embryology {
     constructor(private fabric: Fabric, private growthGene: GeneSequence) {
         this.growingFaces.push(fabric.getFaceSnapshot(0));
         this.growingFaces.push(fabric.getFaceSnapshot(2));
-        this.growingFaces.push(fabric.getFaceSnapshot(6));
+        this.growingFaces.push(fabric.getFaceSnapshot(4));
     }
 
     public step(): boolean {
