@@ -14,7 +14,7 @@ const FLOAT_SIZE: usize = sizeof<f32>();
 const AGE_SIZE: usize = sizeof<u32>();
 const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
 
-const JOINT_RADIUS: f32 = 0.15;
+const JOINT_RADIUS: f32 = 0.5;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
 
 const BILATERAL_MIDDLE: u8 = 0;

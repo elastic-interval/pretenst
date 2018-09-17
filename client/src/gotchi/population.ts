@@ -13,9 +13,9 @@ const INITIAL_FRONTIER = 8;
 const NORMAL_TICKS = 30;
 const CATCH_UP_TICKS = 120;
 const MAX_POPULATION = 16;
-const FRONTIER_EXPANSION = 1.25;
+const FRONTIER_EXPANSION = 1.1;
 const INITIAL_JOINT_COUNT = 47;
-const MUTATION_COUNT = 10;
+const INITIAL_MUTATION_COUNT = 20;
 const CHANCE_OF_GROWTH = 0.1;
 
 interface IGotchiFitness {
@@ -34,6 +34,7 @@ export class Population {
     private gotchiArray: Gotchi[] = [];
     private frontier = INITIAL_FRONTIER;
     private toBeBorn = 0;
+    private mutationCount = INITIAL_MUTATION_COUNT;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
         this.createFrontierGeometry();
@@ -110,7 +111,8 @@ export class Population {
             if (minFrozenAge * 3 > maxFrozenAge * 2) {
                 this.frontier *= FRONTIER_EXPANSION;
                 this.createFrontierGeometry();
-                console.log(`fontier advanced to: ${this.frontier}`);
+                this.mutationCount--;
+                console.log(`fontier = ${this.frontier}, mutations = ${this.mutationCount}`);
             }
         }
         return this.gotchiArray.map(gotchi => {
@@ -132,7 +134,7 @@ export class Population {
             if (clone) {
                 gotchi.rebornClone = freshGotchi;
             } else {
-                freshGotchi.mutateBehavior(MUTATION_COUNT);
+                freshGotchi.mutateBehavior(this.mutationCount);
                 gotchi.offspring = freshGotchi;
             }
         });
