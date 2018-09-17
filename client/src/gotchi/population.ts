@@ -14,19 +14,18 @@ const NORMAL_TICKS = 30;
 const CATCH_UP_TICKS = 120;
 const MAX_POPULATION = 16;
 const FRONTIER_EXPANSION = 1.25;
-const FRONTIER_EXPANSION_AGE = 40000;
-const INITIAL_JOINT_COUNT = 31;
+const INITIAL_JOINT_COUNT = 37;
 const MUTATION_COUNT = 10;
-const CHANCE_OF_GROWTH = 0.3;
+const CHANCE_OF_GROWTH = 0.4;
 
 interface IGotchiFitness {
     gotchi: Gotchi;
     index: number;
-    length: number;
+    distance: number;
 }
 
 const evaluateFitness = (gotchi: Gotchi, index: number): IGotchiFitness => {
-    return {gotchi, index, length: gotchi.fabric.midpoint.length()};
+    return {gotchi, index, distance: gotchi.distance};
 };
 
 export class Population {
@@ -39,7 +38,7 @@ export class Population {
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
         this.createFrontierGeometry();
         for (let birth = 0; birth < MAX_POPULATION; birth++) {
-            setTimeout(() => this.birthRandom(), 500 + 200 * birth);
+            setTimeout(() => this.birthRandom(), 200 * birth);
         }
     }
 
@@ -59,32 +58,34 @@ export class Population {
         const maxAge = Math.max(...this.gotchiArray.map(gotchi => gotchi.age));
         const nursery: Gotchi[] = [];
         let minFrozenAge = maxAge;
+        let maxFrozenAge = 0;
         let frozenCount = 0;
-        this.gotchiArray = this.gotchiArray.map(gotchi => {
-            if (gotchi.replacementExpected) {
-                if (gotchi.replacement) {
-                    gotchi.replacementExpected = false;
-                    if (gotchi.clone) {
-                        return gotchi.replacement;
-                    } else {
-                        nursery.push(gotchi.replacement);
-                        gotchi.replacement = null;
-                        return gotchi;
-                    }
-                } else {
-                    return gotchi;
-                }
+        const registerFrozen = (gotchi: Gotchi) => {
+            gotchi.frozen = true;
+            frozenCount++;
+            if (minFrozenAge > gotchi.age) {
+                minFrozenAge = gotchi.age;
+            }
+            if (maxFrozenAge < gotchi.age) {
+                maxFrozenAge = gotchi.age;
+            }
+        };
+        this.gotchiArray = this.gotchiArray.map((gotchi, index) => {
+            if (gotchi.rebornClone) {
+                return gotchi.rebornClone;
+            }
+            else if (gotchi.offspring) {
+                nursery.push(gotchi.offspring);
+                gotchi.offspring = undefined;
+                return gotchi;
             }
             else if (gotchi.frozen) {
-                frozenCount++;
+                registerFrozen(gotchi);
                 return gotchi;
             } else {
-                if (gotchi.fabric.midpoint.length() >= this.frontier) {
-                    gotchi.frozen = true;
-                    if (gotchi.age < minFrozenAge) {
-                        minFrozenAge = gotchi.age;
-                    }
-                    console.log(`frozen at age ${gotchi.age}`);
+                if (gotchi.distance > this.frontier) {
+                    registerFrozen(gotchi);
+                    console.log(`frozen at age ${gotchi.age} with distance=${gotchi.distance}`);
                     this.toBeBorn++;
                 }
                 gotchi.catchingUp = false;
@@ -92,7 +93,6 @@ export class Population {
                     gotchi.iterate(CATCH_UP_TICKS);
                     gotchi.catchingUp = true;
                 } else if (gotchi.age + NORMAL_TICKS * 3 < maxAge) {
-                    // console.log('triple', index, gotchi.age, maxAge);
                     gotchi.iterate(NORMAL_TICKS);
                     gotchi.catchingUp = true;
                 }
@@ -105,10 +105,10 @@ export class Population {
             this.birthFromPopulation();
         } else if (frozenCount > this.gotchiArray.length / 2) {
             this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
-            if (minFrozenAge < FRONTIER_EXPANSION_AGE) {
+            if (minFrozenAge * 2 > maxFrozenAge) {
                 this.frontier *= FRONTIER_EXPANSION;
                 this.createFrontierGeometry();
-                console.log(`maxTravel = ${this.frontier}`);
+                console.log(`fontier advanced to: ${this.frontier}`);
             }
         }
         return this.gotchiArray.map(gotchi => {
@@ -119,34 +119,24 @@ export class Population {
     // Privates =============================================================
 
     private createReplacement(gotchi: Gotchi, clone: boolean): void {
-        if (gotchi.replacementExpected && !clone) {
-            return;
-        }
-        gotchi.replacementExpected = true;
-        gotchi.clone = clone;
-        const grow = gotchi.frozen && Math.random() < CHANCE_OF_GROWTH;
+        const grow = !clone && gotchi.frozen && Math.random() < CHANCE_OF_GROWTH;
         console.log(`grow=${grow}`);
         this.createBody(gotchi.fabric.jointCountMax + (grow ? 2 : 0)).then(fabric => {
-            gotchi.replacement = gotchi.withNewBody(fabric);
-            if (!clone) {
-                gotchi.replacement.mutateBehavior(MUTATION_COUNT);
+            const freshGotchi = gotchi.withNewBody(fabric);
+            if (clone) {
+                gotchi.rebornClone = freshGotchi;
+            } else {
+                freshGotchi.mutateBehavior(MUTATION_COUNT);
+                gotchi.offspring = freshGotchi;
             }
-        });
-    }
-
-    private createBody(jointCountMax: number): Promise<Fabric> {
-        return this.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, jointCountMax);
-            const currentPhysics = this.physicsObject.applyToFabric(fabricExports);
-            console.log('current physics', currentPhysics);
-            fabric.createSeed(3, HUNG_ALTITUDE);
-            return fabric;
         });
     }
 
     private birthRandom() {
         if (this.gotchiArray.length + 1 > MAX_POPULATION) {
-            this.death();
+            if (!this.death()) {
+                console.log('death failed during birth');
+            }
         }
         this.createBody(INITIAL_JOINT_COUNT).then(fabric => {
             this.gotchiArray.push(new Gotchi(fabric, new Genome(), HANG_DELAY, REST_DELAY));
@@ -156,10 +146,11 @@ export class Population {
     private birthFromPopulation() {
         while (this.gotchiArray.length + 1 > MAX_POPULATION) {
             if (!this.death()) {
+                console.log('death failed');
                 break;
             }
         }
-        const fertile = this.gotchiArray.filter(gotchi => !(gotchi.catchingUp || gotchi.replacementExpected));
+        const fertile = this.gotchiArray.filter(gotchi => !gotchi.catchingUp);
         if (fertile.length) {
             const luckyOne = fertile[Math.floor(fertile.length * Math.random())];
             this.createReplacement(luckyOne, false);
@@ -169,7 +160,7 @@ export class Population {
     private death(): boolean {
         if (this.gotchiArray.length > 0) {
             const fitness = this.gotchiArray.map(evaluateFitness);
-            fitness.sort((a, b) => a.length - b.length);
+            fitness.sort((a, b) => a.distance - b.distance);
             const mature = fitness.filter(f => !f.gotchi.catchingUp);
             if (mature.length) {
                 const deadIndex = mature[0].index;
@@ -177,9 +168,22 @@ export class Population {
                 dead.fabric.dispose();
                 this.gotchiArray.splice(deadIndex, 1);
                 return true;
+            } else {
+                console.log('no mature gotchis to kill!')
             }
         }
         return false;
+    }
+
+    private createBody(jointCountMax: number): Promise<Fabric> {
+        return this.createFabricInstance().then(fabricExports => {
+            const fabric = new Fabric(fabricExports, jointCountMax);
+            this.physicsObject.applyToFabric(fabricExports);
+            // console.log('current physics', currentPhysics);
+            fabric.createSeed(5, HUNG_ALTITUDE);
+            fabric.iterate(1, true);
+            return fabric;
+        });
     }
 
     private createFrontierGeometry(): void {

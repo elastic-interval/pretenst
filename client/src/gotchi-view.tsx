@@ -216,6 +216,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 case 'Space':
                     this.setState({turbo: !this.state.turbo});
                     break;
+                case 'KeyM':
+                    this.props.population.forDisplay.forEach((gotchi, index) => {
+                        console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
+                    });
+                    break;
             }
         });
     }

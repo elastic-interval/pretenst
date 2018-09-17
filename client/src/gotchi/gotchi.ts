@@ -6,9 +6,8 @@ import {Embryology} from '../genetics/embryology';
 export class Gotchi {
     public frozen = false;
     public catchingUp = false;
-    public replacementExpected = false;
-    public clone = false;
-    public replacement: Gotchi | null;
+    public rebornClone?: Gotchi;
+    public offspring?: Gotchi;
     private embryology?: Embryology;
     private behavior: Behavior;
     private hangingCountdown: number;
@@ -19,11 +18,19 @@ export class Gotchi {
         this.embryology = genome.embryology(fabric);
         this.behavior = genome.behavior(fabric);
         this.hangingCountdown = hangingDelay;
-        this.restCountdown = restDelay
+        this.restCountdown = restDelay;
     }
 
     public get age() {
         return this.fabric.age;
+    }
+
+    public get distance() {
+        if (this.fabric.age === 0) {
+            throw new Error('Zero age midpoint!');
+        }
+        const midpoint = this.fabric.midpoint;
+        return Math.sqrt(midpoint.x * midpoint.x + midpoint.z * midpoint.z);
     }
 
     public withNewBody(fabric: Fabric): Gotchi {
