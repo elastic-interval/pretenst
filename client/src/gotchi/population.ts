@@ -1,13 +1,13 @@
 import {IFabricExports} from '../body/fabric-exports';
 import {Gotchi} from './gotchi';
 import {Fabric} from '../body/fabric';
-import {Genome} from '../genetics/genome';
-import {BufferGeometry, Float32BufferAttribute, Vector3} from 'three';
+import {Genome, IGenome} from '../genetics/genome';
+import {BufferGeometry, Float32BufferAttribute, Raycaster, Vector3} from 'three';
 import {Physics} from '../body/physics';
 
 export const HUNG_ALTITUDE = 7;
-const HANG_DELAY = 4000;
-const REST_DELAY = 3000;
+const HANG_DELAY = 3000;
+const REST_DELAY = 2000;
 const WALL_STEP_DEGREES = 3;
 const INITIAL_FRONTIER = 8;
 const NORMAL_TICKS = 30;
@@ -29,6 +29,20 @@ const evaluateFitness = (gotchi: Gotchi, index: number): IGotchiFitness => {
     return {gotchi, index, distance: gotchi.distance};
 };
 
+const getFittest = (mutated: boolean): Genome | undefined => {
+    const fittest = localStorage.getItem('fittest');
+    const storedGenome: IGenome = fittest ? JSON.parse(fittest) : null;
+    return storedGenome ? mutated ? new Genome(storedGenome).withMutatedBehavior(INITIAL_MUTATION_COUNT) : new Genome(storedGenome) : undefined;
+};
+
+export const setFittest = (gotchi: Gotchi) => {
+    localStorage.setItem('fittest', JSON.stringify(gotchi.genomeSnapshot));
+};
+
+export const clearFittest = () => {
+    localStorage.removeItem('fittest');
+};
+
 export class Population {
     public frontierGeometry?: BufferGeometry;
     private physicsObject = new Physics();
@@ -39,8 +53,8 @@ export class Population {
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
         this.createFrontierGeometry();
-        for (let birth = 0; birth < MAX_POPULATION; birth++) {
-            setTimeout(() => this.birthRandom(), 200 * birth);
+        for (let walk = 0; walk < MAX_POPULATION; walk++) {
+            this.birthFromGenome(getFittest(walk > 0));
         }
     }
 
@@ -97,7 +111,6 @@ export class Population {
             } else {
                 if (gotchi.distance > this.frontier) {
                     freeze(gotchi);
-                    console.log(`frozen at age ${gotchi.age} with distance=${gotchi.distance}`);
                     this.toBeBorn++;
                 }
                 gotchi.catchingUp = false;
@@ -125,11 +138,27 @@ export class Population {
             }
         }
         return this.gotchiArray.map(gotchi => {
+            if (gotchi.clicked) {
+                return 0;
+            }
             return gotchi.iterate(NORMAL_TICKS);
         });
     }
 
+    public findGotchi(raycaster: Raycaster): Gotchi | undefined {
+        return this.gotchiArray
+            .filter(g => g.facesMeshNode)
+            .find(gotchi => !!raycaster.intersectObject(gotchi.facesMeshNode));
+    }
+
     // Privates =============================================================
+
+    private birthFromGenome(existingGenome?: Genome) {
+        this.createBody(INITIAL_JOINT_COUNT).then(fabric => {
+            const genome = existingGenome ? existingGenome : new Genome();
+            this.gotchiArray.push(new Gotchi(fabric, genome, HANG_DELAY, REST_DELAY));
+        });
+    }
 
     private createReplacement(gotchi: Gotchi, clone: boolean): void {
         gotchi.expecting = true;
@@ -146,17 +175,6 @@ export class Population {
                 freshGotchi.mutateBehavior(this.mutationCount);
                 gotchi.offspring = freshGotchi;
             }
-        });
-    }
-
-    private birthRandom() {
-        if (this.gotchiArray.length + 1 > MAX_POPULATION) {
-            if (!this.death()) {
-                console.log('death failed during birth');
-            }
-        }
-        this.createBody(INITIAL_JOINT_COUNT).then(fabric => {
-            this.gotchiArray.push(new Gotchi(fabric, new Genome(), HANG_DELAY, REST_DELAY));
         });
     }
 

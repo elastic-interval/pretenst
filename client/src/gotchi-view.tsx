@@ -6,11 +6,12 @@ import {
     LineBasicMaterial,
     MeshPhongMaterial,
     PerspectiveCamera,
+    Raycaster,
     Vector2,
     Vector3,
     VertexColors
 } from 'three';
-import {HUNG_ALTITUDE, Population} from './gotchi/population';
+import {clearFittest, HUNG_ALTITUDE, Population, setFittest} from './gotchi/population';
 import {Gotchi} from './gotchi/gotchi';
 import {Island} from './island/island';
 
@@ -25,6 +26,7 @@ interface IGotchiViewState {
     height: number;
     xray: boolean;
     turbo: boolean;
+    selectedGotchi?: Gotchi
 }
 
 const FLOOR_MATERIAL = new MeshPhongMaterial({
@@ -52,10 +54,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private OrbitControls = require('three-orbit-controls')(this.THREE);
     private galapagotch = new Island();
     private perspectiveCamera: PerspectiveCamera;
+    private rayCaster: Raycaster;
     private target = new Vector3();
     private mouse = new Vector2();
     private orbitControls: any;
-    private facesMeshNode: any;
     private frameTime = Date.now();
     private frameCount = 0;
     private frameDelay = 20;
@@ -77,7 +79,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         orbit.maxPolarAngle = Math.PI / 2 * 0.95;
         orbit.maxDistance = 1000;
         orbit.target = this.target;
-        // this.rayCaster = new Raycaster();
+        this.rayCaster = new Raycaster();
         this.animate();
         this.keyboardListener();
         this.updateDimensions();
@@ -88,18 +90,18 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
     }
 
-    // public trySelect(): boolean {
-    //     this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
-    //     // const intersect = this.rayCaster.intersectObject(this.facesMeshNode);
-    //     // if (intersect.length > 0 && this.state.fabric) {
-    //     //     const faceIndex = intersect[0].faceIndex / 3;
-    //     //     if (this.state.selectedFaceIndex === undefined || faceIndex !== this.state.selectedFaceIndex) {
-    //     //         this.setState({selectedFaceIndex: faceIndex});
-    //     //     }
-    //     //     return true;
-    //     // }
-    //     return false;
-    // }
+    public trySelect(event: any): boolean {
+        this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
+        this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
+        this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
+        const clickedGotchi = this.props.population.findGotchi(this.rayCaster);
+        if (clickedGotchi) {
+            this.setState({selectedGotchi: clickedGotchi});
+            setFittest(clickedGotchi);
+            console.log('clicked', clickedGotchi);
+        }
+        return false;
+    }
 
     public render() {
         this.frameCount++;
@@ -115,9 +117,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             }
             console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
-        // const headlightPosition = new Vector3().add(this.perspectiveCamera.position).add(this.perspectiveCamera.up);
         return (
-            <div id="gotchi-view" onMouseMove={(e: any) => this.mouseMove(e)}>
+            <div id="gotchi-view" onMouseMove={(e: any) => this.mouseMove(e)} onMouseDownCapture={(e) => this.trySelect(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         {
@@ -132,7 +133,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                 :
                                 this.props.population.forDisplay.map((gotchi: Gotchi, index: number) => {
                                     return <R3.Mesh
-                                        ref={(node: any) => this.facesMeshNode = node}
+                                        ref={(node: any) => gotchi.facesMeshNode = node}
                                         key={`Faces${index}`} name="Fabric"
                                         geometry={gotchi.fabric.facesGeometry}
                                         material={FACE_MATERIAL}
@@ -226,6 +227,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     this.props.population.forDisplay.forEach((gotchi, index) => {
                         console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
                     });
+                    break;
+                case 'KeyR':
+                    clearFittest();
                     break;
             }
         });

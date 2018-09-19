@@ -1,14 +1,16 @@
 import {Fabric} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
-import {Genome} from '../genetics/genome';
+import {Genome, IGenome} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 
 export class Gotchi {
     public frozen = false;
+    public clicked = false;
     public expecting = false;
     public catchingUp = false;
     public rebornClone?: Gotchi;
     public offspring?: Gotchi;
+    public facesMeshNode: any;
     private embryology?: Embryology;
     private behavior: Behavior;
     private hangingCountdown: number;
@@ -40,6 +42,10 @@ export class Gotchi {
 
     public mutateBehavior(mutations: number): void {
         this.genome = this.genome.withMutatedBehavior(mutations);
+    }
+
+    public get genomeSnapshot(): IGenome {
+        return this.genome.toIGenome();
     }
 
     public iterate(ticks: number): number {
@@ -81,9 +87,5 @@ export class Gotchi {
         for (let intervalIndex = 0; intervalIndex < this.fabric.intervalCount; intervalIndex++) {
             this.fabric.triggerInterval(intervalIndex);
         }
-    }
-
-    public get genomeString(): string {
-        return [this.genome.behaviorData.join(','), this.genome.behaviorData.join(',')].join(';')
     }
 }
