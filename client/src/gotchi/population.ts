@@ -2,18 +2,19 @@ import {IFabricExports} from '../body/fabric-exports';
 import {Gotchi} from './gotchi';
 import {Fabric} from '../body/fabric';
 import {Genome} from '../genetics/genome';
-import {BufferGeometry, Float32BufferAttribute} from 'three';
+import {BufferGeometry, Float32BufferAttribute, Vector3} from 'three';
 import {Physics} from '../body/physics';
 
+export const HUNG_ALTITUDE = 7;
 const HANG_DELAY = 4000;
 const REST_DELAY = 3000;
-const HUNG_ALTITUDE = 7;
 const WALL_STEP_DEGREES = 3;
 const INITIAL_FRONTIER = 8;
 const NORMAL_TICKS = 30;
 const CATCH_UP_TICKS = 120;
 const MAX_POPULATION = 16;
 const FRONTIER_EXPANSION = 1.1;
+const FRONTIER_ALTITUDE = 0.3;
 const INITIAL_JOINT_COUNT = 47;
 const INITIAL_MUTATION_COUNT = 20;
 const CHANCE_OF_GROWTH = 0.1;
@@ -41,6 +42,14 @@ export class Population {
         for (let birth = 0; birth < MAX_POPULATION; birth++) {
             setTimeout(() => this.birthRandom(), 200 * birth);
         }
+    }
+
+    public get midpoint(): Vector3 {
+        const gotchis = this.gotchiArray;
+        return gotchis
+            .map(gotchi => gotchi.fabric.midpoint)
+            .reduce((prev, currentValue) => prev.add(currentValue), new Vector3())
+            .multiplyScalar(1 / gotchis.length);
     }
 
     public get physics() {
@@ -207,10 +216,10 @@ export class Population {
             const r1 = Math.PI * 2 * degrees / 360;
             const r2 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES) / 360;
             positions[slot++] = this.frontier * Math.sin(r1);
-            positions[slot++] = 0;
+            positions[slot++] = FRONTIER_ALTITUDE;
             positions[slot++] = this.frontier * Math.cos(r1);
             positions[slot++] = this.frontier * Math.sin(r2);
-            positions[slot++] = 0;
+            positions[slot++] = FRONTIER_ALTITUDE;
             positions[slot++] = this.frontier * Math.cos(r2);
         }
         geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));

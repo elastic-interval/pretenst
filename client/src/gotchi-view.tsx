@@ -2,18 +2,17 @@ import * as React from 'react';
 import * as R3 from 'react-three';
 import {
     Color,
+    FaceColors,
     LineBasicMaterial,
-    Material,
     MeshPhongMaterial,
     PerspectiveCamera,
-    PlaneGeometry,
-    Quaternion,
     Vector2,
     Vector3,
     VertexColors
 } from 'three';
-import {Population} from './gotchi/population';
+import {HUNG_ALTITUDE, Population} from './gotchi/population';
 import {Gotchi} from './gotchi/gotchi';
+import {Island} from './island/island';
 
 interface IGotchiViewProps {
     width: number;
@@ -28,26 +27,32 @@ interface IGotchiViewState {
     turbo: boolean;
 }
 
+const FLOOR_MATERIAL = new MeshPhongMaterial({
+    vertexColors: FaceColors,
+    lights: true,
+    visible: true
+});
 const FACE_MATERIAL = new MeshPhongMaterial({
     lights: true,
     color: new Color(0.9, 0.9, 0.9),
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.8,
     visible: true
 });
 const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
 const FRONTIER_MATERIAL = new LineBasicMaterial({color: 0xBBBBBB});
-const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
-const CAMERA_POSITION = new Vector3(0, 20, 0);
-const CAMERA_TARGET = new Vector3(0, 5, 0);
+const SUN_POSITION = new Vector3(0, 300, 0);
+const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE/2, 8);
+const SCALE_FLOOR = new Vector3(10, 10, 10);
 const TARGET_FRAME_RATE = 25;
-const FLOOR_QUATERNION = new Quaternion().setFromAxisAngle(new Vector3(-1, 0, 0), Math.PI / 2);
+const TOWARDS_TARGET = 0.03;
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private THREE = require('three');
     private OrbitControls = require('three-orbit-controls')(this.THREE);
-    private floorMaterial: Material;
+    private galapagotch = new Island();
     private perspectiveCamera: PerspectiveCamera;
+    private target = new Vector3();
     private mouse = new Vector2();
     private orbitControls: any;
     private facesMeshNode: any;
@@ -63,15 +68,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             xray: false,
             turbo: false,
         };
-        this.floorMaterial = FACE_MATERIAL;
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
-        this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
-        this.orbitControls.target.add(CAMERA_TARGET);
-
-        // this.orbitControls.maxPolarAngle = Math.PI / 2 * 0.95;
+        const orbit = this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
+        orbit.minPolarAngle = Math.PI * 0.05;
+        orbit.maxPolarAngle = Math.PI / 2 * 0.95;
+        orbit.maxDistance = 1000;
+        orbit.target = this.target;
         // this.rayCaster = new Raycaster();
         this.animate();
         this.keyboardListener();
@@ -110,7 +115,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             }
             console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
-        const lightPosition = new Vector3().add(this.perspectiveCamera.position).add(LIGHT_ABOVE_CAMERA);
+        // const headlightPosition = new Vector3().add(this.perspectiveCamera.position).add(this.perspectiveCamera.up);
         return (
             <div id="gotchi-view" onMouseMove={(e: any) => this.mouseMove(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
@@ -138,20 +143,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             this.state.xray ? null :
                                 <R3.Mesh
                                     key="Floor"
-                                    geometry={new PlaneGeometry(1, 1)}
-                                    scale={new Vector3(1000, 1000, 1000)}
-                                    material={this.floorMaterial}
-                                    quaternion={FLOOR_QUATERNION}
-                                />
-                        }
-                        {
-                            this.state.xray ? null :
-                                <R3.PointLight
-                                    name="Light"
-                                    key="Light"
-                                    distance="60"
-                                    decay="0.1"
-                                    position={lightPosition}
+                                    geometry={this.galapagotch.geometry}
+                                    scale={SCALE_FLOOR}
+                                    material={FLOOR_MATERIAL}
                                 />
                         }
                         {
@@ -162,6 +156,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                     material={FRONTIER_MATERIAL}
                                 />
                         }
+                        <R3.PointLight
+                            key="Sun"
+                            distance="1000"
+                            decay="0.01"
+                            position={SUN_POSITION}
+                        />
                         <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>
                     </R3.Scene>
                 </R3.Renderer>
@@ -188,6 +188,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     };
 
     private animate() {
+        const towardsTarget = new Vector3();
         const step = () => {
             setTimeout(
                 () => {
@@ -198,6 +199,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     }
                     this.props.population.iterate();
                     this.forceUpdate();
+                    towardsTarget.subVectors(this.props.population.midpoint, this.target).multiplyScalar(TOWARDS_TARGET);
+                    if (towardsTarget.length() > 0.2) {
+                        towardsTarget.setLength(0.2);
+                    }
+                    this.target.add(towardsTarget);
                     this.orbitControls.update();
                     requestAnimationFrame(step);
                 },

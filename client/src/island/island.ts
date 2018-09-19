@@ -100,7 +100,7 @@ export class Island {
         this.tiles.forEach((tile, tileIndex) => {
             const color = tile.lit ? LIT_COLOR : UNLIT_COLOR;
             transform.x = tile.coords.x * SCALEX;
-            transform.y = tile.centerOfGotch ? 0.1 : 0;
+            // transform.y = tile.centerOfGotch ? 0.1 : 0;
             transform.z = tile.coords.y * SCALEY;
             vertices.push(...HEXAGON_POINTS.map(vertex => new Vector3().addVectors(vertex, transform)));
             for (let a = 0; a < SIX; a++) {
