@@ -34,6 +34,10 @@
 .gotchi-panel {
 }
 
+.dice {
+    font-size: xx-large;
+}
+
 .control-panel {
     border-style: solid;
     border-color: green;

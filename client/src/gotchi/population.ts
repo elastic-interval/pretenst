@@ -36,10 +36,12 @@ const getFittest = (mutated: boolean): Genome | undefined => {
 };
 
 export const setFittest = (gotchi: Gotchi) => {
+    console.log('set fittest');
     localStorage.setItem('fittest', JSON.stringify(gotchi.genomeSnapshot));
 };
 
 export const clearFittest = () => {
+    console.log('clear fittest');
     localStorage.removeItem('fittest');
 };
 
@@ -96,7 +98,7 @@ export class Population {
                 maxFrozenAge = gotchi.age;
             }
         };
-        this.gotchiArray = this.gotchiArray.map((gotchi, index) => {
+        this.gotchiArray = this.gotchiArray.map((gotchi, index, array) => {
             if (gotchi.rebornClone) {
                 return gotchi.rebornClone;
             }
@@ -110,6 +112,9 @@ export class Population {
                 return gotchi;
             } else {
                 if (gotchi.distance > this.frontier) {
+                    if (!array.find(g => g.frozen)) {
+                        setFittest(gotchi);
+                    }
                     freeze(gotchi);
                     this.toBeBorn++;
                 }
@@ -138,9 +143,6 @@ export class Population {
             }
         }
         return this.gotchiArray.map(gotchi => {
-            if (gotchi.clicked) {
-                return 0;
-            }
             return gotchi.iterate(NORMAL_TICKS);
         });
     }
@@ -166,7 +168,7 @@ export class Population {
         if (grow) {
             console.log('grow!');
         }
-        this.createBody(gotchi.fabric.jointCountMax + (grow ? 2 : 0)).then(fabric => {
+        this.createBody(gotchi.fabric.jointCountMax + (grow ? 4 : 0)).then(fabric => {
             const freshGotchi = gotchi.withNewBody(fabric);
             gotchi.expecting = false;
             if (clone) {

@@ -11,7 +11,7 @@ import {
     Vector3,
     VertexColors
 } from 'three';
-import {clearFittest, HUNG_ALTITUDE, Population, setFittest} from './gotchi/population';
+import {clearFittest, HUNG_ALTITUDE, Population} from './gotchi/population';
 import {Gotchi} from './gotchi/gotchi';
 import {Island} from './island/island';
 
@@ -76,7 +76,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.perspectiveCamera.position.add(CAMERA_POSITION);
         const orbit = this.orbitControls = new this.OrbitControls(this.perspectiveCamera);
         orbit.minPolarAngle = Math.PI * 0.05;
-        orbit.maxPolarAngle = Math.PI / 2 * 0.95;
+        orbit.maxPolarAngle = Math.PI / 2;
         orbit.maxDistance = 1000;
         orbit.target = this.target;
         this.rayCaster = new Raycaster();
@@ -96,8 +96,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
         const clickedGotchi = this.props.population.findGotchi(this.rayCaster);
         if (clickedGotchi) {
+            clickedGotchi.clicked = true;
             this.setState({selectedGotchi: clickedGotchi});
-            setFittest(clickedGotchi);
             console.log('clicked', clickedGotchi);
         }
         return false;

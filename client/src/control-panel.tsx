@@ -54,6 +54,7 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         const value = this.state.value;
         return (
             <div>
+                <strong className="dice">&#x2680;&#x2681;&#x2682;&#x2683;&#x2684;&#x2685;</strong>
                 {
                     this.props.population.physics.features.map(physicsFeature => {
                         return <button key={physicsFeature.feature} onClick={() => this.selectFeature(physicsFeature)}>
