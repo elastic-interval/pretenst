@@ -1,33 +1,9 @@
-import {Cell} from './cell';
 import {Gotch} from './gotch';
-import {Patch} from './patch';
-import {Token} from './token';
+import {Tile} from './tile';
 
-export const SCALE = 0.08;
-export const SPREAD = 1.05;
-export const SCALE_Y = SPREAD * SCALE * Math.sqrt(3);
-export const SCALE_X = SPREAD * SCALE;
-export const ZOOM_VIEW_BOX = {
-    h: 3,
-    w: 3,
-    x: -1.5,
-    y: -1.5,
-};
-export const HEXAGON_POINTS = '0,-1 -0.866,-0.5 -0.866,0.5 0,1 0.866,0.5 0.866,-0.5';
-export const HEXAGON_RAYS = [
-    {x: 0, y: -1},
-    {x: -0.866, y: -0.5},
-    {x: -0.866, y: 0.5},
-    {x: 0, y: 1},
-    {x: 0.866, y: 0.5},
-    {x: 0.866, y: -0.5},
-];
 export const STOP_STEP = 0;
 export const BRANCH_STEP = 7;
 export const ERROR_STEP = 8;
-
-export const GOTCH_DISTANCE = 0.8;
-export const GOTCH_SCALE = SCALE * 3.8;
 
 export const TOKEN_SHAPE = [
     // center
@@ -311,21 +287,11 @@ export const maximumNumber = (a: number, b: number) => (a > b) ? a : b;
 
 export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0;
 
-export const lightSortOnCoords = (a: Cell, b: Cell): number => coordSort(a.coords, b.coords);
-
-export const patchSortOnCoords = (a: Patch, b: Patch): number => coordSort(a.coords, b.coords);
+export const tileSortOnCoords = (a: Tile, b: Tile): number => coordSort(a.coords, b.coords);
 
 export const gotchSortOnNonces = (a: Gotch, b: Gotch): number => a.nonce < b.nonce ? -1 : a.nonce > b.nonce ? 1 : 0;
 
 export const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacent) => {
-    if (withMax) {
-        return adjacent.nonce > withMax.nonce ? adjacent : withMax;
-    } else {
-        return adjacent;
-    }
-});
-
-export const tokenWithMaxNonce = (tokens: Token[]) => tokens.reduce((withMax, adjacent) => {
     if (withMax) {
         return adjacent.nonce > withMax.nonce ? adjacent : withMax;
     } else {
@@ -343,21 +309,14 @@ export const ringIndex = (coords: ICoords, origin: ICoords): number => {
     return 0;
 };
 
-export const lightsToHexString = (cells: Cell[]) => {
-    const lit = cells.map(cell => cell.lit ? '1' : '0');
+export const tilesToHexString = (tiles: Tile[]) => {
+    const lit = tiles.map(cell => cell.lit ? '1' : '0');
     const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
     return nybbleChars.join('');
 };
 
-export const patchesToHexString = (patches: Patch[]) => {
-    const lit = patches.map(cell => cell.lit ? '1' : '0');
-    const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
-    const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
-    return nybbleChars.join('');
-};
-
-export const fingerprintToLights = (hexString: string, cells: Cell[]) => {
+export const fingerprintToTiles = (hexString: string, tiles: Tile[]) => {
     const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
     const booleanArrays = numbers.map(nyb => {
         const b0 = (nyb & 8) !== 0;
@@ -367,20 +326,7 @@ export const fingerprintToLights = (hexString: string, cells: Cell[]) => {
         return [b0, b1, b2, b3];
     });
     const litStack = [].concat.apply([], booleanArrays).reverse();
-    cells.forEach(cell => cell.lit = litStack.pop());
-};
-
-export const fingerprintToPatches = (hexString: string, patches: Patch[]) => {
-    const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
-    const booleanArrays = numbers.map(nyb => {
-        const b0 = (nyb & 8) !== 0;
-        const b1 = (nyb & 4) !== 0;
-        const b2 = (nyb & 2) !== 0;
-        const b3 = (nyb & 1) !== 0;
-        return [b0, b1, b2, b3];
-    });
-    const litStack = [].concat.apply([], booleanArrays).reverse();
-    patches.forEach(cell => cell.lit = litStack.pop());
+    tiles.forEach(cell => cell.lit = litStack.pop());
 };
 
 // basics
@@ -401,44 +347,6 @@ export const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s +
 
 // main view
 
-export const createMainViewBox = (coordsList: ICoords[]): string => {
-    const margin = 0.5;
-    const minX = coordsList.map(p => p.x).reduce(minimumNumber);
-    const minY = coordsList.map(p => p.y).reduce(minimumNumber);
-    const maxX = coordsList.map(p => p.x).reduce(maximumNumber);
-    const maxY = coordsList.map(p => p.y).reduce(maximumNumber);
-    const x = minX * SCALE_X - margin;
-    const y = minY * SCALE_Y - margin;
-    const w = (maxX - minX) * SCALE_X + margin * 2;
-    const h = (maxY - minY) * SCALE_Y + margin * 2;
-    return `${x},${y},${w},${h}`;
-};
-
-export const createMainViewBoxAround = (center: ICoords): string => {
-    const x = center.x * SCALE_X + ZOOM_VIEW_BOX.x;
-    const y = center.y * SCALE_Y + ZOOM_VIEW_BOX.y;
-    const w = ZOOM_VIEW_BOX.w;
-    const h = ZOOM_VIEW_BOX.h;
-    return `${x},${y},${w},${h}`;
-};
-
-export const getLightTransform = (coords: ICoords, text: boolean): string => {
-    const x = coords.x * SCALE_X;
-    const y = (coords.y + (text ? 0.12 : 0)) * SCALE_Y;
-    const scale = SCALE * (text ? 0.1 : 1.1);
-    return `translate(${x},${y}) scale(${scale})`;
-};
-
-export const getGotchTransform = (coords: ICoords): string => {
-    const x = coords.x * SCALE_X;
-    const y = coords.y * SCALE_Y;
-    return `translate(${x},${y}) scale(${SCALE * SPREAD * 16.5}) rotate(30)`;
-};
-
-export const getListGotchTransform = (index: number): string => {
-    return `translate(0.5,${0.5 + index * GOTCH_DISTANCE}) scale(${GOTCH_SCALE})`
-};
-
 export interface IGotchPattern {
     gotches: string;
     lights: string;
@@ -450,16 +358,9 @@ export const validGotchPattern = (pattern: IGotchPattern): boolean => {
     return gotchesOk && lightsOk;
 };
 
-export const tokenFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Token => {
-    const gotch = new Token(undefined, {x: 0, y: 0}, TOKEN_SHAPE.map(c => new Cell(c)), index);
-    fingerprintToLights(fingerprint, gotch.lights);
-    gotch.owner = ownerLookup(fingerprint);
-    return gotch;
-};
-
 export const gotchFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Gotch => {
-    const gotch = new Gotch(undefined, {x: 0, y: 0}, TOKEN_SHAPE.map(c => new Patch(c)), index);
-    fingerprintToPatches(fingerprint, gotch.patches);
+    const gotch = new Gotch(undefined, {x: 0, y: 0}, TOKEN_SHAPE.map(c => new Tile(c)), index);
+    fingerprintToTiles(fingerprint, gotch.tiles);
     gotch.owner = ownerLookup(fingerprint);
     return gotch;
 };

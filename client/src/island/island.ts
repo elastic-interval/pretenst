@@ -1,47 +1,69 @@
-import {Cell} from './cell';
+import {Color, Face3, Geometry, Vector3} from 'three';
+import {Gotch} from './gotch';
 import {
     BRANCH_STEP,
-    createMainViewBox,
     equals,
+    gotchWithMaxNonce,
     ICoords,
     IGotchPattern,
-    lightSortOnCoords,
-    lightsToHexString,
     plus,
     STOP_STEP,
+    tileSortOnCoords,
     TOKEN_SHAPE,
-    tokenWithMaxNonce,
     zero
 } from './constants';
-import {Token} from './token';
+import {Tile} from './tile';
+
+const NORMAL_SPREAD = 0.2;
+const UP = new Vector3(0, 1, 0);
+const SIX = 6;
+const SCALEX = 0.866;
+const SCALEY = 1.5;
+export const HEXAGON_POINTS = [
+    new Vector3(0, 0, -1),
+    new Vector3(-0.866, 0, -0.5),
+    new Vector3(-0.866, 0, 0.5),
+    new Vector3(0, 0, 1),
+    new Vector3(0.866, 0, 0.5),
+    new Vector3(0.866, 0, -0.5),
+    new Vector3()
+];
+const LIT_COLOR = new Color(1, 1, 0.6);
+const UNLIT_COLOR = new Color(0.5, 0.5, 0.5);
 
 export class Island {
-    public mainViewBox: string;
-    public cells: Cell[] = [];
-    public tokens: Token[] = [];
-    public freeTokens: Token[] = [];
 
-    constructor(private ownerLookup: (fingerprint: string) => string) {
-        if (!this.cells.length) {
-            this.getOrCreateToken(undefined, zero);
+    public tiles: Tile[] = [];
+    public gotches: Gotch[] = [];
+    public freeGotches: Gotch[] = [];
+    private privateGeometry?: Geometry;
+    private ownershipCache: Map<string, string>;
+
+    constructor() {
+        const existingOwner = localStorage.getItem('owner');
+        const owner = existingOwner ? existingOwner : 'gumby';
+        const existingPattern = localStorage.getItem(owner);
+        const pattern: IGotchPattern = existingPattern ? JSON.parse(existingPattern) : {gotches: '0', lights: '0'};
+        this.apply(pattern);
+        if (!this.tiles.length) {
+            this.getOrCreateGotch(undefined, zero);
         }
         this.refreshOwnership();
-        this.refreshViewBox();
     }
 
     public apply(pattern: IGotchPattern) {
-        let token: Token | undefined = this.getOrCreateToken(undefined, zero);
+        let gotch: Gotch | undefined = this.getOrCreateGotch(undefined, zero);
         const stepStack = pattern.gotches.split('').reverse().map(stepChar => Number(stepChar));
-        const tokenStack: Token[] = [];
+        const gotchStack: Gotch[] = [];
         while (stepStack.length > 0) {
             const step = stepStack.pop();
             switch (step) {
                 case STOP_STEP:
-                    token = tokenStack.pop();
+                    gotch = gotchStack.pop();
                     break;
                 case BRANCH_STEP:
-                    if (token) {
-                        tokenStack.push(token);
+                    if (gotch) {
+                        gotchStack.push(gotch);
                     }
                     break;
                 case 1:
@@ -50,8 +72,8 @@ export class Island {
                 case 4:
                 case 5:
                 case 6:
-                    if (token) {
-                        token = this.tokenAroundCell(token.lights[step]);
+                    if (gotch) {
+                        gotch = this.gotchAroundTile(gotch.tiles[step]);
                     }
                     break;
                 default:
@@ -67,90 +89,88 @@ export class Island {
             return [b0, b1, b2, b3];
         });
         const litStack = [].concat.apply([], booleanArrays).reverse();
-        this.cells.sort(lightSortOnCoords).forEach(cell => cell.lit = litStack.pop());
+        this.tiles.sort(tileSortOnCoords).forEach(tile => tile.lit = litStack.pop());
         this.refreshOwnership();
-        this.refreshViewBox();
     }
 
-    get isSingleToken(): boolean {
-        return this.tokens.length === 1;
+    public get geometry(): Geometry {
+        const faces: Face3[] = [];
+        const vertices: Vector3[] = [];
+        const transform = new Vector3();
+        this.tiles.forEach((tile, tileIndex) => {
+            const color = tile.lit ? LIT_COLOR : UNLIT_COLOR;
+            transform.x = tile.coords.x * SCALEX;
+            transform.y = tile.centerOfGotch ? 0.1 : 0;
+            transform.z = tile.coords.y * SCALEY;
+            vertices.push(...HEXAGON_POINTS.map(vertex => new Vector3().addVectors(vertex, transform)));
+            for (let a = 0; a < SIX; a++) {
+                const offset = tileIndex * HEXAGON_POINTS.length;
+                const b = (a + 1) % SIX;
+                faces.push(new Face3(
+                    offset + SIX, offset + a, offset + b,
+                    [
+                        UP,
+                        new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], NORMAL_SPREAD).normalize(),
+                        new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], NORMAL_SPREAD).normalize()
+                    ],
+                    color
+                ));
+            }
+        });
+        if (this.privateGeometry) {
+            this.privateGeometry.dispose();
+            this.privateGeometry = undefined;
+        }
+        if (!this.privateGeometry) {
+            this.privateGeometry = new Geometry();
+            this.privateGeometry.vertices = vertices;
+            this.privateGeometry.faces = faces;
+            this.privateGeometry.computeBoundingSphere();
+        }
+        return this.privateGeometry;
     }
 
-    public get dumbClone(): Island {
-        const island = new Island(this.ownerLookup);
-        island.mainViewBox = this.mainViewBox;
-        island.tokens = this.tokens.slice();
-        island.cells = this.cells.slice();
-        island.refreshOwnership();
-        return island;
+    // ================================================================================================
+
+    private get owns(): Map<string, string> {
+        if (!this.ownershipCache) {
+            const ownership = localStorage.getItem('ownership');
+            this.ownershipCache = ownership ? JSON.parse(ownership) : new Map<string, string>();
+        }
+        return this.ownershipCache;
     }
 
-    public withoutFreeGotches(): Island {
-        const island = this.dumbClone;
-        island.tokens.filter(token => !token.owner).forEach(token => token.destroy().forEach(lightToRemove => {
-            island.cells = island.cells.filter(cell => !equals(lightToRemove.coords, cell.coords));
-        }));
-        island.tokens = island.tokens.filter(token => token.owner);
-        island.refreshOwnership();
-        island.refreshViewBox();
-        return island;
-    }
-
-    public withTokenAroundCell(cell: Cell): Island {
-        const token = this.dumbClone;
-        token.tokenAroundCell(cell);
-        token.refreshOwnership();
-        token.refreshViewBox();
-        return token;
-    }
-
-    public get pattern(): IGotchPattern {
-        const rootToken: Token | undefined = this.tokens.find(token => token.nonce === 0);
-        this.tokens.forEach(token => token.visited = false);
-        const gotches = rootToken ? rootToken.generateOctalTreePattern([]).join('') : '0';
-        const lights = lightsToHexString(this.cells.slice().sort(lightSortOnCoords));
-        return {gotches, lights};
-    }
-
-    // private ===
+    private ownerLookup = (fingerprint: string) => this.owns[fingerprint];
 
     private refreshOwnership() {
-        this.tokens.forEach(token => token.owner = this.ownerLookup(token.createFingerprint()));
-        this.freeTokens = this.tokens.filter(token => !token.owner);
-        this.cells.forEach(cell => cell.updateFreeFlag());
+        this.gotches.forEach(gotch => gotch.owner = this.ownerLookup(gotch.createFingerprint()));
+        this.freeGotches = this.gotches.filter(gotch => !gotch.owner);
+        this.tiles.forEach(cell => cell.updateFreeFlag());
     }
 
-    private tokenAroundCell(cell: Cell): Token {
-        const adjacentMaxNonce = tokenWithMaxNonce(cell.adjacentTokens);
-        return this.getOrCreateToken(adjacentMaxNonce, cell.coords);
+    private gotchAroundTile(tile: Tile): Gotch {
+        const adjacentMaxNonce = gotchWithMaxNonce(tile.adjacentGotches);
+        return this.getOrCreateGotch(adjacentMaxNonce, tile.coords);
     }
 
-    private refreshViewBox() {
-        if (this.cells.length === 0) {
-            return '-1,-1,2,2';
-        }
-        this.mainViewBox = createMainViewBox(this.cells.map(p => p.coords));
-        return this.mainViewBox;
-    }
-
-    private getOrCreateToken(parent: Token | undefined, coords: ICoords): Token {
-        const existing = this.tokens.find(existingToken => equals(existingToken.coords, coords));
+    private getOrCreateGotch(parent: Gotch | undefined, coords: ICoords): Gotch {
+        const existing = this.gotches.find(existingGotch => equals(existingGotch.coords, coords));
         if (existing) {
             return existing;
         }
-        const cells = TOKEN_SHAPE.map(c => this.getOrCreateCell(plus(c, coords)));
-        const token = new Token(parent, coords, cells, -1);
-        this.tokens.push(token);
-        return token;
+        const cells = TOKEN_SHAPE.map(c => this.getOrCreateTile(plus(c, coords)));
+        const gotch = new Gotch(parent, coords, cells, -1);
+        this.gotches.push(gotch);
+        return gotch;
     }
 
-    private getOrCreateCell(coords: ICoords): Cell {
-        const existing = this.cells.find(p => equals(p.coords, coords));
+    private getOrCreateTile(coords: ICoords): Tile {
+        const existing = this.tiles.find(p => equals(p.coords, coords));
         if (existing) {
             return existing;
         }
-        const cell = new Cell(coords);
-        this.cells.push(cell);
-        return cell;
+        const tile = new Tile(coords);
+        this.tiles.push(tile);
+        return tile;
     }
 }

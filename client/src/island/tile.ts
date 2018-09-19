@@ -1,7 +1,7 @@
 import {ICoords} from './constants';
 import {Gotch} from './gotch';
 
-export class Patch {
+export class Tile {
     public lit = false;
     public free = false;
     public memberOfGotch: Gotch[] = [];

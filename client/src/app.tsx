@@ -3,7 +3,7 @@ import './app.css';
 import {IFabricExports} from './body/fabric-exports';
 import {ControlPanel} from './control-panel';
 import {Population} from './gotchi/population';
-import {GalapagotchView} from './galapagotch-view';
+import {IslandView} from './island-view';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -21,11 +21,8 @@ class App extends React.Component<IAppProps, any> {
     public render() {
         return (
             <div className="App">
-                {/*<div className="gotchi-panel">*/}
-                    {/*<IslandView/>*/}
-                {/*</div>*/}
                 <div className="gotchi-panel">
-                    <GalapagotchView width={window.innerWidth} height={window.innerHeight * 0.96} population={this.population}/>
+                    <IslandView width={window.innerWidth} height={window.innerHeight * 0.96} population={this.population}/>
                 </div>
                 {/*<div className="gotchi-panel">*/}
                     {/*<GotchiView width={window.innerWidth} height={window.innerHeight * 0.96} population={this.population}/>*/}
