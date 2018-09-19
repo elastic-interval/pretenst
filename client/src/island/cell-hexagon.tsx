@@ -41,11 +41,11 @@ export class CellHexagon extends React.Component<IHexagonProps, IHexagonState> {
         const insideOutside = this.props.gotchMode ? 'inside' : 'outside';
         const baseClass = `cell-${onOff}-${insideOutside}`;
         if (this.props.gotchMode) {
-            if (cell.centerOfGotch) {
-                const owner = cell.centerOfGotch.owner;
+            if (cell.centerOfToken) {
+                const owner = cell.centerOfToken.owner;
                 const ownership = owner ? this.props.isSelf(owner) ? 'self-owned' : 'other-owned' : 'gotch-free';
                 return `${baseClass} cell-${ownership}`;
-            } else if (cell.canBeNewGotch) {
+            } else if (cell.canBeNewToken) {
                 return `${baseClass} cell-new`;
             } else if (cell.free) {
                 return `${baseClass} cell-free`;

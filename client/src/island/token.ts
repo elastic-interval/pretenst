@@ -5,28 +5,28 @@ import {
     getGotchTransform,
     getListGotchTransform,
     ICoords,
-    patchesToHexString,
+    lightsToHexString,
     ringIndex,
     STOP_STEP
 } from './constants';
-import {Patch} from './patch';
+import {Cell} from './cell';
 
-export class Gotch {
+export class Token {
     public owner: string;
     public nonce = 0;
     public visited = false;
-    public childGotches: Gotch[] = [];
+    public childGotches: Token[] = [];
     public transform: string;
 
-    constructor(public parentGotch: Gotch | undefined,
+    constructor(public parentGotch: Token | undefined,
                 public coords: ICoords,
-                public patches: Patch[],
+                public lights: Cell[],
                 index: number) {
-        this.patches[0].centerOfGotch = this;
+        this.lights[0].centerOfToken = this;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.patches[neighbor].adjacentGotches.push(this);
+            this.lights[neighbor].adjacentTokens.push(this);
         }
-        this.patches.forEach(p => p.memberOfGotch.push(this));
+        this.lights.forEach(p => p.memberOfToken.push(this));
         if (parentGotch) {
             parentGotch.childGotches.push(this);
             this.nonce = parentGotch.nonce + 1;
@@ -35,9 +35,9 @@ export class Gotch {
     }
 
     get canBePurchased(): boolean {
-        const center = this.patches[0];
-        const noneAdjacent = center.adjacentGotches.length === 0;
-        const ownedAdjacentExists = !!center.adjacentGotches.find(gotch => !!gotch.owner);
+        const center = this.lights[0];
+        const noneAdjacent = center.adjacentTokens.length === 0;
+        const ownedAdjacentExists = !!center.adjacentTokens.find(gotch => !!gotch.owner);
         const notOwned = !this.owner;
         return (noneAdjacent || ownedAdjacentExists) && notOwned;
     }
@@ -50,25 +50,25 @@ export class Gotch {
     //   );
     // }
 
-    public destroy(): Patch[] {
-        if (this.patches.length === 0) {
+    public destroy(): Cell[] {
+        if (this.lights.length === 0) {
             return [];
         }
         if (this.parentGotch) {
             this.parentGotch.childGotches = this.parentGotch.childGotches.filter(gotch => !equals(this.coords, gotch.coords));
         }
-        this.patches[0].centerOfGotch = undefined;
+        this.lights[0].centerOfToken = undefined;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.patches[neighbor].adjacentGotches = this.patches[neighbor].adjacentGotches.filter(gotch => !equals(this.coords, gotch.coords));
+            this.lights[neighbor].adjacentTokens = this.lights[neighbor].adjacentTokens.filter(gotch => !equals(this.coords, gotch.coords));
         }
-        this.patches.forEach(p => p.memberOfGotch = p.memberOfGotch.filter(gotch => !equals(this.coords, gotch.coords)));
-        const lightsToRemove = this.patches.filter(p => p.memberOfGotch.length === 0);
-        this.patches = [];
+        this.lights.forEach(p => p.memberOfToken = p.memberOfToken.filter(gotch => !equals(this.coords, gotch.coords)));
+        const lightsToRemove = this.lights.filter(p => p.memberOfToken.length === 0);
+        this.lights = [];
         return lightsToRemove;
     }
 
     public createFingerprint() {
-        return patchesToHexString(this.patches);
+        return lightsToHexString(this.lights);
     }
 
     public generateOctalTreePattern(steps: number[]): number[] {
@@ -79,7 +79,7 @@ export class Gotch {
             while (remainingChildren.length > 0) {
                 const child = remainingChildren.pop();
                 if (child) {
-                    const childGotch = child[1] as Gotch;
+                    const childGotch = child[1] as Token;
                     const index = child[0] as number;
                     if (remainingChildren.length > 0) {
                         steps.push(BRANCH_STEP);

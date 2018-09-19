@@ -2,12 +2,12 @@ import {CellHexagon} from './island/cell-hexagon';
 import {Cell} from './island/cell';
 import {HEXAGON_POINTS, IGotchPattern} from './island/constants';
 import * as React from 'react';
-import {Gotch} from './island/gotch';
 import {Island} from './island/island';
+import {Token} from './island/token';
 
 interface IslandViewState {
-    selectedGotch?: Gotch;
-    gotchMode: boolean;
+    selectedToken?: Token;
+    tokenMode: boolean;
     island: Island;
     owner: string
 }
@@ -26,7 +26,7 @@ class IslandView extends React.Component<any, IslandViewState> {
         island.apply(pattern);
 
         this.state = {
-            gotchMode: false,
+            tokenMode: false,
             island,
             owner
         };
@@ -52,12 +52,12 @@ class IslandView extends React.Component<any, IslandViewState> {
     }
 
     private get purchaseDisabled(): boolean {
-        return this.state.island.freeGotches.length === 0;
+        return this.state.island.freeTokens.length === 0;
     }
 
     private purchaseFreeGotches() {
         const owns = this.owns;
-        this.state.island.freeGotches.forEach(gotch => owns[gotch.createFingerprint()] = this.state.owner);
+        this.state.island.freeTokens.forEach(gotch => owns[gotch.createFingerprint()] = this.state.owner);
         localStorage.setItem('ownership', JSON.stringify(this.ownershipCache));
         this.setState({island: this.state.island.dumbClone}); // force repaint
     }
@@ -71,14 +71,14 @@ class IslandView extends React.Component<any, IslandViewState> {
     }
 
     private get selectedGotch() {
-        if (this.state.selectedGotch) {
-            const gotch = this.state.selectedGotch;
+        if (this.state.selectedToken) {
+            const gotch = this.state.selectedToken;
             const className = 'gotch-highlight ' + (gotch.owner ?
                 gotch.owner === this.state.owner ?
                     'gotch-highlight-owned' : 'gotch-highlight-taken' : 'gotch-highlight-free');
-            return <polygon key={this.state.selectedGotch.coords.x}
+            return <polygon key={this.state.selectedToken.coords.x}
                             points={HEXAGON_POINTS}
-                            transform={this.state.selectedGotch.transform}
+                            transform={this.state.selectedToken.transform}
                             className={className}/>
         } else {
             return null
@@ -88,31 +88,31 @@ class IslandView extends React.Component<any, IslandViewState> {
     private get lights() {
         const cellEnter = (cell: Cell, inside: boolean) => {
             if (inside) {
-                const gotchMode = !!cell.centerOfGotch || cell.canBeNewGotch || cell.free;
-                this.setState({gotchMode});
+                const tokenMode = !!cell.centerOfToken || cell.canBeNewToken || cell.free;
+                this.setState({tokenMode});
             }
-            if (cell.centerOfGotch) {
-                const selectedGotch = inside ? cell.centerOfGotch : undefined;
-                this.setState({selectedGotch});
+            if (cell.centerOfToken) {
+                const selectedToken = inside ? cell.centerOfToken : undefined;
+                this.setState({selectedToken});
             }
         };
         const cellClicked = (cell: Cell) => {
             if (cell.free) {
                 cell.lit = !cell.lit;
                 this.setGotch(this.state.island);
-            } else if (cell.canBeNewGotch) {
-                const gotch = this.state.island.withGotchAroundCell(cell);
+            } else if (cell.canBeNewToken) {
+                const gotch = this.state.island.withTokenAroundCell(cell);
                 this.setGotch(gotch);
             } else {
-                const selectedGotch = cell.centerOfGotch;
-                this.setState({selectedGotch});
+                const selectedToken = cell.centerOfToken;
+                this.setState({selectedToken});
             }
         };
         return this.state.island.cells.map((cell: Cell, index: number) => {
             return <CellHexagon key={index}
                                 cell={cell}
                                 isSelf={(owner: string) => owner === this.state.owner}
-                                gotchMode={this.state.gotchMode}
+                                gotchMode={this.state.tokenMode}
                                 cellClicked={cellClicked}
                                 cellEntered={cellEnter}/>
         })

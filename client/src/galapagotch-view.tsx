@@ -17,13 +17,11 @@ interface IGalapagotchViewState {
 
 const FLOOR_MATERIAL = new MeshPhongMaterial({
     lights: true,
-    color: new Color(0.9, 0.9, 0.9),
-    transparent: true,
-    opacity: 0.6,
+    color: new Color(0.8, 0.8, 0.8),
     visible: true
 });
 const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
-const CAMERA_POSITION = new Vector3(0, 10, 0);
+const CAMERA_POSITION = new Vector3(0, 30, 0);
 const CAMERA_TARGET = new Vector3(0, 0, 0);
 
 export class GalapagotchView extends React.Component<IGalapagotchViewProps, IGalapagotchViewState> {
@@ -86,11 +84,11 @@ export class GalapagotchView extends React.Component<IGalapagotchViewProps, IGal
                         <R3.PointLight
                             name="Light"
                             key="Light"
-                            distance="60"
-                            decay="0.1"
+                            distance="100"
+                            decay="0.01"
                             position={lightPosition}
                         />
-                        <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>
+                        <R3.HemisphereLight name="Hemi" color={new Color(0.6, 0.6, 0.6)}/>
                     </R3.Scene>
                 </R3.Renderer>
             </div>

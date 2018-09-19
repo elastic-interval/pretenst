@@ -1,5 +1,7 @@
 import {Cell} from './cell';
 import {Gotch} from './gotch';
+import {Patch} from './patch';
+import {Token} from './token';
 
 export const SCALE = 0.08;
 export const SPREAD = 1.05;
@@ -27,7 +29,7 @@ export const ERROR_STEP = 8;
 export const GOTCH_DISTANCE = 0.8;
 export const GOTCH_SCALE = SCALE * 3.8;
 
-export const GOTCH_SHAPE = [
+export const TOKEN_SHAPE = [
     // center
     {x: 0, y: 0},
     // layer 1
@@ -311,9 +313,19 @@ export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.
 
 export const lightSortOnCoords = (a: Cell, b: Cell): number => coordSort(a.coords, b.coords);
 
+export const patchSortOnCoords = (a: Patch, b: Patch): number => coordSort(a.coords, b.coords);
+
 export const gotchSortOnNonces = (a: Gotch, b: Gotch): number => a.nonce < b.nonce ? -1 : a.nonce > b.nonce ? 1 : 0;
 
-export const withMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacent) => {
+export const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacent) => {
+    if (withMax) {
+        return adjacent.nonce > withMax.nonce ? adjacent : withMax;
+    } else {
+        return adjacent;
+    }
+});
+
+export const tokenWithMaxNonce = (tokens: Token[]) => tokens.reduce((withMax, adjacent) => {
     if (withMax) {
         return adjacent.nonce > withMax.nonce ? adjacent : withMax;
     } else {
@@ -324,7 +336,7 @@ export const withMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjac
 export const ringIndex = (coords: ICoords, origin: ICoords): number => {
     const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y};
     for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === GOTCH_SHAPE[index].x && ringCoords.y === GOTCH_SHAPE[index].y) {
+        if (ringCoords.x === TOKEN_SHAPE[index].x && ringCoords.y === TOKEN_SHAPE[index].y) {
             return index;
         }
     }
@@ -333,6 +345,13 @@ export const ringIndex = (coords: ICoords, origin: ICoords): number => {
 
 export const lightsToHexString = (cells: Cell[]) => {
     const lit = cells.map(cell => cell.lit ? '1' : '0');
+    const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
+    const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
+    return nybbleChars.join('');
+};
+
+export const patchesToHexString = (patches: Patch[]) => {
+    const lit = patches.map(cell => cell.lit ? '1' : '0');
     const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
     return nybbleChars.join('');
@@ -349,6 +368,19 @@ export const fingerprintToLights = (hexString: string, cells: Cell[]) => {
     });
     const litStack = [].concat.apply([], booleanArrays).reverse();
     cells.forEach(cell => cell.lit = litStack.pop());
+};
+
+export const fingerprintToPatches = (hexString: string, patches: Patch[]) => {
+    const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
+    const booleanArrays = numbers.map(nyb => {
+        const b0 = (nyb & 8) !== 0;
+        const b1 = (nyb & 4) !== 0;
+        const b2 = (nyb & 2) !== 0;
+        const b3 = (nyb & 1) !== 0;
+        return [b0, b1, b2, b3];
+    });
+    const litStack = [].concat.apply([], booleanArrays).reverse();
+    patches.forEach(cell => cell.lit = litStack.pop());
 };
 
 // basics
@@ -418,9 +450,16 @@ export const validGotchPattern = (pattern: IGotchPattern): boolean => {
     return gotchesOk && lightsOk;
 };
 
-export const gotchFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Gotch => {
-    const gotch = new Gotch(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Cell(c)), index);
+export const tokenFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Token => {
+    const gotch = new Token(undefined, {x: 0, y: 0}, TOKEN_SHAPE.map(c => new Cell(c)), index);
     fingerprintToLights(fingerprint, gotch.lights);
+    gotch.owner = ownerLookup(fingerprint);
+    return gotch;
+};
+
+export const gotchFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Gotch => {
+    const gotch = new Gotch(undefined, {x: 0, y: 0}, TOKEN_SHAPE.map(c => new Patch(c)), index);
+    fingerprintToPatches(fingerprint, gotch.patches);
     gotch.owner = ownerLookup(fingerprint);
     return gotch;
 };

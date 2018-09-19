@@ -3,45 +3,45 @@ import {
     BRANCH_STEP,
     createMainViewBox,
     equals,
-    GOTCH_SHAPE,
     ICoords,
     IGotchPattern,
     lightSortOnCoords,
     lightsToHexString,
     plus,
     STOP_STEP,
-    withMaxNonce,
+    TOKEN_SHAPE,
+    tokenWithMaxNonce,
     zero
 } from './constants';
-import {Gotch} from './gotch';
+import {Token} from './token';
 
 export class Island {
     public mainViewBox: string;
     public cells: Cell[] = [];
-    public gotches: Gotch[] = [];
-    public freeGotches: Gotch[] = [];
+    public tokens: Token[] = [];
+    public freeTokens: Token[] = [];
 
     constructor(private ownerLookup: (fingerprint: string) => string) {
         if (!this.cells.length) {
-            this.getOrCreateGotch(undefined, zero);
+            this.getOrCreateToken(undefined, zero);
         }
         this.refreshOwnership();
         this.refreshViewBox();
     }
 
     public apply(pattern: IGotchPattern) {
-        let gotch: Gotch | undefined = this.getOrCreateGotch(undefined, zero);
+        let token: Token | undefined = this.getOrCreateToken(undefined, zero);
         const stepStack = pattern.gotches.split('').reverse().map(stepChar => Number(stepChar));
-        const gotchStack: Gotch[] = [];
+        const tokenStack: Token[] = [];
         while (stepStack.length > 0) {
             const step = stepStack.pop();
             switch (step) {
                 case STOP_STEP:
-                    gotch = gotchStack.pop();
+                    token = tokenStack.pop();
                     break;
                 case BRANCH_STEP:
-                    if (gotch) {
-                        gotchStack.push(gotch);
+                    if (token) {
+                        tokenStack.push(token);
                     }
                     break;
                 case 1:
@@ -50,8 +50,8 @@ export class Island {
                 case 4:
                 case 5:
                 case 6:
-                    if (gotch) {
-                        gotch = this.gotchAroundCell(gotch.lights[step]);
+                    if (token) {
+                        token = this.tokenAroundCell(token.lights[step]);
                     }
                     break;
                 default:
@@ -72,14 +72,14 @@ export class Island {
         this.refreshViewBox();
     }
 
-    get isSingleGotch(): boolean {
-        return this.gotches.length === 1;
+    get isSingleToken(): boolean {
+        return this.tokens.length === 1;
     }
 
     public get dumbClone(): Island {
         const island = new Island(this.ownerLookup);
         island.mainViewBox = this.mainViewBox;
-        island.gotches = this.gotches.slice();
+        island.tokens = this.tokens.slice();
         island.cells = this.cells.slice();
         island.refreshOwnership();
         return island;
@@ -87,27 +87,27 @@ export class Island {
 
     public withoutFreeGotches(): Island {
         const island = this.dumbClone;
-        island.gotches.filter(gotch => !gotch.owner).forEach(gotch => gotch.destroy().forEach(lightToRemove => {
+        island.tokens.filter(token => !token.owner).forEach(token => token.destroy().forEach(lightToRemove => {
             island.cells = island.cells.filter(cell => !equals(lightToRemove.coords, cell.coords));
         }));
-        island.gotches = island.gotches.filter(gotch => gotch.owner);
+        island.tokens = island.tokens.filter(token => token.owner);
         island.refreshOwnership();
         island.refreshViewBox();
         return island;
     }
 
-    public withGotchAroundCell(cell: Cell): Island {
-        const gotch = this.dumbClone;
-        gotch.gotchAroundCell(cell);
-        gotch.refreshOwnership();
-        gotch.refreshViewBox();
-        return gotch;
+    public withTokenAroundCell(cell: Cell): Island {
+        const token = this.dumbClone;
+        token.tokenAroundCell(cell);
+        token.refreshOwnership();
+        token.refreshViewBox();
+        return token;
     }
 
     public get pattern(): IGotchPattern {
-        const rootGotch: Gotch | undefined = this.gotches.find(gotch => gotch.nonce === 0);
-        this.gotches.forEach(gotch => gotch.visited = false);
-        const gotches = rootGotch ? rootGotch.generateOctalTreePattern([]).join('') : '0';
+        const rootToken: Token | undefined = this.tokens.find(token => token.nonce === 0);
+        this.tokens.forEach(token => token.visited = false);
+        const gotches = rootToken ? rootToken.generateOctalTreePattern([]).join('') : '0';
         const lights = lightsToHexString(this.cells.slice().sort(lightSortOnCoords));
         return {gotches, lights};
     }
@@ -115,14 +115,14 @@ export class Island {
     // private ===
 
     private refreshOwnership() {
-        this.gotches.forEach(gotch => gotch.owner = this.ownerLookup(gotch.createFingerprint()));
-        this.freeGotches = this.gotches.filter(gotch => !gotch.owner);
+        this.tokens.forEach(token => token.owner = this.ownerLookup(token.createFingerprint()));
+        this.freeTokens = this.tokens.filter(token => !token.owner);
         this.cells.forEach(cell => cell.updateFreeFlag());
     }
 
-    private gotchAroundCell(cell: Cell): Gotch {
-        const adjacentMaxNonce = withMaxNonce(cell.adjacentGotches);
-        return this.getOrCreateGotch(adjacentMaxNonce, cell.coords);
+    private tokenAroundCell(cell: Cell): Token {
+        const adjacentMaxNonce = tokenWithMaxNonce(cell.adjacentTokens);
+        return this.getOrCreateToken(adjacentMaxNonce, cell.coords);
     }
 
     private refreshViewBox() {
@@ -133,15 +133,15 @@ export class Island {
         return this.mainViewBox;
     }
 
-    private getOrCreateGotch(parent: Gotch | undefined, coords: ICoords): Gotch {
-        const existing = this.gotches.find(existingGotch => equals(existingGotch.coords, coords));
+    private getOrCreateToken(parent: Token | undefined, coords: ICoords): Token {
+        const existing = this.tokens.find(existingToken => equals(existingToken.coords, coords));
         if (existing) {
             return existing;
         }
-        const cells = GOTCH_SHAPE.map(c => this.getOrCreateCell(plus(c, coords)));
-        const gotch = new Gotch(parent, coords, cells, -1);
-        this.gotches.push(gotch);
-        return gotch;
+        const cells = TOKEN_SHAPE.map(c => this.getOrCreateCell(plus(c, coords)));
+        const token = new Token(parent, coords, cells, -1);
+        this.tokens.push(token);
+        return token;
     }
 
     private getOrCreateCell(coords: ICoords): Cell {
