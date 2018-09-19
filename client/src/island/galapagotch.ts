@@ -1,4 +1,4 @@
-import {Face3, Geometry, Vector3} from 'three';
+import {Color, Face3, Geometry, Vector3} from 'three';
 import {Gotch} from './gotch';
 import {
     BRANCH_STEP,
@@ -28,6 +28,8 @@ export const HEXAGON_POINTS = [
     new Vector3(0.866, 0, -0.5),
     new Vector3()
 ];
+const LIT_COLOR = new Color(1, 1, 0.6);
+const UNLIT_COLOR = new Color(0.5, 0.5, 0.5);
 
 export class Galapagotch {
 
@@ -96,17 +98,23 @@ export class Galapagotch {
         const vertices: Vector3[] = [];
         const transform = new Vector3();
         this.patches.forEach((patch, patchIndex) => {
+            const color = patch.lit ? LIT_COLOR : UNLIT_COLOR;
             transform.x = patch.coords.x * SCALEX;
+            transform.y = patch.centerOfGotch ? 0.1 : 0;
             transform.z = patch.coords.y * SCALEY;
             vertices.push(...HEXAGON_POINTS.map(vertex => new Vector3().addVectors(vertex, transform)));
             for (let a = 0; a < SIX; a++) {
                 const offset = patchIndex * HEXAGON_POINTS.length;
                 const b = (a + 1) % SIX;
-                faces.push(new Face3(offset + SIX, offset + a, offset + b, [
-                    UP,
-                    new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], NORMAL_SPREAD).normalize(),
-                    new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], NORMAL_SPREAD).normalize()
-                ]));
+                faces.push(new Face3(
+                    offset + SIX, offset + a, offset + b,
+                    [
+                        UP,
+                        new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], NORMAL_SPREAD).normalize(),
+                        new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], NORMAL_SPREAD).normalize()
+                    ],
+                    color
+                ));
             }
         });
         if (this.privateGeometry) {

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {Color, MeshPhongMaterial, PerspectiveCamera, Vector2, Vector3,} from 'three';
+import {Color, FaceColors, MeshPhongMaterial, PerspectiveCamera, Vector2, Vector3,} from 'three';
 import {Population} from './gotchi/population';
 import {Galapagotch} from './island/galapagotch';
 
@@ -16,8 +16,8 @@ interface IGalapagotchViewState {
 }
 
 const FLOOR_MATERIAL = new MeshPhongMaterial({
+    vertexColors: FaceColors,
     lights: true,
-    color: new Color(0.8, 0.8, 0.8),
     visible: true
 });
 const LIGHT_ABOVE_CAMERA = new Vector3(0, 3, 0);
