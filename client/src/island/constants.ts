@@ -1,11 +1,11 @@
 import {Gotch} from './gotch';
-import {Tile} from './tile';
+import {Spot} from './spot';
 
 export const STOP_STEP = 0;
 export const BRANCH_STEP = 7;
 export const ERROR_STEP = 8;
 
-export const TOKEN_SHAPE = [
+export const GOTCH_SHAPE = [
     // center
     {x: 0, y: 0},
     // layer 1
@@ -281,15 +281,12 @@ export const ROTATE = [
 ];
 
 export const minimumNumber = (a: number, b: number) => (a < b) ? a : b;
-export const maximumNumber = (a: number, b: number) => (a > b) ? a : b;
 
 // gotch patterns
 
 export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0;
 
-export const tileSortOnCoords = (a: Tile, b: Tile): number => coordSort(a.coords, b.coords);
-
-export const gotchSortOnNonces = (a: Gotch, b: Gotch): number => a.nonce < b.nonce ? -1 : a.nonce > b.nonce ? 1 : 0;
+export const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
 
 export const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacent) => {
     if (withMax) {
@@ -302,21 +299,21 @@ export const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, 
 export const ringIndex = (coords: ICoords, origin: ICoords): number => {
     const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y};
     for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === TOKEN_SHAPE[index].x && ringCoords.y === TOKEN_SHAPE[index].y) {
+        if (ringCoords.x === GOTCH_SHAPE[index].x && ringCoords.y === GOTCH_SHAPE[index].y) {
             return index;
         }
     }
     return 0;
 };
 
-export const tilesToHexString = (tiles: Tile[]) => {
-    const lit = tiles.map(cell => cell.lit ? '1' : '0');
+export const spotsToHexFingerprint = (spots: Spot[]) => {
+    const lit = spots.map(cell => cell.lit ? '1' : '0');
     const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
     return nybbleChars.join('');
 };
 
-export const fingerprintToTiles = (hexString: string, tiles: Tile[]) => {
+export const fingerprintToSpots = (hexString: string, spots: Spot[]) => {
     const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
     const booleanArrays = numbers.map(nyb => {
         const b0 = (nyb & 8) !== 0;
@@ -326,7 +323,7 @@ export const fingerprintToTiles = (hexString: string, tiles: Tile[]) => {
         return [b0, b1, b2, b3];
     });
     const litStack = [].concat.apply([], booleanArrays).reverse();
-    tiles.forEach(cell => cell.lit = litStack.pop());
+    spots.forEach(cell => cell.lit = litStack.pop());
 };
 
 // basics
@@ -349,7 +346,7 @@ export const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s +
 
 export interface IslandPattern {
     gotches: string;
-    tiles: string;
+    spots: string;
 }
 
 export const validGotchPattern = (pattern: IslandPattern): boolean => {
@@ -359,8 +356,8 @@ export const validGotchPattern = (pattern: IslandPattern): boolean => {
 };
 
 export const gotchFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Gotch => {
-    const gotch = new Gotch(undefined, {x: 0, y: 0}, TOKEN_SHAPE.map(c => new Tile(c)), index);
-    fingerprintToTiles(fingerprint, gotch.tiles);
+    const gotch = new Gotch(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Spot(c)), index);
+    fingerprintToSpots(fingerprint, gotch.spots);
     gotch.owner = ownerLookup(fingerprint);
     return gotch;
 };

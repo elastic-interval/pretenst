@@ -23,7 +23,7 @@ class App extends React.Component<IAppProps, IAppState> {
         const existingOwner = localStorage.getItem('owner');
         const owner = existingOwner ? existingOwner : 'gumby';
         const existingPattern = localStorage.getItem(owner);
-        const pattern: IslandPattern = existingPattern ? JSON.parse(existingPattern) : {gotches: '0', tiles: '0'};
+        const pattern: IslandPattern = existingPattern ? JSON.parse(existingPattern) : {gotches: '0', spots: '0'};
         this.state = {
             population: new Population(props.createFabricInstance),
             island: new Island(pattern)

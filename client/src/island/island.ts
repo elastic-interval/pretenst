@@ -3,20 +3,20 @@ import {Gotch} from './gotch';
 import {
     BRANCH_STEP,
     equals,
+    GOTCH_SHAPE,
     gotchWithMaxNonce,
     ICoords,
     IslandPattern,
     padRightTo4,
     plus,
+    sortSpotsOnCoord,
     STOP_STEP,
-    tileSortOnCoords,
-    TOKEN_SHAPE,
     zero
 } from './constants';
-import {Tile} from './tile';
+import {Spot} from './spot';
 
 export class Island {
-    public tiles: Tile[] = [];
+    public spots: Spot[] = [];
     public gotches: Gotch[] = [];
     public freeGotches: Gotch[] = [];
     public facesMeshNode: any;
@@ -24,7 +24,7 @@ export class Island {
 
     constructor(pattern: IslandPattern) {
         this.apply(pattern);
-        if (!this.tiles.length) {
+        if (!this.spots.length) {
             this.getOrCreateGotch(undefined, zero);
         }
         this.refreshOwnership();
@@ -52,14 +52,15 @@ export class Island {
                 case 5:
                 case 6:
                     if (gotch) {
-                        gotch = this.gotchAroundTile(gotch.tiles[step]);
+                        gotch = this.gotchAroundSpot(gotch.spots[step]);
                     }
                     break;
                 default:
                     console.error('Error step');
             }
         }
-        const numbers = pattern.tiles.split('').map(hexChar => parseInt(hexChar, 16));
+        const hexChars = pattern.spots ? pattern.spots.split('') : [];
+        const numbers = hexChars.map(hexChar => parseInt(hexChar, 16));
         const booleanArrays = numbers.map(nyb => {
             const b0 = (nyb & 8) !== 0;
             const b1 = (nyb & 4) !== 0;
@@ -68,24 +69,24 @@ export class Island {
             return [b0, b1, b2, b3];
         });
         const litStack = [].concat.apply([], booleanArrays).reverse();
-        this.tiles.sort(tileSortOnCoords).forEach(tile => tile.lit = litStack.pop());
+        this.spots.sort(sortSpotsOnCoord).forEach(spot => spot.lit = litStack.pop());
         this.refreshOwnership();
     }
 
     public get midpoint(): Vector3 {
-        return this.tiles
+        return this.spots
             .reduce(
-                (sum: Vector3, tile: Tile) => {
-                    sum.x += tile.scaledCoords.x;
-                    sum.z += tile.scaledCoords.y;
+                (sum: Vector3, spot: Spot) => {
+                    sum.x += spot.scaledCoords.x;
+                    sum.z += spot.scaledCoords.y;
                     return sum;
                 },
                 new Vector3()
             )
-            .multiplyScalar(1 / this.tiles.length);
+            .multiplyScalar(1 / this.spots.length);
     }
 
-    public findTile(raycaster: Raycaster): Tile | undefined {
+    public findSpot(raycaster: Raycaster): Spot | undefined {
         const intersections = raycaster.intersectObject(this.facesMeshNode);
         if (intersections.length > 1) {
             console.error('Expected only one');
@@ -95,17 +96,17 @@ export class Island {
         if (hit === undefined) {
             return undefined;
         }
-        return this.tiles.find(tile => tile.faceIndexes.indexOf(hit) >= 0);
+        return this.spots.find(spot => spot.faceIndexes.indexOf(hit) >= 0);
     }
 
     public get pattern(): IslandPattern {
-        return {gotches: this.gotchTree, tiles: this.tileString};
+        return {gotches: this.gotchTree, spots: this.spotString};
     }
 
     // ================================================================================================
 
-    private get tileString(): string {
-        const lit = this.tiles.map(tile => tile.lit ? '1' : '0');
+    private get spotString(): string {
+        const lit = this.spots.map(spot => spot.lit ? '1' : '0');
         const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null)
         const nybbleChars = nybbleStrings.map(chunk => {
             if (chunk) {
@@ -140,12 +141,12 @@ export class Island {
     private refreshOwnership() {
         this.gotches.forEach(gotch => gotch.owner = this.ownerLookup(gotch.createFingerprint()));
         this.freeGotches = this.gotches.filter(gotch => !gotch.owner);
-        this.tiles.forEach(cell => cell.updateFreeFlag());
+        this.spots.forEach(cell => cell.updateFreeFlag());
     }
 
-    private gotchAroundTile(tile: Tile): Gotch {
-        const adjacentMaxNonce = gotchWithMaxNonce(tile.adjacentGotches);
-        return this.getOrCreateGotch(adjacentMaxNonce, tile.coords);
+    private gotchAroundSpot(spot: Spot): Gotch {
+        const adjacentMaxNonce = gotchWithMaxNonce(spot.adjacentGotches);
+        return this.getOrCreateGotch(adjacentMaxNonce, spot.coords);
     }
 
     private getOrCreateGotch(parent: Gotch | undefined, coords: ICoords): Gotch {
@@ -153,19 +154,19 @@ export class Island {
         if (existing) {
             return existing;
         }
-        const cells = TOKEN_SHAPE.map(c => this.getOrCreateTile(plus(c, coords)));
+        const cells = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
         const gotch = new Gotch(parent, coords, cells, -1);
         this.gotches.push(gotch);
         return gotch;
     }
 
-    private getOrCreateTile(coords: ICoords): Tile {
-        const existing = this.tiles.find(p => equals(p.coords, coords));
+    private getOrCreateSpot(coords: ICoords): Spot {
+        const existing = this.spots.find(p => equals(p.coords, coords));
         if (existing) {
             return existing;
         }
-        const tile = new Tile(coords);
-        this.tiles.push(tile);
-        return tile;
+        const spot = new Spot(coords);
+        this.spots.push(spot);
+        return spot;
     }
 }

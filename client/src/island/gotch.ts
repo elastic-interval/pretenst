@@ -1,5 +1,5 @@
-import {BRANCH_STEP, equals, ERROR_STEP, ICoords, ringIndex, STOP_STEP, tilesToHexString} from './constants';
-import {Tile} from './tile';
+import {BRANCH_STEP, equals, ERROR_STEP, ICoords, ringIndex, spotsToHexFingerprint, STOP_STEP} from './constants';
+import {Spot} from './spot';
 
 interface IGotchIndexed {
     gotch: Gotch;
@@ -14,13 +14,13 @@ export class Gotch {
 
     constructor(public parentGotch: Gotch | undefined,
                 public coords: ICoords,
-                public tiles: Tile[],
+                public spots: Spot[],
                 index: number) {
-        this.tiles[0].centerOfGotch = this;
+        this.spots[0].centerOfGotch = this;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.tiles[neighbor].adjacentGotches.push(this);
+            this.spots[neighbor].adjacentGotches.push(this);
         }
-        this.tiles.forEach(p => p.memberOfGotch.push(this));
+        this.spots.forEach(p => p.memberOfGotch.push(this));
         if (parentGotch) {
             parentGotch.childGotches.push(this);
             this.nonce = parentGotch.nonce + 1;
@@ -28,7 +28,7 @@ export class Gotch {
     }
 
     get canBePurchased(): boolean {
-        const center = this.tiles[0];
+        const center = this.spots[0];
         const noneAdjacent = center.adjacentGotches.length === 0;
         const ownedAdjacentExists = !!center.adjacentGotches.find(gotch => !!gotch.owner);
         const notOwned = !this.owner;
@@ -43,25 +43,25 @@ export class Gotch {
     //   );
     // }
 
-    public destroy(): Tile[] {
-        if (this.tiles.length === 0) {
+    public destroy(): Spot[] {
+        if (this.spots.length === 0) {
             return [];
         }
         if (this.parentGotch) {
             this.parentGotch.childGotches = this.parentGotch.childGotches.filter(gotch => !equals(this.coords, gotch.coords));
         }
-        this.tiles[0].centerOfGotch = undefined;
+        this.spots[0].centerOfGotch = undefined;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.tiles[neighbor].adjacentGotches = this.tiles[neighbor].adjacentGotches.filter(gotch => !equals(this.coords, gotch.coords));
+            this.spots[neighbor].adjacentGotches = this.spots[neighbor].adjacentGotches.filter(gotch => !equals(this.coords, gotch.coords));
         }
-        this.tiles.forEach(p => p.memberOfGotch = p.memberOfGotch.filter(gotch => !equals(this.coords, gotch.coords)));
-        const lightsToRemove = this.tiles.filter(p => p.memberOfGotch.length === 0);
-        this.tiles = [];
+        this.spots.forEach(p => p.memberOfGotch = p.memberOfGotch.filter(gotch => !equals(this.coords, gotch.coords)));
+        const lightsToRemove = this.spots.filter(p => p.memberOfGotch.length === 0);
+        this.spots = [];
         return lightsToRemove;
     }
 
     public createFingerprint() {
-        return tilesToHexString(this.tiles);
+        return spotsToHexFingerprint(this.spots);
     }
 
     public generateOctalTreePattern(steps: number[]): number[] {

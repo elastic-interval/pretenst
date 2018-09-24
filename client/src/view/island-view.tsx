@@ -3,8 +3,8 @@ import * as R3 from 'react-three';
 import {Color, PerspectiveCamera, Vector3} from 'three';
 import {Island} from '../island/island';
 import {IslandMesh} from './island-mesh';
-import {Tile} from '../island/tile';
-import {TileSelector} from './tile-selector';
+import {Spot} from '../island/spot';
+import {SpotSelector} from './spot-selector';
 
 interface IIslandViewProps {
     width: number;
@@ -15,14 +15,14 @@ interface IIslandViewProps {
 interface IIslandViewState {
     width: number;
     height: number;
-    selectedTile?: Tile;
+    selectedSpot?: Spot;
 }
 
 const SUN_POSITION = new Vector3(0, 300, 0);
 const CAMERA_POSITION = new Vector3(0, 500, 0);
 
 export class IslandView extends React.Component<IIslandViewProps, IIslandViewState> {
-    private selector: TileSelector;
+    private selector: SpotSelector;
     private perspectiveCamera: PerspectiveCamera;
 
     constructor(props: IIslandViewProps) {
@@ -37,7 +37,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         const midpoint = props.island.midpoint;
         this.perspectiveCamera.position.add(CAMERA_POSITION.add(midpoint));
         this.perspectiveCamera.lookAt(midpoint);
-        this.selector = new TileSelector(this.props.island, this.perspectiveCamera);
+        this.selector = new SpotSelector(this.props.island, this.perspectiveCamera);
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             console.log(event.code);
             switch (event.code) {
@@ -51,9 +51,9 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
     }
 
     public componentDidMount() {
-        this.selector.selected.subscribe(tile => {
-            if (tile) {
-                tile.lit = !tile.lit;
+        this.selector.selected.subscribe(spot => {
+            if (spot) {
+                spot.lit = !spot.lit;
                 console.log('island', this.props.island.pattern);
                 this.forceUpdate();
             }

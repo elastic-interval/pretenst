@@ -35,16 +35,16 @@ const islandGeometry = (island: Island): Geometry => {
     const faces: Face3[] = [];
     const vertices: Vector3[] = [];
     const transform = new Vector3();
-    island.tiles.forEach((tile, tileIndex) => {
-        const color = tile.lit ? LIT_COLOR : UNLIT_COLOR;
-        transform.x = tile.scaledCoords.x;
-        // transform.y = tile.centerOfGotch ? 0.1 : 0;
-        transform.z = tile.scaledCoords.y;
+    island.spots.forEach((spot, index) => {
+        const color = spot.lit ? LIT_COLOR : UNLIT_COLOR;
+        transform.x = spot.scaledCoords.x;
+        // transform.y = spot.centerOfGotch ? 0.1 : 0;
+        transform.z = spot.scaledCoords.y;
         vertices.push(...HEXAGON_POINTS.map(vertex => new Vector3().addVectors(vertex, transform)));
         for (let a = 0; a < SIX; a++) {
-            const offset = tileIndex * HEXAGON_POINTS.length;
+            const offset = index * HEXAGON_POINTS.length;
             const b = (a + 1) % SIX;
-            tile.faceIndexes.push(faces.length);
+            spot.faceIndexes.push(faces.length);
             faces.push(new Face3(
                 offset + SIX, offset + a, offset + b,
                 [

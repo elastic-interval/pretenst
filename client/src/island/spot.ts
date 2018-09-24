@@ -4,7 +4,7 @@ import {Gotch} from './gotch';
 const SCALEX = 8.66;
 const SCALEY = 15;
 
-export class Tile {
+export class Spot {
     public scaledCoords: ICoords;
     public lit = false;
     public free = false;
