@@ -152,10 +152,8 @@ export class Population {
 
     public findGotchi(raycaster: Raycaster): Gotchi | undefined {
         return this.gotchiArray
-            .filter(g => g.facesMeshNode)
-            .find(gotchi => {
-                return raycaster.intersectObject(gotchi.facesMeshNode).length > 0;
-            });
+            .filter(gotchi => gotchi.facesMeshNode)
+            .find(gotchi => raycaster.intersectObject(gotchi.facesMeshNode).length > 0);
     }
 
     // Privates =============================================================

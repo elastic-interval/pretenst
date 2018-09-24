@@ -1,4 +1,4 @@
-import {Color, Face3, Geometry, Vector3} from 'three';
+import {Raycaster, Vector3} from 'three';
 import {Gotch} from './gotch';
 import {
     BRANCH_STEP,
@@ -14,29 +14,11 @@ import {
 } from './constants';
 import {Tile} from './tile';
 
-const NORMAL_SPREAD = 0.2;
-const UP = new Vector3(0, 1, 0);
-const SIX = 6;
-const SCALEX = 0.866;
-const SCALEY = 1.5;
-export const HEXAGON_POINTS = [
-    new Vector3(0, 0, -1),
-    new Vector3(-0.866, 0, -0.5),
-    new Vector3(-0.866, 0, 0.5),
-    new Vector3(0, 0, 1),
-    new Vector3(0.866, 0, 0.5),
-    new Vector3(0.866, 0, -0.5),
-    new Vector3()
-];
-const LIT_COLOR = new Color(1, 1, 0.6);
-const UNLIT_COLOR = new Color(0.5, 0.5, 0.5);
-
 export class Island {
-
     public tiles: Tile[] = [];
     public gotches: Gotch[] = [];
     public freeGotches: Gotch[] = [];
-    private privateGeometry?: Geometry;
+    public facesMeshNode: any;
     private ownershipCache: Map<string, string>;
 
     constructor() {
@@ -93,41 +75,30 @@ export class Island {
         this.refreshOwnership();
     }
 
-    public get geometry(): Geometry {
-        const faces: Face3[] = [];
-        const vertices: Vector3[] = [];
-        const transform = new Vector3();
-        this.tiles.forEach((tile, tileIndex) => {
-            const color = tile.lit ? LIT_COLOR : UNLIT_COLOR;
-            transform.x = tile.coords.x * SCALEX;
-            // transform.y = tile.centerOfGotch ? 0.1 : 0;
-            transform.z = tile.coords.y * SCALEY;
-            vertices.push(...HEXAGON_POINTS.map(vertex => new Vector3().addVectors(vertex, transform)));
-            for (let a = 0; a < SIX; a++) {
-                const offset = tileIndex * HEXAGON_POINTS.length;
-                const b = (a + 1) % SIX;
-                faces.push(new Face3(
-                    offset + SIX, offset + a, offset + b,
-                    [
-                        UP,
-                        new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], NORMAL_SPREAD).normalize(),
-                        new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], NORMAL_SPREAD).normalize()
-                    ],
-                    color
-                ));
-            }
-        });
-        if (this.privateGeometry) {
-            this.privateGeometry.dispose();
-            this.privateGeometry = undefined;
+    public get midpoint(): Vector3 {
+        return this.tiles
+            .reduce(
+                (sum: Vector3, tile: Tile) => {
+                    sum.x += tile.scaledCoords.x;
+                    sum.z += tile.scaledCoords.y;
+                    return sum;
+                },
+                new Vector3()
+            )
+            .multiplyScalar(1 / this.tiles.length);
+    }
+
+    public findTile(raycaster: Raycaster): Tile | undefined {
+        const intersections = raycaster.intersectObject(this.facesMeshNode);
+        if (intersections.length > 1) {
+            console.error('Expected only one');
+            return undefined;
         }
-        if (!this.privateGeometry) {
-            this.privateGeometry = new Geometry();
-            this.privateGeometry.vertices = vertices;
-            this.privateGeometry.faces = faces;
-            this.privateGeometry.computeBoundingSphere();
+        const hit = intersections[0].faceIndex;
+        if (hit === undefined) {
+            return undefined;
         }
-        return this.privateGeometry;
+        return this.tiles.find(tile => tile.faceIndexes.indexOf(hit) >= 0);
     }
 
     // ================================================================================================
