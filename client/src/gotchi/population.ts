@@ -10,8 +10,8 @@ const HANG_DELAY = 3000;
 const REST_DELAY = 2000;
 const WALL_STEP_DEGREES = 3;
 const INITIAL_FRONTIER = 8;
-const NORMAL_TICKS = 30;
-const CATCH_UP_TICKS = 120;
+const NORMAL_TICKS = 40;
+const CATCH_UP_TICKS = 220;
 const MAX_POPULATION = 16;
 const FRONTIER_EXPANSION = 1.1;
 const FRONTIER_ALTITUDE = 0.3;
@@ -98,6 +98,7 @@ export class Population {
                 maxFrozenAge = gotchi.age;
             }
         };
+        let catchingUp = false;
         this.gotchiArray = this.gotchiArray.map((gotchi, index, array) => {
             if (gotchi.rebornClone) {
                 return gotchi.rebornClone;
@@ -121,10 +122,10 @@ export class Population {
                 gotchi.catchingUp = false;
                 if (gotchi.age + CATCH_UP_TICKS < maxAge) {
                     gotchi.iterate(CATCH_UP_TICKS);
-                    gotchi.catchingUp = true;
+                    catchingUp = gotchi.catchingUp = true;
                 } else if (gotchi.age + NORMAL_TICKS * 3 < maxAge) {
                     gotchi.iterate(NORMAL_TICKS);
-                    gotchi.catchingUp = true;
+                    catchingUp = gotchi.catchingUp = true;
                 }
                 return gotchi;
             }
@@ -143,7 +144,7 @@ export class Population {
             }
         }
         return this.gotchiArray.map(gotchi => {
-            return gotchi.iterate(NORMAL_TICKS);
+            return gotchi.iterate(catchingUp ? NORMAL_TICKS/3 : NORMAL_TICKS);
         });
     }
 
