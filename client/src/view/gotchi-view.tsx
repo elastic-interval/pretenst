@@ -9,6 +9,7 @@ import {PopulationFrontier} from './population-frontier';
 import {IslandMesh} from './island-mesh';
 import {PopulationOrbit} from './population-orbit';
 import {PopulationSelector} from './population-selector';
+import {Subscription} from 'rxjs/Subscription';
 
 interface IGotchiViewProps {
     width: number;
@@ -18,8 +19,6 @@ interface IGotchiViewProps {
 }
 
 interface IGotchiViewState {
-    width: number;
-    height: number;
     turbo: boolean;
     selectedGotchi?: Gotchi
 }
@@ -33,6 +32,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private perspectiveCamera: PerspectiveCamera;
     private orbit: PopulationOrbit;
     private selector: PopulationSelector;
+    private selectedSubscription: Subscription;
     private frameTime = Date.now();
     private frameCount = 0;
     private frameDelay = 20;
@@ -40,13 +40,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     constructor(props: IGotchiViewProps) {
         super(props);
         this.state = {
-            width: props.width,
-            height: props.height,
             turbo: false,
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
-        this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000);
+        this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
         this.orbit = new PopulationOrbit(this.perspectiveCamera);
         this.selector = new PopulationSelector(this.props.population, this.perspectiveCamera);
@@ -66,22 +64,27 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     break;
             }
         });
-        this.updateDimensions();
+    }
+
+    public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: any) {
+        if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
+            this.perspectiveCamera.aspect = this.props.width / this.props.height;
+            this.perspectiveCamera.updateProjectionMatrix();
+        }
     }
 
     public componentDidMount() {
-        this.selector.selected.subscribe(selectedGotchi => {
+        this.selectedSubscription= this.selector.selected.subscribe(selectedGotchi => {
             if (selectedGotchi) {
                 selectedGotchi.clicked = true;
                 // setFittest(selectedGotchi);
             }
             this.setState({selectedGotchi});
         });
-        window.addEventListener("resize", this.updateDimensions);
     }
 
     public componentWillUnmount() {
-        window.removeEventListener("resize", this.updateDimensions);
+        this.selectedSubscription.unsubscribe();
     }
 
     public render() {
@@ -100,9 +103,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         }
         return (
             <div id="gotchi-view"
-                 onMouseDownCapture={(e) => this.selector.click(e, this.state.width, this.state.height)}>
-                <R3.Renderer width={this.state.width} height={this.state.height}>
-                    <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
+                 onMouseDownCapture={(e) => this.selector.click(e, this.props.width, this.props.height)}>
+                <R3.Renderer width={this.props.width} height={this.props.height}>
+                    <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <PopulationMesh population={this.props.population}/>
                         <IslandMesh island={this.props.island}/>
                         <PopulationFrontier frontier={this.props.population.frontier}/>
@@ -115,15 +118,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     // ==========================
-    private updateDimensions = () => {
-        const element = document.getElementById('gotchi-view');
-        if (element) {
-            this.setState({width: element.clientWidth, height: element.clientHeight});
-            console.log(`w=${this.state.width}, h=${this.state.height}`);
-            this.perspectiveCamera.aspect = this.state.width / this.state.height;
-            this.perspectiveCamera.updateProjectionMatrix();
-        }
-    };
 
     private animate() {
         const step = () => {

@@ -91,15 +91,11 @@ export class Island {
 
     public findSpot(raycaster: Raycaster): Spot | undefined {
         const intersections = raycaster.intersectObject(this.facesMeshNode);
-        if (intersections.length > 1) {
-            console.error('Expected only one');
-            return undefined;
+        if (intersections.length && intersections[0].faceIndex) {
+            const hit = intersections[0].faceIndex;
+            return hit ? this.spots.find(spot => spot.faceIndexes.indexOf(hit) >= 0) : undefined;
         }
-        const hit = intersections[0].faceIndex;
-        if (hit === undefined) {
-            return undefined;
-        }
-        return this.spots.find(spot => spot.faceIndexes.indexOf(hit) >= 0);
+        return undefined;
     }
 
     public get pattern(): IslandPattern {

@@ -5,6 +5,7 @@ import {Island} from '../island/island';
 import {IslandMesh} from './island-mesh';
 import {Spot} from '../island/spot';
 import {SpotSelector} from './spot-selector';
+import {Subscription} from 'rxjs/Subscription';
 
 interface IIslandViewProps {
     width: number;
@@ -13,8 +14,6 @@ interface IIslandViewProps {
 }
 
 interface IIslandViewState {
-    width: number;
-    height: number;
     selectedSpot?: Spot;
 }
 
@@ -24,16 +23,14 @@ const CAMERA_POSITION = new Vector3(0, 500, 0);
 export class IslandView extends React.Component<IIslandViewProps, IIslandViewState> {
     private selector: SpotSelector;
     private perspectiveCamera: PerspectiveCamera;
+    private selectedSubscription: Subscription;
 
     constructor(props: IIslandViewProps) {
         super(props);
-        this.state = {
-            width: props.width,
-            height: props.height,
-        };
+        this.state = {};
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
-        this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000);
+        this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
         const midpoint = props.island.midpoint;
         this.perspectiveCamera.position.add(CAMERA_POSITION.add(midpoint));
         this.perspectiveCamera.lookAt(midpoint);
@@ -47,11 +44,17 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                     break;
             }
         });
-        this.updateDimensions();
+    }
+
+    public componentDidUpdate(prevProps: Readonly<IIslandViewProps>, prevState: Readonly<IIslandViewState>, snapshot: any) {
+        if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
+            this.perspectiveCamera.aspect = this.props.width / this.props.height;
+            this.perspectiveCamera.updateProjectionMatrix();
+        }
     }
 
     public componentDidMount() {
-        this.selector.selected.subscribe(spot => {
+        this.selectedSubscription = this.selector.selected.subscribe(spot => {
             if (spot) {
                 spot.lit = !spot.lit;
                 const pattern = this.props.island.pattern;
@@ -59,19 +62,18 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                 this.forceUpdate();
             }
         });
-        window.addEventListener("resize", this.updateDimensions);
     }
 
     public componentWillUnmount() {
-        window.removeEventListener("resize", this.updateDimensions);
+        this.selectedSubscription.unsubscribe();
     }
 
     public render() {
         return (
             <div id="gotchi-view"
-                 onMouseDownCapture={(e) => this.selector.click(e, this.state.width, this.state.height)}>
-                <R3.Renderer width={this.state.width} height={this.state.height}>
-                    <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
+                 onMouseDownCapture={(e) => this.selector.click(e, this.props.width, this.props.height)}>
+                <R3.Renderer width={this.props.width} height={this.props.height}>
+                    <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandMesh island={this.props.island}/>
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>
@@ -80,17 +82,5 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
             </div>
         );
     }
-
-    // ==========================
-    private updateDimensions = () => {
-        const element = document.getElementById('gotchi-view');
-        if (element) {
-            // todo: watch this: it wil adjust size
-            this.setState({width: element.clientWidth, height: element.clientHeight});
-            console.log(`w=${this.state.width}, h=${this.state.height}`);
-            this.perspectiveCamera.aspect = this.state.width / this.state.height;
-            this.perspectiveCamera.updateProjectionMatrix();
-        }
-    };
 }
 
