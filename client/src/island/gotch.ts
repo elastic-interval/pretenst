@@ -1,6 +1,11 @@
 import {BRANCH_STEP, equals, ERROR_STEP, ICoords, ringIndex, STOP_STEP, tilesToHexString} from './constants';
 import {Tile} from './tile';
 
+interface IGotchIndexed {
+    gotch: Gotch;
+    index: number;
+}
+
 export class Gotch {
     public owner: string;
     public nonce = 0;
@@ -61,20 +66,18 @@ export class Gotch {
 
     public generateOctalTreePattern(steps: number[]): number[] {
         const remainingChildren = this.childGotches.filter(gotch => !gotch.visited)
-            .map(gotch => [ringIndex(gotch.coords, this.coords), gotch])
-            .sort((a, b) => a[0] < b[0] ? 1 : a[0] > b[0] ? -1 : 0);
+            .map(gotch => {
+                const index = ringIndex(gotch.coords, this.coords);
+                return {index, gotch} as IGotchIndexed;
+            })
+            .sort((a, b) => a.index < b.index ? 1 : a.index > b.index ? -1 : 0);
         if (remainingChildren.length > 0) {
-            while (remainingChildren.length > 0) {
-                const child = remainingChildren.pop();
-                if (child) {
-                    const childGotch = child[1] as Gotch;
-                    const index = child[0] as number;
-                    if (remainingChildren.length > 0) {
-                        steps.push(BRANCH_STEP);
-                    }
-                    steps.push(index > 0 ? index : ERROR_STEP);
-                    childGotch.generateOctalTreePattern(steps);
+            for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
+                if (remainingChildren.length > 0) {
+                    steps.push(BRANCH_STEP);
                 }
+                steps.push(child.index > 0 ? child.index : ERROR_STEP);
+                child.gotch.generateOctalTreePattern(steps);
             }
         }
         else {

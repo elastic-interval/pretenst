@@ -14,6 +14,7 @@ interface IGotchiViewProps {
     width: number;
     height: number;
     population: Population;
+    island: Island;
 }
 
 interface IGotchiViewState {
@@ -29,7 +30,6 @@ const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
 const TARGET_FRAME_RATE = 25;
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
-    private island = new Island();
     private perspectiveCamera: PerspectiveCamera;
     private orbit: PopulationOrbit;
     private selector: PopulationSelector;
@@ -104,7 +104,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         <PopulationMesh population={this.props.population}/>
-                        <IslandMesh island={this.island}/>
+                        <IslandMesh island={this.props.island}/>
                         <PopulationFrontier frontier={this.props.population.frontier}/>
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>

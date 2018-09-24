@@ -54,6 +54,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         this.selector.selected.subscribe(tile => {
             if (tile) {
                 tile.lit = !tile.lit;
+                console.log('island', this.props.island.pattern);
                 this.forceUpdate();
             }
         });
@@ -83,6 +84,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
     private updateDimensions = () => {
         const element = document.getElementById('gotchi-view');
         if (element) {
+            // todo: watch this: it wil adjust size
             this.setState({width: element.clientWidth, height: element.clientHeight});
             console.log(`w=${this.state.width}, h=${this.state.height}`);
             this.perspectiveCamera.aspect = this.state.width / this.state.height;

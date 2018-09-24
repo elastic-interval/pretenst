@@ -5,6 +5,7 @@ import {Population} from './gotchi/population';
 import {ControlPanel} from './view/control-panel';
 import {IslandView} from './view/island-view';
 import {Island} from './island/island';
+import {IslandPattern} from './island/constants';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -19,9 +20,13 @@ class App extends React.Component<IAppProps, IAppState> {
 
     constructor(props: IAppProps) {
         super(props);
+        const existingOwner = localStorage.getItem('owner');
+        const owner = existingOwner ? existingOwner : 'gumby';
+        const existingPattern = localStorage.getItem(owner);
+        const pattern: IslandPattern = existingPattern ? JSON.parse(existingPattern) : {gotches: '0', tiles: '0'};
         this.state = {
             population: new Population(props.createFabricInstance),
-            island: new Island()
+            island: new Island(pattern)
         };
     }
 

@@ -347,12 +347,12 @@ export const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s +
 
 // main view
 
-export interface IGotchPattern {
+export interface IslandPattern {
     gotches: string;
-    lights: string;
+    tiles: string;
 }
 
-export const validGotchPattern = (pattern: IGotchPattern): boolean => {
+export const validGotchPattern = (pattern: IslandPattern): boolean => {
     const gotchesOk = /^[0-8]*$/.test(pattern.gotches);
     const lightsOk = /^[0-9a-f]*$/.test(pattern.gotches);
     return gotchesOk && lightsOk;

@@ -5,7 +5,8 @@ import {
     equals,
     gotchWithMaxNonce,
     ICoords,
-    IGotchPattern,
+    IslandPattern,
+    padRightTo4,
     plus,
     STOP_STEP,
     tileSortOnCoords,
@@ -21,11 +22,7 @@ export class Island {
     public facesMeshNode: any;
     private ownershipCache: Map<string, string>;
 
-    constructor() {
-        const existingOwner = localStorage.getItem('owner');
-        const owner = existingOwner ? existingOwner : 'gumby';
-        const existingPattern = localStorage.getItem(owner);
-        const pattern: IGotchPattern = existingPattern ? JSON.parse(existingPattern) : {gotches: '0', lights: '0'};
+    constructor(pattern: IslandPattern) {
         this.apply(pattern);
         if (!this.tiles.length) {
             this.getOrCreateGotch(undefined, zero);
@@ -33,7 +30,7 @@ export class Island {
         this.refreshOwnership();
     }
 
-    public apply(pattern: IGotchPattern) {
+    public apply(pattern: IslandPattern) {
         let gotch: Gotch | undefined = this.getOrCreateGotch(undefined, zero);
         const stepStack = pattern.gotches.split('').reverse().map(stepChar => Number(stepChar));
         const gotchStack: Gotch[] = [];
@@ -62,7 +59,7 @@ export class Island {
                     console.error('Error step');
             }
         }
-        const numbers = pattern.lights.split('').map(hexChar => parseInt(hexChar, 16));
+        const numbers = pattern.tiles.split('').map(hexChar => parseInt(hexChar, 16));
         const booleanArrays = numbers.map(nyb => {
             const b0 = (nyb & 8) !== 0;
             const b1 = (nyb & 4) !== 0;
@@ -101,7 +98,34 @@ export class Island {
         return this.tiles.find(tile => tile.faceIndexes.indexOf(hit) >= 0);
     }
 
+    public get pattern(): IslandPattern {
+        return {gotches: this.gotchTree, tiles: this.tileString};
+    }
+
     // ================================================================================================
+
+    private get tileString(): string {
+        const lit = this.tiles.map(tile => tile.lit ? '1' : '0');
+        const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null)
+        const nybbleChars = nybbleStrings.map(chunk => {
+            if (chunk) {
+                return parseInt(padRightTo4(chunk), 2).toString(16);
+            } else {
+                return '';
+            }
+        });
+        return nybbleChars.join('');
+    };
+
+    private get gotchTree(): string {
+        const root = this.gotches.find(gotch => gotch.nonce === 0);
+        if (!root) {
+            console.error('No root gotch found');
+            return '0';
+        }
+        this.gotches.forEach(gotch => gotch.visited = false);
+        return root.generateOctalTreePattern([]).join('');
+    }
 
     private get owns(): Map<string, string> {
         if (!this.ownershipCache) {
