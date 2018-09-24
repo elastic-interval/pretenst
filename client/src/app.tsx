@@ -4,8 +4,7 @@ import {IFabricExports} from './body/fabric-exports';
 import {Population} from './gotchi/population';
 import {ControlPanel} from './view/control-panel';
 import {IslandView} from './view/island-view';
-import {Island} from './island/island';
-import {IslandPattern} from './island/constants';
+import {Island, IslandPattern} from './island/island';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;

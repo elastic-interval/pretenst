@@ -1,10 +1,59 @@
-import {BRANCH_STEP, equals, ERROR_STEP, ICoords, ringIndex, spotsToHexFingerprint, STOP_STEP} from './constants';
-import {Spot} from './spot';
+import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
+import {equals, ICoords, Spot} from './spot';
+
+const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 
 interface IGotchIndexed {
     gotch: Gotch;
     index: number;
 }
+
+const spotsToHexFingerprint = (spots: Spot[]) => {
+    const lit = spots.map(spot => spot.lit ? '1' : '0');
+    const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
+    const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
+    return nybbleChars.join('');
+};
+
+const ringIndex = (coords: ICoords, origin: ICoords): number => {
+    const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y};
+    for (let index = 1; index <= 6; index++) {
+        if (ringCoords.x === GOTCH_SHAPE[index].x && ringCoords.y === GOTCH_SHAPE[index].y) {
+            return index;
+        }
+    }
+    return 0;
+};
+
+export const gotchTreeString = (gotches: Gotch[]) => {
+    const root = gotches.find(gotch => gotch.nonce === 0);
+    if (!root) {
+        console.error('No root gotch found');
+        return '0';
+    }
+    gotches.forEach(gotch => gotch.visited = false);
+    return root.generateOctalTreePattern([]).join('');
+};
+
+// const fingerprintToSpots = (hexString: string, spots: Spot[]) => {
+//     const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
+//     const booleanArrays = numbers.map(nyb => {
+//         const b0 = (nyb & 8) !== 0;
+//         const b1 = (nyb & 4) !== 0;
+//         const b2 = (nyb & 2) !== 0;
+//         const b3 = (nyb & 1) !== 0;
+//         return [b0, b1, b2, b3];
+//     });
+//     const litStack = [].concat.apply([], booleanArrays).reverse();
+//     spots.forEach(spot => spot.lit = litStack.pop());
+// };
+
+// const gotchFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Gotch => {
+//     const gotch = new Gotch(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Spot(c)), index);
+//     fingerprintToSpots(fingerprint, gotch.spots);
+//     gotch.owner = ownerLookup(fingerprint);
+//     return gotch;
+// };
 
 export class Gotch {
     public owner: string;

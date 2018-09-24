@@ -1,19 +1,22 @@
 import {Raycaster, Vector3} from 'three';
-import {Gotch} from './gotch';
-import {
-    BRANCH_STEP,
-    equals,
-    GOTCH_SHAPE,
-    gotchWithMaxNonce,
-    ICoords,
-    IslandPattern,
-    padRightTo4,
-    plus,
-    sortSpotsOnCoord,
-    STOP_STEP,
-    zero
-} from './constants';
-import {Spot} from './spot';
+import {Gotch, gotchTreeString} from './gotch';
+import {BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
+import {coordSort, equals, ICoords, plus, Spot, spotsToString, zero} from './spot';
+
+export interface IslandPattern {
+    gotches: string;
+    spots: string;
+}
+
+const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
+const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacent) => {
+    if (withMax) {
+        return adjacent.nonce > withMax.nonce ? adjacent : withMax;
+    } else {
+        return adjacent;
+    }
+});
+
 
 export class Island {
     public spots: Spot[] = [];
@@ -100,33 +103,13 @@ export class Island {
     }
 
     public get pattern(): IslandPattern {
-        return {gotches: this.gotchTree, spots: this.spotString};
+        return {
+            gotches: gotchTreeString(this.gotches),
+            spots: spotsToString(this.spots)
+        };
     }
 
     // ================================================================================================
-
-    private get spotString(): string {
-        const lit = this.spots.map(spot => spot.lit ? '1' : '0');
-        const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null)
-        const nybbleChars = nybbleStrings.map(chunk => {
-            if (chunk) {
-                return parseInt(padRightTo4(chunk), 2).toString(16);
-            } else {
-                return '';
-            }
-        });
-        return nybbleChars.join('');
-    };
-
-    private get gotchTree(): string {
-        const root = this.gotches.find(gotch => gotch.nonce === 0);
-        if (!root) {
-            console.error('No root gotch found');
-            return '0';
-        }
-        this.gotches.forEach(gotch => gotch.visited = false);
-        return root.generateOctalTreePattern([]).join('');
-    }
 
     private get owns(): Map<string, string> {
         if (!this.ownershipCache) {
@@ -141,7 +124,7 @@ export class Island {
     private refreshOwnership() {
         this.gotches.forEach(gotch => gotch.owner = this.ownerLookup(gotch.createFingerprint()));
         this.freeGotches = this.gotches.filter(gotch => !gotch.owner);
-        this.spots.forEach(cell => cell.updateFreeFlag());
+        this.spots.forEach(spot => spot.updateFreeFlag());
     }
 
     private gotchAroundSpot(spot: Spot): Gotch {
@@ -154,8 +137,8 @@ export class Island {
         if (existing) {
             return existing;
         }
-        const cells = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
-        const gotch = new Gotch(parent, coords, cells, -1);
+        const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
+        const gotch = new Gotch(parent, coords, spots, -1);
         this.gotches.push(gotch);
         return gotch;
     }
