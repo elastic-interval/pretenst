@@ -28,15 +28,17 @@ export class PopulationMesh extends React.Component<IPopulationMeshProps, IPopul
     }
 
     public render() {
-        return <R3.Object3D key="PopulationMesh">{
-            this.props.population.forDisplay.map((gotchi: Gotchi, index: number) => {
-                return <R3.Mesh
-                    ref={(node: any) => gotchi.facesMeshNode = node}
-                    key={`Faces${index}`} name="Fabric"
-                    geometry={gotchi.fabric.facesGeometry}
-                    material={FACE_MATERIAL}
-                />
-            })
-        }</R3.Object3D>;
+        return <R3.Object3D key="PopulationMesh">
+            {
+                this.props.population.forDisplay.map((gotchi: Gotchi, index: number) => {
+                    return <R3.Mesh
+                        ref={(node: any) => gotchi.facesMeshNode = node}
+                        key={`Faces${index}`} name="Fabric"
+                        geometry={gotchi.fabric.facesGeometry}
+                        material={FACE_MATERIAL}
+                    />
+                })
+            }
+        </R3.Object3D>;
     }
 }
