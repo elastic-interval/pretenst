@@ -54,7 +54,8 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         this.selector.selected.subscribe(spot => {
             if (spot) {
                 spot.lit = !spot.lit;
-                console.log('island', this.props.island.pattern);
+                const pattern = this.props.island.pattern;
+                console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
                 this.forceUpdate();
             }
         });
