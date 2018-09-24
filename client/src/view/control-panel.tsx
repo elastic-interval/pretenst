@@ -1,6 +1,6 @@
 import * as React from 'react';
-import {Population} from './gotchi/population';
-import {IPhysicsFeature} from './body/physics';
+import {Population} from '../gotchi/population';
+import {IPhysicsFeature} from '../body/physics';
 
 export interface IControlPanelProps {
     population: Population;

@@ -1,19 +1,11 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {
-    Color,
-    FaceColors,
-    LineBasicMaterial,
-    MeshPhongMaterial,
-    PerspectiveCamera,
-    Raycaster,
-    Vector2,
-    Vector3,
-    VertexColors
-} from 'three';
-import {clearFittest, HUNG_ALTITUDE, Population} from './gotchi/population';
-import {Gotchi} from './gotchi/gotchi';
-import {Island} from './island/island';
+import {Color, FaceColors, MeshPhongMaterial, PerspectiveCamera, Raycaster, Vector2, Vector3} from 'three';
+import {clearFittest, HUNG_ALTITUDE, Population} from '../gotchi/population';
+import {Gotchi} from '../gotchi/gotchi';
+import {Island} from '../island/island';
+import {PopulationMesh} from './population-mesh';
+import {PopulationFrontier} from './population-frontier';
 
 interface IGotchiViewProps {
     width: number;
@@ -24,7 +16,6 @@ interface IGotchiViewProps {
 interface IGotchiViewState {
     width: number;
     height: number;
-    xray: boolean;
     turbo: boolean;
     selectedGotchi?: Gotchi
 }
@@ -34,17 +25,9 @@ const FLOOR_MATERIAL = new MeshPhongMaterial({
     lights: true,
     visible: true
 });
-const FACE_MATERIAL = new MeshPhongMaterial({
-    lights: true,
-    color: new Color(0.9, 0.9, 0.9),
-    transparent: true,
-    opacity: 0.8,
-    visible: true
-});
-const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
-const FRONTIER_MATERIAL = new LineBasicMaterial({color: 0xBBBBBB});
+// const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
 const SUN_POSITION = new Vector3(0, 300, 0);
-const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE/2, 8);
+const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
 const SCALE_FLOOR = new Vector3(10, 10, 10);
 const TARGET_FRAME_RATE = 25;
 const TOWARDS_TARGET = 0.03;
@@ -67,7 +50,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.state = {
             width: props.width,
             height: props.height,
-            xray: false,
             turbo: false,
         };
         // const loader = new TextureLoader();
@@ -81,7 +63,21 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         orbit.target = this.target;
         this.rayCaster = new Raycaster();
         this.animate();
-        this.keyboardListener();
+        window.addEventListener("keypress", (event: KeyboardEvent) => {
+            switch (event.code) {
+                case 'Space':
+                    this.setState({turbo: !this.state.turbo});
+                    break;
+                case 'KeyM':
+                    this.props.population.forDisplay.forEach((gotchi, index) => {
+                        console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
+                    });
+                    break;
+                case 'KeyR':
+                    clearFittest();
+                    break;
+            }
+        });
         this.updateDimensions();
     }
 
@@ -103,6 +99,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         return false;
     }
 
+    public componentDidMount() {
+        window.addEventListener("resize", this.updateDimensions);
+    }
+
+    public componentWillUnmount() {
+        window.removeEventListener("resize", this.updateDimensions);
+    }
+
     public render() {
         this.frameCount++;
         if (this.frameCount === 300) {
@@ -121,48 +125,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             <div id="gotchi-view" onMouseMove={(e: any) => this.mouseMove(e)} onMouseDownCapture={(e) => this.trySelect(e)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
-                        {
-                            this.state.xray ?
-                                this.props.population.forDisplay.map((gotchi: Gotchi, index: number) => {
-                                    return <R3.LineSegments
-                                        key={`Lines${index}`}
-                                        geometry={gotchi.fabric.lineSegmentsGeometry}
-                                        material={SPRING_MATERIAL}
-                                    />
-                                })
-                                :
-                                this.props.population.forDisplay.map((gotchi: Gotchi, index: number) => {
-                                    return <R3.Mesh
-                                        ref={(node: any) => gotchi.facesMeshNode = node}
-                                        key={`Faces${index}`} name="Fabric"
-                                        geometry={gotchi.fabric.facesGeometry}
-                                        material={FACE_MATERIAL}
-                                    />
-                                })
-                        }
-                        {
-                            this.state.xray ? null :
-                                <R3.Mesh
-                                    key="Floor"
-                                    geometry={this.galapagotch.geometry}
-                                    scale={SCALE_FLOOR}
-                                    material={FLOOR_MATERIAL}
-                                />
-                        }
-                        {
-                            !this.props.population.frontierGeometry ? null :
-                                <R3.LineSegments
-                                    key="Frontier"
-                                    geometry={this.props.population.frontierGeometry}
-                                    material={FRONTIER_MATERIAL}
-                                />
-                        }
-                        <R3.PointLight
-                            key="Sun"
-                            distance="1000"
-                            decay="0.01"
-                            position={SUN_POSITION}
-                        />
+                        <PopulationMesh population={this.props.population}/>
+                        <R3.Mesh key="Floor" geometry={this.galapagotch.geometry} scale={SCALE_FLOOR} material={FLOOR_MATERIAL}/>
+                        <PopulationFrontier frontier={this.props.population.frontier}/>
+                        <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>
                     </R3.Scene>
                 </R3.Renderer>
@@ -170,14 +136,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         );
     }
 
-    public componentDidMount() {
-        window.addEventListener("resize", this.updateDimensions);
-    }
-
-    public componentWillUnmount() {
-        window.removeEventListener("resize", this.updateDimensions);
-    }
-
+    // ==========================
     private updateDimensions = () => {
         const element = document.getElementById('gotchi-view');
         if (element) {
@@ -214,25 +173,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         requestAnimationFrame(step);
     }
 
-    private keyboardListener() {
-        window.addEventListener("keypress", (event: KeyboardEvent) => {
-            switch (event.code) {
-                case 'KeyX':
-                    this.setState({xray: !this.state.xray});
-                    break;
-                case 'Space':
-                    this.setState({turbo: !this.state.turbo});
-                    break;
-                case 'KeyM':
-                    this.props.population.forDisplay.forEach((gotchi, index) => {
-                        console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
-                    });
-                    break;
-                case 'KeyR':
-                    clearFittest();
-                    break;
-            }
-        });
-    }
+
 }
 

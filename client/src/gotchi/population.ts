@@ -2,22 +2,26 @@ import {IFabricExports} from '../body/fabric-exports';
 import {Gotchi} from './gotchi';
 import {Fabric} from '../body/fabric';
 import {Genome, IGenome} from '../genetics/genome';
-import {BufferGeometry, Float32BufferAttribute, Raycaster, Vector3} from 'three';
+import {Raycaster, Vector3} from 'three';
 import {Physics} from '../body/physics';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 export const HUNG_ALTITUDE = 7;
 const HANG_DELAY = 3000;
 const REST_DELAY = 2000;
-const WALL_STEP_DEGREES = 3;
-const INITIAL_FRONTIER = 8;
 const NORMAL_TICKS = 40;
 const CATCH_UP_TICKS = 220;
 const MAX_POPULATION = 16;
-const FRONTIER_EXPANSION = 1.1;
-const FRONTIER_ALTITUDE = 0.3;
 const INITIAL_JOINT_COUNT = 47;
 const INITIAL_MUTATION_COUNT = 20;
 const CHANCE_OF_GROWTH = 0.1;
+
+const INITIAL_FRONTIER = 8;
+const FRONTIER_EXPANSION = 1.1;
+
+export interface IFrontier {
+    radius: number;
+}
 
 interface IGotchiFitness {
     gotchi: Gotchi;
@@ -46,15 +50,13 @@ export const clearFittest = () => {
 };
 
 export class Population {
-    public frontierGeometry?: BufferGeometry;
+    public frontier: BehaviorSubject<IFrontier> = new BehaviorSubject({ radius: INITIAL_FRONTIER});
     private physicsObject = new Physics();
     private gotchiArray: Gotchi[] = [];
-    private frontier = INITIAL_FRONTIER;
     private toBeBorn = 0;
     private mutationCount = INITIAL_MUTATION_COUNT;
 
     constructor(private createFabricInstance: () => Promise<IFabricExports>) {
-        this.createFrontierGeometry();
         for (let walk = 0; walk < MAX_POPULATION; walk++) {
             this.birthFromGenome(getFittest(walk > 0));
         }
@@ -112,7 +114,7 @@ export class Population {
                 freeze(gotchi);
                 return gotchi;
             } else {
-                if (gotchi.distance > this.frontier) {
+                if (gotchi.distance > this.frontier.getValue().radius) {
                     if (!array.find(g => g.frozen)) {
                         setFittest(gotchi);
                     }
@@ -137,14 +139,14 @@ export class Population {
         } else if (frozenNotExpectingCount > this.gotchiArray.length / 2) {
             this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
             if (minFrozenAge * 3 > maxFrozenAge * 2) {
-                this.frontier *= FRONTIER_EXPANSION;
-                this.createFrontierGeometry();
+                const expandedRadius = this.frontier.getValue().radius * FRONTIER_EXPANSION;
+                this.frontier.next( {radius: expandedRadius});
                 this.mutationCount--;
-                console.log(`fontier = ${this.frontier}, mutations = ${this.mutationCount}`);
+                console.log(`fontier = ${expandedRadius}, mutations = ${this.mutationCount}`);
             }
         }
         return this.gotchiArray.map(gotchi => {
-            return gotchi.iterate(catchingUp ? NORMAL_TICKS/3 : NORMAL_TICKS);
+            return gotchi.iterate(catchingUp ? NORMAL_TICKS / 3 : NORMAL_TICKS);
         });
     }
 
@@ -222,28 +224,5 @@ export class Population {
             fabric.iterate(1, true);
             return fabric;
         });
-    }
-
-    private createFrontierGeometry(): void {
-        if (this.frontierGeometry) {
-            const old = this.frontierGeometry;
-            this.frontierGeometry = undefined;
-            old.dispose();
-        }
-        const geometry = new BufferGeometry();
-        const positions = new Float32Array(360 * 6 / WALL_STEP_DEGREES);
-        let slot = 0;
-        for (let degrees = 0; degrees < 360; degrees += WALL_STEP_DEGREES) {
-            const r1 = Math.PI * 2 * degrees / 360;
-            const r2 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES) / 360;
-            positions[slot++] = this.frontier * Math.sin(r1);
-            positions[slot++] = FRONTIER_ALTITUDE;
-            positions[slot++] = this.frontier * Math.cos(r1);
-            positions[slot++] = this.frontier * Math.sin(r2);
-            positions[slot++] = FRONTIER_ALTITUDE;
-            positions[slot++] = this.frontier * Math.cos(r2);
-        }
-        geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));
-        this.frontierGeometry = geometry;
     }
 }
