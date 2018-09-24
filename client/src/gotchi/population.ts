@@ -50,7 +50,7 @@ export const clearFittest = () => {
 };
 
 export class Population {
-    public frontier: BehaviorSubject<IFrontier> = new BehaviorSubject({ radius: INITIAL_FRONTIER});
+    public frontier: BehaviorSubject<IFrontier> = new BehaviorSubject({radius: INITIAL_FRONTIER});
     private physicsObject = new Physics();
     private gotchiArray: Gotchi[] = [];
     private toBeBorn = 0;
@@ -140,7 +140,7 @@ export class Population {
             this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
             if (minFrozenAge * 3 > maxFrozenAge * 2) {
                 const expandedRadius = this.frontier.getValue().radius * FRONTIER_EXPANSION;
-                this.frontier.next( {radius: expandedRadius});
+                this.frontier.next({radius: expandedRadius});
                 this.mutationCount--;
                 console.log(`fontier = ${expandedRadius}, mutations = ${this.mutationCount}`);
             }
@@ -153,7 +153,9 @@ export class Population {
     public findGotchi(raycaster: Raycaster): Gotchi | undefined {
         return this.gotchiArray
             .filter(g => g.facesMeshNode)
-            .find(gotchi => !!raycaster.intersectObject(gotchi.facesMeshNode));
+            .find(gotchi => {
+                return raycaster.intersectObject(gotchi.facesMeshNode).length > 0;
+            });
     }
 
     // Privates =============================================================

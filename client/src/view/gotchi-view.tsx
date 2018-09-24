@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {Color, PerspectiveCamera, Raycaster, Vector2, Vector3} from 'three';
+import {Color, PerspectiveCamera, Vector3} from 'three';
 import {clearFittest, HUNG_ALTITUDE, Population} from '../gotchi/population';
 import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
@@ -8,6 +8,7 @@ import {PopulationMesh} from './population-mesh';
 import {PopulationFrontier} from './population-frontier';
 import {IslandMesh} from './island-mesh';
 import {PopulationOrbit} from './population-orbit';
+import {PopulationSelector} from './population-selector';
 
 interface IGotchiViewProps {
     width: number;
@@ -22,7 +23,7 @@ interface IGotchiViewState {
     selectedGotchi?: Gotchi
 }
 
-// const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors});
+// const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors}); // todo: if this doesn't get used, remove it from WA
 const SUN_POSITION = new Vector3(0, 300, 0);
 const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
 const TARGET_FRAME_RATE = 25;
@@ -30,9 +31,8 @@ const TARGET_FRAME_RATE = 25;
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private island = new Island();
     private perspectiveCamera: PerspectiveCamera;
-    private rayCaster: Raycaster;
-    private mouse = new Vector2();
     private orbit: PopulationOrbit;
+    private selector: PopulationSelector;
     private frameTime = Date.now();
     private frameCount = 0;
     private frameDelay = 20;
@@ -49,7 +49,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
         this.orbit = new PopulationOrbit(this.perspectiveCamera);
-        this.rayCaster = new Raycaster();
+        this.selector = new PopulationSelector(this.props.population, this.perspectiveCamera);
         this.animate();
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             switch (event.code) {
@@ -69,25 +69,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.updateDimensions();
     }
 
-    public mouseMove(event: any) {
-        this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
-        this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
-    }
-
-    public trySelect(event: any): boolean {
-        this.mouse.x = (event.clientX / this.state.width) * 2 - 1;
-        this.mouse.y = -(event.clientY / this.state.height) * 2 + 1;
-        this.rayCaster.setFromCamera(this.mouse, this.perspectiveCamera);
-        const clickedGotchi = this.props.population.findGotchi(this.rayCaster);
-        if (clickedGotchi) {
-            clickedGotchi.clicked = true;
-            this.setState({selectedGotchi: clickedGotchi});
-            console.log('clicked', clickedGotchi);
-        }
-        return false;
-    }
-
     public componentDidMount() {
+        this.selector.selected.subscribe(selectedGotchi => {
+            if (selectedGotchi) {
+                selectedGotchi.clicked = true;
+                // setFittest(selectedGotchi);
+            }
+            this.setState({selectedGotchi});
+        });
         window.addEventListener("resize", this.updateDimensions);
     }
 
@@ -110,7 +99,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
         return (
-            <div id="gotchi-view" onMouseMove={(e: any) => this.mouseMove(e)} onMouseDownCapture={(e) => this.trySelect(e)}>
+            <div id="gotchi-view"
+                 onMouseDownCapture={(e) => this.selector.click(e, this.state.width, this.state.height)}>
                 <R3.Renderer width={this.state.width} height={this.state.height}>
                     <R3.Scene width={this.state.width} height={this.state.height} camera={this.perspectiveCamera}>
                         <PopulationMesh population={this.props.population}/>
