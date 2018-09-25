@@ -2,9 +2,9 @@ import * as React from 'react';
 import './app.css';
 import {IFabricExports} from './body/fabric-exports';
 import {Population} from './gotchi/population';
-import {ControlPanel} from './view/control-panel';
 import {Island, IslandPattern} from './island/island';
 import {GotchiView} from './view/gotchi-view';
+import {IslandView} from './view/island-view';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -13,11 +13,14 @@ interface IAppProps {
 interface IAppState {
     population: Population;
     island: Island;
-    viewWidth: number;
-    viewHeight: number;
+    gotchiViewWidth: number;
+    gotchiViewHeight: number;
+    islandViewWidth: number;
+    islandViewHeight: number;
 }
 
-const MAIN_VIEW_HEIGHT = 0.96;
+const HORIZONTAL_SPLIT = 0.8;
+const VERTICAL_SPLIT = 0.3;
 
 class App extends React.Component<IAppProps, IAppState> {
 
@@ -30,8 +33,10 @@ class App extends React.Component<IAppProps, IAppState> {
         this.state = {
             population: new Population(props.createFabricInstance),
             island: new Island(pattern, owner, props.createFabricInstance),
-            viewWidth: window.innerWidth,
-            viewHeight: window.innerHeight * MAIN_VIEW_HEIGHT
+            gotchiViewWidth: window.innerWidth * HORIZONTAL_SPLIT,
+            gotchiViewHeight: window.innerHeight,
+            islandViewWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
+            islandViewHeight: window.innerHeight * VERTICAL_SPLIT
         };
     }
 
@@ -46,25 +51,31 @@ class App extends React.Component<IAppProps, IAppState> {
     public render() {
         return (
             <div className="App">
-                <div id="view-panel">
-                    {/*<IslandView width={this.state.viewWidth}*/}
-                                {/*height={this.state.viewHeight}*/}
-                                {/*island={this.state.island}/>*/}
-                    <GotchiView width={this.state.viewWidth}
-                                height={this.state.viewHeight}
+                <div className="gotchi-view">
+                    <GotchiView width={this.state.gotchiViewWidth}
+                                height={this.state.gotchiViewHeight}
                                 population={this.state.population}
                                 island={this.state.island}/>
                 </div>
-                <div className="control-panel">
-                    <ControlPanel population={this.state.population}/>
+                <div className="island-view">
+                    <IslandView width={this.state.islandViewWidth}
+                                height={this.state.islandViewHeight}
+                                island={this.state.island}/>
                 </div>
+                {/*<div className="control-panel">*/}
+                {/*<ControlPanel population={this.state.population}/>*/}
+                {/*</div>*/}
             </div>
         );
     }
 
     private updateDimensions = () => {
-        this.setState({viewWidth: window.innerWidth, viewHeight: window.innerHeight * MAIN_VIEW_HEIGHT});
-        console.log(`w=${this.state.viewWidth}, h=${this.state.viewHeight}`);
+        this.setState({
+            gotchiViewWidth: window.innerWidth * HORIZONTAL_SPLIT,
+            gotchiViewHeight: window.innerHeight,
+            islandViewWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
+            islandViewHeight: window.innerHeight * VERTICAL_SPLIT
+        });
     };
 
 }

@@ -5,7 +5,6 @@ import {Island} from '../island/island';
 import {IslandComponent} from './island-component';
 import {Spot} from '../island/spot';
 import {SpotSelector} from './spot-selector';
-import {Orbit} from './orbit';
 import {GOTCHI_FACE_MATERIAL} from './materials';
 import {Gotchi} from '../gotchi/gotchi';
 
@@ -26,7 +25,6 @@ const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 export class IslandView extends React.Component<IIslandViewProps, IIslandViewState> {
     private selector: SpotSelector;
     private perspectiveCamera: PerspectiveCamera;
-    private orbit: Orbit;
     private hoverSpot?: Spot;
 
     constructor(props: IIslandViewProps) {
@@ -37,8 +35,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         this.perspectiveCamera = new PerspectiveCamera(50, props.width / props.height, 1, 500000);
         const midpoint = props.island.midpoint;
         this.perspectiveCamera.position.add(CAMERA_POSITION.add(midpoint));
-        // this.perspectiveCamera.lookAt(midpoint);
-        this.orbit = new Orbit(this.perspectiveCamera, midpoint);
+        this.perspectiveCamera.lookAt(midpoint);
         this.selector = new SpotSelector(props.island, this.perspectiveCamera, this.props.width, props.height);
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             console.log(event.code);
@@ -49,12 +46,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                     break;
             }
         });
-        const step = () => {
-            this.orbit.moveTargetTowards(this.props.island.midpoint);
-            this.orbit.update();
-            requestAnimationFrame(step);
-        };
-        requestAnimationFrame(step);
     }
 
     public componentDidUpdate(prevProps: Readonly<IIslandViewProps>, prevState: Readonly<IIslandViewState>, snapshot: any) {
