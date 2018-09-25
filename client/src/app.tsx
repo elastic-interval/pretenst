@@ -5,6 +5,7 @@ import {Population} from './gotchi/population';
 import {Island, IslandPattern} from './island/island';
 import {GotchiView} from './view/gotchi-view';
 import {IslandView} from './view/island-view';
+import {ControlPanel} from './view/control-panel';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -62,9 +63,9 @@ class App extends React.Component<IAppProps, IAppState> {
                                 height={this.state.islandViewHeight}
                                 island={this.state.island}/>
                 </div>
-                {/*<div className="control-panel">*/}
-                {/*<ControlPanel population={this.state.population}/>*/}
-                {/*</div>*/}
+                <div className="control-panel">
+                    <ControlPanel population={this.state.population}/>
+                </div>
             </div>
         );
     }

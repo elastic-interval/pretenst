@@ -53,32 +53,39 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         const feature = this.state.feature;
         const value = this.state.value;
         return (
-            <div>
+            <div key="control-panel">
                 <strong className="dice">&#x2680;&#x2681;&#x2682;&#x2683;&#x2684;&#x2685;</strong>
-                {
-                    this.props.population.physics.features.map(physicsFeature => {
-                        return <button key={physicsFeature.feature} onClick={() => this.selectFeature(physicsFeature)}>
-                            {physicsFeature.feature}
-                        </button>;
-                    })
-                }
-                {
-                    !feature || !value ?
-                        <span className="feature-prompt">choose one</span>
-                        :
-                        <span>
-                            <span className="feature-prompt">{feature.feature}</span>
-                            &nbsp;
-                            &nbsp;
-                            <button onClick={() => this.featureUp()}>+</button>
-                            &nbsp;
-                            <button onClick={() => this.featureDown()}>-</button>
-                            &nbsp;&nbsp;&nbsp;
-                            <strong className="feature-value">{value}</strong>
-                            &nbsp;
-                            <button onClick={() => this.featureReset()}>reset</button>
-                        </span>
-                }
+                <div>
+                    {
+                        this.props.population.physics.features.map(physicsFeature => {
+                            return <div key={physicsFeature.feature}>
+                                <button onClick={() => this.selectFeature(physicsFeature)}>
+                                    {physicsFeature.feature}
+                                </button>
+                            </div>;
+                        })
+                    }
+                </div>
+                <div>
+                    {
+                        !feature || !value ?
+                            <div className="feature-prompt">choose one</div>
+                            :
+                            <div>
+                                <div className="feature-prompt">{feature.feature}</div>
+                                <div>
+                                    <button onClick={() => this.featureUp()}>+</button>
+                                    <button onClick={() => this.featureDown()}>-</button>
+                                </div>
+                                <div>
+                                    <strong className="feature-value">{value}</strong>
+                                </div>
+                                <div>
+                                    <button onClick={() => this.featureReset()}>reset</button>
+                                </div>
+                            </div>
+                    }
+                </div>
             </div>
         );
     }

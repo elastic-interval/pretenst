@@ -19,13 +19,14 @@
 }
 
 .control-panel {
-    border-style: solid;
-    border-color: green;
-    border-width: 4px;
+    position: absolute;
+    left: 80%;
+    top: 30%;
+    width: 20%;
+    height: 70%;
 }
 
 .feature-prompt {
-    width: 400px;
     display: inline-block;
     text-align: right;
     font-weight: bold;
