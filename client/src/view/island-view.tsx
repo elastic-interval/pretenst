@@ -36,7 +36,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         const midpoint = props.island.midpoint;
         this.perspectiveCamera.position.add(CAMERA_POSITION.add(midpoint));
         this.perspectiveCamera.lookAt(midpoint);
-        this.selector = new SpotSelector(props.island, this.perspectiveCamera, this.props.width, props.height);
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             console.log(event.code);
             switch (event.code) {
@@ -46,6 +45,15 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                     break;
             }
         });
+    }
+
+    public componentDidMount() {
+        this.selector = new SpotSelector(
+            this.props.island,
+            this.perspectiveCamera,
+            this.props.width,
+            this.props.height
+        );
     }
 
     public componentDidUpdate(prevProps: Readonly<IIslandViewProps>, prevState: Readonly<IIslandViewState>, snapshot: any) {
@@ -58,7 +66,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     public render() {
         return (
-            <div id="gotchi-view"
+            <div id="island-view"
                  onMouseMove={e => this.spotHover(this.selector.getSpot(e))}
                  onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e))}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
@@ -69,7 +77,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                                 .filter(gotch => !!gotch.gotchi)
                                 .map(gotch => gotch.gotchi)
                                 .map((gotchi: Gotchi, index: number) => {
-                                    console.log('gotchi', index);
                                     return <R3.Mesh
                                         ref={(node: any) => gotchi.facesMeshNode = node}
                                         key={`Faces${index}`}
@@ -89,10 +96,14 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
     // ==========================
 
     private spotClicked(spot?: Spot) {
-        if (spot && !spot.centerOfGotch) {
+        if (spot) {
             spot.land = !spot.land;
             const pattern = this.props.island.pattern;
             console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
+            // todo: do this somewhere else
+            const existingOwner = localStorage.getItem('owner');
+            const owner = existingOwner ? existingOwner : 'gumby';
+            localStorage.setItem(owner, JSON.stringify(pattern));
             this.forceUpdate();
         }
         console.log('clicked', spot);
