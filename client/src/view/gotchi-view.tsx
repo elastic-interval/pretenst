@@ -4,12 +4,13 @@ import {Color, PerspectiveCamera, Vector3} from 'three';
 import {clearFittest, HUNG_ALTITUDE, Population} from '../gotchi/population';
 import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
-import {PopulationMesh} from './population-mesh';
+import {PopulationComponent} from './population-component';
 import {PopulationFrontier} from './population-frontier';
-import {IslandMesh} from './island-mesh';
-import {PopulationOrbit} from './population-orbit';
+import {IslandComponent} from './island-component';
+import {Orbit} from './orbit';
 import {PopulationSelector} from './population-selector';
 import {Subscription} from 'rxjs/Subscription';
+import {GOTCHI_FACE_MATERIAL} from './materials';
 
 interface IGotchiViewProps {
     width: number;
@@ -30,7 +31,7 @@ const TARGET_FRAME_RATE = 25;
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private perspectiveCamera: PerspectiveCamera;
-    private orbit: PopulationOrbit;
+    private orbit: Orbit;
     private selector: PopulationSelector;
     private selectedSubscription: Subscription;
     private frameTime = Date.now();
@@ -46,7 +47,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
-        this.orbit = new PopulationOrbit(this.perspectiveCamera);
+        this.orbit = new Orbit(this.perspectiveCamera);
         this.selector = new PopulationSelector(this.props.population, this.perspectiveCamera);
         this.animate();
         window.addEventListener("keypress", (event: KeyboardEvent) => {
@@ -106,9 +107,22 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                  onMouseDownCapture={(e) => this.selector.click(e, this.props.width, this.props.height)}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <PopulationMesh population={this.props.population}/>
-                        <IslandMesh island={this.props.island}/>
+                        <IslandComponent island={this.props.island}/>
+                        <PopulationComponent population={this.props.population}/>
                         <PopulationFrontier frontier={this.props.population.frontier}/>
+                        {
+                            this.props.island.gotches
+                                .filter(gotch => !!gotch.gotchi)
+                                .map(gotch => gotch.gotchi)
+                                .map((gotchi: Gotchi, index: number) => {
+                                    return <R3.Mesh
+                                        ref={(node: any) => gotchi.facesMeshNode = node}
+                                        key={`Faces${index}`}
+                                        geometry={gotchi.fabric.facesGeometry}
+                                        material={GOTCHI_FACE_MATERIAL}
+                                    />
+                                })
+                        }
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>
                     </R3.Scene>
@@ -139,7 +153,5 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         };
         requestAnimationFrame(step);
     }
-
-
 }
 

@@ -220,7 +220,7 @@ export class Population {
             const fabric = new Fabric(fabricExports, jointCountMax);
             this.physicsObject.applyToFabric(fabricExports);
             // console.log('current physics', currentPhysics);
-            fabric.createSeed(5, HUNG_ALTITUDE);
+            fabric.createSeed(5, HUNG_ALTITUDE, 0, 0);
             fabric.iterate(1, true);
             return fabric;
         });

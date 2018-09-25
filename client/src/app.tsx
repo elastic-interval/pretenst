@@ -29,7 +29,7 @@ class App extends React.Component<IAppProps, IAppState> {
         const pattern: IslandPattern = existingPattern ? JSON.parse(existingPattern) : {gotches: '0', spots: '0'};
         this.state = {
             population: new Population(props.createFabricInstance),
-            island: new Island(pattern),
+            island: new Island(pattern, owner, props.createFabricInstance),
             viewWidth: window.innerWidth,
             viewHeight: window.innerHeight * MAIN_VIEW_HEIGHT
         };

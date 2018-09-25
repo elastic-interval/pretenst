@@ -454,7 +454,7 @@ export function getJointTag(jointIndex: u16): u16 {
     return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 5 + FLOAT_SIZE * 2 + LATERALITY_SIZE);
 }
 
-export function centralize(altitude: f32, intensity: f32): f32 {
+export function centralize(): void {
     let x: f32 = 0;
     let lowY: f32 = 10000;
     let z: f32 = 0;
@@ -470,11 +470,22 @@ export function centralize(altitude: f32, intensity: f32): f32 {
     z = z / <f32>jointCount;
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         let jPtr = jointPtr(thisJoint);
-        setX(jPtr, getX(jPtr) - x * intensity);
-        if (altitude >= 0) {
-            setY(jPtr, getY(jPtr) + altitude - lowY);
+        setX(jPtr, getX(jPtr) - x);
+        setZ(jPtr, getZ(jPtr) - z);
+    }
+}
+
+export function setAltitude(altitude: f32): f32 {
+    let lowY: f32 = 10000;
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
+        let y = getY(jointPtr(thisJoint));
+        if (y < lowY) {
+            lowY = y;
         }
-        setZ(jPtr, getZ(jPtr) - z * intensity);
+    }
+    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
+        let jPtr = jointPtr(thisJoint);
+        setY(jPtr, getY(jPtr) + altitude - lowY);
     }
     return altitude - lowY;
 }

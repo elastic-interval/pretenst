@@ -1,5 +1,6 @@
 import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {equals, ICoords, Spot} from './spot';
+import {Gotchi} from '../gotchi/gotchi';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 
@@ -9,7 +10,7 @@ interface IGotchIndexed {
 }
 
 const spotsToHexFingerprint = (spots: Spot[]) => {
-    const lit = spots.map(spot => spot.lit ? '1' : '0');
+    const lit = spots.map(spot => spot.land ? '1' : '0');
     const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
     return nybbleChars.join('');
@@ -56,6 +57,7 @@ export const gotchTreeString = (gotches: Gotch[]) => {
 // };
 
 export class Gotch {
+    public gotchi?: Gotchi;
     public owner: string;
     public nonce = 0;
     public visited = false;
@@ -63,8 +65,7 @@ export class Gotch {
 
     constructor(public parentGotch: Gotch | undefined,
                 public coords: ICoords,
-                public spots: Spot[],
-                index: number) {
+                public spots: Spot[]) {
         this.spots[0].centerOfGotch = this;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentGotches.push(this);
@@ -76,10 +77,13 @@ export class Gotch {
         }
     }
 
+    get center(): Spot {
+        return this.spots[0];
+    }
+
     get canBePurchased(): boolean {
-        const center = this.spots[0];
-        const noneAdjacent = center.adjacentGotches.length === 0;
-        const ownedAdjacentExists = !!center.adjacentGotches.find(gotch => !!gotch.owner);
+        const noneAdjacent = this.center.adjacentGotches.length === 0;
+        const ownedAdjacentExists = !!this.center.adjacentGotches.find(gotch => !!gotch.owner);
         const notOwned = !this.owner;
         return (noneAdjacent || ownedAdjacentExists) && notOwned;
     }

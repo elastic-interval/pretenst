@@ -2,6 +2,11 @@ import {Raycaster, Vector3} from 'three';
 import {Gotch, gotchTreeString} from './gotch';
 import {BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, zero} from './spot';
+import {IFabricExports} from '../body/fabric-exports';
+import {HUNG_ALTITUDE} from '../gotchi/population';
+import {Fabric} from '../body/fabric';
+import {Gotchi} from '../gotchi/gotchi';
+import {Genome} from '../genetics/genome';
 
 export interface IslandPattern {
     gotches: string;
@@ -17,7 +22,6 @@ const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacen
     }
 });
 
-
 export class Island {
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
@@ -25,7 +29,7 @@ export class Island {
     public facesMeshNode: any;
     private ownershipCache: Map<string, string>;
 
-    constructor(pattern: IslandPattern) {
+    constructor(pattern: IslandPattern, public owner: string, private createFabricInstance: () => Promise<IFabricExports>) {
         this.apply(pattern);
         if (!this.spots.length) {
             this.getOrCreateGotch(undefined, zero);
@@ -72,7 +76,7 @@ export class Island {
             return [b0, b1, b2, b3];
         });
         const litStack = [].concat.apply([], booleanArrays).reverse();
-        this.spots.sort(sortSpotsOnCoord).forEach(spot => spot.lit = litStack.pop());
+        this.spots.sort(sortSpotsOnCoord).forEach(spot => spot.land = litStack.pop());
         this.refreshOwnership();
     }
 
@@ -134,7 +138,10 @@ export class Island {
             return existing;
         }
         const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
-        const gotch = new Gotch(parent, coords, spots, -1);
+        const gotch = new Gotch(parent, coords, spots);
+        this.createBody(gotch.center.scaledCoords).then(fabric => {
+            gotch.gotchi = new Gotchi(fabric, new Genome(), 100, 100); // largely fake
+        });
         this.gotches.push(gotch);
         return gotch;
     }
@@ -148,4 +155,14 @@ export class Island {
         this.spots.push(spot);
         return spot;
     }
+
+    private createBody(coords: ICoords): Promise<Fabric> {
+        return this.createFabricInstance().then(fabricExports => {
+            const fabric = new Fabric(fabricExports, 15);
+            fabric.createSeed(5, HUNG_ALTITUDE, coords.x, coords.y);
+            fabric.iterate(1, true);
+            return fabric;
+        });
+    }
+
 }

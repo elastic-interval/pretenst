@@ -126,19 +126,24 @@ export class Fabric {
     //     this.face(2, 3, 0);
     // }
 
-    public createSeed(corners: number, altitude: number): void {
-        const hangerLocation = new Vector3(0, 0, 0);
-        const hanger = this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, hangerLocation.x, hangerLocation.y, hangerLocation.z);
+    public createSeed(corners: number, altitude: number, x: number, y: number): void {
+        const hanger = new Vector3(x, 0, y);
+        const hangerJoint = this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z);
         const R = 1;
         for (let walk = 0; walk < corners; walk++) {
             const angle = walk * Math.PI * 2 / corners;
-            this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, R * Math.sin(angle), R * Math.cos(angle), 0);
+            this.fabricExports.createJoint(
+                this.fabricExports.nextJointTag(),
+                BILATERAL_MIDDLE,
+                R * Math.sin(angle) + hanger.x,
+                R * Math.cos(angle) + hanger.y,
+                hanger.z);
         }
         const jointPairName = this.fabricExports.nextJointTag();
-        const left = this.fabricExports.createJoint(jointPairName, BILATERAL_LEFT, 0, 0, -R);
-        const right = this.fabricExports.createJoint(jointPairName, BILATERAL_RIGHT, 0, 0, R);
-        this.interval(hanger, left, -1);
-        this.interval(hanger, right, -1);
+        const left = this.fabricExports.createJoint(jointPairName, BILATERAL_LEFT, hanger.x, hanger.y, hanger.z - R);
+        const right = this.fabricExports.createJoint(jointPairName, BILATERAL_RIGHT, hanger.x, hanger.y, hanger.z + R);
+        this.interval(hangerJoint, left, -1);
+        this.interval(hangerJoint, right, -1);
         this.interval(left, right, -1);
         for (let walk = 0; walk < corners; walk++) {
             this.interval(walk + 1, (walk + 1) % corners + 1, -1);
@@ -149,7 +154,7 @@ export class Fabric {
             this.face(left, walk + 1, (walk + 1) % corners + 1);
             this.face(right, (walk + 1) % corners + 1, walk + 1);
         }
-        hangerLocation.y += this.centralize(altitude, 1);
+        hanger.y += this.setAltitude(altitude);
     }
 
     public iterate(ticks: number, hanging: boolean): number {
@@ -165,8 +170,12 @@ export class Fabric {
         return this.fabricExports.age();
     }
 
-    public centralize(altitude: number, intensity: number): number {
-        return this.fabricExports.centralize(altitude, intensity);
+    public centralize(): void {
+        this.fabricExports.centralize();
+    }
+
+    public setAltitude(altitude: number): number {
+        return this.fabricExports.setAltitude(altitude);
     }
 
     public unfold(faceIndex: number, jointNumber: number): FaceSnapshot [] {

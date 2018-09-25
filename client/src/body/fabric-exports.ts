@@ -28,7 +28,9 @@ export interface IFabricExports {
 
     iterate(ticks: number, hanging: boolean): number;
 
-    centralize(altitude: number, intensity: number): number;
+    centralize(): void;
+
+    setAltitude(altitude: number): number;
 
     removeHanger(): void;
 
