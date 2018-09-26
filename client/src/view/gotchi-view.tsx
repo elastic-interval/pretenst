@@ -125,7 +125,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         <PopulationFrontier frontier={this.props.population.frontier}/>
                         {
                             this.props.island.gotches
-                                .filter(gotch => !!gotch.gotchi)
+                                .filter((gotch, index) => !!gotch.gotchi && index > 0)
                                 .map(gotch => gotch.gotchi)
                                 .map((gotchi: Gotchi, index: number) => {
                                     return <R3.Mesh

@@ -15,15 +15,26 @@
 .island-view {
     position: absolute;
     top: 0;
-    left: 80%;
+    left: 70%;
 }
 
 .control-panel {
     position: absolute;
-    left: 80%;
-    top: 30%;
-    width: 20%;
-    height: 70%;
+    left: 70%;
+    top: 40%;
+    height: 60%;
+    width: 30%;
+    background: black;
+}
+
+.explanation {
+    color: white;
+    padding-left: 10px;
+    padding-right: 10px;
+    border-style: solid;
+    border-width: 5px;
+    border-color: black;
+    background: #78959b;
 }
 
 .feature-prompt {
