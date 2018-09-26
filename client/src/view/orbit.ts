@@ -8,9 +8,10 @@ const TOWARDS_TARGET = 0.03;
 export class Orbit {
     private orbitControls: any;
     private towardsTarget = new Vector3();
+    private cameraToTarget = new Vector3();
     private target = new Vector3();
 
-    constructor(domElement: any, camera: PerspectiveCamera, target?: Vector3) {
+    constructor(domElement: any, private camera: PerspectiveCamera, target?: Vector3) {
         if (target) {
             this.target.add(target);
         }
@@ -26,7 +27,11 @@ export class Orbit {
         if (this.towardsTarget.length() > 0.2) {
             this.towardsTarget.setLength(0.2);
         }
+        const before = this.cameraToTarget.subVectors(this.target, this.camera.position).length();
         this.target.add(this.towardsTarget);
+        const after = this.cameraToTarget.subVectors(this.target, this.camera.position).length();
+        const scale = after - before;
+        this.camera.position.addScaledVector(this.cameraToTarget.normalize(), scale);
     }
 
     public update() {

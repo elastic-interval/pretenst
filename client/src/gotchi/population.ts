@@ -56,6 +56,7 @@ export const clearFittest = () => {
 
 export class Population {
     public frontier: BehaviorSubject<IFrontier> = new BehaviorSubject({radius: INITIAL_FRONTIER});
+    public fittest?: Gotchi;
     private physicsObject = new Physics();
     private gotchiArray: Gotchi[] = [];
     private toBeBorn = 0;
@@ -129,6 +130,7 @@ export class Population {
             } else {
                 if (gotchi.distance > this.frontier.getValue().radius) {
                     if (!array.find(g => g.frozen)) {
+                        this.fittest = gotchi;
                         setFittest(gotchi);
                     }
                     freeze(gotchi);
@@ -159,6 +161,9 @@ export class Population {
             }
         }
         return this.gotchiArray.map(gotchi => {
+            if (gotchi.frozen) {
+                return 0;
+            }
             return gotchi.iterate(catchingUp ? NORMAL_TICKS / 3 : NORMAL_TICKS);
         });
     }

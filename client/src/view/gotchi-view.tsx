@@ -88,6 +88,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             if (selectedGotchi) {
                 selectedGotchi.clicked = true;
                 // setFittest(selectedGotchi);
+            } else {
+                this.props.population.fittest = undefined;
             }
             this.setState({selectedGotchi});
         });
@@ -165,6 +167,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     }
                     this.forceUpdate(); // todo: maybe not necessary
                     this.orbit.update();
+                    if (!this.state.selectedGotchi && this.props.population.fittest) {
+                        this.setState({selectedGotchi: this.props.population.fittest});
+                        this.props.population.fittest = undefined;
+                    }
                     requestAnimationFrame(step);
                 },
                 this.frameDelay
