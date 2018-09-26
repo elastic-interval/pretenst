@@ -4,21 +4,23 @@ import {Geometry} from 'three';
 import {Island} from '../island/island';
 import {ISpotContext} from '../island/spot';
 import {HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
+import {Gotch} from '../island/gotch';
 
-export interface IslandMeshProps {
+export interface IslandComponentProps {
     island: Island;
+    selectedGotch?: Gotch;
 }
 
-export interface IslandMeshState {
+export interface IslandComponentState {
     editMode: boolean;
 }
 
-export class IslandComponent extends React.Component<IslandMeshProps, IslandMeshState> {
+export class IslandComponent extends React.Component<IslandComponentProps, IslandComponentState> {
 
     private spotsGeometry: Geometry;
     private hangersGeometry: Geometry;
 
-    constructor(props: IslandMeshProps) {
+    constructor(props: IslandComponentProps) {
         super(props);
         this.state = {
             editMode: false
@@ -54,7 +56,7 @@ export class IslandComponent extends React.Component<IslandMeshProps, IslandMesh
             faces: [],
             vertices: [],
             owner: this.props.island.owner,
-            singleGotch: this.props.island.gotches.length === 1
+            selectedGotch: this.props.selectedGotch
         };
         this.props.island.spots
             .forEach((spot, index) => spot.addSurfaceGeometry(index, spotContext));
@@ -70,7 +72,7 @@ export class IslandComponent extends React.Component<IslandMeshProps, IslandMesh
             faces: [],
             vertices: [],
             owner: this.props.island.owner,
-            singleGotch: this.props.island.gotches.length === 1
+            selectedGotch: this.props.selectedGotch
         };
         this.props.island.gotches
             .map(gotch => gotch.center)

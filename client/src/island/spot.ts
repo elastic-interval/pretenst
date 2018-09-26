@@ -14,7 +14,7 @@ export interface ISpotContext {
     faces: Face3[];
     vertices: Vector3[];
     owner: string;
-    singleGotch: boolean;
+    selectedGotch?: Gotch;
 }
 
 const WATER_COLOR = new Color('darkturquoise');
@@ -22,6 +22,8 @@ const LAND_COLOR = new Color('tan');
 const HANGER_BASE = 0.7;
 const SIX = 6;
 const UP = new Vector3(0, 1, 0);
+const LAND_NORMAL_SPREAD = 0.04;
+const WATER_NORMAL_SPREAD = -0.02;
 const HEXAGON_POINTS = [
     new Vector3(0, 0, -10),
     new Vector3(-8.66, 0, -5),
@@ -59,7 +61,12 @@ export class Spot {
             hexPoint.y,
             hexPoint.z + this.scaledCoords.y
         )));
-        const normalSpread = this.land ? 0.04 : -0.02;
+        let isSelected = false;
+        const selectedGotch = context.selectedGotch;
+        if (selectedGotch) {
+            isSelected = !!this.memberOfGotch.find(gotch => equals(gotch.coords, selectedGotch.coords));
+        }
+        const normalSpread = (this.land ? LAND_NORMAL_SPREAD : WATER_NORMAL_SPREAD) * (isSelected ? 5 : context.selectedGotch ? 0.1 : 1);
         for (let a = 0; a < SIX; a++) {
             const offset = index * HEXAGON_POINTS.length;
             const b = (a + 1) % SIX;
@@ -75,6 +82,9 @@ export class Spot {
     }
 
     public addHangerGeometry(context: ISpotContext) {
+        if (context.selectedGotch && this.centerOfGotch && !equals(context.selectedGotch.coords, this.centerOfGotch.coords)) {
+            return;
+        }
         for (let a = 0; a < SIX; a++) {
             const hexPoint = HEXAGON_POINTS[a];
             context.vertices.push(new Vector3(
@@ -85,7 +95,7 @@ export class Spot {
             context.vertices.push(new Vector3(
                 hexPoint.x * HANGER_BASE + this.scaledCoords.x,
                 hexPoint.y,
-                hexPoint.z * HANGER_BASE+ this.scaledCoords.y
+                hexPoint.z * HANGER_BASE + this.scaledCoords.y
             ));
         }
     }

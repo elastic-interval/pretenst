@@ -13,6 +13,7 @@ import {GOTCHI_GHOST_MATERIAL} from './materials';
 import {GotchiComponent} from './gotchi-component';
 import {SpotSelector} from './spot-selector';
 import {Spot} from '../island/spot';
+import {Gotch} from '../island/gotch';
 
 interface IGotchiViewProps {
     width: number;
@@ -23,7 +24,8 @@ interface IGotchiViewProps {
 
 interface IGotchiViewState {
     frozen: boolean;
-    selectedGotchi?: Gotchi
+    hoverGotch?: Gotch;
+    selectedGotchi?: Gotchi;
 }
 
 // const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors}); // todo: if this doesn't get used, remove it from WA
@@ -120,7 +122,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                  }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <IslandComponent island={this.props.island}/>
+                        <IslandComponent island={this.props.island} selectedGotch={this.state.hoverGotch}/>
                         {
                             this.state.selectedGotchi ?
                                 <GotchiComponent gotchi={this.state.selectedGotchi}/>
@@ -159,18 +161,29 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             const existingOwner = localStorage.getItem('owner');
             const owner = existingOwner ? existingOwner : 'gumby';
             localStorage.setItem(owner, JSON.stringify(pattern));
-            this.forceUpdate();
         }
         console.log('clicked', spot);
     }
 
     private spotHover(spot?: Spot) {
         if (spot !== this.hoverSpot) {
-            if (spot) {
-                console.log(`hover ${spot.coords.x}, ${spot.coords.y}`);
-            }
             this.hoverSpot = spot;
+            this.hoverActivate()
         }
+    }
+
+    private hoverActivate() {
+        const spot = this.hoverSpot;
+        if (spot) {
+            // console.log(`hover ${spot.coords.x}, ${spot.coords.y}`);
+            if (spot.centerOfGotch) {
+                this.setState({hoverGotch: spot.centerOfGotch});
+                return;
+            }
+        } else {
+            console.log('unhover');
+        }
+        this.setState({hoverGotch: undefined});
     }
 
     private animate() {
@@ -197,7 +210,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     this.forceUpdate();
                     this.orbit.update();
                     if (this.orbit.tooFar !== this.state.frozen) {
-                        this.setState({frozen: this.orbit.tooFar});
+                        this.setState({
+                            frozen: this.orbit.tooFar,
+                            hoverGotch: this.orbit.tooFar ? this.state.hoverGotch : undefined
+                        });
                     }
                     requestAnimationFrame(step);
                 },
