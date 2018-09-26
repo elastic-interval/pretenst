@@ -38,6 +38,8 @@ export class Spot {
     public scaledCoords: ICoords;
     public land = false;
     public free = false;
+    public connected = false;
+    public adjacentSpots: Spot[] = [];
     public memberOfGotch: Gotch[] = [];
     public adjacentGotches: Gotch[] = [];
     public centerOfGotch?: Gotch;
@@ -45,6 +47,26 @@ export class Spot {
 
     constructor(public coords: ICoords) {
         this.scaledCoords = {x: coords.x * SCALEX, y: coords.y * SCALEY};
+    }
+
+    get legal(): boolean {
+        if (!this.connected) {
+            return false;
+        }
+        let landCount = 0;
+        let waterCount = 0;
+        this.adjacentSpots.forEach(adjacent => {
+            if (adjacent.land) {
+                landCount++;
+            } else {
+                waterCount++;
+            }
+        });
+        if (this.land) {
+            return this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1);
+        } else {
+            return landCount > 0;
+        }
     }
 
     get canBeNewGotch(): boolean {
@@ -66,7 +88,9 @@ export class Spot {
         if (selectedGotch) {
             isSelected = !!this.memberOfGotch.find(gotch => equals(gotch.coords, selectedGotch.coords));
         }
-        const normalSpread = (this.land ? LAND_NORMAL_SPREAD : WATER_NORMAL_SPREAD) * (isSelected ? 5 : context.selectedGotch ? 0.1 : 1);
+        const normalSpread = !this.legal ? 0 :
+            (this.land ? LAND_NORMAL_SPREAD : WATER_NORMAL_SPREAD) * (isSelected ? 5 : context.selectedGotch ? 0.1 : 1);
+        const color = this.land ? LAND_COLOR : WATER_COLOR;
         for (let a = 0; a < SIX; a++) {
             const offset = index * HEXAGON_POINTS.length;
             const b = (a + 1) % SIX;
@@ -75,7 +99,6 @@ export class Spot {
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], normalSpread).normalize(),
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize()
             ];
-            const color = this.land ? LAND_COLOR : WATER_COLOR;
             this.faceIndexes.push(context.faces.length);
             context.faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, color));
         }

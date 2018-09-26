@@ -18,7 +18,7 @@ interface IIslandViewState {
 }
 
 const SUN_POSITION = new Vector3(0, 300, 200);
-const CAMERA_POSITION = new Vector3(0, 500, 0);
+const CAMERA_POSITION = new Vector3(0, 260, 0);
 const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 
 export class IslandView extends React.Component<IIslandViewProps, IIslandViewState> {
@@ -91,16 +91,17 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
             if (singleGotch && singleGotch.center !== spot) {
                 spot.land = !spot.land;
                 const pattern = this.props.island.pattern;
-                console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
-
-                // todo: do this somewhere else
-                const existingOwner = localStorage.getItem('owner');
-                const owner = existingOwner ? existingOwner : 'gumby';
-                localStorage.setItem(owner, JSON.stringify(pattern));
+                if (pattern) {
+                    console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
+                    // todo: do this somewhere else
+                    const existingOwner = localStorage.getItem('owner');
+                    const owner = existingOwner ? existingOwner : 'gumby';
+                    localStorage.setItem(owner, JSON.stringify(pattern));
+                }
+                this.props.island.refresh();
                 this.forceUpdate();
             }
         }
-        console.log('clicked', spot);
     }
 
     private spotHover(spot?: Spot) {

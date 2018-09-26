@@ -1,6 +1,6 @@
 import {Raycaster, Vector3} from 'three';
 import {Gotch, gotchTreeString} from './gotch';
-import {BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
+import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, zero} from './spot';
 import {IFabricExports} from '../body/fabric-exports';
 import {HUNG_ALTITUDE} from '../gotchi/population';
@@ -31,7 +31,7 @@ export class Island {
 
     constructor(pattern: IslandPattern, public owner: string, private createFabricInstance: () => Promise<IFabricExports>) {
         this.apply(pattern);
-        this.refreshOwnership();
+        this.refresh();
     }
 
     public apply(pattern: IslandPattern) {
@@ -73,19 +73,20 @@ export class Island {
             return [b0, b1, b2, b3];
         });
         const landStack = [].concat.apply([], booleanArrays).reverse();
+        this.spots.sort(sortSpotsOnCoord);
         if (landStack.length) {
-            this.spots.sort(sortSpotsOnCoord).forEach(spot => {
+            this.spots.forEach(spot => {
                 const land = landStack.pop();
                 spot.land = land ? land : false;
             });
         } else if (this.singleGotch) {
-            this.spots[0].land = true;
+            this.singleGotch.spots[0].land = true;
         }
-        this.refreshOwnership();
+        this.refresh();
     }
 
     public get singleGotch(): Gotch | undefined {
-        return this.gotches.length === 1? this.gotches[0] : undefined;
+        return this.gotches.length === 1 ? this.gotches[0] : undefined;
     }
 
     public get midpoint(): Vector3 {
@@ -110,11 +111,37 @@ export class Island {
         return undefined;
     }
 
-    public get pattern(): IslandPattern {
+    public get pattern(): IslandPattern | undefined {
+        if (this.spots.find(spot => !spot.legal)) {
+            return undefined;
+        }
         return {
             gotches: gotchTreeString(this.gotches),
             spots: spotsToString(this.spots)
         };
+    }
+
+    public refresh() {
+        this.gotches.forEach(gotch => gotch.owner = this.ownerLookup(gotch.createFingerprint()));
+        this.freeGotches = this.gotches.filter(gotch => !gotch.owner);
+        this.spots.forEach(spot => {
+            spot.updateFreeFlag();
+            spot.adjacentSpots = this.getAdjacentSpots(spot);
+            spot.connected = spot.adjacentSpots.length < 6;
+        });
+        let flowChanged = true;
+        while (flowChanged) {
+            flowChanged = false;
+            this.spots.forEach(spot => {
+                if (!spot.connected) {
+                    const connectedByAdjacent = spot.adjacentSpots.find(adj => (adj.land === spot.land) && adj.connected);
+                    if (connectedByAdjacent) {
+                        spot.connected = true;
+                        flowChanged = true;
+                    }
+                }
+            });
+        }
     }
 
     // ================================================================================================
@@ -128,12 +155,6 @@ export class Island {
     }
 
     private ownerLookup = (fingerprint: string) => this.owns[fingerprint];
-
-    private refreshOwnership() {
-        this.gotches.forEach(gotch => gotch.owner = this.ownerLookup(gotch.createFingerprint()));
-        this.freeGotches = this.gotches.filter(gotch => !gotch.owner);
-        this.spots.forEach(spot => spot.updateFreeFlag());
-    }
 
     private gotchAroundSpot(spot: Spot): Gotch {
         const adjacentMaxNonce = gotchWithMaxNonce(spot.adjacentGotches);
@@ -155,13 +176,29 @@ export class Island {
     }
 
     private getOrCreateSpot(coords: ICoords): Spot {
-        const existing = this.spots.find(p => equals(p.coords, coords));
+        const existing = this.getSpot(coords);
         if (existing) {
             return existing;
         }
         const spot = new Spot(coords);
         this.spots.push(spot);
         return spot;
+    }
+
+    private getAdjacentSpots(spot: Spot): Spot[] {
+        const adjacentSpots: Spot[] = [];
+        const coords = spot.coords;
+        ADJACENT.forEach(a => {
+            const adjacentSpot = this.getSpot(plus(a, coords));
+            if (adjacentSpot) {
+                adjacentSpots.push(adjacentSpot);
+            }
+        });
+        return adjacentSpots;
+    }
+
+    private getSpot(coords: ICoords): Spot | undefined {
+        return this.spots.find(p => equals(p.coords, coords));
     }
 
     private createBody(coords: ICoords): Promise<Fabric> {

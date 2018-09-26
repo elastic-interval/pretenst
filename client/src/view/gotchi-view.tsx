@@ -156,13 +156,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         if (spot) {
             spot.land = !spot.land;
             const pattern = this.props.island.pattern;
-            console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
-            // todo: do this somewhere else
-            const existingOwner = localStorage.getItem('owner');
-            const owner = existingOwner ? existingOwner : 'gumby';
-            localStorage.setItem(owner, JSON.stringify(pattern));
+            if (pattern) {
+                console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
+                // todo: do this somewhere else
+                const existingOwner = localStorage.getItem('owner');
+                const owner = existingOwner ? existingOwner : 'gumby';
+                localStorage.setItem(owner, JSON.stringify(pattern));
+            }
         }
-        console.log('clicked', spot);
     }
 
     private spotHover(spot?: Spot) {

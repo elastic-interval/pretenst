@@ -138,6 +138,16 @@ export const GOTCH_SHAPE = [
     {x: 10, y: 2},
     {x: 11, y: 1}, // 126
 ];
+
+export const ADJACENT = [
+    {x: 2, y: 0}, // 1
+    {x: 1, y: -1},
+    {x: -1, y: -1},
+    {x: -2, y: 0},
+    {x: -1, y: 1},
+    {x: 1, y: 1}, // 6
+];
+
 export const ROTATE = [
     0,
     2, 3, 4, 5, 6, 1,
