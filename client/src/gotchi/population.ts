@@ -7,9 +7,9 @@ import {Physics} from '../body/physics';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 export const HUNG_ALTITUDE = 7;
+export const NORMAL_TICKS = 40;
 const HANG_DELAY = 3000;
 const REST_DELAY = 2000;
-const NORMAL_TICKS = 40;
 const CATCH_UP_TICKS = 220;
 const MAX_POPULATION = 16;
 const INITIAL_JOINT_COUNT = 47;
@@ -27,10 +27,15 @@ interface IGotchiFitness {
     gotchi: Gotchi;
     index: number;
     distance: number;
+    age: number;
 }
 
 const evaluateFitness = (gotchi: Gotchi, index: number): IGotchiFitness => {
-    return {gotchi, index, distance: gotchi.distance};
+    return {gotchi, index, distance: gotchi.distance, age: gotchi.age};
+};
+
+const sortFitness = (a: IGotchiFitness, b: IGotchiFitness) => {
+    return (a.age === 0 ? a.distance : a.distance / a.age) - (b.age === 0 ? b.distance : b.distance / b.age)
 };
 
 const getFittest = (mutated: boolean): Genome | undefined => {
@@ -60,6 +65,14 @@ export class Population {
         for (let walk = 0; walk < MAX_POPULATION; walk++) {
             this.birthFromGenome(getFittest(walk > 0));
         }
+    }
+
+    public get fastest(): IGotchiFitness | undefined {
+        const mature = this.gotchiArray
+            .filter(gotchi => !gotchi.catchingUp)
+            .map(evaluateFitness)
+            .sort(sortFitness);
+        return mature.length ? mature[mature.length - 1] : undefined;
     }
 
     public get midpoint(): Vector3 {
@@ -200,7 +213,7 @@ export class Population {
     private death(): boolean {
         if (this.gotchiArray.length > 0) {
             const fitness = this.gotchiArray.map(evaluateFitness);
-            fitness.sort((a, b) => a.distance - b.distance);
+            fitness.sort(sortFitness);
             const mature = fitness.filter(f => !f.gotchi.catchingUp);
             if (mature.length) {
                 const deadIndex = mature[0].index;

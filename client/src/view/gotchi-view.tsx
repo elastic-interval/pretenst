@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Color, PerspectiveCamera, Vector3} from 'three';
-import {clearFittest, HUNG_ALTITUDE, Population} from '../gotchi/population';
+import {clearFittest, HUNG_ALTITUDE, NORMAL_TICKS, Population} from '../gotchi/population';
 import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
 import {PopulationComponent} from './population-component';
@@ -10,7 +10,8 @@ import {IslandComponent} from './island-component';
 import {Orbit} from './orbit';
 import {PopulationSelector} from './population-selector';
 import {Subscription} from 'rxjs/Subscription';
-import {GOTCHI_FACE_MATERIAL} from './materials';
+import {GOTCHI_GHOST_MATERIAL} from './materials';
+import {GotchiComponent} from './gotchi-component';
 
 interface IGotchiViewProps {
     width: number;
@@ -21,6 +22,7 @@ interface IGotchiViewProps {
 
 interface IGotchiViewState {
     turbo: boolean;
+    single: boolean;
     selectedGotchi?: Gotchi
 }
 
@@ -42,6 +44,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         super(props);
         this.state = {
             turbo: false,
+            single: false
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
@@ -55,6 +58,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     this.setState({turbo: !this.state.turbo});
                     break;
                 case 'KeyM':
+                    this.props.population.forDisplay.forEach((gotchi, index) => {
+                        console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
+                    });
+                    break;
+                case 'KeyS':
+
                     this.props.population.forDisplay.forEach((gotchi, index) => {
                         console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
                     });
@@ -75,7 +84,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     public componentDidMount() {
         this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera);
-        this.selectedSubscription= this.selector.selected.subscribe(selectedGotchi => {
+        this.selectedSubscription = this.selector.selected.subscribe(selectedGotchi => {
             if (selectedGotchi) {
                 selectedGotchi.clicked = true;
                 // setFittest(selectedGotchi);
@@ -108,7 +117,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandComponent island={this.props.island}/>
-                        <PopulationComponent population={this.props.population}/>
+                        {
+                            this.state.selectedGotchi ?
+                                <GotchiComponent gotchi={this.state.selectedGotchi}/>
+                                : <PopulationComponent population={this.props.population}/>
+                        }
                         <PopulationFrontier frontier={this.props.population.frontier}/>
                         {
                             this.props.island.gotches
@@ -119,7 +132,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                         ref={(node: any) => gotchi.facesMeshNode = node}
                                         key={`Faces${index}`}
                                         geometry={gotchi.fabric.facesGeometry}
-                                        material={GOTCHI_FACE_MATERIAL}
+                                        material={GOTCHI_GHOST_MATERIAL}
                                     />
                                 })
                         }
@@ -142,9 +155,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             this.props.population.iterate();
                         }
                     }
-                    this.props.population.iterate();
-                    this.forceUpdate();
-                    this.orbit.moveTargetTowards(this.props.population.midpoint);
+                    const single = this.state.selectedGotchi;
+                    if (single) {
+                        single.iterate(NORMAL_TICKS);
+                        this.orbit.moveTargetTowards(single.fabric.midpoint);
+                    } else {
+                        this.props.population.iterate();
+                        this.orbit.moveTargetTowards(this.props.population.midpoint);
+                    }
+                    this.forceUpdate(); // todo: maybe not necessary
                     this.orbit.update();
                     requestAnimationFrame(step);
                 },

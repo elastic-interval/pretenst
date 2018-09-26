@@ -5,7 +5,7 @@ import {Island} from '../island/island';
 import {IslandComponent} from './island-component';
 import {Spot} from '../island/spot';
 import {SpotSelector} from './spot-selector';
-import {GOTCHI_FACE_MATERIAL} from './materials';
+import {GOTCHI_GHOST_MATERIAL} from './materials';
 import {Gotchi} from '../gotchi/gotchi';
 
 interface IIslandViewProps {
@@ -81,7 +81,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                                         ref={(node: any) => gotchi.facesMeshNode = node}
                                         key={`Faces${index}`}
                                         geometry={gotchi.fabric.facesGeometry}
-                                        material={GOTCHI_FACE_MATERIAL}
+                                        material={GOTCHI_GHOST_MATERIAL}
                                     />
                                 })
                         }

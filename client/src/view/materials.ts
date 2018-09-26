@@ -1,10 +1,15 @@
 import {Color, FaceColors, LineBasicMaterial, MeshPhongMaterial} from 'three';
 
-export const GOTCHI_FACE_MATERIAL = new MeshPhongMaterial({
+export const GOTCHI_GHOST_MATERIAL = new MeshPhongMaterial({
     lights: true,
     color: new Color('silver'),
     transparent: true,
     opacity: 0.6
+});
+
+export const GOTCHI_MATERIAL = new MeshPhongMaterial({
+    lights: true,
+    color: new Color('silver'),
 });
 
 export const ISLAND_MATERIAL = new MeshPhongMaterial({

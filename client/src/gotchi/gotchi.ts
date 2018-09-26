@@ -49,7 +49,7 @@ export class Gotchi {
     }
 
     public iterate(ticks: number): number {
-        if (this.frozen || this.clicked) {
+        if (this.frozen) {
             return 0;
         }
         const maxTimeSweep = this.fabric.iterate(ticks, this.hangingCountdown > 0);

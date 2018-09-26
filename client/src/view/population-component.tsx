@@ -2,14 +2,14 @@ import * as React from 'react';
 import * as R3 from 'react-three';
 import {Population} from '../gotchi/population';
 import {Gotchi} from '../gotchi/gotchi';
-import {GOTCHI_FACE_MATERIAL} from './materials';
+import {GOTCHI_GHOST_MATERIAL} from './materials';
 
 export interface IPopulationMeshProps {
-    population: Population
+    population: Population;
 }
 
 export interface IPopulationMeshState {
-    selectedGotchi?: Gotchi
+    nothingYet?: Gotchi
 }
 
 export class PopulationComponent extends React.Component<IPopulationMeshProps, IPopulationMeshState> {
@@ -26,7 +26,7 @@ export class PopulationComponent extends React.Component<IPopulationMeshProps, I
                     ref={(node: any) => gotchi.facesMeshNode = node}
                     key={`Faces${index}`}
                     geometry={gotchi.fabric.facesGeometry}
-                    material={GOTCHI_FACE_MATERIAL}
+                    material={GOTCHI_GHOST_MATERIAL}
                 />
             })
         }</R3.Object3D>;
