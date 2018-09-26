@@ -5,8 +5,6 @@ import {Island} from '../island/island';
 import {IslandComponent} from './island-component';
 import {Spot} from '../island/spot';
 import {SpotSelector} from './spot-selector';
-import {GOTCHI_GHOST_MATERIAL} from './materials';
-import {Gotchi} from '../gotchi/gotchi';
 
 interface IIslandViewProps {
     width: number;
@@ -16,6 +14,7 @@ interface IIslandViewProps {
 
 interface IIslandViewState {
     selectedSpot?: Spot;
+    hoverSpot?: Spot;
 }
 
 const SUN_POSITION = new Vector3(0, 300, 200);
@@ -25,16 +24,19 @@ const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 export class IslandView extends React.Component<IIslandViewProps, IIslandViewState> {
     private selector: SpotSelector;
     private perspectiveCamera: PerspectiveCamera;
-    private hoverSpot?: Spot;
 
     constructor(props: IIslandViewProps) {
         super(props);
-        this.state = {};
+        const singleGotch = props.island.singleGotch;
+        this.state = {
+            hoverSpot: singleGotch ? singleGotch.center : undefined
+        };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, props.width / props.height, 1, 500000);
         const midpoint = props.island.midpoint;
         this.perspectiveCamera.position.add(CAMERA_POSITION.add(midpoint));
+        this.perspectiveCamera.up.set(0, 0, 1).normalize();
         this.perspectiveCamera.lookAt(midpoint);
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             console.log(event.code);
@@ -71,20 +73,8 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                  onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e))}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <IslandComponent island={this.props.island}/>
-                        {
-                            this.props.island.gotches
-                                .filter(gotch => !!gotch.gotchi)
-                                .map(gotch => gotch.gotchi)
-                                .map((gotchi: Gotchi, index: number) => {
-                                    return <R3.Mesh
-                                        ref={(node: any) => gotchi.facesMeshNode = node}
-                                        key={`Faces${index}`}
-                                        geometry={gotchi.fabric.facesGeometry}
-                                        material={GOTCHI_GHOST_MATERIAL}
-                                    />
-                                })
-                        }
+                        <IslandComponent island={this.props.island}
+                                         selectedGotch={this.state.hoverSpot ? this.state.hoverSpot.centerOfGotch : undefined}/>
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>
@@ -97,24 +87,28 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     private spotClicked(spot?: Spot) {
         if (spot) {
-            spot.land = !spot.land;
-            const pattern = this.props.island.pattern;
-            console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
-            // todo: do this somewhere else
-            const existingOwner = localStorage.getItem('owner');
-            const owner = existingOwner ? existingOwner : 'gumby';
-            localStorage.setItem(owner, JSON.stringify(pattern));
-            this.forceUpdate();
+            const singleGotch = this.props.island.singleGotch;
+            if (singleGotch && singleGotch.center !== spot) {
+                spot.land = !spot.land;
+                const pattern = this.props.island.pattern;
+                console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
+
+                // todo: do this somewhere else
+                const existingOwner = localStorage.getItem('owner');
+                const owner = existingOwner ? existingOwner : 'gumby';
+                localStorage.setItem(owner, JSON.stringify(pattern));
+                this.forceUpdate();
+            }
         }
         console.log('clicked', spot);
     }
 
     private spotHover(spot?: Spot) {
-        if (spot !== this.hoverSpot) {
-            if (spot) {
-                console.log(`hover ${spot.coords.x}, ${spot.coords.y}`);
+        const singleGotch = this.props.island.singleGotch;
+        if (!singleGotch) {
+            if (spot !== this.state.hoverSpot) {
+                this.setState({hoverSpot: spot});
             }
-            this.hoverSpot = spot;
         }
     }
 }

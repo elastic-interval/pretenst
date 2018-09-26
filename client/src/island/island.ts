@@ -31,9 +31,6 @@ export class Island {
 
     constructor(pattern: IslandPattern, public owner: string, private createFabricInstance: () => Promise<IFabricExports>) {
         this.apply(pattern);
-        if (!this.spots.length) {
-            this.getOrCreateGotch(undefined, zero);
-        }
         this.refreshOwnership();
     }
 
@@ -75,9 +72,20 @@ export class Island {
             const b3 = (nyb & 1) !== 0;
             return [b0, b1, b2, b3];
         });
-        const litStack = [].concat.apply([], booleanArrays).reverse();
-        this.spots.sort(sortSpotsOnCoord).forEach(spot => spot.land = litStack.pop());
+        const landStack = [].concat.apply([], booleanArrays).reverse();
+        if (landStack.length) {
+            this.spots.sort(sortSpotsOnCoord).forEach(spot => {
+                const land = landStack.pop();
+                spot.land = land ? land : false;
+            });
+        } else if (this.singleGotch) {
+            this.spots[0].land = true;
+        }
         this.refreshOwnership();
+    }
+
+    public get singleGotch(): Gotch | undefined {
+        return this.gotches.length === 1? this.gotches[0] : undefined;
     }
 
     public get midpoint(): Vector3 {

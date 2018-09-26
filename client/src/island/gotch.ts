@@ -30,7 +30,7 @@ export const gotchTreeString = (gotches: Gotch[]) => {
     const root = gotches.find(gotch => gotch.nonce === 0);
     if (!root) {
         console.error('No root gotch found');
-        return '0';
+        return '';
     }
     gotches.forEach(gotch => gotch.visited = false);
     return root.generateOctalTreePattern([]).join('');

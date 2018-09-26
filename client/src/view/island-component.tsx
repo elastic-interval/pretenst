@@ -23,7 +23,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     constructor(props: IslandComponentProps) {
         super(props);
         this.state = {
-            editMode: false
+            editMode: !!props.island.singleGotch,
         };
     }
 

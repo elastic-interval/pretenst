@@ -82,7 +82,8 @@ export class Spot {
     }
 
     public addHangerGeometry(context: ISpotContext) {
-        if (context.selectedGotch && this.centerOfGotch && !equals(context.selectedGotch.coords, this.centerOfGotch.coords)) {
+        if (context.selectedGotch && this.centerOfGotch &&
+            !equals(context.selectedGotch.coords, this.centerOfGotch.coords)) {
             return;
         }
         for (let a = 0; a < SIX; a++) {
