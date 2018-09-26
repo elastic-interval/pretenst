@@ -18,7 +18,6 @@ export class SpotSelector {
 
     public getSpot(event: any): Spot | undefined {
         const rect = event.target.getBoundingClientRect();
-        // console.log(`get spot ${event.clientX}, ${event.clientY}`, rect, this.domElement);
         this.mouse.x = ((event.clientX - rect.left) / this.size.x) * 2 - 1;
         this.mouse.y = -((event.clientY - rect.top) / this.size.y) * 2 + 1;
         this.rayCaster.setFromCamera(this.mouse, this.camera);
