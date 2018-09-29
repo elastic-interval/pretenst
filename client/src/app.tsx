@@ -55,8 +55,8 @@ class App extends React.Component<IAppProps, IAppState> {
             <BrowserRouter>
                 <Switch>
                     <Route exact={true} path="/" component={this.homeView}/>
-                    <Route exact={true} path="/gotchi" component={this.gotchiView}/>
-                    <Route exact={true} path="/island" component={this.islandView}/>
+                    <Route path="/gotchi/:identity" component={this.gotchiView}/>
+                    <Route path="/island/:identity" component={this.islandView}/>
                 </Switch>
             </BrowserRouter>
         );
@@ -78,32 +78,46 @@ class App extends React.Component<IAppProps, IAppState> {
                 <hr/>
                 <ul>
                     <li>
-                        <Link to="/gotchi">Gotchi</Link>
+                        <Link to="/gotchi/gumby">Gumby Gotchi</Link>
                     </li>
                     <li>
-                        <Link to="/island">Island</Link>
+                        <Link to="/island/gumby">Gumby Island</Link>
+                    </li>
+                    <li>
+                        <Link to="/gotchi/pokey">Pokey Gotchi</Link>
+                    </li>
+                    <li>
+                        <Link to="/island/pokey">Pokey Island</Link>
                     </li>
                 </ul>
             </div>
         </div>
     );
 
-    private islandView = () => (
-        <div className="App">
-            <IslandView width={this.state.mainWidth}
-                        height={this.state.mainHeight}
-                        island={this.state.island}/>
-        </div>
-    );
+    private islandView = (ctxt: any) => {
+        this.state.island.owner = ctxt.match.params.identity;
+        console.log('owner', this.state.island.owner);
+        return (
+            <div className="App">
+                <IslandView width={this.state.mainWidth}
+                            height={this.state.mainHeight}
+                            island={this.state.island}/>
+            </div>
+        );
+    };
 
-    private gotchiView = () => (
-        <div className="App">
-            <GotchiView width={this.state.mainWidth}
-                        height={this.state.mainHeight}
-                        population={this.state.population}
-                        island={this.state.island}/>
-        </div>
-    );
+    private gotchiView = (ctxt: any) => {
+        this.state.island.owner = ctxt.match.params.identity;
+        console.log('owner', this.state.island.owner);
+        return (
+            <div className="App">
+                <GotchiView width={this.state.mainWidth}
+                            height={this.state.mainHeight}
+                            population={this.state.population}
+                            island={this.state.island}/>
+            </div>
+        );
+    };
 
     private updateDimensions = () => {
         this.setState({
