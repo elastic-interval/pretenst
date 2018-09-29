@@ -8,7 +8,6 @@ import {PopulationComponent} from './population-component';
 import {PopulationFrontier} from './population-frontier';
 import {IslandComponent} from './island-component';
 import {Orbit} from './orbit';
-import {Subscription} from 'rxjs/Subscription';
 import {GOTCHI_GHOST_MATERIAL} from './materials';
 import {GotchiComponent} from './gotchi-component';
 import {SpotSelector} from './spot-selector';
@@ -37,11 +36,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private perspectiveCamera: PerspectiveCamera;
     private orbit: Orbit;
     private selector: SpotSelector;
-    private selectedSubscription: Subscription;
     private frameTime = Date.now();
     private frameCount = 0;
     private frameDelay = 20;
     private hoverSpot?: Spot;
+    private animating = true;
 
     constructor(props: IGotchiViewProps) {
         super(props);
@@ -91,7 +90,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentWillUnmount() {
-        this.selectedSubscription.unsubscribe();
+        this.animating = false;
     }
 
     public render() {
@@ -124,8 +123,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandComponent island={this.props.island} selectedGotch={this.state.hoverGotch}/>
                         {
-                            this.state.selectedGotchi ?
-                                <GotchiComponent gotchi={this.state.selectedGotchi}/>
+                            this.state.selectedGotchi
+                                ? <GotchiComponent gotchi={this.state.selectedGotchi}/>
                                 : <PopulationComponent population={this.props.population}/>
                         }
                         <PopulationFrontier frontier={this.props.population.frontier}/>
@@ -208,15 +207,17 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             }
                         }
                     }
-                    this.forceUpdate();
-                    this.orbit.update();
-                    if (this.orbit.tooFar !== this.state.frozen) {
-                        this.setState({
-                            frozen: this.orbit.tooFar,
-                            hoverGotch: this.orbit.tooFar ? this.state.hoverGotch : undefined
-                        });
+                    if (this.animating) {
+                        this.forceUpdate();
+                        this.orbit.update();
+                        if (this.orbit.tooFar !== this.state.frozen) {
+                            this.setState({
+                                frozen: this.orbit.tooFar,
+                                hoverGotch: this.orbit.tooFar ? this.state.hoverGotch : undefined
+                            });
+                        }
+                        requestAnimationFrame(step);
                     }
-                    requestAnimationFrame(step);
                 },
                 this.frameDelay
             );
