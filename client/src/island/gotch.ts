@@ -3,7 +3,7 @@ import {equals, ICoords, Spot} from './spot';
 import {Gotchi} from '../gotchi/gotchi';
 import {Genome} from '../genetics/genome';
 import {IFabricFactory} from '../body/fabric';
-import {INITIAL_JOINT_COUNT} from '../gotchi/population';
+import {INITIAL_JOINT_COUNT} from '../gotchi/evolution';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 

@@ -42,7 +42,7 @@ const getFittest = (mutated: boolean): Genome | undefined => {
 
 export const BIRTHPLACE: ICoords = {x: 0, y: 0};
 
-export class Population {
+export class Evolution {
     public frontier: BehaviorSubject<IFrontier> = new BehaviorSubject({radius: INITIAL_FRONTIER});
     public fittest?: Gotchi;
     private physicsObject = new Physics();
@@ -138,7 +138,7 @@ export class Population {
         this.gotchiArray.push(...nursery);
         if (this.toBeBorn > 0) {
             this.toBeBorn--;
-            this.birthFromPopulation();
+            this.createRandomReplacement();
         } else if (frozenNotExpectingCount > this.gotchiArray.length / 2) {
             this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
             if (minFrozenAge * 3 > maxFrozenAge * 2) {
@@ -195,7 +195,7 @@ export class Population {
             });
     }
 
-    private birthFromPopulation() {
+    private createRandomReplacement() {
         while (this.gotchiArray.length + 1 > MAX_POPULATION) {
             if (!this.death()) {
                 console.log('death failed');

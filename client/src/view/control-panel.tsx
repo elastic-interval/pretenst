@@ -1,9 +1,9 @@
 import * as React from 'react';
-import {Population} from '../gotchi/population';
+import {Evolution} from '../gotchi/evolution';
 import {IPhysicsFeature} from '../body/physics';
 
 export interface IControlPanelProps {
-    population: Population;
+    evolution: Evolution;
 }
 
 export interface IControlPanelState {
@@ -27,7 +27,7 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         if (feature) {
             feature.setFactor(feature.getFactor() * 1.1);
             this.setState({value: feature.getFactor()});
-            this.props.population.applyPhysics();
+            this.props.evolution.applyPhysics();
         }
     }
 
@@ -36,7 +36,7 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         if (feature) {
             feature.setFactor(feature.getFactor() * 0.9);
             this.setState({value: feature.getFactor()});
-            this.props.population.applyPhysics();
+            this.props.evolution.applyPhysics();
         }
     }
 
@@ -45,7 +45,7 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         if (feature) {
             feature.setFactor(1);
             this.setState({value: feature.getFactor()});
-            this.props.population.applyPhysics();
+            this.props.evolution.applyPhysics();
         }
     }
 
@@ -57,7 +57,7 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
                 <strong className="dice">&#x2680;&#x2681;&#x2682;&#x2683;&#x2684;&#x2685;</strong>
                 <div>
                     {
-                        this.props.population.physics.features.map(physicsFeature => {
+                        this.props.evolution.physics.features.map(physicsFeature => {
                             return <div key={physicsFeature.feature}>
                                 <button onClick={() => this.selectFeature(physicsFeature)}>
                                     {physicsFeature.feature}

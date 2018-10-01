@@ -1,18 +1,18 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {BufferGeometry, Float32BufferAttribute, LineBasicMaterial} from 'three';
-import {IFrontier} from '../gotchi/population';
+import {IFrontier} from '../gotchi/evolution';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 const FRONTIER_ALTITUDE = 0.3;
 const WALL_STEP_DEGREES = 3;
 const FRONTIER_MATERIAL = new LineBasicMaterial({color: 0xBBBBBB});
 
-export interface IPopulationFrontierProps {
+export interface IEvolutionFrontierProps {
     frontier: BehaviorSubject<IFrontier>;
 }
 
-export interface IPopulationFrontierState {
+export interface IEvolutionFrontierState {
     geometry?: BufferGeometry;
 }
 
@@ -35,9 +35,9 @@ const createFrontierGeometry = (frontier: IFrontier): BufferGeometry => {
     return geometry;
 };
 
-export class PopulationFrontier extends React.Component<IPopulationFrontierProps, IPopulationFrontierState>  {
+export class EvolutionFrontier extends React.Component<IEvolutionFrontierProps, IEvolutionFrontierState>  {
 
-    constructor(props: IPopulationFrontierProps) {
+    constructor(props: IEvolutionFrontierProps) {
         super(props);
         this.state = {
             geometry: createFrontierGeometry(props.frontier.getValue())

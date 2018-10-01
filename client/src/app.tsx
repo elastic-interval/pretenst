@@ -1,7 +1,7 @@
 import * as React from 'react';
 import './app.css';
 import {IFabricExports} from './body/fabric-exports';
-import {Population} from './gotchi/population';
+import {Evolution} from './gotchi/evolution';
 import {Island} from './island/island';
 import {IslandView} from './view/island-view';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
@@ -13,7 +13,7 @@ interface IAppProps {
 }
 
 interface IAppState {
-    population?: Population;
+    evolution?: Evolution;
     island: Island;
     mainWidth: number;
     mainHeight: number;
@@ -114,15 +114,15 @@ class App extends React.Component<IAppProps, IAppState> {
     };
 
     private gotchiView = (ctxt: any) => {
-        const population = this.state.population ? this.state.population : new Population(ctxt.match.params.identity, this.fabricFactory);
-        if (!this.state.population) {
-            // this.setState({population});
+        const evolution = this.state.evolution ? this.state.evolution : new Evolution(ctxt.match.params.identity, this.fabricFactory);
+        if (!this.state.evolution) {
+            // this.setState({evolution});
         }
         return (
             <div className="App">
                 <GotchiView width={this.state.mainWidth}
                             height={this.state.mainHeight}
-                            population={population}
+                            evolution={evolution}
                             island={this.state.island}
                             master={ctxt.match.params.identity}
                 />

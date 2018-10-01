@@ -1,11 +1,11 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Color, PerspectiveCamera, Vector3} from 'three';
-import {Population} from '../gotchi/population';
+import {Evolution} from '../gotchi/evolution';
 import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
-import {PopulationComponent} from './population-component';
-import {PopulationFrontier} from './population-frontier';
+import {EvolutionComponent} from './evolution-component';
+import {EvolutionFrontier} from './evolution-frontier';
 import {IslandComponent} from './island-component';
 import {Orbit} from './orbit';
 import {GOTCHI_GHOST_MATERIAL} from './materials';
@@ -17,7 +17,7 @@ import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 interface IGotchiViewProps {
     width: number;
     height: number;
-    population: Population;
+    evolution: Evolution;
     island: Island;
     master: string;
 }
@@ -53,12 +53,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             switch (event.code) {
                 case 'KeyM':
-                    this.props.population.forDisplay.forEach((gotchi, index) => {
+                    this.props.evolution.forDisplay.forEach((gotchi, index) => {
                         console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
                     });
                     break;
                 case 'KeyS':
-                    this.props.population.forDisplay.forEach((gotchi, index) => {
+                    this.props.evolution.forDisplay.forEach((gotchi, index) => {
                         console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
                     });
                     break;
@@ -110,9 +110,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         {
                             this.state.selectedGotchi
                                 ? <GotchiComponent gotchi={this.state.selectedGotchi}/>
-                                : <PopulationComponent population={this.props.population}/>
+                                : <EvolutionComponent evolution={this.props.evolution}/>
                         }
-                        <PopulationFrontier frontier={this.props.population.frontier}/>
+                        <EvolutionFrontier frontier={this.props.evolution.frontier}/>
                         {
                             this.props.island.gotches
                                 .filter((gotch, index) => !!gotch.gotchi && index > 0)
@@ -155,12 +155,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             single.iterate(NORMAL_TICKS);
                             this.orbit.moveTargetTowards(single.fabric.midpoint);
                         } else {
-                            this.props.population.iterate();
-                            this.orbit.moveTargetTowards(this.props.population.midpoint);
+                            this.props.evolution.iterate();
+                            this.orbit.moveTargetTowards(this.props.evolution.midpoint);
                             // todo: this is escape-of-the-fittest, remove it
-                            // if (this.props.population.fittest) {
-                            //     this.setState({selectedGotchi: this.props.population.fittest});
-                            //     this.props.population.fittest = undefined;
+                            // if (this.props.evolution.fittest) {
+                            //     this.setState({selectedGotchi: this.props.evolution.fittest});
+                            //     this.props.evolution.fittest = undefined;
                             // }
                         }
                     }

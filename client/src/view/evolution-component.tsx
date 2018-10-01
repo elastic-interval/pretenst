@@ -1,27 +1,27 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {Population} from '../gotchi/population';
+import {Evolution} from '../gotchi/evolution';
 import {Gotchi} from '../gotchi/gotchi';
 import {GOTCHI_GHOST_MATERIAL} from './materials';
 
-export interface IPopulationMeshProps {
-    population: Population;
+export interface IEvolutionProps {
+    evolution: Evolution;
 }
 
-export interface IPopulationMeshState {
+export interface IEvolutionState {
     nothingYet?: Gotchi
 }
 
-export class PopulationComponent extends React.Component<IPopulationMeshProps, IPopulationMeshState> {
+export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolutionState> {
 
-    constructor(props: IPopulationMeshProps) {
+    constructor(props: IEvolutionProps) {
         super(props);
         this.state = {};
     }
 
     public render() {
-        return <R3.Object3D key="PopulationMesh">{
-            this.props.population.forDisplay.map((gotchi: Gotchi, index: number) => {
+        return <R3.Object3D key="EvolutionMesh">{
+            this.props.evolution.forDisplay.map((gotchi: Gotchi, index: number) => {
                 return <R3.Mesh
                     ref={(node: any) => gotchi.facesMeshNode = node}
                     key={`Faces${index}`}
