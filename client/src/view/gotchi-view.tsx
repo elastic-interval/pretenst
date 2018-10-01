@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Color, PerspectiveCamera, Vector3} from 'three';
-import {clearFittest, Population} from '../gotchi/population';
+import {Population} from '../gotchi/population';
 import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
 import {PopulationComponent} from './population-component';
@@ -58,13 +58,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     });
                     break;
                 case 'KeyS':
-
                     this.props.population.forDisplay.forEach((gotchi, index) => {
                         console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
                     });
-                    break;
-                case 'KeyR':
-                    clearFittest();
                     break;
             }
         });

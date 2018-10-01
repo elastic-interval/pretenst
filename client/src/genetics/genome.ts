@@ -44,5 +44,9 @@ export class Genome {
         }
         return genome;
     }
+
+    public toJSON() {
+        return JSON.stringify(this.data);
+    }
 }
 

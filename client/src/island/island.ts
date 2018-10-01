@@ -8,7 +8,6 @@ import {Genome, IGenomeData} from '../genetics/genome';
 export interface IslandPattern {
     gotches: string;
     spots: string;
-    genomes: Map<string, IGenomeData>;
 }
 
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
@@ -24,7 +23,6 @@ export class Island {
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
     public facesMeshNode: any;
-    public genomeData: Map<string, IGenomeData>;
 
     constructor(public islandName: string, private fabricFactory: IFabricFactory) {
         const patternString = localStorage.getItem(islandName);
@@ -33,7 +31,6 @@ export class Island {
             spots: '',
             genomes: new Map<string, IGenomeData>()
         };
-        this.genomeData = pattern.genomes;
         this.apply(pattern);
         console.log(`Loaded ${this.islandName}`);
         this.refresh();
@@ -66,6 +63,11 @@ export class Island {
 
     public save() {
         localStorage.setItem(this.islandName, JSON.stringify(this.pattern));
+        this.gotches.forEach(gotch => {
+            if (gotch.genome) {
+                localStorage.setItem(gotch.createFingerprint(), gotch.genome.toJSON());
+            }
+        });
         console.log(`Saved ${this.islandName}`);
     }
 
@@ -100,19 +102,12 @@ export class Island {
     }
 
     public get pattern(): IslandPattern | undefined {
-        if (!this.genomeData || this.spots.find(spot => !spot.legal)) {
+        if (this.spots.find(spot => !spot.legal)) {
             return undefined;
         }
-        const genomes = new Map<string, Genome>();
-        this.gotches.forEach(gotch => {
-            if (gotch.genome) {
-                genomes[gotch.createFingerprint()] = gotch.genome;
-            }
-        });
         return {
             gotches: gotchTreeString(this.gotches),
-            spots: spotsToString(this.spots),
-            genomes: this.genomeData
+            spots: spotsToString(this.spots)
         } as IslandPattern;
     }
 
@@ -166,7 +161,13 @@ export class Island {
         } else if (this.singleGotch) {
             this.singleGotch.spots[0].land = true;
         }
-        this.gotches.forEach(g => g.genome = new Genome(this.genomeData[g.createFingerprint()]));
+        this.gotches.forEach(g => {
+            const fingerprint = g.createFingerprint();
+            const storedGenome = localStorage.getItem(fingerprint);
+            if (storedGenome) {
+                g.genome = new Genome(JSON.parse(storedGenome));
+            }
+        });
         this.refresh();
     }
 

@@ -102,7 +102,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                 if (gotch.center === spot) {
                     if (island.legal) {
                         if (!gotch.gotchi) {
-                            gotch.genome = island.genomeData[gotch.createFingerprint()] = new Genome({
+                            gotch.genome = new Genome({
                                 master: this.props.master,
                                 embryoSequence: [],
                                 behaviorSequence: []

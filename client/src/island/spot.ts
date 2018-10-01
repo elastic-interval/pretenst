@@ -90,7 +90,7 @@ export class Spot {
             isSelected = !!this.memberOfGotch.find(gotch => equals(gotch.coords, selectedGotch.coords));
         }
         const normalSpread = !this.legal ? 0 :
-            (this.land ? LAND_NORMAL_SPREAD : WATER_NORMAL_SPREAD) * (isSelected ? 2 : context.selectedGotch ? 0.1 : 1);
+            (this.land ? LAND_NORMAL_SPREAD : WATER_NORMAL_SPREAD) * (isSelected ? 3 : context.selectedGotch ? 0.1 : 1);
         const color = this.land ? LAND_COLOR : WATER_COLOR;
         for (let a = 0; a < SIX; a++) {
             const offset = index * HEXAGON_POINTS.length;

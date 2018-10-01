@@ -40,16 +40,6 @@ const getFittest = (mutated: boolean): Genome | undefined => {
     return storedGenome ? mutated ? new Genome(storedGenome).withMutatedBehavior(INITIAL_MUTATION_COUNT) : new Genome(storedGenome) : undefined;
 };
 
-export const setFittest = (gotchi: Gotchi) => {
-    console.log('set fittest');
-    localStorage.setItem('fittest', JSON.stringify(gotchi.genomeData));
-};
-
-export const clearFittest = () => {
-    console.log('clear fittest');
-    localStorage.removeItem('fittest');
-};
-
 export const BIRTHPLACE: ICoords = {x: 0, y: 0};
 
 export class Population {
@@ -129,7 +119,7 @@ export class Population {
                 if (gotchi.distance > this.frontier.getValue().radius) {
                     if (!array.find(g => g.frozen)) {
                         this.fittest = gotchi;
-                        setFittest(gotchi);
+                        // todo: SAVE TO LOCAL STORAGE!
                     }
                     freeze(gotchi);
                     this.toBeBorn++;
