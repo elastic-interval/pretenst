@@ -16,10 +16,6 @@ export const NORMAL_TICKS = 40;
 
 export const INTERVALS_RESERVED = 1;
 
-export interface IFabricFactory {
-    createBodyAt(x: number, y: number, jointCountMax: number): Promise<Fabric>;
-}
-
 export class Fabric {
     private kernel: FabricKernel;
     private intervalCountMax: number;

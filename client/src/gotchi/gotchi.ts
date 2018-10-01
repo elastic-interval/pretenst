@@ -3,6 +3,10 @@ import {Behavior} from '../genetics/behavior';
 import {Genome, IGenomeData} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 
+export interface IGotchiFactory {
+    createGotchiAt(x: number, y: number, jointCountMax: number, genome: Genome): Promise<Gotchi>;
+}
+
 export class Gotchi {
     public frozen = false;
     public clicked = false;

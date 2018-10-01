@@ -1,6 +1,6 @@
-import {Gotchi} from './gotchi';
-import {IFabricFactory, NORMAL_TICKS} from '../body/fabric';
-import {Genome, IGenomeData} from '../genetics/genome';
+import {Gotchi, IGotchiFactory} from './gotchi';
+import {NORMAL_TICKS} from '../body/fabric';
+import {Genome} from '../genetics/genome';
 import {Raycaster, Vector3} from 'three';
 import {Physics} from '../body/physics';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
@@ -34,30 +34,28 @@ const sortFitness = (a: IGotchiFitness, b: IGotchiFitness) => {
     return (a.age === 0 ? a.distance : a.distance / a.age) - (b.age === 0 ? b.distance : b.distance / b.age)
 };
 
-const getFittest = (mutated: boolean): Genome | undefined => {
-    const fittest = localStorage.getItem('fittest');
-    const storedGenome: IGenomeData = fittest ? JSON.parse(fittest) : null;
-    return storedGenome ? mutated ? new Genome(storedGenome).withMutatedBehavior(INITIAL_MUTATION_COUNT) : new Genome(storedGenome) : undefined;
-};
-
 export const BIRTHPLACE: ICoords = {x: 0, y: 0};
 
 export class Evolution {
     public frontier: BehaviorSubject<IFrontier> = new BehaviorSubject({radius: INITIAL_FRONTIER});
+    public gotchis: BehaviorSubject<Gotchi[]> = new BehaviorSubject<Gotchi[]>([]);
     public fittest?: Gotchi;
     private physicsObject = new Physics();
-    private gotchiArray: Gotchi[] = [];
     private toBeBorn = 0;
     private mutationCount = INITIAL_MUTATION_COUNT;
 
-    constructor(master: string, private fabricFactory: IFabricFactory) {
+    constructor(genome: Genome, private factory: IGotchiFactory) {
+        let mutatingGenome = genome;
         for (let walk = 0; walk < MAX_POPULATION; walk++) {
-            this.birthFromGenome(master, getFittest(walk > 0));
+            this.factory.createGotchiAt(BIRTHPLACE.x, BIRTHPLACE.y, INITIAL_JOINT_COUNT, mutatingGenome).then(gotchi => {
+                this.gotchis.next(this.gotchis.getValue().concat(gotchi));
+            });
+            mutatingGenome = genome.withMutatedBehavior(INITIAL_MUTATION_COUNT);
         }
     }
 
     public get fastest(): IGotchiFitness | undefined {
-        const mature = this.gotchiArray
+        const mature = this.gotchis.getValue()
             .filter(gotchi => !gotchi.catchingUp)
             .map(evaluateFitness)
             .sort(sortFitness);
@@ -65,7 +63,7 @@ export class Evolution {
     }
 
     public get midpoint(): Vector3 {
-        const gotchis = this.gotchiArray;
+        const gotchis = this.gotchis.getValue();
         return gotchis
             .map(gotchi => gotchi.fabric.midpoint)
             .reduce((prev, currentValue) => prev.add(currentValue), new Vector3())
@@ -77,16 +75,11 @@ export class Evolution {
     }
 
     public applyPhysics() {
-        this.gotchiArray.forEach(gotchi => gotchi.fabric.apply(this.physicsObject));
-    }
-
-    public get forDisplay(): Gotchi[] {
-        return this.gotchiArray;
+        this.gotchis.getValue().forEach(gotchi => gotchi.fabric.apply(this.physicsObject));
     }
 
     public iterate(): number[] {
-        const maxAge = Math.max(...this.gotchiArray.map(gotchi => gotchi.age));
-        const nursery: Gotchi[] = [];
+        const maxAge = Math.max(...this.gotchis.getValue().map(gotchi => gotchi.age));
         let minFrozenAge = maxAge;
         let maxFrozenAge = 0;
         let frozenNotExpectingCount = 0;
@@ -102,19 +95,31 @@ export class Evolution {
                 maxFrozenAge = gotchi.age;
             }
         };
-        let catchingUp = false;
-        this.gotchiArray = this.gotchiArray.map((gotchi, index, array) => {
+        let anyReborn = false;
+        const reborn = this.gotchis.getValue().map(gotchi => {
             if (gotchi.rebornClone) {
+                anyReborn = true;
                 return gotchi.rebornClone;
             }
-            else if (gotchi.offspring) {
-                nursery.push(gotchi.offspring);
+            return gotchi;
+        });
+        if (anyReborn) {
+            this.gotchis.next(reborn);
+        }
+        const offspring: Gotchi[] = [];
+        this.gotchis.getValue().forEach(gotchi => {
+            if (gotchi.offspring) {
+                offspring.push(gotchi);
                 gotchi.offspring = undefined;
-                return gotchi;
             }
-            else if (gotchi.frozen) {
+        });
+        if (offspring.length > 0) {
+            this.gotchis.next(this.gotchis.getValue().concat(offspring));
+        }
+        let catchingUp = false;
+        this.gotchis.getValue().forEach((gotchi, index, array) => {
+            if (gotchi.frozen) {
                 freeze(gotchi);
-                return gotchi;
             } else {
                 if (gotchi.distance > this.frontier.getValue().radius) {
                     if (!array.find(g => g.frozen)) {
@@ -132,15 +137,13 @@ export class Evolution {
                     gotchi.iterate(NORMAL_TICKS);
                     catchingUp = gotchi.catchingUp = true;
                 }
-                return gotchi;
             }
         });
-        this.gotchiArray.push(...nursery);
         if (this.toBeBorn > 0) {
             this.toBeBorn--;
             this.createRandomReplacement();
-        } else if (frozenNotExpectingCount > this.gotchiArray.length / 2) {
-            this.gotchiArray.forEach(gotchi => this.createReplacement(gotchi, true));
+        } else if (frozenNotExpectingCount > this.gotchis.getValue().length / 2) {
+            this.gotchis.getValue().forEach(gotchi => this.createReplacement(gotchi, true));
             if (minFrozenAge * 3 > maxFrozenAge * 2) {
                 const expandedRadius = this.frontier.getValue().radius * FRONTIER_EXPANSION;
                 this.frontier.next({radius: expandedRadius});
@@ -148,7 +151,7 @@ export class Evolution {
                 console.log(`fontier = ${expandedRadius}, mutations = ${this.mutationCount}`);
             }
         }
-        return this.gotchiArray.map(gotchi => {
+        return this.gotchis.getValue().map(gotchi => {
             if (gotchi.frozen) {
                 return 0;
             }
@@ -157,23 +160,18 @@ export class Evolution {
     }
 
     public findGotchi(raycaster: Raycaster): Gotchi | undefined {
-        return this.gotchiArray
+        return this.gotchis.getValue()
             .filter(gotchi => gotchi.facesMeshNode)
             .find(gotchi => raycaster.intersectObject(gotchi.facesMeshNode).length > 0);
     }
 
-    // Privates =============================================================
-
-    private birthFromGenome(master: string, existingGenome?: Genome) {
-        this.fabricFactory.createBodyAt(BIRTHPLACE.x, BIRTHPLACE.y, INITIAL_JOINT_COUNT).then(fabric => {
-            const genome = existingGenome ? existingGenome : new Genome({
-                master,
-                embryoSequence: [],
-                behaviorSequence: []
-            });
-            this.gotchiArray.push(new Gotchi(fabric, genome));
-        });
+    public dispose() {
+        const array = this.gotchis.getValue();
+        // todo: review this
+        array.forEach(gotchi => gotchi.fabric.dispose());
     }
+
+    // Privates =============================================================
 
     private createReplacement(gotchi: Gotchi, clone: boolean): void {
         gotchi.expecting = true;
@@ -181,10 +179,9 @@ export class Evolution {
         if (grow) {
             console.log('grow!');
         }
-        this.fabricFactory
-            .createBodyAt(BIRTHPLACE.x, BIRTHPLACE.y, gotchi.fabric.jointCountMax + (grow ? 4 : 0))
-            .then(fabric => {
-                const freshGotchi = gotchi.withNewBody(fabric);
+        this.factory
+            .createGotchiAt(BIRTHPLACE.x, BIRTHPLACE.y, gotchi.fabric.jointCountMax + (grow ? 4 : 0), new Genome(gotchi.genomeData))
+            .then(freshGotchi => {
                 gotchi.expecting = false;
                 if (clone) {
                     gotchi.rebornClone = freshGotchi;
@@ -196,13 +193,13 @@ export class Evolution {
     }
 
     private createRandomReplacement() {
-        while (this.gotchiArray.length + 1 > MAX_POPULATION) {
+        while (this.gotchis.getValue().length + 1 > MAX_POPULATION) {
             if (!this.death()) {
                 console.log('death failed');
                 break;
             }
         }
-        const fertile = this.gotchiArray.filter(gotchi => !gotchi.catchingUp);
+        const fertile = this.gotchis.getValue().filter(gotchi => !gotchi.catchingUp);
         if (fertile.length) {
             const luckyOne = fertile[Math.floor(fertile.length * Math.random())];
             this.createReplacement(luckyOne, false);
@@ -210,15 +207,16 @@ export class Evolution {
     }
 
     private death(): boolean {
-        if (this.gotchiArray.length > 0) {
-            const fitness = this.gotchiArray.map(evaluateFitness);
+        const gotchis = this.gotchis.getValue();
+        if (gotchis.length > 0) {
+            const fitness = gotchis.map(evaluateFitness);
             fitness.sort(sortFitness);
             const mature = fitness.filter(f => !f.gotchi.catchingUp);
             if (mature.length) {
                 const deadIndex = mature[0].index;
-                const dead = this.gotchiArray[deadIndex];
+                const dead = gotchis[deadIndex];
                 dead.fabric.dispose();
-                this.gotchiArray.splice(deadIndex, 1);
+                this.gotchis.next(gotchis.filter((gotchi, index) => index !== deadIndex));
                 return true;
             } else {
                 console.log('no mature gotchis to kill!')

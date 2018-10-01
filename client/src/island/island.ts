@@ -2,7 +2,6 @@ import {Raycaster, Vector3} from 'three';
 import {Gotch, gotchTreeString} from './gotch';
 import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, zero} from './spot';
-import {IFabricFactory} from '../body/fabric';
 import {Genome, IGenomeData} from '../genetics/genome';
 
 export interface IslandPattern {
@@ -24,7 +23,7 @@ export class Island {
     public gotches: Gotch[] = [];
     public facesMeshNode: any;
 
-    constructor(public islandName: string, private fabricFactory: IFabricFactory) {
+    constructor(public islandName: string) {
         const patternString = localStorage.getItem(islandName);
         const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {
             gotches: '',
@@ -72,7 +71,7 @@ export class Island {
     }
 
     public findGotch(master: string): Gotch | undefined {
-        return this.gotches.find(gotch => !!gotch.gotchi && gotch.gotchi.master === master)
+        return this.gotches.find(gotch => !!gotch.genome && gotch.genome.master === master)
     }
 
     public get singleGotch(): Gotch | undefined {
@@ -182,7 +181,7 @@ export class Island {
             return existing;
         }
         const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
-        const gotch = new Gotch(this.fabricFactory, parent, coords, spots);
+        const gotch = new Gotch(parent, coords, spots);
         this.gotches.push(gotch);
         return gotch;
     }

@@ -1,19 +1,19 @@
 import * as React from 'react';
 import './app.css';
 import {IFabricExports} from './body/fabric-exports';
-import {Evolution} from './gotchi/evolution';
 import {Island} from './island/island';
 import {IslandView} from './view/island-view';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
 import {GotchiView} from './view/gotchi-view';
-import {Fabric, HUNG_ALTITUDE, IFabricFactory} from './body/fabric';
+import {Fabric, HUNG_ALTITUDE} from './body/fabric';
+import {Gotchi, IGotchiFactory} from './gotchi/gotchi';
+import {Genome} from './genetics/genome';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
 }
 
 interface IAppState {
-    evolution?: Evolution;
     island: Island;
     mainWidth: number;
     mainHeight: number;
@@ -26,22 +26,22 @@ const HORIZONTAL_SPLIT = 1;
 const VERTICAL_SPLIT = 0.4;
 
 class App extends React.Component<IAppProps, IAppState> {
-    private fabricFactory: IFabricFactory;
+    private gotchiFactory: IGotchiFactory;
 
     constructor(props: IAppProps) {
         super(props);
-        this.fabricFactory = {
-            createBodyAt: (x: number, y: number, jointCountMax): Promise<Fabric> => {
+        this.gotchiFactory = {
+            createGotchiAt: (x: number, y: number, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
                 return this.props.createFabricInstance().then(fabricExports => {
                     const fabric = new Fabric(fabricExports, jointCountMax);
                     fabric.createSeed(5, HUNG_ALTITUDE, x, y);
                     fabric.iterate(1, true);
-                    return fabric;
+                    return new Gotchi(fabric, genome);
                 });
             }
         };
         this.state = {
-            island: new Island('GalapagotchIsland', this.fabricFactory),
+            island: new Island('GalapagotchIsland'),
             mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
             mainHeight: window.innerHeight,
             sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
@@ -114,17 +114,13 @@ class App extends React.Component<IAppProps, IAppState> {
     };
 
     private gotchiView = (ctxt: any) => {
-        const evolution = this.state.evolution ? this.state.evolution : new Evolution(ctxt.match.params.identity, this.fabricFactory);
-        if (!this.state.evolution) {
-            // this.setState({evolution});
-        }
         return (
             <div className="App">
                 <GotchiView width={this.state.mainWidth}
                             height={this.state.mainHeight}
-                            evolution={evolution}
                             island={this.state.island}
                             master={ctxt.match.params.identity}
+                            factory={this.gotchiFactory}
                 />
             </div>
         );

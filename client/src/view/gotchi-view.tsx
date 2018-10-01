@@ -1,30 +1,30 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Color, PerspectiveCamera, Vector3} from 'three';
-import {Evolution} from '../gotchi/evolution';
-import {Gotchi} from '../gotchi/gotchi';
+import {Evolution, INITIAL_JOINT_COUNT} from '../gotchi/evolution';
+import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
 import {Island} from '../island/island';
 import {EvolutionComponent} from './evolution-component';
-import {EvolutionFrontier} from './evolution-frontier';
 import {IslandComponent} from './island-component';
 import {Orbit} from './orbit';
-import {GOTCHI_GHOST_MATERIAL} from './materials';
 import {GotchiComponent} from './gotchi-component';
 import {SpotSelector} from './spot-selector';
 import {Spot} from '../island/spot';
 import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
+import {Genome} from '../genetics/genome';
 
 interface IGotchiViewProps {
     width: number;
     height: number;
-    evolution: Evolution;
     island: Island;
     master: string;
+    factory: IGotchiFactory;
 }
 
 interface IGotchiViewState {
     cameraTooFar: boolean;
-    selectedGotchi?: Gotchi;
+    gotchi?: Gotchi;
+    evolution?: Evolution;
 }
 
 // const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors}); // todo: if this doesn't get used, remove it from WA
@@ -51,19 +51,41 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
         window.addEventListener("keypress", (event: KeyboardEvent) => {
+            const evolution = this.state.evolution;
+            const gotchi = this.state.gotchi;
             switch (event.code) {
-                case 'KeyM':
-                    this.props.evolution.forDisplay.forEach((gotchi, index) => {
-                        console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
-                    });
+                case 'KeyG':
+                    if (evolution) {
+                        evolution.dispose();
+                        this.setState({evolution: undefined});
+                    }
                     break;
-                case 'KeyS':
-                    this.props.evolution.forDisplay.forEach((gotchi, index) => {
-                        console.log(`${index}: ${gotchi.distance}`, gotchi.fabric.midpoint);
-                    });
+                case 'KeyE':
+                    if (!evolution) {
+                        if (gotchi) {
+                            this.setState({evolution: new Evolution(new Genome(gotchi.genomeData), props.factory)});
+                        }
+                    }
+                    break;
+                case 'KeyR':
+                    if (!evolution) {
+                        const emptyGenome = new Genome({
+                            master: props.master,
+                            behaviorSequence: [],
+                            embryoSequence: []
+                        });
+                        this.setState({evolution: new Evolution(emptyGenome, props.factory)});
+                    }
                     break;
             }
         });
+        const gotch = props.island.findGotch(props.master);
+        const genome = gotch ? gotch.genome : undefined;
+        if (gotch && genome) {
+            props.factory.createGotchiAt(gotch.coords.x, gotch.coords.y, INITIAL_JOINT_COUNT, genome).then(gotchi => {
+                this.setState({gotchi});
+            });
+        }
     }
 
     public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: any) {
@@ -107,25 +129,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandComponent island={this.props.island} master={this.props.master}/>
-                        {
-                            this.state.selectedGotchi
-                                ? <GotchiComponent gotchi={this.state.selectedGotchi}/>
-                                : <EvolutionComponent evolution={this.props.evolution}/>
-                        }
-                        <EvolutionFrontier frontier={this.props.evolution.frontier}/>
-                        {
-                            this.props.island.gotches
-                                .filter((gotch, index) => !!gotch.gotchi && index > 0)
-                                .map(gotch => gotch.gotchi)
-                                .map((gotchi: Gotchi, index: number) => {
-                                    return <R3.Mesh
-                                        ref={(node: any) => gotchi.facesMeshNode = node}
-                                        key={`Faces${index}`}
-                                        geometry={gotchi.fabric.facesGeometry}
-                                        material={GOTCHI_GHOST_MATERIAL}
-                                    />
-                                })
-                        }
+                        {this.liveComponent()}
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>
                     </R3.Scene>
@@ -136,10 +140,24 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     // ==========================
 
+    private liveComponent = () => {
+        if (this.state.evolution) {
+            return (
+                <R3.Object3D key="EvolutionRendering">
+                    <EvolutionComponent evolution={this.state.evolution}/>
+                </R3.Object3D>
+            );
+        } else if (this.state.gotchi) {
+            return <GotchiComponent key="GotchiRendering" gotchi={this.state.gotchi}/>
+        } else {
+            return null;
+        }
+    };
+
     private spotClicked(spot?: Spot) {
         if (this.state.cameraTooFar && spot && spot.centerOfGotch) {
             const gotch = spot.centerOfGotch;
-            gotch.triggerBirth();
+            console.log('clicked gotch', gotch.coords);
         }
     }
 
@@ -150,18 +168,19 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     if (this.state.cameraTooFar) {
                         this.orbit.moveTargetTowards(this.props.island.midpoint);
                     } else {
-                        const single = this.state.selectedGotchi;
-                        if (single) {
-                            single.iterate(NORMAL_TICKS);
-                            this.orbit.moveTargetTowards(single.fabric.midpoint);
-                        } else {
-                            this.props.evolution.iterate();
-                            this.orbit.moveTargetTowards(this.props.evolution.midpoint);
+                        const evolution = this.state.evolution;
+                        const gotchi = this.state.gotchi;
+                        if (evolution) {
+                            evolution.iterate();
+                            this.orbit.moveTargetTowards(evolution.midpoint);
                             // todo: this is escape-of-the-fittest, remove it
                             // if (this.props.evolution.fittest) {
                             //     this.setState({selectedGotchi: this.props.evolution.fittest});
                             //     this.props.evolution.fittest = undefined;
                             // }
+                        } else if (gotchi) {
+                            gotchi.iterate(NORMAL_TICKS);
+                            this.orbit.moveTargetTowards(gotchi.fabric.midpoint);
                         }
                     }
                     if (this.animating) {

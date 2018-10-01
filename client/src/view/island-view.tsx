@@ -101,13 +101,12 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
             if (gotch) {
                 if (gotch.center === spot) {
                     if (island.legal) {
-                        if (!gotch.gotchi) {
+                        if (!gotch.genome) {
                             gotch.genome = new Genome({
                                 master: this.props.master,
                                 embryoSequence: [],
                                 behaviorSequence: []
                             });
-                            gotch.triggerBirth();
                         }
                         island.save();
                     }

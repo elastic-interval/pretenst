@@ -51,7 +51,7 @@ export class Spot {
     }
 
     public refresh() {
-        this.free = !this.memberOfGotch.find(gotch => !!gotch.gotchi);
+        this.free = !this.memberOfGotch.find(gotch => !!gotch.genome);
         if (!this.connected) {
             this.legal = false;
         } else {
