@@ -26,16 +26,100 @@ const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacen
 export class Island {
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
-    public freeGotches: Gotch[] = [];
     public facesMeshNode: any;
 
-    constructor(pattern: IslandPattern,
-                private createFabricInstance: () => Promise<IFabricExports>) {
+    constructor(public islandName: string, private createFabricInstance: () => Promise<IFabricExports>) {
+        const patternString = localStorage.getItem(islandName);
+        const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {
+            gotches: '',
+            spots: '',
+            genomes: new Map<string, Genome>()
+        };
         this.apply(pattern);
+        console.log(`Loaded ${this.islandName}`);
         this.refresh();
     }
 
-    public apply(pattern: IslandPattern) {
+    public get legal(): boolean {
+        return !this.spots.find(spot => !spot.legal);
+    }
+
+    public refresh() {
+        this.spots.forEach(spot => {
+            spot.adjacentSpots = this.getAdjacentSpots(spot);
+            spot.connected = spot.adjacentSpots.length < 6;
+        });
+        let flowChanged = true;
+        while (flowChanged) {
+            flowChanged = false;
+            this.spots.forEach(spot => {
+                if (!spot.connected) {
+                    const connectedByAdjacent = spot.adjacentSpots.find(adj => (adj.land === spot.land) && adj.connected);
+                    if (connectedByAdjacent) {
+                        spot.connected = true;
+                        flowChanged = true;
+                    }
+                }
+            });
+        }
+        this.spots.forEach(spot => spot.refresh());
+    }
+
+    public save() {
+        localStorage.setItem(this.islandName, JSON.stringify(this.pattern));
+        console.log(`Saved ${this.islandName}`);
+    }
+
+    public findGotch(master: string): Gotch | undefined {
+        return this.gotches.find(gotch => !!gotch.gotchi && gotch.gotchi.master === master)
+    }
+
+    public get singleGotch(): Gotch | undefined {
+        return this.gotches.length === 1 ? this.gotches[0] : undefined;
+    }
+
+    public get midpoint(): Vector3 {
+        return this.spots
+            .reduce(
+                (sum: Vector3, spot: Spot) => {
+                    sum.x += spot.scaledCoords.x;
+                    sum.z += spot.scaledCoords.y;
+                    return sum;
+                },
+                new Vector3()
+            )
+            .multiplyScalar(1 / this.spots.length);
+    }
+
+    public findSpot(raycaster: Raycaster): Spot | undefined {
+        const intersections = raycaster.intersectObject(this.facesMeshNode);
+        if (intersections.length && intersections[0].faceIndex) {
+            const hit = intersections[0].faceIndex;
+            return hit ? this.spots.find(spot => spot.faceIndexes.indexOf(hit) >= 0) : undefined;
+        }
+        return undefined;
+    }
+
+    public get pattern(): IslandPattern | undefined {
+        if (this.spots.find(spot => !spot.legal)) {
+            return undefined;
+        }
+        const genomes = new Map<string, Genome>();
+        this.gotches.forEach(gotch => {
+            if (gotch.gotchi) {
+                genomes[gotch.createFingerprint()] = gotch.gotchi.genomeSnapshot;
+            }
+        });
+        return {
+            gotches: gotchTreeString(this.gotches),
+            spots: spotsToString(this.spots),
+            genomes
+        };
+    }
+
+    // ================================================================================================
+
+    private apply(pattern: IslandPattern) {
         let gotch: Gotch | undefined = this.getOrCreateGotch(undefined, zero, pattern.genomes);
         const stepStack = pattern.gotches.split('').reverse().map(stepChar => Number(stepChar));
         const gotchStack: Gotch[] = [];
@@ -85,73 +169,6 @@ export class Island {
         }
         this.refresh();
     }
-
-    public get singleGotch(): Gotch | undefined {
-        return this.gotches.length === 1 ? this.gotches[0] : undefined;
-    }
-
-    public get midpoint(): Vector3 {
-        return this.spots
-            .reduce(
-                (sum: Vector3, spot: Spot) => {
-                    sum.x += spot.scaledCoords.x;
-                    sum.z += spot.scaledCoords.y;
-                    return sum;
-                },
-                new Vector3()
-            )
-            .multiplyScalar(1 / this.spots.length);
-    }
-
-    public findSpot(raycaster: Raycaster): Spot | undefined {
-        const intersections = raycaster.intersectObject(this.facesMeshNode);
-        if (intersections.length && intersections[0].faceIndex) {
-            const hit = intersections[0].faceIndex;
-            return hit ? this.spots.find(spot => spot.faceIndexes.indexOf(hit) >= 0) : undefined;
-        }
-        return undefined;
-    }
-
-    public get pattern(): IslandPattern | undefined {
-        if (this.spots.find(spot => !spot.legal)) {
-            return undefined;
-        }
-        const genomes = new Map<string, Genome>();
-        this.gotches.forEach(gotch => {
-            if (gotch.gotchi) {
-                genomes[gotch.createFingerprint()] = gotch.gotchi.genomeSnapshot;
-            }
-        });
-        return {
-            gotches: gotchTreeString(this.gotches),
-            spots: spotsToString(this.spots),
-            genomes
-        };
-    }
-
-    public refresh() {
-        this.freeGotches = this.gotches.filter(gotch => !gotch.gotchi);
-        this.spots.forEach(spot => {
-            spot.updateFreeFlag();
-            spot.adjacentSpots = this.getAdjacentSpots(spot);
-            spot.connected = spot.adjacentSpots.length < 6;
-        });
-        let flowChanged = true;
-        while (flowChanged) {
-            flowChanged = false;
-            this.spots.forEach(spot => {
-                if (!spot.connected) {
-                    const connectedByAdjacent = spot.adjacentSpots.find(adj => (adj.land === spot.land) && adj.connected);
-                    if (connectedByAdjacent) {
-                        spot.connected = true;
-                        flowChanged = true;
-                    }
-                }
-            });
-        }
-    }
-
-    // ================================================================================================
 
     private gotchAroundSpot(spot: Spot, genomes: Map<string, Genome>): Gotch {
         const adjacentMaxNonce = gotchWithMaxNonce(spot.adjacentGotches);

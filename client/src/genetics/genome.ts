@@ -10,7 +10,7 @@ export interface IGenome {
 }
 
 export class Genome {
-    private master: string;
+    public master: string;
     private embryoSequence: number[];
     private behaviorSequence: number[];
 

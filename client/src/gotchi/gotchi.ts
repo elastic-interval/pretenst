@@ -24,6 +24,10 @@ export class Gotchi {
         this.restCountdown = restDelay;
     }
 
+    public get master() {
+        return this.genome.master;
+    }
+
     public get age() {
         return this.fabric.age;
     }

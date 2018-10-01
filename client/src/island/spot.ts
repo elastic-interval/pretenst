@@ -38,6 +38,7 @@ export class Spot {
     public scaledCoords: ICoords;
     public land = false;
     public free = false;
+    public legal = false;
     public connected = false;
     public adjacentSpots: Spot[] = [];
     public memberOfGotch: Gotch[] = [];
@@ -49,32 +50,32 @@ export class Spot {
         this.scaledCoords = {x: coords.x * SCALEX, y: coords.y * SCALEY};
     }
 
-    get legal(): boolean {
+    public refresh() {
+        this.free = !this.memberOfGotch.find(gotch => !!gotch.gotchi);
         if (!this.connected) {
-            return false;
-        }
-        let landCount = 0;
-        let waterCount = 0;
-        this.adjacentSpots.forEach(adjacent => {
-            if (adjacent.land) {
-                landCount++;
-            } else {
-                waterCount++;
-            }
-        });
-        if (this.land) {
-            return this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1);
+            this.legal = false;
         } else {
-            return landCount > 0;
+            let landCount = 0;
+            let waterCount = 0;
+            this.adjacentSpots.forEach(adjacent => {
+                if (adjacent.land) {
+                    landCount++;
+                } else {
+                    waterCount++;
+                }
+            });
+            if (this.land) {
+                // land must be either on the edge or have adjacent at least 2 land and 1 water
+                this.legal = this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1);
+            } else {
+                // water must have some land around
+                this.legal = landCount > 0;
+            }
         }
     }
 
     get canBeNewGotch(): boolean {
         return !this.centerOfGotch && this.adjacentGotches.length > 0;
-    }
-
-    public updateFreeFlag() {
-        this.free = !this.memberOfGotch.find(gotch => !!gotch.gotchi);
     }
 
     public addSurfaceGeometry(index: number, context: ISpotContext) {

@@ -2,11 +2,10 @@ import * as React from 'react';
 import './app.css';
 import {IFabricExports} from './body/fabric-exports';
 import {Population} from './gotchi/population';
-import {Island, IslandPattern} from './island/island';
+import {Island} from './island/island';
 import {IslandView} from './view/island-view';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
 import {GotchiView} from './view/gotchi-view';
-import {Genome} from './genetics/genome';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -29,14 +28,8 @@ class App extends React.Component<IAppProps, IAppState> {
 
     constructor(props: IAppProps) {
         super(props);
-        const patternString = localStorage.getItem('GalapagotchIsland');
-        const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {
-            gotches: '',
-            spots: '',
-            genomes: new Map<string, Genome>()
-        };
         this.state = {
-            island: new Island(pattern, props.createFabricInstance),
+            island: new Island('GalapagotchIsland', props.createFabricInstance),
             mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
             mainHeight: window.innerHeight,
             sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
