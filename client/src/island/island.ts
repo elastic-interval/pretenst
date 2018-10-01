@@ -11,6 +11,7 @@ import {Genome} from '../genetics/genome';
 export interface IslandPattern {
     gotches: string;
     spots: string;
+    genomes: Map<string, Genome>;
 }
 
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
@@ -27,15 +28,15 @@ export class Island {
     public gotches: Gotch[] = [];
     public freeGotches: Gotch[] = [];
     public facesMeshNode: any;
-    private ownershipCache: Map<string, string>;
 
-    constructor(pattern: IslandPattern, public owner: string, private createFabricInstance: () => Promise<IFabricExports>) {
+    constructor(pattern: IslandPattern,
+                private createFabricInstance: () => Promise<IFabricExports>) {
         this.apply(pattern);
         this.refresh();
     }
 
     public apply(pattern: IslandPattern) {
-        let gotch: Gotch | undefined = this.getOrCreateGotch(undefined, zero);
+        let gotch: Gotch | undefined = this.getOrCreateGotch(undefined, zero, pattern.genomes);
         const stepStack = pattern.gotches.split('').reverse().map(stepChar => Number(stepChar));
         const gotchStack: Gotch[] = [];
         while (stepStack.length > 0) {
@@ -56,7 +57,7 @@ export class Island {
                 case 5:
                 case 6:
                     if (gotch) {
-                        gotch = this.gotchAroundSpot(gotch.spots[step]);
+                        gotch = this.gotchAroundSpot(gotch.spots[step], pattern.genomes);
                     }
                     break;
                 default:
@@ -115,15 +116,21 @@ export class Island {
         if (this.spots.find(spot => !spot.legal)) {
             return undefined;
         }
+        const genomes = new Map<string, Genome>();
+        this.gotches.forEach(gotch => {
+            if (gotch.gotchi) {
+                genomes[gotch.createFingerprint()] = gotch.gotchi.genomeSnapshot;
+            }
+        });
         return {
             gotches: gotchTreeString(this.gotches),
-            spots: spotsToString(this.spots)
+            spots: spotsToString(this.spots),
+            genomes
         };
     }
 
     public refresh() {
-        this.gotches.forEach(gotch => gotch.owner = this.ownerLookup(gotch.createFingerprint()));
-        this.freeGotches = this.gotches.filter(gotch => !gotch.owner);
+        this.freeGotches = this.gotches.filter(gotch => !gotch.gotchi);
         this.spots.forEach(spot => {
             spot.updateFreeFlag();
             spot.adjacentSpots = this.getAdjacentSpots(spot);
@@ -146,31 +153,25 @@ export class Island {
 
     // ================================================================================================
 
-    private get owns(): Map<string, string> {
-        if (!this.ownershipCache) {
-            const ownership = localStorage.getItem('ownership');
-            this.ownershipCache = ownership ? JSON.parse(ownership) : new Map<string, string>();
-        }
-        return this.ownershipCache;
-    }
-
-    private ownerLookup = (fingerprint: string) => this.owns[fingerprint];
-
-    private gotchAroundSpot(spot: Spot): Gotch {
+    private gotchAroundSpot(spot: Spot, genomes: Map<string, Genome>): Gotch {
         const adjacentMaxNonce = gotchWithMaxNonce(spot.adjacentGotches);
-        return this.getOrCreateGotch(adjacentMaxNonce, spot.coords);
+        return this.getOrCreateGotch(adjacentMaxNonce, spot.coords, genomes);
     }
 
-    private getOrCreateGotch(parent: Gotch | undefined, coords: ICoords): Gotch {
+    private getOrCreateGotch(parent: Gotch | undefined, coords: ICoords, genomes: Map<string, Genome>): Gotch {
         const existing = this.gotches.find(existingGotch => equals(existingGotch.coords, coords));
         if (existing) {
             return existing;
         }
         const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
         const gotch = new Gotch(parent, coords, spots);
-        this.createBody(gotch.center.scaledCoords).then(fabric => {
-            gotch.gotchi = new Gotchi(fabric, new Genome(), 100, 100); // largely fake
-        });
+        const fingerprint = gotch.createFingerprint();
+        const genome = genomes[fingerprint];
+        if (genome) {
+            this.createBody(gotch.center.scaledCoords).then(fabric => {
+                gotch.gotchi = new Gotchi(fabric, genome, 100, 100); // largely fake
+            });
+        }
         this.gotches.push(gotch);
         return gotch;
     }

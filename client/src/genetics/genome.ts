@@ -4,17 +4,20 @@ import {Fabric} from '../body/fabric';
 import {Embryology} from './embryology';
 
 export interface IGenome {
+    master: string;
     embryoSequence: number[];
     behaviorSequence: number[];
 }
 
 export class Genome {
+    private master: string;
     private embryoSequence: number[];
     private behaviorSequence: number[];
 
-    constructor(genome?: IGenome) {
-        this.embryoSequence = genome && genome.embryoSequence ? this.embryoSequence = genome.embryoSequence : [];
-        this.behaviorSequence = genome && genome.behaviorSequence ? this.behaviorSequence = genome.behaviorSequence : [];
+    constructor(genome: IGenome) {
+        this.master = genome.master;
+        this.embryoSequence = genome.embryoSequence ? this.embryoSequence = genome.embryoSequence : [];
+        this.behaviorSequence = genome.behaviorSequence ? this.behaviorSequence = genome.behaviorSequence : [];
     }
 
     public embryology(fabric: Fabric): Embryology {
@@ -26,9 +29,11 @@ export class Genome {
     }
 
     public withMutatedBehavior(mutations: number): Genome {
-        const genome = new Genome();
-        genome.embryoSequence = this.embryoSequence.slice();
-        genome.behaviorSequence = this.behaviorSequence.slice();
+        const genome = new Genome({
+            master: this.master,
+            embryoSequence: this.embryoSequence.slice(),
+            behaviorSequence: this.behaviorSequence.slice()
+        });
         for (let hit = 0; hit < mutations; hit++) {
             const geneNumber = Math.floor(Math.random() * genome.behaviorSequence.length);
             genome.behaviorSequence[geneNumber] = Math.random();
@@ -38,6 +43,7 @@ export class Genome {
 
     public toIGenome(): IGenome {
         return {
+            master: this.master,
             embryoSequence: this.embryoSequence,
             behaviorSequence: this.behaviorSequence
         };

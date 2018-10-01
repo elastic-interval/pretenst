@@ -36,29 +36,8 @@ export const gotchTreeString = (gotches: Gotch[]) => {
     return root.generateOctalTreePattern([]).join('');
 };
 
-// const fingerprintToSpots = (hexString: string, spots: Spot[]) => {
-//     const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
-//     const booleanArrays = numbers.map(nyb => {
-//         const b0 = (nyb & 8) !== 0;
-//         const b1 = (nyb & 4) !== 0;
-//         const b2 = (nyb & 2) !== 0;
-//         const b3 = (nyb & 1) !== 0;
-//         return [b0, b1, b2, b3];
-//     });
-//     const litStack = [].concat.apply([], booleanArrays).reverse();
-//     spots.forEach(spot => spot.lit = litStack.pop());
-// };
-
-// const gotchFromFingerprint = (fingerprint: string, index: number, ownerLookup: (fingerprint: string) => string): Gotch => {
-//     const gotch = new Gotch(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Spot(c)), index);
-//     fingerprintToSpots(fingerprint, gotch.spots);
-//     gotch.owner = ownerLookup(fingerprint);
-//     return gotch;
-// };
-
 export class Gotch {
     public gotchi?: Gotchi;
-    public owner: string;
     public nonce = 0;
     public visited = false;
     public childGotches: Gotch[] = [];
@@ -83,18 +62,10 @@ export class Gotch {
 
     get canBePurchased(): boolean {
         const noneAdjacent = this.center.adjacentGotches.length === 0;
-        const ownedAdjacentExists = !!this.center.adjacentGotches.find(gotch => !!gotch.owner);
-        const notOwned = !this.owner;
-        return (noneAdjacent || ownedAdjacentExists) && notOwned;
+        const occupiedAdjacentExists = !!this.center.adjacentGotches.find(gotch => !!gotch.gotchi);
+        const vacant = !this.gotchi;
+        return (noneAdjacent || occupiedAdjacentExists) && vacant;
     }
-
-    // get rotated(): Gotch {
-    //   return new Gotch(
-    //     this.parentGotch, this.coords,
-    //     this.cells.map((p: Cell, index: number, lookup: Array<Cell>) => lookup[ROTATE[index]]),
-    //     this.ownerLookup
-    //   );
-    // }
 
     public destroy(): Spot[] {
         if (this.spots.length === 0) {
@@ -141,3 +112,21 @@ export class Gotch {
     }
 }
 
+// export const fingerprintToSpots = (hexString: string, spots: Spot[]) => {
+//     const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
+//     const booleanArrays = numbers.map(nyb => {
+//         const b0 = (nyb & 8) !== 0;
+//         const b1 = (nyb & 4) !== 0;
+//         const b2 = (nyb & 2) !== 0;
+//         const b3 = (nyb & 1) !== 0;
+//         return [b0, b1, b2, b3];
+//     });
+//     const landStack = [].concat.apply([], booleanArrays).reverse();
+//     spots.forEach(spot => spot.land = landStack.pop());
+// };
+//
+// export const gotchFromFingerprint = (fingerprint: string, index: number, gotchMasterLookup: (fingerprint: string) => string): Gotch => {
+//     const gotch = new Gotch(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Spot(c)));
+//     fingerprintToSpots(fingerprint, gotch.spots);
+//     return gotch;
+// };

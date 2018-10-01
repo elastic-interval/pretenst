@@ -19,6 +19,7 @@ interface IGotchiViewProps {
     height: number;
     population: Population;
     island: Island;
+    master: string;
 }
 
 interface IGotchiViewState {
@@ -121,7 +122,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                  }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <IslandComponent island={this.props.island} selectedGotch={this.state.hoverGotch}/>
+                        <IslandComponent island={this.props.island} selectedGotch={this.state.hoverGotch} master={this.props.master}/>
                         {
                             this.state.selectedGotchi
                                 ? <GotchiComponent gotchi={this.state.selectedGotchi}/>
@@ -157,10 +158,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             const pattern = this.props.island.pattern;
             if (pattern) {
                 console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
-                // todo: do this somewhere else
-                const existingOwner = localStorage.getItem('owner');
-                const owner = existingOwner ? existingOwner : 'gumby';
-                localStorage.setItem(owner, JSON.stringify(pattern));
             }
         }
     }

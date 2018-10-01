@@ -8,6 +8,7 @@ import {Gotch} from '../island/gotch';
 
 export interface IslandComponentProps {
     island: Island;
+    master: string;
     selectedGotch?: Gotch;
 }
 
@@ -55,7 +56,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const spotContext: ISpotContext = {
             faces: [],
             vertices: [],
-            owner: this.props.island.owner,
+            master: this.props.master,
             selectedGotch: this.props.selectedGotch
         };
         this.props.island.spots
@@ -71,7 +72,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const spotContext: ISpotContext = {
             faces: [],
             vertices: [],
-            owner: this.props.island.owner,
+            master: this.props.master,
             selectedGotch: this.props.selectedGotch
         };
         this.props.island.gotches

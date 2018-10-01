@@ -13,7 +13,7 @@ export interface ICoords {
 export interface ISpotContext {
     faces: Face3[];
     vertices: Vector3[];
-    owner: string;
+    master: string;
     selectedGotch?: Gotch;
 }
 
@@ -74,7 +74,7 @@ export class Spot {
     }
 
     public updateFreeFlag() {
-        this.free = !this.memberOfGotch.find(gotch => !!gotch.owner);
+        this.free = !this.memberOfGotch.find(gotch => !!gotch.gotchi);
     }
 
     public addSurfaceGeometry(index: number, context: ISpotContext) {

@@ -6,13 +6,14 @@ import {Island, IslandPattern} from './island/island';
 import {IslandView} from './view/island-view';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
 import {GotchiView} from './view/gotchi-view';
+import {Genome} from './genetics/genome';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
 }
 
 interface IAppState {
-    population: Population;
+    population?: Population;
     island: Island;
     mainWidth: number;
     mainHeight: number;
@@ -28,13 +29,14 @@ class App extends React.Component<IAppProps, IAppState> {
 
     constructor(props: IAppProps) {
         super(props);
-        const existingOwner = localStorage.getItem('owner');
-        const owner = existingOwner ? existingOwner : 'gumby';
-        const existingPattern = localStorage.getItem(owner);
-        const pattern: IslandPattern = existingPattern ? JSON.parse(existingPattern) : {gotches: '', spots: ''};
+        const patternString = localStorage.getItem('GalapagotchIsland');
+        const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {
+            gotches: '',
+            spots: '',
+            genomes: new Map<string, Genome>()
+        };
         this.state = {
-            population: new Population(props.createFabricInstance),
-            island: new Island(pattern, owner, props.createFabricInstance),
+            island: new Island(pattern, props.createFabricInstance),
             mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
             mainHeight: window.innerHeight,
             sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
@@ -95,26 +97,30 @@ class App extends React.Component<IAppProps, IAppState> {
     );
 
     private islandView = (ctxt: any) => {
-        this.state.island.owner = ctxt.match.params.identity;
-        console.log('owner', this.state.island.owner);
         return (
             <div className="App">
                 <IslandView width={this.state.mainWidth}
                             height={this.state.mainHeight}
-                            island={this.state.island}/>
+                            island={this.state.island}
+                            master={ctxt.match.params.identity}
+                />
             </div>
         );
     };
 
     private gotchiView = (ctxt: any) => {
-        this.state.island.owner = ctxt.match.params.identity;
-        console.log('owner', this.state.island.owner);
+        const population = this.state.population ? this.state.population : new Population(ctxt.match.params.identity, this.props.createFabricInstance);
+        if (!this.state.population) {
+            this.setState({population});
+        }
         return (
             <div className="App">
                 <GotchiView width={this.state.mainWidth}
                             height={this.state.mainHeight}
-                            population={this.state.population}
-                            island={this.state.island}/>
+                            population={population}
+                            island={this.state.island}
+                            master={ctxt.match.params.identity}
+                />
             </div>
         );
     };

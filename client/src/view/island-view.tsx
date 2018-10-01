@@ -10,6 +10,7 @@ interface IIslandViewProps {
     width: number;
     height: number;
     island: Island;
+    master: string;
 }
 
 interface IIslandViewState {
@@ -27,6 +28,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     constructor(props: IIslandViewProps) {
         super(props);
+        console.log('master', props.master);
         const singleGotch = props.island.singleGotch;
         this.state = {
             hoverSpot: singleGotch ? singleGotch.center : undefined
@@ -74,7 +76,9 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandComponent island={this.props.island}
-                                         selectedGotch={this.state.hoverSpot ? this.state.hoverSpot.centerOfGotch : undefined}/>
+                                         selectedGotch={this.state.hoverSpot ? this.state.hoverSpot.centerOfGotch : undefined}
+                                         master={this.props.master}
+                        />
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>
@@ -93,10 +97,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                 const pattern = this.props.island.pattern;
                 if (pattern) {
                     console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
-                    // todo: do this somewhere else
-                    const existingOwner = localStorage.getItem('owner');
-                    const owner = existingOwner ? existingOwner : 'gumby';
-                    localStorage.setItem(owner, JSON.stringify(pattern));
                 }
                 this.props.island.refresh();
                 this.forceUpdate();

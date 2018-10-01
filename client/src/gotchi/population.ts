@@ -62,9 +62,9 @@ export class Population {
     private toBeBorn = 0;
     private mutationCount = INITIAL_MUTATION_COUNT;
 
-    constructor(private createFabricInstance: () => Promise<IFabricExports>) {
+    constructor(master: string, private createFabricInstance: () => Promise<IFabricExports>) {
         for (let walk = 0; walk < MAX_POPULATION; walk++) {
-            this.birthFromGenome(getFittest(walk > 0));
+            this.birthFromGenome(master, getFittest(walk > 0));
         }
     }
 
@@ -176,9 +176,13 @@ export class Population {
 
     // Privates =============================================================
 
-    private birthFromGenome(existingGenome?: Genome) {
+    private birthFromGenome(master: string, existingGenome?: Genome) {
         this.createBody(INITIAL_JOINT_COUNT).then(fabric => {
-            const genome = existingGenome ? existingGenome : new Genome();
+            const genome = existingGenome ? existingGenome : new Genome({
+                master,
+                embryoSequence: [],
+                behaviorSequence: []
+            });
             this.gotchiArray.push(new Gotchi(fabric, genome, HANG_DELAY, REST_DELAY));
         });
     }
