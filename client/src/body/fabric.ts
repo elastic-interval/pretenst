@@ -9,8 +9,16 @@ export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
 export const INTERVAL_MUSCLE_STATIC = -32767;
 export const INTERVAL_MUSCLE_GROWING = -32766;
+export const HANGING_DELAY = 3000;
+export const REST_DELAY = 2000;
+export const HUNG_ALTITUDE = 7;
+export const NORMAL_TICKS = 40;
 
 export const INTERVALS_RESERVED = 1;
+
+export interface IFabricFactory {
+    createBodyAt(x: number, y: number, jointCountMax: number): Promise<Fabric>;
+}
 
 export class Fabric {
     private kernel: FabricKernel;

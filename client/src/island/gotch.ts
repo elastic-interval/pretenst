@@ -1,6 +1,9 @@
 import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {equals, ICoords, Spot} from './spot';
 import {Gotchi} from '../gotchi/gotchi';
+import {Genome} from '../genetics/genome';
+import {IFabricFactory} from '../body/fabric';
+import {INITIAL_JOINT_COUNT} from '../gotchi/population';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 
@@ -37,12 +40,13 @@ export const gotchTreeString = (gotches: Gotch[]) => {
 };
 
 export class Gotch {
+    public genome?: Genome;
     public gotchi?: Gotchi;
     public nonce = 0;
     public visited = false;
     public childGotches: Gotch[] = [];
 
-    constructor(public parentGotch: Gotch | undefined,
+    constructor(private fabricFactory: IFabricFactory, public parentGotch: Gotch | undefined,
                 public coords: ICoords,
                 public spots: Spot[]) {
         this.spots[0].centerOfGotch = this;
@@ -53,6 +57,20 @@ export class Gotch {
         if (parentGotch) {
             parentGotch.childGotches.push(this);
             this.nonce = parentGotch.nonce + 1;
+        }
+    }
+
+    public triggerBirth(gotchiCreated?: (gotchi: Gotchi) => void) {
+        const genome = this.genome;
+        if (genome) {
+            this.fabricFactory
+                .createBodyAt(this.coords.x, this.coords.y, INITIAL_JOINT_COUNT)
+                .then(fabric => {
+                    this.gotchi = new Gotchi(fabric, genome);
+                    if (gotchiCreated) {
+                        gotchiCreated(this.gotchi);
+                    }
+                });
         }
     }
 

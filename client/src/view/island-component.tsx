@@ -76,8 +76,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
             selectedGotch: this.props.selectedGotch
         };
         this.props.island.gotches
-            .map(gotch => gotch.center)
-            .forEach(spot => spot.addHangerGeometry(spotContext));
+            .filter(gotch => !!gotch.genome)
+            .forEach(gotch => gotch.center.addHangerGeometry(spotContext));
         const geometry = new Geometry();
         geometry.vertices = spotContext.vertices;
         geometry.computeBoundingSphere();

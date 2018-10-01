@@ -6,6 +6,7 @@ import {Island} from './island/island';
 import {IslandView} from './view/island-view';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
 import {GotchiView} from './view/gotchi-view';
+import {Fabric, HUNG_ALTITUDE, IFabricFactory} from './body/fabric';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -25,11 +26,22 @@ const HORIZONTAL_SPLIT = 1;
 const VERTICAL_SPLIT = 0.4;
 
 class App extends React.Component<IAppProps, IAppState> {
+    private fabricFactory: IFabricFactory;
 
     constructor(props: IAppProps) {
         super(props);
+        this.fabricFactory = {
+            createBodyAt: (x: number, y: number, jointCountMax): Promise<Fabric> => {
+                return this.props.createFabricInstance().then(fabricExports => {
+                    const fabric = new Fabric(fabricExports, jointCountMax);
+                    fabric.createSeed(5, HUNG_ALTITUDE, x, y);
+                    fabric.iterate(1, true);
+                    return fabric;
+                });
+            }
+        };
         this.state = {
-            island: new Island('GalapagotchIsland', props.createFabricInstance),
+            island: new Island('GalapagotchIsland', this.fabricFactory),
             mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
             mainHeight: window.innerHeight,
             sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
@@ -102,9 +114,9 @@ class App extends React.Component<IAppProps, IAppState> {
     };
 
     private gotchiView = (ctxt: any) => {
-        const population = this.state.population ? this.state.population : new Population(ctxt.match.params.identity, this.props.createFabricInstance);
+        const population = this.state.population ? this.state.population : new Population(ctxt.match.params.identity, this.fabricFactory);
         if (!this.state.population) {
-            this.setState({population});
+            // this.setState({population});
         }
         return (
             <div className="App">

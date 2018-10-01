@@ -1,6 +1,6 @@
-import {Fabric} from '../body/fabric';
+import {Fabric, HANGING_DELAY, REST_DELAY} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
-import {Genome, IGenome} from '../genetics/genome';
+import {Genome, IGenomeData} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 
 export class Gotchi {
@@ -17,11 +17,11 @@ export class Gotchi {
     private restCountdown: number;
     private mature = false;
 
-    constructor(public fabric: Fabric, private genome: Genome, private hangingDelay: number, private restDelay: number) {
+    constructor(public fabric: Fabric, private genome: Genome) {
         this.embryology = genome.embryology(fabric);
         this.behavior = genome.behavior(fabric);
-        this.hangingCountdown = hangingDelay;
-        this.restCountdown = restDelay;
+        this.hangingCountdown = HANGING_DELAY;
+        this.restCountdown = REST_DELAY;
     }
 
     public get master() {
@@ -41,15 +41,15 @@ export class Gotchi {
     }
 
     public withNewBody(fabric: Fabric): Gotchi {
-        return new Gotchi(fabric, this.genome, this.hangingDelay, this.restDelay);
+        return new Gotchi(fabric, this.genome);
     }
 
     public mutateBehavior(mutations: number): void {
         this.genome = this.genome.withMutatedBehavior(mutations);
     }
 
-    public get genomeSnapshot(): IGenome {
-        return this.genome.toIGenome();
+    public get genomeData(): IGenomeData {
+        return this.genome.data;
     }
 
     public iterate(ticks: number): number {

@@ -1,6 +1,6 @@
 import {Gotch} from './gotch';
 import {Color, Face3, Vector3} from 'three';
-import {HUNG_ALTITUDE} from '../gotchi/population';
+import {HUNG_ALTITUDE} from '../body/fabric';
 
 const SCALEX = 8.66;
 const SCALEY = 15;

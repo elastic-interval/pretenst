@@ -6,6 +6,7 @@ import {IslandComponent} from './island-component';
 import {Spot} from '../island/spot';
 import {SpotSelector} from './spot-selector';
 import {Gotch} from '../island/gotch';
+import {Genome} from '../genetics/genome';
 
 interface IIslandViewProps {
     width: number;
@@ -33,7 +34,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         console.log('master', props.master);
         const singleGotch = props.island.singleGotch;
         this.state = {
-            selectedGotch : props.island.findGotch(props.master),
+            selectedGotch: props.island.findGotch(props.master),
             hoverSpot: singleGotch ? singleGotch.center : undefined
         };
         // const loader = new TextureLoader();
@@ -95,19 +96,27 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
     private spotClicked(spot?: Spot) {
         if (spot) {
             const island = this.props.island;
-            const singleGotch = island.singleGotch;
-            if (singleGotch && singleGotch.center !== spot) {
-                spot.land = !spot.land;
-                const pattern = island.pattern;
-                if (pattern) {
-                    console.log(`Island(spots-size=${pattern.spots.length}, gotches-size=${pattern.gotches.length})`, pattern);
+            const masterGotch = island.findGotch(this.props.master);
+            const gotch = masterGotch ? masterGotch : island.singleGotch;
+            if (gotch) {
+                if (gotch.center === spot) {
+                    if (island.legal) {
+                        if (!gotch.gotchi) {
+                            gotch.genome = island.genomeData[gotch.createFingerprint()] = new Genome({
+                                master: this.props.master,
+                                embryoSequence: [],
+                                behaviorSequence: []
+                            });
+                            gotch.triggerBirth();
+                        }
+                        island.save();
+                    }
+                } else {
+                    spot.land = !spot.land;
+                    island.refresh();
                 }
-                island.refresh();
-                if (island.legal) {
-                    island.save();
-                }
-                this.forceUpdate();
             }
+            this.forceUpdate();
         }
     }
 
@@ -115,7 +124,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         const singleGotch = this.props.island.singleGotch;
         if (!singleGotch) {
             if (spot !== this.state.hoverSpot) {
-                this.setState({hoverSpot: spot});
+                // this.setState({hoverSpot: spot});
             }
         }
     }

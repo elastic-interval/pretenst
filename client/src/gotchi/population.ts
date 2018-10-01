@@ -1,18 +1,14 @@
-import {IFabricExports} from '../body/fabric-exports';
 import {Gotchi} from './gotchi';
-import {Fabric} from '../body/fabric';
-import {Genome, IGenome} from '../genetics/genome';
+import {IFabricFactory, NORMAL_TICKS} from '../body/fabric';
+import {Genome, IGenomeData} from '../genetics/genome';
 import {Raycaster, Vector3} from 'three';
 import {Physics} from '../body/physics';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import {ICoords} from '../island/spot';
 
-export const HUNG_ALTITUDE = 7;
-export const NORMAL_TICKS = 40;
-const HANG_DELAY = 3000;
-const REST_DELAY = 2000;
+export const INITIAL_JOINT_COUNT = 47;
 const CATCH_UP_TICKS = 220;
 const MAX_POPULATION = 16;
-const INITIAL_JOINT_COUNT = 47;
 const INITIAL_MUTATION_COUNT = 20;
 const CHANCE_OF_GROWTH = 0.1;
 
@@ -40,19 +36,21 @@ const sortFitness = (a: IGotchiFitness, b: IGotchiFitness) => {
 
 const getFittest = (mutated: boolean): Genome | undefined => {
     const fittest = localStorage.getItem('fittest');
-    const storedGenome: IGenome = fittest ? JSON.parse(fittest) : null;
+    const storedGenome: IGenomeData = fittest ? JSON.parse(fittest) : null;
     return storedGenome ? mutated ? new Genome(storedGenome).withMutatedBehavior(INITIAL_MUTATION_COUNT) : new Genome(storedGenome) : undefined;
 };
 
 export const setFittest = (gotchi: Gotchi) => {
     console.log('set fittest');
-    localStorage.setItem('fittest', JSON.stringify(gotchi.genomeSnapshot));
+    localStorage.setItem('fittest', JSON.stringify(gotchi.genomeData));
 };
 
 export const clearFittest = () => {
     console.log('clear fittest');
     localStorage.removeItem('fittest');
 };
+
+export const BIRTHPLACE: ICoords = {x: 0, y: 0};
 
 export class Population {
     public frontier: BehaviorSubject<IFrontier> = new BehaviorSubject({radius: INITIAL_FRONTIER});
@@ -62,7 +60,7 @@ export class Population {
     private toBeBorn = 0;
     private mutationCount = INITIAL_MUTATION_COUNT;
 
-    constructor(master: string, private createFabricInstance: () => Promise<IFabricExports>) {
+    constructor(master: string, private fabricFactory: IFabricFactory) {
         for (let walk = 0; walk < MAX_POPULATION; walk++) {
             this.birthFromGenome(master, getFittest(walk > 0));
         }
@@ -177,13 +175,13 @@ export class Population {
     // Privates =============================================================
 
     private birthFromGenome(master: string, existingGenome?: Genome) {
-        this.createBody(INITIAL_JOINT_COUNT).then(fabric => {
+        this.fabricFactory.createBodyAt(BIRTHPLACE.x, BIRTHPLACE.y, INITIAL_JOINT_COUNT).then(fabric => {
             const genome = existingGenome ? existingGenome : new Genome({
                 master,
                 embryoSequence: [],
                 behaviorSequence: []
             });
-            this.gotchiArray.push(new Gotchi(fabric, genome, HANG_DELAY, REST_DELAY));
+            this.gotchiArray.push(new Gotchi(fabric, genome));
         });
     }
 
@@ -193,16 +191,18 @@ export class Population {
         if (grow) {
             console.log('grow!');
         }
-        this.createBody(gotchi.fabric.jointCountMax + (grow ? 4 : 0)).then(fabric => {
-            const freshGotchi = gotchi.withNewBody(fabric);
-            gotchi.expecting = false;
-            if (clone) {
-                gotchi.rebornClone = freshGotchi;
-            } else {
-                freshGotchi.mutateBehavior(this.mutationCount);
-                gotchi.offspring = freshGotchi;
-            }
-        });
+        this.fabricFactory
+            .createBodyAt(BIRTHPLACE.x, BIRTHPLACE.y, gotchi.fabric.jointCountMax + (grow ? 4 : 0))
+            .then(fabric => {
+                const freshGotchi = gotchi.withNewBody(fabric);
+                gotchi.expecting = false;
+                if (clone) {
+                    gotchi.rebornClone = freshGotchi;
+                } else {
+                    freshGotchi.mutateBehavior(this.mutationCount);
+                    gotchi.offspring = freshGotchi;
+                }
+            });
     }
 
     private birthFromPopulation() {
@@ -235,16 +235,5 @@ export class Population {
             }
         }
         return false;
-    }
-
-    private createBody(jointCountMax: number): Promise<Fabric> {
-        return this.createFabricInstance().then(fabricExports => {
-            const fabric = new Fabric(fabricExports, jointCountMax);
-            this.physicsObject.applyToFabric(fabricExports);
-            // console.log('current physics', currentPhysics);
-            fabric.createSeed(5, HUNG_ALTITUDE, 0, 0);
-            fabric.iterate(1, true);
-            return fabric;
-        });
     }
 }
