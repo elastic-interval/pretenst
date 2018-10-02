@@ -1,12 +1,12 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {Color, PerspectiveCamera, Vector3} from 'three';
+import {Color, Mesh, PerspectiveCamera, Vector3} from 'three';
 import {Island} from '../island/island';
 import {IslandComponent} from './island-component';
 import {Spot} from '../island/spot';
 import {SpotSelector} from './spot-selector';
-import {Gotch} from '../island/gotch';
 import {Genome} from '../genetics/genome';
+import {Gotch} from '../island/gotch';
 
 interface IIslandViewProps {
     width: number;
@@ -30,11 +30,10 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     constructor(props: IIslandViewProps) {
         super(props);
-        console.log('master', props.master);
         const singleGotch = props.island.singleGotch;
         this.state = {
-            masterGotch: props.island.findGotch(props.master),
-            hoverSpot: singleGotch ? singleGotch.center : undefined
+            hoverSpot: singleGotch ? singleGotch.center : undefined,
+            masterGotch: props.master ? props.island.findGotch(props.master) : undefined
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
@@ -43,6 +42,11 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         this.perspectiveCamera.position.add(CAMERA_POSITION.add(midpoint));
         this.perspectiveCamera.up.set(0, 0, 1).normalize();
         this.perspectiveCamera.lookAt(midpoint);
+        this.selector = new SpotSelector(
+            this.perspectiveCamera,
+            this.props.width,
+            this.props.height
+        );
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             console.log(event.code);
             switch (event.code) {
@@ -52,15 +56,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                     break;
             }
         });
-    }
-
-    public componentDidMount() {
-        this.selector = new SpotSelector(
-            this.props.island,
-            this.perspectiveCamera,
-            this.props.width,
-            this.props.height
-        );
     }
 
     public componentDidUpdate(prevProps: Readonly<IIslandViewProps>, prevState: Readonly<IIslandViewState>, snapshot: any) {
@@ -73,10 +68,14 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     public render() {
         return (
-            <div id="island-view" onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e))}>
+            <div id="island-view"
+                 onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e, this.props.island))}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <IslandComponent island={this.props.island} master={this.props.master}/>
+                        <IslandComponent
+                            setMesh={(key: string, mesh: Mesh) => this.selector.setMesh(key, mesh)}
+                            island={this.props.island}
+                        />
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>
@@ -88,41 +87,36 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
     // ==========================
 
     private spotClicked(spot?: Spot) {
-        if (spot) {
-            const island = this.props.island;
-            const centerOfGotch = spot.centerOfGotch;
-            if (centerOfGotch) {
-                if (centerOfGotch.genome) {
-                    return;
-                }
-                // todo: review this below
-                if (island.legal) {
-                    centerOfGotch.genome = new Genome({
-                        master: this.props.master,
-                        embryoSequence: [],
-                        behaviorSequence: []
-                    });
-                    island.save();
-                }
-            } else if (spot.free) {
-                spot.land = !spot.land;
-                island.refresh();
-            } else if (spot.canBeNewGotch) {
-                console.log('can be new');
-                island.createGotch(this.props.master, spot);
-                island.refresh();
-                // if (newGotch) {
-                //     newGotch.genome = new Genome({
-                //         master: this.props.master,
-                //         embryoSequence: [],
-                //         behaviorSequence: []
-                //     });
-                //     island.save();
-                // }
-            } else {
-                console.log('click what?', spot);
+        if (!spot) {
+            return;
+        }
+        const island = this.props.island;
+        const centerOfGotch = spot.centerOfGotch;
+        if (centerOfGotch) {
+            if (centerOfGotch.genome) {
+                return;
             }
-            this.forceUpdate();
+            // todo: review this below
+            if (island.legal) {
+                centerOfGotch.genome = new Genome({
+                    master: this.props.master,
+                    embryoSequence: [],
+                    behaviorSequence: []
+                });
+                island.refresh(this.props.master);
+                island.save();
+            }
+        } else if (spot.free) {
+            spot.land = !spot.land;
+            island.refresh(this.props.master);
+        } else if (spot.canBeNewGotch && !this.state.masterGotch) {
+            island.removeFreeGotches();
+            if (spot.canBeNewGotch) {
+                island.createGotch(spot, this.props.master);
+            }
+            island.refresh(this.props.master);
+        } else {
+            console.log(`${spot.coords.x} ${spot.coords.y}`);
         }
     }
 }

@@ -10,12 +10,6 @@ export interface ICoords {
     y: number;
 }
 
-export interface ISpotContext {
-    faces: Face3[];
-    vertices: Vector3[];
-    master: string;
-}
-
 const WATER_COLOR = new Color('darkturquoise');
 const LAND_COLOR = new Color('tan');
 const HANGER_BASE = 0.7;
@@ -43,7 +37,7 @@ export class Spot {
     public memberOfGotch: Gotch[] = [];
     public adjacentGotches: Gotch[] = [];
     public centerOfGotch?: Gotch;
-    public faceIndexes: number[] = [];
+    public faceNames: string[] = [];
 
     constructor(public coords: ICoords) {
         this.scaledCoords = {x: coords.x * SCALEX, y: coords.y * SCALEY};
@@ -74,11 +68,16 @@ export class Spot {
     }
 
     get canBeNewGotch(): boolean {
-        return !this.centerOfGotch && this.adjacentGotches.length > 0;
+        // const canBe = !this.centerOfGotch && this.adjacentGotches.length > 0 && this.land;
+        // if (canBe) {
+        //     console.log(`${this.coords.x} ${this.coords.y} can be centerOfGotch=${!!this.centerOfGotch} adjacentLength=${this.adjacentGotches.length}`);
+        // }
+        return !this.centerOfGotch && this.adjacentGotches.length > 0 && this.land;
     }
 
-    public addSurfaceGeometry(index: number, context: ISpotContext, depth: number) {
-        context.vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
+    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], depth: number) {
+        this.faceNames = [];
+        vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.scaledCoords.x,
             hexPoint.y,
             hexPoint.z + this.scaledCoords.y
@@ -93,20 +92,20 @@ export class Spot {
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], normalSpread).normalize(),
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize()
             ];
-            this.faceIndexes.push(context.faces.length);
-            context.faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, color));
+            this.faceNames.push(`${key}:${faces.length}`);
+            faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, color));
         }
     }
 
-    public addHangerGeometry(context: ISpotContext) {
+    public addHangerGeometry(vertices: Vector3[]) {
         for (let a = 0; a < SIX; a++) {
             const hexPoint = HEXAGON_POINTS[a];
-            context.vertices.push(new Vector3(
+            vertices.push(new Vector3(
                 this.scaledCoords.x,
                 HUNG_ALTITUDE,
                 this.scaledCoords.y
             ));
-            context.vertices.push(new Vector3(
+            vertices.push(new Vector3(
                 hexPoint.x * HANGER_BASE + this.scaledCoords.x,
                 hexPoint.y,
                 hexPoint.z * HANGER_BASE + this.scaledCoords.y
@@ -120,7 +119,6 @@ export class Spot {
 }
 
 export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0;
-export const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
 export const zero: ICoords = {x: 0, y: 0};
 export const equals = (a: ICoords, b: ICoords): boolean => a.x === b.x && a.y === b.y;
 export const minus = (a: ICoords, b: ICoords): ICoords => {

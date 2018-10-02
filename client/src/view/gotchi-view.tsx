@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {Color, PerspectiveCamera, Vector3} from 'three';
+import {Color, Mesh, PerspectiveCamera, Vector3} from 'three';
 import {Evolution, INITIAL_JOINT_COUNT} from '../gotchi/evolution';
 import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
 import {Island} from '../island/island';
@@ -116,7 +116,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     public componentDidMount() {
         this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera);
         this.selector = new SpotSelector(
-            this.props.island,
             this.perspectiveCamera,
             this.props.width,
             this.props.height
@@ -143,10 +142,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
         return (
-            <div id="gotchi-view" onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e))}>
+            <div id="gotchi-view"
+                 onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e, this.props.island))}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <IslandComponent island={this.props.island} master={this.props.master}/>
+                        <IslandComponent
+                            island={this.props.island}
+                            setMesh={(key: string, node: Mesh) => this.selector.setMesh(key, node)}
+                        />
                         {this.liveComponent()}
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>

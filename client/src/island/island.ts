@@ -1,12 +1,19 @@
-import {Raycaster, Vector3} from 'three';
+import {Vector3} from 'three';
 import {Gotch, gotchTreeString} from './gotch';
 import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, zero} from './spot';
 import {Genome} from '../genetics/genome';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 export interface IslandPattern {
     gotches: string;
     spots: string;
+}
+
+export interface IslandChange {
+    gotchCount: number;
+    spotCount: number;
+    masterGotch?: Gotch;
 }
 
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
@@ -19,23 +26,21 @@ const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacen
 });
 
 export class Island {
+    public islandChange = new BehaviorSubject<IslandChange>({gotchCount: 0, spotCount: 0});
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
-    public facesMeshNode: any;
 
     constructor(public islandName: string) {
         const patternString = localStorage.getItem(islandName);
         const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {gotches: '', spots: ''};
         this.apply(pattern);
-        console.log(`Loaded ${this.islandName}`);
-        this.refresh();
     }
 
     public get legal(): boolean {
         return !this.spots.find(spot => !spot.legal);
     }
 
-    public refresh() {
+    public refresh(master?: string) {
         this.spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot);
             spot.connected = spot.adjacentSpots.length < 6;
@@ -54,6 +59,11 @@ export class Island {
             });
         }
         this.spots.forEach(spot => spot.refresh());
+        this.islandChange.next({
+            gotchCount: this.gotches.length,
+            spotCount: this.spots.length,
+            masterGotch: master ? this.findGotch(master) : undefined
+        });
     }
 
     public save() {
@@ -74,13 +84,23 @@ export class Island {
         return this.gotches.find(gotch => !!gotch.genome && gotch.genome.master === master)
     }
 
-    public createGotch(master: string, spot: Spot): Gotch | undefined {
+    public removeFreeGotches(): void {
+        const deadGotches = this.gotches.filter(gotch => !gotch.genome);
+        deadGotches.forEach(deadGotch => {
+            this.gotches = this.gotches.filter(gotch => !equals(gotch.coords, deadGotch.coords));
+            deadGotch.destroy().forEach(deadSpot => {
+                this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords));
+            });
+        });
+    }
+
+    public createGotch(spot: Spot, master: string): Gotch | undefined {
         if (this.gotches.find(gotch => gotch.master === master)) {
-            console.error('exists!');
+            console.error(`${master} already has a gotch!`);
             return undefined;
         }
         if (!spot.canBeNewGotch) {
-            console.error('cannot be!');
+            console.error(`${JSON.stringify(spot.coords)} cannot be a gotch!`);
             return undefined;
         }
         return this.gotchAroundSpot(spot);
@@ -101,15 +121,6 @@ export class Island {
                 new Vector3()
             )
             .multiplyScalar(1 / this.spots.length);
-    }
-
-    public findSpot(raycaster: Raycaster): Spot | undefined {
-        const intersections = raycaster.intersectObject(this.facesMeshNode);
-        if (intersections.length && intersections[0].faceIndex) {
-            const hit = intersections[0].faceIndex;
-            return hit ? this.spots.find(spot => spot.faceIndexes.indexOf(hit) >= 0) : undefined;
-        }
-        return undefined;
     }
 
     public get pattern(): IslandPattern | undefined {
