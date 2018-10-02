@@ -56,15 +56,19 @@ export class Gotch {
         }
     }
 
+    get master(): string | undefined {
+        return this.genome ? this.genome.master : undefined;
+    }
+
     get center(): Spot {
         return this.spots[0];
     }
 
-    get canBePurchased(): boolean {
-        const noneAdjacent = this.center.adjacentGotches.length === 0;
-        const occupiedAdjacentExists = !!this.center.adjacentGotches.find(gotch => !!gotch.genome);
-        const vacant = !this.genome;
-        return (noneAdjacent || occupiedAdjacentExists) && vacant;
+    get canBeSeeded(): boolean {
+        if (this.genome) {
+            return false;
+        }
+        return !!this.center.adjacentGotches.find(gotch => !!gotch.genome);
     }
 
     public destroy(): Spot[] {

@@ -2,65 +2,103 @@ import * as React from 'react';
 import * as R3 from 'react-three';
 import {Geometry} from 'three';
 import {Island} from '../island/island';
-import {ISpotContext} from '../island/spot';
-import {HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
+import {equals, ISpotContext, Spot} from '../island/spot';
+import {FOREIGN_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
 import {Gotch} from '../island/gotch';
 
 export interface IslandComponentProps {
     island: Island;
     master: string;
-    selectedGotch?: Gotch;
 }
 
 export interface IslandComponentState {
-    editMode: boolean;
+    masterGotch?: Gotch;
 }
 
 export class IslandComponent extends React.Component<IslandComponentProps, IslandComponentState> {
 
-    private spotsGeometry: Geometry;
-    private hangersGeometry: Geometry;
+    private fixedSpotsGeometry: Geometry;
+    private freeSpotsGeometry: Geometry;
+    private foreignHangers: Geometry;
 
     constructor(props: IslandComponentProps) {
         super(props);
         this.state = {
-            editMode: !!props.island.singleGotch,
+            masterGotch: props.island.findGotch(props.master)
         };
     }
 
     public render() {
-        if (this.spotsGeometry) {
-            this.spotsGeometry.dispose();
+        // TODO: Do all this putting the geometries in the state!
+        if (this.fixedSpotsGeometry) {
+            this.fixedSpotsGeometry.dispose();
         }
-        this.spotsGeometry = this.spots;
-        if (this.hangersGeometry) {
-            this.hangersGeometry.dispose();
+        if (this.freeSpotsGeometry) {
+            this.freeSpotsGeometry.dispose();
         }
-        this.hangersGeometry = this.hangers;
-        return <R3.Object3D key="Island">
-            <R3.Mesh
-                key="Spots"
-                geometry={this.spotsGeometry}
-                ref={(node: any) => this.props.island.facesMeshNode = node}
-                material={ISLAND_MATERIAL}
-            />
-            <R3.LineSegments
-                key="Hangers"
-                geometry={this.hangersGeometry}
-                material={HANGER_MATERIAL}
-            />
-        </R3.Object3D>;
+        const spots = this.props.island.spots;
+        const masterGotch = this.state.masterGotch;
+        if (masterGotch) {
+            this.fixedSpotsGeometry = this.getSpotsGeometry(
+                spots.filter(spot => {
+                    return !!spot.memberOfGotch.find(gotch => equals(gotch.coords, masterGotch.coords));
+                }),
+                1
+            );
+            this.freeSpotsGeometry = this.getSpotsGeometry(
+                spots.filter(spot => {
+                    return !spot.memberOfGotch.find(gotch => equals(gotch.coords, masterGotch.coords));
+                }),
+                0.1
+            );
+        } else {
+            this.fixedSpotsGeometry = this.getSpotsGeometry(
+                spots.filter(spot => !spot.canBeNewGotch),
+                0.1
+            );
+            this.freeSpotsGeometry = this.getSpotsGeometry(
+                spots.filter(spot => spot.canBeNewGotch),
+                5
+            );
+        }
+        if (this.foreignHangers) {
+            this.foreignHangers.dispose();
+        }
+        this.foreignHangers = this.getHangersGeometry(
+            this.props.island.gotches
+                .filter(gotch => gotch.master && gotch.master !== this.props.master)
+        );
+        // TODO: there is competition for facesMeshNode!
+        return (
+            <R3.Object3D key="Island">
+                <R3.Mesh
+                    key="FixedSpots"
+                    geometry={this.fixedSpotsGeometry}
+                    ref={(node: any) => this.props.island.facesMeshNode = node}
+                    material={ISLAND_MATERIAL}
+                />
+                <R3.Mesh
+                    key="FreeSpots"
+                    geometry={this.freeSpotsGeometry}
+                    ref={(node: any) => this.props.island.facesMeshNode = node}
+                    material={ISLAND_MATERIAL}
+                />
+                <R3.LineSegments
+                    key="ForeignHangers"
+                    geometry={this.foreignHangers}
+                    material={FOREIGN_HANGER_MATERIAL}
+                />
+            </R3.Object3D>
+        );
     }
 
-    private get spots(): Geometry {
+    private getSpotsGeometry(spots: Spot[], depth: number): Geometry {
         const spotContext: ISpotContext = {
             faces: [],
             vertices: [],
-            master: this.props.master,
-            selectedGotch: this.props.selectedGotch
+            master: this.props.master
         };
-        this.props.island.spots
-            .forEach((spot, index) => spot.addSurfaceGeometry(index, spotContext));
+        spots.forEach((spot, index) => spot.addSurfaceGeometry(index, spotContext, depth));
         const geometry = new Geometry();
         geometry.vertices = spotContext.vertices;
         geometry.faces = spotContext.faces;
@@ -68,14 +106,13 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         return geometry;
     }
 
-    private get hangers(): Geometry {
+    private getHangersGeometry(gotches: Gotch[]): Geometry {
         const spotContext: ISpotContext = {
             faces: [],
             vertices: [],
-            master: this.props.master,
-            selectedGotch: this.props.selectedGotch
+            master: this.props.master
         };
-        this.props.island.gotches
+        gotches
             .filter(gotch => !!gotch.genome)
             .forEach(gotch => gotch.center.addHangerGeometry(spotContext));
         const geometry = new Geometry();

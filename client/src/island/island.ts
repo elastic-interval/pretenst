@@ -2,7 +2,7 @@ import {Raycaster, Vector3} from 'three';
 import {Gotch, gotchTreeString} from './gotch';
 import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, zero} from './spot';
-import {Genome, IGenomeData} from '../genetics/genome';
+import {Genome} from '../genetics/genome';
 
 export interface IslandPattern {
     gotches: string;
@@ -25,11 +25,7 @@ export class Island {
 
     constructor(public islandName: string) {
         const patternString = localStorage.getItem(islandName);
-        const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {
-            gotches: '',
-            spots: '',
-            genomes: new Map<string, IGenomeData>()
-        };
+        const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {gotches: '', spots: ''};
         this.apply(pattern);
         console.log(`Loaded ${this.islandName}`);
         this.refresh();
@@ -61,17 +57,33 @@ export class Island {
     }
 
     public save() {
-        localStorage.setItem(this.islandName, JSON.stringify(this.pattern));
-        this.gotches.forEach(gotch => {
-            if (gotch.genome) {
-                localStorage.setItem(gotch.createFingerprint(), gotch.genome.toJSON());
-            }
-        });
-        console.log(`Saved ${this.islandName}`);
+        if (this.legal) {
+            localStorage.setItem(this.islandName, JSON.stringify(this.pattern));
+            this.gotches.forEach(gotch => {
+                if (gotch.genome) {
+                    localStorage.setItem(gotch.createFingerprint(), gotch.genome.toJSON());
+                }
+            });
+            console.log(`Saved ${this.islandName}`);
+        } else {
+            console.log(`Not legal yet: ${this.islandName}`);
+        }
     }
 
     public findGotch(master: string): Gotch | undefined {
         return this.gotches.find(gotch => !!gotch.genome && gotch.genome.master === master)
+    }
+
+    public createGotch(master: string, spot: Spot): Gotch | undefined {
+        if (this.gotches.find(gotch => gotch.master === master)) {
+            console.error('exists!');
+            return undefined;
+        }
+        if (!spot.canBeNewGotch) {
+            console.error('cannot be!');
+            return undefined;
+        }
+        return this.gotchAroundSpot(spot);
     }
 
     public get singleGotch(): Gotch | undefined {

@@ -16,8 +16,7 @@ interface IIslandViewProps {
 }
 
 interface IIslandViewState {
-    selectedGotch?: Gotch;
-    selectedSpot?: Spot;
+    masterGotch?: Gotch;
     hoverSpot?: Spot;
 }
 
@@ -34,7 +33,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         console.log('master', props.master);
         const singleGotch = props.island.singleGotch;
         this.state = {
-            selectedGotch: props.island.findGotch(props.master),
+            masterGotch: props.island.findGotch(props.master),
             hoverSpot: singleGotch ? singleGotch.center : undefined
         };
         // const loader = new TextureLoader();
@@ -74,15 +73,10 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     public render() {
         return (
-            <div id="island-view"
-                 onMouseMove={e => this.spotHover(this.selector.getSpot(e))}
-                 onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e))}>
+            <div id="island-view" onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e))}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
-                        <IslandComponent island={this.props.island}
-                                         selectedGotch={this.state.selectedGotch}
-                                         master={this.props.master}
-                        />
+                        <IslandComponent island={this.props.island} master={this.props.master}/>
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>
@@ -96,35 +90,39 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
     private spotClicked(spot?: Spot) {
         if (spot) {
             const island = this.props.island;
-            const masterGotch = island.findGotch(this.props.master);
-            const gotch = masterGotch ? masterGotch : island.singleGotch;
-            if (gotch) {
-                if (gotch.center === spot) {
-                    if (island.legal) {
-                        if (!gotch.genome) {
-                            gotch.genome = new Genome({
-                                master: this.props.master,
-                                embryoSequence: [],
-                                behaviorSequence: []
-                            });
-                        }
-                        island.save();
-                    }
-                } else {
-                    spot.land = !spot.land;
-                    island.refresh();
+            const centerOfGotch = spot.centerOfGotch;
+            if (centerOfGotch) {
+                if (centerOfGotch.genome) {
+                    return;
                 }
+                // todo: review this below
+                if (island.legal) {
+                    centerOfGotch.genome = new Genome({
+                        master: this.props.master,
+                        embryoSequence: [],
+                        behaviorSequence: []
+                    });
+                    island.save();
+                }
+            } else if (spot.free) {
+                spot.land = !spot.land;
+                island.refresh();
+            } else if (spot.canBeNewGotch) {
+                console.log('can be new');
+                island.createGotch(this.props.master, spot);
+                island.refresh();
+                // if (newGotch) {
+                //     newGotch.genome = new Genome({
+                //         master: this.props.master,
+                //         embryoSequence: [],
+                //         behaviorSequence: []
+                //     });
+                //     island.save();
+                // }
+            } else {
+                console.log('click what?', spot);
             }
             this.forceUpdate();
-        }
-    }
-
-    private spotHover(spot?: Spot) {
-        const singleGotch = this.props.island.singleGotch;
-        if (!singleGotch) {
-            if (spot !== this.state.hoverSpot) {
-                // this.setState({hoverSpot: spot});
-            }
         }
     }
 }

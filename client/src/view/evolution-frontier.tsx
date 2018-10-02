@@ -35,7 +35,7 @@ const createFrontierGeometry = (frontier: IFrontier): BufferGeometry => {
     return geometry;
 };
 
-export class EvolutionFrontier extends React.Component<IEvolutionFrontierProps, IEvolutionFrontierState>  {
+export class EvolutionFrontier extends React.Component<IEvolutionFrontierProps, IEvolutionFrontierState> {
 
     constructor(props: IEvolutionFrontierProps) {
         super(props);
@@ -45,7 +45,12 @@ export class EvolutionFrontier extends React.Component<IEvolutionFrontierProps, 
     }
 
     public componentDidMount() {
-        this.props.frontier.subscribe(frontier => this.setState({geometry: createFrontierGeometry(frontier)}));
+        this.props.frontier.subscribe(frontier => this.setState((state: IEvolutionFrontierState) => {
+            if (state.geometry) {
+                state.geometry.dispose();
+            }
+            return {geometry : createFrontierGeometry(frontier)};
+        }));
     }
 
     public render() {

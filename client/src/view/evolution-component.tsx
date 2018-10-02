@@ -26,14 +26,14 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
 
     public componentDidMount() {
         this.subscription = this.props.evolution.gotchis.subscribe(gotchis => {
-            this.setState({gotchis});
+            this.setState(() => {
+                return {gotchis};
+            });
         });
     }
 
     public componentWillUnmount() {
-        if (this.subscription) {
-            this.subscription.unsubscribe();
-        }
+        this.subscription.unsubscribe();
     }
 
     public render() {
