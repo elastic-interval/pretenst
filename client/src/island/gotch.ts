@@ -1,5 +1,5 @@
 import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
-import {equals, ICoords, Spot} from './spot';
+import {equals, ICoords, Spot, Surface} from './spot';
 import {Genome} from '../genetics/genome';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
@@ -10,7 +10,7 @@ interface IGotchIndexed {
 }
 
 const spotsToHexFingerprint = (spots: Spot[]) => {
-    const lit = spots.map(spot => spot.land ? '1' : '0');
+    const lit = spots.map(spot => spot.surface === Surface.Land ? '1' : '0');
     const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk);
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16));
     return nybbleChars.join('');

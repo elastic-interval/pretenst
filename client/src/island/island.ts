@@ -1,7 +1,7 @@
 import {Vector3} from 'three';
 import {Gotch, gotchTreeString} from './gotch';
 import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
-import {coordSort, equals, ICoords, plus, Spot, spotsToString, zero} from './spot';
+import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from './spot';
 import {Genome} from '../genetics/genome';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
@@ -39,8 +39,12 @@ export class Island {
         this.apply(pattern);
     }
 
-    public get hasFreeGotch(): boolean {
-        return !!this.gotches.find(gotch => !gotch.genome);
+    public get freeGotch(): Gotch | undefined {
+        return this.gotches.find(gotch => !gotch.genome);
+    }
+
+    public get masterGotch(): Gotch | undefined {
+        return this.gotches.find(gotch => gotch.master === this.master);
     }
 
     public get legal(): boolean {
@@ -57,7 +61,7 @@ export class Island {
             flowChanged = false;
             this.spots.forEach(spot => {
                 if (!spot.connected) {
-                    const connectedByAdjacent = spot.adjacentSpots.find(adj => (adj.land === spot.land) && adj.connected);
+                    const connectedByAdjacent = spot.adjacentSpots.find(adj => (adj.surface === spot.surface) && adj.connected);
                     if (connectedByAdjacent) {
                         spot.connected = true;
                         flowChanged = true;
@@ -185,10 +189,10 @@ export class Island {
         if (landStack.length) {
             this.spots.forEach(spot => {
                 const land = landStack.pop();
-                spot.land = land ? land : false;
+                spot.surface = land ? Surface.Land : Surface.Water;
             });
         } else if (this.singleGotch) {
-            this.singleGotch.spots[0].land = true;
+            this.singleGotch.spots[0].surface = Surface.Land;
         }
         this.gotches.forEach(g => {
             const fingerprint = g.createFingerprint();

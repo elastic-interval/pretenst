@@ -10,13 +10,22 @@ export interface ICoords {
     y: number;
 }
 
-const WATER_COLOR = new Color('darkturquoise');
-const LAND_COLOR = new Color('tan');
+export enum Surface {
+    Unknown = 'unknown',
+    Land = 'land',
+    Water = 'water'
+}
+
+const SURFACE_UNKNOWN_COLOR = new Color('silver');
+const SURFACE_LAND_COLOR = new Color('tan');
+const SURFACE_POTENTIAL_GOTCH_COLOR = new Color('mediumseagreen');
+const SURFACE_FREE_GOTCH_COLOR = new Color('crimson');
+const SURFACE_WATER_COLOR = new Color('darkturquoise');
 const HANGER_BASE = 0.7;
 const SIX = 6;
 const UP = new Vector3(0, 1, 0);
-const LAND_NORMAL_SPREAD = 0.04;
-const WATER_NORMAL_SPREAD = -0.02;
+const LAND_NORMAL_SPREAD = 0.06;
+const WATER_NORMAL_SPREAD = -0.04;
 const HEXAGON_POINTS = [
     new Vector3(0, 0, -10),
     new Vector3(-8.66, 0, -5),
@@ -29,7 +38,7 @@ const HEXAGON_POINTS = [
 
 export class Spot {
     public scaledCoords: ICoords;
-    public land = false;
+    public surface = Surface.Unknown;
     public free = false;
     public legal = false;
     public connected = false;
@@ -51,39 +60,61 @@ export class Spot {
             let landCount = 0;
             let waterCount = 0;
             this.adjacentSpots.forEach(adjacent => {
-                if (adjacent.land) {
-                    landCount++;
-                } else {
-                    waterCount++;
+                switch (adjacent.surface) {
+                    case Surface.Land:
+                        landCount++;
+                        break;
+                    case Surface.Water:
+                        waterCount++;
+                        break;
                 }
             });
-            if (this.land) {
-                // land must be either on the edge or have adjacent at least 2 land and 1 water
-                this.legal = this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1);
-            } else {
-                // water must have some land around
-                this.legal = landCount > 0;
+            switch (this.surface) {
+                case Surface.Unknown:
+                    this.legal = false;
+                    break;
+                case Surface.Land:
+                    // land must be either on the edge or have adjacent at least 2 land and 1 water
+                    this.legal = this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1);
+                    break;
+                case Surface.Water:
+                    // water must have some land around
+                    this.legal = landCount > 0;
+                    break;
             }
         }
     }
 
     get canBeNewGotch(): boolean {
-        // const canBe = !this.centerOfGotch && this.adjacentGotches.length > 0 && this.land;
-        // if (canBe) {
-        //     console.log(`${this.coords.x} ${this.coords.y} can be centerOfGotch=${!!this.centerOfGotch} adjacentLength=${this.adjacentGotches.length}`);
-        // }
-        return !this.centerOfGotch && this.adjacentGotches.length > 0 && this.land;
+        return !this.centerOfGotch && this.adjacentGotches.length > 0 && this.surface === Surface.Land;
     }
 
-    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], depth: number) {
+    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], freeGotch?: Gotch, masterGotch?: Gotch) {
         this.faceNames = [];
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.scaledCoords.x,
             hexPoint.y,
             hexPoint.z + this.scaledCoords.y
         )));
-        const normalSpread = !this.legal ? 0 : (this.land ? LAND_NORMAL_SPREAD : WATER_NORMAL_SPREAD) * depth;
-        const color = this.land ? LAND_COLOR : WATER_COLOR;
+        let normalSpread = 0;
+        let color = SURFACE_UNKNOWN_COLOR;
+        switch (this.surface) {
+            case Surface.Land:
+                if (masterGotch) {
+                    color = SURFACE_LAND_COLOR;
+                }
+                else if (freeGotch) {
+                    color = this === freeGotch.center ? SURFACE_FREE_GOTCH_COLOR : SURFACE_LAND_COLOR;
+                } else {
+                    color = this.canBeNewGotch ? SURFACE_POTENTIAL_GOTCH_COLOR : SURFACE_LAND_COLOR;
+                }
+                normalSpread = this.legal ? LAND_NORMAL_SPREAD : 0;
+                break;
+            case Surface.Water:
+                color = SURFACE_WATER_COLOR;
+                normalSpread = this.legal ? WATER_NORMAL_SPREAD : 0;
+                break;
+        }
         for (let a = 0; a < SIX; a++) {
             const offset = index * HEXAGON_POINTS.length;
             const b = (a + 1) % SIX;
@@ -129,8 +160,8 @@ export const plus = (a: ICoords, b: ICoords): ICoords => {
 };
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 export const spotsToString = (spots: Spot[]) => {
-    const lit = spots.map(spot => spot.land ? '1' : '0');
-    const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null)
+    const land = spots.map(spot => spot.surface === Surface.Land ? '1' : '0');
+    const nybbleStrings = land.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null);
     const nybbleChars = nybbleStrings.map(chunk => {
         if (chunk) {
             return parseInt(padRightTo4(chunk), 2).toString(16);

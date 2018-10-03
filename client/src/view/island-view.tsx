@@ -3,7 +3,7 @@ import * as R3 from 'react-three';
 import {Color, Mesh, PerspectiveCamera, Vector3} from 'three';
 import {Island} from '../island/island';
 import {IslandComponent} from './island-component';
-import {Spot} from '../island/spot';
+import {Spot, Surface} from '../island/spot';
 import {SpotSelector} from './spot-selector';
 import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
@@ -103,12 +103,30 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                     embryoSequence: [],
                     behaviorSequence: []
                 });
-                island.refresh();
                 island.save();
             }
         } else if (spot.free) {
-            spot.land = !spot.land;
+            switch(spot.surface) {
+                case Surface.Unknown:
+                    spot.surface = Surface.Water;
+                    break;
+                case Surface.Land:
+                    spot.surface = Surface.Water;
+                    break;
+                case Surface.Water:
+                    spot.surface = Surface.Land;
+                    break;
+            }
+            const freeGotch = island.freeGotch;
             island.refresh();
+            if (island.legal && freeGotch) {
+                freeGotch.genome = new Genome({
+                    master: this.props.master,
+                    embryoSequence: [],
+                    behaviorSequence: []
+                });
+                island.refresh();
+            }
         } else if (spot.canBeNewGotch && !this.state.masterGotch) {
             island.removeFreeGotches();
             if (spot.canBeNewGotch) {
