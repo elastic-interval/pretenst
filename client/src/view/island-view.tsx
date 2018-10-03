@@ -23,6 +23,7 @@ interface IIslandViewState {
 
 const SUN_POSITION = new Vector3(0, 300, 200);
 const CAMERA_POSITION = new Vector3(0, 260, 0);
+// const CAMERA_POSITION = new Vector3(0, 260, 0);
 const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 
 export class IslandView extends React.Component<IIslandViewProps, IIslandViewState> {

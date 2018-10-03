@@ -12,6 +12,7 @@ export const INTERVAL_MUSCLE_GROWING = -32766;
 export const HANGING_DELAY = 3000;
 export const REST_DELAY = 2000;
 export const HUNG_ALTITUDE = 7;
+export const SEED_CORNERS = 5;
 export const NORMAL_TICKS = 40;
 
 export const INTERVALS_RESERVED = 1;
@@ -130,12 +131,12 @@ export class Fabric {
     //     this.face(2, 3, 0);
     // }
 
-    public createSeed(corners: number, altitude: number, x: number, y: number): void {
+    public createSeed(x: number, y: number): void {
         const hanger = new Vector3(x, 0, y);
         const hangerJoint = this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z);
         const R = 1;
-        for (let walk = 0; walk < corners; walk++) {
-            const angle = walk * Math.PI * 2 / corners;
+        for (let walk = 0; walk < SEED_CORNERS; walk++) {
+            const angle = walk * Math.PI * 2 / SEED_CORNERS;
             this.fabricExports.createJoint(
                 this.fabricExports.nextJointTag(),
                 BILATERAL_MIDDLE,
@@ -149,16 +150,16 @@ export class Fabric {
         this.interval(hangerJoint, left, -1);
         this.interval(hangerJoint, right, -1);
         this.interval(left, right, -1);
-        for (let walk = 0; walk < corners; walk++) {
-            this.interval(walk + 1, (walk + 1) % corners + 1, -1);
+        for (let walk = 0; walk < SEED_CORNERS; walk++) {
+            this.interval(walk + 1, (walk + 1) % SEED_CORNERS + 1, -1);
             this.interval(walk + 1, left, -1);
             this.interval(walk + 1, right, -1);
         }
-        for (let walk = 0; walk < corners; walk++) {
-            this.face(left, walk + 1, (walk + 1) % corners + 1);
-            this.face(right, (walk + 1) % corners + 1, walk + 1);
+        for (let walk = 0; walk < SEED_CORNERS; walk++) {
+            this.face(left, walk + 1, (walk + 1) % SEED_CORNERS + 1);
+            this.face(right, (walk + 1) % SEED_CORNERS + 1, walk + 1);
         }
-        hanger.y += this.setAltitude(altitude);
+        hanger.y += this.setAltitude(HUNG_ALTITUDE);
     }
 
     public iterate(ticks: number, hanging: boolean): number {

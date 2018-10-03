@@ -5,7 +5,7 @@ import {Island} from './island/island';
 import {IslandView} from './view/island-view';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
 import {GotchiView} from './view/gotchi-view';
-import {Fabric, HUNG_ALTITUDE} from './body/fabric';
+import {Fabric} from './body/fabric';
 import {Gotchi, IGotchiFactory} from './gotchi/gotchi';
 import {Genome} from './genetics/genome';
 
@@ -33,7 +33,7 @@ class App extends React.Component<IAppProps, IAppState> {
             createGotchiAt: (x: number, y: number, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
                 return this.props.createFabricInstance().then(fabricExports => {
                     const fabric = new Fabric(fabricExports, jointCountMax);
-                    fabric.createSeed(5, HUNG_ALTITUDE, x, y);
+                    fabric.createSeed(x, y);
                     fabric.iterate(1, true);
                     return new Gotchi(fabric, genome);
                 });
@@ -105,21 +105,13 @@ class App extends React.Component<IAppProps, IAppState> {
         this.state.island.master = master;
         this.state.island.refresh();
         return (
-            <div>
-                <IslandView key="IslandMain"
-                            className="main-view"
-                            width={this.state.mainWidth}
-                            height={this.state.mainHeight}
-                            island={this.state.island}
-                            master={master}
-                />
-                <IslandView key="IslandSide" className="side-top-view"
-                            width={this.state.sideWidth}
-                            height={this.state.sideHeight}
-                            island={this.state.island}
-                            master={master}
-                />
-            </div>
+            <IslandView key="IslandMain"
+                        className="main-view"
+                        width={this.state.mainWidth + this.state.sideWidth}
+                        height={this.state.mainHeight}
+                        island={this.state.island}
+                        master={master}
+            />
         );
     };
 
@@ -128,12 +120,20 @@ class App extends React.Component<IAppProps, IAppState> {
         this.state.island.master = master;
         this.state.island.refresh();
         return (
-            <GotchiView width={this.state.mainWidth}
-                        height={this.state.mainHeight}
-                        island={this.state.island}
-                        master={master}
-                        factory={this.gotchiFactory}
-            />
+            <div>
+                <GotchiView width={this.state.mainWidth}
+                            height={this.state.mainHeight}
+                            island={this.state.island}
+                            master={master}
+                            factory={this.gotchiFactory}
+                />
+                <IslandView key="IslandSide" className="side-top-view"
+                            width={this.state.sideWidth}
+                            height={this.state.sideHeight}
+                            island={this.state.island}
+                            master={master}
+                />
+            </div>
         );
     };
 

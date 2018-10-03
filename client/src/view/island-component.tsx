@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as R3 from 'react-three';
 import {Geometry, Mesh} from 'three';
 import {Island} from '../island/island';
-import {FOREIGN_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
+import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, ISLAND_MATERIAL} from './materials';
 import {Subscription} from 'rxjs/Subscription';
 
 export interface IslandComponentProps {
@@ -12,11 +12,13 @@ export interface IslandComponentProps {
 
 export interface IslandComponentState {
     spotsGeometry: Geometry;
+    seedGeometry: Geometry;
     hangersGeometry: Geometry;
 }
 
 export const dispose = (state: IslandComponentState) => {
     state.spotsGeometry.dispose();
+    state.seedGeometry.dispose();
     state.hangersGeometry.dispose();
 };
 
@@ -30,6 +32,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         super(props);
         this.state = {
             spotsGeometry: this.spotsGeometry,
+            seedGeometry: this.seedGeometry,
             hangersGeometry: this.hangersGeometry
         };
     }
@@ -41,6 +44,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
                     dispose(state);
                     return {
                         spotsGeometry: this.spotsGeometry,
+                        seedGeometry: this.seedGeometry,
                         hangersGeometry: this.hangersGeometry
                     };
                 });
@@ -63,6 +67,11 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
                     geometry={this.state.spotsGeometry}
                     ref={(mesh: Mesh) => this.props.setMesh(FIXED_SPOTS, mesh)}
                     material={ISLAND_MATERIAL}
+                />
+                <R3.Mesh
+                    name="Seeds"
+                    geometry={this.state.seedGeometry}
+                    material={GOTCHI_MATERIAL}
                 />
                 <R3.LineSegments
                     key="ForeignHangers"
@@ -100,7 +109,18 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const geometry = new Geometry();
         gotches
             .filter(gotch => !!gotch.genome)
-            .forEach(gotch => gotch.center.addHangerGeometry(geometry.vertices));
+            .forEach(gotch => gotch.center.addSeedGeometry(geometry.vertices));
+        geometry.computeBoundingSphere();
+        return geometry;
+    }
+
+    private get seedGeometry(): Geometry {
+        const gotches = this.props.island.gotches;
+        const geometry = new Geometry();
+        gotches
+            .filter(gotch => !!gotch.genome && gotch.master !== this.props.island.master)
+            .forEach(gotch => gotch.center.addSeed(geometry.vertices, geometry.faces));
+        geometry.computeFaceNormals();
         geometry.computeBoundingSphere();
         return geometry;
     }

@@ -1,6 +1,6 @@
 import {Gotch} from './gotch';
 import {Color, Face3, Vector3} from 'three';
-import {HUNG_ALTITUDE} from '../body/fabric';
+import {HUNG_ALTITUDE, SEED_CORNERS} from '../body/fabric';
 
 const SCALEX = 8.66;
 const SCALEY = 15;
@@ -133,7 +133,7 @@ export class Spot {
         }
     }
 
-    public addHangerGeometry(vertices: Vector3[]) {
+    public addSeedGeometry(vertices: Vector3[]) {
         for (let a = 0; a < SIX; a++) {
             const hexPoint = HEXAGON_POINTS[a];
             vertices.push(new Vector3(
@@ -149,9 +149,25 @@ export class Spot {
         }
     }
 
-    // private get hoverSomething() {
-    //     return !!this.centerOfGotch || this.canBeNewGotch || this.free;
-    // }
+    public addSeed(vertices: Vector3[], faces: Face3[]): void {
+        const hanger = new Vector3(this.scaledCoords.x, HUNG_ALTITUDE, this.scaledCoords.y);
+        const offset = vertices.length;
+        const R = 1;
+        for (let walk = 0; walk < SEED_CORNERS; walk++) {
+            const angle = walk * Math.PI * 2 / SEED_CORNERS;
+            vertices.push(new Vector3(R * Math.sin(angle) + hanger.x, R * Math.cos(angle) + hanger.y, hanger.z));
+        }
+        const left = vertices.length;
+        vertices.push(new Vector3(hanger.x, hanger.y, hanger.z - R));
+        const right = vertices.length;
+        vertices.push(new Vector3(hanger.x, hanger.y, hanger.z + R));
+        for (let walk = 0; walk < SEED_CORNERS; walk++) {
+            const next = offset + (walk + 1) % SEED_CORNERS;
+            const current = offset + walk;
+            faces.push(new Face3(left, current, next));
+            faces.push(new Face3(right, next, current));
+        }
+    }
 }
 
 export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0;
