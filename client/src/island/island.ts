@@ -138,6 +138,7 @@ export class Island {
         if (this.spots.find(spot => !spot.legal)) {
             return undefined;
         }
+        this.spots.sort(sortSpotsOnCoord);
         return {
             gotches: gotchTreeString(this.gotches),
             spots: spotsToString(this.spots)

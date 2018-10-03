@@ -21,9 +21,8 @@ interface IAppState {
     sideHeight: number;
 }
 
-const HORIZONTAL_SPLIT = 1;
-// const HORIZONTAL_SPLIT = 0.7;
-const VERTICAL_SPLIT = 0.4;
+const HORIZONTAL_SPLIT = 0.8;
+const VERTICAL_SPLIT = 0.3;
 
 class App extends React.Component<IAppProps, IAppState> {
     private gotchiFactory: IGotchiFactory;
@@ -106,11 +105,21 @@ class App extends React.Component<IAppProps, IAppState> {
         this.state.island.master = master;
         this.state.island.refresh();
         return (
-            <IslandView width={this.state.mainWidth}
-                        height={this.state.mainHeight}
-                        island={this.state.island}
-                        master={master}
-            />
+            <div>
+                <IslandView key="IslandMain"
+                            className="main-view"
+                            width={this.state.mainWidth}
+                            height={this.state.mainHeight}
+                            island={this.state.island}
+                            master={master}
+                />
+                <IslandView key="IslandSide" className="side-top-view"
+                            width={this.state.sideWidth}
+                            height={this.state.sideHeight}
+                            island={this.state.island}
+                            master={master}
+                />
+            </div>
         );
     };
 

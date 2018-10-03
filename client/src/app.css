@@ -6,16 +6,16 @@
     font-size: xx-large;
 }
 
-.gotchi-view {
+.main-view {
     position: absolute;
     top: 0;
     left: 0;
 }
 
-.island-view {
+.side-top-view {
     position: absolute;
     top: 0;
-    left: 70%;
+    left: 80%;
 }
 
 .control-panel {
@@ -23,7 +23,7 @@
     left: 70%;
     top: 40%;
     height: 60%;
-    width: 30%;
+    width: 20%;
     background: black;
 }
 

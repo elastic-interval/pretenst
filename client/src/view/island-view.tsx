@@ -9,6 +9,7 @@ import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 
 interface IIslandViewProps {
+    className: string;
     width: number;
     height: number;
     island: Island;
@@ -68,7 +69,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     public render() {
         return (
-            <div id="island-view"
+            <div className={this.props.className}
                  onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e, this.props.island))}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
@@ -103,10 +104,10 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                     behaviorSequence: []
                 });
                 island.refresh();
-                // island.save();
+                island.save();
             }
         } else if (spot.free) {
-            switch(spot.surface) {
+            switch (spot.surface) {
                 case Surface.Unknown:
                     spot.surface = Surface.Water;
                     break;
