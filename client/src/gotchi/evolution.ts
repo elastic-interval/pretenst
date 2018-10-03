@@ -4,7 +4,7 @@ import {Genome} from '../genetics/genome';
 import {Raycaster, Vector3} from 'three';
 import {Physics} from '../body/physics';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {ICoords} from '../island/spot';
+import {Gotch} from '../island/gotch';
 
 export const INITIAL_JOINT_COUNT = 47;
 const CATCH_UP_TICKS = 220;
@@ -13,7 +13,7 @@ const INITIAL_MUTATION_COUNT = 20;
 const CHANCE_OF_GROWTH = 0.1;
 
 const INITIAL_FRONTIER = 8;
-const FRONTIER_EXPANSION = 1.1;
+const FRONTIER_EXPANSION = 1.2;
 
 export interface IFrontier {
     radius: number;
@@ -40,18 +40,19 @@ export class Evolution {
     private mutationCount = INITIAL_MUTATION_COUNT;
     private center: Vector3;
 
-    constructor(private coords: ICoords, genome: Genome, private factory: IGotchiFactory) {
-        let mutatingGenome = genome;
+    constructor(private masterGotch: Gotch, private factory: IGotchiFactory) {
+        let mutatingGenome = masterGotch.genome;
+        const coords = masterGotch.center.scaledCoords;
         this.center = new Vector3(coords.x, 0, coords.y);
         this.frontier = new BehaviorSubject<IFrontier>({
             radius: INITIAL_FRONTIER,
             center: this.center
         });
-        for (let walk = 0; walk < MAX_POPULATION; walk++) {
+        for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
             this.factory.createGotchiAt(coords.x, coords.y, INITIAL_JOINT_COUNT, mutatingGenome).then(gotchi => {
                 this.gotchis.next(this.gotchis.getValue().concat(gotchi));
             });
-            mutatingGenome = genome.withMutatedBehavior(INITIAL_MUTATION_COUNT);
+            mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT);
         }
     }
 
@@ -100,6 +101,7 @@ export class Evolution {
         const reborn = this.gotchis.getValue().map(gotchi => {
             if (gotchi.rebornClone) {
                 anyReborn = true;
+                console.log('clone');
                 return gotchi.rebornClone;
             }
             return gotchi;
@@ -112,6 +114,7 @@ export class Evolution {
             if (gotchi.offspring) {
                 offspring.push(gotchi);
                 gotchi.offspring = undefined;
+                console.log('offspring');
             }
         });
         if (offspring.length > 0) {
@@ -125,7 +128,9 @@ export class Evolution {
                 if (gotchi.getDistanceFrom(this.center) > this.frontier.getValue().radius) {
                     if (!array.find(g => g.frozen)) {
                         this.fittest = gotchi;
-                        // todo: SAVE TO LOCAL STORAGE!
+                        const fingerprint = this.masterGotch.createFingerprint();
+                        console.log(`Saving the winner ${fingerprint}`);
+                        localStorage.setItem(fingerprint, JSON.stringify(this.fittest.genomeData));
                     }
                     freeze(gotchi);
                     this.toBeBorn++;
@@ -183,8 +188,9 @@ export class Evolution {
         if (grow) {
             console.log('grow!');
         }
+        const coords = this.masterGotch.center.scaledCoords;
         this.factory
-            .createGotchiAt(this.coords.x, this.coords.y, gotchi.fabric.jointCountMax + (grow ? 4 : 0), new Genome(gotchi.genomeData))
+            .createGotchiAt(coords.x, coords.y, gotchi.fabric.jointCountMax + (grow ? 4 : 0), new Genome(gotchi.genomeData))
             .then(freshGotchi => {
                 gotchi.expecting = false;
                 if (clone) {
@@ -220,6 +226,7 @@ export class Evolution {
                 const deadIndex = mature[0].index;
                 const dead = gotchis[deadIndex];
                 dead.fabric.dispose();
+                console.log('dead', deadIndex);
                 this.gotchis.next(gotchis.filter((gotchi, index) => index !== deadIndex));
                 return true;
             } else {

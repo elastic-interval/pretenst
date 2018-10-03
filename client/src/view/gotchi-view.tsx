@@ -98,16 +98,17 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 case 'KeyR':
                     if (!evolution) {
                         if (masterGotch) {
-                            const genome = event.code === 'KeyE' ? masterGotch.genome : new Genome({
-                                master: props.master,
-                                behaviorSequence: [],
-                                embryoSequence: []
-                            });
+                            if (event.code === 'KeyR') {
+                                masterGotch.genome = new Genome({
+                                    master: props.master,
+                                    behaviorSequence: [],
+                                    embryoSequence: []
+                                });
+                            }
+                            const genome = masterGotch.genome;
                             if (genome) {
                                 this.setState((state: IGotchiViewState) => {
-                                    return {
-                                        evolution: new Evolution(masterGotch.center.scaledCoords, genome, props.factory)
-                                    };
+                                    return {evolution: new Evolution(masterGotch, props.factory)};
                                 });
                             }
                         }

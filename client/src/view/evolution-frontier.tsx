@@ -1,12 +1,12 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {BufferGeometry, Float32BufferAttribute, LineBasicMaterial} from 'three';
+import {BufferGeometry, Color, Float32BufferAttribute, LineBasicMaterial} from 'three';
 import {IFrontier} from '../gotchi/evolution';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 const FRONTIER_ALTITUDE = 0.3;
 const WALL_STEP_DEGREES = 3;
-const FRONTIER_MATERIAL = new LineBasicMaterial({color: 0xBBBBBB});
+const FRONTIER_MATERIAL = new LineBasicMaterial({color: new Color('crimson')});
 
 export interface IEvolutionFrontierProps {
     frontier: BehaviorSubject<IFrontier>;
