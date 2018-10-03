@@ -8,11 +8,11 @@ const NEAR_UP = new Vector3(0,1,0);
 const TOWARDS_TARGET = 0.03;
 const MAX_TARGET_SPEED = 2.5;
 const TOO_FAR_DISTANCE = 200;
-const TOO_FAR_HEIGHT = 500;
+const TOO_FAR_HEIGHT = 300;
 const TOO_FAR_XZ = 10;
 
 export class Orbit {
-    public tooFar: boolean;
+    public tooFar = false;
     private orbitControls: any;
     private targetMove = new Vector3();
     private cameraMove = new Vector3();

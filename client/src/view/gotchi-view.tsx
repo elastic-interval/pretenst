@@ -9,11 +9,16 @@ import {IslandComponent} from './island-component';
 import {Orbit} from './orbit';
 import {GotchiComponent} from './gotchi-component';
 import {SpotSelector} from './spot-selector';
-import {Spot} from '../island/spot';
+import {Spot, Surface} from '../island/spot';
 import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 import {EvolutionFrontier} from './evolution-frontier';
+
+const SUN_POSITION = new Vector3(0, 300, 0);
+const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
+const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
+const TARGET_FRAME_RATE = 25;
 
 interface IGotchiViewProps {
     width: number;
@@ -25,18 +30,13 @@ interface IGotchiViewProps {
 
 interface IGotchiViewState {
     cameraTooFar: boolean;
+    masterGotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
 }
 
-// const SPRING_MATERIAL = new LineBasicMaterial({vertexColors: VertexColors}); // todo: if this doesn't get used, remove it from WA
-const SUN_POSITION = new Vector3(0, 300, 0);
-const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
-const TARGET_FRAME_RATE = 25;
-
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private perspectiveCamera: PerspectiveCamera;
-    private homeGotch?: Gotch;
     private orbit: Orbit;
     private selector: SpotSelector;
     private frameTime = Date.now();
@@ -46,9 +46,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     constructor(props: IGotchiViewProps) {
         super(props);
-        this.homeGotch = props.island.findGotch(props.master);
         this.state = {
-            cameraTooFar: false
+            cameraTooFar: false,
+            masterGotch: props.master ? props.island.findGotch(props.master) : undefined
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
@@ -69,9 +69,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         this.setState((state: IGotchiViewState) => {
                             return {evolution: undefined};
                         });
-                        if (evolution.fittest && this.homeGotch) {
+                        if (evolution.fittest && this.state.masterGotch) {
                             console.log('storing the fittest');
-                            localStorage.setItem(this.homeGotch.createFingerprint(), JSON.stringify(evolution.fittest.genomeData));
+                            // localStorage.setItem(this.homeGotch.createFingerprint(), JSON.stringify(evolution.fittest.genomeData));
                             this.setState((state: IGotchiViewState) => {
                                 return {gotchi: evolution.fittest};
                             });
@@ -101,14 +101,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     break;
             }
         });
-        const genome = this.homeGotch ? this.homeGotch.genome : undefined;
-        if (this.homeGotch && genome) {
-            props.factory.createGotchiAt(this.homeGotch.coords.x, this.homeGotch.coords.y, INITIAL_JOINT_COUNT, genome).then(gotchi => {
-                this.setState((state: IGotchiViewState) => {
-                    return {gotchi};
-                });
-            });
-        }
     }
 
     public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: any) {
@@ -120,6 +112,19 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     public componentDidMount() {
         this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera);
+        const masterGotch = this.state.masterGotch;
+        if (masterGotch) {
+            if (masterGotch.genome) {
+                const coords = masterGotch.center.scaledCoords;
+                this.props.factory
+                    .createGotchiAt(coords.x, coords.y, INITIAL_JOINT_COUNT, masterGotch.genome)
+                    .then(gotchi => {
+                        this.setState((state: IGotchiViewState) => {
+                            return {gotchi};
+                        });
+                    });
+            }
+        }
         this.animate();
     }
 
@@ -150,9 +155,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             island={this.props.island}
                             setMesh={(key: string, node: Mesh) => this.selector.setMesh(key, node)}
                         />
-                        {this.liveComponent()}
+                        {this.gotchiComponent()}
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
-                        <R3.HemisphereLight name="Hemi" color={new Color(0.8, 0.8, 0.8)}/>
+                        <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>
                 </R3.Renderer>
             </div>
@@ -161,27 +166,63 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     // ==========================
 
-    private liveComponent = () => {
-        if (this.state.evolution) {
-            return (
-                <R3.Object3D key="EvolutionRendering">
-                    <EvolutionComponent evolution={this.state.evolution}/>
-                    <EvolutionFrontier frontier={this.state.evolution.frontier}/>
-                </R3.Object3D>
-            );
-        } else if (this.state.gotchi) {
-            return <GotchiComponent key="GotchiRendering" gotchi={this.state.gotchi}/>
-        } else {
-            return null;
+    private gotchiComponent = () => {
+        if (!this.state.cameraTooFar) {
+            if (this.state.evolution) {
+                return (
+                    <R3.Object3D key="EvolutionRendering">
+                        <EvolutionComponent evolution={this.state.evolution}/>
+                        <EvolutionFrontier frontier={this.state.evolution.frontier}/>
+                    </R3.Object3D>
+                );
+            } else if (this.state.gotchi) {
+                return <GotchiComponent key="GotchiRendering" gotchi={this.state.gotchi}/>
+            }
         }
+        return null;
     };
 
-    private spotClicked(spot?: Spot) {
-        if (this.state.cameraTooFar && spot && spot.centerOfGotch) {
-            const gotch = spot.centerOfGotch;
-            console.log('clicked gotch', gotch.coords);
+    private spotClicked = (spot?: Spot) => {
+        if (!spot || !this.state.cameraTooFar) {
+            return;
         }
-    }
+        console.log(`Spot ${spot.coords.x} ${spot.coords.y}`);
+        const island = this.props.island;
+        const centerOfGotch = spot.centerOfGotch;
+        if (centerOfGotch) {
+            if (centerOfGotch.genome) {
+                return;
+            }
+            if (island.legal && centerOfGotch === island.freeGotch) {
+                centerOfGotch.genome = new Genome({
+                    master: this.props.master,
+                    embryoSequence: [],
+                    behaviorSequence: []
+                });
+                island.refresh();
+                island.save();
+            }
+        } else if (spot.free) {
+            switch (spot.surface) {
+                case Surface.Unknown:
+                    spot.surface = Surface.Water;
+                    break;
+                case Surface.Land:
+                    spot.surface = Surface.Water;
+                    break;
+                case Surface.Water:
+                    spot.surface = Surface.Land;
+                    break;
+            }
+            island.refresh();
+        } else if (spot.canBeNewGotch && !this.state.masterGotch) {
+            island.removeFreeGotches();
+            if (spot.canBeNewGotch) {
+                island.createGotch(spot, this.props.master);
+            }
+            island.refresh();
+        }
+    };
 
     private animate() {
         const step = () => {
@@ -203,6 +244,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         } else if (gotchi) {
                             gotchi.iterate(NORMAL_TICKS);
                             this.orbit.moveTargetTowards(gotchi.fabric.midpoint);
+                        } else {
+                            this.orbit.moveTargetTowards(this.props.island.midpoint);
                         }
                     }
                     if (this.animating) {

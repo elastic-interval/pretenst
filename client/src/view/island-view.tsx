@@ -8,6 +8,10 @@ import {SpotSelector} from './spot-selector';
 import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 
+const SUN_POSITION = new Vector3(0, 300, 200);
+const CAMERA_POSITION = new Vector3(0, 260, 0);
+const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
+
 interface IIslandViewProps {
     className: string;
     width: number;
@@ -20,11 +24,6 @@ interface IIslandViewState {
     masterGotch?: Gotch;
     hoverSpot?: Spot;
 }
-
-const SUN_POSITION = new Vector3(0, 300, 200);
-const CAMERA_POSITION = new Vector3(0, 260, 0);
-// const CAMERA_POSITION = new Vector3(0, 260, 0);
-const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 
 export class IslandView extends React.Component<IIslandViewProps, IIslandViewState> {
     private selector: SpotSelector;
@@ -125,9 +124,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
             if (spot.canBeNewGotch) {
                 island.createGotch(spot, this.props.master);
             }
-            island.refresh();
-        } else {
-            console.log(`refresh ${spot.coords.x} ${spot.coords.y}`);
             island.refresh();
         }
     }
