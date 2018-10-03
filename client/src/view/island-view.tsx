@@ -96,14 +96,14 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
             if (centerOfGotch.genome) {
                 return;
             }
-            // todo: review this below
-            if (island.legal) {
+            if (island.legal && centerOfGotch === island.freeGotch) {
                 centerOfGotch.genome = new Genome({
                     master: this.props.master,
                     embryoSequence: [],
                     behaviorSequence: []
                 });
-                island.save();
+                island.refresh();
+                // island.save();
             }
         } else if (spot.free) {
             switch(spot.surface) {
@@ -117,16 +117,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                     spot.surface = Surface.Land;
                     break;
             }
-            const freeGotch = island.freeGotch;
             island.refresh();
-            if (island.legal && freeGotch) {
-                freeGotch.genome = new Genome({
-                    master: this.props.master,
-                    embryoSequence: [],
-                    behaviorSequence: []
-                });
-                island.refresh();
-            }
         } else if (spot.canBeNewGotch && !this.state.masterGotch) {
             island.removeFreeGotches();
             if (spot.canBeNewGotch) {

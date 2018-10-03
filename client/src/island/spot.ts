@@ -18,7 +18,7 @@ export enum Surface {
 
 const SURFACE_UNKNOWN_COLOR = new Color('silver');
 const SURFACE_LAND_COLOR = new Color('tan');
-const SURFACE_POTENTIAL_GOTCH_COLOR = new Color('mediumseagreen');
+const SURFACE_CLICKABLE_COLOR = new Color('mediumseagreen');
 const SURFACE_FREE_GOTCH_COLOR = new Color('crimson');
 const SURFACE_WATER_COLOR = new Color('darkturquoise');
 const HANGER_BASE = 0.7;
@@ -86,10 +86,13 @@ export class Spot {
     }
 
     get canBeNewGotch(): boolean {
-        return !this.centerOfGotch && this.adjacentGotches.length > 0 && this.surface === Surface.Land;
+        if (this.centerOfGotch || this.surface !== Surface.Land) {
+            return false;
+        }
+        return !!this.adjacentGotches.find(gotch => !!gotch.genome);
     }
 
-    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], freeGotch?: Gotch, masterGotch?: Gotch) {
+    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], legal: boolean, freeGotch?: Gotch, masterGotch?: Gotch) {
         this.faceNames = [];
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.scaledCoords.x,
@@ -104,9 +107,11 @@ export class Spot {
                     color = SURFACE_LAND_COLOR;
                 }
                 else if (freeGotch) {
-                    color = this === freeGotch.center ? SURFACE_FREE_GOTCH_COLOR : SURFACE_LAND_COLOR;
+                    const centerColor = legal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR;
+                    const landColor = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
+                    color = this === freeGotch.center ? centerColor : landColor;
                 } else {
-                    color = this.canBeNewGotch ? SURFACE_POTENTIAL_GOTCH_COLOR : SURFACE_LAND_COLOR;
+                    color = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
                 }
                 normalSpread = this.legal ? LAND_NORMAL_SPREAD : 0;
                 break;

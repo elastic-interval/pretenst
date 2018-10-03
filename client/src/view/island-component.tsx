@@ -78,9 +78,18 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const spots = island.spots;
         const freeGotch = island.freeGotch;
         const masterGotch = island.masterGotch;
+        const legal = island.legal;
         const geometry = new Geometry();
         spots.forEach((spot, index) => {
-            spot.addSurfaceGeometry(FIXED_SPOTS, index, geometry.vertices, geometry.faces, freeGotch, masterGotch);
+            spot.addSurfaceGeometry(
+                FIXED_SPOTS,
+                index,
+                geometry.vertices,
+                geometry.faces,
+                legal,
+                freeGotch,
+                masterGotch
+            );
         });
         geometry.computeBoundingSphere();
         return geometry;
