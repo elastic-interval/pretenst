@@ -48,15 +48,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
             this.props.width,
             this.props.height
         );
-        window.addEventListener("keypress", (event: KeyboardEvent) => {
-            console.log(event.code);
-            switch (event.code) {
-                case 'KeyM':
-                    break;
-                case 'KeyR':
-                    break;
-            }
-        });
     }
 
     public componentDidUpdate(prevProps: Readonly<IIslandViewProps>, prevState: Readonly<IIslandViewState>, snapshot: any) {

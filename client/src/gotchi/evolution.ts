@@ -17,6 +17,7 @@ const FRONTIER_EXPANSION = 1.1;
 
 export interface IFrontier {
     radius: number;
+    center: Vector3;
 }
 
 interface IGotchiFitness {
@@ -26,28 +27,28 @@ interface IGotchiFitness {
     age: number;
 }
 
-const evaluateFitness = (gotchi: Gotchi, index: number): IGotchiFitness => {
-    return {gotchi, index, distance: gotchi.distance, age: gotchi.age};
-};
-
 const sortFitness = (a: IGotchiFitness, b: IGotchiFitness) => {
     return (a.age === 0 ? a.distance : a.distance / a.age) - (b.age === 0 ? b.distance : b.distance / b.age)
 };
 
-export const BIRTHPLACE: ICoords = {x: 0, y: 0};
-
 export class Evolution {
-    public frontier: BehaviorSubject<IFrontier> = new BehaviorSubject({radius: INITIAL_FRONTIER});
+    public frontier: BehaviorSubject<IFrontier>;
     public gotchis: BehaviorSubject<Gotchi[]> = new BehaviorSubject<Gotchi[]>([]);
     public fittest?: Gotchi;
     private physicsObject = new Physics();
     private toBeBorn = 0;
     private mutationCount = INITIAL_MUTATION_COUNT;
+    private center: Vector3;
 
-    constructor(genome: Genome, private factory: IGotchiFactory) {
+    constructor(private coords: ICoords, genome: Genome, private factory: IGotchiFactory) {
         let mutatingGenome = genome;
+        this.center = new Vector3(coords.x, 0, coords.y);
+        this.frontier = new BehaviorSubject<IFrontier>({
+            radius: INITIAL_FRONTIER,
+            center: this.center
+        });
         for (let walk = 0; walk < MAX_POPULATION; walk++) {
-            this.factory.createGotchiAt(BIRTHPLACE.x, BIRTHPLACE.y, INITIAL_JOINT_COUNT, mutatingGenome).then(gotchi => {
+            this.factory.createGotchiAt(coords.x, coords.y, INITIAL_JOINT_COUNT, mutatingGenome).then(gotchi => {
                 this.gotchis.next(this.gotchis.getValue().concat(gotchi));
             });
             mutatingGenome = genome.withMutatedBehavior(INITIAL_MUTATION_COUNT);
@@ -57,7 +58,7 @@ export class Evolution {
     public get fastest(): IGotchiFitness | undefined {
         const mature = this.gotchis.getValue()
             .filter(gotchi => !gotchi.catchingUp)
-            .map(evaluateFitness)
+            .map(this.evaluateFitness)
             .sort(sortFitness);
         return mature.length ? mature[mature.length - 1] : undefined;
     }
@@ -121,7 +122,7 @@ export class Evolution {
             if (gotchi.frozen) {
                 freeze(gotchi);
             } else {
-                if (gotchi.distance > this.frontier.getValue().radius) {
+                if (gotchi.getDistanceFrom(this.center) > this.frontier.getValue().radius) {
                     if (!array.find(g => g.frozen)) {
                         this.fittest = gotchi;
                         // todo: SAVE TO LOCAL STORAGE!
@@ -146,7 +147,10 @@ export class Evolution {
             this.gotchis.getValue().forEach(gotchi => this.createReplacement(gotchi, true));
             if (minFrozenAge * 3 > maxFrozenAge * 2) {
                 const expandedRadius = this.frontier.getValue().radius * FRONTIER_EXPANSION;
-                this.frontier.next({radius: expandedRadius});
+                this.frontier.next({
+                    radius: expandedRadius,
+                    center: this.center
+                });
                 this.mutationCount--;
                 console.log(`fontier = ${expandedRadius}, mutations = ${this.mutationCount}`);
             }
@@ -180,7 +184,7 @@ export class Evolution {
             console.log('grow!');
         }
         this.factory
-            .createGotchiAt(BIRTHPLACE.x, BIRTHPLACE.y, gotchi.fabric.jointCountMax + (grow ? 4 : 0), new Genome(gotchi.genomeData))
+            .createGotchiAt(this.coords.x, this.coords.y, gotchi.fabric.jointCountMax + (grow ? 4 : 0), new Genome(gotchi.genomeData))
             .then(freshGotchi => {
                 gotchi.expecting = false;
                 if (clone) {
@@ -209,7 +213,7 @@ export class Evolution {
     private death(): boolean {
         const gotchis = this.gotchis.getValue();
         if (gotchis.length > 0) {
-            const fitness = gotchis.map(evaluateFitness);
+            const fitness = gotchis.map(this.evaluateFitness);
             fitness.sort(sortFitness);
             const mature = fitness.filter(f => !f.gotchi.catchingUp);
             if (mature.length) {
@@ -224,4 +228,8 @@ export class Evolution {
         }
         return false;
     }
+
+    private evaluateFitness = (gotchi: Gotchi, index: number): IGotchiFitness => {
+        return {gotchi, index, distance: gotchi.getDistanceFrom(this.center), age: gotchi.age};
+    };
 }

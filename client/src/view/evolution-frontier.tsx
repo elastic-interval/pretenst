@@ -18,18 +18,20 @@ export interface IEvolutionFrontierState {
 
 const createFrontierGeometry = (frontier: IFrontier): BufferGeometry => {
     const radius = frontier.radius;
+    const center = frontier.center;
+    console.log('frontier center', center);
     const geometry = new BufferGeometry();
     const positions = new Float32Array(360 * 6 / WALL_STEP_DEGREES);
     let slot = 0;
     for (let degrees = 0; degrees < 360; degrees += WALL_STEP_DEGREES) {
         const r1 = Math.PI * 2 * degrees / 360;
         const r2 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES) / 360;
-        positions[slot++] = radius * Math.sin(r1);
-        positions[slot++] = FRONTIER_ALTITUDE;
-        positions[slot++] = radius * Math.cos(r1);
-        positions[slot++] = radius * Math.sin(r2);
-        positions[slot++] = FRONTIER_ALTITUDE;
-        positions[slot++] = radius * Math.cos(r2);
+        positions[slot++] = radius * Math.sin(r1) + center.x;
+        positions[slot++] = FRONTIER_ALTITUDE + center.y;
+        positions[slot++] = radius * Math.cos(r1) + center.z;
+        positions[slot++] = radius * Math.sin(r2) + center.x;
+        positions[slot++] = FRONTIER_ALTITUDE + center.y;
+        positions[slot++] = radius * Math.cos(r2) + center.z;
     }
     geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));
     return geometry;

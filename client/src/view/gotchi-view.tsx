@@ -31,6 +31,7 @@ interface IGotchiViewProps {
 interface IGotchiViewState {
     cameraTooFar: boolean;
     masterGotch?: Gotch;
+    center: Vector3;
     gotchi?: Gotchi;
     evolution?: Evolution;
 }
@@ -46,14 +47,22 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     constructor(props: IGotchiViewProps) {
         super(props);
+        const masterGotch = props.master ? props.island.findGotch(props.master) : undefined;
         this.state = {
             cameraTooFar: false,
-            masterGotch: props.master ? props.island.findGotch(props.master) : undefined
+            masterGotch,
+            center: masterGotch ? new Vector3(masterGotch.center.scaledCoords.x, 0, masterGotch.center.scaledCoords.y) : new Vector3()
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
+        if (this.state.masterGotch) {
+            const coords = this.state.masterGotch.center.scaledCoords;
+            const toMasterGotch = new Vector3(coords.x, 0, coords.y);
+            this.perspectiveCamera.position.add(toMasterGotch);
+            this.perspectiveCamera.lookAt(toMasterGotch);
+        }
         this.selector = new SpotSelector(
             this.perspectiveCamera,
             this.props.width,
@@ -61,8 +70,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         );
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             const evolution = this.state.evolution;
-            const gotchi = this.state.gotchi;
             switch (event.code) {
+                case 'KeyS':
+                    if (evolution) {
+                        if (evolution.fittest && this.state.masterGotch) {
+                            console.log('Storing the fittest');
+                            localStorage.setItem(this.state.masterGotch.createFingerprint(), JSON.stringify(evolution.fittest.genomeData));
+                        }
+                    }
+                    break;
                 case 'KeyG':
                     if (evolution) {
                         evolution.dispose();
@@ -79,24 +95,22 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     }
                     break;
                 case 'KeyE':
-                    if (!evolution) {
-                        if (gotchi) {
-                            this.setState((state: IGotchiViewState) => {
-                                return {evolution: new Evolution(new Genome(gotchi.genomeData), props.factory)};
-                            });
-                        }
-                    }
-                    break;
                 case 'KeyR':
                     if (!evolution) {
-                        const emptyGenome = new Genome({
-                            master: props.master,
-                            behaviorSequence: [],
-                            embryoSequence: []
-                        });
-                        this.setState((state: IGotchiViewState) => {
-                            return {evolution: new Evolution(emptyGenome, props.factory)};
-                        });
+                        if (masterGotch) {
+                            const genome = event.code === 'KeyE' ? masterGotch.genome : new Genome({
+                                master: props.master,
+                                behaviorSequence: [],
+                                embryoSequence: []
+                            });
+                            if (genome) {
+                                this.setState((state: IGotchiViewState) => {
+                                    return {
+                                        evolution: new Evolution(masterGotch.center.scaledCoords, genome, props.factory)
+                                    };
+                                });
+                            }
+                        }
                     }
                     break;
             }

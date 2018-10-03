@@ -2,6 +2,7 @@ import {Fabric, HANGING_DELAY, REST_DELAY} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
 import {Genome, IGenomeData} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
+import {Vector3} from 'three';
 
 export interface IGotchiFactory {
     createGotchiAt(x: number, y: number, jointCountMax: number, genome: Genome): Promise<Gotchi>;
@@ -36,11 +37,11 @@ export class Gotchi {
         return this.fabric.age;
     }
 
-    public get distance() {
+    public getDistanceFrom(location: Vector3) {
         if (this.fabric.age === 0) {
             throw new Error('Zero age midpoint!');
         }
-        const midpoint = this.fabric.midpoint;
+        const midpoint = this.fabric.midpoint.sub(location);
         return Math.sqrt(midpoint.x * midpoint.x + midpoint.z * midpoint.z);
     }
 
