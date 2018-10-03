@@ -26,21 +26,28 @@ const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacen
 });
 
 export class Island {
+    public master?: string;
     public islandChange = new BehaviorSubject<IslandChange>({gotchCount: 0, spotCount: 0});
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
 
     constructor(public islandName: string) {
-        const patternString = localStorage.getItem(islandName);
+        const patternString = localStorage.getItem(this.islandName);
         const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {gotches: '', spots: ''};
+        this.spots = [];
+        this.gotches = [];
         this.apply(pattern);
+    }
+
+    public get hasFreeGotch(): boolean {
+        return !!this.gotches.find(gotch => !gotch.genome);
     }
 
     public get legal(): boolean {
         return !this.spots.find(spot => !spot.legal);
     }
 
-    public refresh(master?: string) {
+    public refresh() {
         this.spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot);
             spot.connected = spot.adjacentSpots.length < 6;
@@ -62,7 +69,7 @@ export class Island {
         this.islandChange.next({
             gotchCount: this.gotches.length,
             spotCount: this.spots.length,
-            masterGotch: master ? this.findGotch(master) : undefined
+            masterGotch: this.master ? this.findGotch(this.master) : undefined
         });
     }
 

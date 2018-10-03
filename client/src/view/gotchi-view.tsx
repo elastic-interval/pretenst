@@ -54,6 +54,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
+        this.selector = new SpotSelector(
+            this.perspectiveCamera,
+            this.props.width,
+            this.props.height
+        );
         window.addEventListener("keypress", (event: KeyboardEvent) => {
             const evolution = this.state.evolution;
             const gotchi = this.state.gotchi;
@@ -115,11 +120,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     public componentDidMount() {
         this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera);
-        this.selector = new SpotSelector(
-            this.perspectiveCamera,
-            this.props.width,
-            this.props.height
-        );
         this.animate();
     }
 

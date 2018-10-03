@@ -18,11 +18,18 @@ export interface IslandComponentState {
     foreignHangers: Geometry;
 }
 
+export const dispose = (state: IslandComponentState) => {
+    state.fixedSpotsGeometry.dispose();
+    state.freeSpotsGeometry.dispose();
+    state.foreignHangers.dispose();
+};
+
 const FIXED_SPOTS = 'FixedSpots';
 const FREE_SPOTS = 'FreeSpots';
 
 export class IslandComponent extends React.Component<IslandComponentProps, IslandComponentState> {
-    private subscription: Subscription;
+
+    private islandSubscription?: Subscription;
 
     constructor(props: IslandComponentProps) {
         super(props);
@@ -34,22 +41,24 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         };
     }
 
-    public componentDidUpdate() {
-        // this.refresh();
-    }
-
-    public componentDidMount() {
-        this.subscription = this.props.island.islandChange.subscribe((change: IslandChange) => this.refresh(change.masterGotch));
+    public componentWillMount() {
+        if (!this.islandSubscription) {
+            this.islandSubscription = this.props.island.islandChange.subscribe((change: IslandChange) => {
+                this.refreshState(change.masterGotch);
+            });
+        }
     }
 
     public componentWillUnmount() {
-        this.subscription.unsubscribe();
-        this.dispose();
+        if (this.islandSubscription) {
+            this.islandSubscription.unsubscribe();
+        }
+        dispose(this.state);
     }
 
     public render() {
         return (
-            <R3.Object3D key="Island">
+            <R3.Object3D key={this.context.key}>
                 <R3.Mesh
                     name={FIXED_SPOTS}
                     geometry={this.state.fixedSpotsGeometry}
@@ -71,21 +80,38 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         );
     }
 
-    private refresh(masterGotch?: Gotch) {
+    private refreshState(masterGotch?: Gotch) {
         const spots = this.props.island.spots;
         const gotches = this.props.island.gotches;
         if (masterGotch) {
             this.setState((state: IslandComponentState) => {
-                this.dispose();
+                dispose(state);
                 return {
                     fixedSpotsGeometry: this.getSpotsGeometry(FIXED_SPOTS, spots, 1),
                     freeSpotsGeometry: this.getSpotsGeometry(FREE_SPOTS, [], 1),
                     foreignHangers: this.getHangersGeometry(gotches)
                 };
             });
+        } else if (this.props.island.hasFreeGotch) {
+            this.setState((state: IslandComponentState) => {
+                dispose(state);
+                return {
+                    fixedSpotsGeometry: this.getSpotsGeometry(
+                        FIXED_SPOTS,
+                        spots.filter(spot => !spot.free),
+                        0.1
+                    ),
+                    freeSpotsGeometry: this.getSpotsGeometry(
+                        FREE_SPOTS,
+                        spots.filter(spot => spot.free),
+                        5
+                    ),
+                    foreignHangers: this.getHangersGeometry(gotches)
+                };
+            });
         } else {
             this.setState((state: IslandComponentState) => {
-                this.dispose();
+                dispose(state);
                 return {
                     fixedSpotsGeometry: this.getSpotsGeometry(
                         FIXED_SPOTS,
@@ -102,12 +128,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
             });
         }
 
-    }
-
-    private dispose() {
-        this.state.fixedSpotsGeometry.dispose();
-        this.state.freeSpotsGeometry.dispose();
-        this.state.foreignHangers.dispose();
     }
 
     private getSpotsGeometry(key: string, spots: Spot[], depth: number): Geometry {

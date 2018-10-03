@@ -59,7 +59,7 @@ class App extends React.Component<IAppProps, IAppState> {
 
     public render() {
         return (
-            <BrowserRouter>
+            <BrowserRouter forceRefresh={true}>
                 <Switch>
                     <Route exact={true} path="/" component={this.homeView}/>
                     <Route path="/gotchi/:identity" component={this.gotchiView}/>
@@ -102,27 +102,29 @@ class App extends React.Component<IAppProps, IAppState> {
     );
 
     private islandView = (ctxt: any) => {
+        const master = ctxt.match.params.identity;
+        this.state.island.master = master;
+        this.state.island.refresh();
         return (
-            <div className="App">
-                <IslandView width={this.state.mainWidth}
-                            height={this.state.mainHeight}
-                            island={this.state.island}
-                            master={ctxt.match.params.identity}
-                />
-            </div>
+            <IslandView width={this.state.mainWidth}
+                        height={this.state.mainHeight}
+                        island={this.state.island}
+                        master={master}
+            />
         );
     };
 
     private gotchiView = (ctxt: any) => {
+        const master = ctxt.match.params.identity;
+        this.state.island.master = master;
+        this.state.island.refresh();
         return (
-            <div className="App">
-                <GotchiView width={this.state.mainWidth}
-                            height={this.state.mainHeight}
-                            island={this.state.island}
-                            master={ctxt.match.params.identity}
-                            factory={this.gotchiFactory}
-                />
-            </div>
+            <GotchiView width={this.state.mainWidth}
+                        height={this.state.mainHeight}
+                        island={this.state.island}
+                        master={master}
+                        factory={this.gotchiFactory}
+            />
         );
     };
 

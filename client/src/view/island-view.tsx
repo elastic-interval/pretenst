@@ -103,20 +103,21 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                     embryoSequence: [],
                     behaviorSequence: []
                 });
-                island.refresh(this.props.master);
+                island.refresh();
                 island.save();
             }
         } else if (spot.free) {
             spot.land = !spot.land;
-            island.refresh(this.props.master);
+            island.refresh();
         } else if (spot.canBeNewGotch && !this.state.masterGotch) {
             island.removeFreeGotches();
             if (spot.canBeNewGotch) {
                 island.createGotch(spot, this.props.master);
             }
-            island.refresh(this.props.master);
+            island.refresh();
         } else {
-            console.log(`${spot.coords.x} ${spot.coords.y}`);
+            console.log(`refresh ${spot.coords.x} ${spot.coords.y}`);
+            island.refresh();
         }
     }
 }
