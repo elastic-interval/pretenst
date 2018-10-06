@@ -81,13 +81,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     break;
                 case 'KeyG':
                     if (evolution) {
+                        const fittest = evolution.fittest;
                         evolution.dispose();
                         this.setState((state: IGotchiViewState) => {
-                            return {evolution: undefined};
+                            return {
+                                evolution: undefined,
+                                gotchi: fittest
+                            };
                         });
                         if (evolution.fittest && this.state.masterGotch) {
-                            console.log('storing the fittest');
-                            // localStorage.setItem(this.homeGotch.createFingerprint(), JSON.stringify(evolution.fittest.genomeData));
                             this.setState((state: IGotchiViewState) => {
                                 return {gotchi: evolution.fittest};
                             });

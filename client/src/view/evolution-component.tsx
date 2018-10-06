@@ -20,12 +20,12 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
     constructor(props: IEvolutionProps) {
         super(props);
         this.state = {
-            gotchis: props.evolution.gotchis.getValue()
+            gotchis: props.evolution.visibleGotchis.getValue()
         };
     }
 
     public componentDidMount() {
-        this.subscription = this.props.evolution.gotchis.subscribe(gotchis => {
+        this.subscription = this.props.evolution.visibleGotchis.subscribe(gotchis => {
             this.setState(() => {
                 return {gotchis};
             });

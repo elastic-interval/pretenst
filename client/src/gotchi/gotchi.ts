@@ -11,10 +11,7 @@ export interface IGotchiFactory {
 export class Gotchi {
     public frozen = false;
     public clicked = false;
-    public expecting = false;
     public catchingUp = false;
-    public rebornClone?: Gotchi;
-    public offspring?: Gotchi;
     public facesMeshNode: any;
     private embryology?: Embryology;
     private behavior: Behavior;
@@ -49,8 +46,9 @@ export class Gotchi {
         return new Gotchi(fabric, this.genome);
     }
 
-    public mutateBehavior(mutations: number): void {
+    public withMutatedBehavior(mutations: number): Gotchi {
         this.genome = this.genome.withMutatedBehavior(mutations);
+        return this;
     }
 
     public get genomeData(): IGenomeData {
