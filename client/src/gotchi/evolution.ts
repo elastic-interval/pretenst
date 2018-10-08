@@ -51,7 +51,7 @@ export class Evolution {
         const promises: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
             promises.push(this.factory.createGotchiAt(coords.x, coords.y, INITIAL_JOINT_COUNT, mutatingGenome));
-            mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT);
+            mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT/5);
         }
         Promise.all(promises).then(gotchis => {
             this.visibleGotchis.next(gotchis);
@@ -142,10 +142,16 @@ export class Evolution {
         }
         if (frozenCount > this.gotchis.length / 2) {
             if (minFrozenAge * 3 > maxFrozenAge * 2) {
-                const expandedRadius = this.frontier.getValue().radius * FRONTIER_EXPANSION;
-                this.frontier.next({radius: expandedRadius, center: this.center});
                 this.mutationCount--;
-                console.log(`fontier = ${expandedRadius}, mutations = ${this.mutationCount}`);
+                if (this.mutationCount < INITIAL_MUTATION_COUNT/2) {
+                    this.mutationCount = INITIAL_MUTATION_COUNT;
+                    this.frontier.next({radius: INITIAL_FRONTIER, center: this.center});
+                    console.log(`fontier = ${INITIAL_MUTATION_COUNT}, mutations = ${this.mutationCount}`);
+                } else {
+                    const expandedRadius = this.frontier.getValue().radius * FRONTIER_EXPANSION;
+                    this.frontier.next({radius: expandedRadius, center: this.center});
+                    console.log(`fontier = ${expandedRadius}, mutations = ${this.mutationCount}`);
+                }
             }
             const promisedOffspring = this.gotchis.map(gotchi => this.createOffspring(gotchi, true));
             this.dispose();
@@ -182,7 +188,9 @@ export class Evolution {
     }
 
     private get randomOffspring(): Promise<Gotchi> | undefined {
-        const fertile = this.gotchis.filter(gotchi => !gotchi.catchingUp);
+        const fertile = this.gotchis
+            .filter(gotchi => !gotchi.catchingUp)
+            .concat(this.gotchis.filter(gotchi => gotchi.frozen)); // bonus for the frozen
         if (fertile.length) {
             const luckyOne = fertile[Math.floor(fertile.length * Math.random())];
             return this.createOffspring(luckyOne, false);

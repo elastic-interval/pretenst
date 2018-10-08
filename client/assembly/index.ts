@@ -28,7 +28,6 @@ const GRAVITY_ABOVE: f32 = 0.000018920998627436347;
 const DRAG_BELOW: f32 = 0.9607399702072144;
 const GRAVITY_BELOW: f32 = -0.002540299901738763;
 const ELASTIC_FACTOR: f32 = 0.5767999887466431;
-const STIFFNESS_FACTOR: f32 = 0.18230000138282776;
 const MAX_SPAN_VARIATION: f32 = 0.527999997138977;
 const TIME_SWEEP_SPEED: f32 = 21.899999618530273;
 
@@ -60,12 +59,6 @@ let physicsElasticFactor: f32 = ELASTIC_FACTOR;
 
 export function setElasticFactor(factor: f32): f32 {
     return physicsElasticFactor = ELASTIC_FACTOR * factor;
-}
-
-let physicsStiffnessFactor: f32 = STIFFNESS_FACTOR;
-
-export function setStiffnessFactor(factor: f32): f32 {
-    return physicsStiffnessFactor = STIFFNESS_FACTOR * factor;
 }
 
 let maxSpanVariation: f32 = MAX_SPAN_VARIATION;
@@ -885,17 +878,6 @@ function splitVectors(vectorPtr: usize, basisPtr: usize, projectionPtr: usize, h
     multiplyScalar(projectionPtr, agreement * howMuch);
 }
 
-function smoothVelocity(intervalIndex: u16): void {
-    splitVectors(velocityPtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), alphaProjectionPtr, physicsStiffnessFactor);
-    splitVectors(velocityPtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), omegaProjectionPtr, physicsStiffnessFactor);
-    addVectors(projectionPtr, alphaProjectionPtr, omegaProjectionPtr);
-    multiplyScalar(projectionPtr, 0.5);
-    sub(absorbVelocityPtr(getAlphaIndex(intervalIndex)), alphaProjectionPtr);
-    sub(absorbVelocityPtr(getOmegaIndex(intervalIndex)), omegaProjectionPtr);
-    add(absorbVelocityPtr(getAlphaIndex(intervalIndex)), projectionPtr);
-    add(absorbVelocityPtr(getOmegaIndex(intervalIndex)), projectionPtr);
-}
-
 function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     let velocityVectorPtr = velocityPtr(jointIndex);
     let velocityY = getY(velocityVectorPtr);
@@ -933,9 +915,6 @@ function tick(timeSweepStep: u16, hanging: boolean): u16 {
         if (timeSweep > maxTimeSweep) {
             maxTimeSweep = timeSweep;
         }
-    }
-    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        smoothVelocity(thisInterval);
     }
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         exertJointPhysics(thisJoint, physicsDragAbove * (hanging ? 50 : 1));
