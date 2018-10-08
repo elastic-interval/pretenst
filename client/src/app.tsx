@@ -1,6 +1,6 @@
 import * as React from 'react';
 import './app.css';
-import {IFabricExports} from './body/fabric-exports';
+import {Direction, IFabricExports} from './body/fabric-exports';
 import {Island} from './island/island';
 import {IslandView} from './view/island-view';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
@@ -34,7 +34,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 return this.props.createFabricInstance().then(fabricExports => {
                     const fabric = new Fabric(fabricExports, jointCountMax);
                     fabric.createSeed(x, y);
-                    fabric.iterate(1, true);
+                    fabric.iterate(1, Direction.REST, true);
                     return new Gotchi(fabric, genome);
                 });
             }

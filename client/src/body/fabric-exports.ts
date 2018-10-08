@@ -2,6 +2,14 @@ export interface IMemory {
     buffer: ArrayBuffer;
 }
 
+export enum Direction {
+    REST = 0,
+    AHEAD = 1,
+    REVERSE = 2,
+    LEFT = 3,
+    RIGHT = 4,
+}
+
 export interface IFabricExports {
 
     memory: IMemory;
@@ -24,7 +32,7 @@ export interface IFabricExports {
 
     age(): number;
 
-    iterate(ticks: number, direction: number, hanging: boolean): number;
+    iterate(ticks: number, direction: Direction, hanging: boolean): number;
 
     centralize(): void;
 

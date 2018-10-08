@@ -3,6 +3,7 @@ import {Behavior} from '../genetics/behavior';
 import {Genome, IGenomeData} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
 import {Vector3} from 'three';
+import {Direction} from '../body/fabric-exports';
 
 export interface IGotchiFactory {
     createGotchiAt(x: number, y: number, jointCountMax: number, genome: Genome): Promise<Gotchi>;
@@ -13,6 +14,7 @@ export class Gotchi {
     public clicked = false;
     public catchingUp = false;
     public facesMeshNode: any;
+    public direction: Direction = Direction.REST;
     private embryology?: Embryology;
     private behavior: Behavior;
     private hangingCountdown: number;
@@ -56,7 +58,7 @@ export class Gotchi {
     }
 
     public iterate(ticks: number): number {
-        const maxTimeSweep = this.fabric.iterate(ticks, this.hangingCountdown > 0);
+        const maxTimeSweep = this.fabric.iterate(ticks, this.direction, this.hangingCountdown > 0);
         if (maxTimeSweep === 0) {
             if (this.mature) {
                 this.triggerAllIntervals();

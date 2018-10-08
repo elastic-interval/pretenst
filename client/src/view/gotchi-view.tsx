@@ -14,6 +14,7 @@ import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 import {EvolutionFrontier} from './evolution-frontier';
+import {Direction} from '../body/fabric-exports';
 
 const SUN_POSITION = new Vector3(0, 300, 0);
 const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
@@ -136,6 +137,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 this.props.factory
                     .createGotchiAt(coords.x, coords.y, INITIAL_JOINT_COUNT, masterGotch.genome)
                     .then(gotchi => {
+                        gotchi.direction = Direction.AHEAD;
                         this.setState((state: IGotchiViewState) => {
                             return {gotchi};
                         });

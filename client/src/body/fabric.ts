@@ -1,6 +1,6 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
 import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';
-import {IFabricExports} from './fabric-exports';
+import {Direction, IFabricExports} from './fabric-exports';
 import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
 import {Physics} from './physics';
 
@@ -162,8 +162,8 @@ export class Fabric {
         hanger.y += this.setAltitude(HUNG_ALTITUDE);
     }
 
-    public iterate(ticks: number, hanging: boolean): number {
-        return this.fabricExports.iterate(ticks, 0, hanging);
+    public iterate(ticks: number, direction: Direction, hanging: boolean): number {
+        return this.fabricExports.iterate(ticks, direction, hanging);
     }
 
     public removeHanger(): void {

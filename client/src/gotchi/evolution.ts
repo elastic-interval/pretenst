@@ -5,6 +5,7 @@ import {Raycaster, Vector3} from 'three';
 import {Physics} from '../body/physics';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
+import {Direction} from '../body/fabric-exports';
 
 export const INITIAL_JOINT_COUNT = 47;
 const CATCH_UP_TICKS = 220;
@@ -51,9 +52,10 @@ export class Evolution {
         const promises: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
             promises.push(this.factory.createGotchiAt(coords.x, coords.y, INITIAL_JOINT_COUNT, mutatingGenome));
-            mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT/5);
+            mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT / 5);
         }
         Promise.all(promises).then(gotchis => {
+            gotchis.forEach(gotchi => gotchi.direction = Direction.AHEAD);
             this.visibleGotchis.next(gotchis);
         });
     }
@@ -143,7 +145,7 @@ export class Evolution {
         if (frozenCount > this.gotchis.length / 2) {
             if (minFrozenAge * 3 > maxFrozenAge * 2) {
                 this.mutationCount--;
-                if (this.mutationCount < INITIAL_MUTATION_COUNT/2) {
+                if (this.mutationCount < INITIAL_MUTATION_COUNT / 2) {
                     this.mutationCount = INITIAL_MUTATION_COUNT;
                     this.frontier.next({radius: INITIAL_FRONTIER, center: this.center});
                     console.log(`fontier = ${INITIAL_MUTATION_COUNT}, mutations = ${this.mutationCount}`);
@@ -184,7 +186,10 @@ export class Evolution {
         const coords = this.masterGotch.center.scaledCoords;
         return this.factory
             .createGotchiAt(coords.x, coords.y, parent.fabric.jointCountMax + (grow ? 4 : 0), new Genome(parent.genomeData))
-            .then(child => clone ? child : child.withMutatedBehavior(this.mutationCount));
+            .then(child => {
+                child.direction = Direction.AHEAD;
+                return clone ? child : child.withMutatedBehavior(this.mutationCount)
+            });
     }
 
     private get randomOffspring(): Promise<Gotchi> | undefined {

@@ -23,14 +23,12 @@ const BILATERAL_LEFT: u8 = 2;
 
 // Physics =====================================================================================
 
-const DRAG_ABOVE: f32 = 0.009539999882690609;
-// const DRAG_ABOVE: f32 = 0.00009539999882690609;
+const DRAG_ABOVE: f32 = 0.00009539999882690609;
 const GRAVITY_ABOVE: f32 = 0.000018920998627436347;
 const DRAG_BELOW: f32 = 0.9607399702072144;
 const GRAVITY_BELOW: f32 = -0.002540299901738763;
 const ELASTIC_FACTOR: f32 = 0.5767999887466431;
 const MAX_SPAN_VARIATION: f32 = 0.05;
-// const MAX_SPAN_VARIATION: f32 = 0.527999997138977;
 const TIME_SWEEP_SPEED: f32 = 21.899999618530273;
 
 let physicsDragAbove: f32 = DRAG_ABOVE;
@@ -755,6 +753,7 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Muscles =====================================================================================
 
+const REST_DIRECTION: u8 = 0;
 const MUSCLE_COUNT: u16 = 64;
 const REST = <f32>1.0;
 const MUSCLE_DIRECTIONS: u8 = 4;
@@ -772,9 +771,9 @@ function advance(clockPoint: u32): u32 {
     return clockPoint + 65536;
 }
 
-function getMuscleSpanVariationFloat(muscleIndex: u16, direction: u8, timeSweep: u16, reverse: boolean, log: boolean): f32 {
+function getMuscleSpanVariationFloat(muscleIndex: u16, direction: u8, timeSweep: u16, reverse: boolean): f32 {
     let highLow: u8 = getHighLow(musclePtr(muscleIndex, direction));
-    let highClockPoint: u32 = <u32>(highLow / CLOCK_POINTS) << 12; // [0...(65536*15/16)]
+    let highClockPoint: u32 = <u32>(highLow / CLOCK_POINTS) << 12;
     let lowClockPoint: u32 = <u32>(highLow % CLOCK_POINTS) << 12;
     if (highClockPoint === lowClockPoint) {
         lowClockPoint += 1 << 12;
@@ -826,15 +825,7 @@ function getMuscleSpanVariationFloat(muscleIndex: u16, direction: u8, timeSweep:
     let lowToHigh: f32 = <f32>both;
     let degreeHigh = <f32>pointsFromLow / lowToHigh;
     let degreeLow = <f32>pointsFromHigh / lowToHigh;
-    if (log) {
-        logInt(1, pointsFromLow);
-        logInt(2, pointsFromHigh);
-        logInt(3, both);
-        logFloat(4, lowToHigh);
-        logFloat(5, degreeHigh);
-        logFloat(6, degreeLow);
-    }
-    return REST + (reverse ? -REST : REST) * (degreeHigh * maxSpanVariation + degreeLow * -maxSpanVariation);
+    return (reverse ? -REST : REST) * (degreeHigh * maxSpanVariation + degreeLow * -maxSpanVariation);
 }
 
 function interpolateCurrentSpan(intervalIndex: u16, direction: u8): f32 {
@@ -860,9 +851,12 @@ function interpolateCurrentSpan(intervalIndex: u16, direction: u8): f32 {
             return originalSpan * (1 - progress) + idealSpan * progress;
         }
     }
+    if (direction === REST_DIRECTION) {
+        return idealSpan;
+    }
     let opposingMuscle: boolean = (intervalMuscle < 0);
     let muscleIndex: u16 = opposingMuscle ? -intervalMuscle : intervalMuscle;
-    return idealSpan * getMuscleSpanVariationFloat(muscleIndex, direction, timeSweep, opposingMuscle, false);
+    return idealSpan * (REST + getMuscleSpanVariationFloat(muscleIndex, direction - 1, timeSweep, opposingMuscle));
 }
 
 // Physics =====================================================================================
