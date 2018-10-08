@@ -52,17 +52,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.state = {
             cameraTooFar: false,
             masterGotch,
-            center: masterGotch ? new Vector3(masterGotch.center.scaledCoords.x, 0, masterGotch.center.scaledCoords.y) : new Vector3()
+            center: masterGotch ? masterGotch.centerVector : new Vector3()
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
         if (this.state.masterGotch) {
-            const coords = this.state.masterGotch.center.scaledCoords;
-            const toMasterGotch = new Vector3(coords.x, 0, coords.y);
-            this.perspectiveCamera.position.add(toMasterGotch);
-            this.perspectiveCamera.lookAt(toMasterGotch);
+            this.perspectiveCamera.position.add(this.state.masterGotch.centerVector);
         }
         this.selector = new SpotSelector(
             this.perspectiveCamera,
@@ -129,20 +126,19 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidMount() {
-        this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera);
         const masterGotch = this.state.masterGotch;
-        if (masterGotch) {
-            if (masterGotch.genome) {
-                const coords = masterGotch.center.scaledCoords;
-                this.props.factory
-                    .createGotchiAt(coords.x, coords.y, INITIAL_JOINT_COUNT, masterGotch.genome)
-                    .then(gotchi => {
-                        gotchi.direction = Direction.AHEAD;
-                        this.setState((state: IGotchiViewState) => {
-                            return {gotchi};
-                        });
+        const genome = masterGotch ? masterGotch.genome : undefined;
+        const target = masterGotch ? masterGotch.centerVector : undefined;
+        this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera, target);
+        if (masterGotch && genome) {
+            this.props.factory
+                .createGotchiAt(masterGotch.centerVector, INITIAL_JOINT_COUNT, genome)
+                .then(gotchi => {
+                    gotchi.direction = Direction.AHEAD;
+                    this.setState((state: IGotchiViewState) => {
+                        return {gotchi};
                     });
-            }
+                });
         }
         this.animate();
     }

@@ -109,7 +109,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const geometry = new Geometry();
         gotches
             .filter(gotch => !!gotch.genome)
-            .forEach(gotch => gotch.center.addSeedGeometry(geometry.vertices));
+            .forEach(gotch => gotch.centerSpot.addSeedGeometry(geometry.vertices));
         geometry.computeBoundingSphere();
         return geometry;
     }
@@ -119,7 +119,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const geometry = new Geometry();
         gotches
             .filter(gotch => !!gotch.genome && gotch.master !== this.props.island.master)
-            .forEach(gotch => gotch.center.addSeed(geometry.vertices, geometry.faces));
+            .forEach(gotch => gotch.centerSpot.addSeed(geometry.vertices, geometry.faces));
         geometry.computeFaceNormals();
         geometry.computeBoundingSphere();
         return geometry;

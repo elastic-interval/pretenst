@@ -33,7 +33,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         super(props);
         const singleGotch = props.island.singleGotch;
         this.state = {
-            hoverSpot: singleGotch ? singleGotch.center : undefined,
+            hoverSpot: singleGotch ? singleGotch.centerSpot : undefined,
             masterGotch: props.master ? props.island.findGotch(props.master) : undefined
         };
         // const loader = new TextureLoader();

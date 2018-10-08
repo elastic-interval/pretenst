@@ -8,6 +8,7 @@ import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
 import {Gotchi, IGotchiFactory} from './gotchi/gotchi';
 import {Genome} from './genetics/genome';
+import {Vector3} from 'three';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -30,10 +31,10 @@ class App extends React.Component<IAppProps, IAppState> {
     constructor(props: IAppProps) {
         super(props);
         this.gotchiFactory = {
-            createGotchiAt: (x: number, y: number, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
+            createGotchiAt: (location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
                 return this.props.createFabricInstance().then(fabricExports => {
                     const fabric = new Fabric(fabricExports, jointCountMax);
-                    fabric.createSeed(x, y);
+                    fabric.createSeed(location.x, location.z);
                     fabric.iterate(1, Direction.REST, true);
                     return new Gotchi(fabric, genome);
                 });

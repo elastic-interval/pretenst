@@ -6,7 +6,7 @@ import {Vector3} from 'three';
 import {Direction} from '../body/fabric-exports';
 
 export interface IGotchiFactory {
-    createGotchiAt(x: number, y: number, jointCountMax: number, genome: Genome): Promise<Gotchi>;
+    createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>;
 }
 
 export class Gotchi {

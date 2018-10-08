@@ -1,6 +1,7 @@
 import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {equals, ICoords, Spot, Surface} from './spot';
 import {Genome} from '../genetics/genome';
+import {Vector3} from 'three';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 
@@ -60,15 +61,20 @@ export class Gotch {
         return this.genome ? this.genome.master : undefined;
     }
 
-    get center(): Spot {
+    get centerSpot(): Spot {
         return this.spots[0];
+    }
+
+    get centerVector(): Vector3 {
+        const coords = this.centerSpot.scaledCoords;
+        return new Vector3(coords.x, 0, coords.y);
     }
 
     get canBeSeeded(): boolean {
         if (this.genome) {
             return false;
         }
-        return !!this.center.adjacentGotches.find(gotch => !!gotch.genome);
+        return !!this.centerSpot.adjacentGotches.find(gotch => !!gotch.genome);
     }
 
     public destroy(): Spot[] {

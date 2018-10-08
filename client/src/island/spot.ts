@@ -109,7 +109,7 @@ export class Spot {
                 else if (freeGotch) {
                     const centerColor = legal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR;
                     const landColor = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
-                    color = this === freeGotch.center ? centerColor : landColor;
+                    color = this === freeGotch.centerSpot ? centerColor : landColor;
                 } else {
                     color = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
                 }

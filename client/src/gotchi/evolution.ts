@@ -43,15 +43,14 @@ export class Evolution {
 
     constructor(private masterGotch: Gotch, private factory: IGotchiFactory) {
         let mutatingGenome = masterGotch.genome;
-        const coords = masterGotch.center.scaledCoords;
-        this.center = new Vector3(coords.x, 0, coords.y);
+        this.center = masterGotch.centerVector;
         this.frontier = new BehaviorSubject<IFrontier>({
             radius: INITIAL_FRONTIER,
             center: this.center
         });
         const promises: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
-            promises.push(this.factory.createGotchiAt(coords.x, coords.y, INITIAL_JOINT_COUNT, mutatingGenome));
+            promises.push(this.factory.createGotchiAt(this.center, INITIAL_JOINT_COUNT, mutatingGenome));
             mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT / 5);
         }
         Promise.all(promises).then(gotchis => {
@@ -183,9 +182,12 @@ export class Evolution {
         if (grow) {
             console.log('grow!');
         }
-        const coords = this.masterGotch.center.scaledCoords;
         return this.factory
-            .createGotchiAt(coords.x, coords.y, parent.fabric.jointCountMax + (grow ? 4 : 0), new Genome(parent.genomeData))
+            .createGotchiAt(
+                this.masterGotch.centerVector,
+                parent.fabric.jointCountMax + (grow ? 4 : 0),
+                new Genome(parent.genomeData)
+            )
             .then(child => {
                 child.direction = Direction.AHEAD;
                 return clone ? child : child.withMutatedBehavior(this.mutationCount)
