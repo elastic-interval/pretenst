@@ -121,17 +121,11 @@ class App extends React.Component<IAppProps, IAppState> {
         this.state.island.refresh();
         return (
             <div>
-                <GotchiView width={this.state.mainWidth}
+                <GotchiView width={this.state.mainWidth + this.state.sideWidth}
                             height={this.state.mainHeight}
                             island={this.state.island}
                             master={master}
                             factory={this.gotchiFactory}
-                />
-                <IslandView key="IslandSide" className="side-top-view"
-                            width={this.state.sideWidth}
-                            height={this.state.sideHeight}
-                            island={this.state.island}
-                            master={master}
                 />
             </div>
         );
