@@ -134,7 +134,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             this.props.factory
                 .createGotchiAt(masterGotch.centerVector, INITIAL_JOINT_COUNT, genome)
                 .then(gotchi => {
-                    gotchi.direction = Direction.AHEAD;
+                    gotchi.nextDirection = Direction.AHEAD;
                     this.setState((state: IGotchiViewState) => {
                         return {gotchi};
                     });

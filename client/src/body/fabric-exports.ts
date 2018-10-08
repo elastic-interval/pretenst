@@ -32,7 +32,7 @@ export interface IFabricExports {
 
     age(): number;
 
-    iterate(ticks: number, direction: Direction, hanging: boolean): number;
+    iterate(ticks: number, direction: Direction, intensity: number, hanging: boolean): number;
 
     centralize(): void;
 

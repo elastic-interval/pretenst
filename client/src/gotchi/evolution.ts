@@ -54,7 +54,7 @@ export class Evolution {
             mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT / 5);
         }
         Promise.all(promises).then(gotchis => {
-            gotchis.forEach(gotchi => gotchi.direction = Direction.AHEAD);
+            gotchis.forEach(gotchi => gotchi.nextDirection = Direction.AHEAD);
             this.visibleGotchis.next(gotchis);
         });
     }
@@ -189,7 +189,7 @@ export class Evolution {
                 new Genome(parent.genomeData)
             )
             .then(child => {
-                child.direction = Direction.AHEAD;
+                child.nextDirection = Direction.AHEAD;
                 return clone ? child : child.withMutatedBehavior(this.mutationCount)
             });
     }

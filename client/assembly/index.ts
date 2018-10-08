@@ -828,7 +828,7 @@ function getMuscleSpanVariationFloat(muscleIndex: u16, direction: u8, timeSweep:
     return (reverse ? -REST : REST) * (degreeHigh * maxSpanVariation + degreeLow * -maxSpanVariation);
 }
 
-function interpolateCurrentSpan(intervalIndex: u16, direction: u8): f32 {
+function interpolateCurrentSpan(intervalIndex: u16, direction: u8, intensity: f32): f32 {
     let timeSweep = getTimeSweep(intervalIndex);
     let intervalMuscle = getIntervalMuscle(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
@@ -856,7 +856,7 @@ function interpolateCurrentSpan(intervalIndex: u16, direction: u8): f32 {
     }
     let opposingMuscle: boolean = (intervalMuscle < 0);
     let muscleIndex: u16 = opposingMuscle ? -intervalMuscle : intervalMuscle;
-    return idealSpan * (REST + getMuscleSpanVariationFloat(muscleIndex, direction - 1, timeSweep, opposingMuscle));
+    return idealSpan * (REST + intensity * getMuscleSpanVariationFloat(muscleIndex, direction - 1, timeSweep, opposingMuscle));
 }
 
 // Physics =====================================================================================
@@ -866,8 +866,8 @@ function abs(val: f32): f32 {
     return val < 0 ? -val : val;
 }
 
-function elastic(intervalIndex: u16, elasticFactor: f32, direction: u8): void {
-    let idealSpan = interpolateCurrentSpan(intervalIndex, direction);
+function elastic(intervalIndex: u16, elasticFactor: f32, direction: u8, intensity: f32): void {
+    let idealSpan = interpolateCurrentSpan(intervalIndex, direction, intensity);
     let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan;
     addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
     addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
@@ -923,10 +923,10 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     }
 }
 
-function tick(timeSweepStep: u16, direction: u8, hanging: boolean): u16 {
+function tick(timeSweepStep: u16, direction: u8, intensity: f32, hanging: boolean): u16 {
     let maxTimeSweep: u16 = 0;
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        elastic(intervalIndex, hanging ? physicsElasticFactor * 0.1 : physicsElasticFactor, direction);
+        elastic(intervalIndex, hanging ? physicsElasticFactor * 0.1 : physicsElasticFactor, direction, intensity);
         let timeSweep = advanceTimeSweep(intervalIndex, timeSweepStep);
         if (timeSweep > maxTimeSweep) {
             maxTimeSweep = timeSweep;
@@ -944,14 +944,14 @@ function tick(timeSweepStep: u16, direction: u8, hanging: boolean): u16 {
     return maxTimeSweep;
 }
 
-export function iterate(ticks: usize, direction: u8, hanging: boolean): u16 {
+export function iterate(ticks: usize, direction: u8, intensity: f32, hanging: boolean): u16 {
     let timeSweepStep: u16 = <u16>timeSweepSpeed;
     if (hanging) {
         timeSweepStep *= 3;
     }
     let maxTimeSweep: u16 = 0;
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        let tickMaxTimeSweep = tick(timeSweepStep, direction, hanging);
+        let tickMaxTimeSweep = tick(timeSweepStep, direction, intensity, hanging);
         if (tickMaxTimeSweep > maxTimeSweep) {
             maxTimeSweep = tickMaxTimeSweep;
         }

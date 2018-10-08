@@ -9,12 +9,17 @@ export interface IGotchiFactory {
     createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>;
 }
 
+const GEAR_UP = 0.0001;
+
 export class Gotchi {
     public frozen = false;
     public clicked = false;
     public catchingUp = false;
     public facesMeshNode: any;
-    public direction: Direction = Direction.REST;
+    public nextDirection: Direction = Direction.REST;
+    private currentDirection: Direction = Direction.REST;
+    private intensity = 1;
+    private clutch = false;
     private embryology?: Embryology;
     private behavior: Behavior;
     private hangingCountdown: number;
@@ -58,7 +63,26 @@ export class Gotchi {
     }
 
     public iterate(ticks: number): number {
-        const maxTimeSweep = this.fabric.iterate(ticks, this.direction, this.hangingCountdown > 0);
+        const changeClutch = () => {
+            const intensity = this.intensity + ticks * (this.clutch ? -GEAR_UP : GEAR_UP);
+            if (intensity > 1) {
+                this.intensity = 1;
+            } else if (intensity < 0) {
+                this.intensity = 0;
+                this.currentDirection = this.nextDirection;
+                this.clutch = false;
+            } else {
+                this.intensity = intensity;
+            }
+        };
+        const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity, this.hangingCountdown > 0);
+        if (this.nextDirection !== this.currentDirection && !this.clutch) {
+            this.clutch = true;
+            changeClutch(); // so intensity < 1, engage
+        }
+        if (this.intensity < 1) {
+            changeClutch();
+        }
         if (maxTimeSweep === 0) {
             if (this.mature) {
                 this.triggerAllIntervals();

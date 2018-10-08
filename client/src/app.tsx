@@ -35,7 +35,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 return this.props.createFabricInstance().then(fabricExports => {
                     const fabric = new Fabric(fabricExports, jointCountMax);
                     fabric.createSeed(location.x, location.z);
-                    fabric.iterate(1, Direction.REST, true);
+                    fabric.iterate(1, Direction.REST, 1, true);
                     return new Gotchi(fabric, genome);
                 });
             }
