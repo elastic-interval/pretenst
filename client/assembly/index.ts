@@ -9,7 +9,7 @@ const LATERALITY_SIZE: usize = sizeof<u8>();
 const INTERVAL_MUSCLE_SIZE: usize = sizeof<i16>();
 const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
-const SPAN_VARIATION_SIZE: usize = sizeof<i16>();
+const MUSCLE_HIGHLOW_SIZE: usize = sizeof<u8>();
 const FLOAT_SIZE: usize = sizeof<f32>();
 const AGE_SIZE: usize = sizeof<u32>();
 const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
@@ -23,12 +23,14 @@ const BILATERAL_LEFT: u8 = 2;
 
 // Physics =====================================================================================
 
-const DRAG_ABOVE: f32 = 0.00009539999882690609;
+const DRAG_ABOVE: f32 = 0.009539999882690609;
+// const DRAG_ABOVE: f32 = 0.00009539999882690609;
 const GRAVITY_ABOVE: f32 = 0.000018920998627436347;
 const DRAG_BELOW: f32 = 0.9607399702072144;
 const GRAVITY_BELOW: f32 = -0.002540299901738763;
 const ELASTIC_FACTOR: f32 = 0.5767999887466431;
-const MAX_SPAN_VARIATION: f32 = 0.527999997138977;
+const MAX_SPAN_VARIATION: f32 = 0.05;
+// const MAX_SPAN_VARIATION: f32 = 0.527999997138977;
 const TIME_SWEEP_SPEED: f32 = 21.899999618530273;
 
 let physicsDragAbove: f32 = DRAG_ABOVE;
@@ -112,7 +114,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     let jointsSize = jointCountMax * JOINT_SIZE;
     let intervalsSize = intervalCountMax * INTERVAL_SIZE;
     let facesSize = faceCountMax * FACE_SIZE;
-    let musclesSize = MUSCLE_STATE_COUNT * SPAN_VARIATION_SIZE;
+    let musclesSize = MUSCLE_COUNT * MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS;
     // offsets
     let bytes = (
         agePtr = (
@@ -145,8 +147,10 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     ) + AGE_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
-    for (let muscleStateIndex: u16 = 0; muscleStateIndex < MUSCLE_STATE_COUNT; muscleStateIndex++) {
-        setMuscleState(muscleStateIndex, 0);
+    for (let muscleIndex: u16 = 0; muscleIndex < MUSCLE_COUNT; muscleIndex++) {
+        for (let direction: u8 = 0; direction < MUSCLE_COUNT; direction++) {
+            setMuscleHighLow(muscleIndex, direction, 0x08);
+        }
     }
     return bytes;
 }
@@ -163,8 +167,8 @@ export function faces(): usize {
     return faceCount;
 }
 
-export function muscleStates(): usize {
-    return MUSCLE_STATE_COUNT;
+export function muscles(): usize {
+    return MUSCLE_COUNT;
 }
 
 export function nextJointTag(): u16 {
@@ -210,13 +214,13 @@ function timePasses(ticks: usize): void {
 }
 
 @inline()
-function getSpanVariation(vPtr: usize): i16 {
-    return load<i16>(vPtr);
+function getHighLow(vPtr: usize): u8 {
+    return load<u8>(vPtr);
 }
 
 @inline()
-function setSpanVariation(vPtr: usize, variation: i16): void {
-    store<i16>(vPtr, variation);
+function setHighLow(vPtr: usize, highLow: u8): void {
+    store<u8>(vPtr, highLow);
 }
 
 @inline()
@@ -751,32 +755,89 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Muscles =====================================================================================
 
-const MUSCLE_SEQUENCE_LENGTH: u8 = 3;
-const MUSCLE_STATE_COUNT: u16 = 200;
-const SWEEP_CHUNK = <u16>65535 / <u16>(MUSCLE_SEQUENCE_LENGTH + 1) + 1; // +1 to avoid index overrun
-const HALF_SWEEP = <u16>32767;
-const HALF_SWEEP_CHUNK = HALF_SWEEP / <u16>(MUSCLE_SEQUENCE_LENGTH + 1) + 1; // +1 to avoid index overrun
+const MUSCLE_COUNT: u16 = 64;
+const REST = <f32>1.0;
+const MUSCLE_DIRECTIONS: u8 = 4;
+const CLOCK_POINTS: u8 = 16;
 
-function musclePtr(muscleIndex: u16, sequenceIndex: u8): usize {
-    let variationNumber = (muscleIndex + sequenceIndex) % MUSCLE_STATE_COUNT; // wrap around
-    return muscleOffset + variationNumber * SPAN_VARIATION_SIZE; // they overlap intentionally
+function musclePtr(muscleIndex: u16, direction: u8): usize {
+    return muscleOffset + muscleIndex * MUSCLE_DIRECTIONS + direction;
 }
 
-export function setMuscleState(muscleStateIndex: u16, spanVariation: i16): void {
-    setSpanVariation(musclePtr(muscleStateIndex, 0), spanVariation);
+export function setMuscleHighLow(muscleIndex: u16, direction: u8, highLow: u8): void {
+    setHighLow(musclePtr(muscleIndex, direction), highLow);
 }
 
-function getMuscleSpanVariationFloat(muscleIndex: u16, sequenceIndex: u8, reverse: boolean): f32 {
-    let variationInt = getSpanVariation(musclePtr(muscleIndex, sequenceIndex));
-    let variationFloat = <f32>variationInt / <f32>32767;
-    if (reverse) {
-        return 1.0 - maxSpanVariation * variationFloat;
-    } else {
-        return 1.0 + maxSpanVariation * variationFloat;
+function advance(clockPoint: u32): u32 {
+    return clockPoint + 65536;
+}
+
+function getMuscleSpanVariationFloat(muscleIndex: u16, direction: u8, timeSweep: u16, reverse: boolean, log: boolean): f32 {
+    let highLow: u8 = getHighLow(musclePtr(muscleIndex, direction));
+    let highClockPoint: u32 = <u32>(highLow / CLOCK_POINTS) << 12; // [0...(65536*15/16)]
+    let lowClockPoint: u32 = <u32>(highLow % CLOCK_POINTS) << 12;
+    if (highClockPoint === lowClockPoint) {
+        lowClockPoint += 1 << 12;
     }
+    let pointsFromHigh: u32;
+    let pointsFromLow: u32;
+    if (timeSweep === lowClockPoint) {
+        pointsFromHigh = 1;
+        pointsFromLow = 0;
+    } else if (timeSweep === highClockPoint) {
+        pointsFromHigh = 0;
+        pointsFromLow = 1;
+    } else if (lowClockPoint < highClockPoint) {
+        // L-H
+        if (timeSweep > lowClockPoint) {
+            if (timeSweep < highClockPoint) {
+                // L-t-H
+                pointsFromLow = timeSweep - lowClockPoint;
+                pointsFromHigh = highClockPoint - timeSweep;
+            } else {
+                // L-H-t (H-t-L)
+                pointsFromLow = advance(lowClockPoint) - timeSweep;
+                pointsFromHigh = timeSweep - highClockPoint;
+            }
+        } else {
+            // t-L-H (L-H-t)
+            pointsFromLow = lowClockPoint - timeSweep;
+            pointsFromHigh = advance(timeSweep) - highClockPoint;
+        }
+    } else {
+        // H-L
+        if (timeSweep > highClockPoint) {
+            if (timeSweep < lowClockPoint) {
+                // H-t-L
+                pointsFromHigh = timeSweep - highClockPoint;
+                pointsFromLow = lowClockPoint - timeSweep;
+            } else {
+                // H-L-t (L-t-H)
+                pointsFromHigh = advance(highClockPoint) - timeSweep;
+                pointsFromLow = timeSweep - lowClockPoint;
+            }
+        } else {
+            // t-H-L (H-L-t)
+            pointsFromHigh = highClockPoint - timeSweep;
+            pointsFromLow = advance(timeSweep) - lowClockPoint;
+        }
+    }
+    let both: u32 = pointsFromHigh + pointsFromLow;
+    let lowToHigh: f32 = <f32>both;
+    let degreeHigh = <f32>pointsFromLow / lowToHigh;
+    let degreeLow = <f32>pointsFromHigh / lowToHigh;
+    if (log) {
+        logInt(1, pointsFromLow);
+        logInt(2, pointsFromHigh);
+        logInt(3, both);
+        logFloat(4, lowToHigh);
+        logFloat(5, degreeHigh);
+        logFloat(6, degreeLow);
+    }
+    return REST + (reverse ? -REST : REST) * (degreeHigh * maxSpanVariation + degreeLow * -maxSpanVariation);
 }
 
-function interpolateCurrentSpan(intervalIndex: u16): f32 {
+function interpolateCurrentSpan(intervalIndex: u16, direction: u8): f32 {
     let timeSweep = getTimeSweep(intervalIndex);
     let intervalMuscle = getIntervalMuscle(intervalIndex);
     let idealSpan = getFloat(idealSpanPtr(intervalIndex));
@@ -799,27 +860,9 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
             return originalSpan * (1 - progress) + idealSpan * progress;
         }
     }
-    // 0 ---SWEEP_CHUNK------------------- 65536 (sweepChunk is 13107)
-    // 0 -----[ 1 ----- 2 ----- 3 ]-----   4 (4 is unreachable for before, only after)
-
-    let reverseSweep = timeSweep > HALF_SWEEP;
-    if (reverseSweep) {
-        timeSweep -= HALF_SWEEP;
-    }
     let opposingMuscle: boolean = (intervalMuscle < 0);
     let muscleIndex: u16 = opposingMuscle ? -intervalMuscle : intervalMuscle;
-    let before: u8 = <u8>(timeSweep / HALF_SWEEP_CHUNK); // [0..3]
-    let after: u8 = before + 1; // [1..4]
-    let reverseVariation = reverseSweep === opposingMuscle;
-    let beforeVariation: f32 = (before === 0) ? 1 : getMuscleSpanVariationFloat(muscleIndex, before, reverseVariation);
-    let afterVariation: f32 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? 1 : getMuscleSpanVariationFloat(muscleIndex, after, reverseVariation);
-    let beforeTime = before * HALF_SWEEP_CHUNK;
-    let afterTime: u16 = (after === MUSCLE_SEQUENCE_LENGTH + 1) ? HALF_SWEEP : after * HALF_SWEEP_CHUNK;
-    let timeSpan = <f32>HALF_SWEEP_CHUNK;
-    let currentVariation =
-        <f32>(timeSweep - beforeTime) / timeSpan * afterVariation +
-        <f32>(afterTime - timeSweep) / timeSpan * beforeVariation;
-    return idealSpan * currentVariation;
+    return idealSpan * getMuscleSpanVariationFloat(muscleIndex, direction, timeSweep, opposingMuscle, false);
 }
 
 // Physics =====================================================================================
@@ -829,8 +872,8 @@ function abs(val: f32): f32 {
     return val < 0 ? -val : val;
 }
 
-function elastic(intervalIndex: u16, elasticFactor: f32): void {
-    let idealSpan = interpolateCurrentSpan(intervalIndex);
+function elastic(intervalIndex: u16, elasticFactor: f32, direction: u8): void {
+    let idealSpan = interpolateCurrentSpan(intervalIndex, direction);
     let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan;
     addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2);
     addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2);
@@ -855,12 +898,6 @@ function advanceTimeSweep(intervalIndex: u16, timeSweepStep: u16): u16 {
         setTimeSweep(intervalIndex, timeSweep);
     }
     return timeSweep;
-}
-
-function splitVectors(vectorPtr: usize, basisPtr: usize, projectionPtr: usize, howMuch: f32): void {
-    let agreement = dot(vectorPtr, basisPtr);
-    setVector(projectionPtr, basisPtr);
-    multiplyScalar(projectionPtr, agreement * howMuch);
 }
 
 function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
@@ -892,10 +929,10 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     }
 }
 
-function tick(timeSweepStep: u16, hanging: boolean): u16 {
+function tick(timeSweepStep: u16, direction: u8, hanging: boolean): u16 {
     let maxTimeSweep: u16 = 0;
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        elastic(intervalIndex, hanging ? physicsElasticFactor * 0.1 : physicsElasticFactor);
+        elastic(intervalIndex, hanging ? physicsElasticFactor * 0.1 : physicsElasticFactor, direction);
         let timeSweep = advanceTimeSweep(intervalIndex, timeSweepStep);
         if (timeSweep > maxTimeSweep) {
             maxTimeSweep = timeSweep;
@@ -913,14 +950,14 @@ function tick(timeSweepStep: u16, hanging: boolean): u16 {
     return maxTimeSweep;
 }
 
-export function iterate(ticks: usize, hanging: boolean): u16 {
+export function iterate(ticks: usize, direction: u8, hanging: boolean): u16 {
     let timeSweepStep: u16 = <u16>timeSweepSpeed;
     if (hanging) {
         timeSweepStep *= 3;
     }
     let maxTimeSweep: u16 = 0;
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        let tickMaxTimeSweep = tick(timeSweepStep, hanging);
+        let tickMaxTimeSweep = tick(timeSweepStep, direction, hanging);
         if (tickMaxTimeSweep > maxTimeSweep) {
             maxTimeSweep = tickMaxTimeSweep;
         }

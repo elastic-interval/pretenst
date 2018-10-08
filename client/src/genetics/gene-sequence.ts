@@ -17,12 +17,4 @@ export class GeneSequence {
     public nextChoice(maxChoice: number): number {
         return Math.floor(maxChoice * this.next());
     }
-
-    public nextTime(): number {
-        return this.nextChoice(MAX_TIME);
-    }
-
-    public nextSpanVariation(): number {
-        return Math.floor((this.next() - 0.5) * 32767);
-    }
 }

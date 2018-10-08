@@ -61,8 +61,8 @@ export class Fabric {
         return this.fabricExports.faces();
     }
 
-    public get muscleStateCount() {
-        return this.fabricExports.muscleStates();
+    public get muscleCount() {
+        return this.fabricExports.muscles();
     }
 
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
@@ -163,7 +163,7 @@ export class Fabric {
     }
 
     public iterate(ticks: number, hanging: boolean): number {
-        return this.fabricExports.iterate(ticks, hanging);
+        return this.fabricExports.iterate(ticks, 0, hanging);
     }
 
     public removeHanger(): void {
@@ -206,12 +206,8 @@ export class Fabric {
         return new FaceSnapshot(this, this.kernel, this.fabricExports, faceIndex);
     }
 
-    public setMuscleState(muscleStateIndex: number, spanVariationFloat: number): void {
-        if (muscleStateIndex < 0 || muscleStateIndex >= this.muscleStateCount) {
-            throw new Error(`Bad muscle state index ${muscleStateIndex}`);
-        }
-        const spanVariation = Math.floor(Math.abs(spanVariationFloat));
-        this.fabricExports.setMuscleState(muscleStateIndex, spanVariation);
+    public setMuscleHighLow(muscleIndex: number, direction: number, highLow: number): void {
+        this.fabricExports.setMuscleHighLow(muscleIndex, direction, highLow);
     }
 
     public setIntervalMuscle(intervalIndex: number, intervalMuscle: number): void {
@@ -219,7 +215,7 @@ export class Fabric {
             throw new Error(`Bad interval index index ${intervalIndex}`);
         }
         const specialMuscle = intervalMuscle === INTERVAL_MUSCLE_STATIC || intervalMuscle === INTERVAL_MUSCLE_GROWING;
-        if (!specialMuscle && Math.abs(intervalMuscle) >= this.muscleStateCount) {
+        if (!specialMuscle && Math.abs(intervalMuscle) >= this.muscleCount) {
             throw new Error(`Bad interval muscle: ${intervalMuscle}`);
         }
         // console.log(`I[${intervalIndex}]=${intervalMuscle}`);

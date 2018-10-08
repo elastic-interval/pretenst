@@ -24,7 +24,7 @@ export interface IFabricExports {
 
     age(): number;
 
-    iterate(ticks: number, hanging: boolean): number;
+    iterate(ticks: number, direction: number, hanging: boolean): number;
 
     centralize(): void;
 
@@ -66,7 +66,7 @@ export interface IFabricExports {
 
     getFaceAverageIdealSpan(faceIndex: number): number;
 
-    muscleStates(): number;
+    muscles(): number;
 
-    setMuscleState(muscleStateIndex: number, spanVariation: number): void;
+    setMuscleHighLow(muscleIndex: number, direction:number, highLow: number): void;
 }
