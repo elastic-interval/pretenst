@@ -10,7 +10,6 @@ export const BILATERAL_LEFT = 2;
 export const INTERVAL_MUSCLE_STATIC = -32767;
 export const INTERVAL_MUSCLE_GROWING = -32766;
 export const HANGING_DELAY = 3000;
-export const REST_DELAY = 2000;
 export const HUNG_ALTITUDE = 7;
 export const SEED_CORNERS = 5;
 export const NORMAL_TICKS = 40;
@@ -206,7 +205,7 @@ export class Fabric {
         return new FaceSnapshot(this, this.kernel, this.fabricExports, faceIndex);
     }
 
-    public setMuscleHighLow(muscleIndex: number, direction: number, highLow: number): void {
+    public setMuscleHighLow(muscleIndex: number, direction: Direction, highLow: number): void {
         this.fabricExports.setMuscleHighLow(muscleIndex, direction, highLow);
     }
 

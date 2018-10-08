@@ -28,8 +28,8 @@ const GRAVITY_ABOVE: f32 = 0.000018920998627436347;
 const DRAG_BELOW: f32 = 0.9607399702072144;
 const GRAVITY_BELOW: f32 = -0.002540299901738763;
 const ELASTIC_FACTOR: f32 = 0.5767999887466431;
-const MAX_SPAN_VARIATION: f32 = 0.05;
-const TIME_SWEEP_SPEED: f32 = 21.899999618530273;
+const MAX_SPAN_VARIATION: f32 = 0.1;
+const TIME_SWEEP_SPEED: f32 = 30;
 
 let physicsDragAbove: f32 = DRAG_ABOVE;
 
@@ -146,7 +146,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
     for (let muscleIndex: u16 = 0; muscleIndex < MUSCLE_COUNT; muscleIndex++) {
-        for (let direction: u8 = 0; direction < MUSCLE_COUNT; direction++) {
+        for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
             setMuscleHighLow(muscleIndex, direction, 0x08);
         }
     }
@@ -764,7 +764,7 @@ function musclePtr(muscleIndex: u16, direction: u8): usize {
 }
 
 export function setMuscleHighLow(muscleIndex: u16, direction: u8, highLow: u8): void {
-    setHighLow(musclePtr(muscleIndex, direction), highLow);
+    setHighLow(musclePtr(muscleIndex, direction - 1), highLow);
 }
 
 function advance(clockPoint: u32): u32 {
@@ -772,7 +772,7 @@ function advance(clockPoint: u32): u32 {
 }
 
 function getMuscleSpanVariationFloat(muscleIndex: u16, direction: u8, timeSweep: u16, reverse: boolean): f32 {
-    let highLow: u8 = getHighLow(musclePtr(muscleIndex, direction));
+    let highLow: u8 = getHighLow(musclePtr(muscleIndex, direction - 1));
     let highClockPoint: u32 = <u32>(highLow / CLOCK_POINTS) << 12;
     let lowClockPoint: u32 = <u32>(highLow % CLOCK_POINTS) << 12;
     if (highClockPoint === lowClockPoint) {
@@ -856,7 +856,7 @@ function interpolateCurrentSpan(intervalIndex: u16, direction: u8, intensity: f3
     }
     let opposingMuscle: boolean = (intervalMuscle < 0);
     let muscleIndex: u16 = opposingMuscle ? -intervalMuscle : intervalMuscle;
-    return idealSpan * (REST + intensity * getMuscleSpanVariationFloat(muscleIndex, direction - 1, timeSweep, opposingMuscle));
+    return idealSpan * (REST + intensity * getMuscleSpanVariationFloat(muscleIndex, direction, timeSweep, opposingMuscle));
 }
 
 // Physics =====================================================================================

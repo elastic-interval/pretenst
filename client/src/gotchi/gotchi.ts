@@ -1,4 +1,4 @@
-import {Fabric, HANGING_DELAY, REST_DELAY} from '../body/fabric';
+import {Fabric, HANGING_DELAY} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
 import {Genome, IGenomeData} from '../genetics/genome';
 import {Embryology} from '../genetics/embryology';
@@ -9,7 +9,7 @@ export interface IGotchiFactory {
     createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>;
 }
 
-const GEAR_UP = 0.0001;
+const GEAR_UP = 0.0002;
 
 export class Gotchi {
     public frozen = false;
@@ -23,14 +23,12 @@ export class Gotchi {
     private embryology?: Embryology;
     private behavior: Behavior;
     private hangingCountdown: number;
-    private restCountdown: number;
     private mature = false;
 
     constructor(public fabric: Fabric, private genome: Genome) {
         this.embryology = genome.embryology(fabric);
         this.behavior = genome.behavior(fabric);
         this.hangingCountdown = HANGING_DELAY;
-        this.restCountdown = REST_DELAY;
     }
 
     public get master() {
@@ -97,8 +95,6 @@ export class Gotchi {
                     if (this.hangingCountdown <= 0) {
                         this.fabric.removeHanger();
                     }
-                } else if (this.restCountdown > 0) {
-                    this.restCountdown -= ticks;
                 } else {
                     this.behavior.apply();
                     this.triggerAllIntervals();
