@@ -1,6 +1,21 @@
+import {Vector3} from 'three';
+
 export const STOP_STEP = 0;
 export const BRANCH_STEP = 7;
 export const ERROR_STEP = 8;
+
+export const HEXAGON_POINTS = [
+    new Vector3(0, 0, -10),
+    new Vector3(-8.66, 0, -5),
+    new Vector3(-8.66, 0, 5),
+    new Vector3(0, 0, 10),
+    new Vector3(8.66, 0, 5),
+    new Vector3(8.66, 0, -5),
+    new Vector3()
+];
+
+export const HEXAPOD_PROJECTION = 0.5;
+export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * 10;
 
 export const GOTCH_SHAPE = [
     // center

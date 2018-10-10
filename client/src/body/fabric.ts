@@ -40,8 +40,12 @@ export class Fabric {
         }
     }
 
-    public get midpoint(): Vector3 {
+    public get midpoint(): Float32Array {
         return this.kernel.midpoint;
+    }
+
+    public get midpointVector(): Vector3 {
+        return this.kernel.midpointVector;
     }
 
     public get jointCount() {

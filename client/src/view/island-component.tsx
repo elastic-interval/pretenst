@@ -136,11 +136,13 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     private createSeedGeometry(foreign: boolean): Geometry {
         const gotches = this.props.island.gotches;
         const geometry = new Geometry();
-        gotches
-            .filter(gotch => foreign ? this.isForeignGotch(gotch) : this.isHomeGotch(gotch))
-            .forEach(gotch => gotch.centerSpot.addSeed(geometry.vertices, geometry.faces));
-        geometry.computeFaceNormals();
-        geometry.computeBoundingSphere();
+        if (foreign) {
+            gotches
+                .filter(gotch => foreign ? this.isForeignGotch(gotch) : this.isHomeGotch(gotch))
+                .forEach(gotch => gotch.centerSpot.addSeed(geometry.vertices, geometry.faces));
+            geometry.computeFaceNormals();
+            geometry.computeBoundingSphere();
+        }
         return geometry;
     }
 

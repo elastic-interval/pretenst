@@ -43,8 +43,9 @@ export class Gotchi {
         if (this.fabric.age === 0) {
             throw new Error('Zero age midpoint!');
         }
-        const midpoint = this.fabric.midpoint.sub(location);
-        return Math.sqrt(midpoint.x * midpoint.x + midpoint.z * midpoint.z);
+        const xx = this.fabric.midpoint[0] - location.x;
+        const zz = this.fabric.midpoint[2] - location.z;
+        return Math.sqrt(xx * xx + zz * zz);
     }
 
     public withNewBody(fabric: Fabric): Gotchi {

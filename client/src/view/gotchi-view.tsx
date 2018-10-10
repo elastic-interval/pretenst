@@ -45,12 +45,12 @@ function dispose(state: IGotchiViewState) {
     }
 }
 
-function startEvolution(gotch: Gotch) {
+function startEvolution(gotch: Gotch, targetSpot: Spot) {
     return (state: IGotchiViewState) => {
         dispose(state);
         return {
             gotchi: undefined,
-            evolution: new Evolution(gotch)
+            evolution: new Evolution(gotch, targetSpot)
         };
     };
 }
@@ -77,12 +77,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     constructor(props: IGotchiViewProps) {
         super(props);
         const masterGotch = props.master ? props.island.findGotch(props.master) : undefined;
-        const tripSpots = masterGotch ? [masterGotch.centerSpot] : [];
-        props.island.gotches.forEach(gotch => {
-            if (gotch !== masterGotch && Math.random() > 0.5) {
-                tripSpots.push(gotch.centerSpot);
-            }
-        });
+        const tripSpots = masterGotch ? [masterGotch.centerSpot, masterGotch.centerSpot.adjacentSpots[0]] : [];
         this.state = {
             masterGotch,
             tripSpots,
@@ -117,7 +112,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     break;
                 case 'KeyE':
                 case 'KeyR':
-                    if (masterGotch) {
+                    if (masterGotch && tripSpots.length > 0) {
                         const randomize = event.code === 'KeyR';
                         if (randomize) {
                             masterGotch.genome = new Genome({
@@ -126,7 +121,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                 growthSequence: []
                             });
                         }
-                        this.setState(startEvolution(masterGotch))
+                        this.setState(startEvolution(masterGotch, tripSpots[1]))
                     }
                     break;
             }
@@ -144,7 +139,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const masterGotch = this.state.masterGotch;
         const target = masterGotch ? masterGotch.center : undefined;
         this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera, target);
-        this.birthFromGotch(masterGotch);
+        // this.birthFromGotch(masterGotch);
+        if (masterGotch) {
+            this.setState(startEvolution(masterGotch, this.state.tripSpots[1]))
+        }
         this.animate();
     }
 
@@ -164,7 +162,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             } else if (framesPerSecond < TARGET_FRAME_RATE) {
                 this.frameDelay /= 2;
             }
-            console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
+            // console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
         return (
             <div id="gotchi-view"
@@ -261,7 +259,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             this.orbit.moveTargetTowards(evolution.midpoint);
                         } else if (gotchi) {
                             gotchi.iterate(NORMAL_TICKS);
-                            this.orbit.moveTargetTowards(gotchi.fabric.midpoint);
+                            this.orbit.moveTargetTowards(gotchi.fabric.midpointVector);
                         } else {
                             this.orbit.moveTargetTowards(this.props.island.midpoint);
                         }

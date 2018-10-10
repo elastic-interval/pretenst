@@ -1,9 +1,7 @@
 import {Gotch} from './gotch';
 import {Color, Face3, Vector3} from 'three';
 import {HUNG_ALTITUDE, SEED_CORNERS, SPOT_TO_HANGER} from '../body/fabric';
-
-const SCALEX = 8.66;
-const SCALEY = 15;
+import {HEXAGON_POINTS, HEXAPOD_PROJECTION} from './shapes';
 
 export interface ICoords {
     x: number;
@@ -16,25 +14,17 @@ export enum Surface {
     Water = 'water'
 }
 
+const SCALEX = 8.66;
+const SCALEY = 15;
 const SURFACE_UNKNOWN_COLOR = new Color('silver');
 const SURFACE_LAND_COLOR = new Color('tan');
 const SURFACE_CLICKABLE_COLOR = new Color('mediumseagreen');
 const SURFACE_FREE_GOTCH_COLOR = new Color('crimson');
 const SURFACE_WATER_COLOR = new Color('darkturquoise');
-const HANGER_BASE = 0.5;
 const SIX = 6;
 const UP = new Vector3(0, 1, 0);
 const LAND_NORMAL_SPREAD = 0.06;
 const WATER_NORMAL_SPREAD = -0.04;
-const HEXAGON_POINTS = [
-    new Vector3(0, 0, -10),
-    new Vector3(-8.66, 0, -5),
-    new Vector3(-8.66, 0, 5),
-    new Vector3(0, 0, 10),
-    new Vector3(8.66, 0, 5),
-    new Vector3(8.66, 0, -5),
-    new Vector3()
-];
 
 export class Spot {
     public surface = Surface.Unknown;
@@ -138,9 +128,9 @@ export class Spot {
             const hexPoint = HEXAGON_POINTS[a];
             const nextHexPoint = HEXAGON_POINTS[(a + 1) % SIX];
             vertices.push(new Vector3().addVectors(this.center, SPOT_TO_HANGER));
-            vertices.push(new Vector3().add(this.center).addScaledVector(hexPoint, HANGER_BASE));
-            vertices.push(new Vector3().add(this.center).addScaledVector(hexPoint, HANGER_BASE));
-            vertices.push(new Vector3().add(this.center).addScaledVector(nextHexPoint, HANGER_BASE));
+            vertices.push(new Vector3().add(this.center).addScaledVector(hexPoint, HEXAPOD_PROJECTION));
+            vertices.push(new Vector3().add(this.center).addScaledVector(hexPoint, HEXAPOD_PROJECTION));
+            vertices.push(new Vector3().add(this.center).addScaledVector(nextHexPoint, HEXAPOD_PROJECTION));
         }
     }
 

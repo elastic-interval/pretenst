@@ -12,6 +12,7 @@ export class FabricKernel {
     private faceLocationsOffset: number;
     private faceNormalsOffset: number;
     private fabricBytes: number;
+    private midpointArray: Float32Array | undefined;
     private faceMidpointsArray: Float32Array | undefined;
     private faceLocationsArray: Float32Array | undefined;
     private faceNormalsArray: Float32Array | undefined;
@@ -52,9 +53,15 @@ export class FabricKernel {
         this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = this.lineLocationsArray = this.lineColorsArray = undefined;
     }
 
-    public get midpoint(): Vector3 {
-        const midpointArray = new Float32Array(this.arrayBuffer, this.midpointOffset, 3);
-        return vectorFromFloatArray(midpointArray, 0);
+    public get midpoint(): Float32Array {
+        if (!this.midpointArray) {
+            this.midpointArray = new Float32Array(this.arrayBuffer, this.midpointOffset, 3);
+        }
+        return this.midpointArray;
+    }
+
+    public get midpointVector(): Vector3 {
+        return vectorFromFloatArray(this.midpoint, 0);
     }
 
     public get faceMidpoints(): Float32Array {

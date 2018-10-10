@@ -150,6 +150,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
             setMuscleHighLow(muscleIndex, direction, 0x08);
         }
     }
+    store<u32>(agePtr, 0);
     return bytes;
 }
 
