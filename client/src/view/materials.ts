@@ -17,6 +17,10 @@ export const ISLAND_MATERIAL = new MeshPhongMaterial({
     lights: true
 });
 
-export const FOREIGN_HANGER_MATERIAL = new LineBasicMaterial({
+export const HOME_HANGER_MATERIAL = new LineBasicMaterial({
     color: new Color('crimson')
+});
+
+export const FOREIGN_HANGER_MATERIAL = new LineBasicMaterial({
+    color: new Color('white')
 });

@@ -13,7 +13,7 @@ import {Spot, Surface} from '../island/spot';
 import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
-import {EvolutionFrontier} from './evolution-frontier';
+import {Trip} from './trip';
 
 const SUN_POSITION = new Vector3(0, 300, 0);
 const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
@@ -29,6 +29,7 @@ interface IGotchiViewProps {
 
 interface IGotchiViewState {
     cameraTooFar: boolean;
+    tripSpots: Spot[];
     masterGotch?: Gotch;
     center: Vector3;
     gotchi?: Gotchi;
@@ -76,17 +77,24 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     constructor(props: IGotchiViewProps) {
         super(props);
         const masterGotch = props.master ? props.island.findGotch(props.master) : undefined;
+        const tripSpots = masterGotch ? [masterGotch.centerSpot] : [];
+        props.island.gotches.forEach(gotch => {
+            if (gotch !== masterGotch && Math.random() > 0.5) {
+                tripSpots.push(gotch.centerSpot);
+            }
+        });
         this.state = {
-            cameraTooFar: false,
             masterGotch,
-            center: masterGotch ? masterGotch.centerVector : new Vector3()
+            tripSpots,
+            cameraTooFar: false,
+            center: masterGotch ? masterGotch.center : new Vector3()
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
         this.perspectiveCamera.position.add(CAMERA_POSITION);
         if (this.state.masterGotch) {
-            this.perspectiveCamera.position.add(this.state.masterGotch.centerVector);
+            this.perspectiveCamera.position.add(this.state.masterGotch.center);
         }
         this.selector = new SpotSelector(
             this.perspectiveCamera,
@@ -134,7 +142,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     public componentDidMount() {
         const masterGotch = this.state.masterGotch;
-        const target = masterGotch ? masterGotch.centerVector : undefined;
+        const target = masterGotch ? masterGotch.center : undefined;
         this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera, target);
         this.birthFromGotch(masterGotch);
         this.animate();
@@ -188,19 +196,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     private gotchiComponent = () => {
-        if (!this.state.cameraTooFar) {
-            if (this.state.evolution) {
-                return (
-                    <R3.Object3D key="EvolutionRendering">
-                        <EvolutionComponent evolution={this.state.evolution}/>
-                        <EvolutionFrontier frontier={this.state.evolution.frontier}/>
-                    </R3.Object3D>
-                );
-            } else if (this.state.gotchi) {
-                return <GotchiComponent key="GotchiRendering" gotchi={this.state.gotchi}/>
-            }
-        }
-        return null;
+        return (
+            <R3.Object3D key="EvolutionOrGotchi">
+                {!this.state.evolution || this.state.cameraTooFar ? null : <EvolutionComponent evolution={this.state.evolution}/>}
+                {!this.state.gotchi || this.state.cameraTooFar  ? null : <GotchiComponent gotchi={this.state.gotchi}/>}
+                <Trip tripSpots={this.state.tripSpots}/>
+            </R3.Object3D>
+        );
     };
 
     private spotClicked = (spot?: Spot) => {

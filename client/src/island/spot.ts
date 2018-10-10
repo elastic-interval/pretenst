@@ -1,6 +1,6 @@
 import {Gotch} from './gotch';
 import {Color, Face3, Vector3} from 'three';
-import {HUNG_ALTITUDE, SEED_CORNERS} from '../body/fabric';
+import {HUNG_ALTITUDE, SEED_CORNERS, SPOT_TO_HANGER} from '../body/fabric';
 
 const SCALEX = 8.66;
 const SCALEY = 15;
@@ -21,7 +21,7 @@ const SURFACE_LAND_COLOR = new Color('tan');
 const SURFACE_CLICKABLE_COLOR = new Color('mediumseagreen');
 const SURFACE_FREE_GOTCH_COLOR = new Color('crimson');
 const SURFACE_WATER_COLOR = new Color('darkturquoise');
-const HANGER_BASE = 0.7;
+const HANGER_BASE = 0.5;
 const SIX = 6;
 const UP = new Vector3(0, 1, 0);
 const LAND_NORMAL_SPREAD = 0.06;
@@ -37,7 +37,6 @@ const HEXAGON_POINTS = [
 ];
 
 export class Spot {
-    public scaledCoords: ICoords;
     public surface = Surface.Unknown;
     public free = false;
     public legal = false;
@@ -47,9 +46,10 @@ export class Spot {
     public adjacentGotches: Gotch[] = [];
     public centerOfGotch?: Gotch;
     public faceNames: string[] = [];
+    public center: Vector3;
 
     constructor(public coords: ICoords) {
-        this.scaledCoords = {x: coords.x * SCALEX, y: coords.y * SCALEY};
+        this.center = new Vector3(coords.x * SCALEX, 0, coords.y * SCALEY);
     }
 
     public refresh() {
@@ -95,9 +95,9 @@ export class Spot {
     public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], legal: boolean, freeGotch?: Gotch, masterGotch?: Gotch) {
         this.faceNames = [];
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
-            hexPoint.x + this.scaledCoords.x,
-            hexPoint.y,
-            hexPoint.z + this.scaledCoords.y
+            hexPoint.x + this.center.x,
+            hexPoint.y + this.center.y,
+            hexPoint.z + this.center.z
         )));
         let normalSpread = 0;
         let color = SURFACE_UNKNOWN_COLOR;
@@ -133,24 +133,19 @@ export class Spot {
         }
     }
 
-    public addSeedGeometry(vertices: Vector3[]) {
+    public addHangerGeometry(vertices: Vector3[]) {
         for (let a = 0; a < SIX; a++) {
             const hexPoint = HEXAGON_POINTS[a];
-            vertices.push(new Vector3(
-                this.scaledCoords.x,
-                HUNG_ALTITUDE,
-                this.scaledCoords.y
-            ));
-            vertices.push(new Vector3(
-                hexPoint.x * HANGER_BASE + this.scaledCoords.x,
-                hexPoint.y,
-                hexPoint.z * HANGER_BASE + this.scaledCoords.y
-            ));
+            const nextHexPoint = HEXAGON_POINTS[(a + 1) % SIX];
+            vertices.push(new Vector3().addVectors(this.center, SPOT_TO_HANGER));
+            vertices.push(new Vector3().add(this.center).addScaledVector(hexPoint, HANGER_BASE));
+            vertices.push(new Vector3().add(this.center).addScaledVector(hexPoint, HANGER_BASE));
+            vertices.push(new Vector3().add(this.center).addScaledVector(nextHexPoint, HANGER_BASE));
         }
     }
 
     public addSeed(vertices: Vector3[], faces: Face3[]): void {
-        const hanger = new Vector3(this.scaledCoords.x, HUNG_ALTITUDE, this.scaledCoords.y);
+        const hanger = new Vector3(this.center.x, HUNG_ALTITUDE, this.center.z);
         const offset = vertices.length;
         const R = 1;
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
@@ -169,6 +164,25 @@ export class Spot {
         }
     }
 }
+
+/*
+    const geometry = new BufferGeometry();
+    const positions = new Float32Array(360 * 6 / WALL_STEP_DEGREES);
+    let slot = 0;
+    for (let degrees = 0; degrees < 360; degrees += WALL_STEP_DEGREES) {
+        const r1 = Math.PI * 2 * degrees / 360;
+        const r2 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES) / 360;
+        positions[slot++] = radius * Math.sin(r1) + center.x;
+        positions[slot++] = FRONTIER_ALTITUDE + center.y;
+        positions[slot++] = radius * Math.cos(r1) + center.z;
+        positions[slot++] = radius * Math.sin(r2) + center.x;
+        positions[slot++] = FRONTIER_ALTITUDE + center.y;
+        positions[slot++] = radius * Math.cos(r2) + center.z;
+    }
+    geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));
+
+ */
+
 
 export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0;
 export const zero: ICoords = {x: 0, y: 0};

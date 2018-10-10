@@ -14,6 +14,7 @@ export const SEED_CORNERS = 5;
 export const NORMAL_TICKS = 40;
 
 export const INTERVALS_RESERVED = 1;
+export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0);
 
 export class Fabric {
     private kernel: FabricKernel;

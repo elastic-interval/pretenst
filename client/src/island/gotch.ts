@@ -61,7 +61,7 @@ export class Gotch {
 
     public createGotchi(jointCount: number, mutatedGenome?: Genome): Promise<Gotchi>| undefined {
         const genome = mutatedGenome ? mutatedGenome: this.genome;
-        return genome ? this.gotchiFactory.createGotchiAt(this.centerVector, jointCount, genome) : undefined;
+        return genome ? this.gotchiFactory.createGotchiAt(this.center, jointCount, genome) : undefined;
     }
 
     get master(): string | undefined {
@@ -72,9 +72,8 @@ export class Gotch {
         return this.spots[0];
     }
 
-    get centerVector(): Vector3 {
-        const coords = this.centerSpot.scaledCoords;
-        return new Vector3(coords.x, 0, coords.y);
+    get center(): Vector3 {
+        return this.centerSpot.center;
     }
 
     get canBeSeeded(): boolean {

@@ -124,14 +124,7 @@ export class Island {
 
     public get midpoint(): Vector3 {
         return this.spots
-            .reduce(
-                (sum: Vector3, spot: Spot) => {
-                    sum.x += spot.scaledCoords.x;
-                    sum.z += spot.scaledCoords.y;
-                    return sum;
-                },
-                new Vector3()
-            )
+            .reduce((sum: Vector3, spot: Spot) => sum.add(spot.center), new Vector3())
             .multiplyScalar(1 / this.spots.length);
     }
 

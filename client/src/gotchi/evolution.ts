@@ -37,18 +37,16 @@ export class Evolution {
     public fittest?: Gotchi;
     private toBeBorn = 0;
     private mutationCount = INITIAL_MUTATION_COUNT;
-    private center: Vector3;
 
-    constructor(private masterGotch: Gotch) {
-        let mutatingGenome = masterGotch.genome;
-        this.center = masterGotch.centerVector;
+    constructor(private gotch: Gotch) {
+        let mutatingGenome = gotch.genome;
         this.frontier = new BehaviorSubject<IFrontier>({
             radius: INITIAL_FRONTIER,
-            center: this.center
+            center: this.gotch.center
         });
         const promisedGotchis: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
-            const promisedGotchi = this.masterGotch.createGotchi(INITIAL_JOINT_COUNT, mutatingGenome);
+            const promisedGotchi = this.gotch.createGotchi(INITIAL_JOINT_COUNT, mutatingGenome);
             if (promisedGotchi) {
                 promisedGotchis.push(promisedGotchi);
             }
@@ -71,7 +69,7 @@ export class Evolution {
     public get midpoint(): Vector3 {
         const gotchis = this.gotchis;
         if (gotchis.length === 0) {
-            return this.center;
+            return this.gotch.center;
         }
         return gotchis
             .map(gotchi => gotchi.fabric.midpoint)
@@ -98,10 +96,10 @@ export class Evolution {
             if (gotchi.frozen) {
                 freeze(gotchi);
             } else {
-                if (gotchi.getDistanceFrom(this.center) > this.frontier.getValue().radius) {
+                if (gotchi.getDistanceFrom(this.gotch.center) > this.frontier.getValue().radius) {
                     if (!array.find(g => g.frozen)) {
                         this.fittest = gotchi; // first frozen
-                        const fingerprint = this.masterGotch.createFingerprint();
+                        const fingerprint = this.gotch.createFingerprint();
                         console.log(`Saving the winner ${fingerprint}`);
                         localStorage.setItem(fingerprint, JSON.stringify(this.fittest.genomeData));
                     }
@@ -139,11 +137,11 @@ export class Evolution {
                 this.mutationCount--;
                 if (this.mutationCount < INITIAL_MUTATION_COUNT / 2) {
                     this.mutationCount = INITIAL_MUTATION_COUNT;
-                    this.frontier.next({radius: INITIAL_FRONTIER, center: this.center});
+                    this.frontier.next({radius: INITIAL_FRONTIER, center: this.gotch.center});
                     console.log(`fontier = ${INITIAL_MUTATION_COUNT}, mutations = ${this.mutationCount}`);
                 } else {
                     const expandedRadius = this.frontier.getValue().radius * FRONTIER_EXPANSION;
-                    this.frontier.next({radius: expandedRadius, center: this.center});
+                    this.frontier.next({radius: expandedRadius, center: this.gotch.center});
                     console.log(`fontier = ${expandedRadius}, mutations = ${this.mutationCount}`);
                 }
             }
@@ -180,7 +178,7 @@ export class Evolution {
         if (grow) {
             console.log('grow!');
         }
-        const promisedGotchi = this.masterGotch.createGotchi(
+        const promisedGotchi = this.gotch.createGotchi(
             parent.fabric.jointCountMax + (grow ? 4 : 0),
             new Genome(parent.genomeData)
         );
@@ -212,7 +210,7 @@ export class Evolution {
     }
 
     private evaluateFitness = (gotchi: Gotchi, index: number): IGotchiFitness => {
-        return {gotchi, index, distance: gotchi.getDistanceFrom(this.center), age: gotchi.age};
+        return {gotchi, index, distance: gotchi.getDistanceFrom(this.gotch.center), age: gotchi.age};
     };
 
     private get gotchis(): Gotchi[] {
