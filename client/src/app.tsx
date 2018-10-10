@@ -2,7 +2,6 @@ import * as React from 'react';
 import './app.css';
 import {Direction, IFabricExports} from './body/fabric-exports';
 import {Island} from './island/island';
-import {IslandView} from './view/island-view';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
 import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
@@ -77,8 +76,7 @@ class App extends React.Component<IAppProps, IAppState> {
             <BrowserRouter forceRefresh={true}>
                 <Switch>
                     <Route exact={true} path="/" component={this.homeView}/>
-                    <Route path="/gotchi/:identity" component={this.gotchiView}/>
-                    <Route path="/island/:identity" component={this.islandView}/>
+                    <Route path="/:identity" component={this.gotchiView}/>
                 </Switch>
             </BrowserRouter>
         );
@@ -99,36 +97,37 @@ class App extends React.Component<IAppProps, IAppState> {
                 <h2>@fluxe</h2>
                 <hr/>
                 <ul>
-                    <li>
-                        <Link to="/gotchi/gumby">Gumby Gotchi</Link>
-                    </li>
-                    <li>
-                        <Link to="/island/gumby">Gumby Island</Link>
-                    </li>
-                    <li>
-                        <Link to="/gotchi/pokey">Pokey Gotchi</Link>
-                    </li>
-                    <li>
-                        <Link to="/island/pokey">Pokey Island</Link>
-                    </li>
+                    {
+                        this.state.island.gotches
+                            .filter(gotch => !!gotch.master)
+                            .map(gotch => {
+                                    const master = gotch.master;
+                                    return (
+                                        <li key={master}>
+                                            <Link to={master}>{master}</Link>
+                                        </li>
+                                    );
+                                }
+                            )
+                    }
                 </ul>
             </div>
         </div>
     );
 
-    private islandView = (ctxt: any) => {
-        const master = ctxt.match.params.identity;
-        this.state.island.master = master;
-        return (
-            <IslandView key="IslandMain"
-                        className="main-view"
-                        width={this.state.mainWidth + this.state.sideWidth}
-                        height={this.state.mainHeight}
-                        island={this.state.island}
-                        master={master}
-            />
-        );
-    };
+    // private islandView = (ctxt: any) => {
+    //     const master = ctxt.match.params.identity;
+    //     this.state.island.master = master;
+    //     return (
+    //         <IslandView key="IslandMain"
+    //                     className="main-view"
+    //                     width={this.state.mainWidth + this.state.sideWidth}
+    //                     height={this.state.mainHeight}
+    //                     island={this.state.island}
+    //                     master={master}
+    //         />
+    //     );
+    // };
 
     private gotchiView = (ctxt: any) => {
         const master = ctxt.match.params.identity;
