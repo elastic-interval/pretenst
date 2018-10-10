@@ -91,7 +91,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
             if (island.legal && centerOfGotch === island.freeGotch) {
                 centerOfGotch.genome = new Genome({
                     master: this.props.master,
-                    embryoSequence: [],
+                    growthSequence: [],
                     behaviorSequence: []
                 });
                 island.refresh();

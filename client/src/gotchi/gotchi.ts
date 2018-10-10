@@ -1,7 +1,7 @@
 import {Fabric, HANGING_DELAY} from '../body/fabric';
 import {Behavior} from '../genetics/behavior';
 import {Genome, IGenomeData} from '../genetics/genome';
-import {Embryology} from '../genetics/embryology';
+import {Growth} from '../genetics/growth';
 import {Vector3} from 'three';
 import {Direction} from '../body/fabric-exports';
 
@@ -20,13 +20,13 @@ export class Gotchi {
     private currentDirection: Direction = Direction.REST;
     private intensity = 1;
     private clutch = false;
-    private embryology?: Embryology;
+    private growth?: Growth;
     private behavior: Behavior;
     private hangingCountdown: number;
     private mature = false;
 
     constructor(public fabric: Fabric, private genome: Genome) {
-        this.embryology = genome.embryology(fabric);
+        this.growth = genome.growth(fabric);
         this.behavior = genome.behavior(fabric);
         this.hangingCountdown = HANGING_DELAY;
     }
@@ -85,10 +85,10 @@ export class Gotchi {
             if (this.mature) {
                 this.triggerAllIntervals();
             } else {
-                if (this.embryology) {
-                    const successful = this.embryology.step();
+                if (this.growth) {
+                    const successful = this.growth.step();
                     if (!successful) {
-                        this.embryology = undefined;
+                        this.growth = undefined;
                     }
                 } else if (this.hangingCountdown > 0) {
                     this.hangingCountdown -= ticks;
@@ -106,7 +106,7 @@ export class Gotchi {
     }
 
     public get growing(): boolean {
-        return !!this.embryology;
+        return !!this.growth;
     }
 
     public triggerAllIntervals() {

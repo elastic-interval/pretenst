@@ -5,7 +5,7 @@ import {Fabric} from '../body/fabric';
 const UNFOLD_JOINT = 2;
 const FACE_AHEAD = 2;
 
-export class Embryology {
+export class Growth {
 
     private growingFaces: FaceSnapshot [] = [];
 

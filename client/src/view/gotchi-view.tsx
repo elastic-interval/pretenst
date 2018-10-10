@@ -115,7 +115,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             masterGotch.genome = new Genome({
                                 master: props.master,
                                 behaviorSequence: [],
-                                embryoSequence: []
+                                growthSequence: []
                             });
                         }
                         this.setState(startEvolution(masterGotch))
@@ -217,7 +217,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             if (island.legal && centerOfGotch === island.freeGotch) {
                 centerOfGotch.genome = new Genome({
                     master: this.props.master,
-                    embryoSequence: [],
+                    growthSequence: [],
                     behaviorSequence: []
                 });
                 island.refresh();

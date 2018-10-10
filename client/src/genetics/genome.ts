@@ -1,19 +1,19 @@
 import {GeneSequence} from './gene-sequence';
 import {Behavior} from './behavior';
 import {Fabric} from '../body/fabric';
-import {Embryology} from './embryology';
+import {Growth} from './growth';
 
 export interface IGenomeData {
     master: string;
-    embryoSequence: number[];
+    growthSequence: number[];
     behaviorSequence: number[];
 }
 
 export class Genome {
 
     constructor(public data: IGenomeData) {
-        if (!data.embryoSequence) {
-            data.embryoSequence = [];
+        if (!data.growthSequence) {
+            data.growthSequence = [];
         }
         if (!data.behaviorSequence) {
             data.behaviorSequence = [];
@@ -24,8 +24,8 @@ export class Genome {
         return this.data.master;
     }
 
-    public embryology(fabric: Fabric): Embryology {
-        return new Embryology(fabric, new GeneSequence(this.data.embryoSequence));
+    public growth(fabric: Fabric): Growth {
+        return new Growth(fabric, new GeneSequence(this.data.growthSequence));
     }
 
     public behavior(fabric: Fabric): Behavior {
@@ -35,7 +35,7 @@ export class Genome {
     public withMutatedBehavior(mutations: number): Genome {
         const genome = new Genome({
             master: this.data.master,
-            embryoSequence: this.data.embryoSequence.slice(),
+            growthSequence: this.data.growthSequence.slice(),
             behaviorSequence: this.data.behaviorSequence.slice()
         });
         for (let hit = 0; hit < mutations; hit++) {
