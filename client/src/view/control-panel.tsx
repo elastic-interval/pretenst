@@ -1,14 +1,22 @@
 import * as React from 'react';
-import {Evolution} from '../gotchi/evolution';
-import {IPhysicsFeature} from '../body/physics';
+import {IPhysicsFeature, Physics} from '../body/physics';
 
 export interface IControlPanelProps {
-    evolution: Evolution;
+    physics: Physics;
 }
 
 export interface IControlPanelState {
     feature?: IPhysicsFeature;
     value?: number;
+}
+
+function featureSelected(feature: IPhysicsFeature) {
+    return (): any => {
+        return {
+            feature,
+            value: feature.getFactor()
+        };
+    };
 }
 
 export class ControlPanel extends React.Component<IControlPanelProps, IControlPanelState> {
@@ -18,16 +26,11 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         this.state = {};
     }
 
-    public selectFeature(feature: IPhysicsFeature) {
-        this.setState({feature, value: feature.getFactor()});
-    }
-
     public featureUp() {
         const feature = this.state.feature;
         if (feature) {
             feature.setFactor(feature.getFactor() * 1.1);
-            this.setState({value: feature.getFactor()});
-            this.props.evolution.applyPhysics();
+            this.setState(featureSelected(feature));
         }
     }
 
@@ -35,8 +38,7 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         const feature = this.state.feature;
         if (feature) {
             feature.setFactor(feature.getFactor() * 0.9);
-            this.setState({value: feature.getFactor()});
-            this.props.evolution.applyPhysics();
+            this.setState(featureSelected(feature));
         }
     }
 
@@ -44,8 +46,7 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         const feature = this.state.feature;
         if (feature) {
             feature.setFactor(1);
-            this.setState({value: feature.getFactor()});
-            this.props.evolution.applyPhysics();
+            this.setState(featureSelected(feature));
         }
     }
 
@@ -53,13 +54,13 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         const feature = this.state.feature;
         const value = this.state.value;
         return (
-            <div key="control-panel">
+            <div key="control-panel" className="control-panel">
                 <strong className="dice">&#x2680;&#x2681;&#x2682;&#x2683;&#x2684;&#x2685;</strong>
                 <div>
                     {
-                        this.props.evolution.physics.features.map(physicsFeature => {
+                        this.props.physics.features.map(physicsFeature => {
                             return <div key={physicsFeature.feature}>
-                                <button onClick={() => this.selectFeature(physicsFeature)}>
+                                <button onClick={() => this.setState(featureSelected(physicsFeature))}>
                                     {physicsFeature.feature}
                                 </button>
                             </div>;

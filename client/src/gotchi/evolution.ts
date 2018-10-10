@@ -1,8 +1,7 @@
-import {Gotchi, IGotchiFactory} from './gotchi';
+import {Gotchi} from './gotchi';
 import {NORMAL_TICKS} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Raycaster, Vector3} from 'three';
-import {Physics} from '../body/physics';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
 import {Direction} from '../body/fabric-exports';
@@ -36,24 +35,26 @@ export class Evolution {
     public frontier: BehaviorSubject<IFrontier>;
     public visibleGotchis: BehaviorSubject<Gotchi[]> = new BehaviorSubject<Gotchi[]>([]);
     public fittest?: Gotchi;
-    private physicsObject = new Physics();
     private toBeBorn = 0;
     private mutationCount = INITIAL_MUTATION_COUNT;
     private center: Vector3;
 
-    constructor(private masterGotch: Gotch, private factory: IGotchiFactory) {
+    constructor(private masterGotch: Gotch) {
         let mutatingGenome = masterGotch.genome;
         this.center = masterGotch.centerVector;
         this.frontier = new BehaviorSubject<IFrontier>({
             radius: INITIAL_FRONTIER,
             center: this.center
         });
-        const promises: Array<Promise<Gotchi>> = [];
+        const promisedGotchis: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
-            promises.push(this.factory.createGotchiAt(this.center, INITIAL_JOINT_COUNT, mutatingGenome));
+            const promisedGotchi = this.masterGotch.createGotchi(INITIAL_JOINT_COUNT, mutatingGenome);
+            if (promisedGotchi) {
+                promisedGotchis.push(promisedGotchi);
+            }
             mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT / 5);
         }
-        Promise.all(promises).then(gotchis => {
+        Promise.all(promisedGotchis).then(gotchis => {
             gotchis.forEach(gotchi => gotchi.nextDirection = Direction.AHEAD);
             this.visibleGotchis.next(gotchis);
         });
@@ -76,14 +77,6 @@ export class Evolution {
             .map(gotchi => gotchi.fabric.midpoint)
             .reduce((prev, currentValue) => prev.add(currentValue), new Vector3())
             .multiplyScalar(1 / gotchis.length);
-    }
-
-    public get physics() {
-        return this.physicsObject;
-    }
-
-    public applyPhysics() {
-        this.gotchis.forEach(gotchi => gotchi.fabric.apply(this.physicsObject));
     }
 
     public iterate(): number[] {
@@ -154,7 +147,13 @@ export class Evolution {
                     console.log(`fontier = ${expandedRadius}, mutations = ${this.mutationCount}`);
                 }
             }
-            const promisedOffspring = this.gotchis.map(gotchi => this.createOffspring(gotchi, true));
+            const promisedOffspring: Array<Promise<Gotchi>> = [];
+            this.gotchis.forEach(gotchi => {
+                const offspring = this.createOffspring(gotchi, true);
+                if (offspring) {
+                    promisedOffspring.push(offspring);
+                }
+            });
             this.dispose();
             this.visibleGotchis.next([]);
             Promise.all(promisedOffspring).then(offspring => {
@@ -171,27 +170,27 @@ export class Evolution {
     }
 
     public dispose() {
-        // todo: review this
-        this.gotchis.forEach(gotchi => gotchi.fabric.dispose());
+        this.gotchis.forEach(gotchi => gotchi.dispose());
     }
 
     // Privates =============================================================
 
-    private createOffspring(parent: Gotchi, clone: boolean): Promise<Gotchi> {
+    private createOffspring(parent: Gotchi, clone: boolean): Promise<Gotchi> | undefined {
         const grow = !clone && parent.frozen && Math.random() < CHANCE_OF_GROWTH;
         if (grow) {
             console.log('grow!');
         }
-        return this.factory
-            .createGotchiAt(
-                this.masterGotch.centerVector,
-                parent.fabric.jointCountMax + (grow ? 4 : 0),
-                new Genome(parent.genomeData)
-            )
-            .then(child => {
-                child.nextDirection = Direction.AHEAD;
-                return clone ? child : child.withMutatedBehavior(this.mutationCount)
-            });
+        const promisedGotchi = this.masterGotch.createGotchi(
+            parent.fabric.jointCountMax + (grow ? 4 : 0),
+            new Genome(parent.genomeData)
+        );
+        if (!promisedGotchi) {
+            return undefined;
+        }
+        return promisedGotchi.then(child => {
+            child.nextDirection = Direction.AHEAD;
+            return clone ? child : child.withMutatedBehavior(this.mutationCount)
+        });
     }
 
     private get randomOffspring(): Promise<Gotchi> | undefined {

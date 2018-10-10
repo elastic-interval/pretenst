@@ -4,6 +4,7 @@ import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from './spot';
 import {Genome} from '../genetics/genome';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import {IGotchiFactory} from '../gotchi/gotchi';
 
 export interface IslandPattern {
     gotches: string;
@@ -31,7 +32,7 @@ export class Island {
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
 
-    constructor(public islandName: string) {
+    constructor(public islandName: string, private gotchiFactory: IGotchiFactory) {
         const patternString = localStorage.getItem(this.islandName);
         const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {gotches: '', spots: ''};
         this.spots = [];
@@ -216,7 +217,7 @@ export class Island {
             return existing;
         }
         const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
-        const gotch = new Gotch(parent, coords, spots);
+        const gotch = new Gotch(parent, coords, spots, this.gotchiFactory);
         this.gotches.push(gotch);
         return gotch;
     }

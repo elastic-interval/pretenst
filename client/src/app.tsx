@@ -9,6 +9,8 @@ import {Fabric} from './body/fabric';
 import {Gotchi, IGotchiFactory} from './gotchi/gotchi';
 import {Genome} from './genetics/genome';
 import {Vector3} from 'three';
+import {Physics} from './body/physics';
+import {ControlPanel} from './view/control-panel';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -22,26 +24,39 @@ interface IAppState {
     sideHeight: number;
 }
 
-const HORIZONTAL_SPLIT = 0.8;
+const HORIZONTAL_SPLIT = 0.9;
 const VERTICAL_SPLIT = 0.3;
+
+const updateDimensions = (): any => {
+    return {
+        mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
+        mainHeight: window.innerHeight,
+        sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
+        sideHeight: window.innerHeight * VERTICAL_SPLIT
+    };
+};
 
 class App extends React.Component<IAppProps, IAppState> {
     private gotchiFactory: IGotchiFactory;
+    private physics = new Physics();
 
     constructor(props: IAppProps) {
         super(props);
         this.gotchiFactory = {
             createGotchiAt: (location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
                 return this.props.createFabricInstance().then(fabricExports => {
+                    this.physics.applyToFabric(fabricExports);
                     const fabric = new Fabric(fabricExports, jointCountMax);
                     fabric.createSeed(location.x, location.z);
                     fabric.iterate(1, Direction.REST, 1, true);
-                    return new Gotchi(fabric, genome);
+                    const gotchi = new Gotchi(fabric, genome);
+                    gotchi.nextDirection = Direction.AHEAD;
+                    return gotchi;
                 });
             }
         };
         this.state = {
-            island: new Island('GalapagotchIsland'),
+            island: new Island('GalapagotchIsland', this.gotchiFactory),
             mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
             mainHeight: window.innerHeight,
             sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
@@ -50,11 +65,11 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     public componentDidMount() {
-        window.addEventListener("resize", this.updateDimensions);
+        window.addEventListener("resize", () => this.setState(updateDimensions));
     }
 
     public componentWillUnmount() {
-        window.removeEventListener("resize", this.updateDimensions);
+        window.removeEventListener("resize", () => this.setState(updateDimensions));
     }
 
     public render() {
@@ -104,7 +119,6 @@ class App extends React.Component<IAppProps, IAppState> {
     private islandView = (ctxt: any) => {
         const master = ctxt.match.params.identity;
         this.state.island.master = master;
-        this.state.island.refresh();
         return (
             <IslandView key="IslandMain"
                         className="main-view"
@@ -119,26 +133,16 @@ class App extends React.Component<IAppProps, IAppState> {
     private gotchiView = (ctxt: any) => {
         const master = ctxt.match.params.identity;
         this.state.island.master = master;
-        this.state.island.refresh();
         return (
             <div>
-                <GotchiView width={this.state.mainWidth + this.state.sideWidth}
+                <GotchiView width={this.state.mainWidth}
                             height={this.state.mainHeight}
                             island={this.state.island}
                             master={master}
-                            factory={this.gotchiFactory}
                 />
+                <ControlPanel physics={this.physics}/>
             </div>
         );
-    };
-
-    private updateDimensions = () => {
-        this.setState({
-            mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
-            mainHeight: window.innerHeight,
-            sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
-            sideHeight: window.innerHeight * VERTICAL_SPLIT
-        });
     };
 
 }

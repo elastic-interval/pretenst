@@ -114,4 +114,8 @@ export class Gotchi {
             this.fabric.triggerInterval(intervalIndex);
         }
     }
+
+    public dispose() {
+        this.fabric.disposeOfGeometry();
+    }
 }

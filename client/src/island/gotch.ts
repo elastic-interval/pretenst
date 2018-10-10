@@ -2,6 +2,7 @@ import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {equals, ICoords, Spot, Surface} from './spot';
 import {Genome} from '../genetics/genome';
 import {Vector3} from 'three';
+import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 
@@ -45,7 +46,8 @@ export class Gotch {
 
     constructor(public parentGotch: Gotch | undefined,
                 public coords: ICoords,
-                public spots: Spot[]) {
+                public spots: Spot[],
+                private gotchiFactory: IGotchiFactory) {
         this.spots[0].centerOfGotch = this;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentGotches.push(this);
@@ -55,6 +57,11 @@ export class Gotch {
             parentGotch.childGotches.push(this);
             this.nonce = parentGotch.nonce + 1;
         }
+    }
+
+    public createGotchi(jointCount: number, mutatedGenome?: Genome): Promise<Gotchi>| undefined {
+        const genome = mutatedGenome ? mutatedGenome: this.genome;
+        return genome ? this.gotchiFactory.createGotchiAt(this.centerVector, jointCount, genome) : undefined;
     }
 
     get master(): string | undefined {

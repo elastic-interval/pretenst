@@ -2,7 +2,6 @@ import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
 import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';
 import {Direction, IFabricExports} from './fabric-exports';
 import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
-import {Physics} from './physics';
 
 export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
@@ -29,11 +28,7 @@ export class Fabric {
         this.kernel = new FabricKernel(fabricExports, this.jointCountMax, this.intervalCountMax, this.faceCountMax);
     }
 
-    public apply(physics: Physics): object {
-        return physics.applyToFabric(this.fabricExports);
-    }
-
-    public dispose(): void {
+    public disposeOfGeometry(): void {
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose();
             this.facesGeometryStored = undefined;

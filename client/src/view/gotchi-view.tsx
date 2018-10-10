@@ -2,7 +2,7 @@ import * as React from 'react';
 import * as R3 from 'react-three';
 import {Color, Mesh, PerspectiveCamera, Vector3} from 'three';
 import {Evolution, INITIAL_JOINT_COUNT} from '../gotchi/evolution';
-import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
+import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
 import {EvolutionComponent} from './evolution-component';
 import {IslandComponent} from './island-component';
@@ -14,7 +14,6 @@ import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 import {EvolutionFrontier} from './evolution-frontier';
-import {Direction} from '../body/fabric-exports';
 
 const SUN_POSITION = new Vector3(0, 300, 0);
 const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
@@ -26,7 +25,6 @@ interface IGotchiViewProps {
     height: number;
     island: Island;
     master: string;
-    factory: IGotchiFactory;
 }
 
 interface IGotchiViewState {
@@ -35,6 +33,35 @@ interface IGotchiViewState {
     center: Vector3;
     gotchi?: Gotchi;
     evolution?: Evolution;
+}
+
+function dispose(state: IGotchiViewState) {
+    if (state.gotchi) {
+        state.gotchi.dispose();
+    }
+    if (state.evolution) {
+        state.evolution.dispose();
+    }
+}
+
+function startEvolution(gotch: Gotch) {
+    return (state: IGotchiViewState) => {
+        dispose(state);
+        return {
+            gotchi: undefined,
+            evolution: new Evolution(gotch)
+        };
+    };
+}
+
+function startGotchi(gotchi: Gotchi) {
+    return (state: IGotchiViewState) => {
+        dispose(state);
+        return {
+            gotchi,
+            evolution: undefined,
+        };
+    };
 }
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
@@ -78,40 +105,20 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     }
                     break;
                 case 'KeyG':
-                    if (evolution) {
-                        const fittest = evolution.fittest;
-                        evolution.dispose();
-                        this.setState((state: IGotchiViewState) => {
-                            return {
-                                evolution: undefined,
-                                gotchi: fittest
-                            };
-                        });
-                        if (evolution.fittest && this.state.masterGotch) {
-                            this.setState((state: IGotchiViewState) => {
-                                return {gotchi: evolution.fittest};
-                            });
-                        }
-                    }
+                    this.birthFromGotch(this.state.masterGotch);
                     break;
                 case 'KeyE':
                 case 'KeyR':
-                    if (!evolution) {
-                        if (masterGotch) {
-                            if (event.code === 'KeyR') {
-                                masterGotch.genome = new Genome({
-                                    master: props.master,
-                                    behaviorSequence: [],
-                                    embryoSequence: []
-                                });
-                            }
-                            const genome = masterGotch.genome;
-                            if (genome) {
-                                this.setState((state: IGotchiViewState) => {
-                                    return {evolution: new Evolution(masterGotch, props.factory)};
-                                });
-                            }
+                    if (masterGotch) {
+                        const randomize = event.code === 'KeyR';
+                        if (randomize) {
+                            masterGotch.genome = new Genome({
+                                master: props.master,
+                                behaviorSequence: [],
+                                embryoSequence: []
+                            });
                         }
+                        this.setState(startEvolution(masterGotch))
                     }
                     break;
             }
@@ -127,19 +134,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     public componentDidMount() {
         const masterGotch = this.state.masterGotch;
-        const genome = masterGotch ? masterGotch.genome : undefined;
         const target = masterGotch ? masterGotch.centerVector : undefined;
         this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera, target);
-        if (masterGotch && genome) {
-            this.props.factory
-                .createGotchiAt(masterGotch.centerVector, INITIAL_JOINT_COUNT, genome)
-                .then(gotchi => {
-                    gotchi.nextDirection = Direction.AHEAD;
-                    this.setState((state: IGotchiViewState) => {
-                        return {gotchi};
-                    });
-                });
-        }
+        this.birthFromGotch(masterGotch);
         this.animate();
     }
 
@@ -180,6 +177,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     // ==========================
+
+    private birthFromGotch(gotch?: Gotch) {
+        if (gotch) {
+            const promisedGotchi = gotch.createGotchi(INITIAL_JOINT_COUNT);
+            if (promisedGotchi) {
+                promisedGotchi.then(gotchi => this.setState(startGotchi(gotchi)));
+            }
+        }
+    }
 
     private gotchiComponent = () => {
         if (!this.state.cameraTooFar) {
@@ -251,11 +257,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         if (evolution) {
                             evolution.iterate();
                             this.orbit.moveTargetTowards(evolution.midpoint);
-                            // todo: this is escape-of-the-fittest, remove it
-                            // if (this.props.evolution.fittest) {
-                            //     this.setState({selectedGotchi: this.props.evolution.fittest});
-                            //     this.props.evolution.fittest = undefined;
-                            // }
                         } else if (gotchi) {
                             gotchi.iterate(NORMAL_TICKS);
                             this.orbit.moveTargetTowards(gotchi.fabric.midpoint);
