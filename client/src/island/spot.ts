@@ -1,7 +1,7 @@
 import {Gotch} from './gotch';
 import {Color, Face3, Vector3} from 'three';
 import {HUNG_ALTITUDE, SEED_CORNERS, SPOT_TO_HANGER} from '../body/fabric';
-import {HEXAGON_POINTS, HEXAPOD_PROJECTION} from './shapes';
+import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
 
 export interface ICoords {
     x: number;
@@ -14,8 +14,6 @@ export enum Surface {
     Water = 'water'
 }
 
-const SCALEX = 8.66;
-const SCALEY = 15;
 const SURFACE_UNKNOWN_COLOR = new Color('silver');
 const SURFACE_LAND_COLOR = new Color('tan');
 const SURFACE_CLICKABLE_COLOR = new Color('mediumseagreen');
@@ -23,8 +21,8 @@ const SURFACE_FREE_GOTCH_COLOR = new Color('crimson');
 const SURFACE_WATER_COLOR = new Color('darkturquoise');
 const SIX = 6;
 const UP = new Vector3(0, 1, 0);
-const LAND_NORMAL_SPREAD = 0.06;
-const WATER_NORMAL_SPREAD = -0.04;
+const LAND_NORMAL_SPREAD = 0.03;
+const WATER_NORMAL_SPREAD = -0.02;
 
 export class Spot {
     public surface = Surface.Unknown;
@@ -39,7 +37,7 @@ export class Spot {
     public center: Vector3;
 
     constructor(public coords: ICoords) {
-        this.center = new Vector3(coords.x * SCALEX, 0, coords.y * SCALEY);
+        this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y);
     }
 
     public refresh() {

@@ -4,18 +4,23 @@ export const STOP_STEP = 0;
 export const BRANCH_STEP = 7;
 export const ERROR_STEP = 8;
 
+const SURFACE_SCALE = 20;
+const KINDA = 0.866;
+
 export const HEXAGON_POINTS = [
-    new Vector3(0, 0, -10),
-    new Vector3(-8.66, 0, -5),
-    new Vector3(-8.66, 0, 5),
-    new Vector3(0, 0, 10),
-    new Vector3(8.66, 0, 5),
-    new Vector3(8.66, 0, -5),
+    new Vector3(0, 0, -SURFACE_SCALE),
+    new Vector3(-KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE/2),
+    new Vector3(-KINDA * SURFACE_SCALE, 0, SURFACE_SCALE/2),
+    new Vector3(0, 0, SURFACE_SCALE),
+    new Vector3(KINDA * SURFACE_SCALE, 0, SURFACE_SCALE/2),
+    new Vector3(KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE/2),
     new Vector3()
 ];
 
-export const HEXAPOD_PROJECTION = 0.5;
-export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * 10;
+export const HEXAPOD_PROJECTION = 0.2;
+export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * SURFACE_SCALE;
+export const SCALE_X = SURFACE_SCALE * KINDA;
+export const SCALE_Y = SURFACE_SCALE * 1.5;
 
 export const GOTCH_SHAPE = [
     // center

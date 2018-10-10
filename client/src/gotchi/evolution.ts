@@ -12,6 +12,7 @@ export const INITIAL_JOINT_COUNT = 47;
 const MAX_POPULATION = 16;
 const INITIAL_MUTATION_COUNT = 20;
 const CHANCE_OF_GROWTH = 0.1;
+const MINIMUM_AGE = 10000;
 const MAXIMUM_AGE = 60000;
 
 export class Evolution {
@@ -76,12 +77,15 @@ export class Evolution {
             }
             return !gotchi.catchingUp;
         });
+        if (maxAge > MINIMUM_AGE && gotchis.length === MAX_POPULATION && this.birthing === 0) {
+            this.killWeakest(adultGotchis);
+        }
         if (maxAge > MAXIMUM_AGE || frozenCount > gotchis.length / 2) {
             console.log(`maxAge=${maxAge} frozenCount=${frozenCount}`);
             this.saveStrongest(adultGotchis);
             this.rebootAll();
         }
-        while (this.gotchis.length + this.birthing < MAX_POPULATION) {
+        while (gotchis.length + this.birthing < MAX_POPULATION) {
             this.birthing++;
             const offspring = this.createRandomOffspring(adultGotchis.concat(adultGotchis.filter(g => g.frozen)));
             if (offspring) {
