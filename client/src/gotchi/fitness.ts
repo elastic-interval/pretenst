@@ -13,7 +13,7 @@ export class Fitness {
     constructor(private target: Vector3) {
     }
 
-    public shouldFreeze(gotchi: Gotchi) {
+    public touchedDestination(gotchi: Gotchi) {
         return gotchi.getDistanceFrom(this.target) < HEXAPOD_RADIUS;
     }
 
