@@ -143,6 +143,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
         }
     }
     store<u32>(agePtr, 0);
+    calculateMidpoint();
     return bytes;
 }
 
@@ -729,7 +730,7 @@ export function removeFace(deadFaceIndex: u16): void {
 const REST_DIRECTION: u8 = 0;
 const MUSCLE_COUNT: u16 = 64;
 const REST = <f32>1.0;
-const MUSCLE_DIRECTIONS: u8 = 4;
+const MUSCLE_DIRECTIONS: u8 = 3;
 const CLOCK_POINTS: u8 = 16;
 
 function musclePtr(muscleIndex: u16, direction: u8): usize {
@@ -912,6 +913,14 @@ function tick(timeSweepStep: u16, direction: u8, intensity: f32, hanging: boolea
     return maxTimeSweep;
 }
 
+function calculateMidpoint(): void {
+    zero(midpointPtr);
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        add(midpointPtr, locationPtr(jointIndex));
+    }
+    multiplyScalar(midpointPtr, 1.0 / <f32>jointCount);
+}
+
 export function iterate(ticks: usize, direction: u8, intensity: f32, hanging: boolean): u16 {
     let timeSweepStep: u16 = <u16>timeSweepSpeed;
     if (hanging) {
@@ -928,11 +937,7 @@ export function iterate(ticks: usize, direction: u8, intensity: f32, hanging: bo
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex);
     }
-    zero(midpointPtr);
-    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        add(midpointPtr, locationPtr(jointIndex));
-    }
-    multiplyScalar(midpointPtr, 1.0 / <f32>jointCount);
+    calculateMidpoint();
     return maxTimeSweep;
 }
 

@@ -1,5 +1,4 @@
 import {Fabric, HANGING_DELAY} from '../body/fabric';
-import {Behavior} from '../genetics/behavior';
 import {Genome, IGenomeData} from '../genetics/genome';
 import {Growth} from '../genetics/growth';
 import {Vector3} from 'three';
@@ -12,20 +11,17 @@ export interface IGotchiFactory {
 const GEAR_UP = 0.0002;
 
 export class Gotchi {
-    public frozen = false;
     public facesMeshNode: any;
     public nextDirection: Direction = Direction.REST;
     private currentDirection: Direction = Direction.REST;
     private intensity = 1;
     private clutch = false;
     private growth?: Growth;
-    private behavior: Behavior;
     private hangingCountdown: number;
-    private mature = false;
+    private growthFinished = false;
 
     constructor(public fabric: Fabric, private genome: Genome) {
         this.growth = genome.growth(fabric);
-        this.behavior = genome.behavior(fabric);
         this.hangingCountdown = HANGING_DELAY;
     }
 
@@ -38,9 +34,6 @@ export class Gotchi {
     }
 
     public getDistanceFrom(location: Vector3) {
-        if (this.fabric.age === 0) {
-            throw new Error('Zero age midpoint!');
-        }
         const xx = this.fabric.midpoint[0] - location.x;
         const zz = this.fabric.midpoint[2] - location.z;
         return Math.sqrt(xx * xx + zz * zz);
@@ -81,7 +74,7 @@ export class Gotchi {
             changeClutch();
         }
         if (maxTimeSweep === 0) {
-            if (this.mature) {
+            if (this.growthFinished) {
                 this.triggerAllIntervals();
             } else {
                 if (this.growth) {
@@ -95,9 +88,8 @@ export class Gotchi {
                         this.fabric.removeHanger();
                     }
                 } else {
-                    this.behavior.apply();
-                    this.triggerAllIntervals();
-                    this.mature = true;
+                    this.genome.applyBehavior(this.fabric);
+                    this.growthFinished = true;
                 }
             }
         }

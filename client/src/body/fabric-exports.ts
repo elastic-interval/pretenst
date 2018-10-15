@@ -5,9 +5,8 @@ export interface IMemory {
 export enum Direction {
     REST = 0,
     AHEAD = 1,
-    REVERSE = 2,
-    LEFT = 3,
-    RIGHT = 4,
+    LEFT = 2,
+    RIGHT = 3
 }
 
 export interface IFabricExports {

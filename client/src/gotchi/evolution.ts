@@ -5,11 +5,11 @@ import {Raycaster, Vector3} from 'three';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
 import {Direction} from '../body/fabric-exports';
-import {Fitness, IGotchiFitness} from './fitness';
 import {Spot} from '../island/spot';
+import {Evolver} from './evolver';
 
 export const INITIAL_JOINT_COUNT = 47;
-const MAX_POPULATION = 24;
+const MAX_POPULATION = 12;
 const INITIAL_MUTATION_COUNT = 20;
 const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;
@@ -17,15 +17,15 @@ const MAXIMUM_AGE = 40000;
 const INCREASE_AGE_LIMIT = 1000;
 
 export class Evolution {
-    public visibleGotchis: BehaviorSubject<Gotchi[]> = new BehaviorSubject<Gotchi[]>([]);
-    public fittest?: Gotchi;
+    public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([]);
     private mutationCount = INITIAL_MUTATION_COUNT;
-    private fitness: Fitness;
+    private evolverId = 0;
+    private target: Vector3;
     private birthing = 0;
     private ageLimit = MINIMUM_AGE;
 
     constructor(private gotch: Gotch, targetSpot: Spot) {
-        this.fitness = new Fitness(targetSpot.center);
+        this.target = targetSpot.center;
         let mutatingGenome = gotch.genome;
         const promisedGotchis: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
@@ -37,40 +37,52 @@ export class Evolution {
         }
         this.birthing = MAX_POPULATION;
         Promise.all(promisedGotchis).then(gotchis => {
-            gotchis.forEach(gotchi => gotchi.nextDirection = Direction.AHEAD);
             this.birthing = 0;
-            this.visibleGotchis.next(gotchis);
+            this.evolversNow.next(gotchis.map(gotchi => {
+                gotchi.nextDirection = Direction.AHEAD;
+                return this.gotchiToEvolver(gotchi);
+            }));
         });
     }
 
     public get midpoint(): Vector3 {
-        const gotchis = this.gotchis;
-        if (gotchis.length === 0) {
+        const evolvers = this.evolversNow.getValue();
+        if (evolvers.length === 0) {
             return this.gotch.center;
         }
-        return gotchis
-            .map(gotchi => gotchi.fabric.midpoint)
+        return evolvers
+            .map(evolver => evolver.gotchi.fabric.midpoint)
             .reduce((prev, array) => {
                 prev.x += array[0];
                 prev.y += array[1];
                 prev.z += array[2];
                 return prev;
             }, new Vector3())
-            .multiplyScalar(1 / gotchis.length);
+            .multiplyScalar(1 / evolvers.length);
     }
 
     public iterate(): void {
-        const gotchis = this.gotchis;
+        const evolvers = this.evolversNow.getValue();
         let frozenCount = 0;
-        const active = gotchis.filter(gotchi => {
-            if (gotchi.frozen || this.fitness.touchedDestination(gotchi)) {
-                gotchi.frozen = true;
+        const activeEvolvers = evolvers.filter(evolver => {
+            if (evolver.frozen || evolver.touchedDestination) {
+                evolver.frozen = true;
                 frozenCount++;
                 return false;
             }
-            return gotchi.age < this.ageLimit;
+            return evolver.gotchi.age < this.ageLimit;
         });
-        if (active.length === 0) {
+        if (frozenCount > evolvers.length / 2 || this.ageLimit >= MAXIMUM_AGE) {
+            console.log(`frozenCount=${frozenCount}`);
+            this.ageLimit = MINIMUM_AGE;
+            evolvers.forEach(gotchi => gotchi.frozen = true);
+            const toSave = this.strongest();
+            if (toSave) {
+                this.save(toSave.gotchi);
+            }
+            this.rebootAll();
+        }
+        else if (activeEvolvers.length === 0) {
             for (let count = this.ageLimit / MINIMUM_AGE; count > 0; count -= 1) {
                 const toDie = this.weakest();
                 if (toDie) {
@@ -78,37 +90,28 @@ export class Evolution {
                 }
             }
             this.ageLimit += INCREASE_AGE_LIMIT;
-        } else if (active.length < gotchis.length) {
+        } else if (activeEvolvers.length < evolvers.length) {
             const ticks = NORMAL_TICKS * 10;
-            active.forEach(gotchi => {
-                const behind = this.ageLimit - gotchi.age;
-                gotchi.iterate(behind > ticks ? ticks : behind);
+            activeEvolvers.forEach(activeEvolver => {
+                const behind = this.ageLimit - activeEvolver.gotchi.age;
+                activeEvolver.gotchi.iterate(behind > ticks ? ticks : behind);
             });
         } else {
             const ticks = NORMAL_TICKS;
-            active.forEach(gotchi => {
-                const behind = this.ageLimit - gotchi.age;
-                gotchi.iterate(behind > ticks ? ticks : behind);
+            activeEvolvers.forEach(activeEvolver => {
+                const behind = this.ageLimit - activeEvolver.gotchi.age;
+                activeEvolver.gotchi.iterate(behind > ticks ? ticks : behind);
             });
         }
-        if (frozenCount > gotchis.length / 2 || this.ageLimit >= MAXIMUM_AGE) {
-            console.log(`frozenCount=${frozenCount}`);
-            gotchis.forEach(gotchi => gotchi.frozen = true);
-            const toSave = this.strongest();
-            if (toSave) {
-                this.save(toSave.gotchi);
-            }
-            this.rebootAll();
-        }
-        if (gotchis.length + this.birthing < MAX_POPULATION) {
-            this.birthing++;
-            console.log('towards max pop', this.birthing);
-            const offspring = this.createRandomOffspring(gotchis.concat(gotchis.filter(g => g.frozen)));
+        if (evolvers.length > 0 && evolvers.length + this.birthing < MAX_POPULATION) {
+            console.log(`Birth because ${evolvers.length} + ${this.birthing} < ${MAX_POPULATION}`, this.birthing);
+            const offspring = this.createRandomOffspring(evolvers.concat(evolvers.filter(g => g.frozen)));
             if (offspring) {
+                this.birthing++;
                 offspring.then(gotchi => {
                     this.birthing--;
-                    console.log('birth', this.birthing, this.gotchis.length + 1);
-                    this.visibleGotchis.next(this.gotchis.concat([gotchi]));
+                    console.log('birth', this.birthing, this.evolversNow.getValue().length + 1);
+                    this.evolversNow.next(this.evolversNow.getValue().concat([this.gotchiToEvolver(gotchi)]));
                 });
             } else {
                 console.warn('no offspring');
@@ -116,26 +119,30 @@ export class Evolution {
         }
     }
 
-    public findGotchi(raycaster: Raycaster): Gotchi | undefined {
-        return this.visibleGotchis.getValue()
-            .filter(gotchi => gotchi.facesMeshNode)
-            .find(gotchi => raycaster.intersectObject(gotchi.facesMeshNode).length > 0);
+    public findGotchi(raycaster: Raycaster): Evolver | undefined {
+        return this.evolversNow.getValue()
+            .filter(evolver => evolver.gotchi.facesMeshNode)
+            .find(evolver => raycaster.intersectObject(evolver.gotchi.facesMeshNode).length > 0);
     }
 
     public dispose() {
-        this.gotchis.forEach(gotchi => gotchi.dispose());
+        this.evolversNow.getValue().forEach(evolver => evolver.gotchi.dispose());
     }
 
     // Privates =============================================================
 
-    private strongest(): IGotchiFitness | undefined {
-        const ranked = this.fitness.rank(this.gotchis);
-        return ranked[0];
+    private get ranked(): Evolver[] {
+        const evolvers = this.evolversNow.getValue();
+        evolvers.forEach(e => e.calculateFitness());
+        return evolvers.sort((a,b) => b.fitness - a.fitness);
     }
 
-    private weakest(): IGotchiFitness | undefined {
-        const ranked = this.fitness.rank(this.gotchis);
-        return ranked.pop();
+    private strongest(): Evolver | undefined {
+        return this.ranked[0];
+    }
+
+    private weakest(): Evolver | undefined {
+        return this.ranked.pop();
     }
 
     private save(gotchi: Gotchi) {
@@ -144,26 +151,27 @@ export class Evolution {
         localStorage.setItem(fingerprint, JSON.stringify(gotchi.genomeData));
     }
 
-    private kill(fitness: IGotchiFitness) {
-        fitness.gotchi.dispose();
-        this.visibleGotchis.next(this.gotchis.filter((gotchi, index) => index !== fitness.index));
+    private kill(deadEvolver: Evolver) {
+        deadEvolver.gotchi.dispose();
+        this.evolversNow.next(this.evolversNow.getValue().filter(evolver => evolver.id !== deadEvolver.id));
     }
 
     private rebootAll() {
         const promisedOffspring: Array<Promise<Gotchi>> = [];
-        this.gotchis.forEach(gotchi => {
-            const offspring = this.createOffspring(gotchi, true);
+        this.evolversNow.getValue().forEach(evolver => {
+            const offspring = this.createOffspring(evolver.gotchi, true);
             if (offspring) {
                 promisedOffspring.push(offspring);
             }
         });
         this.birthing = promisedOffspring.length;
         this.dispose();
-        this.visibleGotchis.next([]);
+        this.evolversNow.next([]);
+        console.log(`reboot birthing=${this.birthing} evolvers=${this.evolversNow.getValue().length}`);
         Promise.all(promisedOffspring).then(offspring => {
-            this.visibleGotchis.next(offspring);
-            this.birthing = 0;
-            this.ageLimit = MINIMUM_AGE;
+            this.evolversNow.next(offspring.map(off => this.gotchiToEvolver(off)));
+            this.birthing -= promisedOffspring.length;
+            console.log('rebirth done');
         });
     }
 
@@ -177,6 +185,7 @@ export class Evolution {
             new Genome(parent.genomeData)
         );
         if (!promisedGotchi) {
+            console.log('stilborn!');
             return undefined;
         }
         return promisedGotchi.then(child => {
@@ -185,18 +194,15 @@ export class Evolution {
         });
     }
 
-    private createRandomOffspring(gotchis: Gotchi[]): Promise<Gotchi> | undefined {
-        if (gotchis.length) {
-            console.log('adults', gotchis.length);
-            const luckyOne = gotchis[Math.floor(gotchis.length * Math.random())];
-            return this.createOffspring(luckyOne, false);
+    private createRandomOffspring(evolvers: Evolver[]): Promise<Gotchi> | undefined {
+        if (evolvers.length) {
+            const luckyOne = evolvers[Math.floor(evolvers.length * Math.random())];
+            return this.createOffspring(luckyOne.gotchi, false);
         }
-        console.warn('no adults!');
         return undefined;
     }
 
-    private get gotchis(): Gotchi[] {
-        return this.visibleGotchis.getValue();
-    }
-
+    private gotchiToEvolver = (gotchi: Gotchi): Evolver => {
+        return new Evolver(this.evolverId++, gotchi, this.gotch.center, this.target);
+    };
 }

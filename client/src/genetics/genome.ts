@@ -1,7 +1,7 @@
 import {GeneSequence} from './gene-sequence';
-import {Behavior} from './behavior';
-import {Fabric} from '../body/fabric';
+import {Fabric, INTERVALS_RESERVED} from '../body/fabric';
 import {Growth} from './growth';
+import {Direction} from '../body/fabric-exports';
 
 export interface IGenomeData {
     master: string;
@@ -28,8 +28,23 @@ export class Genome {
         return new Growth(fabric, new GeneSequence(this.data.growthSequence));
     }
 
-    public behavior(fabric: Fabric): Behavior {
-        return new Behavior(fabric, new GeneSequence(this.data.behaviorSequence));
+    public applyBehavior(fabric: Fabric): void {
+        const behaviorGene = new GeneSequence(this.data.behaviorSequence);
+        const muscleCount = fabric.muscleCount;
+        for (let muscleIndex = 0; muscleIndex < muscleCount; muscleIndex++) {
+            for (let direction = Direction.AHEAD; direction <= Direction.RIGHT; direction++) {
+                const highLow = behaviorGene.nextChoice(256);
+                fabric.setMuscleHighLow(muscleIndex, direction, highLow);
+                // console.log(`M[${muscleIndex}]=${highLow}`);
+            }
+        }
+        // todo: too much assignment here, due to opposites
+        for (let intervalIndex = 0; intervalIndex < fabric.intervalCount - INTERVALS_RESERVED; intervalIndex++) {
+            const opposite = behaviorGene.next() > 0.3;
+            const intervalMuscle = behaviorGene.nextChoice(muscleCount) * (opposite ? -1 : 1);
+            fabric.setIntervalMuscle(INTERVALS_RESERVED + intervalIndex, intervalMuscle);
+            // console.log(`I[${intervalMuscle}]=${intervalMuscle}`);
+        }
     }
 
     public withMutatedBehavior(mutations: number): Genome {

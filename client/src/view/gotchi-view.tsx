@@ -14,6 +14,7 @@ import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 import {Trip} from './trip';
+import {Direction} from '../body/fabric-exports';
 
 const SUN_POSITION = new Vector3(0, 300, 0);
 const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
@@ -58,6 +59,7 @@ function startEvolution(gotch: Gotch, targetSpot: Spot) {
 function startGotchi(gotchi: Gotchi) {
     return (state: IGotchiViewState) => {
         dispose(state);
+        gotchi.nextDirection = Direction.AHEAD;
         return {
             gotchi,
             evolution: undefined,
@@ -97,23 +99,29 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             this.props.height
         );
         window.addEventListener("keypress", (event: KeyboardEvent) => {
-            const evolution = this.state.evolution;
+            const setDirection = (direction: Direction) => {
+                const gotchi = this.state.gotchi;
+                if (gotchi) {
+                    gotchi.nextDirection = direction;
+                }
+            };
             switch (event.code) {
-                case 'KeyS':
-                    if (evolution) {
-                        if (evolution.fittest && this.state.masterGotch) {
-                            console.log('Storing the fittest');
-                            localStorage.setItem(this.state.masterGotch.createFingerprint(), JSON.stringify(evolution.fittest.genomeData));
-                        }
-                    }
+                case 'KeyA':
+                    setDirection(Direction.AHEAD);
+                    break;
+                case 'KeyR':
+                    setDirection(Direction.RIGHT);
+                    break;
+                case 'KeyL':
+                    setDirection(Direction.LEFT);
                     break;
                 case 'KeyG':
                     this.birthFromGotch(this.state.masterGotch);
                     break;
                 case 'KeyE':
-                case 'KeyR':
+                case 'KeyY':
                     if (masterGotch && tripSpots.length > 0) {
-                        const randomize = event.code === 'KeyR';
+                        const randomize = event.code === 'KeyY';
                         if (randomize) {
                             masterGotch.genome = new Genome({
                                 master: props.master,

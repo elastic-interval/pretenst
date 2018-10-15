@@ -1,6 +1,6 @@
 import * as React from 'react';
 import './app.css';
-import {Direction, IFabricExports} from './body/fabric-exports';
+import {IFabricExports} from './body/fabric-exports';
 import {Island} from './island/island';
 import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
 import {GotchiView} from './view/gotchi-view';
@@ -47,10 +47,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     this.physics.applyToFabric(fabricExports);
                     const fabric = new Fabric(fabricExports, jointCountMax);
                     fabric.createSeed(location.x, location.z);
-                    fabric.iterate(1, Direction.REST, 1, true);
-                    const gotchi = new Gotchi(fabric, genome);
-                    gotchi.nextDirection = Direction.AHEAD;
-                    return gotchi;
+                    return new Gotchi(fabric, genome);
                 });
             }
         };
