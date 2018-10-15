@@ -21,6 +21,8 @@ const BILATERAL_MIDDLE: u8 = 0;
 const BILATERAL_RIGHT: u8 = 1;
 const BILATERAL_LEFT: u8 = 2;
 
+const SEED_CORNERS: u16 = 5;
+
 // Physics =====================================================================================
 
 const DRAG_ABOVE: f32 = 0.00009539999882690609;
@@ -30,6 +32,11 @@ const GRAVITY_BELOW: f32 = -0.002540299901738763;
 const ELASTIC_FACTOR: f32 = 0.5767999887466431;
 const MAX_SPAN_VARIATION: f32 = 0.1;
 const TIME_SWEEP_SPEED: f32 = 30;
+
+let ticksSoFar: u32 = 0;
+
+let gestating: boolean = true;
+let headJointIndex: u16 = 0;
 
 let physicsDragAbove: f32 = DRAG_ABOVE;
 
@@ -73,8 +80,6 @@ export function setSpanVariationSpeed(factor: f32): f32 {
     return timeSweepSpeed = TIME_SWEEP_SPEED * factor;
 }
 
-const STRESS_MAX: f32 = 0.001;
-
 // Dimensioning ================================================================================
 
 let jointCount: u16 = 0;
@@ -93,11 +98,12 @@ let intervalOffset: usize = 0;
 let faceOffset: usize = 0;
 let muscleOffset: usize = 0;
 
-let projectionPtr: usize = 0;
-let alphaProjectionPtr: usize = 0;
-let omegaProjectionPtr: usize = 0;
+let vectorA: usize = 0;
+let vectorB: usize = 0;
+let vector: usize = 0;
 let midpointPtr: usize = 0;
-let agePtr: usize = 0;
+let seedPtr: usize = 0;
+let headPtr: usize = 0;
 
 export function init(joints: u16, intervals: u16, faces: u16): usize {
     jointCountMax = joints;
@@ -111,30 +117,32 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     let musclesSize = MUSCLE_COUNT * MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS;
     // offsets
     let bytes = (
-        agePtr = (
-            midpointPtr = (
-                omegaProjectionPtr = (
-                    alphaProjectionPtr = (
-                        projectionPtr = (
-                            muscleOffset = (
-                                faceOffset = (
-                                    intervalOffset = (
-                                        jointOffset = (
-                                            faceLocationOffset = (
-                                                faceNormalOffset = (
-                                                    faceMidpointOffset
-                                                ) + faceVectorsSize
-                                            ) + faceJointVectorsSize
-                                        ) + faceJointVectorsSize
-                                    ) + jointsSize
-                                ) + intervalsSize
-                            ) + facesSize
-                        ) + musclesSize
-                    ) + VECTOR_SIZE
-                ) + VECTOR_SIZE
+        vectorB = (
+            vectorA = (
+                vector = (
+                    muscleOffset = (
+                        faceOffset = (
+                            intervalOffset = (
+                                jointOffset = (
+                                    faceLocationOffset = (
+                                        faceNormalOffset = (
+                                            faceMidpointOffset = (
+                                                headPtr = (
+                                                    seedPtr = (
+                                                        midpointPtr
+                                                    ) + VECTOR_SIZE
+                                                ) + VECTOR_SIZE
+                                            ) + VECTOR_SIZE
+                                        ) + faceVectorsSize
+                                    ) + faceJointVectorsSize
+                                ) + faceJointVectorsSize
+                            ) + jointsSize
+                        ) + intervalsSize
+                    ) + facesSize
+                ) + musclesSize
             ) + VECTOR_SIZE
         ) + VECTOR_SIZE
-    ) + AGE_SIZE;
+    ) + VECTOR_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
     for (let muscleIndex: u16 = 0; muscleIndex < MUSCLE_COUNT; muscleIndex++) {
@@ -142,7 +150,6 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
             setMuscleHighLow(muscleIndex, direction, 0x08);
         }
     }
-    store<u32>(agePtr, 0);
     calculateMidpoint();
     return bytes;
 }
@@ -168,7 +175,9 @@ export function nextJointTag(): u16 {
     return jointTagCount;
 }
 
-export function removeHanger(): void {
+export function endGestation(): void {
+    gestating = false;
+    // remove the hanger joint, and consequences
     jointCount--;
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         copyJointFromNext(jointIndex)
@@ -187,6 +196,19 @@ export function removeHanger(): void {
             setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1);
         }
     }
+    // choose head
+    let minY: f32 = 10000;
+    addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
+    multiplyScalar(seedPtr, 0.5);
+    for (let jointIndex: u16 = 0; jointIndex < SEED_CORNERS; jointIndex++) {
+        subVectors(vectorA, locationPtr(jointIndex), seedPtr);
+        let y = abs(getY(vectorA));
+        if (y > 0 && y < minY) { // least y above midpoint
+            minY = y;
+            headJointIndex = jointIndex;
+        }
+    }
+    subVectors(headPtr, locationPtr(headJointIndex), seedPtr);
 }
 
 // Peek and Poke ================================================================================
@@ -196,18 +218,8 @@ function abs(val: f32): f32 {
     return val < 0 ? -val : val;
 }
 
-@inline()
-function getAge(): u32 {
-    return load<u32>(agePtr);
-}
-
 export function age(): u32 {
-    return getAge();
-}
-
-@inline()
-function timePasses(ticks: usize): void {
-    store<u32>(agePtr, getAge() + ticks);
+    return ticksSoFar;
 }
 
 @inline()
@@ -469,6 +481,20 @@ export function setAltitude(altitude: f32): f32 {
     return altitude - lowY;
 }
 
+function calculateMidpoint(): void {
+    zero(midpointPtr);
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        add(midpointPtr, locationPtr(jointIndex));
+    }
+    multiplyScalar(midpointPtr, 1.0 / <f32>jointCount);
+}
+
+function calculateSeedVectors(): void {
+    addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
+    multiplyScalar(seedPtr, 0.5);
+    subVectors(headPtr, locationPtr(headJointIndex), seedPtr);
+}
+
 // Intervals =====================================================================================
 
 const INTERVAL_SIZE: usize = INTERVAL_MUSCLE_SIZE + INDEX_SIZE * 3 + VECTOR_SIZE + FLOAT_SIZE * 2;
@@ -629,9 +655,9 @@ export function getFaceLaterality(faceIndex: u16): u8 {
 }
 
 function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
-    subVectors(projectionPtr, location, midpoint);
-    multiplyScalar(projectionPtr, 1 / length(projectionPtr));
-    addScaledVector(normal, projectionPtr, 0.7);
+    subVectors(vector, location, midpoint);
+    multiplyScalar(vector, 1 / length(vector));
+    addScaledVector(normal, vector, 0.7);
     multiplyScalar(normal, 1 / length(normal));
 }
 
@@ -669,9 +695,9 @@ function outputFaceGeometry(faceIndex: u16): void {
     let normal0 = outputNormalPtr(faceIndex, 0);
     let normal1 = outputNormalPtr(faceIndex, 1);
     let normal2 = outputNormalPtr(faceIndex, 2);
-    subVectors(alphaProjectionPtr, loc1, loc0);
-    subVectors(omegaProjectionPtr, loc2, loc0);
-    crossVectors(normal0, alphaProjectionPtr, omegaProjectionPtr);
+    subVectors(vectorA, loc1, loc0);
+    subVectors(vectorB, loc2, loc0);
+    crossVectors(normal0, vectorA, vectorB);
     multiplyScalar(normal0, 1 / length(normal0));
     setVector(normal1, normal0);
     setVector(normal2, normal0);
@@ -892,52 +918,45 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     }
 }
 
-function tick(timeSweepStep: u16, direction: u8, intensity: f32, hanging: boolean): u16 {
+function tick(timeSweepStep: u16, direction: u8, intensity: f32): u16 {
     let maxTimeSweep: u16 = 0;
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        elastic(intervalIndex, hanging ? physicsElasticFactor * 0.1 : physicsElasticFactor, direction, intensity);
+        elastic(intervalIndex, gestating ? physicsElasticFactor * 0.1 : physicsElasticFactor, direction, intensity);
         let timeSweep = advanceTimeSweep(intervalIndex, timeSweepStep);
         if (timeSweep > maxTimeSweep) {
             maxTimeSweep = timeSweep;
         }
     }
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        exertJointPhysics(jointIndex, physicsDragAbove * (hanging ? 50 : 1));
+        exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? 50 : 1));
         addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getFloat(intervalMassPtr(jointIndex)));
         zero(forcePtr(jointIndex));
     }
-    for (let jointIndex: u16 = hanging ? 1 : 0; jointIndex < jointCount; jointIndex++) {
+    for (let jointIndex: u16 = gestating ? 1 : 0; jointIndex < jointCount; jointIndex++) {
         add(locationPtr(jointIndex), velocityPtr(jointIndex));
         setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS);
     }
     return maxTimeSweep;
 }
 
-function calculateMidpoint(): void {
-    zero(midpointPtr);
-    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        add(midpointPtr, locationPtr(jointIndex));
-    }
-    multiplyScalar(midpointPtr, 1.0 / <f32>jointCount);
-}
-
-export function iterate(ticks: usize, direction: u8, intensity: f32, hanging: boolean): u16 {
+export function iterate(ticks: usize, direction: u8, intensity: f32): u16 {
     let timeSweepStep: u16 = <u16>timeSweepSpeed;
-    if (hanging) {
+    if (gestating) {
         timeSweepStep *= 3;
     }
     let maxTimeSweep: u16 = 0;
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        let tickMaxTimeSweep = tick(timeSweepStep, direction, intensity, hanging);
+        let tickMaxTimeSweep = tick(timeSweepStep, direction, intensity);
         if (tickMaxTimeSweep > maxTimeSweep) {
             maxTimeSweep = tickMaxTimeSweep;
         }
     }
-    timePasses(ticks);
+    ticksSoFar += ticks;
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex);
     }
     calculateMidpoint();
+    calculateSeedVectors();
     return maxTimeSweep;
 }
 

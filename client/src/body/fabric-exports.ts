@@ -9,6 +9,8 @@ export enum Direction {
     RIGHT = 3
 }
 
+export const SEED_CORNERS = 5;
+
 export interface IFabricExports {
 
     memory: IMemory;
@@ -31,13 +33,13 @@ export interface IFabricExports {
 
     age(): number;
 
-    iterate(ticks: number, direction: Direction, intensity: number, hanging: boolean): number;
+    iterate(ticks: number, direction: Direction, intensity: number): number;
 
     centralize(): void;
 
     setAltitude(altitude: number): number;
 
-    removeHanger(): void;
+    endGestation(): void;
 
     nextJointTag(): number;
 

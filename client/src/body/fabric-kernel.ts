@@ -6,11 +6,11 @@ export const vectorFromFloatArray = (array: Float32Array, index: number) => new 
 export class FabricKernel {
     private arrayBuffer: ArrayBuffer;
     private faceMidpointsOffset: number;
-    private midpointOffset: number;
+    private vectorsOffset: number;
     private faceLocationsOffset: number;
     private faceNormalsOffset: number;
     private fabricBytes: number;
-    private midpointArray: Float32Array | undefined;
+    private vectorArray: Float32Array | undefined;
     private faceMidpointsArray: Float32Array | undefined;
     private faceLocationsArray: Float32Array | undefined;
     private faceNormalsArray: Float32Array | undefined;
@@ -27,12 +27,12 @@ export class FabricKernel {
         const faceVectorFloats = this.faceCountMax * floatsInVector;
         const faceJointFloats = faceVectorFloats * vectorsForFace;
         // offsets
-        this.midpointOffset = (
-            this.faceLocationsOffset = (
-                this.faceNormalsOffset = (
-                    this.faceMidpointsOffset = 0
-                ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
-            ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
+        this.faceLocationsOffset = (
+            this.faceNormalsOffset = (
+                this.faceMidpointsOffset = (
+                    this.vectorsOffset = 0
+                ) + 3 * floatsInVector * Float32Array.BYTES_PER_ELEMENT
+            ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
         this.fabricBytes = exports.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
         this.arrayBuffer = exports.memory.buffer;
@@ -42,15 +42,23 @@ export class FabricKernel {
         this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined;
     }
 
-    public get midpoint(): Float32Array {
-        if (!this.midpointArray) {
-            this.midpointArray = new Float32Array(this.arrayBuffer, this.midpointOffset, 3);
+    public get vectors(): Float32Array {
+        if (!this.vectorArray) {
+            this.vectorArray = new Float32Array(this.arrayBuffer, this.vectorsOffset, 3 * 3);
         }
-        return this.midpointArray;
+        return this.vectorArray;
     }
 
     public get midpointVector(): Vector3 {
-        return vectorFromFloatArray(this.midpoint, 0);
+        return vectorFromFloatArray(this.vectors, 0);
+    }
+
+    public get seedVector(): Vector3 {
+        return vectorFromFloatArray(this.vectors, 3);
+    }
+
+    public get headVector(): Vector3 {
+        return vectorFromFloatArray(this.vectors, 6);
     }
 
     public get faceMidpoints(): Float32Array {

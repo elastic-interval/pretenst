@@ -51,7 +51,7 @@ export class Evolution {
             return this.gotch.center;
         }
         return evolvers
-            .map(evolver => evolver.gotchi.fabric.midpoint)
+            .map(evolver => evolver.gotchi.fabric.vectors)
             .reduce((prev, array) => {
                 prev.x += array[0];
                 prev.y += array[1];

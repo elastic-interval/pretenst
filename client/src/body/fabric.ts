@@ -1,6 +1,6 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
 import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';
-import {Direction, IFabricExports} from './fabric-exports';
+import {Direction, IFabricExports, SEED_CORNERS} from './fabric-exports';
 import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
 
 export const BILATERAL_MIDDLE = 0;
@@ -10,7 +10,6 @@ export const INTERVAL_MUSCLE_STATIC = -32767;
 export const INTERVAL_MUSCLE_GROWING = -32766;
 export const HANGING_DELAY = 3000;
 export const HUNG_ALTITUDE = 7;
-export const SEED_CORNERS = 5;
 export const NORMAL_TICKS = 40;
 
 export const INTERVALS_RESERVED = 1;
@@ -40,12 +39,20 @@ export class Fabric {
         }
     }
 
-    public get midpoint(): Float32Array {
-        return this.kernel.midpoint;
+    public get vectors(): Float32Array {
+        return this.kernel.vectors;
     }
 
     public get midpointVector(): Vector3 {
         return this.kernel.midpointVector;
+    }
+
+    public get seedVector(): Vector3 {
+        return this.kernel.seedVector;
+    }
+
+    public get headVector(): Vector3 {
+        return this.kernel.headVector;
     }
 
     public get jointCount() {
@@ -131,12 +138,12 @@ export class Fabric {
         hanger.y += this.setAltitude(HUNG_ALTITUDE);
     }
 
-    public iterate(ticks: number, direction: Direction, intensity: number, hanging: boolean): number {
-        return this.fabricExports.iterate(ticks, direction, intensity, hanging);
+    public iterate(ticks: number, direction: Direction, intensity: number): number {
+        return this.fabricExports.iterate(ticks, direction, intensity);
     }
 
     public removeHanger(): void {
-        this.fabricExports.removeHanger();
+        this.fabricExports.endGestation();
         this.kernel.refresh();
     }
 

@@ -1,7 +1,8 @@
 import {Gotch} from './gotch';
 import {Color, Face3, Vector3} from 'three';
-import {HUNG_ALTITUDE, SEED_CORNERS, SPOT_TO_HANGER} from '../body/fabric';
+import {HUNG_ALTITUDE, SPOT_TO_HANGER} from '../body/fabric';
 import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
+import {SEED_CORNERS} from '../body/fabric-exports';
 
 export interface ICoords {
     x: number;

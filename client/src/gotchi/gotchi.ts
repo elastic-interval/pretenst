@@ -34,8 +34,8 @@ export class Gotchi {
     }
 
     public getDistanceFrom(location: Vector3) {
-        const xx = this.fabric.midpoint[0] - location.x;
-        const zz = this.fabric.midpoint[2] - location.z;
+        const xx = this.fabric.vectors[0] - location.x;
+        const zz = this.fabric.vectors[2] - location.z;
         return Math.sqrt(xx * xx + zz * zz);
     }
 
@@ -65,7 +65,7 @@ export class Gotchi {
                 this.intensity = intensity;
             }
         };
-        const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity, this.hangingCountdown > 0);
+        const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity);
         if (this.nextDirection !== this.currentDirection && !this.clutch) {
             this.clutch = true;
             changeClutch(); // so intensity < 1, engage
