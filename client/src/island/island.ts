@@ -38,6 +38,7 @@ export class Island {
         this.spots = [];
         this.gotches = [];
         this.apply(pattern);
+        // console.log('island', this.spots.map(spot => spot.coords));
     }
 
     public get freeGotch(): Gotch | undefined {

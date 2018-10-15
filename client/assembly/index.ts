@@ -190,6 +190,11 @@ export function removeHanger(): void {
 
 // Peek and Poke ================================================================================
 
+@inline
+function abs(val: f32): f32 {
+    return val < 0 ? -val : val;
+}
+
 @inline()
 function getAge(): u32 {
     return load<u32>(agePtr);
@@ -497,11 +502,6 @@ function intervalPtr(intervalIndex: u16): usize {
 
 export function getIntervalMuscle(intervalIndex: u16): i16 {
     return load<i16>(intervalPtr(intervalIndex));
-}
-
-function getIntervalMuscleIndex(intervalIndex: u16): u16 {
-    let intervalMuscle = getIntervalMuscle(intervalIndex);
-    return intervalMuscle < 0 ? -intervalMuscle : intervalMuscle;
 }
 
 export function setIntervalMuscle(intervalIndex: u16, intervalMuscle: i16): void {
@@ -833,11 +833,6 @@ function interpolateCurrentSpan(intervalIndex: u16, direction: u8, intensity: f3
 }
 
 // Physics =====================================================================================
-
-@inline
-function abs(val: f32): f32 {
-    return val < 0 ? -val : val;
-}
 
 function elastic(intervalIndex: u16, elasticFactor: f32, direction: u8, intensity: f32): void {
     let idealSpan = interpolateCurrentSpan(intervalIndex, direction, intensity);

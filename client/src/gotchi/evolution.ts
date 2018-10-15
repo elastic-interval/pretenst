@@ -9,7 +9,7 @@ import {Fitness, IGotchiFitness} from './fitness';
 import {Spot} from '../island/spot';
 
 export const INITIAL_JOINT_COUNT = 47;
-const MAX_POPULATION = 16;
+const MAX_POPULATION = 24;
 const INITIAL_MUTATION_COUNT = 20;
 const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;

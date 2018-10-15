@@ -139,10 +139,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const masterGotch = this.state.masterGotch;
         const target = masterGotch ? masterGotch.center : undefined;
         this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera, target);
-        // this.birthFromGotch(masterGotch);
-        if (masterGotch) {
-            this.setState(startEvolution(masterGotch, this.state.tripSpots[1]))
-        }
+        this.birthFromGotch(masterGotch);
+        // if (masterGotch) {
+        //     this.setState(startEvolution(masterGotch, this.state.tripSpots[1]))
+        // }
         this.animate();
     }
 

@@ -12,9 +12,7 @@ export interface IGotchiFactory {
 const GEAR_UP = 0.0002;
 
 export class Gotchi {
-    public pushedAgeLimit = false;
     public frozen = false;
-    public catchingUp = false;
     public facesMeshNode: any;
     public nextDirection: Direction = Direction.REST;
     private currentDirection: Direction = Direction.REST;
