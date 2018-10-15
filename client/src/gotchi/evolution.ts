@@ -6,11 +6,11 @@ import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
 import {Direction} from '../body/fabric-exports';
 import {Spot} from '../island/spot';
-import {Evolver} from './evolver';
+import {compareEvolvers, Evolver} from './evolver';
 
 export const INITIAL_JOINT_COUNT = 47;
 const MAX_POPULATION = 12;
-const INITIAL_MUTATION_COUNT = 20;
+const INITIAL_MUTATION_COUNT = 14;
 const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;
 const MAXIMUM_AGE = 40000;
@@ -134,7 +134,7 @@ export class Evolution {
     private get ranked(): Evolver[] {
         const evolvers = this.evolversNow.getValue();
         evolvers.forEach(e => e.calculateFitness());
-        return evolvers.sort((a,b) => b.fitness - a.fitness);
+        return evolvers.sort(compareEvolvers);
     }
 
     private strongest(): Evolver | undefined {

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {FOREIGN_HANGER_MATERIAL, GOTCHI_GHOST_MATERIAL} from './materials';
+import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL} from './materials';
 import {Gotchi} from '../gotchi/gotchi';
 
 export interface IGotchiMeshProps {
@@ -30,7 +30,7 @@ export class GotchiComponent extends React.Component<IGotchiMeshProps, IGotchiMe
                 <R3.Mesh
                     key="Gotchi"
                     geometry={fabric.facesGeometry}
-                    material={GOTCHI_GHOST_MATERIAL}
+                    material={GOTCHI_MATERIAL}
                 />
             </R3.Object3D>
         );

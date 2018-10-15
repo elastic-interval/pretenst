@@ -2,10 +2,12 @@ import {Gotchi} from './gotchi';
 import {Vector3} from 'three';
 import {HEXAPOD_RADIUS} from '../island/shapes';
 
+export const compareEvolvers = (a: Evolver, b: Evolver) => a.toDestination - b.toDestination;
+
 export class Evolver {
 
     public frozen = false;
-    public fitness = 0;
+    public toDestination = 0;
 
     constructor(
         public id: number,
@@ -16,10 +18,7 @@ export class Evolver {
     }
 
     public calculateFitness(): void {
-        const fromOrigin = this.gotchi.getDistanceFrom(this.origin);
-        const toDestination = this.gotchi.getDistanceFrom(this.destination);
-        const totalDistance = fromOrigin + toDestination;
-        this.fitness = 1 - toDestination / totalDistance;
+        this.toDestination = this.gotchi.getDistanceFrom(this.destination);
     }
 
     public get touchedDestination(): boolean {

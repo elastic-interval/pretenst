@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Evolution} from '../gotchi/evolution';
-import {GOTCHI_GHOST_MATERIAL} from './materials';
+import {FOREIGN_HANGER_MATERIAL, GOTCHI_GHOST_MATERIAL} from './materials';
 import {Subscription} from 'rxjs/Subscription';
 import {Evolver} from '../gotchi/evolver';
 
@@ -35,15 +35,25 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
     }
 
     public render() {
-        return <R3.Object3D key="EvolutionMesh">{
-            this.state.evolvers.map((evolver: Evolver, index: number) => {
-                return <R3.Mesh
-                    ref={(node: any) => evolver.gotchi.facesMeshNode = node}
-                    key={`GotchiGhost${index}`}
-                    geometry={evolver.gotchi.fabric.facesGeometry}
-                    material={GOTCHI_GHOST_MATERIAL}
-                />
-            })
-        }</R3.Object3D>;
+        return <R3.Object3D key="EvolutionMesh">
+            {
+                this.state.evolvers.map(evolver => {
+                    const fabric = evolver.gotchi.fabric;
+                    return (
+                        <R3.Object3D key={`Evolver${evolver.id}`}>
+                            <R3.LineSegments
+                                geometry={fabric.compassGeometry}
+                                material={FOREIGN_HANGER_MATERIAL}
+                            />
+                            <R3.Mesh
+                                ref={(node: any) => evolver.gotchi.facesMeshNode = node}
+                                geometry={fabric.facesGeometry}
+                                material={GOTCHI_GHOST_MATERIAL}
+                            />
+                        </R3.Object3D>
+                    );
+                })
+            }
+        </R3.Object3D>;
     }
 }
