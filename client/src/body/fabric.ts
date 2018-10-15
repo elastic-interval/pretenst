@@ -20,7 +20,7 @@ export class Fabric {
     private intervalCountMax: number;
     private faceCountMax: number;
     private facesGeometryStored: BufferGeometry | undefined;
-    private lineSegmentsGeometryStored: BufferGeometry | undefined;
+    private compassSegmentsGeometryStored: BufferGeometry | undefined;
 
     constructor(private fabricExports: IFabricExports, public jointCountMax: number) {
         this.intervalCountMax = jointCountMax * 3 + 30;
@@ -33,9 +33,9 @@ export class Fabric {
             this.facesGeometryStored.dispose();
             this.facesGeometryStored = undefined;
         }
-        if (this.lineSegmentsGeometryStored) {
-            this.lineSegmentsGeometryStored.dispose();
-            this.lineSegmentsGeometryStored = undefined;
+        if (this.compassSegmentsGeometryStored) {
+            this.compassSegmentsGeometryStored.dispose();
+            this.compassSegmentsGeometryStored = undefined;
         }
     }
 
@@ -49,10 +49,6 @@ export class Fabric {
 
     public get seedVector(): Vector3 {
         return this.kernel.seedVector;
-    }
-
-    public get headVector(): Vector3 {
-        return this.kernel.headVector;
     }
 
     public get jointCount() {
@@ -93,6 +89,17 @@ export class Fabric {
             geometries.push(createGeometry(oppositeFaceIndex));
         }
         return geometries;
+    }
+    
+    public get compassGeometry(): BufferGeometry {
+        const geometry = new BufferGeometry();
+        geometry.addAttribute('position', new Float32BufferAttribute(this.kernel.compassSegments, 3));
+        if (this.compassSegmentsGeometryStored) {
+            this.compassSegmentsGeometryStored.dispose();
+            this.compassSegmentsGeometryStored = undefined;
+        }
+        this.compassSegmentsGeometryStored = geometry;
+        return geometry;
     }
 
     public get facesGeometry(): BufferGeometry {

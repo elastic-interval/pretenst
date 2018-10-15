@@ -11,17 +11,15 @@ const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
 const MUSCLE_HIGHLOW_SIZE: usize = sizeof<u8>();
 const FLOAT_SIZE: usize = sizeof<f32>();
-const AGE_SIZE: usize = sizeof<u32>();
 const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
 
 const JOINT_RADIUS: f32 = 0.5;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
 
 const BILATERAL_MIDDLE: u8 = 0;
-const BILATERAL_RIGHT: u8 = 1;
-const BILATERAL_LEFT: u8 = 2;
-
+const COMPASS_SEGMENTS: u16 = 8;
 const SEED_CORNERS: u16 = 5;
+const COMPASS_RADIUS: f32 = 4;
 
 // Physics =====================================================================================
 
@@ -36,7 +34,6 @@ const TIME_SWEEP_SPEED: f32 = 30;
 let ticksSoFar: u32 = 0;
 
 let gestating: boolean = true;
-let headJointIndex: u16 = 0;
 
 let physicsDragAbove: f32 = DRAG_ABOVE;
 
@@ -103,12 +100,13 @@ let vectorB: usize = 0;
 let vector: usize = 0;
 let midpointPtr: usize = 0;
 let seedPtr: usize = 0;
-let headPtr: usize = 0;
+let compassPtr: usize = 0;
 
 export function init(joints: u16, intervals: u16, faces: u16): usize {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
+    let compassSize = COMPASS_SEGMENTS * VECTOR_SIZE;
     let faceVectorsSize = faceCountMax * VECTOR_SIZE;
     let faceJointVectorsSize = faceVectorsSize * 3;
     let jointsSize = jointCountMax * JOINT_SIZE;
@@ -127,12 +125,12 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                                     faceLocationOffset = (
                                         faceNormalOffset = (
                                             faceMidpointOffset = (
-                                                headPtr = (
+                                                compassPtr = (
                                                     seedPtr = (
                                                         midpointPtr
                                                     ) + VECTOR_SIZE
                                                 ) + VECTOR_SIZE
-                                            ) + VECTOR_SIZE
+                                            ) + compassSize
                                         ) + faceVectorsSize
                                     ) + faceJointVectorsSize
                                 ) + faceJointVectorsSize
@@ -196,19 +194,6 @@ export function endGestation(): void {
             setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1);
         }
     }
-    // choose head
-    let minY: f32 = 10000;
-    addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
-    multiplyScalar(seedPtr, 0.5);
-    for (let jointIndex: u16 = 0; jointIndex < SEED_CORNERS; jointIndex++) {
-        subVectors(vectorA, locationPtr(jointIndex), seedPtr);
-        let y = abs(getY(vectorA));
-        if (y > 0 && y < minY) { // least y above midpoint
-            minY = y;
-            headJointIndex = jointIndex;
-        }
-    }
-    subVectors(headPtr, locationPtr(headJointIndex), seedPtr);
 }
 
 // Peek and Poke ================================================================================
@@ -489,10 +474,34 @@ function calculateMidpoint(): void {
     multiplyScalar(midpointPtr, 1.0 / <f32>jointCount);
 }
 
-function calculateSeedVectors(): void {
+function compassSegmentFrom(index: u16): usize {
+    return compassPtr + index * VECTOR_SIZE * 2;
+}
+
+function compassSegmentTo(index: u16): usize {
+    return compassPtr + index * VECTOR_SIZE * 2 + VECTOR_SIZE;
+}
+
+function calculateCompass(): void {
     addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
     multiplyScalar(seedPtr, 0.5);
-    subVectors(headPtr, locationPtr(headJointIndex), seedPtr);
+    subVectors(vectorA, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
+    setY(vectorA, 0); // horizontal, should be near already
+    multiplyScalar(vectorA, 1 / length(vectorA));
+    setAll(vector, 0, 1, 0); // up
+    crossVectors(vectorB, vectorA, vector);
+    multiplyScalar(vectorB, 1 / length(vectorB));
+    // vectorB is forward, vectorA is left
+    multiplyScalar(vectorA, COMPASS_RADIUS);
+    multiplyScalar(vectorB, COMPASS_RADIUS);
+    setVector(compassSegmentFrom(0), seedPtr);
+    addVectors(compassSegmentTo(0), seedPtr, vectorB);
+    setVector(compassSegmentFrom(1), seedPtr);
+    addVectors(compassSegmentTo(1), seedPtr, vectorA);
+    setVector(compassSegmentFrom(2), seedPtr);
+    subVectors(compassSegmentTo(2), seedPtr, vectorA);
+    setVector(compassSegmentFrom(3), seedPtr);
+    subVectors(compassSegmentTo(3), seedPtr, vectorB);
 }
 
 // Intervals =====================================================================================
@@ -956,7 +965,7 @@ export function iterate(ticks: usize, direction: u8, intensity: f32): u16 {
         outputFaceGeometry(faceIndex);
     }
     calculateMidpoint();
-    calculateSeedVectors();
+    calculateCompass();
     return maxTimeSweep;
 }
 

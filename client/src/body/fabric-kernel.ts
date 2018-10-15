@@ -5,12 +5,14 @@ export const vectorFromFloatArray = (array: Float32Array, index: number) => new 
 
 export class FabricKernel {
     private arrayBuffer: ArrayBuffer;
-    private faceMidpointsOffset: number;
     private vectorsOffset: number;
+    private compassSegmentsOffset: number;
+    private faceMidpointsOffset: number;
     private faceLocationsOffset: number;
     private faceNormalsOffset: number;
     private fabricBytes: number;
     private vectorArray: Float32Array | undefined;
+    private compassSegmentsArray: Float32Array | undefined;
     private faceMidpointsArray: Float32Array | undefined;
     private faceLocationsArray: Float32Array | undefined;
     private faceNormalsArray: Float32Array | undefined;
@@ -24,14 +26,17 @@ export class FabricKernel {
         // sizes
         const floatsInVector = 3;
         const vectorsForFace = 3;
+        const compassFloats = 8 * floatsInVector;
         const faceVectorFloats = this.faceCountMax * floatsInVector;
         const faceJointFloats = faceVectorFloats * vectorsForFace;
         // offsets
         this.faceLocationsOffset = (
             this.faceNormalsOffset = (
                 this.faceMidpointsOffset = (
-                    this.vectorsOffset = 0
-                ) + 3 * floatsInVector * Float32Array.BYTES_PER_ELEMENT
+                    this.compassSegmentsOffset = (
+                        this.vectorsOffset = 0
+                    )  + 2 * floatsInVector * Float32Array.BYTES_PER_ELEMENT
+                ) + compassFloats * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
         this.fabricBytes = exports.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
@@ -44,7 +49,7 @@ export class FabricKernel {
 
     public get vectors(): Float32Array {
         if (!this.vectorArray) {
-            this.vectorArray = new Float32Array(this.arrayBuffer, this.vectorsOffset, 3 * 3);
+            this.vectorArray = new Float32Array(this.arrayBuffer, this.vectorsOffset, 2 * 3);
         }
         return this.vectorArray;
     }
@@ -57,8 +62,11 @@ export class FabricKernel {
         return vectorFromFloatArray(this.vectors, 3);
     }
 
-    public get headVector(): Vector3 {
-        return vectorFromFloatArray(this.vectors, 6);
+    public get compassSegments(): Float32Array {
+        if (!this.compassSegmentsArray) {
+            this.compassSegmentsArray = new Float32Array(this.arrayBuffer, this.compassSegmentsOffset, 8 * 3);
+        }
+        return this.compassSegmentsArray;
     }
 
     public get faceMidpoints(): Float32Array {
