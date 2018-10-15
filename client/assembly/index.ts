@@ -85,8 +85,6 @@ let intervalCountMax: u16 = 0;
 let faceCount: u16 = 0;
 let faceCountMax: u16 = 0;
 
-let lineLocationOffset: usize = 0;
-let lineColorOffset: usize = 0;
 let jointOffset: usize = 0;
 let faceMidpointOffset: usize = 0;
 let faceNormalOffset: usize = 0;
@@ -105,8 +103,6 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
-    let intervalLinesSize = intervalCountMax * VECTOR_SIZE * 2;
-    let intervalColorsSize = intervalLinesSize;
     let faceVectorsSize = faceCountMax * VECTOR_SIZE;
     let faceJointVectorsSize = faceVectorsSize * 3;
     let jointsSize = jointCountMax * JOINT_SIZE;
@@ -126,11 +122,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                                         jointOffset = (
                                             faceLocationOffset = (
                                                 faceNormalOffset = (
-                                                    faceMidpointOffset = (
-                                                        lineColorOffset = (
-                                                            lineLocationOffset
-                                                        ) + intervalLinesSize
-                                                    ) + intervalColorsSize
+                                                    faceMidpointOffset
                                                 ) + faceVectorsSize
                                             ) + faceJointVectorsSize
                                         ) + faceJointVectorsSize
@@ -593,26 +585,6 @@ export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
     return intervalCountMax;
 }
 
-// Lines depicting the intervals ================================================================
-
-const LINE_SIZE: usize = VECTOR_SIZE * 2;
-
-function outputAlphaLocationPtr(intervalIndex: u16): usize {
-    return intervalIndex * LINE_SIZE;
-}
-
-function outputOmegaLocationPtr(intervalIndex: u16): usize {
-    return intervalIndex * LINE_SIZE + VECTOR_SIZE;
-}
-
-function outputAlphaColorPtr(intervalIndex: u16): usize {
-    return lineColorOffset + intervalIndex * LINE_SIZE;
-}
-
-function outputOmegaColorPtr(intervalIndex: u16): usize {
-    return lineColorOffset + intervalIndex * LINE_SIZE + VECTOR_SIZE;
-}
-
 // Faces =====================================================================================
 
 const FACE_SIZE: usize = INDEX_SIZE * 3;
@@ -958,24 +930,6 @@ export function iterate(ticks: usize, direction: u8, intensity: f32, hanging: bo
         }
     }
     timePasses(ticks);
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        setVector(outputAlphaLocationPtr(intervalIndex), locationPtr(getAlphaIndex(intervalIndex)));
-        setVector(outputOmegaLocationPtr(intervalIndex), locationPtr(getOmegaIndex(intervalIndex)));
-        let stress: f32 = 0;
-        if (getTimeSweep(intervalIndex) !== INTERVAL_MUSCLE_GROWING) {
-            stress = getFloat(stressPtr(intervalIndex)) / STRESS_MAX;
-            if (stress > 1) {
-                stress = 1;
-            } else if (stress < -1) {
-                stress = -1;
-            }
-        }
-        let red: f32 = 0.8 + -stress * 0.2;
-        let green: f32 = 0.5;
-        let blue: f32 = 0.8 + stress * 0.2;
-        setAll(outputAlphaColorPtr(intervalIndex), red, green, blue);
-        setAll(outputOmegaColorPtr(intervalIndex), red, green, blue);
-    }
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex);
     }

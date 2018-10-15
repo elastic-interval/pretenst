@@ -5,8 +5,6 @@ export const vectorFromFloatArray = (array: Float32Array, index: number) => new 
 
 export class FabricKernel {
     private arrayBuffer: ArrayBuffer;
-    private lineLocationOffset: number;
-    private lineColorsOffset: number;
     private faceMidpointsOffset: number;
     private midpointOffset: number;
     private faceLocationsOffset: number;
@@ -16,8 +14,6 @@ export class FabricKernel {
     private faceMidpointsArray: Float32Array | undefined;
     private faceLocationsArray: Float32Array | undefined;
     private faceNormalsArray: Float32Array | undefined;
-    private lineLocationsArray: Float32Array | undefined;
-    private lineColorsArray: Float32Array | undefined;
 
     constructor(
         public exports: IFabricExports,
@@ -26,22 +22,15 @@ export class FabricKernel {
         public faceCountMax: number
     ) {
         // sizes
-        const vectorsPerLine = 2;
         const floatsInVector = 3;
         const vectorsForFace = 3;
-        const lineLocationFloats = this.intervalCountMax * vectorsPerLine * floatsInVector;
-        const lineColorFloats = lineLocationFloats;
         const faceVectorFloats = this.faceCountMax * floatsInVector;
         const faceJointFloats = faceVectorFloats * vectorsForFace;
         // offsets
         this.midpointOffset = (
             this.faceLocationsOffset = (
                 this.faceNormalsOffset = (
-                    this.faceMidpointsOffset = (
-                        this.lineColorsOffset = (
-                            this.lineLocationOffset = 0
-                        ) + lineLocationFloats * Float32Array.BYTES_PER_ELEMENT
-                    ) + lineColorFloats * Float32Array.BYTES_PER_ELEMENT
+                    this.faceMidpointsOffset = 0
                 ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
             ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
@@ -50,7 +39,7 @@ export class FabricKernel {
     }
 
     public refresh() {
-        this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = this.lineLocationsArray = this.lineColorsArray = undefined;
+        this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined;
     }
 
     public get midpoint(): Float32Array {
@@ -83,20 +72,6 @@ export class FabricKernel {
             this.faceNormalsArray = new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.exports.faces() * 3 * 3);
         }
         return this.faceNormalsArray;
-    }
-
-    public get lineLocations(): Float32Array {
-        if (!this.lineLocationsArray) {
-            this.lineLocationsArray = new Float32Array(this.arrayBuffer, this.lineLocationOffset, this.exports.intervals() * 2 * 3);
-        }
-        return this.lineLocationsArray;
-    }
-
-    public get lineColors(): Float32Array {
-        if (!this.lineColorsArray) {
-            this.lineColorsArray = new Float32Array(this.arrayBuffer, this.lineColorsOffset, this.exports.intervals() * 2 * 3);
-        }
-        return this.lineColorsArray;
     }
 
     public get blockBytes() {

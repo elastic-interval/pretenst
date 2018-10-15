@@ -100,36 +100,6 @@ export class Fabric {
         return geometry;
     }
 
-    public get lineSegmentsGeometry(): BufferGeometry {
-        const geometry = new BufferGeometry();
-        geometry.addAttribute('position', new Float32BufferAttribute(this.kernel.lineLocations, 3));
-        geometry.addAttribute('color', new Float32BufferAttribute(this.kernel.lineColors, 3));
-        if (this.lineSegmentsGeometryStored) {
-            this.lineSegmentsGeometryStored.dispose();
-            this.lineSegmentsGeometryStored = undefined;
-        }
-        this.lineSegmentsGeometryStored = geometry;
-        return geometry;
-    }
-
-    // public createTetrahedron(): void {
-    //     const R = Math.sqrt(2) / 2;
-    //     this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, R, -R, R);
-    //     this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, -R, R, R);
-    //     this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, -R, -R, -R);
-    //     this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, R, R, -R);
-    //     this.interval(0, 1, -1);
-    //     this.interval(1, 2, -1);
-    //     this.interval(2, 3, -1);
-    //     this.interval(2, 0, -1);
-    //     this.interval(0, 3, -1);
-    //     this.interval(3, 1, -1);
-    //     this.face(0, 1, 2);
-    //     this.face(1, 3, 2);
-    //     this.face(1, 0, 3);
-    //     this.face(2, 3, 0);
-    // }
-
     public createSeed(x: number, y: number): void {
         const hanger = new Vector3(x, 0, y);
         const hangerJoint = this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z);
