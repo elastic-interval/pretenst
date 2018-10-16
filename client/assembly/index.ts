@@ -19,7 +19,7 @@ const AMBIENT_JOINT_MASS: f32 = 0.1;
 const BILATERAL_MIDDLE: u8 = 0;
 const COMPASS_SEGMENTS: u16 = 8;
 const SEED_CORNERS: u16 = 5;
-const COMPASS_RADIUS: f32 = 4;
+const COMPASS_RADIUS: f32 = 6;
 
 // Physics =====================================================================================
 
@@ -100,6 +100,8 @@ let vectorB: usize = 0;
 let vector: usize = 0;
 let midpointPtr: usize = 0;
 let seedPtr: usize = 0;
+let forwardPtr: usize = 0;
+let rightPtr: usize = 0;
 let compassPtr: usize = 0;
 
 export function init(joints: u16, intervals: u16, faces: u16): usize {
@@ -126,8 +128,12 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                                         faceNormalOffset = (
                                             faceMidpointOffset = (
                                                 compassPtr = (
-                                                    seedPtr = (
-                                                        midpointPtr
+                                                    rightPtr = (
+                                                        forwardPtr = (
+                                                            seedPtr = (
+                                                                midpointPtr
+                                                            ) + VECTOR_SIZE
+                                                        ) + VECTOR_SIZE
                                                     ) + VECTOR_SIZE
                                                 ) + VECTOR_SIZE
                                             ) + compassSize
@@ -482,26 +488,29 @@ function compassSegmentTo(index: u16): usize {
     return compassPtr + index * VECTOR_SIZE * 2 + VECTOR_SIZE;
 }
 
+function calculateCompassPoint(index: u16, pointer: usize, factor: f32): void {
+    setVector(compassSegmentFrom(index), pointer);
+    multiplyScalar(compassSegmentFrom(index), COMPASS_RADIUS/2 * factor);
+    add(compassSegmentFrom(index), seedPtr);
+    setVector(compassSegmentTo(index), pointer);
+    multiplyScalar(compassSegmentTo(index), COMPASS_RADIUS * factor);
+    add(compassSegmentTo(index), seedPtr);
+}
+
 function calculateCompass(): void {
     addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
     multiplyScalar(seedPtr, 0.5);
-    subVectors(vectorA, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
-    setY(vectorA, 0); // horizontal, should be near already
-    multiplyScalar(vectorA, 1 / length(vectorA));
+    subVectors(rightPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
+    setY(rightPtr, 0); // horizontal, should be near already
+    multiplyScalar(rightPtr, 1 / length(rightPtr));
     setAll(vector, 0, 1, 0); // up
-    crossVectors(vectorB, vectorA, vector);
-    multiplyScalar(vectorB, 1 / length(vectorB));
-    // vectorB is forward, vectorA is left
-    multiplyScalar(vectorA, COMPASS_RADIUS);
-    multiplyScalar(vectorB, COMPASS_RADIUS);
-    setVector(compassSegmentFrom(0), seedPtr);
-    addVectors(compassSegmentTo(0), seedPtr, vectorB);
-    setVector(compassSegmentFrom(1), seedPtr);
-    addVectors(compassSegmentTo(1), seedPtr, vectorA);
-    setVector(compassSegmentFrom(2), seedPtr);
-    subVectors(compassSegmentTo(2), seedPtr, vectorA);
-    setVector(compassSegmentFrom(3), seedPtr);
-    subVectors(compassSegmentTo(3), seedPtr, vectorB);
+    crossVectors(forwardPtr, rightPtr, vector);
+    multiplyScalar(forwardPtr, 1 / length(forwardPtr));
+    // forward and right are unit vectors
+    calculateCompassPoint(0, forwardPtr, 1);
+    calculateCompassPoint(1, rightPtr, 1);
+    calculateCompassPoint(2, forwardPtr, -1);
+    calculateCompassPoint(3, rightPtr, -1);
 }
 
 // Intervals =====================================================================================

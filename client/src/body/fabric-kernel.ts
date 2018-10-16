@@ -1,7 +1,14 @@
 import {IFabricExports} from './fabric-exports';
 import {Vector3} from 'three';
 
-export const vectorFromFloatArray = (array: Float32Array, index: number) => new Vector3(array[index], array[index + 1], array[index + 2]);
+export const vectorFromFloatArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
+    if (vector) {
+        vector.set(array[index], array[index + 1], array[index + 2]);
+        return vector;
+    } else {
+        return new Vector3(array[index], array[index + 1], array[index + 2]);
+    }
+};
 
 export class FabricKernel {
     private arrayBuffer: ArrayBuffer;
@@ -16,6 +23,10 @@ export class FabricKernel {
     private faceMidpointsArray: Float32Array | undefined;
     private faceLocationsArray: Float32Array | undefined;
     private faceNormalsArray: Float32Array | undefined;
+    private midpointVector = new Vector3();
+    private seedVector = new Vector3();
+    private forwardVector = new Vector3();
+    private rightVector = new Vector3();
 
     constructor(
         public exports: IFabricExports,
@@ -26,6 +37,7 @@ export class FabricKernel {
         // sizes
         const floatsInVector = 3;
         const vectorsForFace = 3;
+        const seedFloats = 4 * floatsInVector;
         const compassFloats = 8 * floatsInVector;
         const faceVectorFloats = this.faceCountMax * floatsInVector;
         const faceJointFloats = faceVectorFloats * vectorsForFace;
@@ -35,7 +47,7 @@ export class FabricKernel {
                 this.faceMidpointsOffset = (
                     this.compassSegmentsOffset = (
                         this.vectorsOffset = 0
-                    )  + 2 * floatsInVector * Float32Array.BYTES_PER_ELEMENT
+                    )  + seedFloats * Float32Array.BYTES_PER_ELEMENT
                 ) + compassFloats * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
@@ -49,17 +61,25 @@ export class FabricKernel {
 
     public get vectors(): Float32Array {
         if (!this.vectorArray) {
-            this.vectorArray = new Float32Array(this.arrayBuffer, this.vectorsOffset, 2 * 3);
+            this.vectorArray = new Float32Array(this.arrayBuffer, this.vectorsOffset, 4 * 3);
         }
         return this.vectorArray;
     }
 
-    public get midpointVector(): Vector3 {
-        return vectorFromFloatArray(this.vectors, 0);
+    public get midpoint(): Vector3 {
+        return vectorFromFloatArray(this.vectors, 0, this.midpointVector);
     }
 
-    public get seedVector(): Vector3 {
-        return vectorFromFloatArray(this.vectors, 3);
+    public get seed(): Vector3 {
+        return vectorFromFloatArray(this.vectors, 3, this.seedVector);
+    }
+
+    public get forward(): Vector3 {
+        return vectorFromFloatArray(this.vectors, 6, this.forwardVector);
+    }
+
+    public get right(): Vector3 {
+        return vectorFromFloatArray(this.vectors, 9, this.rightVector);
     }
 
     public get compassSegments(): Float32Array {

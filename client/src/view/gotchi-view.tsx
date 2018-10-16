@@ -267,7 +267,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             this.orbit.moveTargetTowards(evolution.midpoint);
                         } else if (gotchi) {
                             gotchi.iterate(NORMAL_TICKS);
-                            this.orbit.moveTargetTowards(gotchi.fabric.midpointVector);
+                            this.orbit.moveTargetTowards(gotchi.fabric.midpoint);
                         } else {
                             this.orbit.moveTargetTowards(this.props.island.midpoint);
                         }

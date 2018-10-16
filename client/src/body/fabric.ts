@@ -43,12 +43,20 @@ export class Fabric {
         return this.kernel.vectors;
     }
 
-    public get midpointVector(): Vector3 {
-        return this.kernel.midpointVector;
+    public get midpoint(): Vector3 {
+        return this.kernel.midpoint;
     }
 
-    public get seedVector(): Vector3 {
-        return this.kernel.seedVector;
+    public get seed(): Vector3 {
+        return this.kernel.seed;
+    }
+
+    public get forward(): Vector3 {
+        return this.kernel.forward;
+    }
+
+    public get right(): Vector3 {
+        return this.kernel.right;
     }
 
     public get jointCount() {
