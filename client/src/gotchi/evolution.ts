@@ -15,6 +15,7 @@ const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;
 const MAXIMUM_AGE = 40000;
 const INCREASE_AGE_LIMIT = 1000;
+const CATCH_UP_TICKS = NORMAL_TICKS * 10;
 
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([]);
@@ -88,10 +89,9 @@ export class Evolution {
             }
             this.ageLimit += INCREASE_AGE_LIMIT;
         } else if (activeEvolvers.length < evolvers.length) {
-            const ticks = NORMAL_TICKS * 10;
             activeEvolvers.forEach(activeEvolver => {
                 const behind = this.ageLimit - activeEvolver.gotchi.age;
-                activeEvolver.gotchi.iterate(behind > ticks ? ticks : behind);
+                activeEvolver.gotchi.iterate(behind > CATCH_UP_TICKS ? CATCH_UP_TICKS : behind);
             });
         } else {
             activeEvolvers.forEach(activeEvolver => {
@@ -99,18 +99,27 @@ export class Evolution {
                 activeEvolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind);
             });
         }
+        activeEvolvers.forEach(activeEvolver => {
+            if (activeEvolver.frozen || activeEvolver.gotchi.isGestating || activeEvolver.gotchi.age < MINIMUM_AGE / 10) {
+                return;
+            }
+            const nextDirection = activeEvolver.gotchi.nextDirection;
+            const preferredDirection = activeEvolver.directionToTarget;
+            if (nextDirection !== preferredDirection) {
+                console.log(`${activeEvolver.id}: ${Direction[nextDirection]} ==> ${Direction[preferredDirection]}`);
+                activeEvolver.gotchi.nextDirection = preferredDirection;
+            }
+        });
         if (evolvers.length > 0 && evolvers.length + this.birthing < MAX_POPULATION) {
-            console.log(`Birth because ${evolvers.length} + ${this.birthing} < ${MAX_POPULATION}`, this.birthing);
+            // console.log(`Birth because ${evolvers.length} + ${this.birthing} < ${MAX_POPULATION}`, this.birthing);
             const offspring = this.createRandomOffspring(evolvers.concat(evolvers.filter(g => g.frozen)));
             if (offspring) {
                 this.birthing++;
                 offspring.then(gotchi => {
                     this.birthing--;
-                    console.log('birth', this.birthing, this.evolversNow.getValue().length + 1);
+                    // console.log('birth', this.birthing, this.evolversNow.getValue().length + 1);
                     this.evolversNow.next(this.evolversNow.getValue().concat([this.gotchiToEvolver(gotchi)]));
                 });
-            } else {
-                console.warn('no offspring');
             }
         }
     }
@@ -167,7 +176,6 @@ export class Evolution {
         Promise.all(promisedOffspring).then(offspring => {
             this.evolversNow.next(offspring.map(off => this.gotchiToEvolver(off)));
             this.birthing -= promisedOffspring.length;
-            console.log('rebirth done');
         });
     }
 
@@ -185,7 +193,6 @@ export class Evolution {
             return undefined;
         }
         return promisedGotchi.then(child => {
-            child.nextDirection = Direction.FORWARD;
             return clone ? child : child.withMutatedBehavior(this.mutationCount)
         });
     }

@@ -929,11 +929,16 @@ function tick(timeSweepStep: u16, direction: u8, intensity: f32): u16 {
     return maxTimeSweep;
 }
 
-export function iterate(ticks: usize, direction: u8, intensity: f32): u16 {
+export function isGestating(): boolean {
+    return gestating;
+}
+
+export function iterate(ticks: usize, direction: u8, intensity: f32, timePassing: boolean): u16 {
     let timeSweepStep: u16 = <u16>timeSweepSpeed;
     if (gestating) {
         timeSweepStep *= 3;
     }
+    ticksSoFar += timePassing ? ticks : ticks / 5;
     let maxTimeSweep: u16 = 0;
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         let tickMaxTimeSweep = tick(timeSweepStep, direction, intensity);
@@ -941,7 +946,6 @@ export function iterate(ticks: usize, direction: u8, intensity: f32): u16 {
             maxTimeSweep = tickMaxTimeSweep;
         }
     }
-    ticksSoFar += ticks;
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex);
     }

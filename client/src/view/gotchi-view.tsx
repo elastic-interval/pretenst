@@ -61,7 +61,6 @@ function startGotchi(gotchi: Gotchi) {
     return (state: IGotchiViewState) => {
         dispose(state);
         gotchi.travel = state.trip.createTravel(0);
-        gotchi.nextDirection = Direction.FORWARD;
         return {
             gotchi,
             evolution: undefined,

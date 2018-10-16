@@ -13,7 +13,7 @@ const GEAR_UP = 0.00025;
 
 export class Gotchi {
     public facesMeshNode: any;
-    public travel? : ITravel;
+    public travel?: ITravel;
     public nextDirection: Direction = Direction.REST;
     private currentDirection: Direction = Direction.REST;
     private intensity = 1;
@@ -31,8 +31,12 @@ export class Gotchi {
         return this.genome.master;
     }
 
-    public get age() {
+    public get age(): number {
         return this.fabric.age;
+    }
+
+    public get isGestating(): boolean {
+        return this.fabric.isGestating;
     }
 
     public getDistanceFrom(location: Vector3) {
@@ -67,7 +71,8 @@ export class Gotchi {
                 this.intensity = intensity;
             }
         };
-        const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity);
+        const timePassing = !(this.clutch || this.isGestating);
+        const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity, timePassing);
         if (this.nextDirection !== this.currentDirection && !this.clutch) {
             this.clutch = true;
             changeClutch(); // so intensity < 1, engage

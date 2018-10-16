@@ -137,8 +137,8 @@ export class Fabric {
         hanger.y += this.setAltitude(HUNG_ALTITUDE);
     }
 
-    public iterate(ticks: number, direction: Direction, intensity: number): number {
-        return this.fabricExports.iterate(ticks, direction, intensity);
+    public iterate(ticks: number, direction: Direction, intensity: number, timePassing: boolean): number {
+        return this.fabricExports.iterate(ticks, direction, intensity, timePassing);
     }
 
     public removeHanger(): void {
@@ -148,6 +148,10 @@ export class Fabric {
 
     public get age(): number {
         return this.fabricExports.age();
+    }
+
+    public get isGestating(): boolean {
+        return this.fabricExports.isGestating();
     }
 
     public centralize(): void {
