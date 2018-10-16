@@ -9,19 +9,19 @@ import {compareEvolvers, Evolver} from './evolver';
 import {Trip} from '../island/trip';
 
 export const INITIAL_JOINT_COUNT = 47;
-const MAX_POPULATION = 12;
+const MAX_POPULATION = 16;
 const INITIAL_MUTATION_COUNT = 14;
 const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;
-const MAXIMUM_AGE = 40000;
+const MAXIMUM_AGE = 50000;
 const INCREASE_AGE_LIMIT = 1000;
-const CATCH_UP_TICKS = NORMAL_TICKS * 10;
+const SURVIVAL_RATE = 0.85;
 
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([]);
     private mutationCount = INITIAL_MUTATION_COUNT;
     private evolverId = 0;
-    private birthing = 0;
+    private evolversBeingBorn = 0;
     private ageLimit = MINIMUM_AGE;
 
     constructor(private gotch: Gotch, private trip: Trip) {
@@ -34,9 +34,9 @@ export class Evolution {
             }
             mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT / 5);
         }
-        this.birthing = MAX_POPULATION;
+        this.evolversBeingBorn = MAX_POPULATION;
         Promise.all(promisedGotchis).then(gotchis => {
-            this.birthing = 0;
+            this.evolversBeingBorn = 0;
             this.evolversNow.next(gotchis.map(gotchi => {
                 return this.gotchiToEvolver(gotchi);
             }));
@@ -70,35 +70,21 @@ export class Evolution {
             }
             return evolver.gotchi.age < this.ageLimit;
         });
-        if (frozenCount > evolvers.length / 2 || this.ageLimit >= MAXIMUM_AGE) {
-            console.log(`frozenCount=${frozenCount}`);
-            this.ageLimit = MINIMUM_AGE;
-            evolvers.forEach(gotchi => gotchi.frozen = true);
-            const toSave = this.strongest();
-            if (toSave) {
-                this.save(toSave.gotchi);
-            }
-            this.rebootAll();
-        }
-        else if (activeEvolvers.length === 0) {
-            for (let count = this.ageLimit / MINIMUM_AGE; count > 0; count -= 1) {
-                const toDie = this.weakest();
-                if (toDie) {
-                    this.kill(toDie);
+        if (frozenCount > evolvers.length / 2 || (activeEvolvers.length === 0 && this.evolversBeingBorn === 0)) {
+            this.rebootAll(SURVIVAL_RATE);
+            this.ageLimit += INCREASE_AGE_LIMIT;
+            if (this.ageLimit >= MAXIMUM_AGE) {
+                this.ageLimit = MINIMUM_AGE;
+                const toSave = this.strongest();
+                if (toSave) {
+                    this.save(toSave.gotchi);
                 }
             }
-            this.ageLimit += INCREASE_AGE_LIMIT;
-        } else if (activeEvolvers.length < evolvers.length) {
-            activeEvolvers.forEach(activeEvolver => {
-                const behind = this.ageLimit - activeEvolver.gotchi.age;
-                activeEvolver.gotchi.iterate(behind > CATCH_UP_TICKS ? CATCH_UP_TICKS : behind);
-            });
-        } else {
-            activeEvolvers.forEach(activeEvolver => {
-                const behind = this.ageLimit - activeEvolver.gotchi.age;
-                activeEvolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind);
-            });
         }
+        activeEvolvers.forEach(activeEvolver => {
+            const behind = this.ageLimit - activeEvolver.gotchi.age;
+            activeEvolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind);
+        });
         activeEvolvers.forEach(activeEvolver => {
             if (activeEvolver.frozen || activeEvolver.gotchi.isGestating || activeEvolver.gotchi.age === 0) {
                 return;
@@ -110,14 +96,14 @@ export class Evolution {
                 activeEvolver.gotchi.direction = chosenDirection;
             }
         });
-        if (evolvers.length > 0 && evolvers.length + this.birthing < MAX_POPULATION) {
-            // console.log(`Birth because ${evolvers.length} + ${this.birthing} < ${MAX_POPULATION}`, this.birthing);
+        if (evolvers.length > 0 && evolvers.length + this.evolversBeingBorn < MAX_POPULATION) {
+            console.log(`Birth ${evolvers.length} + ${this.evolversBeingBorn} < ${MAX_POPULATION}`, this.evolversBeingBorn);
             const offspring = this.createRandomOffspring(evolvers.concat(evolvers.filter(g => g.frozen)));
             if (offspring) {
-                this.birthing++;
+                this.evolversBeingBorn++;
                 offspring.then(gotchi => {
-                    this.birthing--;
-                    // console.log('birth', this.birthing, this.evolversNow.getValue().length + 1);
+                    this.evolversBeingBorn--;
+                    // console.log('birth', this.evolversBeingBorn, this.evolversNow.getValue().length + 1);
                     this.evolversNow.next(this.evolversNow.getValue().concat([this.gotchiToEvolver(gotchi)]));
                 });
             }
@@ -146,9 +132,14 @@ export class Evolution {
         return this.ranked[0];
     }
 
-    private weakest(): Evolver | undefined {
-        return this.ranked.pop();
-    }
+    // private weakest(): Evolver | undefined {
+    //     return this.ranked.pop();
+    // }
+    //
+    // private kill(deadEvolver: Evolver) {
+    //     deadEvolver.gotchi.dispose();
+    //     this.evolversNow.next(this.evolversNow.getValue().filter(evolver => evolver.id !== deadEvolver.id));
+    // }
 
     private save(gotchi: Gotchi) {
         const fingerprint = this.gotch.createFingerprint();
@@ -156,26 +147,25 @@ export class Evolution {
         localStorage.setItem(fingerprint, JSON.stringify(gotchi.genomeData));
     }
 
-    private kill(deadEvolver: Evolver) {
-        deadEvolver.gotchi.dispose();
-        this.evolversNow.next(this.evolversNow.getValue().filter(evolver => evolver.id !== deadEvolver.id));
-    }
-
-    private rebootAll() {
+    private rebootAll(survivalRate: number) {
         const promisedOffspring: Array<Promise<Gotchi>> = [];
-        this.evolversNow.getValue().forEach(evolver => {
+        const ranked = this.ranked;
+        const deadEvolvers = ranked.splice(Math.ceil(ranked.length * survivalRate));
+        console.log(`REBOOT: dead=${deadEvolvers.length} remaining=${ranked.length}`);
+        deadEvolvers.forEach(evolver => evolver.gotchi.dispose());
+        ranked.forEach(evolver => {
             const offspring = this.createOffspring(evolver.gotchi, true);
             if (offspring) {
+                evolver.gotchi.dispose();
                 promisedOffspring.push(offspring);
             }
         });
-        this.birthing = promisedOffspring.length;
-        this.dispose();
+        this.evolversBeingBorn = promisedOffspring.length;
         this.evolversNow.next([]);
-        console.log(`reboot birthing=${this.birthing} evolvers=${this.evolversNow.getValue().length}`);
         Promise.all(promisedOffspring).then(offspring => {
+            console.log(`survived=${offspring.length}`);
             this.evolversNow.next(offspring.map(off => this.gotchiToEvolver(off)));
-            this.birthing -= promisedOffspring.length;
+            this.evolversBeingBorn -= promisedOffspring.length;
         });
     }
 

@@ -8,9 +8,9 @@ export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
 export const INTERVAL_MUSCLE_STATIC = -32767;
 export const INTERVAL_MUSCLE_GROWING = -32766;
-export const HANGING_DELAY = 3000;
+export const HANGING_DELAY = 2400;
 export const HUNG_ALTITUDE = 7;
-export const NORMAL_TICKS = 40;
+export const NORMAL_TICKS = 50;
 
 export const INTERVALS_RESERVED = 1;
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0);
