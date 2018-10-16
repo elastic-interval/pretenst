@@ -933,12 +933,11 @@ export function isGestating(): boolean {
     return gestating;
 }
 
-export function iterate(ticks: usize, direction: u8, intensity: f32, timePassing: boolean): u16 {
+export function iterate(ticks: usize, direction: u8, intensity: f32): u16 {
     let timeSweepStep: u16 = <u16>timeSweepSpeed;
     if (gestating) {
         timeSweepStep *= 3;
     }
-    ticksSoFar += timePassing ? ticks : ticks / 5;
     let maxTimeSweep: u16 = 0;
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         let tickMaxTimeSweep = tick(timeSweepStep, direction, intensity);
@@ -951,6 +950,11 @@ export function iterate(ticks: usize, direction: u8, intensity: f32, timePassing
     }
     calculateJointMidpoint();
     calculateDirectionVectors();
+    if (direction > 0) {
+        ticksSoFar += ticks;
+    } else if (ticksSoFar === 0) {
+        ticksSoFar = 1;
+    }
     return maxTimeSweep;
 }
 

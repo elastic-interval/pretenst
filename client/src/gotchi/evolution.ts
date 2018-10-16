@@ -103,11 +103,11 @@ export class Evolution {
             if (activeEvolver.frozen || activeEvolver.gotchi.isGestating || activeEvolver.gotchi.age === 0) {
                 return;
             }
-            const nextDirection = activeEvolver.gotchi.direction;
-            const preferredDirection = activeEvolver.directionToTarget;
-            if (nextDirection !== preferredDirection) {
-                console.log(`${activeEvolver.id}: ${Direction[nextDirection]} ==> ${Direction[preferredDirection]}`);
-                activeEvolver.gotchi.direction = preferredDirection;
+            const gotchiDirection = activeEvolver.gotchi.direction;
+            const chosenDirection = activeEvolver.voteDirection();
+            if (chosenDirection !== undefined && gotchiDirection !== chosenDirection) {
+                console.log(`${activeEvolver.id}: ${Direction[gotchiDirection]} ==> ${Direction[chosenDirection]}`);
+                activeEvolver.gotchi.direction = chosenDirection;
             }
         });
         if (evolvers.length > 0 && evolvers.length + this.birthing < MAX_POPULATION) {

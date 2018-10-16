@@ -71,8 +71,7 @@ export class Gotchi {
                 this.intensity = intensity;
             }
         };
-        const timePassing = !(this.clutch || this.isGestating);
-        const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity, timePassing);
+        const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity);
         if (this.direction !== this.currentDirection && !this.clutch) {
             this.clutch = true;
             changeClutch(); // so intensity < 1, engage

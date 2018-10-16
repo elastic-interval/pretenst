@@ -18,7 +18,7 @@ function geometryRefreshed(state: IGotchiMeshState, props: IGotchiMeshProps) {
     const pointerGeometry = new Geometry();
     const fabric = props.gotchi.fabric;
     const travel = props.gotchi.travel;
-    if (travel) {
+    if (travel && !fabric.isGestating) {
         const seed = fabric.seed;
         const forward = fabric.forward;
         const right = fabric.right;
@@ -47,12 +47,13 @@ export class GotchiComponent extends React.Component<IGotchiMeshProps, IGotchiMe
     }
 
     public render() {
-        const fabric = this.props.gotchi.fabric;
+        const gotchi = this.props.gotchi;
+        const fabric = gotchi.fabric;
         return (
             <R3.Object3D key="Gotchi">
                 <R3.LineSegments
                     key="Vectors"
-                    geometry={this.state.pointerGeometry}
+                    geometry={fabric.pointerGeometryFor(gotchi.direction)}
                     material={POINTER_MATERIAL}
                 />
                 <R3.Mesh

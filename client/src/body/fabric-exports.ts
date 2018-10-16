@@ -36,7 +36,7 @@ export interface IFabricExports {
 
     isGestating(): boolean;
 
-    iterate(ticks: number, direction: Direction, intensity: number, timePassing: boolean): number;
+    iterate(ticks: number, direction: Direction, intensity: number): number;
 
     centralize(): void;
 
