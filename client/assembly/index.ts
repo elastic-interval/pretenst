@@ -504,7 +504,7 @@ function calculateCompass(): void {
     setY(rightPtr, 0); // horizontal, should be near already
     multiplyScalar(rightPtr, 1 / length(rightPtr));
     setAll(vector, 0, 1, 0); // up
-    crossVectors(forwardPtr, rightPtr, vector);
+    crossVectors(forwardPtr, vector, rightPtr);
     multiplyScalar(forwardPtr, 1 / length(forwardPtr));
     // forward and right are unit vectors
     calculateCompassPoint(0, forwardPtr, 1);
