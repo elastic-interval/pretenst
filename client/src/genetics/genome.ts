@@ -32,7 +32,7 @@ export class Genome {
         const behaviorGene = new GeneSequence(this.data.behaviorSequence);
         const muscleCount = fabric.muscleCount;
         for (let muscleIndex = 0; muscleIndex < muscleCount; muscleIndex++) {
-            for (let direction = Direction.AHEAD; direction <= Direction.RIGHT; direction++) {
+            for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
                 const highLow = behaviorGene.nextChoice(256);
                 fabric.setMuscleHighLow(muscleIndex, direction, highLow);
                 // console.log(`M[${muscleIndex}]=${highLow}`);

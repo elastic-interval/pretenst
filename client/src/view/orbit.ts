@@ -27,6 +27,7 @@ export class Orbit {
         orbit.maxPolarAngle = Math.PI / 2;
         orbit.maxDistance = 1000;
         orbit.minDistance = 7;
+        orbit.enableKeys = false;
         orbit.target = this.target;
     }
 

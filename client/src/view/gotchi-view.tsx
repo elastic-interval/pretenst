@@ -61,7 +61,7 @@ function startGotchi(gotchi: Gotchi) {
     return (state: IGotchiViewState) => {
         dispose(state);
         gotchi.travel = state.trip.createTravel(0);
-        gotchi.nextDirection = Direction.AHEAD;
+        gotchi.nextDirection = Direction.FORWARD;
         return {
             gotchi,
             evolution: undefined,
@@ -100,7 +100,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             this.props.width,
             this.props.height
         );
-        window.addEventListener("keypress", (event: KeyboardEvent) => {
+        window.addEventListener("keydown", (event: KeyboardEvent) => {
             const setDirection = (direction: Direction) => {
                 const gotchi = this.state.gotchi;
                 if (gotchi) {
@@ -108,15 +108,22 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 }
             };
             switch (event.code) {
-                case 'KeyA':
-                    setDirection(Direction.AHEAD);
+                case 'ArrowUp':
+                    setDirection(Direction.FORWARD);
                     break;
-                case 'KeyR':
+                case 'ArrowRight':
                     setDirection(Direction.RIGHT);
                     break;
-                case 'KeyL':
+                case 'ArrowLeft':
                     setDirection(Direction.LEFT);
                     break;
+                case 'ArrowDown':
+                    setDirection(Direction.REVERSE);
+                    break;
+            }
+        });
+        window.addEventListener("keypress", (event: KeyboardEvent) => {
+            switch (event.code) {
                 case 'KeyG':
                     this.birthFromGotch(this.state.masterGotch);
                     break;

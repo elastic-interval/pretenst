@@ -4,9 +4,10 @@ export interface IMemory {
 
 export enum Direction {
     REST = 0,
-    AHEAD = 1,
+    FORWARD = 1,
     LEFT = 2,
-    RIGHT = 3
+    RIGHT = 3,
+    REVERSE = 4
 }
 
 export const SEED_CORNERS = 5;

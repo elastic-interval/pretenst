@@ -13,13 +13,11 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
 export class FabricKernel {
     private arrayBuffer: ArrayBuffer;
     private vectorsOffset: number;
-    private compassSegmentsOffset: number;
     private faceMidpointsOffset: number;
     private faceLocationsOffset: number;
     private faceNormalsOffset: number;
     private fabricBytes: number;
     private vectorArray: Float32Array | undefined;
-    private compassSegmentsArray: Float32Array | undefined;
     private faceMidpointsArray: Float32Array | undefined;
     private faceLocationsArray: Float32Array | undefined;
     private faceNormalsArray: Float32Array | undefined;
@@ -38,17 +36,14 @@ export class FabricKernel {
         const floatsInVector = 3;
         const vectorsForFace = 3;
         const seedFloats = 4 * floatsInVector;
-        const compassFloats = 8 * floatsInVector;
         const faceVectorFloats = this.faceCountMax * floatsInVector;
         const faceJointFloats = faceVectorFloats * vectorsForFace;
         // offsets
         this.faceLocationsOffset = (
             this.faceNormalsOffset = (
                 this.faceMidpointsOffset = (
-                    this.compassSegmentsOffset = (
-                        this.vectorsOffset = 0
-                    )  + seedFloats * Float32Array.BYTES_PER_ELEMENT
-                ) + compassFloats * Float32Array.BYTES_PER_ELEMENT
+                    this.vectorsOffset = 0
+                ) + seedFloats * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
         this.fabricBytes = exports.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
@@ -80,13 +75,6 @@ export class FabricKernel {
 
     public get right(): Vector3 {
         return vectorFromFloatArray(this.vectors, 9, this.rightVector);
-    }
-
-    public get compassSegments(): Float32Array {
-        if (!this.compassSegmentsArray) {
-            this.compassSegmentsArray = new Float32Array(this.arrayBuffer, this.compassSegmentsOffset, 8 * 3);
-        }
-        return this.compassSegmentsArray;
     }
 
     public get faceMidpoints(): Float32Array {

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL} from './materials';
+import {GOTCHI_MATERIAL, POINTER_MATERIAL} from './materials';
 import {Gotchi} from '../gotchi/gotchi';
 import {Geometry, Vector3} from 'three';
 
@@ -12,6 +12,8 @@ export interface IGotchiMeshState {
     pointerGeometry: Geometry
 }
 
+const POINTER_SIZE = 10;
+
 function geometryRefreshed(state: IGotchiMeshState, props: IGotchiMeshProps) {
     const pointerGeometry = new Geometry();
     const fabric = props.gotchi.fabric;
@@ -21,10 +23,10 @@ function geometryRefreshed(state: IGotchiMeshState, props: IGotchiMeshProps) {
         const forward = fabric.forward;
         const right = fabric.right;
         const toTarget = new Vector3().subVectors(travel.goTo.center, seed).normalize();
-        const goForward = toTarget.dot(forward) > 0;
-        const goRight = toTarget.dot(right) > 0;
-        const forwardEnd = new Vector3().add(seed).addScaledVector(forward, goForward ? 10: -10);
-        const rightEnd = new Vector3().add(seed).addScaledVector(right, goRight ? 10: -10);
+        const goForward = toTarget.dot(forward);
+        const goRight = toTarget.dot(right);
+        const forwardEnd = new Vector3().add(seed).addScaledVector(forward, goForward * POINTER_SIZE);
+        const rightEnd = new Vector3().add(seed).addScaledVector(right, goRight * POINTER_SIZE);
         pointerGeometry.vertices = [seed, forwardEnd, seed, rightEnd];
     }
     state.pointerGeometry.dispose();
@@ -51,12 +53,7 @@ export class GotchiComponent extends React.Component<IGotchiMeshProps, IGotchiMe
                 <R3.LineSegments
                     key="Vectors"
                     geometry={this.state.pointerGeometry}
-                    material={HOME_HANGER_MATERIAL}
-                />
-                <R3.LineSegments
-                    key="Compass"
-                    geometry={fabric.compassGeometry}
-                    material={FOREIGN_HANGER_MATERIAL}
+                    material={POINTER_MATERIAL}
                 />
                 <R3.Mesh
                     key="Gotchi"

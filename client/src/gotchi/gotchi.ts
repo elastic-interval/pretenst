@@ -9,7 +9,7 @@ export interface IGotchiFactory {
     createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>;
 }
 
-const GEAR_UP = 0.0002;
+const GEAR_UP = 0.00025;
 
 export class Gotchi {
     public facesMeshNode: any;

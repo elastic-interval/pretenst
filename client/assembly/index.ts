@@ -17,9 +17,7 @@ const JOINT_RADIUS: f32 = 0.5;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
 
 const BILATERAL_MIDDLE: u8 = 0;
-const COMPASS_SEGMENTS: u16 = 8;
 const SEED_CORNERS: u16 = 5;
-const COMPASS_RADIUS: f32 = 6;
 
 // Physics =====================================================================================
 
@@ -102,13 +100,11 @@ let midpointPtr: usize = 0;
 let seedPtr: usize = 0;
 let forwardPtr: usize = 0;
 let rightPtr: usize = 0;
-let compassPtr: usize = 0;
 
 export function init(joints: u16, intervals: u16, faces: u16): usize {
     jointCountMax = joints;
     intervalCountMax = intervals;
     faceCountMax = faces;
-    let compassSize = COMPASS_SEGMENTS * VECTOR_SIZE;
     let faceVectorsSize = faceCountMax * VECTOR_SIZE;
     let faceJointVectorsSize = faceVectorsSize * 3;
     let jointsSize = jointCountMax * JOINT_SIZE;
@@ -127,16 +123,14 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
                                     faceLocationOffset = (
                                         faceNormalOffset = (
                                             faceMidpointOffset = (
-                                                compassPtr = (
-                                                    rightPtr = (
-                                                        forwardPtr = (
-                                                            seedPtr = (
-                                                                midpointPtr
-                                                            ) + VECTOR_SIZE
+                                                rightPtr = (
+                                                    forwardPtr = (
+                                                        seedPtr = (
+                                                            midpointPtr
                                                         ) + VECTOR_SIZE
                                                     ) + VECTOR_SIZE
                                                 ) + VECTOR_SIZE
-                                            ) + compassSize
+                                            ) + VECTOR_SIZE
                                         ) + faceVectorsSize
                                     ) + faceJointVectorsSize
                                 ) + faceJointVectorsSize
@@ -154,7 +148,7 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
             setMuscleHighLow(muscleIndex, direction, 0x08);
         }
     }
-    calculateMidpoint();
+    calculateJointMidpoint();
     return bytes;
 }
 
@@ -472,7 +466,7 @@ export function setAltitude(altitude: f32): f32 {
     return altitude - lowY;
 }
 
-function calculateMidpoint(): void {
+function calculateJointMidpoint(): void {
     zero(midpointPtr);
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         add(midpointPtr, locationPtr(jointIndex));
@@ -480,24 +474,7 @@ function calculateMidpoint(): void {
     multiplyScalar(midpointPtr, 1.0 / <f32>jointCount);
 }
 
-function compassSegmentFrom(index: u16): usize {
-    return compassPtr + index * VECTOR_SIZE * 2;
-}
-
-function compassSegmentTo(index: u16): usize {
-    return compassPtr + index * VECTOR_SIZE * 2 + VECTOR_SIZE;
-}
-
-function calculateCompassPoint(index: u16, pointer: usize, factor: f32): void {
-    setVector(compassSegmentFrom(index), pointer);
-    multiplyScalar(compassSegmentFrom(index), COMPASS_RADIUS/2 * factor);
-    add(compassSegmentFrom(index), seedPtr);
-    setVector(compassSegmentTo(index), pointer);
-    multiplyScalar(compassSegmentTo(index), COMPASS_RADIUS * factor);
-    add(compassSegmentTo(index), seedPtr);
-}
-
-function calculateCompass(): void {
+function calculateDirectionVectors(): void {
     addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
     multiplyScalar(seedPtr, 0.5);
     subVectors(rightPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1));
@@ -506,11 +483,6 @@ function calculateCompass(): void {
     setAll(vector, 0, 1, 0); // up
     crossVectors(forwardPtr, vector, rightPtr);
     multiplyScalar(forwardPtr, 1 / length(forwardPtr));
-    // forward and right are unit vectors
-    calculateCompassPoint(0, forwardPtr, 1);
-    calculateCompassPoint(1, rightPtr, 1);
-    calculateCompassPoint(2, forwardPtr, -1);
-    calculateCompassPoint(3, rightPtr, -1);
 }
 
 // Intervals =====================================================================================
@@ -774,7 +746,7 @@ export function removeFace(deadFaceIndex: u16): void {
 const REST_DIRECTION: u8 = 0;
 const MUSCLE_COUNT: u16 = 64;
 const REST = <f32>1.0;
-const MUSCLE_DIRECTIONS: u8 = 3;
+const MUSCLE_DIRECTIONS: u8 = 4;
 const CLOCK_POINTS: u8 = 16;
 
 function musclePtr(muscleIndex: u16, direction: u8): usize {
@@ -973,8 +945,8 @@ export function iterate(ticks: usize, direction: u8, intensity: f32): u16 {
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex);
     }
-    calculateMidpoint();
-    calculateCompass();
+    calculateJointMidpoint();
+    calculateDirectionVectors();
     return maxTimeSweep;
 }
 

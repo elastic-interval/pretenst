@@ -1,11 +1,11 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {BufferGeometry, Color, Float32BufferAttribute, LineBasicMaterial} from 'three';
+import {BufferGeometry, Float32BufferAttribute} from 'three';
 import {Spot} from '../island/spot';
 import {Trip} from '../island/trip';
+import {TRIP_MATERIAL} from './materials';
 
 const TRIP_ALTITUDE = 0.3;
-const TRIP_MATERIAL = new LineBasicMaterial({color: new Color('green')});
 
 export interface ITripComponentProps {
     trip: Trip;

@@ -37,7 +37,6 @@ export class Evolution {
         Promise.all(promisedGotchis).then(gotchis => {
             this.birthing = 0;
             this.evolversNow.next(gotchis.map(gotchi => {
-                gotchi.nextDirection = Direction.AHEAD;
                 return this.gotchiToEvolver(gotchi);
             }));
         });
@@ -95,10 +94,9 @@ export class Evolution {
                 activeEvolver.gotchi.iterate(behind > ticks ? ticks : behind);
             });
         } else {
-            const ticks = NORMAL_TICKS;
             activeEvolvers.forEach(activeEvolver => {
                 const behind = this.ageLimit - activeEvolver.gotchi.age;
-                activeEvolver.gotchi.iterate(behind > ticks ? ticks : behind);
+                activeEvolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind);
             });
         }
         if (evolvers.length > 0 && evolvers.length + this.birthing < MAX_POPULATION) {
@@ -187,7 +185,7 @@ export class Evolution {
             return undefined;
         }
         return promisedGotchi.then(child => {
-            child.nextDirection = Direction.AHEAD;
+            child.nextDirection = Direction.FORWARD;
             return clone ? child : child.withMutatedBehavior(this.mutationCount)
         });
     }
