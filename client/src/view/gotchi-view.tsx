@@ -13,8 +13,9 @@ import {Spot, Surface} from '../island/spot';
 import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
-import {Trip} from './trip';
+import {TripComponent} from './trip-component';
 import {Direction} from '../body/fabric-exports';
+import {Trip} from '../island/trip';
 
 const SUN_POSITION = new Vector3(0, 300, 0);
 const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
@@ -30,7 +31,7 @@ interface IGotchiViewProps {
 
 interface IGotchiViewState {
     cameraTooFar: boolean;
-    tripSpots: Spot[];
+    trip: Trip;
     masterGotch?: Gotch;
     center: Vector3;
     gotchi?: Gotchi;
@@ -46,12 +47,12 @@ function dispose(state: IGotchiViewState) {
     }
 }
 
-function startEvolution(gotch: Gotch, targetSpot: Spot) {
+function startEvolution(gotch: Gotch, trip: Trip) {
     return (state: IGotchiViewState) => {
         dispose(state);
         return {
             gotchi: undefined,
-            evolution: new Evolution(gotch, targetSpot)
+            evolution: new Evolution(gotch, trip)
         };
     };
 }
@@ -59,6 +60,7 @@ function startEvolution(gotch: Gotch, targetSpot: Spot) {
 function startGotchi(gotchi: Gotchi) {
     return (state: IGotchiViewState) => {
         dispose(state);
+        gotchi.travel = state.trip.createTravel(0);
         gotchi.nextDirection = Direction.AHEAD;
         return {
             gotchi,
@@ -82,7 +84,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const tripSpots = masterGotch ? [masterGotch.centerSpot, masterGotch.centerSpot.adjacentSpots[0]] : [];
         this.state = {
             masterGotch,
-            tripSpots,
+            trip: new Trip(tripSpots),
             cameraTooFar: false,
             center: masterGotch ? masterGotch.center : new Vector3()
         };
@@ -129,7 +131,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                 growthSequence: []
                             });
                         }
-                        this.setState(startEvolution(masterGotch, tripSpots[1]))
+                        this.setState(startEvolution(masterGotch, this.state.trip))
                     }
                     break;
             }
@@ -206,7 +208,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             <R3.Object3D key="EvolutionOrGotchi">
                 {!this.state.evolution || this.state.cameraTooFar ? null : <EvolutionComponent evolution={this.state.evolution}/>}
                 {!this.state.gotchi || this.state.cameraTooFar  ? null : <GotchiComponent gotchi={this.state.gotchi}/>}
-                <Trip tripSpots={this.state.tripSpots}/>
+                <TripComponent trip={this.state.trip}/>
             </R3.Object3D>
         );
     };

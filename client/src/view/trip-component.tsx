@@ -2,25 +2,26 @@ import * as React from 'react';
 import * as R3 from 'react-three';
 import {BufferGeometry, Color, Float32BufferAttribute, LineBasicMaterial} from 'three';
 import {Spot} from '../island/spot';
+import {Trip} from '../island/trip';
 
 const TRIP_ALTITUDE = 0.3;
 const TRIP_MATERIAL = new LineBasicMaterial({color: new Color('green')});
 
-export interface ITripProps {
-    tripSpots: Spot[];
+export interface ITripComponentProps {
+    trip: Trip;
 }
 
-export interface ITripState {
+export interface ITripComponentState {
     geometry?: BufferGeometry;
     nextSpot?: Spot;
 }
 
-function geometryRefreshed(state: ITripState, props: ITripProps) {
+function geometryRefreshed(state: ITripComponentState, props: ITripComponentProps) {
     if (state.geometry) {
         state.geometry.dispose();
     }
     const positions: number[] = [];
-    props.tripSpots.forEach(spot => {
+    props.trip.spots.forEach(spot => {
         positions.push(spot.center.x);
         positions.push(TRIP_ALTITUDE);
         positions.push(spot.center.z);
@@ -32,9 +33,9 @@ function geometryRefreshed(state: ITripState, props: ITripProps) {
     };
 }
 
-export class Trip extends React.Component<ITripProps, ITripState> {
+export class TripComponent extends React.Component<ITripComponentProps, ITripComponentState> {
 
-    constructor(props: ITripProps) {
+    constructor(props: ITripComponentProps) {
         super(props);
         this.state = {};
     }

@@ -3,6 +3,7 @@ import {Genome, IGenomeData} from '../genetics/genome';
 import {Growth} from '../genetics/growth';
 import {Vector3} from 'three';
 import {Direction} from '../body/fabric-exports';
+import {ITravel} from '../island/trip';
 
 export interface IGotchiFactory {
     createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>;
@@ -12,6 +13,7 @@ const GEAR_UP = 0.0002;
 
 export class Gotchi {
     public facesMeshNode: any;
+    public travel? : ITravel;
     public nextDirection: Direction = Direction.REST;
     private currentDirection: Direction = Direction.REST;
     private intensity = 1;

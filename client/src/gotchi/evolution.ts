@@ -5,8 +5,8 @@ import {Raycaster, Vector3} from 'three';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
 import {Direction} from '../body/fabric-exports';
-import {Spot} from '../island/spot';
 import {compareEvolvers, Evolver} from './evolver';
+import {Trip} from '../island/trip';
 
 export const INITIAL_JOINT_COUNT = 47;
 const MAX_POPULATION = 12;
@@ -20,12 +20,10 @@ export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([]);
     private mutationCount = INITIAL_MUTATION_COUNT;
     private evolverId = 0;
-    private target: Vector3;
     private birthing = 0;
     private ageLimit = MINIMUM_AGE;
 
-    constructor(private gotch: Gotch, targetSpot: Spot) {
-        this.target = targetSpot.center;
+    constructor(private gotch: Gotch, private trip: Trip) {
         let mutatingGenome = gotch.genome;
         const promisedGotchis: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
@@ -203,6 +201,7 @@ export class Evolution {
     }
 
     private gotchiToEvolver = (gotchi: Gotchi): Evolver => {
-        return new Evolver(this.evolverId++, gotchi, this.gotch.center, this.target);
+        const travel = this.trip.createTravel(0);
+        return new Evolver(this.evolverId++, gotchi, travel);
     };
 }
