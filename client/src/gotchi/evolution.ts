@@ -100,14 +100,14 @@ export class Evolution {
             });
         }
         activeEvolvers.forEach(activeEvolver => {
-            if (activeEvolver.frozen || activeEvolver.gotchi.isGestating || activeEvolver.gotchi.age < MINIMUM_AGE / 10) {
+            if (activeEvolver.frozen || activeEvolver.gotchi.isGestating || activeEvolver.gotchi.age === 0) {
                 return;
             }
-            const nextDirection = activeEvolver.gotchi.nextDirection;
+            const nextDirection = activeEvolver.gotchi.direction;
             const preferredDirection = activeEvolver.directionToTarget;
             if (nextDirection !== preferredDirection) {
                 console.log(`${activeEvolver.id}: ${Direction[nextDirection]} ==> ${Direction[preferredDirection]}`);
-                activeEvolver.gotchi.nextDirection = preferredDirection;
+                activeEvolver.gotchi.direction = preferredDirection;
             }
         });
         if (evolvers.length > 0 && evolvers.length + this.birthing < MAX_POPULATION) {

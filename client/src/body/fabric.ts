@@ -15,10 +15,13 @@ export const NORMAL_TICKS = 40;
 export const INTERVALS_RESERVED = 1;
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0);
 
+const POINTER_SIZE = 6;
+
 export class Fabric {
     private kernel: FabricKernel;
     private intervalCountMax: number;
     private faceCountMax: number;
+    private pointerGeometryStored: Geometry | undefined;
     private facesGeometryStored: BufferGeometry | undefined;
 
     constructor(private fabricExports: IFabricExports, public jointCountMax: number) {
@@ -31,6 +34,10 @@ export class Fabric {
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose();
             this.facesGeometryStored = undefined;
+        }
+        if (this.pointerGeometryStored) {
+            this.pointerGeometryStored.dispose();
+            this.pointerGeometryStored = undefined;
         }
     }
 
@@ -93,16 +100,41 @@ export class Fabric {
         }
         return geometries;
     }
-    
+
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry();
         geometry.addAttribute('position', new Float32BufferAttribute(this.kernel.faceLocations, 3));
         geometry.addAttribute('normal', new Float32BufferAttribute(this.kernel.faceNormals, 3));
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose();
-            this.facesGeometryStored = undefined;
         }
         this.facesGeometryStored = geometry;
+        return geometry;
+    }
+
+    public pointerGeometryFor(direction: Direction): Geometry {
+        const geometry = new Geometry();
+        const seed = this.seed;
+        const end = new Vector3().add(seed);
+        switch (direction) {
+            case Direction.FORWARD:
+                end.addScaledVector(this.forward, POINTER_SIZE);
+                break;
+            case Direction.LEFT:
+                end.addScaledVector(this.right, -POINTER_SIZE);
+                break;
+            case Direction.RIGHT:
+                end.addScaledVector(this.right, POINTER_SIZE);
+                break;
+            case Direction.REVERSE:
+                end.addScaledVector(this.forward, -POINTER_SIZE);
+                break;
+        }
+        geometry.vertices = [seed, end];
+        if (this.pointerGeometryStored) {
+            this.pointerGeometryStored.dispose();
+        }
+        this.pointerGeometryStored = geometry;
         return geometry;
     }
 

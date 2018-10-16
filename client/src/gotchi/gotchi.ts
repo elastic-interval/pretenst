@@ -14,7 +14,7 @@ const GEAR_UP = 0.00025;
 export class Gotchi {
     public facesMeshNode: any;
     public travel?: ITravel;
-    public nextDirection: Direction = Direction.REST;
+    public direction: Direction = Direction.REST;
     private currentDirection: Direction = Direction.REST;
     private intensity = 1;
     private clutch = false;
@@ -65,7 +65,7 @@ export class Gotchi {
                 this.intensity = 1;
             } else if (intensity < 0) {
                 this.intensity = 0;
-                this.currentDirection = this.nextDirection;
+                this.currentDirection = this.direction;
                 this.clutch = false;
             } else {
                 this.intensity = intensity;
@@ -73,7 +73,7 @@ export class Gotchi {
         };
         const timePassing = !(this.clutch || this.isGestating);
         const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity, timePassing);
-        if (this.nextDirection !== this.currentDirection && !this.clutch) {
+        if (this.direction !== this.currentDirection && !this.clutch) {
             this.clutch = true;
             changeClutch(); // so intensity < 1, engage
         }

@@ -103,7 +103,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             const setDirection = (direction: Direction) => {
                 const gotchi = this.state.gotchi;
                 if (gotchi) {
-                    gotchi.nextDirection = direction;
+                    gotchi.direction = direction;
                 }
             };
             switch (event.code) {
