@@ -12,6 +12,7 @@
   "author": "Gerald A. de Jong",
   "license": "GPL",
   "devDependencies": {
-    "assemblyscript": "github:AssemblyScript/assemblyscript"
+    "assemblyscript": "github:AssemblyScript/assemblyscript",
+    "typescript": "^2.9.2"
   }
 }
