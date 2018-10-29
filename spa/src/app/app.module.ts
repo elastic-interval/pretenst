@@ -1,9 +1,9 @@
-import { BrowserModule } from '@angular/platform-browser';
-import { FormsModule } from '@angular/forms';
-import { NgModule } from '@angular/core';
+import {BrowserModule} from '@angular/platform-browser';
+import {FormsModule} from '@angular/forms';
+import {NgModule} from '@angular/core';
 
-import { AppComponent } from './app.component';
-import { ThreeExamplesModule } from './three-examples/three-examples.module';
+import {AppComponent} from './app.component';
+import {ThreeModule} from './three/three.module';
 
 @NgModule({
   declarations: [
@@ -12,7 +12,7 @@ import { ThreeExamplesModule } from './three-examples/three-examples.module';
   imports: [
     BrowserModule,
     FormsModule,
-    ThreeExamplesModule
+    ThreeModule
   ],
   providers: [],
   bootstrap: [AppComponent]

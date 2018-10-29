@@ -1,8 +1,8 @@
-import { TestBed, async } from '@angular/core/testing';
-import { AppComponent } from './app.component';
+import {async, TestBed} from '@angular/core/testing';
+import {AppComponent} from './app.component';
 
-import { FormsModule } from '@angular/forms';
-import { ThreeExamplesModule } from './three-examples/three-examples.module';
+import {FormsModule} from '@angular/forms';
+import {ThreeModule} from './three/three-examples.module';
 
 describe('AppComponent', () => {
   beforeEach(async(() => {
@@ -12,7 +12,7 @@ describe('AppComponent', () => {
       ],
       imports: [
         FormsModule,
-        ThreeExamplesModule
+        ThreeModule
       ]
     }).compileComponents();
   }));
