@@ -123,11 +123,6 @@ modules.xml
 .idea/misc.xml
 *.ipr
 
-# End of https://www.gitignore.io/api/intellij,intellij+iml
-api/build
-api/*.db
-api/out/
-
 #Intentional ignores
 __*
 
@@ -143,6 +138,7 @@ testresults/*.xml
 
 target
 project
+build
 
 eig.wasm
 eig.wasm.map
