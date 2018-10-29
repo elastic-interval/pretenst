@@ -3,10 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
-    "@types/react": "^15.4.1",
-    "@types/react-dom": "^15.4.1",
-    "@types/three": "^0.92.14",
-    "ajv": "^6.5.2",
+    "@types/react": "^15.6.19",
+    "@types/react-dom": "^15.5.8",
+    "@types/three": "^0.92.25",
+    "ajv": "^6.5.4",
     "react": "^15.4.1",
     "react-dom": "^15.4.1",
     "react-router-dom": "^4.3.1",
@@ -27,7 +27,7 @@
   },
   "devDependencies": {
     "@types/jest": "^22.2.3",
-    "@types/node": "^9.6.25",
+    "@types/node": "^9.6.35",
     "assemblyscript": "github:AssemblyScript/assemblyscript",
     "typescript": "^2.9.2"
   }
