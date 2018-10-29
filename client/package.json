@@ -20,15 +20,11 @@
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
     "test": "react-scripts-ts test --env=jsdom",
-    "eject": "react-scripts-ts eject",
-    "asbuild:untouched": "asc assembly/index.ts -b build/untouched.wasm -t build/untouched.wat --use Math=JSMath --sourceMap --validate",
-    "asbuild:optimized": "asc assembly/index.ts -b public/eig.wasm -t build/optimized.wat --use Math=JSMath --sourceMap --validate --optimize --noDebug",
-    "asbuild": "npm run asbuild:untouched && npm run asbuild:optimized"
+    "eject": "react-scripts-ts eject"
   },
   "devDependencies": {
     "@types/jest": "^22.2.3",
     "@types/node": "^9.6.35",
-    "assemblyscript": "github:AssemblyScript/assemblyscript",
     "typescript": "^2.9.2"
   }
 }

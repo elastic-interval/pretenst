@@ -343,11 +343,11 @@ function distance(a: usize, b: usize): f32 {
     let dx = getX(a) - getX(b);
     let dy = getY(a) - getY(b);
     let dz = getZ(a) - getZ(b);
-    return <f32>Math.sqrt(dx * dx + dy * dy + dz * dz);
+    return <f32>sqrt(dx * dx + dy * dy + dz * dz);
 }
 
 function length(vPtr: usize): f32 {
-    return <f32>Math.sqrt(quadrance(vPtr));
+    return <f32>sqrt(quadrance(vPtr));
 }
 
 function crossVectors(vPtr: usize, a: usize, b: usize): void {

@@ -14,7 +14,7 @@
 </head>
 <body>
 <script>
-    const eigCodePromise = fetch("/eig.wasm").then(response => response.arrayBuffer());
+    const eigCodePromise = fetch("/fabric.wasm").then(response => response.arrayBuffer());
     function createFabricInstance() {
         function log(msg) {
             console.log(msg);
