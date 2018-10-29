@@ -7,7 +7,7 @@ lazy val root = (project in file(".")).
       organization := "Beautiful Code BV",
       scalaVersion := "2.12.4"
     )),
-    name := "patch-tokens-server",
+    name := "galapagotchi-server",
     libraryDependencies ++= Seq(
       "com.typesafe.akka" %% "akka-http" % akkaHttpVersion,
       "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
