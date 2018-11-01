@@ -60,13 +60,11 @@ export interface IFabricExports {
 
     intervals(): number;
 
-    createInterval(intervalMuscle: number, alphaIndex: number, omegaIndex: number, span: number): number;
-
-    getIntervalMuscle(intervalIndex: number): number;
-
-    setIntervalMuscle(intervalIndex: number, intervalMuscle: number): number;
+    createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number;
 
     findOppositeIntervalIndex(intervalIndex: number): number;
+
+    setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void;
 
     faces(): number;
 
@@ -79,8 +77,4 @@ export interface IFabricExports {
     getFaceJointIndex(faceIndex: number, jointNumber: number): number;
 
     getFaceAverageIdealSpan(faceIndex: number): number;
-
-    muscles(): number;
-
-    setMuscleHighLow(muscleIndex: number, direction:number, highLow: number): void;
 }

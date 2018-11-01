@@ -30,20 +30,11 @@ export class Genome {
 
     public applyBehavior(fabric: Fabric): void {
         const behaviorGene = new GeneSequence(this.data.behaviorSequence);
-        const muscleCount = fabric.muscleCount;
-        for (let muscleIndex = 0; muscleIndex < muscleCount; muscleIndex++) {
+        for (let intervalIndex = INTERVALS_RESERVED; intervalIndex < fabric.intervalCount; intervalIndex++) {
             for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
                 const highLow = behaviorGene.nextChoice(256);
-                fabric.setMuscleHighLow(muscleIndex, direction, highLow);
-                // console.log(`M[${muscleIndex}]=${highLow}`);
+                fabric.setIntervalHighLow(intervalIndex, direction, highLow);
             }
-        }
-        // todo: too much assignment here, due to opposites
-        for (let intervalIndex = 0; intervalIndex < fabric.intervalCount - INTERVALS_RESERVED; intervalIndex++) {
-            const opposite = behaviorGene.next() > 0.3;
-            const intervalMuscle = behaviorGene.nextChoice(muscleCount) * (opposite ? -1 : 1);
-            fabric.setIntervalMuscle(INTERVALS_RESERVED + intervalIndex, intervalMuscle);
-            // console.log(`I[${intervalMuscle}]=${intervalMuscle}`);
         }
     }
 

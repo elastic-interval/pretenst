@@ -14,7 +14,7 @@ const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;
 const MAXIMUM_AGE = 50000;
 const INCREASE_AGE_LIMIT = 1000;
-const SURVIVAL_RATE = 0.85;
+const SURVIVAL_RATE = 0.75;
 
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([]);
@@ -70,15 +70,18 @@ export class Evolution {
             return evolver.gotchi.age < this.ageLimit;
         });
         if (frozenCount > evolvers.length / 2 || (activeEvolvers.length === 0 && this.evolversBeingBorn === 0)) {
-            this.rebootAll(SURVIVAL_RATE);
             this.ageLimit += INCREASE_AGE_LIMIT;
+            console.log('age limit', this.ageLimit);
+            const toSave = this.strongest();
+            if (toSave) {
+                this.save(toSave.gotchi);
+            } else {
+                console.log('no strongest?');
+            }
             if (this.ageLimit >= MAXIMUM_AGE) {
                 this.ageLimit = MINIMUM_AGE;
-                const toSave = this.strongest();
-                if (toSave) {
-                    this.save(toSave.gotchi);
-                }
             }
+            this.rebootAll(SURVIVAL_RATE);
         }
         activeEvolvers.forEach(activeEvolver => {
             const behind = this.ageLimit - activeEvolver.gotchi.age;
