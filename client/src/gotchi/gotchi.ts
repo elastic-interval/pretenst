@@ -1,30 +1,22 @@
-import {Fabric, HANGING_DELAY} from '../body/fabric';
+import {Fabric} from '../body/fabric';
 import {Genome, IGenomeData} from '../genetics/genome';
 import {Growth} from '../genetics/growth';
 import {Vector3} from 'three';
-import {Direction} from '../body/fabric-exports';
 import {ITravel} from '../island/trip';
+import {Direction} from '../body/fabric-exports';
 
 export interface IGotchiFactory {
     createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>;
 }
 
-const GEAR_UP = 0.00025;
-
 export class Gotchi {
     public facesMeshNode: any;
     public travel?: ITravel;
-    public direction: Direction = Direction.REST;
-    private currentDirection: Direction = Direction.REST;
-    private intensity = 1;
-    private clutch = false;
     private growth?: Growth;
-    private hangingCountdown: number;
     private growthFinished = false;
 
     constructor(public fabric: Fabric, private genome: Genome) {
         this.growth = genome.growth(fabric);
-        this.hangingCountdown = HANGING_DELAY;
     }
 
     public get master() {
@@ -58,58 +50,32 @@ export class Gotchi {
         return this.genome.data;
     }
 
-    public iterate(ticks: number): number {
-        const changeClutch = () => {
-            const intensity = this.intensity + ticks * (this.clutch ? -GEAR_UP : GEAR_UP);
-            if (intensity > 1) {
-                this.intensity = 1;
-            } else if (intensity < 0) {
-                this.intensity = 0;
-                this.currentDirection = this.direction;
-                this.clutch = false;
-            } else {
-                this.intensity = intensity;
-            }
-        };
-        const maxTimeSweep = this.fabric.iterate(ticks, this.currentDirection, this.intensity);
-        if (this.direction !== this.currentDirection && !this.clutch) {
-            this.clutch = true;
-            changeClutch(); // so intensity < 1, engage
-        }
-        if (this.intensity < 1) {
-            changeClutch();
-        }
-        if (maxTimeSweep === 0) {
-            if (this.growthFinished) {
-                this.triggerAllIntervals();
-            } else {
-                if (this.growth) {
-                    const successful = this.growth.step();
-                    if (!successful) {
-                        this.growth = undefined;
-                    }
-                } else if (this.hangingCountdown > 0) {
-                    this.hangingCountdown -= ticks;
-                    if (this.hangingCountdown <= 0) {
-                        this.fabric.removeHanger();
-                    }
-                } else {
-                    this.genome.applyBehavior(this.fabric);
-                    this.growthFinished = true;
+    public get direction(): Direction {
+        return this.fabric.direction;
+    }
+
+    public set direction(direction: Direction) {
+        this.fabric.direction = direction;
+    }
+
+    public iterate(ticks: number): void {
+        const wrapAround = this.fabric.iterate(ticks);
+        if (wrapAround && !this.growthFinished) {
+            if (this.growth) {
+                const successful = this.growth.step();
+                if (!successful) {
+                    this.growth = undefined;
                 }
+            } else {
+                this.genome.applyBehavior(this.fabric);
+                this.growthFinished = true;
+                this.fabric.removeHanger();
             }
         }
-        return maxTimeSweep;
     }
 
     public get growing(): boolean {
         return !!this.growth;
-    }
-
-    public triggerAllIntervals() {
-        for (let intervalIndex = 0; intervalIndex < this.fabric.intervalCount; intervalIndex++) {
-            this.fabric.triggerInterval(intervalIndex);
-        }
     }
 
     public dispose() {

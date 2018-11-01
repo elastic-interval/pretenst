@@ -36,7 +36,11 @@ export interface IFabricExports {
 
     isGestating(): boolean;
 
-    iterate(ticks: number, direction: Direction, intensity: number): number;
+    getDirection(): Direction;
+
+    setDirection(direction: Direction): void;
+
+    iterate(ticks: number): boolean;
 
     centralize(): void;
 
@@ -63,8 +67,6 @@ export interface IFabricExports {
     setIntervalMuscle(intervalIndex: number, intervalMuscle: number): number;
 
     findOppositeIntervalIndex(intervalIndex: number): number;
-
-    triggerInterval(intervalIndex: number): void;
 
     faces(): number;
 
