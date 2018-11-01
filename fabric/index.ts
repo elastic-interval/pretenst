@@ -470,7 +470,7 @@ function calculateDirectionVectors(): void {
 
 // Intervals =====================================================================================
 
-const INTERVAL_SIZE: usize = INTERVAL_MUSCLE_SIZE + INDEX_SIZE * 2 + VECTOR_SIZE + FLOAT_SIZE * 2;
+const INTERVAL_SIZE: usize = INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE;
 const INTERVAL_MUSCLE_STATIC: i16 = -32767;
 const INTERVAL_MUSCLE_GROWING: i16 = -32766;
 
@@ -526,12 +526,8 @@ function unitPtr(intervalIndex: u16): usize {
     return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE;
 }
 
-function stressPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE;
-}
-
 function idealSpanPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE;
+    return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE;
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -801,14 +797,8 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
             setIntervalMuscle(intervalIndex, INTERVAL_MUSCLE_STATIC); // back to static
             return idealSpan;
         } else { // busy growing
-            let originalSpan: f32 = 1;
-            if (timeSweep === 1) { // just triggered now, store span in stress (cheating)
-                originalSpan = calculateSpan(intervalIndex);
-                setFloat(stressPtr(intervalIndex), originalSpan);
-            } else {
-                originalSpan = getFloat(stressPtr(intervalIndex));
-            }
-            return originalSpan * (1 - progress) + idealSpan * progress;
+            let currentSpan: f32 = calculateSpan(intervalIndex);
+            return currentSpan * (1 - progress) + idealSpan * progress;
         }
     }
     if (currentDirection === REST_DIRECTION) {

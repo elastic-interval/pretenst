@@ -37,7 +37,6 @@ export class Evolver {
         }, [0,0,0,0,0]);
         for (let dir = Direction.FORWARD; dir <= Direction.REVERSE; dir++) {
             if (counts[dir] === MAX_VOTES && this.currentDirection !== dir) {
-                console.log('votes: '+JSON.stringify(counts));
                 this.currentDirection = dir;
                 return dir;
             }

@@ -8,7 +8,7 @@ import {compareEvolvers, Evolver} from './evolver';
 import {Trip} from '../island/trip';
 
 export const INITIAL_JOINT_COUNT = 47;
-const MAX_POPULATION = 16;
+const MAX_POPULATION = 24;
 const INITIAL_MUTATION_COUNT = 14;
 const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;
