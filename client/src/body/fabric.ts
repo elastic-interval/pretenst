@@ -222,20 +222,18 @@ export class Fabric {
         if (intervalIndex < INTERVALS_RESERVED || intervalIndex >= this.intervalCount) {
             throw new Error(`Bad interval index index ${intervalIndex}`);
         }
-        // console.log(`I[${intervalIndex}]=${intervalMuscle}`);
         this.fabricExports.setIntervalHighLow(intervalIndex, direction, highLow);
         switch(direction) {
             case Direction.FORWARD:
             case Direction.REVERSE:
                 const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
                 if (oppositeIntervalIndex < this.intervalCount) {
-                    // console.log(`O[${oppositeIntervalIndex}]=${oppositeIntervalMuscle}`);
                     this.fabricExports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow);
                 }
                 break;
             case Direction.RIGHT:
             case Direction.LEFT:
-                // todo: make opposite opposite
+                // todo: make opposite opposite?
                 break;
         }
     }

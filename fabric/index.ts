@@ -912,7 +912,7 @@ export function iterate(ticks: usize): boolean {
         }
         tick();
     }
-    if (!gestating) {
+    if (currentDirection !== REST_DIRECTION) {
         ticksSoFar += ticks;
     }
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {

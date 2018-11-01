@@ -12,7 +12,7 @@ const MAX_POPULATION = 24;
 const INITIAL_MUTATION_COUNT = 14;
 const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;
-const MAXIMUM_AGE = 50000;
+const MAXIMUM_AGE = 30000;
 const INCREASE_AGE_LIMIT = 1000;
 const SURVIVAL_RATE = 0.75;
 
@@ -92,9 +92,6 @@ export class Evolution {
         });
         if (!anyGestating) {
             activeEvolvers.forEach(activeEvolver => {
-                if (activeEvolver.frozen || activeEvolver.gotchi.age === 0) {
-                    return;
-                }
                 const gotchiDirection = activeEvolver.gotchi.direction;
                 const chosenDirection = activeEvolver.voteDirection();
                 if (chosenDirection !== undefined && gotchiDirection !== chosenDirection) {
