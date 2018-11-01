@@ -83,20 +83,25 @@ export class Evolution {
             }
             this.rebootAll(SURVIVAL_RATE);
         }
-        activeEvolvers.forEach(activeEvolver => {
+        let anyGestating = false;
+        activeEvolvers.map(activeEvolver => {
             const behind = this.ageLimit - activeEvolver.gotchi.age;
-            activeEvolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind);
-        });
-        activeEvolvers.forEach(activeEvolver => {
-            if (activeEvolver.frozen || activeEvolver.gotchi.isGestating || activeEvolver.gotchi.age === 0) {
-                return;
-            }
-            const gotchiDirection = activeEvolver.gotchi.direction;
-            const chosenDirection = activeEvolver.voteDirection();
-            if (chosenDirection !== undefined && gotchiDirection !== chosenDirection) {
-                activeEvolver.gotchi.direction = chosenDirection;
+            if (activeEvolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind)) {
+                anyGestating = true;
             }
         });
+        if (!anyGestating) {
+            activeEvolvers.forEach(activeEvolver => {
+                if (activeEvolver.frozen || activeEvolver.gotchi.age === 0) {
+                    return;
+                }
+                const gotchiDirection = activeEvolver.gotchi.direction;
+                const chosenDirection = activeEvolver.voteDirection();
+                if (chosenDirection !== undefined && gotchiDirection !== chosenDirection) {
+                    activeEvolver.gotchi.direction = chosenDirection;
+                }
+            });
+        }
         if (evolvers.length > 0 && evolvers.length + this.evolversBeingBorn < MAX_POPULATION) {
             console.log(`Birth ${evolvers.length} + ${this.evolversBeingBorn} < ${MAX_POPULATION}`, this.evolversBeingBorn);
             const offspring = this.createRandomOffspring(evolvers.concat(evolvers.filter(g => g.frozen)));

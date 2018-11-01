@@ -174,7 +174,7 @@ export class Fabric {
         return this.fabricExports.iterate(ticks);
     }
 
-    public removeHanger(): void {
+    public endGestation(): void {
         this.fabricExports.endGestation();
         this.kernel.refresh();
     }
@@ -224,11 +224,19 @@ export class Fabric {
         }
         // console.log(`I[${intervalIndex}]=${intervalMuscle}`);
         this.fabricExports.setIntervalHighLow(intervalIndex, direction, highLow);
-        const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
-        if (oppositeIntervalIndex < this.intervalCount) {
-            // todo: currently opposite set to same
-            // console.log(`O[${oppositeIntervalIndex}]=${oppositeIntervalMuscle}`);
-            this.fabricExports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow);
+        switch(direction) {
+            case Direction.FORWARD:
+            case Direction.REVERSE:
+                const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
+                if (oppositeIntervalIndex < this.intervalCount) {
+                    // console.log(`O[${oppositeIntervalIndex}]=${oppositeIntervalMuscle}`);
+                    this.fabricExports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow);
+                }
+                break;
+            case Direction.RIGHT:
+            case Direction.LEFT:
+                // todo: make opposite opposite
+                break;
         }
     }
 

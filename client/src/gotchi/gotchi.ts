@@ -58,7 +58,7 @@ export class Gotchi {
         this.fabric.direction = direction;
     }
 
-    public iterate(ticks: number): void {
+    public iterate(ticks: number): boolean {
         const wrapAround = this.fabric.iterate(ticks);
         if (wrapAround && !this.growthFinished) {
             if (this.growth) {
@@ -69,9 +69,10 @@ export class Gotchi {
             } else {
                 this.genome.applyBehavior(this.fabric);
                 this.growthFinished = true;
-                this.fabric.removeHanger();
+                this.fabric.endGestation();
             }
         }
+        return !!this.growth;
     }
 
     public get growing(): boolean {
