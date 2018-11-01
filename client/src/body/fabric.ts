@@ -8,7 +8,6 @@ export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
 export const INTERVAL_MUSCLE_STATIC = -32767;
 export const INTERVAL_MUSCLE_GROWING = -32766;
-export const HANGING_DELAY = 2400;
 export const HUNG_ALTITUDE = 7;
 export const NORMAL_TICKS = 50;
 
@@ -169,8 +168,16 @@ export class Fabric {
         hanger.y += this.setAltitude(HUNG_ALTITUDE);
     }
 
-    public iterate(ticks: number, direction: Direction, intensity: number): number {
-        return this.fabricExports.iterate(ticks, direction, intensity);
+    public get direction(): Direction {
+        return this.fabricExports.getDirection();
+    }
+
+    public set direction(direction: Direction) {
+         this.fabricExports.setDirection(direction);
+    }
+
+    public iterate(ticks: number): boolean {
+        return this.fabricExports.iterate(ticks);
     }
 
     public removeHanger(): void {
@@ -239,10 +246,6 @@ export class Fabric {
         }
     }
 
-    public triggerInterval(intervalIndex: number): void {
-        this.fabricExports.triggerInterval(intervalIndex);
-    }
-
     public toString(): string {
         return `${(this.kernel.blockBytes / 1024).toFixed(1)}k =becomes=> ${this.kernel.bufferBytes / 65536} block(s)`
     }
@@ -258,9 +261,7 @@ export class Fabric {
     }
 
     private intervalGrowth(alphaIndex: number, omegaIndex: number, span: number): number {
-        const intervalIndex = this.fabricExports.createInterval(INTERVAL_MUSCLE_GROWING, alphaIndex, omegaIndex, span);
-        this.fabricExports.triggerInterval(intervalIndex);
-        return intervalIndex;
+        return this.fabricExports.createInterval(INTERVAL_MUSCLE_GROWING, alphaIndex, omegaIndex, span);
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
