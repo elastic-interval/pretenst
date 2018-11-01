@@ -937,7 +937,9 @@ export function iterate(ticks: usize): boolean {
             }
         }
         tick();
-        ticksSoFar++;
+    }
+    if (!gestating) {
+        ticksSoFar += ticks;
     }
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex);

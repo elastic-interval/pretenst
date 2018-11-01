@@ -4,7 +4,6 @@ import {Genome} from '../genetics/genome';
 import {Raycaster, Vector3} from 'three';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
-import {Direction} from '../body/fabric-exports';
 import {compareEvolvers, Evolver} from './evolver';
 import {Trip} from '../island/trip';
 
@@ -92,7 +91,6 @@ export class Evolution {
             const gotchiDirection = activeEvolver.gotchi.direction;
             const chosenDirection = activeEvolver.voteDirection();
             if (chosenDirection !== undefined && gotchiDirection !== chosenDirection) {
-                console.log(`${activeEvolver.id}: ${Direction[gotchiDirection]} ==> ${Direction[chosenDirection]}`);
                 activeEvolver.gotchi.direction = chosenDirection;
             }
         });
