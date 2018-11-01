@@ -6,8 +6,6 @@ import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
 export const BILATERAL_MIDDLE = 0;
 export const BILATERAL_RIGHT = 1;
 export const BILATERAL_LEFT = 2;
-export const INTERVAL_MUSCLE_STATIC = -32767;
-export const INTERVAL_MUSCLE_GROWING = -32766;
 export const HUNG_ALTITUDE = 7;
 export const NORMAL_TICKS = 50;
 
@@ -70,10 +68,6 @@ export class Fabric {
 
     public get faceCount() {
         return this.fabricExports.faces();
-    }
-
-    public get muscleCount() {
-        return this.fabricExports.muscles();
     }
 
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
@@ -224,25 +218,17 @@ export class Fabric {
         return new FaceSnapshot(this, this.kernel, this.fabricExports, faceIndex);
     }
 
-    public setMuscleHighLow(muscleIndex: number, direction: Direction, highLow: number): void {
-        this.fabricExports.setMuscleHighLow(muscleIndex, direction, highLow);
-    }
-
-    public setIntervalMuscle(intervalIndex: number, intervalMuscle: number): void {
+    public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
         if (intervalIndex < INTERVALS_RESERVED || intervalIndex >= this.intervalCount) {
             throw new Error(`Bad interval index index ${intervalIndex}`);
         }
-        const specialMuscle = intervalMuscle === INTERVAL_MUSCLE_STATIC || intervalMuscle === INTERVAL_MUSCLE_GROWING;
-        if (!specialMuscle && Math.abs(intervalMuscle) >= this.muscleCount) {
-            throw new Error(`Bad interval muscle: ${intervalMuscle}`);
-        }
         // console.log(`I[${intervalIndex}]=${intervalMuscle}`);
-        this.fabricExports.setIntervalMuscle(intervalIndex, intervalMuscle); // could be negative
+        this.fabricExports.setIntervalHighLow(intervalIndex, direction, highLow);
         const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);
         if (oppositeIntervalIndex < this.intervalCount) {
-            const oppositeIntervalMuscle = specialMuscle ? intervalMuscle : Math.abs(intervalMuscle); // same if positive, opposite if negative
+            // todo: currently opposite set to same
             // console.log(`O[${oppositeIntervalIndex}]=${oppositeIntervalMuscle}`);
-            this.fabricExports.setIntervalMuscle(oppositeIntervalIndex, oppositeIntervalMuscle);
+            this.fabricExports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow);
         }
     }
 
@@ -257,11 +243,11 @@ export class Fabric {
     }
 
     private interval(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.fabricExports.createInterval(INTERVAL_MUSCLE_STATIC, alphaIndex, omegaIndex, span);
+        return this.fabricExports.createInterval(alphaIndex, omegaIndex, span, false);
     }
 
     private intervalGrowth(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.fabricExports.createInterval(INTERVAL_MUSCLE_GROWING, alphaIndex, omegaIndex, span);
+        return this.fabricExports.createInterval(alphaIndex, omegaIndex, span, true);
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {

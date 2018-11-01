@@ -6,19 +6,21 @@ declare function logInt(idx: u32, i: i32): void;
 
 const ERROR: usize = 65535;
 const LATERALITY_SIZE: usize = sizeof<u8>();
-const INTERVAL_MUSCLE_SIZE: usize = sizeof<i16>();
 const JOINT_NAME_SIZE: usize = sizeof<u16>();
 const INDEX_SIZE: usize = sizeof<u16>();
 const MUSCLE_HIGHLOW_SIZE: usize = sizeof<u8>();
 const FLOAT_SIZE: usize = sizeof<f32>();
 const VECTOR_SIZE: usize = FLOAT_SIZE * 3;
-
+const CLOCK_POINTS: u8 = 16;
 const JOINT_RADIUS: f32 = 0.5;
 const AMBIENT_JOINT_MASS: f32 = 0.1;
-
 const BILATERAL_MIDDLE: u8 = 0;
 const SEED_CORNERS: u16 = 5;
 const REST_DIRECTION: u8 = 0;
+const MUSCLE_DIRECTIONS: u8 = 5;
+const DEFAULT_HIGH_LOW: u8 = 0x08;
+const GROWING_INTERVAL: u8 = 1;
+const MATURE_INTERVAL: u8 = 2;
 
 // Body state =====================================================================================
 
@@ -97,7 +99,6 @@ let faceNormalOffset: usize = 0;
 let faceLocationOffset: usize = 0;
 let intervalOffset: usize = 0;
 let faceOffset: usize = 0;
-let muscleOffset: usize = 0;
 
 let vectorA: usize = 0;
 let vectorB: usize = 0;
@@ -116,44 +117,36 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     let jointsSize = jointCountMax * JOINT_SIZE;
     let intervalsSize = intervalCountMax * INTERVAL_SIZE;
     let facesSize = faceCountMax * FACE_SIZE;
-    let musclesSize = MUSCLE_COUNT * MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS;
     // offsets
     let bytes = (
         vectorB = (
             vectorA = (
                 vector = (
-                    muscleOffset = (
-                        faceOffset = (
-                            intervalOffset = (
-                                jointOffset = (
-                                    faceLocationOffset = (
-                                        faceNormalOffset = (
-                                            faceMidpointOffset = (
-                                                rightPtr = (
-                                                    forwardPtr = (
-                                                        seedPtr = (
-                                                            midpointPtr
-                                                        ) + VECTOR_SIZE
+                    faceOffset = (
+                        intervalOffset = (
+                            jointOffset = (
+                                faceLocationOffset = (
+                                    faceNormalOffset = (
+                                        faceMidpointOffset = (
+                                            rightPtr = (
+                                                forwardPtr = (
+                                                    seedPtr = (
+                                                        midpointPtr
                                                     ) + VECTOR_SIZE
                                                 ) + VECTOR_SIZE
                                             ) + VECTOR_SIZE
-                                        ) + faceVectorsSize
-                                    ) + faceJointVectorsSize
+                                        ) + VECTOR_SIZE
+                                    ) + faceVectorsSize
                                 ) + faceJointVectorsSize
-                            ) + jointsSize
-                        ) + intervalsSize
-                    ) + facesSize
-                ) + musclesSize
+                            ) + faceJointVectorsSize
+                        ) + jointsSize
+                    ) + intervalsSize
+                ) + facesSize
             ) + VECTOR_SIZE
         ) + VECTOR_SIZE
     ) + VECTOR_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
-    for (let muscleIndex: u16 = 0; muscleIndex < MUSCLE_COUNT; muscleIndex++) {
-        for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
-            setMuscleHighLow(muscleIndex, direction, 0x08);
-        }
-    }
     calculateJointMidpoint();
     return bytes;
 }
@@ -168,10 +161,6 @@ export function intervals(): usize {
 
 export function faces(): usize {
     return faceCount;
-}
-
-export function muscles(): usize {
-    return MUSCLE_COUNT;
 }
 
 export function nextJointTag(): u16 {
@@ -470,64 +459,78 @@ function calculateDirectionVectors(): void {
 
 // Intervals =====================================================================================
 
-const INTERVAL_SIZE: usize = INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE;
-const INTERVAL_MUSCLE_STATIC: i16 = -32767;
-const INTERVAL_MUSCLE_GROWING: i16 = -32766;
+const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS;
 
-export function createInterval(intervalMuscle: i16, alphaIndex: u16, omegaIndex: u16, idealSpan: f32): usize {
+export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32, growing: boolean): usize {
     if (intervalCount + 1 >= intervalCountMax) {
         return ERROR;
     }
     let intervalIndex = intervalCount++;
-    setIntervalMuscle(intervalIndex, intervalMuscle);
     setAlphaIndex(intervalIndex, alphaIndex);
     setOmegaIndex(intervalIndex, omegaIndex);
-    setFloat(idealSpanPtr(intervalIndex), idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
+    setIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex));
+    for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
+        if (direction === REST_DIRECTION) {
+            setIntervalHighLow(intervalIndex, direction, growing ? GROWING_INTERVAL : MATURE_INTERVAL);
+        } else {
+            setIntervalHighLow(intervalIndex, direction, DEFAULT_HIGH_LOW);
+        }
+    }
     return intervalIndex;
 }
 
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset;
-    setIntervalMuscle(intervalIndex, getIntervalMuscle(nextIndex));
     setAlphaIndex(intervalIndex, getAlphaIndex(nextIndex));
     setOmegaIndex(intervalIndex, getOmegaIndex(nextIndex));
-    setFloat(idealSpanPtr(intervalIndex), getFloat(idealSpanPtr(nextIndex)));
+    setIdealSpan(intervalIndex, getIdealSpan(nextIndex));
+    for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
+        setIntervalHighLow(intervalIndex, direction, getIntervalHighLow(nextIndex, direction));
+    }
 }
 
 function intervalPtr(intervalIndex: u16): usize {
     return intervalOffset + intervalIndex * INTERVAL_SIZE;
 }
 
-export function getIntervalMuscle(intervalIndex: u16): i16 {
-    return load<i16>(intervalPtr(intervalIndex));
-}
-
-export function setIntervalMuscle(intervalIndex: u16, intervalMuscle: i16): void {
-    store<i16>(intervalPtr(intervalIndex), intervalMuscle);
-}
-
 function getAlphaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE);
+    return getIndex(intervalPtr(intervalIndex));
 }
 
 function setAlphaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE, v);
+    setIndex(intervalPtr(intervalIndex), v);
 }
 
 function getOmegaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE);
+    return getIndex(intervalPtr(intervalIndex) + INDEX_SIZE);
 }
 
 function setOmegaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE, v);
+    setIndex(intervalPtr(intervalIndex) + INDEX_SIZE, v);
 }
 
 function unitPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE;
+    return intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE;
 }
 
 function idealSpanPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INTERVAL_MUSCLE_SIZE + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE;
+    return intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE;
+}
+
+function getIdealSpan(intervalIndex: u16): f32 {
+    return getFloat(idealSpanPtr(intervalIndex));
+}
+
+function setIdealSpan(intervalIndex: u16, idealSpan: f32): void {
+    setFloat(idealSpanPtr(intervalIndex), idealSpan);
+}
+
+function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
+    return getHighLow(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE + MUSCLE_HIGHLOW_SIZE * direction);
+}
+
+export function setIntervalHighLow(intervalIndex: u16, direction: u8, highLow: u8): void {
+    setHighLow(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE + MUSCLE_HIGHLOW_SIZE * direction, highLow);
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -566,6 +569,97 @@ export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
     }
     return intervalCountMax;
 }
+
+function advance(clockPoint: u32): u32 {
+    return clockPoint + 65536;
+}
+
+function getIntervalSpanVariationFloat(intervalIndex: u16, direction: u8): f32 {
+    if (direction === REST_DIRECTION) {
+        return 0;
+    }
+    let highLow: u8 = getIntervalHighLow(intervalIndex, direction);
+    let highClockPoint: u32 = <u32>(highLow / CLOCK_POINTS) << 12;
+    let lowClockPoint: u32 = <u32>(highLow % CLOCK_POINTS) << 12;
+    if (highClockPoint === lowClockPoint) {
+        lowClockPoint += 1 << 12;
+    }
+    let pointsFromHigh: u32;
+    let pointsFromLow: u32;
+    if (timeSweep === lowClockPoint) {
+        pointsFromHigh = 1;
+        pointsFromLow = 0;
+    } else if (timeSweep === highClockPoint) {
+        pointsFromHigh = 0;
+        pointsFromLow = 1;
+    } else if (lowClockPoint < highClockPoint) {
+        // L-H
+        if (timeSweep > lowClockPoint) {
+            if (timeSweep < highClockPoint) {
+                // L-t-H
+                pointsFromLow = timeSweep - lowClockPoint;
+                pointsFromHigh = highClockPoint - timeSweep;
+            } else {
+                // L-H-t (H-t-L)
+                pointsFromLow = advance(lowClockPoint) - timeSweep;
+                pointsFromHigh = timeSweep - highClockPoint;
+            }
+        } else {
+            // t-L-H (L-H-t)
+            pointsFromLow = lowClockPoint - timeSweep;
+            pointsFromHigh = advance(timeSweep) - highClockPoint;
+        }
+    } else {
+        // H-L
+        if (timeSweep > highClockPoint) {
+            if (timeSweep < lowClockPoint) {
+                // H-t-L
+                pointsFromHigh = timeSweep - highClockPoint;
+                pointsFromLow = lowClockPoint - timeSweep;
+            } else {
+                // H-L-t (L-t-H)
+                pointsFromHigh = advance(highClockPoint) - timeSweep;
+                pointsFromLow = timeSweep - lowClockPoint;
+            }
+        } else {
+            // t-H-L (H-L-t)
+            pointsFromHigh = highClockPoint - timeSweep;
+            pointsFromLow = advance(timeSweep) - lowClockPoint;
+        }
+    }
+    let both: u32 = pointsFromHigh + pointsFromLow;
+    let lowToHigh: f32 = <f32>both;
+    let degreeHigh = <f32>pointsFromLow / lowToHigh;
+    let degreeLow = <f32>pointsFromHigh / lowToHigh;
+    return degreeHigh * maxSpanVariation + degreeLow * -maxSpanVariation;
+}
+
+function interpolateCurrentSpan(intervalIndex: u16): f32 {
+    let progress = <f32>timeSweep / 65536;
+    let idealSpan = getIdealSpan(intervalIndex);
+    let intervalState = getIntervalHighLow(intervalIndex, REST_DIRECTION);
+    if (intervalState === GROWING_INTERVAL) {
+        if (timeSweep === 0) { // done growing
+            setIntervalHighLow(intervalIndex, REST_DIRECTION, MATURE_INTERVAL);
+            return idealSpan;
+        } else { // busy growing
+            let currentSpan: f32 = calculateSpan(intervalIndex);
+            return currentSpan * (1 - progress) + idealSpan * progress;
+        }
+    }
+    if (currentDirection === REST_DIRECTION) {
+        return idealSpan;
+    }
+    if (previousDirection !== currentDirection) {
+        let previousSpanVariation = getIntervalSpanVariationFloat(intervalIndex, previousDirection);
+        let spanVariation = getIntervalSpanVariationFloat(intervalIndex, currentDirection);
+        return idealSpan + idealSpan * (progress * spanVariation + (1 - progress) * previousSpanVariation);
+    } else {
+        let spanVariation = getIntervalSpanVariationFloat(intervalIndex, currentDirection);
+        return idealSpan + idealSpan * spanVariation;
+    }
+}
+
 
 // Faces =====================================================================================
 
@@ -623,9 +717,9 @@ export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
     let interval0 = findIntervalIndex(joint0, joint1);
     let interval1 = findIntervalIndex(joint1, joint2);
     let interval2 = findIntervalIndex(joint2, joint0);
-    let ideal0 = getFloat(idealSpanPtr(interval0));
-    let ideal1 = getFloat(idealSpanPtr(interval1));
-    let ideal2 = getFloat(idealSpanPtr(interval2));
+    let ideal0 = getIdealSpan(interval0);
+    let ideal1 = getIdealSpan(interval1);
+    let ideal2 = getIdealSpan(interval2);
     return (ideal0 + ideal1 + ideal2) / 3;
 }
 
@@ -704,116 +798,6 @@ export function removeFace(deadFaceIndex: u16): void {
         outputFaceGeometry(faceIndex);
     }
     faceCount--;
-}
-
-// Muscles =====================================================================================
-
-const MUSCLE_COUNT: u16 = 64;
-const REST = <f32>1.0;
-const MUSCLE_DIRECTIONS: u8 = 4;
-const CLOCK_POINTS: u8 = 16;
-
-function musclePtr(muscleIndex: u16, direction: u8): usize {
-    return muscleOffset + muscleIndex * MUSCLE_DIRECTIONS + direction;
-}
-
-export function setMuscleHighLow(muscleIndex: u16, direction: u8, highLow: u8): void {
-    setHighLow(musclePtr(muscleIndex, direction - 1), highLow);
-}
-
-function advance(clockPoint: u32): u32 {
-    return clockPoint + 65536;
-}
-
-function getMuscleSpanVariationFloat(muscleIndex: u16, direction: u8, reverse: boolean): f32 {
-    if (direction === REST_DIRECTION) {
-        return 0;
-    }
-    let highLow: u8 = getHighLow(musclePtr(muscleIndex, direction - 1));
-    let highClockPoint: u32 = <u32>(highLow / CLOCK_POINTS) << 12;
-    let lowClockPoint: u32 = <u32>(highLow % CLOCK_POINTS) << 12;
-    if (highClockPoint === lowClockPoint) {
-        lowClockPoint += 1 << 12;
-    }
-    let pointsFromHigh: u32;
-    let pointsFromLow: u32;
-    if (timeSweep === lowClockPoint) {
-        pointsFromHigh = 1;
-        pointsFromLow = 0;
-    } else if (timeSweep === highClockPoint) {
-        pointsFromHigh = 0;
-        pointsFromLow = 1;
-    } else if (lowClockPoint < highClockPoint) {
-        // L-H
-        if (timeSweep > lowClockPoint) {
-            if (timeSweep < highClockPoint) {
-                // L-t-H
-                pointsFromLow = timeSweep - lowClockPoint;
-                pointsFromHigh = highClockPoint - timeSweep;
-            } else {
-                // L-H-t (H-t-L)
-                pointsFromLow = advance(lowClockPoint) - timeSweep;
-                pointsFromHigh = timeSweep - highClockPoint;
-            }
-        } else {
-            // t-L-H (L-H-t)
-            pointsFromLow = lowClockPoint - timeSweep;
-            pointsFromHigh = advance(timeSweep) - highClockPoint;
-        }
-    } else {
-        // H-L
-        if (timeSweep > highClockPoint) {
-            if (timeSweep < lowClockPoint) {
-                // H-t-L
-                pointsFromHigh = timeSweep - highClockPoint;
-                pointsFromLow = lowClockPoint - timeSweep;
-            } else {
-                // H-L-t (L-t-H)
-                pointsFromHigh = advance(highClockPoint) - timeSweep;
-                pointsFromLow = timeSweep - lowClockPoint;
-            }
-        } else {
-            // t-H-L (H-L-t)
-            pointsFromHigh = highClockPoint - timeSweep;
-            pointsFromLow = advance(timeSweep) - lowClockPoint;
-        }
-    }
-    let both: u32 = pointsFromHigh + pointsFromLow;
-    let lowToHigh: f32 = <f32>both;
-    let degreeHigh = <f32>pointsFromLow / lowToHigh;
-    let degreeLow = <f32>pointsFromHigh / lowToHigh;
-    return (reverse ? -REST : REST) * (degreeHigh * maxSpanVariation + degreeLow * -maxSpanVariation);
-}
-
-function interpolateCurrentSpan(intervalIndex: u16): f32 {
-    let progress = <f32>timeSweep / 65536;
-    let intervalMuscle = getIntervalMuscle(intervalIndex);
-    let idealSpan = getFloat(idealSpanPtr(intervalIndex));
-    if (intervalMuscle === INTERVAL_MUSCLE_STATIC) {
-        return idealSpan;
-    }
-    if (intervalMuscle === INTERVAL_MUSCLE_GROWING) {
-        if (timeSweep === 0) { // done growing
-            setIntervalMuscle(intervalIndex, INTERVAL_MUSCLE_STATIC); // back to static
-            return idealSpan;
-        } else { // busy growing
-            let currentSpan: f32 = calculateSpan(intervalIndex);
-            return currentSpan * (1 - progress) + idealSpan * progress;
-        }
-    }
-    if (currentDirection === REST_DIRECTION) {
-        return idealSpan;
-    }
-    let opposingMuscle: boolean = (intervalMuscle < 0);
-    let muscleIndex: u16 = opposingMuscle ? -intervalMuscle : intervalMuscle;
-    if (previousDirection !== currentDirection) {
-        let previousSpanVariation = getMuscleSpanVariationFloat(muscleIndex, previousDirection, opposingMuscle);
-        let spanVariation = getMuscleSpanVariationFloat(muscleIndex, currentDirection, opposingMuscle);
-        return idealSpan * (REST + progress * spanVariation + (1 - progress) * previousSpanVariation);
-    } else {
-        let spanVariation = getMuscleSpanVariationFloat(muscleIndex, currentDirection, opposingMuscle);
-        return idealSpan * (REST + spanVariation);
-    }
 }
 
 // Physics =====================================================================================
