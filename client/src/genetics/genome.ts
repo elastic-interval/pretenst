@@ -1,22 +1,24 @@
-import {GeneSequence} from './gene-sequence';
-import {Fabric, INTERVALS_RESERVED} from '../body/fabric';
+import {GeneReader} from './gene-reader';
+import {Fabric} from '../body/fabric';
 import {Growth} from './growth';
 import {Direction} from '../body/fabric-exports';
+import {Behavior} from './behavior';
 
 export interface IGenomeData {
     master: string;
-    growthSequence: number[];
-    behaviorSequence: number[];
+    gene: Map<Direction, number[]>;
+}
+
+export function freshGenomeFor(master: string): Genome {
+    const genomeData: IGenomeData = {master, gene: new Map<Direction, number[]>()};
+    return new Genome(genomeData);
 }
 
 export class Genome {
 
     constructor(public data: IGenomeData) {
-        if (!data.growthSequence) {
-            data.growthSequence = [];
-        }
-        if (!data.behaviorSequence) {
-            data.behaviorSequence = [];
+        if (!this.data.gene) {
+            this.data.gene = new Map<Direction, number[]>();
         }
     }
 
@@ -25,34 +27,41 @@ export class Genome {
     }
 
     public growth(fabric: Fabric): Growth {
-        return new Growth(fabric, new GeneSequence(this.data.growthSequence));
+        return new Growth(fabric, this.createReader(Direction.REST));
     }
 
-    public applyBehavior(fabric: Fabric): void {
-        const behaviorGene = new GeneSequence(this.data.behaviorSequence);
-        for (let intervalIndex = INTERVALS_RESERVED; intervalIndex < fabric.intervalCount; intervalIndex++) {
-            for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
-                const highLow = behaviorGene.nextChoice(256);
-                fabric.setIntervalHighLow(intervalIndex, direction, highLow);
-            }
-        }
+    public behavior(fabric: Fabric, direction: Direction): Behavior {
+        return new Behavior(fabric, direction, this.createReader(direction));
     }
 
-    public withMutatedBehavior(mutations: number): Genome {
-        const genome = new Genome({
-            master: this.data.master,
-            growthSequence: this.data.growthSequence.slice(),
-            behaviorSequence: this.data.behaviorSequence.slice()
+    public withMutatedBehavior(direction: Direction, mutations: number): Genome {
+        const geneClone = new Map<Direction, number[]>();
+        this.data.gene.forEach((numbers, geneDirection) => {
+            geneClone[geneDirection] = numbers.slice();
         });
+        const directionGene: number[] = geneClone[direction] ? geneClone[direction]: [];
         for (let hit = 0; hit < mutations; hit++) {
-            const geneNumber = Math.floor(Math.random() * genome.data.behaviorSequence.length);
-            genome.data.behaviorSequence[geneNumber] = Math.random();
+            const geneNumber = Math.floor(Math.random() * directionGene.length);
+            directionGene[geneNumber] = Math.random();
         }
-        return genome;
+        return new Genome({master: this.data.master, gene: geneClone});
     }
 
     public toJSON() {
         return JSON.stringify(this.data);
+    }
+
+    // ================= private
+
+    private createReader(direction: Direction): GeneReader {
+        const gene = this.data.gene[direction];
+        if (gene) {
+            return new GeneReader(gene);
+        } else {
+            const freshGene: number[] = [];
+            this.data.gene[direction] = freshGene;
+            return new GeneReader(freshGene);
+        }
     }
 }
 

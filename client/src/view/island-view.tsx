@@ -5,7 +5,7 @@ import {Island} from '../island/island';
 import {IslandComponent} from './island-component';
 import {Spot, Surface} from '../island/spot';
 import {SpotSelector} from './spot-selector';
-import {Genome} from '../genetics/genome';
+import {freshGenomeFor} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 
 const SUN_POSITION = new Vector3(0, 300, 200);
@@ -91,11 +91,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                 return;
             }
             if (island.legal && centerOfGotch === island.freeGotch) {
-                centerOfGotch.genome = new Genome({
-                    master: this.props.master,
-                    growthSequence: [],
-                    behaviorSequence: []
-                });
+                centerOfGotch.genome = freshGenomeFor(this.props.master);
                 island.refresh();
                 island.save();
             }

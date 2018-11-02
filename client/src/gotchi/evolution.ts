@@ -6,6 +6,7 @@ import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
 import {compareEvolvers, Evolver} from './evolver';
 import {Trip} from '../island/trip';
+import {Direction} from '../body/fabric-exports';
 
 export const INITIAL_JOINT_COUNT = 47;
 const MAX_POPULATION = 24;
@@ -30,7 +31,8 @@ export class Evolution {
             if (promisedGotchi) {
                 promisedGotchis.push(promisedGotchi);
             }
-            mutatingGenome = mutatingGenome.withMutatedBehavior(INITIAL_MUTATION_COUNT / 5);
+            const direction: Direction = Math.floor(Math.random() * 5);
+            mutatingGenome = mutatingGenome.withMutatedBehavior(direction, INITIAL_MUTATION_COUNT);
         }
         this.evolversBeingBorn = MAX_POPULATION;
         Promise.all(promisedGotchis).then(gotchis => {
@@ -156,7 +158,7 @@ export class Evolution {
         console.log(`REBOOT: dead=${deadEvolvers.length} remaining=${ranked.length}`);
         deadEvolvers.forEach(evolver => evolver.gotchi.dispose());
         ranked.forEach(evolver => {
-            const offspring = this.createOffspring(evolver.gotchi, true);
+            const offspring = this.createOffspring(evolver.gotchi, evolver.currentDirection, true);
             if (offspring) {
                 evolver.gotchi.dispose();
                 promisedOffspring.push(offspring);
@@ -171,21 +173,15 @@ export class Evolution {
         });
     }
 
-    private createOffspring(parent: Gotchi, clone: boolean): Promise<Gotchi> | undefined {
-        const promisedGotchi = this.gotch.createGotchi(parent.fabric.jointCountMax, new Genome(parent.genomeData));
-        if (!promisedGotchi) {
-            console.log('stilborn!');
-            return undefined;
-        }
-        return promisedGotchi.then(child => {
-            return clone ? child : child.withMutatedBehavior(this.mutationCount)
-        });
+    private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Promise<Gotchi> | undefined {
+        const genome = new Genome(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : this.mutationCount);
+        return this.gotch.createGotchi(parent.fabric.jointCountMax, genome);
     }
 
     private createRandomOffspring(evolvers: Evolver[]): Promise<Gotchi> | undefined {
         if (evolvers.length) {
             const luckyOne = evolvers[Math.floor(evolvers.length * Math.random())];
-            return this.createOffspring(luckyOne.gotchi, false);
+            return this.createOffspring(luckyOne.gotchi, luckyOne.currentDirection, false);
         }
         return undefined;
     }

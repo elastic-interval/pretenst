@@ -12,10 +12,10 @@ export class Evolver {
 
     public frozen = false;
     public toDestination = 0;
+    public currentDirection: Direction = Direction.REST;
     private target: Vector3;
     private toTarget = new Vector3();
     private votes: Direction[] = [];
-    private currentDirection: Direction = Direction.REST;
 
     constructor(
         public id: number,

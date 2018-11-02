@@ -41,8 +41,8 @@ export class Gotchi {
         return new Gotchi(fabric, this.genome);
     }
 
-    public withMutatedBehavior(mutations: number): Gotchi {
-        this.genome = this.genome.withMutatedBehavior(mutations);
+    public withMutatedBehavior(direction: Direction, mutations: number): Gotchi {
+        this.genome = this.genome.withMutatedBehavior(direction, mutations);
         return this;
     }
 
@@ -67,7 +67,9 @@ export class Gotchi {
                     this.growth = undefined;
                 }
             } else {
-                this.genome.applyBehavior(this.fabric);
+                for (let direction=Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
+                    this.genome.behavior(this.fabric, direction).apply();
+                }
                 this.growthFinished = true;
                 this.fabric.endGestation();
             }

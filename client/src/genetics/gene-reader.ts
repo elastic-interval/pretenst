@@ -1,9 +1,12 @@
 export const MAX_TIME = 65536;
 
-export class GeneSequence {
+export class GeneReader {
     private cursor = 0;
 
     constructor(private sequence: number[]) {
+        if (!this.sequence) {
+            this.sequence = [];
+        }
     }
 
     public next(): number {

@@ -11,7 +11,7 @@ import {GotchiComponent} from './gotchi-component';
 import {SpotSelector} from './spot-selector';
 import {Spot, Surface} from '../island/spot';
 import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
-import {Genome} from '../genetics/genome';
+import {freshGenomeFor} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 import {TripComponent} from './trip-component';
 import {Direction} from '../body/fabric-exports';
@@ -131,15 +131,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     if (masterGotch && tripSpots.length > 0) {
                         const randomize = event.code === 'KeyY';
                         if (randomize) {
-                            masterGotch.genome = new Genome({
-                                master: props.master,
-                                behaviorSequence: [],
-                                growthSequence: []
-                            });
+                            masterGotch.genome = freshGenomeFor(props.master);
                         }
                         this.setState(startEvolution(masterGotch, this.state.trip))
                     }
                     break;
+                case 'KeyL':
+                    if (this.state.gotchi) {
+                        console.log('genome', this.state.gotchi.genomeData);
+                    }
             }
         });
     }
@@ -232,11 +232,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 return;
             }
             if (island.legal && centerOfGotch === island.freeGotch) {
-                centerOfGotch.genome = new Genome({
-                    master: this.props.master,
-                    growthSequence: [],
-                    behaviorSequence: []
-                });
+                centerOfGotch.genome = freshGenomeFor(this.props.master);
                 island.refresh();
                 island.save();
             }

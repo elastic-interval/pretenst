@@ -1,4 +1,4 @@
-import {GeneSequence} from './gene-sequence';
+import {GeneReader} from './gene-reader';
 import {FaceSnapshot} from '../body/face-snapshot';
 import {Fabric} from '../body/fabric';
 
@@ -9,7 +9,7 @@ export class Growth {
 
     private growingFaces: FaceSnapshot [] = [];
 
-    constructor(private fabric: Fabric, private growthGene: GeneSequence) {
+    constructor(private fabric: Fabric, private growthGene: GeneReader) {
         this.growingFaces.push(fabric.getFaceSnapshot(0));
         this.growingFaces.push(fabric.getFaceSnapshot(2));
         this.growingFaces.push(fabric.getFaceSnapshot(4));
