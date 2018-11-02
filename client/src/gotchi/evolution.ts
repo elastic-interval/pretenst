@@ -1,5 +1,5 @@
 import {Gotchi} from './gotchi';
-import {NORMAL_TICKS} from '../body/fabric';
+import {NORMAL_TICKS, SPOT_TO_HANGER} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Raycaster, Vector3} from 'three';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
@@ -43,7 +43,7 @@ export class Evolution {
     public get midpoint(): Vector3 {
         const evolvers = this.evolversNow.getValue();
         if (evolvers.length === 0) {
-            return this.gotch.center;
+            return new Vector3().add(this.gotch.center).add(SPOT_TO_HANGER);
         }
         return evolvers
             .map(evolver => evolver.gotchi.fabric.vectors)
