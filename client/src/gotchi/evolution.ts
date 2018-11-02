@@ -14,7 +14,7 @@ const MUTATION_COUNT = 3;
 const MINIMUM_AGE = 15000;
 const MAXIMUM_AGE = 30000;
 const INCREASE_AGE_LIMIT = 1000;
-const SURVIVAL_RATE = 0.75;
+const SURVIVAL_RATE = 0.66;
 
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([]);
@@ -30,7 +30,7 @@ export class Evolution {
             if (promisedGotchi) {
                 promisedGotchis.push(promisedGotchi);
             }
-            const direction: Direction = Math.floor(Math.random() * 5);
+            const direction: Direction = Math.floor(Math.random() * 4) + 1;
             mutatingGenome = mutatingGenome.withMutatedBehavior(direction, MUTATION_COUNT);
         }
         Promise.all(promisedGotchis).then(gotchis => {
