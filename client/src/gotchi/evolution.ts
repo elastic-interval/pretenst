@@ -119,15 +119,6 @@ export class Evolution {
         return this.rankedEvolvers[0];
     }
 
-    // private weakest(): Evolver | undefined {
-    //     return this.ranked.pop();
-    // }
-    //
-    // private kill(deadEvolver: Evolver) {
-    //     deadEvolver.gotchi.dispose();
-    //     this.evolversNow.next(this.evolversNow.getValue().filter(evolver => evolver.id !== deadEvolver.id));
-    // }
-
     private save(gotchi: Gotchi) {
         const fingerprint = this.gotch.createFingerprint();
         console.log(`Saving the strongest ${fingerprint}`);
@@ -159,7 +150,6 @@ export class Evolution {
     }
 
     private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Promise<Gotchi> {
-        console.log(`offspring clone=${clone}`, Direction[direction]);
         const genome = new Genome(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : MUTATION_COUNT);
         return this.gotch.createGotchi(parent.fabric.jointCountMax, genome);
     }
