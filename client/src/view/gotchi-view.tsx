@@ -187,6 +187,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandComponent
                             island={this.props.island}
+                            onlyMasterGotch={!this.state.cameraTooFar}
                             setMesh={(key: string, node: Mesh) => this.selector.setMesh(key, node)}
                         />
                         {this.gotchiComponent()}

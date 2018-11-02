@@ -15,6 +15,12 @@ export enum Surface {
     Water = 'water'
 }
 
+export interface IViewState {
+    islandIsLegal: boolean;
+    masterGotch?: Gotch;
+    freeGotch?: Gotch;
+}
+
 const SURFACE_UNKNOWN_COLOR = new Color('silver');
 const SURFACE_LAND_COLOR = new Color('tan');
 const SURFACE_CLICKABLE_COLOR = new Color('mediumseagreen');
@@ -26,16 +32,16 @@ const LAND_NORMAL_SPREAD = 0.03;
 const WATER_NORMAL_SPREAD = -0.02;
 
 export class Spot {
-    public surface = Surface.Unknown;
-    public free = false;
-    public legal = false;
-    public connected = false;
+    public center: Vector3;
     public adjacentSpots: Spot[] = [];
     public memberOfGotch: Gotch[] = [];
     public adjacentGotches: Gotch[] = [];
     public centerOfGotch?: Gotch;
+    public connected = false;
     public faceNames: string[] = [];
-    public center: Vector3;
+    public surface = Surface.Unknown;
+    public free = false;
+    public legal = false;
 
     constructor(public coords: ICoords) {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y);
@@ -81,7 +87,7 @@ export class Spot {
         return !!this.adjacentGotches.find(gotch => !!gotch.genome);
     }
 
-    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], legal: boolean, freeGotch?: Gotch, masterGotch?: Gotch) {
+    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], viewState: IViewState) {
         this.faceNames = [];
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.center.x,
@@ -92,13 +98,13 @@ export class Spot {
         let color = SURFACE_UNKNOWN_COLOR;
         switch (this.surface) {
             case Surface.Land:
-                if (masterGotch) {
+                if (viewState.masterGotch) {
                     color = SURFACE_LAND_COLOR;
                 }
-                else if (freeGotch) {
-                    const centerColor = legal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR;
+                else if (viewState.freeGotch) {
+                    const centerColor = viewState.islandIsLegal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR;
                     const landColor = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
-                    color = this === freeGotch.centerSpot ? centerColor : landColor;
+                    color = this === viewState.freeGotch.centerSpot ? centerColor : landColor;
                 } else {
                     color = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
                 }

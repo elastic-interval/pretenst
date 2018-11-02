@@ -27,10 +27,10 @@ const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacen
 });
 
 export class Island {
-    public master?: string;
     public islandChange = new BehaviorSubject<IslandChange>({gotchCount: 0, spotCount: 0});
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
+    public masterGotch?: Gotch;
 
     constructor(public islandName: string, private gotchiFactory: IGotchiFactory) {
         const patternString = localStorage.getItem(this.islandName);
@@ -38,15 +38,18 @@ export class Island {
         this.spots = [];
         this.gotches = [];
         this.apply(pattern);
-        // console.log('island', this.spots.map(spot => spot.coords));
+    }
+
+    public set master(masterName: string | undefined) {
+        this.masterGotch = this.gotches.find(gotch => gotch.master === masterName);
+    }
+
+    public get master(): string | undefined {
+        return this.masterGotch ? this.masterGotch.master : undefined;
     }
 
     public get freeGotch(): Gotch | undefined {
         return this.gotches.find(gotch => !gotch.genome);
-    }
-
-    public get masterGotch(): Gotch | undefined {
-        return this.gotches.find(gotch => gotch.master === this.master);
     }
 
     public get legal(): boolean {

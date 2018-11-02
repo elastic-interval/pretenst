@@ -5,9 +5,11 @@ import {Island} from '../island/island';
 import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
 import {Subscription} from 'rxjs/Subscription';
 import {Gotch} from '../island/gotch';
+import {IViewState} from '../island/spot';
 
 export interface IslandComponentProps {
     island: Island;
+    onlyMasterGotch: boolean;
     setMesh: (key: string, ref: Mesh) => void;
 }
 
@@ -61,6 +63,17 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         }
     }
 
+    public componentDidUpdate(prevProps: Readonly<IslandComponentProps>, prevState: Readonly<IslandComponentState>, snapshot: any) {
+        if (prevProps.onlyMasterGotch !== this.props.onlyMasterGotch) {
+            this.setState((state: IslandComponentState) => {
+                state.spotsGeometry.dispose();
+                return {
+                    spotsGeometry: this.spotsGeometry,
+                }
+            });
+        }
+    }
+
     public componentWillUnmount() {
         if (this.islandSubscription) {
             this.islandSubscription.unsubscribe();
@@ -103,21 +116,15 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     private get spotsGeometry(): Geometry {
         const island = this.props.island;
-        const spots = island.spots;
-        const freeGotch = island.freeGotch;
-        const masterGotch = island.masterGotch;
-        const legal = island.legal;
+        const spots = this.props.onlyMasterGotch && this.props.island.masterGotch ? this.props.island.masterGotch.spots : island.spots;
+        const viewState: IViewState = {
+            islandIsLegal: island.legal,
+            freeGotch: island.freeGotch,
+            masterGotch: island.masterGotch
+        };
         const geometry = new Geometry();
         spots.forEach((spot, index) => {
-            spot.addSurfaceGeometry(
-                FIXED_SPOTS,
-                index,
-                geometry.vertices,
-                geometry.faces,
-                legal,
-                freeGotch,
-                masterGotch
-            );
+            spot.addSurfaceGeometry(FIXED_SPOTS, index, geometry.vertices, geometry.faces, viewState);
         });
         geometry.computeBoundingSphere();
         return geometry;

@@ -9,7 +9,7 @@ import {Genome} from '../genetics/genome';
 import {Gotch} from '../island/gotch';
 
 const SUN_POSITION = new Vector3(0, 300, 200);
-const CAMERA_POSITION = new Vector3(0, 260, 0);
+const CAMERA_POSITION = new Vector3(0, 550, 0);
 const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 
 interface IIslandViewProps {
@@ -17,6 +17,7 @@ interface IIslandViewProps {
     width: number;
     height: number;
     island: Island;
+    onlyMasterGotch: boolean;
     master: string;
 }
 
@@ -39,7 +40,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, props.width / props.height, 1, 500000);
-        const midpoint = props.island.midpoint;
+        const midpoint = this.props.onlyMasterGotch && this.state.masterGotch ? this.state.masterGotch.center : props.island.midpoint;
         this.perspectiveCamera.position.add(CAMERA_POSITION.add(midpoint));
         this.perspectiveCamera.up.set(0, 0, 1).normalize();
         this.perspectiveCamera.lookAt(midpoint);
@@ -67,6 +68,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                         <IslandComponent
                             setMesh={(key: string, mesh: Mesh) => this.selector.setMesh(key, mesh)}
                             island={this.props.island}
+                            onlyMasterGotch={this.props.onlyMasterGotch}
                         />
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>

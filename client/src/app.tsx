@@ -10,6 +10,7 @@ import {Genome} from './genetics/genome';
 import {Vector3} from 'three';
 import {Physics} from './body/physics';
 import {ControlPanel} from './view/control-panel';
+import {IslandView} from './view/island-view';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -24,7 +25,7 @@ interface IAppState {
 }
 
 const HORIZONTAL_SPLIT = 0.9;
-const VERTICAL_SPLIT = 0.3;
+const VERTICAL_SPLIT = 0.2;
 
 const updateDimensions = (): any => {
     return {
@@ -73,7 +74,7 @@ class App extends React.Component<IAppProps, IAppState> {
             <BrowserRouter forceRefresh={true}>
                 <Switch>
                     <Route exact={true} path="/" component={this.homeView}/>
-                    <Route path="/:identity" component={this.gotchiView}/>
+                    <Route path="/:identity" component={this.spatialView}/>
                 </Switch>
             </BrowserRouter>
         );
@@ -112,21 +113,7 @@ class App extends React.Component<IAppProps, IAppState> {
         </div>
     );
 
-    // private islandView = (ctxt: any) => {
-    //     const master = ctxt.match.params.identity;
-    //     this.state.island.master = master;
-    //     return (
-    //         <IslandView key="IslandMain"
-    //                     className="main-view"
-    //                     width={this.state.mainWidth + this.state.sideWidth}
-    //                     height={this.state.mainHeight}
-    //                     island={this.state.island}
-    //                     master={master}
-    //         />
-    //     );
-    // };
-
-    private gotchiView = (ctxt: any) => {
+    private spatialView = (ctxt: any) => {
         const master = ctxt.match.params.identity;
         this.state.island.master = master;
         return (
@@ -136,11 +123,23 @@ class App extends React.Component<IAppProps, IAppState> {
                             island={this.state.island}
                             master={master}
                 />
-                <ControlPanel physics={this.physics}/>
+                <div>
+                    <div className="gotch-title">
+                        <h3>{this.state.island.master}'s gotch</h3>
+                    </div>
+                    <IslandView key="IslandMain"
+                                className="gotch-view"
+                                width={this.state.sideWidth}
+                                height={this.state.sideHeight}
+                                island={this.state.island}
+                                onlyMasterGotch={true}
+                                master={master}
+                    />
+                    <ControlPanel physics={this.physics}/>
+                </div>
             </div>
         );
     };
-
 }
 
 export default App;
