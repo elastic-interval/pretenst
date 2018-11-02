@@ -10,7 +10,6 @@ import {Trip} from '../island/trip';
 export const INITIAL_JOINT_COUNT = 47;
 const MAX_POPULATION = 24;
 const INITIAL_MUTATION_COUNT = 14;
-const CHANCE_OF_GROWTH = 0.1;
 const MINIMUM_AGE = 15000;
 const MAXIMUM_AGE = 30000;
 const INCREASE_AGE_LIMIT = 1000;
@@ -173,14 +172,7 @@ export class Evolution {
     }
 
     private createOffspring(parent: Gotchi, clone: boolean): Promise<Gotchi> | undefined {
-        const grow = !clone && Math.random() < CHANCE_OF_GROWTH;
-        if (grow) {
-            console.log('grow!');
-        }
-        const promisedGotchi = this.gotch.createGotchi(
-            parent.fabric.jointCountMax + (grow ? 4 : 0),
-            new Genome(parent.genomeData)
-        );
+        const promisedGotchi = this.gotch.createGotchi(parent.fabric.jointCountMax, new Genome(parent.genomeData));
         if (!promisedGotchi) {
             console.log('stilborn!');
             return undefined;

@@ -117,7 +117,7 @@ class App extends React.Component<IAppProps, IAppState> {
         const master = ctxt.match.params.identity;
         this.state.island.master = master;
         return (
-            <div>
+            <div className="everything">
                 <GotchiView width={this.state.mainWidth}
                             height={this.state.mainHeight}
                             island={this.state.island}

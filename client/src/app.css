@@ -2,6 +2,11 @@
     text-align: center;
 }
 
+.everything {
+    height: 100%;
+    width: 100%;
+}
+
 .dice {
     font-size: xx-large;
 }
@@ -34,7 +39,7 @@
     text-align: center;
     left: 90%;
     top: 40%;
-    height: 100%;
+    height: 50%;
     width: 10%;
 }
 
