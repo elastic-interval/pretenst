@@ -41,11 +41,6 @@ export class Gotchi {
         return new Gotchi(fabric, this.genome);
     }
 
-    public withMutatedBehavior(direction: Direction, mutations: number): Gotchi {
-        this.genome = this.genome.withMutatedBehavior(direction, mutations);
-        return this;
-    }
-
     public get genomeData(): IGenomeData {
         return this.genome.data;
     }
@@ -58,7 +53,7 @@ export class Gotchi {
         this.fabric.direction = direction;
     }
 
-    public iterate(ticks: number): boolean {
+    public iterate(ticks: number): void {
         const wrapAround = this.fabric.iterate(ticks);
         if (wrapAround && !this.growthFinished) {
             if (this.growth) {
@@ -74,7 +69,6 @@ export class Gotchi {
                 this.fabric.endGestation();
             }
         }
-        return !!this.growth;
     }
 
     public get growing(): boolean {

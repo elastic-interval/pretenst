@@ -6,11 +6,11 @@ import {Behavior} from './behavior';
 
 export interface IGenomeData {
     master: string;
-    gene: Map<Direction, number[]>;
+    gene: any;
 }
 
 export function freshGenomeFor(master: string): Genome {
-    const genomeData: IGenomeData = {master, gene: new Map<Direction, number[]>()};
+    const genomeData: IGenomeData = {master, gene: {}};
     return new Genome(genomeData);
 }
 
@@ -18,7 +18,7 @@ export class Genome {
 
     constructor(public data: IGenomeData) {
         if (!this.data.gene) {
-            this.data.gene = new Map<Direction, number[]>();
+            this.data.gene = {};
         }
     }
 
@@ -35,14 +35,15 @@ export class Genome {
     }
 
     public withMutatedBehavior(direction: Direction, mutations: number): Genome {
-        const geneClone = new Map<Direction, number[]>();
-        this.data.gene.forEach((numbers, geneDirection) => {
-            geneClone[geneDirection] = numbers.slice();
+        const geneClone = {};
+        Object.keys(this.data.gene).forEach(key => {
+            geneClone[key] = this.data.gene[key].slice();
         });
-        const directionGene: number[] = geneClone[direction] ? geneClone[direction]: [];
+        const directionGene: number[] = geneClone[direction] ? geneClone[direction] : [];
         for (let hit = 0; hit < mutations; hit++) {
             const geneNumber = Math.floor(Math.random() * directionGene.length);
             directionGene[geneNumber] = Math.random();
+            console.log(`G[${direction}][${geneNumber}] = ${directionGene[geneNumber]}`)
         }
         return new Genome({master: this.data.master, gene: geneClone});
     }

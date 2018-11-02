@@ -10,7 +10,7 @@ import {Direction} from '../body/fabric-exports';
 
 export const INITIAL_JOINT_COUNT = 47;
 const MAX_POPULATION = 24;
-const INITIAL_MUTATION_COUNT = 14;
+const MUTATION_COUNT = 3;
 const MINIMUM_AGE = 15000;
 const MAXIMUM_AGE = 30000;
 const INCREASE_AGE_LIMIT = 1000;
@@ -18,9 +18,8 @@ const SURVIVAL_RATE = 0.75;
 
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([]);
-    private mutationCount = INITIAL_MUTATION_COUNT;
+    private rebooting = false;
     private evolverId = 0;
-    private evolversBeingBorn = 0;
     private ageLimit = MINIMUM_AGE;
 
     constructor(private gotch: Gotch, private trip: Trip) {
@@ -32,11 +31,9 @@ export class Evolution {
                 promisedGotchis.push(promisedGotchi);
             }
             const direction: Direction = Math.floor(Math.random() * 5);
-            mutatingGenome = mutatingGenome.withMutatedBehavior(direction, INITIAL_MUTATION_COUNT);
+            mutatingGenome = mutatingGenome.withMutatedBehavior(direction, MUTATION_COUNT);
         }
-        this.evolversBeingBorn = MAX_POPULATION;
         Promise.all(promisedGotchis).then(gotchis => {
-            this.evolversBeingBorn = 0;
             this.evolversNow.next(gotchis.map(gotchi => {
                 return this.gotchiToEvolver(gotchi);
             }));
@@ -61,6 +58,9 @@ export class Evolution {
 
     public iterate(): void {
         const evolvers = this.evolversNow.getValue();
+        if (evolvers.length === 0 || this.rebooting) {
+            return;
+        }
         let frozenCount = 0;
         const activeEvolvers = evolvers.filter(evolver => {
             if (evolver.frozen || evolver.touchedDestination) {
@@ -70,7 +70,18 @@ export class Evolution {
             }
             return evolver.gotchi.age < this.ageLimit;
         });
-        if (frozenCount > evolvers.length / 2 || (activeEvolvers.length === 0 && this.evolversBeingBorn === 0)) {
+        activeEvolvers.forEach(evolver => {
+            const behind = this.ageLimit - evolver.gotchi.age;
+            evolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind);
+            const gotchiDirection = evolver.gotchi.direction;
+            const chosenDirection = evolver.voteDirection();
+            if (chosenDirection !== undefined && gotchiDirection !== chosenDirection) {
+                evolver.gotchi.direction = chosenDirection;
+            }
+        });
+        const halfFrozen = frozenCount > evolvers.length / 2;
+        const noneActive = activeEvolvers.length === 0;
+        if (halfFrozen || noneActive) {
             this.ageLimit += INCREASE_AGE_LIMIT;
             console.log('age limit', this.ageLimit);
             const toSave = this.strongest();
@@ -83,34 +94,6 @@ export class Evolution {
                 this.ageLimit = MINIMUM_AGE;
             }
             this.rebootAll(SURVIVAL_RATE);
-        }
-        let anyGestating = false;
-        activeEvolvers.map(activeEvolver => {
-            const behind = this.ageLimit - activeEvolver.gotchi.age;
-            if (activeEvolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind)) {
-                anyGestating = true;
-            }
-        });
-        if (!anyGestating) {
-            activeEvolvers.forEach(activeEvolver => {
-                const gotchiDirection = activeEvolver.gotchi.direction;
-                const chosenDirection = activeEvolver.voteDirection();
-                if (chosenDirection !== undefined && gotchiDirection !== chosenDirection) {
-                    activeEvolver.gotchi.direction = chosenDirection;
-                }
-            });
-        }
-        if (evolvers.length > 0 && evolvers.length + this.evolversBeingBorn < MAX_POPULATION) {
-            console.log(`Birth ${evolvers.length} + ${this.evolversBeingBorn} < ${MAX_POPULATION}`, this.evolversBeingBorn);
-            const offspring = this.createRandomOffspring(evolvers.concat(evolvers.filter(g => g.frozen)));
-            if (offspring) {
-                this.evolversBeingBorn++;
-                offspring.then(gotchi => {
-                    this.evolversBeingBorn--;
-                    // console.log('birth', this.evolversBeingBorn, this.evolversNow.getValue().length + 1);
-                    this.evolversNow.next(this.evolversNow.getValue().concat([this.gotchiToEvolver(gotchi)]));
-                });
-            }
         }
     }
 
@@ -126,14 +109,14 @@ export class Evolution {
 
     // Privates =============================================================
 
-    private get ranked(): Evolver[] {
+    private get rankedEvolvers(): Evolver[] {
         const evolvers = this.evolversNow.getValue();
         evolvers.forEach(e => e.calculateFitness());
         return evolvers.sort(compareEvolvers);
     }
 
     private strongest(): Evolver | undefined {
-        return this.ranked[0];
+        return this.rankedEvolvers[0];
     }
 
     // private weakest(): Evolver | undefined {
@@ -152,38 +135,33 @@ export class Evolution {
     }
 
     private rebootAll(survivalRate: number) {
-        const promisedOffspring: Array<Promise<Gotchi>> = [];
-        const ranked = this.ranked;
+        this.rebooting = true;
+        const ranked: Evolver[] = this.rankedEvolvers;
         const deadEvolvers = ranked.splice(Math.ceil(ranked.length * survivalRate));
         console.log(`REBOOT: dead=${deadEvolvers.length} remaining=${ranked.length}`);
-        deadEvolvers.forEach(evolver => evolver.gotchi.dispose());
-        ranked.forEach(evolver => {
-            const offspring = this.createOffspring(evolver.gotchi, evolver.currentDirection, true);
-            if (offspring) {
-                evolver.gotchi.dispose();
-                promisedOffspring.push(offspring);
-            }
-        });
-        this.evolversBeingBorn = promisedOffspring.length;
-        this.evolversNow.next([]);
-        Promise.all(promisedOffspring).then(offspring => {
-            console.log(`survived=${offspring.length}`);
-            this.evolversNow.next(offspring.map(off => this.gotchiToEvolver(off)));
-            this.evolversBeingBorn -= promisedOffspring.length;
-        });
+        this.evolversNow.next(ranked);
+        setTimeout(() => {
+            const mutants: Array<Promise<Gotchi>> = deadEvolvers.map(deadEvolver => {
+                deadEvolver.gotchi.dispose();
+                const luckyParent = ranked[Math.floor(ranked.length * Math.random())];
+                return this.createOffspring(luckyParent.gotchi, luckyParent.currentDirection, false);
+            });
+            const clones: Array<Promise<Gotchi>> = ranked.map(evolver => {
+                return this.createOffspring(evolver.gotchi, evolver.currentDirection, true);
+            });
+            this.evolversNow.next([]);
+            Promise.all(mutants.concat(clones)).then(offspring => {
+                console.log(`survived=${offspring.length}`);
+                this.evolversNow.next(offspring.map(off => this.gotchiToEvolver(off)));
+                this.rebooting = false;
+            });
+        }, 1000);
     }
 
-    private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Promise<Gotchi> | undefined {
-        const genome = new Genome(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : this.mutationCount);
+    private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Promise<Gotchi> {
+        console.log(`offspring clone=${clone}`, Direction[direction]);
+        const genome = new Genome(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : MUTATION_COUNT);
         return this.gotch.createGotchi(parent.fabric.jointCountMax, genome);
-    }
-
-    private createRandomOffspring(evolvers: Evolver[]): Promise<Gotchi> | undefined {
-        if (evolvers.length) {
-            const luckyOne = evolvers[Math.floor(evolvers.length * Math.random())];
-            return this.createOffspring(luckyOne.gotchi, luckyOne.currentDirection, false);
-        }
-        return undefined;
     }
 
     private gotchiToEvolver = (gotchi: Gotchi): Evolver => {

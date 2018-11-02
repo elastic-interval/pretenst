@@ -59,10 +59,10 @@ export class Gotch {
         }
     }
 
-    public createGotchi(jointCount: number, mutatedGenome?: Genome): Promise<Gotchi>| undefined {
+    public createGotchi(jointCount: number, mutatedGenome?: Genome): Promise<Gotchi> {
         const genome = mutatedGenome ? mutatedGenome: this.genome;
         if (!genome) {
-            return undefined;
+            throw new Error('Create gotchi but no genome');
         }
         return this.gotchiFactory.createGotchiAt(this.center, jointCount, genome);
     }
