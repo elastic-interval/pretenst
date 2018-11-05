@@ -10,11 +10,12 @@ import {Orbit} from './orbit';
 import {GotchiComponent} from './gotchi-component';
 import {MeshKey, SpotSelector} from './spot-selector';
 import {Spot} from '../island/spot';
-import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
+import {NORMAL_TICKS} from '../body/fabric';
 import {Gotch} from '../island/gotch';
 
+export const HIGH_ALTITUDE = 1000;
+
 const SUN_POSITION = new Vector3(0, 300, 0);
-const CAMERA_POSITION = new Vector3(9, HUNG_ALTITUDE / 2, 8);
 const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 const TARGET_FRAME_RATE = 25;
 
@@ -43,11 +44,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     constructor(props: IGotchiViewProps) {
         super(props);
+        this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
+        this.perspectiveCamera.position.addVectors(props.island.midpoint, new Vector3(0, HIGH_ALTITUDE / 2, 0));
         this.state = {
             helicopterView: false,
         };
-        this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
-        this.perspectiveCamera.position.add(CAMERA_POSITION);
         this.spotSelector = new SpotSelector(
             this.perspectiveCamera,
             this.props.island,
@@ -64,7 +65,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidMount() {
-        this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera);
+        this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera, this.props.island.midpoint);
         this.animate();
     }
 
@@ -146,11 +147,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     if (this.animating) {
                         this.forceUpdate();
                         this.orbit.update();
-                        if (this.orbit.tooFar !== this.state.helicopterView) {
-                            this.setState((state: IGotchiViewState) => {
-                                return {helicopterView: this.orbit.tooFar};
-                            });
-                        }
                         requestAnimationFrame(step);
                     }
                 },
