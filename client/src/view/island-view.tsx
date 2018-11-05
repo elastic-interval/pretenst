@@ -3,9 +3,8 @@ import * as R3 from 'react-three';
 import {Color, Mesh, PerspectiveCamera, Vector3} from 'three';
 import {Island} from '../island/island';
 import {IslandComponent} from './island-component';
-import {Spot, Surface} from '../island/spot';
-import {SpotSelector} from './spot-selector';
-import {freshGenomeFor} from '../genetics/genome';
+import {Spot} from '../island/spot';
+import {MeshKey, SpotSelector} from './spot-selector';
 import {Gotch} from '../island/gotch';
 
 const SUN_POSITION = new Vector3(0, 300, 200);
@@ -46,6 +45,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         this.perspectiveCamera.lookAt(midpoint);
         this.selector = new SpotSelector(
             this.perspectiveCamera,
+            this.props.island,
             this.props.width,
             this.props.height
         );
@@ -61,12 +61,11 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     public render() {
         return (
-            <div className={this.props.className}
-                 onMouseDownCapture={e => this.spotClicked(this.selector.getSpot(e, this.props.island))}>
+            <div className={this.props.className}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandComponent
-                            setMesh={(key: string, mesh: Mesh) => this.selector.setMesh(key, mesh)}
+                            setMesh={(key: MeshKey, mesh: Mesh) => this.selector.setMesh(key, mesh)}
                             island={this.props.island}
                             onlyMasterGotch={this.props.onlyMasterGotch}
                         />
@@ -76,45 +75,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                 </R3.Renderer>
             </div>
         );
-    }
-
-    // ==========================
-
-    private spotClicked(spot?: Spot) {
-        if (!spot) {
-            return;
-        }
-        const island = this.props.island;
-        const centerOfGotch = spot.centerOfGotch;
-        if (centerOfGotch) {
-            if (centerOfGotch.genome) {
-                return;
-            }
-            if (island.legal && centerOfGotch === island.freeGotch) {
-                centerOfGotch.genome = freshGenomeFor(this.props.master);
-                island.refresh();
-                island.save();
-            }
-        } else if (spot.free) {
-            switch (spot.surface) {
-                case Surface.Unknown:
-                    spot.surface = Surface.Water;
-                    break;
-                case Surface.Land:
-                    spot.surface = Surface.Water;
-                    break;
-                case Surface.Water:
-                    spot.surface = Surface.Land;
-                    break;
-            }
-            island.refresh();
-        } else if (spot.canBeNewGotch && !this.state.masterGotch) {
-            island.removeFreeGotches();
-            if (spot.canBeNewGotch) {
-                island.createGotch(spot, this.props.master);
-            }
-            island.refresh();
-        }
     }
 }
 

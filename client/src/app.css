@@ -34,15 +34,6 @@
     left: 90%;
 }
 
-.control-panel {
-    position: absolute;
-    text-align: center;
-    left: 90%;
-    top: 40%;
-    height: 50%;
-    width: 10%;
-}
-
 .explanation {
     color: white;
     padding-left: 10px;

@@ -3,6 +3,7 @@ import {Color, Face3, Vector3} from 'three';
 import {HUNG_ALTITUDE, SPOT_TO_HANGER} from '../body/fabric';
 import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
 import {SEED_CORNERS} from '../body/fabric-exports';
+import {MeshKey} from '../view/spot-selector';
 
 export interface ICoords {
     x: number;
@@ -87,7 +88,7 @@ export class Spot {
         return !!this.adjacentGotches.find(gotch => !!gotch.genome);
     }
 
-    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], viewState: IViewState) {
+    public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[], viewState: IViewState) {
         this.faceNames = [];
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.center.x,
@@ -123,7 +124,7 @@ export class Spot {
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], normalSpread).normalize(),
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize()
             ];
-            this.faceNames.push(`${key}:${faces.length}`);
+            this.faceNames.push(`${meshKey}:${faces.length}`);
             faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, color));
         }
     }
@@ -139,7 +140,7 @@ export class Spot {
         }
     }
 
-    public addSeed(vertices: Vector3[], faces: Face3[]): void {
+    public addSeed(meshKey: MeshKey, vertices: Vector3[], faces: Face3[]): void {
         const hanger = new Vector3(this.center.x, HUNG_ALTITUDE, this.center.z);
         const offset = vertices.length;
         const R = 1;
@@ -154,7 +155,9 @@ export class Spot {
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const next = offset + (walk + 1) % SEED_CORNERS;
             const current = offset + walk;
+            this.faceNames.push(`${meshKey}:${faces.length}`);
             faces.push(new Face3(left, current, next));
+            this.faceNames.push(`${meshKey}:${faces.length}`);
             faces.push(new Face3(right, next, current));
         }
     }

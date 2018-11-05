@@ -1,11 +1,11 @@
 import * as React from 'react';
 import {IPhysicsFeature, Physics} from '../body/physics';
 
-export interface IControlPanelProps {
+export interface IPhysicsPanelProps {
     physics: Physics;
 }
 
-export interface IControlPanelState {
+export interface IPhysicsPanelState {
     feature?: IPhysicsFeature;
     value?: number;
 }
@@ -19,9 +19,9 @@ function featureSelected(feature: IPhysicsFeature) {
     };
 }
 
-export class ControlPanel extends React.Component<IControlPanelProps, IControlPanelState> {
+export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPanelState> {
 
-    constructor(props: IControlPanelProps) {
+    constructor(props: IPhysicsPanelProps) {
         super(props);
         this.state = {};
     }
@@ -54,16 +54,17 @@ export class ControlPanel extends React.Component<IControlPanelProps, IControlPa
         const feature = this.state.feature;
         const value = this.state.value;
         return (
-            <div key="control-panel" className="control-panel">
-                <strong className="dice">&#x2680;&#x2681;&#x2682;&#x2683;&#x2684;&#x2685;</strong>
+            <div key="control-panel">
+                <h3>Physics</h3>
                 <div>
                     {
                         this.props.physics.features.map(physicsFeature => {
-                            return <div key={physicsFeature.feature}>
-                                <button onClick={() => this.setState(featureSelected(physicsFeature))}>
-                                    {physicsFeature.feature}
-                                </button>
-                            </div>;
+                            return (
+                                <span key={physicsFeature.feature}>
+                                    <button onClick={() => this.setState(featureSelected(physicsFeature))}>
+                                        {physicsFeature.feature}
+                                    </button>
+                                </span>);
                         })
                     }
                 </div>

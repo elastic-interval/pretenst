@@ -6,6 +6,7 @@ import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL, ISLAND_M
 import {Subscription} from 'rxjs/Subscription';
 import {Gotch} from '../island/gotch';
 import {IViewState} from '../island/spot';
+import {MeshKey} from './spot-selector';
 
 export interface IslandComponentProps {
     island: Island;
@@ -28,8 +29,6 @@ export const dispose = (state: IslandComponentState) => {
     state.homeSeedGeometry.dispose();
     state.homeHangersGeometry.dispose();
 };
-
-const FIXED_SPOTS = 'FixedSpots';
 
 export class IslandComponent extends React.Component<IslandComponentProps, IslandComponentState> {
 
@@ -85,14 +84,15 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         return (
             <R3.Object3D key={this.context.key}>
                 <R3.Mesh
-                    name={FIXED_SPOTS}
+                    name="spots"
                     geometry={this.state.spotsGeometry}
-                    ref={(mesh: Mesh) => this.props.setMesh(FIXED_SPOTS, mesh)}
+                    ref={(mesh: Mesh) => this.props.setMesh(MeshKey.SPOTS_KEY, mesh)}
                     material={ISLAND_MATERIAL}
                 />
                 <R3.Mesh
                     name="ForeignSeeds"
                     geometry={this.state.foreignSeedGeometry}
+                    ref={(mesh: Mesh) => this.props.setMesh(MeshKey.SEEDS_KEY, mesh)}
                     material={GOTCHI_MATERIAL}
                 />
                 <R3.Mesh
@@ -124,7 +124,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         };
         const geometry = new Geometry();
         spots.forEach((spot, index) => {
-            spot.addSurfaceGeometry(FIXED_SPOTS, index, geometry.vertices, geometry.faces, viewState);
+            spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces, viewState);
         });
         geometry.computeBoundingSphere();
         return geometry;
@@ -146,7 +146,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         if (foreign) {
             gotches
                 .filter(gotch => foreign ? this.isForeignGotch(gotch) : this.isHomeGotch(gotch))
-                .forEach(gotch => gotch.centerSpot.addSeed(geometry.vertices, geometry.faces));
+                .forEach(gotch => gotch.centerSpot.addSeed(MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces));
             geometry.computeFaceNormals();
             geometry.computeBoundingSphere();
         }
