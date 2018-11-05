@@ -10,7 +10,7 @@ const MAX_VOTES = 30;
 
 export class Evolver {
 
-    public frozen = false;
+    public done = false;
     public toDestination = 0;
     public currentDirection: Direction = Direction.REST;
     private target: Vector3;

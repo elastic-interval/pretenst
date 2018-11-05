@@ -1,16 +1,14 @@
 import * as React from 'react';
+import {CSSProperties} from 'react';
 import './app.css';
 import {IFabricExports} from './body/fabric-exports';
 import {Island} from './island/island';
-import {BrowserRouter, Link, Route, Switch} from 'react-router-dom'
 import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
 import {Gotchi, IGotchiFactory} from './gotchi/gotchi';
 import {Genome} from './genetics/genome';
 import {Vector3} from 'three';
 import {Physics} from './body/physics';
-import {ControlPanel} from './view/control-panel';
-import {IslandView} from './view/island-view';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -18,23 +16,51 @@ interface IAppProps {
 
 interface IAppState {
     island: Island;
-    mainWidth: number;
-    mainHeight: number;
-    sideWidth: number;
-    sideHeight: number;
+    width: number;
+    height: number;
 }
 
-const HORIZONTAL_SPLIT = 0.9;
-const VERTICAL_SPLIT = 0.2;
-
 const updateDimensions = (): any => {
-    return {
-        mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
-        mainHeight: window.innerHeight,
-        sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
-        sideHeight: window.innerHeight * VERTICAL_SPLIT
-    };
+    return {width: window.innerWidth, height: window.innerHeight};
 };
+
+const margin = '20px';
+const cornerRadius = '60px';
+
+function insetStyle(top: boolean, right: boolean): CSSProperties {
+    const css: CSSProperties = {
+        position: 'absolute',
+        color: 'white',
+        backgroundColor: 'black',
+        borderColor: 'white',
+        borderStyle: 'solid',
+        padding: '20px 20px 20px 20px',
+        width: '200px',
+        height: '200px'
+    };
+    if (top) {
+        css.top = margin;
+    } else {
+        css.bottom = margin;
+    }
+    if (right) {
+        css.right = margin;
+        css.textAlign = 'right';
+        if (top) {
+            css.borderBottomLeftRadius = cornerRadius;
+        } else {
+            css.borderTopLeftRadius = cornerRadius;
+        }
+    } else {
+        css.left = margin;
+        if (top) {
+            css.borderBottomRightRadius = cornerRadius;
+        } else {
+            css.borderTopRightRadius = cornerRadius;
+        }
+    }
+    return css;
+}
 
 class App extends React.Component<IAppProps, IAppState> {
     private gotchiFactory: IGotchiFactory;
@@ -54,10 +80,8 @@ class App extends React.Component<IAppProps, IAppState> {
         };
         this.state = {
             island: new Island('GalapagotchIsland', this.gotchiFactory),
-            mainWidth: window.innerWidth * HORIZONTAL_SPLIT,
-            mainHeight: window.innerHeight,
-            sideWidth: window.innerWidth * (1 - HORIZONTAL_SPLIT),
-            sideHeight: window.innerHeight * VERTICAL_SPLIT
+            width: window.innerWidth,
+            height: window.innerHeight
         };
     }
 
@@ -71,75 +95,44 @@ class App extends React.Component<IAppProps, IAppState> {
 
     public render() {
         return (
-            <BrowserRouter forceRefresh={true}>
-                <Switch>
-                    <Route exact={true} path="/" component={this.homeView}/>
-                    <Route path="/:identity" component={this.spatialView}/>
-                </Switch>
-            </BrowserRouter>
-        );
-    }
-
-    private homeView = () => (
-        <div className="App">
-            <div className="explanation">
-                <h1>Galapagotchi</h1>
-                <p>
-                    The native animals on the Galapagotch Islands are members of
-                    various species of robot runners, each one evolved and driven
-                    by its master.
-                </p>
-                <p>
-                    So far a work-in-progress, but stay tuned!
-                </p>
-                <h2>@fluxe</h2>
-                <hr/>
-                <ul>
-                    {
-                        this.state.island.gotches
-                            .filter(gotch => !!gotch.master)
-                            .map(gotch => {
-                                    const master = gotch.master;
-                                    return (
-                                        <li key={master}>
-                                            <Link to={master}>{master}</Link>
-                                        </li>
-                                    );
-                                }
-                            )
-                    }
-                </ul>
-            </div>
-        </div>
-    );
-
-    private spatialView = (ctxt: any) => {
-        const master = ctxt.match.params.identity;
-        this.state.island.master = master;
-        return (
-            <div className="everything">
-                <GotchiView width={this.state.mainWidth}
-                            height={this.state.mainHeight}
-                            island={this.state.island}
-                            master={master}
-                />
-                <div>
-                    <div className="gotch-title">
-                        <h3>{this.state.island.master}'s gotch</h3>
-                    </div>
-                    <IslandView key="IslandMain"
-                                className="gotch-view"
-                                width={this.state.sideWidth}
-                                height={this.state.sideHeight}
-                                island={this.state.island}
-                                onlyMasterGotch={true}
-                                master={master}
-                    />
-                    <ControlPanel physics={this.physics}/>
+            <div>
+                <GotchiView width={this.state.width} height={this.state.height} island={this.state.island}/>
+                <div style={insetStyle(true, false)}>
+                    <p>
+                        top left
+                    </p>
+                    <p>
+                        And here is a very long one consisting of multiple lines which should wrap i guess
+                    </p>
+                </div>
+                <div style={insetStyle(true, true)}>
+                    <p>
+                        top right
+                    </p>
+                    <p>
+                        And here is a very long one consisting of multiple lines which should wrap i guess
+                    </p>
+                </div>
+                <div style={insetStyle(false, true)}>
+                    <p>
+                        bottom right
+                    </p>
+                    <p>
+                        And here is a very long one consisting of multiple lines which should wrap i guess
+                    </p>
+                </div>
+                <div style={insetStyle(false, false)}>
+                    <p>
+                        bottom left
+                    </p>
+                    <p>
+                        And here is a very long one consisting of multiple lines which should wrap i guess
+                    </p>
                 </div>
             </div>
         );
-    };
+    }
+
 }
 
 export default App;

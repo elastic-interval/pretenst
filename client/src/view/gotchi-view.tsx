@@ -26,8 +26,9 @@ interface IGotchiViewProps {
     width: number;
     height: number;
     island: Island;
-    master: string;
 }
+
+const MASTER = 'gumby';
 
 interface IGotchiViewState {
     cameraTooFar: boolean;
@@ -79,7 +80,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     constructor(props: IGotchiViewProps) {
         super(props);
-        const masterGotch = props.master ? props.island.findGotch(props.master) : undefined;
+        const masterGotch = props.island.findGotch(MASTER);
         const tripSpots = masterGotch ? [masterGotch.centerSpot, masterGotch.centerSpot.adjacentSpots[0]] : [];
         this.state = {
             masterGotch,
@@ -130,8 +131,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 case 'KeyY':
                     if (masterGotch && tripSpots.length > 0) {
                         const randomize = event.code === 'KeyY';
-                        if (randomize) {
-                            masterGotch.genome = freshGenomeFor(props.master);
+                        if (randomize && masterGotch && masterGotch.genome) {
+                            masterGotch.genome = freshGenomeFor(masterGotch.genome.master);
                         }
                         this.setState(startEvolution(masterGotch, this.state.trip))
                     }
@@ -211,6 +212,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     private gotchiComponent = () => {
+        // todo: not for just browsing
         return (
             <R3.Object3D key="EvolutionOrGotchi">
                 {!this.state.evolution || this.state.cameraTooFar ? null : <EvolutionComponent evolution={this.state.evolution}/>}
@@ -232,7 +234,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 return;
             }
             if (island.legal && centerOfGotch === island.freeGotch) {
-                centerOfGotch.genome = freshGenomeFor(this.props.master);
+                centerOfGotch.genome = freshGenomeFor(MASTER);
                 island.refresh();
                 island.save();
             }
@@ -252,7 +254,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         } else if (spot.canBeNewGotch && !this.state.masterGotch) {
             island.removeFreeGotches();
             if (spot.canBeNewGotch) {
-                island.createGotch(spot, this.props.master);
+                island.createGotch(spot, MASTER);
             }
             island.refresh();
         }

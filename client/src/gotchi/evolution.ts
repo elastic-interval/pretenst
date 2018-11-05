@@ -63,8 +63,8 @@ export class Evolution {
         }
         let frozenCount = 0;
         const activeEvolvers = evolvers.filter(evolver => {
-            if (evolver.frozen || evolver.touchedDestination) {
-                evolver.frozen = true;
+            if (evolver.done || evolver.touchedDestination) {
+                evolver.done = true;
                 frozenCount++;
                 return false;
             }

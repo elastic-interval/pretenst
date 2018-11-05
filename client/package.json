@@ -9,7 +9,6 @@
     "ajv": "^6.5.4",
     "react": "^15.4.1",
     "react-dom": "^15.4.1",
-    "react-router-dom": "^4.3.1",
     "react-scripts-ts": "2.15.1",
     "react-three": "^0.9.7",
     "rxjs": "5.5.6",
