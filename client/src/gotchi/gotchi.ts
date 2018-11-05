@@ -19,6 +19,10 @@ export class Gotchi {
         this.growth = genome.growth(fabric);
     }
 
+    public get midpoint() {
+        return this.fabric.midpoint;
+    }
+
     public get master() {
         return this.genome.master;
     }
