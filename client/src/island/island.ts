@@ -5,6 +5,7 @@ import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} fr
 import {Genome} from '../genetics/genome';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {IGotchiFactory} from '../gotchi/gotchi';
+import {AppStorage} from '../app-storage';
 
 export interface IslandPattern {
     gotches: string;
@@ -32,12 +33,8 @@ export class Island {
     public gotches: Gotch[] = [];
     public masterGotch?: Gotch;
 
-    constructor(public islandName: string, private gotchiFactory: IGotchiFactory) {
-        const patternString = localStorage.getItem(this.islandName);
-        const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {gotches: '', spots: ''};
-        this.spots = [];
-        this.gotches = [];
-        this.apply(pattern);
+    constructor(public islandName: string, private gotchiFactory: IGotchiFactory, private storage: AppStorage) {
+        this.apply(storage.getIsland(islandName));
     }
 
     public set master(masterName: string | undefined) {
@@ -84,12 +81,7 @@ export class Island {
 
     public save() {
         if (this.legal) {
-            localStorage.setItem(this.islandName, JSON.stringify(this.pattern));
-            this.gotches.forEach(gotch => {
-                if (gotch.genome) {
-                    localStorage.setItem(gotch.createFingerprint(), gotch.genome.toJSON());
-                }
-            });
+            this.storage.setIsland(this.islandName, this.pattern);
             console.log(`Saved ${this.islandName}`);
         } else {
             console.log(`Not legal yet: ${this.islandName}`);
@@ -132,9 +124,9 @@ export class Island {
             .multiplyScalar(1 / this.spots.length);
     }
 
-    public get pattern(): IslandPattern | undefined {
-        if (this.spots.find(spot => !spot.legal)) {
-            return undefined;
+    public get pattern(): IslandPattern {
+        if (!this.legal) {
+            throw new Error('Saving illegal island')
         }
         this.spots.sort(sortSpotsOnCoord);
         return {
@@ -194,10 +186,9 @@ export class Island {
             this.singleGotch.spots[0].surface = Surface.Land;
         }
         this.gotches.forEach(g => {
-            const fingerprint = g.createFingerprint();
-            const storedGenome = localStorage.getItem(fingerprint);
-            if (storedGenome) {
-                g.genome = new Genome(JSON.parse(storedGenome));
+            const genomeData = this.storage.getGenome(g);
+            if (genomeData) {
+                g.genome = new Genome(genomeData);
             }
         });
         this.refresh();

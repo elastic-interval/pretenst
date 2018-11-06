@@ -1,6 +1,6 @@
 import {Gotchi} from './gotchi';
 import {NORMAL_TICKS, SPOT_TO_HANGER} from '../body/fabric';
-import {Genome} from '../genetics/genome';
+import {Genome, IGenomeData} from '../genetics/genome';
 import {Raycaster, Vector3} from 'three';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
@@ -22,7 +22,7 @@ export class Evolution {
     private evolverId = 0;
     private ageLimit = MINIMUM_AGE;
 
-    constructor(private gotch: Gotch, private trip: Trip) {
+    constructor(private gotch: Gotch, private trip: Trip, private saveGenome: (genome: IGenomeData) => void) {
         let mutatingGenome = gotch.genome;
         const promisedGotchis: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
@@ -86,7 +86,7 @@ export class Evolution {
             console.log('age limit', this.ageLimit);
             const toSave = this.strongest();
             if (toSave) {
-                this.save(toSave.gotchi);
+                this.saveGenome(toSave.gotchi.genomeData);
             } else {
                 console.log('no strongest?');
             }
@@ -117,12 +117,6 @@ export class Evolution {
 
     private strongest(): Evolver | undefined {
         return this.rankedEvolvers[0];
-    }
-
-    private save(gotchi: Gotchi) {
-        const fingerprint = this.gotch.createFingerprint();
-        console.log(`Saving the strongest ${fingerprint}`);
-        localStorage.setItem(fingerprint, JSON.stringify(gotchi.genomeData));
     }
 
     private rebootAll(survivalRate: number) {

@@ -4,8 +4,8 @@ import {IFabricExports} from './body/fabric-exports';
 import {Island} from './island/island';
 import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
-import {Gotchi, IGotchiFactory} from './gotchi/gotchi';
-import {Genome} from './genetics/genome';
+import {Gotchi} from './gotchi/gotchi';
+import {Genome, IGenomeData} from './genetics/genome';
 import {Vector3} from 'three';
 import {Physics} from './body/physics';
 import {PhysicsPanel} from './view/physics-panel';
@@ -19,9 +19,11 @@ import {Trip} from './island/trip';
 import {insetStyle} from './view/layout';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {OrbitState} from './view/orbit';
+import {AppStorage} from './app-storage';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
+    storage: AppStorage;
 }
 
 export interface IAppState {
@@ -47,11 +49,14 @@ function dispose(state: IAppState) {
 }
 
 function startEvolution(gotch: Gotch) {
-    return (state: IAppState) => {
+    return (state: IAppState, props: IAppProps) => {
         dispose(state);
         return {
             gotchi: undefined,
-            evolution: new Evolution(gotch, new Trip([]))
+            evolution: new Evolution(gotch, new Trip([]), (genomeData: IGenomeData) => {
+                console.log(`Saving genome data`);
+                props.storage.setGenome(gotch, genomeData);
+            })
         };
     };
 }
@@ -79,14 +84,15 @@ function selectGotch(gotch: Gotch) {
 }
 
 class App extends React.Component<IAppProps, IAppState> {
-    private gotchiFactory: IGotchiFactory;
-    private physics = new Physics();
     private orbitState = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
     private selectedSpot = new BehaviorSubject<Spot | undefined>(undefined);
 
+    private physics: Physics;
+
     constructor(props: IAppProps) {
         super(props);
-        this.gotchiFactory = {
+        this.physics = new Physics(props.storage);
+        const gotchiFactory = {
             createGotchiAt: (location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
                 return this.props.createFabricInstance().then(fabricExports => {
                     this.physics.applyToFabric(fabricExports);
@@ -97,7 +103,7 @@ class App extends React.Component<IAppProps, IAppState> {
             }
         };
         this.state = {
-            island: new Island('GalapagotchIsland', this.gotchiFactory),
+            island: new Island('GalapagotchIsland', gotchiFactory, this.props.storage),
             width: window.innerWidth,
             height: window.innerHeight
         };
@@ -134,7 +140,12 @@ class App extends React.Component<IAppProps, IAppState> {
                     />
                 </div>
                 <div style={insetStyle(true, true)}>
-                    <IdentityPanel master={undefined}/>
+                    <IdentityPanel
+                        island={this.state.island}
+                        master={undefined}
+                        selectedSpot={this.selectedSpot}
+                        storage={this.props.storage}
+                    />
                 </div>
                 <div style={insetStyle(false, false)}>
                     <ActionsPanel

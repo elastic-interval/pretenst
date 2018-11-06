@@ -1,4 +1,5 @@
 import {IFabricExports} from './fabric-exports';
+import {AppStorage} from '../app-storage';
 
 export enum PhysicsFeature {
     GravityAbove = 'Gravity Above',
@@ -18,9 +19,9 @@ export interface IPhysicsFeature {
 
 export class Physics {
 
-    private featuresArray: IPhysicsFeature[];
+    private readonly featuresArray: IPhysicsFeature[];
 
-    constructor() {
+    constructor(private storage: AppStorage) {
         this.featuresArray = Object.keys(PhysicsFeature).map(f => this.createFeature(PhysicsFeature[f]));
     }
 
@@ -66,18 +67,8 @@ export class Physics {
     private createFeature(feature: PhysicsFeature): IPhysicsFeature {
         return {
             feature,
-            getFactor: () => {
-                const storedValue = localStorage.getItem(feature);
-                if (!storedValue) {
-                    localStorage.setItem(feature, '1');
-                    return 1;
-                } else {
-                    return parseFloat(storedValue);
-                }
-            },
-            setFactor: (factor: number) => {
-                localStorage.setItem(feature, factor.toFixed(3));
-            }
+            getFactor: () => this.storage.getPhysicsFeature(feature),
+            setFactor: (factor: number) => this.storage.setPhysicsFeature(feature, factor)
         }
     }
 }

@@ -1,37 +1,59 @@
 import * as React from 'react';
 import {ChangeEvent, FormEvent} from 'react';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import {Spot} from '../island/spot';
+import {Subscription} from 'rxjs/Subscription';
+import {AppStorage} from '../app-storage';
+import {Island} from '../island/island';
 
 export interface IIdentityPanelProps {
+    storage: AppStorage;
+    island: Island;
+    selectedSpot: BehaviorSubject<Spot | undefined>;
     master?: string;
 }
 
 interface IIdentityPanelState {
+    islandMasters: string[];
+    selectedSpot?: Spot;
     name: string;
+    error?: string;
 }
 
 export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentityPanelState> {
+    private subs: Subscription[] = [];
 
     constructor(props: IIdentityPanelProps) {
         super(props);
         this.handleNameChange = this.handleNameChange.bind(this);
         this.handleSubmitName = this.handleSubmitName.bind(this);
-        this.state = {name: props.master ? props.master : ''};
+        this.state = {
+            name: props.master ? props.master : '',
+            islandMasters: props.island.gotches.map(gotch => {
+                const genome = props.storage.getGenome(gotch);
+                return genome? genome.master : '';
+            }).filter(master => master.length > 0)
+        };
+    }
+
+    public componentDidMount() {
+        this.subs.push(this.props.selectedSpot.subscribe(selectedSpot => this.setState({selectedSpot})));
+    }
+
+    public componentWillUnmount() {
+        this.subs.forEach(s => s.unsubscribe());
     }
 
     public render() {
-        return (
-            <div>
-                {this.content}
-            </div>
-        );
-    }
-
-    private get content() {
         if (this.props.master) {
             return (
-                <strong>{this.props.master}</strong>
+                <div>
+                    <strong>{this.props.master}</strong>
+                </div>
             );
         } else {
+            // const gotch = this.state.selectedSpot ? this.state.selectedSpot.centerOfGotch : null;
+            const candidate = this.state.selectedSpot ? this.state.selectedSpot.canBeNewGotch : false;
             return (
                 <div>
                     <p>
@@ -41,10 +63,10 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
                     </p>
                     <form onSubmit={this.handleSubmitName}>
                         <label>
-                            <strong>Name:</strong>
-                            <input type="text" value={this.state.name} onChange={this.handleNameChange}/>
+                            <strong>{candidate ? 'candidate':'your'} Name:</strong>
+                            <input type="text" value={this.state.name} onChange={this.handleNameChange}/><strong>{this.state.error}</strong>
                         </label>
-                        <input type="submit" value="Choose this Gotch!"/>
+                        <input type="submit" disabled={!candidate} value="Choose this Gotch!"/>
                     </form>
                 </div>
             );
@@ -52,8 +74,13 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
     }
 
     private handleNameChange(event: ChangeEvent<HTMLInputElement>) {
-        console.log('name change', event);
-        this.setState({name: event.target.value});
+        const name = event.target.value;
+        if (this.state.islandMasters.find(master => master === name)) {
+            const error = 'Name exists!';
+            this.setState({name, error});
+        } else {
+            this.setState({name, error: undefined});
+        }
     }
 
     private handleSubmitName(event: FormEvent<HTMLFormElement>) {
