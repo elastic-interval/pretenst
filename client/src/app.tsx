@@ -5,21 +5,18 @@ import {Island} from './island/island';
 import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
 import {Gotchi} from './gotchi/gotchi';
-import {Genome, IGenomeData} from './genetics/genome';
+import {Genome} from './genetics/genome';
 import {Vector3} from 'three';
 import {Physics} from './body/physics';
-import {PhysicsPanel} from './view/physics-panel';
 import {IdentityPanel} from './view/identity-panel';
-import {TitlePanel} from './view/title-panel';
-import {ActionsPanel} from './view/actions-panel';
 import {Spot} from './island/spot';
-import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution';
+import {Evolution} from './gotchi/evolution';
 import {Gotch} from './island/gotch';
-import {Trip} from './island/trip';
-import {insetStyle} from './view/layout';
+import {InsetStyle, insetStyle} from './view/layout';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {OrbitState} from './view/orbit';
 import {AppStorage} from './app-storage';
+import {Subscription} from 'rxjs/Subscription';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -30,6 +27,8 @@ export interface IAppState {
     island: Island;
     width: number;
     height: number;
+
+    orbitState: OrbitState;
     gotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
@@ -48,29 +47,29 @@ function dispose(state: IAppState) {
     }
 }
 
-function startEvolution(gotch: Gotch) {
-    return (state: IAppState, props: IAppProps) => {
-        dispose(state);
-        return {
-            gotchi: undefined,
-            evolution: new Evolution(gotch, new Trip([]), (genomeData: IGenomeData) => {
-                console.log(`Saving genome data`);
-                props.storage.setGenome(gotch, genomeData);
-            })
-        };
-    };
-}
-
-function startGotchi(gotchi: Gotchi) {
-    return (state: IAppState) => {
-        dispose(state);
-        // gotchi.travel = state.trip.createTravel(0);
-        return {
-            gotchi,
-            evolution: undefined,
-        };
-    };
-}
+// function startEvolution(gotch: Gotch) {
+//     return (state: IAppState, props: IAppProps) => {
+//         dispose(state);
+//         return {
+//             gotchi: undefined,
+//             evolution: new Evolution(gotch, new Trip([]), (genomeData: IGenomeData) => {
+//                 console.log(`Saving genome data`);
+//                 props.storage.setGenome(gotch, genomeData);
+//             })
+//         };
+//     };
+// }
+//
+// function startGotchi(gotchi: Gotchi) {
+//     return (state: IAppState) => {
+//         dispose(state);
+//         // gotchi.travel = state.trip.createTravel(0);
+//         return {
+//             gotchi,
+//             evolution: undefined,
+//         };
+//     };
+// }
 
 function selectGotch(gotch: Gotch) {
     return (state: IAppState) => {
@@ -84,6 +83,7 @@ function selectGotch(gotch: Gotch) {
 }
 
 class App extends React.Component<IAppProps, IAppState> {
+    private subs: Subscription[] = [];
     private orbitState = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
     private selectedSpot = new BehaviorSubject<Spot | undefined>(undefined);
 
@@ -103,19 +103,22 @@ class App extends React.Component<IAppProps, IAppState> {
             }
         };
         this.state = {
+            orbitState: this.orbitState.getValue(),
             island: new Island('GalapagotchIsland', gotchiFactory, this.props.storage),
             width: window.innerWidth,
             height: window.innerHeight
         };
-        this.selectedSpot.subscribe(this.spotSelected);
     }
 
     public componentDidMount() {
         window.addEventListener("resize", () => this.setState(updateDimensions));
+        this.subs.push(this.selectedSpot.subscribe(this.spotSelected));
+        this.subs.push(this.orbitState.subscribe(orbitState => this.setState({orbitState})));
     }
 
     public componentWillUnmount() {
         window.removeEventListener("resize", () => this.setState(updateDimensions));
+        this.subs.forEach(s => s.unsubscribe());
     }
 
     public render() {
@@ -131,49 +134,29 @@ class App extends React.Component<IAppProps, IAppState> {
                     evolution={this.state.evolution}
                     gotchi={this.state.gotchi}
                 />
-                <div style={insetStyle(true, false)}>
-                    <TitlePanel
-                        islandName={this.state.island.islandName}
-                        version={'0.0.1'}
-                        selectedSpot={this.selectedSpot}
-                        orbitState={this.orbitState}
-                    />
-                </div>
-                <div style={insetStyle(true, true)}>
-                    <IdentityPanel
-                        island={this.state.island}
-                        master={undefined}
-                        selectedSpot={this.selectedSpot}
-                        storage={this.props.storage}
-                    />
-                </div>
-                <div style={insetStyle(false, false)}>
-                    <ActionsPanel
-                        startEvolution={() => {
-                            if (this.state.gotch) {
-                                this.setState(startEvolution(this.state.gotch));
-                            }
-                        }}
-                        rebirth={() => {
-                            if (this.state.gotch) {
-                                this.state.gotch.createGotchi(INITIAL_JOINT_COUNT).then(
-                                    gotchi => this.setState(startGotchi(gotchi))
-                                );
-                            }
-                        }}
-                    />
-                </div>
-                <div style={insetStyle(false, true)}>
-                    <PhysicsPanel physics={this.physics}/>
-                </div>
+                {this.insetPanel}
             </div>
         );
     }
 
+    private get insetPanel() {
+        const style = insetStyle(
+            this.state.orbitState === OrbitState.CRUISE ? InsetStyle.TOP_MIDDLE : InsetStyle.BOTTOM_MIDDLE
+        );
+        return (
+            <div style={style}>
+                <IdentityPanel
+                    island={this.state.island}
+                    master={undefined}
+                    selectedSpot={this.selectedSpot}
+                    storage={this.props.storage}
+                />
+            </div>
+        );
+    }
 
     private spotSelected = (spot?: Spot) => {
         if (spot) {
-            console.log(`Spot ${spot.coords.x} ${spot.coords.y}`);
             if (spot.centerOfGotch) {
                 this.setState(selectGotch(spot.centerOfGotch));
             }

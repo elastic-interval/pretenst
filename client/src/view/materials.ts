@@ -25,4 +25,4 @@ export const TRIP_MATERIAL = new LineBasicMaterial({color: new Color('crimson')}
 
 export const GOTCHI_POINTER_MATERIAL = new LineBasicMaterial({color: new Color('magenta')});
 
-export const USER_POINTER_MATERIAL = new LineBasicMaterial({color: new Color('black')});
+export const USER_POINTER_MATERIAL = new LineBasicMaterial({color: new Color('green')});

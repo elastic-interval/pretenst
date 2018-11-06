@@ -1,38 +1,80 @@
 import {CSSProperties} from 'react';
 
-const margin = '20px';
-const cornerRadius = '60px';
+const MARGIN = '20px';
+const CORNER_RADIUS = '60px';
+const SMALL = '100px';
+const QUARTER = '25%';
+const HALF = '50%';
 
-export function insetStyle(top: boolean, right: boolean): CSSProperties {
+export enum InsetStyle {
+    TOP_LEFT,
+    TOP_RIGHT,
+    BOTTOM_RIGHT,
+    BOTTOM_LEFT,
+    TOP_MIDDLE,
+    BOTTOM_MIDDLE
+}
+
+export function insetStyle(style: InsetStyle): CSSProperties {
     const css: CSSProperties = {
         position: 'absolute',
         color: 'white',
         backgroundColor: 'black',
         borderColor: 'white',
         borderStyle: 'solid',
-        padding: '20px 20px 20px 20px',
-        width: '200px',
-        height: '200px'
+        padding: '20px 20px 20px 20px'
     };
-    if (top) {
-        css.top = margin;
-    } else {
-        css.bottom = margin;
-    }
-    if (right) {
-        css.right = margin;
-        if (top) {
-            css.borderBottomLeftRadius = cornerRadius;
-        } else {
-            css.borderTopLeftRadius = cornerRadius;
-        }
-    } else {
-        css.left = margin;
-        if (top) {
-            css.borderBottomRightRadius = cornerRadius;
-        } else {
-            css.borderTopRightRadius = cornerRadius;
-        }
+    switch (style) {
+        case InsetStyle.TOP_LEFT:
+            css.top = MARGIN;
+            css.left = MARGIN;
+            css.width = SMALL;
+            css.height = SMALL;
+            css.borderBottomRightRadius = CORNER_RADIUS;
+            break;
+        case InsetStyle.TOP_RIGHT:
+            css.top = MARGIN;
+            css.right = MARGIN;
+            css.width = SMALL;
+            css.height = SMALL;
+            css.borderBottomLeftRadius = CORNER_RADIUS;
+            break;
+        case InsetStyle.TOP_MIDDLE:
+            css.top = MARGIN;
+            css.width = HALF;
+            css.left = QUARTER;
+            css.right = QUARTER;
+            css.height = SMALL;
+            css.borderBottomLeftRadius = CORNER_RADIUS;
+            css.borderBottomRightRadius = CORNER_RADIUS;
+            css.borderTopLeftRadius = CORNER_RADIUS;
+            css.borderTopRightRadius = CORNER_RADIUS;
+            break;
+        case InsetStyle.BOTTOM_LEFT:
+            css.bottom = MARGIN;
+            css.left = MARGIN;
+            css.width = SMALL;
+            css.height = SMALL;
+            css.borderTopRightRadius = CORNER_RADIUS;
+            break;
+        case InsetStyle.BOTTOM_RIGHT:
+            css.bottom = MARGIN;
+            css.right = MARGIN;
+            css.width = SMALL;
+            css.height = SMALL;
+            css.borderTopLeftRadius = CORNER_RADIUS;
+            break;
+        case InsetStyle.BOTTOM_MIDDLE:
+            css.bottom = MARGIN;
+            css.width = HALF;
+            css.left = QUARTER;
+            css.right = QUARTER;
+            css.height = SMALL;
+            css.borderBottomLeftRadius = CORNER_RADIUS;
+            css.borderBottomRightRadius = CORNER_RADIUS;
+            css.borderTopLeftRadius = CORNER_RADIUS;
+            css.borderTopRightRadius = CORNER_RADIUS;
+            break;
     }
     return css;
 }
