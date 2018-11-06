@@ -17,6 +17,8 @@ import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution';
 import {Gotch} from './island/gotch';
 import {Trip} from './island/trip';
 import {insetStyle} from './view/layout';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import {OrbitState} from './view/orbit';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -79,6 +81,7 @@ function selectGotch(gotch: Gotch) {
 class App extends React.Component<IAppProps, IAppState> {
     private gotchiFactory: IGotchiFactory;
     private physics = new Physics();
+    private orbitState = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
 
     constructor(props: IAppProps) {
         super(props);
@@ -113,12 +116,17 @@ class App extends React.Component<IAppProps, IAppState> {
                 <GotchiView island={this.state.island}
                             width={this.state.width} height={this.state.height}
                             clickSpot={this.clickSpot}
+                            orbitState={this.orbitState}
                             gotch={this.state.gotch}
                             evolution={this.state.evolution}
                             gotchi={this.state.gotchi}
                 />
                 <div style={insetStyle(true, false)}>
-                    <TitlePanel islandName={this.state.island.islandName} version={'0.0.1'}/>
+                    <TitlePanel
+                        islandName={this.state.island.islandName}
+                        version={'0.0.1'}
+                        orbitState={this.orbitState}
+                    />
                 </div>
                 <div style={insetStyle(true, true)}>
                     <IdentityPanel master={undefined}/>

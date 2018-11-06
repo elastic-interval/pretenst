@@ -14,12 +14,22 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, any> {
         return (
             <div>
                 <h3>Identity</h3>
-                {
-                    this.props.master ?
-                        <strong>{this.props.master}</strong>
-                        : <span>no master yet</span>
-                }
+                {this.content}
             </div>
         );
+    }
+
+    private get content() {
+        if (this.props.master) {
+            return (
+                <strong>{this.props.master}</strong>
+            );
+        } else {
+            return (
+                <p>
+                    You do not yet have a home gotch. You can choose one of the green spots.
+                </p>
+            );
+        }
     }
 }

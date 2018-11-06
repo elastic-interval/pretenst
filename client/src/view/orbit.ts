@@ -3,21 +3,26 @@ import {PerspectiveCamera, Vector3} from 'three';
 import * as ORBIT_CONTROLS from 'three-orbit-controls';
 import {HUNG_ALTITUDE} from '../body/fabric';
 import {HIGH_ALTITUDE} from './gotchi-view';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 const OrbitControls = ORBIT_CONTROLS(THREE);
-const NEAR_UP = new Vector3(0,1,0);
 const TOWARDS_TARGET = 0.03;
 const MAX_TARGET_SPEED = 2.5;
+const HELICOPTER_ALTITUDE = 300;
+const VERTICAL_ALTITUDE = HUNG_ALTITUDE * 6;
+const UPWARDS = 0.3;
+
+export enum OrbitState {
+    HELICOPTER = 'HELICOPTER',
+    CRUISE = 'CRUISE'
+}
 
 export class Orbit {
     private orbitControls: any;
     private vector = new Vector3();
     private target = new Vector3();
 
-    constructor(domElement: any, private camera: PerspectiveCamera, target?: Vector3) {
-        if (target) {
-            this.target.add(target);
-        }
+    constructor(domElement: any, private camera: PerspectiveCamera, private stateBehavior: BehaviorSubject<OrbitState>, target: Vector3) {
         const orbit = this.orbitControls = new OrbitControls(camera, domElement);
         orbit.minPolarAngle = Math.PI * 0.1;
         orbit.maxPolarAngle = 0.95 * Math.PI / 2;
@@ -25,6 +30,7 @@ export class Orbit {
         orbit.minDistance = 7;
         orbit.enableKeys = false;
         orbit.target = this.target;
+        this.target.add(target);
     }
 
     public moveTargetTowards(location: Vector3) {
@@ -33,20 +39,29 @@ export class Orbit {
             this.vector.setLength(MAX_TARGET_SPEED);
         }
         this.target.add(this.vector);
-        if (this.altitude < HUNG_ALTITUDE * 6) {
-            this.camera.up.add(NEAR_UP).normalize();
-        }
     }
 
     public update() {
         this.orbitControls.update();
-    }
-
-    public get altitude(): number {
-        return this.camera.position.y;
-    }
-
-    public get distance(): number {
-        return this.vector.subVectors(this.target, this.camera.position).length();
+        // const distance = this.vector.subVectors(this.target, this.camera.position).length();
+        const altitude = this.camera.position.y;
+        if (altitude < VERTICAL_ALTITUDE) {
+            const up = this.camera.up;
+            up.y += UPWARDS;
+            up.normalize();
+        }
+        switch (this.stateBehavior.getValue()) {
+            case OrbitState.HELICOPTER:
+                if (altitude < HELICOPTER_ALTITUDE) {
+                    console.log('cruise!');
+                    this.stateBehavior.next(OrbitState.CRUISE);
+                }
+                break;
+            case OrbitState.CRUISE:
+                if (altitude > HELICOPTER_ALTITUDE) {
+                    this.stateBehavior.next(OrbitState.HELICOPTER);
+                }
+                break;
+        }
     }
 }

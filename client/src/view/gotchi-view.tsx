@@ -6,12 +6,13 @@ import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
 import {EvolutionComponent} from './evolution-component';
 import {IslandComponent} from './island-component';
-import {Orbit} from './orbit';
+import {Orbit, OrbitState} from './orbit';
 import {GotchiComponent} from './gotchi-component';
 import {MeshKey, SpotSelector} from './spot-selector';
 import {Spot} from '../island/spot';
 import {NORMAL_TICKS} from '../body/fabric';
 import {Gotch} from '../island/gotch';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 export const HIGH_ALTITUDE = 1000;
 
@@ -24,6 +25,7 @@ interface IGotchiViewProps {
     height: number;
     island: Island;
     clickSpot: (spot: Spot) => void;
+    orbitState: BehaviorSubject<OrbitState>;
     gotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
@@ -65,7 +67,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidMount() {
-        this.orbit = new Orbit(document.getElementById('gotchi-view'), this.perspectiveCamera, this.props.island.midpoint);
+        const element = document.getElementById('gotchi-view');
+        this.orbit = new Orbit(element, this.perspectiveCamera, this.props.orbitState, this.props.island.midpoint);
         this.animate();
     }
 
@@ -89,7 +92,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         }
         return (
             <div id="gotchi-view" onMouseDownCapture={e => {
-                const far = this.orbit.distance > HIGH_ALTITUDE / 2;
+                const far = this.props.orbitState.getValue() === OrbitState.HELICOPTER;
                 const meshKey = far ? MeshKey.SPOTS_KEY : MeshKey.SEEDS_KEY;
                 const spot = this.spotSelector.getSpot(meshKey, e);
                 if (spot) {
