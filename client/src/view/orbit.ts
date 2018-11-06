@@ -18,6 +18,7 @@ export enum OrbitState {
 }
 
 export class Orbit {
+    public changing = false;
     private orbitControls: any;
     private vector = new Vector3();
     private target = new Vector3();
@@ -30,6 +31,8 @@ export class Orbit {
         orbit.minDistance = 7;
         orbit.enableKeys = false;
         orbit.target = this.target;
+        orbit.addEventListener('start', (event: any) => this.changing = true);
+        orbit.addEventListener('end', (event: any) => this.changing = false);
         this.target.add(target);
     }
 

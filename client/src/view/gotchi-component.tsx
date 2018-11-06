@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {GOTCHI_MATERIAL, POINTER_MATERIAL} from './materials';
+import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL} from './materials';
 import {Gotchi} from '../gotchi/gotchi';
 import {Geometry, Vector3} from 'three';
 
@@ -54,7 +54,7 @@ export class GotchiComponent extends React.Component<IGotchiMeshProps, IGotchiMe
                 <R3.LineSegments
                     key="Vectors"
                     geometry={fabric.pointerGeometryFor(gotchi.direction)}
-                    material={POINTER_MATERIAL}
+                    material={GOTCHI_POINTER_MATERIAL}
                 />
                 <R3.Mesh
                     key="Gotchi"

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Evolution} from '../gotchi/evolution';
-import {GOTCHI_GHOST_MATERIAL, POINTER_MATERIAL} from './materials';
+import {GOTCHI_GHOST_MATERIAL, GOTCHI_POINTER_MATERIAL} from './materials';
 import {Subscription} from 'rxjs/Subscription';
 import {Evolver} from '../gotchi/evolver';
 
@@ -45,7 +45,7 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
                             <R3.LineSegments
                                 key="Vectors"
                                 geometry={fabric.pointerGeometryFor(gotchi.direction)}
-                                material={POINTER_MATERIAL}
+                                material={GOTCHI_POINTER_MATERIAL}
                             />
                             <R3.Mesh
                                 ref={(node: any) => gotchi.facesMeshNode = node}

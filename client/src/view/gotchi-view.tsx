@@ -1,6 +1,6 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {Color, Mesh, PerspectiveCamera, Vector3} from 'three';
+import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from 'three';
 import {Evolution} from '../gotchi/evolution';
 import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
@@ -13,6 +13,7 @@ import {Spot} from '../island/spot';
 import {NORMAL_TICKS} from '../body/fabric';
 import {Gotch} from '../island/gotch';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import {USER_POINTER_MATERIAL} from './materials';
 
 export const HIGH_ALTITUDE = 1000;
 
@@ -103,7 +104,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             onlyMasterGotch={!this.state.helicopterView}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
-                        {this.gotchiComponent()}
+                        <R3.Object3D key="EvolutionOrGotchi">
+                            {!this.props.evolution || this.state.helicopterView ? null :
+                                <EvolutionComponent evolution={this.props.evolution}/>}
+                            {!this.props.gotchi || this.state.helicopterView ? null :
+                                <GotchiComponent gotchi={this.props.gotchi}/>}
+                        </R3.Object3D>
+                        <R3.LineSegments key="Pointer" geometry={this.pointerGeometry} material={USER_POINTER_MATERIAL}/>
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>
@@ -114,16 +121,21 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     // ==========================
 
-    private gotchiComponent = () => {
-        // todo: not for just browsing
-        return (
-            <R3.Object3D key="EvolutionOrGotchi">
-                {!this.props.evolution || this.state.helicopterView ? null :
-                    <EvolutionComponent evolution={this.props.evolution}/>}
-                {!this.props.gotchi || this.state.helicopterView ? null : <GotchiComponent gotchi={this.props.gotchi}/>}
-            </R3.Object3D>
-        );
-    };
+    private get pointerGeometry(): Geometry | null {
+        const geometry = new Geometry();
+        if (this.orbit && !this.orbit.changing) {
+            this.perspectiveCamera.updateProjectionMatrix();
+            geometry.vertices = [
+                new Vector3(0, -1, -1).unproject(this.perspectiveCamera),
+                this.props.island.midpoint,
+                new Vector3(-1, -1, -1).unproject(this.perspectiveCamera),
+                this.props.island.midpoint,
+                new Vector3(1, -1, -1).unproject(this.perspectiveCamera),
+                this.props.island.midpoint,
+            ];
+        }
+        return geometry;
+    }
 
     private animate() {
         const step = () => {
@@ -147,8 +159,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         }
                     }
                     if (this.animating) {
-                        this.forceUpdate();
                         this.orbit.update();
+                        this.forceUpdate();
                         requestAnimationFrame(step);
                     }
                 },
