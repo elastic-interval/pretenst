@@ -24,7 +24,7 @@ interface IGotchiViewProps {
     width: number;
     height: number;
     island: Island;
-    clickSpot: (spot: Spot) => void;
+    selectedSpot: BehaviorSubject<Spot | undefined>;
     orbitState: BehaviorSubject<OrbitState>;
     gotch?: Gotch;
     gotchi?: Gotchi;
@@ -94,10 +94,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             <div id="gotchi-view" onMouseDownCapture={e => {
                 const far = this.props.orbitState.getValue() === OrbitState.HELICOPTER;
                 const meshKey = far ? MeshKey.SPOTS_KEY : MeshKey.SEEDS_KEY;
-                const spot = this.spotSelector.getSpot(meshKey, e);
-                if (spot) {
-                    this.props.clickSpot(spot);
-                }
+                this.props.selectedSpot.next(this.spotSelector.getSpot(meshKey, e));
             }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>

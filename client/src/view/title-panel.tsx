@@ -2,20 +2,23 @@ import * as React from 'react';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {OrbitState} from './orbit';
 import {Subscription} from 'rxjs/Subscription';
+import {Spot} from '../island/spot';
 
 export interface ITitlePanelProps {
     version: string;
     islandName: string;
     orbitState: BehaviorSubject<OrbitState>;
+    selectedSpot: BehaviorSubject<Spot | undefined>;
 }
 
 export interface ITitlePanelState {
     orbitState: OrbitState;
+    selectedSpot?: Spot;
 }
 
 export class TitlePanel extends React.Component<ITitlePanelProps, ITitlePanelState> {
 
-    private orbitStateSubscription: Subscription;
+    private subs: Subscription[] = [];
 
     constructor(props: ITitlePanelProps) {
         super(props);
@@ -23,14 +26,16 @@ export class TitlePanel extends React.Component<ITitlePanelProps, ITitlePanelSta
     }
 
     public componentDidMount() {
-        this.orbitStateSubscription = this.props.orbitState.subscribe(orbitState => this.setState({orbitState}));
+        this.subs.push(this.props.orbitState.subscribe(orbitState => this.setState({orbitState})));
+        this.subs.push(this.props.selectedSpot.subscribe(selectedSpot => this.setState({selectedSpot})));
     }
 
     public componentWillUnmount() {
-        this.orbitStateSubscription.unsubscribe();
+        this.subs.forEach(s => s.unsubscribe());
     }
 
     public render() {
+        const spot = this.state.selectedSpot;
         return (
             <div>
                 <h3>Welcome to Galapagotchi</h3>
@@ -39,6 +44,8 @@ export class TitlePanel extends React.Component<ITitlePanelProps, ITitlePanelSta
                 <strong>version {this.props.version}</strong>
                 <br/>
                 <strong>{this.state.orbitState}</strong>
+                <br/>
+                <strong>{spot ? `Spot(${spot.coords.x},${spot.coords.y})` : null}</strong>
             </div>
         );
     }

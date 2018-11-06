@@ -82,6 +82,7 @@ class App extends React.Component<IAppProps, IAppState> {
     private gotchiFactory: IGotchiFactory;
     private physics = new Physics();
     private orbitState = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
+    private selectedSpot = new BehaviorSubject<Spot | undefined>(undefined);
 
     constructor(props: IAppProps) {
         super(props);
@@ -100,6 +101,7 @@ class App extends React.Component<IAppProps, IAppState> {
             width: window.innerWidth,
             height: window.innerHeight
         };
+        this.selectedSpot.subscribe(this.spotSelected);
     }
 
     public componentDidMount() {
@@ -113,18 +115,21 @@ class App extends React.Component<IAppProps, IAppState> {
     public render() {
         return (
             <div>
-                <GotchiView island={this.state.island}
-                            width={this.state.width} height={this.state.height}
-                            clickSpot={this.clickSpot}
-                            orbitState={this.orbitState}
-                            gotch={this.state.gotch}
-                            evolution={this.state.evolution}
-                            gotchi={this.state.gotchi}
+                <GotchiView
+                    island={this.state.island}
+                    width={this.state.width}
+                    height={this.state.height}
+                    selectedSpot={this.selectedSpot}
+                    orbitState={this.orbitState}
+                    gotch={this.state.gotch}
+                    evolution={this.state.evolution}
+                    gotchi={this.state.gotchi}
                 />
                 <div style={insetStyle(true, false)}>
                     <TitlePanel
                         islandName={this.state.island.islandName}
                         version={'0.0.1'}
+                        selectedSpot={this.selectedSpot}
                         orbitState={this.orbitState}
                     />
                 </div>
@@ -155,10 +160,12 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
 
-    private clickSpot = (spot: Spot) => {
-        console.log(`Spot ${spot.coords.x} ${spot.coords.y}`);
-        if (spot.centerOfGotch) {
-            this.setState(selectGotch(spot.centerOfGotch));
+    private spotSelected = (spot?: Spot) => {
+        if (spot) {
+            console.log(`Spot ${spot.coords.x} ${spot.coords.y}`);
+            if (spot.centerOfGotch) {
+                this.setState(selectGotch(spot.centerOfGotch));
+            }
         }
         // const island = this.state.island;
         // const centerOfGotch = spot.centerOfGotch;
