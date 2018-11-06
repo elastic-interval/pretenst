@@ -33,12 +33,20 @@ export class Orbit {
             this.vector.setLength(MAX_TARGET_SPEED);
         }
         this.target.add(this.vector);
-        if (this.camera.position.y < HUNG_ALTITUDE * 6) {
+        if (this.altitude < HUNG_ALTITUDE * 6) {
             this.camera.up.add(NEAR_UP).normalize();
         }
     }
 
     public update() {
         this.orbitControls.update();
+    }
+
+    public get altitude(): number {
+        return this.camera.position.y;
+    }
+
+    public get distance(): number {
+        return this.vector.subVectors(this.target, this.camera.position).length();
     }
 }

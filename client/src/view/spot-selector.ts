@@ -30,9 +30,9 @@ export class SpotSelector {
         this.size.y = height;
     }
 
-    public getSpot(event: any): Spot | undefined {
+    public getSpot(meshKey: MeshKey, event: any): Spot | undefined {
         this.adjustRaycaster(event);
-        return this.findSpot();
+        return this.findSpot(meshKey);
     }
 
     // ==================
@@ -44,21 +44,14 @@ export class SpotSelector {
         this.rayCaster.setFromCamera(this.mouse, this.camera);
     }
 
-    private findSpot(): Spot | undefined {
-        const uuidToKey = new Map<string, string>();
-        const meshes: Mesh[] = [];
-        Object.keys(this.meshes).forEach(key => {
-            const mesh = this.meshes[key];
-            meshes.push(mesh);
-            uuidToKey[mesh.uuid] = key;
-        });
-        const intersections = this.rayCaster.intersectObjects(meshes, true);
-        if (intersections.length && intersections[0].faceIndex) {
-            const intersection = intersections[0];
-            const key = uuidToKey[intersection.object.uuid];
-            const faceName = `${key}:${intersection.faceIndex}`;
+    private findSpot(meshKey: MeshKey): Spot | undefined {
+        const mesh = this.meshes[meshKey];
+        const intersections = this.rayCaster.intersectObjects([mesh], true)
+            .filter(i => i.faceIndex !== undefined);
+        const spots = intersections.map(intersection => {
+            const faceName = `${meshKey}:${intersection.faceIndex}`;
             return this.island.spots.find(spot => spot.faceNames.indexOf(faceName) >= 0);
-        }
-        return undefined;
+        });
+        return spots.pop();
     }
 }

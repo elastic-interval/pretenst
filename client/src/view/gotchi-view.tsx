@@ -88,13 +88,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             // console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
         return (
-            <div id="gotchi-view"
-                 onMouseDownCapture={e => {
-                     const spot = this.spotSelector.getSpot(e);
-                     if (spot) {
-                         this.props.clickSpot(spot);
-                     }
-                 }}>
+            <div id="gotchi-view" onMouseDownCapture={e => {
+                const far = this.orbit.distance > HIGH_ALTITUDE / 2;
+                const meshKey = far ? MeshKey.SPOTS_KEY : MeshKey.SEEDS_KEY;
+                const spot = this.spotSelector.getSpot(meshKey, e);
+                if (spot) {
+                    this.props.clickSpot(spot);
+                }
+            }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandComponent
@@ -117,7 +118,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         // todo: not for just browsing
         return (
             <R3.Object3D key="EvolutionOrGotchi">
-                {!this.props.evolution || this.state.helicopterView ? null : <EvolutionComponent evolution={this.props.evolution}/>}
+                {!this.props.evolution || this.state.helicopterView ? null :
+                    <EvolutionComponent evolution={this.props.evolution}/>}
                 {!this.props.gotchi || this.state.helicopterView ? null : <GotchiComponent gotchi={this.props.gotchi}/>}
             </R3.Object3D>
         );
