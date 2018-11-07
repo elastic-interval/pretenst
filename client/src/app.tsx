@@ -73,6 +73,19 @@ function startGotchi(gotchi: Gotchi) {
     };
 }
 
+function selectSpot(spot?: Spot) {
+    const gotch = spot ? spot.centerOfGotch : undefined;
+    return (state: IAppState) => {
+        dispose(state);
+        return {
+            spot,
+            gotch,
+            gotchi: undefined,
+            evolution: undefined,
+        };
+    }
+}
+
 interface IClicky {
     label: string;
     click: () => void;
@@ -117,18 +130,10 @@ class App extends React.Component<IAppProps, IAppState> {
 
     public componentDidMount() {
         window.addEventListener("resize", () => this.setState(updateDimensions));
-        this.subs.push(this.selectedSpotSubject.subscribe(maybeSpot => {
-            const spot = maybeSpot ? maybeSpot : this.state.spot;
-            const gotch = maybeSpot ? maybeSpot.centerOfGotch : undefined;
-            this.setState((state: IAppState) => {
-                dispose(state);
-                return {
-                    spot,
-                    gotch,
-                    gotchi: undefined,
-                    evolution: undefined,
-                };
-            });
+        this.subs.push(this.selectedSpotSubject.subscribe(spot => {
+            if (spot && !this.state.evolution && !this.state.gotchi) {
+                this.setState(selectSpot(spot));
+            }
         }));
         this.subs.push(this.orbitStateSubject.subscribe(orbitState => this.setState({orbitState})));
     }
@@ -163,7 +168,13 @@ class App extends React.Component<IAppProps, IAppState> {
         }
         const cruising = this.state.orbitState === OrbitState.CRUISE;
         const style = insetStyle(cruising ? InsetStyle.TOP_MIDDLE : InsetStyle.BOTTOM_MIDDLE);
-        return <div style={style}>{userMessage}</div>;
+        return (
+            <div style={style}>
+                <div style={{textAlign: 'center'}}>
+                    {userMessage}
+                </div>
+            </div>
+        );
     }
 
     private get userMessage() {
@@ -175,48 +186,42 @@ class App extends React.Component<IAppProps, IAppState> {
         const evolution = this.state.evolution;
         if (orbitState === OrbitState.HELICOPTER) {
             return (
-                <div style={{textAlign: 'center'}}>
-                    {
-                        spot ? (
-                            gotch && gotch.master ? (
-                                <div>
-                                    <h3>This is &quot;{gotch.master}&quot;</h3>
-                                    <p>
-                                        You can
-                                        <Clicky label={`Visit ${gotch.master}`} click={() => console.log('VISIT')}/>
-                                        or choose another one.
-                                    </p>
-                                    {
-                                        master ? (
-                                            <p>This shouldn't happen</p>
-                                        ) : (
-                                            <p>
-                                                Choose a green one and you can make it your new home.
-                                            </p>
-                                        )
-                                    }
-                                </div>
-                            ) : ( // spot and no gotch
-                                <div>
-                                    <h3>Free Gotch!</h3>
-                                    <p>
-                                        This one can be your new home!
-                                        <Clicky label={'Make this home'} click={() => console.log('HOME')}/>
-                                    </p>
-                                </div>
-                            )
-                        ) : ( // no spot or gotch
-                            <div>
-                                <h3>Welcome to Galapagotch Island!</h3>
-                                <p>
-                                    You are seeing the island from above,
-                                    and in some places you see dormant gotchis. You can visit them.
-                                    Just click on one of them and zoom in.
-                                </p>
-                            </div>
-                        )
-                    }
-                </div>
+                spot ? (
+                    gotch && gotch.master ? (
+                        <div>
+                            <h3>This is &quot;{gotch.master}&quot;</h3>
+                            <p>
+                                You can
+                                <Clicky label={`Visit ${gotch.master}`} click={() => console.log('VISIT')}/>
+                                or choose another one.
+                            </p>
+                            {
+                                master ? (
+                                    <p>This shouldn't happen</p>
+                                ) : (
+                                    <p>Choose a green one and you can make it your new home.</p>
+                                )
+                            }
+                        </div>
+                    ) : ( // spot and no gotch
+                        <div>
+                            <h3>Free Gotch!</h3>
+                            <p>
+                                This one can be your new home!
+                                <Clicky label={'Make this home'} click={() => console.log('HOME')}/>
+                            </p>
+                        </div>
+                    )
+                ) : ( // no spot or gotch
+                    <div>
+                        <h3>Welcome to Galapagotch Island!</h3>
+                        <p>
+                            You are seeing the island from above,
+                            and in some places you see dormant gotchis. You can visit them.
+                            Just click on one of them and zoom in.
+                        </p>
+                    </div>
+                )
             );
         }
         if (evolution) {
@@ -231,6 +236,10 @@ class App extends React.Component<IAppProps, IAppState> {
                 <div>
                     <h3>{gotchi.master}</h3>
                     <p>Driving!</p>
+                    <Clicky label="Enough" click={() => {
+                        this.selectedSpotSubject.next(undefined);
+                        this.setState(selectSpot(undefined));
+                    }}/>
                 </div>
             );
         }
@@ -238,22 +247,16 @@ class App extends React.Component<IAppProps, IAppState> {
             return (
                 <div>
                     <h3>{gotch.master}</h3>
-                    <Clicky label="Launch" click={() => this.createGotchi(gotch)}/>
-                    <Clicky label="Evolve" click={() => this.createEvolution(gotch)}/>
+                    <Clicky label="Launch" click={() =>
+                        gotch.createGotchi(INITIAL_JOINT_COUNT).then((newbornGotchi: Gotchi) => {
+                            this.setState(startGotchi(newbornGotchi));
+                        })
+                    }/>
+                    <Clicky label="Evolve" click={() => this.setState(startEvolution(gotch))}/>
                 </div>
             );
         }
         return null;
-    }
-
-    private createGotchi(gotch: Gotch) {
-        gotch.createGotchi(INITIAL_JOINT_COUNT).then((newbornGotchi: Gotchi) => {
-            this.setState(startGotchi(newbornGotchi));
-        });
-    }
-
-    private createEvolution(gotch: Gotch) {
-        this.setState(startEvolution(gotch));
     }
 
     // private spotSelected = (spot?: Spot) => {
