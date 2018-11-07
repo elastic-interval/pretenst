@@ -18,7 +18,7 @@ export enum Surface {
 
 export interface IViewState {
     islandIsLegal: boolean;
-    masterGotch?: Gotch;
+    master?: string;
     freeGotch?: Gotch;
 }
 
@@ -99,7 +99,7 @@ export class Spot {
         let color = SURFACE_UNKNOWN_COLOR;
         switch (this.surface) {
             case Surface.Land:
-                if (viewState.masterGotch) {
+                if (viewState.master) {
                     color = SURFACE_LAND_COLOR;
                 }
                 else if (viewState.freeGotch) {

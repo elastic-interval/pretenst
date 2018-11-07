@@ -67,7 +67,6 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
                         <IslandComponent
                             setMesh={(key: MeshKey, mesh: Mesh) => this.selector.setMesh(key, mesh)}
                             island={this.props.island}
-                            onlyMasterGotch={this.props.onlyMasterGotch}
                         />
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>

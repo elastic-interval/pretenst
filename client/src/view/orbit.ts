@@ -27,6 +27,11 @@ export class Orbit {
         orbit.minDistance = 7;
         orbit.enableKeys = false;
         orbit.target = this.target;
+        // orbit.enablePan = false;
+        // orbit.enableZoom = true;
+        // orbit.enableDamping = true;
+        // orbit.dampingFactor = 0.07;
+        // orbit.rotateSpeed = 0.07;
         const updateLastChanged = () => this.lastChanged = Date.now();
         orbit.addEventListener('start', updateLastChanged);
         orbit.addEventListener('end', updateLastChanged);

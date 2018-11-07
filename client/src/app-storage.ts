@@ -3,9 +3,20 @@ import {Gotch} from './island/gotch';
 import {IslandPattern} from './island/island';
 import {IGenomeData} from './genetics/genome';
 
+const MASTER_KEY = 'master';
+
 export class AppStorage {
 
     constructor(private storage: Storage) {
+    }
+
+    public getMaster(): string | undefined {
+        const value = this.storage.getItem(MASTER_KEY);
+        return value ? value : undefined;
+    }
+
+    public setMaster(master: string) {
+        this.storage.setItem(MASTER_KEY, master);
     }
 
     public getPhysicsFeature(feature: PhysicsFeature): number {

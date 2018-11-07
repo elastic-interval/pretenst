@@ -1,8 +1,8 @@
 import {CSSProperties} from 'react';
 
 const MARGIN = '20px';
-const CORNER_RADIUS = '60px';
-const SMALL = '100px';
+const CORNER_RADIUS = '20px';
+const SMALL = '200px';
 const QUARTER = '25%';
 const HALF = '50%';
 
@@ -22,7 +22,7 @@ export function insetStyle(style: InsetStyle): CSSProperties {
         backgroundColor: 'black',
         borderColor: 'white',
         borderStyle: 'solid',
-        padding: '20px 20px 20px 20px'
+        padding: '5px 5px 5px 5px'
     };
     switch (style) {
         case InsetStyle.TOP_LEFT:

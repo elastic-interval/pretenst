@@ -10,7 +10,7 @@ import {MeshKey} from './spot-selector';
 
 export interface IslandComponentProps {
     island: Island;
-    onlyMasterGotch: boolean;
+    master?: string;
     setMesh: (key: string, ref: Mesh) => void;
 }
 
@@ -62,17 +62,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         }
     }
 
-    public componentDidUpdate(prevProps: Readonly<IslandComponentProps>, prevState: Readonly<IslandComponentState>, snapshot: any) {
-        if (prevProps.onlyMasterGotch !== this.props.onlyMasterGotch) {
-            this.setState((state: IslandComponentState) => {
-                state.spotsGeometry.dispose();
-                return {
-                    spotsGeometry: this.spotsGeometry,
-                }
-            });
-        }
-    }
-
     public componentWillUnmount() {
         if (this.islandSubscription) {
             this.islandSubscription.unsubscribe();
@@ -116,14 +105,13 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     private get spotsGeometry(): Geometry {
         const island = this.props.island;
-        const spots = this.props.onlyMasterGotch && this.props.island.masterGotch ? this.props.island.masterGotch.spots : island.spots;
         const viewState: IViewState = {
             islandIsLegal: island.legal,
             freeGotch: island.freeGotch,
-            masterGotch: island.masterGotch
+            master: this.props.master
         };
         const geometry = new Geometry();
-        spots.forEach((spot, index) => {
+        island.spots.forEach((spot, index) => {
             spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces, viewState);
         });
         geometry.computeBoundingSphere();
@@ -154,10 +142,10 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     }
 
     private isHomeGotch(gotch: Gotch): boolean {
-        return !!gotch.genome && gotch.genome.master === this.props.island.master;
+        return !!gotch.genome && gotch.genome.master === this.props.master;
     }
 
     private isForeignGotch(gotch: Gotch): boolean {
-        return !!gotch.genome && gotch.genome.master !== this.props.island.master;
+        return !!gotch.genome && gotch.genome.master !== this.props.master;
     }
 }

@@ -15,7 +15,6 @@ export interface IslandPattern {
 export interface IslandChange {
     gotchCount: number;
     spotCount: number;
-    masterGotch?: Gotch;
 }
 
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
@@ -31,18 +30,9 @@ export class Island {
     public islandChange = new BehaviorSubject<IslandChange>({gotchCount: 0, spotCount: 0});
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
-    public masterGotch?: Gotch;
 
     constructor(public islandName: string, private gotchiFactory: IGotchiFactory, private storage: AppStorage) {
         this.apply(storage.getIsland(islandName));
-    }
-
-    public set master(masterName: string | undefined) {
-        this.masterGotch = this.gotches.find(gotch => gotch.master === masterName);
-    }
-
-    public get master(): string | undefined {
-        return this.masterGotch ? this.masterGotch.master : undefined;
     }
 
     public get freeGotch(): Gotch | undefined {
@@ -74,8 +64,7 @@ export class Island {
         this.spots.forEach(spot => spot.refresh());
         this.islandChange.next({
             gotchCount: this.gotches.length,
-            spotCount: this.spots.length,
-            masterGotch: this.master ? this.findGotch(this.master) : undefined
+            spotCount: this.spots.length
         });
     }
 

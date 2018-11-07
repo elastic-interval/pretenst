@@ -103,7 +103,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
                         <IslandComponent
                             island={this.props.island}
-                            onlyMasterGotch={false}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
                         {!this.props.evolution ? null : <EvolutionComponent evolution={this.props.evolution}/>}
@@ -151,7 +150,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         };
         const geometry = new Geometry();
         const spot = this.props.selectedSpot.getValue();
-        if (spot && this.orbit && !this.orbit.changing) {
+        const action = this.props.evolution || this.props.gotchi;
+        if (spot && this.orbit && !this.orbit.changing && !action) {
             const target = spot.centerOfGotch ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
             geometry.vertices = [userCoords(0), target, userCoords(-1), target, userCoords(1), target];
         }

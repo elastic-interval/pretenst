@@ -5,18 +5,18 @@ import {Island} from './island/island';
 import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
 import {Gotchi} from './gotchi/gotchi';
-import {Genome} from './genetics/genome';
+import {Genome, IGenomeData} from './genetics/genome';
 import {Vector3} from 'three';
 import {Physics} from './body/physics';
-import {IdentityPanel} from './view/identity-panel';
 import {Spot} from './island/spot';
-import {Evolution} from './gotchi/evolution';
+import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution';
 import {Gotch} from './island/gotch';
 import {InsetStyle, insetStyle} from './view/layout';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {OrbitState} from './view/orbit';
 import {AppStorage} from './app-storage';
 import {Subscription} from 'rxjs/Subscription';
+import {Trip} from './island/trip';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -28,7 +28,9 @@ export interface IAppState {
     width: number;
     height: number;
 
+    master?: string
     orbitState: OrbitState;
+    spot?: Spot;
     gotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
@@ -47,45 +49,47 @@ function dispose(state: IAppState) {
     }
 }
 
-// function startEvolution(gotch: Gotch) {
-//     return (state: IAppState, props: IAppProps) => {
-//         dispose(state);
-//         return {
-//             gotchi: undefined,
-//             evolution: new Evolution(gotch, new Trip([]), (genomeData: IGenomeData) => {
-//                 console.log(`Saving genome data`);
-//                 props.storage.setGenome(gotch, genomeData);
-//             })
-//         };
-//     };
-// }
-//
-// function startGotchi(gotchi: Gotchi) {
-//     return (state: IAppState) => {
-//         dispose(state);
-//         // gotchi.travel = state.trip.createTravel(0);
-//         return {
-//             gotchi,
-//             evolution: undefined,
-//         };
-//     };
-// }
-
-function selectGotch(gotch: Gotch) {
-    return (state: IAppState) => {
+function startEvolution(gotch: Gotch) {
+    return (state: IAppState, props: IAppProps) => {
         dispose(state);
         return {
-            gotch,
             gotchi: undefined,
+            evolution: new Evolution(gotch, new Trip([]), (genomeData: IGenomeData) => {
+                console.log(`Saving genome data`);
+                props.storage.setGenome(gotch, genomeData);
+            })
+        };
+    };
+}
+
+function startGotchi(gotchi: Gotchi) {
+    return (state: IAppState) => {
+        dispose(state);
+        // gotchi.travel = state.trip.createTravel(0);
+        return {
+            gotchi,
             evolution: undefined,
         };
     };
 }
 
+interface IClicky {
+    label: string;
+    click: () => void;
+}
+
+function Clicky(params: IClicky) {
+    return (
+        <span style={{padding: '5px 5px 5px 5px'}}>
+            <button onClick={params.click}>{params.label}</button>
+        </span>
+    );
+}
+
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = [];
-    private orbitState = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
-    private selectedSpot = new BehaviorSubject<Spot | undefined>(undefined);
+    private orbitStateSubject = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
+    private selectedSpotSubject = new BehaviorSubject<Spot | undefined>(undefined);
 
     private physics: Physics;
 
@@ -103,8 +107,9 @@ class App extends React.Component<IAppProps, IAppState> {
             }
         };
         this.state = {
-            orbitState: this.orbitState.getValue(),
+            orbitState: this.orbitStateSubject.getValue(),
             island: new Island('GalapagotchIsland', gotchiFactory, this.props.storage),
+            master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight
         };
@@ -112,8 +117,20 @@ class App extends React.Component<IAppProps, IAppState> {
 
     public componentDidMount() {
         window.addEventListener("resize", () => this.setState(updateDimensions));
-        this.subs.push(this.selectedSpot.subscribe(this.spotSelected));
-        this.subs.push(this.orbitState.subscribe(orbitState => this.setState({orbitState})));
+        this.subs.push(this.selectedSpotSubject.subscribe(maybeSpot => {
+            const spot = maybeSpot ? maybeSpot : this.state.spot;
+            const gotch = maybeSpot ? maybeSpot.centerOfGotch : undefined;
+            this.setState((state: IAppState) => {
+                dispose(state);
+                return {
+                    spot,
+                    gotch,
+                    gotchi: undefined,
+                    evolution: undefined,
+                };
+            });
+        }));
+        this.subs.push(this.orbitStateSubject.subscribe(orbitState => this.setState({orbitState})));
     }
 
     public componentWillUnmount() {
@@ -128,8 +145,8 @@ class App extends React.Component<IAppProps, IAppState> {
                     island={this.state.island}
                     width={this.state.width}
                     height={this.state.height}
-                    selectedSpot={this.selectedSpot}
-                    orbitState={this.orbitState}
+                    selectedSpot={this.selectedSpotSubject}
+                    orbitState={this.orbitStateSubject}
                     gotch={this.state.gotch}
                     evolution={this.state.evolution}
                     gotchi={this.state.gotchi}
@@ -140,60 +157,145 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     private get insetPanel() {
-        const style = insetStyle(
-            this.state.orbitState === OrbitState.CRUISE ? InsetStyle.TOP_MIDDLE : InsetStyle.BOTTOM_MIDDLE
-        );
-        return (
-            <div style={style}>
-                <IdentityPanel
-                    island={this.state.island}
-                    master={undefined}
-                    selectedSpot={this.selectedSpot}
-                    storage={this.props.storage}
-                />
-            </div>
-        );
+        const userMessage = this.userMessage;
+        if (!userMessage) {
+            return null;
+        }
+        const cruising = this.state.orbitState === OrbitState.CRUISE;
+        const style = insetStyle(cruising ? InsetStyle.TOP_MIDDLE : InsetStyle.BOTTOM_MIDDLE);
+        return <div style={style}>{userMessage}</div>;
     }
 
-    private spotSelected = (spot?: Spot) => {
-        if (spot) {
-            if (spot.centerOfGotch) {
-                this.setState(selectGotch(spot.centerOfGotch));
-            }
+    private get userMessage() {
+        const orbitState = this.state.orbitState;
+        const spot = this.state.spot;
+        const gotch = this.state.gotch;
+        const master = this.state.master;
+        const gotchi = this.state.gotchi;
+        const evolution = this.state.evolution;
+        if (orbitState === OrbitState.HELICOPTER) {
+            return (
+                <div style={{textAlign: 'center'}}>
+                    {
+                        spot ? (
+                            gotch && gotch.master ? (
+                                <div>
+                                    <h3>This is &quot;{gotch.master}&quot;</h3>
+                                    <p>
+                                        You can
+                                        <Clicky label={`Visit ${gotch.master}`} click={() => console.log('VISIT')}/>
+                                        or choose another one.
+                                    </p>
+                                    {
+                                        master ? (
+                                            <p>This shouldn't happen</p>
+                                        ) : (
+                                            <p>
+                                                Choose a green one and you can make it your new home.
+                                            </p>
+                                        )
+                                    }
+                                </div>
+                            ) : ( // spot and no gotch
+                                <div>
+                                    <h3>Free Gotch!</h3>
+                                    <p>
+                                        This one can be your new home!
+                                        <Clicky label={'Make this home'} click={() => console.log('HOME')}/>
+                                    </p>
+                                </div>
+                            )
+                        ) : ( // no spot or gotch
+                            <div>
+                                <h3>Welcome to Galapagotch Island!</h3>
+                                <p>
+                                    You are seeing the island from above,
+                                    and in some places you see dormant gotchis. You can visit them.
+                                    Just click on one of them and zoom in.
+                                </p>
+                            </div>
+                        )
+                    }
+                </div>
+            );
         }
-        // const island = this.state.island;
-        // const centerOfGotch = spot.centerOfGotch;
-        // if (centerOfGotch) {
-        //     if (centerOfGotch.genome) {
-        //         return;
-        //     }
-        //     if (island.legal && centerOfGotch === island.freeGotch) {
-        //         // centerOfGotch.genome = freshGenomeFor(MASTER);
-        //         island.refresh();
-        //         island.save();
-        //     }
-        // } else if (spot.free) {
-        //     switch (spot.surface) {
-        //         case Surface.Unknown:
-        //             spot.surface = Surface.Water;
-        //             break;
-        //         case Surface.Land:
-        //             spot.surface = Surface.Water;
-        //             break;
-        //         case Surface.Water:
-        //             spot.surface = Surface.Land;
-        //             break;
-        //     }
-        //     island.refresh();
-        // } else if (spot.canBeNewGotch) {
-        // // } else if (spot.canBeNewGotch && !this.state.masterGotch) {
-        //     island.removeFreeGotches();
-        //     if (spot.canBeNewGotch) {
-        //         // island.createGotch(spot, MASTER);
-        //     }
-        //     island.refresh();
-        // }
-    };
+        if (evolution) {
+            return (
+                <p>
+                    You are evolving
+                </p>
+            );
+        }
+        if (gotchi) {
+            return (
+                <div>
+                    <h3>{gotchi.master}</h3>
+                    <p>Driving!</p>
+                </div>
+            );
+        }
+        if (gotch) {
+            return (
+                <div>
+                    <h3>{gotch.master}</h3>
+                    <Clicky label="Launch" click={() => this.createGotchi(gotch)}/>
+                    <Clicky label="Evolve" click={() => this.createEvolution(gotch)}/>
+                </div>
+            );
+        }
+        return null;
+    }
+
+    private createGotchi(gotch: Gotch) {
+        gotch.createGotchi(INITIAL_JOINT_COUNT).then((newbornGotchi: Gotchi) => {
+            this.setState(startGotchi(newbornGotchi));
+        });
+    }
+
+    private createEvolution(gotch: Gotch) {
+        this.setState(startEvolution(gotch));
+    }
+
+    // private spotSelected = (spot?: Spot) => {
+    //     if (spot) {
+    //         if (spot.centerOfGotch) {
+    //             console.log('spot selected');
+    //             this.setState(selectGotch(spot.centerOfGotch));
+    //         }
+    //     }
+    //     const island = this.state.island;
+    //     const centerOfGotch = spot.centerOfGotch;
+    //     if (centerOfGotch) {
+    //         if (centerOfGotch.genome) {
+    //             return;
+    //         }
+    //         if (island.legal && centerOfGotch === island.freeGotch) {
+    //             // centerOfGotch.genome = freshGenomeFor(MASTER);
+    //             island.refresh();
+    //             island.save();
+    //         }
+    //     } else if (spot.free) {
+    //         switch (spot.surface) {
+    //             case Surface.Unknown:
+    //                 spot.surface = Surface.Water;
+    //                 break;
+    //             case Surface.Land:
+    //                 spot.surface = Surface.Water;
+    //                 break;
+    //             case Surface.Water:
+    //                 spot.surface = Surface.Land;
+    //                 break;
+    //         }
+    //         island.refresh();
+    //     } else if (spot.canBeNewGotch) {
+    //     // } else if (spot.canBeNewGotch && !this.state.masterGotch) {
+    //         island.removeFreeGotches();
+    //         if (spot.canBeNewGotch) {
+    //             // island.createGotch(spot, MASTER);
+    //         }
+    //         island.refresh();
+    //     }
+    // };
 }
 
 export default App;
