@@ -150,8 +150,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 .unproject(this.perspectiveCamera);
         };
         const geometry = new Geometry();
-        if (this.orbit && !this.orbit.changing) {
-            const target = this.target ? this.target : this.props.island.midpoint;
+        const spot = this.props.selectedSpot.getValue();
+        if (spot && this.orbit && !this.orbit.changing) {
+            const target = spot.centerOfGotch ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
             geometry.vertices = [userCoords(0), target, userCoords(-1), target, userCoords(1), target];
         }
         return geometry;
