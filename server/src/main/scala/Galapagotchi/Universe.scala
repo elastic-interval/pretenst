@@ -1,4 +1,4 @@
-package PatchTokens
+package Galapagotchi
 
 import akka.actor.SupervisorStrategy.Resume
 import akka.actor.{Actor, ActorLogging, OneForOneStrategy, Props}

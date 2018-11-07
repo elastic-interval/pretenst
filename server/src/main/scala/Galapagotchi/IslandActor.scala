@@ -1,10 +1,10 @@
-package PatchTokens
+package Galapagotchi
 
-import PatchTokens.Vocabulary.Patch
+import Galapagotchi.Vocabulary.Gotch
 import akka.actor.ActorLogging
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 
-object PatchActor {
+object IslandActor {
 
   sealed trait Command
 
@@ -17,24 +17,24 @@ object PatchActor {
   sealed trait Event extends Serializable
 
 
-  case class PatchSnapshot(everything: String)
+  case class IslandSnapshot(everything: String)
 
 
 }
 
-class PatchActor extends PersistentActor with ActorLogging {
+class IslandActor extends PersistentActor with ActorLogging {
 
-  import PatchActor._
+  import IslandActor._
 
-  var patches = Seq.empty[Patch]
+  var patches = Seq.empty[Gotch]
 
-  override def persistenceId: String = "patch"
+  override def persistenceId: String = "island"
 
   override def receiveRecover: Receive = {
 
     case event: Event =>
 
-    case SnapshotOffer(metadata, basketSnapshot: PatchSnapshot) =>
+    case SnapshotOffer(metadata, islandSnapshot: IslandSnapshot) =>
 
     case RecoveryCompleted =>
       log.info(s"Recovery complete for persistence ID: $persistenceId")
@@ -43,7 +43,7 @@ class PatchActor extends PersistentActor with ActorLogging {
   override def receiveCommand: Receive = {
 
     case Hello =>
-      sender() ! "Hi from PatchActor"
+      sender() ! "Hi from IslandActor"
 
   }
 
