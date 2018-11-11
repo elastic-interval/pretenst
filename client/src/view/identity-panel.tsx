@@ -2,7 +2,6 @@ import * as React from 'react';
 import {ChangeEvent, FormEvent} from 'react';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Spot} from '../island/spot';
-import {Subscription} from 'rxjs/Subscription';
 import {AppStorage} from '../app-storage';
 import {Island} from '../island/island';
 
@@ -15,14 +14,11 @@ export interface IIdentityPanelProps {
 
 interface IIdentityPanelState {
     islandMasters: string[];
-    selectedSpot?: Spot;
     name: string;
     error?: string;
 }
 
 export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentityPanelState> {
-    private subs: Subscription[] = [];
-
     constructor(props: IIdentityPanelProps) {
         super(props);
         this.handleNameChange = this.handleNameChange.bind(this);
@@ -36,14 +32,6 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
         };
     }
 
-    public componentDidMount() {
-        this.subs.push(this.props.selectedSpot.subscribe(selectedSpot => this.setState({selectedSpot})));
-    }
-
-    public componentWillUnmount() {
-        this.subs.forEach(s => s.unsubscribe());
-    }
-
     public render() {
         if (this.props.master) {
             return (
@@ -52,8 +40,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
                 </div>
             );
         } else {
-            // const gotch = this.state.selectedSpot ? this.state.selectedSpot.centerOfGotch : null;
-            const candidate = this.state.selectedSpot ? this.state.selectedSpot.canBeNewGotch : false;
+            const candidate = false;
             return (
                 <div>
                     <p>
@@ -63,7 +50,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
                     </p>
                     <form onSubmit={this.handleSubmitName}>
                         <label>
-                            <strong>{candidate ? 'candidate':'your'} Name:</strong>
+                            <strong>Name:</strong>
                             <input type="text" value={this.state.name} onChange={this.handleNameChange}/><strong>{this.state.error}</strong>
                         </label>
                         <input type="submit" disabled={!candidate} value="Choose this Gotch!"/>
