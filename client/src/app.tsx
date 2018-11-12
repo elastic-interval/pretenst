@@ -245,15 +245,33 @@ class App extends React.Component<IAppProps, IAppState> {
         }
         if (gotch) {
             return (
-                <div>
-                    <h3>{gotch.master}</h3>
-                    <Clicky label="Launch" click={() =>
-                        gotch.createGotchi(INITIAL_JOINT_COUNT).then((newbornGotchi: Gotchi) => {
-                            this.setState(startGotchi(newbornGotchi));
-                        })
-                    }/>
-                    <Clicky label="Evolve" click={() => this.setState(startEvolution(gotch))}/>
-                </div>
+                gotch.master === master ? (
+                    <div>
+                        <h3>This is your gotch!</h3>
+                        You can
+                        <Clicky label={`Launch ${gotch.master}`} click={() =>
+                            gotch.createGotchi(INITIAL_JOINT_COUNT).then((newbornGotchi: Gotchi) => {
+                                this.setState(startGotchi(newbornGotchi));
+                            })
+                        }/>
+                        and drive it around.
+                        If it doesn't work well enough, you can
+                        <Clicky label="Evolve" click={() => this.setState(startEvolution(gotch))}/>
+                        it for a while so it learns muscle coordination.
+                    </div>
+
+                ): (
+                    <div>
+                        <h3>This is "{gotch.master}"</h3>
+                        You can
+                        <Clicky label={`Launch ${gotch.master}`} click={() =>
+                            gotch.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
+                                this.setState(startGotchi(freshGotchi));
+                            })
+                        }/>
+                        to see it grow from the seed.
+                    </div>
+                )
             );
         }
         return null;
