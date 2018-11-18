@@ -12,11 +12,6 @@ export interface IslandPattern {
     spots: string;
 }
 
-export interface IslandChange {
-    gotchCount: number;
-    spotCount: number;
-}
-
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
 const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacent) => {
     if (withMax) {
@@ -27,23 +22,45 @@ const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacen
 });
 
 export class Island {
-    public islandChange = new BehaviorSubject<IslandChange>({gotchCount: 0, spotCount: 0});
     public spots: Spot[] = [];
     public gotches: Gotch[] = [];
+    public activeGotchIndex = -1;
 
-    constructor(public islandName: string, private gotchiFactory: IGotchiFactory, private storage: AppStorage) {
+    constructor(
+        public islandName: string,
+        public islandState: BehaviorSubject<boolean>,
+        private gotchiFactory: IGotchiFactory,
+        private storage: AppStorage
+    ) {
         this.apply(storage.getIsland(islandName));
+    }
+
+    public get gotchesWithSeeds() {
+        return this.gotches.filter((gotch: Gotch, index:number) => !!gotch.master && index !== this.activeGotchIndex);
+    }
+
+    public get isLegal(): boolean {
+        return !this.spots.find(spot => !spot.legal);
     }
 
     public get freeGotch(): Gotch | undefined {
         return this.gotches.find(gotch => !gotch.genome);
     }
 
-    public get legal(): boolean {
-        return !this.spots.find(spot => !spot.legal);
+    public findGotch(master: string): Gotch | undefined {
+        return this.gotches.find(gotch => !!gotch.genome && gotch.genome.master === master)
     }
 
-    public refresh() {
+    public setActive(master?: string) {
+        this.activeGotchIndex = !master ? -1 : this.gotches.findIndex(gotch => !!gotch.genome && gotch.genome.master === master);
+        this.announceChange();
+    }
+
+    public get activeGotch(): Gotch | undefined {
+        return this.activeGotchIndex >= 0 ? this.gotches[this.activeGotchIndex] : undefined;
+    }
+
+    public refreshStructure() {
         this.spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot);
             spot.connected = spot.adjacentSpots.length < 6;
@@ -62,23 +79,16 @@ export class Island {
             });
         }
         this.spots.forEach(spot => spot.refresh());
-        this.islandChange.next({
-            gotchCount: this.gotches.length,
-            spotCount: this.spots.length
-        });
+        this.announceChange();
     }
 
     public save() {
-        if (this.legal) {
+        if (this.isLegal) {
             this.storage.setIsland(this.islandName, this.pattern);
             console.log(`Saved ${this.islandName}`);
         } else {
             console.log(`Not legal yet: ${this.islandName}`);
         }
-    }
-
-    public findGotch(master: string): Gotch | undefined {
-        return this.gotches.find(gotch => !!gotch.genome && gotch.genome.master === master)
     }
 
     public removeFreeGotches(): void {
@@ -114,7 +124,7 @@ export class Island {
     }
 
     public get pattern(): IslandPattern {
-        if (!this.legal) {
+        if (!this.isLegal) {
             throw new Error('Saving illegal island')
         }
         this.spots.sort(sortSpotsOnCoord);
@@ -125,6 +135,10 @@ export class Island {
     }
 
     // ================================================================================================
+
+    private announceChange() {
+        this.islandState.next(this.activeGotchIndex >= 0);
+    }
 
     private apply(pattern: IslandPattern) {
         let gotch: Gotch | undefined = this.getOrCreateGotch(undefined, zero);
@@ -180,7 +194,7 @@ export class Island {
                 g.genome = new Genome(genomeData);
             }
         });
-        this.refresh();
+        this.refreshStructure();
     }
 
     private gotchAroundSpot(spot: Spot): Gotch {

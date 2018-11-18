@@ -48,7 +48,6 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
                                 material={GOTCHI_POINTER_MATERIAL}
                             />
                             <R3.Mesh
-                                ref={(node: any) => gotchi.facesMeshNode = node}
                                 geometry={fabric.facesGeometry}
                                 material={GOTCHI_GHOST_MATERIAL}
                             />

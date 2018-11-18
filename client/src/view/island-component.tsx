@@ -4,7 +4,6 @@ import {Geometry, Mesh} from 'three';
 import {Island} from '../island/island';
 import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
 import {Subscription} from 'rxjs/Subscription';
-import {Gotch} from '../island/gotch';
 import {IViewState} from '../island/spot';
 import {MeshKey} from './spot-selector';
 
@@ -47,7 +46,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     public componentWillMount() {
         if (!this.islandSubscription) {
-            this.islandSubscription = this.props.island.islandChange.subscribe(() => {
+            this.islandSubscription = this.props.island.islandState.subscribe(() => {
                 this.setState((state: IslandComponentState) => {
                     dispose(state);
                     return {
@@ -106,7 +105,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     private get spotsGeometry(): Geometry {
         const island = this.props.island;
         const viewState: IViewState = {
-            islandIsLegal: island.legal,
+            islandIsLegal: island.isLegal,
             freeGotch: island.freeGotch,
             master: this.props.master
         };
@@ -121,31 +120,19 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     private createHangersGeometry(foreign: boolean): Geometry {
         const gotches = this.props.island.gotches;
         const geometry = new Geometry();
-        gotches
-            .filter(gotch => foreign ? this.isForeignGotch(gotch) : this.isHomeGotch(gotch))
-            .forEach(gotch => gotch.centerSpot.addHangerGeometry(geometry.vertices));
+        gotches.forEach(gotch => gotch.centerSpot.addHangerGeometry(geometry.vertices));
         geometry.computeBoundingSphere();
         return geometry;
     }
 
     private createSeedGeometry(foreign: boolean): Geometry {
-        const gotches = this.props.island.gotches;
+        const gotches = this.props.island.gotchesWithSeeds;
         const geometry = new Geometry();
         if (foreign) {
-            gotches
-                .filter(gotch => foreign ? this.isForeignGotch(gotch) : this.isHomeGotch(gotch))
-                .forEach(gotch => gotch.centerSpot.addSeed(MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces));
+            gotches.forEach(gotch => gotch.centerSpot.addSeed(MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces));
             geometry.computeFaceNormals();
             geometry.computeBoundingSphere();
         }
         return geometry;
-    }
-
-    private isHomeGotch(gotch: Gotch): boolean {
-        return !!gotch.genome && gotch.genome.master === this.props.master;
-    }
-
-    private isForeignGotch(gotch: Gotch): boolean {
-        return !!gotch.genome && gotch.genome.master !== this.props.master;
     }
 }

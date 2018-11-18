@@ -3,6 +3,7 @@ import {equals, ICoords, Spot, Surface} from './spot';
 import {Genome} from '../genetics/genome';
 import {Vector3} from 'three';
 import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
+import {Trip} from './trip';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 
@@ -59,8 +60,13 @@ export class Gotch {
         }
     }
 
+    public createStupidTrip(): Trip {
+        const spots = this.centerSpot.adjacentSpots.filter(spot => spot.surface === Surface.Land);
+        return new Trip([this.centerSpot, spots[0]]);
+    }
+
     public createGotchi(jointCount: number, mutatedGenome?: Genome): Promise<Gotchi> {
-        const genome = mutatedGenome ? mutatedGenome: this.genome;
+        const genome = mutatedGenome ? mutatedGenome : this.genome;
         if (!genome) {
             throw new Error('Create gotchi but no genome');
         }

@@ -1,6 +1,6 @@
 import * as React from 'react';
 import './app.css';
-import {IFabricExports} from './body/fabric-exports';
+import {Direction, IFabricExports} from './body/fabric-exports';
 import {Island} from './island/island';
 import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
@@ -34,6 +34,7 @@ export interface IAppState {
     gotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
+    trip?: Trip;
 }
 
 const updateDimensions = (): any => {
@@ -52,12 +53,15 @@ function dispose(state: IAppState) {
 function startEvolution(gotch: Gotch) {
     return (state: IAppState, props: IAppProps) => {
         dispose(state);
+        state.island.setActive(gotch.master);
+        const trip = gotch.createStupidTrip();
         return {
             gotchi: undefined,
-            evolution: new Evolution(gotch, new Trip([]), (genomeData: IGenomeData) => {
+            evolution: new Evolution(gotch, trip, (genomeData: IGenomeData) => {
                 console.log(`Saving genome data`);
                 props.storage.setGenome(gotch, genomeData);
-            })
+            }),
+            trip
         };
     };
 }
@@ -77,6 +81,7 @@ function selectSpot(spot?: Spot) {
     const gotch = spot ? spot.centerOfGotch : undefined;
     return (state: IAppState) => {
         dispose(state);
+        state.island.setActive();
         return {
             spot,
             gotch,
@@ -103,12 +108,13 @@ class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = [];
     private orbitStateSubject = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
     private selectedSpotSubject = new BehaviorSubject<Spot | undefined>(undefined);
-
+    private islandState: BehaviorSubject<boolean>;
     private physics: Physics;
 
     constructor(props: IAppProps) {
         super(props);
         this.physics = new Physics(props.storage);
+        this.islandState = new BehaviorSubject<boolean>(false);
         const gotchiFactory = {
             createGotchiAt: (location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
                 return this.props.createFabricInstance().then(fabricExports => {
@@ -121,7 +127,7 @@ class App extends React.Component<IAppProps, IAppState> {
         };
         this.state = {
             orbitState: this.orbitStateSubject.getValue(),
-            island: new Island('GalapagotchIsland', gotchiFactory, this.props.storage),
+            island: new Island('GalapagotchIsland', this.islandState, gotchiFactory, this.props.storage),
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight
@@ -154,6 +160,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     orbitState={this.orbitStateSubject}
                     gotch={this.state.gotch}
                     evolution={this.state.evolution}
+                    trip={this.state.trip}
                     gotchi={this.state.gotchi}
                 />
                 {this.insetPanel}
@@ -226,20 +233,34 @@ class App extends React.Component<IAppProps, IAppState> {
         }
         if (evolution) {
             return (
-                <p>
-                    You are evolving
-                </p>
+                <div>
+                    <p>
+                        You are evolving. Fancy that!
+                    </p>
+                    <Clicky label="Enough" click={() => {
+                        this.selectedSpotSubject.next(undefined);
+                        this.setState(selectSpot(undefined));
+                    }}/>
+                </div>
             );
         }
         if (gotchi) {
             return (
                 <div>
                     <h3>{gotchi.master}</h3>
-                    <p>Driving!</p>
-                    <Clicky label="Enough" click={() => {
-                        this.selectedSpotSubject.next(undefined);
-                        this.setState(selectSpot(undefined));
-                    }}/>
+                    <p>
+                        <p>Driving!</p>
+                        <Clicky label="Enough" click={() => {
+                            this.selectedSpotSubject.next(undefined);
+                            this.setState(selectSpot(undefined));
+                        }}/>
+                    </p>
+                    <p>
+                        <Clicky label="Left" click={() => this.gotchiGo(Direction.LEFT)}/>
+                        <Clicky label="Right" click={() => this.gotchiGo(Direction.RIGHT)}/>
+                        <Clicky label="Forward" click={() => this.gotchiGo(Direction.FORWARD)}/>
+                        <Clicky label="Reverse" click={() => this.gotchiGo(Direction.REVERSE)}/>
+                    </p>
                 </div>
             );
         }
@@ -248,33 +269,55 @@ class App extends React.Component<IAppProps, IAppState> {
                 gotch.master === master ? (
                     <div>
                         <h3>This is your gotch!</h3>
-                        You can
-                        <Clicky label={`Launch ${gotch.master}`} click={() =>
-                            gotch.createGotchi(INITIAL_JOINT_COUNT).then((newbornGotchi: Gotchi) => {
-                                this.setState(startGotchi(newbornGotchi));
-                            })
-                        }/>
-                        and drive it around.
-                        If it doesn't work well enough, you can
-                        <Clicky label="Evolve" click={() => this.setState(startEvolution(gotch))}/>
-                        it for a while so it learns muscle coordination.
+                        <p>
+                            You can
+                            <Clicky label={`Launch ${gotch.master}`} click={() => this.createGotchi(gotch)}/>
+                            and drive it around.
+                        </p>
+                        <p>
+                            If it doesn't work well enough, you can
+                            <Clicky label="Evolve" click={() => this.createEvolution(gotch)}/>
+                            it for a while so it learns muscle coordination.
+                        </p>
                     </div>
 
-                ): (
+                ) : (
                     <div>
                         <h3>This is "{gotch.master}"</h3>
-                        You can
-                        <Clicky label={`Launch ${gotch.master}`} click={() =>
-                            gotch.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
-                                this.setState(startGotchi(freshGotchi));
-                            })
-                        }/>
-                        to see it grow from the seed.
+                        <p>
+                            You can
+                            <Clicky label={`Launch ${gotch.master}`} click={() => this.createGotchi(gotch)}/>
+                            to see it grow from the seed.
+                        </p>
+                        <p>
+                            For the time being you can also try to
+                            <Clicky label="Evolve" click={() => this.createEvolution(gotch)}/>
+                            it for a while so it learns muscle coordination.
+                        </p>
                     </div>
                 )
             );
         }
         return null;
+    }
+
+    private gotchiGo(direction: Direction) {
+        const gotchi = this.state.gotchi;
+        if (gotchi) {
+            gotchi.direction = direction;
+        }
+    }
+
+    private createEvolution(gotch: Gotch) {
+        this.state.island.setActive(gotch.master);
+        this.setState(startEvolution(gotch));
+    }
+
+    private createGotchi(gotch: Gotch) {
+        this.state.island.setActive(gotch.master);
+        gotch.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
+            this.setState(startGotchi(freshGotchi));
+        })
     }
 
     // private spotSelected = (spot?: Spot) => {

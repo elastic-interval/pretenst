@@ -15,6 +15,8 @@ import {Gotch} from '../island/gotch';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {USER_POINTER_MATERIAL} from './materials';
 import {Subscription} from 'rxjs/Subscription';
+import {TripComponent} from './trip-component';
+import {Trip} from '../island/trip';
 
 export const HIGH_ALTITUDE = 1000;
 
@@ -31,6 +33,7 @@ interface IGotchiViewProps {
     gotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
+    trip?: Trip;
 }
 
 interface IGotchiViewState {
@@ -112,6 +115,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             geometry={this.pointerGeometry}
                             material={USER_POINTER_MATERIAL}
                         />
+                        {!this.props.trip ? null : <TripComponent trip={this.props.trip}/>}
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>

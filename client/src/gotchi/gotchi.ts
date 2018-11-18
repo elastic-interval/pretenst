@@ -10,10 +10,8 @@ export interface IGotchiFactory {
 }
 
 export class Gotchi {
-    public facesMeshNode: any;
     public travel?: ITravel;
     private growth?: Growth;
-    private growthFinished = false;
 
     constructor(public fabric: Fabric, private genome: Genome) {
         this.growth = genome.growth(fabric);
@@ -58,25 +56,16 @@ export class Gotchi {
     }
 
     public iterate(ticks: number): void {
-        const wrapAround = this.fabric.iterate(ticks);
-        if (wrapAround && !this.growthFinished) {
-            if (this.growth) {
-                const successful = this.growth.step();
-                if (!successful) {
-                    this.growth = undefined;
-                }
-            } else {
-                for (let direction=Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
+        const nextTimeSweep = this.fabric.iterate(ticks);
+        if (nextTimeSweep && this.growth) {
+            if (!this.growth.step()) {
+                this.growth = undefined;
+                for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
                     this.genome.behavior(this.fabric, direction).apply();
                 }
-                this.growthFinished = true;
                 this.fabric.endGestation();
             }
         }
-    }
-
-    public get growing(): boolean {
-        return !!this.growth;
     }
 
     public dispose() {

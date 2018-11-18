@@ -16,7 +16,6 @@ interface IIslandViewProps {
     width: number;
     height: number;
     island: Island;
-    onlyMasterGotch: boolean;
     master: string;
 }
 
@@ -39,7 +38,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
         this.perspectiveCamera = new PerspectiveCamera(50, props.width / props.height, 1, 500000);
-        const midpoint = this.props.onlyMasterGotch && this.state.masterGotch ? this.state.masterGotch.center : props.island.midpoint;
+        const midpoint = props.island.midpoint;
         this.perspectiveCamera.position.add(CAMERA_POSITION.add(midpoint));
         this.perspectiveCamera.up.set(0, 0, 1).normalize();
         this.perspectiveCamera.lookAt(midpoint);

@@ -1,7 +1,7 @@
 import {Gotchi} from './gotchi';
 import {NORMAL_TICKS, SPOT_TO_HANGER} from '../body/fabric';
 import {Genome, IGenomeData} from '../genetics/genome';
-import {Raycaster, Vector3} from 'three';
+import {Vector3} from 'three';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Gotch} from '../island/gotch';
 import {compareEvolvers, Evolver} from './evolver';
@@ -95,12 +95,6 @@ export class Evolution {
             }
             this.rebootAll(SURVIVAL_RATE);
         }
-    }
-
-    public findGotchi(raycaster: Raycaster): Evolver | undefined {
-        return this.evolversNow.getValue()
-            .filter(evolver => evolver.gotchi.facesMeshNode)
-            .find(evolver => raycaster.intersectObject(evolver.gotchi.facesMeshNode).length > 0);
     }
 
     public dispose() {
