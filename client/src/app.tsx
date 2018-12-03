@@ -17,6 +17,7 @@ import {OrbitState} from './view/orbit';
 import {AppStorage} from './app-storage';
 import {Subscription} from 'rxjs/Subscription';
 import {Trip} from './island/trip';
+import {Button} from 'reactstrap';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -224,6 +225,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 ) : ( // no spot or gotch
                     <div>
                         <h3>Welcome to Galapagotch Island!</h3>
+                        <Button color="danger">Danger!</Button>
                         <p>
                             You are seeing the island from above,
                             and in some places you see dormant gotchis. You can visit them.
