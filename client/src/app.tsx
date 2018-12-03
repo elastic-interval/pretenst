@@ -73,6 +73,7 @@ function startGotchi(gotchi: Gotchi) {
         return {
             gotchi,
             evolution: undefined,
+            trip: undefined
         };
     };
 }
@@ -87,6 +88,7 @@ function selectSpot(spot?: Spot) {
             gotch,
             gotchi: undefined,
             evolution: undefined,
+            trip: undefined
         };
     }
 }
