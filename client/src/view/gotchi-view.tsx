@@ -139,25 +139,37 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     this.target = spot.center;
                     this.props.selectedSpot.next(spot);
                 }
-            } else {
-                this.props.selectedSpot.next(undefined);
             }
+            // else {
+            //     this.props.selectedSpot.next(undefined);
+            // }
         }
     }
 
+    // private get pointerGeometry(): Geometry | null {
+    //     this.perspectiveCamera.updateProjectionMatrix();
+    //     const upDown = this.state.orbitState === OrbitState.CRUISE ? -1 : 1;
+    //     const userCoords = (x: number): Vector3 => {
+    //         return new Vector3(x * 0.4 * upDown, -0.7 * upDown, -0.1 * upDown)
+    //             .unproject(this.perspectiveCamera);
+    //     };
+    //     const geometry = new Geometry();
+    //     const spot = this.props.selectedSpot.getValue();
+    //     const action = this.props.evolution || this.props.gotchi;
+    //     if (spot && this.orbit && !this.orbit.changing && !action) {
+    //         const target = spot.centerOfGotch ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
+    //         geometry.vertices = [userCoords(0), target, userCoords(-1), target, userCoords(1), target];
+    //     }
+    //     return geometry;
+    // }
+
     private get pointerGeometry(): Geometry | null {
-        this.perspectiveCamera.updateProjectionMatrix();
-        const upDown = this.state.orbitState === OrbitState.CRUISE ? -1 : 1;
-        const userCoords = (x: number): Vector3 => {
-            return new Vector3(x * 0.4 * upDown, -0.7 * upDown, -0.1 * upDown)
-                .unproject(this.perspectiveCamera);
-        };
         const geometry = new Geometry();
         const spot = this.props.selectedSpot.getValue();
         const action = this.props.evolution || this.props.gotchi;
-        if (spot && this.orbit && !this.orbit.changing && !action) {
+        if (spot && this.orbit && !action) {
             const target = spot.centerOfGotch ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
-            geometry.vertices = [userCoords(0), target, userCoords(-1), target, userCoords(1), target];
+            geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)];
         }
         return geometry;
     }
