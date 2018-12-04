@@ -4,7 +4,7 @@ import {Gotchi} from '../gotchi/gotchi';
 import {Evolution} from '../gotchi/evolution';
 import {Gotch} from '../island/gotch';
 import {OrbitState} from './orbit';
-import {Button} from 'reactstrap';
+import {InfoPanel} from './info-panel';
 
 export enum Command {
     RETURN_TO_SEED,
@@ -44,110 +44,158 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
     }
 
     public render() {
-        if (this.props.orbitState === OrbitState.HELICOPTER) {
-            return (
-                this.props.spot ? (
-                    this.props.gotch && this.props.gotch.master ? (
-                        <div>
-                            <h3>This is &quot;{this.props.gotch.master}&quot;</h3>
-                            <p>
-                                You can
-                                <Clicky label={`Visit ${this.props.gotch.master}`} click={() => console.log('VISIT')}/>
-                                or choose another one.
-                            </p>
-                            {
-                                this.props.master ? (
-                                    <p>This shouldn't happen</p>
-                                ) : (
-                                    <p>Choose a green one and you can make it your new home.</p>
-                                )
-                            }
-                        </div>
-                    ) : ( // spot and no gotch
-                        <div>
-                            <h3>Free Gotch!</h3>
-                            <p>
-                                This one can be your new home!
-                                <Clicky label={'Make this home'} click={() => console.log('HOME')}/>
-                            </p>
-                        </div>
-                    )
-                ) : ( // no spot or gotch
-                    <div>
-                        <h3>Welcome to Galapagotch Island!</h3>
-                        <Button color="danger">Danger!</Button>
-                        <p>
-                            You are seeing the island from above,
-                            and in some places you see dormant gotchis. You can visit them.
-                            Just click on one of them and zoom in.
-                        </p>
-                    </div>
-                )
-            );
+        if (this.props.orbitState === OrbitState.HELICOPTER && this.props.spot) {
+            if (this.props.gotch && this.props.gotch.master) {
+                return this.occupiedGotch(this.props.gotch);
+            } else {
+                return this.availableSpot(this.props.spot);
+            }
         }
         if (this.props.evolution) {
-            return (
-                <div>
-                    <p>
-                        You are evolving. Fancy that!
-                    </p>
-                    <Clicky label="Enough" click={() => this.props.do(Command.RETURN_TO_SEED)}/>
-                </div>
-            );
+            return this.evolving(this.props.evolution);
         }
         if (this.props.gotchi) {
-            return (
-                <div>
-                    <h3>{this.props.gotchi.master}</h3>
-                    <p>
-                        <p>Driving!</p>
-                        <Clicky label="Enough" click={() => this.props.do(Command.RETURN_TO_SEED)}/>
-                    </p>
-                    <p>
-                        <Clicky label="Left" click={() => this.props.do(Command.TURN_LEFT)}/>
-                        <Clicky label="Right" click={() => this.props.do(Command.TURN_RIGHT)}/>
-                    </p>
-                </div>
-            );
+            return this.drivingGotchi(this.props.gotchi)
         }
         if (this.props.gotch) {
-            return (
-                this.props.gotch.master === this.props.master ? (
-                    <div>
-                        <h3>This is your gotch!</h3>
-                        <p>
-                            You can
-                            <Clicky label={`Launch ${this.props.gotch.master}`} click={() => this.props.do(Command.LAUNCH_GOTCHI)}/>
-                            and drive it around.
-                        </p>
-                        <p>
-                            If it doesn't work well enough, you can
-                            <Clicky label="Evolve" click={() => this.props.do(Command.LAUNCH_EVOLUTION)}/>
-                            it for a while so it learns muscle coordination.
-                        </p>
-                    </div>
-
-                ) : (
-                    <div>
-                        <h3>This is "{this.props.gotch.master}"</h3>
-                        <p>
-                            You can
-                            <Clicky label={`Launch ${this.props.gotch.master}`} click={() => this.props.do(Command.LAUNCH_GOTCHI)}/>
-                            to see it grow from the seed.
-                        </p>
-                        <p>
-                            For the time being you can also try to
-                            <Clicky label="Evolve" click={() => this.props.do(Command.LAUNCH_EVOLUTION)}/>
-                            it for a while so it learns muscle coordination.
-                        </p>
-                    </div>
-                )
-            );
+            const home = this.props.gotch.master === this.props.master;
+            return home ? this.homeGotch(this.props.gotch) : this.foreignGotch(this.props.gotch);
         }
-        return null;
+        return <InfoPanel exit={() => console.log('outa here')}/>;
     }
 
+    private foreignGotch(gotch: Gotch) {
+        return (
+            <div>
+                <h3>This is "{gotch.master}"</h3>
+                <p>
+                    You can
+                    <Clicky label={`Launch ${gotch.master}`} click={() => this.props.do(Command.LAUNCH_GOTCHI)}/>
+                    to see it grow from the seed.
+                </p>
+                <p>
+                    For the time being you can also try to
+                    <Clicky label="Evolve" click={() => this.props.do(Command.LAUNCH_EVOLUTION)}/>
+                    it for a while so it learns muscle coordination.
+                </p>
+            </div>
+        );
+    }
 
+    private homeGotch(gotch: Gotch) {
+        return <div>
+            <h3>This is your gotch!</h3>
+            <p>
+                You can
+                <Clicky label={`Launch ${gotch.master}`} click={() => this.props.do(Command.LAUNCH_GOTCHI)}/>
+                and drive it around.
+            </p>
+            <p>
+                If it doesn't work well enough, you can
+                <Clicky label="Evolve" click={() => this.props.do(Command.LAUNCH_EVOLUTION)}/>
+                it for a while so it learns muscle coordination.
+            </p>
+        </div>;
+    }
 
+    private drivingGotchi(gotchi: Gotchi) {
+        return (
+            <div>
+                <h3>{gotchi.master}</h3>
+                <p>
+                    <p>Driving!</p>
+                    <Clicky label="Enough" click={() => this.props.do(Command.RETURN_TO_SEED)}/>
+                </p>
+                <p>
+                    <Clicky label="Left" click={() => this.props.do(Command.TURN_LEFT)}/>
+                    <Clicky label="Right" click={() => this.props.do(Command.TURN_RIGHT)}/>
+                </p>
+            </div>
+        );
+    }
+
+    private evolving(evolution: Evolution) {
+        return (
+            <div>
+                <p>
+                    You are evolving. Fancy that!
+                </p>
+                <Clicky label="Enough" click={() => this.props.do(Command.RETURN_TO_SEED)}/>
+            </div>
+        );
+    }
+
+    private availableSpot(spot: Spot) {
+        return (
+            <div>
+                <h3>Free Gotch!</h3>
+                <p>
+                    This one can be your new home!
+                    <Clicky label={'Make this home'} click={() => console.log('HOME')}/>
+                </p>
+            </div>
+        );
+    }
+
+    private occupiedGotch(gotch: Gotch) {
+        return (
+            <div>
+                <h3>This is &quot;{gotch.master}&quot;</h3>
+                <p>
+                    You can
+                    <Clicky label={`Visit ${gotch.master}`} click={() => console.log('VISIT')}/>
+                    or choose another one.
+                </p>
+                {
+                    this.props.master ? (
+                        <p>This shouldn't happen</p>
+                    ) : (
+                        <p>Choose a green one and you can make it your new home.</p>
+                    )
+                }
+            </div>
+        );
+    }
+
+// private spotSelected = (spot?: Spot) => {
+    //     if (spot) {
+    //         if (spot.centerOfGotch) {
+    //             console.log('spot selected');
+    //             this.setState(selectGotch(spot.centerOfGotch));
+    //         }
+    //     }
+    //     const island = this.state.island;
+    //     const centerOfGotch = spot.centerOfGotch;
+    //     if (centerOfGotch) {
+    //         if (centerOfGotch.genome) {
+    //             return;
+    //         }
+    //         if (island.legal && centerOfGotch === island.freeGotch) {
+    //             // centerOfGotch.genome = freshGenomeFor(MASTER);
+    //             island.refresh();
+    //             island.save();
+    //         }
+    //     } else if (spot.free) {
+    //         switch (spot.surface) {
+    //             case Surface.Unknown:
+    //                 spot.surface = Surface.Water;
+    //                 break;
+    //             case Surface.Land:
+    //                 spot.surface = Surface.Water;
+    //                 break;
+    //             case Surface.Water:
+    //                 spot.surface = Surface.Land;
+    //                 break;
+    //         }
+    //         island.refresh();
+    //     } else if (spot.canBeNewGotch) {
+    //     // } else if (spot.canBeNewGotch && !this.state.masterGotch) {
+    //         island.removeFreeGotches();
+    //         if (spot.canBeNewGotch) {
+    //             // island.createGotch(spot, MASTER);
+    //         }
+    //         island.refresh();
+    //     }
+    // };
 
 }

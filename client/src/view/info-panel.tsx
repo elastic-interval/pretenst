@@ -14,7 +14,7 @@ export class InfoPanel extends React.Component<IInfoPanelProps, any> {
     public render() {
         return (
             <div>
-                <h1>Info</h1>
+                <h3>Welcome to Galapagotch Island!</h3>
                 <Button color="success" onClick={() => this.props.exit()}>Ok got it</Button>
             </div>
         );

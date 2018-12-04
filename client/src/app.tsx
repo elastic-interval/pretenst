@@ -11,13 +11,13 @@ import {Physics} from './body/physics';
 import {Spot} from './island/spot';
 import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution';
 import {Gotch} from './island/gotch';
-import {InsetStyle, insetStyle} from './view/layout';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {OrbitState} from './view/orbit';
 import {AppStorage} from './app-storage';
 import {Subscription} from 'rxjs/Subscription';
 import {Trip} from './island/trip';
 import {ActionsPanel, Command} from './view/actions-panel';
+import {InsetStyle, insetStyle} from './view/layout';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -153,17 +153,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     trip={this.state.trip}
                     gotchi={this.state.gotchi}
                 />
-                {this.insetPanel}
-            </div>
-        );
-    }
-
-    private get insetPanel() {
-        const cruising = this.state.orbitState === OrbitState.CRUISE;
-        const style = insetStyle(cruising ? InsetStyle.TOP_MIDDLE : InsetStyle.BOTTOM_MIDDLE);
-        return (
-            <div style={style}>
-                <div style={{textAlign: 'center'}}>
+                <div style={insetStyle(InsetStyle.BOTTOM_MOST)}>
                     <ActionsPanel
                         orbitState={this.state.orbitState}
                         spot={this.state.spot}
@@ -171,87 +161,48 @@ class App extends React.Component<IAppProps, IAppState> {
                         master={this.state.master}
                         gotchi={this.state.gotchi}
                         evolution={this.state.evolution}
-                        do={(command: Command) => {
-                            const gotch = this.state.gotch;
-                            const gotchi = this.state.gotchi;
-                            switch (command) {
-                                case Command.RETURN_TO_SEED:
-                                    const selectedSpot = this.selectedSpotSubject.getValue();
-                                    this.selectedSpotSubject.next(selectedSpot); // refresh
-                                    this.setState(selectSpot(selectedSpot));
-                                    break;
-                                case Command.LAUNCH_GOTCHI:
-                                    if (gotch) {
-                                        this.state.island.setActive(gotch.master);
-                                        gotch.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
-                                            this.setState(startGotchi(freshGotchi));
-                                        });
-                                    }
-                                    break;
-                                case Command.TURN_LEFT:
-                                    if (gotchi) {
-                                        gotchi.direction = turn(gotchi.direction, false);
-                                    }
-                                    break;
-                                case Command.TURN_RIGHT:
-                                    if (gotchi) {
-                                        gotchi.direction = turn(gotchi.direction, true);
-                                    }
-                                    break;
-                                case Command.LAUNCH_EVOLUTION:
-                                    if (gotch) {
-                                        this.state.island.setActive(gotch.master);
-                                        this.setState(startEvolution(gotch));
-                                    }
-                                    break;
-                            }
-                        }}
+                        do={(command: Command) => this.executeCommand(command)}
                     />
                 </div>
             </div>
         );
     }
 
-    // private spotSelected = (spot?: Spot) => {
-    //     if (spot) {
-    //         if (spot.centerOfGotch) {
-    //             console.log('spot selected');
-    //             this.setState(selectGotch(spot.centerOfGotch));
-    //         }
-    //     }
-    //     const island = this.state.island;
-    //     const centerOfGotch = spot.centerOfGotch;
-    //     if (centerOfGotch) {
-    //         if (centerOfGotch.genome) {
-    //             return;
-    //         }
-    //         if (island.legal && centerOfGotch === island.freeGotch) {
-    //             // centerOfGotch.genome = freshGenomeFor(MASTER);
-    //             island.refresh();
-    //             island.save();
-    //         }
-    //     } else if (spot.free) {
-    //         switch (spot.surface) {
-    //             case Surface.Unknown:
-    //                 spot.surface = Surface.Water;
-    //                 break;
-    //             case Surface.Land:
-    //                 spot.surface = Surface.Water;
-    //                 break;
-    //             case Surface.Water:
-    //                 spot.surface = Surface.Land;
-    //                 break;
-    //         }
-    //         island.refresh();
-    //     } else if (spot.canBeNewGotch) {
-    //     // } else if (spot.canBeNewGotch && !this.state.masterGotch) {
-    //         island.removeFreeGotches();
-    //         if (spot.canBeNewGotch) {
-    //             // island.createGotch(spot, MASTER);
-    //         }
-    //         island.refresh();
-    //     }
-    // };
+    private executeCommand(command: Command) {
+        const gotch = this.state.gotch;
+        const gotchi = this.state.gotchi;
+        switch (command) {
+            case Command.RETURN_TO_SEED:
+                const selectedSpot = this.selectedSpotSubject.getValue();
+                this.selectedSpotSubject.next(selectedSpot); // refresh
+                this.setState(selectSpot(selectedSpot));
+                break;
+            case Command.LAUNCH_GOTCHI:
+                if (gotch) {
+                    this.state.island.setActive(gotch.master);
+                    gotch.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
+                        this.setState(startGotchi(freshGotchi));
+                    });
+                }
+                break;
+            case Command.TURN_LEFT:
+                if (gotchi) {
+                    gotchi.direction = turn(gotchi.direction, false);
+                }
+                break;
+            case Command.TURN_RIGHT:
+                if (gotchi) {
+                    gotchi.direction = turn(gotchi.direction, true);
+                }
+                break;
+            case Command.LAUNCH_EVOLUTION:
+                if (gotch) {
+                    this.state.island.setActive(gotch.master);
+                    this.setState(startEvolution(gotch));
+                }
+                break;
+        }
+    }
 }
 
 export default App;

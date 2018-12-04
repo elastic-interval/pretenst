@@ -2,9 +2,11 @@ import {CSSProperties} from 'react';
 
 const MARGIN = '20px';
 const CORNER_RADIUS = '20px';
-const SMALL = '200px';
+const SMALL = '10%';
 const QUARTER = '25%';
 const HALF = '50%';
+const MOST = '90%';
+const MOST_SIDE = '5%';
 
 export enum InsetStyle {
     TOP_LEFT,
@@ -12,7 +14,8 @@ export enum InsetStyle {
     BOTTOM_RIGHT,
     BOTTOM_LEFT,
     TOP_MIDDLE,
-    BOTTOM_MIDDLE
+    BOTTOM_MIDDLE,
+    BOTTOM_MOST
 }
 
 export function insetStyle(style: InsetStyle): CSSProperties {
@@ -69,6 +72,17 @@ export function insetStyle(style: InsetStyle): CSSProperties {
             css.width = HALF;
             css.left = QUARTER;
             css.right = QUARTER;
+            css.height = SMALL;
+            css.borderBottomLeftRadius = CORNER_RADIUS;
+            css.borderBottomRightRadius = CORNER_RADIUS;
+            css.borderTopLeftRadius = CORNER_RADIUS;
+            css.borderTopRightRadius = CORNER_RADIUS;
+            break;
+        case InsetStyle.BOTTOM_MOST:
+            css.bottom = MARGIN;
+            css.width = MOST;
+            css.left = MOST_SIDE;
+            css.right = MOST_SIDE;
             css.height = SMALL;
             css.borderBottomLeftRadius = CORNER_RADIUS;
             css.borderBottomRightRadius = CORNER_RADIUS;
