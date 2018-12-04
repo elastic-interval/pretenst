@@ -5,6 +5,7 @@ import {Evolution} from '../gotchi/evolution';
 import {Gotch} from '../island/gotch';
 import {OrbitState} from './orbit';
 import {InfoPanel} from './info-panel';
+import {Button} from 'reactstrap';
 
 export enum Command {
     RETURN_TO_SEED,
@@ -32,7 +33,7 @@ interface IClicky {
 function Clicky(params: IClicky) {
     return (
         <span style={{padding: '5px 5px 5px 5px'}}>
-            <button onClick={params.click}>{params.label}</button>
+            <Button onClick={params.click}>{params.label}</Button>
         </span>
     );
 }
@@ -128,7 +129,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
     private availableSpot(spot: Spot) {
         return (
             <div>
-                <h3>Free Gotch!</h3>
                 <p>
                     This one can be your new home!
                     <Clicky label={'Make this home'} click={() => console.log('HOME')}/>

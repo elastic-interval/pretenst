@@ -1,7 +1,9 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: sans-serif;
+    font-family: serif;
+    font-weight: bold;
+    font-size: x-large;
 }
 
 .App {
@@ -45,8 +47,6 @@ body {
 }
 
 .carousel-item {
-    font-family: serif;
-    font-weight: bold;
     color: white;
     height: 100%;
     width: 90%;
