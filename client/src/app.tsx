@@ -1,6 +1,6 @@
 import * as React from 'react';
 import './app.css';
-import {Direction, IFabricExports} from './body/fabric-exports';
+import {IFabricExports, turn} from './body/fabric-exports';
 import {Island} from './island/island';
 import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
@@ -17,7 +17,7 @@ import {OrbitState} from './view/orbit';
 import {AppStorage} from './app-storage';
 import {Subscription} from 'rxjs/Subscription';
 import {Trip} from './island/trip';
-import {Button} from 'reactstrap';
+import {ActionsPanel, Command} from './view/actions-panel';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -94,19 +94,6 @@ function selectSpot(spot?: Spot) {
     }
 }
 
-interface IClicky {
-    label: string;
-    click: () => void;
-}
-
-function Clicky(params: IClicky) {
-    return (
-        <span style={{padding: '5px 5px 5px 5px'}}>
-            <button onClick={params.click}>{params.label}</button>
-        </span>
-    );
-}
-
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = [];
     private orbitStateSubject = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
@@ -172,158 +159,57 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     private get insetPanel() {
-        const userMessage = this.userMessage;
-        if (!userMessage) {
-            return null;
-        }
         const cruising = this.state.orbitState === OrbitState.CRUISE;
         const style = insetStyle(cruising ? InsetStyle.TOP_MIDDLE : InsetStyle.BOTTOM_MIDDLE);
         return (
             <div style={style}>
                 <div style={{textAlign: 'center'}}>
-                    {userMessage}
+                    <ActionsPanel
+                        orbitState={this.state.orbitState}
+                        spot={this.state.spot}
+                        gotch={this.state.gotch}
+                        master={this.state.master}
+                        gotchi={this.state.gotchi}
+                        evolution={this.state.evolution}
+                        do={(command: Command) => {
+                            const gotch = this.state.gotch;
+                            const gotchi = this.state.gotchi;
+                            switch (command) {
+                                case Command.RETURN_TO_SEED:
+                                    const selectedSpot = this.selectedSpotSubject.getValue();
+                                    this.selectedSpotSubject.next(selectedSpot); // refresh
+                                    this.setState(selectSpot(selectedSpot));
+                                    break;
+                                case Command.LAUNCH_GOTCHI:
+                                    if (gotch) {
+                                        this.state.island.setActive(gotch.master);
+                                        gotch.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
+                                            this.setState(startGotchi(freshGotchi));
+                                        });
+                                    }
+                                    break;
+                                case Command.TURN_LEFT:
+                                    if (gotchi) {
+                                        gotchi.direction = turn(gotchi.direction, false);
+                                    }
+                                    break;
+                                case Command.TURN_RIGHT:
+                                    if (gotchi) {
+                                        gotchi.direction = turn(gotchi.direction, true);
+                                    }
+                                    break;
+                                case Command.LAUNCH_EVOLUTION:
+                                    if (gotch) {
+                                        this.state.island.setActive(gotch.master);
+                                        this.setState(startEvolution(gotch));
+                                    }
+                                    break;
+                            }
+                        }}
+                    />
                 </div>
             </div>
         );
-    }
-
-    private get userMessage() {
-        const orbitState = this.state.orbitState;
-        const spot = this.state.spot;
-        const gotch = this.state.gotch;
-        const master = this.state.master;
-        const gotchi = this.state.gotchi;
-        const evolution = this.state.evolution;
-        if (orbitState === OrbitState.HELICOPTER) {
-            return (
-                spot ? (
-                    gotch && gotch.master ? (
-                        <div>
-                            <h3>This is &quot;{gotch.master}&quot;</h3>
-                            <p>
-                                You can
-                                <Clicky label={`Visit ${gotch.master}`} click={() => console.log('VISIT')}/>
-                                or choose another one.
-                            </p>
-                            {
-                                master ? (
-                                    <p>This shouldn't happen</p>
-                                ) : (
-                                    <p>Choose a green one and you can make it your new home.</p>
-                                )
-                            }
-                        </div>
-                    ) : ( // spot and no gotch
-                        <div>
-                            <h3>Free Gotch!</h3>
-                            <p>
-                                This one can be your new home!
-                                <Clicky label={'Make this home'} click={() => console.log('HOME')}/>
-                            </p>
-                        </div>
-                    )
-                ) : ( // no spot or gotch
-                    <div>
-                        <h3>Welcome to Galapagotch Island!</h3>
-                        <Button color="danger">Danger!</Button>
-                        <p>
-                            You are seeing the island from above,
-                            and in some places you see dormant gotchis. You can visit them.
-                            Just click on one of them and zoom in.
-                        </p>
-                    </div>
-                )
-            );
-        }
-        if (evolution) {
-            return (
-                <div>
-                    <p>
-                        You are evolving. Fancy that!
-                    </p>
-                    <Clicky label="Enough" click={() => {
-                        const selectedSpot = this.selectedSpotSubject.getValue();
-                        this.selectedSpotSubject.next(selectedSpot); // refresh
-                        this.setState(selectSpot(selectedSpot));
-                    }}/>
-                </div>
-            );
-        }
-        if (gotchi) {
-            return (
-                <div>
-                    <h3>{gotchi.master}</h3>
-                    <p>
-                        <p>Driving!</p>
-                        <Clicky label="Enough" click={() => {
-                            const selectedSpot = this.selectedSpotSubject.getValue();
-                            this.selectedSpotSubject.next(selectedSpot); // refresh
-                            this.setState(selectSpot(selectedSpot));
-                        }}/>
-                    </p>
-                    <p>
-                        <Clicky label="Left" click={() => this.gotchiGo(Direction.LEFT)}/>
-                        <Clicky label="Right" click={() => this.gotchiGo(Direction.RIGHT)}/>
-                        <Clicky label="Forward" click={() => this.gotchiGo(Direction.FORWARD)}/>
-                        <Clicky label="Reverse" click={() => this.gotchiGo(Direction.REVERSE)}/>
-                    </p>
-                </div>
-            );
-        }
-        if (gotch) {
-            return (
-                gotch.master === master ? (
-                    <div>
-                        <h3>This is your gotch!</h3>
-                        <p>
-                            You can
-                            <Clicky label={`Launch ${gotch.master}`} click={() => this.createGotchi(gotch)}/>
-                            and drive it around.
-                        </p>
-                        <p>
-                            If it doesn't work well enough, you can
-                            <Clicky label="Evolve" click={() => this.createEvolution(gotch)}/>
-                            it for a while so it learns muscle coordination.
-                        </p>
-                    </div>
-
-                ) : (
-                    <div>
-                        <h3>This is "{gotch.master}"</h3>
-                        <p>
-                            You can
-                            <Clicky label={`Launch ${gotch.master}`} click={() => this.createGotchi(gotch)}/>
-                            to see it grow from the seed.
-                        </p>
-                        <p>
-                            For the time being you can also try to
-                            <Clicky label="Evolve" click={() => this.createEvolution(gotch)}/>
-                            it for a while so it learns muscle coordination.
-                        </p>
-                    </div>
-                )
-            );
-        }
-        return null;
-    }
-
-    private gotchiGo(direction: Direction) {
-        const gotchi = this.state.gotchi;
-        if (gotchi) {
-            gotchi.direction = direction;
-        }
-    }
-
-    private createEvolution(gotch: Gotch) {
-        this.state.island.setActive(gotch.master);
-        this.setState(startEvolution(gotch));
-    }
-
-    private createGotchi(gotch: Gotch) {
-        this.state.island.setActive(gotch.master);
-        gotch.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
-            this.setState(startGotchi(freshGotchi));
-        })
     }
 
     // private spotSelected = (spot?: Spot) => {
