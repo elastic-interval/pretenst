@@ -242,7 +242,9 @@ class App extends React.Component<IAppProps, IAppState> {
                         You are evolving. Fancy that!
                     </p>
                     <Clicky label="Enough" click={() => {
-                        this.setState(selectSpot(this.selectedSpotSubject.getValue()));
+                        const selectedSpot = this.selectedSpotSubject.getValue();
+                        this.selectedSpotSubject.next(selectedSpot); // refresh
+                        this.setState(selectSpot(selectedSpot));
                     }}/>
                 </div>
             );
@@ -254,7 +256,9 @@ class App extends React.Component<IAppProps, IAppState> {
                     <p>
                         <p>Driving!</p>
                         <Clicky label="Enough" click={() => {
-                            this.setState(selectSpot(this.selectedSpotSubject.getValue()));
+                            const selectedSpot = this.selectedSpotSubject.getValue();
+                            this.selectedSpotSubject.next(selectedSpot); // refresh
+                            this.setState(selectSpot(selectedSpot));
                         }}/>
                     </p>
                     <p>

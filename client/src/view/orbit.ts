@@ -6,9 +6,8 @@ import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 const OrbitControls = ORBIT_CONTROLS(THREE);
 const HELICOPTER_DISTANCE = 160;
-const MIN_TARGET_SPEED = 0.2;
-// const MAX_TARGET_SPEED = 30.0;
 const UPWARDS = 0.3;
+const TOWARDS_TARGET = 0.05;
 
 export enum OrbitState {
     HELICOPTER = 'HELICOPTER',
@@ -46,11 +45,7 @@ export class Orbit {
     }
 
     public moveTargetTowards(location: Vector3) {
-        this.vector.subVectors(location, this.target);
-        const maxTargetSpeed = MIN_TARGET_SPEED;
-        if (this.vector.length() > maxTargetSpeed) {
-            this.vector.setLength(maxTargetSpeed);
-        }
+        this.vector.subVectors(location, this.target).multiplyScalar(TOWARDS_TARGET);
         this.target.add(this.vector);
     }
 

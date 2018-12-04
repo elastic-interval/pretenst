@@ -79,6 +79,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.orbit = new Orbit(element, this.perspectiveCamera, this.props.orbitState, this.target);
         this.animate();
         this.subs.push(this.props.orbitState.subscribe(orbitState => this.setState({orbitState})));
+        this.subs.push(this.props.selectedSpot.subscribe(spot => {
+            if (spot) {
+                if (spot.centerOfGotch) {
+                    this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center);
+                } else if (spot.canBeNewGotch) {
+                    this.target = spot.center;
+                }
+            }
+        }));
     }
 
     public componentWillUnmount() {
@@ -128,21 +137,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     private get onMouseDownCapture() {
         return (event: any) => {
+            if (this.props.evolution || this.props.gotchi) {
+                return;
+            }
             const far = this.state.orbitState === OrbitState.HELICOPTER;
             const meshKey = far ? MeshKey.SPOTS_KEY : MeshKey.SEEDS_KEY;
             const spot = this.spotSelector.getSpot(meshKey, event);
-            if (spot) {
-                if (spot.centerOfGotch) {
-                    this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center);
-                    this.props.selectedSpot.next(spot);
-                } else if (spot.canBeNewGotch) {
-                    this.target = spot.center;
-                    this.props.selectedSpot.next(spot);
-                }
+            if (spot && (spot.centerOfGotch || spot.canBeNewGotch)) {
+                this.props.selectedSpot.next(spot);
             }
-            // else {
-            //     this.props.selectedSpot.next(undefined);
-            // }
         }
     }
 
