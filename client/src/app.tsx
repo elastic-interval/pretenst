@@ -1,5 +1,4 @@
 import * as React from 'react';
-import './app.css';
 import {IFabricExports, turn} from './body/fabric-exports';
 import {Island} from './island/island';
 import {GotchiView} from './view/gotchi-view';

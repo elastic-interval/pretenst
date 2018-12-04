@@ -1,5 +1,94 @@
 body {
-  margin: 0;
-  padding: 0;
-  font-family: sans-serif;
+    margin: 0;
+    padding: 0;
+    font-family: sans-serif;
+}
+
+.App {
+    text-align: center;
+}
+
+.everything {
+    height: 100%;
+    width: 100%;
+}
+
+.dice {
+    font-size: xx-large;
+}
+
+.gotchi-view {
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.gotch-title {
+    position: absolute;
+    background-color: darkslategray;
+    color: white;
+    text-align: center;
+    top: 0;
+    left: 90%;
+    height: 5%;
+    width: 10%;
+}
+
+.gotch-view {
+    position: absolute;
+    top: 5%;
+    left: 90%;
+}
+
+.carousel {
+    height: 100%;
+}
+
+.carousel-item {
+    font-family: serif;
+    font-weight: bold;
+    color: white;
+    height: 100%;
+    width: 90%;
+    margin-right: 5%;
+    margin-left: 5%;
+    /*padding-left: 100px;*/
+    /*padding-right: 100px;*/
+    border-style: solid;
+    border-width: 3px;
+    border-radius: 10px;
+    border-color: gray;
+}
+
+.carousel-inner {
+    height: 100%;
+}
+
+.carousel-item.active {
+}
+
+.carousel-control-prev {
+    width: 5%;
+}
+
+.carousel-control-next {
+    width: 5%;
+}
+
+.feature-prompt {
+    display: inline-block;
+    text-align: right;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.feature-value {
+    display: inline-block;
+    width: 300px;
+}
+
+:host {
+    display: block;
+    height: 100%;
+    max-height: 100%;
 }

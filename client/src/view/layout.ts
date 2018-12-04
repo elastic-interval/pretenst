@@ -5,8 +5,8 @@ const CORNER_RADIUS = '20px';
 const SMALL = '10%';
 const QUARTER = '25%';
 const HALF = '50%';
-const MOST = '90%';
-const MOST_SIDE = '5%';
+const MOST = '80%';
+const MOST_SIDE = '10%';
 
 export enum InsetStyle {
     TOP_LEFT,
@@ -88,6 +88,9 @@ export function insetStyle(style: InsetStyle): CSSProperties {
             css.borderBottomRightRadius = CORNER_RADIUS;
             css.borderTopLeftRadius = CORNER_RADIUS;
             css.borderTopRightRadius = CORNER_RADIUS;
+            // css.margin = '5px 50px 5px 50px';
+            css.marginTop = '50px';
+            css.textAlign = 'center';
             break;
     }
     return css;
