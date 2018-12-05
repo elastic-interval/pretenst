@@ -1,7 +1,6 @@
 import * as React from 'react';
 import {IFabricExports, turn} from './body/fabric-exports';
 import {Island} from './island/island';
-import {GotchiView} from './view/gotchi-view';
 import {Fabric} from './body/fabric';
 import {Gotchi} from './gotchi/gotchi';
 import {Genome, IGenomeData} from './genetics/genome';
@@ -16,7 +15,9 @@ import {AppStorage} from './app-storage';
 import {Subscription} from 'rxjs/Subscription';
 import {Trip} from './island/trip';
 import {ActionsPanel, Command} from './view/actions-panel';
-import {InsetStyle, insetStyle} from './view/layout';
+import {GotchiView} from './view/gotchi-view';
+import {InfoPanel} from './view/info-panel';
+import {Button} from 'reactstrap';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -27,6 +28,7 @@ export interface IAppState {
     island: Island;
     width: number;
     height: number;
+    infoPanel: boolean;
 
     master?: string
     orbitState: OrbitState;
@@ -115,6 +117,7 @@ class App extends React.Component<IAppProps, IAppState> {
             }
         };
         this.state = {
+            infoPanel: true,
             orbitState: this.orbitStateSubject.getValue(),
             island: new Island('GalapagotchIsland', this.islandState, gotchiFactory, this.props.storage),
             master: this.props.storage.getMaster(),
@@ -140,7 +143,7 @@ class App extends React.Component<IAppProps, IAppState> {
 
     public render() {
         return (
-            <div>
+            <div className="everything">
                 <GotchiView
                     island={this.state.island}
                     width={this.state.width}
@@ -152,7 +155,18 @@ class App extends React.Component<IAppProps, IAppState> {
                     trip={this.state.trip}
                     gotchi={this.state.gotchi}
                 />
-                <div style={insetStyle(InsetStyle.BOTTOM_MOST)}>
+                {!this.state.infoPanel ? null : (
+                    <div className="info-panel floating-panel">
+                        <div className="info-title">
+                            <h3>Galapagotchi Run!</h3>
+                            <div className="info-exit">
+                                <Button color="link" onClick={() => this.setState({infoPanel: false})}>X</Button>
+                            </div>
+                        </div>
+                        <InfoPanel master={this.state.master}/>
+                    </div>
+                )}
+                <div className="actions-panel floating-panel">
                     <ActionsPanel
                         orbitState={this.state.orbitState}
                         spot={this.state.spot}

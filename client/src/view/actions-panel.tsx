@@ -4,7 +4,6 @@ import {Gotchi} from '../gotchi/gotchi';
 import {Evolution} from '../gotchi/evolution';
 import {Gotch} from '../island/gotch';
 import {OrbitState} from './orbit';
-import {InfoPanel} from './info-panel';
 import {Button} from 'reactstrap';
 
 export enum Command {
@@ -62,12 +61,16 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
             const home = this.props.gotch.master === this.props.master;
             return home ? this.homeGotch(this.props.gotch) : this.foreignGotch(this.props.gotch);
         }
-        return <InfoPanel exit={() => console.log('outa here')}/>;
+        return (
+            <div className="action-panel">
+                <h1>Click on something or whatever</h1>
+            </div>
+        );
     }
 
     private foreignGotch(gotch: Gotch) {
         return (
-            <div>
+            <div className="action-panel">
                 <h3>This is "{gotch.master}"</h3>
                 <p>
                     You can
@@ -84,24 +87,26 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
     }
 
     private homeGotch(gotch: Gotch) {
-        return <div>
-            <h3>This is your gotch!</h3>
-            <p>
-                You can
-                <Clicky label={`Launch ${gotch.master}`} click={() => this.props.do(Command.LAUNCH_GOTCHI)}/>
-                and drive it around.
-            </p>
-            <p>
-                If it doesn't work well enough, you can
-                <Clicky label="Evolve" click={() => this.props.do(Command.LAUNCH_EVOLUTION)}/>
-                it for a while so it learns muscle coordination.
-            </p>
-        </div>;
+        return (
+            <div className="action-panel">
+                <h3>This is your gotch!</h3>
+                <p>
+                    You can
+                    <Clicky label={`Launch ${gotch.master}`} click={() => this.props.do(Command.LAUNCH_GOTCHI)}/>
+                    and drive it around.
+                </p>
+                <p>
+                    If it doesn't work well enough, you can
+                    <Clicky label="Evolve" click={() => this.props.do(Command.LAUNCH_EVOLUTION)}/>
+                    it for a while so it learns muscle coordination.
+                </p>
+            </div>
+        );
     }
 
     private drivingGotchi(gotchi: Gotchi) {
         return (
-            <div>
+            <div className="action-panel">
                 <h3>{gotchi.master}</h3>
                 <p>
                     <p>Driving!</p>
@@ -117,7 +122,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
 
     private evolving(evolution: Evolution) {
         return (
-            <div>
+            <div className="action-panel">
                 <p>
                     You are evolving. Fancy that!
                 </p>
@@ -128,7 +133,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
 
     private availableSpot(spot: Spot) {
         return (
-            <div>
+            <div className="action-panel">
                 <p>
                     This one can be your new home!
                     <Clicky label={'Make this home'} click={() => console.log('HOME')}/>
@@ -139,7 +144,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
 
     private occupiedGotch(gotch: Gotch) {
         return (
-            <div>
+            <div className="action-panel">
                 <h3>This is &quot;{gotch.master}&quot;</h3>
                 <p>
                     You can

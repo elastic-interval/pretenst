@@ -1,9 +1,19 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: sans-serif;
-    font-weight: bold;
+    font-family: Verdana;
     font-size: large;
+}
+
+p a, p a:hover {
+    color: red;
+    font-weight: bolder;
+    text-decoration: none;
+}
+
+.btn-link {
+    color: white;
+    font-weight: bolder;
 }
 
 .App {
@@ -13,6 +23,29 @@ body {
 .everything {
     height: 100%;
     width: 100%;
+}
+
+.floating-panel {
+    position: absolute;
+    color: white;
+    background-color: black;
+    border-color: white;
+    border-style: solid;
+    padding: 5px 5px 5px 5px;
+    border-radius: 20px;
+}
+
+.actions-panel {
+    top: 20px;
+    right: 20px;
+    width: 20%;
+    height: 20%;
+    text-align: center;
+}
+
+.action-panel {
+    width: 100%;
+    right: 100%;
 }
 
 .dice {
@@ -42,18 +75,33 @@ body {
     left: 90%;
 }
 
+.info-title {
+    text-align: center;
+}
+
+.info-exit {
+    position: absolute;
+    top: 5px;
+    right: 15px;
+}
+
+.info-panel {
+    bottom: 20px;
+    left: 20px;
+    width: 30%;
+    height: 35%;
+}
+
 .carousel {
     height: 100%;
 }
 
 .carousel-item {
     color: white;
+    margin-left: 10%;
+    width: 80%;
     height: 100%;
-    width: 90%;
-    margin-right: 5%;
-    margin-left: 5%;
-    /*padding-left: 100px;*/
-    /*padding-right: 100px;*/
+    padding: 2% 2% 2% 2%;
     border-style: solid;
     border-width: 3px;
     border-radius: 10px;
@@ -61,18 +109,18 @@ body {
 }
 
 .carousel-inner {
-    height: 100%;
+    height: 85%;
 }
 
 .carousel-item.active {
 }
 
 .carousel-control-prev {
-    width: 5%;
+    width: 10%;
 }
 
 .carousel-control-next {
-    width: 5%;
+    width: 10%;
 }
 
 .feature-prompt {

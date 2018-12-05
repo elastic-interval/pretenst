@@ -20,7 +20,7 @@ import {Trip} from '../island/trip';
 
 export const HIGH_ALTITUDE = 1000;
 
-const SUN_POSITION = new Vector3(0, 300, 0);
+const SUN_POSITION = new Vector3(0, 400, 0);
 const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 const TARGET_FRAME_RATE = 25;
 
