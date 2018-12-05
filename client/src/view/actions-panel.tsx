@@ -57,7 +57,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
             if (this.props.gotch && this.props.gotch.master) {
                 return this.occupiedGotch(this.props.gotch);
             } else {
-                return this.availableSpot(this.props.spot);
+                return this.availableGotch(this.props.spot);
             }
         }
         if (this.props.evolution) {
@@ -67,8 +67,14 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
             return this.drivingGotchi(this.props.gotchi)
         }
         if (this.props.gotch) {
-            const home = this.props.gotch.master === this.props.master;
-            return home ? this.homeGotch(this.props.gotch) : this.foreignGotch(this.props.gotch);
+            if (this.props.gotch.master === this.props.master) {
+                return this.homeGotch(this.props.gotch);
+            } else {
+                return this.foreignGotch(this.props.gotch);
+            }
+        }
+        if (this.props.spot && this.props.spot.free) {
+            return this.freeSpot(this.props.spot)
         }
         return (
             <ActionPanel>
@@ -124,7 +130,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                     Driving "{gotchi.master}"
                 </p>
                 <p>
-                    <Clicky props={this.props}  command={Command.RETURN_TO_SEED}/>
+                    <Clicky props={this.props} command={Command.RETURN_TO_SEED}/>
                     <Clicky props={this.props} command={Command.TURN_LEFT}/>
                     <Clicky props={this.props} command={Command.TURN_RIGHT}/>
                 </p>
@@ -143,15 +149,15 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
         );
     }
 
-    private availableSpot(spot: Spot) {
+    private availableGotch(spot: Spot) {
         return (
             <ActionPanel>
                 <p>
                     This one can be your new home!
                 </p>
-                {!spot.canBeNewGotch? null : (
+                {!spot.canBeNewGotch ? null : (
                     <p>
-                       <Clicky props={this.props} command={Command.CLAIM_GOTCH}/>
+                        <Clicky props={this.props} command={Command.CLAIM_GOTCH}/>
                     </p>
                 )}
             </ActionPanel>
@@ -177,4 +183,19 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
             </ActionPanel>
         );
     }
+
+    private freeSpot(spot: Spot) {
+        return (
+            <ActionPanel>
+                <p>
+                    This spot needs to be turned into <strong>land</strong> or <strong>water</strong>.
+                </p>
+                <p>
+                    <Clicky props={this.props} command={Command.CREATE_LAND}/>
+                    <Clicky props={this.props} command={Command.CREATE_WATER}/>
+                </p>
+            </ActionPanel>
+        );
+    }
+
 }

@@ -5,7 +5,7 @@ import {HIGH_ALTITUDE} from './gotchi-view';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 const OrbitControls = ORBIT_CONTROLS(THREE);
-const HELICOPTER_DISTANCE = 160;
+const HELICOPTER_DISTANCE = 300;
 const UPWARDS = 0.3;
 const TOWARDS_TARGET = 0.05;
 

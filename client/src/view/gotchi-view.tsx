@@ -83,7 +83,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             if (spot) {
                 if (spot.centerOfGotch) {
                     this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center);
-                } else if (spot.canBeNewGotch) {
+                } else if (spot.canBeNewGotch || spot.free) {
                     this.target = spot.center;
                 }
             }
@@ -149,7 +149,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             const far = this.state.orbitState === OrbitState.HELICOPTER;
             const meshKey = far ? MeshKey.SPOTS_KEY : MeshKey.SEEDS_KEY;
             const spot = this.spotSelector.getSpot(meshKey, event);
-            if (spot && (spot.centerOfGotch || spot.canBeNewGotch)) {
+            if (spot && (spot.centerOfGotch || spot.canBeNewGotch || spot.free)) {
                 this.props.selectedSpot.next(spot);
             }
         }

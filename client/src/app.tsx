@@ -239,13 +239,13 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.CREATE_LAND:
                 if (spot && spot.free) {
                     spot.surface = Surface.Land;
-                    // island.refreshStructure();
+                    island.refreshStructure();
                 }
                 break;
             case Command.CREATE_WATER:
                 if (spot && spot.free) {
                     spot.surface = Surface.Water;
-                    // island.refreshStructure();
+                    island.refreshStructure();
                 }
                 break;
             case Command.CLAIM_GOTCH:
