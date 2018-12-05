@@ -107,7 +107,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             } else if (framesPerSecond < TARGET_FRAME_RATE) {
                 this.frameDelay /= 2;
             }
-            // console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
+            console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
         }
         return (
             <div id="gotchi-view" onMouseDownCapture={this.onMouseDownCapture}>
@@ -117,14 +117,20 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             island={this.props.island}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
-                        {!this.props.evolution ? null : <EvolutionComponent evolution={this.props.evolution}/>}
-                        {!this.props.gotchi ? null : <GotchiComponent gotchi={this.props.gotchi}/>}
+                        {!this.props.evolution ? null : (
+                            <EvolutionComponent evolution={this.props.evolution}/>)
+                        }
+                        {!this.props.gotchi ? null : (
+                            <GotchiComponent gotchi={this.props.gotchi}/>
+                        )}
                         <R3.LineSegments
                             key="Pointer"
                             geometry={this.pointerGeometry}
                             material={USER_POINTER_MATERIAL}
                         />
-                        {!this.props.trip ? null : <TripComponent trip={this.props.trip}/>}
+                        {!this.props.trip ? null : (
+                            <TripComponent trip={this.props.trip}/>
+                        )}
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>
