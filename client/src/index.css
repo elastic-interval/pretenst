@@ -6,7 +6,7 @@ body {
 }
 
 p a, p a:hover {
-    color: red;
+    color: #ff8582;
     font-weight: bolder;
     text-decoration: none;
 }
@@ -121,6 +121,10 @@ p a, p a:hover {
 
 .carousel-control-next {
     width: 10%;
+}
+
+.carousel-indicators {
+    top: 80%;
 }
 
 .feature-prompt {
