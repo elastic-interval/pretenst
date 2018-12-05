@@ -17,43 +17,35 @@ interface IPage {
 const PAGES: IPage[] = [
     {
         lines: [
-            "This is a *Galapagotch* island."
+            'This is the first *Galapagotch* island.',
+            'What you see is a toy world, but it\'s also a place',
+            'where you can get a sense of how natural selection works.',
+            'It\'s developing into a game.',
+            'Welcome, because both players and developers can help make it more fun!'
         ]
     },
     {
         lines: [
-            'In the local dialect, *galapa* means something like "family" and a *gotch*',
+            '',
+            'As the story goes, *galapa* means something like "family" in the local dialect and a *gotch*',
             'is a unique beehive pattern of surface spots where a *gotchi* lives.',
-        ]
-    },
-    {
-        lines: [
             'Every *gotch* is a place with a completely unique pattern',
             'and it is forever connected to its neighbors.',
-            'Together they form a *Galapagotch* island.'
         ]
     },
     {
         lines: [
-            'A *galapagotchi* emerges from its gotch,',
-            'evolving first body shape and then muscle coordination.'
-        ]
-    },
-    {
-        lines: [
-            '## ⚁ ⚂ ⚃ ⚂ ⚀ ⚄ ⚅ ⚂ ⚂ ⚅ ⚂ ⚃ ⚁ ⚁ ⚄ ⚀ ⚅ ⚄ ⚅ ...',
             '',
-            'The genes of a galapagotchi are not DNA like ours, but are instead frozen sequences of dice.'
+            'A *galapagotchi* emerges from its gotch,',
+            'evolving first body shape and then muscle coordination.',
+            'The genes of a galapagotchi are not DNA like ours, but are instead frozen sequences of dice.',
+            '⚁ ⚂ ⚃ ⚂ ⚀ ⚄ ⚅ ⚂ ⚂ ⚅ ⚂ ⚃ ⚁ ⚁ ⚄ ⚀ ⚅ ⚄ ⚅ ...',
         ]
     },
     {
         lines: [
             'A mutated gene is a near-perfect copy, but with some dice randomly tossed.',
-            'The result of tossing a few dice [is anybody\'s guess](https://en.wikipedia.org/wiki/The_Blind_Watchmaker).'
-        ]
-    },
-    {
-        lines: [
+            'The result of tossing a few dice [is anybody\'s guess](https://en.wikipedia.org/wiki/The_Blind_Watchmaker).',
             'A gotchi evolves in an accelerated kind of "multiverse" where they compete with',
             'mutated versions of themselves in the same space.',
             'While evolving, they look a bit like ghosts.'
@@ -62,11 +54,7 @@ const PAGES: IPage[] = [
     {
         lines: [
             'To acquire a shape, the galapagotchi are completely dependent on their master, the player.',
-            'This is an aesthetic selection phase, so the master can throw the dice until a good enough body appears.'
-        ]
-    },
-    {
-        lines: [
+            'This is an aesthetic selection phase, so the master can throw the dice until a good enough body appears.',
             'To acquire running behavior, a *gotchi* continues its multiverse evolution',
             'with a drive to run and a sense of direction',
             '(*intelligent design*: guilty as charged, don\'t want',
@@ -76,11 +64,8 @@ const PAGES: IPage[] = [
     {
         lines: [
             'A *gotchi* competes against mutations of itself, like toy bacteria might,',
-            'but *wow* it can evolve to run with conviction!\n'
-        ]
-    },
-    {
-        lines: [
+            'but *wow* it can evolve to run with conviction!',
+            '',
             'As the [Dawkins](https://en.wikipedia.org/wiki/Richard_Dawkins)-inspired evolution proceeds,',
             'the slowest are forgotten while the fastest become pregnant',
             'and give birth to mutations of themselves, tossing a few dice.'
@@ -111,7 +96,18 @@ const PAGES: IPage[] = [
         lines: [
             '**galapagotch island**: family of permanently linked *gotches*'
         ]
+    },
+    {
+        lines: [
+            'If you\'re a developer, [look here](https://github.com/geralddejong/galapagotchi)',
+            'or [find me](https://twitter.com/fluxe) if you are interested in ',
+            '[WebAssembly](https://webassembly.org/),',
+            '[WebGL](https://en.wikipedia.org/wiki/WebGL)/[ThreeJS](https://threejs.org/) or',
+            'Darwin\'s [Evolution](https://en.wikipedia.org/wiki/Darwin%27s_Dangerous_Idea).'
+        ]
     }
+    /*
+     */
 ];
 
 const PAGE_STRINGS = PAGES.map(page => page.lines.join('\n'));
