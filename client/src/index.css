@@ -42,9 +42,20 @@ p a, p a:hover {
     text-align: center;
 }
 
+.actions-panel-collapsed {
+    top: 20px;
+    right: 20px;
+}
+
 .action-panel {
     width: 100%;
     right: 100%;
+}
+
+.action-exit {
+    position: absolute;
+    top: 5px;
+    left: 15px;
 }
 
 .dice {
@@ -89,6 +100,11 @@ p a, p a:hover {
     left: 20px;
     width: 30%;
     height: 35%;
+}
+
+.info-panel-collapsed {
+    bottom: 20px;
+    left: 20px;
 }
 
 .carousel {

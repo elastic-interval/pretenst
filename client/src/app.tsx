@@ -29,6 +29,7 @@ export interface IAppState {
     width: number;
     height: number;
     infoPanel: boolean;
+    actionPanel: boolean;
 
     master?: string
     orbitState: OrbitState;
@@ -86,6 +87,7 @@ function selectSpot(spot?: Spot) {
         dispose(state);
         state.island.setActive();
         return {
+            actionPanel: true,
             spot,
             gotch,
             gotchi: undefined,
@@ -118,6 +120,7 @@ class App extends React.Component<IAppProps, IAppState> {
         };
         this.state = {
             infoPanel: true,
+            actionPanel: false,
             orbitState: this.orbitStateSubject.getValue(),
             island: new Island('GalapagotchIsland', this.islandState, gotchiFactory, this.props.storage),
             master: this.props.storage.getMaster(),
@@ -155,7 +158,11 @@ class App extends React.Component<IAppProps, IAppState> {
                     trip={this.state.trip}
                     gotchi={this.state.gotchi}
                 />
-                {!this.state.infoPanel ? null : (
+                {!this.state.infoPanel ? (
+                    <div className="info-panel-collapsed floating-panel">
+                        <Button color="link" onClick={() => this.setState({infoPanel: true})}>?</Button>
+                    </div>
+                ) : (
                     <div className="info-panel floating-panel">
                         <div className="info-title">
                             <h3>Galapagotchi Run!</h3>
@@ -166,17 +173,26 @@ class App extends React.Component<IAppProps, IAppState> {
                         <InfoPanel master={this.state.master}/>
                     </div>
                 )}
-                <div className="actions-panel floating-panel">
-                    <ActionsPanel
-                        orbitState={this.state.orbitState}
-                        spot={this.state.spot}
-                        gotch={this.state.gotch}
-                        master={this.state.master}
-                        gotchi={this.state.gotchi}
-                        evolution={this.state.evolution}
-                        do={(command: Command) => this.executeCommand(command)}
-                    />
-                </div>
+                {!this.state.actionPanel ? (
+                    <div className="actions-panel-collapsed floating-panel">
+                        <Button color="link" onClick={() => this.setState({actionPanel: true})}>!</Button>
+                    </div>
+                ) : (
+                    <div className="actions-panel floating-panel">
+                        <div className="action-exit">
+                            <Button color="link" onClick={() => this.setState({actionPanel: false})}>X</Button>
+                        </div>
+                        <ActionsPanel
+                            orbitState={this.state.orbitState}
+                            spot={this.state.spot}
+                            gotch={this.state.gotch}
+                            master={this.state.master}
+                            gotchi={this.state.gotchi}
+                            evolution={this.state.evolution}
+                            do={(command: Command) => this.executeCommand(command)}
+                        />
+                    </div>
+                )}
             </div>
         );
     }
