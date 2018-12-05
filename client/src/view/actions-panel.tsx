@@ -7,11 +7,14 @@ import {OrbitState} from './orbit';
 import {Button} from 'reactstrap';
 
 export enum Command {
-    RETURN_TO_SEED,
-    LAUNCH_GOTCHI,
-    TURN_LEFT,
-    TURN_RIGHT,
-    LAUNCH_EVOLUTION
+    RETURN_TO_SEED = 'Return to seed',
+    LAUNCH_GOTCHI = 'Launch Gotchi',
+    TURN_LEFT = 'Turn Left',
+    TURN_RIGHT = 'Turn Right',
+    LAUNCH_EVOLUTION = 'Launch Evolution',
+    CLAIM_GOTCH = 'Claim Gotch',
+    CREATE_LAND = 'Create Land',
+    CREATE_WATER = 'Create Water',
 }
 
 export interface IActionsPanelProps {
@@ -21,21 +24,27 @@ export interface IActionsPanelProps {
     gotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
-    do: (command: Command) => void;
+    doCommand: (command: Command) => void;
 }
 
 interface IClicky {
-    label: string;
-    click: () => void;
+    props: IActionsPanelProps;
+    command: Command;
 }
 
 function Clicky(params: IClicky) {
     return (
         <span style={{padding: '5px 5px 5px 5px'}}>
-            <Button onClick={params.click}>{params.label}</Button>
+            <Button onClick={() => params.props.doCommand(params.command)}>{params.command}</Button>
         </span>
     );
 }
+
+const ActionPanel = (props: any) => (
+    <div className="action-panel">
+        {props.children}
+    </div>
+);
 
 export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
 
@@ -62,94 +71,101 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
             return home ? this.homeGotch(this.props.gotch) : this.foreignGotch(this.props.gotch);
         }
         return (
-            <div className="action-panel">
+            <ActionPanel>
                 <h1>Click on something or whatever</h1>
-            </div>
+            </ActionPanel>
         );
     }
 
     private foreignGotch(gotch: Gotch) {
         return (
-            <div className="action-panel">
-                <h3>This is "{gotch.master}"</h3>
+            <ActionPanel>
+                <p>
+                    This is "{gotch.master}"
+                </p>
                 <p>
                     You can
-                    <Clicky label={`Launch ${gotch.master}`} click={() => this.props.do(Command.LAUNCH_GOTCHI)}/>
+                    <Clicky props={this.props} command={Command.LAUNCH_GOTCHI}/>
                     to see it grow from the seed.
                 </p>
                 <p>
                     For the time being you can also try to
-                    <Clicky label="Evolve" click={() => this.props.do(Command.LAUNCH_EVOLUTION)}/>
+                    <Clicky props={this.props} command={Command.LAUNCH_EVOLUTION}/>
                     it for a while so it learns muscle coordination.
                 </p>
-            </div>
+            </ActionPanel>
         );
     }
 
     private homeGotch(gotch: Gotch) {
         return (
-            <div className="action-panel">
-                <h3>This is your gotch!</h3>
+            <ActionPanel>
+                <p>
+                    This is your gotch!
+                </p>
                 <p>
                     You can
-                    <Clicky label={`Launch ${gotch.master}`} click={() => this.props.do(Command.LAUNCH_GOTCHI)}/>
+                    <Clicky props={this.props} command={Command.LAUNCH_GOTCHI}/>
                     and drive it around.
                 </p>
                 <p>
                     If it doesn't work well enough, you can
-                    <Clicky label="Evolve" click={() => this.props.do(Command.LAUNCH_EVOLUTION)}/>
+                    <Clicky props={this.props} command={Command.LAUNCH_EVOLUTION}/>
                     it for a while so it learns muscle coordination.
                 </p>
-            </div>
+            </ActionPanel>
         );
     }
 
     private drivingGotchi(gotchi: Gotchi) {
         return (
-            <div className="action-panel">
-                <h3>{gotchi.master}</h3>
+            <ActionPanel>
                 <p>
-                    <p>Driving!</p>
-                    <Clicky label="Enough" click={() => this.props.do(Command.RETURN_TO_SEED)}/>
+                    Driving "{gotchi.master}"
                 </p>
                 <p>
-                    <Clicky label="Left" click={() => this.props.do(Command.TURN_LEFT)}/>
-                    <Clicky label="Right" click={() => this.props.do(Command.TURN_RIGHT)}/>
+                    <Clicky props={this.props}  command={Command.RETURN_TO_SEED}/>
+                    <Clicky props={this.props} command={Command.TURN_LEFT}/>
+                    <Clicky props={this.props} command={Command.TURN_RIGHT}/>
                 </p>
-            </div>
+            </ActionPanel>
         );
     }
 
     private evolving(evolution: Evolution) {
         return (
-            <div className="action-panel">
+            <ActionPanel>
                 <p>
                     You are evolving. Fancy that!
                 </p>
-                <Clicky label="Enough" click={() => this.props.do(Command.RETURN_TO_SEED)}/>
-            </div>
+                <Clicky props={this.props} command={Command.RETURN_TO_SEED}/>
+            </ActionPanel>
         );
     }
 
     private availableSpot(spot: Spot) {
         return (
-            <div className="action-panel">
+            <ActionPanel>
                 <p>
                     This one can be your new home!
-                    <Clicky label={'Make this home'} click={() => console.log('HOME')}/>
                 </p>
-            </div>
+                {!spot.canBeNewGotch? null : (
+                    <p>
+                       <Clicky props={this.props} command={Command.CLAIM_GOTCH}/>
+                    </p>
+                )}
+            </ActionPanel>
         );
     }
 
     private occupiedGotch(gotch: Gotch) {
         return (
-            <div className="action-panel">
-                <h3>This is &quot;{gotch.master}&quot;</h3>
+            <ActionPanel>
                 <p>
-                    You can
-                    <Clicky label={`Visit ${gotch.master}`} click={() => console.log('VISIT')}/>
-                    or choose another one.
+                    This is &quot;{gotch.master}&quot;
+                </p>
+                <p>
+                    You can zoom in for a visit or choose another one.
                 </p>
                 {
                     this.props.master ? (
@@ -158,49 +174,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                         <p>Choose a green one and you can make it your new home.</p>
                     )
                 }
-            </div>
+            </ActionPanel>
         );
     }
-
-// private spotSelected = (spot?: Spot) => {
-    //     if (spot) {
-    //         if (spot.centerOfGotch) {
-    //             console.log('spot selected');
-    //             this.setState(selectGotch(spot.centerOfGotch));
-    //         }
-    //     }
-    //     const island = this.state.island;
-    //     const centerOfGotch = spot.centerOfGotch;
-    //     if (centerOfGotch) {
-    //         if (centerOfGotch.genome) {
-    //             return;
-    //         }
-    //         if (island.legal && centerOfGotch === island.freeGotch) {
-    //             // centerOfGotch.genome = freshGenomeFor(MASTER);
-    //             island.refresh();
-    //             island.save();
-    //         }
-    //     } else if (spot.free) {
-    //         switch (spot.surface) {
-    //             case Surface.Unknown:
-    //                 spot.surface = Surface.Water;
-    //                 break;
-    //             case Surface.Land:
-    //                 spot.surface = Surface.Water;
-    //                 break;
-    //             case Surface.Water:
-    //                 spot.surface = Surface.Land;
-    //                 break;
-    //         }
-    //         island.refresh();
-    //     } else if (spot.canBeNewGotch) {
-    //     // } else if (spot.canBeNewGotch && !this.state.masterGotch) {
-    //         island.removeFreeGotches();
-    //         if (spot.canBeNewGotch) {
-    //             // island.createGotch(spot, MASTER);
-    //         }
-    //         island.refresh();
-    //     }
-    // };
-
 }

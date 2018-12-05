@@ -6,7 +6,7 @@ import {Gotchi} from './gotchi/gotchi';
 import {Genome, IGenomeData} from './genetics/genome';
 import {Vector3} from 'three';
 import {Physics} from './body/physics';
-import {Spot} from './island/spot';
+import {Spot, Surface} from './island/spot';
 import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution';
 import {Gotch} from './island/gotch';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
@@ -179,8 +179,11 @@ class App extends React.Component<IAppProps, IAppState> {
                     </div>
                 ) : (
                     <div className="actions-panel floating-panel">
-                        <div className="action-exit">
-                            <Button color="link" onClick={() => this.setState({actionPanel: false})}>X</Button>
+                        <div className="info-title">
+                            <h3>Actions</h3>
+                            <div className="action-exit">
+                                <Button color="link" onClick={() => this.setState({actionPanel: false})}>X</Button>
+                            </div>
                         </div>
                         <ActionsPanel
                             orbitState={this.state.orbitState}
@@ -189,7 +192,7 @@ class App extends React.Component<IAppProps, IAppState> {
                             master={this.state.master}
                             gotchi={this.state.gotchi}
                             evolution={this.state.evolution}
-                            do={(command: Command) => this.executeCommand(command)}
+                            doCommand={(command: Command) => this.executeCommand(command)}
                         />
                     </div>
                 )}
@@ -198,6 +201,9 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     private executeCommand(command: Command) {
+        const island = this.state.island;
+        const master = this.state.master;
+        const spot = this.state.spot;
         const gotch = this.state.gotch;
         const gotchi = this.state.gotchi;
         switch (command) {
@@ -208,7 +214,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 break;
             case Command.LAUNCH_GOTCHI:
                 if (gotch) {
-                    this.state.island.setActive(gotch.master);
+                    island.setActive(gotch.master);
                     gotch.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
                         this.setState(startGotchi(freshGotchi));
                     });
@@ -226,10 +232,38 @@ class App extends React.Component<IAppProps, IAppState> {
                 break;
             case Command.LAUNCH_EVOLUTION:
                 if (gotch) {
-                    this.state.island.setActive(gotch.master);
+                    island.setActive(gotch.master);
                     this.setState(startEvolution(gotch));
                 }
                 break;
+            case Command.CREATE_LAND:
+                if (spot && spot.free) {
+                    spot.surface = Surface.Land;
+                    // island.refreshStructure();
+                }
+                break;
+            case Command.CREATE_WATER:
+                if (spot && spot.free) {
+                    spot.surface = Surface.Water;
+                    // island.refreshStructure();
+                }
+                break;
+            case Command.CLAIM_GOTCH:
+                if (spot && master) {
+                    island.removeFreeGotches();
+                    if (spot.canBeNewGotch) {
+                        island.createGotch(spot, master);
+                    }
+                    island.refreshStructure();
+                }
+                // if (island.legal && centerOfGotch === island.freeGotch) {
+                //     // centerOfGotch.genome = freshGenomeFor(MASTER);
+                //     island.refresh();
+                //     island.save();
+                // }
+                break;
+            default:
+                throw new Error('Unknown command!');
         }
     }
 }
