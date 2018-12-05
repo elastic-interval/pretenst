@@ -55,7 +55,7 @@ p a, p a:hover {
 .action-exit {
     position: absolute;
     top: 5px;
-    left: 15px;
+    right: 15px;
 }
 
 .dice {
