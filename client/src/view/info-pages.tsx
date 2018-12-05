@@ -108,11 +108,8 @@ export const INFO_PAGES: JSX.Element[] = [
         <div>
             <p>
                 To acquire running behavior, a *gotchi* continues its multiverse evolution
-                with a drive to run and a sense of direction
-            </p>
-            <p>
-                (<i>intelligent design</i>: guilty as charged,
-                don't want to wait <a href={AGE_OF_THE_EARTH}>billions of years</a>.
+                with a drive to run and a sense of direction (<i>intelligent design</i>: guilty as charged,
+                don't want to wait <a href={AGE_OF_THE_EARTH}>billions of years</a>).
             </p>
         </div>
     )

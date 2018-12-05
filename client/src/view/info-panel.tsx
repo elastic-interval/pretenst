@@ -23,12 +23,12 @@ export class InfoPanel extends React.Component<IInfoPanelProps, IInfoPanelState>
 
     public render() {
         const {activeIndex} = this.state;
-        const items = INFO_PAGES.map((page: JSX.Element, index: number) => {
+        const items = INFO_PAGES.map((pageContent: JSX.Element, index: number) => {
             return (
                 <CarouselItem key={`page-${index}`}
                               onExiting={() => this.animating = true}
                               onExited={() => this.animating = false}>
-                    <div key={`item-${index}`}>{page}</div>
+                    <div key={`item-${index}`}>{pageContent}</div>
                 </CarouselItem>
             );
         });
