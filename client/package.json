@@ -11,7 +11,6 @@
     "bootstrap": "^4.1.3",
     "react": "^15.4.1",
     "react-dom": "^15.4.1",
-    "react-markdown": "^4.0.4",
     "react-scripts-ts": "2.15.1",
     "react-three": "^0.9.7",
     "reactstrap": "^6.5.0",

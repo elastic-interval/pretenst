@@ -146,9 +146,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             if (this.props.evolution || this.props.gotchi) {
                 return;
             }
-            const far = this.state.orbitState === OrbitState.HELICOPTER;
-            const meshKey = far ? MeshKey.SPOTS_KEY : MeshKey.SEEDS_KEY;
-            const spot = this.spotSelector.getSpot(meshKey, event);
+            const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event);
             if (spot && (spot.centerOfGotch || spot.canBeNewGotch || spot.free)) {
                 this.props.selectedSpot.next(spot);
             }

@@ -53,28 +53,29 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
     }
 
     public render() {
-        if (this.props.orbitState === OrbitState.HELICOPTER && this.props.spot) {
-            if (this.props.gotch && this.props.gotch.master) {
-                return this.occupiedGotch(this.props.gotch);
-            } else {
-                return this.availableGotch(this.props.spot);
+        const evolution = this.props.evolution;
+        if (evolution) {
+            return this.evolving(evolution);
+        }
+        const gotchi = this.props.gotchi;
+        if (gotchi) {
+            return this.drivingGotchi(gotchi)
+        }
+        const gotch = this.props.gotch;
+        if (gotch) {
+            if (gotch.master === this.props.master) {
+                return this.homeGotch(gotch);
+            } else if (gotch.master) {
+                return this.foreignGotch(gotch);
             }
         }
-        if (this.props.evolution) {
-            return this.evolving(this.props.evolution);
-        }
-        if (this.props.gotchi) {
-            return this.drivingGotchi(this.props.gotchi)
-        }
-        if (this.props.gotch) {
-            if (this.props.gotch.master === this.props.master) {
-                return this.homeGotch(this.props.gotch);
-            } else {
-                return this.foreignGotch(this.props.gotch);
+        const spot = this.props.spot;
+        if (spot) {
+            if (spot.free) {
+                return this.freeSpot(spot)
+            } else if (spot.canBeNewGotch) {
+                return this.availableGotch(spot);
             }
-        }
-        if (this.props.spot && this.props.spot.free) {
-            return this.freeSpot(this.props.spot)
         }
         return (
             <ActionPanel>
@@ -164,26 +165,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
         );
     }
 
-    private occupiedGotch(gotch: Gotch) {
-        return (
-            <ActionPanel>
-                <p>
-                    This is &quot;{gotch.master}&quot;
-                </p>
-                <p>
-                    You can zoom in for a visit or choose another one.
-                </p>
-                {
-                    this.props.master ? (
-                        <p>This shouldn't happen</p>
-                    ) : (
-                        <p>Choose a green one and you can make it your new home.</p>
-                    )
-                }
-            </ActionPanel>
-        );
-    }
-
     private freeSpot(spot: Spot) {
         return (
             <ActionPanel>
@@ -197,5 +178,4 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
             </ActionPanel>
         );
     }
-
 }

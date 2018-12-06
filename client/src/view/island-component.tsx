@@ -80,7 +80,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
                 <R3.Mesh
                     name="ForeignSeeds"
                     geometry={this.state.foreignSeedGeometry}
-                    ref={(mesh: Mesh) => this.props.setMesh(MeshKey.SEEDS_KEY, mesh)}
                     material={GOTCHI_MATERIAL}
                 />
                 <R3.Mesh
