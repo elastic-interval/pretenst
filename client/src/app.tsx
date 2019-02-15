@@ -20,7 +20,7 @@ import {InfoPanel} from './view/info-panel';
 import {Button} from 'reactstrap';
 
 interface IAppProps {
-    createFabricInstance: () => Promise<IFabricExports>;
+    createFabricInstance: (fabricNumber: number) => Promise<IFabricExports>;
     storage: AppStorage;
 }
 
@@ -98,6 +98,7 @@ function selectSpot(spot?: Spot) {
 }
 
 class App extends React.Component<IAppProps, IAppState> {
+    private fabricCount = 0;
     private subs: Subscription[] = [];
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER);
     private perspectiveCamera: PerspectiveCamera;
@@ -109,21 +110,19 @@ class App extends React.Component<IAppProps, IAppState> {
         super(props);
         this.physics = new Physics(props.storage);
         this.islandState = new BehaviorSubject<boolean>(false);
-        const gotchiFactory = {
-            createGotchiAt: (location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
-                return this.props.createFabricInstance().then(fabricExports => {
-                    this.physics.applyToFabric(fabricExports);
-                    const fabric = new Fabric(fabricExports, jointCountMax);
-                    fabric.createSeed(location.x, location.z);
-                    return new Gotchi(fabric, genome);
-                });
-            }
+        const createGotchiAt = (location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
+            return this.props.createFabricInstance(this.fabricCount++).then(fabricExports => {
+                this.physics.applyToFabric(fabricExports);
+                const fabric = new Fabric(fabricExports, jointCountMax);
+                fabric.createSeed(location.x, location.z);
+                return new Gotchi(fabric, genome);
+            });
         };
         this.state = {
             infoPanel: true,
             actionPanel: false,
             orbitDistance: this.orbitDistanceSubject.getValue(),
-            island: new Island('GalapagotchIsland', this.islandState, gotchiFactory, this.props.storage),
+            island: new Island('GalapagotchIsland', this.islandState, {createGotchiAt}, this.props.storage),
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight

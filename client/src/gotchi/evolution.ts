@@ -34,9 +34,7 @@ export class Evolution {
             mutatingGenome = mutatingGenome.withMutatedBehavior(direction, MUTATION_COUNT);
         }
         Promise.all(promisedGotchis).then(gotchis => {
-            this.evolversNow.next(gotchis.map(gotchi => {
-                return this.gotchiToEvolver(gotchi);
-            }));
+            this.evolversNow.next(gotchis.map(gotchi => this.gotchiToEvolver(gotchi)));
         });
     }
 
@@ -120,18 +118,19 @@ export class Evolution {
         console.log(`REBOOT: dead=${deadEvolvers.length} remaining=${ranked.length}`);
         this.evolversNow.next(ranked);
         setTimeout(() => {
-            const mutants: Array<Promise<Gotchi>> = deadEvolvers.map(deadEvolver => {
-                deadEvolver.gotchi.dispose();
+            const mutants: Array<Promise<Gotchi>> = deadEvolvers.map(evolver => {
+                evolver.gotchi.dispose();
                 const luckyParent = ranked[Math.floor(ranked.length * Math.random())];
                 return this.createOffspring(luckyParent.gotchi, luckyParent.currentDirection, false);
             });
             const clones: Array<Promise<Gotchi>> = ranked.map(evolver => {
+                evolver.gotchi.dispose();
                 return this.createOffspring(evolver.gotchi, evolver.currentDirection, true);
             });
             this.evolversNow.next([]);
             Promise.all(mutants.concat(clones)).then(offspring => {
                 console.log(`survived=${offspring.length}`);
-                this.evolversNow.next(offspring.map(off => this.gotchiToEvolver(off)));
+                this.evolversNow.next(offspring.map(g => this.gotchiToEvolver(g)));
                 this.rebooting = false;
             });
         }, 1000);

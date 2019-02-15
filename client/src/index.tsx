@@ -7,7 +7,7 @@ import {IFabricExports} from './body/fabric-exports';
 import {AppStorage} from './app-storage';
 import './index.css';
 
-declare const createFabricInstance: () => Promise<IFabricExports>; // implementation: index.html
+declare const createFabricInstance: (fabricNumber: any) => Promise<IFabricExports>; // implementation: index.html
 const storage: AppStorage = new AppStorage(localStorage);
 
 ReactDOM.render(
