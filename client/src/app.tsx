@@ -1,23 +1,23 @@
 import * as React from 'react';
-import {Direction, IFabricExports, turn} from './body/fabric-exports';
-import {Island} from './island/island';
-import {Fabric} from './body/fabric';
-import {Gotchi} from './gotchi/gotchi';
-import {Genome, IGenomeData} from './genetics/genome';
-import {PerspectiveCamera, Vector3} from 'three';
-import {Physics} from './body/physics';
-import {Spot, Surface} from './island/spot';
-import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution';
-import {Hexalot} from './island/hexalot';
+import {Button} from 'reactstrap';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {OrbitDistance} from './view/orbit';
-import {AppStorage} from './app-storage';
 import {Subscription} from 'rxjs/Subscription';
+import {PerspectiveCamera, Vector3} from 'three';
+import {AppStorage} from './app-storage';
+import {Fabric} from './body/fabric';
+import {Direction, IFabricExports, turn} from './body/fabric-exports';
+import {Physics} from './body/physics';
+import {Genome, IGenomeData} from './genetics/genome';
+import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution';
+import {Gotchi} from './gotchi/gotchi';
+import {Hexalot} from './island/hexalot';
+import {Island} from './island/island';
+import {Spot, Surface} from './island/spot';
 import {Trip} from './island/trip';
 import {ActionsPanel, Command} from './view/actions-panel';
 import {GotchiView} from './view/gotchi-view';
 import {InfoPanel} from './view/info-panel';
-import {Button} from 'reactstrap';
+import {OrbitDistance} from './view/orbit';
 
 interface IAppProps {
     createFabricInstance: () => Promise<IFabricExports>;
@@ -31,7 +31,7 @@ export interface IAppState {
     infoPanel: boolean;
     actionPanel: boolean;
 
-    master?: string
+    master?: string;
     orbitDistance: OrbitDistance;
     spot?: Spot;
     hexalot?: Hexalot;
@@ -64,7 +64,7 @@ function startEvolution(hexalot: Hexalot) {
                 console.log(`Saving genome data`);
                 props.storage.setGenome(hexalot, genomeData);
             }),
-            trip
+            trip,
         };
     };
 }
@@ -76,7 +76,7 @@ function startGotchi(gotchi: Gotchi) {
         return {
             gotchi,
             evolution: undefined,
-            trip: undefined
+            trip: undefined,
         };
     };
 }
@@ -92,9 +92,9 @@ function selectSpot(spot?: Spot) {
             hexalot,
             gotchi: undefined,
             evolution: undefined,
-            trip: undefined
+            trip: undefined,
         };
-    }
+    };
 }
 
 class App extends React.Component<IAppProps, IAppState> {
@@ -117,7 +117,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     fabric.createSeed(location.x, location.z);
                     return new Gotchi(fabric, genome);
                 });
-            }
+            },
         };
         this.state = {
             infoPanel: true,
@@ -126,7 +126,7 @@ class App extends React.Component<IAppProps, IAppState> {
             island: new Island('GalapagotchIsland', this.islandState, gotchiFactory, this.props.storage),
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
-            height: window.innerHeight
+            height: window.innerHeight,
         };
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000);
     }

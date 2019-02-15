@@ -1,8 +1,8 @@
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import * as THREE from 'three';
 import {PerspectiveCamera, Vector3} from 'three';
 import * as ORBIT_CONTROLS from 'three-orbit-controls';
 import {HIGH_ALTITUDE} from './gotchi-view';
-import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 
 const OrbitControls = ORBIT_CONTROLS(THREE);
 const HELICOPTER_DISTANCE = 300;
@@ -11,7 +11,7 @@ const TOWARDS_TARGET = 0.05;
 
 export enum OrbitDistance {
     HELICOPTER = 'HELICOPTER',
-    CRUISE = 'CRUISE'
+    CRUISE = 'CRUISE',
 }
 
 export class Orbit {

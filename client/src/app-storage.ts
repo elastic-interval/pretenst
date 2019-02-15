@@ -1,7 +1,7 @@
 import {PhysicsFeature} from './body/physics';
+import {IGenomeData} from './genetics/genome';
 import {Hexalot} from './island/hexalot';
 import {IslandPattern} from './island/island';
-import {IGenomeData} from './genetics/genome';
 
 const MASTER_KEY = 'master';
 
@@ -25,7 +25,7 @@ export class AppStorage {
     }
 
     public setPhysicsFeature(feature: PhysicsFeature, factor: number) {
-        this.storage.setItem(feature, factor.toFixed(3))
+        this.storage.setItem(feature, factor.toFixed(3));
     }
 
     public getIsland(islandName: string): IslandPattern {

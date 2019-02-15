@@ -1,8 +1,8 @@
-import {Gotchi} from './gotchi';
 import {Vector3} from 'three';
+import {Direction} from '../body/fabric-exports';
 import {HEXAPOD_RADIUS} from '../island/shapes';
 import {ITravel} from '../island/trip';
-import {Direction} from '../body/fabric-exports';
+import {Gotchi} from './gotchi';
 
 export const compareEvolvers = (a: Evolver, b: Evolver) => a.toDestination - b.toDestination;
 

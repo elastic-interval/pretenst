@@ -1,11 +1,11 @@
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Vector3} from 'three';
+import {AppStorage} from '../app-storage';
+import {Genome} from '../genetics/genome';
+import {IGotchiFactory} from '../gotchi/gotchi';
 import {Hexalot, hexalotTreeString} from './hexalot';
 import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from './spot';
-import {Genome} from '../genetics/genome';
-import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {IGotchiFactory} from '../gotchi/gotchi';
-import {AppStorage} from '../app-storage';
 
 export interface IslandPattern {
     hexalots: string;
@@ -30,7 +30,7 @@ export class Island {
         public islandName: string,
         public islandState: BehaviorSubject<boolean>,
         private gotchiFactory: IGotchiFactory,
-        private storage: AppStorage
+        private storage: AppStorage,
     ) {
         this.apply(storage.getIsland(islandName));
     }
@@ -48,7 +48,7 @@ export class Island {
     }
 
     public findHexalot(master: string): Hexalot | undefined {
-        return this.hexalots.find(hexalot => !!hexalot.genome && hexalot.genome.master === master)
+        return this.hexalots.find(hexalot => !!hexalot.genome && hexalot.genome.master === master);
     }
 
     public setActive(master?: string) {
@@ -125,12 +125,12 @@ export class Island {
 
     public get pattern(): IslandPattern {
         if (!this.isLegal) {
-            throw new Error('Saving illegal island')
+            throw new Error('Saving illegal island');
         }
         this.spots.sort(sortSpotsOnCoord);
         return {
             hexalots: hexalotTreeString(this.hexalots),
-            spots: spotsToString(this.spots)
+            spots: spotsToString(this.spots),
         } as IslandPattern;
     }
 

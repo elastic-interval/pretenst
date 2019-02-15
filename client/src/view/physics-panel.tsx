@@ -14,7 +14,7 @@ function featureSelected(feature: IPhysicsFeature) {
     return (): any => {
         return {
             feature,
-            value: feature.getFactor()
+            value: feature.getFactor(),
         };
     };
 }

@@ -1,8 +1,8 @@
 import * as React from 'react';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {OrbitDistance} from './orbit';
 import {Subscription} from 'rxjs/Subscription';
 import {Spot} from '../island/spot';
+import {OrbitDistance} from './orbit';
 
 export interface ITitlePanelProps {
     version: string;

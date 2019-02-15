@@ -1,22 +1,22 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import {Subscription} from 'rxjs/Subscription';
 import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from 'three';
+import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 import {Evolution} from '../gotchi/evolution';
 import {Gotchi} from '../gotchi/gotchi';
-import {Island} from '../island/island';
-import {EvolutionComponent} from './evolution-component';
-import {IslandComponent} from './island-component';
-import {Orbit, OrbitDistance} from './orbit';
-import {GotchiComponent} from './gotchi-component';
-import {MeshKey, SpotSelector} from './spot-selector';
-import {Spot} from '../island/spot';
-import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
 import {Hexalot} from '../island/hexalot';
-import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {USER_POINTER_MATERIAL} from './materials';
-import {Subscription} from 'rxjs/Subscription';
-import {TripComponent} from './trip-component';
+import {Island} from '../island/island';
+import {Spot} from '../island/spot';
 import {Trip} from '../island/trip';
+import {EvolutionComponent} from './evolution-component';
+import {GotchiComponent} from './gotchi-component';
+import {IslandComponent} from './island-component';
+import {USER_POINTER_MATERIAL} from './materials';
+import {Orbit, OrbitDistance} from './orbit';
+import {MeshKey, SpotSelector} from './spot-selector';
+import {TripComponent} from './trip-component';
 
 export const HIGH_ALTITUDE = 1000;
 
@@ -55,13 +55,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         super(props);
         this.props.perspectiveCamera.position.addVectors(props.island.midpoint, new Vector3(0, HIGH_ALTITUDE / 2, 0));
         this.state = {
-            orbitDistance: this.props.orbitDistance.getValue()
+            orbitDistance: this.props.orbitDistance.getValue(),
         };
         this.spotSelector = new SpotSelector(
             this.props.perspectiveCamera,
             this.props.island,
             this.props.width,
-            this.props.height
+            this.props.height,
         );
     }
 
@@ -149,7 +149,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             if (spot && (spot.centerOfHexalot || spot.canBeNewHexalot || spot.free)) {
                 this.props.selectedSpot.next(spot);
             }
-        }
+        };
     }
 
     // private get pointerGeometry(): Geometry | null {
@@ -201,7 +201,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         requestAnimationFrame(step);
                     }
                 },
-                this.frameDelay
+                this.frameDelay,
             );
         };
         requestAnimationFrame(step);

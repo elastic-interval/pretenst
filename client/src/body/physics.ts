@@ -1,5 +1,5 @@
-import {IFabricExports} from './fabric-exports';
 import {AppStorage} from '../app-storage';
+import {IFabricExports} from './fabric-exports';
 
 export enum PhysicsFeature {
     GravityAbove = 'Gravity Above',
@@ -8,12 +8,12 @@ export enum PhysicsFeature {
     DragBelow = 'Drag Below',
     ElasticFactor = 'Elastic Factor',
     MaxSpanVariation = 'Maximum Span Variation',
-    SpanVariationSpeed = 'Span Variation Speed'
+    SpanVariationSpeed = 'Span Variation Speed',
 }
 
 export interface IPhysicsFeature {
     feature: PhysicsFeature;
-    getFactor: () => number,
+    getFactor: () => number;
     setFactor: (factor: number) => void;
 }
 
@@ -68,7 +68,7 @@ export class Physics {
         return {
             feature,
             getFactor: () => this.storage.getPhysicsFeature(feature),
-            setFactor: (factor: number) => this.storage.setPhysicsFeature(feature, factor)
-        }
+            setFactor: (factor: number) => this.storage.setPhysicsFeature(feature, factor),
+        };
     }
 }

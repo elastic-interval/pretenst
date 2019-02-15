@@ -17,7 +17,7 @@ export class InfoPanel extends React.Component<IInfoPanelProps, IInfoPanelState>
     constructor(props: IInfoPanelProps) {
         super(props);
         this.state = {
-            activeIndex: 0
+            activeIndex: 0,
         };
     }
 

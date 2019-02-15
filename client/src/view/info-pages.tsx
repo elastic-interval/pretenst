@@ -1,5 +1,5 @@
-import {Col, Container, Row} from 'reactstrap';
 import * as React from 'react';
+import {Col, Container, Row} from 'reactstrap';
 
 const GALAPAGOTCHI = 'https://github.com/geralddejong/galapagotchi';
 const FLUXE = 'https://twitter.com/fluxe';
@@ -194,5 +194,5 @@ export const INFO_PAGES: JSX.Element[] = [
                 </Row>
             </Container>
         </div>
-    )
+    ),
 ];

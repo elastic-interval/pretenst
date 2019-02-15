@@ -29,7 +29,7 @@ function geometryRefreshed(state: ITripComponentState, props: ITripComponentProp
     const geometry = new BufferGeometry();
     geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));
     return {
-        geometry
+        geometry,
     };
 }
 

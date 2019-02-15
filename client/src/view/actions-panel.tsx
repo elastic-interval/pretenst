@@ -1,12 +1,12 @@
 import * as React from 'react';
-import {Spot} from '../island/spot';
-import {Gotchi} from '../gotchi/gotchi';
-import {Evolution} from '../gotchi/evolution';
-import {Hexalot} from '../island/hexalot';
-import {OrbitDistance} from './orbit';
 import {Button, ButtonGroup, Col, Container, Row} from 'reactstrap';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Vector3} from 'three';
+import {Evolution} from '../gotchi/evolution';
+import {Gotchi} from '../gotchi/gotchi';
+import {Hexalot} from '../island/hexalot';
+import {Spot} from '../island/spot';
+import {OrbitDistance} from './orbit';
 
 export enum Command {
     RETURN_TO_SEED = 'Return to seed',
@@ -65,7 +65,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
         }
         const gotchi = this.props.gotchi;
         if (gotchi) {
-            return this.drivingGotchi(gotchi)
+            return this.drivingGotchi(gotchi);
         }
         const hexalot = this.props.hexalot;
         if (hexalot) {
@@ -78,7 +78,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
         const spot = this.props.spot;
         if (spot) {
             if (spot.free) {
-                return this.freeSpot(spot)
+                return this.freeSpot(spot);
             } else if (spot.canBeNewHexalot) {
                 return this.availableHexalot(spot);
             }

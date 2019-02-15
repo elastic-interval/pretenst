@@ -1,10 +1,10 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
+import {Subscription} from 'rxjs/Subscription';
 import {Geometry, Mesh} from 'three';
 import {Island} from '../island/island';
-import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
-import {Subscription} from 'rxjs/Subscription';
 import {IViewState} from '../island/spot';
+import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
 import {MeshKey} from './spot-selector';
 
 export interface IslandComponentProps {
@@ -40,7 +40,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
             foreignSeedGeometry: this.createSeedGeometry(true),
             foreignHangersGeometry: this.createHangersGeometry(true),
             homeSeedGeometry: this.createSeedGeometry(false),
-            homeHangersGeometry: this.createHangersGeometry(false)
+            homeHangersGeometry: this.createHangersGeometry(false),
         };
     }
 
@@ -54,7 +54,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
                         foreignSeedGeometry: this.createSeedGeometry(true),
                         foreignHangersGeometry: this.createHangersGeometry(true),
                         homeSeedGeometry: this.createSeedGeometry(false),
-                        homeHangersGeometry: this.createHangersGeometry(false)
+                        homeHangersGeometry: this.createHangersGeometry(false),
                     };
                 });
             });
@@ -106,7 +106,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const viewState: IViewState = {
             islandIsLegal: island.isLegal,
             freeHexalot: island.freeHexalot,
-            master: this.props.master
+            master: this.props.master,
         };
         const geometry = new Geometry();
         island.spots.forEach((spot, index) => {

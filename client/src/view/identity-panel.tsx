@@ -1,9 +1,9 @@
 import * as React from 'react';
 import {ChangeEvent, FormEvent} from 'react';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {Spot} from '../island/spot';
 import {AppStorage} from '../app-storage';
 import {Island} from '../island/island';
+import {Spot} from '../island/spot';
 
 export interface IIdentityPanelProps {
     storage: AppStorage;
@@ -28,7 +28,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
             islandMasters: props.island.hexalots.map(hexalot => {
                 const genome = props.storage.getGenome(hexalot);
                 return genome? genome.master : '';
-            }).filter(master => master.length > 0)
+            }).filter(master => master.length > 0),
         };
     }
 

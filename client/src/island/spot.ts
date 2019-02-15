@@ -1,9 +1,9 @@
-import {Hexalot} from './hexalot';
 import {Color, Face3, Vector3} from 'three';
 import {HUNG_ALTITUDE, SPOT_TO_HANGER} from '../body/fabric';
-import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
 import {SEED_CORNERS} from '../body/fabric-exports';
 import {MeshKey} from '../view/spot-selector';
+import {Hexalot} from './hexalot';
+import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
 
 export interface ICoords {
     x: number;
@@ -13,7 +13,7 @@ export interface ICoords {
 export enum Surface {
     Unknown = 'unknown',
     Land = 'land',
-    Water = 'water'
+    Water = 'water',
 }
 
 export interface IViewState {
@@ -93,7 +93,7 @@ export class Spot {
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.center.x,
             hexPoint.y + this.center.y,
-            hexPoint.z + this.center.z
+            hexPoint.z + this.center.z,
         )));
         let normalSpread = 0;
         let color = SURFACE_UNKNOWN_COLOR;
@@ -122,7 +122,7 @@ export class Spot {
             const vertexNormals = [
                 UP,
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], normalSpread).normalize(),
-                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize()
+                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize(),
             ];
             this.faceNames.push(`${meshKey}:${faces.length}`);
             faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, color));

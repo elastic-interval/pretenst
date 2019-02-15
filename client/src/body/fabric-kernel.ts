@@ -1,5 +1,5 @@
-import {IFabricExports} from './fabric-exports';
 import {Vector3} from 'three';
+import {IFabricExports} from './fabric-exports';
 
 export const vectorFromFloatArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
     if (vector) {
@@ -30,7 +30,7 @@ export class FabricKernel {
         public exports: IFabricExports,
         public jointCountMax: number,
         public intervalCountMax: number,
-        public faceCountMax: number
+        public faceCountMax: number,
     ) {
         // sizes
         const floatsInVector = 3;

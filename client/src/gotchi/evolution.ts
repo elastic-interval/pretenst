@@ -1,12 +1,12 @@
-import {Gotchi} from './gotchi';
-import {NORMAL_TICKS, SPOT_TO_HANGER} from '../body/fabric';
-import {Genome, IGenomeData} from '../genetics/genome';
-import {Vector3} from 'three';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {Hexalot} from '../island/hexalot';
-import {compareEvolvers, Evolver} from './evolver';
-import {Trip} from '../island/trip';
+import {Vector3} from 'three';
+import {NORMAL_TICKS, SPOT_TO_HANGER} from '../body/fabric';
 import {Direction} from '../body/fabric-exports';
+import {Genome, IGenomeData} from '../genetics/genome';
+import {Hexalot} from '../island/hexalot';
+import {Trip} from '../island/trip';
+import {compareEvolvers, Evolver} from './evolver';
+import {Gotchi} from './gotchi';
 
 export const INITIAL_JOINT_COUNT = 47;
 const MAX_POPULATION = 24;
@@ -145,5 +145,5 @@ export class Evolution {
     private gotchiToEvolver = (gotchi: Gotchi): Evolver => {
         const travel = this.trip.createTravel(0);
         return new Evolver(this.evolverId++, gotchi, travel);
-    };
+    }
 }

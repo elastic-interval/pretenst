@@ -1,6 +1,6 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
-import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';
 import {Direction, IFabricExports, SEED_CORNERS} from './fabric-exports';
+import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';
 import {FaceSnapshot, IJointSnapshot} from './face-snapshot';
 
 export const BILATERAL_MIDDLE = 0;
@@ -84,7 +84,7 @@ export class Fabric {
             geometry.vertices = [
                 vectorFromFloatArray(faceLocations, faceOffset * 3), apex,
                 vectorFromFloatArray(faceLocations, (faceOffset + 1) * 3), apex,
-                vectorFromFloatArray(faceLocations, (faceOffset + 2) * 3), apex
+                vectorFromFloatArray(faceLocations, (faceOffset + 2) * 3), apex,
             ];
             return geometry;
         };
@@ -159,7 +159,7 @@ export class Fabric {
         geometry.vertices = [
             arrowFromL, arrowToL, arrowFromR, arrowToR,
             arrowToRx, arrowTip, arrowToLx, arrowTip,
-            arrowToRx, arrowToR, arrowToLx, arrowToL
+            arrowToRx, arrowToR, arrowToLx, arrowToL,
         ];
         if (this.pointerGeometryStored) {
             this.pointerGeometryStored.dispose();
@@ -276,7 +276,7 @@ export class Fabric {
     }
 
     public toString(): string {
-        return `${(this.kernel.blockBytes / 1024).toFixed(1)}k =becomes=> ${this.kernel.bufferBytes / 65536} block(s)`
+        return `${(this.kernel.blockBytes / 1024).toFixed(1)}k =becomes=> ${this.kernel.bufferBytes / 65536} block(s)`;
     }
 
     // ==========================================================

@@ -1,8 +1,8 @@
+import {Vector3} from 'three';
+import {Genome} from '../genetics/genome';
+import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
 import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {equals, ICoords, Spot, Surface} from './spot';
-import {Genome} from '../genetics/genome';
-import {Vector3} from 'three';
-import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
 import {Trip} from './trip';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;

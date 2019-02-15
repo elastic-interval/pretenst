@@ -1,10 +1,10 @@
 import {Mesh, PerspectiveCamera, Raycaster, Vector2} from 'three';
-import {Spot} from '../island/spot';
 import {Island} from '../island/island';
+import {Spot} from '../island/spot';
 
 export enum MeshKey {
     SPOTS_KEY = 'Spots',
-    SEEDS_KEY = 'Seeds'
+    SEEDS_KEY = 'Seeds',
 }
 
 export class SpotSelector {

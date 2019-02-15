@@ -1,15 +1,15 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL} from './materials';
-import {Gotchi} from '../gotchi/gotchi';
 import {Geometry, Vector3} from 'three';
+import {Gotchi} from '../gotchi/gotchi';
+import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL} from './materials';
 
 export interface IGotchiComponentProps {
     gotchi: Gotchi;
 }
 
 export interface IGotchiComponentState {
-    pointerGeometry: Geometry
+    pointerGeometry: Geometry;
 }
 
 const POINTER_SIZE = 10;
@@ -38,7 +38,7 @@ export class GotchiComponent extends React.Component<IGotchiComponentProps, IGot
     constructor(props: IGotchiComponentProps) {
         super(props);
         this.state = {
-            pointerGeometry: new Geometry()
+            pointerGeometry: new Geometry(),
         };
     }
 

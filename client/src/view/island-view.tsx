@@ -1,11 +1,11 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Color, Mesh, PerspectiveCamera, Vector3} from 'three';
-import {Island} from '../island/island';
-import {IslandComponent} from './island-component';
-import {Spot} from '../island/spot';
-import {MeshKey, SpotSelector} from './spot-selector';
 import {Hexalot} from '../island/hexalot';
+import {Island} from '../island/island';
+import {Spot} from '../island/spot';
+import {IslandComponent} from './island-component';
+import {MeshKey, SpotSelector} from './spot-selector';
 
 const SUN_POSITION = new Vector3(0, 300, 200);
 const CAMERA_POSITION = new Vector3(0, 550, 0);
@@ -33,7 +33,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         const singleHexalot = props.island.singleHexalot;
         this.state = {
             hoverSpot: singleHexalot ? singleHexalot.centerSpot : undefined,
-            masterHexalot: props.master ? props.island.findHexalot(props.master) : undefined
+            masterHexalot: props.master ? props.island.findHexalot(props.master) : undefined,
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});
@@ -46,7 +46,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
             this.perspectiveCamera,
             this.props.island,
             this.props.width,
-            this.props.height
+            this.props.height,
         );
     }
 

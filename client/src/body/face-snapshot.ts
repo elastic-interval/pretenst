@@ -21,7 +21,7 @@ export class FaceSnapshot {
         private kernel: FabricKernel,
         private fabricExports: IFabricExports,
         private faceIndex: number,
-        private derived?: boolean
+        private derived?: boolean,
     ) {
         this.jointSnapshots = TRIANGLE
             .map(jointNumber => {
@@ -78,7 +78,7 @@ export class FaceSnapshot {
         return TRIANGLE
             .map(jointNumber => vectorFromFloatArray(
                 this.kernel.faceNormals,
-                (this.faceIndex * 3 + jointNumber) * 3
+                (this.faceIndex * 3 + jointNumber) * 3,
             ))
             .reduce((prev, current) => prev.add(current), new Vector3())
             .multiplyScalar(1 / 3.0);
