@@ -1,6 +1,10 @@
 {
   "name": "galapagotchi",
   "version": "0.1.0",
+  "engineStrict": true,
+  "engines": {
+    "node": "8.9.1"
+  },
   "private": true,
   "dependencies": {
     "@types/react": "^15.6.19",

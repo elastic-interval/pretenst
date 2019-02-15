@@ -16,7 +16,7 @@ export const INFO_PAGES: JSX.Element[] = [
     (
         <div>
             <p>
-                This is the first <strong>Galapahexalot Island</strong>.
+                This is the first <strong>Galapagotch Island</strong>.
             </p>
             <p>
                 What you see is a toy world, but it's also a place
@@ -170,7 +170,7 @@ export const INFO_PAGES: JSX.Element[] = [
     ,
     (
         <div>
-            <strong>galapahexalot island</strong>:
+            <strong>galapagotchisland</strong>:
             one of six possible siblings living in neighbor <i>hexalots</i>
         </div>
     )

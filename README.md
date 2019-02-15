@@ -52,7 +52,7 @@ Surviving galapagotchi are the ones who froze the right dice, according to the n
 
 **galapasi**: one of six possible siblings living in neighbor *hexalots*;
 
-**galapahexalot island**: family of permanently linked *hexalots*
+**galapagotch island**: family of permanently linked *hexalots*
 
 ## Youtube
 
