@@ -12,7 +12,10 @@ export const NORMAL_TICKS = 50;
 export const INTERVALS_RESERVED = 1;
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0);
 
-const POINTER_SIZE = 6;
+const ARROW_LENGTH = 9;
+const ARROW_WIDTH = 1;
+const ARROW_TIP_LENGTH_FACTOR = 1.3;
+const ARROW_TIP_WIDTH_FACTOR = 1.5;
 
 export class Fabric {
     private kernel: FabricKernel;
@@ -107,23 +110,57 @@ export class Fabric {
 
     public pointerGeometryFor(direction: Direction): Geometry {
         const geometry = new Geometry();
-        const seed = this.seed;
-        const end = new Vector3().add(seed);
+        const vector = () => new Vector3().add(this.seed);
+        const arrowFromL = vector();
+        const arrowFromR = vector();
+        const arrowToL = vector();
+        const arrowToR = vector();
+        const arrowToLx = vector();
+        const arrowToRx = vector();
+        const arrowTip = vector();
         switch (direction) {
             case Direction.FORWARD:
-                end.addScaledVector(this.forward, POINTER_SIZE);
+                arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, ARROW_LENGTH);
+                arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, ARROW_LENGTH);
+                arrowFromL.addScaledVector(this.right, -ARROW_WIDTH);
+                arrowToR.addScaledVector(this.right, ARROW_WIDTH).addScaledVector(this.forward, ARROW_LENGTH);
+                arrowToRx.addScaledVector(this.right, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, ARROW_LENGTH);
+                arrowFromR.addScaledVector(this.right, ARROW_WIDTH);
+                arrowTip.addScaledVector(this.forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR);
                 break;
             case Direction.LEFT:
-                end.addScaledVector(this.right, -POINTER_SIZE);
+                arrowToL.addScaledVector(this.forward, -ARROW_WIDTH).addScaledVector(this.right, -ARROW_LENGTH);
+                arrowToLx.addScaledVector(this.forward, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, -ARROW_LENGTH);
+                arrowFromL.addScaledVector(this.forward, -ARROW_WIDTH);
+                arrowToR.addScaledVector(this.forward, ARROW_WIDTH).addScaledVector(this.right, -ARROW_LENGTH);
+                arrowToRx.addScaledVector(this.forward, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, -ARROW_LENGTH);
+                arrowFromR.addScaledVector(this.forward, ARROW_WIDTH);
+                arrowTip.addScaledVector(this.right, -ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR);
                 break;
             case Direction.RIGHT:
-                end.addScaledVector(this.right, POINTER_SIZE);
+                arrowToL.addScaledVector(this.forward, ARROW_WIDTH).addScaledVector(this.right, ARROW_LENGTH);
+                arrowToLx.addScaledVector(this.forward, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, ARROW_LENGTH);
+                arrowFromL.addScaledVector(this.forward, ARROW_WIDTH);
+                arrowToR.addScaledVector(this.forward, -ARROW_WIDTH).addScaledVector(this.right, ARROW_LENGTH);
+                arrowToRx.addScaledVector(this.forward, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, ARROW_LENGTH);
+                arrowFromR.addScaledVector(this.forward, -ARROW_WIDTH);
+                arrowTip.addScaledVector(this.right, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR);
                 break;
             case Direction.REVERSE:
-                end.addScaledVector(this.forward, -POINTER_SIZE);
+                arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, -ARROW_LENGTH);
+                arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, -ARROW_LENGTH);
+                arrowFromL.addScaledVector(this.right, -ARROW_WIDTH);
+                arrowToR.addScaledVector(this.right, ARROW_WIDTH).addScaledVector(this.forward, -ARROW_LENGTH);
+                arrowToRx.addScaledVector(this.right, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, -ARROW_LENGTH);
+                arrowFromR.addScaledVector(this.right, ARROW_WIDTH);
+                arrowTip.addScaledVector(this.forward, -ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR);
                 break;
         }
-        geometry.vertices = [seed, end];
+        geometry.vertices = [
+            arrowFromL, arrowToL, arrowFromR, arrowToR,
+            arrowToRx, arrowTip, arrowToLx, arrowTip,
+            arrowToRx, arrowToR, arrowToLx, arrowToL
+        ];
         if (this.pointerGeometryStored) {
             this.pointerGeometryStored.dispose();
         }
@@ -167,7 +204,7 @@ export class Fabric {
     }
 
     public set direction(direction: Direction) {
-         this.fabricExports.setDirection(direction);
+        this.fabricExports.setDirection(direction);
     }
 
     public iterate(ticks: number): boolean {
@@ -223,7 +260,7 @@ export class Fabric {
             throw new Error(`Bad interval index index ${intervalIndex}`);
         }
         this.fabricExports.setIntervalHighLow(intervalIndex, direction, highLow);
-        switch(direction) {
+        switch (direction) {
             case Direction.FORWARD:
             case Direction.REVERSE:
                 const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex);

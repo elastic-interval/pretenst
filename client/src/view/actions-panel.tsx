@@ -4,7 +4,7 @@ import {Gotchi} from '../gotchi/gotchi';
 import {Evolution} from '../gotchi/evolution';
 import {Gotch} from '../island/gotch';
 import {OrbitState} from './orbit';
-import {Button} from 'reactstrap';
+import {Button, ButtonGroup, Col, Container, Row} from 'reactstrap';
 
 export enum Command {
     RETURN_TO_SEED = 'Return to seed',
@@ -87,19 +87,21 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
     private foreignGotch(gotch: Gotch) {
         return (
             <ActionPanel>
-                <p>
-                    This is "{gotch.master}"
-                </p>
-                <p>
-                    You can
-                    <Clicky props={this.props} command={Command.LAUNCH_GOTCHI}/>
-                    to see it grow from the seed.
-                </p>
-                <p>
-                    For the time being you can also try to
-                    <Clicky props={this.props} command={Command.LAUNCH_EVOLUTION}/>
-                    it for a while so it learns muscle coordination.
-                </p>
+                <h3>{gotch.master}</h3>
+                <Container>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.LAUNCH_GOTCHI)}>
+                                Launch
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.LAUNCH_EVOLUTION)}>
+                                Evolve
+                            </Button>
+                        </Col>
+                    </Row>
+                </Container>
             </ActionPanel>
         );
     }
@@ -132,8 +134,15 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                 </p>
                 <p>
                     <Clicky props={this.props} command={Command.RETURN_TO_SEED}/>
-                    <Clicky props={this.props} command={Command.TURN_LEFT}/>
-                    <Clicky props={this.props} command={Command.TURN_RIGHT}/>
+                    <ButtonGroup>
+                        <Button onClick={() => this.props.doCommand(Command.TURN_LEFT)}>
+                            <img src="/turn-l.png" width="64" height="64"/>
+                        </Button>
+                        &nbsp;
+                        <Button onClick={() => this.props.doCommand(Command.TURN_RIGHT)}>
+                            <img src="/turn-r.png" width="64" height="64"/>
+                        </Button>
+                    </ButtonGroup>
                 </p>
             </ActionPanel>
         );
