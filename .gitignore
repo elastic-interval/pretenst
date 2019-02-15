@@ -140,5 +140,5 @@ target
 project
 build
 
-fabric.wasm
-fabric.wasm.map
+*.wasm
+*.wasm.map
