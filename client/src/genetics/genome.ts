@@ -44,7 +44,7 @@ export class Genome {
         for (let hit = 0; hit < mutations; hit++) {
             const geneNumber = Math.floor(Math.random() * directionGene.length);
             directionGene[geneNumber] = Math.random();
-            console.log(`G[${direction}][${geneNumber}] = ${directionGene[geneNumber]}`);
+            // console.log(`G[${direction}][${geneNumber}] = ${directionGene[geneNumber]}`);
         }
         return new Genome({master: this.data.master, gene: geneClone});
     }

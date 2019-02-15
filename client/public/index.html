@@ -15,7 +15,10 @@
 <body>
 <script>
     const eigCodePromise = fetch("/fabric.wasm").then(response => response.arrayBuffer());
-    function createFabricInstance() {
+
+    function createFabricInstance(count) {
+        console.log('create', count);
+
         function log(msg) {
             console.log(msg);
         }
@@ -40,7 +43,10 @@
         };
         return eigCodePromise
             .then(code => WebAssembly.instantiate(code, importObject))
-            .then(instantiation => instantiation.instance.exports);
+            .then(instantiation => {
+                console.log('instantiation ' + count, instantiation);
+                return instantiation.instance.exports;
+            });
     }
 </script>
 <noscript>

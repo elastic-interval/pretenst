@@ -36,7 +36,7 @@ export class FabricKernel {
         // sizes
         const floatsInVector = 3;
         const vectorsForFace = 3;
-        const seedFloats = 4 * floatsInVector;
+        const seedVectors = 4 * floatsInVector;
         const faceVectorFloats = this.faceCountMax * floatsInVector;
         const faceJointFloats = faceVectorFloats * vectorsForFace;
         // offsets
@@ -44,11 +44,17 @@ export class FabricKernel {
             this.faceNormalsOffset = (
                 this.faceMidpointsOffset = (
                     this.vectorsOffset = 0
-                ) + seedFloats * Float32Array.BYTES_PER_ELEMENT
+                ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT;
         this.fabricBytes = exports.init(jointCountMax, this.intervalCountMax, this.faceCountMax);
         this.arrayBuffer = exports.memory.buffer;
+        const byteLength = exports.memory.buffer.byteLength;
+        if (byteLength === 0) {
+            throw new Error(`Zero byte length! ${this.fabricBytes}`);
+        } else {
+            console.log(`Got ${byteLength} bytes`);
+        }
     }
 
     public refresh() {
