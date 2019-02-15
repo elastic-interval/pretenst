@@ -147,7 +147,6 @@ export function init(joints: u16, intervals: u16, faces: u16): usize {
     ) + VECTOR_SIZE;
     let blocks = bytes >> 16;
     memory.grow(blocks + 1);
-    calculateJointMidpoint();
     return bytes;
 }
 
