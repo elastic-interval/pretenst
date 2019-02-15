@@ -1,18 +1,18 @@
 import * as React from 'react';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {OrbitState} from './orbit';
+import {OrbitDistance} from './orbit';
 import {Subscription} from 'rxjs/Subscription';
 import {Spot} from '../island/spot';
 
 export interface ITitlePanelProps {
     version: string;
     islandName: string;
-    orbitState: BehaviorSubject<OrbitState>;
+    orbitState: BehaviorSubject<OrbitDistance>;
     selectedSpot: BehaviorSubject<Spot | undefined>;
 }
 
 export interface ITitlePanelState {
-    orbitState: OrbitState;
+    orbitState: OrbitDistance;
     selectedSpot?: Spot;
 }
 

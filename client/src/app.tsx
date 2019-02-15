@@ -1,16 +1,16 @@
 import * as React from 'react';
-import {IFabricExports, turn} from './body/fabric-exports';
+import {Direction, IFabricExports, turn} from './body/fabric-exports';
 import {Island} from './island/island';
 import {Fabric} from './body/fabric';
 import {Gotchi} from './gotchi/gotchi';
 import {Genome, IGenomeData} from './genetics/genome';
-import {Vector3} from 'three';
+import {PerspectiveCamera, Vector3} from 'three';
 import {Physics} from './body/physics';
 import {Spot, Surface} from './island/spot';
 import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution';
 import {Gotch} from './island/gotch';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {OrbitState} from './view/orbit';
+import {OrbitDistance} from './view/orbit';
 import {AppStorage} from './app-storage';
 import {Subscription} from 'rxjs/Subscription';
 import {Trip} from './island/trip';
@@ -32,7 +32,7 @@ export interface IAppState {
     actionPanel: boolean;
 
     master?: string
-    orbitState: OrbitState;
+    orbitDistance: OrbitDistance;
     spot?: Spot;
     gotch?: Gotch;
     gotchi?: Gotchi;
@@ -99,7 +99,8 @@ function selectSpot(spot?: Spot) {
 
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = [];
-    private orbitStateSubject = new BehaviorSubject<OrbitState>(OrbitState.HELICOPTER);
+    private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER);
+    private perspectiveCamera: PerspectiveCamera;
     private selectedSpotSubject = new BehaviorSubject<Spot | undefined>(undefined);
     private islandState: BehaviorSubject<boolean>;
     private physics: Physics;
@@ -121,12 +122,13 @@ class App extends React.Component<IAppProps, IAppState> {
         this.state = {
             infoPanel: true,
             actionPanel: false,
-            orbitState: this.orbitStateSubject.getValue(),
+            orbitDistance: this.orbitDistanceSubject.getValue(),
             island: new Island('GalapagotchIsland', this.islandState, gotchiFactory, this.props.storage),
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight
         };
+        this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000);
     }
 
     public componentDidMount() {
@@ -136,7 +138,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 this.setState(selectSpot(spot));
             }
         }));
-        this.subs.push(this.orbitStateSubject.subscribe(orbitState => this.setState({orbitState})));
+        this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})));
     }
 
     public componentWillUnmount() {
@@ -148,11 +150,12 @@ class App extends React.Component<IAppProps, IAppState> {
         return (
             <div className="everything">
                 <GotchiView
+                    perspectiveCamera={this.perspectiveCamera}
                     island={this.state.island}
                     width={this.state.width}
                     height={this.state.height}
                     selectedSpot={this.selectedSpotSubject}
-                    orbitState={this.orbitStateSubject}
+                    orbitDistance={this.orbitDistanceSubject}
                     gotch={this.state.gotch}
                     evolution={this.state.evolution}
                     trip={this.state.trip}
@@ -186,13 +189,14 @@ class App extends React.Component<IAppProps, IAppState> {
                             </div>
                         </div>
                         <ActionsPanel
-                            orbitState={this.state.orbitState}
+                            orbitDistance={this.orbitDistanceSubject}
+                            cameraLocation={this.perspectiveCamera.position}
                             spot={this.state.spot}
                             gotch={this.state.gotch}
                             master={this.state.master}
                             gotchi={this.state.gotchi}
                             evolution={this.state.evolution}
-                            doCommand={(command: Command) => this.executeCommand(command)}
+                            doCommand={this.executeCommand}
                         />
                     </div>
                 )}
@@ -200,7 +204,7 @@ class App extends React.Component<IAppProps, IAppState> {
         );
     }
 
-    private executeCommand(command: Command) {
+    private executeCommand = (command: Command, location?: Vector3) => {
         const island = this.state.island;
         const master = this.state.master;
         const spot = this.state.spot;
@@ -228,6 +232,21 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.TURN_RIGHT:
                 if (gotchi) {
                     gotchi.direction = turn(gotchi.direction, true);
+                }
+                break;
+            case Command.COME_HERE:
+                if (gotchi && location) {
+                    gotchi.approach(location, true);
+                }
+                break;
+            case Command.GO_THERE:
+                if (gotchi && location) {
+                    gotchi.approach(location, false);
+                }
+                break;
+            case Command.STOP:
+                if (gotchi) {
+                    gotchi.direction = Direction.REST;
                 }
                 break;
             case Command.LAUNCH_EVOLUTION:

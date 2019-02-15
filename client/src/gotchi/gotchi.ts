@@ -55,6 +55,23 @@ export class Gotchi {
         this.fabric.direction = direction;
     }
 
+    public approach(location: Vector3, towards: boolean) {
+        const distance = (direction: Vector3, factor: number) => new Vector3()
+            .add(this.fabric.midpoint)
+            .addScaledVector(direction, factor)
+            .sub(location)
+            .length();
+        const distances = [
+            {direction: Direction.FORWARD, distance: distance(this.fabric.forward, 1)},
+            {direction: Direction.LEFT, distance: distance(this.fabric.right, -1)},
+            {direction: Direction.RIGHT, distance: distance(this.fabric.right, 1)},
+            {direction: Direction.REVERSE, distance: distance(this.fabric.forward, -1)},
+        ].sort((a, b) => {
+            return a.distance < b.distance ? -1 : b.distance > a.distance ? 1 : 0;
+        });
+        this.direction = towards ? distances[0].direction : distances[3].direction;
+    }
+
     public iterate(ticks: number): void {
         const nextTimeSweep = this.fabric.iterate(ticks);
         if (nextTimeSweep && this.growth) {

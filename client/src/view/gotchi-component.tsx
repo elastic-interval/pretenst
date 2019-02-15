@@ -4,17 +4,17 @@ import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL} from './materials';
 import {Gotchi} from '../gotchi/gotchi';
 import {Geometry, Vector3} from 'three';
 
-export interface IGotchiMeshProps {
+export interface IGotchiComponentProps {
     gotchi: Gotchi;
 }
 
-export interface IGotchiMeshState {
+export interface IGotchiComponentState {
     pointerGeometry: Geometry
 }
 
 const POINTER_SIZE = 10;
 
-function geometryRefreshed(state: IGotchiMeshState, props: IGotchiMeshProps) {
+function geometryRefreshed(state: IGotchiComponentState, props: IGotchiComponentProps) {
     const pointerGeometry = new Geometry();
     const fabric = props.gotchi.fabric;
     const travel = props.gotchi.travel;
@@ -33,9 +33,9 @@ function geometryRefreshed(state: IGotchiMeshState, props: IGotchiMeshProps) {
     return {pointerGeometry};
 }
 
-export class GotchiComponent extends React.Component<IGotchiMeshProps, IGotchiMeshState> {
+export class GotchiComponent extends React.Component<IGotchiComponentProps, IGotchiComponentState> {
 
-    constructor(props: IGotchiMeshProps) {
+    constructor(props: IGotchiComponentProps) {
         super(props);
         this.state = {
             pointerGeometry: new Geometry()

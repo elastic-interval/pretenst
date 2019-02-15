@@ -3,14 +3,19 @@ import {Spot} from '../island/spot';
 import {Gotchi} from '../gotchi/gotchi';
 import {Evolution} from '../gotchi/evolution';
 import {Gotch} from '../island/gotch';
-import {OrbitState} from './orbit';
+import {OrbitDistance} from './orbit';
 import {Button, ButtonGroup, Col, Container, Row} from 'reactstrap';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+import {Vector3} from 'three';
 
 export enum Command {
     RETURN_TO_SEED = 'Return to seed',
     LAUNCH_GOTCHI = 'Launch Gotchi',
     TURN_LEFT = 'Turn Left',
     TURN_RIGHT = 'Turn Right',
+    COME_HERE = 'Come Here',
+    GO_THERE = 'Go There',
+    STOP = 'Stop',
     LAUNCH_EVOLUTION = 'Launch Evolution',
     CLAIM_GOTCH = 'Claim Gotch',
     CREATE_LAND = 'Create Land',
@@ -18,13 +23,14 @@ export enum Command {
 }
 
 export interface IActionsPanelProps {
-    orbitState: OrbitState;
+    orbitDistance: BehaviorSubject<OrbitDistance>;
+    cameraLocation: Vector3;
     master?: string;
     spot?: Spot;
     gotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
-    doCommand: (command: Command) => void;
+    doCommand: (command: Command, location?: Vector3) => void;
 }
 
 interface IClicky {
@@ -132,18 +138,31 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                 <p>
                     Driving "{gotchi.master}"
                 </p>
-                <p>
+                <div>
                     <Clicky props={this.props} command={Command.RETURN_TO_SEED}/>
                     <ButtonGroup>
+                        <Button onClick={() => this.props.doCommand(Command.COME_HERE, this.props.cameraLocation)}>
+                            Come here
+                        </Button>
+                        &nbsp;
+                        <Button onClick={() => this.props.doCommand(Command.GO_THERE, this.props.cameraLocation)}>
+                            Go There
+                        </Button>
+                        &nbsp;
+                        <Button onClick={() => this.props.doCommand(Command.STOP)}>
+                            Stop
+                        </Button>
+                    </ButtonGroup>
+                    <ButtonGroup>
                         <Button onClick={() => this.props.doCommand(Command.TURN_LEFT)}>
-                            <img src="/turn-l.png" width="64" height="64"/>
+                            Turn left
                         </Button>
                         &nbsp;
                         <Button onClick={() => this.props.doCommand(Command.TURN_RIGHT)}>
-                            <img src="/turn-r.png" width="64" height="64"/>
+                            Turn right
                         </Button>
                     </ButtonGroup>
-                </p>
+                </div>
             </ActionPanel>
         );
     }

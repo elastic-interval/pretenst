@@ -9,7 +9,7 @@ const HELICOPTER_DISTANCE = 300;
 const UPWARDS = 0.3;
 const TOWARDS_TARGET = 0.05;
 
-export enum OrbitState {
+export enum OrbitDistance {
     HELICOPTER = 'HELICOPTER',
     CRUISE = 'CRUISE'
 }
@@ -20,7 +20,7 @@ export class Orbit {
     private target = new Vector3();
     private lastChanged = Date.now();
 
-    constructor(domElement: any, private camera: PerspectiveCamera, private stateBehavior: BehaviorSubject<OrbitState>, target: Vector3) {
+    constructor(domElement: any, private camera: PerspectiveCamera, private orbitDistanceBehavior: BehaviorSubject<OrbitDistance>, target: Vector3) {
         const orbit = this.orbitControls = new OrbitControls(camera, domElement);
         orbit.minPolarAngle = Math.PI * 0.1;
         orbit.maxPolarAngle = 0.95 * Math.PI / 2;
@@ -57,15 +57,15 @@ export class Orbit {
             up.y += UPWARDS;
             up.normalize();
         }
-        switch (this.stateBehavior.getValue()) {
-            case OrbitState.HELICOPTER:
+        switch (this.orbitDistanceBehavior.getValue()) {
+            case OrbitDistance.HELICOPTER:
                 if (distance < HELICOPTER_DISTANCE) {
-                    this.stateBehavior.next(OrbitState.CRUISE);
+                    this.orbitDistanceBehavior.next(OrbitDistance.CRUISE);
                 }
                 break;
-            case OrbitState.CRUISE:
+            case OrbitDistance.CRUISE:
                 if (distance > HELICOPTER_DISTANCE) {
-                    this.stateBehavior.next(OrbitState.HELICOPTER);
+                    this.orbitDistanceBehavior.next(OrbitDistance.HELICOPTER);
                 }
                 break;
         }

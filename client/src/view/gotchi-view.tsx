@@ -6,7 +6,7 @@ import {Gotchi} from '../gotchi/gotchi';
 import {Island} from '../island/island';
 import {EvolutionComponent} from './evolution-component';
 import {IslandComponent} from './island-component';
-import {Orbit, OrbitState} from './orbit';
+import {Orbit, OrbitDistance} from './orbit';
 import {GotchiComponent} from './gotchi-component';
 import {MeshKey, SpotSelector} from './spot-selector';
 import {Spot} from '../island/spot';
@@ -25,11 +25,12 @@ const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
 const TARGET_FRAME_RATE = 25;
 
 interface IGotchiViewProps {
+    perspectiveCamera: PerspectiveCamera;
     width: number;
     height: number;
     island: Island;
     selectedSpot: BehaviorSubject<Spot | undefined>;
-    orbitState: BehaviorSubject<OrbitState>;
+    orbitDistance: BehaviorSubject<OrbitDistance>;
     gotch?: Gotch;
     gotchi?: Gotchi;
     evolution?: Evolution;
@@ -37,12 +38,11 @@ interface IGotchiViewProps {
 }
 
 interface IGotchiViewState {
-    orbitState: OrbitState;
+    orbitDistance: OrbitDistance;
 }
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private subs: Subscription[] = [];
-    private perspectiveCamera: PerspectiveCamera;
     private orbit: Orbit;
     private spotSelector: SpotSelector;
     private frameTime = Date.now();
@@ -53,13 +53,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     constructor(props: IGotchiViewProps) {
         super(props);
-        this.perspectiveCamera = new PerspectiveCamera(50, this.props.width / this.props.height, 1, 500000);
-        this.perspectiveCamera.position.addVectors(props.island.midpoint, new Vector3(0, HIGH_ALTITUDE / 2, 0));
+        this.props.perspectiveCamera.position.addVectors(props.island.midpoint, new Vector3(0, HIGH_ALTITUDE / 2, 0));
         this.state = {
-            orbitState: this.props.orbitState.getValue()
+            orbitDistance: this.props.orbitDistance.getValue()
         };
         this.spotSelector = new SpotSelector(
-            this.perspectiveCamera,
+            this.props.perspectiveCamera,
             this.props.island,
             this.props.width,
             this.props.height
@@ -68,17 +67,17 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: any) {
         if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
-            this.perspectiveCamera.aspect = this.props.width / this.props.height;
-            this.perspectiveCamera.updateProjectionMatrix();
+            this.props.perspectiveCamera.aspect = this.props.width / this.props.height;
+            this.props.perspectiveCamera.updateProjectionMatrix();
         }
     }
 
     public componentDidMount() {
         const element = document.getElementById('gotchi-view');
         this.target = this.props.island.midpoint;
-        this.orbit = new Orbit(element, this.perspectiveCamera, this.props.orbitState, this.target);
+        this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target);
         this.animate();
-        this.subs.push(this.props.orbitState.subscribe(orbitState => this.setState({orbitState})));
+        this.subs.push(this.props.orbitDistance.subscribe(orbitDistance => this.setState({orbitDistance})));
         this.subs.push(this.props.selectedSpot.subscribe(spot => {
             if (spot) {
                 if (spot.centerOfGotch) {
@@ -112,7 +111,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         return (
             <div id="gotchi-view" onMouseDownCapture={this.onMouseDownCapture}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
-                    <R3.Scene width={this.props.width} height={this.props.height} camera={this.perspectiveCamera}>
+                    <R3.Scene width={this.props.width} height={this.props.height} camera={this.props.perspectiveCamera}>
                         <IslandComponent
                             island={this.props.island}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
