@@ -123,7 +123,7 @@ class App extends React.Component<IAppProps, IAppState> {
             infoPanel: true,
             actionPanel: false,
             orbitDistance: this.orbitDistanceSubject.getValue(),
-            island: new Island('GalapahexalotIsland', this.islandState, gotchiFactory, this.props.storage),
+            island: new Island('GalapagotchIsland', this.islandState, gotchiFactory, this.props.storage),
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight
