@@ -1,4 +1,5 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three';
+
 import {Direction, IFabricExports, SEED_CORNERS} from './fabric-exports';
 import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';
 import {FaceSnapshot, IJointSnapshot} from './face-snapshot';

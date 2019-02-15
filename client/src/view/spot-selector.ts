@@ -1,4 +1,5 @@
 import {Mesh, PerspectiveCamera, Raycaster, Vector2} from 'three';
+
 import {Island} from '../island/island';
 import {Spot} from '../island/spot';
 

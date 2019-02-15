@@ -2,6 +2,7 @@ import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import * as THREE from 'three';
 import {PerspectiveCamera, Vector3} from 'three';
 import * as ORBIT_CONTROLS from 'three-orbit-controls';
+
 import {HIGH_ALTITUDE} from './gotchi-view';
 
 const OrbitControls = ORBIT_CONTROLS(THREE);

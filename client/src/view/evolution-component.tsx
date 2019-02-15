@@ -1,8 +1,10 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Subscription} from 'rxjs/Subscription';
+
 import {Evolution} from '../gotchi/evolution';
 import {Evolver} from '../gotchi/evolver';
+
 import {GOTCHI_GHOST_MATERIAL, GOTCHI_POINTER_MATERIAL} from './materials';
 
 export interface IEvolutionProps {

@@ -2,10 +2,12 @@ import * as React from 'react';
 import {Button, ButtonGroup, Col, Container, Row} from 'reactstrap';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Vector3} from 'three';
+
 import {Evolution} from '../gotchi/evolution';
 import {Gotchi} from '../gotchi/gotchi';
 import {Hexalot} from '../island/hexalot';
 import {Spot} from '../island/spot';
+
 import {OrbitDistance} from './orbit';
 
 export enum Command {

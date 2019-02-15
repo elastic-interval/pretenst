@@ -1,8 +1,10 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {BufferGeometry, Float32BufferAttribute} from 'three';
+
 import {Spot} from '../island/spot';
 import {Trip} from '../island/trip';
+
 import {TRIP_MATERIAL} from './materials';
 
 const TRIP_ALTITUDE = 0.3;

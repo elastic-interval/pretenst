@@ -1,5 +1,6 @@
 import {Fabric, INTERVALS_RESERVED} from '../body/fabric';
 import {Direction} from '../body/fabric-exports';
+
 import {GeneReader} from './gene-reader';
 
 export class Behavior {

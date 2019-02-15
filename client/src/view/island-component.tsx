@@ -2,8 +2,10 @@ import * as React from 'react';
 import * as R3 from 'react-three';
 import {Subscription} from 'rxjs/Subscription';
 import {Geometry, Mesh} from 'three';
+
 import {Island} from '../island/island';
 import {IViewState} from '../island/spot';
+
 import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
 import {MeshKey} from './spot-selector';
 

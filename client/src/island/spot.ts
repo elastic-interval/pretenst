@@ -1,7 +1,9 @@
 import {Color, Face3, Vector3} from 'three';
+
 import {HUNG_ALTITUDE, SPOT_TO_HANGER} from '../body/fabric';
 import {SEED_CORNERS} from '../body/fabric-exports';
 import {MeshKey} from '../view/spot-selector';
+
 import {Hexalot} from './hexalot';
 import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
 

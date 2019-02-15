@@ -1,6 +1,7 @@
 import * as React from 'react';
 import {ChangeEvent, FormEvent} from 'react';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
+
 import {AppStorage} from '../app-storage';
 import {Island} from '../island/island';
 import {Spot} from '../island/spot';

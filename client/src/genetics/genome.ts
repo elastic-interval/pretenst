@@ -1,5 +1,6 @@
 import {Fabric} from '../body/fabric';
 import {Direction} from '../body/fabric-exports';
+
 import {Behavior} from './behavior';
 import {GeneReader} from './gene-reader';
 import {Growth} from './growth';

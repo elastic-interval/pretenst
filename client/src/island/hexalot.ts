@@ -1,6 +1,8 @@
 import {Vector3} from 'three';
+
 import {Genome} from '../genetics/genome';
 import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
+
 import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {equals, ICoords, Spot, Surface} from './spot';
 import {Trip} from './trip';

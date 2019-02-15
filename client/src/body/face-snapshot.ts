@@ -1,4 +1,5 @@
 import {Vector3} from 'three';
+
 import {BILATERAL_MIDDLE, Fabric} from './fabric';
 import {IFabricExports} from './fabric-exports';
 import {FabricKernel, vectorFromFloatArray} from './fabric-kernel';

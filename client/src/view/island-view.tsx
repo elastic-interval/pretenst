@@ -1,9 +1,11 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
 import {Color, Mesh, PerspectiveCamera, Vector3} from 'three';
+
 import {Hexalot} from '../island/hexalot';
 import {Island} from '../island/island';
 import {Spot} from '../island/spot';
+
 import {IslandComponent} from './island-component';
 import {MeshKey, SpotSelector} from './spot-selector';
 

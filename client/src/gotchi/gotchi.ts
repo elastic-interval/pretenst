@@ -1,4 +1,5 @@
 import {Vector3} from 'three';
+
 import {Fabric} from '../body/fabric';
 import {Direction} from '../body/fabric-exports';
 import {Genome, IGenomeData} from '../genetics/genome';

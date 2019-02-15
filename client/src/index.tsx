@@ -1,6 +1,7 @@
 import 'bootstrap/dist/css/bootstrap.min.css';
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
+
 import App from './app';
 import {AppStorage} from './app-storage';
 import {IFabricExports} from './body/fabric-exports';

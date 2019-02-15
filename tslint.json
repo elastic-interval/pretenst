@@ -13,7 +13,10 @@
   "rules": {
     "no-bitwise": false,
     "no-console": false,
-    "ordered-imports": true,
+    "ordered-imports": [
+      true,
+      {"grouped-imports": true}
+    ],
     "jsx-no-lambda": false,
     "object-literal-sort-keys": false,
     "semicolon": [
@@ -28,6 +31,7 @@
       }
     ],
     "no-any": {"severity": "warning"},
-    "eofline": true
+    "eofline": true,
+    "indent": [true, "spaces", 4]
   }
 }

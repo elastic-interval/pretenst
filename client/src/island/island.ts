@@ -1,8 +1,10 @@
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Vector3} from 'three';
+
 import {AppStorage} from '../app-storage';
 import {Genome} from '../genetics/genome';
 import {IGotchiFactory} from '../gotchi/gotchi';
+
 import {Hexalot, hexalotTreeString} from './hexalot';
 import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from './spot';

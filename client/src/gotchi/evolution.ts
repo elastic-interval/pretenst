@@ -1,10 +1,12 @@
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {Vector3} from 'three';
+
 import {NORMAL_TICKS, SPOT_TO_HANGER} from '../body/fabric';
 import {Direction} from '../body/fabric-exports';
 import {Genome, IGenomeData} from '../genetics/genome';
 import {Hexalot} from '../island/hexalot';
 import {Trip} from '../island/trip';
+
 import {compareEvolvers, Evolver} from './evolver';
 import {Gotchi} from './gotchi';
 

@@ -1,4 +1,5 @@
 import {Vector3} from 'three';
+
 import {IFabricExports} from './fabric-exports';
 
 export const vectorFromFloatArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
