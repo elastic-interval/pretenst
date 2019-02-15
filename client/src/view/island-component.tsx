@@ -105,7 +105,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const island = this.props.island;
         const viewState: IViewState = {
             islandIsLegal: island.isLegal,
-            freeGotch: island.freeGotch,
+            freeHexalot: island.freeHexalot,
             master: this.props.master
         };
         const geometry = new Geometry();
@@ -117,18 +117,18 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     }
 
     private createHangersGeometry(foreign: boolean): Geometry {
-        const gotches = this.props.island.gotches;
+        const hexalots = this.props.island.hexalots;
         const geometry = new Geometry();
-        gotches.forEach(gotch => gotch.centerSpot.addHangerGeometry(geometry.vertices));
+        hexalots.forEach(hexalot => hexalot.centerSpot.addHangerGeometry(geometry.vertices));
         geometry.computeBoundingSphere();
         return geometry;
     }
 
     private createSeedGeometry(foreign: boolean): Geometry {
-        const gotches = this.props.island.gotchesWithSeeds;
+        const hexalots = this.props.island.hexalotsWithSeeds;
         const geometry = new Geometry();
         if (foreign) {
-            gotches.forEach(gotch => gotch.centerSpot.addSeed(MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces));
+            hexalots.forEach(hexalot => hexalot.centerSpot.addSeed(MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces));
             geometry.computeFaceNormals();
             geometry.computeBoundingSphere();
         }

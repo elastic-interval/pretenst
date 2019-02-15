@@ -2,7 +2,7 @@ import {Gotchi} from './gotchi';
 import {NORMAL_TICKS} from '../body/fabric';
 import {Genome} from '../genetics/genome';
 import {Raycaster, Vector3} from 'three';
-import {Gotch} from '../island/gotch';
+import {Hexalot} from '../island/hexalot';
 import {Direction} from '../body/fabric-exports';
 import {compareEvolvers, Evolver} from './evolver';
 import {Trip} from '../island/trip';
@@ -24,11 +24,11 @@ export class Evolution {
     private evolversBeingBorn = 0;
     private ageLimit = MINIMUM_AGE;
 
-    constructor(private gotch: Gotch, private trip: Trip) {
-        let mutatingGenome = gotch.genome;
+    constructor(private hexalot: Hexalot, private trip: Trip) {
+        let mutatingGenome = hexalot.genome;
         const promisedGotchis: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
-            const promisedGotchi = this.gotch.createGotchi(INITIAL_JOINT_COUNT, mutatingGenome);
+            const promisedGotchi = this.hexalot.createGotchi(INITIAL_JOINT_COUNT, mutatingGenome);
             if (promisedGotchi) {
                 promisedGotchis.push(promisedGotchi);
             }
@@ -46,7 +46,7 @@ export class Evolution {
     public get midpoint(): Vector3 {
         const evolvers = this.evolversNow.getValue();
         if (evolvers.length === 0) {
-            return this.gotch.center;
+            return this.hexalot.center;
         }
         return evolvers
             .map(evolver => evolver.gotchi.fabric.vectors)
@@ -142,7 +142,7 @@ export class Evolution {
     // }
 
     private save(gotchi: Gotchi) {
-        const fingerprint = this.gotch.createFingerprint();
+        const fingerprint = this.hexalot.createFingerprint();
         console.log(`Saving the strongest ${fingerprint}`);
         localStorage.setItem(fingerprint, JSON.stringify(gotchi.genomeData));
     }
@@ -174,7 +174,7 @@ export class Evolution {
         if (grow) {
             console.log('grow!');
         }
-        const promisedGotchi = this.gotch.createGotchi(
+        const promisedGotchi = this.hexalot.createGotchi(
             parent.fabric.jointCountMax + (grow ? 4 : 0),
             new Genome(parent.genomeData)
         );

@@ -8,17 +8,17 @@ By the way [look here](https://github.com/geralddejong/galapagotchi) or [find me
 
 [image of island]
 
-This is a *Galapagotch* island. 
+This is a *Galapahexalot* island. 
 
-In the local dialect, *galapa* means something like "family" and a *gotch* is a unique beehive pattern of surface spots where a *gotchi* lives. (see *Galapaglossary* below).
+In the local dialect, *galapa* means something like "family" and a *hexalot* is a unique beehive pattern of surface spots where a *gotchi* lives. (see *Galapaglossary* below).
 
-[image of gotch]
+[image of hexalot]
 
-Every *gotch* is a place with a completely unique pattern, and it is forever connected to its neighbors. Together they form a *Galapagotch* island. 
+Every *hexalot* is a place with a completely unique pattern, and it is forever connected to its neighbors. Together they form a *Galapahexalot* island. 
 
 [image of suspended seed or whatever]
 
-A *galapagotchi* emerges from its gotch, evolving first body shape and then muscle coordination. 
+A *galapagotchi* emerges from its hexalot, evolving first body shape and then muscle coordination. 
 
 # ⚁ ⚂ ⚃ ⚂ ⚀ ⚄ ⚅ ⚂ ⚂ ⚅ ⚂ ⚃ ⚁ ⚁ ⚄ ⚀ ⚅ ⚄ ⚅ ...
 
@@ -44,15 +44,15 @@ Surviving galapagotchi are the ones who froze the right dice, according to the n
 
 ## Galapaglossary
 
-**gotch**: universally unique beehive pattern of 127 surface spots; home of a *galapagotchi*
+**hexalot**: universally unique beehive pattern of 127 surface spots; home of a *galapagotchi*
 
 **gotchi**: avatar; an evolving body with the singular purpose of running; representative of a player; short for *galapagotchi*
 
 **galapa**: permanently interwoven; inextricably connected; family
 
-**galapasi**: one of six possible siblings living in neighbor *gotches*;
+**galapasi**: one of six possible siblings living in neighbor *hexalots*;
 
-**galapagotch island**: family of permanently linked *gotches*
+**galapahexalot island**: family of permanently linked *hexalots*
 
 ## Youtube
 

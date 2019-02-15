@@ -1,4 +1,4 @@
-import {Gotch} from './gotch';
+import {Hexalot} from './hexalot';
 import {Color, Face3, Vector3} from 'three';
 import {HUNG_ALTITUDE, SPOT_TO_HANGER} from '../body/fabric';
 import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
@@ -19,7 +19,7 @@ export enum Surface {
 export interface IViewState {
     islandIsLegal: boolean;
     master?: string;
-    freeGotch?: Gotch;
+    freeHexalot?: Hexalot;
 }
 
 const SURFACE_UNKNOWN_COLOR = new Color('silver');
@@ -35,9 +35,9 @@ const WATER_NORMAL_SPREAD = -0.02;
 export class Spot {
     public center: Vector3;
     public adjacentSpots: Spot[] = [];
-    public memberOfGotch: Gotch[] = [];
-    public adjacentGotches: Gotch[] = [];
-    public centerOfGotch?: Gotch;
+    public memberOfHexalot: Hexalot[] = [];
+    public adjacentHexalots: Hexalot[] = [];
+    public centerOfHexalot?: Hexalot;
     public connected = false;
     public faceNames: string[] = [];
     public surface = Surface.Unknown;
@@ -49,7 +49,7 @@ export class Spot {
     }
 
     public refresh() {
-        this.free = !this.memberOfGotch.find(gotch => !!gotch.genome);
+        this.free = !this.memberOfHexalot.find(hexalot => !!hexalot.genome);
         if (!this.connected) {
             this.legal = false;
         } else {
@@ -81,11 +81,11 @@ export class Spot {
         }
     }
 
-    get canBeNewGotch(): boolean {
-        if (this.centerOfGotch || this.surface !== Surface.Land) {
+    get canBeNewHexalot(): boolean {
+        if (this.centerOfHexalot || this.surface !== Surface.Land) {
             return false;
         }
-        return !!this.adjacentGotches.find(gotch => !!gotch.genome);
+        return !!this.adjacentHexalots.find(hexalot => !!hexalot.genome);
     }
 
     public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[], viewState: IViewState) {
@@ -102,12 +102,12 @@ export class Spot {
                 if (viewState.master) {
                     color = SURFACE_LAND_COLOR;
                 }
-                else if (viewState.freeGotch) {
+                else if (viewState.freeHexalot) {
                     const centerColor = viewState.islandIsLegal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR;
-                    const landColor = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
-                    color = this === viewState.freeGotch.centerSpot ? centerColor : landColor;
+                    const landColor = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
+                    color = this === viewState.freeHexalot.centerSpot ? centerColor : landColor;
                 } else {
-                    color = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
+                    color = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
                 }
                 normalSpread = this.legal ? LAND_NORMAL_SPREAD : 0;
                 break;

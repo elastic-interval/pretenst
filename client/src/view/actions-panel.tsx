@@ -2,7 +2,7 @@ import * as React from 'react';
 import {Spot} from '../island/spot';
 import {Gotchi} from '../gotchi/gotchi';
 import {Evolution} from '../gotchi/evolution';
-import {Gotch} from '../island/gotch';
+import {Hexalot} from '../island/hexalot';
 import {OrbitDistance} from './orbit';
 import {Button, ButtonGroup, Col, Container, Row} from 'reactstrap';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
@@ -17,7 +17,7 @@ export enum Command {
     GO_THERE = 'Go There',
     STOP = 'Stop',
     LAUNCH_EVOLUTION = 'Launch Evolution',
-    CLAIM_GOTCH = 'Claim Gotch',
+    CLAIM_GOTCH = 'Claim Hexalot',
     CREATE_LAND = 'Create Land',
     CREATE_WATER = 'Create Water',
 }
@@ -27,7 +27,7 @@ export interface IActionsPanelProps {
     cameraLocation: Vector3;
     master?: string;
     spot?: Spot;
-    gotch?: Gotch;
+    hexalot?: Hexalot;
     gotchi?: Gotchi;
     evolution?: Evolution;
     doCommand: (command: Command, location?: Vector3) => void;
@@ -67,20 +67,20 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
         if (gotchi) {
             return this.drivingGotchi(gotchi)
         }
-        const gotch = this.props.gotch;
-        if (gotch) {
-            if (gotch.master === this.props.master) {
-                return this.homeGotch(gotch);
-            } else if (gotch.master) {
-                return this.foreignGotch(gotch);
+        const hexalot = this.props.hexalot;
+        if (hexalot) {
+            if (hexalot.master === this.props.master) {
+                return this.homeHexalot(hexalot);
+            } else if (hexalot.master) {
+                return this.foreignHexalot(hexalot);
             }
         }
         const spot = this.props.spot;
         if (spot) {
             if (spot.free) {
                 return this.freeSpot(spot)
-            } else if (spot.canBeNewGotch) {
-                return this.availableGotch(spot);
+            } else if (spot.canBeNewHexalot) {
+                return this.availableHexalot(spot);
             }
         }
         return (
@@ -90,10 +90,10 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
         );
     }
 
-    private foreignGotch(gotch: Gotch) {
+    private foreignHexalot(hexalot: Hexalot) {
         return (
             <ActionPanel>
-                <h3>{gotch.master}</h3>
+                <h3>{hexalot.master}</h3>
                 <Container>
                     <Row>
                         <Col>
@@ -112,11 +112,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
         );
     }
 
-    private homeGotch(gotch: Gotch) {
+    private homeHexalot(hexalot: Hexalot) {
         return (
             <ActionPanel>
                 <p>
-                    This is your gotch!
+                    This is your hexalot!
                 </p>
                 <p>
                     You can
@@ -178,13 +178,13 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
         );
     }
 
-    private availableGotch(spot: Spot) {
+    private availableHexalot(spot: Spot) {
         return (
             <ActionPanel>
                 <p>
                     This one can be your new home!
                 </p>
-                {!spot.canBeNewGotch ? null : (
+                {!spot.canBeNewHexalot ? null : (
                     <p>
                         <Clicky props={this.props} command={Command.CLAIM_GOTCH}/>
                     </p>

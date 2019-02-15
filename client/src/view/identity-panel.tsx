@@ -25,8 +25,8 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
         this.handleSubmitName = this.handleSubmitName.bind(this);
         this.state = {
             name: props.master ? props.master : '',
-            islandMasters: props.island.gotches.map(gotch => {
-                const genome = props.storage.getGenome(gotch);
+            islandMasters: props.island.hexalots.map(hexalot => {
+                const genome = props.storage.getGenome(hexalot);
                 return genome? genome.master : '';
             }).filter(master => master.length > 0)
         };
@@ -44,7 +44,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
             return (
                 <div>
                     <p>
-                        You do not yet have a home gotch,
+                        You do not yet have a home hexalot,
                         but once you have decided upon a name for your Galapagotchi,
                         you can choose one of the green spots as its new home.
                     </p>
@@ -53,7 +53,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
                             <strong>Name:</strong>
                             <input type="text" value={this.state.name} onChange={this.handleNameChange}/><strong>{this.state.error}</strong>
                         </label>
-                        <input type="submit" disabled={!candidate} value="Choose this Gotch!"/>
+                        <input type="submit" disabled={!candidate} value="Choose this Hexalot!"/>
                     </form>
                 </div>
             );

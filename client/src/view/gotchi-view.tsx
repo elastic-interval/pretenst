@@ -11,7 +11,7 @@ import {GotchiComponent} from './gotchi-component';
 import {MeshKey, SpotSelector} from './spot-selector';
 import {Spot} from '../island/spot';
 import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
-import {Gotch} from '../island/gotch';
+import {Hexalot} from '../island/hexalot';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
 import {USER_POINTER_MATERIAL} from './materials';
 import {Subscription} from 'rxjs/Subscription';
@@ -31,7 +31,7 @@ interface IGotchiViewProps {
     island: Island;
     selectedSpot: BehaviorSubject<Spot | undefined>;
     orbitDistance: BehaviorSubject<OrbitDistance>;
-    gotch?: Gotch;
+    hexalot?: Hexalot;
     gotchi?: Gotchi;
     evolution?: Evolution;
     trip?: Trip;
@@ -80,9 +80,9 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         this.subs.push(this.props.orbitDistance.subscribe(orbitDistance => this.setState({orbitDistance})));
         this.subs.push(this.props.selectedSpot.subscribe(spot => {
             if (spot) {
-                if (spot.centerOfGotch) {
+                if (spot.centerOfHexalot) {
                     this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center);
-                } else if (spot.canBeNewGotch || spot.free) {
+                } else if (spot.canBeNewHexalot || spot.free) {
                     this.target = spot.center;
                 }
             }
@@ -146,7 +146,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 return;
             }
             const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event);
-            if (spot && (spot.centerOfGotch || spot.canBeNewGotch || spot.free)) {
+            if (spot && (spot.centerOfHexalot || spot.canBeNewHexalot || spot.free)) {
                 this.props.selectedSpot.next(spot);
             }
         }
@@ -163,7 +163,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     //     const spot = this.props.selectedSpot.getValue();
     //     const action = this.props.evolution || this.props.gotchi;
     //     if (spot && this.orbit && !this.orbit.changing && !action) {
-    //         const target = spot.centerOfGotch ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
+    //         const target = spot.centerOfHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
     //         geometry.vertices = [userCoords(0), target, userCoords(-1), target, userCoords(1), target];
     //     }
     //     return geometry;
@@ -174,7 +174,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const spot = this.props.selectedSpot.getValue();
         const action = this.props.evolution || this.props.gotchi;
         if (spot && this.orbit && !action) {
-            const target = spot.centerOfGotch ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
+            const target = spot.centerOfHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
             geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)];
         }
         return geometry;

@@ -1,6 +1,6 @@
 package Galapagotchi
 
-import Galapagotchi.Vocabulary.Gotch
+import Galapagotchi.Vocabulary.Hexalot
 import akka.actor.ActorLogging
 import akka.persistence.{PersistentActor, RecoveryCompleted, SnapshotOffer}
 
@@ -26,7 +26,7 @@ class IslandActor extends PersistentActor with ActorLogging {
 
   import IslandActor._
 
-  var patches = Seq.empty[Gotch]
+  var patches = Seq.empty[Hexalot]
 
   override def persistenceId: String = "island"
 

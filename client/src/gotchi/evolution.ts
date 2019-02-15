@@ -3,7 +3,7 @@ import {NORMAL_TICKS, SPOT_TO_HANGER} from '../body/fabric';
 import {Genome, IGenomeData} from '../genetics/genome';
 import {Vector3} from 'three';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {Gotch} from '../island/gotch';
+import {Hexalot} from '../island/hexalot';
 import {compareEvolvers, Evolver} from './evolver';
 import {Trip} from '../island/trip';
 import {Direction} from '../body/fabric-exports';
@@ -22,11 +22,11 @@ export class Evolution {
     private evolverId = 0;
     private ageLimit = MINIMUM_AGE;
 
-    constructor(private gotch: Gotch, private trip: Trip, private saveGenome: (genome: IGenomeData) => void) {
-        let mutatingGenome = gotch.genome;
+    constructor(private hexalot: Hexalot, private trip: Trip, private saveGenome: (genome: IGenomeData) => void) {
+        let mutatingGenome = hexalot.genome;
         const promisedGotchis: Array<Promise<Gotchi>> = [];
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
-            const promisedGotchi = this.gotch.createGotchi(INITIAL_JOINT_COUNT, mutatingGenome);
+            const promisedGotchi = this.hexalot.createGotchi(INITIAL_JOINT_COUNT, mutatingGenome);
             if (promisedGotchi) {
                 promisedGotchis.push(promisedGotchi);
             }
@@ -43,7 +43,7 @@ export class Evolution {
     public get midpoint(): Vector3 {
         const evolvers = this.evolversNow.getValue();
         if (evolvers.length === 0) {
-            return new Vector3().add(this.gotch.center).add(SPOT_TO_HANGER);
+            return new Vector3().add(this.hexalot.center).add(SPOT_TO_HANGER);
         }
         return evolvers
             .map(evolver => evolver.gotchi.fabric.vectors)
@@ -139,7 +139,7 @@ export class Evolution {
 
     private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Promise<Gotchi> {
         const genome = new Genome(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : MUTATION_COUNT);
-        return this.gotch.createGotchi(parent.fabric.jointCountMax, genome);
+        return this.hexalot.createGotchi(parent.fabric.jointCountMax, genome);
     }
 
     private gotchiToEvolver = (gotchi: Gotchi): Evolver => {

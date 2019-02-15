@@ -5,7 +5,7 @@ import {Island} from '../island/island';
 import {IslandComponent} from './island-component';
 import {Spot} from '../island/spot';
 import {MeshKey, SpotSelector} from './spot-selector';
-import {Gotch} from '../island/gotch';
+import {Hexalot} from '../island/hexalot';
 
 const SUN_POSITION = new Vector3(0, 300, 200);
 const CAMERA_POSITION = new Vector3(0, 550, 0);
@@ -20,7 +20,7 @@ interface IIslandViewProps {
 }
 
 interface IIslandViewState {
-    masterGotch?: Gotch;
+    masterHexalot?: Hexalot;
     hoverSpot?: Spot;
 }
 
@@ -30,10 +30,10 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
 
     constructor(props: IIslandViewProps) {
         super(props);
-        const singleGotch = props.island.singleGotch;
+        const singleHexalot = props.island.singleHexalot;
         this.state = {
-            hoverSpot: singleGotch ? singleGotch.centerSpot : undefined,
-            masterGotch: props.master ? props.island.findGotch(props.master) : undefined
+            hoverSpot: singleHexalot ? singleHexalot.centerSpot : undefined,
+            masterHexalot: props.master ? props.island.findHexalot(props.master) : undefined
         };
         // const loader = new TextureLoader();
         // this.floorMaterial = new MeshBasicMaterial({map: loader.load('/grass.jpg')});

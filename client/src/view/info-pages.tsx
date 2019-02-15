@@ -16,7 +16,7 @@ export const INFO_PAGES: JSX.Element[] = [
     (
         <div>
             <p>
-                This is the first <strong>Galapagotch Island</strong>.
+                This is the first <strong>Galapahexalot Island</strong>.
             </p>
             <p>
                 What you see is a toy world, but it's also a place
@@ -50,11 +50,11 @@ export const INFO_PAGES: JSX.Element[] = [
         <div>
             <p>
                 As the story goes, <strong>galapa</strong> means something like
-                "family" in the local dialect and a <strong>gotch</strong>,
+                "family" in the local dialect and a <strong>hexalot</strong>,
                 is a unique beehive pattern of surface spots where a *gotchi* lives.
             </p>
             <p>
-                Every *gotch* is a place with a completely unique pattern
+                Every *hexalot* is a place with a completely unique pattern
                 and it is forever connected to its neighbors.
             </p>
         </div>
@@ -63,7 +63,7 @@ export const INFO_PAGES: JSX.Element[] = [
     (
         <div>
             <p>
-                A <strong>galapagotchi</strong> emerges from its gotch,
+                A <strong>galapagotchi</strong> emerges from its hexalot,
                 evolving first body shape and then muscle coordination.
             </p>
             <p>
@@ -144,7 +144,7 @@ export const INFO_PAGES: JSX.Element[] = [
     ,
     (
         <div>
-            <strong>gotch</strong>:
+            <strong>hexalot</strong>:
             universally unique beehive pattern of 127 surface spots;
             home of a <i>galapagotchi</i>
         </div>
@@ -170,8 +170,8 @@ export const INFO_PAGES: JSX.Element[] = [
     ,
     (
         <div>
-            <strong>galapagotch island</strong>:
-            one of six possible siblings living in neighbor <i>gotches</i>
+            <strong>galapahexalot island</strong>:
+            one of six possible siblings living in neighbor <i>hexalots</i>
         </div>
     )
     ,

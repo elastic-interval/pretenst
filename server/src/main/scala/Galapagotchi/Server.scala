@@ -28,9 +28,9 @@ object Server extends App with VocabularyJson {
             }
           },
           post {
-            entity(as[String]) { gotchHex =>
+            entity(as[String]) { hexalotHex =>
               pathEnd {
-                complete(s"Purchase by $masterName of $gotchHex")
+                complete(s"Purchase by $masterName of $hexalotHex")
               }
             }
           }
@@ -38,10 +38,10 @@ object Server extends App with VocabularyJson {
       }
     },
     pathPrefix("adjacent") {
-      pathPrefix(Segment) { gotchHex: String =>
+      pathPrefix(Segment) { hexalotHex: String =>
         get {
           pathEnd {
-            complete(s"Adjacent for $gotchHex")
+            complete(s"Adjacent for $hexalotHex")
           }
         }
       }
