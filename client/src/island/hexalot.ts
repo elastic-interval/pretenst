@@ -3,7 +3,7 @@ import {Vector3} from "three"
 import {Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 
-import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from "./shapes"
+import {BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
 import {equals, ICoords, Spot, Surface} from "./spot"
 import {Trip} from "./trip"
 
@@ -24,7 +24,7 @@ const spotsToHexFingerprint = (spots: Spot[]) => {
 const ringIndex = (coords: ICoords, origin: ICoords): number => {
     const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
     for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === GOTCH_SHAPE[index].x && ringCoords.y === GOTCH_SHAPE[index].y) {
+        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
             return index
         }
     }

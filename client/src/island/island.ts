@@ -6,7 +6,7 @@ import {Genome} from "../genetics/genome"
 import {IGotchiFactory} from "../gotchi/gotchi"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
-import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from "./shapes"
+import {ADJACENT, BRANCH_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from "./spot"
 
 export interface IslandPattern {
@@ -209,7 +209,7 @@ export class Island {
         if (existing) {
             return existing
         }
-        const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
+        const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
         const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory)
         this.hexalots.push(hexalot)
         return hexalot

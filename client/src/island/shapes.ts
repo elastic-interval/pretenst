@@ -22,7 +22,7 @@ export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * SURFACE_SCALE
 export const SCALE_X = SURFACE_SCALE * KINDA
 export const SCALE_Y = SURFACE_SCALE * 1.5
 
-export const GOTCH_SHAPE = [
+export const HEXALOT_SHAPE = [
     // center
     {x: 0, y: 0},
     // layer 1
