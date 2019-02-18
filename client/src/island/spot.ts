@@ -1,9 +1,11 @@
-import {Gotch} from './gotch';
 import {Color, Face3, Vector3} from 'three';
+
 import {HUNG_ALTITUDE, SPOT_TO_HANGER} from '../body/fabric';
-import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
 import {SEED_CORNERS} from '../body/fabric-exports';
 import {MeshKey} from '../view/spot-selector';
+
+import {Hexalot} from './hexalot';
+import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
 
 export interface ICoords {
     x: number;
@@ -13,13 +15,13 @@ export interface ICoords {
 export enum Surface {
     Unknown = 'unknown',
     Land = 'land',
-    Water = 'water'
+    Water = 'water',
 }
 
 export interface IViewState {
     islandIsLegal: boolean;
     master?: string;
-    freeGotch?: Gotch;
+    freeHexalot?: Hexalot;
 }
 
 const SURFACE_UNKNOWN_COLOR = new Color('silver');
@@ -35,9 +37,9 @@ const WATER_NORMAL_SPREAD = -0.02;
 export class Spot {
     public center: Vector3;
     public adjacentSpots: Spot[] = [];
-    public memberOfGotch: Gotch[] = [];
-    public adjacentGotches: Gotch[] = [];
-    public centerOfGotch?: Gotch;
+    public memberOfHexalot: Hexalot[] = [];
+    public adjacentHexalots: Hexalot[] = [];
+    public centerOfHexalot?: Hexalot;
     public connected = false;
     public faceNames: string[] = [];
     public surface = Surface.Unknown;
@@ -49,7 +51,7 @@ export class Spot {
     }
 
     public refresh() {
-        this.free = !this.memberOfGotch.find(gotch => !!gotch.genome);
+        this.free = !this.memberOfHexalot.find(hexalot => !!hexalot.genome);
         if (!this.connected) {
             this.legal = false;
         } else {
@@ -81,11 +83,11 @@ export class Spot {
         }
     }
 
-    get canBeNewGotch(): boolean {
-        if (this.centerOfGotch || this.surface !== Surface.Land) {
+    get canBeNewHexalot(): boolean {
+        if (this.centerOfHexalot || this.surface !== Surface.Land) {
             return false;
         }
-        return !!this.adjacentGotches.find(gotch => !!gotch.genome);
+        return !!this.adjacentHexalots.find(hexalot => !!hexalot.genome);
     }
 
     public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[], viewState: IViewState) {
@@ -93,7 +95,7 @@ export class Spot {
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.center.x,
             hexPoint.y + this.center.y,
-            hexPoint.z + this.center.z
+            hexPoint.z + this.center.z,
         )));
         let normalSpread = 0;
         let color = SURFACE_UNKNOWN_COLOR;
@@ -102,12 +104,12 @@ export class Spot {
                 if (viewState.master) {
                     color = SURFACE_LAND_COLOR;
                 }
-                else if (viewState.freeGotch) {
+                else if (viewState.freeHexalot) {
                     const centerColor = viewState.islandIsLegal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR;
-                    const landColor = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
-                    color = this === viewState.freeGotch.centerSpot ? centerColor : landColor;
+                    const landColor = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
+                    color = this === viewState.freeHexalot.centerSpot ? centerColor : landColor;
                 } else {
-                    color = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
+                    color = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
                 }
                 normalSpread = this.legal ? LAND_NORMAL_SPREAD : 0;
                 break;
@@ -122,7 +124,7 @@ export class Spot {
             const vertexNormals = [
                 UP,
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], normalSpread).normalize(),
-                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize()
+                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize(),
             ];
             this.faceNames.push(`${meshKey}:${faces.length}`);
             faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, color));

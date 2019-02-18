@@ -1,4 +1,5 @@
 import * as React from 'react';
+
 import {IPhysicsFeature, Physics} from '../body/physics';
 
 export interface IPhysicsPanelProps {
@@ -14,7 +15,7 @@ function featureSelected(feature: IPhysicsFeature) {
     return (): any => {
         return {
             feature,
-            value: feature.getFactor()
+            value: feature.getFactor(),
         };
     };
 }

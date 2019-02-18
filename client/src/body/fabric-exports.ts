@@ -7,7 +7,7 @@ export enum Direction {
     FORWARD = 1,
     LEFT = 2,
     RIGHT = 3,
-    REVERSE = 4
+    REVERSE = 4,
 }
 
 export function turn(direction: Direction, right: boolean): Direction {
@@ -35,7 +35,7 @@ export interface IFabricExports {
 
     setGravityAbove(factor: number): number;
 
-    setDragBelow(factor: number): number
+    setDragBelow(factor: number): number;
 
     setGravityBelow(factor: number): number;
 

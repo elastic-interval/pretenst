@@ -68,7 +68,7 @@ p a, p a:hover {
     left: 0;
 }
 
-.gotch-title {
+.hexalot-title {
     position: absolute;
     background-color: darkslategray;
     color: white;
@@ -79,7 +79,7 @@ p a, p a:hover {
     width: 10%;
 }
 
-.gotch-view {
+.hexalot-view {
     position: absolute;
     top: 5%;
     left: 90%;

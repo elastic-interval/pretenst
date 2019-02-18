@@ -14,7 +14,7 @@ export const HEXAGON_POINTS = [
     new Vector3(0, 0, SURFACE_SCALE),
     new Vector3(KINDA * SURFACE_SCALE, 0, SURFACE_SCALE/2),
     new Vector3(KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE/2),
-    new Vector3()
+    new Vector3(),
 ];
 
 export const HEXAPOD_PROJECTION = 0.2;
@@ -195,6 +195,6 @@ export const ROTATE = [
     109, 110, 111, 112, 113, 114,
     115, 116, 117, 118, 119, 120,
     121, 122, 123, 124, 125, 126,
-    91, 92, 93, 94, 95, 96
+    91, 92, 93, 94, 95, 96,
 ];
 

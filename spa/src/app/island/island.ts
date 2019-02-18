@@ -1,5 +1,5 @@
 import {Vector3} from 'three';
-import {Gotch, gotchTreeString} from './gotch';
+import {Hexalot, hexalotTreeString} from './hexalot';
 import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from './spot';
 import {Genome} from '../genetics/genome';
@@ -7,18 +7,18 @@ import {IGotchiFactory} from '../gotchi/gotchi';
 import {BehaviorSubject} from 'rxjs/index';
 
 export interface IslandPattern {
-    gotches: string;
+    hexalots: string;
     spots: string;
 }
 
 export interface IslandChange {
-    gotchCount: number;
+    hexalotCount: number;
     spotCount: number;
-    masterGotch?: Gotch;
+    masterHexalot?: Hexalot;
 }
 
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
-const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacent) => {
+const hexalotWithMaxNonce = (hexalots: Hexalot[]) => hexalots.reduce((withMax, adjacent) => {
     if (withMax) {
         return adjacent.nonce > withMax.nonce ? adjacent : withMax;
     } else {
@@ -28,25 +28,25 @@ const gotchWithMaxNonce = (gotches: Gotch[]) => gotches.reduce((withMax, adjacen
 
 export class Island {
     public master?: string;
-    public islandChange = new BehaviorSubject<IslandChange>({gotchCount: 0, spotCount: 0});
+    public islandChange = new BehaviorSubject<IslandChange>({hexalotCount: 0, spotCount: 0});
     public spots: Spot[] = [];
-    public gotches: Gotch[] = [];
+    public hexalots: Hexalot[] = [];
 
     constructor(public islandName: string, private gotchiFactory: IGotchiFactory) {
         const patternString = localStorage.getItem(this.islandName);
-        const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {gotches: '', spots: ''};
+        const pattern: IslandPattern = patternString ? JSON.parse(patternString) : {hexalots: '', spots: ''};
         this.spots = [];
-        this.gotches = [];
+        this.hexalots = [];
         this.apply(pattern);
         // console.log('island', this.spots.map(spot => spot.coords));
     }
 
-    public get freeGotch(): Gotch | undefined {
-        return this.gotches.find(gotch => !gotch.genome);
+    public get freeHexalot(): Hexalot | undefined {
+        return this.hexalots.find(hexalot => !hexalot.genome);
     }
 
-    public get masterGotch(): Gotch | undefined {
-        return this.gotches.find(gotch => gotch.master === this.master);
+    public get masterHexalot(): Hexalot | undefined {
+        return this.hexalots.find(hexalot => hexalot.master === this.master);
     }
 
     public get legal(): boolean {
@@ -73,18 +73,18 @@ export class Island {
         }
         this.spots.forEach(spot => spot.refresh());
         this.islandChange.next({
-            gotchCount: this.gotches.length,
+            hexalotCount: this.hexalots.length,
             spotCount: this.spots.length,
-            masterGotch: this.master ? this.findGotch(this.master) : undefined
+            masterHexalot: this.master ? this.findHexalot(this.master) : undefined
         });
     }
 
     public save() {
         if (this.legal) {
             localStorage.setItem(this.islandName, JSON.stringify(this.pattern));
-            this.gotches.forEach(gotch => {
-                if (gotch.genome) {
-                    localStorage.setItem(gotch.createFingerprint(), gotch.genome.toJSON());
+            this.hexalots.forEach(hexalot => {
+                if (hexalot.genome) {
+                    localStorage.setItem(hexalot.createFingerprint(), hexalot.genome.toJSON());
                 }
             });
             console.log(`Saved ${this.islandName}`);
@@ -93,34 +93,34 @@ export class Island {
         }
     }
 
-    public findGotch(master: string): Gotch | undefined {
-        return this.gotches.find(gotch => !!gotch.genome && gotch.genome.master === master)
+    public findHexalot(master: string): Hexalot | undefined {
+        return this.hexalots.find(hexalot => !!hexalot.genome && hexalot.genome.master === master)
     }
 
-    public removeFreeGotches(): void {
-        const deadGotches = this.gotches.filter(gotch => !gotch.genome);
-        deadGotches.forEach(deadGotch => {
-            this.gotches = this.gotches.filter(gotch => !equals(gotch.coords, deadGotch.coords));
-            deadGotch.destroy().forEach(deadSpot => {
+    public removeFreeHexalots(): void {
+        const deadHexalots = this.hexalots.filter(hexalot => !hexalot.genome);
+        deadHexalots.forEach(deadHexalot => {
+            this.hexalots = this.hexalots.filter(hexalot => !equals(hexalot.coords, deadHexalot.coords));
+            deadHexalot.destroy().forEach(deadSpot => {
                 this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords));
             });
         });
     }
 
-    public createGotch(spot: Spot, master: string): Gotch | undefined {
-        if (this.gotches.find(gotch => gotch.master === master)) {
-            console.error(`${master} already has a gotch!`);
+    public createHexalot(spot: Spot, master: string): Hexalot | undefined {
+        if (this.hexalots.find(hexalot => hexalot.master === master)) {
+            console.error(`${master} already has a hexalot!`);
             return undefined;
         }
-        if (!spot.canBeNewGotch) {
-            console.error(`${JSON.stringify(spot.coords)} cannot be a gotch!`);
+        if (!spot.canBeNewHexalot) {
+            console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`);
             return undefined;
         }
-        return this.gotchAroundSpot(spot);
+        return this.hexalotAroundSpot(spot);
     }
 
-    public get singleGotch(): Gotch | undefined {
-        return this.gotches.length === 1 ? this.gotches[0] : undefined;
+    public get singleHexalot(): Hexalot | undefined {
+        return this.hexalots.length === 1 ? this.hexalots[0] : undefined;
     }
 
     public get midpoint(): Vector3 {
@@ -135,7 +135,7 @@ export class Island {
         }
         this.spots.sort(sortSpotsOnCoord);
         return {
-            gotches: gotchTreeString(this.gotches),
+            hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToString(this.spots)
         } as IslandPattern;
     }
@@ -143,18 +143,18 @@ export class Island {
     // ================================================================================================
 
     private apply(pattern: IslandPattern) {
-        let gotch: Gotch | undefined = this.getOrCreateGotch(undefined, zero);
-        const stepStack = pattern.gotches.split('').reverse().map(stepChar => Number(stepChar));
-        const gotchStack: Gotch[] = [];
+        let hexalot: Hexalot | undefined = this.getOrCreateHexalot(undefined, zero);
+        const stepStack = pattern.hexalots.split('').reverse().map(stepChar => Number(stepChar));
+        const hexalotStack: Hexalot[] = [];
         while (stepStack.length > 0) {
             const step = stepStack.pop();
             switch (step) {
                 case STOP_STEP:
-                    gotch = gotchStack.pop();
+                    hexalot = hexalotStack.pop();
                     break;
                 case BRANCH_STEP:
-                    if (gotch) {
-                        gotchStack.push(gotch);
+                    if (hexalot) {
+                        hexalotStack.push(hexalot);
                     }
                     break;
                 case 1:
@@ -163,8 +163,8 @@ export class Island {
                 case 4:
                 case 5:
                 case 6:
-                    if (gotch) {
-                        gotch = this.gotchAroundSpot(gotch.spots[step]);
+                    if (hexalot) {
+                        hexalot = this.hexalotAroundSpot(hexalot.spots[step]);
                     }
                     break;
                 default:
@@ -187,10 +187,10 @@ export class Island {
                 const land = landStack.pop();
                 spot.surface = land ? Surface.Land : Surface.Water;
             });
-        } else if (this.singleGotch) {
-            this.singleGotch.spots[0].surface = Surface.Land;
+        } else if (this.singleHexalot) {
+            this.singleHexalot.spots[0].surface = Surface.Land;
         }
-        this.gotches.forEach(g => {
+        this.hexalots.forEach(g => {
             const fingerprint = g.createFingerprint();
             const storedGenome = localStorage.getItem(fingerprint);
             if (storedGenome) {
@@ -200,20 +200,20 @@ export class Island {
         this.refresh();
     }
 
-    private gotchAroundSpot(spot: Spot): Gotch {
-        const adjacentMaxNonce = gotchWithMaxNonce(spot.adjacentGotches);
-        return this.getOrCreateGotch(adjacentMaxNonce, spot.coords);
+    private hexalotAroundSpot(spot: Spot): Hexalot {
+        const adjacentMaxNonce = hexalotWithMaxNonce(spot.adjacentHexalots);
+        return this.getOrCreateHexalot(adjacentMaxNonce, spot.coords);
     }
 
-    private getOrCreateGotch(parent: Gotch | undefined, coords: ICoords): Gotch {
-        const existing = this.gotches.find(existingGotch => equals(existingGotch.coords, coords));
+    private getOrCreateHexalot(parent: Hexalot | undefined, coords: ICoords): Hexalot {
+        const existing = this.hexalots.find(existingHexalot => equals(existingHexalot.coords, coords));
         if (existing) {
             return existing;
         }
         const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
-        const gotch = new Gotch(parent, coords, spots, this.gotchiFactory);
-        this.gotches.push(gotch);
-        return gotch;
+        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory);
+        this.hexalots.push(hexalot);
+        return hexalot;
     }
 
     private getOrCreateSpot(coords: ICoords): Spot {

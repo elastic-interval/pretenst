@@ -1,9 +1,10 @@
 import * as React from 'react';
 import {ChangeEvent, FormEvent} from 'react';
 import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {Spot} from '../island/spot';
+
 import {AppStorage} from '../app-storage';
 import {Island} from '../island/island';
+import {Spot} from '../island/spot';
 
 export interface IIdentityPanelProps {
     storage: AppStorage;
@@ -25,10 +26,10 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
         this.handleSubmitName = this.handleSubmitName.bind(this);
         this.state = {
             name: props.master ? props.master : '',
-            islandMasters: props.island.gotches.map(gotch => {
-                const genome = props.storage.getGenome(gotch);
+            islandMasters: props.island.hexalots.map(hexalot => {
+                const genome = props.storage.getGenome(hexalot);
                 return genome? genome.master : '';
-            }).filter(master => master.length > 0)
+            }).filter(master => master.length > 0),
         };
     }
 
@@ -44,7 +45,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
             return (
                 <div>
                     <p>
-                        You do not yet have a home gotch,
+                        You do not yet have a home hexalot,
                         but once you have decided upon a name for your Galapagotchi,
                         you can choose one of the green spots as its new home.
                     </p>
@@ -53,7 +54,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
                             <strong>Name:</strong>
                             <input type="text" value={this.state.name} onChange={this.handleNameChange}/><strong>{this.state.error}</strong>
                         </label>
-                        <input type="submit" disabled={!candidate} value="Choose this Gotch!"/>
+                        <input type="submit" disabled={!candidate} value="Choose this Hexalot!"/>
                     </form>
                 </div>
             );

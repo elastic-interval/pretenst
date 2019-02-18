@@ -1,7 +1,7 @@
 import {PhysicsFeature} from './body/physics';
-import {Gotch} from './island/gotch';
-import {IslandPattern} from './island/island';
 import {IGenomeData} from './genetics/genome';
+import {Hexalot} from './island/hexalot';
+import {IslandPattern} from './island/island';
 
 const MASTER_KEY = 'master';
 
@@ -25,24 +25,24 @@ export class AppStorage {
     }
 
     public setPhysicsFeature(feature: PhysicsFeature, factor: number) {
-        this.storage.setItem(feature, factor.toFixed(3))
+        this.storage.setItem(feature, factor.toFixed(3));
     }
 
     public getIsland(islandName: string): IslandPattern {
         const patternString = this.storage.getItem(islandName);
-        return patternString ? JSON.parse(patternString) : {gotches: '', spots: ''};
+        return patternString ? JSON.parse(patternString) : {hexalots: '', spots: ''};
     }
 
     public setIsland(islandName: string, islandPattern: IslandPattern) {
         this.storage.setItem(islandName, JSON.stringify(islandPattern));
     }
 
-    public getGenome(gotch: Gotch): IGenomeData | undefined {
-        const genomeString = this.storage.getItem(gotch.createFingerprint());
+    public getGenome(hexalot: Hexalot): IGenomeData | undefined {
+        const genomeString = this.storage.getItem(hexalot.createFingerprint());
         return genomeString ? JSON.parse(genomeString) : undefined;
     }
 
-    public setGenome(gotch: Gotch, genomeData: IGenomeData) {
-        this.storage.setItem(gotch.createFingerprint(), JSON.stringify(genomeData));
+    public setGenome(hexalot: Hexalot, genomeData: IGenomeData) {
+        this.storage.setItem(hexalot.createFingerprint(), JSON.stringify(genomeData));
     }
 }

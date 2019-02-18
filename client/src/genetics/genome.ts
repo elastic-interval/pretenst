@@ -1,8 +1,9 @@
-import {GeneReader} from './gene-reader';
 import {Fabric} from '../body/fabric';
-import {Growth} from './growth';
 import {Direction} from '../body/fabric-exports';
+
 import {Behavior} from './behavior';
+import {GeneReader} from './gene-reader';
+import {Growth} from './growth';
 
 export interface IGenomeData {
     master: string;
@@ -43,7 +44,7 @@ export class Genome {
         for (let hit = 0; hit < mutations; hit++) {
             const geneNumber = Math.floor(Math.random() * directionGene.length);
             directionGene[geneNumber] = Math.random();
-            // console.log(`G[${direction}][${geneNumber}] = ${directionGene[geneNumber]}`)
+            // console.log(`G[${direction}][${geneNumber}] = ${directionGene[geneNumber]}`);
         }
         return new Genome({master: this.data.master, gene: geneClone});
     }

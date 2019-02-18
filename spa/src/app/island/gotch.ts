@@ -6,8 +6,8 @@ import {Gotchi, IGotchiFactory} from '../gotchi/gotchi';
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s;
 
-interface IGotchIndexed {
-    gotch: Gotch;
+interface IHexalotIndexed {
+    hexalot: Hexalot;
     index: number;
 }
 
@@ -28,34 +28,34 @@ const ringIndex = (coords: ICoords, origin: ICoords): number => {
     return 0;
 };
 
-export const gotchTreeString = (gotches: Gotch[]) => {
-    const root = gotches.find(gotch => gotch.nonce === 0);
+export const hexalotTreeString = (hexalots: Hexalot[]) => {
+    const root = hexalots.find(hexalot => hexalot.nonce === 0);
     if (!root) {
-        console.error('No root gotch found');
+        console.error('No root hexalot found');
         return '';
     }
-    gotches.forEach(gotch => gotch.visited = false);
+    hexalots.forEach(hexalot => hexalot.visited = false);
     return root.generateOctalTreePattern([]).join('');
 };
 
-export class Gotch {
+export class Hexalot {
     public genome?: Genome;
     public nonce = 0;
     public visited = false;
-    public childGotches: Gotch[] = [];
+    public childHexalots: Hexalot[] = [];
 
-    constructor(public parentGotch: Gotch | undefined,
+    constructor(public parentHexalot: Hexalot | undefined,
                 public coords: ICoords,
                 public spots: Spot[],
                 private gotchiFactory: IGotchiFactory) {
-        this.spots[0].centerOfGotch = this;
+        this.spots[0].centerOfHexalot = this;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.spots[neighbor].adjacentGotches.push(this);
+            this.spots[neighbor].adjacentHexalots.push(this);
         }
-        this.spots.forEach(p => p.memberOfGotch.push(this));
-        if (parentGotch) {
-            parentGotch.childGotches.push(this);
-            this.nonce = parentGotch.nonce + 1;
+        this.spots.forEach(p => p.memberOfHexalot.push(this));
+        if (parentHexalot) {
+            parentHexalot.childHexalots.push(this);
+            this.nonce = parentHexalot.nonce + 1;
         }
     }
 
@@ -83,22 +83,22 @@ export class Gotch {
         if (this.genome) {
             return false;
         }
-        return !!this.centerSpot.adjacentGotches.find(gotch => !!gotch.genome);
+        return !!this.centerSpot.adjacentHexalots.find(hexalot => !!hexalot.genome);
     }
 
     public destroy(): Spot[] {
         if (this.spots.length === 0) {
             return [];
         }
-        if (this.parentGotch) {
-            this.parentGotch.childGotches = this.parentGotch.childGotches.filter(gotch => !equals(this.coords, gotch.coords));
+        if (this.parentHexalot) {
+            this.parentHexalot.childHexalots = this.parentHexalot.childHexalots.filter(hexalot => !equals(this.coords, hexalot.coords));
         }
-        this.spots[0].centerOfGotch = undefined;
+        this.spots[0].centerOfHexalot = undefined;
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.spots[neighbor].adjacentGotches = this.spots[neighbor].adjacentGotches.filter(gotch => !equals(this.coords, gotch.coords));
+            this.spots[neighbor].adjacentHexalots = this.spots[neighbor].adjacentHexalots.filter(hexalot => !equals(this.coords, hexalot.coords));
         }
-        this.spots.forEach(p => p.memberOfGotch = p.memberOfGotch.filter(gotch => !equals(this.coords, gotch.coords)));
-        const lightsToRemove = this.spots.filter(p => p.memberOfGotch.length === 0);
+        this.spots.forEach(p => p.memberOfHexalot = p.memberOfHexalot.filter(hexalot => !equals(this.coords, hexalot.coords)));
+        const lightsToRemove = this.spots.filter(p => p.memberOfHexalot.length === 0);
         this.spots = [];
         return lightsToRemove;
     }
@@ -108,10 +108,10 @@ export class Gotch {
     }
 
     public generateOctalTreePattern(steps: number[]): number[] {
-        const remainingChildren = this.childGotches.filter(gotch => !gotch.visited)
-            .map(gotch => {
-                const index = ringIndex(gotch.coords, this.coords);
-                return {index, gotch} as IGotchIndexed;
+        const remainingChildren = this.childHexalots.filter(hexalot => !hexalot.visited)
+            .map(hexalot => {
+                const index = ringIndex(hexalot.coords, this.coords);
+                return {index, hexalot} as IHexalotIndexed;
             })
             .sort((a, b) => a.index < b.index ? 1 : a.index > b.index ? -1 : 0);
         if (remainingChildren.length > 0) {
@@ -120,7 +120,7 @@ export class Gotch {
                     steps.push(BRANCH_STEP);
                 }
                 steps.push(child.index > 0 ? child.index : ERROR_STEP);
-                child.gotch.generateOctalTreePattern(steps);
+                child.hexalot.generateOctalTreePattern(steps);
             }
         }
         else {
@@ -144,8 +144,8 @@ export class Gotch {
 //     spots.forEach(spot => spot.land = landStack.pop());
 // };
 //
-// export const gotchFromFingerprint = (fingerprint: string, index: number, gotchMasterLookup: (fingerprint: string) => string): Gotch => {
-//     const gotch = new Gotch(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Spot(c)));
-//     fingerprintToSpots(fingerprint, gotch.spots);
-//     return gotch;
+// export const hexalotFromFingerprint = (fingerprint: string, index: number, hexalotMasterLookup: (fingerprint: string) => string): Hexalot => {
+//     const hexalot = new Hexalot(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Spot(c)));
+//     fingerprintToSpots(fingerprint, hexalot.spots);
+//     return hexalot;
 // };

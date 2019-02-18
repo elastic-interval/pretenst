@@ -1,4 +1,4 @@
-import {Gotch} from './gotch';
+import {Hexalot} from './hexalot';
 import {Color, Face3, Vector3} from 'three';
 import {HUNG_ALTITUDE, SPOT_TO_HANGER} from '../body/fabric';
 import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes';
@@ -31,9 +31,9 @@ export class Spot {
     public legal = false;
     public connected = false;
     public adjacentSpots: Spot[] = [];
-    public memberOfGotch: Gotch[] = [];
-    public adjacentGotches: Gotch[] = [];
-    public centerOfGotch?: Gotch;
+    public memberOfHexalot: Hexalot[] = [];
+    public adjacentHexalots: Hexalot[] = [];
+    public centerOfHexalot?: Hexalot;
     public faceNames: string[] = [];
     public center: Vector3;
 
@@ -42,7 +42,7 @@ export class Spot {
     }
 
     public refresh() {
-        this.free = !this.memberOfGotch.find(gotch => !!gotch.genome);
+        this.free = !this.memberOfHexalot.find(hexalot => !!hexalot.genome);
         if (!this.connected) {
             this.legal = false;
         } else {
@@ -74,14 +74,14 @@ export class Spot {
         }
     }
 
-    get canBeNewGotch(): boolean {
-        if (this.centerOfGotch || this.surface !== Surface.Land) {
+    get canBeNewHexalot(): boolean {
+        if (this.centerOfHexalot || this.surface !== Surface.Land) {
             return false;
         }
-        return !!this.adjacentGotches.find(gotch => !!gotch.genome);
+        return !!this.adjacentHexalots.find(hexalot => !!hexalot.genome);
     }
 
-    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], legal: boolean, freeGotch?: Gotch, masterGotch?: Gotch) {
+    public addSurfaceGeometry(key: string, index: number, vertices: Vector3[], faces: Face3[], legal: boolean, freeHexalot?: Hexalot, masterHexalot?: Hexalot) {
         this.faceNames = [];
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.center.x,
@@ -92,15 +92,15 @@ export class Spot {
         let color = SURFACE_UNKNOWN_COLOR;
         switch (this.surface) {
             case Surface.Land:
-                if (masterGotch) {
+                if (masterHexalot) {
                     color = SURFACE_LAND_COLOR;
                 }
-                else if (freeGotch) {
+                else if (freeHexalot) {
                     const centerColor = legal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR;
-                    const landColor = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
-                    color = this === freeGotch.centerSpot ? centerColor : landColor;
+                    const landColor = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
+                    color = this === freeHexalot.centerSpot ? centerColor : landColor;
                 } else {
-                    color = this.canBeNewGotch ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
+                    color = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR;
                 }
                 normalSpread = this.legal ? LAND_NORMAL_SPREAD : 0;
                 break;

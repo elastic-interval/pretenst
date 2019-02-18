@@ -1,10 +1,12 @@
 import * as React from 'react';
 import * as R3 from 'react-three';
-import {Geometry, Mesh} from 'three';
-import {Island} from '../island/island';
-import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
 import {Subscription} from 'rxjs/Subscription';
+import {Geometry, Mesh} from 'three';
+
+import {Island} from '../island/island';
 import {IViewState} from '../island/spot';
+
+import {FOREIGN_HANGER_MATERIAL, GOTCHI_MATERIAL, HOME_HANGER_MATERIAL, ISLAND_MATERIAL} from './materials';
 import {MeshKey} from './spot-selector';
 
 export interface IslandComponentProps {
@@ -40,7 +42,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
             foreignSeedGeometry: this.createSeedGeometry(true),
             foreignHangersGeometry: this.createHangersGeometry(true),
             homeSeedGeometry: this.createSeedGeometry(false),
-            homeHangersGeometry: this.createHangersGeometry(false)
+            homeHangersGeometry: this.createHangersGeometry(false),
         };
     }
 
@@ -54,7 +56,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
                         foreignSeedGeometry: this.createSeedGeometry(true),
                         foreignHangersGeometry: this.createHangersGeometry(true),
                         homeSeedGeometry: this.createSeedGeometry(false),
-                        homeHangersGeometry: this.createHangersGeometry(false)
+                        homeHangersGeometry: this.createHangersGeometry(false),
                     };
                 });
             });
@@ -105,8 +107,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const island = this.props.island;
         const viewState: IViewState = {
             islandIsLegal: island.isLegal,
-            freeGotch: island.freeGotch,
-            master: this.props.master
+            freeHexalot: island.freeHexalot,
+            master: this.props.master,
         };
         const geometry = new Geometry();
         island.spots.forEach((spot, index) => {
@@ -117,18 +119,18 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     }
 
     private createHangersGeometry(foreign: boolean): Geometry {
-        const gotches = this.props.island.gotches;
+        const hexalots = this.props.island.hexalots;
         const geometry = new Geometry();
-        gotches.forEach(gotch => gotch.centerSpot.addHangerGeometry(geometry.vertices));
+        hexalots.forEach(hexalot => hexalot.centerSpot.addHangerGeometry(geometry.vertices));
         geometry.computeBoundingSphere();
         return geometry;
     }
 
     private createSeedGeometry(foreign: boolean): Geometry {
-        const gotches = this.props.island.gotchesWithSeeds;
+        const hexalots = this.props.island.hexalotsWithSeeds;
         const geometry = new Geometry();
         if (foreign) {
-            gotches.forEach(gotch => gotch.centerSpot.addSeed(MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces));
+            hexalots.forEach(hexalot => hexalot.centerSpot.addSeed(MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces));
             geometry.computeFaceNormals();
             geometry.computeBoundingSphere();
         }
