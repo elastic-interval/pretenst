@@ -1,29 +1,29 @@
-import * as React from 'react';
-import {Carousel, CarouselControl, CarouselIndicators, CarouselItem} from 'reactstrap';
+import * as React from 'react'
+import {Carousel, CarouselControl, CarouselIndicators, CarouselItem} from 'reactstrap'
 
-import {INFO_PAGES} from './info-pages';
+import {INFO_PAGES} from './info-pages'
 
 export interface IInfoPanelProps {
-    master?: string;
+    master?: string
 }
 
 export interface IInfoPanelState {
-    activeIndex: number;
+    activeIndex: number
 }
 
 export class InfoPanel extends React.Component<IInfoPanelProps, IInfoPanelState> {
 
-    private animating = false;
+    private animating = false
 
     constructor(props: IInfoPanelProps) {
-        super(props);
+        super(props)
         this.state = {
             activeIndex: 0,
-        };
+        }
     }
 
     public render() {
-        const {activeIndex} = this.state;
+        const {activeIndex} = this.state
         const items = INFO_PAGES.map((pageContent: JSX.Element, index: number) => {
             return (
                 <CarouselItem key={`page-${index}`}
@@ -31,8 +31,8 @@ export class InfoPanel extends React.Component<IInfoPanelProps, IInfoPanelState>
                               onExited={() => this.animating = false}>
                     <div key={`item-${index}`}>{pageContent}</div>
                 </CarouselItem>
-            );
-        });
+            )
+        })
         return (
             <Carousel interval={30000}
                       activeIndex={activeIndex}
@@ -47,26 +47,26 @@ export class InfoPanel extends React.Component<IInfoPanelProps, IInfoPanelState>
                 <CarouselControl direction="next" directionText="Next"
                                  onClickHandler={() => this.next()}/>
             </Carousel>
-        );
+        )
     }
 
     private next() {
         if (!this.animating) {
-            const nextIndex = this.state.activeIndex === INFO_PAGES.length - 1 ? 0 : this.state.activeIndex + 1;
-            this.setState({activeIndex: nextIndex});
+            const nextIndex = this.state.activeIndex === INFO_PAGES.length - 1 ? 0 : this.state.activeIndex + 1
+            this.setState({activeIndex: nextIndex})
         }
     }
 
     private previous() {
         if (!this.animating) {
-            const nextIndex = this.state.activeIndex === 0 ? INFO_PAGES.length - 1 : this.state.activeIndex - 1;
-            this.setState({activeIndex: nextIndex});
+            const nextIndex = this.state.activeIndex === 0 ? INFO_PAGES.length - 1 : this.state.activeIndex - 1
+            this.setState({activeIndex: nextIndex})
         }
     }
 
     private goToIndex(index: number) {
         if (!this.animating) {
-            this.setState({activeIndex: index});
+            this.setState({activeIndex: index})
         }
     }
 }

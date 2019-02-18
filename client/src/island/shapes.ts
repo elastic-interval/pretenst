@@ -1,11 +1,11 @@
-import {Vector3} from 'three';
+import {Vector3} from 'three'
 
-export const STOP_STEP = 0;
-export const BRANCH_STEP = 7;
-export const ERROR_STEP = 8;
+export const STOP_STEP = 0
+export const BRANCH_STEP = 7
+export const ERROR_STEP = 8
 
-const SURFACE_SCALE = 20;
-const KINDA = 0.866;
+const SURFACE_SCALE = 20
+const KINDA = 0.866
 
 export const HEXAGON_POINTS = [
     new Vector3(0, 0, -SURFACE_SCALE),
@@ -15,12 +15,12 @@ export const HEXAGON_POINTS = [
     new Vector3(KINDA * SURFACE_SCALE, 0, SURFACE_SCALE/2),
     new Vector3(KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE/2),
     new Vector3(),
-];
+]
 
-export const HEXAPOD_PROJECTION = 0.2;
-export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * SURFACE_SCALE;
-export const SCALE_X = SURFACE_SCALE * KINDA;
-export const SCALE_Y = SURFACE_SCALE * 1.5;
+export const HEXAPOD_PROJECTION = 0.2
+export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * SURFACE_SCALE
+export const SCALE_X = SURFACE_SCALE * KINDA
+export const SCALE_Y = SURFACE_SCALE * 1.5
 
 export const GOTCH_SHAPE = [
     // center
@@ -157,7 +157,7 @@ export const GOTCH_SHAPE = [
     {x: 9, y: 3},
     {x: 10, y: 2},
     {x: 11, y: 1}, // 126
-];
+]
 
 export const ADJACENT = [
     {x: 2, y: 0}, // 1
@@ -166,7 +166,7 @@ export const ADJACENT = [
     {x: -2, y: 0},
     {x: -1, y: 1},
     {x: 1, y: 1}, // 6
-];
+]
 
 export const ROTATE = [
     0,
@@ -196,5 +196,5 @@ export const ROTATE = [
     115, 116, 117, 118, 119, 120,
     121, 122, 123, 124, 125, 126,
     91, 92, 93, 94, 95, 96,
-];
+]
 

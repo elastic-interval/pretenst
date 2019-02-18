@@ -1,16 +1,16 @@
-import * as React from 'react';
-import {Col, Container, Row} from 'reactstrap';
+import * as React from 'react'
+import {Col, Container, Row} from 'reactstrap'
 
-const GALAPAGOTCHI = 'https://github.com/geralddejong/galapagotchi';
-const FLUXE = 'https://twitter.com/fluxe';
-const WEBASSEMBLY = 'https://webassembly.org/';
-const WEBGL = 'https://en.wikipedia.org/wiki/WebGL';
-const THREEJS = 'https://threejs.org/';
-const DARWINS_DANGEROUS_IDEA = 'https://en.wikipedia.org/wiki/Darwin%27s_Dangerous_Idea';
-const THE_BLIND_WATCHMAKER = 'https://en.wikipedia.org/wiki/The_Blind_Watchmaker';
-const AGE_OF_THE_EARTH = 'https://en.wikipedia.org/wiki/Age_of_the_Earth';
-const CHARLES_DARWIN = 'https://en.wikipedia.org/wiki/Charles_Darwin';
-const RICHARD_DAWKINS = 'https://en.wikipedia.org/wiki/Richard_Dawkins';
+const GALAPAGOTCHI = 'https://github.com/geralddejong/galapagotchi'
+const FLUXE = 'https://twitter.com/fluxe'
+const WEBASSEMBLY = 'https://webassembly.org/'
+const WEBGL = 'https://en.wikipedia.org/wiki/WebGL'
+const THREEJS = 'https://threejs.org/'
+const DARWINS_DANGEROUS_IDEA = 'https://en.wikipedia.org/wiki/Darwin%27s_Dangerous_Idea'
+const THE_BLIND_WATCHMAKER = 'https://en.wikipedia.org/wiki/The_Blind_Watchmaker'
+const AGE_OF_THE_EARTH = 'https://en.wikipedia.org/wiki/Age_of_the_Earth'
+const CHARLES_DARWIN = 'https://en.wikipedia.org/wiki/Charles_Darwin'
+const RICHARD_DAWKINS = 'https://en.wikipedia.org/wiki/Richard_Dawkins'
 
 export const INFO_PAGES: JSX.Element[] = [
     (
@@ -195,4 +195,4 @@ export const INFO_PAGES: JSX.Element[] = [
             </Container>
         </div>
     ),
-];
+]

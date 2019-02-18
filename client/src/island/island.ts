@@ -1,32 +1,32 @@
-import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {Vector3} from 'three';
+import {BehaviorSubject} from 'rxjs/BehaviorSubject'
+import {Vector3} from 'three'
 
-import {AppStorage} from '../app-storage';
-import {Genome} from '../genetics/genome';
-import {IGotchiFactory} from '../gotchi/gotchi';
+import {AppStorage} from '../app-storage'
+import {Genome} from '../genetics/genome'
+import {IGotchiFactory} from '../gotchi/gotchi'
 
-import {Hexalot, hexalotTreeString} from './hexalot';
-import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes';
-import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from './spot';
+import {Hexalot, hexalotTreeString} from './hexalot'
+import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes'
+import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from './spot'
 
 export interface IslandPattern {
-    hexalots: string;
-    spots: string;
+    hexalots: string
+    spots: string
 }
 
-const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords);
+const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
 const hexalotWithMaxNonce = (hexalots: Hexalot[]) => hexalots.reduce((withMax, adjacent) => {
     if (withMax) {
-        return adjacent.nonce > withMax.nonce ? adjacent : withMax;
+        return adjacent.nonce > withMax.nonce ? adjacent : withMax
     } else {
-        return adjacent;
+        return adjacent
     }
-});
+})
 
 export class Island {
-    public spots: Spot[] = [];
-    public hexalots: Hexalot[] = [];
-    public activeHexalotIndex = -1;
+    public spots: Spot[] = []
+    public hexalots: Hexalot[] = []
+    public activeHexalotIndex = -1
 
     constructor(
         public islandName: string,
@@ -34,129 +34,129 @@ export class Island {
         private gotchiFactory: IGotchiFactory,
         private storage: AppStorage,
     ) {
-        this.apply(storage.getIsland(islandName));
+        this.apply(storage.getIsland(islandName))
     }
 
     public get hexalotsWithSeeds() {
-        return this.hexalots.filter((hexalot: Hexalot, index:number) => !!hexalot.master && index !== this.activeHexalotIndex);
+        return this.hexalots.filter((hexalot: Hexalot, index:number) => !!hexalot.master && index !== this.activeHexalotIndex)
     }
 
     public get isLegal(): boolean {
-        return !this.spots.find(spot => !spot.legal);
+        return !this.spots.find(spot => !spot.legal)
     }
 
     public get freeHexalot(): Hexalot | undefined {
-        return this.hexalots.find(hexalot => !hexalot.genome);
+        return this.hexalots.find(hexalot => !hexalot.genome)
     }
 
     public findHexalot(master: string): Hexalot | undefined {
-        return this.hexalots.find(hexalot => !!hexalot.genome && hexalot.genome.master === master);
+        return this.hexalots.find(hexalot => !!hexalot.genome && hexalot.genome.master === master)
     }
 
     public setActive(master?: string) {
-        this.activeHexalotIndex = !master ? -1 : this.hexalots.findIndex(hexalot => !!hexalot.genome && hexalot.genome.master === master);
-        this.announceChange();
+        this.activeHexalotIndex = !master ? -1 : this.hexalots.findIndex(hexalot => !!hexalot.genome && hexalot.genome.master === master)
+        this.announceChange()
     }
 
     public get activeHexalot(): Hexalot | undefined {
-        return this.activeHexalotIndex >= 0 ? this.hexalots[this.activeHexalotIndex] : undefined;
+        return this.activeHexalotIndex >= 0 ? this.hexalots[this.activeHexalotIndex] : undefined
     }
 
     public refreshStructure() {
         this.spots.forEach(spot => {
-            spot.adjacentSpots = this.getAdjacentSpots(spot);
-            spot.connected = spot.adjacentSpots.length < 6;
-        });
-        let flowChanged = true;
+            spot.adjacentSpots = this.getAdjacentSpots(spot)
+            spot.connected = spot.adjacentSpots.length < 6
+        })
+        let flowChanged = true
         while (flowChanged) {
-            flowChanged = false;
+            flowChanged = false
             this.spots.forEach(spot => {
                 if (!spot.connected) {
-                    const connectedByAdjacent = spot.adjacentSpots.find(adj => (adj.surface === spot.surface) && adj.connected);
+                    const connectedByAdjacent = spot.adjacentSpots.find(adj => (adj.surface === spot.surface) && adj.connected)
                     if (connectedByAdjacent) {
-                        spot.connected = true;
-                        flowChanged = true;
+                        spot.connected = true
+                        flowChanged = true
                     }
                 }
-            });
+            })
         }
-        this.spots.forEach(spot => spot.refresh());
-        this.announceChange();
+        this.spots.forEach(spot => spot.refresh())
+        this.announceChange()
     }
 
     public save() {
         if (this.isLegal) {
-            this.storage.setIsland(this.islandName, this.pattern);
-            console.log(`Saved ${this.islandName}`);
+            this.storage.setIsland(this.islandName, this.pattern)
+            console.log(`Saved ${this.islandName}`)
         } else {
-            console.log(`Not legal yet: ${this.islandName}`);
+            console.log(`Not legal yet: ${this.islandName}`)
         }
     }
 
     public removeFreeHexalots(): void {
-        const deadHexalots = this.hexalots.filter(hexalot => !hexalot.genome);
+        const deadHexalots = this.hexalots.filter(hexalot => !hexalot.genome)
         deadHexalots.forEach(deadHexalot => {
-            this.hexalots = this.hexalots.filter(hexalot => !equals(hexalot.coords, deadHexalot.coords));
+            this.hexalots = this.hexalots.filter(hexalot => !equals(hexalot.coords, deadHexalot.coords))
             deadHexalot.destroy().forEach(deadSpot => {
-                this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords));
-            });
-        });
+                this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords))
+            })
+        })
     }
 
     public createHexalot(spot: Spot, master: string): Hexalot | undefined {
         if (this.hexalots.find(hexalot => hexalot.master === master)) {
-            console.error(`${master} already has a hexalot!`);
-            return undefined;
+            console.error(`${master} already has a hexalot!`)
+            return undefined
         }
         if (!spot.canBeNewHexalot) {
-            console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`);
-            return undefined;
+            console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`)
+            return undefined
         }
-        return this.hexalotAroundSpot(spot);
+        return this.hexalotAroundSpot(spot)
     }
 
     public get singleHexalot(): Hexalot | undefined {
-        return this.hexalots.length === 1 ? this.hexalots[0] : undefined;
+        return this.hexalots.length === 1 ? this.hexalots[0] : undefined
     }
 
     public get midpoint(): Vector3 {
         return this.spots
             .reduce((sum: Vector3, spot: Spot) => sum.add(spot.center), new Vector3())
-            .multiplyScalar(1 / this.spots.length);
+            .multiplyScalar(1 / this.spots.length)
     }
 
     public get pattern(): IslandPattern {
         if (!this.isLegal) {
-            throw new Error('Saving illegal island');
+            throw new Error('Saving illegal island')
         }
-        this.spots.sort(sortSpotsOnCoord);
+        this.spots.sort(sortSpotsOnCoord)
         return {
             hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToString(this.spots),
-        } as IslandPattern;
+        } as IslandPattern
     }
 
     // ================================================================================================
 
     private announceChange() {
-        this.islandState.next(this.activeHexalotIndex >= 0);
+        this.islandState.next(this.activeHexalotIndex >= 0)
     }
 
     private apply(pattern: IslandPattern) {
-        let hexalot: Hexalot | undefined = this.getOrCreateHexalot(undefined, zero);
-        const stepStack = pattern.hexalots.split('').reverse().map(stepChar => Number(stepChar));
-        const hexalotStack: Hexalot[] = [];
+        let hexalot: Hexalot | undefined = this.getOrCreateHexalot(undefined, zero)
+        const stepStack = pattern.hexalots.split('').reverse().map(stepChar => Number(stepChar))
+        const hexalotStack: Hexalot[] = []
         while (stepStack.length > 0) {
-            const step = stepStack.pop();
+            const step = stepStack.pop()
             switch (step) {
                 case STOP_STEP:
-                    hexalot = hexalotStack.pop();
-                    break;
+                    hexalot = hexalotStack.pop()
+                    break
                 case BRANCH_STEP:
                     if (hexalot) {
-                        hexalotStack.push(hexalot);
+                        hexalotStack.push(hexalot)
                     }
-                    break;
+                    break
                 case 1:
                 case 2:
                 case 3:
@@ -164,80 +164,80 @@ export class Island {
                 case 5:
                 case 6:
                     if (hexalot) {
-                        hexalot = this.hexalotAroundSpot(hexalot.spots[step]);
+                        hexalot = this.hexalotAroundSpot(hexalot.spots[step])
                     }
-                    break;
+                    break
                 default:
-                    console.error('Error step');
+                    console.error('Error step')
             }
         }
-        const hexChars = pattern.spots ? pattern.spots.split('') : [];
-        const numbers = hexChars.map(hexChar => parseInt(hexChar, 16));
+        const hexChars = pattern.spots ? pattern.spots.split('') : []
+        const numbers = hexChars.map(hexChar => parseInt(hexChar, 16))
         const booleanArrays = numbers.map(nyb => {
-            const b0 = (nyb & 8) !== 0;
-            const b1 = (nyb & 4) !== 0;
-            const b2 = (nyb & 2) !== 0;
-            const b3 = (nyb & 1) !== 0;
-            return [b0, b1, b2, b3];
-        });
-        const landStack = [].concat.apply([], booleanArrays).reverse();
-        this.spots.sort(sortSpotsOnCoord);
+            const b0 = (nyb & 8) !== 0
+            const b1 = (nyb & 4) !== 0
+            const b2 = (nyb & 2) !== 0
+            const b3 = (nyb & 1) !== 0
+            return [b0, b1, b2, b3]
+        })
+        const landStack = [].concat.apply([], booleanArrays).reverse()
+        this.spots.sort(sortSpotsOnCoord)
         if (landStack.length) {
             this.spots.forEach(spot => {
-                const land = landStack.pop();
-                spot.surface = land ? Surface.Land : Surface.Water;
-            });
+                const land = landStack.pop()
+                spot.surface = land ? Surface.Land : Surface.Water
+            })
         } else if (this.singleHexalot) {
-            this.singleHexalot.spots[0].surface = Surface.Land;
+            this.singleHexalot.spots[0].surface = Surface.Land
         }
         this.hexalots.forEach(g => {
-            const genomeData = this.storage.getGenome(g);
+            const genomeData = this.storage.getGenome(g)
             if (genomeData) {
-                g.genome = new Genome(genomeData);
+                g.genome = new Genome(genomeData)
             }
-        });
-        this.refreshStructure();
+        })
+        this.refreshStructure()
     }
 
     private hexalotAroundSpot(spot: Spot): Hexalot {
-        const adjacentMaxNonce = hexalotWithMaxNonce(spot.adjacentHexalots);
-        return this.getOrCreateHexalot(adjacentMaxNonce, spot.coords);
+        const adjacentMaxNonce = hexalotWithMaxNonce(spot.adjacentHexalots)
+        return this.getOrCreateHexalot(adjacentMaxNonce, spot.coords)
     }
 
     private getOrCreateHexalot(parent: Hexalot | undefined, coords: ICoords): Hexalot {
-        const existing = this.hexalots.find(existingHexalot => equals(existingHexalot.coords, coords));
+        const existing = this.hexalots.find(existingHexalot => equals(existingHexalot.coords, coords))
         if (existing) {
-            return existing;
+            return existing
         }
-        const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)));
-        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory);
-        this.hexalots.push(hexalot);
-        return hexalot;
+        const spots = GOTCH_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
+        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory)
+        this.hexalots.push(hexalot)
+        return hexalot
     }
 
     private getOrCreateSpot(coords: ICoords): Spot {
-        const existing = this.getSpot(coords);
+        const existing = this.getSpot(coords)
         if (existing) {
-            return existing;
+            return existing
         }
-        const spot = new Spot(coords);
-        this.spots.push(spot);
-        return spot;
+        const spot = new Spot(coords)
+        this.spots.push(spot)
+        return spot
     }
 
     private getAdjacentSpots(spot: Spot): Spot[] {
-        const adjacentSpots: Spot[] = [];
-        const coords = spot.coords;
+        const adjacentSpots: Spot[] = []
+        const coords = spot.coords
         ADJACENT.forEach(a => {
-            const adjacentSpot = this.getSpot(plus(a, coords));
+            const adjacentSpot = this.getSpot(plus(a, coords))
             if (adjacentSpot) {
-                adjacentSpots.push(adjacentSpot);
+                adjacentSpots.push(adjacentSpot)
             }
-        });
-        return adjacentSpots;
+        })
+        return adjacentSpots
     }
 
     private getSpot(coords: ICoords): Spot | undefined {
-        return this.spots.find(p => equals(p.coords, coords));
+        return this.spots.find(p => equals(p.coords, coords))
     }
 }

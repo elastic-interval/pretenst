@@ -1,5 +1,5 @@
 export interface IMemory {
-    buffer: ArrayBuffer;
+    buffer: ArrayBuffer
 }
 
 export enum Direction {
@@ -13,83 +13,83 @@ export enum Direction {
 export function turn(direction: Direction, right: boolean): Direction {
     switch (direction) {
         case Direction.FORWARD:
-            return right ? Direction.RIGHT : Direction.LEFT;
+            return right ? Direction.RIGHT : Direction.LEFT
         case Direction.REVERSE:
-            return right ? Direction.LEFT : Direction.RIGHT;
+            return right ? Direction.LEFT : Direction.RIGHT
         case Direction.LEFT:
-            return right ? Direction.FORWARD : Direction.REVERSE;
+            return right ? Direction.FORWARD : Direction.REVERSE
         case Direction.RIGHT:
-            return right ? Direction.REVERSE : Direction.FORWARD;
+            return right ? Direction.REVERSE : Direction.FORWARD
         default:
-            return Direction.FORWARD;
+            return Direction.FORWARD
     }
 }
 
-export const SEED_CORNERS = 5;
+export const SEED_CORNERS = 5
 
 export interface IFabricExports {
 
-    memory: IMemory;
+    memory: IMemory
 
-    setDragAbove(factor: number): number;
+    setDragAbove(factor: number): number
 
-    setGravityAbove(factor: number): number;
+    setGravityAbove(factor: number): number
 
-    setDragBelow(factor: number): number;
+    setDragBelow(factor: number): number
 
-    setGravityBelow(factor: number): number;
+    setGravityBelow(factor: number): number
 
-    setElasticFactor(factor: number): number;
+    setElasticFactor(factor: number): number
 
-    setMaxSpanVariation(factor: number): number;
+    setMaxSpanVariation(factor: number): number
 
-    setSpanVariationSpeed(factor: number): number;
+    setSpanVariationSpeed(factor: number): number
 
-    init(joints: number, intervals: number, faces: number): number;
+    init(joints: number, intervals: number, faces: number): number
 
-    age(): number;
+    age(): number
 
-    isGestating(): boolean;
+    isGestating(): boolean
 
-    getDirection(): Direction;
+    getDirection(): Direction
 
-    setDirection(direction: Direction): void;
+    setDirection(direction: Direction): void
 
-    iterate(ticks: number): boolean;
+    iterate(ticks: number): boolean
 
-    centralize(): void;
+    centralize(): void
 
-    setAltitude(altitude: number): number;
+    setAltitude(altitude: number): number
 
-    endGestation(): void;
+    endGestation(): void
 
-    nextJointTag(): number;
+    nextJointTag(): number
 
-    joints(): number;
+    joints(): number
 
-    createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number;
+    createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number
 
-    getJointTag(jointIndex: number): number;
+    getJointTag(jointIndex: number): number
 
-    getJointLaterality(jointIndex: number): number;
+    getJointLaterality(jointIndex: number): number
 
-    intervals(): number;
+    intervals(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number;
+    createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number
 
-    findOppositeIntervalIndex(intervalIndex: number): number;
+    findOppositeIntervalIndex(intervalIndex: number): number
 
-    setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void;
+    setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
 
-    faces(): number;
+    faces(): number
 
-    createFace(joint0Index: number, joint1Index: number, joint2Index: number): number;
+    createFace(joint0Index: number, joint1Index: number, joint2Index: number): number
 
-    removeFace(faceIndex: number): void;
+    removeFace(faceIndex: number): void
 
-    findOppositeFaceIndex(faceIndex: number): number;
+    findOppositeFaceIndex(faceIndex: number): number
 
-    getFaceJointIndex(faceIndex: number, jointNumber: number): number;
+    getFaceJointIndex(faceIndex: number, jointNumber: number): number
 
-    getFaceAverageIdealSpan(faceIndex: number): number;
+    getFaceAverageIdealSpan(faceIndex: number): number
 }

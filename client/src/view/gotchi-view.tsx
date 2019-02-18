@@ -1,114 +1,114 @@
-import * as React from 'react';
-import * as R3 from 'react-three';
-import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {Subscription} from 'rxjs/Subscription';
-import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from 'three';
+import * as React from 'react'
+import * as R3 from 'react-three'
+import {BehaviorSubject} from 'rxjs/BehaviorSubject'
+import {Subscription} from 'rxjs/Subscription'
+import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from 'three'
 
-import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric';
-import {Evolution} from '../gotchi/evolution';
-import {Gotchi} from '../gotchi/gotchi';
-import {Hexalot} from '../island/hexalot';
-import {Island} from '../island/island';
-import {Spot} from '../island/spot';
-import {Trip} from '../island/trip';
+import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric'
+import {Evolution} from '../gotchi/evolution'
+import {Gotchi} from '../gotchi/gotchi'
+import {Hexalot} from '../island/hexalot'
+import {Island} from '../island/island'
+import {Spot} from '../island/spot'
+import {Trip} from '../island/trip'
 
-import {EvolutionComponent} from './evolution-component';
-import {GotchiComponent} from './gotchi-component';
-import {IslandComponent} from './island-component';
-import {USER_POINTER_MATERIAL} from './materials';
-import {Orbit, OrbitDistance} from './orbit';
-import {MeshKey, SpotSelector} from './spot-selector';
-import {TripComponent} from './trip-component';
+import {EvolutionComponent} from './evolution-component'
+import {GotchiComponent} from './gotchi-component'
+import {IslandComponent} from './island-component'
+import {USER_POINTER_MATERIAL} from './materials'
+import {Orbit, OrbitDistance} from './orbit'
+import {MeshKey, SpotSelector} from './spot-selector'
+import {TripComponent} from './trip-component'
 
-export const HIGH_ALTITUDE = 1000;
+export const HIGH_ALTITUDE = 1000
 
-const SUN_POSITION = new Vector3(0, 400, 0);
-const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8);
-const TARGET_FRAME_RATE = 25;
+const SUN_POSITION = new Vector3(0, 400, 0)
+const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8)
+const TARGET_FRAME_RATE = 25
 
 interface IGotchiViewProps {
-    perspectiveCamera: PerspectiveCamera;
-    width: number;
-    height: number;
-    island: Island;
-    selectedSpot: BehaviorSubject<Spot | undefined>;
-    orbitDistance: BehaviorSubject<OrbitDistance>;
-    hexalot?: Hexalot;
-    gotchi?: Gotchi;
-    evolution?: Evolution;
-    trip?: Trip;
+    perspectiveCamera: PerspectiveCamera
+    width: number
+    height: number
+    island: Island
+    selectedSpot: BehaviorSubject<Spot | undefined>
+    orbitDistance: BehaviorSubject<OrbitDistance>
+    hexalot?: Hexalot
+    gotchi?: Gotchi
+    evolution?: Evolution
+    trip?: Trip
 }
 
 interface IGotchiViewState {
-    orbitDistance: OrbitDistance;
+    orbitDistance: OrbitDistance
 }
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
-    private subs: Subscription[] = [];
-    private orbit: Orbit;
-    private spotSelector: SpotSelector;
-    private frameTime = Date.now();
-    private frameCount = 0;
-    private frameDelay = 20;
-    private animating = true;
-    private target?: Vector3;
+    private subs: Subscription[] = []
+    private orbit: Orbit
+    private spotSelector: SpotSelector
+    private frameTime = Date.now()
+    private frameCount = 0
+    private frameDelay = 20
+    private animating = true
+    private target?: Vector3
 
     constructor(props: IGotchiViewProps) {
-        super(props);
-        this.props.perspectiveCamera.position.addVectors(props.island.midpoint, new Vector3(0, HIGH_ALTITUDE / 2, 0));
+        super(props)
+        this.props.perspectiveCamera.position.addVectors(props.island.midpoint, new Vector3(0, HIGH_ALTITUDE / 2, 0))
         this.state = {
             orbitDistance: this.props.orbitDistance.getValue(),
-        };
+        }
         this.spotSelector = new SpotSelector(
             this.props.perspectiveCamera,
             this.props.island,
             this.props.width,
             this.props.height,
-        );
+        )
     }
 
     public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: any) {
         if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
-            this.props.perspectiveCamera.aspect = this.props.width / this.props.height;
-            this.props.perspectiveCamera.updateProjectionMatrix();
+            this.props.perspectiveCamera.aspect = this.props.width / this.props.height
+            this.props.perspectiveCamera.updateProjectionMatrix()
         }
     }
 
     public componentDidMount() {
-        const element = document.getElementById('gotchi-view');
-        this.target = this.props.island.midpoint;
-        this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target);
-        this.animate();
-        this.subs.push(this.props.orbitDistance.subscribe(orbitDistance => this.setState({orbitDistance})));
+        const element = document.getElementById('gotchi-view')
+        this.target = this.props.island.midpoint
+        this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target)
+        this.animate()
+        this.subs.push(this.props.orbitDistance.subscribe(orbitDistance => this.setState({orbitDistance})))
         this.subs.push(this.props.selectedSpot.subscribe(spot => {
             if (spot) {
                 if (spot.centerOfHexalot) {
-                    this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center);
+                    this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center)
                 } else if (spot.canBeNewHexalot || spot.free) {
-                    this.target = spot.center;
+                    this.target = spot.center
                 }
             }
-        }));
+        }))
     }
 
     public componentWillUnmount() {
-        this.animating = false;
-        this.subs.forEach(s => s.unsubscribe());
+        this.animating = false
+        this.subs.forEach(s => s.unsubscribe())
     }
 
     public render() {
-        this.frameCount++;
+        this.frameCount++
         if (this.frameCount === 300) {
-            const frameTime = Date.now();
-            const framesPerSecond = 1000 / ((frameTime - this.frameTime) / this.frameCount);
-            this.frameTime = frameTime;
-            this.frameCount = 0;
+            const frameTime = Date.now()
+            const framesPerSecond = 1000 / ((frameTime - this.frameTime) / this.frameCount)
+            this.frameTime = frameTime
+            this.frameCount = 0
             if (framesPerSecond > TARGET_FRAME_RATE) {
-                this.frameDelay++;
+                this.frameDelay++
             } else if (framesPerSecond < TARGET_FRAME_RATE) {
-                this.frameDelay /= 2;
+                this.frameDelay /= 2
             }
-            console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`);
+            console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`)
         }
         return (
             <div id="gotchi-view" onMouseDownCapture={this.onMouseDownCapture}>
@@ -137,7 +137,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     </R3.Scene>
                 </R3.Renderer>
             </div>
-        );
+        )
     }
 
     // ==========================
@@ -145,13 +145,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private get onMouseDownCapture() {
         return (event: any) => {
             if (this.props.evolution || this.props.gotchi) {
-                return;
+                return
             }
-            const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event);
+            const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
             if (spot && (spot.centerOfHexalot || spot.canBeNewHexalot || spot.free)) {
-                this.props.selectedSpot.next(spot);
+                this.props.selectedSpot.next(spot)
             }
-        };
+        }
     }
 
     // private get pointerGeometry(): Geometry | null {
@@ -172,14 +172,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     // }
 
     private get pointerGeometry(): Geometry | null {
-        const geometry = new Geometry();
-        const spot = this.props.selectedSpot.getValue();
-        const action = this.props.evolution || this.props.gotchi;
+        const geometry = new Geometry()
+        const spot = this.props.selectedSpot.getValue()
+        const action = this.props.evolution || this.props.gotchi
         if (spot && this.orbit && !action) {
-            const target = spot.centerOfHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
-            geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)];
+            const target = spot.centerOfHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center
+            geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)]
         }
-        return geometry;
+        return geometry
     }
 
     private animate() {
@@ -187,26 +187,26 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             setTimeout(
                 () => {
                     if (this.props.evolution) {
-                        this.props.evolution.iterate();
-                        this.target = this.props.evolution.midpoint;
+                        this.props.evolution.iterate()
+                        this.target = this.props.evolution.midpoint
                     }
                     if (this.props.gotchi) {
-                        this.props.gotchi.iterate(NORMAL_TICKS);
-                        this.target = this.props.gotchi.midpoint;
+                        this.props.gotchi.iterate(NORMAL_TICKS)
+                        this.target = this.props.gotchi.midpoint
                     }
                     if (this.target) {
-                        this.orbit.moveTargetTowards(this.target);
+                        this.orbit.moveTargetTowards(this.target)
                     }
                     if (this.animating) {
-                        this.orbit.update();
-                        this.forceUpdate();
-                        requestAnimationFrame(step);
+                        this.orbit.update()
+                        this.forceUpdate()
+                        requestAnimationFrame(step)
                     }
                 },
                 this.frameDelay,
-            );
-        };
-        requestAnimationFrame(step);
+            )
+        }
+        requestAnimationFrame(step)
     }
 }
 

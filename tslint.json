@@ -21,7 +21,7 @@
     "object-literal-sort-keys": false,
     "semicolon": [
       true,
-      "always"
+      "never"
     ],
     "trailing-comma": [
       true,
