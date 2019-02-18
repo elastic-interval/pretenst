@@ -15,7 +15,9 @@
     "no-console": false,
     "ordered-imports": [
       true,
-      {"grouped-imports": true}
+      {
+        "grouped-imports": true
+      }
     ],
     "jsx-no-lambda": false,
     "object-literal-sort-keys": false,
@@ -30,11 +32,29 @@
         "singleline": "never"
       }
     ],
-    "no-any": {"severity": "warning"},
+    "no-any": {
+      "severity": "warning"
+    },
     "eofline": true,
-    "indent": [true, "spaces", 4],
+    "indent": [
+      true,
+      "spaces",
+      4
+    ],
     "quotemark": [
-      true, "double"
-    ]
+      true,
+      "double"
+    ],
+    "member-ordering": [
+      true,
+      {
+        "order": "instance-sandwich"
+      }
+    ],
+    "no-consecutive-blank-lines": [
+      true,
+      2
+    ],
+    "no-trailing-whitespace": true
   }
 }
