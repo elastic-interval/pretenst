@@ -1,13 +1,13 @@
-import {Vector3} from 'three'
+import {Vector3} from "three"
 
-import {Genome} from '../genetics/genome'
-import {Gotchi, IGotchiFactory} from '../gotchi/gotchi'
+import {Genome} from "../genetics/genome"
+import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 
-import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes'
-import {equals, ICoords, Spot, Surface} from './spot'
-import {Trip} from './trip'
+import {BRANCH_STEP, ERROR_STEP, GOTCH_SHAPE, STOP_STEP} from "./shapes"
+import {equals, ICoords, Spot, Surface} from "./spot"
+import {Trip} from "./trip"
 
-const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s
+const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
 
 interface IHexalotIndexed {
     hexalot: Hexalot
@@ -15,10 +15,10 @@ interface IHexalotIndexed {
 }
 
 const spotsToHexFingerprint = (spots: Spot[]) => {
-    const lit = spots.map(spot => spot.surface === Surface.Land ? '1' : '0')
-    const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null).filter(chunk => chunk)
+    const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
+    const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : null).filter(chunk => chunk)
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16))
-    return nybbleChars.join('')
+    return nybbleChars.join("")
 }
 
 const ringIndex = (coords: ICoords, origin: ICoords): number => {
@@ -34,11 +34,11 @@ const ringIndex = (coords: ICoords, origin: ICoords): number => {
 export const hexalotTreeString = (hexalots: Hexalot[]) => {
     const root = hexalots.find(hexalot => hexalot.nonce === 0)
     if (!root) {
-        console.error('No root hexalot found')
-        return ''
+        console.error("No root hexalot found")
+        return ""
     }
     hexalots.forEach(hexalot => hexalot.visited = false)
-    return root.generateOctalTreePattern([]).join('')
+    return root.generateOctalTreePattern([]).join("")
 }
 
 export class Hexalot {
@@ -70,7 +70,7 @@ export class Hexalot {
     public createGotchi(jointCount: number, mutatedGenome?: Genome): Promise<Gotchi> {
         const genome = mutatedGenome ? mutatedGenome : this.genome
         if (!genome) {
-            throw new Error('Create gotchi but no genome')
+            throw new Error("Create gotchi but no genome")
         }
         return this.gotchiFactory.createGotchiAt(this.center, jointCount, genome)
     }

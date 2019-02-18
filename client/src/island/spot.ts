@@ -1,11 +1,11 @@
-import {Color, Face3, Vector3} from 'three'
+import {Color, Face3, Vector3} from "three"
 
-import {HUNG_ALTITUDE, SPOT_TO_HANGER} from '../body/fabric'
-import {SEED_CORNERS} from '../body/fabric-exports'
-import {MeshKey} from '../view/spot-selector'
+import {HUNG_ALTITUDE, SPOT_TO_HANGER} from "../body/fabric"
+import {SEED_CORNERS} from "../body/fabric-exports"
+import {MeshKey} from "../view/spot-selector"
 
-import {Hexalot} from './hexalot'
-import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from './shapes'
+import {Hexalot} from "./hexalot"
+import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from "./shapes"
 
 export interface ICoords {
     x: number
@@ -13,9 +13,9 @@ export interface ICoords {
 }
 
 export enum Surface {
-    Unknown = 'unknown',
-    Land = 'land',
-    Water = 'water',
+    Unknown = "unknown",
+    Land = "land",
+    Water = "water",
 }
 
 export interface IViewState {
@@ -24,11 +24,11 @@ export interface IViewState {
     freeHexalot?: Hexalot
 }
 
-const SURFACE_UNKNOWN_COLOR = new Color('silver')
-const SURFACE_LAND_COLOR = new Color('tan')
-const SURFACE_CLICKABLE_COLOR = new Color('mediumseagreen')
-const SURFACE_FREE_GOTCH_COLOR = new Color('crimson')
-const SURFACE_WATER_COLOR = new Color('darkturquoise')
+const SURFACE_UNKNOWN_COLOR = new Color("silver")
+const SURFACE_LAND_COLOR = new Color("tan")
+const SURFACE_CLICKABLE_COLOR = new Color("mediumseagreen")
+const SURFACE_FREE_GOTCH_COLOR = new Color("crimson")
+const SURFACE_WATER_COLOR = new Color("darkturquoise")
 const SIX = 6
 const UP = new Vector3(0, 1, 0)
 const LAND_NORMAL_SPREAD = 0.03
@@ -193,16 +193,16 @@ export const minus = (a: ICoords, b: ICoords): ICoords => {
 export const plus = (a: ICoords, b: ICoords): ICoords => {
     return {x: a.x + b.x, y: a.y + b.y}
 }
-const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + '0') : s
+const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
 export const spotsToString = (spots: Spot[]) => {
-    const land = spots.map(spot => spot.surface === Surface.Land ? '1' : '0')
-    const nybbleStrings = land.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join('') : null)
+    const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
+    const nybbleStrings = land.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : null)
     const nybbleChars = nybbleStrings.map(chunk => {
         if (chunk) {
             return parseInt(padRightTo4(chunk), 2).toString(16)
         } else {
-            return ''
+            return ""
         }
     })
-    return nybbleChars.join('')
+    return nybbleChars.join("")
 }

@@ -1,13 +1,13 @@
-import * as React from 'react'
-import * as R3 from 'react-three'
-import {Color, Mesh, PerspectiveCamera, Vector3} from 'three'
+import * as React from "react"
+import * as R3 from "react-three"
+import {Color, Mesh, PerspectiveCamera, Vector3} from "three"
 
-import {Hexalot} from '../island/hexalot'
-import {Island} from '../island/island'
-import {Spot} from '../island/spot'
+import {Hexalot} from "../island/hexalot"
+import {Island} from "../island/island"
+import {Spot} from "../island/spot"
 
-import {IslandComponent} from './island-component'
-import {MeshKey, SpotSelector} from './spot-selector'
+import {IslandComponent} from "./island-component"
+import {MeshKey, SpotSelector} from "./spot-selector"
 
 const SUN_POSITION = new Vector3(0, 300, 200)
 const CAMERA_POSITION = new Vector3(0, 550, 0)

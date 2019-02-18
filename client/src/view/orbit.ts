@@ -1,9 +1,9 @@
-import {BehaviorSubject} from 'rxjs/BehaviorSubject'
-import * as THREE from 'three'
-import {PerspectiveCamera, Vector3} from 'three'
-import * as ORBIT_CONTROLS from 'three-orbit-controls'
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import * as THREE from "three"
+import {PerspectiveCamera, Vector3} from "three"
+import * as ORBIT_CONTROLS from "three-orbit-controls"
 
-import {HIGH_ALTITUDE} from './gotchi-view'
+import {HIGH_ALTITUDE} from "./gotchi-view"
 
 const OrbitControls = ORBIT_CONTROLS(THREE)
 const HELICOPTER_DISTANCE = 300
@@ -11,8 +11,8 @@ const UPWARDS = 0.3
 const TOWARDS_TARGET = 0.05
 
 export enum OrbitDistance {
-    HELICOPTER = 'HELICOPTER',
-    CRUISE = 'CRUISE',
+    HELICOPTER = "HELICOPTER",
+    CRUISE = "CRUISE",
 }
 
 export class Orbit {
@@ -35,9 +35,9 @@ export class Orbit {
         // orbit.dampingFactor = 0.07;
         // orbit.rotateSpeed = 0.07;
         const updateLastChanged = () => this.lastChanged = Date.now()
-        orbit.addEventListener('start', updateLastChanged)
-        orbit.addEventListener('end', updateLastChanged)
-        orbit.addEventListener('change', updateLastChanged)
+        orbit.addEventListener("start", updateLastChanged)
+        orbit.addEventListener("end", updateLastChanged)
+        orbit.addEventListener("change", updateLastChanged)
         this.target.add(target)
     }
 

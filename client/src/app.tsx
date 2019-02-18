@@ -1,24 +1,24 @@
-import * as React from 'react'
-import {Button} from 'reactstrap'
-import {BehaviorSubject} from 'rxjs/BehaviorSubject'
-import {Subscription} from 'rxjs/Subscription'
-import {PerspectiveCamera, Vector3} from 'three'
+import * as React from "react"
+import {Button} from "reactstrap"
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {Subscription} from "rxjs/Subscription"
+import {PerspectiveCamera, Vector3} from "three"
 
-import {AppStorage} from './app-storage'
-import {Fabric} from './body/fabric'
-import {Direction, IFabricExports, turn} from './body/fabric-exports'
-import {Physics} from './body/physics'
-import {Genome, IGenomeData} from './genetics/genome'
-import {Evolution, INITIAL_JOINT_COUNT} from './gotchi/evolution'
-import {Gotchi} from './gotchi/gotchi'
-import {Hexalot} from './island/hexalot'
-import {Island} from './island/island'
-import {Spot, Surface} from './island/spot'
-import {Trip} from './island/trip'
-import {ActionsPanel, Command} from './view/actions-panel'
-import {GotchiView} from './view/gotchi-view'
-import {InfoPanel} from './view/info-panel'
-import {OrbitDistance} from './view/orbit'
+import {AppStorage} from "./app-storage"
+import {Fabric} from "./body/fabric"
+import {Direction, IFabricExports, turn} from "./body/fabric-exports"
+import {Physics} from "./body/physics"
+import {Genome, IGenomeData} from "./genetics/genome"
+import {Evolution, INITIAL_JOINT_COUNT} from "./gotchi/evolution"
+import {Gotchi} from "./gotchi/gotchi"
+import {Hexalot} from "./island/hexalot"
+import {Island} from "./island/island"
+import {Spot, Surface} from "./island/spot"
+import {Trip} from "./island/trip"
+import {ActionsPanel, Command} from "./view/actions-panel"
+import {GotchiView} from "./view/gotchi-view"
+import {InfoPanel} from "./view/info-panel"
+import {OrbitDistance} from "./view/orbit"
 
 interface IAppProps {
     createFabricInstance: (fabricNumber: number) => Promise<IFabricExports>
@@ -123,7 +123,7 @@ class App extends React.Component<IAppProps, IAppState> {
             infoPanel: true,
             actionPanel: false,
             orbitDistance: this.orbitDistanceSubject.getValue(),
-            island: new Island('GalapagotchIsland', this.islandState, {createGotchiAt}, this.props.storage),
+            island: new Island("GalapagotchIsland", this.islandState, {createGotchiAt}, this.props.storage),
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight,
@@ -282,7 +282,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 // }
                 break
             default:
-                throw new Error('Unknown command!')
+                throw new Error("Unknown command!")
         }
     }
 }

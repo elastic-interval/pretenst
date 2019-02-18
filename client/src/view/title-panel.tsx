@@ -1,10 +1,10 @@
-import * as React from 'react'
-import {BehaviorSubject} from 'rxjs/BehaviorSubject'
-import {Subscription} from 'rxjs/Subscription'
+import * as React from "react"
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {Subscription} from "rxjs/Subscription"
 
-import {Spot} from '../island/spot'
+import {Spot} from "../island/spot"
 
-import {OrbitDistance} from './orbit'
+import {OrbitDistance} from "./orbit"
 
 export interface ITitlePanelProps {
     version: string

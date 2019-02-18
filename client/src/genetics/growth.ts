@@ -1,7 +1,7 @@
-import {Fabric} from '../body/fabric'
-import {FaceSnapshot} from '../body/face-snapshot'
+import {Fabric} from "../body/fabric"
+import {FaceSnapshot} from "../body/face-snapshot"
 
-import {GeneReader} from './gene-reader'
+import {GeneReader} from "./gene-reader"
 
 const UNFOLD_JOINT = 2
 const FACE_AHEAD = 2

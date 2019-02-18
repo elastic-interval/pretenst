@@ -1,4 +1,4 @@
-import {Vector3} from 'three'
+import {Vector3} from "three"
 
 export const STOP_STEP = 0
 export const BRANCH_STEP = 7

@@ -1,7 +1,7 @@
-import * as React from 'react'
-import {Carousel, CarouselControl, CarouselIndicators, CarouselItem} from 'reactstrap'
+import * as React from "react"
+import {Carousel, CarouselControl, CarouselIndicators, CarouselItem} from "reactstrap"
 
-import {INFO_PAGES} from './info-pages'
+import {INFO_PAGES} from "./info-pages"
 
 export interface IInfoPanelProps {
     master?: string

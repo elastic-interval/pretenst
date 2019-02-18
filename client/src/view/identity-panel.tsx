@@ -1,10 +1,10 @@
-import * as React from 'react'
-import {ChangeEvent, FormEvent} from 'react'
-import {BehaviorSubject} from 'rxjs/BehaviorSubject'
+import * as React from "react"
+import {ChangeEvent, FormEvent} from "react"
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
 
-import {AppStorage} from '../app-storage'
-import {Island} from '../island/island'
-import {Spot} from '../island/spot'
+import {AppStorage} from "../app-storage"
+import {Island} from "../island/island"
+import {Spot} from "../island/spot"
 
 export interface IIdentityPanelProps {
     storage: AppStorage
@@ -25,10 +25,10 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
         this.handleNameChange = this.handleNameChange.bind(this)
         this.handleSubmitName = this.handleSubmitName.bind(this)
         this.state = {
-            name: props.master ? props.master : '',
+            name: props.master ? props.master : "",
             islandMasters: props.island.hexalots.map(hexalot => {
                 const genome = props.storage.getGenome(hexalot)
-                return genome? genome.master : ''
+                return genome? genome.master : ""
             }).filter(master => master.length > 0),
         }
     }
@@ -64,7 +64,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
     private handleNameChange(event: ChangeEvent<HTMLInputElement>) {
         const name = event.target.value
         if (this.state.islandMasters.find(master => master === name)) {
-            const error = 'Name exists!'
+            const error = "Name exists!"
             this.setState({name, error})
         } else {
             this.setState({name, error: undefined})
@@ -72,7 +72,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
     }
 
     private handleSubmitName(event: FormEvent<HTMLFormElement>) {
-        console.log('submit', event)
+        console.log("submit", event)
         event.preventDefault()
     }
 }

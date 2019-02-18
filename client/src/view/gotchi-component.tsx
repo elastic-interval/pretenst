@@ -1,10 +1,10 @@
-import * as React from 'react'
-import * as R3 from 'react-three'
-import {Geometry, Vector3} from 'three'
+import * as React from "react"
+import * as R3 from "react-three"
+import {Geometry, Vector3} from "three"
 
-import {Gotchi} from '../gotchi/gotchi'
+import {Gotchi} from "../gotchi/gotchi"
 
-import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL} from './materials'
+import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL} from "./materials"
 
 export interface IGotchiComponentProps {
     gotchi: Gotchi

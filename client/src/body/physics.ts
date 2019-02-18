@@ -1,15 +1,15 @@
-import {AppStorage} from '../app-storage'
+import {AppStorage} from "../app-storage"
 
-import {IFabricExports} from './fabric-exports'
+import {IFabricExports} from "./fabric-exports"
 
 export enum PhysicsFeature {
-    GravityAbove = 'Gravity Above',
-    GravityBelow = 'Gravity Below',
-    DragAbove = 'Drag Above',
-    DragBelow = 'Drag Below',
-    ElasticFactor = 'Elastic Factor',
-    MaxSpanVariation = 'Maximum Span Variation',
-    SpanVariationSpeed = 'Span Variation Speed',
+    GravityAbove = "Gravity Above",
+    GravityBelow = "Gravity Below",
+    DragAbove = "Drag Above",
+    DragBelow = "Drag Below",
+    ElasticFactor = "Elastic Factor",
+    MaxSpanVariation = "Maximum Span Variation",
+    SpanVariationSpeed = "Span Variation Speed",
 }
 
 export interface IPhysicsFeature {

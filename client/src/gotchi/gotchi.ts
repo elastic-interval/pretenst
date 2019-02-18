@@ -1,10 +1,10 @@
-import {Vector3} from 'three'
+import {Vector3} from "three"
 
-import {Fabric} from '../body/fabric'
-import {Direction} from '../body/fabric-exports'
-import {Genome, IGenomeData} from '../genetics/genome'
-import {Growth} from '../genetics/growth'
-import {ITravel} from '../island/trip'
+import {Fabric} from "../body/fabric"
+import {Direction} from "../body/fabric-exports"
+import {Genome, IGenomeData} from "../genetics/genome"
+import {Growth} from "../genetics/growth"
+import {ITravel} from "../island/trip"
 
 export interface IGotchiFactory {
     createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>

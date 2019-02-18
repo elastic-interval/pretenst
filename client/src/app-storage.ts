@@ -1,9 +1,9 @@
-import {PhysicsFeature} from './body/physics'
-import {IGenomeData} from './genetics/genome'
-import {Hexalot} from './island/hexalot'
-import {IslandPattern} from './island/island'
+import {PhysicsFeature} from "./body/physics"
+import {IGenomeData} from "./genetics/genome"
+import {Hexalot} from "./island/hexalot"
+import {IslandPattern} from "./island/island"
 
-const MASTER_KEY = 'master'
+const MASTER_KEY = "master"
 
 export class AppStorage {
 
@@ -30,7 +30,7 @@ export class AppStorage {
 
     public getIsland(islandName: string): IslandPattern {
         const patternString = this.storage.getItem(islandName)
-        return patternString ? JSON.parse(patternString) : {hexalots: '', spots: ''}
+        return patternString ? JSON.parse(patternString) : {hexalots: "", spots: ""}
     }
 
     public setIsland(islandName: string, islandPattern: IslandPattern) {

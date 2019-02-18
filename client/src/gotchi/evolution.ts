@@ -1,14 +1,14 @@
-import {BehaviorSubject} from 'rxjs/BehaviorSubject'
-import {Vector3} from 'three'
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {Vector3} from "three"
 
-import {NORMAL_TICKS, SPOT_TO_HANGER} from '../body/fabric'
-import {Direction} from '../body/fabric-exports'
-import {Genome, IGenomeData} from '../genetics/genome'
-import {Hexalot} from '../island/hexalot'
-import {Trip} from '../island/trip'
+import {NORMAL_TICKS, SPOT_TO_HANGER} from "../body/fabric"
+import {Direction} from "../body/fabric-exports"
+import {Genome, IGenomeData} from "../genetics/genome"
+import {Hexalot} from "../island/hexalot"
+import {Trip} from "../island/trip"
 
-import {compareEvolvers, Evolver} from './evolver'
-import {Gotchi} from './gotchi'
+import {compareEvolvers, Evolver} from "./evolver"
+import {Gotchi} from "./gotchi"
 
 export const INITIAL_JOINT_COUNT = 47
 const MAX_POPULATION = 24
@@ -83,12 +83,12 @@ export class Evolution {
         const noneActive = activeEvolvers.length === 0
         if (halfFrozen || noneActive) {
             this.ageLimit += INCREASE_AGE_LIMIT
-            console.log('age limit', this.ageLimit)
+            console.log("age limit", this.ageLimit)
             const toSave = this.strongest()
             if (toSave) {
                 this.saveGenome(toSave.gotchi.genomeData)
             } else {
-                console.log('no strongest?')
+                console.log("no strongest?")
             }
             if (this.ageLimit >= MAXIMUM_AGE) {
                 this.ageLimit = MINIMUM_AGE

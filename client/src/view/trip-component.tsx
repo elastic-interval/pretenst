@@ -1,11 +1,11 @@
-import * as React from 'react'
-import * as R3 from 'react-three'
-import {BufferGeometry, Float32BufferAttribute} from 'three'
+import * as React from "react"
+import * as R3 from "react-three"
+import {BufferGeometry, Float32BufferAttribute} from "three"
 
-import {Spot} from '../island/spot'
-import {Trip} from '../island/trip'
+import {Spot} from "../island/spot"
+import {Trip} from "../island/trip"
 
-import {TRIP_MATERIAL} from './materials'
+import {TRIP_MATERIAL} from "./materials"
 
 const TRIP_ALTITUDE = 0.3
 
@@ -29,7 +29,7 @@ function geometryRefreshed(state: ITripComponentState, props: ITripComponentProp
         positions.push(spot.center.z)
     })
     const geometry = new BufferGeometry()
-    geometry.addAttribute('position', new Float32BufferAttribute(positions, 3))
+    geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
     return {
         geometry,
     }

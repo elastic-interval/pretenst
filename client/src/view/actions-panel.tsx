@@ -1,27 +1,27 @@
-import * as React from 'react'
-import {Button, ButtonGroup, Col, Container, Row} from 'reactstrap'
-import {BehaviorSubject} from 'rxjs/BehaviorSubject'
-import {Vector3} from 'three'
+import * as React from "react"
+import {Button, ButtonGroup, Col, Container, Row} from "reactstrap"
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {Vector3} from "three"
 
-import {Evolution} from '../gotchi/evolution'
-import {Gotchi} from '../gotchi/gotchi'
-import {Hexalot} from '../island/hexalot'
-import {Spot} from '../island/spot'
+import {Evolution} from "../gotchi/evolution"
+import {Gotchi} from "../gotchi/gotchi"
+import {Hexalot} from "../island/hexalot"
+import {Spot} from "../island/spot"
 
-import {OrbitDistance} from './orbit'
+import {OrbitDistance} from "./orbit"
 
 export enum Command {
-    RETURN_TO_SEED = 'Return to seed',
-    LAUNCH_GOTCHI = 'Launch Gotchi',
-    TURN_LEFT = 'Turn Left',
-    TURN_RIGHT = 'Turn Right',
-    COME_HERE = 'Come Here',
-    GO_THERE = 'Go There',
-    STOP = 'Stop',
-    LAUNCH_EVOLUTION = 'Launch Evolution',
-    CLAIM_GOTCH = 'Claim Hexalot',
-    CREATE_LAND = 'Create Land',
-    CREATE_WATER = 'Create Water',
+    RETURN_TO_SEED = "Return to seed",
+    LAUNCH_GOTCHI = "Launch Gotchi",
+    TURN_LEFT = "Turn Left",
+    TURN_RIGHT = "Turn Right",
+    COME_HERE = "Come Here",
+    GO_THERE = "Go There",
+    STOP = "Stop",
+    LAUNCH_EVOLUTION = "Launch Evolution",
+    CLAIM_GOTCH = "Claim Hexalot",
+    CREATE_LAND = "Create Land",
+    CREATE_WATER = "Create Water",
 }
 
 export interface IActionsPanelProps {
@@ -42,7 +42,7 @@ interface IClicky {
 
 function Clicky(params: IClicky) {
     return (
-        <span style={{padding: '5px 5px 5px 5px'}}>
+        <span style={{padding: "5px 5px 5px 5px"}}>
             <Button onClick={() => params.props.doCommand(params.command)}>{params.command}</Button>
         </span>
     )

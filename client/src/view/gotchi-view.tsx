@@ -1,24 +1,24 @@
-import * as React from 'react'
-import * as R3 from 'react-three'
-import {BehaviorSubject} from 'rxjs/BehaviorSubject'
-import {Subscription} from 'rxjs/Subscription'
-import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from 'three'
+import * as React from "react"
+import * as R3 from "react-three"
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {Subscription} from "rxjs/Subscription"
+import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from "three"
 
-import {HUNG_ALTITUDE, NORMAL_TICKS} from '../body/fabric'
-import {Evolution} from '../gotchi/evolution'
-import {Gotchi} from '../gotchi/gotchi'
-import {Hexalot} from '../island/hexalot'
-import {Island} from '../island/island'
-import {Spot} from '../island/spot'
-import {Trip} from '../island/trip'
+import {HUNG_ALTITUDE, NORMAL_TICKS} from "../body/fabric"
+import {Evolution} from "../gotchi/evolution"
+import {Gotchi} from "../gotchi/gotchi"
+import {Hexalot} from "../island/hexalot"
+import {Island} from "../island/island"
+import {Spot} from "../island/spot"
+import {Trip} from "../island/trip"
 
-import {EvolutionComponent} from './evolution-component'
-import {GotchiComponent} from './gotchi-component'
-import {IslandComponent} from './island-component'
-import {USER_POINTER_MATERIAL} from './materials'
-import {Orbit, OrbitDistance} from './orbit'
-import {MeshKey, SpotSelector} from './spot-selector'
-import {TripComponent} from './trip-component'
+import {EvolutionComponent} from "./evolution-component"
+import {GotchiComponent} from "./gotchi-component"
+import {IslandComponent} from "./island-component"
+import {USER_POINTER_MATERIAL} from "./materials"
+import {Orbit, OrbitDistance} from "./orbit"
+import {MeshKey, SpotSelector} from "./spot-selector"
+import {TripComponent} from "./trip-component"
 
 export const HIGH_ALTITUDE = 1000
 
@@ -75,7 +75,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidMount() {
-        const element = document.getElementById('gotchi-view')
+        const element = document.getElementById("gotchi-view")
         this.target = this.props.island.midpoint
         this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target)
         this.animate()

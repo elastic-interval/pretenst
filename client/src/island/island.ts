@@ -1,13 +1,13 @@
-import {BehaviorSubject} from 'rxjs/BehaviorSubject'
-import {Vector3} from 'three'
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {Vector3} from "three"
 
-import {AppStorage} from '../app-storage'
-import {Genome} from '../genetics/genome'
-import {IGotchiFactory} from '../gotchi/gotchi'
+import {AppStorage} from "../app-storage"
+import {Genome} from "../genetics/genome"
+import {IGotchiFactory} from "../gotchi/gotchi"
 
-import {Hexalot, hexalotTreeString} from './hexalot'
-import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from './shapes'
-import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from './spot'
+import {Hexalot, hexalotTreeString} from "./hexalot"
+import {ADJACENT, BRANCH_STEP, GOTCH_SHAPE, STOP_STEP} from "./shapes"
+import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from "./spot"
 
 export interface IslandPattern {
     hexalots: string
@@ -127,7 +127,7 @@ export class Island {
 
     public get pattern(): IslandPattern {
         if (!this.isLegal) {
-            throw new Error('Saving illegal island')
+            throw new Error("Saving illegal island")
         }
         this.spots.sort(sortSpotsOnCoord)
         return {
@@ -144,7 +144,7 @@ export class Island {
 
     private apply(pattern: IslandPattern) {
         let hexalot: Hexalot | undefined = this.getOrCreateHexalot(undefined, zero)
-        const stepStack = pattern.hexalots.split('').reverse().map(stepChar => Number(stepChar))
+        const stepStack = pattern.hexalots.split("").reverse().map(stepChar => Number(stepChar))
         const hexalotStack: Hexalot[] = []
         while (stepStack.length > 0) {
             const step = stepStack.pop()
@@ -168,10 +168,10 @@ export class Island {
                     }
                     break
                 default:
-                    console.error('Error step')
+                    console.error("Error step")
             }
         }
-        const hexChars = pattern.spots ? pattern.spots.split('') : []
+        const hexChars = pattern.spots ? pattern.spots.split("") : []
         const numbers = hexChars.map(hexChar => parseInt(hexChar, 16))
         const booleanArrays = numbers.map(nyb => {
             const b0 = (nyb & 8) !== 0

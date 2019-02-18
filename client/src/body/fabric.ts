@@ -1,8 +1,8 @@
-import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from 'three'
+import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from "three"
 
-import {Direction, IFabricExports, SEED_CORNERS} from './fabric-exports'
-import {FabricKernel, vectorFromFloatArray} from './fabric-kernel'
-import {FaceSnapshot, IJointSnapshot} from './face-snapshot'
+import {Direction, IFabricExports, SEED_CORNERS} from "./fabric-exports"
+import {FabricKernel, vectorFromFloatArray} from "./fabric-kernel"
+import {FaceSnapshot, IJointSnapshot} from "./face-snapshot"
 
 export const BILATERAL_MIDDLE = 0
 export const BILATERAL_RIGHT = 1
@@ -100,8 +100,8 @@ export class Fabric {
 
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry()
-        geometry.addAttribute('position', new Float32BufferAttribute(this.kernel.faceLocations, 3))
-        geometry.addAttribute('normal', new Float32BufferAttribute(this.kernel.faceNormals, 3))
+        geometry.addAttribute("position", new Float32BufferAttribute(this.kernel.faceLocations, 3))
+        geometry.addAttribute("normal", new Float32BufferAttribute(this.kernel.faceNormals, 3))
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose()
         }
