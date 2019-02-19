@@ -55,6 +55,7 @@
       true,
       2
     ],
-    "no-trailing-whitespace": true
+    "no-trailing-whitespace": true,
+    "no-unused-expression": {"severity": "warning"}
   }
 }

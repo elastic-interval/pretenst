@@ -1,16 +1,18 @@
+import { Hexalot, PubKey } from "./types"
+
 export interface IKeyValueStore {
     set(key: string, value: string): Promise<void>
 
     get(key: string): Promise<string | null>
 }
 
-type Hexalot = string
-type PubKey = string
-
 export const GENESIS_LOT_KEY = "genesisLot"
 
 export class HexalotStore {
-    constructor(private readonly db: IKeyValueStore, readonly prefix: string = "galapagotchi") {
+    constructor(
+        readonly db: IKeyValueStore,
+        readonly prefix: string = "galapagotchi",
+    ) {
     }
 
     public async getGenesisLot(): Promise<Hexalot | null> {
@@ -26,10 +28,10 @@ export class HexalotStore {
     }
 
     private async set(key: string, value: string) {
-        return this.db.set(`${this.prefix}:${key}`, value)
+        return this.db.set(`${this.prefix}::${key}`, value)
     }
 
     private async get(key: string): Promise<string | null> {
-        return this.db.get(`${this.prefix}:${key}`)
+        return this.db.get(`${this.prefix}::${key}`)
     }
 }
