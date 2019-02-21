@@ -1,95 +1,95 @@
-import * as React from 'react';
-import {Button, ButtonGroup, Col, Container, Row} from 'reactstrap';
-import {BehaviorSubject} from 'rxjs/BehaviorSubject';
-import {Vector3} from 'three';
+import * as React from "react"
+import {Button, ButtonGroup, Col, Container, Row} from "reactstrap"
+import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {Vector3} from "three"
 
-import {Evolution} from '../gotchi/evolution';
-import {Gotchi} from '../gotchi/gotchi';
-import {Hexalot} from '../island/hexalot';
-import {Spot} from '../island/spot';
+import {Evolution} from "../gotchi/evolution"
+import {Gotchi} from "../gotchi/gotchi"
+import {Hexalot} from "../island/hexalot"
+import {Spot} from "../island/spot"
 
-import {OrbitDistance} from './orbit';
+import {OrbitDistance} from "./orbit"
 
 export enum Command {
-    RETURN_TO_SEED = 'Return to seed',
-    LAUNCH_GOTCHI = 'Launch Gotchi',
-    TURN_LEFT = 'Turn Left',
-    TURN_RIGHT = 'Turn Right',
-    COME_HERE = 'Come Here',
-    GO_THERE = 'Go There',
-    STOP = 'Stop',
-    LAUNCH_EVOLUTION = 'Launch Evolution',
-    CLAIM_GOTCH = 'Claim Hexalot',
-    CREATE_LAND = 'Create Land',
-    CREATE_WATER = 'Create Water',
+    RETURN_TO_SEED = "Return to seed",
+    LAUNCH_GOTCHI = "Launch Gotchi",
+    TURN_LEFT = "Turn Left",
+    TURN_RIGHT = "Turn Right",
+    COME_HERE = "Come Here",
+    GO_THERE = "Go There",
+    STOP = "Stop",
+    LAUNCH_EVOLUTION = "Launch Evolution",
+    CLAIM_GOTCH = "Claim Hexalot",
+    CREATE_LAND = "Create Land",
+    CREATE_WATER = "Create Water",
 }
 
 export interface IActionsPanelProps {
-    orbitDistance: BehaviorSubject<OrbitDistance>;
-    cameraLocation: Vector3;
-    master?: string;
-    spot?: Spot;
-    hexalot?: Hexalot;
-    gotchi?: Gotchi;
-    evolution?: Evolution;
-    doCommand: (command: Command, location?: Vector3) => void;
+    orbitDistance: BehaviorSubject<OrbitDistance>
+    cameraLocation: Vector3
+    master?: string
+    spot?: Spot
+    hexalot?: Hexalot
+    gotchi?: Gotchi
+    evolution?: Evolution
+    doCommand: (command: Command, location?: Vector3) => void
 }
 
 interface IClicky {
-    props: IActionsPanelProps;
-    command: Command;
+    props: IActionsPanelProps
+    command: Command
 }
 
 function Clicky(params: IClicky) {
     return (
-        <span style={{padding: '5px 5px 5px 5px'}}>
+        <span style={{padding: "5px 5px 5px 5px"}}>
             <Button onClick={() => params.props.doCommand(params.command)}>{params.command}</Button>
         </span>
-    );
+    )
 }
 
 const ActionPanel = (props: any) => (
     <div className="action-panel">
         {props.children}
     </div>
-);
+)
 
 export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
 
     constructor(props: IActionsPanelProps) {
-        super(props);
+        super(props)
     }
 
     public render() {
-        const evolution = this.props.evolution;
+        const evolution = this.props.evolution
         if (evolution) {
-            return this.evolving(evolution);
+            return this.evolving(evolution)
         }
-        const gotchi = this.props.gotchi;
+        const gotchi = this.props.gotchi
         if (gotchi) {
-            return this.drivingGotchi(gotchi);
+            return this.drivingGotchi(gotchi)
         }
-        const hexalot = this.props.hexalot;
+        const hexalot = this.props.hexalot
         if (hexalot) {
             if (hexalot.master === this.props.master) {
-                return this.homeHexalot(hexalot);
+                return this.homeHexalot(hexalot)
             } else if (hexalot.master) {
-                return this.foreignHexalot(hexalot);
+                return this.foreignHexalot(hexalot)
             }
         }
-        const spot = this.props.spot;
+        const spot = this.props.spot
         if (spot) {
             if (spot.free) {
-                return this.freeSpot(spot);
+                return this.freeSpot(spot)
             } else if (spot.canBeNewHexalot) {
-                return this.availableHexalot(spot);
+                return this.availableHexalot(spot)
             }
         }
         return (
             <ActionPanel>
                 <h1>Click on something or whatever</h1>
             </ActionPanel>
-        );
+        )
     }
 
     private foreignHexalot(hexalot: Hexalot) {
@@ -111,7 +111,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                     </Row>
                 </Container>
             </ActionPanel>
-        );
+        )
     }
 
     private homeHexalot(hexalot: Hexalot) {
@@ -131,7 +131,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                     it for a while so it learns muscle coordination.
                 </p>
             </ActionPanel>
-        );
+        )
     }
 
     private drivingGotchi(gotchi: Gotchi) {
@@ -166,7 +166,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                     </ButtonGroup>
                 </div>
             </ActionPanel>
-        );
+        )
     }
 
     private evolving(evolution: Evolution) {
@@ -177,7 +177,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                 </p>
                 <Clicky props={this.props} command={Command.RETURN_TO_SEED}/>
             </ActionPanel>
-        );
+        )
     }
 
     private availableHexalot(spot: Spot) {
@@ -192,7 +192,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                     </p>
                 )}
             </ActionPanel>
-        );
+        )
     }
 
     private freeSpot(spot: Spot) {
@@ -206,6 +206,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
                     <Clicky props={this.props} command={Command.CREATE_WATER}/>
                 </p>
             </ActionPanel>
-        );
+        )
     }
 }

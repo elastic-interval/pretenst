@@ -1,10 +1,11 @@
 {
   "name": "galapagotchi-server",
   "version": "1.0.0",
-  "main": "index.ts",
+  "main": "src/index.ts",
   "license": "MIT",
   "scripts": {
-    "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node index.ts",
+    "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node src/index.ts",
+    "test": "mocha -r ts-node/register test/*.test.ts",
     "lint": "tslint --fix -p tsconfig.json"
   },
   "dependencies": {
@@ -13,5 +14,11 @@
     "ts-node": "^8.0.2",
     "tslint": "^5.12.1",
     "typescript": "^3.3.3"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.6",
+    "chai": "^4.2.0",
+    "mocha": "^6.0.0"
   }
 }
