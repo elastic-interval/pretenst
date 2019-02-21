@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response, Router } from "express"
 
-import { HEXALOT_PURCHASE_PRICE_SATS } from "./constants"
+import { HEXALOT_PURCHASE_PRICE_SATOSHIS } from "./constants"
 import { PaymentHandler } from "./payment"
 import { HexalotStore, IKeyValueStore } from "./store"
 import { Hexalot } from "./types"
@@ -59,7 +59,7 @@ export class HexalotCurator {
             } catch (e) {
                 return res.status(400).end(`Lot cannot be purchased: ${e}`)
             }
-            const invoice = await this.paymentHandler.generateInvoice(lot, HEXALOT_PURCHASE_PRICE_SATS)
+            const invoice = await this.paymentHandler.generateInvoice(lot, HEXALOT_PURCHASE_PRICE_SATOSHIS)
             res
                 .status(402) // HTTP 402 Payment Required :)
                 .end(invoice)
