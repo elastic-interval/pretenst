@@ -1,19 +1,7 @@
 import { expect } from "chai"
 import "mocha"
 
-import { GENESIS_LOT_KEY, HexalotStore, IKeyValueStore } from "../src/store"
-
-class InMemoryStore implements IKeyValueStore {
-    private db: { [key: string]: string } = {}
-
-    public async get(key: string): Promise<string | null> {
-        return this.db[key] || null
-    }
-
-    public async set(key: string, value: string): Promise<void> {
-        this.db[key] = value
-    }
-}
+import { GENESIS_LOT_KEY, HexalotStore, InMemoryStore } from "../src/store"
 
 describe("Hexalot store", () => {
     let db: InMemoryStore
@@ -34,7 +22,7 @@ describe("Hexalot store", () => {
         const pubKey = "TEST_KEY"
         const lot = "TEST_LOT"
         expect(await store.getLotOwner(lot)).to.equal(null)
-        await store.setLotOwner(lot, pubKey)
+        await store.assignLot(lot, pubKey)
         expect(await store.getLotOwner(lot)).to.equal(pubKey)
     })
 })

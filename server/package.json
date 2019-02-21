@@ -4,7 +4,7 @@
   "main": "src/index.ts",
   "license": "MIT",
   "scripts": {
-    "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node index.ts",
+    "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node src/index.ts",
     "lint": "tslint --fix -p tsconfig.json"
   },
   "dependencies": {
