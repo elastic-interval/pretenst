@@ -5,6 +5,7 @@
   "license": "MIT",
   "scripts": {
     "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node src/index.ts",
+    "test": "mocha -r ts-node/register test/*.test.ts",
     "lint": "tslint --fix -p tsconfig.json"
   },
   "dependencies": {
