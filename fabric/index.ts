@@ -65,32 +65,34 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     let facesSize = faceCountMax * FACE_SIZE
     // offsets
     fabricBytes = (
-        vectorB = (
-            vectorA = (
-                vector = (
-                    faceOffset = (
-                        intervalOffset = (
-                            jointOffset = (
-                                faceLocationOffset = (
-                                    faceNormalOffset = (
-                                        faceMidpointOffset = (
-                                            rightPtr = (
-                                                forwardPtr = (
-                                                    seedPtr = (
-                                                        midpointPtr
+        statePtr = (
+            vectorB = (
+                vectorA = (
+                    vector = (
+                        faceOffset = (
+                            intervalOffset = (
+                                jointOffset = (
+                                    faceLocationOffset = (
+                                        faceNormalOffset = (
+                                            faceMidpointOffset = (
+                                                rightPtr = (
+                                                    forwardPtr = (
+                                                        seedPtr = (
+                                                            midpointPtr
+                                                        ) + VECTOR_SIZE
                                                     ) + VECTOR_SIZE
                                                 ) + VECTOR_SIZE
                                             ) + VECTOR_SIZE
-                                        ) + VECTOR_SIZE
-                                    ) + faceVectorsSize
+                                        ) + faceVectorsSize
+                                    ) + faceJointVectorsSize
                                 ) + faceJointVectorsSize
-                            ) + faceJointVectorsSize
-                        ) + jointsSize
-                    ) + intervalsSize
-                ) + facesSize
+                            ) + jointsSize
+                        ) + intervalsSize
+                    ) + facesSize
+                ) + VECTOR_SIZE
             ) + VECTOR_SIZE
         ) + VECTOR_SIZE
-    ) + VECTOR_SIZE
+    ) + STATE_SIZE
     let blocks = (fabricBytes * instanceCountMax) >> 16
     memory.grow(blocks + 1)
     return fabricBytes
@@ -405,7 +407,7 @@ function setPreviousDirection(value: u8): void {
     setU8(statePtr + U32 + U16 * 5 + U8, value)
 }
 
-export function getCurrentDirectionX(): u8 {
+export function getCurrentDirection(): u8 {
     return getU8(statePtr + U32 + U16 * 5 + U8 * 2)
 }
 
@@ -417,7 +419,7 @@ function getNextDirection(): u8 {
     return getU8(statePtr + U32 + U16 * 5 + U8 * 3)
 }
 
-export function setNextDirectionX(value: u8): void {
+export function setNextDirection(value: u8): void {
     setU8(statePtr + U32 + U16 * 5 + U8 * 3, value)
 }
 
@@ -435,9 +437,6 @@ export function resetX(): void {
 let ticksSoFar: u32 = 0
 let timeSweep: u16 = 0
 let gestating: u8 = GESTATING
-let previousDirection: u8 = REST_DIRECTION
-let currentDirection: u8 = REST_DIRECTION
-let nextDirection: u8 = REST_DIRECTION
 let jointCount: u16 = 0
 let jointTagCount: u16 = 0
 let intervalCount: u16 = 0
@@ -787,9 +786,11 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
             return currentSpan * (1 - progress) + idealSpan * progress
         }
     }
+    let currentDirection = getCurrentDirection()
     if (currentDirection === REST_DIRECTION) {
         return idealSpan
     }
+    let previousDirection = getPreviousDirection()
     if (previousDirection !== currentDirection) {
         let previousSpanVariation = getIntervalSpanVariationFloat(intervalIndex, previousDirection)
         let spanVariation = getIntervalSpanVariationFloat(intervalIndex, currentDirection)
@@ -961,8 +962,7 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     if (altitude > JOINT_RADIUS) {
         setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
         multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove)
-    }
-    else if (altitude > -JOINT_RADIUS) {
+    } else if (altitude > -JOINT_RADIUS) {
         let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
         let degreeBelow: f32 = 1.0 - degreeAbove
         if (velocityY < 0) {
@@ -972,8 +972,7 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
         setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
         let drag = dragAbove * degreeAbove + physicsDragBelow * degreeBelow
         multiplyScalar(velocityPtr(jointIndex), 1 - drag)
-    }
-    else {
+    } else {
         if (velocityY < 0) {
             zero(velocityVectorPtr)
         } else {
@@ -1025,17 +1024,10 @@ export function endGestation(): void {
     }
 }
 
-export function getCurrentDirection(): u8 {
-    return currentDirection
-}
-
-export function setNextDirection(direction: u8): void {
-    nextDirection = direction
-}
-
 export function iterate(ticks: usize): boolean {
     let wrapAround = false
     let timeSweepStep: u16 = <u16>timeSweepSpeed
+    let currentDirection = getCurrentDirection()
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         let current = timeSweep
         timeSweep += timeSweepStep
@@ -1044,9 +1036,10 @@ export function iterate(ticks: usize): boolean {
             if (gestating) {
                 timeSweep = 0
             } else {
-                previousDirection = currentDirection
+                setPreviousDirection(currentDirection)
+                let nextDirection = getNextDirection()
                 if (nextDirection !== currentDirection) {
-                    currentDirection = nextDirection
+                    setCurrentDirection(nextDirection)
                 }
             }
         }
