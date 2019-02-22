@@ -337,16 +337,16 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 const STATE_SIZE: usize = U32 + U16 * 5 + U8 * 4 + U16 // last one is padding for multiple of 4 bytes
 
-function incrementAge(ticks: u16): void {
-    setU32(statePtr, getU32(statePtr) + ticks)
+function setAge(value: u32): void {
+    setU32(statePtr, value)
 }
 
-export function getAgeX(): u32 {
+export function getAge(): u32 {
     return getU32(statePtr)
 }
 
 function setTimeSweep(value: u16): void {
-    setU32(statePtr + U32, value)
+    setU16(statePtr + U32, value)
 }
 
 function getTimeSweep(): u16 {
@@ -423,10 +423,9 @@ export function setNextDirection(value: u8): void {
     setU8(statePtr + U32 + U16 * 5 + U8 * 3, value)
 }
 
-let ticksSoFar: u32 = 0
-let timeSweep: u16 = 0
-
 export function reset(): void {
+    setAge(0)
+    setTimeSweep(0)
     setJointCount(0)
     setJointTagCount(0)
     setIntervalCount(0)
@@ -435,10 +434,6 @@ export function reset(): void {
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
-}
-
-export function getAge(): u32 {
-    return ticksSoFar
 }
 
 // Joints =====================================================================================
@@ -706,6 +701,7 @@ function getIntervalSpanVariationFloat(intervalIndex: u16, direction: u8): f32 {
     }
     let pointsFromHigh: u32
     let pointsFromLow: u32
+    let timeSweep = getTimeSweep()
     if (timeSweep === lowClockPoint) {
         pointsFromHigh = 1
         pointsFromLow = 0
@@ -755,6 +751,7 @@ function getIntervalSpanVariationFloat(intervalIndex: u16, direction: u8): f32 {
 }
 
 function interpolateCurrentSpan(intervalIndex: u16): f32 {
+    let timeSweep = getTimeSweep()
     let progress = <f32>timeSweep / 65536
     let idealSpan = getIdealSpan(intervalIndex)
     let intervalState = getIntervalHighLow(intervalIndex, REST_DIRECTION)
@@ -985,8 +982,8 @@ function tick(): void {
     }
 }
 
-export function isGestating(): u8 {
-    return getGestating()
+export function isGestating(): boolean {
+    return getGestating() === GESTATING
 }
 
 export function endGestation(): void {
@@ -1020,12 +1017,14 @@ export function iterate(ticks: usize): boolean {
     let timeSweepStep: u16 = <u16>timeSweepSpeed
     let currentDirection = getCurrentDirection()
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
+        let timeSweep = getTimeSweep()
         let current = timeSweep
         timeSweep += timeSweepStep
+        setTimeSweep(timeSweep)
         if (timeSweep < current) {
             wrapAround = true
             if (getGestating()) {
-                timeSweep = 0
+                setTimeSweep(0)
             } else {
                 setPreviousDirection(currentDirection)
                 let nextDirection = getNextDirection()
@@ -1037,7 +1036,7 @@ export function iterate(ticks: usize): boolean {
         tick()
     }
     if (currentDirection !== REST_DIRECTION) {
-        ticksSoFar += ticks
+        setAge(getAge() + ticks)
     }
     let faceCount = getFaceCount()
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
