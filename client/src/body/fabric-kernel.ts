@@ -1,6 +1,6 @@
 import {Vector3} from "three"
 
-import {IFabricExports} from "./fabric-exports"
+import {Direction, IFabricExports, IFabricInstanceExports} from "./fabric-exports"
 
 export const vectorFromFloatArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
     if (vector) {
@@ -9,6 +9,12 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
     } else {
         return new Vector3(array[index], array[index + 1], array[index + 2])
     }
+}
+
+export function createFabricKernel(fabricExports: IFabricExports, instanceMax: number, jointCountMax: number): FabricKernel {
+    const intervalCountMax = jointCountMax * 3 + 30
+    const faceCountMax = jointCountMax * 2 + 20
+    return new FabricKernel(fabricExports, instanceMax, jointCountMax, intervalCountMax, faceCountMax)
 }
 
 export class FabricKernel {
@@ -26,9 +32,11 @@ export class FabricKernel {
     private seedVector = new Vector3()
     private forwardVector = new Vector3()
     private rightVector = new Vector3()
+    private instanceArray: IFabricInstanceExports[]
 
     constructor(
-        public exports: IFabricExports,
+        private exports: IFabricExports,
+        public instanceMax: number,
         public jointCountMax: number,
         public intervalCountMax: number,
         public faceCountMax: number,
@@ -47,7 +55,7 @@ export class FabricKernel {
                 ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
-        this.fabricBytes = exports.init(jointCountMax, this.intervalCountMax, this.faceCountMax)
+        this.fabricBytes = exports.init(this.instanceMax, this.jointCountMax, this.intervalCountMax, this.faceCountMax)
         this.arrayBuffer = exports.memory.buffer
         const byteLength = exports.memory.buffer.byteLength
         if (byteLength === 0) {
@@ -55,11 +63,28 @@ export class FabricKernel {
         } else {
             console.log(`Got ${byteLength} bytes`)
         }
+        for (let index = 0; index < instanceMax; index++) {
+            this.instanceArray.push(new InstanceExports(exports, index))
+        }
+    }
+
+    public get blockBytes() {
+        return this.fabricBytes
+    }
+
+    public get bufferBytes() {
+        return this.arrayBuffer.byteLength
+    }
+
+    public get instance(): IFabricInstanceExports[] {
+        return this.instanceArray
     }
 
     public refresh() {
         this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined
     }
+
+    // TODO: everything below must be per-instance
 
     public get vectors(): Float32Array {
         if (!this.vectorArray) {
@@ -105,11 +130,107 @@ export class FabricKernel {
         return this.faceNormalsArray
     }
 
-    public get blockBytes() {
-        return this.fabricBytes
+}
+
+class InstanceExports implements IFabricInstanceExports {
+
+    constructor(private exports: IFabricExports, private index: number) {
     }
 
-    public get bufferBytes() {
-        return this.arrayBuffer.byteLength
+    public age(): number {
+        return this.ex.age()
+    }
+
+    public centralize(): void {
+        this.ex.centralize()
+    }
+
+    public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
+        return this.ex.createFace(joint0Index, joint1Index, joint2Index)
+    }
+
+    public createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number {
+        return this.ex.createInterval(alphaIndex, omegaIndex, span, growing)
+    }
+
+    public createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number {
+        return this.ex.createJoint(jointTag, laterality, x, y, z)
+    }
+
+    public endGestation(): void {
+        this.ex.endGestation()
+    }
+
+    public faces(): number {
+        return this.ex.faces()
+    }
+
+    public findOppositeFaceIndex(faceIndex: number): number {
+        return this.ex.findOppositeFaceIndex(faceIndex)
+    }
+
+    public findOppositeIntervalIndex(intervalIndex: number): number {
+        return this.ex.findOppositeIntervalIndex(intervalIndex)
+    }
+
+    public getDirection(): Direction {
+        return this.ex.getDirection()
+    }
+
+    public getFaceAverageIdealSpan(faceIndex: number): number {
+        return this.ex.getFaceAverageIdealSpan(faceIndex)
+    }
+
+    public getFaceJointIndex(faceIndex: number, jointNumber: number): number {
+        return this.ex.getFaceJointIndex(faceIndex, jointNumber)
+    }
+
+    public getJointLaterality(jointIndex: number): number {
+        return this.ex.getJointLaterality(jointIndex)
+    }
+
+    public getJointTag(jointIndex: number): number {
+        return this.ex.getJointTag(jointIndex)
+    }
+
+    public intervals(): number {
+        return this.ex.intervals()
+    }
+
+    public isGestating(): boolean {
+        return this.ex.isGestating()
+    }
+
+    public iterate(ticks: number): boolean {
+        return this.ex.iterate(ticks)
+    }
+
+    public joints(): number {
+        return this.ex.joints()
+    }
+
+    public nextJointTag(): number {
+        return this.ex.nextJointTag()
+    }
+
+    public removeFace(faceIndex: number): void {
+        this.ex.removeFace(faceIndex)
+    }
+
+    public setAltitude(altitude: number): number {
+        return this.ex.setAltitude(altitude)
+    }
+
+    public setDirection(direction: Direction): void {
+        this.ex.setDirection(direction)
+    }
+
+    public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
+        this.ex.setIntervalHighLow(intervalIndex, direction, highLow)
+    }
+
+    private get ex(): IFabricExports {
+        this.exports.setInstance(this.index)
+        return this.exports
     }
 }

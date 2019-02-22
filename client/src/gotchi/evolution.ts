@@ -26,18 +26,14 @@ export class Evolution {
 
     constructor(private hexalot: Hexalot, private trip: Trip, private saveGenome: (genome: IGenomeData) => void) {
         let mutatingGenome = hexalot.genome
-        const promisedGotchis: Array<Promise<Gotchi>> = []
+        const gotchis: Gotchi[] = []
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
-            const promisedGotchi = this.hexalot.createGotchi(INITIAL_JOINT_COUNT, mutatingGenome)
-            if (promisedGotchi) {
-                promisedGotchis.push(promisedGotchi)
-            }
+            const gotchi = this.hexalot.createGotchi(mutatingGenome)
+            gotchis.push(gotchi)
             const direction: Direction = Math.floor(Math.random() * 4) + 1
             mutatingGenome = mutatingGenome.withMutatedBehavior(direction, MUTATION_COUNT)
         }
-        Promise.all(promisedGotchis).then(gotchis => {
-            this.evolversNow.next(gotchis.map(gotchi => this.gotchiToEvolver(gotchi)))
-        })
+        this.evolversNow.next(gotchis.map(gotchi => this.gotchiToEvolver(gotchi)))
     }
 
     public get midpoint(): Vector3 {
@@ -120,27 +116,26 @@ export class Evolution {
         console.log(`REBOOT: dead=${deadEvolvers.length} remaining=${ranked.length}`)
         this.evolversNow.next(ranked)
         setTimeout(() => {
-            const mutants: Array<Promise<Gotchi>> = deadEvolvers.map(evolver => {
+            const mutants: Gotchi[] = deadEvolvers.map(evolver => {
                 evolver.gotchi.dispose()
                 const luckyParent = ranked[Math.floor(ranked.length * Math.random())]
                 return this.createOffspring(luckyParent.gotchi, luckyParent.currentDirection, false)
             })
-            const clones: Array<Promise<Gotchi>> = ranked.map(evolver => {
+            const clones: Gotchi[] = ranked.map(evolver => {
                 evolver.gotchi.dispose()
                 return this.createOffspring(evolver.gotchi, evolver.currentDirection, true)
             })
+            const offspring = mutants.concat(clones)
             this.evolversNow.next([])
-            Promise.all(mutants.concat(clones)).then(offspring => {
-                console.log(`survived=${offspring.length}`)
-                this.evolversNow.next(offspring.map(g => this.gotchiToEvolver(g)))
-                this.rebooting = false
-            })
+            console.log(`survived=${offspring.length}`)
+            this.evolversNow.next(offspring.map(g => this.gotchiToEvolver(g)))
+            this.rebooting = false
         }, 1000)
     }
 
-    private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Promise<Gotchi> {
+    private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Gotchi {
         const genome = new Genome(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : MUTATION_COUNT)
-        return this.hexalot.createGotchi(parent.fabric.jointCountMax, genome)
+        return this.hexalot.createGotchi(genome)
     }
 
     private gotchiToEvolver = (gotchi: Gotchi): Evolver => {

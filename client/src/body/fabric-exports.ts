@@ -45,7 +45,58 @@ export interface IFabricExports {
 
     setSpanVariationSpeed(factor: number): number
 
-    init(joints: number, intervals: number, faces: number): number
+    init(joints: number, intervals: number, faces: number, instances: number): number
+
+    setInstance(index: number): void
+
+    age(): number
+
+    isGestating(): boolean
+
+    getDirection(): Direction
+
+    setDirection(direction: Direction): void
+
+    iterate(ticks: number): boolean
+
+    centralize(): void
+
+    setAltitude(altitude: number): number
+
+    endGestation(): void
+
+    nextJointTag(): number
+
+    joints(): number
+
+    createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number
+
+    getJointTag(jointIndex: number): number
+
+    getJointLaterality(jointIndex: number): number
+
+    intervals(): number
+
+    createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number
+
+    findOppositeIntervalIndex(intervalIndex: number): number
+
+    setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
+
+    faces(): number
+
+    createFace(joint0Index: number, joint1Index: number, joint2Index: number): number
+
+    removeFace(faceIndex: number): void
+
+    findOppositeFaceIndex(faceIndex: number): number
+
+    getFaceJointIndex(faceIndex: number, jointNumber: number): number
+
+    getFaceAverageIdealSpan(faceIndex: number): number
+}
+
+export interface IFabricInstanceExports {
 
     age(): number
 

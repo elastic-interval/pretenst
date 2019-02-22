@@ -1,7 +1,7 @@
 import {Vector3} from "three"
 
 import {BILATERAL_MIDDLE, Fabric} from "./fabric"
-import {IFabricExports} from "./fabric-exports"
+import {IFabricInstanceExports} from "./fabric-exports"
 import {FabricKernel, vectorFromFloatArray} from "./fabric-kernel"
 
 export interface IJointSnapshot {
@@ -20,7 +20,7 @@ export class FaceSnapshot {
     constructor(
         private fabric: Fabric,
         private kernel: FabricKernel,
-        private fabricExports: IFabricExports,
+        private fabricExports: IFabricInstanceExports,
         private faceIndex: number,
         private derived?: boolean,
     ) {

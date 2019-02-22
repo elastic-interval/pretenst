@@ -55,6 +55,8 @@
       true,
       2
     ],
+    "prefer-const": false, // for the assemblyscript
+    "no-angle-bracket-type-assertion": false, // for the assemblyscript
     "no-trailing-whitespace": true,
     "no-unused-expression": {"severity": "warning"},
     "max-classes-per-file": false

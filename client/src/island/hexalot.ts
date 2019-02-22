@@ -67,12 +67,12 @@ export class Hexalot {
         return new Trip([this.centerSpot, spots[0]])
     }
 
-    public createGotchi(jointCount: number, mutatedGenome?: Genome): Promise<Gotchi> {
+    public createGotchi(mutatedGenome?: Genome): Gotchi {
         const genome = mutatedGenome ? mutatedGenome : this.genome
         if (!genome) {
             throw new Error("Create gotchi but no genome")
         }
-        return this.gotchiFactory.createGotchiAt(this.center, jointCount, genome)
+        return this.gotchiFactory.createGotchiAt(this.center, genome)
     }
 
     get master(): string | undefined {

@@ -7,7 +7,7 @@ import {Growth} from "../genetics/growth"
 import {ITravel} from "../island/trip"
 
 export interface IGotchiFactory {
-    createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>
+    createGotchiAt(location: Vector3, genome: Genome): Gotchi
 }
 
 export class Gotchi {
@@ -87,6 +87,7 @@ export class Gotchi {
     }
 
     public dispose() {
+        // todo: mark instance as free
         this.fabric.disposeOfGeometry()
     }
 }
