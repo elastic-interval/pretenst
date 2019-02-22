@@ -375,7 +375,7 @@ export function nextJointTag(): u16 {
     return count
 }
 
-export function getIntervalCountX(): u16 {
+export function getIntervalCount(): u16 {
     return getU16(statePtr + U32 + U16 * 3)
 }
 
@@ -383,7 +383,7 @@ function setIntervalCount(value: u16): void {
     setU16(statePtr + U32 + U16 * 3, value)
 }
 
-export function getFaceCountX(): u16 {
+export function getFaceCount(): u16 {
     return getU16(statePtr + U32 + U16 * 4)
 }
 
@@ -425,8 +425,6 @@ export function setNextDirection(value: u8): void {
 
 let ticksSoFar: u32 = 0
 let timeSweep: u16 = 0
-let intervalCount: u16 = 0
-let faceCount: u16 = 0
 
 export function reset(): void {
     setJointCount(0)
@@ -437,20 +435,10 @@ export function reset(): void {
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
-    intervalCount = 0
-    faceCount = 0
 }
 
 export function getAge(): u32 {
     return ticksSoFar
-}
-
-export function getIntervalCount(): usize {
-    return intervalCount
-}
-
-export function getFaceCount(): usize {
-    return faceCount
 }
 
 // Joints =====================================================================================
@@ -558,6 +546,7 @@ export function setAltitude(altitude: f32): f32 {
         let jPtr = jointPtr(thisJoint)
         setY(jPtr, getY(jPtr) + altitude - lowY)
     }
+    let faceCount = getFaceCount()
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex)
     }
@@ -589,10 +578,12 @@ function calculateDirectionVectors(): void {
 const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
 
 export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32, growing: boolean): usize {
+    let intervalCount = getIntervalCount()
     if (intervalCount + 1 >= intervalCountMax) {
         return ERROR
     }
-    let intervalIndex = intervalCount++
+    let intervalIndex = intervalCount
+    setIntervalCount(intervalCount + 1)
     setAlphaIndex(intervalIndex, alphaIndex)
     setOmegaIndex(intervalIndex, omegaIndex)
     setIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex))
@@ -669,6 +660,7 @@ function calculateSpan(intervalIndex: u16): f32 {
 }
 
 function findIntervalIndex(joint0: u16, joint1: u16): u16 {
+    let intervalCount = getIntervalCount()
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         let alpha = getAlphaIndex(thisInterval)
         let omega = getOmegaIndex(thisInterval)
@@ -682,6 +674,7 @@ function findIntervalIndex(joint0: u16, joint1: u16): u16 {
 export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
     let tagAlpha = getJointTag(getAlphaIndex(intervalIndex))
     let tagOmega = getJointTag(getOmegaIndex(intervalIndex))
+    let intervalCount = getIntervalCount()
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
         if (thisInterval === intervalIndex) {
             continue
@@ -889,6 +882,7 @@ export function findOppositeFaceIndex(faceIndex: u16): u16 {
     let tag0 = getFaceTag(faceIndex, 0)
     let tag1 = getFaceTag(faceIndex, 1)
     let tag2 = getFaceTag(faceIndex, 2)
+    let faceCount = getFaceCount()
     for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
         if (thisFace === faceIndex) {
             continue
@@ -907,10 +901,12 @@ export function findOppositeFaceIndex(faceIndex: u16): u16 {
 }
 
 export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): usize {
+    let faceCount = getFaceCount()
     if (faceCount + 1 >= faceCountMax) {
         return ERROR
     }
-    let faceIndex = faceCount++
+    let faceIndex = faceCount
+    setFaceCount(faceCount + 1)
     setFaceJointIndex(faceIndex, 0, joint0Index)
     setFaceJointIndex(faceIndex, 1, joint1Index)
     setFaceJointIndex(faceIndex, 2, joint2Index)
@@ -919,14 +915,15 @@ export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16)
 }
 
 export function removeFace(deadFaceIndex: u16): void {
-    for (let faceIndex: u16 = deadFaceIndex; faceIndex < faceCount - 1; faceIndex++) {
+    let faceCount = getFaceCount() - 1
+    for (let faceIndex: u16 = deadFaceIndex; faceIndex < faceCount; faceIndex++) {
         let nextFace = faceIndex + 1
         setFaceJointIndex(faceIndex, 0, getFaceJointIndex(nextFace, 0))
         setFaceJointIndex(faceIndex, 1, getFaceJointIndex(nextFace, 1))
         setFaceJointIndex(faceIndex, 2, getFaceJointIndex(nextFace, 2))
         outputFaceGeometry(faceIndex)
     }
-    faceCount--
+    setFaceCount(faceCount)
 }
 
 // Physics =====================================================================================
@@ -972,6 +969,7 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
 
 function tick(): void {
     let gestating = getGestating()
+    let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         elastic(intervalIndex, gestating ? physicsElasticFactor * 0.1 : physicsElasticFactor)
     }
@@ -999,14 +997,16 @@ export function endGestation(): void {
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         copyJointFromNext(jointIndex)
     }
-    intervalCount -= 2
+    let intervalCount = getIntervalCount() - 2
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         copyIntervalFromOffset(intervalIndex, 2)
     }
+    setIntervalCount(intervalCount)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setAlphaIndex(intervalIndex, getAlphaIndex(intervalIndex) - 1)
         setOmegaIndex(intervalIndex, getOmegaIndex(intervalIndex) - 1)
     }
+    let faceCount = getFaceCount()
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         for (let jointNumber: u16 = 0; jointNumber < 3; jointNumber++) {
             let jointIndex = getFaceJointIndex(faceIndex, jointNumber)
@@ -1039,6 +1039,7 @@ export function iterate(ticks: usize): boolean {
     if (currentDirection !== REST_DIRECTION) {
         ticksSoFar += ticks
     }
+    let faceCount = getFaceCount()
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex)
     }
