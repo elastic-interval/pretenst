@@ -4,13 +4,16 @@ declare function logFloat(idx: u32, f: f32): void
 
 declare function logInt(idx: u32, i: i32): void
 
+const U8 = sizeof<u8>()
+const U16 = sizeof<u16>()
+const F32 = sizeof<f32>()
+
 const ERROR: usize = 65535
-const LATERALITY_SIZE: usize = sizeof<u8>()
-const JOINT_NAME_SIZE: usize = sizeof<u16>()
-const INDEX_SIZE: usize = sizeof<u16>()
-const MUSCLE_HIGHLOW_SIZE: usize = sizeof<u8>()
-const FLOAT_SIZE: usize = sizeof<f32>()
-const VECTOR_SIZE: usize = FLOAT_SIZE * 3
+const LATERALITY_SIZE: usize = U8
+const JOINT_NAME_SIZE: usize = U16
+const INDEX_SIZE: usize = U16
+const MUSCLE_HIGHLOW_SIZE: usize = U8
+const VECTOR_SIZE: usize = F32 * 3
 const CLOCK_POINTS: u8 = 16
 const JOINT_RADIUS: f32 = 0.5
 const AMBIENT_JOINT_MASS: f32 = 0.1
@@ -168,15 +171,15 @@ export function reset(): void {
     faceCount = 0
 }
 
-export function joints(): usize {
+export function getJointCount(): usize {
     return jointCount
 }
 
-export function intervals(): usize {
+export function getIntervalCount(): usize {
     return intervalCount
 }
 
-export function faces(): usize {
+export function getFaceCount(): usize {
     return faceCount
 }
 
@@ -238,22 +241,22 @@ function setX(vPtr: usize, v: f32): void {
 
 @inline()
 function getY(vPtr: usize): f32 {
-    return load<f32>(vPtr + FLOAT_SIZE)
+    return load<f32>(vPtr + F32)
 }
 
 @inline()
 function setY(vPtr: usize, v: f32): void {
-    store<f32>(vPtr + FLOAT_SIZE, v)
+    store<f32>(vPtr + F32, v)
 }
 
 @inline()
 function getZ(vPtr: usize): f32 {
-    return load<f32>(vPtr + FLOAT_SIZE * 2)
+    return load<f32>(vPtr + F32 * 2)
 }
 
 @inline()
 function setZ(vPtr: usize, v: f32): void {
-    store<f32>(vPtr + FLOAT_SIZE * 2, v)
+    store<f32>(vPtr + F32 * 2, v)
 }
 
 // Vector3 ================================================================================
@@ -353,7 +356,7 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 // Joints =====================================================================================
 
-const JOINT_SIZE: usize = VECTOR_SIZE * 3 + LATERALITY_SIZE + JOINT_NAME_SIZE + FLOAT_SIZE * 2
+const JOINT_SIZE: usize = VECTOR_SIZE * 3 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
     if (jointCount + 1 >= jointCountMax) {
@@ -400,23 +403,23 @@ function intervalMassPtr(jointIndex: u16): usize {
 }
 
 function altitudePtr(jointIndex: u16): usize {
-    return jointPtr(jointIndex) + VECTOR_SIZE * 3 + FLOAT_SIZE
+    return jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32
 }
 
 function setJointLaterality(jointIndex: u16, laterality: u8): void {
-    store<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + FLOAT_SIZE * 2, laterality)
+    store<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2, laterality)
 }
 
 export function getJointLaterality(jointIndex: u16): u8 {
-    return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + FLOAT_SIZE * 2)
+    return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2)
 }
 
 function setJointTag(jointIndex: u16, tag: u16): void {
-    store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + FLOAT_SIZE * 2 + LATERALITY_SIZE, tag)
+    store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2 + LATERALITY_SIZE, tag)
 }
 
 export function getJointTag(jointIndex: u16): u16 {
-    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + FLOAT_SIZE * 2 + LATERALITY_SIZE)
+    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2 + LATERALITY_SIZE)
 }
 
 export function centralize(): void {
@@ -479,7 +482,7 @@ function calculateDirectionVectors(): void {
 
 // Intervals =====================================================================================
 
-const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
+const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
 
 export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32, growing: boolean): usize {
     if (intervalCount + 1 >= intervalCountMax) {
@@ -546,11 +549,11 @@ function setIdealSpan(intervalIndex: u16, idealSpan: f32): void {
 }
 
 function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
-    return getHighLow(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE + MUSCLE_HIGHLOW_SIZE * direction)
+    return getHighLow(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction)
 }
 
 export function setIntervalHighLow(intervalIndex: u16, direction: u8, highLow: u8): void {
-    setHighLow(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + FLOAT_SIZE + MUSCLE_HIGHLOW_SIZE * direction, highLow)
+    setHighLow(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction, highLow)
 }
 
 function calculateSpan(intervalIndex: u16): f32 {

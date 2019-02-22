@@ -57,15 +57,15 @@ export class Fabric {
     }
 
     public get jointCount() {
-        return this.exports.joints()
+        return this.exports.getJointCount()
     }
 
     public get intervalCount() {
-        return this.exports.intervals()
+        return this.exports.getIntervalCount()
     }
 
     public get faceCount() {
-        return this.exports.faces()
+        return this.exports.getFaceCount()
     }
 
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
@@ -86,7 +86,7 @@ export class Fabric {
         const geometries: Geometry[] = []
         geometries.push(createGeometry(faceIndex))
         const oppositeFaceIndex = this.exports.findOppositeFaceIndex(faceIndex)
-        if (oppositeFaceIndex < this.exports.faces()) {
+        if (oppositeFaceIndex < this.exports.getFaceCount()) {
             geometries.push(createGeometry(oppositeFaceIndex))
         }
         return geometries
@@ -215,7 +215,7 @@ export class Fabric {
     }
 
     public get age(): number {
-        return this.exports.age()
+        return this.exports.getAge()
     }
 
     public get isGestating(): boolean {

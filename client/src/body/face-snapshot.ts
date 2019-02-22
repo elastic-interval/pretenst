@@ -36,8 +36,8 @@ export class FaceSnapshot {
     public get fresh(): FaceSnapshot {
         // potentially walk back the index, due to deletions since last time
         let faceIndex = this.faceIndex
-        if (faceIndex >= this.fabricExports.faces()) {
-            faceIndex = this.fabricExports.faces() - 1
+        if (faceIndex >= this.fabricExports.getFaceCount()) {
+            faceIndex = this.fabricExports.getFaceCount() - 1
         }
         while (faceIndex >= 0) {
             const differentJoints = this.joints.filter(jointSnapshot => {

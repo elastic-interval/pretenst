@@ -53,7 +53,7 @@ export interface IFabricExports {
 
     reset(): void
 
-    age(): number
+    getAge(): number
 
     isGestating(): boolean
 
@@ -71,7 +71,7 @@ export interface IFabricExports {
 
     nextJointTag(): number
 
-    joints(): number
+    getJointCount(): number
 
     createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number
 
@@ -79,7 +79,7 @@ export interface IFabricExports {
 
     getJointLaterality(jointIndex: number): number
 
-    intervals(): number
+    getIntervalCount(): number
 
     createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number
 
@@ -87,7 +87,7 @@ export interface IFabricExports {
 
     setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
 
-    faces(): number
+    getFaceCount(): number
 
     createFace(joint0Index: number, joint1Index: number, joint2Index: number): number
 
@@ -104,7 +104,7 @@ export interface IFabricInstanceExports {
 
     reset(): void
 
-    age(): number
+    getAge(): number
 
     isGestating(): boolean
 
@@ -122,7 +122,7 @@ export interface IFabricInstanceExports {
 
     nextJointTag(): number
 
-    joints(): number
+    getJointCount(): number
 
     createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number
 
@@ -130,7 +130,7 @@ export interface IFabricInstanceExports {
 
     getJointLaterality(jointIndex: number): number
 
-    intervals(): number
+    getIntervalCount(): number
 
     createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number
 
@@ -138,7 +138,7 @@ export interface IFabricInstanceExports {
 
     setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
 
-    faces(): number
+    getFaceCount(): number
 
     createFace(joint0Index: number, joint1Index: number, joint2Index: number): number
 

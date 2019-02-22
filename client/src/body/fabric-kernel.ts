@@ -111,21 +111,21 @@ export class FabricKernel {
 
     public get faceMidpoints(): Float32Array {
         if (!this.faceMidpointsArray) {
-            this.faceMidpointsArray = new Float32Array(this.arrayBuffer, this.faceMidpointsOffset, this.exports.faces() * 3)
+            this.faceMidpointsArray = new Float32Array(this.arrayBuffer, this.faceMidpointsOffset, this.exports.getFaceCount() * 3)
         }
         return this.faceMidpointsArray
     }
 
     public get faceLocations(): Float32Array {
         if (!this.faceLocationsArray) {
-            this.faceLocationsArray = new Float32Array(this.arrayBuffer, this.faceLocationsOffset, this.exports.faces() * 3 * 3)
+            this.faceLocationsArray = new Float32Array(this.arrayBuffer, this.faceLocationsOffset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceLocationsArray
     }
 
     public get faceNormals(): Float32Array {
         if (!this.faceNormalsArray) {
-            this.faceNormalsArray = new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.exports.faces() * 3 * 3)
+            this.faceNormalsArray = new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceNormalsArray
     }
@@ -141,8 +141,8 @@ class InstanceExports implements IFabricInstanceExports {
         return this.ex.reset()
     }
 
-    public age(): number {
-        return this.ex.age()
+    public getAge(): number {
+        return this.ex.getAge()
     }
 
     public centralize(): void {
@@ -165,8 +165,8 @@ class InstanceExports implements IFabricInstanceExports {
         this.ex.endGestation()
     }
 
-    public faces(): number {
-        return this.ex.faces()
+    public getFaceCount(): number {
+        return this.ex.getFaceCount()
     }
 
     public findOppositeFaceIndex(faceIndex: number): number {
@@ -197,8 +197,8 @@ class InstanceExports implements IFabricInstanceExports {
         return this.ex.getJointTag(jointIndex)
     }
 
-    public intervals(): number {
-        return this.ex.intervals()
+    public getIntervalCount(): number {
+        return this.ex.getIntervalCount()
     }
 
     public isGestating(): boolean {
@@ -209,8 +209,8 @@ class InstanceExports implements IFabricInstanceExports {
         return this.ex.iterate(ticks)
     }
 
-    public joints(): number {
-        return this.ex.joints()
+    public getJointCount(): number {
+        return this.ex.getJointCount()
     }
 
     public nextJointTag(): number {
