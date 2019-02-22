@@ -86,7 +86,7 @@ let intervalCountMax: u16 = 0
 let faceCountMax: u16 = 0
 let instanceCountMax: u16 = 0
 
-let instance: u16 = 0
+let fabricBytes: usize = 0
 
 let jointCount: u16 = 0
 let jointTagCount: u16 = 0
@@ -128,7 +128,7 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     let intervalsSize = intervalCountMax * INTERVAL_SIZE
     let facesSize = faceCountMax * FACE_SIZE
     // offsets
-    let bytes = (
+    fabricBytes = (
         vectorB = (
             vectorA = (
                 vector = (
@@ -155,13 +155,9 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
             ) + VECTOR_SIZE
         ) + VECTOR_SIZE
     ) + VECTOR_SIZE
-    let blocks = (bytes * instanceCountMax) >> 16
+    let blocks = (fabricBytes * instanceCountMax) >> 16
     memory.grow(blocks + 1)
-    return bytes
-}
-
-export function setInstance(index: u16): void {
-    instance = index
+    return fabricBytes
 }
 
 export function reset(): void {
@@ -194,69 +190,77 @@ export function nextJointTag(): u16 {
 
 // Peek and Poke ================================================================================
 
+let instance: u16 = 0
+let instancePtr: usize = 0
+
+export function setInstance(index: u16): void {
+    instance = index
+    instancePtr = instance * fabricBytes
+}
+
 @inline
 function abs(val: f32): f32 {
     return val < 0 ? -val : val
 }
 
 @inline()
-function getHighLow(vPtr: usize): u8 {
-    return load<u8>(vPtr)
+function getU8(vPtr: usize): u8 {
+    return load<u8>(instancePtr + vPtr)
 }
 
 @inline()
-function setHighLow(vPtr: usize, highLow: u8): void {
-    store<u8>(vPtr, highLow)
+function setU8(vPtr: usize, highLow: u8): void {
+    store<u8>(instancePtr + vPtr, highLow)
 }
 
 @inline()
-function getIndex(vPtr: usize): u16 {
-    return load<u16>(vPtr)
+function getU16(vPtr: usize): u16 {
+    return load<u16>(instancePtr + vPtr)
 }
 
 @inline()
-function setIndex(vPtr: usize, index: u16): void {
-    store<u16>(vPtr, index)
+function setU16(vPtr: usize, index: u16): void {
+    store<u16>(instancePtr + vPtr, index)
 }
 
 @inline()
-function getFloat(vPtr: usize): f32 {
-    return load<f32>(vPtr)
+function getF32(vPtr: usize): f32 {
+    return load<f32>(instancePtr + vPtr)
 }
 
 @inline()
-function setFloat(vPtr: usize, v: f32): void {
-    store<f32>(vPtr, v)
+function setF32(vPtr: usize, v: f32): void {
+    store<f32>(instancePtr + vPtr, v)
 }
 
 @inline()
 function getX(vPtr: usize): f32 {
-    return load<f32>(vPtr)
+    return load<f32>(instancePtr + vPtr)
 }
 
 @inline()
 function setX(vPtr: usize, v: f32): void {
-    store<f32>(vPtr, v)
+    store<f32>(instancePtr + vPtr, v)
 }
 
 @inline()
 function getY(vPtr: usize): f32 {
-    return load<f32>(vPtr + F32)
+    return load<f32>(instancePtr + vPtr + F32)
 }
 
 @inline()
 function setY(vPtr: usize, v: f32): void {
-    store<f32>(vPtr + F32, v)
+    store<f32>(instancePtr + vPtr + F32, v)
 }
 
 @inline()
 function getZ(vPtr: usize): f32 {
-    return load<f32>(vPtr + F32 * 2)
+    return load<f32>(instancePtr + vPtr + F32 * 2)
 }
 
 @inline()
 function setZ(vPtr: usize, v: f32): void {
-    store<f32>(vPtr + F32 * 2, v)
+    store<f32>(instancePtr + vPtr + F32 * 2, v)
 }
 
 // Vector3 ================================================================================
@@ -366,7 +370,7 @@ export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f3
     setAll(locationPtr(jointIndex), x, y, z)
     zero(forcePtr(jointIndex))
     zero(velocityPtr(jointIndex))
-    setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS)
+    setF32(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS)
     setJointLaterality(jointIndex, laterality)
     setJointTag(jointIndex, jointTag)
     return jointIndex
@@ -377,7 +381,7 @@ function copyJointFromNext(jointIndex: u16): void {
     setVector(locationPtr(jointIndex), locationPtr(nextIndex))
     setVector(forcePtr(jointIndex), forcePtr(nextIndex))
     setVector(velocityPtr(jointIndex), velocityPtr(nextIndex))
-    setFloat(intervalMassPtr(jointIndex), getFloat(intervalMassPtr(nextIndex)))
+    setF32(intervalMassPtr(jointIndex), getF32(intervalMassPtr(nextIndex)))
     setJointLaterality(jointIndex, getJointLaterality(nextIndex))
     setJointTag(jointIndex, getJointTag(nextIndex))
 }
@@ -407,19 +411,19 @@ function altitudePtr(jointIndex: u16): usize {
 }
 
 function setJointLaterality(jointIndex: u16, laterality: u8): void {
-    store<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2, laterality)
+    setU8(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2, laterality)
 }
 
 export function getJointLaterality(jointIndex: u16): u8 {
-    return load<u8>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2)
+    return getU8(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2)
 }
 
 function setJointTag(jointIndex: u16, tag: u16): void {
-    store<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2 + LATERALITY_SIZE, tag)
+    setU16(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2 + LATERALITY_SIZE, tag)
 }
 
 export function getJointTag(jointIndex: u16): u16 {
-    return load<u16>(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2 + LATERALITY_SIZE)
+    return getU16(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2 + LATERALITY_SIZE)
 }
 
 export function centralize(): void {
@@ -517,19 +521,19 @@ function intervalPtr(intervalIndex: u16): usize {
 }
 
 function getAlphaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex))
+    return getU16(intervalPtr(intervalIndex))
 }
 
 function setAlphaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex), v)
+    setU16(intervalPtr(intervalIndex), v)
 }
 
 function getOmegaIndex(intervalIndex: u16): u16 {
-    return getIndex(intervalPtr(intervalIndex) + INDEX_SIZE)
+    return getU16(intervalPtr(intervalIndex) + INDEX_SIZE)
 }
 
 function setOmegaIndex(intervalIndex: u16, v: u16): void {
-    setIndex(intervalPtr(intervalIndex) + INDEX_SIZE, v)
+    setU16(intervalPtr(intervalIndex) + INDEX_SIZE, v)
 }
 
 function unitPtr(intervalIndex: u16): usize {
@@ -541,19 +545,19 @@ function idealSpanPtr(intervalIndex: u16): usize {
 }
 
 function getIdealSpan(intervalIndex: u16): f32 {
-    return getFloat(idealSpanPtr(intervalIndex))
+    return getF32(idealSpanPtr(intervalIndex))
 }
 
 function setIdealSpan(intervalIndex: u16, idealSpan: f32): void {
-    setFloat(idealSpanPtr(intervalIndex), idealSpan)
+    setF32(idealSpanPtr(intervalIndex), idealSpan)
 }
 
 function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
-    return getHighLow(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction)
+    return getU8(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction)
 }
 
 export function setIntervalHighLow(intervalIndex: u16, direction: u8, highLow: u8): void {
-    setHighLow(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction, highLow)
+    setU8(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction, highLow)
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -693,11 +697,11 @@ function facePtr(faceIndex: u16): usize {
 }
 
 export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {
-    return getIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE)
+    return getU16(facePtr(faceIndex) + jointNumber * INDEX_SIZE)
 }
 
 function setFaceJointIndex(faceIndex: u16, jointNumber: u16, v: u16): void {
-    setIndex(facePtr(faceIndex) + jointNumber * INDEX_SIZE, v)
+    setU16(facePtr(faceIndex) + jointNumber * INDEX_SIZE, v)
 }
 
 function getFaceTag(faceIndex: u16, jointNumber: u16): u16 {
@@ -832,9 +836,9 @@ function elastic(intervalIndex: u16, elasticFactor: f32): void {
     addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2)
     let mass = idealSpan * idealSpan * idealSpan
     let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex))
-    setFloat(alphaMass, getFloat(alphaMass) + mass / 2)
+    setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex))
-    setFloat(omegaMass, getFloat(omegaMass) + mass / 2)
+    setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
 function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
@@ -872,12 +876,12 @@ function tick(): void {
     }
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? 50 : 1))
-        addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getFloat(intervalMassPtr(jointIndex)))
+        addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getF32(intervalMassPtr(jointIndex)))
         zero(forcePtr(jointIndex))
     }
     for (let jointIndex: u16 = gestating ? 1 : 0; jointIndex < jointCount; jointIndex++) {
         add(locationPtr(jointIndex), velocityPtr(jointIndex))
-        setFloat(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS)
+        setF32(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS)
     }
 }
 
