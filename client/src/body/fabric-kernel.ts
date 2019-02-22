@@ -17,12 +17,35 @@ export function createFabricKernel(fabricExports: IFabricExports, instanceMax: n
     return new FabricKernel(fabricExports, instanceMax, jointCountMax, intervalCountMax, faceCountMax)
 }
 
+interface IOffsets {
+    vectorsOffset: number
+    faceMidpointsOffset: number
+    faceLocationsOffset: number
+    faceNormalsOffset: number
+}
+
+function createOffsets(faceCountMax: number): IOffsets {
+    const offsets: IOffsets = {vectorsOffset: 0, faceMidpointsOffset: 0, faceLocationsOffset: 0, faceNormalsOffset: 0}
+    // sizes
+    const seedVectors = 4 * FLOATS_IN_VECTOR
+    const faceVectorFloats = faceCountMax * FLOATS_IN_VECTOR
+    const faceJointFloats = faceVectorFloats * VECTORS_FOR_FACE
+    // offsets
+    offsets.faceLocationsOffset = (
+        offsets.faceNormalsOffset = (
+            offsets.faceMidpointsOffset = (
+                offsets.vectorsOffset = 0
+            ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
+        ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
+    ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
+    return offsets
+}
+
+const FLOATS_IN_VECTOR = 3
+const VECTORS_FOR_FACE = 3
+
 export class FabricKernel {
     private arrayBuffer: ArrayBuffer
-    private vectorsOffset: number
-    private faceMidpointsOffset: number
-    private faceLocationsOffset: number
-    private faceNormalsOffset: number
     private fabricBytes: number
     private vectorArray: Float32Array | undefined
     private faceMidpointsArray: Float32Array | undefined
@@ -33,6 +56,7 @@ export class FabricKernel {
     private forwardVector = new Vector3()
     private rightVector = new Vector3()
     private instanceArray: IFabricInstanceExports[] = []
+    private offsets: IOffsets
 
     constructor(
         private exports: IFabricExports,
@@ -41,20 +65,7 @@ export class FabricKernel {
         public intervalCountMax: number,
         public faceCountMax: number,
     ) {
-        // sizes
-        const floatsInVector = 3
-        const vectorsForFace = 3
-        const seedVectors = 4 * floatsInVector
-        const faceVectorFloats = this.faceCountMax * floatsInVector
-        const faceJointFloats = faceVectorFloats * vectorsForFace
-        // offsets
-        this.faceLocationsOffset = (
-            this.faceNormalsOffset = (
-                this.faceMidpointsOffset = (
-                    this.vectorsOffset = 0
-                ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
-            ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
-        ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
+        this.offsets = createOffsets(faceCountMax)
         this.fabricBytes = exports.init(this.jointCountMax, this.intervalCountMax, this.faceCountMax, this.instanceMax)
         this.arrayBuffer = exports.memory.buffer
         const byteLength = exports.memory.buffer.byteLength
@@ -88,7 +99,7 @@ export class FabricKernel {
 
     public get vectors(): Float32Array {
         if (!this.vectorArray) {
-            this.vectorArray = new Float32Array(this.arrayBuffer, this.vectorsOffset, 4 * 3)
+            this.vectorArray = new Float32Array(this.arrayBuffer, this.offsets.vectorsOffset, 4 * 3)
         }
         return this.vectorArray
     }
@@ -111,21 +122,21 @@ export class FabricKernel {
 
     public get faceMidpoints(): Float32Array {
         if (!this.faceMidpointsArray) {
-            this.faceMidpointsArray = new Float32Array(this.arrayBuffer, this.faceMidpointsOffset, this.exports.getFaceCount() * 3)
+            this.faceMidpointsArray = new Float32Array(this.arrayBuffer, this.offsets.faceMidpointsOffset, this.exports.getFaceCount() * 3)
         }
         return this.faceMidpointsArray
     }
 
     public get faceLocations(): Float32Array {
         if (!this.faceLocationsArray) {
-            this.faceLocationsArray = new Float32Array(this.arrayBuffer, this.faceLocationsOffset, this.exports.getFaceCount() * 3 * 3)
+            this.faceLocationsArray = new Float32Array(this.arrayBuffer, this.offsets.faceLocationsOffset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceLocationsArray
     }
 
     public get faceNormals(): Float32Array {
         if (!this.faceNormalsArray) {
-            this.faceNormalsArray = new Float32Array(this.arrayBuffer, this.faceNormalsOffset, this.exports.getFaceCount() * 3 * 3)
+            this.faceNormalsArray = new Float32Array(this.arrayBuffer, this.offsets.faceNormalsOffset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceNormalsArray
     }
