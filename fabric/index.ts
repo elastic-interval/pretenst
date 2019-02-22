@@ -26,7 +26,7 @@ const DEFAULT_HIGH_LOW: u8 = 0x08
 const GROWING_INTERVAL: u8 = 1
 const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
-const NOT_GESTATING: u8 = 1
+const NOT_GESTATING: u8 = 0
 
 // Dimensioning ================================================================================
 
@@ -423,7 +423,14 @@ export function setNextDirection(value: u8): void {
     setU8(statePtr + U32 + U16 * 5 + U8 * 3, value)
 }
 
-export function resetX(): void {
+let ticksSoFar: u32 = 0
+let timeSweep: u16 = 0
+let jointCount: u16 = 0
+let jointTagCount: u16 = 0
+let intervalCount: u16 = 0
+let faceCount: u16 = 0
+
+export function reset(): void {
     setJointCount(0)
     setJointTagCount(0)
     setIntervalCount(0)
@@ -432,17 +439,6 @@ export function resetX(): void {
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
-}
-
-let ticksSoFar: u32 = 0
-let timeSweep: u16 = 0
-let gestating: u8 = GESTATING
-let jointCount: u16 = 0
-let jointTagCount: u16 = 0
-let intervalCount: u16 = 0
-let faceCount: u16 = 0
-
-export function reset(): void {
     jointTagCount = 0
     jointCount = 0
     intervalCount = 0
@@ -983,6 +979,7 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
 }
 
 function tick(): void {
+    let gestating = getGestating()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         elastic(intervalIndex, gestating ? physicsElasticFactor * 0.1 : physicsElasticFactor)
     }
@@ -998,11 +995,11 @@ function tick(): void {
 }
 
 export function isGestating(): u8 {
-    return gestating
+    return getGestating()
 }
 
 export function endGestation(): void {
-    gestating = NOT_GESTATING
+    setGestating(NOT_GESTATING)
     // remove the hanger joint, and consequences
     jointCount--
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
@@ -1033,7 +1030,7 @@ export function iterate(ticks: usize): boolean {
         timeSweep += timeSweepStep
         if (timeSweep < current) {
             wrapAround = true
-            if (gestating) {
+            if (getGestating()) {
                 timeSweep = 0
             } else {
                 setPreviousDirection(currentDirection)
