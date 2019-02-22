@@ -14,8 +14,7 @@
 </head>
 <body>
 <script>
-    const eigCodePromise = fetch("/fabric.wasm").then(response => response.arrayBuffer());
-
+    const eigCodePromise = fetch("/fabric.wasm").then(response => response.arrayBuffer()).then(bytes => WebAssembly.compile(bytes));
     function createFabricInstance(count) {
         console.log('create', count);
 
@@ -43,9 +42,9 @@
         };
         return eigCodePromise
             .then(code => WebAssembly.instantiate(code, importObject))
-            .then(instantiation => {
-                console.log('instantiation ' + count, instantiation);
-                return instantiation.instance.exports;
+            .then(instance => {
+                console.log('instance ' + count, instance);
+                return instance.exports;
             });
     }
 </script>
