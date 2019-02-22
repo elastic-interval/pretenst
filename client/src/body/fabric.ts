@@ -198,11 +198,11 @@ export class Fabric {
     }
 
     public get direction(): Direction {
-        return this.exports.getDirection()
+        return this.exports.getCurrentDirection()
     }
 
     public set direction(direction: Direction) {
-        this.exports.setDirection(direction)
+        this.exports.setNextDirection(direction)
     }
 
     public iterate(ticks: number): boolean {

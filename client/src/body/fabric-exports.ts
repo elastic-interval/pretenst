@@ -1,3 +1,5 @@
+import {Vector3} from "three"
+
 export interface IMemory {
     buffer: ArrayBuffer
 }
@@ -57,9 +59,9 @@ export interface IFabricExports {
 
     isGestating(): boolean
 
-    getDirection(): Direction
+    getCurrentDirection(): Direction
 
-    setDirection(direction: Direction): void
+    setNextDirection(direction: Direction): void
 
     iterate(ticks: number): boolean
 
@@ -102,15 +104,33 @@ export interface IFabricExports {
 
 export interface IFabricInstanceExports {
 
+    getMidpoint(): Vector3
+
+    getSeed(): Vector3
+
+    getForward(): Vector3
+
+    getRight(): Vector3
+
+    getFaceMidpoints(): Float32Array
+
+    getFaceLocations(): Float32Array
+
+    getFaceNormals(): Float32Array
+
+    flushFaces(): void
+
+    getVectors(): Float32Array
+
     reset(): void
 
     getAge(): number
 
     isGestating(): boolean
 
-    getDirection(): Direction
+    getCurrentDirection(): Direction
 
-    setDirection(direction: Direction): void
+    setNextDirection(direction: Direction): void
 
     iterate(ticks: number): boolean
 

@@ -911,11 +911,11 @@ export function endGestation(): void {
     }
 }
 
-export function getDirection(): u8 {
+export function getCurrentDirection(): u8 {
     return currentDirection
 }
 
-export function setDirection(direction: u8): void {
+export function setNextDirection(direction: u8): void {
     nextDirection = direction
 }
 

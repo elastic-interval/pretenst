@@ -64,7 +64,7 @@ export class FabricKernel {
             console.log(`Got ${byteLength} bytes`)
         }
         for (let index = 0; index < instanceMax; index++) {
-            this.instanceArray.push(new InstanceExports(exports, index))
+            this.instanceArray.push(new InstanceExports(this, exports, index))
         }
     }
 
@@ -134,7 +134,7 @@ export class FabricKernel {
 
 class InstanceExports implements IFabricInstanceExports {
 
-    constructor(private exports: IFabricExports, private index: number) {
+    constructor(private kernel: FabricKernel, private exports: IFabricExports, private index: number) {
     }
 
     public reset(): void {
@@ -177,8 +177,8 @@ class InstanceExports implements IFabricInstanceExports {
         return this.ex.findOppositeIntervalIndex(intervalIndex)
     }
 
-    public getDirection(): Direction {
-        return this.ex.getDirection()
+    public getCurrentDirection(): Direction {
+        return this.ex.getCurrentDirection()
     }
 
     public getFaceAverageIdealSpan(faceIndex: number): number {
@@ -225,8 +225,8 @@ class InstanceExports implements IFabricInstanceExports {
         return this.ex.setAltitude(altitude)
     }
 
-    public setDirection(direction: Direction): void {
-        this.ex.setDirection(direction)
+    public setNextDirection(direction: Direction): void {
+        this.ex.setNextDirection(direction)
     }
 
     public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
@@ -236,6 +236,42 @@ class InstanceExports implements IFabricInstanceExports {
     private get ex(): IFabricExports {
         this.exports.setInstance(this.index)
         return this.exports
+    }
+
+    public flushFaces(): void {
+        this.kernel.refresh()
+    }
+
+    public getFaceLocations(): Float32Array {
+        return this.kernel.faceLocations
+    }
+
+    public getFaceMidpoints(): Float32Array {
+        return this.kernel.faceMidpoints
+    }
+
+    public getFaceNormals(): Float32Array {
+        return this.kernel.faceNormals
+    }
+
+    public getForward(): Vector3 {
+        return this.kernel.forward
+    }
+
+    public getMidpoint(): Vector3 {
+        return this.kernel.midpoint
+    }
+
+    public getRight(): Vector3 {
+        return this.kernel.right
+    }
+
+    public getSeed(): Vector3 {
+        return this.kernel.seed
+    }
+
+    public getVectors(): Float32Array {
+        return this.kernel.vectors
     }
 
 }
