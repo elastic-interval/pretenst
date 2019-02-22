@@ -88,11 +88,6 @@ let instanceCountMax: u16 = 0
 
 let fabricBytes: usize = 0
 
-let jointCount: u16 = 0
-let jointTagCount: u16 = 0
-let intervalCount: u16 = 0
-let faceCount: u16 = 0
-
 let jointOffset: usize = 0
 let faceMidpointOffset: usize = 0
 let faceNormalOffset: usize = 0
@@ -107,15 +102,6 @@ let midpointPtr: usize = 0
 let seedPtr: usize = 0
 let forwardPtr: usize = 0
 let rightPtr: usize = 0
-
-// Body state =====================================================================================
-
-let ticksSoFar: u32 = 0
-let timeSweep: u16 = 0
-let gestating: boolean = true
-let previousDirection: u8 = REST_DIRECTION
-let currentDirection: u8 = REST_DIRECTION
-let nextDirection: u8 = REST_DIRECTION
 
 export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabric: u16, instances: u16): usize {
     jointCountMax = jointsPerFabric
@@ -158,34 +144,6 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     let blocks = (fabricBytes * instanceCountMax) >> 16
     memory.grow(blocks + 1)
     return fabricBytes
-}
-
-export function reset(): void {
-    jointTagCount = 0
-    jointCount = 0
-    intervalCount = 0
-    faceCount = 0
-}
-
-export function getAge(): u32 {
-    return ticksSoFar
-}
-
-export function getJointCount(): usize {
-    return jointCount
-}
-
-export function getIntervalCount(): usize {
-    return intervalCount
-}
-
-export function getFaceCount(): usize {
-    return faceCount
-}
-
-export function nextJointTag(): u16 {
-    jointTagCount++
-    return jointTagCount
 }
 
 // Peek and Poke ================================================================================
@@ -358,6 +316,47 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
     setZ(vPtr, ax * by - ay * bx)
 }
 
+// Body state =====================================================================================
+
+let ticksSoFar: u32 = 0
+let timeSweep: u16 = 0
+let gestating: boolean = true
+let previousDirection: u8 = REST_DIRECTION
+let currentDirection: u8 = REST_DIRECTION
+let nextDirection: u8 = REST_DIRECTION
+let jointCount: u16 = 0
+let jointTagCount: u16 = 0
+let intervalCount: u16 = 0
+let faceCount: u16 = 0
+
+export function reset(): void {
+    jointTagCount = 0
+    jointCount = 0
+    intervalCount = 0
+    faceCount = 0
+}
+
+export function getAge(): u32 {
+    return ticksSoFar
+}
+
+export function getJointCount(): usize {
+    return jointCount
+}
+
+export function getIntervalCount(): usize {
+    return intervalCount
+}
+
+export function getFaceCount(): usize {
+    return faceCount
+}
+
+export function nextJointTag(): u16 {
+    jointTagCount++
+    return jointTagCount
+}
+
 // Joints =====================================================================================
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 3 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
@@ -477,9 +476,9 @@ function calculateDirectionVectors(): void {
     addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1))
     multiplyScalar(seedPtr, 0.5)
     subVectors(rightPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1))
-    setY(rightPtr, 0); // horizontal, should be near already
+    setY(rightPtr, 0) // horizontal, should be near already
     multiplyScalar(rightPtr, 1 / length(rightPtr))
-    setAll(vector, 0, 1, 0); // up
+    setAll(vector, 0, 1, 0) // up
     crossVectors(forwardPtr, vector, rightPtr)
     multiplyScalar(forwardPtr, 1 / length(forwardPtr))
 }
@@ -583,7 +582,7 @@ export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
     let tagAlpha = getJointTag(getAlphaIndex(intervalIndex))
     let tagOmega = getJointTag(getOmegaIndex(intervalIndex))
     for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        if (thisInterval == intervalIndex) {
+        if (thisInterval === intervalIndex) {
             continue
         }
         let thisTagAlpha = getJointTag(getAlphaIndex(thisInterval))
@@ -788,7 +787,7 @@ export function findOppositeFaceIndex(faceIndex: u16): u16 {
     let tag1 = getFaceTag(faceIndex, 1)
     let tag2 = getFaceTag(faceIndex, 2)
     for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
-        if (thisFace == faceIndex) {
+        if (thisFace === faceIndex) {
             continue
         }
         let thisTag0 = getFaceTag(thisFace, 0)
@@ -853,7 +852,7 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
         let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
         let degreeBelow: f32 = 1.0 - degreeAbove
         if (velocityY < 0) {
-            multiplyScalar(velocityVectorPtr, degreeAbove); // zero at the bottom
+            multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
         }
         let gravityValue: f32 = physicsGravityAbove * degreeAbove + physicsGravityBelow * degreeBelow
         setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
