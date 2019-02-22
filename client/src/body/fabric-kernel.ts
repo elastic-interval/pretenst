@@ -11,7 +11,7 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
     }
 }
 
-export function createFabricKernel(fabricExports: IFabricExports, instanceMax: number, jointCountMax: number): FabricKernel {
+export function createFabricKernel(fabricExports: IFabricExports,instanceMax: number, jointCountMax: number): FabricKernel {
     const intervalCountMax = jointCountMax * 3 + 30
     const faceCountMax = jointCountMax * 2 + 20
     const dimensions: IFabricDimensions = {
@@ -28,10 +28,11 @@ interface IOffsets {
     faceMidpointsOffset: number
     faceLocationsOffset: number
     faceNormalsOffset: number
+    fabricBytes: number
 }
 
-function createOffsets(faceCountMax: number): IOffsets {
-    const offsets: IOffsets = {vectorsOffset: 0, faceMidpointsOffset: 0, faceLocationsOffset: 0, faceNormalsOffset: 0}
+function createOffsets(faceCountMax: number, fabricBytes: number): IOffsets {
+    const offsets: IOffsets = {vectorsOffset: 0, faceMidpointsOffset: 0, faceLocationsOffset: 0, faceNormalsOffset: 0, fabricBytes}
     // sizes
     const seedVectors = 4 * FLOATS_IN_VECTOR
     const faceVectorFloats = faceCountMax * FLOATS_IN_VECTOR
@@ -51,7 +52,6 @@ const FLOATS_IN_VECTOR = 3
 const VECTORS_FOR_FACE = 3
 
 export class FabricKernel {
-    private fabricBytes: number
     private instanceArray: IFabricInstanceExports[] = []
     private offsets: IOffsets
 
@@ -59,11 +59,11 @@ export class FabricKernel {
         exports: IFabricExports,
         dimensions: IFabricDimensions,
     ) {
-        this.offsets = createOffsets(dimensions.faceCountMax)
-        this.fabricBytes = exports.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
+        const fabricBytes = exports.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
+        this.offsets = createOffsets(dimensions.faceCountMax, fabricBytes)
         const byteLength = exports.memory.buffer.byteLength
         if (byteLength === 0) {
-            throw new Error(`Zero byte length! ${this.fabricBytes}`)
+            throw new Error(`Zero byte length! ${this.offsets.fabricBytes}`)
         } else {
             console.log(`Got ${byteLength} bytes`)
         }
@@ -239,7 +239,8 @@ class InstanceExports implements IFabricInstanceExports {
 
     public get vectors(): Float32Array {
         if (!this.vectorArray) {
-            this.vectorArray = new Float32Array(this.arrayBuffer, this.offsets.vectorsOffset, 4 * 3)
+            const offset = this.offsets.vectorsOffset + this.index * this.offsets.fabricBytes
+            this.vectorArray = new Float32Array(this.arrayBuffer, offset, 4 * 3)
         }
         return this.vectorArray
     }
@@ -262,21 +263,24 @@ class InstanceExports implements IFabricInstanceExports {
 
     public get faceMidpoints(): Float32Array {
         if (!this.faceMidpointsArray) {
-            this.faceMidpointsArray = new Float32Array(this.arrayBuffer, this.offsets.faceMidpointsOffset, this.exports.getFaceCount() * 3)
+            const offset = this.offsets.faceMidpointsOffset + this.index * this.offsets.fabricBytes
+            this.faceMidpointsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3)
         }
         return this.faceMidpointsArray
     }
 
     public get faceLocations(): Float32Array {
         if (!this.faceLocationsArray) {
-            this.faceLocationsArray = new Float32Array(this.arrayBuffer, this.offsets.faceLocationsOffset, this.exports.getFaceCount() * 3 * 3)
+            const offset = this.offsets.faceLocationsOffset + this.index * this.offsets.fabricBytes
+            this.faceLocationsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceLocationsArray
     }
 
     public get faceNormals(): Float32Array {
         if (!this.faceNormalsArray) {
-            this.faceNormalsArray = new Float32Array(this.arrayBuffer, this.offsets.faceNormalsOffset, this.exports.getFaceCount() * 3 * 3)
+            const offset = this.offsets.faceNormalsOffset + this.index * this.offsets.fabricBytes
+            this.faceNormalsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceNormalsArray
     }
