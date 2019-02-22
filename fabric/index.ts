@@ -353,7 +353,7 @@ function getTimeSweep(): u16 {
     return getU16(statePtr + U32)
 }
 
-export function getJointCountX(): u16 {
+export function getJointCount(): u16 {
     return getU16(statePtr + U32 + U16)
 }
 
@@ -369,7 +369,7 @@ function setJointTagCount(value: u16): void {
     setU16(statePtr + U32 + U16 * 2, value)
 }
 
-export function nextJointTagX(): u16 {
+export function nextJointTag(): u16 {
     let count = getJointTagCount()
     setJointTagCount(count + 1)
     return count
@@ -425,8 +425,6 @@ export function setNextDirection(value: u8): void {
 
 let ticksSoFar: u32 = 0
 let timeSweep: u16 = 0
-let jointCount: u16 = 0
-let jointTagCount: u16 = 0
 let intervalCount: u16 = 0
 let faceCount: u16 = 0
 
@@ -439,18 +437,12 @@ export function reset(): void {
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
-    jointTagCount = 0
-    jointCount = 0
     intervalCount = 0
     faceCount = 0
 }
 
 export function getAge(): u32 {
     return ticksSoFar
-}
-
-export function getJointCount(): usize {
-    return jointCount
 }
 
 export function getIntervalCount(): usize {
@@ -461,20 +453,17 @@ export function getFaceCount(): usize {
     return faceCount
 }
 
-export function nextJointTag(): u16 {
-    jointTagCount++
-    return jointTagCount
-}
-
 // Joints =====================================================================================
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 3 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
+    let jointCount = getJointCount()
     if (jointCount + 1 >= jointCountMax) {
         return ERROR
     }
-    let jointIndex = jointCount++
+    setJointCount(jointCount + 1)
+    let jointIndex = jointCount
     setAll(locationPtr(jointIndex), x, y, z)
     zero(forcePtr(jointIndex))
     zero(velocityPtr(jointIndex))
@@ -535,6 +524,7 @@ export function getJointTag(jointIndex: u16): u16 {
 }
 
 export function centralize(): void {
+    let jointCount = getJointCount()
     let x: f32 = 0
     let lowY: f32 = 10000
     let z: f32 = 0
@@ -556,6 +546,7 @@ export function centralize(): void {
 }
 
 export function setAltitude(altitude: f32): f32 {
+    let jointCount = getJointCount()
     let lowY: f32 = 10000
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
         let y = getY(jointPtr(thisJoint))
@@ -574,6 +565,7 @@ export function setAltitude(altitude: f32): f32 {
 }
 
 function calculateJointMidpoint(): void {
+    let jointCount = getJointCount()
     zero(midpointPtr)
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         add(midpointPtr, locationPtr(jointIndex))
@@ -983,6 +975,7 @@ function tick(): void {
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         elastic(intervalIndex, gestating ? physicsElasticFactor * 0.1 : physicsElasticFactor)
     }
+    let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? 50 : 1))
         addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getF32(intervalMassPtr(jointIndex)))
@@ -1000,8 +993,9 @@ export function isGestating(): u8 {
 
 export function endGestation(): void {
     setGestating(NOT_GESTATING)
+    let jointCount = getJointCount() - 1
+    setJointCount(jointCount)
     // remove the hanger joint, and consequences
-    jointCount--
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         copyJointFromNext(jointIndex)
     }
