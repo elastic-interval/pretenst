@@ -48,13 +48,17 @@ function Clicky(params: IClicky) {
     )
 }
 
-const ActionPanel = (props: any) => (
+interface IActionPanelProps {
+    children: Array<JSX.Element | null> | JSX.Element
+}
+
+const ActionPanel = (props: IActionPanelProps) => (
     <div className="action-panel">
         {props.children}
     </div>
 )
 
-export class ActionsPanel extends React.Component<IActionsPanelProps, any> {
+export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
     constructor(props: IActionsPanelProps) {
         super(props)

@@ -52,7 +52,7 @@ export class IslandView extends React.Component<IIslandViewProps, IIslandViewSta
         )
     }
 
-    public componentDidUpdate(prevProps: Readonly<IIslandViewProps>, prevState: Readonly<IIslandViewState>, snapshot: any) {
+    public componentDidUpdate(prevProps: Readonly<IIslandViewProps>, prevState: Readonly<IIslandViewState>, snapshot: object) {
         if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
             this.perspectiveCamera.aspect = this.props.width / this.props.height
             this.perspectiveCamera.updateProjectionMatrix()

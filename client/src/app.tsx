@@ -41,7 +41,7 @@ export interface IAppState {
     trip?: Trip
 }
 
-const updateDimensions = (): any => {
+const updateDimensions = (): object => {
     return {width: window.innerWidth, height: window.innerHeight}
 }
 

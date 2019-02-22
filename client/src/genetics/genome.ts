@@ -7,7 +7,7 @@ import {Growth} from "./growth"
 
 export interface IGenomeData {
     master: string
-    gene: any
+    gene: object
 }
 
 export function freshGenomeFor(master: string): Genome {

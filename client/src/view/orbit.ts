@@ -15,13 +15,17 @@ export enum OrbitDistance {
     CRUISE = "CRUISE",
 }
 
+interface IOrbitControls {
+    update: () => void
+}
+
 export class Orbit {
-    private orbitControls: any
+    private orbitControls: IOrbitControls
     private vector = new Vector3()
     private target = new Vector3()
     private lastChanged = Date.now()
 
-    constructor(domElement: any, private camera: PerspectiveCamera, private orbitDistanceBehavior: BehaviorSubject<OrbitDistance>, target: Vector3) {
+    constructor(domElement: Element, private camera: PerspectiveCamera, private orbitDistanceBehavior: BehaviorSubject<OrbitDistance>, target: Vector3) {
         const orbit = this.orbitControls = new OrbitControls(camera, domElement)
         orbit.minPolarAngle = Math.PI * 0.1
         orbit.maxPolarAngle = 0.95 * Math.PI / 2

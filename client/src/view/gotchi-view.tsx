@@ -67,7 +67,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         )
     }
 
-    public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: any) {
+    public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: object) {
         if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
             this.props.perspectiveCamera.aspect = this.props.width / this.props.height
             this.props.perspectiveCamera.updateProjectionMatrix()
@@ -75,20 +75,22 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidMount() {
-        const element = document.getElementById("gotchi-view")
-        this.target = this.props.island.midpoint
-        this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target)
-        this.animate()
-        this.subs.push(this.props.orbitDistance.subscribe(orbitDistance => this.setState({orbitDistance})))
-        this.subs.push(this.props.selectedSpot.subscribe(spot => {
-            if (spot) {
-                if (spot.centerOfHexalot) {
-                    this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center)
-                } else if (spot.canBeNewHexalot || spot.free) {
-                    this.target = spot.center
+        const element: Element | null = document.getElementById("gotchi-view")
+        if (element) {
+            this.target = this.props.island.midpoint
+            this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target)
+            this.animate()
+            this.subs.push(this.props.orbitDistance.subscribe(orbitDistance => this.setState({orbitDistance})))
+            this.subs.push(this.props.selectedSpot.subscribe(spot => {
+                if (spot) {
+                    if (spot.centerOfHexalot) {
+                        this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center)
+                    } else if (spot.canBeNewHexalot || spot.free) {
+                        this.target = spot.center
+                    }
                 }
-            }
-        }))
+            }))
+        }
     }
 
     public componentWillUnmount() {
@@ -143,7 +145,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     // ==========================
 
     private get onMouseDownCapture() {
-        return (event: any) => {
+        return (event: React.MouseEvent<HTMLDivElement>) => {
             if (this.props.evolution || this.props.gotchi) {
                 return
             }

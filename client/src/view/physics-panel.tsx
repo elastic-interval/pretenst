@@ -12,7 +12,7 @@ export interface IPhysicsPanelState {
 }
 
 function featureSelected(feature: IPhysicsFeature) {
-    return (): any => {
+    return (): object => {
         return {
             feature,
             value: feature.getFactor(),

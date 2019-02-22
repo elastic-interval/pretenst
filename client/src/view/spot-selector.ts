@@ -1,3 +1,4 @@
+import * as React from "react"
 import {Mesh, PerspectiveCamera, Raycaster, Vector2} from "three"
 
 import {Island} from "../island/island"
@@ -31,17 +32,16 @@ export class SpotSelector {
         this.size.y = height
     }
 
-    public getSpot(meshKey: MeshKey, event: any): Spot | undefined {
+    public getSpot(meshKey: MeshKey, event: React.MouseEvent<HTMLDivElement>): Spot | undefined {
         this.adjustRaycaster(event)
         return this.findSpot(meshKey)
     }
 
     // ==================
 
-    private adjustRaycaster(event: any) {
-        const rect = event.target.getBoundingClientRect()
-        this.mouse.x = ((event.clientX - rect.left) / this.size.x) * 2 - 1
-        this.mouse.y = -((event.clientY - rect.top) / this.size.y) * 2 + 1
+    private adjustRaycaster(event: React.MouseEvent<HTMLDivElement>) {
+        this.mouse.x = (event.clientX / this.size.x) * 2 - 1
+        this.mouse.y = -(event.clientY / this.size.y) * 2 + 1
         this.rayCaster.setFromCamera(this.mouse, this.camera)
     }
 

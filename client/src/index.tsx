@@ -8,7 +8,7 @@ import {IFabricExports} from "./body/fabric-exports"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
 
-declare const createFabricInstance: (fabricNumber: any) => Promise<IFabricExports> // implementation: index.html
+declare const createFabricInstance: (fabricNumber: number) => Promise<IFabricExports> // implementation: index.html
 const storage: AppStorage = new AppStorage(localStorage)
 
 ReactDOM.render(
