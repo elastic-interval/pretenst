@@ -10,7 +10,7 @@ import {Direction, IFabricExports, turn} from "./body/fabric-exports"
 import {createFabricKernel, FabricKernel} from "./body/fabric-kernel"
 import {Physics} from "./body/physics"
 import {Genome, IGenomeData} from "./genetics/genome"
-import {Evolution, INITIAL_JOINT_COUNT} from "./gotchi/evolution"
+import {Evolution, INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Gotchi} from "./gotchi/gotchi"
 import {Hexalot} from "./island/hexalot"
 import {Island} from "./island/island"
@@ -114,7 +114,7 @@ class App extends React.Component<IAppProps, IAppState> {
         this.physics = new Physics(props.storage)
         this.physics.applyToFabric(props.fabricExports)
         this.islandState = new BehaviorSubject<boolean>(false)
-        this.fabricKernel = createFabricKernel(props.fabricExports, 1, INITIAL_JOINT_COUNT)
+        this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         this.instanceUsed = this.fabricKernel.instance.map(() => false)
         const createGotchiAt = (location: Vector3, genome: Genome): Gotchi => {
             const freeIndex = this.instanceUsed.indexOf(false)
@@ -123,7 +123,9 @@ class App extends React.Component<IAppProps, IAppState> {
             }
             console.log("Allocating fabric", freeIndex)
             this.instanceUsed[freeIndex] = true
-            const fabric = new Fabric(this.fabricKernel.instance[freeIndex], freeIndex).createSeed(location.x, location.z)
+            const exports = this.fabricKernel.instance[freeIndex]
+            exports.flushFaces()
+            const fabric = new Fabric(exports, freeIndex).createSeed(location.x, location.z)
             return new Gotchi(fabric, genome, (index: number) => {
                 console.log("Freeing fabric", index)
                 this.instanceUsed[index] = false
