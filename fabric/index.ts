@@ -6,6 +6,7 @@ declare function logInt(idx: u32, i: i32): void
 
 const U8 = sizeof<u8>()
 const U16 = sizeof<u16>()
+const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
 const ERROR: usize = 65535
@@ -24,6 +25,76 @@ const MUSCLE_DIRECTIONS: u8 = 5
 const DEFAULT_HIGH_LOW: u8 = 0x08
 const GROWING_INTERVAL: u8 = 1
 const MATURE_INTERVAL: u8 = 2
+const GESTATING: u8 = 1
+const NOT_GESTATING: u8 = 1
+
+// Dimensioning ================================================================================
+
+let jointCountMax: u16 = 0
+let intervalCountMax: u16 = 0
+let faceCountMax: u16 = 0
+let instanceCountMax: u16 = 0
+
+let fabricBytes: usize = 0
+
+let jointOffset: usize = 0
+let faceMidpointOffset: usize = 0
+let faceNormalOffset: usize = 0
+let faceLocationOffset: usize = 0
+let intervalOffset: usize = 0
+let faceOffset: usize = 0
+
+let statePtr: usize = 0
+let vectorA: usize = 0
+let vectorB: usize = 0
+let vector: usize = 0
+let midpointPtr: usize = 0
+let seedPtr: usize = 0
+let forwardPtr: usize = 0
+let rightPtr: usize = 0
+
+export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabric: u16, instances: u16): usize {
+    jointCountMax = jointsPerFabric
+    intervalCountMax = intervalsPerFabric
+    faceCountMax = facesPerFabric
+    instanceCountMax = instances
+    let faceVectorsSize = faceCountMax * VECTOR_SIZE
+    let faceJointVectorsSize = faceVectorsSize * 3
+    let jointsSize = jointCountMax * JOINT_SIZE
+    let intervalsSize = intervalCountMax * INTERVAL_SIZE
+    let facesSize = faceCountMax * FACE_SIZE
+    // offsets
+    fabricBytes = (
+        vectorB = (
+            vectorA = (
+                vector = (
+                    faceOffset = (
+                        intervalOffset = (
+                            jointOffset = (
+                                faceLocationOffset = (
+                                    faceNormalOffset = (
+                                        faceMidpointOffset = (
+                                            rightPtr = (
+                                                forwardPtr = (
+                                                    seedPtr = (
+                                                        midpointPtr
+                                                    ) + VECTOR_SIZE
+                                                ) + VECTOR_SIZE
+                                            ) + VECTOR_SIZE
+                                        ) + VECTOR_SIZE
+                                    ) + faceVectorsSize
+                                ) + faceJointVectorsSize
+                            ) + faceJointVectorsSize
+                        ) + jointsSize
+                    ) + intervalsSize
+                ) + facesSize
+            ) + VECTOR_SIZE
+        ) + VECTOR_SIZE
+    ) + VECTOR_SIZE
+    let blocks = (fabricBytes * instanceCountMax) >> 16
+    memory.grow(blocks + 1)
+    return fabricBytes
+}
 
 // Physics =====================================================================================
 
@@ -77,76 +148,7 @@ export function setSpanVariationSpeed(factor: f32): f32 {
     return timeSweepSpeed = TIME_SWEEP_SPEED * factor
 }
 
-// TODO: everything below must be reviewed to work with multiple instances
-
-// Dimensioning ================================================================================
-
-let jointCountMax: u16 = 0
-let intervalCountMax: u16 = 0
-let faceCountMax: u16 = 0
-let instanceCountMax: u16 = 0
-
-let fabricBytes: usize = 0
-
-let jointOffset: usize = 0
-let faceMidpointOffset: usize = 0
-let faceNormalOffset: usize = 0
-let faceLocationOffset: usize = 0
-let intervalOffset: usize = 0
-let faceOffset: usize = 0
-
-let vectorA: usize = 0
-let vectorB: usize = 0
-let vector: usize = 0
-let midpointPtr: usize = 0
-let seedPtr: usize = 0
-let forwardPtr: usize = 0
-let rightPtr: usize = 0
-
-export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabric: u16, instances: u16): usize {
-    jointCountMax = jointsPerFabric
-    intervalCountMax = intervalsPerFabric
-    faceCountMax = facesPerFabric
-    instanceCountMax = instances
-    let faceVectorsSize = faceCountMax * VECTOR_SIZE
-    let faceJointVectorsSize = faceVectorsSize * 3
-    let jointsSize = jointCountMax * JOINT_SIZE
-    let intervalsSize = intervalCountMax * INTERVAL_SIZE
-    let facesSize = faceCountMax * FACE_SIZE
-    // offsets
-    fabricBytes = (
-        vectorB = (
-            vectorA = (
-                vector = (
-                    faceOffset = (
-                        intervalOffset = (
-                            jointOffset = (
-                                faceLocationOffset = (
-                                    faceNormalOffset = (
-                                        faceMidpointOffset = (
-                                            rightPtr = (
-                                                forwardPtr = (
-                                                    seedPtr = (
-                                                        midpointPtr
-                                                    ) + VECTOR_SIZE
-                                                ) + VECTOR_SIZE
-                                            ) + VECTOR_SIZE
-                                        ) + VECTOR_SIZE
-                                    ) + faceVectorsSize
-                                ) + faceJointVectorsSize
-                            ) + faceJointVectorsSize
-                        ) + jointsSize
-                    ) + intervalsSize
-                ) + facesSize
-            ) + VECTOR_SIZE
-        ) + VECTOR_SIZE
-    ) + VECTOR_SIZE
-    let blocks = (fabricBytes * instanceCountMax) >> 16
-    memory.grow(blocks + 1)
-    return fabricBytes
-}
-
-// Peek and Poke ================================================================================
+// Instances ====================================================================================
 
 let instance: u16 = 0
 let instancePtr: usize = 0
@@ -156,10 +158,7 @@ export function setInstance(index: u16): void {
     instancePtr = instance * fabricBytes
 }
 
-@inline
-function abs(val: f32): f32 {
-    return val < 0 ? -val : val
-}
+// Peek and Poke ================================================================================
 
 @inline()
 function getU8(vPtr: usize): u8 {
@@ -179,6 +178,16 @@ function getU16(vPtr: usize): u16 {
 @inline()
 function setU16(vPtr: usize, index: u16): void {
     store<u16>(instancePtr + vPtr, index)
+}
+
+@inline()
+function getU32(vPtr: usize): u32 {
+    return load<u32>(instancePtr + vPtr)
+}
+
+@inline()
+function setU32(vPtr: usize, index: u32): void {
+    store<u32>(instancePtr + vPtr, index)
 }
 
 @inline()
@@ -219,6 +228,11 @@ function getZ(vPtr: usize): f32 {
 @inline()
 function setZ(vPtr: usize, v: f32): void {
     store<f32>(instancePtr + vPtr + F32 * 2, v)
+}
+
+@inline
+function abs(val: f32): f32 {
+    return val < 0 ? -val : val
 }
 
 // Vector3 ================================================================================
@@ -275,16 +289,16 @@ function multiplyScalar(vPtr: usize, s: f32): void {
     setZ(vPtr, getZ(vPtr) * s)
 }
 
-function dot(vPtr: usize, v: usize): f32 {
-    return getX(vPtr) * getX(v) + getY(vPtr) * getY(v) + getZ(vPtr) * getZ(v)
-}
+// function dot(vPtr: usize, v: usize): f32 {
+//     return getX(vPtr) * getX(v) + getY(vPtr) * getY(v) + getZ(vPtr) * getZ(v)
+// }
 
-function lerp(vPtr: usize, v: usize, interpolation: f32): void {
-    let antiInterpolation = <f32>1.0 - interpolation
-    setX(vPtr, getX(vPtr) * antiInterpolation + getX(v) * interpolation)
-    setY(vPtr, getY(vPtr) * antiInterpolation + getY(v) * interpolation)
-    setX(vPtr, getZ(vPtr) * antiInterpolation + getZ(v) * interpolation)
-}
+// function lerp(vPtr: usize, v: usize, interpolation: f32): void {
+//     let antiInterpolation = <f32>1.0 - interpolation
+//     setX(vPtr, getX(vPtr) * antiInterpolation + getX(v) * interpolation)
+//     setY(vPtr, getY(vPtr) * antiInterpolation + getY(v) * interpolation)
+//     setX(vPtr, getZ(vPtr) * antiInterpolation + getZ(v) * interpolation)
+// }
 
 function quadrance(vPtr: usize): f32 {
     let x = getX(vPtr)
@@ -316,11 +330,111 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
     setZ(vPtr, ax * by - ay * bx)
 }
 
-// Body state =====================================================================================
+
+// Fabric state ===============================================================================
+
+const STATE_SIZE: usize = U32 + U16 * 5 + U8 * 4 + U16 // last one is padding for multiple of 4 bytes
+
+function incrementAge(ticks: u16): void {
+    setU32(statePtr, getU32(statePtr) + ticks)
+}
+
+export function getAgeX(): u32 {
+    return getU32(statePtr)
+}
+
+function setTimeSweep(value: u16): void {
+    setU32(statePtr + U32, value)
+}
+
+function getTimeSweep(): u16 {
+    return getU16(statePtr + U32)
+}
+
+export function getJointCountX(): u16 {
+    return getU16(statePtr + U32 + U16)
+}
+
+function setJointCount(value: u16): void {
+    setU16(statePtr + U32 + U16, value)
+}
+
+function getJointTagCount(): u16 {
+    return getU16(statePtr + U32 + U16 * 2)
+}
+
+function setJointTagCount(value: u16): void {
+    setU16(statePtr + U32 + U16 * 2, value)
+}
+
+export function nextJointTagX(): u16 {
+    let count = getJointTagCount()
+    setJointTagCount(count + 1)
+    return count
+}
+
+export function getIntervalCountX(): u16 {
+    return getU16(statePtr + U32 + U16 * 3)
+}
+
+function setIntervalCount(value: u16): void {
+    setU16(statePtr + U32 + U16 * 3, value)
+}
+
+export function getFaceCountX(): u16 {
+    return getU16(statePtr + U32 + U16 * 4)
+}
+
+function setFaceCount(value: u16): void {
+    setU16(statePtr + U32 + U16 * 4, value)
+}
+
+export function getGestating(): u8 {
+    return getU8(statePtr + U32 + U16 * 5)
+}
+
+function setGestating(value: u8): void {
+    setU8(statePtr + U32 + U16 * 5, value)
+}
+
+function getPreviousDirection(): u8 {
+    return getU8(statePtr + U32 + U16 * 5 + U8)
+}
+
+function setPreviousDirection(value: u8): void {
+    setU8(statePtr + U32 + U16 * 5 + U8, value)
+}
+
+export function getCurrentDirectionX(): u8 {
+    return getU8(statePtr + U32 + U16 * 5 + U8 * 2)
+}
+
+function setCurrentDirection(value: u8): void {
+    setU8(statePtr + U32 + U16 * 5 + U8 * 2, value)
+}
+
+function getNextDirection(): u8 {
+    return getU8(statePtr + U32 + U16 * 5 + U8 * 3)
+}
+
+export function setNextDirectionX(value: u8): void {
+    setU8(statePtr + U32 + U16 * 5 + U8 * 3, value)
+}
+
+export function resetX(): void {
+    setJointCount(0)
+    setJointTagCount(0)
+    setIntervalCount(0)
+    setFaceCount(0)
+    setGestating(GESTATING)
+    setPreviousDirection(REST_DIRECTION)
+    setCurrentDirection(REST_DIRECTION)
+    setNextDirection(REST_DIRECTION)
+}
 
 let ticksSoFar: u32 = 0
 let timeSweep: u16 = 0
-let gestating: boolean = true
+let gestating: u8 = GESTATING
 let previousDirection: u8 = REST_DIRECTION
 let currentDirection: u8 = REST_DIRECTION
 let nextDirection: u8 = REST_DIRECTION
@@ -884,12 +998,12 @@ function tick(): void {
     }
 }
 
-export function isGestating(): boolean {
+export function isGestating(): u8 {
     return gestating
 }
 
 export function endGestation(): void {
-    gestating = false
+    gestating = NOT_GESTATING
     // remove the hanger joint, and consequences
     jointCount--
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
