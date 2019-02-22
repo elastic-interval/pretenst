@@ -171,6 +171,10 @@ export function reset(): void {
     faceCount = 0
 }
 
+export function getAge(): u32 {
+    return ticksSoFar
+}
+
 export function getJointCount(): usize {
     return jointCount
 }
@@ -193,10 +197,6 @@ export function nextJointTag(): u16 {
 @inline
 function abs(val: f32): f32 {
     return val < 0 ? -val : val
-}
-
-export function age(): u32 {
-    return ticksSoFar
 }
 
 @inline()
