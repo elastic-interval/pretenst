@@ -1,9 +1,10 @@
 import { NextFunction, Request, Response, Router } from "express"
 
-import { HEXALOT_PURCHASE_PRICE_SATOSHIS } from "./constants"
+import { HEXALOT_ALLOWED_RADII, HEXALOT_PURCHASE_PRICE_SATOSHIS } from "./constants"
+import { Hexalot } from "./hexalot"
 import { PaymentHandler } from "./payment"
 import { HexalotStore, IKeyValueStore } from "./store"
-import { Hexalot } from "./types"
+import { HexalotID } from "./types"
 
 type AuthenticatedRequest = Request & {
     user: {
@@ -15,7 +16,7 @@ function authenticateUser(
     req: Request,
     res: Response,
     next: NextFunction,
-) {
+): void {
     const pubkey = req.header("X-User-Pubkey")
     if (!pubkey) {
         return res.status(400).end("Missing X-User-Pubkey header")
@@ -36,7 +37,7 @@ export class HexalotCurator {
 
     constructor(
         db: IKeyValueStore,
-        readonly paymentHandler: PaymentHandler,
+        readonly payments: PaymentHandler,
         prefix: string = "galapagotchi",
     ) {
         this.store = new HexalotStore(db, prefix)
@@ -49,23 +50,29 @@ export class HexalotCurator {
 
         router.post("/buy", async (req, res) => {
             const {user: {pubkey}} = req as AuthenticatedRequest
-            const {parentLot, direction, newBits: newBitsStr} = req.body
+            const {parentID, direction, newBits: newBitsStr} = req.body
+            if (!(direction instanceof Number)) {
+                return res.status(400).end("'direction' must be 0-5")
+            }
+            if (!(newBitsStr instanceof String)) {
+                return res.status(400).end("'newBits' must be a string")
+            }
             const newBits = (newBitsStr as string)
                 .split("")
                 .map(c => c === "1")
-            let lot: Hexalot
+            let lotID: HexalotID
             try {
-                lot = this.computeLot(parentLot, parseInt(direction, 10), newBits)
+                lotID = this.computeChildLotID(parentID, direction as number, newBits)
             } catch (e) {
                 return res.status(400).end(`Lot cannot be purchased: ${e}`)
             }
-            const invoice = await this.paymentHandler.generateInvoice(lot, HEXALOT_PURCHASE_PRICE_SATOSHIS)
+            const invoice = await this.payments.generateInvoice(lotID, HEXALOT_PURCHASE_PRICE_SATOSHIS)
             res
                 .status(402) // HTTP 402 Payment Required :)
                 .end(invoice)
 
-            this.paymentHandler.waitForPayment(invoice)
-                .then(() => this.store.assignLot(lot, pubkey))
+            this.payments.waitForPayment(invoice)
+                .then(() => this.store.assignLot(lotID, pubkey))
                 .catch(e => console.error(`Error waiting for payment: ${e}`))
         })
 
@@ -79,12 +86,16 @@ export class HexalotCurator {
     }
 
     // @ts-ignore
-    private computeLot(
-        parentLot: string,
+    private computeChildLotID(
+        parentID: string,
         direction: number,
         newBits: boolean[],
-    ): Hexalot {
-        // TODO: check whether child hexalot has been taken
+    ): HexalotID {
+        const parent = new Hexalot(parentID)
+        if (!HEXALOT_ALLOWED_RADII[parent.radius]) {
+            throw new Error(`Lot radius ${parent.radius} not in allowed radii: ${Object.keys(HEXALOT_ALLOWED_RADII)}`)
+        }
+
         return "FAKE_LOT"
     }
 }

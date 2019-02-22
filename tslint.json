@@ -56,7 +56,18 @@
       2
     ],
     "no-trailing-whitespace": true,
-    "no-unused-expression": {"severity": "warning"},
-    "max-classes-per-file": false
+    "no-unused-expression": {
+      "severity": "warning"
+    },
+    "max-classes-per-file": false,
+    "typedef": [
+      true,
+      "call-signature",
+      "parameter",
+      "property-declaration",
+      "member-variable-declaration"
+    ],
+    "no-empty": false,
+    "max-line-length": [true, 120]
   }
 }
