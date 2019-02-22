@@ -161,6 +161,13 @@ export function setInstance(index: u16): void {
     instance = index
 }
 
+export function reset(): void {
+    jointTagCount = 0
+    jointCount = 0
+    intervalCount = 0
+    faceCount = 0
+}
+
 export function joints(): usize {
     return jointCount
 }

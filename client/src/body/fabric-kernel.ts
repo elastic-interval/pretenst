@@ -32,7 +32,7 @@ export class FabricKernel {
     private seedVector = new Vector3()
     private forwardVector = new Vector3()
     private rightVector = new Vector3()
-    private instanceArray: IFabricInstanceExports[]
+    private instanceArray: IFabricInstanceExports[] = []
 
     constructor(
         private exports: IFabricExports,
@@ -55,7 +55,7 @@ export class FabricKernel {
                 ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
-        this.fabricBytes = exports.init(this.instanceMax, this.jointCountMax, this.intervalCountMax, this.faceCountMax)
+        this.fabricBytes = exports.init(this.jointCountMax, this.intervalCountMax, this.faceCountMax, this.instanceMax)
         this.arrayBuffer = exports.memory.buffer
         const byteLength = exports.memory.buffer.byteLength
         if (byteLength === 0) {
@@ -135,6 +135,10 @@ export class FabricKernel {
 class InstanceExports implements IFabricInstanceExports {
 
     constructor(private exports: IFabricExports, private index: number) {
+    }
+
+    public reset(): void {
+        return this.ex.reset()
     }
 
     public age(): number {
@@ -233,4 +237,5 @@ class InstanceExports implements IFabricInstanceExports {
         this.exports.setInstance(this.index)
         return this.exports
     }
+
 }

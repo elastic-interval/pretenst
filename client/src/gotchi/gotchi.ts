@@ -14,8 +14,13 @@ export class Gotchi {
     public travel?: ITravel
     private growth?: Growth
 
-    constructor(public fabric: Fabric, private genome: Genome) {
+    constructor(public fabric: Fabric, private genome: Genome, private freeFabric: (index: number) => void) {
         this.growth = genome.growth(fabric)
+    }
+
+    public dispose() {
+        this.fabric.disposeOfGeometry()
+        this.freeFabric(this.fabric.index)
     }
 
     public get midpoint() {
@@ -40,9 +45,9 @@ export class Gotchi {
         return Math.sqrt(xx * xx + zz * zz)
     }
 
-    public withNewBody(fabric: Fabric): Gotchi {
-        return new Gotchi(fabric, this.genome)
-    }
+    // public withNewBody(fabric: Fabric): Gotchi {
+    //     return new Gotchi(fabric, this.genome)
+    // }
 
     public get genomeData(): IGenomeData {
         return this.genome.data
@@ -86,8 +91,4 @@ export class Gotchi {
         }
     }
 
-    public dispose() {
-        // todo: mark instance as free
-        this.fabric.disposeOfGeometry()
-    }
 }

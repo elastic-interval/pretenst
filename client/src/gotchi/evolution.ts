@@ -11,7 +11,7 @@ import {compareEvolvers, Evolver} from "./evolver"
 import {Gotchi} from "./gotchi"
 
 export const INITIAL_JOINT_COUNT = 47
-const MAX_POPULATION = 24
+export const MAX_POPULATION = 24
 const MUTATION_COUNT = 3
 const MINIMUM_AGE = 15000
 const MAXIMUM_AGE = 30000

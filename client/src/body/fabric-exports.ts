@@ -49,6 +49,10 @@ export interface IFabricExports {
 
     setInstance(index: number): void
 
+    // below methods use instance index
+
+    reset(): void
+
     age(): number
 
     isGestating(): boolean
@@ -97,6 +101,8 @@ export interface IFabricExports {
 }
 
 export interface IFabricInstanceExports {
+
+    reset(): void
 
     age(): number
 

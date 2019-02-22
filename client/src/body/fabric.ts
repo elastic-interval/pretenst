@@ -164,6 +164,7 @@ export class Fabric {
     }
 
     public createSeed(x: number, y: number): Fabric {
+        this.exports.reset()
         const hanger = new Vector3(x, 0, y)
         const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z)
         const R = 1
