@@ -29,6 +29,13 @@ export function turn(direction: Direction, right: boolean): Direction {
 
 export const SEED_CORNERS = 5
 
+export interface IFabricDimensions {
+    instanceMax: number,
+    jointCountMax: number,
+    intervalCountMax: number,
+    faceCountMax: number,
+}
+
 export interface IFabricExports {
 
     memory: IMemory
@@ -103,6 +110,8 @@ export interface IFabricExports {
 }
 
 export interface IFabricInstanceExports {
+
+    getDimensions(): IFabricDimensions
 
     getMidpoint(): Vector3
 

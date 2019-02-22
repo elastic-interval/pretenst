@@ -2,7 +2,7 @@ import {Vector3} from "three"
 
 import {BILATERAL_MIDDLE, Fabric} from "./fabric"
 import {IFabricInstanceExports} from "./fabric-exports"
-import {FabricKernel, vectorFromFloatArray} from "./fabric-kernel"
+import {vectorFromFloatArray} from "./fabric-kernel"
 
 export interface IJointSnapshot {
     jointNumber: number
@@ -19,7 +19,7 @@ export class FaceSnapshot {
 
     constructor(
         private fabric: Fabric,
-        private kernel: FabricKernel,
+        private exports: IFabricInstanceExports,
         private fabricExports: IFabricInstanceExports,
         private faceIndex: number,
         private derived?: boolean,
@@ -28,7 +28,7 @@ export class FaceSnapshot {
             .map(jointNumber => {
                 const jointIndex = fabricExports.getFaceJointIndex(faceIndex, jointNumber)
                 const tag = fabricExports.getJointTag(jointIndex)
-                const location = vectorFromFloatArray(this.kernel.faceLocations, (faceIndex * 3 + jointNumber) * 3)
+                const location = vectorFromFloatArray(this.exports.getFaceLocations(), (faceIndex * 3 + jointNumber) * 3)
                 return {jointNumber, jointIndex, tag, location} as IJointSnapshot
             })
     }
@@ -52,7 +52,7 @@ export class FaceSnapshot {
                 throw new Error("Face not found!")
             }
         }
-        return new FaceSnapshot(this.fabric, this.kernel, this.fabricExports, faceIndex, true)
+        return new FaceSnapshot(this.fabric, this.exports, this.fabricExports, faceIndex, true)
     }
 
     public get isDerived(): boolean {
@@ -72,13 +72,13 @@ export class FaceSnapshot {
     }
 
     public get midpoint(): Vector3 {
-        return vectorFromFloatArray(this.kernel.faceMidpoints, this.faceIndex * 3)
+        return vectorFromFloatArray(this.exports.getFaceMidpoints(), this.faceIndex * 3)
     }
 
     public get normal(): Vector3 {
         return TRIANGLE
             .map(jointNumber => vectorFromFloatArray(
-                this.kernel.faceNormals,
+                this.exports.getFaceNormals(),
                 (this.faceIndex * 3 + jointNumber) * 3,
             ))
             .reduce((prev, current) => prev.add(current), new Vector3())

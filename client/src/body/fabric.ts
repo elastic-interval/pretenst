@@ -1,7 +1,7 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from "three"
 
 import {Direction, IFabricInstanceExports, SEED_CORNERS} from "./fabric-exports"
-import {FabricKernel, vectorFromFloatArray} from "./fabric-kernel"
+import {vectorFromFloatArray} from "./fabric-kernel"
 import {FaceSnapshot, IJointSnapshot} from "./face-snapshot"
 
 export const BILATERAL_MIDDLE = 0
@@ -22,7 +22,7 @@ export class Fabric {
     private pointerGeometryStored: Geometry | undefined
     private facesGeometryStored: BufferGeometry | undefined
 
-    constructor(private kernel: FabricKernel, public index: number) {
+    constructor(private exports: IFabricInstanceExports, public index: number) {
     }
 
     public disposeOfGeometry(): void {
@@ -37,23 +37,23 @@ export class Fabric {
     }
 
     public get vectors(): Float32Array {
-        return this.kernel.vectors
+        return this.exports.getVectors()
     }
 
     public get midpoint(): Vector3 {
-        return this.kernel.midpoint
+        return this.exports.getMidpoint()
     }
 
     public get seed(): Vector3 {
-        return this.kernel.seed
+        return this.exports.getSeed()
     }
 
     public get forward(): Vector3 {
-        return this.kernel.forward
+        return this.exports.getForward()
     }
 
     public get right(): Vector3 {
-        return this.kernel.right
+        return this.exports.getRight()
     }
 
     public get jointCount() {
@@ -74,7 +74,7 @@ export class Fabric {
             const apexHeight = face.averageIdealSpan * Math.sqrt(2 / 3)
             const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, apexHeight)
             const faceOffset = face.index * 3
-            const faceLocations = this.kernel.faceLocations
+            const faceLocations = this.exports.getFaceLocations()
             const geometry = new Geometry()
             geometry.vertices = [
                 vectorFromFloatArray(faceLocations, faceOffset * 3), apex,
@@ -94,8 +94,8 @@ export class Fabric {
 
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry()
-        geometry.addAttribute("position", new Float32BufferAttribute(this.kernel.faceLocations, 3))
-        geometry.addAttribute("normal", new Float32BufferAttribute(this.kernel.faceNormals, 3))
+        geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getFaceLocations(), 3))
+        geometry.addAttribute("normal", new Float32BufferAttribute(this.exports.getFaceNormals(), 3))
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose()
         }
@@ -211,7 +211,7 @@ export class Fabric {
 
     public endGestation(): void {
         this.exports.endGestation()
-        this.kernel.refresh()
+        this.exports.flushFaces()
     }
 
     public get age(): number {
@@ -232,13 +232,13 @@ export class Fabric {
 
     public unfold(faceIndex: number, jointNumber: number): FaceSnapshot [] {
         const newJointCount = this.jointCount + 2
-        if (newJointCount >= this.kernel.jointCountMax) {
+        if (newJointCount >= this.exports.getDimensions().jointCountMax) {
             return []
         }
         const apexTag = this.exports.nextJointTag()
         let oppositeFaceIndex = this.exports.findOppositeFaceIndex(faceIndex)
         const freshFaces = this.unfoldFace(this.getFaceSnapshot(faceIndex), jointNumber, apexTag)
-        if (oppositeFaceIndex < this.kernel.faceCountMax) {
+        if (oppositeFaceIndex < this.exports.getDimensions().faceCountMax) {
             if (oppositeFaceIndex > faceIndex) {
                 oppositeFaceIndex-- // since faceIndex was deleted
             }
@@ -250,7 +250,7 @@ export class Fabric {
     }
 
     public getFaceSnapshot(faceIndex: number): FaceSnapshot {
-        return new FaceSnapshot(this, this.kernel, this.exports, faceIndex)
+        return new FaceSnapshot(this, this.exports, this.exports, faceIndex)
     }
 
     public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
@@ -273,10 +273,6 @@ export class Fabric {
         }
     }
 
-    public toString(): string {
-        return `${(this.kernel.blockBytes / 1024).toFixed(1)}k =becomes=> ${this.kernel.bufferBytes / 65536} block(s)`
-    }
-
     // ==========================================================
 
     private face(joint0Index: number, joint1Index: number, joint2Index: number): number {
@@ -297,7 +293,7 @@ export class Fabric {
         const chosenJoint = sortedJoints[faceJointIndex]
         const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplace.averageIdealSpan * 0.1)
         const apexIndex = this.exports.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z)
-        if (apexIndex >= this.kernel.jointCountMax) {
+        if (apexIndex >= this.exports.getDimensions().jointCountMax) {
             return []
         }
         sortedJoints.forEach(faceJoint => {
@@ -322,14 +318,10 @@ export class Fabric {
             }
         })
         faceToReplace.remove()
-        this.kernel.refresh()
+        this.exports.flushFaces()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
-            .map(index => new FaceSnapshot(this, this.kernel, this.exports, index))
-    }
-
-    private get exports(): IFabricInstanceExports {
-        return this.kernel.instance[this.index]
+            .map(index => new FaceSnapshot(this, this.exports, this.exports, index))
     }
 }
 

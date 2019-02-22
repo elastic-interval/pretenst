@@ -123,7 +123,7 @@ class App extends React.Component<IAppProps, IAppState> {
             }
             console.log("Allocating fabric", freeIndex)
             this.instanceUsed[freeIndex] = true
-            const fabric = new Fabric(this.fabricKernel, freeIndex).createSeed(location.x, location.z)
+            const fabric = new Fabric(this.fabricKernel.instance[freeIndex], freeIndex).createSeed(location.x, location.z)
             return new Gotchi(fabric, genome, (index: number) => {
                 console.log("Freeing fabric", index)
                 this.instanceUsed[index] = false
