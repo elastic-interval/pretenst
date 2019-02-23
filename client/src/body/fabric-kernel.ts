@@ -64,8 +64,6 @@ export class FabricKernel {
         const byteLength = exports.memory.buffer.byteLength
         if (byteLength === 0) {
             throw new Error(`Zero byte length! ${this.offsets.fabricBytes}`)
-        } else {
-            console.log(`Got ${byteLength} bytes`)
         }
         for (let index = 0; index < dimensions.instanceMax; index++) {
             this.instanceArray.push(new InstanceExports(this.offsets, exports, dimensions, index))
