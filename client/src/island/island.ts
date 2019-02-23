@@ -38,7 +38,7 @@ export class Island {
     }
 
     public get hexalotsWithSeeds() {
-        return this.hexalots.filter((hexalot: Hexalot, index:number) => !!hexalot.master && index !== this.activeHexalotIndex)
+        return this.hexalots.filter((hexalot: Hexalot, index: number) => !!hexalot.master && index !== this.activeHexalotIndex)
     }
 
     public get isLegal(): boolean {
@@ -188,6 +188,7 @@ export class Island {
                 spot.surface = land ? Surface.Land : Surface.Water
             })
         } else if (this.singleHexalot) {
+            this.singleHexalot.spots.map(spot => spot.surface = Math.random() > 0.5 ? Surface.Land : Surface.Water)
             this.singleHexalot.spots[0].surface = Surface.Land
         }
         this.hexalots.forEach(g => {
