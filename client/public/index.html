@@ -14,13 +14,11 @@
 </head>
 <body>
 <script>
-    const eigCodePromise = fetch("/fabric.wasm").then(response => response.arrayBuffer()).then(bytes => WebAssembly.compile(bytes));
-    function createFabricInstance(count) {
-        console.log('create', count);
-
+    function getFabricExports() {
         function log(msg) {
             console.log(msg);
         }
+
         const importObject = {
             env: {
                 abort: (a, b, c, d) => {
@@ -29,7 +27,7 @@
             },
             index: {
                 logBoolean: (index, booleanValue) => {
-                    log(index + ': ' + (booleanValue ? 'true': 'false'));
+                    log(index + ': ' + (booleanValue ? 'true' : 'false'));
                 },
                 logFloat: (index, floatValue) => {
                     log(index + ': ' + floatValue.toFixed(5));
@@ -40,12 +38,11 @@
             },
             JSMath: Math
         };
-        return eigCodePromise
+        return fetch("/fabric.wasm")
+            .then(response => response.arrayBuffer())
+            .then(bytes => WebAssembly.compile(bytes))
             .then(code => WebAssembly.instantiate(code, importObject))
-            .then(instance => {
-                console.log('instance ' + count, instance);
-                return instance.exports;
-            });
+            .then(instance => instance.exports);
     }
 </script>
 <noscript>

@@ -1,3 +1,5 @@
+import {Vector3} from "three"
+
 export interface IMemory {
     buffer: ArrayBuffer
 }
@@ -27,6 +29,13 @@ export function turn(direction: Direction, right: boolean): Direction {
 
 export const SEED_CORNERS = 5
 
+export interface IFabricDimensions {
+    instanceMax: number,
+    jointCountMax: number,
+    intervalCountMax: number,
+    faceCountMax: number,
+}
+
 export interface IFabricExports {
 
     memory: IMemory
@@ -45,15 +54,21 @@ export interface IFabricExports {
 
     setSpanVariationSpeed(factor: number): number
 
-    init(joints: number, intervals: number, faces: number): number
+    init(joints: number, intervals: number, faces: number, instances: number): number
 
-    age(): number
+    setInstance(index: number): void
+
+    // below methods use instance index
+
+    reset(): void
+
+    getAge(): number
 
     isGestating(): boolean
 
-    getDirection(): Direction
+    getCurrentDirection(): Direction
 
-    setDirection(direction: Direction): void
+    setNextDirection(direction: Direction): void
 
     iterate(ticks: number): boolean
 
@@ -65,7 +80,7 @@ export interface IFabricExports {
 
     nextJointTag(): number
 
-    joints(): number
+    getJointCount(): number
 
     createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number
 
@@ -73,7 +88,7 @@ export interface IFabricExports {
 
     getJointLaterality(jointIndex: number): number
 
-    intervals(): number
+    getIntervalCount(): number
 
     createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number
 
@@ -81,7 +96,78 @@ export interface IFabricExports {
 
     setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
 
-    faces(): number
+    getFaceCount(): number
+
+    createFace(joint0Index: number, joint1Index: number, joint2Index: number): number
+
+    removeFace(faceIndex: number): void
+
+    findOppositeFaceIndex(faceIndex: number): number
+
+    getFaceJointIndex(faceIndex: number, jointNumber: number): number
+
+    getFaceAverageIdealSpan(faceIndex: number): number
+}
+
+export interface IFabricInstanceExports {
+
+    getDimensions(): IFabricDimensions
+
+    getMidpoint(): Vector3
+
+    getSeed(): Vector3
+
+    getForward(): Vector3
+
+    getRight(): Vector3
+
+    getFaceMidpoints(): Float32Array
+
+    getFaceLocations(): Float32Array
+
+    getFaceNormals(): Float32Array
+
+    flushFaces(): void
+
+    getVectors(): Float32Array
+
+    reset(): void
+
+    getAge(): number
+
+    isGestating(): boolean
+
+    getCurrentDirection(): Direction
+
+    setNextDirection(direction: Direction): void
+
+    iterate(ticks: number): boolean
+
+    centralize(): void
+
+    setAltitude(altitude: number): number
+
+    endGestation(): void
+
+    nextJointTag(): number
+
+    getJointCount(): number
+
+    createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number
+
+    getJointTag(jointIndex: number): number
+
+    getJointLaterality(jointIndex: number): number
+
+    getIntervalCount(): number
+
+    createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number
+
+    findOppositeIntervalIndex(intervalIndex: number): number
+
+    setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
+
+    getFaceCount(): number
 
     createFace(joint0Index: number, joint1Index: number, joint2Index: number): number
 

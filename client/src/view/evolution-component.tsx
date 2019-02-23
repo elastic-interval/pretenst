@@ -39,11 +39,11 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
     public render() {
         return <R3.Object3D key="EvolutionMesh">
             {
-                this.state.evolvers.map(evolver => {
+                this.state.evolvers.map((evolver, index) => {
                     const gotchi = evolver.gotchi
                     const fabric = gotchi.fabric
                     return (
-                        <R3.Object3D key={`Evolver${evolver.id}`}>
+                        <R3.Object3D key={`Evolver${index}`}>
                             <R3.LineSegments
                                 key="Vectors"
                                 geometry={fabric.pointerGeometryFor(gotchi.direction)}

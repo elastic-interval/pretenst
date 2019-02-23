@@ -20,7 +20,6 @@ export class Evolver {
     private votes: Direction[] = []
 
     constructor(
-        public id: number,
         public gotchi: Gotchi,
         public travel: ITravel,
     ) {

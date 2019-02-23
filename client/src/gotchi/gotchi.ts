@@ -7,15 +7,20 @@ import {Growth} from "../genetics/growth"
 import {ITravel} from "../island/trip"
 
 export interface IGotchiFactory {
-    createGotchiAt(location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi>
+    createGotchiAt(location: Vector3, genome: Genome): Gotchi
 }
 
 export class Gotchi {
     public travel?: ITravel
     private growth?: Growth
 
-    constructor(public fabric: Fabric, private genome: Genome) {
+    constructor(public fabric: Fabric, private genome: Genome, private freeFabric: () => void) {
         this.growth = genome.growth(fabric)
+    }
+
+    public dispose() {
+        this.fabric.disposeOfGeometry()
+        this.freeFabric()
     }
 
     public get midpoint() {
@@ -38,10 +43,6 @@ export class Gotchi {
         const xx = this.fabric.vectors[0] - location.x
         const zz = this.fabric.vectors[2] - location.z
         return Math.sqrt(xx * xx + zz * zz)
-    }
-
-    public withNewBody(fabric: Fabric): Gotchi {
-        return new Gotchi(fabric, this.genome)
     }
 
     public get genomeData(): IGenomeData {
@@ -84,9 +85,5 @@ export class Gotchi {
                 this.fabric.endGestation()
             }
         }
-    }
-
-    public dispose() {
-        this.fabric.disposeOfGeometry()
     }
 }

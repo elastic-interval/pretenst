@@ -1,14 +1,14 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from "three"
 
-import {Direction, IFabricExports, SEED_CORNERS} from "./fabric-exports"
-import {FabricKernel, vectorFromFloatArray} from "./fabric-kernel"
+import {Direction, IFabricInstanceExports, SEED_CORNERS} from "./fabric-exports"
+import {vectorFromFloatArray} from "./fabric-kernel"
 import {FaceSnapshot, IJointSnapshot} from "./face-snapshot"
 
 export const BILATERAL_MIDDLE = 0
 export const BILATERAL_RIGHT = 1
 export const BILATERAL_LEFT = 2
 export const HUNG_ALTITUDE = 7
-export const NORMAL_TICKS = 50
+export const NORMAL_TICKS = 32
 
 export const INTERVALS_RESERVED = 1
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0)
@@ -19,16 +19,10 @@ const ARROW_TIP_LENGTH_FACTOR = 1.3
 const ARROW_TIP_WIDTH_FACTOR = 1.5
 
 export class Fabric {
-    private kernel: FabricKernel
-    private intervalCountMax: number
-    private faceCountMax: number
     private pointerGeometryStored: Geometry | undefined
     private facesGeometryStored: BufferGeometry | undefined
 
-    constructor(private fabricExports: IFabricExports, public jointCountMax: number) {
-        this.intervalCountMax = jointCountMax * 3 + 30
-        this.faceCountMax = jointCountMax * 2 + 20
-        this.kernel = new FabricKernel(fabricExports, this.jointCountMax, this.intervalCountMax, this.faceCountMax)
+    constructor(private exports: IFabricInstanceExports, public index: number) {
     }
 
     public disposeOfGeometry(): void {
@@ -43,35 +37,35 @@ export class Fabric {
     }
 
     public get vectors(): Float32Array {
-        return this.kernel.vectors
+        return this.exports.getVectors()
     }
 
     public get midpoint(): Vector3 {
-        return this.kernel.midpoint
+        return this.exports.getMidpoint()
     }
 
     public get seed(): Vector3 {
-        return this.kernel.seed
+        return this.exports.getSeed()
     }
 
     public get forward(): Vector3 {
-        return this.kernel.forward
+        return this.exports.getForward()
     }
 
     public get right(): Vector3 {
-        return this.kernel.right
+        return this.exports.getRight()
     }
 
     public get jointCount() {
-        return this.fabricExports.joints()
+        return this.exports.getJointCount()
     }
 
     public get intervalCount() {
-        return this.fabricExports.intervals()
+        return this.exports.getIntervalCount()
     }
 
     public get faceCount() {
-        return this.fabricExports.faces()
+        return this.exports.getFaceCount()
     }
 
     public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
@@ -80,7 +74,7 @@ export class Fabric {
             const apexHeight = face.averageIdealSpan * Math.sqrt(2 / 3)
             const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, apexHeight)
             const faceOffset = face.index * 3
-            const faceLocations = this.kernel.faceLocations
+            const faceLocations = this.exports.getFaceLocations()
             const geometry = new Geometry()
             geometry.vertices = [
                 vectorFromFloatArray(faceLocations, faceOffset * 3), apex,
@@ -91,8 +85,8 @@ export class Fabric {
         }
         const geometries: Geometry[] = []
         geometries.push(createGeometry(faceIndex))
-        const oppositeFaceIndex = this.fabricExports.findOppositeFaceIndex(faceIndex)
-        if (oppositeFaceIndex < this.fabricExports.faces()) {
+        const oppositeFaceIndex = this.exports.findOppositeFaceIndex(faceIndex)
+        if (oppositeFaceIndex < this.exports.getFaceCount()) {
             geometries.push(createGeometry(oppositeFaceIndex))
         }
         return geometries
@@ -100,8 +94,8 @@ export class Fabric {
 
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry()
-        geometry.addAttribute("position", new Float32BufferAttribute(this.kernel.faceLocations, 3))
-        geometry.addAttribute("normal", new Float32BufferAttribute(this.kernel.faceNormals, 3))
+        geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getFaceLocations(), 3))
+        geometry.addAttribute("normal", new Float32BufferAttribute(this.exports.getFaceNormals(), 3))
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose()
         }
@@ -169,22 +163,24 @@ export class Fabric {
         return geometry
     }
 
-    public createSeed(x: number, y: number): void {
+    public createSeed(x: number, y: number): Fabric {
+        this.exports.reset()
         const hanger = new Vector3(x, 0, y)
-        const hangerJoint = this.fabricExports.createJoint(this.fabricExports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z)
+        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z)
         const R = 1
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const angle = walk * Math.PI * 2 / SEED_CORNERS
-            this.fabricExports.createJoint(
-                this.fabricExports.nextJointTag(),
+            this.exports.createJoint(
+                this.exports.nextJointTag(),
                 BILATERAL_MIDDLE,
                 R * Math.sin(angle) + hanger.x,
                 R * Math.cos(angle) + hanger.y,
-                hanger.z)
+                hanger.z,
+            )
         }
-        const jointPairName = this.fabricExports.nextJointTag()
-        const left = this.fabricExports.createJoint(jointPairName, BILATERAL_LEFT, hanger.x, hanger.y, hanger.z - R)
-        const right = this.fabricExports.createJoint(jointPairName, BILATERAL_RIGHT, hanger.x, hanger.y, hanger.z + R)
+        const jointPairName = this.exports.nextJointTag()
+        const left = this.exports.createJoint(jointPairName, BILATERAL_LEFT, hanger.x, hanger.y, hanger.z - R)
+        const right = this.exports.createJoint(jointPairName, BILATERAL_RIGHT, hanger.x, hanger.y, hanger.z + R)
         this.interval(hangerJoint, left, -1)
         this.interval(hangerJoint, right, -1)
         this.interval(left, right, -1)
@@ -198,50 +194,51 @@ export class Fabric {
             this.face(right, (walk + 1) % SEED_CORNERS + 1, walk + 1)
         }
         hanger.y += this.setAltitude(HUNG_ALTITUDE)
+        return this
     }
 
     public get direction(): Direction {
-        return this.fabricExports.getDirection()
+        return this.exports.getCurrentDirection()
     }
 
     public set direction(direction: Direction) {
-        this.fabricExports.setDirection(direction)
+        this.exports.setNextDirection(direction)
     }
 
     public iterate(ticks: number): boolean {
-        return this.fabricExports.iterate(ticks)
+        return this.exports.iterate(ticks)
     }
 
     public endGestation(): void {
-        this.fabricExports.endGestation()
-        this.kernel.refresh()
+        this.exports.endGestation()
+        this.exports.flushFaces()
     }
 
     public get age(): number {
-        return this.fabricExports.age()
+        return this.exports.getAge()
     }
 
     public get isGestating(): boolean {
-        return this.fabricExports.isGestating()
+        return this.exports.isGestating()
     }
 
     public centralize(): void {
-        this.fabricExports.centralize()
+        this.exports.centralize()
     }
 
     public setAltitude(altitude: number): number {
-        return this.fabricExports.setAltitude(altitude)
+        return this.exports.setAltitude(altitude)
     }
 
     public unfold(faceIndex: number, jointNumber: number): FaceSnapshot [] {
         const newJointCount = this.jointCount + 2
-        if (newJointCount >= this.jointCountMax) {
+        if (newJointCount >= this.exports.getDimensions().jointCountMax) {
             return []
         }
-        const apexTag = this.fabricExports.nextJointTag()
-        let oppositeFaceIndex = this.fabricExports.findOppositeFaceIndex(faceIndex)
+        const apexTag = this.exports.nextJointTag()
+        let oppositeFaceIndex = this.exports.findOppositeFaceIndex(faceIndex)
         const freshFaces = this.unfoldFace(this.getFaceSnapshot(faceIndex), jointNumber, apexTag)
-        if (oppositeFaceIndex < this.kernel.faceCountMax) {
+        if (oppositeFaceIndex < this.exports.getDimensions().faceCountMax) {
             if (oppositeFaceIndex > faceIndex) {
                 oppositeFaceIndex-- // since faceIndex was deleted
             }
@@ -253,45 +250,41 @@ export class Fabric {
     }
 
     public getFaceSnapshot(faceIndex: number): FaceSnapshot {
-        return new FaceSnapshot(this, this.kernel, this.fabricExports, faceIndex)
+        return new FaceSnapshot(this, this.exports, this.exports, faceIndex)
     }
 
     public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
         if (intervalIndex < INTERVALS_RESERVED || intervalIndex >= this.intervalCount) {
             throw new Error(`Bad interval index index ${intervalIndex}`)
         }
-        this.fabricExports.setIntervalHighLow(intervalIndex, direction, highLow)
+        this.exports.setIntervalHighLow(intervalIndex, direction, highLow)
         switch (direction) {
             case Direction.FORWARD:
             case Direction.REVERSE:
-                const oppositeIntervalIndex = this.fabricExports.findOppositeIntervalIndex(intervalIndex)
+                const oppositeIntervalIndex = this.exports.findOppositeIntervalIndex(intervalIndex)
                 if (oppositeIntervalIndex < this.intervalCount) {
-                    this.fabricExports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow)
+                    this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow)
                 }
                 break
             case Direction.RIGHT:
             case Direction.LEFT:
-                // todo: make opposite opposite?
+                // make opposite opposite?
                 break
         }
-    }
-
-    public toString(): string {
-        return `${(this.kernel.blockBytes / 1024).toFixed(1)}k =becomes=> ${this.kernel.bufferBytes / 65536} block(s)`
     }
 
     // ==========================================================
 
     private face(joint0Index: number, joint1Index: number, joint2Index: number): number {
-        return this.fabricExports.createFace(joint0Index, joint1Index, joint2Index)
+        return this.exports.createFace(joint0Index, joint1Index, joint2Index)
     }
 
     private interval(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.fabricExports.createInterval(alphaIndex, omegaIndex, span, false)
+        return this.exports.createInterval(alphaIndex, omegaIndex, span, false)
     }
 
     private intervalGrowth(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.fabricExports.createInterval(alphaIndex, omegaIndex, span, true)
+        return this.exports.createInterval(alphaIndex, omegaIndex, span, true)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
@@ -299,8 +292,8 @@ export class Fabric {
         const sortedJoints = faceToReplace.joints.sort((a: IJointSnapshot, b: IJointSnapshot) => b.tag - a.tag)
         const chosenJoint = sortedJoints[faceJointIndex]
         const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplace.averageIdealSpan * 0.1)
-        const apexIndex = this.fabricExports.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z)
-        if (apexIndex >= this.jointCountMax) {
+        const apexIndex = this.exports.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z)
+        if (apexIndex >= this.exports.getDimensions().jointCountMax) {
             return []
         }
         sortedJoints.forEach(faceJoint => {
@@ -325,10 +318,10 @@ export class Fabric {
             }
         })
         faceToReplace.remove()
-        this.kernel.refresh()
+        this.exports.flushFaces()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
-            .map(index => new FaceSnapshot(this, this.kernel, this.fabricExports, index))
+            .map(index => new FaceSnapshot(this, this.exports, this.exports, index))
     }
 }
 

@@ -7,9 +7,10 @@ import {PerspectiveCamera, Vector3} from "three"
 import {AppStorage} from "./app-storage"
 import {Fabric} from "./body/fabric"
 import {Direction, IFabricExports, turn} from "./body/fabric-exports"
+import {createFabricKernel, FabricKernel} from "./body/fabric-kernel"
 import {Physics} from "./body/physics"
 import {Genome, IGenomeData} from "./genetics/genome"
-import {Evolution, INITIAL_JOINT_COUNT} from "./gotchi/evolution"
+import {Evolution, INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Gotchi} from "./gotchi/gotchi"
 import {Hexalot} from "./island/hexalot"
 import {Island} from "./island/island"
@@ -21,7 +22,7 @@ import {InfoPanel} from "./view/info-panel"
 import {OrbitDistance} from "./view/orbit"
 
 interface IAppProps {
-    createFabricInstance: (fabricNumber: number) => Promise<IFabricExports>
+    fabricExports: IFabricExports
     storage: AppStorage
 }
 
@@ -99,25 +100,33 @@ function selectSpot(spot?: Spot) {
 }
 
 class App extends React.Component<IAppProps, IAppState> {
-    private fabricCount = 0
     private subs: Subscription[] = []
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
     private perspectiveCamera: PerspectiveCamera
     private selectedSpotSubject = new BehaviorSubject<Spot | undefined>(undefined)
     private islandState: BehaviorSubject<boolean>
     private physics: Physics
+    private fabricKernel: FabricKernel
+    private instanceUsed: boolean[]
 
     constructor(props: IAppProps) {
         super(props)
         this.physics = new Physics(props.storage)
+        this.physics.applyToFabric(props.fabricExports)
         this.islandState = new BehaviorSubject<boolean>(false)
-        const createGotchiAt = (location: Vector3, jointCountMax: number, genome: Genome): Promise<Gotchi> => {
-            return this.props.createFabricInstance(this.fabricCount++).then(fabricExports => {
-                this.physics.applyToFabric(fabricExports)
-                const fabric = new Fabric(fabricExports, jointCountMax)
-                fabric.createSeed(location.x, location.z)
-                return new Gotchi(fabric, genome)
-            })
+        this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
+        this.instanceUsed = this.fabricKernel.instance.map(() => false)
+        const createGotchiAt = (location: Vector3, genome: Genome): Gotchi => {
+            const freeIndex = this.instanceUsed.indexOf(false)
+            if (freeIndex < 0) {
+                throw new Error("No free fabrics!")
+            }
+            this.instanceUsed[freeIndex] = true
+            const exports = this.fabricKernel.instance[freeIndex]
+            exports.flushFaces()
+            const fabric = new Fabric(exports, freeIndex).createSeed(location.x, location.z)
+            fabric.iterate(0)
+            return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
         }
         this.state = {
             infoPanel: true,
@@ -219,9 +228,7 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.LAUNCH_GOTCHI:
                 if (hexalot) {
                     island.setActive(hexalot.master)
-                    hexalot.createGotchi(INITIAL_JOINT_COUNT).then((freshGotchi: Gotchi) => {
-                        this.setState(startGotchi(freshGotchi))
-                    })
+                    this.setState(startGotchi(hexalot.createGotchi()))
                 }
                 break
             case Command.TURN_LEFT:
