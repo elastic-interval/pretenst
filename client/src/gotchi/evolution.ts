@@ -11,7 +11,7 @@ import {compareEvolvers, Evolver} from "./evolver"
 import {Gotchi} from "./gotchi"
 
 export const INITIAL_JOINT_COUNT = 47
-export const MAX_POPULATION = 24
+export const MAX_POPULATION = 36
 const MUTATION_COUNT = 3
 const MINIMUM_AGE = 15000
 const MAXIMUM_AGE = 30000
@@ -21,7 +21,6 @@ const SURVIVAL_RATE = 0.66
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([])
     private rebooting = false
-    private evolverId = 0
     private ageLimit = MINIMUM_AGE
 
     constructor(private hexalot: Hexalot, private trip: Trip, private saveGenome: (genome: IGenomeData) => void) {
@@ -140,6 +139,6 @@ export class Evolution {
 
     private gotchiToEvolver = (gotchi: Gotchi): Evolver => {
         const travel = this.trip.createTravel(0)
-        return new Evolver(this.evolverId++, gotchi, travel)
+        return new Evolver(gotchi, travel)
     }
 }

@@ -121,13 +121,14 @@ class App extends React.Component<IAppProps, IAppState> {
             if (freeIndex < 0) {
                 throw new Error("No free fabrics!")
             }
-            console.log("Allocating fabric", freeIndex)
+            // console.log("Allocating fabric", freeIndex)
             this.instanceUsed[freeIndex] = true
             const exports = this.fabricKernel.instance[freeIndex]
             exports.flushFaces()
             const fabric = new Fabric(exports, freeIndex).createSeed(location.x, location.z)
+            fabric.iterate(0)
             return new Gotchi(fabric, genome, (index: number) => {
-                console.log("Freeing fabric", index)
+                // console.log("Freeing fabric", index)
                 this.instanceUsed[index] = false
             })
         }
