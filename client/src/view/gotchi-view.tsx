@@ -24,7 +24,6 @@ export const HIGH_ALTITUDE = 1000
 
 const SUN_POSITION = new Vector3(0, 400, 0)
 const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8)
-const TARGET_FRAME_RATE = 25
 
 interface IGotchiViewProps {
     perspectiveCamera: PerspectiveCamera
@@ -47,9 +46,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     private subs: Subscription[] = []
     private orbit: Orbit
     private spotSelector: SpotSelector
-    private frameTime = Date.now()
-    private frameCount = 0
-    private frameDelay = 20
     private animating = true
     private target?: Vector3
 
@@ -99,19 +95,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public render() {
-        this.frameCount++
-        if (this.frameCount === 300) {
-            const frameTime = Date.now()
-            const framesPerSecond = 1000 / ((frameTime - this.frameTime) / this.frameCount)
-            this.frameTime = frameTime
-            this.frameCount = 0
-            if (framesPerSecond > TARGET_FRAME_RATE) {
-                this.frameDelay++
-            } else if (framesPerSecond < TARGET_FRAME_RATE) {
-                this.frameDelay /= 2
-            }
-            console.log(`FPS: ${Math.floor(framesPerSecond)}: ${this.frameDelay}`)
-        }
         return (
             <div id="gotchi-view" onMouseDownCapture={this.onMouseDownCapture}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
@@ -205,7 +188,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         requestAnimationFrame(step)
                     }
                 },
-                this.frameDelay,
+                10,
             )
         }
         requestAnimationFrame(step)
