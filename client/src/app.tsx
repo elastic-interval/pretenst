@@ -126,7 +126,7 @@ class App extends React.Component<IAppProps, IAppState> {
             exports.flushFaces()
             const fabric = new Fabric(exports, freeIndex).createSeed(location.x, location.z)
             fabric.iterate(0)
-            return new Gotchi(fabric, genome, (index: number) => this.instanceUsed[index] = false)
+            return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
         }
         this.state = {
             infoPanel: true,
