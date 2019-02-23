@@ -45,10 +45,6 @@ export class Gotchi {
         return Math.sqrt(xx * xx + zz * zz)
     }
 
-    // public withNewBody(fabric: Fabric): Gotchi {
-    //     return new Gotchi(fabric, this.genome)
-    // }
-
     public get genomeData(): IGenomeData {
         return this.genome.data
     }
@@ -90,5 +86,4 @@ export class Gotchi {
             }
         }
     }
-
 }
