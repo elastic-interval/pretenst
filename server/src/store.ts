@@ -40,8 +40,15 @@ export class HexalotStore {
         return this.db.get(GENESIS_LOT_KEY)
     }
 
-    public async touchLot(lot: HexalotID): Promise<void> {
-        return this.set(`hexalot:${lot}:exists`, "1")
+    public async spawnLot(
+        parent: HexalotID,
+        direction: number,
+        child: HexalotID,
+    ): Promise<void> {
+        await Promise.all([
+            this.set(`hexalot:${child}:exists`, "1"),
+            this.set(`hexalot:${parent}:child:${direction}`, child),
+        ])
     }
 
     public async assignLot(lot: HexalotID, owner: PubKey): Promise<void> {
@@ -49,10 +56,13 @@ export class HexalotStore {
         ownedLots.push(lot)
         // FIXME: this operation has to be atomic
         await Promise.all([
-            this.touchLot(lot),
             this.set(`user:${owner}:lots`, JSON.stringify(ownedLots)),
             this.set(`hexalot:${lot}:owner`, owner),
         ])
+    }
+
+    public async getChildLot(parent: HexalotID, direction: number): Promise<HexalotID | null> {
+        return this.get(`hexalot:${parent}:child:${direction}`)
     }
 
     public async getOwnedLots(owner: PubKey): Promise<HexalotID[]> {
