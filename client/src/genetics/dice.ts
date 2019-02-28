@@ -15,7 +15,10 @@ export const DICE: IDie[] = [
 
 const createDiceMap = (): { [key: string]: IDie; } => {
     const map = {}
-    DICE.forEach(die => map[die.numeral] = die)
+    DICE.forEach(die => {
+        map[die.numeral] = die
+        map[die.symbol] = die
+    })
     return map
 }
 
@@ -31,7 +34,7 @@ export function diceToNuance(dice: IDie[]): number {
 }
 
 export function serializeGene(dice: IDie[]): string {
-    return dice.map(die => die.numeral).join()
+    return dice.map(die => die.symbol).join("")
 }
 
 export function deserializeGene(s: string): IDie[] {
