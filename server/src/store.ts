@@ -1,4 +1,4 @@
-import { Hexalot, PubKey } from "./types"
+import { HexalotID, PubKey } from "./types"
 
 export interface IKeyValueStore {
     set(key: string, value: string): Promise<void>
@@ -36,38 +36,48 @@ export class HexalotStore {
     ) {
     }
 
-    public async getGenesisLot(): Promise<Hexalot | null> {
+    public async getGenesisLot(): Promise<HexalotID | null> {
         return this.db.get(GENESIS_LOT_KEY)
     }
 
-    public async touchLot(lot: Hexalot) {
-        return this.set(`hexalot:${lot}:exists`, "1")
+    public async spawnLot(
+        parent: HexalotID,
+        direction: number,
+        child: HexalotID,
+    ): Promise<void> {
+        await Promise.all([
+            this.set(`hexalot:${child}:exists`, "1"),
+            this.set(`hexalot:${parent}:child:${direction}`, child),
+        ])
     }
 
-    public async assignLot(lot: Hexalot, owner: PubKey) {
-        const ownedLots: Hexalot[] = JSON.parse(await this.get(`user:${owner}:lots`) || "[]")
+    public async assignLot(lot: HexalotID, owner: PubKey): Promise<void> {
+        const ownedLots: HexalotID[] = JSON.parse(await this.get(`user:${owner}:lots`) || "[]")
         ownedLots.push(lot)
         // FIXME: this operation has to be atomic
-        return Promise.all([
-            this.touchLot(lot),
+        await Promise.all([
             this.set(`user:${owner}:lots`, JSON.stringify(ownedLots)),
             this.set(`hexalot:${lot}:owner`, owner),
         ])
     }
 
-    public async getOwnedLots(owner: PubKey): Promise<Hexalot[]> {
+    public async getChildLot(parent: HexalotID, direction: number): Promise<HexalotID | null> {
+        return this.get(`hexalot:${parent}:child:${direction}`)
+    }
+
+    public async getOwnedLots(owner: PubKey): Promise<HexalotID[]> {
         return JSON.parse(await this.get(`user:${owner}:lots`) || "[]")
     }
 
-    public async getLotOwner(lot: Hexalot): Promise<PubKey | null> {
+    public async getLotOwner(lot: HexalotID): Promise<PubKey | null> {
         return this.get(`hexalot:${lot}:owner`)
     }
 
-    public async lotExists(lot: Hexalot): Promise<boolean> {
+    public async lotExists(lot: HexalotID): Promise<boolean> {
         return !!(await this.get(`hexalot:${lot}:exists`))
     }
 
-    private async set(key: string, value: string) {
+    private async set(key: string, value: string): Promise<void> {
         return this.db.set(`${this.prefix}::${key}`, value)
     }
 

@@ -1,8 +1,8 @@
-import { Hexalot } from "./types"
+import { HexalotID } from "./types"
 
 export class PaymentHandler {
     public async generateInvoice(
-        lot: Hexalot,
+        lot: HexalotID,
         amount: string,
     ): Promise<string> {
         // TODO: connect to lightning node

@@ -1,3 +1,3 @@
 
-export type Hexalot = string
+export type HexalotID = string
 export type PubKey = string
