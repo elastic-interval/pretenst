@@ -99,6 +99,15 @@ function selectSpot(spot?: Spot) {
     }
 }
 
+function getInfoPanelMaximized(): boolean {
+    return "true" === localStorage.getItem("InfoPanel.maximized")
+}
+
+function setInfoPanelMaximized(maximized: boolean): void {
+    localStorage.setItem("InfoPanel.maximized", maximized ? "true" : "false")
+}
+
+
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
@@ -129,7 +138,7 @@ class App extends React.Component<IAppProps, IAppState> {
             return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
         }
         this.state = {
-            infoPanel: true,
+            infoPanel: getInfoPanelMaximized(),
             actionPanel: false,
             orbitDistance: this.orbitDistanceSubject.getValue(),
             island: new Island("GalapagotchIsland", this.islandState, {createGotchiAt}, this.props.storage),
@@ -172,14 +181,20 @@ class App extends React.Component<IAppProps, IAppState> {
                 />
                 {!this.state.infoPanel ? (
                     <div className="info-panel-collapsed floating-panel">
-                        <Button color="link" onClick={() => this.setState({infoPanel: true})}>?</Button>
+                        <Button color="link" onClick={() => {
+                            this.setState({infoPanel: true})
+                            setInfoPanelMaximized(true)
+                        }}>?</Button>
                     </div>
                 ) : (
                     <div className="info-panel floating-panel">
                         <div className="info-title">
                             <h3>Galapagotchi Run!</h3>
                             <div className="info-exit">
-                                <Button color="link" onClick={() => this.setState({infoPanel: false})}>X</Button>
+                                <Button color="link" onClick={() => {
+                                    this.setState({infoPanel: false})
+                                    setInfoPanelMaximized(false)
+                                }}>X</Button>
                             </div>
                         </div>
                         <InfoPanel master={this.state.master}/>

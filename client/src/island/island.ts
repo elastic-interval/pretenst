@@ -2,7 +2,7 @@ import {BehaviorSubject} from "rxjs/BehaviorSubject"
 import {Vector3} from "three"
 
 import {AppStorage} from "../app-storage"
-import {Genome} from "../genetics/genome"
+import {fromGenomeData} from "../genetics/genome"
 import {IGotchiFactory} from "../gotchi/gotchi"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
@@ -194,7 +194,7 @@ export class Island {
         this.hexalots.forEach(g => {
             const genomeData = this.storage.getGenome(g)
             if (genomeData) {
-                g.genome = new Genome(genomeData)
+                g.genome = fromGenomeData(genomeData)
             }
         })
         this.refreshStructure()

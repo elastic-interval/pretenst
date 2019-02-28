@@ -3,7 +3,7 @@ import {Vector3} from "three"
 
 import {NORMAL_TICKS, SPOT_TO_HANGER} from "../body/fabric"
 import {Direction} from "../body/fabric-exports"
-import {Genome, IGenomeData} from "../genetics/genome"
+import {fromGenomeData, IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
 import {Trip} from "../island/trip"
 
@@ -133,7 +133,7 @@ export class Evolution {
     }
 
     private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Gotchi {
-        const genome = new Genome(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : MUTATION_COUNT)
+        const genome = fromGenomeData(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : MUTATION_COUNT)
         return this.hexalot.createGotchi(genome)
     }
 
