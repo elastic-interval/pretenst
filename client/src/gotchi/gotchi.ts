@@ -2,10 +2,10 @@ import {Vector3} from "three"
 
 import {Fabric} from "../body/fabric"
 import {Direction} from "../body/fabric-exports"
+import {Behavior} from "../genetics/behavior"
 import {Genome, IGenomeData} from "../genetics/genome"
 import {Growth} from "../genetics/growth"
 import {ITravel} from "../island/trip"
-import {Behavior} from "../genetics/behavior"
 
 export interface IGotchiFactory {
     createGotchiAt(location: Vector3, genome: Genome): Gotchi

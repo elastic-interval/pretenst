@@ -17,6 +17,10 @@ export function freshGenomeFor(master: string): Genome {
     return new Genome(genomeData, rollTheDice)
 }
 
+export function fromGenomeData(genomeData: IGenomeData) {
+    return new Genome(genomeData, rollTheDice)
+}
+
 export class Genome {
 
     constructor(public data: IGenomeData, private roll: () => IDie) {
