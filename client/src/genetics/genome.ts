@@ -1,20 +1,15 @@
 import {Direction} from "../body/fabric-exports"
 
-import {DICE, IDie} from "./dice"
+import {deserializeGene, DICE, IDie, serializeGene} from "./dice"
 import {GeneReader} from "./gene-reader"
 
 export interface IGenomeData {
     master: string
-    gene: { [key: string]: IDie[]; }
+    geneMap: { [key: string]: string; }
 }
 
 function rollTheDice(): IDie {
     return DICE[Math.floor(Math.random() * DICE.length)]
-}
-
-export function freshGenomeFor(master: string): Genome {
-    const genomeData: IGenomeData = {master, gene: {}}
-    return new Genome(genomeData, rollTheDice)
 }
 
 export function fromGenomeData(genomeData: IGenomeData) {
@@ -23,9 +18,11 @@ export function fromGenomeData(genomeData: IGenomeData) {
 
 export class Genome {
 
+    private gene: { [key: string]: IDie[]; } = {}
+
     constructor(public data: IGenomeData, private roll: () => IDie) {
-        if (!this.data.gene) {
-            this.data.gene = {}
+        if (data.geneMap) {
+            Object.keys(data.geneMap).forEach(direction => this.gene[direction] = deserializeGene(data.geneMap[direction]))
         }
     }
 
@@ -34,20 +31,18 @@ export class Genome {
     }
 
     public createReader(direction: Direction): GeneReader {
-        const gene = this.data.gene[direction]
+        const gene = this.gene[direction]
         if (gene) {
             return new GeneReader(gene, this.roll)
         } else {
-            const freshGene: IDie[] = []
-            this.data.gene[direction] = freshGene
-            return new GeneReader(freshGene, this.roll)
+            return new GeneReader(this.gene[direction] = [], this.roll)
         }
     }
 
     public withMutatedBehavior(direction: Direction, mutations: number): Genome {
         const geneClone = {}
-        Object.keys(this.data.gene).forEach(key => {
-            geneClone[key] = this.data.gene[key].slice()
+        Object.keys(this.data.geneMap).forEach(key => {
+            geneClone[key] = this.data.geneMap[key].slice()
         })
         const directionGene: IDie[] = geneClone[direction] ? geneClone[direction] : []
         for (let hit = 0; hit < mutations; hit++) {
@@ -55,11 +50,13 @@ export class Genome {
             directionGene[geneNumber] = this.roll()
             // console.log(`G[${direction}][${geneNumber}] = ${directionGene[geneNumber]}`);
         }
-        const genomeData: IGenomeData = {master: this.data.master, gene: geneClone}
+        const genomeData: IGenomeData = {master: this.data.master, geneMap: geneClone}
         return new Genome(genomeData, this.roll)
     }
 
     public toJSON() {
+        this.data.geneMap = {}
+        Object.keys(this.gene).forEach(key => this.data.geneMap[key] = serializeGene(this.gene[key]))
         return JSON.stringify(this.data)
     }
 }

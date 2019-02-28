@@ -79,7 +79,7 @@ describe("Genetics", () => {
 
         it("should hold direction genes", () => {
             const master = "test"
-            const genome = new Genome({master, gene: {}}, () => DICE[0])
+            const genome = new Genome({master, geneMap: {}}, () => DICE[0])
             expect(genome.createReader(Direction.REST).chooseFrom(2)).toBe(0)
         })
 
