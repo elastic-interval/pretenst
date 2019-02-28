@@ -13,16 +13,14 @@ export const DICE: IDie[] = [
     {index: 5, numeral: "6", symbol: "⚅"},
 ]
 
-const createDiceMap = (): { [key: string]: IDie; } => {
+const DICE_MAP = ((): { [key: string]: IDie; } => {
     const map = {}
     DICE.forEach(die => {
         map[die.numeral] = die
         map[die.symbol] = die
     })
     return map
-}
-
-export const DICE_MAP = createDiceMap()
+})()
 
 export function diceToNuance(dice: IDie[]): number {
     if (dice.length === 0) {
