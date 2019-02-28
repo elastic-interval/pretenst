@@ -1,23 +1,37 @@
-export const MAX_TIME = 65536
+import {diceToNuance, IDie} from "./dice"
 
 export class GeneReader {
     private cursor = 0
 
-    constructor(private sequence: number[]) {
+    constructor(private sequence: IDie[], private roll: () => IDie) {
         if (!this.sequence) {
             this.sequence = []
         }
     }
 
-    public next(): number {
-        while (this.sequence.length < this.cursor + 1) {
-            this.sequence.push(Math.random())
+    public chooseFrom(maxChoice: number): number {
+        const choice = (...dice: IDie[]) => Math.floor(diceToNuance(dice) * maxChoice)
+        if (maxChoice <= 6) {
+            return choice(this.next())
+        } else if (maxChoice <= 6 * 6) {
+            return choice(this.next(), this.next())
+        } else if (maxChoice <= 6 * 6 * 6) {
+            return choice(this.next(), this.next(), this.next())
+        } else if (maxChoice <= 6 * 6 * 6 * 6) {
+            return choice(this.next(), this.next(), this.next(), this.next())
+        } else {
+            return choice(this.next(), this.next(), this.next(), this.next(), this.next())
         }
-        return this.sequence[this.cursor++]
-
     }
 
-    public nextChoice(maxChoice: number): number {
-        return Math.floor(maxChoice * this.next())
+    public get size(): number {
+        return this.sequence ? this.sequence.length : 0
+    }
+
+    private next(): IDie {
+        while (this.sequence.length < this.cursor + 1) {
+            this.sequence.push(this.roll())
+        }
+        return this.sequence[this.cursor++]
     }
 }

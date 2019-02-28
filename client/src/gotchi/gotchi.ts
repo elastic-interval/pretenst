@@ -5,6 +5,7 @@ import {Direction} from "../body/fabric-exports"
 import {Genome, IGenomeData} from "../genetics/genome"
 import {Growth} from "../genetics/growth"
 import {ITravel} from "../island/trip"
+import {Behavior} from "../genetics/behavior"
 
 export interface IGotchiFactory {
     createGotchiAt(location: Vector3, genome: Genome): Gotchi
@@ -15,7 +16,7 @@ export class Gotchi {
     private growth?: Growth
 
     constructor(public fabric: Fabric, private genome: Genome, private freeFabric: () => void) {
-        this.growth = genome.growth(fabric)
+        this.growth = new Growth(fabric, genome.createReader(Direction.REST))
     }
 
     public dispose() {
@@ -80,7 +81,7 @@ export class Gotchi {
             if (!this.growth.step()) {
                 this.growth = undefined
                 for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
-                    this.genome.behavior(this.fabric, direction).apply()
+                    new Behavior(this.fabric, direction, this.genome.createReader(direction)).apply()
                 }
                 this.fabric.endGestation()
             }
