@@ -35,5 +35,5 @@ export function serializeGene(dice: IDie[]): string {
 }
 
 export function deserializeGene(s: string): IDie[] {
-    return s.split("").map((numeral: string): IDie => DICE_MAP[numeral])
+    return s.split("").map((numeral: string): IDie => DICE_MAP[numeral]).filter(die => !!die)
 }

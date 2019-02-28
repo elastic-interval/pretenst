@@ -47,7 +47,7 @@ export class Gotchi {
     }
 
     public get genomeData(): IGenomeData {
-        return this.genome.data
+        return this.genome.genomeData
     }
 
     public get direction(): Direction {
