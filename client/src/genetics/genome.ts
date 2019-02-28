@@ -35,7 +35,8 @@ export class Genome {
         if (gene) {
             return new GeneReader(gene, this.roll)
         } else {
-            return new GeneReader(this.gene[direction] = [], this.roll)
+            this.gene[direction] = []
+            return new GeneReader(this.gene[direction], this.roll)
         }
     }
 
