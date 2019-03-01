@@ -4,9 +4,11 @@ import {IFabricExports} from "./fabric-exports"
 
 export enum PhysicsFeature {
     GravityAbove = "Gravity Above",
-    GravityBelow = "Gravity Below",
+    GravityBelowLand = "Gravity Below Land",
+    GravityBelowWater = "Gravity Below Water",
     DragAbove = "Drag Above",
-    DragBelow = "Drag Below",
+    DragBelowLand = "Drag Below Land",
+    DragBelowWater = "Drag Below Water",
     ElasticFactor = "Elastic Factor",
     MaxSpanVariation = "Maximum Span Variation",
     SpanVariationSpeed = "Span Variation Speed",
@@ -26,7 +28,7 @@ export class Physics {
         this.featuresArray = Object.keys(PhysicsFeature).map(f => this.createFeature(PhysicsFeature[f]))
     }
 
-    public get features() {
+    public get features(): IPhysicsFeature[] {
         return this.featuresArray
     }
 
@@ -39,14 +41,20 @@ export class Physics {
                 case PhysicsFeature.GravityAbove:
                     currentValue = fabricExports.setGravityAbove(factor)
                     break
-                case PhysicsFeature.GravityBelow:
-                    currentValue = fabricExports.setGravityBelow(factor)
+                case PhysicsFeature.GravityBelowLand:
+                    currentValue = fabricExports.setGravityBelowLand(factor)
+                    break
+                case PhysicsFeature.GravityBelowWater:
+                    currentValue = fabricExports.setGravityBelowWater(factor)
                     break
                 case PhysicsFeature.DragAbove:
                     currentValue = fabricExports.setDragAbove(factor)
                     break
-                case PhysicsFeature.DragBelow:
-                    currentValue = fabricExports.setDragBelow(factor)
+                case PhysicsFeature.DragBelowLand:
+                    currentValue = fabricExports.setDragBelowLand(factor)
+                    break
+                case PhysicsFeature.DragBelowWater:
+                    currentValue = fabricExports.setDragBelowWater(factor)
                     break
                 case PhysicsFeature.ElasticFactor:
                     currentValue = fabricExports.setElasticFactor(factor)
