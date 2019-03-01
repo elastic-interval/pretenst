@@ -7,7 +7,6 @@ import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from "three"
 import {HUNG_ALTITUDE, NORMAL_TICKS} from "../body/fabric"
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
-import {Hexalot} from "../island/hexalot"
 import {Island} from "../island/island"
 import {Spot} from "../island/spot"
 import {Trip} from "../island/trip"
@@ -32,7 +31,6 @@ interface IGotchiViewProps {
     island: Island
     selectedSpot: BehaviorSubject<Spot | undefined>
     orbitDistance: BehaviorSubject<OrbitDistance>
-    hexalot?: Hexalot
     gotchi?: Gotchi
     evolution?: Evolution
     trip?: Trip
@@ -63,14 +61,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         )
     }
 
-    public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: object) {
+    public componentDidUpdate(
+        prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: object): void {
         if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
             this.props.perspectiveCamera.aspect = this.props.width / this.props.height
             this.props.perspectiveCamera.updateProjectionMatrix()
         }
     }
 
-    public componentDidMount() {
+    public componentDidMount(): void {
         const element: Element | null = document.getElementById("gotchi-view")
         if (element) {
             this.target = this.props.island.midpoint
@@ -89,12 +88,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         }
     }
 
-    public componentWillUnmount() {
+    public componentWillUnmount(): void {
         this.animating = false
         this.subs.forEach(s => s.unsubscribe())
     }
 
-    public render() {
+    public render(): JSX.Element {
         return (
             <div id="gotchi-view" onMouseDownCapture={this.onMouseDownCapture}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
@@ -127,14 +126,21 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     // ==========================
 
-    private get onMouseDownCapture() {
+    private get onMouseDownCapture(): (event: React.MouseEvent<HTMLDivElement>) => void {
         return (event: React.MouseEvent<HTMLDivElement>) => {
             if (this.props.evolution || this.props.gotchi) {
                 return
             }
-            const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
-            if (spot && (spot.centerOfHexalot || spot.canBeNewHexalot || spot.free)) {
-                this.props.selectedSpot.next(spot)
+            if (event.button === 2) {
+                this.props.selectedSpot.next(undefined)
+                this.props.island.setIslandState(false, undefined)
+            } else {
+                const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
+                // todo: during island building we need this:
+                // if (spot && (spot.centerOfHexalot || spot.canBeNewHexalot || spot.free)) {
+                if (spot && spot.centerOfHexalot) {
+                    this.props.selectedSpot.next(spot)
+                }
             }
         }
     }
@@ -167,7 +173,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         return geometry
     }
 
-    private animate() {
+    private animate(): void {
         const step = () => {
             setTimeout(
                 () => {

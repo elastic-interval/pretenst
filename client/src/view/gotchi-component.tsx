@@ -16,7 +16,7 @@ export interface IGotchiComponentState {
 
 const POINTER_SIZE = 10
 
-function geometryRefreshed(state: IGotchiComponentState, props: IGotchiComponentProps) {
+function geometryRefreshed(state: IGotchiComponentState, props: IGotchiComponentProps): object {
     const pointerGeometry = new Geometry()
     const fabric = props.gotchi.fabric
     const travel = props.gotchi.travel
@@ -44,11 +44,11 @@ export class GotchiComponent extends React.Component<IGotchiComponentProps, IGot
         }
     }
 
-    public componentWillReceiveProps() {
+    public componentWillReceiveProps(): void {
         this.setState(geometryRefreshed)
     }
 
-    public render() {
+    public render(): JSX.Element {
         const gotchi = this.props.gotchi
         const fabric = gotchi.fabric
         return (

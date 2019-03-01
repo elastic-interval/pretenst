@@ -50,7 +50,7 @@ export class Spot {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
     }
 
-    public refresh() {
+    public refresh(): void {
         this.free = !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
         if (!this.connected) {
             this.legal = false
@@ -90,8 +90,11 @@ export class Spot {
         return !!this.adjacentHexalots.find(hexalot => !!hexalot.genome)
     }
 
-    public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[], viewState: IViewState) {
-        this.faceNames = []
+    public addSurfaceGeometry(
+        meshKey: MeshKey, index: number,
+        vertices: Vector3[], faces: Face3[],
+        viewState: IViewState,
+    ): void {
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x + this.center.x,
             hexPoint.y + this.center.y,
@@ -103,8 +106,7 @@ export class Spot {
             case Surface.Land:
                 if (viewState.master) {
                     color = SURFACE_LAND_COLOR
-                }
-                else if (viewState.freeHexalot) {
+                } else if (viewState.freeHexalot) {
                     const centerColor = viewState.islandIsLegal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR
                     const landColor = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR
                     color = this === viewState.freeHexalot.centerSpot ? centerColor : landColor
@@ -131,7 +133,7 @@ export class Spot {
         }
     }
 
-    public addHangerGeometry(vertices: Vector3[]) {
+    public addHangerGeometry(vertices: Vector3[]): void {
         for (let a = 0; a < SIX; a++) {
             const hexPoint = HEXAGON_POINTS[a]
             const nextHexPoint = HEXAGON_POINTS[(a + 1) % SIX]
@@ -183,20 +185,27 @@ export class Spot {
 
  */
 
+export const coordSort = (a: ICoords, b: ICoords): number =>
+    a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0
 
-export const coordSort = (a: ICoords, b: ICoords): number => a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0
 export const zero: ICoords = {x: 0, y: 0}
+
 export const equals = (a: ICoords, b: ICoords): boolean => a.x === b.x && a.y === b.y
+
 export const minus = (a: ICoords, b: ICoords): ICoords => {
     return {x: a.x - b.x, y: a.y - b.y}
 }
+
 export const plus = (a: ICoords, b: ICoords): ICoords => {
     return {x: a.x + b.x, y: a.y + b.y}
 }
+
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
+
 export const spotsToString = (spots: Spot[]) => {
     const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
-    const nybbleStrings = land.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : null)
+    const nybbleStrings = land.map((l, index, array) =>
+        (index % 4 === 0) ? array.slice(index, index + 4).join("") : null)
     const nybbleChars = nybbleStrings.map(chunk => {
         if (chunk) {
             return parseInt(padRightTo4(chunk), 2).toString(16)

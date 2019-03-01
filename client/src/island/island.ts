@@ -14,6 +14,11 @@ export interface IslandPattern {
     spots: string
 }
 
+export interface IslandState {
+    gotchiAlive: boolean
+    selectedHexalot?: Hexalot
+}
+
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
 const hexalotWithMaxNonce = (hexalots: Hexalot[]) => hexalots.reduce((withMax, adjacent) => {
     if (withMax) {
@@ -26,19 +31,20 @@ const hexalotWithMaxNonce = (hexalots: Hexalot[]) => hexalots.reduce((withMax, a
 export class Island {
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
-    public activeHexalotIndex = -1
 
     constructor(
         public islandName: string,
-        public islandState: BehaviorSubject<boolean>,
+        public islandState: BehaviorSubject<IslandState>,
         private gotchiFactory: IGotchiFactory,
         private storage: AppStorage,
     ) {
         this.apply(storage.getIsland(islandName))
+        // console.log("spots", this.spots.map(s =>
+        //     `(${s.coords.x},${s.coords.y})==(${s.center.x},${s.center.z})`))
     }
 
-    public get hexalotsWithSeeds() {
-        return this.hexalots.filter((hexalot: Hexalot, index: number) => !!hexalot.master && index !== this.activeHexalotIndex)
+    public get hexalotsWithSeeds(): Hexalot[] {
+        return this.hexalots.filter((hexalot: Hexalot, index: number) => !!hexalot.master)
     }
 
     public get isLegal(): boolean {
@@ -53,16 +59,11 @@ export class Island {
         return this.hexalots.find(hexalot => !!hexalot.genome && hexalot.genome.master === master)
     }
 
-    public setActive(master?: string) {
-        this.activeHexalotIndex = !master ? -1 : this.hexalots.findIndex(hexalot => !!hexalot.genome && hexalot.genome.master === master)
-        this.announceChange()
+    public setIslandState(gotchiAlive: boolean, selectedHexalot?: Hexalot): void {
+        this.islandState.next({gotchiAlive, selectedHexalot})
     }
 
-    public get activeHexalot(): Hexalot | undefined {
-        return this.activeHexalotIndex >= 0 ? this.hexalots[this.activeHexalotIndex] : undefined
-    }
-
-    public refreshStructure() {
+    public refreshStructure(): void {
         this.spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot)
             spot.connected = spot.adjacentSpots.length < 6
@@ -72,7 +73,8 @@ export class Island {
             flowChanged = false
             this.spots.forEach(spot => {
                 if (!spot.connected) {
-                    const connectedByAdjacent = spot.adjacentSpots.find(adj => (adj.surface === spot.surface) && adj.connected)
+                    const connectedByAdjacent = spot.adjacentSpots
+                        .find(adj => (adj.surface === spot.surface) && adj.connected)
                     if (connectedByAdjacent) {
                         spot.connected = true
                         flowChanged = true
@@ -81,10 +83,10 @@ export class Island {
             })
         }
         this.spots.forEach(spot => spot.refresh())
-        this.announceChange()
+        this.islandState.next(this.islandState.getValue()) // just refresh
     }
 
-    public save() {
+    public save(): void {
         if (this.isLegal) {
             this.storage.setIsland(this.islandName, this.pattern)
             console.log(`Saved ${this.islandName}`)
@@ -138,11 +140,7 @@ export class Island {
 
     // ================================================================================================
 
-    private announceChange() {
-        this.islandState.next(this.activeHexalotIndex >= 0)
-    }
-
-    private apply(pattern: IslandPattern) {
+    private apply(pattern: IslandPattern): void {
         let hexalot: Hexalot | undefined = this.getOrCreateHexalot(undefined, zero)
         const stepStack = pattern.hexalots.split("").reverse().map(stepChar => Number(stepChar))
         const hexalotStack: Hexalot[] = []

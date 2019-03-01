@@ -13,7 +13,7 @@ import {Genome, IGenomeData} from "./genetics/genome"
 import {Evolution, INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Gotchi} from "./gotchi/gotchi"
 import {Hexalot} from "./island/hexalot"
-import {Island} from "./island/island"
+import {Island, IslandState} from "./island/island"
 import {Spot, Surface} from "./island/spot"
 import {Trip} from "./island/trip"
 import {ActionsPanel, Command} from "./view/actions-panel"
@@ -36,7 +36,6 @@ export interface IAppState {
     master?: string
     orbitDistance: OrbitDistance
     spot?: Spot
-    hexalot?: Hexalot
     gotchi?: Gotchi
     evolution?: Evolution
     trip?: Trip
@@ -46,7 +45,7 @@ const updateDimensions = (): object => {
     return {width: window.innerWidth, height: window.innerHeight}
 }
 
-function dispose(state: IAppState) {
+const dispose = (state: IAppState) => {
     if (state.gotchi) {
         state.gotchi.dispose()
     }
@@ -55,10 +54,10 @@ function dispose(state: IAppState) {
     }
 }
 
-function startEvolution(hexalot: Hexalot) {
+const startEvolution = (hexalot: Hexalot) => {
     return (state: IAppState, props: IAppProps) => {
+        state.island.setIslandState(true, hexalot)
         dispose(state)
-        state.island.setActive(hexalot.master)
         const trip = hexalot.createStupidTrip()
         return {
             gotchi: undefined,
@@ -71,9 +70,11 @@ function startEvolution(hexalot: Hexalot) {
     }
 }
 
-function startGotchi(gotchi: Gotchi) {
+const startGotchi = (hexalot: Hexalot) => {
     return (state: IAppState) => {
+        state.island.setIslandState(true, hexalot)
         dispose(state)
+        const gotchi = hexalot.createGotchi()
         // gotchi.travel = state.trip.createTravel(0);
         return {
             gotchi,
@@ -83,15 +84,13 @@ function startGotchi(gotchi: Gotchi) {
     }
 }
 
-function selectSpot(spot?: Spot) {
-    const hexalot = spot ? spot.centerOfHexalot : undefined
+const selectSpot = (spot?: Spot) => {
     return (state: IAppState) => {
+        state.island.setIslandState(false, spot ? spot.centerOfHexalot : undefined)
         dispose(state)
-        state.island.setActive()
         return {
             actionPanel: true,
             spot,
-            hexalot,
             gotchi: undefined,
             evolution: undefined,
             trip: undefined,
@@ -110,10 +109,11 @@ function setInfoPanelMaximized(maximized: boolean): void {
 
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
-    private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
+    private orbitDistanceSubject: BehaviorSubject<OrbitDistance> =
+        new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
     private perspectiveCamera: PerspectiveCamera
-    private selectedSpotSubject = new BehaviorSubject<Spot | undefined>(undefined)
-    private islandState: BehaviorSubject<boolean>
+    private selectedSpotSubject: BehaviorSubject<Spot | undefined> = new BehaviorSubject<Spot | undefined>(undefined)
+    private islandState: BehaviorSubject<IslandState>
     private physics: Physics
     private fabricKernel: FabricKernel
     private instanceUsed: boolean[]
@@ -122,7 +122,7 @@ class App extends React.Component<IAppProps, IAppState> {
         super(props)
         this.physics = new Physics(props.storage)
         this.physics.applyToFabric(props.fabricExports)
-        this.islandState = new BehaviorSubject<boolean>(false)
+        this.islandState = new BehaviorSubject<IslandState>({gotchiAlive: false})
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         this.instanceUsed = this.fabricKernel.instance.map(() => false)
         const createGotchiAt = (location: Vector3, genome: Genome): Gotchi => {
@@ -149,7 +149,7 @@ class App extends React.Component<IAppProps, IAppState> {
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000)
     }
 
-    public componentDidMount() {
+    public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
         this.subs.push(this.selectedSpotSubject.subscribe(spot => {
             if (spot && !this.state.evolution && !this.state.gotchi) {
@@ -159,12 +159,12 @@ class App extends React.Component<IAppProps, IAppState> {
         this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
     }
 
-    public componentWillUnmount() {
+    public componentWillUnmount(): void {
         window.removeEventListener("resize", () => this.setState(updateDimensions))
         this.subs.forEach(s => s.unsubscribe())
     }
 
-    public render() {
+    public render(): JSX.Element {
         return (
             <div className="everything">
                 <GotchiView
@@ -174,7 +174,6 @@ class App extends React.Component<IAppProps, IAppState> {
                     height={this.state.height}
                     selectedSpot={this.selectedSpotSubject}
                     orbitDistance={this.orbitDistanceSubject}
-                    hexalot={this.state.hexalot}
                     evolution={this.state.evolution}
                     trip={this.state.trip}
                     gotchi={this.state.gotchi}
@@ -216,7 +215,7 @@ class App extends React.Component<IAppProps, IAppState> {
                             orbitDistance={this.orbitDistanceSubject}
                             cameraLocation={this.perspectiveCamera.position}
                             spot={this.state.spot}
-                            hexalot={this.state.hexalot}
+                            hexalot={this.islandState.getValue().selectedHexalot}
                             master={this.state.master}
                             gotchi={this.state.gotchi}
                             evolution={this.state.evolution}
@@ -232,18 +231,26 @@ class App extends React.Component<IAppProps, IAppState> {
         const island = this.state.island
         const master = this.state.master
         const spot = this.state.spot
-        const hexalot = this.state.hexalot
+        const hexalot = island.islandState.getValue().selectedHexalot
         const gotchi = this.state.gotchi
         switch (command) {
+            case Command.DETACH:
+                this.selectedSpotSubject.next(undefined)
+                this.state.island.setIslandState(false)
+                break
             case Command.RETURN_TO_SEED:
                 const selectedSpot = this.selectedSpotSubject.getValue()
                 this.selectedSpotSubject.next(selectedSpot) // refresh
                 this.setState(selectSpot(selectedSpot))
                 break
             case Command.LAUNCH_GOTCHI:
+                if (hexalot && hexalot.genome) {
+                    this.setState(startGotchi(hexalot))
+                }
+                break
+            case Command.LAUNCH_EVOLUTION:
                 if (hexalot) {
-                    island.setActive(hexalot.master)
-                    this.setState(startGotchi(hexalot.createGotchi()))
+                    this.setState(startEvolution(hexalot))
                 }
                 break
             case Command.TURN_LEFT:
@@ -269,12 +276,6 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.STOP:
                 if (gotchi) {
                     gotchi.direction = Direction.REST
-                }
-                break
-            case Command.LAUNCH_EVOLUTION:
-                if (hexalot) {
-                    island.setActive(hexalot.master)
-                    this.setState(startEvolution(hexalot))
                 }
                 break
             case Command.CREATE_LAND:
