@@ -9,6 +9,12 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
+const HEXALOT_BITS: u8 = 128
+const FLOATS_IN_VECTOR = 3
+const SPOT_CENTERS_SIZE = HEXALOT_BITS * FLOATS_IN_VECTOR * F32
+const SURFACE_SIZE = HEXALOT_BITS * U8
+const HEXALOT_SIZE = SPOT_CENTERS_SIZE + SURFACE_SIZE
+
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
 const JOINT_NAME_SIZE: usize = U16
@@ -93,7 +99,7 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
             ) + VECTOR_SIZE
         ) + VECTOR_SIZE
     ) + STATE_SIZE
-    let blocks = (fabricBytes * instanceCountMax) >> 16
+    let blocks = (HEXALOT_SIZE + fabricBytes * instanceCountMax) >> 16
     memory.grow(blocks + 1)
     return fabricBytes
 }
@@ -171,7 +177,7 @@ let instancePtr: usize = 0
 
 export function setInstance(index: u16): void {
     instance = index
-    instancePtr = instance * fabricBytes
+    instancePtr = HEXALOT_SIZE + instance * fabricBytes
 }
 
 // Peek and Poke ================================================================================
@@ -346,6 +352,19 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
     setZ(vPtr, ax * by - ay * bx)
 }
 
+
+// Hexalot ====================================================================================
+
+
+function getHexalotBit(bitNumber: u8): u8 {
+    return getU8(SPOT_CENTERS_SIZE + bitNumber)
+}
+
+export function hexalotDump(): void {
+    for (let bit: u8 = 0; bit < HEXALOT_BITS; bit++) {
+        logInt(bit, getHexalotBit(bit))
+    }
+}
 
 // Fabric state ===============================================================================
 

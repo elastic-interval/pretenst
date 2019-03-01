@@ -157,6 +157,14 @@ class App extends React.Component<IAppProps, IAppState> {
             }
         }))
         this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
+        this.subs.push(this.islandState.subscribe(islandState => {
+            const hexalot = islandState.selectedHexalot
+            if (hexalot) {
+                const spotCenters = hexalot.spots.map(spot => spot.center)
+                const surface = hexalot.spots.map(spot => spot.surface === Surface.Land)
+                this.fabricKernel.setHexalot(spotCenters, surface)
+            }
+        }))
     }
 
     public componentWillUnmount(): void {

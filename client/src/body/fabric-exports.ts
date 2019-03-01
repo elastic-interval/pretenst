@@ -62,6 +62,8 @@ export interface IFabricExports {
 
     setInstance(index: number): void
 
+    hexalotDump(): void
+
     // below methods use instance index
 
     reset(): void

@@ -14,7 +14,7 @@ interface IHexalotIndexed {
     index: number
 }
 
-const spotsToHexFingerprint = (spots: Spot[]) => {
+const spotsToHexFingerprint = (spots: Spot[]): string => {
     const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
     const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : null).filter(chunk => chunk)
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16))
@@ -111,7 +111,7 @@ export class Hexalot {
         return lightsToRemove
     }
 
-    public createFingerprint() {
+    public createFingerprint(): string {
         return spotsToHexFingerprint(this.spots)
     }
 
