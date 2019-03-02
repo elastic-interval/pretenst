@@ -226,6 +226,10 @@ class InstanceExports implements IFabricInstanceExports {
         this.ex.setIntervalHighLow(intervalIndex, direction, highLow)
     }
 
+    public hexalotDump(): void {
+        this.ex.hexalotDump()
+    }
+
     private get ex(): IFabricExports {
         this.exports.setInstance(this.index)
         return this.exports

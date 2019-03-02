@@ -33,6 +33,7 @@ const GROWING_INTERVAL: u8 = 1
 const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
+const LAND: u8 = 1
 
 // Dimensioning ================================================================================
 
@@ -252,6 +253,16 @@ function setZ(vPtr: usize, v: f32): void {
     store<f32>(instancePtr + vPtr + F32 * 2, v)
 }
 
+@inline()
+function getU8Global(vPtr: usize): u8 {
+    return load<u8>(vPtr)
+}
+
+@inline()
+function getF32Global(vPtr: usize): f32 {
+    return load<f32>(vPtr)
+}
+
 @inline
 function abs(val: f32): f32 {
     return val < 0 ? -val : val
@@ -355,14 +366,50 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 // Hexalot ====================================================================================
 
+function getSpotLocationX(bitNumber: u8): f32 {
+    return getF32Global(bitNumber * FLOATS_IN_VECTOR * F32)
+}
+
+function getSpotLocationZ(bitNumber: u8): f32 {
+    return getF32Global((bitNumber * FLOATS_IN_VECTOR + 2) * F32)
+}
 
 function getHexalotBit(bitNumber: u8): u8 {
-    return getU8(SPOT_CENTERS_SIZE + bitNumber)
+    return getU8Global(SPOT_CENTERS_SIZE + bitNumber)
+}
+
+function getNearestSpotIndex(jointIndex: u16): u8 {
+    let locPtr = locationPtr(jointIndex)
+    let x = getX(locPtr)
+    let z = getZ(locPtr)
+    let minQ: f32 = 10000
+    let spotIndex: u8 = HEXALOT_BITS
+    for (let bit: u8 = 0; bit < HEXALOT_BITS - 1; bit++) {
+        let xx = getSpotLocationX(bit)
+        let dx = xx - x
+        let zz = getSpotLocationZ(bit)
+        let dz = zz - z
+        let q = dx * dx + dz * dz
+        if (q < minQ) {
+            minQ = q
+            spotIndex = bit
+        }
+    }
+    return spotIndex
+}
+
+function getTerrainUnder(jointIndex: u16): u8 {
+    let spotIndex = getNearestSpotIndex(jointIndex)
+    if (spotIndex === HEXALOT_BITS) {
+        return HEXALOT_BITS
+    }
+    return getHexalotBit(spotIndex)
 }
 
 export function hexalotDump(): void {
-    for (let bit: u8 = 0; bit < HEXALOT_BITS; bit++) {
-        logInt(bit, getHexalotBit(bit))
+    for (let bit: u8 = 0; bit < 3; bit++) {
+        logFloat(bit, getSpotLocationX(bit))
+        logFloat(bit, getSpotLocationZ(bit))
     }
 }
 
@@ -970,7 +1017,7 @@ function elastic(intervalIndex: u16, elasticFactor: f32): void {
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function exertJointPhysics(jointIndex: u16, dragAbove: f32, land: boolean): void {
+function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     let velocityVectorPtr = velocityPtr(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(locationPtr(jointIndex))
@@ -978,6 +1025,7 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32, land: boolean): void
         setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
         multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove)
     } else {
+        let land = getTerrainUnder(jointIndex) === LAND
         let physicsGravityBelow = land ? physicsGravityBelowLand : physicsGravityBelowWater
         let physicsDragBelow = land ? physicsDragBelowLand : physicsDragBelowWater
         if (altitude > -JOINT_RADIUS) { // close to the surface
@@ -1001,6 +1049,8 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32, land: boolean): void
     }
 }
 
+let dump = 1
+
 function tick(): void {
     let gestating = getGestating()
     let intervalCount = getIntervalCount()
@@ -1009,7 +1059,7 @@ function tick(): void {
     }
     let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? 50 : 1), true) // TODO
+        exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? 50 : 1))
         addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getF32(intervalMassPtr(jointIndex)))
         zero(forcePtr(jointIndex))
     }

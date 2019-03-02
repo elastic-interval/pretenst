@@ -12,6 +12,8 @@ import {OrbitDistance} from "./orbit"
 
 export enum Command {
     DETACH = "Detach",
+    SAVE_GENOME = "Save genome",
+    DELETE_GENOME = "Delete genome",
     RETURN_TO_SEED = "Return to seed",
     LAUNCH_GOTCHI = "Launch Gotchi",
     TURN_LEFT = "Turn Left",
@@ -174,6 +176,14 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                         &nbsp;
                         <Button onClick={() => this.props.doCommand(Command.TURN_RIGHT)}>
                             Turn right
+                        </Button>
+                    </ButtonGroup>
+                    <ButtonGroup>
+                        <Button onClick={() => this.props.doCommand(Command.SAVE_GENOME)}>
+                            Save genome
+                        </Button>
+                        <Button onClick={() => this.props.doCommand(Command.DELETE_GENOME)}>
+                            Delete genome
                         </Button>
                     </ButtonGroup>
                 </div>

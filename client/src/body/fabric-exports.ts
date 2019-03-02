@@ -184,4 +184,6 @@ export interface IFabricInstanceExports {
     getFaceJointIndex(faceIndex: number, jointNumber: number): number
 
     getFaceAverageIdealSpan(faceIndex: number): number
+
+    hexalotDump(): void
 }

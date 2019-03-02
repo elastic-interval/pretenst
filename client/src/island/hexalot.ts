@@ -1,6 +1,6 @@
 import {Vector3} from "three"
 
-import {Genome} from "../genetics/genome"
+import {fromMaster, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 
 import {BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
@@ -68,11 +68,14 @@ export class Hexalot {
     }
 
     public createGotchi(mutatedGenome?: Genome): Gotchi {
-        const genome = mutatedGenome ? mutatedGenome : this.genome
-        if (!genome) {
-            throw new Error("Create gotchi but no genome")
+        if (mutatedGenome) {
+            return this.gotchiFactory.createGotchiAt(this.center, mutatedGenome)
+        } else {
+            if (!this.genome) {
+                this.genome = fromMaster(`(${this.coords.x}, ${this.coords.y})`)
+            }
+            return this.gotchiFactory.createGotchiAt(this.center, this.genome)
         }
-        return this.gotchiFactory.createGotchiAt(this.center, genome)
     }
 
     get master(): string | undefined {
@@ -130,8 +133,7 @@ export class Hexalot {
                 steps.push(child.index > 0 ? child.index : ERROR_STEP)
                 child.hexalot.generateOctalTreePattern(steps)
             }
-        }
-        else {
+        } else {
             steps.push(STOP_STEP)
         }
         this.visited = true

@@ -12,7 +12,18 @@ function rollTheDice(): IDie {
     return DICE[Math.floor(Math.random() * DICE.length)]
 }
 
-export function fromGenomeData(genomeData: IGenomeData) {
+function freshGenomeData(master: string): IGenomeData {
+    return {
+        master,
+        geneMap: {},
+    }
+}
+
+export function fromMaster(master: string): Genome {
+    return new Genome(freshGenomeData(master), rollTheDice)
+}
+
+export function fromGenomeData(genomeData: IGenomeData): Genome {
     return new Genome(genomeData, rollTheDice)
 }
 
@@ -26,7 +37,7 @@ export class Genome {
         }
     }
 
-    public get master() {
+    public get master(): string {
         return this.data.master
     }
 
@@ -53,7 +64,7 @@ export class Genome {
             mutated[direction][geneNumber] = this.roll()
             // console.log(`G[${direction}][${geneNumber}] = ${directionGene[geneNumber]}`);
         }
-        const genome = new Genome({master: this.master, geneMap:{}}, this.roll)
+        const genome = new Genome(freshGenomeData(this.master), this.roll)
         genome.gene = mutated
         return genome
     }

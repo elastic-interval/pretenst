@@ -59,12 +59,13 @@ const startEvolution = (hexalot: Hexalot) => {
         state.island.setIslandState(true, hexalot)
         dispose(state)
         const trip = hexalot.createStupidTrip()
+        const saveGenome = (genomeData: IGenomeData) => {
+            console.log(`Saving genome data`)
+            props.storage.setGenome(hexalot, genomeData)
+        }
         return {
             gotchi: undefined,
-            evolution: new Evolution(hexalot, trip, (genomeData: IGenomeData) => {
-                console.log(`Saving genome data`)
-                props.storage.setGenome(hexalot, genomeData)
-            }),
+            evolution: new Evolution(hexalot, trip, saveGenome),
             trip,
         }
     }
@@ -74,6 +75,7 @@ const startGotchi = (hexalot: Hexalot) => {
     return (state: IAppState) => {
         state.island.setIslandState(true, hexalot)
         dispose(state)
+        console.warn("Start gotchi", hexalot.genome)
         const gotchi = hexalot.createGotchi()
         // gotchi.travel = state.trip.createTravel(0);
         return {
@@ -246,13 +248,26 @@ class App extends React.Component<IAppProps, IAppState> {
                 this.selectedSpotSubject.next(undefined)
                 this.state.island.setIslandState(false)
                 break
+            case Command.SAVE_GENOME:
+                if (hexalot && gotchi) {
+                    console.log("Saving")
+                    const genomeData = gotchi.genomeData
+                    this.props.storage.setGenome(hexalot, genomeData)
+                }
+                break
+            case Command.DELETE_GENOME:
+                if (hexalot) {
+                    console.log("Deleting")
+                    hexalot.genome = undefined
+                }
+                break
             case Command.RETURN_TO_SEED:
                 const selectedSpot = this.selectedSpotSubject.getValue()
                 this.selectedSpotSubject.next(selectedSpot) // refresh
                 this.setState(selectSpot(selectedSpot))
                 break
             case Command.LAUNCH_GOTCHI:
-                if (hexalot && hexalot.genome) {
+                if (hexalot) {
                     this.setState(startGotchi(hexalot))
                 }
                 break
