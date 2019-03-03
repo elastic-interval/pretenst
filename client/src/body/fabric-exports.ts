@@ -62,8 +62,6 @@ export interface IFabricExports {
 
     setInstance(index: number): void
 
-    hexalotDump(): void
-
     // below methods use instance index
 
     reset(): void
@@ -184,6 +182,4 @@ export interface IFabricInstanceExports {
     getFaceJointIndex(faceIndex: number, jointNumber: number): number
 
     getFaceAverageIdealSpan(faceIndex: number): number
-
-    hexalotDump(): void
 }

@@ -1030,13 +1030,6 @@ function getTerrainUnder(jointIndex: u16): u8 {
     return getHexalotBit(spotIndex)
 }
 
-export function hexalotDump(): void {
-    for (let bit: u8 = 0; bit < 3; bit++) {
-        logFloat(bit, getSpotLocationX(bit))
-        logFloat(bit, getSpotLocationZ(bit))
-    }
-}
-
 // Physics =====================================================================================
 
 function elastic(intervalIndex: u16, elasticFactor: f32): void {
