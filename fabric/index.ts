@@ -9,7 +9,7 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
-const HEXALOT_BITS: u8 = 128
+const HEXALOT_BITS: u8 = 128 // TODO: should be 127 for some things
 const FLOATS_IN_VECTOR = 3
 const SPOT_CENTERS_SIZE = HEXALOT_BITS * FLOATS_IN_VECTOR * F32
 const SURFACE_SIZE = HEXALOT_BITS * U8
@@ -399,6 +399,8 @@ function getNearestSpotIndex(jointIndex: u16): u8 {
 }
 
 function getTerrainUnder(jointIndex: u16): u8 {
+    // TODO: save the three most recent spotIndexes at the joint and check mostly only those
+    // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
     let spotIndex = getNearestSpotIndex(jointIndex)
     if (spotIndex === HEXALOT_BITS) {
         return HEXALOT_BITS
