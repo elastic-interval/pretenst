@@ -9,12 +9,7 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
-const HEXALOT_BITS: u8 = 128 // TODO: should be 127 for some things
 const FLOATS_IN_VECTOR = 3
-const SPOT_CENTERS_SIZE = HEXALOT_BITS * FLOATS_IN_VECTOR * F32
-const SURFACE_SIZE = HEXALOT_BITS * U8
-const HEXALOT_SIZE = SPOT_CENTERS_SIZE + SURFACE_SIZE
-
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
 const JOINT_NAME_SIZE: usize = U16
@@ -361,58 +356,6 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
     setX(vPtr, ay * bz - az * by)
     setY(vPtr, az * bx - ax * bz)
     setZ(vPtr, ax * by - ay * bx)
-}
-
-
-// Hexalot ====================================================================================
-
-function getSpotLocationX(bitNumber: u8): f32 {
-    return getF32Global(bitNumber * FLOATS_IN_VECTOR * F32)
-}
-
-function getSpotLocationZ(bitNumber: u8): f32 {
-    return getF32Global((bitNumber * FLOATS_IN_VECTOR + 2) * F32)
-}
-
-function getHexalotBit(bitNumber: u8): u8 {
-    return getU8Global(SPOT_CENTERS_SIZE + bitNumber)
-}
-
-function getNearestSpotIndex(jointIndex: u16): u8 {
-    let locPtr = locationPtr(jointIndex)
-    let x = getX(locPtr)
-    let z = getZ(locPtr)
-    let minQ: f32 = 10000
-    let spotIndex: u8 = HEXALOT_BITS
-    for (let bit: u8 = 0; bit < HEXALOT_BITS - 1; bit++) {
-        let xx = getSpotLocationX(bit)
-        let dx = xx - x
-        let zz = getSpotLocationZ(bit)
-        let dz = zz - z
-        let q = dx * dx + dz * dz
-        if (q < minQ) {
-            minQ = q
-            spotIndex = bit
-        }
-    }
-    return spotIndex
-}
-
-function getTerrainUnder(jointIndex: u16): u8 {
-    // TODO: save the three most recent spotIndexes at the joint and check mostly only those
-    // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
-    let spotIndex = getNearestSpotIndex(jointIndex)
-    if (spotIndex === HEXALOT_BITS) {
-        return HEXALOT_BITS
-    }
-    return getHexalotBit(spotIndex)
-}
-
-export function hexalotDump(): void {
-    for (let bit: u8 = 0; bit < 3; bit++) {
-        logFloat(bit, getSpotLocationX(bit))
-        logFloat(bit, getSpotLocationZ(bit))
-    }
 }
 
 // Fabric state ===============================================================================
@@ -1005,6 +948,95 @@ export function removeFace(deadFaceIndex: u16): void {
     setFaceCount(faceCount)
 }
 
+// Birth =======================================================================================
+
+export function isGestating(): boolean {
+    return getGestating() === GESTATING
+}
+
+export function endGestation(): void {
+    setGestating(NOT_GESTATING)
+    let jointCount = getJointCount() - 1
+    setJointCount(jointCount)
+    // remove the hanger joint, and consequences
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        copyJointFromNext(jointIndex)
+    }
+    let intervalCount = getIntervalCount() - 2
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        copyIntervalFromOffset(intervalIndex, 2)
+    }
+    setIntervalCount(intervalCount)
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        setAlphaIndex(intervalIndex, getAlphaIndex(intervalIndex) - 1)
+        setOmegaIndex(intervalIndex, getOmegaIndex(intervalIndex) - 1)
+    }
+    let faceCount = getFaceCount()
+    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
+        for (let jointNumber: u16 = 0; jointNumber < 3; jointNumber++) {
+            let jointIndex = getFaceJointIndex(faceIndex, jointNumber)
+            setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1)
+        }
+    }
+}
+
+// Hexalot ====================================================================================
+
+const HEXALOT_BITS_ALIGNED: u8 = 128
+const HEXALOT_BITS: u8 = 127
+const SPOT_CENTERS_SIZE = HEXALOT_BITS_ALIGNED * FLOATS_IN_VECTOR * F32
+const SURFACE_SIZE = HEXALOT_BITS_ALIGNED * U8
+const HEXALOT_SIZE = SPOT_CENTERS_SIZE + SURFACE_SIZE
+
+function getSpotLocationX(bitNumber: u8): f32 {
+    return getF32Global(bitNumber * FLOATS_IN_VECTOR * F32)
+}
+
+function getSpotLocationZ(bitNumber: u8): f32 {
+    return getF32Global((bitNumber * FLOATS_IN_VECTOR + 2) * F32)
+}
+
+function getHexalotBit(bitNumber: u8): u8 {
+    return getU8Global(SPOT_CENTERS_SIZE + bitNumber)
+}
+
+function getNearestSpotIndex(jointIndex: u16): u8 {
+    let locPtr = locationPtr(jointIndex)
+    let x = getX(locPtr)
+    let z = getZ(locPtr)
+    let minimumQuadrance: f32 = 10000
+    let nearestSpotIndex: u8 = HEXALOT_BITS
+    for (let bit: u8 = 0; bit < HEXALOT_BITS; bit++) {
+        let xx = getSpotLocationX(bit)
+        let dx = xx - x
+        let zz = getSpotLocationZ(bit)
+        let dz = zz - z
+        let q = dx * dx + dz * dz
+        if (q < minimumQuadrance) {
+            minimumQuadrance = q
+            nearestSpotIndex = bit
+        }
+    }
+    return nearestSpotIndex
+}
+
+function getTerrainUnder(jointIndex: u16): u8 {
+    // TODO: save the three most recent spotIndexes at the joint and check mostly only those
+    // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
+    let spotIndex = getNearestSpotIndex(jointIndex)
+    if (spotIndex === HEXALOT_BITS) {
+        return HEXALOT_BITS
+    }
+    return getHexalotBit(spotIndex)
+}
+
+export function hexalotDump(): void {
+    for (let bit: u8 = 0; bit < 3; bit++) {
+        logFloat(bit, getSpotLocationX(bit))
+        logFloat(bit, getSpotLocationZ(bit))
+    }
+}
+
 // Physics =====================================================================================
 
 function elastic(intervalIndex: u16, elasticFactor: f32): void {
@@ -1051,8 +1083,6 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     }
 }
 
-let dump = 1
-
 function tick(): void {
     let gestating = getGestating()
     let intervalCount = getIntervalCount()
@@ -1068,36 +1098,6 @@ function tick(): void {
     for (let jointIndex: u16 = gestating ? 1 : 0; jointIndex < jointCount; jointIndex++) {
         add(locationPtr(jointIndex), velocityPtr(jointIndex))
         setF32(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS)
-    }
-}
-
-export function isGestating(): boolean {
-    return getGestating() === GESTATING
-}
-
-export function endGestation(): void {
-    setGestating(NOT_GESTATING)
-    let jointCount = getJointCount() - 1
-    setJointCount(jointCount)
-    // remove the hanger joint, and consequences
-    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        copyJointFromNext(jointIndex)
-    }
-    let intervalCount = getIntervalCount() - 2
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        copyIntervalFromOffset(intervalIndex, 2)
-    }
-    setIntervalCount(intervalCount)
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        setAlphaIndex(intervalIndex, getAlphaIndex(intervalIndex) - 1)
-        setOmegaIndex(intervalIndex, getOmegaIndex(intervalIndex) - 1)
-    }
-    let faceCount = getFaceCount()
-    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
-        for (let jointNumber: u16 = 0; jointNumber < 3; jointNumber++) {
-            let jointIndex = getFaceJointIndex(faceIndex, jointNumber)
-            setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1)
-        }
     }
 }
 
