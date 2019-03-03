@@ -1,6 +1,6 @@
 import { expect } from "chai"
 
-import { Direction, Hexalot } from "../src/hexalot"
+import { Direction, Hexalot, overlap } from "../src/hexalot"
 
 describe("Hexalot logic", () => {
     it("can parse correct hexalot ID", () => {
@@ -31,9 +31,9 @@ describe("Hexalot logic", () => {
     })
 
     it("can validate whether a hexalot is a child", () => {
-        const parent = new Hexalot(1, [true,  true,  true, true, true, false, false])
-        const child = new Hexalot(1,  [true, false, false, true, true, false, false])
-        expect(parent.isChild(child, Direction.SW)).to.be.true
-        expect(parent.isChild(child, Direction.NE)).to.be.false
+        const parent = new Hexalot(1, [true, true, true, true, true, false, false])
+        const child = new Hexalot(1, [true, false, false, true, true, false, false])
+        expect(overlap(parent, child, Direction.NE)).to.be.true
+        expect(overlap(parent, child, Direction.SW)).to.be.false
     })
 })

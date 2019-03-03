@@ -1,34 +1,29 @@
 import { NextFunction, Request, Response, Router } from "express"
 
 import { HEXALOT_ALLOWED_RADII, HEXALOT_PURCHASE_PRICE_SATOSHIS } from "./constants"
-import { Direction, Hexalot } from "./hexalot"
+import { Direction, Hexalot, overlap } from "./hexalot"
 import { PaymentHandler } from "./payment"
 import { HexalotStore, IKeyValueStore } from "./store"
 import { HexalotID } from "./types"
-
-type AuthenticatedRequest = Request & {
-    user: {
-        pubkey: string,
-    },
-}
 
 function authenticateUser(
     req: Request,
     res: Response,
     next: NextFunction,
 ): void {
-    const pubkey = req.header("X-User-Pubkey")
+    if (!req.body.auth) {
+        return res.status(400).end("Missing auth")
+    }
+    const {auth: {pubkey, signature}} = req.body
     if (!pubkey) {
-        return res.status(400).end("Missing X-User-Pubkey header")
+        return res.status(400).end("Missing auth.pubkey")
     }
-    const signature = req.header("X-User-Signature")
     if (!signature) {
-        return res.status(400).end("Missing X-User-Signature header")
+        return res.status(400).end("Missing auth.signature")
     }
-    // TODO: check signature against pubkey
-    const authReq = (req as AuthenticatedRequest)
-    authReq.user = {...(authReq.user || {}), pubkey}
-    console.log(`Request from ${pubkey}`)
+    // @ts-ignore
+    // TODO: Check signature
+    console.log(`Authenticated request from ${pubkey}`)
     next()
 }
 
@@ -49,10 +44,9 @@ export class HexalotCurator {
         router.use(authenticateUser)
 
         router.post("/buy", async (req, res) => {
-            const {user: {pubkey}} = req as AuthenticatedRequest
-            const {parentID, direction, childID} = req.body
+            const {parentID, direction, childID, auth: {pubkey}} = req.body
             try {
-                this.checkChildLotValid(parentID, direction, childID)
+                await this.checkChildLotValid(parentID, direction, childID)
             } catch (e) {
                 return res.status(400).end(`Lot cannot be purchased: ${e}`)
             }
@@ -67,12 +61,32 @@ export class HexalotCurator {
         })
 
         router.get("/owned", async (req, res) => {
-            const {user: {pubkey}} = req as AuthenticatedRequest
+            const {auth: {pubkey}} = req.body
             const ownedLots = await this.store.getOwnedLots(pubkey)
             res.end(JSON.stringify(ownedLots))
         })
 
         return router
+    }
+
+    private async overlapsWithSibling(
+        parent: Hexalot,
+        child: Hexalot,
+        childDirection: Direction,
+        clockwise: boolean,
+    ): Promise<boolean> {
+        const delta = clockwise ? 5 : 1
+        const siblingDirection = (childDirection + delta) % 6
+        const siblingID = await this.store.getChildLot(parent.id, siblingDirection)
+        if (!siblingID) {
+            return true
+        }
+        let comparisonDirection = (childDirection + 2) % 6
+        if (clockwise) {
+            comparisonDirection = (comparisonDirection + 3) % 6
+        }
+        const sibling = Hexalot.fromID(siblingID)
+        return overlap(child, sibling, comparisonDirection)
     }
 
     // @ts-ignore
@@ -89,9 +103,14 @@ export class HexalotCurator {
             throw new Error("Child lot already exists")
         }
         const child = Hexalot.fromID(childID)
-        if (!parent.isChild(child, direction)) {
+        if (!overlap(parent, child, direction)) {
             throw new Error("Not a child of parent lot")
         }
-        // TODO: check whether child intersects correctly with parent's other children
+        if (!this.overlapsWithSibling(parent, child, direction, true)) {
+            throw new Error("Child must overlap with clockwise sibling")
+        }
+        if (!this.overlapsWithSibling(parent, child, direction, false)) {
+            throw new Error("Child must overlap with counter-clockwise sibling")
+        }
     }
 }
