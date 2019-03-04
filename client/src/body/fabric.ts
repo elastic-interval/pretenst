@@ -56,15 +56,15 @@ export class Fabric {
         return this.exports.getRight()
     }
 
-    public get jointCount() {
+    public get jointCount(): number {
         return this.exports.getJointCount()
     }
 
-    public get intervalCount() {
+    public get intervalCount(): number {
         return this.exports.getIntervalCount()
     }
 
-    public get faceCount() {
+    public get faceCount(): number {
         return this.exports.getFaceCount()
     }
 

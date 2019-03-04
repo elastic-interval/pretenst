@@ -49,12 +49,12 @@ export class Orbit {
         return Date.now() - this.lastChanged < 100
     }
 
-    public moveTargetTowards(location: Vector3) {
+    public moveTargetTowards(location: Vector3): void {
         this.vector.subVectors(location, this.target).multiplyScalar(TOWARDS_TARGET)
         this.target.add(this.vector)
     }
 
-    public update() {
+    public update(): void {
         this.orbitControls.update()
         const distance = this.distance
         if (distance < HELICOPTER_DISTANCE) {

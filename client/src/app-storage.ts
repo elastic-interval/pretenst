@@ -15,7 +15,7 @@ export class AppStorage {
         return value ? value : undefined
     }
 
-    public setMaster(master: string) {
+    public setMaster(master: string): void {
         this.storage.setItem(MASTER_KEY, master)
     }
 
@@ -24,7 +24,7 @@ export class AppStorage {
         return value ? parseFloat(value) : 1.0
     }
 
-    public setPhysicsFeature(feature: PhysicsFeature, factor: number) {
+    public setPhysicsFeature(feature: PhysicsFeature, factor: number): void {
         this.storage.setItem(feature, factor.toFixed(3))
     }
 
@@ -33,7 +33,7 @@ export class AppStorage {
         return patternString ? JSON.parse(patternString) : {hexalots: "", spots: ""}
     }
 
-    public setIsland(islandName: string, islandPattern: IslandPattern) {
+    public setIsland(islandName: string, islandPattern: IslandPattern): void {
         this.storage.setItem(islandName, JSON.stringify(islandPattern))
     }
 
@@ -42,7 +42,7 @@ export class AppStorage {
         return genomeString ? JSON.parse(genomeString) : undefined
     }
 
-    public setGenome(hexalot: Hexalot, genomeData: IGenomeData) {
+    public setGenome(hexalot: Hexalot, genomeData: IGenomeData): void {
         this.storage.setItem(hexalot.createFingerprint(), JSON.stringify(genomeData))
     }
 }

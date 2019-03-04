@@ -43,7 +43,7 @@ interface IClicky {
     command: Command
 }
 
-function Clicky(params: IClicky) {
+function Clicky(params: IClicky): JSX.Element {
     return (
         <span style={{padding: "5px 5px 5px 5px"}}>
             <Button onClick={() => params.props.doCommand(params.command)}>{params.command}</Button>

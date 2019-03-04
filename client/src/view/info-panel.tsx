@@ -22,7 +22,7 @@ export class InfoPanel extends React.Component<IInfoPanelProps, IInfoPanelState>
         }
     }
 
-    public render() {
+    public render(): JSX.Element {
         const {activeIndex} = this.state
         const items = INFO_PAGES.map((pageContent: JSX.Element, index: number) => {
             return (
@@ -50,21 +50,21 @@ export class InfoPanel extends React.Component<IInfoPanelProps, IInfoPanelState>
         )
     }
 
-    private next() {
+    private next(): void {
         if (!this.animating) {
             const nextIndex = this.state.activeIndex === INFO_PAGES.length - 1 ? 0 : this.state.activeIndex + 1
             this.setState({activeIndex: nextIndex})
         }
     }
 
-    private previous() {
+    private previous(): void {
         if (!this.animating) {
             const nextIndex = this.state.activeIndex === 0 ? INFO_PAGES.length - 1 : this.state.activeIndex - 1
             this.setState({activeIndex: nextIndex})
         }
     }
 
-    private goToIndex(index: number) {
+    private goToIndex(index: number): void {
         if (!this.animating) {
             this.setState({activeIndex: index})
         }
