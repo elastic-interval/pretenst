@@ -41,11 +41,11 @@ export interface IAppState {
     trip?: Trip
 }
 
-const updateDimensions = (): object => {
+function updateDimensions(): object {
     return {width: window.innerWidth, height: window.innerHeight}
 }
 
-const dispose = (state: IAppState) => {
+function dispose(state: IAppState): void {
     if (state.gotchi) {
         state.gotchi.dispose()
     }
@@ -54,7 +54,7 @@ const dispose = (state: IAppState) => {
     }
 }
 
-const startEvolution = (hexalot: Hexalot) => {
+function startEvolution(hexalot: Hexalot): object {
     return (state: IAppState, props: IAppProps) => {
         state.island.setIslandState(true, hexalot)
         dispose(state)
@@ -71,7 +71,7 @@ const startEvolution = (hexalot: Hexalot) => {
     }
 }
 
-const startGotchi = (hexalot: Hexalot) => {
+function startGotchi(hexalot: Hexalot): object {
     return (state: IAppState) => {
         state.island.setIslandState(true, hexalot)
         dispose(state)
@@ -86,7 +86,7 @@ const startGotchi = (hexalot: Hexalot) => {
     }
 }
 
-const selectSpot = (spot?: Spot) => {
+function selectSpot(spot?: Spot): object {
     return (state: IAppState) => {
         state.island.setIslandState(false, spot ? spot.centerOfHexalot : undefined)
         dispose(state)
