@@ -14,16 +14,11 @@ function authenticateUser(
     if (!req.body.auth) {
         return res.status(400).end("Missing auth")
     }
-    const {auth: {pubkey, signature}} = req.body
-    if (!pubkey) {
+    if (!req.body.auth.pubkey) {
         return res.status(400).end("Missing auth.pubkey")
     }
-    if (!signature) {
-        return res.status(400).end("Missing auth.signature")
-    }
-    // @ts-ignore
-    // TODO: Check signature
-    console.log(`Authenticated request from ${pubkey}`)
+    // Until we implement Hexalot transfers, skip authentication
+    // TODO: read & verify signature
     next()
 }
 
@@ -41,29 +36,43 @@ export class HexalotCurator {
     public createExpressRouter(): Router {
         const router = Router()
 
-        router.use(authenticateUser)
 
-        router.post("/buy", async (req, res) => {
+        router.post("/buy", authenticateUser, async (req, res) => {
             const {parentID, direction, childID, auth: {pubkey}} = req.body
             try {
                 await this.checkChildLotValid(parentID, direction, childID)
             } catch (e) {
                 return res.status(400).end(`Lot cannot be purchased: ${e}`)
             }
-            const invoice = await this.payments.generateInvoice(childID, HEXALOT_PURCHASE_PRICE_SATOSHIS)
+            const {invoice, paid} = await this.payments.generatePayment(childID, HEXALOT_PURCHASE_PRICE_SATOSHIS)
             res
                 .status(402) // HTTP 402 Payment Required :)
-                .end(invoice)
+                .json({invoice})
+                .end()
 
-            await this.payments.waitForPayment(invoice)
+            await paid
             await this.store.spawnLot(parentID, direction, childID)
             await this.store.assignLot(childID, pubkey)
         })
 
-        router.get("/owned", async (req, res) => {
-            const {auth: {pubkey}} = req.body
+        router.get("/owned/:pubkey", async (req, res) => {
+            const {pubkey} = req.params
             const ownedLots = await this.store.getOwnedLots(pubkey)
-            res.end(JSON.stringify(ownedLots))
+            res.json({
+                ownedLots,
+            })
+        })
+
+        router.get("/:id", async (req, res) => {
+            const {id} = req.params
+            const owner = await this.store.getLotOwner(id)
+            if (!owner) {
+                return res.status(404).end(`Lot ${id} not found`)
+            }
+            res.json({
+                id,
+                owner,
+            })
         })
 
         return router
