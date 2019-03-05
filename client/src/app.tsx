@@ -264,6 +264,7 @@ class App extends React.Component<IAppProps, IAppState> {
         switch (command) {
             case Command.DETACH:
                 this.selectedSpotSubject.next(undefined)
+                this.hexalotIdSubject.next("")
                 this.state.island.setIslandState(false)
                 break
             case Command.SAVE_GENOME:
