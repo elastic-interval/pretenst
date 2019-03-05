@@ -10,6 +10,7 @@ import { InMemoryStore } from "./src/store"
 async function run(port: number): Promise<void> {
     const lnRpc = await createLnRpc({
         server: "localhost:10009",
+        macaroonPath: "~/.lnd/data/chain/bitcoin/testnet/invoice.macaroon",
     })
     const paymentHandler = new PaymentHandler(lnRpc)
     const curator = new HexalotCurator(new InMemoryStore(), paymentHandler)
