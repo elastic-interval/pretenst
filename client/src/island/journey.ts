@@ -21,4 +21,8 @@ export class Journey {
     public createTravel(visited: number): ITravel {
         return {journey: this, visited, goTo: this.hexalots[visited + 1]}
     }
+
+    public serialize(): string {
+        return JSON.stringify(this.hexalots.map(hexalot => hexalot.createFingerprint()))
+    }
 }

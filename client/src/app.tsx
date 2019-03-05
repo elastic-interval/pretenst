@@ -185,9 +185,12 @@ class App extends React.Component<IAppProps, IAppState> {
                     const homeHexalotId = this.hexalotIdSubject.getValue()
                     if (homeHexalotId.length === 0) {
                         this.hexalotIdSubject.next(fingerprint)
+                        this.props.storage.loadJourney(hexalot, this.state.island)
+                        this.setState({journey: hexalot.journey})
                     } else {
                         if (homeHexalotId === fingerprint) {
                             hexalot.journey = undefined
+                            this.props.storage.saveJourney(hexalot)
                         } else {
                             const homeHexalot = this.state.island.findHexalot(homeHexalotId)
                             if (homeHexalot) {
@@ -197,6 +200,7 @@ class App extends React.Component<IAppProps, IAppState> {
                                 } else {
                                     homeHexalot.journey = new Journey([homeHexalot, hexalot])
                                 }
+                                this.props.storage.saveJourney(homeHexalot)
                                 this.setState({journey: homeHexalot.journey})
                             }
                         }
@@ -286,6 +290,7 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.DETACH:
                 this.selectedSpotSubject.next(undefined)
                 this.hexalotIdSubject.next("")
+                this.setState({journey: undefined})
                 this.state.island.setIslandState(false)
                 break
             case Command.SAVE_GENOME:
