@@ -111,10 +111,10 @@ function setInfoPanelMaximized(maximized: boolean): void {
 
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
-    private orbitDistanceSubject: BehaviorSubject<OrbitDistance> =
-        new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
     private perspectiveCamera: PerspectiveCamera
-    private selectedSpotSubject: BehaviorSubject<Spot | undefined> = new BehaviorSubject<Spot | undefined>(undefined)
+    private hexalotIdSubject = new BehaviorSubject<string>("")
+    private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
+    private selectedSpotSubject = new BehaviorSubject<Spot | undefined>(undefined)
     private islandState: BehaviorSubject<IslandState>
     private physics: Physics
     private fabricKernel: FabricKernel
@@ -122,6 +122,12 @@ class App extends React.Component<IAppProps, IAppState> {
 
     constructor(props: IAppProps) {
         super(props)
+        this.hexalotIdSubject.subscribe(hexalotId => location.replace(`/#/${hexalotId}`))
+        this.selectedSpotSubject.subscribe(spot => {
+            if (spot && spot.centerOfHexalot) {
+                this.hexalotIdSubject.next(spot.centerOfHexalot.createFingerprint())
+            }
+        })
         this.physics = new Physics(props.storage)
         this.physics.applyToFabric(props.fabricExports)
         this.islandState = new BehaviorSubject<IslandState>({gotchiAlive: false})
@@ -237,7 +243,7 @@ class App extends React.Component<IAppProps, IAppState> {
         )
     }
 
-    private executeCommand = (command: Command, location?: Vector3) => {
+    private executeCommand = (command: Command, where?: Vector3) => {
         const island = this.state.island
         const master = this.state.master
         const spot = this.state.spot
@@ -247,6 +253,7 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.DETACH:
                 this.selectedSpotSubject.next(undefined)
                 this.state.island.setIslandState(false)
+                location.replace("/#/hexalotid")
                 break
             case Command.SAVE_GENOME:
                 if (hexalot && gotchi) {
@@ -287,13 +294,13 @@ class App extends React.Component<IAppProps, IAppState> {
                 }
                 break
             case Command.COME_HERE:
-                if (gotchi && location) {
-                    gotchi.approach(location, true)
+                if (gotchi && where) {
+                    gotchi.approach(where, true)
                 }
                 break
             case Command.GO_THERE:
-                if (gotchi && location) {
-                    gotchi.approach(location, false)
+                if (gotchi && where) {
+                    gotchi.approach(where, false)
                 }
                 break
             case Command.STOP:
