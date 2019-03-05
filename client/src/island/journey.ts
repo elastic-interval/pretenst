@@ -14,6 +14,10 @@ export class Journey {
         return this.hexalots
     }
 
+    public addVisit(hexalot: Hexalot): void {
+        this.hexalots.push(hexalot)
+    }
+
     public createTravel(visited: number): ITravel {
         return {journey: this, visited, goTo: this.hexalots[visited + 1]}
     }

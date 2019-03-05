@@ -178,9 +178,30 @@ class App extends React.Component<IAppProps, IAppState> {
         }))
         this.subs.push(this.hexalotIdSubject.subscribe(hexalotId => location.replace(`/#/${hexalotId}`)))
         this.subs.push(this.selectedSpotSubject.subscribe(spot => {
-            // first choice is home for the session
-            if (spot && spot.centerOfHexalot && this.hexalotIdSubject.getValue().length === 0) {
-                this.hexalotIdSubject.next(spot.centerOfHexalot.createFingerprint())
+            if (spot) {
+                const hexalot = spot.centerOfHexalot
+                if (hexalot) {
+                    const fingerprint = hexalot.createFingerprint()
+                    const homeHexalotId = this.hexalotIdSubject.getValue()
+                    if (homeHexalotId.length === 0) {
+                        this.hexalotIdSubject.next(fingerprint)
+                    } else {
+                        if (homeHexalotId === fingerprint) {
+                            hexalot.journey = undefined
+                        } else {
+                            const homeHexalot = this.state.island.findHexalot(homeHexalotId)
+                            if (homeHexalot) {
+                                const journey = homeHexalot.journey
+                                if (journey) {
+                                    journey.addVisit(hexalot)
+                                } else {
+                                    homeHexalot.journey = new Journey([homeHexalot, hexalot])
+                                }
+                                this.setState({journey: homeHexalot.journey})
+                            }
+                        }
+                    }
+                }
             }
         }))
     }

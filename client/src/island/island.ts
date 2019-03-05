@@ -55,8 +55,8 @@ export class Island {
         return this.hexalots.find(hexalot => !hexalot.genome)
     }
 
-    public findHexalot(master: string): Hexalot | undefined {
-        return this.hexalots.find(hexalot => !!hexalot.genome && hexalot.genome.master === master)
+    public findHexalot(fingerprint: string): Hexalot | undefined {
+        return this.hexalots.find(hexalot => hexalot.createFingerprint() === fingerprint)
     }
 
     public setIslandState(gotchiAlive: boolean, selectedHexalot?: Hexalot): void {
