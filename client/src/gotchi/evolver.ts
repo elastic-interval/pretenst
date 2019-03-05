@@ -1,8 +1,8 @@
 import {Vector3} from "three"
 
 import {Direction} from "../body/fabric-exports"
+import {ITravel} from "../island/journey"
 import {HEXAPOD_RADIUS} from "../island/shapes"
-import {ITravel} from "../island/trip"
 
 import {Gotchi} from "./gotchi"
 

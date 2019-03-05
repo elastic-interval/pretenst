@@ -14,8 +14,8 @@ import {Evolution, INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution
 import {Gotchi} from "./gotchi/gotchi"
 import {Hexalot} from "./island/hexalot"
 import {Island, IslandState} from "./island/island"
+import {Journey} from "./island/journey"
 import {Spot, Surface} from "./island/spot"
-import {Trip} from "./island/trip"
 import {ActionsPanel, Command} from "./view/actions-panel"
 import {GotchiView} from "./view/gotchi-view"
 import {InfoPanel} from "./view/info-panel"
@@ -38,7 +38,7 @@ export interface IAppState {
     spot?: Spot
     gotchi?: Gotchi
     evolution?: Evolution
-    trip?: Trip
+    journey?: Journey
 }
 
 function updateDimensions(): object {
@@ -58,15 +58,15 @@ function startEvolution(hexalot: Hexalot): object {
     return (state: IAppState, props: IAppProps) => {
         state.island.setIslandState(true, hexalot)
         dispose(state)
-        const trip = hexalot.createStupidTrip()
+        const journey = hexalot.createStupidJourney()
         const saveGenome = (genomeData: IGenomeData) => {
             console.log(`Saving genome data`)
             props.storage.setGenome(hexalot, genomeData)
         }
         return {
             gotchi: undefined,
-            evolution: new Evolution(hexalot, trip, saveGenome),
-            trip,
+            evolution: new Evolution(hexalot, journey, saveGenome),
+            journey,
         }
     }
 }
@@ -81,7 +81,7 @@ function startGotchi(hexalot: Hexalot): object {
         return {
             gotchi,
             evolution: undefined,
-            trip: undefined,
+            journey: undefined,
         }
     }
 }
@@ -95,7 +95,7 @@ function selectSpot(spot?: Spot): object {
             spot,
             gotchi: undefined,
             evolution: undefined,
-            trip: undefined,
+            journey: undefined,
         }
     }
 }
@@ -185,7 +185,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     selectedSpot={this.selectedSpotSubject}
                     orbitDistance={this.orbitDistanceSubject}
                     evolution={this.state.evolution}
-                    trip={this.state.trip}
+                    journey={this.state.journey}
                     gotchi={this.state.gotchi}
                 />
                 {!this.state.infoPanel ? (

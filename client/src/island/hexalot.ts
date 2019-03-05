@@ -3,9 +3,9 @@ import {Vector3} from "three"
 import {fromMaster, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 
+import {Journey} from "./journey"
 import {BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
 import {equals, ICoords, Spot, Surface} from "./spot"
-import {Trip} from "./trip"
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
 
@@ -43,6 +43,7 @@ export const hexalotTreeString = (hexalots: Hexalot[]) => {
 
 export class Hexalot {
     public genome?: Genome
+    public journey?: Journey
     public nonce = 0
     public visited = false
     public childHexalots: Hexalot[] = []
@@ -62,9 +63,15 @@ export class Hexalot {
         }
     }
 
-    public createStupidTrip(): Trip {
-        const spots = this.centerSpot.adjacentSpots.filter(spot => spot.surface === Surface.Land)
-        return new Trip([this.centerSpot, spots[0]])
+    public createStupidJourney(): Journey {
+        const visits: Hexalot[]= [this]
+        this.centerSpot.adjacentSpots.forEach(spot => {
+            const hexalot = spot.centerOfHexalot
+            if (hexalot) {
+                visits.push(hexalot)
+            }
+        })
+        return new Journey(visits)
     }
 
     public createGotchi(mutatedGenome?: Genome): Gotchi {

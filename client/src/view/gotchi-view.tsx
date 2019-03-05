@@ -8,16 +8,16 @@ import {HUNG_ALTITUDE, NORMAL_TICKS} from "../body/fabric"
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
 import {Island} from "../island/island"
+import {Journey} from "../island/journey"
 import {Spot} from "../island/spot"
-import {Trip} from "../island/trip"
 
 import {EvolutionComponent} from "./evolution-component"
 import {GotchiComponent} from "./gotchi-component"
 import {IslandComponent} from "./island-component"
+import {JourneyComponent} from "./journey-component"
 import {USER_POINTER_MATERIAL} from "./materials"
 import {Orbit, OrbitDistance} from "./orbit"
 import {MeshKey, SpotSelector} from "./spot-selector"
-import {TripComponent} from "./trip-component"
 
 export const HIGH_ALTITUDE = 1000
 
@@ -33,7 +33,7 @@ interface IGotchiViewProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
     gotchi?: Gotchi
     evolution?: Evolution
-    trip?: Trip
+    journey?: Journey
 }
 
 interface IGotchiViewState {
@@ -113,8 +113,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             geometry={this.pointerGeometry}
                             material={USER_POINTER_MATERIAL}
                         />
-                        {!this.props.trip ? null : (
-                            <TripComponent trip={this.props.trip}/>
+                        {!this.props.journey ? null : (
+                            <JourneyComponent journey={this.props.journey}/>
                         )}
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                         <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
