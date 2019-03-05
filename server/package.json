@@ -1,10 +1,10 @@
 {
   "name": "galapagotchi-server",
   "version": "1.0.0",
-  "main": "src/index.ts",
+  "main": "index.ts",
   "license": "MIT",
   "scripts": {
-    "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node src/index.ts",
+    "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node index.ts",
     "test": "mocha -r ts-node/register test/*.test.ts",
     "lint": "tslint --fix -p tsconfig.json"
   },

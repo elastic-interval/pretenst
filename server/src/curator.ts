@@ -11,11 +11,8 @@ function authenticateUser(
     res: Response,
     next: NextFunction,
 ): void {
-    if (!req.body.auth) {
-        return res.status(400).end("Missing auth")
-    }
-    if (!req.body.auth.pubkey) {
-        return res.status(400).end("Missing auth.pubkey")
+    if (!req.body.pubkey) {
+        return res.status(400).end("Missing pubkey")
     }
     // Until we implement Hexalot transfers, skip authentication
     // TODO: read & verify signature
@@ -38,9 +35,9 @@ export class HexalotCurator {
 
 
         router.post("/buy", authenticateUser, async (req, res) => {
-            const {parentID, direction, childID, auth: {pubkey}} = req.body
+            const {parentID, direction, childID, pubkey} = req.body
             try {
-                await this.checkChildLotValid(parentID, direction, childID)
+                // await this.checkChildLotValid(parentID, direction, childID)
             } catch (e) {
                 return res.status(400).end(`Lot cannot be purchased: ${e}`)
             }

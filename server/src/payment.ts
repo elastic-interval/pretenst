@@ -20,7 +20,7 @@ export class PaymentHandler {
             memo,
             value,
         })
-        const invoice = response.payment_request
+        const invoice = response.paymentRequest
         const paid = new Promise<void>(resolve => {
             this.invoiceSettledEvents.once(invoice, resolve)
         })
@@ -33,8 +33,8 @@ export class PaymentHandler {
     private async setupSubscriptions(): Promise<void> {
         const subscriber = await this.lnRpc.subscribeInvoices()
         subscriber.on("data", (invoice: Invoice) => {
-            if (invoice.settled)  {
-                this.invoiceSettledEvents.emit(invoice.payment_request)
+            if (invoice.settled && invoice.paymentRequest)  {
+                this.invoiceSettledEvents.emit(invoice.paymentRequest)
             }
         })
     }
