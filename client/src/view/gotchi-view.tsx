@@ -28,6 +28,8 @@ interface IGotchiViewProps {
     perspectiveCamera: PerspectiveCamera
     width: number
     height: number
+    left: number
+    top: number
     island: Island
     selectedSpot: BehaviorSubject<Spot | undefined>
     orbitDistance: BehaviorSubject<OrbitDistance>
@@ -62,10 +64,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidUpdate(
-        prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: object): void {
+        prevProps: Readonly<IGotchiViewProps>,
+        prevState: Readonly<IGotchiViewState>, snapshot: object,
+    ): void {
         if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
             this.props.perspectiveCamera.aspect = this.props.width / this.props.height
             this.props.perspectiveCamera.updateProjectionMatrix()
+            this.spotSelector.setSize(this.props.width, this.props.height)
         }
     }
 

@@ -30,6 +30,8 @@ export interface IAppState {
     island: Island
     width: number
     height: number
+    left: number
+    top: number
     infoPanel: boolean
     actionPanel: boolean
 
@@ -42,7 +44,12 @@ export interface IAppState {
 }
 
 function updateDimensions(): object {
-    return {width: window.innerWidth, height: window.innerHeight}
+    return {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        left: window.screenLeft,
+        top: window.screenTop,
+    }
 }
 
 function dispose(state: IAppState): void {
@@ -122,12 +129,6 @@ class App extends React.Component<IAppProps, IAppState> {
 
     constructor(props: IAppProps) {
         super(props)
-        this.hexalotIdSubject.subscribe(hexalotId => location.replace(`/#/${hexalotId}`))
-        this.selectedSpotSubject.subscribe(spot => {
-            if (spot && spot.centerOfHexalot) {
-                this.hexalotIdSubject.next(spot.centerOfHexalot.createFingerprint())
-            }
-        })
         this.physics = new Physics(props.storage)
         this.physics.applyToFabric(props.fabricExports)
         this.islandState = new BehaviorSubject<IslandState>({gotchiAlive: false})
@@ -153,12 +154,14 @@ class App extends React.Component<IAppProps, IAppState> {
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight,
+            left: window.screenLeft,
+            top: window.screenTop,
         }
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000)
     }
 
     public componentDidMount(): void {
-        window.addEventListener("resize", () => this.setState(updateDimensions))
+        window.addEventListener("resize", (e) => this.setState(updateDimensions))
         this.subs.push(this.selectedSpotSubject.subscribe(spot => {
             if (spot && !this.state.evolution && !this.state.gotchi) {
                 this.setState(selectSpot(spot))
@@ -171,6 +174,13 @@ class App extends React.Component<IAppProps, IAppState> {
                 const spotCenters = hexalot.spots.map(spot => spot.center)
                 const surface = hexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
+            }
+        }))
+        this.subs.push(this.hexalotIdSubject.subscribe(hexalotId => location.replace(`/#/${hexalotId}`)))
+        this.subs.push(this.selectedSpotSubject.subscribe(spot => {
+            // first choice is home for the session
+            if (spot && spot.centerOfHexalot && this.hexalotIdSubject.getValue().length === 0) {
+                this.hexalotIdSubject.next(spot.centerOfHexalot.createFingerprint())
             }
         }))
     }
@@ -188,6 +198,8 @@ class App extends React.Component<IAppProps, IAppState> {
                     island={this.state.island}
                     width={this.state.width}
                     height={this.state.height}
+                    left={this.state.left}
+                    top={this.state.top}
                     selectedSpot={this.selectedSpotSubject}
                     orbitDistance={this.orbitDistanceSubject}
                     evolution={this.state.evolution}
@@ -253,7 +265,6 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.DETACH:
                 this.selectedSpotSubject.next(undefined)
                 this.state.island.setIslandState(false)
-                location.replace("/#/hexalotid")
                 break
             case Command.SAVE_GENOME:
                 if (hexalot && gotchi) {
