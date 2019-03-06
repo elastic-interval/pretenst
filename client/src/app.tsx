@@ -161,7 +161,7 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     public componentDidMount(): void {
-        window.addEventListener("resize", (e) => this.setState(updateDimensions))
+        window.addEventListener("resize", () => this.setState(updateDimensions))
         this.subs.push(this.selectedSpotSubject.subscribe(spot => {
             if (spot && !this.state.evolution && !this.state.gotchi) {
                 this.setState(selectSpot(spot))
@@ -178,32 +178,34 @@ class App extends React.Component<IAppProps, IAppState> {
         }))
         this.subs.push(this.hexalotIdSubject.subscribe(hexalotId => location.replace(`/#/${hexalotId}`)))
         this.subs.push(this.selectedSpotSubject.subscribe(spot => {
-            if (spot) {
-                const hexalot = spot.centerOfHexalot
-                if (hexalot) {
-                    const fingerprint = hexalot.createFingerprint()
-                    const homeHexalotId = this.hexalotIdSubject.getValue()
-                    if (homeHexalotId.length === 0) {
-                        this.hexalotIdSubject.next(fingerprint)
-                        this.props.storage.loadJourney(hexalot, this.state.island)
-                        this.setState({journey: hexalot.journey})
-                    } else {
-                        if (homeHexalotId === fingerprint) {
-                            hexalot.journey = undefined
-                            this.props.storage.saveJourney(hexalot)
+            if (!spot) {
+                return
+            }
+            const hexalot = spot.centerOfHexalot
+            if (!hexalot) {
+                return
+            }
+            const fingerprint = hexalot.createFingerprint()
+            const homeHexalotId = this.hexalotIdSubject.getValue()
+            if (homeHexalotId.length === 0) {
+                this.hexalotIdSubject.next(fingerprint)
+                this.props.storage.loadJourney(hexalot, this.state.island)
+                this.setState({journey: hexalot.journey})
+            } else {
+                if (homeHexalotId === fingerprint) {
+                    hexalot.journey = undefined
+                    this.props.storage.saveJourney(hexalot)
+                } else {
+                    const homeHexalot = this.state.island.findHexalot(homeHexalotId)
+                    if (homeHexalot) {
+                        const journey = homeHexalot.journey
+                        if (journey) {
+                            journey.addVisit(hexalot)
                         } else {
-                            const homeHexalot = this.state.island.findHexalot(homeHexalotId)
-                            if (homeHexalot) {
-                                const journey = homeHexalot.journey
-                                if (journey) {
-                                    journey.addVisit(hexalot)
-                                } else {
-                                    homeHexalot.journey = new Journey([homeHexalot, hexalot])
-                                }
-                                this.props.storage.saveJourney(homeHexalot)
-                                this.setState({journey: homeHexalot.journey})
-                            }
+                            homeHexalot.journey = new Journey([homeHexalot, hexalot])
                         }
+                        this.props.storage.saveJourney(homeHexalot)
+                        this.setState({journey: homeHexalot.journey})
                     }
                 }
             }
