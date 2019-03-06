@@ -1,9 +1,18 @@
 import {PhysicsFeature} from "./body/physics"
 import {IGenomeData} from "./genetics/genome"
 import {Hexalot} from "./island/hexalot"
-import {IslandPattern} from "./island/island"
+import {Island, IslandPattern} from "./island/island"
+import {Journey} from "./island/journey"
 
 const MASTER_KEY = "master"
+
+function journeyKey(hexalot: Hexalot): string {
+    return `${hexalot.createFingerprint()}-journey`
+}
+
+function genomeKey(hexalot: Hexalot): string {
+    return `${hexalot.createFingerprint()}-genome`
+}
 
 export class AppStorage {
 
@@ -38,11 +47,38 @@ export class AppStorage {
     }
 
     public getGenome(hexalot: Hexalot): IGenomeData | undefined {
-        const genomeString = this.storage.getItem(hexalot.createFingerprint())
+        const genomeString = this.storage.getItem(genomeKey(hexalot))
         return genomeString ? JSON.parse(genomeString) : undefined
     }
 
     public setGenome(hexalot: Hexalot, genomeData: IGenomeData): void {
-        this.storage.setItem(hexalot.createFingerprint(), JSON.stringify(genomeData))
+        this.storage.setItem(genomeKey(hexalot), JSON.stringify(genomeData))
+    }
+
+    public saveJourney(hexalot: Hexalot): void {
+        const journey = hexalot.journey
+        const key = journeyKey(hexalot)
+        if (journey) {
+            this.storage.setItem(key, journey.serialize())
+        } else {
+            this.storage.removeItem(key)
+        }
+    }
+
+    public loadJourney(hexalot: Hexalot, island: Island): void {
+        const journeyString = this.storage.getItem(journeyKey(hexalot))
+        if (journeyString) {
+            const journey = new Journey([hexalot])
+            hexalot.journey = journey
+            const fingerprints: string[] = JSON.parse(journeyString)
+            fingerprints.forEach(fingerprint => {
+                const nextHexalot = island.findHexalot(fingerprint)
+                if (nextHexalot) {
+                    journey.addVisit(nextHexalot)
+                }
+            })
+        } else {
+            hexalot.journey = undefined
+        }
     }
 }

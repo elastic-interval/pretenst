@@ -1,14 +1,12 @@
 # Galapagotchi Run!
 
-*"Will you be my galapasi?"*
-
 Welcome to the [galapagotchi.run](https://galapagotchi.run) project, where you can create and evolve your own personal runner. It's like a game. Together we can make it more fun!
 
 By the way [look here](https://github.com/geralddejong/galapagotchi) or [find me](https://twitter.com/fluxe) if you are a developer interested in [WebAssembly](https://webassembly.org/), [WebGL](https://en.wikipedia.org/wiki/WebGL)/[ThreeJS](https://threejs.org/) or Darwin's [Evolution](https://en.wikipedia.org/wiki/Darwin%27s_Dangerous_Idea).
 
 [image of island]
 
-This is a *Galapahexalot* island. 
+This is a *Galapagotch* island. 
 
 In the local dialect, *galapa* means something like "family" and a *hexalot* is a unique beehive pattern of surface spots where a *gotchi* lives. (see *Galapaglossary* below).
 

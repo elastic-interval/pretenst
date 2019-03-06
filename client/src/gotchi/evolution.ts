@@ -5,7 +5,7 @@ import {NORMAL_TICKS, SPOT_TO_HANGER} from "../body/fabric"
 import {Direction} from "../body/fabric-exports"
 import {fromGenomeData, IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
-import {Trip} from "../island/trip"
+import {Journey} from "../island/journey"
 
 import {compareEvolvers, Evolver} from "./evolver"
 import {Gotchi} from "./gotchi"
@@ -23,7 +23,7 @@ export class Evolution {
     private rebooting = false
     private ageLimit = MINIMUM_AGE
 
-    constructor(private hexalot: Hexalot, private trip: Trip, private saveGenome: (genome: IGenomeData) => void) {
+    constructor(private hexalot: Hexalot, private journey: Journey, private saveGenome: (genome: IGenomeData) => void) {
         let mutatingGenome = hexalot.genome
         const gotchis: Gotchi[] = []
         for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
@@ -138,7 +138,7 @@ export class Evolution {
     }
 
     private gotchiToEvolver = (gotchi: Gotchi): Evolver => {
-        const travel = this.trip.createTravel(0)
+        const travel = this.journey.createTravel(0)
         return new Evolver(gotchi, travel)
     }
 }
