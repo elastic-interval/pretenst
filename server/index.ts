@@ -1,5 +1,4 @@
-import createLnRpc from "@radar/lnrpc"
-import { LnRpc } from "@radar/lnrpc/types/lnrpc"
+import createLnRpc, { LnRpcClientConfig } from "@radar/lnrpc"
 import bodyParser from "body-parser"
 import dotenv from "dotenv"
 import express from "express"
@@ -13,18 +12,20 @@ async function run(port: number): Promise<void> {
     dotenv.load()
 
     const lnRpcHost = process.env.LNRPC_REMOTE_HOST
-    let lnRpc: LnRpc
+    let config: LnRpcClientConfig
     if (!lnRpcHost) {
-        lnRpc = await createLnRpc({
+        config = {
             server: "localhost:10009",
-        })
+        }
     } else {
-        lnRpc = await createLnRpc({
+        config = {
             server: `${lnRpcHost}:10009`,
             tls: `./secret/${lnRpcHost}/tls.cert`,
             macaroonPath: `./secret/${lnRpcHost}/admin.macaroon`,
-        })
+        }
     }
+    console.log(`Connecting to LN RPC with config: ${JSON.stringify(config, null, 2)}`)
+    const lnRpc = await createLnRpc(config)
     const paymentHandler = new PaymentHandler(lnRpc)
     const flashStore = new LevelDBFlashStore(__dirname + "/data/flash-store")
     const curator = new HexalotCurator(flashStore, paymentHandler)
