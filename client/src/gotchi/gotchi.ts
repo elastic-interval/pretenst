@@ -19,16 +19,16 @@ export class Gotchi {
         this.growth = new Growth(fabric, genome.createReader(Direction.REST))
     }
 
-    public dispose() {
+    public dispose(): void {
         this.fabric.disposeOfGeometry()
         this.freeFabric()
     }
 
-    public get midpoint() {
+    public get midpoint(): Vector3 {
         return this.fabric.midpoint
     }
 
-    public get master() {
+    public get master(): string {
         return this.genome.master
     }
 
@@ -40,7 +40,7 @@ export class Gotchi {
         return this.fabric.isGestating
     }
 
-    public getDistanceFrom(location: Vector3) {
+    public getDistanceFrom(location: Vector3): number {
         const xx = this.fabric.vectors[0] - location.x
         const zz = this.fabric.vectors[2] - location.z
         return Math.sqrt(xx * xx + zz * zz)
@@ -58,7 +58,7 @@ export class Gotchi {
         this.fabric.direction = direction
     }
 
-    public approach(location: Vector3, towards: boolean) {
+    public approach(location: Vector3, towards: boolean): void {
         const distance = (direction: Vector3, factor: number) => new Vector3()
             .add(this.fabric.midpoint)
             .addScaledVector(direction, factor)

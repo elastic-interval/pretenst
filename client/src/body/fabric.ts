@@ -7,7 +7,7 @@ import {FaceSnapshot, IJointSnapshot} from "./face-snapshot"
 export const BILATERAL_MIDDLE = 0
 export const BILATERAL_RIGHT = 1
 export const BILATERAL_LEFT = 2
-export const HUNG_ALTITUDE = 7
+export const HUNG_ALTITUDE = 10
 export const NORMAL_TICKS = 50
 
 export const INTERVALS_RESERVED = 1
@@ -56,15 +56,15 @@ export class Fabric {
         return this.exports.getRight()
     }
 
-    public get jointCount() {
+    public get jointCount(): number {
         return this.exports.getJointCount()
     }
 
-    public get intervalCount() {
+    public get intervalCount(): number {
         return this.exports.getIntervalCount()
     }
 
-    public get faceCount() {
+    public get faceCount(): number {
         return this.exports.getFaceCount()
     }
 
@@ -193,7 +193,7 @@ export class Fabric {
             this.face(left, walk + 1, (walk + 1) % SEED_CORNERS + 1)
             this.face(right, (walk + 1) % SEED_CORNERS + 1, walk + 1)
         }
-        hanger.y += this.setAltitude(HUNG_ALTITUDE)
+        hanger.y += this.setAltitude(HUNG_ALTITUDE - R)
         return this
     }
 

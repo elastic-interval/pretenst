@@ -11,7 +11,7 @@ export interface IPhysicsPanelState {
     value?: number
 }
 
-function featureSelected(feature: IPhysicsFeature) {
+function featureSelected(feature: IPhysicsFeature): () => object {
     return (): object => {
         return {
             feature,
@@ -27,7 +27,7 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPa
         this.state = {}
     }
 
-    public featureUp() {
+    public featureUp(): void {
         const feature = this.state.feature
         if (feature) {
             feature.setFactor(feature.getFactor() * 1.1)
@@ -35,7 +35,7 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPa
         }
     }
 
-    public featureDown() {
+    public featureDown(): void {
         const feature = this.state.feature
         if (feature) {
             feature.setFactor(feature.getFactor() * 0.9)
@@ -43,7 +43,7 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPa
         }
     }
 
-    public featureReset() {
+    public featureReset(): void {
         const feature = this.state.feature
         if (feature) {
             feature.setFactor(1)
@@ -51,7 +51,7 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPa
         }
     }
 
-    public render() {
+    public render(): JSX.Element {
         const feature = this.state.feature
         const value = this.state.value
         return (

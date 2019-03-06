@@ -26,17 +26,17 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
         }
     }
 
-    public componentDidMount() {
+    public componentDidMount(): void {
         this.subscription = this.props.evolution.evolversNow.subscribe(evolvers => {
             this.setState({evolvers})
         })
     }
 
-    public componentWillUnmount() {
+    public componentWillUnmount(): void {
         this.subscription.unsubscribe()
     }
 
-    public render() {
+    public render(): JSX.Element {
         return <R3.Object3D key="EvolutionMesh">
             {
                 this.state.evolvers.map((evolver, index) => {

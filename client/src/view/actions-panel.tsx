@@ -11,6 +11,9 @@ import {Spot} from "../island/spot"
 import {OrbitDistance} from "./orbit"
 
 export enum Command {
+    DETACH = "Detach",
+    SAVE_GENOME = "Save genome",
+    DELETE_GENOME = "Delete genome",
     RETURN_TO_SEED = "Return to seed",
     LAUNCH_GOTCHI = "Launch Gotchi",
     TURN_LEFT = "Turn Left",
@@ -40,7 +43,7 @@ interface IClicky {
     command: Command
 }
 
-function Clicky(params: IClicky) {
+function Clicky(params: IClicky): JSX.Element {
     return (
         <span style={{padding: "5px 5px 5px 5px"}}>
             <Button onClick={() => params.props.doCommand(params.command)}>{params.command}</Button>
@@ -64,7 +67,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         super(props)
     }
 
-    public render() {
+    public render(): JSX.Element {
         const evolution = this.props.evolution
         if (evolution) {
             return this.evolving(evolution)
@@ -77,7 +80,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         if (hexalot) {
             if (hexalot.master === this.props.master) {
                 return this.homeHexalot(hexalot)
-            } else if (hexalot.master) {
+            } else {
                 return this.foreignHexalot(hexalot)
             }
         }
@@ -96,10 +99,10 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private foreignHexalot(hexalot: Hexalot) {
+    private foreignHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionPanel>
-                <h3>{hexalot.master}</h3>
+                <span>This hexalot at ({hexalot.coords.x}, {hexalot.coords.y}) belongs to {hexalot.master}</span>
                 <Container>
                     <Row>
                         <Col>
@@ -113,16 +116,23 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             </Button>
                         </Col>
                     </Row>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.DETACH)}>
+                                Detach
+                            </Button>
+                        </Col>
+                    </Row>
                 </Container>
             </ActionPanel>
         )
     }
 
-    private homeHexalot(hexalot: Hexalot) {
+    private homeHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionPanel>
                 <p>
-                    This is your hexalot!
+                    This is your hexalot at ({hexalot.coords.x}, {hexalot.coords.y})
                 </p>
                 <p>
                     You can
@@ -138,7 +148,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private drivingGotchi(gotchi: Gotchi) {
+    private drivingGotchi(gotchi: Gotchi): JSX.Element {
         return (
             <ActionPanel>
                 <p>
@@ -168,12 +178,20 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             Turn right
                         </Button>
                     </ButtonGroup>
+                    <ButtonGroup>
+                        <Button onClick={() => this.props.doCommand(Command.SAVE_GENOME)}>
+                            Save genome
+                        </Button>
+                        <Button onClick={() => this.props.doCommand(Command.DELETE_GENOME)}>
+                            Delete genome
+                        </Button>
+                    </ButtonGroup>
                 </div>
             </ActionPanel>
         )
     }
 
-    private evolving(evolution: Evolution) {
+    private evolving(evolution: Evolution): JSX.Element {
         return (
             <ActionPanel>
                 <p>
@@ -184,7 +202,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private availableHexalot(spot: Spot) {
+    private availableHexalot(spot: Spot): JSX.Element {
         return (
             <ActionPanel>
                 <p>
@@ -199,7 +217,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private freeSpot(spot: Spot) {
+    private freeSpot(spot: Spot): JSX.Element {
         return (
             <ActionPanel>
                 <p>

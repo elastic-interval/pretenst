@@ -9,6 +9,7 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
+const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
 const JOINT_NAME_SIZE: usize = U16
@@ -27,6 +28,7 @@ const GROWING_INTERVAL: u8 = 1
 const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
+const LAND: u8 = 1
 
 // Dimensioning ================================================================================
 
@@ -93,7 +95,7 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
             ) + VECTOR_SIZE
         ) + VECTOR_SIZE
     ) + STATE_SIZE
-    let blocks = (fabricBytes * instanceCountMax) >> 16
+    let blocks = (HEXALOT_SIZE + fabricBytes * instanceCountMax) >> 16
     memory.grow(blocks + 1)
     return fabricBytes
 }
@@ -102,8 +104,10 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
 
 const DRAG_ABOVE: f32 = 0.00009539999882690609
 const GRAVITY_ABOVE: f32 = 0.000018920998627436347
-const DRAG_BELOW: f32 = 0.9607399702072144
-const GRAVITY_BELOW: f32 = -0.002540299901738763
+const DRAG_BELOW_LAND: f32 = 0.9607399702072144
+const DRAG_BELOW_WATER: f32 = 0.001
+const GRAVITY_BELOW_LAND: f32 = -0.002540299901738763
+const GRAVITY_BELOW_WATER: f32 = -0.00001
 const ELASTIC_FACTOR: f32 = 0.5767999887466431
 const MAX_SPAN_VARIATION: f32 = 0.1
 const TIME_SWEEP_SPEED: f32 = 30
@@ -120,16 +124,28 @@ export function setGravityAbove(factor: f32): f32 {
     return physicsGravityAbove = GRAVITY_ABOVE * factor
 }
 
-let physicsDragBelow: f32 = DRAG_BELOW
+let physicsDragBelowWater: f32 = DRAG_BELOW_WATER
 
-export function setDragBelow(factor: f32): f32 {
-    return physicsDragBelow = DRAG_BELOW * factor
+export function setDragBelowWater(factor: f32): f32 {
+    return physicsDragBelowWater = DRAG_BELOW_WATER * factor
 }
 
-let physicsGravityBelow: f32 = GRAVITY_BELOW
+let physicsGravityBelowWater: f32 = GRAVITY_BELOW_WATER
 
-export function setGravityBelow(factor: f32): f32 {
-    return physicsGravityBelow = GRAVITY_BELOW * factor
+export function setGravityBelowWater(factor: f32): f32 {
+    return physicsGravityBelowWater = GRAVITY_BELOW_WATER * factor
+}
+
+let physicsDragBelowLand: f32 = DRAG_BELOW_LAND
+
+export function setDragBelowLand(factor: f32): f32 {
+    return physicsDragBelowLand = DRAG_BELOW_LAND * factor
+}
+
+let physicsGravityBelowLand: f32 = GRAVITY_BELOW_LAND
+
+export function setGravityBelowLand(factor: f32): f32 {
+    return physicsGravityBelowLand = GRAVITY_BELOW_LAND * factor
 }
 
 let physicsElasticFactor: f32 = ELASTIC_FACTOR
@@ -157,7 +173,7 @@ let instancePtr: usize = 0
 
 export function setInstance(index: u16): void {
     instance = index
-    instancePtr = instance * fabricBytes
+    instancePtr = HEXALOT_SIZE + instance * fabricBytes
 }
 
 // Peek and Poke ================================================================================
@@ -230,6 +246,16 @@ function getZ(vPtr: usize): f32 {
 @inline()
 function setZ(vPtr: usize, v: f32): void {
     store<f32>(instancePtr + vPtr + F32 * 2, v)
+}
+
+@inline()
+function getU8Global(vPtr: usize): u8 {
+    return load<u8>(vPtr)
+}
+
+@inline()
+function getF32Global(vPtr: usize): f32 {
+    return load<f32>(vPtr)
 }
 
 @inline
@@ -331,7 +357,6 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
     setY(vPtr, az * bx - ax * bz)
     setZ(vPtr, ax * by - ay * bx)
 }
-
 
 // Fabric state ===============================================================================
 
@@ -639,11 +664,11 @@ function setIdealSpan(intervalIndex: u16, idealSpan: f32): void {
 }
 
 function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
-    return getU8(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction)
+    return getU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction)
 }
 
 export function setIntervalHighLow(intervalIndex: u16, direction: u8, highLow: u8): void {
-    setU8(intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction, highLow)
+    setU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction, highLow)
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -923,64 +948,7 @@ export function removeFace(deadFaceIndex: u16): void {
     setFaceCount(faceCount)
 }
 
-// Physics =====================================================================================
-
-function elastic(intervalIndex: u16, elasticFactor: f32): void {
-    let idealSpan = interpolateCurrentSpan(intervalIndex)
-    let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan
-    addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2)
-    addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2)
-    let mass = idealSpan * idealSpan * idealSpan
-    let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex))
-    setF32(alphaMass, getF32(alphaMass) + mass / 2)
-    let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex))
-    setF32(omegaMass, getF32(omegaMass) + mass / 2)
-}
-
-function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
-    let velocityVectorPtr = velocityPtr(jointIndex)
-    let velocityY = getY(velocityVectorPtr)
-    let altitude = getY(locationPtr(jointIndex))
-    if (altitude > JOINT_RADIUS) {
-        setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
-        multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove)
-    } else if (altitude > -JOINT_RADIUS) {
-        let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
-        let degreeBelow: f32 = 1.0 - degreeAbove
-        if (velocityY < 0) {
-            multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
-        }
-        let gravityValue: f32 = physicsGravityAbove * degreeAbove + physicsGravityBelow * degreeBelow
-        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
-        let drag = dragAbove * degreeAbove + physicsDragBelow * degreeBelow
-        multiplyScalar(velocityPtr(jointIndex), 1 - drag)
-    } else {
-        if (velocityY < 0) {
-            zero(velocityVectorPtr)
-        } else {
-            setY(velocityVectorPtr, velocityY - physicsGravityBelow)
-        }
-        multiplyScalar(velocityPtr(jointIndex), 1 - physicsDragBelow)
-    }
-}
-
-function tick(): void {
-    let gestating = getGestating()
-    let intervalCount = getIntervalCount()
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        elastic(intervalIndex, gestating ? physicsElasticFactor * 0.1 : physicsElasticFactor)
-    }
-    let jointCount = getJointCount()
-    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? 50 : 1))
-        addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getF32(intervalMassPtr(jointIndex)))
-        zero(forcePtr(jointIndex))
-    }
-    for (let jointIndex: u16 = gestating ? 1 : 0; jointIndex < jointCount; jointIndex++) {
-        add(locationPtr(jointIndex), velocityPtr(jointIndex))
-        setF32(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS)
-    }
-}
+// Birth =======================================================================================
 
 export function isGestating(): boolean {
     return getGestating() === GESTATING
@@ -1009,6 +977,120 @@ export function endGestation(): void {
             let jointIndex = getFaceJointIndex(faceIndex, jointNumber)
             setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1)
         }
+    }
+}
+
+// Hexalot ====================================================================================
+
+const HEXALOT_BITS_ALIGNED: u8 = 128
+const HEXALOT_BITS: u8 = 127
+const SPOT_CENTERS_SIZE = HEXALOT_BITS_ALIGNED * FLOATS_IN_VECTOR * F32
+const SURFACE_SIZE = HEXALOT_BITS_ALIGNED * U8
+const HEXALOT_SIZE = SPOT_CENTERS_SIZE + SURFACE_SIZE
+
+function getSpotLocationX(bitNumber: u8): f32 {
+    return getF32Global(bitNumber * FLOATS_IN_VECTOR * F32)
+}
+
+function getSpotLocationZ(bitNumber: u8): f32 {
+    return getF32Global((bitNumber * FLOATS_IN_VECTOR + 2) * F32)
+}
+
+function getHexalotBit(bitNumber: u8): u8 {
+    return getU8Global(SPOT_CENTERS_SIZE + bitNumber)
+}
+
+function getNearestSpotIndex(jointIndex: u16): u8 {
+    let locPtr = locationPtr(jointIndex)
+    let x = getX(locPtr)
+    let z = getZ(locPtr)
+    let minimumQuadrance: f32 = 10000
+    let nearestSpotIndex: u8 = HEXALOT_BITS
+    for (let bit: u8 = 0; bit < HEXALOT_BITS; bit++) {
+        let xx = getSpotLocationX(bit)
+        let dx = xx - x
+        let zz = getSpotLocationZ(bit)
+        let dz = zz - z
+        let q = dx * dx + dz * dz
+        if (q < minimumQuadrance) {
+            minimumQuadrance = q
+            nearestSpotIndex = bit
+        }
+    }
+    return nearestSpotIndex
+}
+
+function getTerrainUnder(jointIndex: u16): u8 {
+    // TODO: save the three most recent spotIndexes at the joint and check mostly only those
+    // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
+    let spotIndex = getNearestSpotIndex(jointIndex)
+    if (spotIndex === HEXALOT_BITS) {
+        return HEXALOT_BITS
+    }
+    return getHexalotBit(spotIndex)
+}
+
+// Physics =====================================================================================
+
+function elastic(intervalIndex: u16, elasticFactor: f32): void {
+    let idealSpan = interpolateCurrentSpan(intervalIndex)
+    let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan
+    addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2)
+    addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2)
+    let mass = idealSpan * idealSpan * idealSpan
+    let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex))
+    setF32(alphaMass, getF32(alphaMass) + mass / 2)
+    let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex))
+    setF32(omegaMass, getF32(omegaMass) + mass / 2)
+}
+
+function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
+    let velocityVectorPtr = velocityPtr(jointIndex)
+    let velocityY = getY(velocityVectorPtr)
+    let altitude = getY(locationPtr(jointIndex))
+    if (altitude > JOINT_RADIUS) { // far above
+        setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
+        multiplyScalar(velocityPtr(jointIndex), 1 - dragAbove)
+    } else {
+        let land = getTerrainUnder(jointIndex) === LAND
+        let physicsGravityBelow = land ? physicsGravityBelowLand : physicsGravityBelowWater
+        let physicsDragBelow = land ? physicsDragBelowLand : physicsDragBelowWater
+        if (altitude > -JOINT_RADIUS) { // close to the surface
+            let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
+            let degreeBelow: f32 = 1.0 - degreeAbove
+            if (velocityY < 0 && land) {
+                multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
+            }
+            let gravityValue: f32 = physicsGravityAbove * degreeAbove + physicsGravityBelow * degreeBelow
+            setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
+            let drag = dragAbove * degreeAbove + physicsDragBelow * degreeBelow
+            multiplyScalar(velocityPtr(jointIndex), 1 - drag)
+        } else { // far under the surface
+            if (velocityY < 0 && land) {
+                zero(velocityVectorPtr)
+            } else {
+                setY(velocityVectorPtr, velocityY - physicsGravityBelow)
+            }
+            multiplyScalar(velocityPtr(jointIndex), 1 - physicsDragBelow)
+        }
+    }
+}
+
+function tick(): void {
+    let gestating = getGestating()
+    let intervalCount = getIntervalCount()
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        elastic(intervalIndex, gestating ? physicsElasticFactor * 0.1 : physicsElasticFactor)
+    }
+    let jointCount = getJointCount()
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? 50 : 1))
+        addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getF32(intervalMassPtr(jointIndex)))
+        zero(forcePtr(jointIndex))
+    }
+    for (let jointIndex: u16 = gestating ? 1 : 0; jointIndex < jointCount; jointIndex++) {
+        add(locationPtr(jointIndex), velocityPtr(jointIndex))
+        setF32(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS)
     }
 }
 

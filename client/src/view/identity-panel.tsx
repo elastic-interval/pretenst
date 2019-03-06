@@ -28,12 +28,12 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
             name: props.master ? props.master : "",
             islandMasters: props.island.hexalots.map(hexalot => {
                 const genome = props.storage.getGenome(hexalot)
-                return genome? genome.master : ""
+                return genome ? genome.master : ""
             }).filter(master => master.length > 0),
         }
     }
 
-    public render() {
+    public render(): JSX.Element {
         if (this.props.master) {
             return (
                 <div>
@@ -52,7 +52,8 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
                     <form onSubmit={this.handleSubmitName}>
                         <label>
                             <strong>Name:</strong>
-                            <input type="text" value={this.state.name} onChange={this.handleNameChange}/><strong>{this.state.error}</strong>
+                            <input type="text" value={this.state.name}
+                                   onChange={this.handleNameChange}/><strong>{this.state.error}</strong>
                         </label>
                         <input type="submit" disabled={!candidate} value="Choose this Hexalot!"/>
                     </form>
@@ -61,7 +62,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
         }
     }
 
-    private handleNameChange(event: ChangeEvent<HTMLInputElement>) {
+    private handleNameChange(event: ChangeEvent<HTMLInputElement>): void {
         const name = event.target.value
         if (this.state.islandMasters.find(master => master === name)) {
             const error = "Name exists!"
@@ -71,7 +72,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
         }
     }
 
-    private handleSubmitName(event: FormEvent<HTMLFormElement>) {
+    private handleSubmitName(event: FormEvent<HTMLFormElement>): void {
         console.log("submit", event)
         event.preventDefault()
     }

@@ -18,7 +18,7 @@ export interface ITripComponentState {
     nextSpot?: Spot
 }
 
-function geometryRefreshed(state: ITripComponentState, props: ITripComponentProps) {
+function geometryRefreshed(state: ITripComponentState, props: ITripComponentProps): object {
     if (state.geometry) {
         state.geometry.dispose()
     }
@@ -42,11 +42,11 @@ export class TripComponent extends React.Component<ITripComponentProps, ITripCom
         this.state = {}
     }
 
-    public componentWillReceiveProps() {
+    public componentWillReceiveProps(): void {
         this.setState(geometryRefreshed)
     }
 
-    public render() {
+    public render(): JSX.Element {
         if (!this.state.geometry) {
             return <R3.Object3D key="NoTrip"/>
         } else {

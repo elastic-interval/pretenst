@@ -27,16 +27,16 @@ export class TitlePanel extends React.Component<ITitlePanelProps, ITitlePanelSta
         this.state = {orbitState: props.orbitState.getValue()}
     }
 
-    public componentDidMount() {
+    public componentDidMount(): void {
         this.subs.push(this.props.orbitState.subscribe(orbitState => this.setState({orbitState})))
         this.subs.push(this.props.selectedSpot.subscribe(selectedSpot => this.setState({selectedSpot})))
     }
 
-    public componentWillUnmount() {
+    public componentWillUnmount(): void {
         this.subs.forEach(s => s.unsubscribe())
     }
 
-    public render() {
+    public render(): JSX.Element {
         const spot = this.state.selectedSpot
         return (
             <div>

@@ -1,6 +1,15 @@
 import {Vector3} from "three"
 
+import {HEXALOT_SHAPE} from "../island/shapes"
+
 import {Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports} from "./fabric-exports"
+
+const FLOATS_IN_VECTOR = 3
+const VECTORS_FOR_FACE = 3
+const HEXALOT_BITS = 128
+const SPOT_CENTERS_FLOATS = HEXALOT_BITS * FLOATS_IN_VECTOR
+const SPOT_CENTERS_SIZE = SPOT_CENTERS_FLOATS * Float32Array.BYTES_PER_ELEMENT
+const HEXALOT_SIZE = SPOT_CENTERS_SIZE + HEXALOT_BITS
 
 export const vectorFromFloatArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
     if (vector) {
@@ -11,7 +20,7 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
     }
 }
 
-export function createFabricKernel(fabricExports: IFabricExports,instanceMax: number, jointCountMax: number): FabricKernel {
+export function createFabricKernel(fabricExports: IFabricExports, instanceMax: number, jointCountMax: number): FabricKernel {
     const intervalCountMax = jointCountMax * 3 + 30
     const faceCountMax = jointCountMax * 2 + 20
     const dimensions: IFabricDimensions = {
@@ -32,7 +41,13 @@ interface IOffsets {
 }
 
 function createOffsets(faceCountMax: number, fabricBytes: number): IOffsets {
-    const offsets: IOffsets = {vectorsOffset: 0, faceMidpointsOffset: 0, faceLocationsOffset: 0, faceNormalsOffset: 0, fabricBytes}
+    const offsets: IOffsets = {
+        vectorsOffset: 0,
+        faceMidpointsOffset: 0,
+        faceLocationsOffset: 0,
+        faceNormalsOffset: 0,
+        fabricBytes,
+    }
     // sizes
     const seedVectors = 4 * FLOATS_IN_VECTOR
     const faceVectorFloats = faceCountMax * FLOATS_IN_VECTOR
@@ -48,35 +63,48 @@ function createOffsets(faceCountMax: number, fabricBytes: number): IOffsets {
     return offsets
 }
 
-const FLOATS_IN_VECTOR = 3
-const VECTORS_FOR_FACE = 3
-
 export class FabricKernel {
     private instanceArray: IFabricInstanceExports[] = []
     private offsets: IOffsets
+    private arrayBuffer: ArrayBuffer
+    private spotCenters: Float32Array
+    private surface: Int8Array
 
-    constructor(
-        exports: IFabricExports,
-        dimensions: IFabricDimensions,
-    ) {
+    constructor(exports: IFabricExports, dimensions: IFabricDimensions) {
         const fabricBytes = exports.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
+        this.arrayBuffer = exports.memory.buffer
+        this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
+        this.surface = new Int8Array(this.arrayBuffer, SPOT_CENTERS_SIZE, HEXALOT_BITS)
         this.offsets = createOffsets(dimensions.faceCountMax, fabricBytes)
-        const byteLength = exports.memory.buffer.byteLength
+        const byteLength = this.arrayBuffer.byteLength
         if (byteLength === 0) {
             throw new Error(`Zero byte length! ${this.offsets.fabricBytes}`)
         }
         for (let index = 0; index < dimensions.instanceMax; index++) {
-            this.instanceArray.push(new InstanceExports(this.offsets, exports, dimensions, index))
+            this.instanceArray.push(new InstanceExports(this.arrayBuffer, this.offsets, exports, dimensions, index))
         }
     }
 
     public get instance(): IFabricInstanceExports[] {
         return this.instanceArray
     }
+
+    public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
+        if (spotCenters.length !== HEXALOT_SHAPE.length || surface.length !== HEXALOT_SHAPE.length) {
+            throw new Error("Size problem")
+        }
+        spotCenters.forEach((center, index) => {
+            this.spotCenters[index * FLOATS_IN_VECTOR] = center.x
+            this.spotCenters[index * FLOATS_IN_VECTOR + 1] = center.y
+            this.spotCenters[index * FLOATS_IN_VECTOR + 2] = center.z
+        })
+        surface.forEach((land, index) => {
+            this.surface[index] = land ? 1 : 0
+        })
+    }
 }
 
 class InstanceExports implements IFabricInstanceExports {
-    private arrayBuffer: ArrayBuffer
     private vectorArray: Float32Array | undefined
     private faceMidpointsArray: Float32Array | undefined
     private faceLocationsArray: Float32Array | undefined
@@ -86,15 +114,19 @@ class InstanceExports implements IFabricInstanceExports {
     private forwardVector = new Vector3()
     private rightVector = new Vector3()
 
-    constructor(private offsets: IOffsets, private exports: IFabricExports, private dimensions: IFabricDimensions, private index: number) {
-        this.arrayBuffer = exports.memory.buffer
+    constructor(
+        private arrayBuffer: ArrayBuffer,
+        private offsets: IOffsets,
+        private exports: IFabricExports,
+        private dimensions: IFabricDimensions,
+        private index: number) {
     }
 
     public getDimensions(): IFabricDimensions {
         return this.dimensions
     }
 
-    public refresh() {
+    public refresh(): void {
         this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined
     }
 
@@ -237,7 +269,7 @@ class InstanceExports implements IFabricInstanceExports {
 
     public get vectors(): Float32Array {
         if (!this.vectorArray) {
-            const offset = this.offsets.vectorsOffset + this.index * this.offsets.fabricBytes
+            const offset = HEXALOT_SIZE + this.offsets.vectorsOffset + this.index * this.offsets.fabricBytes
             this.vectorArray = new Float32Array(this.arrayBuffer, offset, 4 * 3)
         }
         return this.vectorArray
@@ -261,7 +293,7 @@ class InstanceExports implements IFabricInstanceExports {
 
     public get faceMidpoints(): Float32Array {
         if (!this.faceMidpointsArray) {
-            const offset = this.offsets.faceMidpointsOffset + this.index * this.offsets.fabricBytes
+            const offset = HEXALOT_SIZE + this.offsets.faceMidpointsOffset + this.index * this.offsets.fabricBytes
             this.faceMidpointsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3)
         }
         return this.faceMidpointsArray
@@ -269,7 +301,7 @@ class InstanceExports implements IFabricInstanceExports {
 
     public get faceLocations(): Float32Array {
         if (!this.faceLocationsArray) {
-            const offset = this.offsets.faceLocationsOffset + this.index * this.offsets.fabricBytes
+            const offset = HEXALOT_SIZE + this.offsets.faceLocationsOffset + this.index * this.offsets.fabricBytes
             this.faceLocationsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceLocationsArray
@@ -277,7 +309,7 @@ class InstanceExports implements IFabricInstanceExports {
 
     public get faceNormals(): Float32Array {
         if (!this.faceNormalsArray) {
-            const offset = this.offsets.faceNormalsOffset + this.index * this.offsets.fabricBytes
+            const offset = HEXALOT_SIZE + this.offsets.faceNormalsOffset + this.index * this.offsets.fabricBytes
             this.faceNormalsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceNormalsArray

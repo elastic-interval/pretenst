@@ -1,6 +1,6 @@
 import {Vector3} from "three"
 
-import {Genome} from "../genetics/genome"
+import {fromMaster, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 
 import {BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
@@ -14,7 +14,7 @@ interface IHexalotIndexed {
     index: number
 }
 
-const spotsToHexFingerprint = (spots: Spot[]) => {
+const spotsToHexFingerprint = (spots: Spot[]): string => {
     const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
     const nybbleStrings = lit.map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : null).filter(chunk => chunk)
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16))
@@ -68,11 +68,14 @@ export class Hexalot {
     }
 
     public createGotchi(mutatedGenome?: Genome): Gotchi {
-        const genome = mutatedGenome ? mutatedGenome : this.genome
-        if (!genome) {
-            throw new Error("Create gotchi but no genome")
+        if (mutatedGenome) {
+            return this.gotchiFactory.createGotchiAt(this.center, mutatedGenome)
+        } else {
+            if (!this.genome) {
+                this.genome = fromMaster(`(${this.coords.x}, ${this.coords.y})`)
+            }
+            return this.gotchiFactory.createGotchiAt(this.center, this.genome)
         }
-        return this.gotchiFactory.createGotchiAt(this.center, genome)
     }
 
     get master(): string | undefined {
@@ -111,7 +114,7 @@ export class Hexalot {
         return lightsToRemove
     }
 
-    public createFingerprint() {
+    public createFingerprint(): string {
         return spotsToHexFingerprint(this.spots)
     }
 
@@ -130,8 +133,7 @@ export class Hexalot {
                 steps.push(child.index > 0 ? child.index : ERROR_STEP)
                 child.hexalot.generateOctalTreePattern(steps)
             }
-        }
-        else {
+        } else {
             steps.push(STOP_STEP)
         }
         this.visited = true

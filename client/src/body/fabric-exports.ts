@@ -44,9 +44,13 @@ export interface IFabricExports {
 
     setGravityAbove(factor: number): number
 
-    setDragBelow(factor: number): number
+    setDragBelowLand(factor: number): number
 
-    setGravityBelow(factor: number): number
+    setGravityBelowLand(factor: number): number
+
+    setDragBelowWater(factor: number): number
+
+    setGravityBelowWater(factor: number): number
 
     setElasticFactor(factor: number): number
 

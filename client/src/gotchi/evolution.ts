@@ -92,7 +92,7 @@ export class Evolution {
         }
     }
 
-    public dispose() {
+    public dispose(): void {
         this.evolversNow.getValue().forEach(evolver => evolver.gotchi.dispose())
     }
 
@@ -108,7 +108,7 @@ export class Evolution {
         return this.rankedEvolvers[0]
     }
 
-    private rebootAll(survivalRate: number) {
+    private rebootAll(survivalRate: number): void {
         this.rebooting = true
         const ranked: Evolver[] = this.rankedEvolvers
         const deadEvolvers = ranked.splice(Math.ceil(ranked.length * survivalRate))

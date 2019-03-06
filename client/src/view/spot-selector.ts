@@ -19,7 +19,7 @@ export class SpotSelector {
         this.setSize(width, height)
     }
 
-    public setMesh(key: MeshKey, mesh: Mesh) {
+    public setMesh(key: MeshKey, mesh: Mesh): void {
         if (mesh) {
             this.meshes[key] = mesh
         } else {
@@ -27,7 +27,7 @@ export class SpotSelector {
         }
     }
 
-    public setSize(width: number, height: number) {
+    public setSize(width: number, height: number): void {
         this.size.x = width
         this.size.y = height
     }
@@ -39,7 +39,10 @@ export class SpotSelector {
 
     // ==================
 
-    private adjustRaycaster(event: React.MouseEvent<HTMLDivElement>) {
+    private adjustRaycaster(event: React.MouseEvent<HTMLDivElement>): void {
+        // todo: const rect = event.target.getBoundingClientRect();
+        // this.mouse.x = ((event.clientX - rect.left) / this.size.x) * 2 - 1;
+        // this.mouse.y = -((event.clientY - rect.top) / this.size.y) * 2 + 1;
         this.mouse.x = (event.clientX / this.size.x) * 2 - 1
         this.mouse.y = -(event.clientY / this.size.y) * 2 + 1
         this.rayCaster.setFromCamera(this.mouse, this.camera)
