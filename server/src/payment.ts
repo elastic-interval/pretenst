@@ -31,7 +31,10 @@ export class PaymentHandler {
     }
 
     private async setupSubscriptions(): Promise<void> {
-        const subscriber = await this.lnRpc.subscribeInvoices()
+        const subscriber = await this.lnRpc.subscribeInvoices({
+            addIndex: "0",
+            settleIndex: "0",
+        })
         subscriber.on("data", (invoice: Invoice) => {
             if (invoice.settled && invoice.paymentRequest)  {
                 this.invoiceSettledEvents.emit(invoice.paymentRequest)

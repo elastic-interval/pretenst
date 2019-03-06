@@ -1,4 +1,5 @@
 import { HexalotID, PubKey } from "./types"
+import { FlashStore } from "flash-store"
 
 export interface IKeyValueStore {
     set(key: string, value: string): Promise<void>
@@ -29,6 +30,26 @@ export class InMemoryStore implements IKeyValueStore {
     }
 }
 
+export class LevelDBFlashStore implements IKeyValueStore {
+    private db: FlashStore<string, string>
+
+    constructor(storePath: string) {
+        this.db = new FlashStore(storePath)
+    }
+
+    public delete(key: string): Promise<void> {
+        return this.db.del(key)
+    }
+
+    public async get(key: string): Promise<string | null> {
+        return await this.db.get(key) || null
+    }
+
+    public set(key: string, value: string): Promise<void> {
+        return this.db.set(key, value)
+    }
+}
+
 export class HexalotStore {
     constructor(
         readonly db: IKeyValueStore,
@@ -54,7 +75,7 @@ export class HexalotStore {
     public async assignLot(lot: HexalotID, owner: PubKey): Promise<void> {
         const ownedLots: HexalotID[] = JSON.parse(await this.get(`user:${owner}:lots`) || "[]")
         ownedLots.push(lot)
-        // FIXME: this operation has to be atomic
+        // FIXME: this operation should be atomic
         await Promise.all([
             this.set(`user:${owner}:lots`, JSON.stringify(ownedLots)),
             this.set(`hexalot:${lot}:owner`, owner),

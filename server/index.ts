@@ -1,19 +1,33 @@
 import createLnRpc from "@radar/lnrpc"
-import bodyParser = require("body-parser")
+import { LnRpc } from "@radar/lnrpc/types/lnrpc"
+import bodyParser from "body-parser"
+import dotenv from "dotenv"
 import express from "express"
 
 import { HexalotCurator } from "./src/curator"
 import { PaymentHandler } from "./src/payment"
-import { InMemoryStore } from "./src/store"
+import { LevelDBFlashStore } from "./src/store"
 
 
 async function run(port: number): Promise<void> {
-    const lnRpc = await createLnRpc({
-        server: "localhost:10009",
-        macaroonPath: "~/.lnd/data/chain/bitcoin/testnet/invoice.macaroon",
-    })
+    dotenv.load()
+
+    const lnRpcHost = process.env.LNRPC_REMOTE_HOST
+    let lnRpc: LnRpc
+    if (!lnRpcHost) {
+        lnRpc = await createLnRpc({
+            server: "localhost:10009",
+        })
+    } else {
+        lnRpc = await createLnRpc({
+            server: `${lnRpcHost}:10009`,
+            tls: `./secret/${lnRpcHost}/tls.cert`,
+            macaroonPath: `./secret/${lnRpcHost}/admin.macaroon`,
+        })
+    }
     const paymentHandler = new PaymentHandler(lnRpc)
-    const curator = new HexalotCurator(new InMemoryStore(), paymentHandler)
+    const flashStore = new LevelDBFlashStore(__dirname + "/data/flash-store")
+    const curator = new HexalotCurator(flashStore, paymentHandler)
 
     const app = express()
 
