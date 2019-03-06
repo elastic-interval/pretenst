@@ -2,17 +2,16 @@ import createLnRpc, { LnRpcClientConfig } from "@radar/lnrpc"
 import bodyParser from "body-parser"
 import dotenv from "dotenv"
 import express from "express"
-import { join } from "path"
+import morgan from "morgan"
 import { homedir } from "os"
+import { join } from "path"
 
 import { HexalotCurator } from "./src/curator"
 import { PaymentHandler } from "./src/payment"
 import { LevelDBFlashStore } from "./src/store"
 
 
-async function run(port: number): Promise<void> {
-    dotenv.load()
-
+async function run(listenPort: number): Promise<void> {
     const lnRpcHost = process.env.LNRPC_REMOTE_HOST
     let config: LnRpcClientConfig
     if (!lnRpcHost) {
@@ -42,9 +41,12 @@ async function run(port: number): Promise<void> {
 
     app.use("/hexalot", curator.createExpressRouter())
 
-    return new Promise<void>(resolve => app.listen(port, resolve))
+    app.use(morgan("short"))
+
+    return new Promise<void>(resolve => app.listen(listenPort, resolve))
 }
 
-const PORT = 8000
-run(PORT)
-    .then(() => console.log(`Listening on port ${PORT}`))
+dotenv.load()
+const port = parseInt(process.env.PORT || "8000", 10)
+run(port)
+    .then(() => console.log(`Listening on port: ${port}`))
