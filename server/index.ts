@@ -2,6 +2,7 @@ import createLnRpc, { LnRpcClientConfig } from "@radar/lnrpc"
 import bodyParser from "body-parser"
 import dotenv from "dotenv"
 import express from "express"
+import {resolve} from "path"
 
 import { HexalotCurator } from "./src/curator"
 import { PaymentHandler } from "./src/payment"
@@ -14,8 +15,10 @@ async function run(port: number): Promise<void> {
     const lnRpcHost = process.env.LNRPC_REMOTE_HOST
     let config: LnRpcClientConfig
     if (!lnRpcHost) {
+        const lnRpcNetwork = process.env.LNRPC_NETWORK || "testnet"
         config = {
             server: "localhost:10009",
+            macaroonPath: resolve(`~/.lnd/data/chain/bitcoin/${lnRpcNetwork}/admin.macaroon`),
         }
     } else {
         config = {
