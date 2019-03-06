@@ -11,8 +11,7 @@ function journeyKey(hexalot: Hexalot): string {
 }
 
 function genomeKey(hexalot: Hexalot): string {
-    return hexalot.createFingerprint()
-    // return `${hexalot.createFingerprint()}-genome`
+    return `${hexalot.createFingerprint()}-genome`
 }
 
 export class AppStorage {
