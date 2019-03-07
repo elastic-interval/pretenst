@@ -67,7 +67,7 @@
 
 "@radar/lnrpc@0.5.2-beta":
   version "0.5.2-beta"
-  resolved "https://registry.yarnpkg.com/@radar/lnrpc/-/lnrpc-0.5.2-beta.tgz#8ba22debf9aa83f60108c6165d11294116cfea53"
+  resolved "https://registry.yarnpkg.com/@radar/l˜nrpc/-/lnrpc-0.5.2-beta.tgz#8ba22debf9aa83f60108c6165d11294116cfea53"
   integrity sha512-JjN0mKFtCTOtnVG6jT/iiM1hVklsCQ4V9Mh+G/8/cHcJglESzw498TJUcmGPvMR//16/O+Bot6F0m4WsrdfuKA==
   dependencies:
     "@grpc/proto-loader" "^0.3.0"
