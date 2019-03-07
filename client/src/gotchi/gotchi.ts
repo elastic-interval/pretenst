@@ -9,6 +9,8 @@ import {ITravel} from "../island/journey"
 
 export interface IGotchiFactory {
     createGotchiAt(location: Vector3, genome: Genome): Gotchi
+
+    copyGotchi(gotchi: Gotchi, genome: Genome): Gotchi
 }
 
 export class Gotchi {
@@ -17,6 +19,10 @@ export class Gotchi {
 
     constructor(public fabric: Fabric, private genome: Genome, private freeFabric: () => void) {
         this.growth = new Growth(fabric, genome.createReader(Direction.REST))
+    }
+
+    public get index(): number {
+        return this.fabric.index
     }
 
     public dispose(): void {

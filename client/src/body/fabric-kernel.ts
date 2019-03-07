@@ -1,7 +1,10 @@
 import {Vector3} from "three"
 
+import {Genome} from "../genetics/genome"
+import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 import {HEXALOT_SHAPE} from "../island/shapes"
 
+import {Fabric} from "./fabric"
 import {Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports} from "./fabric-exports"
 
 const FLOATS_IN_VECTOR = 3
@@ -63,14 +66,15 @@ function createOffsets(faceCountMax: number, fabricBytes: number): IOffsets {
     return offsets
 }
 
-export class FabricKernel {
+export class FabricKernel implements IGotchiFactory {
     private instanceArray: IFabricInstanceExports[] = []
+    private instanceUsed: boolean[] = []
     private offsets: IOffsets
     private arrayBuffer: ArrayBuffer
     private spotCenters: Float32Array
     private surface: Int8Array
 
-    constructor(exports: IFabricExports, dimensions: IFabricDimensions) {
+    constructor(private exports: IFabricExports, dimensions: IFabricDimensions) {
         const fabricBytes = exports.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
         this.arrayBuffer = exports.memory.buffer
         this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
@@ -82,11 +86,38 @@ export class FabricKernel {
         }
         for (let index = 0; index < dimensions.instanceMax; index++) {
             this.instanceArray.push(new InstanceExports(this.arrayBuffer, this.offsets, exports, dimensions, index))
+            this.instanceUsed.push(false)
         }
     }
 
+    public createGotchiAt(location: Vector3, genome: Genome): Gotchi {
+        const newInstance = this.newInstance
+        newInstance.flushFaces()
+        const fabric = new Fabric(newInstance).createSeed(location.x, location.z)
+        fabric.iterate(0)
+        return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
+    }
+
+    public copyGotchi(gotchi: Gotchi, genome: Genome): Gotchi {
+        const newInstance = this.newInstance
+        newInstance.flushFaces()
+        this.exports.copyInstance(gotchi.fabric.index, newInstance.index)
+        const fabric = new Fabric(newInstance)
+        return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
+    }
+
+
     public get instance(): IFabricInstanceExports[] {
         return this.instanceArray
+    }
+
+    public get newInstance(): IFabricInstanceExports {
+        const freeIndex = this.instanceUsed.indexOf(false)
+        if (freeIndex < 0) {
+            throw new Error("No free fabrics!")
+        }
+        this.instanceUsed[freeIndex] = true
+        return this.instance[freeIndex]
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
@@ -119,7 +150,11 @@ class InstanceExports implements IFabricInstanceExports {
         private offsets: IOffsets,
         private exports: IFabricExports,
         private dimensions: IFabricDimensions,
-        private index: number) {
+        private fabricIndex: number) {
+    }
+
+    public get index(): number {
+        return this.fabricIndex
     }
 
     public getDimensions(): IFabricDimensions {

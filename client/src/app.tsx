@@ -5,11 +5,10 @@ import {Subscription} from "rxjs/Subscription"
 import {PerspectiveCamera, Vector3} from "three"
 
 import {AppStorage} from "./app-storage"
-import {Fabric} from "./body/fabric"
 import {Direction, IFabricExports, turn} from "./body/fabric-exports"
 import {createFabricKernel, FabricKernel} from "./body/fabric-kernel"
 import {Physics} from "./body/physics"
-import {Genome, IGenomeData} from "./genetics/genome"
+import {IGenomeData} from "./genetics/genome"
 import {Evolution, INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Gotchi} from "./gotchi/gotchi"
 import {Hexalot} from "./island/hexalot"
@@ -115,7 +114,6 @@ function setInfoPanelMaximized(maximized: boolean): void {
     localStorage.setItem("InfoPanel.maximized", maximized ? "true" : "false")
 }
 
-
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
     private perspectiveCamera: PerspectiveCamera
@@ -125,7 +123,6 @@ class App extends React.Component<IAppProps, IAppState> {
     private islandState: BehaviorSubject<IslandState>
     private physics: Physics
     private fabricKernel: FabricKernel
-    private instanceUsed: boolean[]
 
     constructor(props: IAppProps) {
         super(props)
@@ -133,24 +130,11 @@ class App extends React.Component<IAppProps, IAppState> {
         this.physics.applyToFabric(props.fabricExports)
         this.islandState = new BehaviorSubject<IslandState>({gotchiAlive: false})
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        this.instanceUsed = this.fabricKernel.instance.map(() => false)
-        const createGotchiAt = (location: Vector3, genome: Genome): Gotchi => {
-            const freeIndex = this.instanceUsed.indexOf(false)
-            if (freeIndex < 0) {
-                throw new Error("No free fabrics!")
-            }
-            this.instanceUsed[freeIndex] = true
-            const exports = this.fabricKernel.instance[freeIndex]
-            exports.flushFaces()
-            const fabric = new Fabric(exports, freeIndex).createSeed(location.x, location.z)
-            fabric.iterate(0)
-            return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
-        }
         this.state = {
             infoPanel: getInfoPanelMaximized(),
             actionPanel: false,
             orbitDistance: this.orbitDistanceSubject.getValue(),
-            island: new Island("GalapagotchIsland", this.islandState, {createGotchiAt}, this.props.storage),
+            island: new Island("GalapagotchIsland", this.islandState, this.fabricKernel, this.props.storage),
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight,

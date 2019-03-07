@@ -22,7 +22,11 @@ export class Fabric {
     private pointerGeometryStored: Geometry | undefined
     private facesGeometryStored: BufferGeometry | undefined
 
-    constructor(private exports: IFabricInstanceExports, public index: number) {
+    constructor(private exports: IFabricInstanceExports) {
+    }
+
+    public get index(): number {
+        return this.exports.index
     }
 
     public disposeOfGeometry(): void {
