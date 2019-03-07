@@ -17,8 +17,12 @@ export class Gotchi {
     public travel?: ITravel
     private growth?: Growth
 
-    constructor(public fabric: Fabric, private genome: Genome) {
+    constructor(public fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
         this.growth = new Growth(fabric, genome.createReader(Direction.REST))
+    }
+
+    public copyWithGenome(genome: Genome): Gotchi {
+        return this.gotchiFactory.copyLiveGotchi(this, genome)
     }
 
     public recycle(): void {

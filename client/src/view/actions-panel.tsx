@@ -21,7 +21,8 @@ export enum Command {
     COME_HERE = "Come Here",
     GO_THERE = "Go There",
     STOP = "Stop",
-    LAUNCH_EVOLUTION = "Launch Evolution",
+    LAUNCH_EVOLUTION = "Launch evolution",
+    EVOLVE_FROM_HERE = "Evolve from here",
     CLAIM_GOTCH = "Claim Hexalot",
     CREATE_LAND = "Create Land",
     CREATE_WATER = "Create Water",
@@ -194,10 +195,20 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private evolving(evolution: Evolution): JSX.Element {
         return (
             <ActionPanel>
-                <p>
-                    You are evolving. Fancy that!
-                </p>
-                <Clicky props={this.props} command={Command.RETURN_TO_SEED}/>
+                <Container>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.RETURN_TO_SEED)}>
+                                Return to seed
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.EVOLVE_FROM_HERE)}>
+                                Evolve from here
+                            </Button>
+                        </Col>
+                    </Row>
+                </Container>
             </ActionPanel>
         )
     }

@@ -3,7 +3,7 @@ import {Vector3} from "three"
 
 import {NORMAL_TICKS, SPOT_TO_HANGER} from "../body/fabric"
 import {Direction} from "../body/fabric-exports"
-import {fromGenomeData, IGenomeData} from "../genetics/genome"
+import {fromGenomeData, Genome, IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
 import {Journey} from "../island/journey"
 
@@ -24,15 +24,7 @@ export class Evolution {
     private ageLimit = MINIMUM_AGE
 
     constructor(private hexalot: Hexalot, private journey: Journey, private saveGenome: (genome: IGenomeData) => void) {
-        let mutatingGenome = hexalot.genome
-        const gotchis: Gotchi[] = []
-        for (let walk = 0; walk < MAX_POPULATION && mutatingGenome; walk++) {
-            const gotchi = this.hexalot.createGotchi(mutatingGenome)
-            gotchis.push(gotchi)
-            const direction: Direction = Math.floor(Math.random() * 4) + 1
-            mutatingGenome = mutatingGenome.withMutatedBehavior(direction, MUTATION_COUNT)
-        }
-        this.evolversNow.next(gotchis.map(gotchi => this.gotchiToEvolver(gotchi)))
+        this.fillPopulation(genome => this.hexalot.createGotchi(genome))
     }
 
     public get midpoint(): Vector3 {
@@ -79,7 +71,7 @@ export class Evolution {
         if (halfFrozen || noneActive) {
             this.ageLimit += INCREASE_AGE_LIMIT
             console.log("age limit", this.ageLimit)
-            const toSave = this.strongest()
+            const toSave = this.strongest
             if (toSave) {
                 this.saveGenome(toSave.gotchi.genomeData)
             } else {
@@ -89,6 +81,18 @@ export class Evolution {
                 this.ageLimit = MINIMUM_AGE
             }
             this.rebootAll(SURVIVAL_RATE)
+        }
+    }
+
+    public fromHere(): void {
+        const ancestor = this.strongest
+        if (ancestor) {
+            const evolvers = this.evolversNow.getValue()
+            this.evolversNow.next([ancestor])
+            evolvers
+                .filter(evolver => evolver.gotchi.index !== ancestor.gotchi.index)
+                .forEach(evolver => evolver.gotchi.recycle())
+            this.fillPopulation(genome => ancestor.gotchi.copyWithGenome(genome))
         }
     }
 
@@ -104,7 +108,7 @@ export class Evolution {
         return evolvers.sort(compareEvolvers)
     }
 
-    private strongest(): Evolver | undefined {
+    private get strongest(): Evolver | undefined {
         return this.rankedEvolvers[0]
     }
 
@@ -140,5 +144,18 @@ export class Evolution {
     private gotchiToEvolver = (gotchi: Gotchi): Evolver => {
         const travel = this.journey.createTravel(0)
         return new Evolver(gotchi, travel)
+    }
+
+    private fillPopulation(createGotchi: (genome: Genome) => Gotchi): void {
+        const toAdd = MAX_POPULATION - this.evolversNow.getValue().length
+        let mutatingGenome = this.hexalot.genome
+        const gotchis: Gotchi[] = []
+        while (gotchis.length < toAdd && mutatingGenome) {
+            const gotchi = createGotchi(mutatingGenome)
+            gotchis.push(gotchi)
+            const direction: Direction = Math.floor(Math.random() * 4) + 1
+            mutatingGenome = mutatingGenome.withMutatedBehavior(direction, MUTATION_COUNT)
+        }
+        this.evolversNow.next(this.evolversNow.getValue().concat(gotchis.map(gotchi => this.gotchiToEvolver(gotchi))))
     }
 }

@@ -269,6 +269,7 @@ class App extends React.Component<IAppProps, IAppState> {
         const spot = this.state.spot
         const hexalot = island.islandState.getValue().selectedHexalot
         const gotchi = this.state.gotchi
+        const evolution = this.state.evolution
         switch (command) {
             case Command.DETACH:
                 this.selectedSpotSubject.next(undefined)
@@ -302,6 +303,11 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.LAUNCH_EVOLUTION:
                 if (hexalot) {
                     this.setState(startEvolution(hexalot))
+                }
+                break
+            case Command.EVOLVE_FROM_HERE:
+                if (evolution) {
+                    evolution.fromHere()
                 }
                 break
             case Command.TURN_LEFT:

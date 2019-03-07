@@ -63,7 +63,7 @@ export interface IFabricExports {
 
     setInstance(index: number): void
 
-    copyInstance(fromIndex: number, index: number): void
+    cloneInstance(fromIndex: number, index: number): void
 
     // below methods use instance index
 
