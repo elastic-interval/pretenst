@@ -204,7 +204,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                         </Col>
                         <Col>
                             <Button onClick={() => this.props.doCommand(Command.EVOLVE_FROM_HERE)}>
-                                Evolve from here
+                                Evolve from here (fails still)
                             </Button>
                         </Col>
                     </Row>

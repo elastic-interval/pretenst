@@ -22,6 +22,7 @@ export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([])
     private rebooting = false
     private ageLimit = MINIMUM_AGE
+    private ancestor?: Gotchi
 
     constructor(private hexalot: Hexalot, private journey: Journey, private saveGenome: (genome: IGenomeData) => void) {
         this.fillPopulation(genome => this.hexalot.createGotchi(genome))
@@ -82,17 +83,19 @@ export class Evolution {
             }
             this.rebootAll(SURVIVAL_RATE)
         }
+        if (this.ancestor) {
+            const ancestor = this.ancestor
+            this.ancestor = undefined
+            const gotchis = evolvers.map(evolver => evolver.gotchi)
+            gotchis.filter(g => g.index !== ancestor.index).forEach(g => g.recycle())
+            this.fillPopulation(genome => ancestor.copyWithGenome(genome), ancestor)
+        }
     }
 
     public fromHere(): void {
-        const ancestor = this.strongest
-        if (ancestor) {
-            const evolvers = this.evolversNow.getValue()
-            this.evolversNow.next([ancestor])
-            evolvers
-                .filter(evolver => evolver.gotchi.index !== ancestor.gotchi.index)
-                .forEach(evolver => evolver.gotchi.recycle())
-            this.fillPopulation(genome => ancestor.gotchi.copyWithGenome(genome))
+        const strongestEvolver = this.strongest
+        if (strongestEvolver) {
+            this.ancestor = strongestEvolver.gotchi
         }
     }
 
@@ -146,16 +149,18 @@ export class Evolution {
         return new Evolver(gotchi, travel)
     }
 
-    private fillPopulation(createGotchi: (genome: Genome) => Gotchi): void {
-        const toAdd = MAX_POPULATION - this.evolversNow.getValue().length
+    private fillPopulation(createGotchi: (genome: Genome) => Gotchi, parent?: Gotchi): void {
         let mutatingGenome = this.hexalot.genome
         const gotchis: Gotchi[] = []
-        while (gotchis.length < toAdd && mutatingGenome) {
+        if (parent) {
+            gotchis.push(parent)
+        }
+        while (gotchis.length < MAX_POPULATION && mutatingGenome) {
             const gotchi = createGotchi(mutatingGenome)
             gotchis.push(gotchi)
-            const direction: Direction = Math.floor(Math.random() * 4) + 1
+            const direction: Direction = Math.floor(Math.random() * 4) + 1 // todo: make this smarter
             mutatingGenome = mutatingGenome.withMutatedBehavior(direction, MUTATION_COUNT)
         }
-        this.evolversNow.next(this.evolversNow.getValue().concat(gotchis.map(gotchi => this.gotchiToEvolver(gotchi))))
+        this.evolversNow.next(gotchis.map(gotchi => this.gotchiToEvolver(gotchi)))
     }
 }

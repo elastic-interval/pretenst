@@ -182,7 +182,6 @@ export function cloneInstance(fromIndex: u16, index: u16): void {
     for (let walk: usize = 0; walk < fabricBytes; walk += U32) {
         store<u32>(toAddress + walk, load<u32>(fromAddress + walk))
     }
-    setInstance(index)
 }
 
 // Peek and Poke ================================================================================

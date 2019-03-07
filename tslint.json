@@ -69,6 +69,7 @@
       "property-declaration"
     ],
     "no-empty": false,
-    "max-line-length": [true, 160]
+    "max-line-length": [true, 160],
+    "no-debugger": false
   }
 }

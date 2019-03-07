@@ -227,7 +227,7 @@ export class Fabric {
 
     public endGestation(): void {
         this.exports.endGestation()
-        this.exports.disposeGeometry()
+        this.exports.freshGeometry()
     }
 
     public get age(): number {
@@ -334,7 +334,7 @@ export class Fabric {
             }
         })
         faceToReplace.remove()
-        this.exports.disposeGeometry()
+        this.exports.freshGeometry()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
             .map(index => new FaceSnapshot(this, this.exports, this.exports, index))
