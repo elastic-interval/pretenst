@@ -8,7 +8,7 @@ import {Growth} from "../genetics/growth"
 import {ITravel} from "../island/journey"
 
 export interface IGotchiFactory {
-    createGotchiSeed(location: Vector3, genome: Genome): Gotchi
+    createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi
 
     copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi
 }

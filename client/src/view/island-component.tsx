@@ -4,7 +4,7 @@ import {Subscription} from "rxjs/Subscription"
 import {Geometry, Mesh} from "three"
 
 import {Island, IslandState} from "../island/island"
-import {equals, IViewState} from "../island/spot"
+import {IViewState} from "../island/spot"
 
 import {GOTCHI_MATERIAL, HANGER_MATERIAL, ISLAND_MATERIAL} from "./materials"
 import {MeshKey} from "./spot-selector"
@@ -119,8 +119,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const hexalots = this.props.island.hexalotsWithSeeds
         const geometry = new Geometry()
         hexalots.forEach(hexalot => {
-            if (!islandState.gotchiAlive || !islandState.selectedHexalot
-                || !equals(hexalot.coords, islandState.selectedHexalot.coords)) {
+            if (!islandState.gotchiAlive) {
                 hexalot.centerSpot.addSeed(MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
             }
         })

@@ -1,6 +1,6 @@
-import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from "three"
+import {BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3} from "three"
 
-import {Direction, IFabricInstanceExports, SEED_CORNERS} from "./fabric-exports"
+import {Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS} from "./fabric-exports"
 import {vectorFromFloatArray} from "./fabric-kernel"
 import {FaceSnapshot, IJointSnapshot} from "./face-snapshot"
 
@@ -172,24 +172,31 @@ export class Fabric {
         return geometry
     }
 
-    public createSeed(x: number, y: number): Fabric {
+    public createSeed(x: number, y: number, rotation: number): Fabric {
         this.exports.reset()
+        // prepare
         const hanger = new Vector3(x, 0, y)
-        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z)
-        const R = 1
+        const locations: Vector3[] = []
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const angle = walk * Math.PI * 2 / SEED_CORNERS
-            this.exports.createJoint(
-                this.exports.nextJointTag(),
-                BILATERAL_MIDDLE,
-                R * Math.sin(angle) + hanger.x,
-                R * Math.cos(angle) + hanger.y,
-                hanger.z,
-            )
+            locations.push(new Vector3(SEED_RADIUS * Math.sin(angle) + hanger.x, SEED_RADIUS * Math.cos(angle) + hanger.y, hanger.z))
+        }
+        const leftLoc = new Vector3(hanger.x, hanger.y, hanger.z - SEED_RADIUS)
+        const rightLoc = new Vector3(hanger.x, hanger.y, hanger.z + SEED_RADIUS)
+        locations.push(leftLoc, rightLoc)
+        if (rotation > 0) {
+            const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * rotation)
+            locations.forEach(location => location.applyMatrix4(rotationMatrix))
+        }
+        // build
+        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z)
+        for (let walk = 0; walk < SEED_CORNERS; walk++) {
+            const where = locations[walk]
+            this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, where.x, where.y, where.z)
         }
         const jointPairName = this.exports.nextJointTag()
-        const left = this.exports.createJoint(jointPairName, BILATERAL_LEFT, hanger.x, hanger.y, hanger.z - R)
-        const right = this.exports.createJoint(jointPairName, BILATERAL_RIGHT, hanger.x, hanger.y, hanger.z + R)
+        const left = this.exports.createJoint(jointPairName, BILATERAL_LEFT, leftLoc.x, leftLoc.y, leftLoc.z)
+        const right = this.exports.createJoint(jointPairName, BILATERAL_RIGHT, rightLoc.x, rightLoc.y, rightLoc.z)
         this.interval(hangerJoint, left, -1)
         this.interval(hangerJoint, right, -1)
         this.interval(left, right, -1)
@@ -202,7 +209,7 @@ export class Fabric {
             this.face(left, walk + 1, (walk + 1) % SEED_CORNERS + 1)
             this.face(right, (walk + 1) % SEED_CORNERS + 1, walk + 1)
         }
-        hanger.y += this.setAltitude(HUNG_ALTITUDE - R)
+        hanger.y += this.setAltitude(HUNG_ALTITUDE - SEED_RADIUS)
         return this
     }
 

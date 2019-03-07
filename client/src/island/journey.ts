@@ -23,6 +23,6 @@ export class Journey {
     }
 
     public serialize(): string {
-        return JSON.stringify(this.hexalots.map(hexalot => hexalot.createFingerprint()))
+        return JSON.stringify(this.hexalots.map(hexalot => hexalot.id))
     }
 }

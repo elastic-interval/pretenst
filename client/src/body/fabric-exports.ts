@@ -28,6 +28,7 @@ export function turn(direction: Direction, right: boolean): Direction {
 }
 
 export const SEED_CORNERS = 5
+export const SEED_RADIUS = 1
 
 export interface IFabricDimensions {
     instanceMax: number,

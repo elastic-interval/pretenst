@@ -1,6 +1,7 @@
 import {Vector3} from "three"
 
-import {fromMaster, Genome} from "../genetics/genome"
+import {AppStorage} from "../app-storage"
+import {fromGenomeData, fromMaster, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 
 import {Journey} from "./journey"
@@ -44,14 +45,17 @@ export const hexalotTreeString = (hexalots: Hexalot[]) => {
 export class Hexalot {
     public genome?: Genome
     public journey?: Journey
+    public rotation = -1
     public nonce = 0
     public visited = false
     public childHexalots: Hexalot[] = []
+    private identifier?: string
 
     constructor(public parentHexalot: Hexalot | undefined,
                 public coords: ICoords,
                 public spots: Spot[],
-                private gotchiFactory: IGotchiFactory) {
+                private gotchiFactory: IGotchiFactory,
+                private appStorage: AppStorage) {
         this.spots[0].centerOfHexalot = this
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentHexalots.push(this)
@@ -63,8 +67,28 @@ export class Hexalot {
         }
     }
 
+    public load(): void {
+        this.refreshFingerprint()
+        const genomeData = this.appStorage.getGenome(this)
+        if (genomeData) {
+            this.genome = fromGenomeData(genomeData)
+        }
+        this.rotation = this.appStorage.getRotation(this)
+    }
+
+    public get id(): string {
+        if (!this.identifier) {
+            throw new Error("Should have refreshed fingerprint first")
+        }
+        return this.identifier
+    }
+
+    public refreshFingerprint(): void {
+        this.identifier = spotsToHexFingerprint(this.spots)
+    }
+
     public createStupidJourney(): Journey {
-        const visits: Hexalot[]= [this]
+        const visits: Hexalot[] = [this]
         this.centerSpot.adjacentSpots.forEach(spot => {
             const hexalot = spot.centerOfHexalot
             if (hexalot) {
@@ -76,13 +100,29 @@ export class Hexalot {
 
     public createGotchi(mutatedGenome?: Genome): Gotchi {
         if (mutatedGenome) {
-            return this.gotchiFactory.createGotchiSeed(this.center, mutatedGenome)
+            return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, mutatedGenome)
         } else {
             if (!this.genome) {
                 this.genome = fromMaster(`(${this.coords.x}, ${this.coords.y})`)
             }
-            return this.gotchiFactory.createGotchiSeed(this.center, this.genome)
+            return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, this.genome)
         }
+    }
+
+    public rotate(forward: boolean): Gotchi {
+        const genome = this.genome
+        if (!genome) {
+            throw new Error("Rotate nothing")
+        }
+        let nextRotation = forward ? this.rotation + 1 : this.rotation - 1
+        if (nextRotation < 0) {
+            nextRotation = 5
+        } else if (nextRotation > 5) {
+            nextRotation = 0
+        }
+        this.rotation = nextRotation
+        this.appStorage.setRotation(this, this.rotation)
+        return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, genome)
     }
 
     get master(): string | undefined {
@@ -97,6 +137,7 @@ export class Hexalot {
         return this.centerSpot.center
     }
 
+    // todo: why is this unused?
     get canBeSeeded(): boolean {
         if (this.genome) {
             return false
@@ -119,10 +160,6 @@ export class Hexalot {
         const lightsToRemove = this.spots.filter(p => p.memberOfHexalot.length === 0)
         this.spots = []
         return lightsToRemove
-    }
-
-    public createFingerprint(): string {
-        return spotsToHexFingerprint(this.spots)
     }
 
     public generateOctalTreePattern(steps: number[]): number[] {

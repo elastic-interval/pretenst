@@ -7,11 +7,15 @@ import {Journey} from "./island/journey"
 const MASTER_KEY = "master"
 
 function journeyKey(hexalot: Hexalot): string {
-    return `${hexalot.createFingerprint()}-journey`
+    return `${hexalot.id}-journey`
 }
 
 function genomeKey(hexalot: Hexalot): string {
-    return `${hexalot.createFingerprint()}-genome`
+    return `${hexalot.id}-genome`
+}
+
+function rotationKey(hexalot: Hexalot): string {
+    return `${hexalot.id}-rotation`
 }
 
 export class AppStorage {
@@ -80,5 +84,17 @@ export class AppStorage {
         } else {
             hexalot.journey = undefined
         }
+    }
+
+    public setRotation(hexalot: Hexalot, rotation: number): void {
+        this.storage.setItem(rotationKey(hexalot), `${rotation}`)
+    }
+
+    public getRotation(hexalot: Hexalot): number {
+        const rotationString = this.storage.getItem(rotationKey(hexalot))
+        if (rotationString) {
+            return parseInt(rotationString, 10)
+        }
+        return 0
     }
 }

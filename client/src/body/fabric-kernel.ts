@@ -98,17 +98,18 @@ export class FabricKernel implements IGotchiFactory {
         }
     }
 
-    public createGotchiSeed(location: Vector3, genome: Genome): Gotchi {
-        const gotchi = this.createGotchi(genome)
-        gotchi.fabric.createSeed(location.x, location.z)
-        gotchi.fabric.iterate(0)
-        return gotchi
+    public createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi {
+        const newInstance = this.allocateInstance()
+        const fabric = new Fabric(newInstance).createSeed(location.x, location.z, rotation)
+        fabric.iterate(0)
+        return new Gotchi(fabric, genome)
     }
 
     public copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi {
-        const newGotchi = this.createGotchi(genome)
-        this.exports.copyInstance(gotchi.index, newGotchi.index)
-        return newGotchi
+        const newInstance = this.allocateInstance()
+        this.exports.copyInstance(gotchi.fabric.index, newInstance.index)
+        const fabric = new Fabric(newInstance)
+        return new Gotchi(fabric, genome)
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
@@ -126,11 +127,6 @@ export class FabricKernel implements IGotchiFactory {
     }
 
     // ==============================================================
-
-    private createGotchi(genome: Genome): Gotchi {
-        const newInstance = this.allocateInstance()
-        return new Gotchi(new Fabric(newInstance), genome)
-    }
 
     private allocateInstance(): IFabricInstanceExports {
         const freeIndex = this.instanceUsed.indexOf(false)

@@ -81,9 +81,7 @@ function startGotchi(hexalot: Hexalot): object {
     return (state: IAppState) => {
         state.island.setIslandState(true, hexalot)
         recycle(state)
-        console.warn("Start gotchi", hexalot.genome)
         const gotchi = hexalot.createGotchi()
-        // gotchi.travel = state.trip.createTravel(0);
         return {
             gotchi,
             evolution: undefined,
@@ -169,14 +167,13 @@ class App extends React.Component<IAppProps, IAppState> {
             if (!hexalot) {
                 return
             }
-            const fingerprint = hexalot.createFingerprint()
             const homeHexalotId = this.hexalotIdSubject.getValue()
             if (homeHexalotId.length === 0) {
-                this.hexalotIdSubject.next(fingerprint)
+                this.hexalotIdSubject.next(hexalot.id)
                 this.props.storage.loadJourney(hexalot, this.state.island)
                 this.setState({journey: hexalot.journey})
             } else {
-                if (homeHexalotId === fingerprint) {
+                if (homeHexalotId === hexalot.id) {
                     hexalot.journey = undefined
                     this.props.storage.saveJourney(hexalot)
                 } else {
