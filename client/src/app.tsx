@@ -51,19 +51,19 @@ function updateDimensions(): object {
     }
 }
 
-function dispose(state: IAppState): void {
+function recycle(state: IAppState): void {
     if (state.gotchi) {
-        state.gotchi.dispose()
+        state.gotchi.recycle()
     }
     if (state.evolution) {
-        state.evolution.dispose()
+        state.evolution.recycle()
     }
 }
 
 function startEvolution(hexalot: Hexalot): object {
     return (state: IAppState, props: IAppProps) => {
         state.island.setIslandState(true, hexalot)
-        dispose(state)
+        recycle(state)
         const journey = hexalot.createStupidJourney()
         const saveGenome = (genomeData: IGenomeData) => {
             console.log(`Saving genome data`)
@@ -80,7 +80,7 @@ function startEvolution(hexalot: Hexalot): object {
 function startGotchi(hexalot: Hexalot): object {
     return (state: IAppState) => {
         state.island.setIslandState(true, hexalot)
-        dispose(state)
+        recycle(state)
         console.warn("Start gotchi", hexalot.genome)
         const gotchi = hexalot.createGotchi()
         // gotchi.travel = state.trip.createTravel(0);
@@ -95,7 +95,7 @@ function startGotchi(hexalot: Hexalot): object {
 function selectSpot(spot?: Spot): object {
     return (state: IAppState) => {
         state.island.setIslandState(false, spot ? spot.centerOfHexalot : undefined)
-        dispose(state)
+        recycle(state)
         return {
             actionPanel: true,
             spot,

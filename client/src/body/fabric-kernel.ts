@@ -85,39 +85,30 @@ export class FabricKernel implements IGotchiFactory {
             throw new Error(`Zero byte length! ${this.offsets.fabricBytes}`)
         }
         for (let index = 0; index < dimensions.instanceMax; index++) {
-            this.instanceArray.push(new InstanceExports(this.arrayBuffer, this.offsets, exports, dimensions, index))
+            this.instanceArray.push(new InstanceExports(
+                this.arrayBuffer,
+                this.offsets,
+                exports,
+                dimensions,
+                index,
+                toFree => this.instanceUsed[toFree] = false,
+                ),
+            )
             this.instanceUsed.push(false)
         }
     }
 
-    public createGotchiAt(location: Vector3, genome: Genome): Gotchi {
-        const newInstance = this.newInstance
-        newInstance.flushFaces()
-        const fabric = new Fabric(newInstance).createSeed(location.x, location.z)
-        fabric.iterate(0)
-        return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
+    public createGotchiSeed(location: Vector3, genome: Genome): Gotchi {
+        const gotchi = this.createGotchi(genome)
+        gotchi.fabric.createSeed(location.x, location.z)
+        gotchi.fabric.iterate(0)
+        return gotchi
     }
 
-    public copyGotchi(gotchi: Gotchi, genome: Genome): Gotchi {
-        const newInstance = this.newInstance
-        newInstance.flushFaces()
-        this.exports.copyInstance(gotchi.fabric.index, newInstance.index)
-        const fabric = new Fabric(newInstance)
-        return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
-    }
-
-
-    public get instance(): IFabricInstanceExports[] {
-        return this.instanceArray
-    }
-
-    public get newInstance(): IFabricInstanceExports {
-        const freeIndex = this.instanceUsed.indexOf(false)
-        if (freeIndex < 0) {
-            throw new Error("No free fabrics!")
-        }
-        this.instanceUsed[freeIndex] = true
-        return this.instance[freeIndex]
+    public copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi {
+        const newGotchi = this.createGotchi(genome)
+        this.exports.copyInstance(gotchi.index, newGotchi.index)
+        return newGotchi
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
@@ -132,6 +123,23 @@ export class FabricKernel implements IGotchiFactory {
         surface.forEach((land, index) => {
             this.surface[index] = land ? 1 : 0
         })
+    }
+
+    // ==============================================================
+
+    private createGotchi(genome: Genome): Gotchi {
+        const newInstance = this.allocateInstance()
+        return new Gotchi(new Fabric(newInstance), genome)
+    }
+
+    private allocateInstance(): IFabricInstanceExports {
+        const freeIndex = this.instanceUsed.indexOf(false)
+        if (freeIndex < 0) {
+            throw new Error("No free fabrics!")
+        }
+        this.instanceUsed[freeIndex] = true
+        this.instanceArray[freeIndex].disposeGeometry()
+        return this.instanceArray[freeIndex]
     }
 }
 
@@ -150,19 +158,21 @@ class InstanceExports implements IFabricInstanceExports {
         private offsets: IOffsets,
         private exports: IFabricExports,
         private dimensions: IFabricDimensions,
-        private fabricIndex: number) {
+        private fabricIndex: number,
+        private recycleFabric: (index: number) => void,
+    ) {
     }
 
     public get index(): number {
         return this.fabricIndex
     }
 
-    public getDimensions(): IFabricDimensions {
-        return this.dimensions
+    public recycle(): void {
+        this.recycleFabric(this.fabricIndex)
     }
 
-    public refresh(): void {
-        this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined
+    public getDimensions(): IFabricDimensions {
+        return this.dimensions
     }
 
     public reset(): void {
@@ -266,8 +276,8 @@ class InstanceExports implements IFabricInstanceExports {
         return this.exports
     }
 
-    public flushFaces(): void {
-        this.refresh()
+    public disposeGeometry(): void {
+        this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined
     }
 
     public getFaceLocations(): Float32Array {
@@ -349,4 +359,5 @@ class InstanceExports implements IFabricInstanceExports {
         }
         return this.faceNormalsArray
     }
+
 }

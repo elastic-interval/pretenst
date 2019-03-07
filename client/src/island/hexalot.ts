@@ -76,12 +76,12 @@ export class Hexalot {
 
     public createGotchi(mutatedGenome?: Genome): Gotchi {
         if (mutatedGenome) {
-            return this.gotchiFactory.createGotchiAt(this.center, mutatedGenome)
+            return this.gotchiFactory.createGotchiSeed(this.center, mutatedGenome)
         } else {
             if (!this.genome) {
                 this.genome = fromMaster(`(${this.coords.x}, ${this.coords.y})`)
             }
-            return this.gotchiFactory.createGotchiAt(this.center, this.genome)
+            return this.gotchiFactory.createGotchiSeed(this.center, this.genome)
         }
     }
 

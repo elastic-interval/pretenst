@@ -8,26 +8,25 @@ import {Growth} from "../genetics/growth"
 import {ITravel} from "../island/journey"
 
 export interface IGotchiFactory {
-    createGotchiAt(location: Vector3, genome: Genome): Gotchi
+    createGotchiSeed(location: Vector3, genome: Genome): Gotchi
 
-    copyGotchi(gotchi: Gotchi, genome: Genome): Gotchi
+    copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi
 }
 
 export class Gotchi {
     public travel?: ITravel
     private growth?: Growth
 
-    constructor(public fabric: Fabric, private genome: Genome, private freeFabric: () => void) {
+    constructor(public fabric: Fabric, private genome: Genome) {
         this.growth = new Growth(fabric, genome.createReader(Direction.REST))
+    }
+
+    public recycle(): void {
+        this.fabric.recycle()
     }
 
     public get index(): number {
         return this.fabric.index
-    }
-
-    public dispose(): void {
-        this.fabric.disposeOfGeometry()
-        this.freeFabric()
     }
 
     public get midpoint(): Vector3 {

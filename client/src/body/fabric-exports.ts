@@ -119,6 +119,10 @@ export interface IFabricInstanceExports {
 
     index: Readonly<number>
 
+    recycle(): void
+
+    disposeGeometry(): void
+
     getDimensions(): IFabricDimensions
 
     getMidpoint(): Vector3
@@ -134,8 +138,6 @@ export interface IFabricInstanceExports {
     getFaceLocations(): Float32Array
 
     getFaceNormals(): Float32Array
-
-    flushFaces(): void
 
     getVectors(): Float32Array
 

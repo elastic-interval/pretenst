@@ -12,7 +12,7 @@ import {Gotchi} from "./gotchi"
 
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
-const MUTATION_COUNT = 3
+const MUTATION_COUNT = 18
 const MINIMUM_AGE = 15000
 const MAXIMUM_AGE = 30000
 const INCREASE_AGE_LIMIT = 1000
@@ -92,8 +92,8 @@ export class Evolution {
         }
     }
 
-    public dispose(): void {
-        this.evolversNow.getValue().forEach(evolver => evolver.gotchi.dispose())
+    public recycle(): void {
+        this.evolversNow.getValue().forEach(evolver => evolver.gotchi.recycle())
     }
 
     // Privates =============================================================
@@ -116,12 +116,12 @@ export class Evolution {
         this.evolversNow.next(ranked)
         setTimeout(() => {
             const mutants: Gotchi[] = deadEvolvers.map(evolver => {
-                evolver.gotchi.dispose()
+                evolver.gotchi.recycle()
                 const luckyParent = ranked[Math.floor(ranked.length * Math.random())]
                 return this.createOffspring(luckyParent.gotchi, luckyParent.currentDirection, false)
             })
             const clones: Gotchi[] = ranked.map(evolver => {
-                evolver.gotchi.dispose()
+                evolver.gotchi.recycle()
                 return this.createOffspring(evolver.gotchi, evolver.currentDirection, true)
             })
             const offspring = mutants.concat(clones)

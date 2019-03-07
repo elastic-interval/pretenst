@@ -25,6 +25,11 @@ export class Fabric {
     constructor(private exports: IFabricInstanceExports) {
     }
 
+    public recycle(): void {
+        this.disposeOfGeometry()
+        this.exports.recycle()
+    }
+
     public get index(): number {
         return this.exports.index
     }
@@ -215,7 +220,7 @@ export class Fabric {
 
     public endGestation(): void {
         this.exports.endGestation()
-        this.exports.flushFaces()
+        this.exports.disposeGeometry()
     }
 
     public get age(): number {
@@ -322,7 +327,7 @@ export class Fabric {
             }
         })
         faceToReplace.remove()
-        this.exports.flushFaces()
+        this.exports.disposeGeometry()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
             .map(index => new FaceSnapshot(this, this.exports, this.exports, index))
