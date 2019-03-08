@@ -50,7 +50,7 @@ export class AppStorage {
         this.storage.setItem(islandName, JSON.stringify(islandPattern))
     }
 
-    public getGenome(hexalot: Hexalot): IGenomeData | undefined {
+    public getGenomeData(hexalot: Hexalot): IGenomeData | undefined {
         const genomeString = this.storage.getItem(genomeKey(hexalot))
         return genomeString ? JSON.parse(genomeString) : undefined
     }

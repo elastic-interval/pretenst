@@ -7,15 +7,15 @@ import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from "three"
 import {HUNG_ALTITUDE, NORMAL_TICKS} from "../body/fabric"
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
+import {Hexalot} from "../island/hexalot"
 import {Island} from "../island/island"
 import {Journey} from "../island/journey"
 import {Spot} from "../island/spot"
 
 import {EvolutionComponent} from "./evolution-component"
-import {GotchiComponent} from "./gotchi-component"
 import {IslandComponent} from "./island-component"
 import {JourneyComponent} from "./journey-component"
-import {USER_POINTER_MATERIAL} from "./materials"
+import {GOTCHI_MATERIAL, USER_POINTER_MATERIAL} from "./materials"
 import {Orbit, OrbitDistance} from "./orbit"
 import {MeshKey, SpotSelector} from "./spot-selector"
 
@@ -31,6 +31,7 @@ interface IGotchiViewProps {
     left: number
     top: number
     island: Island
+    homeHexalot: BehaviorSubject<Hexalot | undefined>
     selectedSpot: BehaviorSubject<Spot | undefined>
     orbitDistance: BehaviorSubject<OrbitDistance>
     gotchi?: Gotchi
@@ -63,10 +64,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         )
     }
 
-    public componentDidUpdate(
-        prevProps: Readonly<IGotchiViewProps>,
-        prevState: Readonly<IGotchiViewState>, snapshot: object,
-    ): void {
+    public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: object): void {
         if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
             this.props.perspectiveCamera.aspect = this.props.width / this.props.height
             this.props.perspectiveCamera.updateProjectionMatrix()
@@ -111,7 +109,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             <EvolutionComponent evolution={this.props.evolution}/>)
                         }
                         {!this.props.gotchi ? null : (
-                            <GotchiComponent gotchi={this.props.gotchi}/>
+                            <R3.Mesh
+                                key="Gotchi"
+                                geometry={this.props.gotchi.fabric.facesGeometry}
+                                material={GOTCHI_MATERIAL}
+                            />
                         )}
                         <R3.LineSegments
                             key="Pointer"

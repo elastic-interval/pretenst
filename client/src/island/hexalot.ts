@@ -43,7 +43,7 @@ export const hexalotTreeString = (hexalots: Hexalot[]) => {
 }
 
 export class Hexalot {
-    public genome?: Genome
+    public genomeStored?: Genome
     public journey?: Journey
     public rotation = -1
     public nonce = 0
@@ -69,9 +69,9 @@ export class Hexalot {
 
     public load(): void {
         this.refreshFingerprint()
-        const genomeData = this.appStorage.getGenome(this)
+        const genomeData = this.appStorage.getGenomeData(this)
         if (genomeData) {
-            this.genome = fromGenomeData(genomeData)
+            this.genomeStored = fromGenomeData(genomeData)
         }
         this.rotation = this.appStorage.getRotation(this)
     }
@@ -81,6 +81,17 @@ export class Hexalot {
             throw new Error("Should have refreshed fingerprint first")
         }
         return this.identifier
+    }
+
+    public get genome(): Genome {
+        if (!this.genomeStored) {
+            this.genomeStored = fromMaster(`(${this.coords.x}, ${this.coords.y})`)
+        }
+        return this.genomeStored
+    }
+
+    public deleteGenome(): void {
+        this.genomeStored = undefined
     }
 
     public refreshFingerprint(): void {
@@ -102,9 +113,6 @@ export class Hexalot {
         if (mutatedGenome) {
             return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, mutatedGenome)
         } else {
-            if (!this.genome) {
-                this.genome = fromMaster(`(${this.coords.x}, ${this.coords.y})`)
-            }
             return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, this.genome)
         }
     }

@@ -1,7 +1,7 @@
 import {Vector3} from "three"
 
 import {Direction} from "../body/fabric-exports"
-import {ITravel} from "../island/journey"
+import {Leg} from "../island/journey"
 import {HEXAPOD_RADIUS} from "../island/shapes"
 
 import {Gotchi} from "./gotchi"
@@ -12,18 +12,14 @@ const MAX_VOTES = 30
 
 export class Evolver {
 
-    public done = false
     public toDestination = 0
     public currentDirection: Direction = Direction.REST
     private target: Vector3
     private toTarget = new Vector3()
     private votes: Direction[] = []
 
-    constructor(
-        public gotchi: Gotchi,
-        public travel: ITravel,
-    ) {
-        this.target = travel.goTo.center
+    constructor(public gotchi: Gotchi, public leg: Leg) {
+        this.target = leg.goTo.center
     }
 
     public get index(): number {
@@ -43,6 +39,7 @@ export class Evolver {
         for (let dir = Direction.FORWARD; dir <= Direction.REVERSE; dir++) {
             if (counts[dir] === MAX_VOTES && this.currentDirection !== dir) {
                 this.currentDirection = dir
+                console.log(`Direction ${Direction[this.currentDirection]}`)
                 return dir
             }
         }

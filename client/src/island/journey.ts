@@ -1,13 +1,21 @@
 import {Hexalot} from "./hexalot"
 
-export interface ITravel {
-    journey: Journey
-    visited: number
-    goTo: Hexalot
+export class Leg {
+    constructor(public journey: Journey, private visited: number, public goTo: Hexalot) {
+    }
+
+    public get nextLeg(): Leg | undefined {
+        const nextHexalot = this.visited + 1
+        if (nextHexalot === this.journey.hexalots.length) {
+            return undefined
+        }
+        const goTo = this.journey.hexalots[nextHexalot]
+        return new Leg(this.journey, nextHexalot, goTo)
+    }
 }
 
 export class Journey {
-    constructor(private hexalots: Hexalot[]) {
+    constructor(public hexalots: Hexalot[]) {
     }
 
     public get visits(): Hexalot[] {
@@ -15,11 +23,17 @@ export class Journey {
     }
 
     public addVisit(hexalot: Hexalot): void {
+        if (this.hexalots.some(h => h.id === hexalot.id)) {
+            return
+        }
         this.hexalots.push(hexalot)
     }
 
-    public createTravel(visited: number): ITravel {
-        return {journey: this, visited, goTo: this.hexalots[visited + 1]}
+    public get firstLeg(): Leg | undefined {
+        if (this.hexalots.length === 0) {
+            return undefined
+        }
+        return new Leg(this, 0, this.hexalots[1])
     }
 
     public serialize(): string {

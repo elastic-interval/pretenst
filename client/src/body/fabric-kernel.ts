@@ -103,7 +103,6 @@ export class FabricKernel implements IGotchiFactory {
         const newInstance = this.allocateInstance()
         this.exports.cloneInstance(gotchi.fabric.index, newInstance.index)
         const fabric = new Fabric(newInstance)
-        console.log(`copyLive:${gotchi.index}`, fabric)
         return new Gotchi(fabric, genome, this)
     }
 

@@ -15,14 +15,14 @@ export enum Command {
     SAVE_GENOME = "Save genome",
     DELETE_GENOME = "Delete genome",
     RETURN_TO_SEED = "Return to seed",
-    LAUNCH_GOTCHI = "Launch Gotchi",
+    DRIVE = "Launch Gotchi",
     TURN_LEFT = "Turn Left",
     TURN_RIGHT = "Turn Right",
     COME_HERE = "Come Here",
     GO_THERE = "Go There",
     STOP = "Stop",
-    LAUNCH_EVOLUTION = "Launch evolution",
-    EVOLVE_FROM_HERE = "Evolve from here",
+    EVOLVE = "Launch evolution",
+    FORGET_JOURNEY = "Forget journey",
     CLAIM_GOTCH = "Claim Hexalot",
     CREATE_LAND = "Create Land",
     CREATE_WATER = "Create Water",
@@ -30,6 +30,7 @@ export enum Command {
 
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
+    homeHexalot: BehaviorSubject<Hexalot | undefined>
     cameraLocation: Vector3
     master?: string
     spot?: Spot
@@ -79,7 +80,8 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         }
         const hexalot = this.props.hexalot
         if (hexalot) {
-            if (hexalot.master === this.props.master) {
+            const homeHexalot = this.props.homeHexalot.getValue()
+            if (homeHexalot && homeHexalot.id === hexalot.id) {
                 return this.homeHexalot(hexalot)
             } else {
                 return this.foreignHexalot(hexalot)
@@ -103,21 +105,14 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private foreignHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionPanel>
-                <span>This hexalot at ({hexalot.coords.x}, {hexalot.coords.y}) belongs to {hexalot.master}</span>
+                <span>This hexalot {hexalot.id} belongs to {hexalot.master}</span>
                 <Container>
                     <Row>
                         <Col>
-                            <Button onClick={() => this.props.doCommand(Command.LAUNCH_GOTCHI)}>
+                            <Button onClick={() => this.props.doCommand(Command.DRIVE)}>
                                 Launch
                             </Button>
                         </Col>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.LAUNCH_EVOLUTION)}>
-                                Evolve
-                            </Button>
-                        </Col>
-                    </Row>
-                    <Row>
                         <Col>
                             <Button onClick={() => this.props.doCommand(Command.DETACH)}>
                                 Detach
@@ -132,19 +127,50 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private homeHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionPanel>
-                <p>
-                    This is your hexalot at ({hexalot.coords.x}, {hexalot.coords.y})
-                </p>
-                <p>
-                    You can
-                    <Clicky props={this.props} command={Command.LAUNCH_GOTCHI}/>
-                    and drive it around.
-                </p>
-                <p>
-                    If it doesn't work well enough, you can
-                    <Clicky props={this.props} command={Command.LAUNCH_EVOLUTION}/>
-                    it for a while so it learns muscle coordination.
-                </p>
+                <span>This is your home hexalot, {hexalot.id} </span>
+                <Container>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.TURN_LEFT)}>
+                                Left
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.TURN_RIGHT)}>
+                                Right
+                            </Button>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.DRIVE)}>
+                                Drive
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.EVOLVE)}>
+                                Evolve
+                            </Button>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.FORGET_JOURNEY)}>
+                                Forget journey
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.DETACH)}>
+                                Logout
+                            </Button>
+                        </Col>
+                    </Row>
+                    <ButtonGroup>
+                        <Button onClick={() => this.props.doCommand(Command.DELETE_GENOME)}>
+                            Delete genome
+                        </Button>
+                    </ButtonGroup>
+                </Container>
             </ActionPanel>
         )
     }
@@ -170,23 +196,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             Stop
                         </Button>
                     </ButtonGroup>
-                    <ButtonGroup>
-                        <Button onClick={() => this.props.doCommand(Command.TURN_LEFT)}>
-                            Turn left
-                        </Button>
-                        &nbsp;
-                        <Button onClick={() => this.props.doCommand(Command.TURN_RIGHT)}>
-                            Turn right
-                        </Button>
-                    </ButtonGroup>
-                    <ButtonGroup>
-                        <Button onClick={() => this.props.doCommand(Command.SAVE_GENOME)}>
-                            Save genome
-                        </Button>
-                        <Button onClick={() => this.props.doCommand(Command.DELETE_GENOME)}>
-                            Delete genome
-                        </Button>
-                    </ButtonGroup>
                 </div>
             </ActionPanel>
         )
@@ -200,11 +209,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                         <Col>
                             <Button onClick={() => this.props.doCommand(Command.RETURN_TO_SEED)}>
                                 Return to seed
-                            </Button>
-                        </Col>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.EVOLVE_FROM_HERE)}>
-                                Evolve from here (fails still)
                             </Button>
                         </Col>
                     </Row>

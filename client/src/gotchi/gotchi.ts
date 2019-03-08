@@ -5,7 +5,6 @@ import {Direction} from "../body/fabric-exports"
 import {Behavior} from "../genetics/behavior"
 import {Genome, IGenomeData} from "../genetics/genome"
 import {Growth} from "../genetics/growth"
-import {ITravel} from "../island/journey"
 
 export interface IGotchiFactory {
     createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi
@@ -14,7 +13,6 @@ export interface IGotchiFactory {
 }
 
 export class Gotchi {
-    public travel?: ITravel
     private growth?: Growth
 
     constructor(public fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
