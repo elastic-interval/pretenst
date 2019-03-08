@@ -98,17 +98,6 @@ export class Hexalot {
         this.identifier = spotsToHexFingerprint(this.spots)
     }
 
-    public createStupidJourney(): Journey {
-        const visits: Hexalot[] = [this]
-        this.centerSpot.adjacentSpots.forEach(spot => {
-            const hexalot = spot.centerOfHexalot
-            if (hexalot) {
-                visits.push(hexalot)
-            }
-        })
-        return new Journey(visits)
-    }
-
     public createGotchi(mutatedGenome?: Genome): Gotchi {
         if (mutatedGenome) {
             return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, mutatedGenome)

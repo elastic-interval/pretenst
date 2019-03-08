@@ -1,7 +1,7 @@
 import {Hexalot} from "./hexalot"
 
 export class Leg {
-    constructor(public journey: Journey, private visited: number, public goTo: Hexalot) {
+    constructor(public journey: Journey, public visited: number, public goTo: Hexalot) {
     }
 
     public get nextLeg(): Leg | undefined {
@@ -30,7 +30,7 @@ export class Journey {
     }
 
     public get firstLeg(): Leg | undefined {
-        if (this.hexalots.length === 0) {
+        if (this.visits.length < 2) {
             return undefined
         }
         return new Leg(this, 0, this.hexalots[1])

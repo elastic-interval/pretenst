@@ -92,14 +92,16 @@ function startGotchi(hexalot: Hexalot): object {
 
 function selectSpot(spot?: Spot): object {
     return (state: IAppState) => {
-        state.island.setIslandState(false, spot ? spot.centerOfHexalot : undefined)
+        const selectedHexalot = spot ? spot.centerOfHexalot : undefined
+        state.island.setIslandState(false, selectedHexalot)
+        const journey = selectedHexalot ? selectedHexalot.journey : undefined
         recycle(state)
         return {
             actionPanel: true,
             spot,
             gotchi: undefined,
             evolution: undefined,
-            journey: undefined,
+            journey,
         }
     }
 }
