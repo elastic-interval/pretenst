@@ -26,6 +26,10 @@ export class Evolver {
         this.target = travel.goTo.center
     }
 
+    public get index(): number {
+        return this.gotchi.index
+    }
+
     public voteDirection(): Direction | undefined {
         const votes = this.votes
         votes.push(this.directionToTarget)
@@ -35,7 +39,7 @@ export class Evolver {
         const counts = votes.reduce((c: number[], vote) => {
             c[vote]++
             return c
-        }, [0,0,0,0,0])
+        }, [0, 0, 0, 0, 0])
         for (let dir = Direction.FORWARD; dir <= Direction.REVERSE; dir++) {
             if (counts[dir] === MAX_VOTES && this.currentDirection !== dir) {
                 this.currentDirection = dir

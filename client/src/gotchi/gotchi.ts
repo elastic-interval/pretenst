@@ -18,7 +18,9 @@ export class Gotchi {
     private growth?: Growth
 
     constructor(public fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
-        this.growth = new Growth(fabric, genome.createReader(Direction.REST))
+        if (fabric.isGestating) {
+            this.growth = new Growth(fabric, genome.createReader(Direction.REST))
+        }
     }
 
     public copyWithGenome(genome: Genome): Gotchi {

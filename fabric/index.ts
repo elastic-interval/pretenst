@@ -176,9 +176,9 @@ export function setInstance(index: u16): void {
     instancePtr = HEXALOT_SIZE + instance * fabricBytes
 }
 
-export function cloneInstance(fromIndex: u16, index: u16): void {
+export function cloneInstance(fromIndex: u16, toIndex: u16): void {
     let fromAddress = HEXALOT_SIZE + fromIndex * fabricBytes
-    let toAddress = HEXALOT_SIZE + index * fabricBytes
+    let toAddress = HEXALOT_SIZE + toIndex * fabricBytes
     for (let walk: usize = 0; walk < fabricBytes; walk += U32) {
         store<u32>(toAddress + walk, load<u32>(fromAddress + walk))
     }

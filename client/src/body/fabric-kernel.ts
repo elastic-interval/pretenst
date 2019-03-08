@@ -96,7 +96,6 @@ export class FabricKernel implements IGotchiFactory {
     public createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi {
         const newInstance = this.allocateInstance()
         const fabric = new Fabric(newInstance).createSeed(location.x, location.z, rotation)
-        fabric.iterate(0)
         return new Gotchi(fabric, genome, this)
     }
 

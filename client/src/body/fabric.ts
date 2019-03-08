@@ -210,6 +210,7 @@ export class Fabric {
             this.face(right, (walk + 1) % SEED_CORNERS + 1, walk + 1)
         }
         hanger.y += this.setAltitude(HUNG_ALTITUDE - SEED_RADIUS)
+        this.iterate(0) // output the face geometry, set direction vector, but don't experience time
         return this
     }
 
