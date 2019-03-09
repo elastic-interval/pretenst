@@ -591,9 +591,11 @@ function calculateJointMidpoint(): void {
 }
 
 function calculateDirectionVectors(): void {
-    addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1))
+    let rightJoint = getGestating() ? SEED_CORNERS + 1 : SEED_CORNERS // hanger joint still there
+    let leftJoint = rightJoint + 1
+    addVectors(seedPtr, locationPtr(rightJoint), locationPtr(leftJoint))
     multiplyScalar(seedPtr, 0.5)
-    subVectors(rightPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1))
+    subVectors(rightPtr, locationPtr(rightJoint), locationPtr(leftJoint))
     setY(rightPtr, 0) // horizontal, should be near already
     multiplyScalar(rightPtr, 1 / length(rightPtr))
     setAll(vector, 0, 1, 0) // up
