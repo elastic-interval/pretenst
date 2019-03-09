@@ -1,8 +1,7 @@
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
 import {Vector3} from "three"
 
-import {NORMAL_TICKS, SPOT_TO_HANGER} from "../body/fabric"
-import {Direction} from "../body/fabric-exports"
+import {NORMAL_TICKS} from "../body/fabric"
 import {fromGenomeData, Genome, IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
 import {Leg} from "../island/journey"
@@ -23,17 +22,17 @@ export class Evolution {
     private ageLimit = 30000 // MINIMUM_AGE
     private frozenHero?: Evolver
     private leg: Leg
+    private midpointVector = new Vector3()
 
     constructor(private hexalot: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
         this.leg = firstLeg
-        const evolvers = this.createPopulation(Direction.REVERSE) // todo: which direction?
-        this.evolversNow.next(evolvers)
+        this.evolversNow.next(this.createPopulation())
     }
 
     public get midpoint(): Vector3 {
         const evolvers = this.evolversNow.getValue()
         if (evolvers.length === 0) {
-            return new Vector3().add(this.hexalot.center).add(SPOT_TO_HANGER)
+            return this.midpointVector
         }
         const vectors = evolvers.map(evolver => evolver.vectors)
         const sumFromArray = (prev: Vector3, array: Float32Array) => {
@@ -42,7 +41,8 @@ export class Evolution {
             prev.z += array[2]
             return prev
         }
-        return vectors.reduce(sumFromArray, new Vector3()).multiplyScalar(1 / evolvers.length)
+        this.midpointVector.set(0, 0, 0)
+        return vectors.reduce(sumFromArray, this.midpointVector).multiplyScalar(1 / evolvers.length)
     }
 
     public iterate(): void {
@@ -58,10 +58,7 @@ export class Evolution {
         }
         const moving = evolvers.filter(evolver => evolver.age < this.ageLimit)
         if (moving.length === 0) {
-            console.log("no more movers", evolvers.length)
-            if (!this.frozenHero) {
-                this.saveStrongest()
-            }
+            this.saveStrongest()
             this.adjustAgeLimit()
             this.nextGenerationFromSurvival()
             return
@@ -128,7 +125,7 @@ export class Evolution {
         setTimeout(() => {
             const otherEvolvers = evolvers.filter(evolver => evolver.index !== heroEvolver.index)
             otherEvolvers.forEach(evolver => evolver.recycle())
-            this.evolversNow.next(this.createPopulation(heroEvolver.direction))
+            this.evolversNow.next(this.createPopulation())
             this.rebooting = false
         }, 500)
     }
@@ -165,7 +162,7 @@ export class Evolution {
         }, 500)
     }
 
-    private createPopulation(directionToMutate: Direction): Evolver[] {
+    private createPopulation(): Evolver[] {
         let mutatingGenome: Genome | undefined = fromGenomeData(this.hexalot.genome.genomeData)
         const evolvers: Evolver[] = []
         while (true) {

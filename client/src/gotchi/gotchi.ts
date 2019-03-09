@@ -19,6 +19,8 @@ export class Gotchi {
     constructor(public fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
         if (fabric.isGestating) {
             this.growth = new Growth(fabric, genome.createReader(Direction.REST))
+        } else {
+            this.applyBehaviorGenes()
         }
     }
 
@@ -90,12 +92,16 @@ export class Gotchi {
         if (timeSweepTick && this.growth) {
             if (!this.growth.step()) {
                 this.growth = undefined
-                for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
-                    new Behavior(this.fabric, direction, this.genome.createReader(direction)).apply()
-                }
+                this.applyBehaviorGenes()
                 this.fabric.endGestation()
             }
         }
         return timeSweepTick
+    }
+
+    private applyBehaviorGenes(): void {
+        for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
+            new Behavior(this.fabric, direction, this.genome.createReader(direction)).apply()
+        }
     }
 }

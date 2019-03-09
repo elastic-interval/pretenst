@@ -276,18 +276,21 @@ export class Fabric {
             throw new Error(`Bad interval index index ${intervalIndex}`)
         }
         this.exports.setIntervalHighLow(intervalIndex, direction, highLow)
-        switch (direction) {
-            case Direction.FORWARD:
-            case Direction.REVERSE:
-                const oppositeIntervalIndex = this.exports.findOppositeIntervalIndex(intervalIndex)
-                if (oppositeIntervalIndex < this.intervalCount) {
+        const oppositeIntervalIndex = this.exports.findOppositeIntervalIndex(intervalIndex)
+        if (oppositeIntervalIndex < this.intervalCount) {
+            switch (direction) {
+                case Direction.FORWARD:
+                case Direction.REVERSE:
                     this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow)
-                }
-                break
-            case Direction.RIGHT:
-            case Direction.LEFT:
-                // make opposite opposite?
-                break
+                    break
+                case Direction.RIGHT:
+                case Direction.LEFT:
+                    const high = highLow >> 4
+                    const low = highLow & 0xf
+                    const oppositeHighLow = low << 4 + high
+                    this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, oppositeHighLow)
+                    break
+            }
         }
     }
 
