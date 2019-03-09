@@ -61,7 +61,6 @@ function recycle(state: IAppState): void {
 }
 
 function startEvolution(hexalot: Hexalot, firstLeg: Leg): object {
-    console.log("START", hexalot, firstLeg)
     return (state: IAppState, props: IAppProps) => {
         state.island.setIslandState(true, hexalot)
         recycle(state)
@@ -317,13 +316,13 @@ class App extends React.Component<IAppProps, IAppState> {
                 }
                 break
             case Command.TURN_LEFT:
-                if (homeHexalot) {
-                    homeHexalot.rotate(true)
+                if (homeHexalot && gotchi) {
+                    homeHexalot.rotate(true, gotchi)
                 }
                 break
             case Command.TURN_RIGHT:
-                if (homeHexalot) {
-                    homeHexalot.rotate(false)
+                if (homeHexalot && gotchi) {
+                    homeHexalot.rotate(false, gotchi)
                 }
                 break
             case Command.COME_HERE:
@@ -338,7 +337,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 break
             case Command.STOP:
                 if (gotchi) {
-                    gotchi.direction = Direction.REST
+                    gotchi.nextDirection = Direction.REST
                 }
                 break
             case Command.CREATE_LAND:

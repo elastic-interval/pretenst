@@ -7,8 +7,7 @@ import {fromGenomeData, Genome, IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
 import {Leg} from "../island/journey"
 
-import {compareEvolvers, Evolver} from "./evolver"
-import {Gotchi} from "./gotchi"
+import {Evolver, IEvolver} from "./evolver"
 
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
@@ -21,14 +20,13 @@ const SURVIVAL_RATE = 0.66
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([])
     private rebooting = false
-    private ageLimit = MINIMUM_AGE
-    private frozenHero?: Gotchi
+    private ageLimit = 30000 // MINIMUM_AGE
+    private frozenHero?: Evolver
     private leg: Leg
 
     constructor(private hexalot: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
         this.leg = firstLeg
-        const gotchiFromHexalot = (genome: Genome) => this.hexalot.createGotchi(genome)
-        const evolvers = this.createEvolvers(gotchiFromHexalot)
+        const evolvers = this.createPopulation(Direction.REVERSE) // todo: which direction?
         this.evolversNow.next(evolvers)
     }
 
@@ -37,15 +35,14 @@ export class Evolution {
         if (evolvers.length === 0) {
             return new Vector3().add(this.hexalot.center).add(SPOT_TO_HANGER)
         }
-        return evolvers
-            .map(evolver => evolver.gotchi.fabric.vectors)
-            .reduce((prev, array) => {
-                prev.x += array[0]
-                prev.y += array[1]
-                prev.z += array[2]
-                return prev
-            }, new Vector3())
-            .multiplyScalar(1 / evolvers.length)
+        const vectors = evolvers.map(evolver => evolver.vectors)
+        const sumFromArray = (prev: Vector3, array: Float32Array) => {
+            prev.x += array[0]
+            prev.y += array[1]
+            prev.z += array[2]
+            return prev
+        }
+        return vectors.reduce(sumFromArray, new Vector3()).multiplyScalar(1 / evolvers.length)
     }
 
     public iterate(): void {
@@ -55,10 +52,11 @@ export class Evolution {
         }
         const heroEvolver = evolvers.find(e => e.touchedDestination)
         if (heroEvolver) {
+            console.log("next generation from hero", heroEvolver)
             this.nextGenerationFromHero(heroEvolver)
             return
         }
-        const moving = evolvers.filter(evolver => evolver.gotchi.age < this.ageLimit)
+        const moving = evolvers.filter(evolver => evolver.age < this.ageLimit)
         if (moving.length === 0) {
             console.log("no more movers", evolvers.length)
             if (!this.frozenHero) {
@@ -69,18 +67,17 @@ export class Evolution {
             return
         }
         moving.forEach(evolver => {
-            const behind = this.ageLimit - evolver.gotchi.age
-            evolver.gotchi.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind)
-            const gotchiDirection = evolver.gotchi.direction
-            const chosenDirection = evolver.voteDirection()
-            if (chosenDirection !== undefined && gotchiDirection !== chosenDirection) {
-                evolver.gotchi.direction = chosenDirection
+            const behind = this.ageLimit - evolver.age
+            const timeSweepTick = evolver.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind)
+            if (timeSweepTick && !evolver.gestating) {
+                evolver.mutateGenome(3)
+                evolver.adjustDirection()
             }
         })
     }
 
     public recycle(): void {
-        this.evolversNow.getValue().forEach(evolver => evolver.gotchi.recycle())
+        this.evolversNow.getValue().forEach(evolver => evolver.recycle())
     }
 
     // Privates =============================================================
@@ -88,7 +85,7 @@ export class Evolution {
     private saveStrongest(): void {
         const toSave = this.strongest
         if (toSave) {
-            this.saveGenome(toSave.gotchi.genomeData)
+            this.saveGenome(toSave.evolver.genomeData)
         } else {
             console.log("no strongest?")
         }
@@ -96,94 +93,103 @@ export class Evolution {
 
     private adjustAgeLimit(): void {
         this.ageLimit += INCREASE_AGE_LIMIT
-        if (this.ageLimit >= MAXIMUM_AGE * (this.leg.visited + 1)) {
-            this.ageLimit = MAXIMUM_AGE * this.leg.visited + MINIMUM_AGE
+        const ageLimitForLeg = MAXIMUM_AGE * (this.leg.visited + 1)
+        if (this.ageLimit >= ageLimitForLeg) {
+            this.ageLimit = ageLimitForLeg + MINIMUM_AGE
         }
         console.log("age limit now", this.ageLimit)
     }
 
-    private get rankedEvolvers(): Evolver[] {
+    private get rankedEvolvers(): IEvolver[] {
         let evolvers = this.evolversNow.getValue()
         const frozenHero = this.frozenHero
         if (frozenHero) {
             evolvers = evolvers.filter(e => e.index !== frozenHero.index)
         }
-        evolvers.forEach(e => e.calculateFitness())
-        return evolvers.sort(compareEvolvers)
+        const evaluated = evolvers.map(evolver => evolver.evaluated)
+        return evaluated.sort((a: IEvolver, b: IEvolver) => a.distanceFromTarget - b.distanceFromTarget)
     }
 
-    private get strongest(): Evolver | undefined {
+    private get strongest(): IEvolver | undefined {
         return this.rankedEvolvers[0]
     }
 
     private nextGenerationFromHero(heroEvolver: Evolver): void {
         this.rebooting = true
+        this.frozenHero = heroEvolver
         const nextLeg = this.leg.nextLeg
         if (!nextLeg) {
             console.warn("Evolution is over")
             return // todo: evolution is over
         }
         this.leg = heroEvolver.leg = nextLeg
-        const heroGotchi = heroEvolver.gotchi
-        this.frozenHero = heroGotchi
         const evolvers = this.evolversNow.getValue()
         this.evolversNow.next([heroEvolver])
         setTimeout(() => {
-            const otherGotchis = evolvers.map(e => e.gotchi).filter(g => g.index !== heroGotchi.index)
-            otherGotchis.forEach(g => g.recycle())
-            const gotchiFromParent = (genome: Genome) => heroGotchi.copyWithGenome(genome)
-            const population = this.createEvolvers(gotchiFromParent)
-            this.evolversNow.next(population)
+            const otherEvolvers = evolvers.filter(evolver => evolver.index !== heroEvolver.index)
+            otherEvolvers.forEach(evolver => evolver.recycle())
+            this.evolversNow.next(this.createPopulation(heroEvolver.direction))
             this.rebooting = false
         }, 500)
     }
 
     private nextGenerationFromSurvival(): void {
         this.rebooting = true
-        const ranked: Evolver[] = this.rankedEvolvers
-        const deadEvolvers = ranked.splice(Math.ceil(ranked.length * SURVIVAL_RATE))
-        console.log(`REBOOT: dead=${deadEvolvers.length} remaining=${ranked.length}`)
-        this.evolversNow.next(ranked)
+        const ranked: IEvolver[] = this.rankedEvolvers
+        const dead = ranked.splice(Math.ceil(ranked.length * SURVIVAL_RATE))
+        dead.forEach(e => console.log(`Dead ${e.evolver.index}:  ${e.distanceFromTarget}`))
+        ranked.forEach(e => console.log(`Ranked ${e.evolver.index}:  ${e.distanceFromTarget}`))
+        this.evolversNow.next(ranked.map(e => e.evolver))
+        dead.forEach(e => e.evolver.recycle())
         setTimeout(() => {
-            const mutants: Gotchi[] = deadEvolvers.map(evolver => {
-                evolver.gotchi.recycle()
-                const luckyParent = ranked[Math.floor(ranked.length * Math.random())]
-                return this.createOffspring(luckyParent.gotchi, luckyParent.currentDirection, false)
+            const nextGeneration: Evolver[] = []
+            dead.map(e => e.evolver).forEach(() => {
+                const luckyParent = ranked[Math.floor(ranked.length * Math.random())].evolver
+                const offspring = this.createOffspring(luckyParent)
+                if (offspring) {
+                    nextGeneration.push(offspring)
+                }
             })
-            const clones: Gotchi[] = ranked.map(evolver => {
-                evolver.gotchi.recycle()
-                return this.createOffspring(evolver.gotchi, evolver.currentDirection, true)
-            })
-            const offspring = mutants.concat(clones)
             this.evolversNow.next([])
-            console.log(`survived=${offspring.length}`)
-            this.evolversNow.next(offspring.map(gotchi => new Evolver(gotchi, this.leg)))
-            this.rebooting = false
+            setTimeout(() => {
+                ranked.forEach(e => e.evolver.recycle())
+                ranked.map(e => e.evolver).forEach(evolver => {
+                    const reborn = this.createEvolver(fromGenomeData(evolver.genomeData))
+                    if (reborn) {
+                        nextGeneration.push(reborn)
+                    }
+                })
+                this.evolversNow.next(nextGeneration)
+                this.rebooting = false
+            }, 500)
         }, 500)
     }
 
-    private createOffspring(parent: Gotchi, direction: Direction, clone: boolean): Gotchi {
-        console.log(`Mutating offspring ${Direction[direction]}`)
-        const genome = fromGenomeData(parent.genomeData).withMutatedBehavior(direction, clone ? 0 : MUTATION_COUNT)
-        const frozenHero = this.frozenHero
-        return frozenHero ? frozenHero.copyWithGenome(genome) : this.hexalot.createGotchi(genome)
+    private createPopulation(directionToMutate: Direction): Evolver[] {
+        let mutatingGenome: Genome | undefined = fromGenomeData(this.hexalot.genome.genomeData)
+        const evolvers: Evolver[] = []
+        while (true) {
+            const evolver = this.createEvolver(mutatingGenome)
+            if (!evolver) {
+                break
+            }
+            evolvers.push(evolver)
+            mutatingGenome = mutatingGenome.withMutatedBehavior(evolver.direction, MUTATION_COUNT)
+        }
+        return evolvers
     }
 
-    private createEvolvers(createGotchi: (genome: Genome) => Gotchi): Evolver[] {
-        const parent = this.frozenHero
-        let mutatingGenome = parent ? fromGenomeData(parent.genomeData) : this.hexalot.genome
-        const gotchis: Gotchi[] = []
-        let direction = Direction.REVERSE // todo: better
-        if (parent) {
-            direction = parent.direction // todo: actually want the new direction
-            gotchis.push(parent)
+    private createOffspring(parent: Evolver): Evolver | undefined {
+        const offspringGenome = fromGenomeData(parent.offspringGenome)
+        return this.createEvolver(offspringGenome)
+    }
+
+    private createEvolver(genome: Genome): Evolver | undefined {
+        const frozenHero = this.frozenHero
+        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.hexalot.createGotchi(genome)
+        if (!gotchi) {
+            return undefined
         }
-        while (gotchis.length < MAX_POPULATION) {
-            const gotchi = createGotchi(mutatingGenome)
-            gotchis.push(gotchi)
-            console.log(`Mutating ${gotchis.length} ${Direction[direction]}`)
-            mutatingGenome = mutatingGenome.withMutatedBehavior(direction, MUTATION_COUNT)
-        }
-        return gotchis.map(gotchi => new Evolver(gotchi, this.leg))
+        return new Evolver(gotchi, this.leg)
     }
 }

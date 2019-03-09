@@ -93,14 +93,20 @@ export class FabricKernel implements IGotchiFactory {
         }
     }
 
-    public createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi {
+    public createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi | undefined {
         const newInstance = this.allocateInstance()
+        if (!newInstance) {
+            return undefined
+        }
         const fabric = new Fabric(newInstance).createSeed(location.x, location.z, rotation)
         return new Gotchi(fabric, genome, this)
     }
 
-    public copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi {
+    public copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi | undefined {
         const newInstance = this.allocateInstance()
+        if (!newInstance) {
+            return undefined
+        }
         this.exports.cloneInstance(gotchi.fabric.index, newInstance.index)
         const fabric = new Fabric(newInstance)
         return new Gotchi(fabric, genome, this)
@@ -122,10 +128,10 @@ export class FabricKernel implements IGotchiFactory {
 
     // ==============================================================
 
-    private allocateInstance(): IFabricInstanceExports {
+    private allocateInstance(): IFabricInstanceExports | undefined {
         const freeIndex = this.instanceUsed.indexOf(false)
         if (freeIndex < 0) {
-            throw new Error("No free fabrics!")
+            return undefined
         }
         this.instanceUsed[freeIndex] = true
         this.instanceArray[freeIndex].freshGeometry()

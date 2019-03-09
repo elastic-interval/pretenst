@@ -14,7 +14,7 @@ export const INTERVALS_RESERVED = 1
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0)
 
 const ARROW_LENGTH = 9
-const ARROW_WIDTH = 1
+const ARROW_WIDTH = 0.6
 const ARROW_TIP_LENGTH_FACTOR = 1.3
 const ARROW_TIP_WIDTH_FACTOR = 1.5
 
@@ -185,6 +185,7 @@ export class Fabric {
         const rightLoc = new Vector3(hanger.x, hanger.y, hanger.z + SEED_RADIUS)
         locations.push(leftLoc, rightLoc)
         if (rotation > 0) {
+            console.log("rotating", rotation)
             const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * rotation)
             locations.forEach(location => location.applyMatrix4(rotationMatrix))
         }
@@ -214,11 +215,11 @@ export class Fabric {
         return this
     }
 
-    public get direction(): Direction {
+    public get currentDirection(): Direction {
         return this.exports.getCurrentDirection()
     }
 
-    public set direction(direction: Direction) {
+    public set nextDirection(direction: Direction) {
         this.exports.setNextDirection(direction)
     }
 

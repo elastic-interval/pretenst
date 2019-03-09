@@ -1,72 +1,130 @@
 import {Vector3} from "three"
 
+import {Fabric} from "../body/fabric"
 import {Direction} from "../body/fabric-exports"
+import {fromGenomeData, Genome, IGenomeData} from "../genetics/genome"
 import {Leg} from "../island/journey"
 import {HEXAPOD_RADIUS} from "../island/shapes"
 
 import {Gotchi} from "./gotchi"
 
-export const compareEvolvers = (a: Evolver, b: Evolver) => a.toDestination - b.toDestination
-
 const MAX_VOTES = 30
 
-export class Evolver {
+export interface IEvolver {
+    evolver: Evolver
+    distanceFromTarget: number
+}
 
-    public toDestination = 0
-    public currentDirection = Direction.REST
-    private toTarget = new Vector3()
+export class Evolver {
     private votes: Direction[] = []
     private currentLeg: Leg
+    private mutatingGenome: Genome
+    private nextDirection = Direction.REST
 
-    constructor(public gotchi: Gotchi, leg: Leg) {
-        this.currentLeg = leg
-        this.voteDirection()
+    constructor(private gotchi: Gotchi, leg: Leg) {
+        this.mutatingGenome = fromGenomeData(gotchi.genomeData)
+        this.leg = leg
     }
 
     public set leg(leg: Leg) {
         this.currentLeg = leg
         this.votes = []
-        this.voteDirection()
+        this.nextDirection = this.gotchi.nextDirection = this.voteDirection()
+    }
+
+    public adjustDirection(): boolean {
+        const direction = this.voteDirection()
+        if (this.nextDirection === direction) {
+            return false
+        }
+        console.log(`${this.index} turned ${Direction[this.nextDirection]} to ${Direction[direction]}`)
+        this.nextDirection = this.gotchi.nextDirection = direction
+        return true
     }
 
     public get index(): number {
         return this.gotchi.index
     }
 
-    public voteDirection(): Direction | undefined {
-        const votes = this.votes
-        votes.push(this.directionToTarget)
-        if (votes.length > MAX_VOTES) {
-            votes.shift()
-        }
-        const counts = votes.reduce((c: number[], vote) => {
-            c[vote]++
-            return c
-        }, [0, 0, 0, 0, 0])
-        for (let dir = Direction.FORWARD; dir <= Direction.REVERSE; dir++) {
-            if (counts[dir] === MAX_VOTES && this.currentDirection !== dir) {
-                this.currentDirection = dir
-                console.log(`Direction ${Direction[this.currentDirection]}`)
-                return this.currentDirection
-            }
-        }
-        return undefined
+    public get age(): number {
+        return this.gotchi.age
     }
 
-    public calculateFitness(): void {
-        this.toDestination = this.gotchi.getDistanceFrom(this.target)
+    public get gestating(): boolean {
+        return this.fabric.isGestating
+    }
+
+    public get fabric(): Fabric {
+        return this.gotchi.fabric
+    }
+
+    public get vectors(): Float32Array {
+        return this.gotchi.fabric.vectors
+    }
+
+    public get offspringGenome(): IGenomeData {
+        return this.mutatingGenome.genomeData
+    }
+
+    public mutateGenome(mutationCount: number): void {
+        console.log(`mutating ${this.index} ${Direction[this.nextDirection]} ${mutationCount} dice`)
+        this.mutatingGenome = this.mutatingGenome.withMutatedBehavior(this.nextDirection, mutationCount)
+    }
+
+    public get direction(): Direction {
+        return this.nextDirection
+    }
+
+    public get evaluated(): IEvolver {
+        const distanceFromTarget = this.gotchi.getDistanceFrom(this.target)
+        return {evolver: this, distanceFromTarget}
     }
 
     public get touchedDestination(): boolean {
         return this.gotchi.getDistanceFrom(this.target) < HEXAPOD_RADIUS
     }
 
+    public iterate(ticks: number): boolean {
+        return this.gotchi.iterate(ticks)
+    }
+
+    public get genomeData(): IGenomeData {
+        return this.gotchi.genomeData
+    }
+
+    public gotchiWithGenome(genome: Genome): Gotchi | undefined {
+        return this.gotchi.copyWithGenome(genome)
+    }
+
+    public recycle(): void {
+        this.gotchi.recycle()
+    }
+
+    // ============================
+
+    private voteDirection(): Direction {
+        const votes = this.votes
+        const latestVote = this.directionToTarget
+        votes.push(latestVote)
+        if (votes.length > MAX_VOTES) {
+            votes.shift()
+        }
+        const voteCounts = votes.reduce((c: number[], vote) => {
+            c[vote]++
+            return c
+        }, [0, 0, 0, 0, 0])
+        for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
+            if (voteCounts[direction] === MAX_VOTES && this.nextDirection !== direction) {
+                return direction
+            }
+        }
+        return latestVote
+    }
+
     private get directionToTarget(): Direction {
-        const fabric = this.gotchi.fabric
         const toTarget = this.toTarget
-        toTarget.subVectors(this.target, fabric.seed).normalize()
-        const degreeForward = toTarget.dot(fabric.forward)
-        const degreeRight = toTarget.dot(fabric.right)
+        const degreeForward = toTarget.dot(this.gotchi.fabric.forward)
+        const degreeRight = toTarget.dot(this.gotchi.fabric.right)
         if (degreeForward > 0) {
             if (degreeRight > 0) {
                 return degreeForward > degreeRight ? Direction.FORWARD : Direction.RIGHT
@@ -80,6 +138,14 @@ export class Evolver {
                 return -degreeForward > -degreeRight ? Direction.REVERSE : Direction.LEFT
             }
         }
+    }
+
+    private get toTarget(): Vector3 {
+        const toTarget = new Vector3()
+        toTarget.subVectors(this.target, this.gotchi.fabric.seed)
+        toTarget.y = 0
+        toTarget.normalize()
+        return toTarget
     }
 
     private get target(): Vector3 {
