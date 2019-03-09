@@ -285,10 +285,10 @@ export class Fabric {
                     break
                 case Direction.RIGHT:
                 case Direction.LEFT:
-                    const high = highLow >> 4
-                    const low = highLow & 0xf
-                    const oppositeHighLow = low << 4 + high
-                    this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, oppositeHighLow)
+                    const low = Math.floor(highLow / 16)
+                    const high = highLow % 16
+                    const lowHigh = low + high * 16
+                    this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, lowHigh)
                     break
             }
         }
