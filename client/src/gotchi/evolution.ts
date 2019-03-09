@@ -157,7 +157,7 @@ export class Evolution {
             const offspring = mutants.concat(clones)
             this.evolversNow.next([])
             console.log(`survived=${offspring.length}`)
-            this.evolversNow.next(offspring.map(gotchi => new Evolver(gotchi, ranked[0].leg)))
+            this.evolversNow.next(offspring.map(gotchi => new Evolver(gotchi, this.leg)))
             this.rebooting = false
         }, 500)
     }

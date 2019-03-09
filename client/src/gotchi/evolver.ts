@@ -13,13 +13,20 @@ const MAX_VOTES = 30
 export class Evolver {
 
     public toDestination = 0
-    public currentDirection: Direction = Direction.REST
-    private target: Vector3
+    public currentDirection = Direction.REST
     private toTarget = new Vector3()
     private votes: Direction[] = []
+    private currentLeg: Leg
 
-    constructor(public gotchi: Gotchi, public leg: Leg) {
-        this.target = leg.goTo.center
+    constructor(public gotchi: Gotchi, leg: Leg) {
+        this.currentLeg = leg
+        this.voteDirection()
+    }
+
+    public set leg(leg: Leg) {
+        this.currentLeg = leg
+        this.votes = []
+        this.voteDirection()
     }
 
     public get index(): number {
@@ -40,7 +47,7 @@ export class Evolver {
             if (counts[dir] === MAX_VOTES && this.currentDirection !== dir) {
                 this.currentDirection = dir
                 console.log(`Direction ${Direction[this.currentDirection]}`)
-                return dir
+                return this.currentDirection
             }
         }
         return undefined
@@ -75,5 +82,8 @@ export class Evolver {
         }
     }
 
+    private get target(): Vector3 {
+        return this.currentLeg.goTo.center
+    }
 }
 
