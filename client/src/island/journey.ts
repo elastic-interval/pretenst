@@ -15,7 +15,7 @@ export class Leg {
 }
 
 export class Journey {
-    constructor(public hexalots: Hexalot[]) {
+    constructor(readonly hexalots: Hexalot[]) {
     }
 
     public get visits(): Hexalot[] {

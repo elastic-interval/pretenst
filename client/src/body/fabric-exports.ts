@@ -12,22 +12,6 @@ export enum Direction {
     REVERSE = 4,
 }
 
-// Maybe later drive with keyboard?
-// export function turn(direction: Direction, right: boolean): Direction {
-//     switch (direction) {
-//         case Direction.FORWARD:
-//             return right ? Direction.RIGHT : Direction.LEFT
-//         case Direction.REVERSE:
-//             return right ? Direction.LEFT : Direction.RIGHT
-//         case Direction.LEFT:
-//             return right ? Direction.FORWARD : Direction.REVERSE
-//         case Direction.RIGHT:
-//             return right ? Direction.REVERSE : Direction.FORWARD
-//         default:
-//             return Direction.FORWARD
-//     }
-// }
-
 export const SEED_CORNERS = 5
 export const SEED_RADIUS = 1
 

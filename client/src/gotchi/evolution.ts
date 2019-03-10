@@ -35,10 +35,10 @@ export class Evolution {
             return this.midpointVector
         }
         const vectors = evolvers.map(evolver => evolver.vectors)
-        const sumFromArray = (prev: Vector3, array: Float32Array) => {
-            prev.x += array[0]
-            prev.y += array[1]
-            prev.z += array[2]
+        const sumFromArray = (prev: Vector3, [x, y, z]: Float32Array) => {
+            prev.x += x
+            prev.y += y
+            prev.z += z
             return prev
         }
         this.midpointVector.set(0, 0, 0)
@@ -89,10 +89,11 @@ export class Evolution {
     }
 
     private adjustAgeLimit(): void {
-        this.ageLimit += INCREASE_AGE_LIMIT
-        const ageLimitForLeg = MAXIMUM_AGE * (this.leg.visited + 1)
+        const nextVisit = this.leg.visited + 1
+        this.ageLimit += INCREASE_AGE_LIMIT * nextVisit
+        const ageLimitForLeg = MAXIMUM_AGE * nextVisit
         if (this.ageLimit >= ageLimitForLeg) {
-            this.ageLimit = ageLimitForLeg + MINIMUM_AGE
+            this.ageLimit = ageLimitForLeg + MINIMUM_AGE * nextVisit
         }
         console.log("age limit now", this.ageLimit)
     }
