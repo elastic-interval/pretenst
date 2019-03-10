@@ -12,55 +12,65 @@ function rollTheDice(): IDie {
     return DICE[Math.floor(Math.random() * DICE.length)]
 }
 
-export function fromGenomeData(genomeData: IGenomeData) {
+function freshGenomeData(master: string): IGenomeData {
+    return {
+        master,
+        geneMap: {},
+    }
+}
+
+export function fromMaster(master: string): Genome {
+    return new Genome(freshGenomeData(master), rollTheDice)
+}
+
+export function fromGenomeData(genomeData: IGenomeData): Genome {
     return new Genome(genomeData, rollTheDice)
 }
 
 export class Genome {
 
-    private gene: { [key: string]: IDie[]; } = {}
+    private geneMap: { [key: string]: IDie[]; } = {}
 
     constructor(private data: IGenomeData, private roll: () => IDie) {
         if (data.geneMap) {
-            Object.keys(data.geneMap).forEach(direction => this.gene[direction] = deserializeGene(data.geneMap[direction]))
+            Object.keys(data.geneMap).forEach(direction => this.geneMap[direction] = deserializeGene(data.geneMap[direction]))
         }
     }
 
-    public get master() {
+    public get master(): string {
         return this.data.master
     }
 
     public createReader(direction: Direction): GeneReader {
-        const gene = this.gene[direction]
+        const gene = this.geneMap[direction]
         if (gene) {
             return new GeneReader(gene, this.roll)
         } else {
-            this.gene[direction] = []
-            return new GeneReader(this.gene[direction], this.roll)
+            this.geneMap[direction] = []
+            return new GeneReader(this.geneMap[direction], this.roll)
         }
     }
 
     public withMutatedBehavior(direction: Direction, mutations: number): Genome {
-        const mutated: { [key: string]: IDie[]; } = {}
-        Object.keys(this.gene).forEach(key => {
-            mutated[key] = this.gene[key].slice()
+        const mutatedGeneMap: { [key: string]: IDie[]; } = {}
+        Object.keys(this.geneMap).forEach(key => {
+            mutatedGeneMap[key] = this.geneMap[key].slice()
         })
-        if (!mutated[direction]) {
-            mutated[direction] = []
+        if (!mutatedGeneMap[direction]) {
+            mutatedGeneMap[direction] = []
         }
         for (let hit = 0; hit < mutations; hit++) {
-            const geneNumber = Math.floor(Math.random() * mutated[direction].length)
-            mutated[direction][geneNumber] = this.roll()
-            // console.log(`G[${direction}][${geneNumber}] = ${directionGene[geneNumber]}`);
+            const geneNumber = Math.floor(Math.random() * mutatedGeneMap[direction].length)
+            mutatedGeneMap[direction][geneNumber] = this.roll()
         }
-        const genome = new Genome({master: this.master, geneMap:{}}, this.roll)
-        genome.gene = mutated
+        const genome = new Genome(freshGenomeData(this.master), this.roll)
+        genome.geneMap = mutatedGeneMap
         return genome
     }
 
     public get genomeData(): IGenomeData {
         this.data.geneMap = {}
-        Object.keys(this.gene).forEach(key => this.data.geneMap[key] = serializeGene(this.gene[key]))
+        Object.keys(this.geneMap).forEach(key => this.data.geneMap[key] = serializeGene(this.geneMap[key]))
         return this.data
     }
 }

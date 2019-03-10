@@ -11,14 +11,18 @@ import {Spot} from "../island/spot"
 import {OrbitDistance} from "./orbit"
 
 export enum Command {
+    DETACH = "Detach",
+    SAVE_GENOME = "Save genome",
+    DELETE_GENOME = "Delete genome",
     RETURN_TO_SEED = "Return to seed",
-    LAUNCH_GOTCHI = "Launch Gotchi",
+    DRIVE = "Launch Gotchi",
     TURN_LEFT = "Turn Left",
     TURN_RIGHT = "Turn Right",
     COME_HERE = "Come Here",
     GO_THERE = "Go There",
     STOP = "Stop",
-    LAUNCH_EVOLUTION = "Launch Evolution",
+    EVOLVE = "Launch evolution",
+    FORGET_JOURNEY = "Forget journey",
     CLAIM_GOTCH = "Claim Hexalot",
     CREATE_LAND = "Create Land",
     CREATE_WATER = "Create Water",
@@ -26,6 +30,7 @@ export enum Command {
 
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
+    homeHexalot: BehaviorSubject<Hexalot | undefined>
     cameraLocation: Vector3
     master?: string
     spot?: Spot
@@ -40,7 +45,7 @@ interface IClicky {
     command: Command
 }
 
-function Clicky(params: IClicky) {
+function Clicky(params: IClicky): JSX.Element {
     return (
         <span style={{padding: "5px 5px 5px 5px"}}>
             <Button onClick={() => params.props.doCommand(params.command)}>{params.command}</Button>
@@ -64,7 +69,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         super(props)
     }
 
-    public render() {
+    public render(): JSX.Element {
         const evolution = this.props.evolution
         if (evolution) {
             return this.evolving(evolution)
@@ -75,9 +80,10 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         }
         const hexalot = this.props.hexalot
         if (hexalot) {
-            if (hexalot.master === this.props.master) {
+            const homeHexalot = this.props.homeHexalot.getValue()
+            if (homeHexalot && homeHexalot.id === hexalot.id) {
                 return this.homeHexalot(hexalot)
-            } else if (hexalot.master) {
+            } else {
                 return this.foreignHexalot(hexalot)
             }
         }
@@ -96,20 +102,20 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private foreignHexalot(hexalot: Hexalot) {
+    private foreignHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionPanel>
-                <h3>{hexalot.master}</h3>
+                <span>This hexalot {hexalot.id} belongs to {hexalot.master}</span>
                 <Container>
                     <Row>
                         <Col>
-                            <Button onClick={() => this.props.doCommand(Command.LAUNCH_GOTCHI)}>
+                            <Button onClick={() => this.props.doCommand(Command.DRIVE)}>
                                 Launch
                             </Button>
                         </Col>
                         <Col>
-                            <Button onClick={() => this.props.doCommand(Command.LAUNCH_EVOLUTION)}>
-                                Evolve
+                            <Button onClick={() => this.props.doCommand(Command.DETACH)}>
+                                Detach
                             </Button>
                         </Col>
                     </Row>
@@ -118,27 +124,58 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private homeHexalot(hexalot: Hexalot) {
+    private homeHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionPanel>
-                <p>
-                    This is your hexalot!
-                </p>
-                <p>
-                    You can
-                    <Clicky props={this.props} command={Command.LAUNCH_GOTCHI}/>
-                    and drive it around.
-                </p>
-                <p>
-                    If it doesn't work well enough, you can
-                    <Clicky props={this.props} command={Command.LAUNCH_EVOLUTION}/>
-                    it for a while so it learns muscle coordination.
-                </p>
+                <span>This is your home hexalot, {hexalot.id} </span>
+                <Container>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.TURN_LEFT)}>
+                                Left
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.TURN_RIGHT)}>
+                                Right
+                            </Button>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.DRIVE)}>
+                                Drive
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.EVOLVE)}>
+                                Evolve
+                            </Button>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.FORGET_JOURNEY)}>
+                                Forget journey
+                            </Button>
+                        </Col>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.DETACH)}>
+                                Logout
+                            </Button>
+                        </Col>
+                    </Row>
+                    <ButtonGroup>
+                        <Button onClick={() => this.props.doCommand(Command.DELETE_GENOME)}>
+                            Delete genome
+                        </Button>
+                    </ButtonGroup>
+                </Container>
             </ActionPanel>
         )
     }
 
-    private drivingGotchi(gotchi: Gotchi) {
+    private drivingGotchi(gotchi: Gotchi): JSX.Element {
         return (
             <ActionPanel>
                 <p>
@@ -159,32 +196,28 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             Stop
                         </Button>
                     </ButtonGroup>
-                    <ButtonGroup>
-                        <Button onClick={() => this.props.doCommand(Command.TURN_LEFT)}>
-                            Turn left
-                        </Button>
-                        &nbsp;
-                        <Button onClick={() => this.props.doCommand(Command.TURN_RIGHT)}>
-                            Turn right
-                        </Button>
-                    </ButtonGroup>
                 </div>
             </ActionPanel>
         )
     }
 
-    private evolving(evolution: Evolution) {
+    private evolving(evolution: Evolution): JSX.Element {
         return (
             <ActionPanel>
-                <p>
-                    You are evolving. Fancy that!
-                </p>
-                <Clicky props={this.props} command={Command.RETURN_TO_SEED}/>
+                <Container>
+                    <Row>
+                        <Col>
+                            <Button onClick={() => this.props.doCommand(Command.RETURN_TO_SEED)}>
+                                Return to seed
+                            </Button>
+                        </Col>
+                    </Row>
+                </Container>
             </ActionPanel>
         )
     }
 
-    private availableHexalot(spot: Spot) {
+    private availableHexalot(spot: Spot): JSX.Element {
         return (
             <ActionPanel>
                 <p>
@@ -199,7 +232,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private freeSpot(spot: Spot) {
+    private freeSpot(spot: Spot): JSX.Element {
         return (
             <ActionPanel>
                 <p>

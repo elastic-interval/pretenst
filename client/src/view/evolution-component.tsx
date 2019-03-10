@@ -26,28 +26,26 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
         }
     }
 
-    public componentDidMount() {
+    public componentDidMount(): void {
         this.subscription = this.props.evolution.evolversNow.subscribe(evolvers => {
             this.setState({evolvers})
         })
     }
 
-    public componentWillUnmount() {
+    public componentWillUnmount(): void {
         this.subscription.unsubscribe()
     }
 
-    public render() {
+    public render(): JSX.Element {
         return <R3.Object3D key="EvolutionMesh">
             {
                 this.state.evolvers.map((evolver, index) => {
-                    const gotchi = evolver.gotchi
-                    const fabric = gotchi.fabric
+                    const fabric = evolver.fabric
                     return (
                         <R3.Object3D key={`Evolver${index}`}>
-                            <R3.LineSegments
-                                key="Vectors"
-                                geometry={fabric.pointerGeometryFor(gotchi.direction)}
-                                material={GOTCHI_POINTER_MATERIAL}
+                            <R3.LineSegments key="Vectors"
+                                             geometry={fabric.pointerGeometryFor(evolver.direction)}
+                                             material={GOTCHI_POINTER_MATERIAL}
                             />
                             <R3.Mesh
                                 geometry={fabric.facesGeometry}

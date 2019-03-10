@@ -7,7 +7,7 @@ export class Behavior {
     constructor(private fabric: Fabric, private direction: Direction, private behaviorGene: GeneReader) {
     }
 
-    public apply() {
+    public apply(): void {
         for (let intervalIndex = INTERVALS_RESERVED; intervalIndex < this.fabric.intervalCount; intervalIndex++) {
             const highLow = this.behaviorGene.chooseFrom(256)
             // console.log(`I[${intervalIndex}][${this.direction}] = ${highLow}`);

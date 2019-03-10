@@ -95,7 +95,7 @@ export class FaceSnapshot {
         return BILATERAL_MIDDLE
     }
 
-    public remove() {
+    public remove(): void {
         // maybe fresh first
         this.fabricExports.removeFace(this.faceIndex)
     }
