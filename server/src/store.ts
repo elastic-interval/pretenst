@@ -1,26 +1,26 @@
-import { HexalotID, PubKey } from "./types"
+import { FlashStore } from "flash-store"
+
+import { IslandPattern } from "./island"
 
 export interface IKeyValueStore {
-    set(key: string, value: string): Promise<void>
+    set(key: string, value: any): Promise<void>
 
-    get(key: string): Promise<string | null>
+    get(key: string): Promise<any | null>
 
     delete(key: string): Promise<void>
 }
-
-export const GENESIS_LOT_KEY = "genesisLot"
 
 export class InvalidHexalotError extends Error {
 }
 
 export class InMemoryStore implements IKeyValueStore {
-    private db: { [key: string]: string } = {}
+    private db: { [key: string]: any } = {}
 
-    public async get(key: string): Promise<string | null> {
+    public async get(key: string): Promise<any | null> {
         return this.db[key] || null
     }
 
-    public async set(key: string, value: string): Promise<void> {
+    public async set(key: string, value: any): Promise<void> {
         this.db[key] = value
     }
 
@@ -29,59 +29,51 @@ export class InMemoryStore implements IKeyValueStore {
     }
 }
 
-export class HexalotStore {
+export class LevelDBFlashStore implements IKeyValueStore {
+    private db: FlashStore<string, any>
+
+    constructor(storePath: string) {
+        this.db = new FlashStore(storePath)
+    }
+
+    public delete(key: string): Promise<void> {
+        return this.db.del(key)
+    }
+
+    public async get(key: string): Promise<any | null> {
+        return await this.db.get(key) || null
+    }
+
+    public set(key: string, value: any): Promise<void> {
+        return this.db.set(key, value)
+    }
+}
+
+export class IslandStore {
     constructor(
         readonly db: IKeyValueStore,
-        readonly prefix: string = "galapagotchi",
+        readonly islandName: string,
     ) {
     }
 
-    public async getGenesisLot(): Promise<HexalotID | null> {
-        return this.db.get(GENESIS_LOT_KEY)
+    public async getPattern(): Promise<IslandPattern | null> {
+        const pattern = await this.get("pattern")
+        if (!pattern) {
+            return null
+        }
+        return pattern
     }
 
-    public async spawnLot(
-        parent: HexalotID,
-        direction: number,
-        child: HexalotID,
-    ): Promise<void> {
-        await Promise.all([
-            this.set(`hexalot:${child}:exists`, "1"),
-            this.set(`hexalot:${parent}:child:${direction}`, child),
-        ])
+    public async setPattern(pattern: IslandPattern): Promise<void> {
+        const patternStr = JSON.stringify(pattern)
+        return this.set("pattern", patternStr)
     }
 
-    public async assignLot(lot: HexalotID, owner: PubKey): Promise<void> {
-        const ownedLots: HexalotID[] = JSON.parse(await this.get(`user:${owner}:lots`) || "[]")
-        ownedLots.push(lot)
-        // FIXME: this operation has to be atomic
-        await Promise.all([
-            this.set(`user:${owner}:lots`, JSON.stringify(ownedLots)),
-            this.set(`hexalot:${lot}:owner`, owner),
-        ])
+    private async set(key: string, value: any): Promise<void> {
+        return this.db.set(`/island/${this.islandName}/${key}`, value)
     }
 
-    public async getChildLot(parent: HexalotID, direction: number): Promise<HexalotID | null> {
-        return this.get(`hexalot:${parent}:child:${direction}`)
-    }
-
-    public async getOwnedLots(owner: PubKey): Promise<HexalotID[]> {
-        return JSON.parse(await this.get(`user:${owner}:lots`) || "[]")
-    }
-
-    public async getLotOwner(lot: HexalotID): Promise<PubKey | null> {
-        return this.get(`hexalot:${lot}:owner`)
-    }
-
-    public async lotExists(lot: HexalotID): Promise<boolean> {
-        return !!(await this.get(`hexalot:${lot}:exists`))
-    }
-
-    private async set(key: string, value: string): Promise<void> {
-        return this.db.set(`${this.prefix}::${key}`, value)
-    }
-
-    private async get(key: string): Promise<string | null> {
-        return this.db.get(`${this.prefix}::${key}`)
+    private async get(key: string): Promise<any | null> {
+        return this.db.get(`/island/${this.islandName}/${key}`)
     }
 }

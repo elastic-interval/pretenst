@@ -1,15 +1,47 @@
+import { Invoice, LnRpc } from "@radar/lnrpc"
+import { EventEmitter } from "events"
+
 import { HexalotID } from "./types"
 
 export class PaymentHandler {
-    public async generateInvoice(
-        lot: HexalotID,
-        amount: string,
-    ): Promise<string> {
-        // TODO: connect to lightning node
-        return `FAKE_INVOICE:${lot}:${amount}`
+    private invoiceSettledEvents: EventEmitter
+
+    constructor(
+        readonly lnRpc: LnRpc,
+        readonly islandName: string,
+    ) {
+        this.invoiceSettledEvents = new EventEmitter()
+        this.setupSubscriptions()
     }
 
-    public async waitForPayment(invoice: string): Promise<void> {
-        // TODO: wait for invoice to be paid
+    public async generatePayment(
+        lotID: HexalotID,
+        value: string,
+    ): Promise<{ invoice: string, paid: Promise<void> }> {
+        const memo = `galapagotchi.run/island/${this.islandName}/hexalot/${lotID}`
+        const response = await this.lnRpc.addInvoice({
+            memo,
+            value,
+        })
+        const invoice = response.paymentRequest
+        const paid = new Promise<void>(resolve => {
+            this.invoiceSettledEvents.once(invoice, resolve)
+        })
+        return {
+            invoice,
+            paid,
+        }
+    }
+
+    private async setupSubscriptions(): Promise<void> {
+        const subscriber = await this.lnRpc.subscribeInvoices({
+            addIndex: "0",
+            settleIndex: "0",
+        })
+        subscriber.on("data", (invoice: Invoice) => {
+            if (invoice.settled && invoice.paymentRequest) {
+                this.invoiceSettledEvents.emit(invoice.paymentRequest)
+            }
+        })
     }
 }

@@ -62,6 +62,29 @@ function* genSpiral(radius: number): IterableIterator<Vector> {
     }
 }
 
+export function overlap(h1: Hexalot, h2: Hexalot, direction: Direction): boolean {
+    if (h1.radius !== h2.radius) {
+        return false
+    }
+    const delta = DIRECTION_VECTORS[direction]
+    if (!delta) {
+        throw new Error(`Direction has to be in [0,5]: ${direction}`)
+    }
+    const iter = genSpiral(h1.radius)
+    for (let cursor = iter.next(); !cursor.done; cursor = iter.next()) {
+        const h2Pos = cursor.value
+        const h1Pos = v3dAdd(h2Pos, delta)
+        if (v3dMinRadius(h1Pos) > h1.radius) {
+            continue
+        }
+        if (h2.at(h1Pos) !== h1.at(h2Pos)) {
+            return false
+        }
+    }
+    return true
+
+}
+
 export class Hexalot {
     public get id(): HexalotID {
         let sizeByte = this.radius.toString(16)
@@ -99,28 +122,6 @@ export class Hexalot {
             throw new Error(`Coordinates out of bounds: ${x},${z}`)
         }
         return this.bits[index]
-    }
-
-    public isChild(child: Hexalot, direction: Direction): boolean {
-        if (this.radius !== child.radius) {
-            return false
-        }
-        const delta = DIRECTION_VECTORS[direction]
-        if (!delta) {
-            throw new Error(`Direction has to be in [0,5]: ${direction}`)
-        }
-        const iter = genSpiral(this.radius)
-        for (let cursor = iter.next(); !cursor.done; cursor = iter.next()) {
-            const childPos = cursor.value
-            const parentPos = v3dAdd(childPos, delta)
-            if (v3dMinRadius(parentPos) > this.radius) {
-                continue
-            }
-            if (child.at(childPos) !== this.at(parentPos)) {
-                return false
-            }
-        }
-        return true
     }
 
     public static fromID(id: HexalotID): Hexalot {
