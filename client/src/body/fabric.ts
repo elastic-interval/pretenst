@@ -111,7 +111,7 @@ export class Fabric {
 
     public pointerGeometryFor(direction: Direction): Geometry {
         const geometry = new Geometry()
-        const v = () => new Vector3()
+        const v = () => new Vector3().add(this.seed)
         const arrowFromL = v()
         const arrowFromR = v()
         const arrowToL = v()
