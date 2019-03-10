@@ -2,7 +2,6 @@ import {BehaviorSubject} from "rxjs/BehaviorSubject"
 import {Vector3} from "three"
 
 import {AppStorage} from "../app-storage"
-import {fromGenomeData} from "../genetics/genome"
 import {IGotchiFactory} from "../gotchi/gotchi"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
@@ -36,9 +35,9 @@ export class Island {
         public islandName: string,
         public islandState: BehaviorSubject<IslandState>,
         private gotchiFactory: IGotchiFactory,
-        private storage: AppStorage,
+        private appStorage: AppStorage,
     ) {
-        this.apply(storage.getIsland(islandName))
+        this.apply(appStorage.getIsland(islandName))
         // console.log("spots", this.spots.map(s =>
         //     `(${s.coords.x},${s.coords.y})==(${s.center.x},${s.center.z})`))
     }
@@ -56,7 +55,7 @@ export class Island {
     }
 
     public findHexalot(fingerprint: string): Hexalot | undefined {
-        return this.hexalots.find(hexalot => hexalot.createFingerprint() === fingerprint)
+        return this.hexalots.find(hexalot => hexalot.id === fingerprint)
     }
 
     public setIslandState(gotchiAlive: boolean, selectedHexalot?: Hexalot): void {
@@ -83,12 +82,13 @@ export class Island {
             })
         }
         this.spots.forEach(spot => spot.refresh())
+        this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
         this.islandState.next(this.islandState.getValue()) // just refresh
     }
 
     public save(): void {
         if (this.isLegal) {
-            this.storage.setIsland(this.islandName, this.pattern)
+            this.appStorage.setIsland(this.islandName, this.pattern)
             console.log(`Saved ${this.islandName}`)
         } else {
             console.log(`Not legal yet: ${this.islandName}`)
@@ -189,12 +189,7 @@ export class Island {
             this.singleHexalot.spots.map(spot => spot.surface = Math.random() > 0.5 ? Surface.Land : Surface.Water)
             this.singleHexalot.spots[0].surface = Surface.Land
         }
-        this.hexalots.forEach(g => {
-            const genomeData = this.storage.getGenome(g)
-            if (genomeData) {
-                g.genome = fromGenomeData(genomeData)
-            }
-        })
+        this.hexalots.forEach(lot => lot.load())
         this.refreshStructure()
     }
 
@@ -209,7 +204,7 @@ export class Island {
             return existing
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
-        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory)
+        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory, this.appStorage)
         this.hexalots.push(hexalot)
         return hexalot
     }

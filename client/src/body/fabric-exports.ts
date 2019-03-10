@@ -12,22 +12,8 @@ export enum Direction {
     REVERSE = 4,
 }
 
-export function turn(direction: Direction, right: boolean): Direction {
-    switch (direction) {
-        case Direction.FORWARD:
-            return right ? Direction.RIGHT : Direction.LEFT
-        case Direction.REVERSE:
-            return right ? Direction.LEFT : Direction.RIGHT
-        case Direction.LEFT:
-            return right ? Direction.FORWARD : Direction.REVERSE
-        case Direction.RIGHT:
-            return right ? Direction.REVERSE : Direction.FORWARD
-        default:
-            return Direction.FORWARD
-    }
-}
-
 export const SEED_CORNERS = 5
+export const SEED_RADIUS = 1
 
 export interface IFabricDimensions {
     instanceMax: number,
@@ -61,6 +47,8 @@ export interface IFabricExports {
     init(joints: number, intervals: number, faces: number, instances: number): number
 
     setInstance(index: number): void
+
+    cloneInstance(fromIndex: number, index: number): void
 
     // below methods use instance index
 
@@ -115,6 +103,12 @@ export interface IFabricExports {
 
 export interface IFabricInstanceExports {
 
+    index: Readonly<number>
+
+    recycle(): void
+
+    freshGeometry(): void
+
     getDimensions(): IFabricDimensions
 
     getMidpoint(): Vector3
@@ -130,8 +124,6 @@ export interface IFabricInstanceExports {
     getFaceLocations(): Float32Array
 
     getFaceNormals(): Float32Array
-
-    flushFaces(): void
 
     getVectors(): Float32Array
 

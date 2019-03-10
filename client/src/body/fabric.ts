@@ -1,6 +1,6 @@
-import {BufferGeometry, Float32BufferAttribute, Geometry, Vector3} from "three"
+import {BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3} from "three"
 
-import {Direction, IFabricInstanceExports, SEED_CORNERS} from "./fabric-exports"
+import {Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS} from "./fabric-exports"
 import {vectorFromFloatArray} from "./fabric-kernel"
 import {FaceSnapshot, IJointSnapshot} from "./face-snapshot"
 
@@ -14,7 +14,7 @@ export const INTERVALS_RESERVED = 1
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0)
 
 const ARROW_LENGTH = 9
-const ARROW_WIDTH = 1
+const ARROW_WIDTH = 0.6
 const ARROW_TIP_LENGTH_FACTOR = 1.3
 const ARROW_TIP_WIDTH_FACTOR = 1.5
 
@@ -22,7 +22,16 @@ export class Fabric {
     private pointerGeometryStored: Geometry | undefined
     private facesGeometryStored: BufferGeometry | undefined
 
-    constructor(private exports: IFabricInstanceExports, public index: number) {
+    constructor(private exports: IFabricInstanceExports) {
+    }
+
+    public recycle(): void {
+        this.disposeOfGeometry()
+        this.exports.recycle()
+    }
+
+    public get index(): number {
+        return this.exports.index
     }
 
     public disposeOfGeometry(): void {
@@ -163,24 +172,32 @@ export class Fabric {
         return geometry
     }
 
-    public createSeed(x: number, y: number): Fabric {
+    public createSeed(x: number, y: number, rotation: number): Fabric {
         this.exports.reset()
+        // prepare
         const hanger = new Vector3(x, 0, y)
-        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z)
-        const R = 1
+        const locations: Vector3[] = []
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const angle = walk * Math.PI * 2 / SEED_CORNERS
-            this.exports.createJoint(
-                this.exports.nextJointTag(),
-                BILATERAL_MIDDLE,
-                R * Math.sin(angle) + hanger.x,
-                R * Math.cos(angle) + hanger.y,
-                hanger.z,
-            )
+            locations.push(new Vector3(SEED_RADIUS * Math.sin(angle) + hanger.x, SEED_RADIUS * Math.cos(angle) + hanger.y, hanger.z))
+        }
+        const leftLoc = new Vector3(hanger.x, hanger.y, hanger.z - SEED_RADIUS)
+        const rightLoc = new Vector3(hanger.x, hanger.y, hanger.z + SEED_RADIUS)
+        locations.push(leftLoc, rightLoc)
+        if (rotation > 0) {
+            console.log("rotating", rotation)
+            const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * rotation)
+            locations.forEach(location => location.applyMatrix4(rotationMatrix))
+        }
+        // build
+        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z)
+        for (let walk = 0; walk < SEED_CORNERS; walk++) {
+            const where = locations[walk]
+            this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, where.x, where.y, where.z)
         }
         const jointPairName = this.exports.nextJointTag()
-        const left = this.exports.createJoint(jointPairName, BILATERAL_LEFT, hanger.x, hanger.y, hanger.z - R)
-        const right = this.exports.createJoint(jointPairName, BILATERAL_RIGHT, hanger.x, hanger.y, hanger.z + R)
+        const left = this.exports.createJoint(jointPairName, BILATERAL_LEFT, leftLoc.x, leftLoc.y, leftLoc.z)
+        const right = this.exports.createJoint(jointPairName, BILATERAL_RIGHT, rightLoc.x, rightLoc.y, rightLoc.z)
         this.interval(hangerJoint, left, -1)
         this.interval(hangerJoint, right, -1)
         this.interval(left, right, -1)
@@ -193,15 +210,16 @@ export class Fabric {
             this.face(left, walk + 1, (walk + 1) % SEED_CORNERS + 1)
             this.face(right, (walk + 1) % SEED_CORNERS + 1, walk + 1)
         }
-        hanger.y += this.setAltitude(HUNG_ALTITUDE - R)
+        hanger.y += this.setAltitude(HUNG_ALTITUDE - SEED_RADIUS)
+        this.iterate(0) // output the face geometry, set direction vector, but don't experience time
         return this
     }
 
-    public get direction(): Direction {
+    public get currentDirection(): Direction {
         return this.exports.getCurrentDirection()
     }
 
-    public set direction(direction: Direction) {
+    public set nextDirection(direction: Direction) {
         this.exports.setNextDirection(direction)
     }
 
@@ -211,7 +229,7 @@ export class Fabric {
 
     public endGestation(): void {
         this.exports.endGestation()
-        this.exports.flushFaces()
+        this.exports.freshGeometry()
     }
 
     public get age(): number {
@@ -258,18 +276,21 @@ export class Fabric {
             throw new Error(`Bad interval index index ${intervalIndex}`)
         }
         this.exports.setIntervalHighLow(intervalIndex, direction, highLow)
-        switch (direction) {
-            case Direction.FORWARD:
-            case Direction.REVERSE:
-                const oppositeIntervalIndex = this.exports.findOppositeIntervalIndex(intervalIndex)
-                if (oppositeIntervalIndex < this.intervalCount) {
+        const oppositeIntervalIndex = this.exports.findOppositeIntervalIndex(intervalIndex)
+        if (oppositeIntervalIndex < this.intervalCount) {
+            switch (direction) {
+                case Direction.FORWARD:
+                case Direction.REVERSE:
                     this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow)
-                }
-                break
-            case Direction.RIGHT:
-            case Direction.LEFT:
-                // make opposite opposite?
-                break
+                    break
+                case Direction.RIGHT:
+                case Direction.LEFT:
+                    const low = Math.floor(highLow / 16)
+                    const high = highLow % 16
+                    const lowHigh = low + high * 16
+                    this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, lowHigh)
+                    break
+            }
         }
     }
 
@@ -318,7 +339,7 @@ export class Fabric {
             }
         })
         faceToReplace.remove()
-        this.exports.flushFaces()
+        this.exports.freshGeometry()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
             .map(index => new FaceSnapshot(this, this.exports, this.exports, index))

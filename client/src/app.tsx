@@ -5,16 +5,15 @@ import {Subscription} from "rxjs/Subscription"
 import {PerspectiveCamera, Vector3} from "three"
 
 import {AppStorage} from "./app-storage"
-import {Fabric} from "./body/fabric"
-import {Direction, IFabricExports, turn} from "./body/fabric-exports"
+import {Direction, IFabricExports} from "./body/fabric-exports"
 import {createFabricKernel, FabricKernel} from "./body/fabric-kernel"
 import {Physics} from "./body/physics"
-import {Genome, IGenomeData} from "./genetics/genome"
+import {IGenomeData} from "./genetics/genome"
 import {Evolution, INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Gotchi} from "./gotchi/gotchi"
 import {Hexalot} from "./island/hexalot"
 import {Island, IslandState} from "./island/island"
-import {Journey} from "./island/journey"
+import {Journey, Leg} from "./island/journey"
 import {Spot, Surface} from "./island/spot"
 import {ActionsPanel, Command} from "./view/actions-panel"
 import {GotchiView} from "./view/gotchi-view"
@@ -52,28 +51,27 @@ function updateDimensions(): object {
     }
 }
 
-function dispose(state: IAppState): void {
+function recycle(state: IAppState): void {
     if (state.gotchi) {
-        state.gotchi.dispose()
+        state.gotchi.recycle()
     }
     if (state.evolution) {
-        state.evolution.dispose()
+        state.evolution.recycle()
     }
 }
 
-function startEvolution(hexalot: Hexalot): object {
+function startEvolution(hexalot: Hexalot, firstLeg: Leg): object {
     return (state: IAppState, props: IAppProps) => {
         state.island.setIslandState(true, hexalot)
-        dispose(state)
-        const journey = hexalot.createStupidJourney()
+        recycle(state)
         const saveGenome = (genomeData: IGenomeData) => {
             console.log(`Saving genome data`)
             props.storage.setGenome(hexalot, genomeData)
         }
         return {
             gotchi: undefined,
-            evolution: new Evolution(hexalot, journey, saveGenome),
-            journey,
+            evolution: new Evolution(hexalot, firstLeg, saveGenome),
+            journey: firstLeg.journey,
         }
     }
 }
@@ -81,10 +79,8 @@ function startEvolution(hexalot: Hexalot): object {
 function startGotchi(hexalot: Hexalot): object {
     return (state: IAppState) => {
         state.island.setIslandState(true, hexalot)
-        dispose(state)
-        console.warn("Start gotchi", hexalot.genome)
+        recycle(state)
         const gotchi = hexalot.createGotchi()
-        // gotchi.travel = state.trip.createTravel(0);
         return {
             gotchi,
             evolution: undefined,
@@ -95,14 +91,16 @@ function startGotchi(hexalot: Hexalot): object {
 
 function selectSpot(spot?: Spot): object {
     return (state: IAppState) => {
-        state.island.setIslandState(false, spot ? spot.centerOfHexalot : undefined)
-        dispose(state)
+        const selectedHexalot = spot ? spot.centerOfHexalot : undefined
+        state.island.setIslandState(false, selectedHexalot)
+        const journey = selectedHexalot ? selectedHexalot.journey : undefined
+        recycle(state)
         return {
             actionPanel: true,
             spot,
             gotchi: undefined,
             evolution: undefined,
-            journey: undefined,
+            journey,
         }
     }
 }
@@ -115,17 +113,15 @@ function setInfoPanelMaximized(maximized: boolean): void {
     localStorage.setItem("InfoPanel.maximized", maximized ? "true" : "false")
 }
 
-
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
     private perspectiveCamera: PerspectiveCamera
-    private hexalotIdSubject = new BehaviorSubject<string>("")
+    private homeHexalot = new BehaviorSubject<Hexalot | undefined>(undefined)
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
     private selectedSpotSubject = new BehaviorSubject<Spot | undefined>(undefined)
     private islandState: BehaviorSubject<IslandState>
     private physics: Physics
     private fabricKernel: FabricKernel
-    private instanceUsed: boolean[]
 
     constructor(props: IAppProps) {
         super(props)
@@ -133,24 +129,11 @@ class App extends React.Component<IAppProps, IAppState> {
         this.physics.applyToFabric(props.fabricExports)
         this.islandState = new BehaviorSubject<IslandState>({gotchiAlive: false})
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        this.instanceUsed = this.fabricKernel.instance.map(() => false)
-        const createGotchiAt = (location: Vector3, genome: Genome): Gotchi => {
-            const freeIndex = this.instanceUsed.indexOf(false)
-            if (freeIndex < 0) {
-                throw new Error("No free fabrics!")
-            }
-            this.instanceUsed[freeIndex] = true
-            const exports = this.fabricKernel.instance[freeIndex]
-            exports.flushFaces()
-            const fabric = new Fabric(exports, freeIndex).createSeed(location.x, location.z)
-            fabric.iterate(0)
-            return new Gotchi(fabric, genome, () => this.instanceUsed[fabric.index] = false)
-        }
         this.state = {
             infoPanel: getInfoPanelMaximized(),
             actionPanel: false,
             orbitDistance: this.orbitDistanceSubject.getValue(),
-            island: new Island("GalapagotchIsland", this.islandState, {createGotchiAt}, this.props.storage),
+            island: new Island("GalapagotchIsland", this.islandState, this.fabricKernel, this.props.storage),
             master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight,
@@ -176,7 +159,10 @@ class App extends React.Component<IAppProps, IAppState> {
                 this.fabricKernel.setHexalot(spotCenters, surface)
             }
         }))
-        this.subs.push(this.hexalotIdSubject.subscribe(hexalotId => location.replace(`/#/${hexalotId}`)))
+        this.subs.push(this.homeHexalot.subscribe((hexalot?: Hexalot) => {
+            const id = hexalot ? hexalot.id : ""
+            location.replace(`/#/${id}`)
+        }))
         this.subs.push(this.selectedSpotSubject.subscribe(spot => {
             if (!spot) {
                 return
@@ -185,30 +171,23 @@ class App extends React.Component<IAppProps, IAppState> {
             if (!hexalot) {
                 return
             }
-            const fingerprint = hexalot.createFingerprint()
-            const homeHexalotId = this.hexalotIdSubject.getValue()
-            if (homeHexalotId.length === 0) {
-                this.hexalotIdSubject.next(fingerprint)
+            const homeHexalot = this.homeHexalot.getValue()
+            if (!homeHexalot) {
+                this.homeHexalot.next(hexalot)
                 this.props.storage.loadJourney(hexalot, this.state.island)
                 this.setState({journey: hexalot.journey})
-            } else {
-                if (homeHexalotId === fingerprint) {
-                    hexalot.journey = undefined
-                    this.props.storage.saveJourney(hexalot)
-                } else {
-                    const homeHexalot = this.state.island.findHexalot(homeHexalotId)
-                    if (homeHexalot) {
-                        const journey = homeHexalot.journey
-                        if (journey) {
-                            journey.addVisit(hexalot)
-                        } else {
-                            homeHexalot.journey = new Journey([homeHexalot, hexalot])
-                        }
-                        this.props.storage.saveJourney(homeHexalot)
-                        this.setState({journey: homeHexalot.journey})
-                    }
-                }
+                return
             }
+            if (homeHexalot.id !== hexalot.id) {
+                const journey = homeHexalot.journey
+                if (journey) {
+                    journey.addVisit(hexalot)
+                } else {
+                    homeHexalot.journey = new Journey([homeHexalot, hexalot])
+                }
+                this.props.storage.saveJourney(homeHexalot)
+            }
+            this.setState({journey: homeHexalot.journey})
         }))
     }
 
@@ -227,6 +206,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     height={this.state.height}
                     left={this.state.left}
                     top={this.state.top}
+                    homeHexalot={this.homeHexalot}
                     selectedSpot={this.selectedSpotSubject}
                     orbitDistance={this.orbitDistanceSubject}
                     evolution={this.state.evolution}
@@ -268,6 +248,7 @@ class App extends React.Component<IAppProps, IAppState> {
                         </div>
                         <ActionsPanel
                             orbitDistance={this.orbitDistanceSubject}
+                            homeHexalot={this.homeHexalot}
                             cameraLocation={this.perspectiveCamera.position}
                             spot={this.state.spot}
                             hexalot={this.islandState.getValue().selectedHexalot}
@@ -286,26 +267,27 @@ class App extends React.Component<IAppProps, IAppState> {
         const island = this.state.island
         const master = this.state.master
         const spot = this.state.spot
-        const hexalot = island.islandState.getValue().selectedHexalot
+        const homeHexalot = this.homeHexalot.getValue()
         const gotchi = this.state.gotchi
+        const journey = this.state.journey
         switch (command) {
             case Command.DETACH:
                 this.selectedSpotSubject.next(undefined)
-                this.hexalotIdSubject.next("")
+                this.homeHexalot.next(undefined)
                 this.setState({journey: undefined})
                 this.state.island.setIslandState(false)
                 break
             case Command.SAVE_GENOME:
-                if (hexalot && gotchi) {
+                if (homeHexalot && gotchi) {
                     console.log("Saving")
                     const genomeData = gotchi.genomeData
-                    this.props.storage.setGenome(hexalot, genomeData)
+                    this.props.storage.setGenome(homeHexalot, genomeData)
                 }
                 break
             case Command.DELETE_GENOME:
-                if (hexalot) {
+                if (homeHexalot) {
                     console.log("Deleting")
-                    hexalot.genome = undefined
+                    homeHexalot.deleteGenome()
                 }
                 break
             case Command.RETURN_TO_SEED:
@@ -313,24 +295,34 @@ class App extends React.Component<IAppProps, IAppState> {
                 this.selectedSpotSubject.next(selectedSpot) // refresh
                 this.setState(selectSpot(selectedSpot))
                 break
-            case Command.LAUNCH_GOTCHI:
-                if (hexalot) {
-                    this.setState(startGotchi(hexalot))
+            case Command.DRIVE:
+                if (homeHexalot) {
+                    this.setState(startGotchi(homeHexalot))
                 }
                 break
-            case Command.LAUNCH_EVOLUTION:
-                if (hexalot) {
-                    this.setState(startEvolution(hexalot))
+            case Command.EVOLVE:
+                if (homeHexalot && journey) {
+                    const firstLeg = journey.firstLeg
+                    if (firstLeg) {
+                        this.setState(startEvolution(homeHexalot, firstLeg))
+                    }
+                }
+                break
+            case Command.FORGET_JOURNEY:
+                if (homeHexalot) {
+                    homeHexalot.journey = undefined
+                    this.props.storage.saveJourney(homeHexalot)
+                    this.setState({journey: undefined})
                 }
                 break
             case Command.TURN_LEFT:
-                if (gotchi) {
-                    gotchi.direction = turn(gotchi.direction, false)
+                if (homeHexalot && gotchi) {
+                    homeHexalot.rotate(true, gotchi)
                 }
                 break
             case Command.TURN_RIGHT:
-                if (gotchi) {
-                    gotchi.direction = turn(gotchi.direction, true)
+                if (homeHexalot && gotchi) {
+                    homeHexalot.rotate(false, gotchi)
                 }
                 break
             case Command.COME_HERE:
@@ -345,7 +337,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 break
             case Command.STOP:
                 if (gotchi) {
-                    gotchi.direction = Direction.REST
+                    gotchi.nextDirection = Direction.REST
                 }
                 break
             case Command.CREATE_LAND:

@@ -27,7 +27,7 @@ export class IdentityPanel extends React.Component<IIdentityPanelProps, IIdentit
         this.state = {
             name: props.master ? props.master : "",
             islandMasters: props.island.hexalots.map(hexalot => {
-                const genome = props.storage.getGenome(hexalot)
+                const genome = props.storage.getGenomeData(hexalot)
                 return genome ? genome.master : ""
             }).filter(master => master.length > 0),
         }

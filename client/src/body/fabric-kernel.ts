@@ -1,7 +1,10 @@
 import {Vector3} from "three"
 
+import {Genome} from "../genetics/genome"
+import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 import {HEXALOT_SHAPE} from "../island/shapes"
 
+import {Fabric} from "./fabric"
 import {Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports} from "./fabric-exports"
 
 const FLOATS_IN_VECTOR = 3
@@ -37,16 +40,14 @@ interface IOffsets {
     faceMidpointsOffset: number
     faceLocationsOffset: number
     faceNormalsOffset: number
-    fabricBytes: number
 }
 
-function createOffsets(faceCountMax: number, fabricBytes: number): IOffsets {
+function createOffsets(faceCountMax: number, baseOffset: number): IOffsets {
     const offsets: IOffsets = {
         vectorsOffset: 0,
         faceMidpointsOffset: 0,
         faceLocationsOffset: 0,
         faceNormalsOffset: 0,
-        fabricBytes,
     }
     // sizes
     const seedVectors = 4 * FLOATS_IN_VECTOR
@@ -56,37 +57,59 @@ function createOffsets(faceCountMax: number, fabricBytes: number): IOffsets {
     offsets.faceLocationsOffset = (
         offsets.faceNormalsOffset = (
             offsets.faceMidpointsOffset = (
-                offsets.vectorsOffset = 0
+                offsets.vectorsOffset = baseOffset
             ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
         ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
     ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
     return offsets
 }
 
-export class FabricKernel {
+export class FabricKernel implements IGotchiFactory {
     private instanceArray: IFabricInstanceExports[] = []
-    private offsets: IOffsets
+    private instanceUsed: boolean[] = []
     private arrayBuffer: ArrayBuffer
     private spotCenters: Float32Array
     private surface: Int8Array
 
-    constructor(exports: IFabricExports, dimensions: IFabricDimensions) {
+    constructor(private exports: IFabricExports, dimensions: IFabricDimensions) {
         const fabricBytes = exports.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
         this.arrayBuffer = exports.memory.buffer
         this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
         this.surface = new Int8Array(this.arrayBuffer, SPOT_CENTERS_SIZE, HEXALOT_BITS)
-        this.offsets = createOffsets(dimensions.faceCountMax, fabricBytes)
         const byteLength = this.arrayBuffer.byteLength
         if (byteLength === 0) {
-            throw new Error(`Zero byte length! ${this.offsets.fabricBytes}`)
+            throw new Error(`Zero byte length! ${fabricBytes}`)
         }
         for (let index = 0; index < dimensions.instanceMax; index++) {
-            this.instanceArray.push(new InstanceExports(this.arrayBuffer, this.offsets, exports, dimensions, index))
+            this.instanceArray.push(new InstanceExports(
+                this.arrayBuffer,
+                createOffsets(dimensions.faceCountMax, HEXALOT_SIZE + index * fabricBytes),
+                exports,
+                dimensions,
+                index,
+                toFree => this.instanceUsed[toFree] = false,
+            ))
+            this.instanceUsed.push(false)
         }
     }
 
-    public get instance(): IFabricInstanceExports[] {
-        return this.instanceArray
+    public createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi | undefined {
+        const newInstance = this.allocateInstance()
+        if (!newInstance) {
+            return undefined
+        }
+        const fabric = new Fabric(newInstance).createSeed(location.x, location.z, rotation)
+        return new Gotchi(fabric, genome, this)
+    }
+
+    public copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi | undefined {
+        const newInstance = this.allocateInstance()
+        if (!newInstance) {
+            return undefined
+        }
+        this.exports.cloneInstance(gotchi.fabric.index, newInstance.index)
+        const fabric = new Fabric(newInstance)
+        return new Gotchi(fabric, genome, this)
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
@@ -102,6 +125,18 @@ export class FabricKernel {
             this.surface[index] = land ? 1 : 0
         })
     }
+
+    // ==============================================================
+
+    private allocateInstance(): IFabricInstanceExports | undefined {
+        const freeIndex = this.instanceUsed.indexOf(false)
+        if (freeIndex < 0) {
+            return undefined
+        }
+        this.instanceUsed[freeIndex] = true
+        this.instanceArray[freeIndex].freshGeometry()
+        return this.instanceArray[freeIndex]
+    }
 }
 
 class InstanceExports implements IFabricInstanceExports {
@@ -115,19 +150,25 @@ class InstanceExports implements IFabricInstanceExports {
     private rightVector = new Vector3()
 
     constructor(
-        private arrayBuffer: ArrayBuffer,
+        private buffer: ArrayBuffer,
         private offsets: IOffsets,
         private exports: IFabricExports,
         private dimensions: IFabricDimensions,
-        private index: number) {
+        private fabricIndex: number,
+        private recycleFabric: (index: number) => void,
+    ) {
+    }
+
+    public get index(): number {
+        return this.fabricIndex
+    }
+
+    public recycle(): void {
+        this.recycleFabric(this.fabricIndex)
     }
 
     public getDimensions(): IFabricDimensions {
         return this.dimensions
-    }
-
-    public refresh(): void {
-        this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined
     }
 
     public reset(): void {
@@ -231,8 +272,8 @@ class InstanceExports implements IFabricInstanceExports {
         return this.exports
     }
 
-    public flushFaces(): void {
-        this.refresh()
+    public freshGeometry(): void {
+        this.vectorArray = this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined
     }
 
     public getFaceLocations(): Float32Array {
@@ -267,14 +308,6 @@ class InstanceExports implements IFabricInstanceExports {
         return this.vectors
     }
 
-    public get vectors(): Float32Array {
-        if (!this.vectorArray) {
-            const offset = HEXALOT_SIZE + this.offsets.vectorsOffset + this.index * this.offsets.fabricBytes
-            this.vectorArray = new Float32Array(this.arrayBuffer, offset, 4 * 3)
-        }
-        return this.vectorArray
-    }
-
     public get midpoint(): Vector3 {
         return vectorFromFloatArray(this.vectors, 0, this.midpointVector)
     }
@@ -291,27 +324,35 @@ class InstanceExports implements IFabricInstanceExports {
         return vectorFromFloatArray(this.vectors, 9, this.rightVector)
     }
 
+    public get vectors(): Float32Array {
+        if (!this.vectorArray) {
+            this.vectorArray = new Float32Array(this.buffer, this.offsets.vectorsOffset, 4 * 3)
+        }
+        return this.vectorArray
+    }
+
     public get faceMidpoints(): Float32Array {
         if (!this.faceMidpointsArray) {
-            const offset = HEXALOT_SIZE + this.offsets.faceMidpointsOffset + this.index * this.offsets.fabricBytes
-            this.faceMidpointsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3)
+            this.faceMidpointsArray =
+                new Float32Array(this.buffer, this.offsets.faceMidpointsOffset, this.exports.getFaceCount() * 3)
         }
         return this.faceMidpointsArray
     }
 
     public get faceLocations(): Float32Array {
         if (!this.faceLocationsArray) {
-            const offset = HEXALOT_SIZE + this.offsets.faceLocationsOffset + this.index * this.offsets.fabricBytes
-            this.faceLocationsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3 * 3)
+            this.faceLocationsArray =
+                new Float32Array(this.buffer, this.offsets.faceLocationsOffset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceLocationsArray
     }
 
     public get faceNormals(): Float32Array {
         if (!this.faceNormalsArray) {
-            const offset = HEXALOT_SIZE + this.offsets.faceNormalsOffset + this.index * this.offsets.fabricBytes
-            this.faceNormalsArray = new Float32Array(this.arrayBuffer, offset, this.exports.getFaceCount() * 3 * 3)
+            this.faceNormalsArray =
+                new Float32Array(this.buffer, this.offsets.faceNormalsOffset, this.exports.getFaceCount() * 3 * 3)
         }
         return this.faceNormalsArray
     }
+
 }

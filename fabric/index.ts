@@ -176,6 +176,14 @@ export function setInstance(index: u16): void {
     instancePtr = HEXALOT_SIZE + instance * fabricBytes
 }
 
+export function cloneInstance(fromIndex: u16, toIndex: u16): void {
+    let fromAddress = HEXALOT_SIZE + fromIndex * fabricBytes
+    let toAddress = HEXALOT_SIZE + toIndex * fabricBytes
+    for (let walk: usize = 0; walk < fabricBytes; walk += U32) {
+        store<u32>(toAddress + walk, load<u32>(fromAddress + walk))
+    }
+}
+
 // Peek and Poke ================================================================================
 
 @inline()
@@ -184,8 +192,8 @@ function getU8(vPtr: usize): u8 {
 }
 
 @inline()
-function setU8(vPtr: usize, highLow: u8): void {
-    store<u8>(instancePtr + vPtr, highLow)
+function setU8(vPtr: usize, value: u8): void {
+    store<u8>(instancePtr + vPtr, value)
 }
 
 @inline()
@@ -194,8 +202,8 @@ function getU16(vPtr: usize): u16 {
 }
 
 @inline()
-function setU16(vPtr: usize, index: u16): void {
-    store<u16>(instancePtr + vPtr, index)
+function setU16(vPtr: usize, value: u16): void {
+    store<u16>(instancePtr + vPtr, value)
 }
 
 @inline()
@@ -204,8 +212,8 @@ function getU32(vPtr: usize): u32 {
 }
 
 @inline()
-function setU32(vPtr: usize, index: u32): void {
-    store<u32>(instancePtr + vPtr, index)
+function setU32(vPtr: usize, value: u32): void {
+    store<u32>(instancePtr + vPtr, value)
 }
 
 @inline()
@@ -214,8 +222,8 @@ function getF32(vPtr: usize): f32 {
 }
 
 @inline()
-function setF32(vPtr: usize, v: f32): void {
-    store<f32>(instancePtr + vPtr, v)
+function setF32(vPtr: usize, value: f32): void {
+    store<f32>(instancePtr + vPtr, value)
 }
 
 @inline()
@@ -224,8 +232,8 @@ function getX(vPtr: usize): f32 {
 }
 
 @inline()
-function setX(vPtr: usize, v: f32): void {
-    store<f32>(instancePtr + vPtr, v)
+function setX(vPtr: usize, value: f32): void {
+    store<f32>(instancePtr + vPtr, value)
 }
 
 @inline()
@@ -234,8 +242,8 @@ function getY(vPtr: usize): f32 {
 }
 
 @inline()
-function setY(vPtr: usize, v: f32): void {
-    store<f32>(instancePtr + vPtr + F32, v)
+function setY(vPtr: usize, value: f32): void {
+    store<f32>(instancePtr + vPtr + F32, value)
 }
 
 @inline()
@@ -244,8 +252,8 @@ function getZ(vPtr: usize): f32 {
 }
 
 @inline()
-function setZ(vPtr: usize, v: f32): void {
-    store<f32>(instancePtr + vPtr + F32 * 2, v)
+function setZ(vPtr: usize, value: f32): void {
+    store<f32>(instancePtr + vPtr + F32 * 2, value)
 }
 
 @inline()
@@ -259,8 +267,8 @@ function getF32Global(vPtr: usize): f32 {
 }
 
 @inline
-function abs(val: f32): f32 {
-    return val < 0 ? -val : val
+function abs(value: f32): f32 {
+    return value < 0 ? -value : value
 }
 
 // Vector3 ================================================================================
@@ -583,9 +591,11 @@ function calculateJointMidpoint(): void {
 }
 
 function calculateDirectionVectors(): void {
-    addVectors(seedPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1))
+    let rightJoint = getGestating() ? SEED_CORNERS + 1 : SEED_CORNERS // hanger joint still there
+    let leftJoint = rightJoint + 1
+    addVectors(seedPtr, locationPtr(rightJoint), locationPtr(leftJoint))
     multiplyScalar(seedPtr, 0.5)
-    subVectors(rightPtr, locationPtr(SEED_CORNERS), locationPtr(SEED_CORNERS + 1))
+    subVectors(rightPtr, locationPtr(rightJoint), locationPtr(leftJoint))
     setY(rightPtr, 0) // horizontal, should be near already
     multiplyScalar(rightPtr, 1 / length(rightPtr))
     setAll(vector, 0, 1, 0) // up
@@ -835,16 +845,6 @@ function outputNormalPtr(faceIndex: u16, jointNumber: u16): usize {
 
 function outputLocationPtr(faceIndex: u16, jointNumber: u16): usize {
     return faceLocationOffset + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
-}
-
-export function getFaceLaterality(faceIndex: u16): u8 {
-    for (let jointWalk: u16 = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
-        let jointLaterality = getJointLaterality(getFaceJointIndex(faceIndex, jointWalk))
-        if (jointLaterality !== BILATERAL_MIDDLE) {
-            return jointLaterality
-        }
-    }
-    return BILATERAL_MIDDLE
 }
 
 function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
