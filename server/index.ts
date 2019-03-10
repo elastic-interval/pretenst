@@ -39,12 +39,12 @@ async function run(listenPort: number): Promise<void> {
 
     app.use(bodyParser())
 
+    app.use(morgan("short"))
+
     app.get("/test", (req, res) => res.end("OK"))
 
     app.use("/island/genesis",
         new IslandCurator("genesis", db, lnRpc).createRouter())
-
-    app.use(morgan("short"))
 
     return new Promise<void>(
         resolve => app.listen(listenPort, resolve),

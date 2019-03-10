@@ -1,4 +1,5 @@
 import { ADJACENT, BRANCH_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
+import { IslandStore } from "./store"
 import { HexalotID, PubKey } from "./types"
 
 enum Surface {
@@ -74,6 +75,7 @@ interface IHexalot {
     nonce: number
     id: HexalotID
     owner: PubKey
+    genomeData: string
 
     generateOctalTreePattern(steps: number[]): number[]
 }
@@ -91,11 +93,22 @@ export class Island {
     public spots: ISpot[] = []
     public hexalots: IHexalot[] = []
 
-    constructor(readonly islandName: string) {
+    constructor(
+        readonly islandName: string,
+        readonly store: IslandStore,
+    ) {
     }
 
     public get isLegal(): boolean {
         return !this.spots.find(spot => !spot.legal)
+    }
+
+    public async loadPatternFromStore(): Promise<void>{
+        const pattern = await this.store.getPattern()
+        if (!pattern) {
+            throw new Error("Pattern not found")
+        }
+        this.apply(pattern)
     }
 
     public assignHexalot(
@@ -133,8 +146,8 @@ export class Island {
         this.spots.forEach(spot => spot.refresh())
     }
 
-    public save(): void {
-        // TODO
+    public async save(): Promise<void> {
+        await this.store.setPattern(this.pattern)
     }
 
     public createHexalot(spot: ISpot, owner: PubKey): IHexalot | undefined {
@@ -205,13 +218,12 @@ export class Island {
                 spot.surface = land ? Surface.Land : Surface.Water
             })
         }
-        // TODO
-        // this.hexalots.forEach(g => {
-        //     const genomeData = this.storage.getGenome(g)
-        //     if (genomeData) {
-        //         g.genome = fromGenomeData(genomeData)
-        //     }
-        // })
+        this.hexalots.forEach(async lot => {
+            const genomeData = await this.store.getGenome(lot.id)
+            if (genomeData) {
+                lot.genomeData = genomeData
+            }
+        })
         this.refreshStructure()
     }
 

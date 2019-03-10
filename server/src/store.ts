@@ -1,6 +1,7 @@
 import { FlashStore } from "flash-store"
 
 import { IslandPattern } from "./island"
+import { HexalotID } from "./types"
 
 export interface IKeyValueStore {
     set(key: string, value: any): Promise<void>
@@ -67,6 +68,10 @@ export class IslandStore {
     public async setPattern(pattern: IslandPattern): Promise<void> {
         const patternStr = JSON.stringify(pattern)
         return this.set("pattern", patternStr)
+    }
+
+    public async getGenome(id: HexalotID): Promise<string | null> {
+        return this.get(`/hexalot/${id}/genome`)
     }
 
     private async set(key: string, value: any): Promise<void> {
