@@ -98,19 +98,15 @@ export class Hexalot {
         this.identifier = spotsToHexFingerprint(this.spots)
     }
 
-    public createGotchi(mutatedGenome?: Genome): Gotchi | undefined {
-        if (mutatedGenome) {
-            return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, mutatedGenome)
-        } else {
-            return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, this.genome)
-        }
+    public createNativeGotchi(): Gotchi | undefined {
+        return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, this.genome)
     }
 
-    public rotate(forward: boolean, gotchi: Gotchi): Gotchi {
-        const genome = this.genome
-        if (!genome) {
-            throw new Error("Rotate nothing")
-        }
+    public createGotchiWithGenome(genome: Genome): Gotchi | undefined {
+        return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, genome)
+    }
+
+    public rotate(forward: boolean): number {
         let nextRotation = forward ? this.rotation + 1 : this.rotation - 1
         if (nextRotation < 0) {
             nextRotation = 5
@@ -119,12 +115,7 @@ export class Hexalot {
         }
         this.rotation = nextRotation
         this.appStorage.setRotation(this, this.rotation)
-        gotchi.recycle()
-        const gotchiEgg = this.gotchiFactory.createGotchiSeed(this.center, this.rotation, genome)
-        if (!gotchiEgg) {
-            throw new Error("Unable to rotate")
-        }
-        return gotchiEgg
+        return this.rotation
     }
 
     get master(): string | undefined {

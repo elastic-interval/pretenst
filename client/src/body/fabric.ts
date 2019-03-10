@@ -1,5 +1,7 @@
 import {BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3} from "three"
 
+import {ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH} from "../island/shapes"
+
 import {Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS} from "./fabric-exports"
 import {vectorFromFloatArray} from "./fabric-kernel"
 import {FaceSnapshot, IJointSnapshot} from "./face-snapshot"
@@ -12,11 +14,6 @@ export const NORMAL_TICKS = 50
 
 export const INTERVALS_RESERVED = 1
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0)
-
-const ARROW_LENGTH = 9
-const ARROW_WIDTH = 0.6
-const ARROW_TIP_LENGTH_FACTOR = 1.3
-const ARROW_TIP_WIDTH_FACTOR = 1.5
 
 export class Fabric {
     private pointerGeometryStored: Geometry | undefined
@@ -114,14 +111,14 @@ export class Fabric {
 
     public pointerGeometryFor(direction: Direction): Geometry {
         const geometry = new Geometry()
-        const vector = () => new Vector3().add(this.seed)
-        const arrowFromL = vector()
-        const arrowFromR = vector()
-        const arrowToL = vector()
-        const arrowToR = vector()
-        const arrowToLx = vector()
-        const arrowToRx = vector()
-        const arrowTip = vector()
+        const v = () => new Vector3()
+        const arrowFromL = v()
+        const arrowFromR = v()
+        const arrowToL = v()
+        const arrowToR = v()
+        const arrowToLx = v()
+        const arrowToRx = v()
+        const arrowTip = v()
         switch (direction) {
             case Direction.FORWARD:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, ARROW_LENGTH)
@@ -172,25 +169,23 @@ export class Fabric {
         return geometry
     }
 
-    public createSeed(x: number, y: number, rotation: number): Fabric {
+    public createSeed(x: number, z: number, rotation: number): Fabric {
         this.exports.reset()
         // prepare
-        const hanger = new Vector3(x, 0, y)
         const locations: Vector3[] = []
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const angle = walk * Math.PI * 2 / SEED_CORNERS
-            locations.push(new Vector3(SEED_RADIUS * Math.sin(angle) + hanger.x, SEED_RADIUS * Math.cos(angle) + hanger.y, hanger.z))
+            locations.push(new Vector3(SEED_RADIUS * Math.sin(angle), SEED_RADIUS * Math.cos(angle), 0))
         }
-        const leftLoc = new Vector3(hanger.x, hanger.y, hanger.z - SEED_RADIUS)
-        const rightLoc = new Vector3(hanger.x, hanger.y, hanger.z + SEED_RADIUS)
+        const leftLoc = new Vector3(0, 0, -SEED_RADIUS)
+        const rightLoc = new Vector3(0, 0, SEED_RADIUS)
         locations.push(leftLoc, rightLoc)
-        if (rotation > 0) {
-            console.log("rotating", rotation)
-            const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * rotation)
-            locations.forEach(location => location.applyMatrix4(rotationMatrix))
-        }
+        const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * rotation)
+        const translationMatrix = new Matrix4().makeTranslation(x, 0, z)
+        const transformer = translationMatrix.multiply(rotationMatrix)
+        locations.forEach(location => location.applyMatrix4(transformer))
         // build
-        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, hanger.x, hanger.y, hanger.z)
+        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, x, 0, z)
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const where = locations[walk]
             this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, where.x, where.y, where.z)
@@ -210,7 +205,7 @@ export class Fabric {
             this.face(left, walk + 1, (walk + 1) % SEED_CORNERS + 1)
             this.face(right, (walk + 1) % SEED_CORNERS + 1, walk + 1)
         }
-        hanger.y += this.setAltitude(HUNG_ALTITUDE - SEED_RADIUS)
+        this.setAltitude(HUNG_ALTITUDE - SEED_RADIUS)
         this.iterate(0) // output the face geometry, set direction vector, but don't experience time
         return this
     }

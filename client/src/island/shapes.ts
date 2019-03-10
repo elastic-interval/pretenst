@@ -198,3 +198,7 @@ export const ROTATE = [
     91, 92, 93, 94, 95, 96,
 ]
 
+export const ARROW_LENGTH = 9
+export const ARROW_WIDTH = 0.6
+export const ARROW_TIP_LENGTH_FACTOR = 1.3
+export const ARROW_TIP_WIDTH_FACTOR = 1.5

@@ -184,7 +184,7 @@ export class Evolution {
 
     private createEvolver(genome: Genome): Evolver | undefined {
         const frozenHero = this.frozenHero
-        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.hexalot.createGotchi(genome)
+        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.hexalot.createGotchiWithGenome(genome)
         if (!gotchi) {
             return undefined
         }

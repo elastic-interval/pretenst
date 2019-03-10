@@ -76,11 +76,11 @@ function startEvolution(hexalot: Hexalot, firstLeg: Leg): object {
     }
 }
 
-function startGotchi(hexalot: Hexalot): object {
+function startGotchi(hexalot: Hexalot): object { // todo: with/without journey
     return (state: IAppState) => {
         state.island.setIslandState(true, hexalot)
         recycle(state)
-        const gotchi = hexalot.createGotchi()
+        const gotchi = hexalot.createNativeGotchi()
         return {
             gotchi,
             evolution: undefined,
@@ -316,13 +316,15 @@ class App extends React.Component<IAppProps, IAppState> {
                 }
                 break
             case Command.TURN_LEFT:
-                if (homeHexalot && gotchi) {
-                    homeHexalot.rotate(true, gotchi)
+                if (homeHexalot) {
+                    homeHexalot.rotate(true)
+                    this.islandState.next(this.islandState.getValue()) // todo: smarter way to refresh?
                 }
                 break
             case Command.TURN_RIGHT:
-                if (homeHexalot && gotchi) {
-                    homeHexalot.rotate(false, gotchi)
+                if (homeHexalot) {
+                    homeHexalot.rotate(false)
+                    this.islandState.next(this.islandState.getValue()) // todo: smarter way to refresh?
                 }
                 break
             case Command.COME_HERE:

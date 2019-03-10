@@ -1,4 +1,4 @@
-import {Color, Face3, Vector3} from "three"
+import {Color, Face3, Matrix4, Vector3} from "three"
 
 import {HUNG_ALTITUDE, SPOT_TO_HANGER} from "../body/fabric"
 import {SEED_CORNERS} from "../body/fabric-exports"
@@ -144,18 +144,29 @@ export class Spot {
         }
     }
 
-    public addSeed(meshKey: MeshKey, vertices: Vector3[], faces: Face3[]): void {
-        const hanger = new Vector3(this.center.x, HUNG_ALTITUDE, this.center.z)
+    public addSeed(rotation: number, meshKey: MeshKey, vertices: Vector3[], faces: Face3[]): void {
+        const toTransform: Vector3[] = []
+        const hanger = new Vector3(0, HUNG_ALTITUDE, 0)
         const offset = vertices.length
         const R = 1
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const angle = walk * Math.PI * 2 / SEED_CORNERS
-            vertices.push(new Vector3(R * Math.sin(angle) + hanger.x, R * Math.cos(angle) + hanger.y, hanger.z))
+            const location = new Vector3(R * Math.sin(angle) + hanger.x, R * Math.cos(angle) + hanger.y, hanger.z)
+            toTransform.push(location)
+            vertices.push(location)
         }
         const left = vertices.length
-        vertices.push(new Vector3(hanger.x, hanger.y, hanger.z - R))
+        const negative = new Vector3(hanger.x, hanger.y, hanger.z - R)
+        vertices.push(negative)
+        toTransform.push(negative)
         const right = vertices.length
-        vertices.push(new Vector3(hanger.x, hanger.y, hanger.z + R))
+        const positive = new Vector3(hanger.x, hanger.y, hanger.z + R)
+        vertices.push(positive)
+        toTransform.push(positive)
+        const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * rotation)
+        const translationMatrix = new Matrix4().makeTranslation(this.center.x, this.center.y, this.center.z)
+        const tranformer = translationMatrix.multiply(rotationMatrix)
+        toTransform.forEach(point => point.applyMatrix4(tranformer))
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const next = offset + (walk + 1) % SEED_CORNERS
             const current = offset + walk
