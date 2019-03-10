@@ -6,7 +6,10 @@ import { HexalotID } from "./types"
 export class PaymentHandler {
     private invoiceSettledEvents: EventEmitter
 
-    constructor(readonly lnRpc: LnRpc) {
+    constructor(
+        readonly lnRpc: LnRpc,
+        readonly islandName: string,
+    ) {
         this.invoiceSettledEvents = new EventEmitter()
         this.setupSubscriptions()
     }
@@ -15,7 +18,7 @@ export class PaymentHandler {
         lotID: HexalotID,
         value: string,
     ): Promise<{ invoice: string, paid: Promise<void> }> {
-        const memo = `galapagotchi.run/hexalot/${lotID}`
+        const memo = `galapagotchi.run/island/${this.islandName}/hexalot/${lotID}`
         const response = await this.lnRpc.addInvoice({
             memo,
             value,
@@ -36,7 +39,7 @@ export class PaymentHandler {
             settleIndex: "0",
         })
         subscriber.on("data", (invoice: Invoice) => {
-            if (invoice.settled && invoice.paymentRequest)  {
+            if (invoice.settled && invoice.paymentRequest) {
                 this.invoiceSettledEvents.emit(invoice.paymentRequest)
             }
         })

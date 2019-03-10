@@ -1,3 +1,4 @@
+import { LnRpc } from "@radar/lnrpc"
 import { NextFunction, Request, Response, Router } from "express"
 
 import { PaymentHandler } from "./payment"
@@ -18,12 +19,15 @@ function authenticateUser(
 
 export class IslandCurator {
     private store: IslandStore
+    // @ts-ignore
+    private payments: PaymentHandler
 
     constructor(
         readonly islandName: string,
         db: IKeyValueStore,
-        readonly payments: PaymentHandler,
+        lnRpc: LnRpc,
     ) {
+        this.payments = new PaymentHandler(lnRpc, islandName)
         this.store = new IslandStore(db, islandName)
     }
 

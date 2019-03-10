@@ -1,4 +1,4 @@
-import createLnRpc, { LnRpcClientConfig } from "@radar/lnrpc"
+import createLnRpc, { LnRpc, LnRpcClientConfig } from "@radar/lnrpc"
 import bodyParser from "body-parser"
 import dotenv from "dotenv"
 import express from "express"
@@ -7,11 +7,10 @@ import { homedir } from "os"
 import { join } from "path"
 
 import { IslandCurator } from "./src/curator"
-import { PaymentHandler } from "./src/payment"
 import { LevelDBFlashStore } from "./src/store"
 
 
-async function setupPaymentHandler(): Promise<PaymentHandler> {
+async function connectToLnRpc(): Promise<LnRpc> {
     const lnRpcHost = process.env.LNRPC_REMOTE_HOST
     let config: LnRpcClientConfig
     if (!lnRpcHost) {
@@ -28,14 +27,13 @@ async function setupPaymentHandler(): Promise<PaymentHandler> {
         }
     }
     console.log(`Connecting to LN RPC with config: ${JSON.stringify(config, null, 2)}`)
-    const lnRpc = await createLnRpc(config)
-    return new PaymentHandler(lnRpc)
+    return createLnRpc(config)
 }
 
 async function run(listenPort: number): Promise<void> {
     const db = new LevelDBFlashStore(__dirname + "/data/islandsdb")
 
-    const payments = await setupPaymentHandler()
+    const lnRpc = await connectToLnRpc()
 
     const app = express()
 
@@ -44,7 +42,7 @@ async function run(listenPort: number): Promise<void> {
     app.get("/test", (req, res) => res.end("OK"))
 
     app.use("/island/genesis",
-        new IslandCurator("genesis", db, payments).createRouter())
+        new IslandCurator("genesis", db, lnRpc).createRouter())
 
     app.use(morgan("short"))
 
