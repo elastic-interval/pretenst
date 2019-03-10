@@ -6,12 +6,12 @@ import morgan from "morgan"
 import { homedir } from "os"
 import { join } from "path"
 
-import { HexalotCurator } from "./src/curator"
+import { IslandCurator } from "./src/curator"
 import { PaymentHandler } from "./src/payment"
 import { LevelDBFlashStore } from "./src/store"
 
 
-async function run(listenPort: number): Promise<void> {
+async function setupPaymentHandler(): Promise<PaymentHandler> {
     const lnRpcHost = process.env.LNRPC_REMOTE_HOST
     let config: LnRpcClientConfig
     if (!lnRpcHost) {
@@ -29,9 +29,13 @@ async function run(listenPort: number): Promise<void> {
     }
     console.log(`Connecting to LN RPC with config: ${JSON.stringify(config, null, 2)}`)
     const lnRpc = await createLnRpc(config)
-    const paymentHandler = new PaymentHandler(lnRpc)
-    const flashStore = new LevelDBFlashStore(__dirname + "/data/flash-store")
-    const curator = new HexalotCurator(flashStore, paymentHandler)
+    return new PaymentHandler(lnRpc)
+}
+
+async function run(listenPort: number): Promise<void> {
+    const db = new LevelDBFlashStore(__dirname + "/data/islandsdb")
+
+    const payments = await setupPaymentHandler()
 
     const app = express()
 
@@ -39,11 +43,14 @@ async function run(listenPort: number): Promise<void> {
 
     app.get("/test", (req, res) => res.end("OK"))
 
-    app.use("/hexalot", curator.createExpressRouter())
+    app.use("/island/genesis",
+        new IslandCurator("genesis", db, payments).createRouter())
 
     app.use(morgan("short"))
 
-    return new Promise<void>(resolve => app.listen(listenPort, resolve))
+    return new Promise<void>(
+        resolve => app.listen(listenPort, resolve),
+    )
 }
 
 dotenv.load()
