@@ -23,7 +23,13 @@ p a, p a:hover {
 
 .floating-panel {
     position: absolute;
-    color: wheat;
+    color: darkcyan;
+    padding: 5px 5px 5px 5px;
+}
+
+.action-prompt {
+    color: darkcyan;
+    padding: 5px 5px 5px 5px;
 }
 
 .actions-panel-outer {

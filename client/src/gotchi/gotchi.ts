@@ -40,10 +40,6 @@ export class Gotchi {
         return this.fabric.midpoint
     }
 
-    public get master(): string {
-        return this.genome.master
-    }
-
     public get age(): number {
         return this.fabric.age
     }

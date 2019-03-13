@@ -23,7 +23,7 @@ export enum Command {
     STOP = "Stop",
     EVOLVE = "Launch evolution",
     FORGET_JOURNEY = "Forget journey",
-    CLAIM_GOTCH = "Claim Hexalot",
+    CLAIM_HEXALOT = "Claim Hexalot",
     CREATE_LAND = "Create Land",
     CREATE_WATER = "Create Water",
 }
@@ -32,7 +32,6 @@ export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
     homeHexalot: BehaviorSubject<Hexalot | undefined>
     cameraLocation: Vector3
-    master?: string
     spot?: Spot
     hexalot?: Hexalot
     gotchi?: Gotchi
@@ -92,8 +91,10 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private foreignHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionFrame>
-                <span>This hexalot {hexalot.id} belongs to {hexalot.master}</span>
-                {this.buttons(Command.DRIVE, Command.DETACH)}
+                {this.buttons("Foreign", [
+                    Command.DRIVE,
+                    Command.DETACH,
+                ])}
             </ActionFrame>
         )
     }
@@ -101,11 +102,15 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private homeHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionFrame>
-                {this.buttons(
-                    Command.TURN_LEFT, Command.TURN_RIGHT,
-                    Command.DRIVE, Command.EVOLVE,
-                    Command.FORGET_JOURNEY, Command.DETACH, Command.DELETE_GENOME,
-                )}
+                {this.buttons("Home", [
+                    Command.TURN_LEFT,
+                    Command.TURN_RIGHT,
+                    Command.DRIVE,
+                    Command.EVOLVE,
+                    Command.FORGET_JOURNEY,
+                    Command.DETACH,
+                    Command.DELETE_GENOME,
+                ])}
             </ActionFrame>
         )
     }
@@ -113,12 +118,12 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private drivingGotchi(gotchi: Gotchi): JSX.Element {
         return (
             <ActionFrame>
-                {this.buttons(
+                {this.buttons("Driving", [
                     Command.RETURN_TO_SEED,
                     Command.COME_HERE,
                     Command.GO_THERE,
                     Command.STOP,
-                )}
+                ])}
             </ActionFrame>
         )
     }
@@ -126,7 +131,9 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private evolving(evolution: Evolution): JSX.Element {
         return (
             <ActionFrame>
-                {this.button(Command.RETURN_TO_SEED)}
+                {this.buttons("Evolving", [
+                    Command.RETURN_TO_SEED,
+                ])}
             </ActionFrame>
         )
     }
@@ -134,7 +141,9 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private availableHexalot(spot: Spot): JSX.Element {
         return (
             <ActionFrame>
-                {!spot.canBeNewHexalot ? <h2>Cannot claim</h2> : this.button(Command.CLAIM_GOTCH)}
+                {!spot.canBeNewHexalot ? <h2>Cannot claim</h2> : this.buttons("Available", [
+                    Command.CLAIM_HEXALOT,
+                ])}
             </ActionFrame>
         )
     }
@@ -142,22 +151,23 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private freeSpot(spot: Spot): JSX.Element {
         return (
             <ActionFrame>
-                {this.buttons(Command.CREATE_LAND, Command.CREATE_WATER)}
+                {this.buttons("Free", [Command.CREATE_LAND, Command.CREATE_WATER])}
             </ActionFrame>
         )
     }
 
-    private buttons(...commands: Command[]): JSX.Element {
+    private buttons(prompt: string, commands: Command[]): JSX.Element {
         return (
             <ButtonToolbar>
+                <span className="action-prompt">{prompt}:</span>
                 <ButtonGroup>{
-                    commands.map(command => this.button(command))
+                    commands.map(command => this.commandButton(command))
                 }</ButtonGroup>
             </ButtonToolbar>
         )
     }
 
-    private button(command: Command): JSX.Element {
+    private commandButton(command: Command): JSX.Element {
         return (
             <Button key={command} outline color="primary" className="command-button"
                     onClick={() => this.props.doCommand(command)}>{command}</Button>

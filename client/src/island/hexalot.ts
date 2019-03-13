@@ -85,7 +85,7 @@ export class Hexalot {
 
     public get genome(): Genome {
         if (!this.genomeStored) {
-            this.genomeStored = fromMaster(`(${this.coords.x}, ${this.coords.y})`)
+            this.genomeStored = fromMaster()
         }
         return this.genomeStored
     }
@@ -116,10 +116,6 @@ export class Hexalot {
         this.rotation = nextRotation
         this.appStorage.setRotation(this, this.rotation)
         return this.rotation
-    }
-
-    get master(): string | undefined {
-        return this.genome ? this.genome.master : undefined
     }
 
     get centerSpot(): Spot {

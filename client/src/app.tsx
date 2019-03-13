@@ -33,7 +33,6 @@ export interface IAppState {
     top: number
     infoPanel: boolean
 
-    master?: string
     orbitDistance: OrbitDistance
     spot?: Spot
     gotchi?: Gotchi
@@ -132,7 +131,6 @@ class App extends React.Component<IAppProps, IAppState> {
             infoPanel: getInfoPanelMaximized(),
             orbitDistance: this.orbitDistanceSubject.getValue(),
             island: new Island("GalapagotchIsland", this.islandState, this.fabricKernel, this.props.storage),
-            master: this.props.storage.getMaster(),
             width: window.innerWidth,
             height: window.innerHeight,
             left: window.screenLeft,
@@ -229,7 +227,7 @@ class App extends React.Component<IAppProps, IAppState> {
                                 }}>X</Button>
                             </div>
                         </div>
-                        <InfoPanel master={this.state.master}/>
+                        <InfoPanel/>
                     </div>
                 )}
                 <div className="actions-panel-outer floating-panel">
@@ -240,7 +238,6 @@ class App extends React.Component<IAppProps, IAppState> {
                             cameraLocation={this.perspectiveCamera.position}
                             spot={this.state.spot}
                             hexalot={this.islandState.getValue().selectedHexalot}
-                            master={this.state.master}
                             gotchi={this.state.gotchi}
                             evolution={this.state.evolution}
                             doCommand={this.executeCommand}
@@ -253,7 +250,6 @@ class App extends React.Component<IAppProps, IAppState> {
 
     private executeCommand = (command: Command, where?: Vector3) => {
         const island = this.state.island
-        const master = this.state.master
         const spot = this.state.spot
         const homeHexalot = this.homeHexalot.getValue()
         const gotchi = this.state.gotchi
@@ -342,11 +338,11 @@ class App extends React.Component<IAppProps, IAppState> {
                     island.refreshStructure()
                 }
                 break
-            case Command.CLAIM_GOTCH:
-                if (spot && master) {
+            case Command.CLAIM_HEXALOT:
+                if (spot) {
                     island.removeFreeHexalots()
                     if (spot.canBeNewHexalot) {
-                        island.createHexalot(spot, master)
+                        island.createHexalot(spot)
                     }
                     island.refreshStructure()
                 }

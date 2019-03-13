@@ -4,8 +4,6 @@ import {Hexalot} from "./island/hexalot"
 import {Island, IslandPattern} from "./island/island"
 import {Journey} from "./island/journey"
 
-const MASTER_KEY = "master"
-
 function journeyKey(hexalot: Hexalot): string {
     return `${hexalot.id}-journey`
 }
@@ -21,15 +19,6 @@ function rotationKey(hexalot: Hexalot): string {
 export class AppStorage {
 
     constructor(private storage: Storage) {
-    }
-
-    public getMaster(): string | undefined {
-        const value = this.storage.getItem(MASTER_KEY)
-        return value ? value : undefined
-    }
-
-    public setMaster(master: string): void {
-        this.storage.setItem(MASTER_KEY, master)
     }
 
     public getPhysicsFeature(feature: PhysicsFeature): number {

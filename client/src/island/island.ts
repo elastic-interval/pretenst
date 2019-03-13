@@ -43,7 +43,7 @@ export class Island {
     }
 
     public get hexalotsWithSeeds(): Hexalot[] {
-        return this.hexalots.filter((hexalot: Hexalot, index: number) => !!hexalot.master)
+        return this.hexalots.filter(hexalot => !!hexalot.genomeStored)
     }
 
     public get isLegal(): boolean {
@@ -105,11 +105,7 @@ export class Island {
         })
     }
 
-    public createHexalot(spot: Spot, master: string): Hexalot | undefined {
-        if (this.hexalots.find(hexalot => hexalot.master === master)) {
-            console.error(`${master} already has a hexalot!`)
-            return undefined
-        }
+    public createHexalot(spot: Spot): Hexalot | undefined {
         if (!spot.canBeNewHexalot) {
             console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`)
             return undefined

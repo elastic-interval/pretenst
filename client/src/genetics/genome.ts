@@ -4,7 +4,6 @@ import {deserializeGene, DICE, IDie, serializeGene} from "./dice"
 import {GeneReader} from "./gene-reader"
 
 export interface IGenomeData {
-    master: string
     geneMap: { [key: string]: string; }
 }
 
@@ -12,15 +11,14 @@ function rollTheDice(): IDie {
     return DICE[Math.floor(Math.random() * DICE.length)]
 }
 
-function freshGenomeData(master: string): IGenomeData {
+function freshGenomeData(): IGenomeData {
     return {
-        master,
         geneMap: {},
     }
 }
 
-export function fromMaster(master: string): Genome {
-    return new Genome(freshGenomeData(master), rollTheDice)
+export function fromMaster(): Genome {
+    return new Genome(freshGenomeData(), rollTheDice)
 }
 
 export function fromGenomeData(genomeData: IGenomeData): Genome {
@@ -35,10 +33,6 @@ export class Genome {
         if (data.geneMap) {
             Object.keys(data.geneMap).forEach(direction => this.geneMap[direction] = deserializeGene(data.geneMap[direction]))
         }
-    }
-
-    public get master(): string {
-        return this.data.master
     }
 
     public createReader(direction: Direction): GeneReader {
@@ -63,7 +57,7 @@ export class Genome {
             const geneNumber = Math.floor(Math.random() * mutatedGeneMap[direction].length)
             mutatedGeneMap[direction][geneNumber] = this.roll()
         }
-        const genome = new Genome(freshGenomeData(this.master), this.roll)
+        const genome = new Genome(freshGenomeData(), this.roll)
         genome.geneMap = mutatedGeneMap
         return genome
     }
