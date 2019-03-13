@@ -4,7 +4,8 @@ import {Subscription} from "rxjs/Subscription"
 import {Geometry, Matrix4, Mesh, Vector3} from "three"
 
 import {HUNG_ALTITUDE} from "../body/fabric"
-import {Island, IslandState} from "../island/island"
+import {Island} from "../island/island"
+import {IslandMode, IslandState} from "../island/island-state"
 import {ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH} from "../island/shapes"
 import {equals, IViewState} from "../island/spot"
 
@@ -37,11 +38,11 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     constructor(props: IslandComponentProps) {
         super(props)
-        const initial = {gotchiAlive: false}
+        const islandState = props.island.islandState.getValue()
         this.state = {
-            spotsGeometry: this.createSpotsGeometry(initial),
-            seedGeometry: this.createSeedGeometry(initial),
-            arrowGeometry: this.createArrowGeometry(initial),
+            spotsGeometry: this.createSpotsGeometry(islandState),
+            seedGeometry: this.createSeedGeometry(islandState),
+            arrowGeometry: this.createArrowGeometry(islandState),
             hangersGeometry: this.createHangersGeometry(),
         }
     }
@@ -131,8 +132,11 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         const hexalots = this.props.island.hexalotsWithSeeds
         const geometry = new Geometry()
         hexalots.forEach(hexalot => {
-            if (!islandState.gotchiAlive || !islandState.selectedHexalot
-                || !equals(hexalot.coords, islandState.selectedHexalot.coords)) {
+            if (
+                islandState.islandMode === IslandMode.Landed || islandState.islandMode === IslandMode.Visiting ||
+                !islandState.selectedHexalot ||
+                !equals(hexalot.coords, islandState.selectedHexalot.coords)
+            ) {
                 hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
             }
         })
@@ -144,7 +148,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     private createArrowGeometry(islandState: IslandState): Geometry {
         const geometry = new Geometry()
         const hexalot = islandState.selectedHexalot
-        if (!hexalot || islandState.gotchiAlive) {
+        if (!hexalot || islandState.islandMode !== IslandMode.Landed) {
             return geometry
         }
         const toTransform: Vector3[] = []

@@ -1,11 +1,11 @@
 import * as React from "react"
 import {Button, ButtonGroup, ButtonToolbar} from "reactstrap"
+import {Subscription} from "rxjs"
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
 import {Vector3} from "three"
 
-import {Evolution} from "../gotchi/evolution"
-import {Gotchi} from "../gotchi/gotchi"
 import {Hexalot} from "../island/hexalot"
+import {IslandMode, IslandState} from "../island/island-state"
 import {Spot} from "../island/spot"
 
 import {OrbitDistance} from "./orbit"
@@ -32,11 +32,12 @@ export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
     homeHexalot: BehaviorSubject<Hexalot | undefined>
     cameraLocation: Vector3
-    spot?: Spot
-    hexalot?: Hexalot
-    gotchi?: Gotchi
-    evolution?: Evolution
+    islandState: BehaviorSubject<IslandState>
     doCommand: (command: Command, location?: Vector3) => void
+}
+
+interface IActionPanelState {
+    islandState: IslandState
 }
 
 interface IActionPanelProps {
@@ -49,43 +50,77 @@ const ActionFrame = (props: IActionPanelProps) => (
     </div>
 )
 
-export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
+export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPanelState> {
+    private subs: Subscription[] = []
 
     constructor(props: IActionsPanelProps) {
         super(props)
+        this.state = {islandState: props.islandState.getValue()}
+    }
+
+    public componentDidMount(): void {
+        this.subs.push(this.props.islandState.subscribe(islandState => this.setState({islandState})))
+    }
+
+    public componentWillUnmount(): void {
+        this.subs.forEach(s => s.unsubscribe())
     }
 
     public render(): JSX.Element {
-        const evolution = this.props.evolution
-        if (evolution) {
-            return this.evolving(evolution)
+        switch (this.state.islandState.islandMode) {
+            case IslandMode.FixingIsland:
+                const spot = this.state.islandState.selectedSpot
+                if (spot) {
+                    if (spot.free || !spot.legal) {
+                        return this.freeSpot(spot)
+                    } else if (spot.canBeNewHexalot) {
+                        return this.availableHexalot(spot)
+                    }
+                }
+                return (
+                    <ActionFrame>
+                        <p>Fixing island?</p>
+                    </ActionFrame>
+                )
+            case IslandMode.Visiting:
+                return (
+                    <ActionFrame>
+                        <p>Choose a hexalot by clicking on one</p>
+                    </ActionFrame>
+                )
+            case IslandMode.Landed:
+                const hexalot = this.state.islandState.selectedHexalot
+                if (hexalot) {
+                    const homeHexalot = this.props.homeHexalot.getValue()
+                    if (homeHexalot && homeHexalot.id === hexalot.id) {
+                        return this.homeHexalot(hexalot)
+                    } else {
+                        return this.foreignHexalot(hexalot)
+                    }
+                }
+                return (
+                    <ActionFrame>
+                        <p>No selected hexalot?</p>
+                    </ActionFrame>
+                )
+            case IslandMode.PlanningJourney:
+                return (
+                    <ActionFrame>
+                        <p>Planning journey</p>
+                    </ActionFrame>
+                )
+            case IslandMode.PlanningDrive:
+                return (
+                    <ActionFrame>
+                        <p>Planning Drive</p>
+                    </ActionFrame>
+                )
+            case IslandMode.Evolving:
+                return this.evolving
+            case IslandMode.DrivingFree:
+            case IslandMode.DrivingJourney:
+                return this.drivingGotchi
         }
-        const gotchi = this.props.gotchi
-        if (gotchi) {
-            return this.drivingGotchi(gotchi)
-        }
-        const hexalot = this.props.hexalot
-        if (hexalot) {
-            const homeHexalot = this.props.homeHexalot.getValue()
-            if (homeHexalot && homeHexalot.id === hexalot.id) {
-                return this.homeHexalot(hexalot)
-            } else {
-                return this.foreignHexalot(hexalot)
-            }
-        }
-        const spot = this.props.spot
-        if (spot) {
-            if (spot.free) {
-                return this.freeSpot(spot)
-            } else if (spot.canBeNewHexalot) {
-                return this.availableHexalot(spot)
-            }
-        }
-        return (
-            <ActionFrame>
-                <p>Choose a hexalot by clicking on one</p>
-            </ActionFrame>
-        )
     }
 
     private foreignHexalot(hexalot: Hexalot): JSX.Element {
@@ -102,7 +137,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private homeHexalot(hexalot: Hexalot): JSX.Element {
         return (
             <ActionFrame>
-                {this.buttons("Home", [
+                {this.buttons("Landed", [
                     Command.TURN_LEFT,
                     Command.TURN_RIGHT,
                     Command.DRIVE,
@@ -115,7 +150,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private drivingGotchi(gotchi: Gotchi): JSX.Element {
+    private get drivingGotchi(): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Driving", [
@@ -128,7 +163,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         )
     }
 
-    private evolving(evolution: Evolution): JSX.Element {
+    private get evolving(): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Evolving", [
@@ -169,7 +204,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
     private commandButton(command: Command): JSX.Element {
         return (
-            <Button key={command} outline color="primary" className="command-button"
+            <Button key={command} outline={true} color="primary" className="command-button"
                     onClick={() => this.props.doCommand(command)}>{command}</Button>
         )
     }

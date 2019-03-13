@@ -5,17 +5,13 @@ import {AppStorage} from "../app-storage"
 import {IGotchiFactory} from "../gotchi/gotchi"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
+import {IslandMode, IslandState} from "./island-state"
 import {ADJACENT, BRANCH_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from "./spot"
 
 export interface IslandPattern {
     hexalots: string
     spots: string
-}
-
-export interface IslandState {
-    gotchiAlive: boolean
-    selectedHexalot?: Hexalot
 }
 
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
@@ -30,16 +26,17 @@ const hexalotWithMaxNonce = (hexalots: Hexalot[]) => hexalots.reduce((withMax, a
 export class Island {
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
+    public islandState: BehaviorSubject<IslandState>
 
     constructor(
         public islandName: string,
-        public islandState: BehaviorSubject<IslandState>,
         private gotchiFactory: IGotchiFactory,
         private appStorage: AppStorage,
     ) {
         this.apply(appStorage.getIsland(islandName))
-        // console.log("spots", this.spots.map(s =>
-        //     `(${s.coords.x},${s.coords.y})==(${s.center.x},${s.center.z})`))
+        this.refreshStructure()
+        const islandMode = this.isLegal ? IslandMode.Visiting : IslandMode.FixingIsland
+        this.islandState = new BehaviorSubject<IslandState>(new IslandState(islandMode))
     }
 
     public get hexalotsWithSeeds(): Hexalot[] {
@@ -56,10 +53,6 @@ export class Island {
 
     public findHexalot(fingerprint: string): Hexalot | undefined {
         return this.hexalots.find(hexalot => hexalot.id === fingerprint)
-    }
-
-    public setIslandState(gotchiAlive: boolean, selectedHexalot?: Hexalot): void {
-        this.islandState.next({gotchiAlive, selectedHexalot})
     }
 
     public refreshStructure(): void {
@@ -83,7 +76,9 @@ export class Island {
         }
         this.spots.forEach(spot => spot.refresh())
         this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        this.islandState.next(this.islandState.getValue()) // just refresh
+        if (this.islandState) { // refresh if there is a state
+            this.islandState.next(this.islandState.getValue())
+        }
     }
 
     public save(): void {
@@ -186,7 +181,6 @@ export class Island {
             this.singleHexalot.spots[0].surface = Surface.Land
         }
         this.hexalots.forEach(lot => lot.load())
-        this.refreshStructure()
     }
 
     private hexalotAroundSpot(spot: Spot): Hexalot {

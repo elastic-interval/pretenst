@@ -9,8 +9,8 @@ import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
 import {Hexalot} from "../island/hexalot"
 import {Island} from "../island/island"
+import {IslandMode, IslandState} from "../island/island-state"
 import {Journey} from "../island/journey"
-import {Spot} from "../island/spot"
 
 import {EvolutionComponent} from "./evolution-component"
 import {IslandComponent} from "./island-component"
@@ -32,7 +32,7 @@ interface IGotchiViewProps {
     top: number
     island: Island
     homeHexalot: BehaviorSubject<Hexalot | undefined>
-    selectedSpot: BehaviorSubject<Spot | undefined>
+    islandState: BehaviorSubject<IslandState>
     orbitDistance: BehaviorSubject<OrbitDistance>
     gotchi?: Gotchi
     evolution?: Evolution
@@ -79,11 +79,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target)
             this.animate()
             this.subs.push(this.props.orbitDistance.subscribe(orbitDistance => this.setState({orbitDistance})))
-            this.subs.push(this.props.selectedSpot.subscribe(spot => {
+            this.subs.push(this.props.islandState.subscribe(islandState => {
+                const spot = islandState.selectedSpot
                 if (spot) {
                     if (spot.centerOfHexalot) {
                         this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center)
-                    } else if (spot.canBeNewHexalot || spot.free) {
+                    } else { // todo: else if (spot.canBeNewHexalot || spot.free) {
                         this.target = spot.center
                     }
                 }
@@ -146,16 +147,17 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             if (this.props.evolution || this.props.gotchi) {
                 return
             }
+            const islandState = this.props.islandState
             if (event.button === 2) {
-                this.props.selectedSpot.next(undefined)
-                this.props.island.setIslandState(false, undefined)
+                islandState.next(islandState.getValue().setIslandMode(IslandMode.Visiting))
             } else {
                 const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
+                islandState.next(islandState.getValue().setSelectedSpot(spot))
                 // todo: during island building we need this:
                 // if (spot && (spot.centerOfHexalot || spot.canBeNewHexalot || spot.free)) {
-                if (spot && spot.centerOfHexalot) {
-                    this.props.selectedSpot.next(spot)
-                }
+                // if (spot && spot.centerOfHexalot) {
+                //     islandState.next(islandState.getValue().setSelectedSpot(spot))
+                // }
             }
         }
     }
@@ -179,7 +181,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     private get pointerGeometry(): Geometry | null {
         const geometry = new Geometry()
-        const spot = this.props.selectedSpot.getValue()
+        const spot = this.props.islandState.getValue().selectedSpot
         const action = this.props.evolution || this.props.gotchi
         if (spot && this.orbit && !action) {
             const target = spot.centerOfHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center
