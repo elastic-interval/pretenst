@@ -10,8 +10,8 @@ import {Evolver, IEvolver} from "./evolver"
 
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
-const MUTATION_COUNT = 18
-const MINIMUM_AGE = 15000
+const MUTATION_COUNT = 5
+const MINIMUM_AGE = 20000
 const MAXIMUM_AGE = 30000
 const INCREASE_AGE_LIMIT = 1000
 const SURVIVAL_RATE = 0.66
@@ -19,7 +19,7 @@ const SURVIVAL_RATE = 0.66
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([])
     private rebooting = false
-    private ageLimit = 30000 // MINIMUM_AGE
+    private ageLimit = MINIMUM_AGE
     private frozenHero?: Evolver
     private leg: Leg
     private midpointVector = new Vector3()
@@ -67,7 +67,7 @@ export class Evolution {
             const behind = this.ageLimit - evolver.age
             const timeSweepTick = evolver.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind)
             if (timeSweepTick && !evolver.gestating) {
-                evolver.mutateGenome(3)
+                evolver.mutateGenome(1)
                 evolver.adjustDirection()
             }
         })

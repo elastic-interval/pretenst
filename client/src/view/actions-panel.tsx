@@ -1,5 +1,5 @@
 import * as React from "react"
-import {Button, ButtonGroup, Col, Container, Row} from "reactstrap"
+import {Button, ButtonGroup, ButtonToolbar} from "reactstrap"
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
 import {Vector3} from "three"
 
@@ -40,25 +40,12 @@ export interface IActionsPanelProps {
     doCommand: (command: Command, location?: Vector3) => void
 }
 
-interface IClicky {
-    props: IActionsPanelProps
-    command: Command
-}
-
-function Clicky(params: IClicky): JSX.Element {
-    return (
-        <span style={{padding: "5px 5px 5px 5px"}}>
-            <Button onClick={() => params.props.doCommand(params.command)}>{params.command}</Button>
-        </span>
-    )
-}
-
 interface IActionPanelProps {
     children: Array<JSX.Element | null> | JSX.Element
 }
 
-const ActionPanel = (props: IActionPanelProps) => (
-    <div className="action-panel">
+const ActionFrame = (props: IActionPanelProps) => (
+    <div className="action-frame">
         {props.children}
     </div>
 )
@@ -96,153 +83,84 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
             }
         }
         return (
-            <ActionPanel>
-                <h1>Click on something or whatever</h1>
-            </ActionPanel>
+            <ActionFrame>
+                <p>Choose a hexalot by clicking on one</p>
+            </ActionFrame>
         )
     }
 
     private foreignHexalot(hexalot: Hexalot): JSX.Element {
         return (
-            <ActionPanel>
+            <ActionFrame>
                 <span>This hexalot {hexalot.id} belongs to {hexalot.master}</span>
-                <Container>
-                    <Row>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.DRIVE)}>
-                                Launch
-                            </Button>
-                        </Col>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.DETACH)}>
-                                Detach
-                            </Button>
-                        </Col>
-                    </Row>
-                </Container>
-            </ActionPanel>
+                {this.buttons(Command.DRIVE, Command.DETACH)}
+            </ActionFrame>
         )
     }
 
     private homeHexalot(hexalot: Hexalot): JSX.Element {
         return (
-            <ActionPanel>
-                <span>This is your home hexalot, {hexalot.id} </span>
-                <Container>
-                    <Row>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.TURN_LEFT)}>
-                                Left
-                            </Button>
-                        </Col>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.TURN_RIGHT)}>
-                                Right
-                            </Button>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.DRIVE)}>
-                                Drive
-                            </Button>
-                        </Col>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.EVOLVE)}>
-                                Evolve
-                            </Button>
-                        </Col>
-                    </Row>
-                    <Row>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.FORGET_JOURNEY)}>
-                                Forget journey
-                            </Button>
-                        </Col>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.DETACH)}>
-                                Logout
-                            </Button>
-                        </Col>
-                    </Row>
-                    <ButtonGroup>
-                        <Button onClick={() => this.props.doCommand(Command.DELETE_GENOME)}>
-                            Delete genome
-                        </Button>
-                    </ButtonGroup>
-                </Container>
-            </ActionPanel>
+            <ActionFrame>
+                {this.buttons(
+                    Command.TURN_LEFT, Command.TURN_RIGHT,
+                    Command.DRIVE, Command.EVOLVE,
+                    Command.FORGET_JOURNEY, Command.DETACH, Command.DELETE_GENOME,
+                )}
+            </ActionFrame>
         )
     }
 
     private drivingGotchi(gotchi: Gotchi): JSX.Element {
         return (
-            <ActionPanel>
-                <p>
-                    Driving "{gotchi.master}"
-                </p>
-                <div>
-                    <Clicky props={this.props} command={Command.RETURN_TO_SEED}/>
-                    <ButtonGroup>
-                        <Button onClick={() => this.props.doCommand(Command.COME_HERE, this.props.cameraLocation)}>
-                            Come here
-                        </Button>
-                        &nbsp;
-                        <Button onClick={() => this.props.doCommand(Command.GO_THERE, this.props.cameraLocation)}>
-                            Go There
-                        </Button>
-                        &nbsp;
-                        <Button onClick={() => this.props.doCommand(Command.STOP)}>
-                            Stop
-                        </Button>
-                    </ButtonGroup>
-                </div>
-            </ActionPanel>
+            <ActionFrame>
+                {this.buttons(
+                    Command.RETURN_TO_SEED,
+                    Command.COME_HERE,
+                    Command.GO_THERE,
+                    Command.STOP,
+                )}
+            </ActionFrame>
         )
     }
 
     private evolving(evolution: Evolution): JSX.Element {
         return (
-            <ActionPanel>
-                <Container>
-                    <Row>
-                        <Col>
-                            <Button onClick={() => this.props.doCommand(Command.RETURN_TO_SEED)}>
-                                Return to seed
-                            </Button>
-                        </Col>
-                    </Row>
-                </Container>
-            </ActionPanel>
+            <ActionFrame>
+                {this.button(Command.RETURN_TO_SEED)}
+            </ActionFrame>
         )
     }
 
     private availableHexalot(spot: Spot): JSX.Element {
         return (
-            <ActionPanel>
-                <p>
-                    This one can be your new home!
-                </p>
-                {!spot.canBeNewHexalot ? null : (
-                    <p>
-                        <Clicky props={this.props} command={Command.CLAIM_GOTCH}/>
-                    </p>
-                )}
-            </ActionPanel>
+            <ActionFrame>
+                {!spot.canBeNewHexalot ? <h2>Cannot claim</h2> : this.button(Command.CLAIM_GOTCH)}
+            </ActionFrame>
         )
     }
 
     private freeSpot(spot: Spot): JSX.Element {
         return (
-            <ActionPanel>
-                <p>
-                    This spot needs to be turned into <strong>land</strong> or <strong>water</strong>.
-                </p>
-                <p>
-                    <Clicky props={this.props} command={Command.CREATE_LAND}/>
-                    <Clicky props={this.props} command={Command.CREATE_WATER}/>
-                </p>
-            </ActionPanel>
+            <ActionFrame>
+                {this.buttons(Command.CREATE_LAND, Command.CREATE_WATER)}
+            </ActionFrame>
+        )
+    }
+
+    private buttons(...commands: Command[]): JSX.Element {
+        return (
+            <ButtonToolbar>
+                <ButtonGroup>{
+                    commands.map(command => this.button(command))
+                }</ButtonGroup>
+            </ButtonToolbar>
+        )
+    }
+
+    private button(command: Command): JSX.Element {
+        return (
+            <Button key={command} outline color="primary" className="command-button"
+                    onClick={() => this.props.doCommand(command)}>{command}</Button>
         )
     }
 }

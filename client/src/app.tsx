@@ -32,7 +32,6 @@ export interface IAppState {
     left: number
     top: number
     infoPanel: boolean
-    actionPanel: boolean
 
     master?: string
     orbitDistance: OrbitDistance
@@ -131,7 +130,6 @@ class App extends React.Component<IAppProps, IAppState> {
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         this.state = {
             infoPanel: getInfoPanelMaximized(),
-            actionPanel: false,
             orbitDistance: this.orbitDistanceSubject.getValue(),
             island: new Island("GalapagotchIsland", this.islandState, this.fabricKernel, this.props.storage),
             master: this.props.storage.getMaster(),
@@ -222,10 +220,10 @@ class App extends React.Component<IAppProps, IAppState> {
                     </div>
                 ) : (
                     <div className="info-panel floating-panel">
+                        <span>Galapagotchi</span>
                         <div className="info-title">
-                            <h3>Galapagotchi Run!</h3>
                             <div className="info-exit">
-                                <Button color="link" onClick={() => {
+                                <Button onClick={() => {
                                     this.setState({infoPanel: false})
                                     setInfoPanelMaximized(false)
                                 }}>X</Button>
@@ -234,18 +232,8 @@ class App extends React.Component<IAppProps, IAppState> {
                         <InfoPanel master={this.state.master}/>
                     </div>
                 )}
-                {!this.state.actionPanel ? (
-                    <div className="actions-panel-collapsed floating-panel">
-                        <Button color="link" onClick={() => this.setState({actionPanel: true})}>!</Button>
-                    </div>
-                ) : (
-                    <div className="actions-panel floating-panel">
-                        <div className="info-title">
-                            <h3>Actions</h3>
-                            <div className="action-exit">
-                                <Button color="link" onClick={() => this.setState({actionPanel: false})}>X</Button>
-                            </div>
-                        </div>
+                <div className="actions-panel-outer floating-panel">
+                    <div className="actions-panel-inner">
                         <ActionsPanel
                             orbitDistance={this.orbitDistanceSubject}
                             homeHexalot={this.homeHexalot}
@@ -258,7 +246,7 @@ class App extends React.Component<IAppProps, IAppState> {
                             doCommand={this.executeCommand}
                         />
                     </div>
-                )}
+                </div>
             </div>
         )
     }
