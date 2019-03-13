@@ -8,7 +8,7 @@ import {AppStorage} from "./app-storage"
 import {Direction, IFabricExports} from "./body/fabric-exports"
 import {createFabricKernel, FabricKernel} from "./body/fabric-kernel"
 import {Physics} from "./body/physics"
-import {IGenomeData} from "./genetics/genome"
+import {freshGenome, IGenomeData} from "./genetics/genome"
 import {Evolution, INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Gotchi} from "./gotchi/gotchi"
 import {Hexalot} from "./island/hexalot"
@@ -118,9 +118,7 @@ function setInfoPanelMaximized(maximized: boolean): void {
 class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
     private perspectiveCamera: PerspectiveCamera
-    private homeHexalot = new BehaviorSubject<Hexalot | undefined>(undefined)
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
-    private selectedSpotSubject = new BehaviorSubject<Spot | undefined>(undefined)
     private physics: Physics
     private fabricKernel: FabricKernel
 
@@ -143,49 +141,41 @@ class App extends React.Component<IAppProps, IAppState> {
 
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
-        this.subs.push(this.selectedSpotSubject.subscribe(spot => {
-            if (spot && !this.state.evolution && !this.state.gotchi) {
-                this.setState(selectSpot(spot))
-            }
-        }))
         this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
         this.subs.push(this.state.island.islandState.subscribe(islandState => {
-            const hexalot = islandState.selectedHexalot
-            if (hexalot) {
-                const spotCenters = hexalot.spots.map(spot => spot.center)
-                const surface = hexalot.spots.map(spot => spot.surface === Surface.Land)
+            const selectedHome = islandState.selectedHome
+            if (selectedHome) {
+                this.props.storage.loadJourney(selectedHome, this.state.island)
+                this.setState({journey: selectedHome.journey})
+                return
+            }
+            this.setState({journey: undefined})
+            const homeHexalot = islandState.homeHexalot
+            const selectedHexalot = islandState.selectedHexalot
+            if (homeHexalot) {
+                location.replace(`/#/${homeHexalot.id}`)
+                const spotCenters = homeHexalot.spots.map(spot => spot.center)
+                const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
-            }
-        }))
-        this.subs.push(this.homeHexalot.subscribe((hexalot?: Hexalot) => {
-            const id = hexalot ? hexalot.id : ""
-            location.replace(`/#/${id}`)
-        }))
-        this.subs.push(this.selectedSpotSubject.subscribe(spot => {
-            if (!spot) {
-                return
-            }
-            const hexalot = spot.centerOfHexalot
-            if (!hexalot) {
-                return
-            }
-            const homeHexalot = this.homeHexalot.getValue()
-            if (!homeHexalot) {
-                this.homeHexalot.next(hexalot)
-                this.props.storage.loadJourney(hexalot, this.state.island)
-                this.setState({journey: hexalot.journey})
-                return
-            }
-            if (homeHexalot.id !== hexalot.id) {
-                const journey = homeHexalot.journey
-                if (journey) {
-                    journey.addVisit(hexalot)
-                } else {
-                    homeHexalot.journey = new Journey([homeHexalot, hexalot])
+                if (selectedHexalot) {
+                    const journey = homeHexalot.journey
+                    if (journey) {
+                        journey.addVisit(selectedHexalot)
+                    } else {
+                        homeHexalot.journey = new Journey([homeHexalot, selectedHexalot])
+                    }
+                    this.props.storage.saveJourney(homeHexalot)
                 }
-                this.props.storage.saveJourney(homeHexalot)
+            } else {
+                location.replace(`/#/`)
+                if (selectedHexalot && !selectedHexalot.occupied) {
+                    this.state.island.islandState.next(islandState.setHomeToSelected())
+                }
             }
-            this.setState({journey: homeHexalot.journey})
+            const selectedSpot = islandState.selectedSpot
+            if (selectedSpot && !this.state.evolution && !this.state.gotchi) {
+                this.setState(selectSpot(selectedSpot))
+            }
         }))
     }
 
@@ -205,7 +195,6 @@ class App extends React.Component<IAppProps, IAppState> {
                     height={this.state.height}
                     left={this.state.left}
                     top={this.state.top}
-                    homeHexalot={this.homeHexalot}
                     orbitDistance={this.orbitDistanceSubject}
                     evolution={this.state.evolution}
                     journey={this.state.journey}
@@ -236,7 +225,6 @@ class App extends React.Component<IAppProps, IAppState> {
                     <div className="actions-panel-inner">
                         <ActionsPanel
                             orbitDistance={this.orbitDistanceSubject}
-                            homeHexalot={this.homeHexalot}
                             cameraLocation={this.perspectiveCamera.position}
                             islandState={this.state.island.islandState}
                             doCommand={this.executeCommand}
@@ -251,15 +239,13 @@ class App extends React.Component<IAppProps, IAppState> {
         const island = this.state.island
         const islandState = island.islandState
         const spot = islandState.getValue().selectedSpot
-        const homeHexalot = this.homeHexalot.getValue()
+        const homeHexalot = islandState.getValue().homeHexalot
         const gotchi = this.state.gotchi
         const journey = this.state.journey
         switch (command) {
             case Command.DETACH:
-                this.selectedSpotSubject.next(undefined)
-                this.homeHexalot.next(undefined)
                 this.setState({journey: undefined})
-                islandState.next(islandState.getValue().setIslandMode(IslandMode.Visiting))
+                islandState.next(islandState.getValue().setIslandMode(IslandMode.Visiting).setHomeToSelected())
                 break
             case Command.SAVE_GENOME:
                 if (homeHexalot && gotchi) {
@@ -268,16 +254,13 @@ class App extends React.Component<IAppProps, IAppState> {
                     this.props.storage.setGenome(homeHexalot, genomeData)
                 }
                 break
-            case Command.DELETE_GENOME:
+            case Command.RANDOM_GENOME:
                 if (homeHexalot) {
-                    console.log("Deleting")
-                    homeHexalot.deleteGenome()
+                    homeHexalot.genome = freshGenome()
                 }
                 break
             case Command.RETURN_TO_SEED:
-                const selectedSpot = this.selectedSpotSubject.getValue()
-                this.selectedSpotSubject.next(selectedSpot) // refresh
-                this.setState(selectSpot(selectedSpot))
+                this.setState(selectSpot(islandState.getValue().selectedSpot))
                 break
             case Command.DRIVE:
                 if (homeHexalot) {
@@ -342,15 +325,16 @@ class App extends React.Component<IAppProps, IAppState> {
                 if (spot) {
                     island.removeFreeHexalots()
                     if (spot.available) {
-                        island.createHexalot(spot)
+                        const hexalot = island.createHexalot(spot)
+                        if (hexalot) {
+                            hexalot.refreshFingerprint()
+                            this.props.storage.setGenome(hexalot, freshGenome().genomeData)
+                            islandState.next(islandState.getValue().setHomeToSelected())
+                        }
                     }
                     island.refreshStructure()
+                    island.save()
                 }
-                // if (island.legal && centerOfHexalot === island.freeHexalot) {
-                //     // centerOfHexalot.genome = freshGenomeFor(MASTER);
-                //     island.refresh();
-                //     island.save();
-                // }
                 break
             default:
                 throw new Error("Unknown command!")

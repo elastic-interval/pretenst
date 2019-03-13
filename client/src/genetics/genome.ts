@@ -17,7 +17,7 @@ function freshGenomeData(): IGenomeData {
     }
 }
 
-export function fromMaster(): Genome {
+export function freshGenome(): Genome {
     return new Genome(freshGenomeData(), rollTheDice)
 }
 

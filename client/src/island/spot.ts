@@ -44,10 +44,11 @@ export class Spot {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
     }
 
-    public refresh(firstHexalot: boolean): void {
-        this.free = firstHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
+    public refresh(firstHexalot: boolean, isCenterOfHexalot: boolean): void {
+        this.free = firstHexalot && !isCenterOfHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
         if (firstHexalot) {
-            this.available = !!this.centerOfHexalot
+            this.available = !!this.centerOfHexalot && !this.centerOfHexalot.occupied
+            console.log("first hexalot available", this.available)
         } else {
             this.available = !this.centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
         }

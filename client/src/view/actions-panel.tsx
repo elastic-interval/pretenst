@@ -6,14 +6,13 @@ import {Vector3} from "three"
 
 import {Hexalot} from "../island/hexalot"
 import {IslandMode, IslandState} from "../island/island-state"
-import {Spot} from "../island/spot"
 
 import {OrbitDistance} from "./orbit"
 
 export enum Command {
     DETACH = "Detach",
     SAVE_GENOME = "Save genome",
-    DELETE_GENOME = "Delete genome",
+    RANDOM_GENOME = "Random genome",
     RETURN_TO_SEED = "Return to seed",
     DRIVE = "Launch Gotchi",
     TURN_LEFT = "Turn Left",
@@ -30,7 +29,6 @@ export enum Command {
 
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
-    homeHexalot: BehaviorSubject<Hexalot | undefined>
     cameraLocation: Vector3
     islandState: BehaviorSubject<IslandState>
     doCommand: (command: Command, location?: Vector3) => void
@@ -67,14 +65,22 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
     }
 
     public render(): JSX.Element {
+        const homeHexalot = this.state.islandState.homeHexalot
+        const selectedHexalot = this.state.islandState.selectedHexalot
         switch (this.state.islandState.islandMode) {
             case IslandMode.FixingIsland:
                 const spot = this.state.islandState.selectedSpot
                 if (spot) {
                     if (spot.free) {
-                        return this.freeSpot(spot)
+                        return this.freeSpot
                     } else if (spot.available) {
-                        return this.availableHexalot(spot)
+                        return this.availableHexalot
+                    } else {
+                        return (
+                            <ActionFrame>
+                                <p>You can claim this hexalot when the island has been fixed.</p>
+                            </ActionFrame>
+                        )
                     }
                 }
                 return (
@@ -83,44 +89,48 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                     </ActionFrame>
                 )
             case IslandMode.Visiting:
-                return (
-                    <ActionFrame>
-                        <p>Choose a hexalot by clicking on one</p>
-                    </ActionFrame>
-                )
-            case IslandMode.Landed:
-                const hexalot = this.state.islandState.selectedHexalot
-                if (hexalot) {
-                    const homeHexalot = this.props.homeHexalot.getValue()
-                    if (homeHexalot && homeHexalot.id === hexalot.id) {
-                        return this.homeHexalot(hexalot)
+                if (selectedHexalot) {
+                    if (homeHexalot) {
+                        if (homeHexalot.id === selectedHexalot.id) {
+                            return this.homeHexalot(selectedHexalot)
+                        } else {
+                            return this.foreignHexalot(selectedHexalot)
+                        }
                     } else {
-                        return this.foreignHexalot(hexalot)
+                        return this.availableHexalot
                     }
                 }
                 return (
                     <ActionFrame>
-                        <p>No selected hexalot?</p>
+                        <p>Select a hexalot</p>
                     </ActionFrame>
                 )
             case IslandMode.PlanningJourney:
-                return (
-                    <ActionFrame>
-                        <p>Planning journey</p>
-                    </ActionFrame>
-                )
+                return this.planningJourney
             case IslandMode.PlanningDrive:
-                return (
-                    <ActionFrame>
-                        <p>Planning Drive</p>
-                    </ActionFrame>
-                )
+                return this.planningDrive
             case IslandMode.Evolving:
                 return this.evolving
             case IslandMode.DrivingFree:
             case IslandMode.DrivingJourney:
                 return this.drivingGotchi
         }
+    }
+
+    private get planningJourney(): JSX.Element {
+        return (
+            <ActionFrame>
+                <p>Planning journey</p>
+            </ActionFrame>
+        )
+    }
+
+    private get planningDrive(): JSX.Element {
+        return (
+            <ActionFrame>
+                <p>Planning Drive</p>
+            </ActionFrame>
+        )
     }
 
     private foreignHexalot(hexalot: Hexalot): JSX.Element {
@@ -144,7 +154,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                     Command.EVOLVE,
                     Command.FORGET_JOURNEY,
                     Command.DETACH,
-                    Command.DELETE_GENOME,
+                    Command.RANDOM_GENOME,
                 ])}
             </ActionFrame>
         )
@@ -173,7 +183,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         )
     }
 
-    private availableHexalot(spot: Spot): JSX.Element {
+    private get availableHexalot(): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Available", [
@@ -183,7 +193,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         )
     }
 
-    private freeSpot(spot: Spot): JSX.Element {
+    private get freeSpot(): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Free", [Command.CREATE_LAND, Command.CREATE_WATER])}

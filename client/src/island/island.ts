@@ -15,13 +15,11 @@ export interface IslandPattern {
 }
 
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
-const hexalotWithMaxNonce = (hexalots: Hexalot[]) => hexalots.reduce((withMax, adjacent) => {
-    if (withMax) {
-        return adjacent.nonce > withMax.nonce ? adjacent : withMax
-    } else {
-        return adjacent
-    }
-})
+
+function hexalotWithMaxNonce(hexalots: Hexalot[]): Hexalot | undefined {
+    const maxNonce = (withMax: Hexalot | undefined, adjacent: Hexalot) => withMax ? adjacent.nonce > withMax.nonce ? adjacent : withMax : adjacent
+    return hexalots.reduce(maxNonce, undefined)
+}
 
 export class Island {
     public spots: Spot[] = []
@@ -37,10 +35,6 @@ export class Island {
         this.refreshStructure()
         const islandMode = this.isLegal ? IslandMode.Visiting : IslandMode.FixingIsland
         this.islandState = new BehaviorSubject<IslandState>(new IslandState(islandMode))
-    }
-
-    public get hexalotsWithSeeds(): Hexalot[] {
-        return this.hexalots.filter(hexalot => !!hexalot.genomeStored)
     }
 
     public get isLegal(): boolean {
@@ -75,7 +69,7 @@ export class Island {
             })
         }
         const firstHexalot = this.hexalots.length === 1
-        this.spots.forEach(spot => spot.refresh(firstHexalot))
+        this.spots.forEach(spot => spot.refresh(firstHexalot, !!spot.centerOfHexalot))
         if (firstHexalot && !this.isLegal) {
             this.hexalots[0].centerSpot.available = false
         }
@@ -185,8 +179,7 @@ export class Island {
     }
 
     private hexalotAroundSpot(spot: Spot): Hexalot {
-        const adjacentMaxNonce = hexalotWithMaxNonce(spot.adjacentHexalots)
-        return this.getOrCreateHexalot(adjacentMaxNonce, spot.coords)
+        return this.getOrCreateHexalot(hexalotWithMaxNonce(spot.adjacentHexalots), spot.coords)
     }
 
     private getOrCreateHexalot(parent: Hexalot | undefined, coords: ICoords): Hexalot {

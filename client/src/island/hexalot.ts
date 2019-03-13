@@ -1,7 +1,7 @@
 import {Vector3} from "three"
 
 import {AppStorage} from "../app-storage"
-import {fromGenomeData, fromMaster, Genome} from "../genetics/genome"
+import {fromGenomeData, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 
 import {Journey} from "./journey"
@@ -43,7 +43,7 @@ export const hexalotTreeString = (hexalots: Hexalot[]) => {
 }
 
 export class Hexalot {
-    public genomeStored?: Genome
+    public genome?: Genome
     public journey?: Journey
     public rotation = -1
     public nonce = 0
@@ -71,7 +71,7 @@ export class Hexalot {
         this.refreshFingerprint()
         const genomeData = this.appStorage.getGenomeData(this)
         if (genomeData) {
-            this.genomeStored = fromGenomeData(genomeData)
+            this.genome = fromGenomeData(genomeData)
         }
         this.rotation = this.appStorage.getRotation(this)
     }
@@ -83,15 +83,8 @@ export class Hexalot {
         return this.identifier
     }
 
-    public get genome(): Genome {
-        if (!this.genomeStored) {
-            this.genomeStored = fromMaster()
-        }
-        return this.genomeStored
-    }
-
-    public deleteGenome(): void {
-        this.genomeStored = undefined
+    public get occupied(): boolean {
+        return !!this.genome
     }
 
     public refreshFingerprint(): void {
@@ -99,6 +92,9 @@ export class Hexalot {
     }
 
     public createNativeGotchi(): Gotchi | undefined {
+        if (!this.genome) {
+            return undefined
+        }
         return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, this.genome)
     }
 
@@ -124,14 +120,6 @@ export class Hexalot {
 
     get center(): Vector3 {
         return this.centerSpot.center
-    }
-
-    // todo: why is this unused?
-    get canBeSeeded(): boolean {
-        if (this.genome) {
-            return false
-        }
-        return !!this.centerSpot.adjacentHexalots.find(hexalot => !!hexalot.genome)
     }
 
     public destroy(): Spot[] {

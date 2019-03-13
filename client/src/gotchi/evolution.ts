@@ -164,7 +164,11 @@ export class Evolution {
     }
 
     private createPopulation(): Evolver[] {
-        let mutatingGenome: Genome | undefined = fromGenomeData(this.hexalot.genome.genomeData)
+        const genome = this.hexalot.genome
+        if (!genome) {
+            throw new Error("No genome!")
+        }
+        let mutatingGenome: Genome | undefined = fromGenomeData(genome.genomeData)
         const evolvers: Evolver[] = []
         while (true) {
             const evolver = this.createEvolver(mutatingGenome)

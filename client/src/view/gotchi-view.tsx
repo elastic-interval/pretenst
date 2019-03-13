@@ -7,7 +7,6 @@ import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from "three"
 import {HUNG_ALTITUDE, NORMAL_TICKS} from "../body/fabric"
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
-import {Hexalot} from "../island/hexalot"
 import {Island} from "../island/island"
 import {IslandMode, IslandState} from "../island/island-state"
 import {Journey} from "../island/journey"
@@ -31,7 +30,6 @@ interface IGotchiViewProps {
     left: number
     top: number
     island: Island
-    homeHexalot: BehaviorSubject<Hexalot | undefined>
     islandState: BehaviorSubject<IslandState>
     orbitDistance: BehaviorSubject<OrbitDistance>
     gotchi?: Gotchi
@@ -162,29 +160,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         }
     }
 
-    // private get pointerGeometry(): Geometry | null {
-    //     this.perspectiveCamera.updateProjectionMatrix();
-    //     const upDown = this.state.orbitState === OrbitState.CRUISE ? -1 : 1;
-    //     const userCoords = (x: number): Vector3 => {
-    //         return new Vector3(x * 0.4 * upDown, -0.7 * upDown, -0.1 * upDown)
-    //             .unproject(this.perspectiveCamera);
-    //     };
-    //     const geometry = new Geometry();
-    //     const spot = this.props.selectedSpot.getValue();
-    //     const action = this.props.evolution || this.props.gotchi;
-    //     if (spot && this.orbit && !this.orbit.changing && !action) {
-    //         const target = spot.centerOfHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center;
-    //         geometry.vertices = [userCoords(0), target, userCoords(-1), target, userCoords(1), target];
-    //     }
-    //     return geometry;
-    // }
-
     private get pointerGeometry(): Geometry | null {
         const geometry = new Geometry()
-        const spot = this.props.islandState.getValue().selectedSpot
-        const action = this.props.evolution || this.props.gotchi
-        if (spot && this.orbit && !action) {
-            const target = spot.centerOfHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(spot.center) : spot.center
+        const islandState = this.props.islandState.getValue()
+        const selectedSpot = islandState.selectedSpot
+        if (selectedSpot) {
+            const center = selectedSpot.center
+            const occupedHexalot = selectedSpot.centerOfHexalot && selectedSpot.centerOfHexalot.occupied
+            const target = occupedHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(center) : center
             geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)]
         }
         return geometry

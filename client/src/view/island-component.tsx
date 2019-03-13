@@ -7,7 +7,6 @@ import {HUNG_ALTITUDE} from "../body/fabric"
 import {Island} from "../island/island"
 import {IslandMode, IslandState} from "../island/island-state"
 import {ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH} from "../island/shapes"
-import {equals} from "../island/spot"
 
 import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL, HANGER_MATERIAL, ISLAND_MATERIAL} from "./materials"
 import {MeshKey} from "./spot-selector"
@@ -123,16 +122,9 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     }
 
     private createSeedGeometry(islandState: IslandState): Geometry {
-        const hexalots = this.props.island.hexalotsWithSeeds
         const geometry = new Geometry()
-        hexalots.forEach(hexalot => {
-            if (
-                islandState.islandMode === IslandMode.Landed || islandState.islandMode === IslandMode.Visiting ||
-                !islandState.selectedHexalot ||
-                !equals(hexalot.coords, islandState.selectedHexalot.coords)
-            ) {
-                hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
-            }
+        this.props.island.hexalots.filter(hexalot => hexalot.occupied).forEach(hexalot => {
+            hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
         })
         geometry.computeFaceNormals()
         geometry.computeBoundingSphere()
@@ -142,7 +134,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     private createArrowGeometry(islandState: IslandState): Geometry {
         const geometry = new Geometry()
         const hexalot = islandState.selectedHexalot
-        if (!hexalot || islandState.islandMode !== IslandMode.Landed) {
+        if (!hexalot || islandState.islandMode !== IslandMode.Visiting) {
             return geometry
         }
         const toTransform: Vector3[] = []
