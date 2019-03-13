@@ -17,46 +17,38 @@ export interface IslandComponentProps {
 }
 
 export interface IslandComponentState {
-    spotsGeometry: Geometry
-    seedGeometry: Geometry
-    arrowGeometry: Geometry
-    hangersGeometry: Geometry
-}
-
-export const dispose = (state: IslandComponentState) => {
-    state.spotsGeometry.dispose()
-    state.seedGeometry.dispose()
-    state.arrowGeometry.dispose()
-    state.hangersGeometry.dispose()
+    islandState: IslandState
 }
 
 export class IslandComponent extends React.Component<IslandComponentProps, IslandComponentState> {
 
     private subscription?: Subscription
+    private spots: Geometry
+    private seeds: Geometry
+    private arrow: Geometry
+    private hangers: Geometry
 
     constructor(props: IslandComponentProps) {
         super(props)
-        const islandState = props.island.islandState.getValue()
-        this.state = {
-            spotsGeometry: this.createSpotsGeometry(islandState),
-            seedGeometry: this.createSeedGeometry(islandState),
-            arrowGeometry: this.createArrowGeometry(islandState),
-            hangersGeometry: this.createHangersGeometry(),
-        }
+        const islandState = props.island.islandStateSubject.getValue()
+        this.state = {islandState}
+        this.spots = this.spotsGeometry
+        this.seeds = this.seedsGeometry
+        this.arrow = this.arrowGeometry
+        this.hangers = this.hangersGeometry
     }
 
     public componentWillMount(): void {
         if (!this.subscription) {
-            this.subscription = this.props.island.islandState.subscribe((islandState: IslandState) => {
+            this.subscription = this.props.island.islandStateSubject.subscribe((islandState: IslandState) => {
                 this.props.island.spots.forEach(spot => spot.faceNames = [])
                 this.setState((state: IslandComponentState) => {
-                    dispose(state)
-                    return {
-                        spotsGeometry: this.createSpotsGeometry(islandState),
-                        seedGeometry: this.createSeedGeometry(islandState),
-                        arrowGeometry: this.createArrowGeometry(islandState),
-                        hangersGeometry: this.createHangersGeometry(),
-                    }
+                    this.disposeGeometry()
+                    this.spots = this.spotsGeometry
+                    this.seeds = this.seedsGeometry
+                    this.arrow = this.arrowGeometry
+                    this.hangers = this.hangersGeometry
+                    return {islandState}
                 })
             })
         }
@@ -66,7 +58,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         if (this.subscription) {
             this.subscription.unsubscribe()
         }
-        dispose(this.state)
+        this.disposeGeometry()
     }
 
     public render(): JSX.Element {
@@ -74,34 +66,35 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
             <R3.Object3D key={this.context.key}>
                 <R3.Mesh
                     name="Spots"
-                    geometry={this.state.spotsGeometry}
+                    geometry={this.spots}
                     ref={(mesh: Mesh) => this.props.setMesh(MeshKey.SPOTS_KEY, mesh)}
                     material={ISLAND_MATERIAL}
                 />
                 <R3.Mesh
                     name="Seeds"
-                    geometry={this.state.seedGeometry}
+                    geometry={this.seeds}
                     material={GOTCHI_MATERIAL}
                 />
                 <R3.LineSegments
                     key="Arrows"
-                    geometry={this.state.arrowGeometry}
+                    geometry={this.arrow}
                     material={GOTCHI_POINTER_MATERIAL}
                 />
                 <R3.LineSegments
                     key="Hangers"
-                    geometry={this.state.hangersGeometry}
+                    geometry={this.hangers}
                     material={HANGER_MATERIAL}
                 />
             </R3.Object3D>
         )
     }
 
-    private createSpotsGeometry(islandState: IslandState): Geometry {
+    private get spotsGeometry(): Geometry {
         const island = this.props.island
         const geometry = new Geometry()
-        if (islandState.selectedHexalot) {
-            islandState.selectedHexalot.spots.forEach((spot, index) => {
+        const selectedHexalot = this.state.islandState.selectedHexalot
+        if (selectedHexalot) {
+            selectedHexalot.spots.forEach((spot, index) => {
                 spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces)
             })
         } else {
@@ -113,7 +106,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         return geometry
     }
 
-    private createHangersGeometry(): Geometry {
+    private get hangersGeometry(): Geometry {
         const hexalots = this.props.island.hexalots
         const geometry = new Geometry()
         hexalots.forEach(hexalot => hexalot.centerSpot.addHangerGeometry(geometry.vertices))
@@ -121,7 +114,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         return geometry
     }
 
-    private createSeedGeometry(islandState: IslandState): Geometry {
+    private get seedsGeometry(): Geometry {
         const geometry = new Geometry()
         this.props.island.hexalots.filter(hexalot => hexalot.occupied).forEach(hexalot => {
             hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
@@ -131,8 +124,9 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
         return geometry
     }
 
-    private createArrowGeometry(islandState: IslandState): Geometry {
+    private get arrowGeometry(): Geometry {
         const geometry = new Geometry()
+        const islandState = this.state.islandState
         const hexalot = islandState.selectedHexalot
         if (!hexalot || islandState.islandMode !== IslandMode.Visiting) {
             return geometry
@@ -162,5 +156,12 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
             arrowToRx, arrowToR, arrowToLx, arrowToL,
         ]
         return geometry
+    }
+
+    private disposeGeometry(): void {
+        this.spots.dispose()
+        this.seeds.dispose()
+        this.arrow.dispose()
+        this.hangers.dispose()
     }
 }

@@ -24,17 +24,15 @@ function hexalotWithMaxNonce(hexalots: Hexalot[]): Hexalot | undefined {
 export class Island {
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
-    public islandState: BehaviorSubject<IslandState>
 
     constructor(
         public islandName: string,
+        public islandStateSubject: BehaviorSubject<IslandState>,
         private gotchiFactory: IGotchiFactory,
         private appStorage: AppStorage,
     ) {
         this.apply(appStorage.getIsland(islandName))
         this.refreshStructure()
-        const islandMode = this.isLegal ? IslandMode.Visiting : IslandMode.FixingIsland
-        this.islandState = new BehaviorSubject<IslandState>(new IslandState(islandMode))
     }
 
     public get isLegal(): boolean {
@@ -74,8 +72,9 @@ export class Island {
             this.hexalots[0].centerSpot.available = false
         }
         this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        if (this.islandState) { // refresh if there is a state
-            this.islandState.next(this.islandState.getValue())
+        if (this.islandStateSubject) { // refresh if there is a state
+            const islandMode = this.isLegal ? IslandMode.Visiting : IslandMode.FixingIsland
+            this.islandStateSubject.next(this.islandStateSubject.getValue().setIslandMode(islandMode))
         }
     }
 

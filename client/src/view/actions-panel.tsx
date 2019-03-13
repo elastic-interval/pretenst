@@ -14,13 +14,14 @@ export enum Command {
     SAVE_GENOME = "Save genome",
     RANDOM_GENOME = "Random genome",
     RETURN_TO_SEED = "Return to seed",
-    DRIVE = "Launch Gotchi",
-    TURN_LEFT = "Turn Left",
-    TURN_RIGHT = "Turn Right",
+    DRIVE_FREE = "Drive free",
+    DRIVE_JOURNEY = "Drive journey",
+    TURN_LEFT = "Left",
+    TURN_RIGHT = "Right",
     COME_HERE = "Come Here",
     GO_THERE = "Go There",
     STOP = "Stop",
-    EVOLVE = "Launch evolution",
+    EVOLVE = "Evolve",
     FORGET_JOURNEY = "Forget journey",
     CLAIM_HEXALOT = "Claim Hexalot",
     CREATE_LAND = "Create Land",
@@ -30,7 +31,7 @@ export enum Command {
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
     cameraLocation: Vector3
-    islandState: BehaviorSubject<IslandState>
+    islandStateSubject: BehaviorSubject<IslandState>
     doCommand: (command: Command, location?: Vector3) => void
 }
 
@@ -53,11 +54,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
 
     constructor(props: IActionsPanelProps) {
         super(props)
-        this.state = {islandState: props.islandState.getValue()}
+        this.state = {islandState: props.islandStateSubject.getValue()}
     }
 
     public componentDidMount(): void {
-        this.subs.push(this.props.islandState.subscribe(islandState => this.setState({islandState})))
+        this.subs.push(this.props.islandStateSubject.subscribe(islandState => this.setState({islandState})))
     }
 
     public componentWillUnmount(): void {
@@ -65,11 +66,12 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
     }
 
     public render(): JSX.Element {
-        const homeHexalot = this.state.islandState.homeHexalot
-        const selectedHexalot = this.state.islandState.selectedHexalot
-        switch (this.state.islandState.islandMode) {
+        const islandState = this.state.islandState
+        const homeHexalot = islandState.homeHexalot
+        const selectedHexalot = islandState.selectedHexalot
+        switch (islandState.islandMode) {
             case IslandMode.FixingIsland:
-                const spot = this.state.islandState.selectedSpot
+                const spot = islandState.selectedSpot
                 if (spot) {
                     if (spot.free) {
                         return this.freeSpot
@@ -114,6 +116,12 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
             case IslandMode.DrivingFree:
             case IslandMode.DrivingJourney:
                 return this.drivingGotchi
+            default:
+                return (
+                    <ActionFrame>
+                        <p>Strange state</p>
+                    </ActionFrame>
+                )
         }
     }
 
@@ -137,7 +145,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         return (
             <ActionFrame>
                 {this.buttons("Foreign", [
-                    Command.DRIVE,
+                    Command.DRIVE_FREE,
                     Command.DETACH,
                 ])}
             </ActionFrame>
@@ -150,7 +158,8 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                 {this.buttons("Landed", [
                     Command.TURN_LEFT,
                     Command.TURN_RIGHT,
-                    Command.DRIVE,
+                    Command.DRIVE_FREE,
+                    Command.DRIVE_JOURNEY,
                     Command.EVOLVE,
                     Command.FORGET_JOURNEY,
                     Command.DETACH,

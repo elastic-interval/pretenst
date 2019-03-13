@@ -48,7 +48,6 @@ export class Spot {
         this.free = firstHexalot && !isCenterOfHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
         if (firstHexalot) {
             this.available = !!this.centerOfHexalot && !this.centerOfHexalot.occupied
-            console.log("first hexalot available", this.available)
         } else {
             this.available = !this.centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
         }
