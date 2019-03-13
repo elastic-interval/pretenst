@@ -7,14 +7,13 @@ import {HUNG_ALTITUDE} from "../body/fabric"
 import {Island} from "../island/island"
 import {IslandMode, IslandState} from "../island/island-state"
 import {ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH} from "../island/shapes"
-import {equals, IViewState} from "../island/spot"
+import {equals} from "../island/spot"
 
 import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL, HANGER_MATERIAL, ISLAND_MATERIAL} from "./materials"
 import {MeshKey} from "./spot-selector"
 
 export interface IslandComponentProps {
     island: Island
-    master?: string
     setMesh: (key: string, ref: Mesh) => void
 }
 
@@ -101,19 +100,14 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     private createSpotsGeometry(islandState: IslandState): Geometry {
         const island = this.props.island
-        const viewState: IViewState = {
-            islandIsLegal: island.isLegal,
-            freeHexalot: island.freeHexalot,
-            master: this.props.master,
-        }
         const geometry = new Geometry()
         if (islandState.selectedHexalot) {
             islandState.selectedHexalot.spots.forEach((spot, index) => {
-                spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces, viewState)
+                spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces)
             })
         } else {
             island.spots.forEach((spot, index) => {
-                spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces, viewState)
+                spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces)
             })
         }
         geometry.computeBoundingSphere()

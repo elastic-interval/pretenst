@@ -18,16 +18,9 @@ export enum Surface {
     Water = "water",
 }
 
-export interface IViewState {
-    islandIsLegal: boolean
-    master?: string
-    freeHexalot?: Hexalot
-}
-
 const SURFACE_UNKNOWN_COLOR = new Color("silver")
 const SURFACE_LAND_COLOR = new Color("tan")
-const SURFACE_CLICKABLE_COLOR = new Color("mediumseagreen")
-const SURFACE_FREE_GOTCH_COLOR = new Color("crimson")
+const SURFACE_AVAILABLE_LAND_COLOR = new Color("mediumseagreen")
 const SURFACE_WATER_COLOR = new Color("darkturquoise")
 const SIX = 6
 const UP = new Vector3(0, 1, 0)
@@ -45,81 +38,57 @@ export class Spot {
     public surface = Surface.Unknown
     public free = false
     public legal = false
+    public available = false
 
     constructor(public coords: ICoords) {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
     }
 
-    public refresh(): void {
-        this.free = !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
-        if (!this.connected) {
-            this.legal = false
+    public refresh(firstHexalot: boolean): void {
+        this.free = firstHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
+        if (firstHexalot) {
+            this.available = !!this.centerOfHexalot
         } else {
-            let landCount = 0
-            let waterCount = 0
-            this.adjacentSpots.forEach(adjacent => {
-                switch (adjacent.surface) {
-                    case Surface.Land:
-                        landCount++
-                        break
-                    case Surface.Water:
-                        waterCount++
-                        break
-                }
-            })
-            switch (this.surface) {
-                case Surface.Unknown:
-                    this.legal = false
-                    break
+            this.available = !this.centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
+        }
+        let landCount = 0
+        let waterCount = 0
+        this.adjacentSpots.forEach(adjacent => {
+            switch (adjacent.surface) {
                 case Surface.Land:
-                    // land must be either on the edge or have adjacent at least 2 land and 1 water
-                    this.legal = this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1)
+                    landCount++
                     break
                 case Surface.Water:
-                    // water must have some land around
-                    this.legal = landCount > 0
+                    waterCount++
                     break
             }
+        })
+        switch (this.surface) {
+            case Surface.Unknown:
+                this.legal = false
+                break
+            case Surface.Land:
+                // land must be connected and either on the edge or have adjacent at least 2 land and 1 water
+                this.legal = this.connected && this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1)
+                break
+            case Surface.Water:
+                // water must have some land around
+                this.legal = landCount > 0
+                break
         }
-    }
-
-    get canBeNewHexalot(): boolean {
-        if (this.centerOfHexalot || this.surface !== Surface.Land) {
-            return false
-        }
-        return !!this.adjacentHexalots.find(hexalot => !!hexalot.genome)
     }
 
     public addSurfaceGeometry(
         meshKey: MeshKey, index: number,
         vertices: Vector3[], faces: Face3[],
-        viewState: IViewState,
     ): void {
+        const sizeFactor = this.sizeFactor
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
-            hexPoint.x + this.center.x,
-            hexPoint.y + this.center.y,
-            hexPoint.z + this.center.z,
+            hexPoint.x * sizeFactor + this.center.x,
+            hexPoint.y * sizeFactor + this.center.y,
+            hexPoint.z * sizeFactor + this.center.z,
         )))
-        let normalSpread = 0
-        let color = SURFACE_UNKNOWN_COLOR
-        switch (this.surface) {
-            case Surface.Land:
-                if (viewState.master) {
-                    color = SURFACE_LAND_COLOR
-                } else if (viewState.freeHexalot) {
-                    const centerColor = viewState.islandIsLegal ? SURFACE_CLICKABLE_COLOR : SURFACE_FREE_GOTCH_COLOR
-                    const landColor = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR
-                    color = this === viewState.freeHexalot.centerSpot ? centerColor : landColor
-                } else {
-                    color = this.canBeNewHexalot ? SURFACE_CLICKABLE_COLOR : SURFACE_LAND_COLOR
-                }
-                normalSpread = this.legal ? LAND_NORMAL_SPREAD : 0
-                break
-            case Surface.Water:
-                color = SURFACE_WATER_COLOR
-                normalSpread = this.legal ? WATER_NORMAL_SPREAD : 0
-                break
-        }
+        const normalSpread = this.normalSpread
         for (let a = 0; a < SIX; a++) {
             const offset = index * HEXAGON_POINTS.length
             const b = (a + 1) % SIX
@@ -129,7 +98,7 @@ export class Spot {
                 new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize(),
             ]
             this.faceNames.push(`${meshKey}:${faces.length}`)
-            faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, color))
+            faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, this.color))
         }
     }
 
@@ -174,6 +143,32 @@ export class Spot {
             faces.push(new Face3(left, current, next))
             this.faceNames.push(`${meshKey}:${faces.length}`)
             faces.push(new Face3(right, next, current))
+        }
+    }
+
+    private get sizeFactor(): number {
+        return this.legal ? 1 : 0.9
+    }
+
+    private get color(): Color {
+        switch (this.surface) {
+            case Surface.Land:
+                return this.available ? SURFACE_AVAILABLE_LAND_COLOR : SURFACE_LAND_COLOR
+            case Surface.Water:
+                return SURFACE_WATER_COLOR
+            default:
+                return SURFACE_UNKNOWN_COLOR
+        }
+    }
+
+    private get normalSpread(): number {
+        switch (this.surface) {
+            case Surface.Land:
+                return LAND_NORMAL_SPREAD
+            case Surface.Water:
+                return WATER_NORMAL_SPREAD
+            default:
+                return 0
         }
     }
 }

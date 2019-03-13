@@ -74,7 +74,11 @@ export class Island {
                 }
             })
         }
-        this.spots.forEach(spot => spot.refresh())
+        const firstHexalot = this.hexalots.length === 1
+        this.spots.forEach(spot => spot.refresh(firstHexalot))
+        if (firstHexalot && !this.isLegal) {
+            this.hexalots[0].centerSpot.available = false
+        }
         this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
         if (this.islandState) { // refresh if there is a state
             this.islandState.next(this.islandState.getValue())
@@ -101,15 +105,11 @@ export class Island {
     }
 
     public createHexalot(spot: Spot): Hexalot | undefined {
-        if (!spot.canBeNewHexalot) {
+        if (!spot.available) {
             console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`)
             return undefined
         }
         return this.hexalotAroundSpot(spot)
-    }
-
-    public get singleHexalot(): Hexalot | undefined {
-        return this.hexalots.length === 1 ? this.hexalots[0] : undefined
     }
 
     public get midpoint(): Vector3 {
@@ -176,9 +176,10 @@ export class Island {
                 const land = landStack.pop()
                 spot.surface = land ? Surface.Land : Surface.Water
             })
-        } else if (this.singleHexalot) {
-            this.singleHexalot.spots.map(spot => spot.surface = Math.random() > 0.5 ? Surface.Land : Surface.Water)
-            this.singleHexalot.spots[0].surface = Surface.Land
+        } else if (this.hexalots.length === 1) {
+            const singleHexalot = this.hexalots[0]
+            singleHexalot.spots.map(spot => spot.surface = Math.random() > 0.5 ? Surface.Land : Surface.Water)
+            singleHexalot.spots[0].surface = Surface.Land
         }
         this.hexalots.forEach(lot => lot.load())
     }

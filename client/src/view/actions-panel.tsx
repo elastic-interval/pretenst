@@ -71,9 +71,9 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
             case IslandMode.FixingIsland:
                 const spot = this.state.islandState.selectedSpot
                 if (spot) {
-                    if (spot.free || !spot.legal) {
+                    if (spot.free) {
                         return this.freeSpot(spot)
-                    } else if (spot.canBeNewHexalot) {
+                    } else if (spot.available) {
                         return this.availableHexalot(spot)
                     }
                 }
@@ -176,7 +176,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
     private availableHexalot(spot: Spot): JSX.Element {
         return (
             <ActionFrame>
-                {!spot.canBeNewHexalot ? <h2>Cannot claim</h2> : this.buttons("Available", [
+                {this.buttons("Available", [
                     Command.CLAIM_HEXALOT,
                 ])}
             </ActionFrame>

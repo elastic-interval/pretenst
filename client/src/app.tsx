@@ -341,7 +341,7 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.CLAIM_HEXALOT:
                 if (spot) {
                     island.removeFreeHexalots()
-                    if (spot.canBeNewHexalot) {
+                    if (spot.available) {
                         island.createHexalot(spot)
                     }
                     island.refreshStructure()
