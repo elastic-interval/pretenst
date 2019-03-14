@@ -6,7 +6,8 @@ import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from "three"
 
 import {HUNG_ALTITUDE, NORMAL_TICKS} from "../body/fabric"
 import {Island} from "../island/island"
-import {IslandMode, IslandState} from "../island/island-state"
+import {IslandState} from "../island/island-state"
+import {Spot} from "../island/spot"
 
 import {EvolutionComponent} from "./evolution-component"
 import {IslandComponent} from "./island-component"
@@ -27,8 +28,8 @@ interface IGotchiViewProps {
     left: number
     top: number
     island: Island
-    islandState: IslandState
     orbitDistance: BehaviorSubject<OrbitDistance>
+    clickSpot: (spot: Spot) => void
 }
 
 interface IGotchiViewState {
@@ -96,7 +97,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const gotchi = this.state.islandState.gotchi
         const journey = this.state.islandState.journey
         return (
-            <div id="gotchi-view" onMouseDownCapture={this.onMouseDownCapture}>
+            <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
+                const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
+                if (spot) {
+                    this.props.clickSpot(spot)
+                }
+            }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.props.perspectiveCamera}>
                         <IslandComponent
@@ -137,40 +143,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     // ==========================
 
-    private get onMouseDownCapture(): (event: React.MouseEvent<HTMLDivElement>) => void {
-        return (event: React.MouseEvent<HTMLDivElement>) => {
-            const islandState = this.state.islandState
-            const islandStateSubject = this.props.island.islandStateSubject
-            switch (islandState.islandMode) {
-                case IslandMode.FixingIsland:
-                    break
-                case IslandMode.Visiting:
-                    const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
-                    if (spot) {
-                        const selectedSpot = islandState.setSelectedSpot(spot)
-                        islandStateSubject.next(selectedSpot)
-                    }
-                    break
-                case IslandMode.Landed:
-                    if (event.button === 2) {
-                        islandStateSubject.next(islandStateSubject.getValue().setIslandMode(IslandMode.Visiting))
-                    }
-                    break
-                case IslandMode.PlanningJourney:
-                    break
-                case IslandMode.PlanningDrive:
-                    break
-                case IslandMode.Evolving:
-                    break
-                case IslandMode.DrivingFree:
-                    break
-                case IslandMode.DrivingJourney:
-                    break
-            }
-        }
-    }
-
-    // todo: cache this
+    // todo: cache this, dispose old ones
     private get pointerGeometry(): Geometry | null {
         const geometry = new Geometry()
         const islandState = this.state.islandState

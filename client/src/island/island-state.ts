@@ -6,14 +6,14 @@ import {Journey} from "./journey"
 import {Spot, Surface} from "./spot"
 
 export enum IslandMode {
-    FixingIsland = "Fixing island",
-    Visiting = "Visiting",
-    Landed = "Landed",
-    PlanningJourney = "Planning journey",
-    PlanningDrive = "Planning drive",
-    Evolving = "Evolving",
     DrivingFree = "Driving free",
     DrivingJourney = "Driving journey",
+    Evolving = "Evolving",
+    FixingIsland = "Fixing island",
+    Landed = "Landed",
+    PlanningDrive = "Planning drive",
+    PlanningJourney = "Planning journey",
+    Visiting = "Visiting",
 }
 
 export class IslandState {
@@ -29,7 +29,7 @@ export class IslandState {
     ) {
     }
 
-    public setIslandMode(islandMode: IslandMode): IslandState {
+    public withMode(islandMode: IslandMode): IslandState {
         const copy = this.copy
         copy.islandMode = islandMode
         switch (islandMode) {
@@ -53,7 +53,7 @@ export class IslandState {
         return copy
     }
 
-    public setSelectedSpot(selectedSpot?: Spot): IslandState {
+    public withSelectedSpot(selectedSpot?: Spot): IslandState {
         const copy = this.copy
         copy.selectedSpot = selectedSpot
         copy.selectedHexalot = selectedSpot ? selectedSpot.centerOfHexalot : undefined
@@ -61,7 +61,7 @@ export class IslandState {
         return copy
     }
 
-    public setSurface(surface: Surface): IslandState {
+    public withSurface(surface: Surface): IslandState {
         if (this.selectedSpot) {
             this.selectedSpot.surface = surface
             const copy = this.copy
@@ -72,7 +72,7 @@ export class IslandState {
         }
     }
 
-    public setGotchi(gotchi: Gotchi, journey?: Journey): IslandState {
+    public withGotchi(gotchi: Gotchi, journey?: Journey): IslandState {
         this.recycle()
         const copy = this.copy
         copy.gotchi = gotchi
@@ -81,7 +81,7 @@ export class IslandState {
         return copy
     }
 
-    public setEvolution(evolution: Evolution): IslandState {
+    public withEvolution(evolution: Evolution): IslandState {
         this.recycle()
         const copy = this.copy
         copy.evolution = evolution
@@ -89,9 +89,8 @@ export class IslandState {
         return copy
     }
 
-    public setHomeToSelected(): IslandState {
+    public withHomeHexalot(hexalot?: Hexalot): IslandState {
         const copy = this.copy
-        const hexalot = this.selectedHexalot
         copy.homeHexalot = hexalot
         copy.islandMode = hexalot ? IslandMode.Landed : IslandMode.Visiting
         return copy

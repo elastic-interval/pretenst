@@ -2,7 +2,6 @@ import * as React from "react"
 import {Button, ButtonGroup, ButtonToolbar} from "reactstrap"
 import {Subscription} from "rxjs"
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
-import {Vector3} from "three"
 
 import {Hexalot} from "../island/hexalot"
 import {IslandMode, IslandState} from "../island/island-state"
@@ -10,29 +9,29 @@ import {IslandMode, IslandState} from "../island/island-state"
 import {OrbitDistance} from "./orbit"
 
 export enum Command {
-    DETACH = "Detach",
-    SAVE_GENOME = "Save genome",
-    RANDOM_GENOME = "Random genome",
-    RETURN_TO_SEED = "Return to seed",
-    DRIVE_FREE = "Drive free",
-    DRIVE_JOURNEY = "Drive journey",
-    TURN_LEFT = "Left",
-    TURN_RIGHT = "Right",
-    COME_HERE = "Come Here",
-    GO_THERE = "Go There",
-    STOP = "Stop",
-    EVOLVE = "Evolve",
-    FORGET_JOURNEY = "Forget journey",
-    CLAIM_HEXALOT = "Claim Hexalot",
-    CREATE_LAND = "Create Land",
-    CREATE_WATER = "Create Water",
+    ClaimHexalot = "Claim hexalot",
+    ComeHere = "Come here",
+    DriveFree = "Drive free",
+    DriveJourney = "Drive journey",
+    Evolve = "Evolve",
+    ForgetJourney = "Forget journey",
+    GoThere = "Go there",
+    Logout = "Logout",
+    MakeLand = "Make into land",
+    MakeWater = "Make into water",
+    PlanJourney = "Plan journey",
+    RandomGenome = "Random genome",
+    ReturnHome = "Return home",
+    RotateLeft = "Rotate left",
+    RotateRight = "Rotate right",
+    SaveGenome = "Save genome",
+    StopMoving = "Stop moving",
 }
 
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
-    cameraLocation: Vector3
     islandStateSubject: BehaviorSubject<IslandState>
-    doCommand: (command: Command, location?: Vector3) => void
+    doCommand: (command: Command) => void
 }
 
 interface IActionPanelState {
@@ -43,11 +42,7 @@ interface IActionPanelProps {
     children: Array<JSX.Element | null> | JSX.Element
 }
 
-const ActionFrame = (props: IActionPanelProps) => (
-    <div className="action-frame">
-        {props.children}
-    </div>
-)
+const ActionFrame = (props: IActionPanelProps) => <div className="action-frame">{props.children}</div>
 
 export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPanelState> {
     private subs: Subscription[] = []
@@ -107,6 +102,8 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                         <p>Select a hexalot</p>
                     </ActionFrame>
                 )
+            case IslandMode.Landed:
+                return this.landed
             case IslandMode.PlanningJourney:
                 return this.planningJourney
             case IslandMode.PlanningDrive:
@@ -119,7 +116,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
             default:
                 return (
                     <ActionFrame>
-                        <p>Strange state</p>
+                        <p>Strange state {islandState.islandMode}</p>
                     </ActionFrame>
                 )
         }
@@ -128,7 +125,12 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
     private get planningJourney(): JSX.Element {
         return (
             <ActionFrame>
-                <p>Planning journey</p>
+                {this.buttons("Planning journey", [
+                    Command.ForgetJourney,
+                    Command.DriveJourney,
+                    Command.Evolve,
+                    Command.ReturnHome,
+                ])}
             </ActionFrame>
         )
     }
@@ -136,7 +138,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
     private get planningDrive(): JSX.Element {
         return (
             <ActionFrame>
-                <p>Planning Drive</p>
+                {this.buttons("Drive", [
+                    Command.RotateLeft,
+                    Command.RotateRight,
+                    Command.DriveFree,
+                ])}
             </ActionFrame>
         )
     }
@@ -145,8 +151,8 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         return (
             <ActionFrame>
                 {this.buttons("Foreign", [
-                    Command.DRIVE_FREE,
-                    Command.DETACH,
+                    Command.DriveFree,
+                    Command.Logout,
                 ])}
             </ActionFrame>
         )
@@ -156,14 +162,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         return (
             <ActionFrame>
                 {this.buttons("Landed", [
-                    Command.TURN_LEFT,
-                    Command.TURN_RIGHT,
-                    Command.DRIVE_FREE,
-                    Command.DRIVE_JOURNEY,
-                    Command.EVOLVE,
-                    Command.FORGET_JOURNEY,
-                    Command.DETACH,
-                    Command.RANDOM_GENOME,
+                    Command.PlanJourney,
+                    Command.DriveJourney,
+                    Command.Evolve,
+                    Command.Logout,
+                    Command.RandomGenome,
                 ])}
             </ActionFrame>
         )
@@ -173,10 +176,10 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         return (
             <ActionFrame>
                 {this.buttons("Driving", [
-                    Command.RETURN_TO_SEED,
-                    Command.COME_HERE,
-                    Command.GO_THERE,
-                    Command.STOP,
+                    Command.ReturnHome,
+                    Command.ComeHere,
+                    Command.GoThere,
+                    Command.StopMoving,
                 ])}
             </ActionFrame>
         )
@@ -186,7 +189,20 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         return (
             <ActionFrame>
                 {this.buttons("Evolving", [
-                    Command.RETURN_TO_SEED,
+                    Command.ReturnHome,
+                ])}
+            </ActionFrame>
+        )
+    }
+
+    private get landed(): JSX.Element {
+        return (
+            <ActionFrame>
+                {this.buttons("Landed", [
+                    Command.PlanJourney,
+                    Command.Evolve,
+                    Command.DriveFree,
+                    Command.Logout,
                 ])}
             </ActionFrame>
         )
@@ -196,7 +212,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         return (
             <ActionFrame>
                 {this.buttons("Available", [
-                    Command.CLAIM_HEXALOT,
+                    Command.ClaimHexalot,
                 ])}
             </ActionFrame>
         )
@@ -205,7 +221,10 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
     private get freeSpot(): JSX.Element {
         return (
             <ActionFrame>
-                {this.buttons("Free", [Command.CREATE_LAND, Command.CREATE_WATER])}
+                {this.buttons("Free", [
+                    Command.MakeLand,
+                    Command.MakeWater,
+                ])}
             </ActionFrame>
         )
     }
@@ -214,17 +233,20 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         return (
             <ButtonToolbar>
                 <span className="action-prompt">{prompt}:</span>
-                <ButtonGroup>{
-                    commands.map(command => this.commandButton(command))
-                }</ButtonGroup>
+                <ButtonGroup>{commands.map(command => this.commandButton(command))}</ButtonGroup>
             </ButtonToolbar>
         )
     }
 
     private commandButton(command: Command): JSX.Element {
         return (
-            <Button key={command} outline={true} color="primary" className="command-button"
-                    onClick={() => this.props.doCommand(command)}>{command}</Button>
+            <Button
+                key={command}
+                outline={true}
+                color="primary"
+                className="command-button"
+                onClick={() => this.props.doCommand(command)}
+            >{command}</Button>
         )
     }
 }

@@ -74,7 +74,7 @@ export class Island {
         this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
         if (this.islandStateSubject) { // refresh if there is a state
             const islandMode = this.isLegal ? IslandMode.Visiting : IslandMode.FixingIsland
-            this.islandStateSubject.next(this.islandStateSubject.getValue().setIslandMode(islandMode))
+            this.islandStateSubject.next(this.islandStateSubject.getValue().withMode(islandMode))
         }
     }
 
