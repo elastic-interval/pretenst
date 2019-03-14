@@ -67,7 +67,8 @@ export class Island {
             })
         }
         const firstHexalot = this.hexalots.length === 1
-        this.spots.forEach(spot => spot.refresh(firstHexalot, !!spot.centerOfHexalot))
+        const firstHexalotOccupied = firstHexalot ? this.hexalots[0].occupied : false
+        this.spots.forEach(spot => spot.refresh(firstHexalot, firstHexalotOccupied))
         if (firstHexalot && !this.isLegal) {
             this.hexalots[0].centerSpot.available = false
         }

@@ -176,6 +176,10 @@ class App extends React.Component<IAppProps, IAppState> {
                 break
             case IslandMode.Visiting:
                 if (hexalot) {
+                    if (!hexalot.occupied) {
+                        hexalot.genome = freshGenome()
+                        this.state.island.refreshStructure()
+                    }
                     islandStateSubject.next(islandState.withHomeHexalot(hexalot))
                 }
                 break
