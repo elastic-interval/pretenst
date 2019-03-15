@@ -1,4 +1,4 @@
-import { ADJACENT, BRANCH_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
+import { ADJACENT, BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
 import { IslandStore } from "./store"
 import { HexalotID, PubKey } from "./types"
 
@@ -8,14 +8,43 @@ enum Surface {
     Water = "water",
 }
 
+interface ISpot {
+    connected: boolean
+    coords: ICoords
+    adjacentSpots: ISpot[]
+    memberOfHexalot: IHexalot[]
+    adjacentHexalots: IHexalot[]
+    centerOfHexalot?: IHexalot
+    surface: Surface
+}
+
+interface IHexalot {
+    id: HexalotID
+    coords: ICoords
+    childHexalots: IHexalot[]
+    spots: ISpot[]
+    nonce: number
+    owner?: PubKey
+    genomeData: string | null
+}
+
+interface IHexalotIndexed extends IHexalot {
+    index: number
+}
+
 const ZERO: ICoords = {x: 0, y: 0}
 const equals = (a: ICoords, b: ICoords): boolean => a.x === b.x && a.y === b.y
-
 const coordSort = (a: ICoords, b: ICoords): number =>
     a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0
+
+function coordsToString(coords: ICoords): string {
+    return `${coords.x},${coords.y}`
+}
+
 const plus = (a: ICoords, b: ICoords): ICoords => {
     return {x: a.x + b.x, y: a.y + b.y}
 }
+
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
 
 const spotsToString = (spots: ISpot[]) => {
@@ -32,14 +61,50 @@ const spotsToString = (spots: ISpot[]) => {
     return nybbleChars.join("")
 }
 
+const ringIndex = (coords: ICoords, origin: ICoords): number => {
+    const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
+    for (let index = 1; index <= 6; index++) {
+        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
+            return index
+        }
+    }
+    return 0
+}
+
+function generateOctalTreePattern(
+    root: IHexalot,
+    steps: number[],
+    visited: { [coords: string]: boolean },
+): number[] {
+    const remainingChildren = root.childHexalots
+        .filter(child => !visited[coordsToString(child.coords)])
+        .map(child => {
+            const index = ringIndex(child.coords, root.coords)
+            return {index, ...child} as IHexalotIndexed
+        })
+        .sort((a, b) => a.index < b.index ? 1 : a.index > b.index ? -1 : 0)
+    if (remainingChildren.length > 0) {
+        for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
+            if (remainingChildren.length > 0) {
+                steps.push(BRANCH_STEP)
+            }
+            steps.push(child.index > 0 ? child.index : ERROR_STEP)
+            generateOctalTreePattern(child, steps, visited)
+        }
+    } else {
+        steps.push(STOP_STEP)
+    }
+    visited[coordsToString(root.coords)] = true
+    return steps
+}
+
 const hexalotTreeString = (hexalots: IHexalot[]) => {
     const root = hexalots.find(hexalot => hexalot.nonce === 0)
     if (!root) {
         console.error("No root hexalot found")
         return ""
     }
-    hexalots.forEach(hexalot => hexalot.visited = false)
-    return root.generateOctalTreePattern([]).join("")
+    return generateOctalTreePattern(root, [], {}).join("")
 }
 
 interface ICoords {
@@ -52,42 +117,26 @@ export interface IslandPattern {
     spots: string
 }
 
-interface ISpot {
-    canBeNewHexalot: boolean
-    coords: ICoords
-    adjacentSpots: ISpot[]
-    memberOfHexalot: IHexalot[]
-    adjacentHexalots: IHexalot[]
-    centerOfHexalot?: IHexalot
-    connected: boolean
-    faceNames: string[]
-    surface: Surface
-    free: boolean
-    legal: boolean
-
-    refresh(): void
-}
-
-interface IHexalot {
-    spots: ISpot[]
-    coords: ICoords
-    visited: boolean
-    nonce: number
-    id: HexalotID
-    owner: PubKey
-    genomeData: string
-
-    generateOctalTreePattern(steps: number[]): number[]
-}
-
 const sortSpotsOnCoord = (a: ISpot, b: ISpot): number => coordSort(a.coords, b.coords)
-const hexalotWithMaxNonce = (hexalots: IHexalot[]) => hexalots.reduce((withMax, adjacent) => {
-    if (withMax) {
-        return adjacent.nonce > withMax.nonce ? adjacent : withMax
-    } else {
-        return adjacent
-    }
-})
+
+const hexalotWithMaxNonce = (hexalots: IHexalot[]): IHexalot | null =>
+    hexalots.length === 0 ?
+        null :
+        hexalots.reduce((withMax, adjacent) => {
+            if (withMax) {
+                return adjacent.nonce > withMax.nonce ? adjacent : withMax
+            } else {
+                return adjacent
+            }
+        })
+
+function canBeNewHexalot(spot: ISpot): boolean {
+    return false
+}
+
+function refreshSpot(spot: ISpot): ISpot {
+    return spot
+}
 
 export class Island {
     public spots: ISpot[] = []
@@ -100,23 +149,23 @@ export class Island {
     }
 
     public get isLegal(): boolean {
-        return !this.spots.find(spot => !spot.legal)
+        return !this.spots.find(spot => !spot) // TODO
     }
 
-    public async loadPatternFromStore(): Promise<void>{
+    public async loadPatternFromStore(): Promise<void> {
         const pattern = await this.store.getPattern()
         if (!pattern) {
             throw new Error("Pattern not found")
         }
-        this.apply(pattern)
+        return this.apply(pattern)
     }
 
-    public assignHexalot(
-        owner: PubKey,
-        parentID: HexalotID,
+    public claimHexalot(
         coords: ICoords,
         newID: HexalotID,
-    ) {
+        genome: string,
+    ): void {
+        throw new Error("not implemented")
         // TODO
     }
 
@@ -143,18 +192,17 @@ export class Island {
                 }
             })
         }
-        this.spots.forEach(spot => spot.refresh())
+        this.spots.forEach(refreshSpot)
     }
 
     public async save(): Promise<void> {
         await this.store.setPattern(this.pattern)
     }
 
-    public createHexalot(spot: ISpot, owner: PubKey): IHexalot | undefined {
-        // TODO: ownership
-        if (!spot.canBeNewHexalot) {
+    public createHexalot(spot: ISpot, owner: PubKey): IHexalot | null {
+        if (!canBeNewHexalot(spot)) {
             console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`)
-            return undefined
+            return null
         }
         return this.hexalotAroundSpot(spot)
     }
@@ -167,12 +215,12 @@ export class Island {
         return {
             hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToString(this.spots),
-        } as IslandPattern
+        }
     }
 
     // ================================================================================================
 
-    private apply(pattern: IslandPattern): void {
+    private async apply(pattern: IslandPattern): Promise<void> {
         let hexalot: IHexalot | undefined = this.getOrCreateHexalot(undefined, ZERO)
         const stepStack = pattern.hexalots.split("").reverse().map(Number)
         const hexalotStack: IHexalot[] = []
@@ -218,17 +266,11 @@ export class Island {
                 spot.surface = land ? Surface.Land : Surface.Water
             })
         }
-        this.hexalots.forEach(async lot => {
-            const genomeData = await this.store.getGenome(lot.id)
-            if (genomeData) {
-                lot.genomeData = genomeData
-            }
-        })
         this.refreshStructure()
     }
 
     private hexalotAroundSpot(spot: ISpot): IHexalot {
-        const adjacentMaxNonce = hexalotWithMaxNonce(spot.adjacentHexalots)
+        const adjacentMaxNonce = hexalotWithMaxNonce(spot.adjacentHexalots)!
         return this.getOrCreateHexalot(adjacentMaxNonce, spot.coords)
     }
 
@@ -239,8 +281,12 @@ export class Island {
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
         const hexalot: IHexalot = {
+            id: "",
             coords,
             spots,
+            childHexalots: [],
+            genomeData: null,
+            nonce: parent ? parent.nonce + 1 : 0,
             // TODO
         }
         this.hexalots.push(hexalot)
@@ -253,6 +299,12 @@ export class Island {
             return existing
         }
         const spot: ISpot = {
+            surface: Surface.Unknown,
+            adjacentHexalots: [],
+            connected: false,
+            adjacentSpots: [],
+            memberOfHexalot: [],
+            coords,
             // TODO
         }
         this.spots.push(spot)
