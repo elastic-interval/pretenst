@@ -6,7 +6,13 @@ import {HUNG_ALTITUDE} from "../body/fabric"
 import {IslandMode, IslandState} from "../island/island-state"
 import {ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH} from "../island/shapes"
 
-import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL, HANGER_MATERIAL, ISLAND_MATERIAL} from "./materials"
+import {
+    GOTCHI_MATERIAL,
+    GOTCHI_POINTER_MATERIAL,
+    HANGER_MATERIAL_FREE,
+    HANGER_MATERIAL_OCCUPIED,
+    ISLAND_MATERIAL,
+} from "./materials"
 import {MeshKey} from "./spot-selector"
 
 export interface IslandComponentProps {
@@ -18,14 +24,16 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private spots: Geometry
     private seeds: Geometry
     private arrow: Geometry
-    private hangers: Geometry
+    private hangersOccupied: Geometry
+    private hangersFree: Geometry
 
     constructor(props: IslandComponentProps) {
         super(props)
         this.spots = this.spotsGeometry
         this.seeds = this.seedsGeometry
         this.arrow = this.arrowGeometry
-        this.hangers = this.hangersGeometry
+        this.hangersOccupied = this.hangersGeometry(true)
+        this.hangersFree = this.hangersGeometry(false)
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IslandComponentProps>, nextContext: object): void {
@@ -34,7 +42,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.spots = this.spotsGeometry
         this.seeds = this.seedsGeometry
         this.arrow = this.arrowGeometry
-        this.hangers = this.hangersGeometry
+        this.hangersOccupied = this.hangersGeometry(true)
+        this.hangersFree = this.hangersGeometry(false)
     }
 
     public componentWillUnmount(): void {
@@ -61,9 +70,14 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
                     material={GOTCHI_POINTER_MATERIAL}
                 />
                 <R3.LineSegments
-                    key="Hangers"
-                    geometry={this.hangers}
-                    material={HANGER_MATERIAL}
+                    key="HangersOccupied"
+                    geometry={this.hangersOccupied}
+                    material={HANGER_MATERIAL_OCCUPIED}
+                />
+                <R3.LineSegments
+                    key="HangersFree"
+                    geometry={this.hangersFree}
+                    material={HANGER_MATERIAL_FREE}
                 />
             </R3.Object3D>
         )
@@ -86,8 +100,9 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         return geometry
     }
 
-    private get hangersGeometry(): Geometry {
-        const hexalots = this.props.islandState.island.hexalots
+    private hangersGeometry(occupied: boolean): Geometry {
+        const allHexalots = this.props.islandState.island.hexalots
+        const hexalots = occupied ? allHexalots.filter(h => h.occupied) : allHexalots.filter(h => !h.occupied)
         const geometry = new Geometry()
         hexalots.forEach(hexalot => hexalot.centerSpot.addHangerGeometry(geometry.vertices))
         geometry.computeBoundingSphere()
@@ -144,6 +159,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.spots.dispose()
         this.seeds.dispose()
         this.arrow.dispose()
-        this.hangers.dispose()
+        this.hangersOccupied.dispose()
+        this.hangersFree.dispose()
     }
 }

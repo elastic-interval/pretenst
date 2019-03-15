@@ -17,7 +17,9 @@ export const ISLAND_MATERIAL = new MeshPhongMaterial({
     lights: true,
 })
 
-export const HANGER_MATERIAL = new LineBasicMaterial({color: new Color("black")})
+export const HANGER_MATERIAL_OCCUPIED = new LineBasicMaterial({color: new Color("black")})
+
+export const HANGER_MATERIAL_FREE = new LineBasicMaterial({color: new Color("white")})
 
 export const TRIP_MATERIAL = new LineBasicMaterial({color: new Color("crimson")})
 
