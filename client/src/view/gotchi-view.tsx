@@ -6,7 +6,6 @@ import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from "three"
 
 import {HUNG_ALTITUDE, NORMAL_TICKS} from "../body/fabric"
 import {IslandState} from "../island/island-state"
-import {Spot} from "../island/spot"
 
 import {EvolutionComponent} from "./evolution-component"
 import {IslandComponent} from "./island-component"
@@ -28,7 +27,6 @@ interface IGotchiViewProps {
     top: number
     islandState: IslandState
     orbitDistance: BehaviorSubject<OrbitDistance>
-    clickSpot: (spot: Spot) => void
 }
 
 interface IGotchiViewState {
@@ -95,7 +93,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
                 const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
                 if (spot) {
-                    this.props.clickSpot(spot)
+                    this.props.islandState.clickSpot(spot)
                 }
             }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>

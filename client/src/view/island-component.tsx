@@ -28,7 +28,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.hangers = this.hangersGeometry
     }
 
-    public componentWillReceiveProps(nextProps: Readonly<IslandComponentProps>, nextContext: any): void {
+    public componentWillReceiveProps(nextProps: Readonly<IslandComponentProps>, nextContext: object): void {
         this.props.islandState.island.spots.forEach(spot => spot.faceNames = [])
         this.disposeGeometry()
         this.spots = this.spotsGeometry

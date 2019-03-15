@@ -4,36 +4,14 @@ import {Subscription} from "rxjs"
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
 
 import {Hexalot} from "../island/hexalot"
-import {IslandMode, IslandState} from "../island/island-state"
+import {Command, IslandMode, IslandState} from "../island/island-state"
 import {Spot} from "../island/spot"
 
 import {OrbitDistance} from "./orbit"
 
-export enum Command {
-    ClaimHexalot = "Claim hexalot",
-    ComeHere = "Come here",
-    DriveFree = "Drive free",
-    DriveJourney = "Drive journey",
-    Evolve = "Evolve",
-    ForgetJourney = "Forget journey",
-    GoThere = "Go there",
-    Logout = "Logout",
-    MakeLand = "Make into land",
-    MakeWater = "Make into water",
-    PlanFreeDrive = "Plan free drive",
-    PlanJourney = "Plan journey",
-    RandomGenome = "Random genome",
-    ReturnHome = "Return home",
-    RotateLeft = "Rotate left",
-    RotateRight = "Rotate right",
-    SaveGenome = "Save genome",
-    StopMoving = "Stop moving",
-}
-
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
     islandState: IslandState
-    doCommand: (command: Command) => void
 }
 
 interface IActionPanelState {
@@ -102,11 +80,32 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
             } else if (selectedSpot.available) {
                 return this.availableHexalot
             } else {
-                return (
-                    <ActionFrame>
-                        <p>You can claim this hexalot when the island has been fixed.</p>
-                    </ActionFrame>
-                )
+                const hexalot = selectedSpot.centerOfHexalot
+                if (hexalot) {
+                    if (hexalot.occupied) {
+                        return (
+                            <ActionFrame>
+                                <p>Occupied</p>
+                            </ActionFrame>
+                        )
+                    } else {
+                        return (
+                            <ActionFrame>
+                                <p>You can claim this hexalot when the island has been fixed.</p>
+                                {this.buttons("Repair", [
+                                    Command.JumpToFix,
+                                    Command.AbandonFix,
+                                ])}
+                            </ActionFrame>
+                        )
+                    }
+                } else {
+                    return (
+                        <ActionFrame>
+                            <p>Nothing to see here.</p>
+                        </ActionFrame>
+                    )
+                }
             }
         } else {
             return (
@@ -250,7 +249,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                 outline={true}
                 color="primary"
                 className="command-button"
-                onClick={() => this.props.doCommand(command)}
+                onClick={() => this.state.islandState.executeCommand(command)}
             >{command}</Button>
         )
     }

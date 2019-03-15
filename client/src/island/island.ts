@@ -2,7 +2,6 @@ import {BehaviorSubject} from "rxjs"
 import {Vector3} from "three"
 
 import {AppStorage} from "../app-storage"
-import {freshGenome} from "../genetics/genome"
 import {IGotchiFactory} from "../gotchi/gotchi"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
@@ -30,16 +29,13 @@ export class Island {
     constructor(
         public islandName: string,
         private gotchiFactory: IGotchiFactory,
-        private appStorage: AppStorage,
+        private storage: AppStorage,
     ) {
-        this.apply(appStorage.getIsland(islandName))
-        const islandStateSubject = new BehaviorSubject<IslandState>(this.stateAfterRefresh(new IslandState(this, IslandMode.Visiting)))
-        islandStateSubject.getValue().subject = islandStateSubject
-        this.state = islandStateSubject.getValue()
-    }
-
-    public get isLegal(): boolean {
-        return !this.spots.find(spot => !spot.legal)
+        this.apply(storage.getIsland(islandName))
+        this.state = new IslandState(this, storage, IslandMode.Visiting)
+        const islandStateSubject = new BehaviorSubject<IslandState>(this.state)
+        this.state.legal = this.refreshStructureLegal()
+        this.state.subject = islandStateSubject
     }
 
     public get freeHexalot(): Hexalot | undefined {
@@ -50,7 +46,7 @@ export class Island {
         return this.hexalots.find(hexalot => hexalot.id === fingerprint)
     }
 
-    public stateAfterRefresh(islandState: IslandState): IslandState {
+    public refreshStructureLegal(): boolean {
         const spots = this.spots
         spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot)
@@ -71,40 +67,12 @@ export class Island {
             })
         }
         spots.forEach(spot => spot.checkLegal())
-        const islandLegal = this.isLegal
-        const singleHexalot = this.hexalots.length === 1
-        const homeHexalot = islandState.homeHexalot
-        if (homeHexalot) {
-            spots.forEach(spot => spot.available = false)
-        } else {
-            spots.forEach(spot => spot.checkAvailable(singleHexalot, islandLegal))
-        }
-        spots.forEach(spot => spot.checkFree(singleHexalot))
-        this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        if (!islandLegal) {
-            return islandState.withMode(IslandMode.FixingIsland)
-        }
-        if (singleHexalot) {
-            const firstHexalot = this.hexalots[0]
-            const centerSpot = firstHexalot.centerSpot
-            if (!firstHexalot.occupied) {
-                centerSpot.available = islandLegal
-            }
-            return islandState.homeHexalot ? islandState.withSelectedSpot(centerSpot) : islandState
-        }
-        if (homeHexalot) {
-            if (!homeHexalot.occupied) {
-                this.appStorage.setGenome(homeHexalot, freshGenome().genomeData)
-            }
-            return islandState.withSelectedSpot(homeHexalot.centerSpot).withHomeHexalot(homeHexalot)
-        } else {
-            return islandState.withMode(IslandMode.Visiting)
-        }
+        return !this.spots.some(spot => !spot.legal)
     }
 
     public save(): void {
-        if (this.isLegal) {
-            this.appStorage.setIsland(this.islandName, this.pattern)
+        if (this.state.legal) {
+            this.storage.setIsland(this.islandName, this.pattern)
             console.log(`Saved ${this.islandName}`)
         } else {
             console.log(`Not legal yet: ${this.islandName}`)
@@ -136,7 +104,7 @@ export class Island {
     }
 
     public get pattern(): IslandPattern {
-        if (!this.isLegal) {
+        if (!this.state.legal) {
             throw new Error("Saving illegal island")
         }
         this.spots.sort(sortSpotsOnCoord)
@@ -211,7 +179,7 @@ export class Island {
             return existing
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
-        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory, this.appStorage)
+        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory, this.storage)
         hexalot.refreshFingerprint()
         this.hexalots.push(hexalot)
         return hexalot
