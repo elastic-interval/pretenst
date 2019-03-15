@@ -93,7 +93,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
                 const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
                 if (spot) {
-                    this.props.islandState.clickSpot(spot)
+                    this.props.islandState.stateAfterClick(spot).dispatch()
                 }
             }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>

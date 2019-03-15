@@ -2,6 +2,7 @@ import * as React from "react"
 import {Button, ButtonGroup, ButtonToolbar} from "reactstrap"
 import {Subscription} from "rxjs"
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {Vector3} from "three"
 
 import {Hexalot} from "../island/hexalot"
 import {Command, IslandMode, IslandState} from "../island/island-state"
@@ -12,10 +13,7 @@ import {OrbitDistance} from "./orbit"
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
     islandState: IslandState
-}
-
-interface IActionPanelState {
-    islandState: IslandState
+    location: Vector3
 }
 
 interface IContainerProps {
@@ -26,12 +24,11 @@ const ActionFrame = (props: IContainerProps) => <div className="action-frame">{p
 
 const Message = (props: IContainerProps) => <p>{props.children}</p>
 
-export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPanelState> {
+export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     private subs: Subscription[] = []
 
     constructor(props: IActionsPanelProps) {
         super(props)
-        this.state = {islandState: props.islandState}
     }
 
     public componentDidMount(): void {
@@ -43,27 +40,27 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
     }
 
     public render(): JSX.Element {
-        const islandState = this.state.islandState
+        const islandState = this.props.islandState
         switch (islandState.islandMode) {
             case IslandMode.FixingIsland:
-                return this.fixingIsland(islandState.selectedSpot)
+                return this.FixingIsland(islandState.selectedSpot)
             case IslandMode.Visiting:
-                return this.visiting(islandState.selectedHexalot)
+                return this.Visiting(islandState.selectedHexalot)
             case IslandMode.Landed:
                 const homeHexalot = islandState.homeHexalot
                 if (!homeHexalot) {
                     throw new Error("Landed with no home?")
                 }
-                return this.landed(homeHexalot, islandState.selectedHexalot)
+                return this.Landed(homeHexalot, islandState.selectedHexalot)
             case IslandMode.PlanningJourney:
-                return this.planningJourney
+                return this.PlanningJourney
             case IslandMode.PlanningDrive:
-                return this.planningDrive
+                return this.PlanningDrive
             case IslandMode.Evolving:
-                return this.evolving
+                return this.Evolving
             case IslandMode.DrivingFree:
             case IslandMode.DrivingJourney:
-                return this.drivingGotchi
+                return this.DrivingGotchi
             default:
                 return (
                     <ActionFrame>
@@ -73,7 +70,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         }
     }
 
-    private fixingIsland(selectedSpot?: Spot): JSX.Element {
+    private FixingIsland(selectedSpot?: Spot): JSX.Element {
         if (selectedSpot) {
             if (selectedSpot.free) {
                 return this.freeSpot
@@ -121,7 +118,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         }
     }
 
-    private visiting(selectedHexalot?: Hexalot): JSX.Element {
+    private Visiting(selectedHexalot?: Hexalot): JSX.Element {
         if (selectedHexalot) {
             if (selectedHexalot.centerSpot.available) {
                 return this.availableHexalot
@@ -140,7 +137,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         )
     }
 
-    private landed(homeHexalot: Hexalot, selectedHexalot?: Hexalot): JSX.Element {
+    private Landed(homeHexalot: Hexalot, selectedHexalot?: Hexalot): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Landed", [
@@ -154,7 +151,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         )
     }
 
-    private get planningJourney(): JSX.Element {
+    private get PlanningJourney(): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Planning journey", [
@@ -167,7 +164,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         )
     }
 
-    private get planningDrive(): JSX.Element {
+    private get PlanningDrive(): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Drive", [
@@ -189,7 +186,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         )
     }
 
-    private get drivingGotchi(): JSX.Element {
+    private get DrivingGotchi(): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Driving", [
@@ -202,7 +199,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         )
     }
 
-    private get evolving(): JSX.Element {
+    private get Evolving(): JSX.Element {
         return (
             <ActionFrame>
                 {this.buttons("Evolving", [
@@ -249,7 +246,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                 outline={true}
                 color="primary"
                 className="command-button"
-                onClick={() => this.state.islandState.executeCommand(command)}
+                onClick={() => this.props.islandState.stateAfterCommand(command, this.props.location).dispatch()}
             >{command}</Button>
         )
     }

@@ -135,6 +135,7 @@ class App extends React.Component<IAppProps, IAppState> {
                         <ActionsPanel
                             orbitDistance={this.orbitDistanceSubject}
                             islandState={this.state.islandState}
+                            location={this.perspectiveCamera.position}
                         />
                     </div>
                 </div>
