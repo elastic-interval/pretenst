@@ -1,6 +1,5 @@
 import * as React from "react"
 import * as R3 from "react-three"
-import {Subscription} from "rxjs/Subscription"
 import {Geometry, Matrix4, Mesh, Vector3} from "three"
 
 import {HUNG_ALTITUDE} from "../body/fabric"
@@ -16,8 +15,6 @@ export interface IslandComponentProps {
 }
 
 export class IslandComponent extends React.Component<IslandComponentProps, object> {
-
-    private subscription?: Subscription
     private spots: Geometry
     private seeds: Geometry
     private arrow: Geometry
@@ -31,26 +28,16 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.hangers = this.hangersGeometry
     }
 
-    public componentWillMount(): void {
-        if (!this.subscription) {
-            this.subscription = this.props.islandState.subject.subscribe((islandState: IslandState) => {
-                islandState.island.spots.forEach(spot => spot.faceNames = [])
-                this.setState(() => {
-                    this.disposeGeometry()
-                    this.spots = this.spotsGeometry
-                    this.seeds = this.seedsGeometry
-                    this.arrow = this.arrowGeometry
-                    this.hangers = this.hangersGeometry
-                    return {}
-                })
-            })
-        }
+    public componentWillReceiveProps(nextProps: Readonly<IslandComponentProps>, nextContext: any): void {
+        this.props.islandState.island.spots.forEach(spot => spot.faceNames = [])
+        this.disposeGeometry()
+        this.spots = this.spotsGeometry
+        this.seeds = this.seedsGeometry
+        this.arrow = this.arrowGeometry
+        this.hangers = this.hangersGeometry
     }
 
     public componentWillUnmount(): void {
-        if (this.subscription) {
-            this.subscription.unsubscribe()
-        }
         this.disposeGeometry()
     }
 
@@ -121,8 +108,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private get arrowGeometry(): Geometry {
         const geometry = new Geometry()
         const islandState = this.props.islandState
-        const hexalot = islandState.selectedHexalot
-        if (!hexalot || islandState.islandMode !== IslandMode.Visiting) {
+        const homeHexalot = islandState.homeHexalot
+        if (!homeHexalot || islandState.islandMode !== IslandMode.PlanningDrive) {
             return geometry
         }
         const toTransform: Vector3[] = []
@@ -131,7 +118,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
             toTransform.push(vec)
             return vec
         }
-        const forward = new Vector3().subVectors(hexalot.spots[4].center, hexalot.center).normalize()
+        const adjacentSpot = homeHexalot.spots[4]
+        const forward = new Vector3().subVectors(adjacentSpot.center, homeHexalot.center).normalize()
         const right = new Vector3().add(forward).applyMatrix4(new Matrix4().makeRotationY(Math.PI / 2))
         const arrowFromL = v().addScaledVector(right, -ARROW_WIDTH)
         const arrowFromR = v().addScaledVector(right, ARROW_WIDTH)
@@ -140,8 +128,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         const arrowToLx = v().addScaledVector(right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(forward, ARROW_LENGTH)
         const arrowToRx = v().addScaledVector(right, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(forward, ARROW_LENGTH)
         const arrowTip = v().addScaledVector(forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
-        const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * hexalot.rotation)
-        const translationMatrix = new Matrix4().makeTranslation(hexalot.center.x, hexalot.center.y + HUNG_ALTITUDE, hexalot.center.z)
+        const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * homeHexalot.rotation)
+        const translationMatrix = new Matrix4().makeTranslation(homeHexalot.center.x, homeHexalot.center.y + HUNG_ALTITUDE, homeHexalot.center.z)
         const transformer = translationMatrix.multiply(rotationMatrix)
         toTransform.forEach(point => point.applyMatrix4(transformer))
         geometry.vertices = [

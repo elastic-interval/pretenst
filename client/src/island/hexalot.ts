@@ -87,6 +87,10 @@ export class Hexalot {
         return !!this.genome
     }
 
+    public get isLegal(): boolean {
+        return !this.spots.find(spot => !spot.legal)
+    }
+
     public refreshFingerprint(): void {
         this.identifier = spotsToHexFingerprint(this.spots)
     }

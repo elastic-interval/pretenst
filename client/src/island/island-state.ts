@@ -40,14 +40,19 @@ export class IslandState {
         copy.islandMode = islandMode
         switch (islandMode) {
             case IslandMode.FixingIsland:
+                copy.recycle()
                 break
             case IslandMode.Visiting:
+                copy.recycle()
                 break
             case IslandMode.Landed:
+                copy.recycle()
                 break
             case IslandMode.PlanningJourney:
+                copy.recycle()
                 break
             case IslandMode.PlanningDrive:
+                copy.recycle()
                 break
             case IslandMode.Evolving:
                 break
@@ -57,6 +62,12 @@ export class IslandState {
                 break
         }
         return copy
+    }
+
+    public withNewHomeHexalotAt(spot: Spot): IslandState {
+        const copy = this.withFreeHexalotsRemoved
+        const hexalot = this.island.createHexalot(spot)
+        return copy.withHomeHexalot(hexalot).withRefreshedStructure()
     }
 
     public withRefreshedStructure(): IslandState {
@@ -99,10 +110,15 @@ export class IslandState {
         return copy
     }
 
+    public get withFreeHexalotsRemoved(): IslandState {
+        this.island.removeFreeHexalots()
+        return this // todo: no change of state?
+    }
+
     public withHomeHexalot(hexalot?: Hexalot): IslandState {
-        const copy = this.copy
+        const copy = this.copy.withSelectedSpot(hexalot ? hexalot.centerSpot : undefined)
         copy.homeHexalot = hexalot
-        copy.islandMode = hexalot ? IslandMode.Landed : IslandMode.Visiting
+        copy.islandMode = copy.homeHexalot ? IslandMode.Landed : IslandMode.Visiting
         return copy
     }
 
@@ -123,9 +139,11 @@ export class IslandState {
     private recycle(): void {
         if (this.gotchi) {
             this.gotchi.recycle()
+            this.gotchi = undefined
         }
         if (this.evolution) {
             this.evolution.recycle()
+            this.evolution = undefined
         }
     }
 

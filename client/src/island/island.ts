@@ -50,14 +50,15 @@ export class Island {
     }
 
     public stateAfterRefresh(islandState: IslandState): IslandState {
-        this.spots.forEach(spot => {
+        const spots = this.spots
+        spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot)
             spot.connected = spot.adjacentSpots.length < 6
         })
         let flowChanged = true
         while (flowChanged) {
             flowChanged = false
-            this.spots.forEach(spot => {
+            spots.forEach(spot => {
                 if (spot.connected) {
                     return
                 }
@@ -68,13 +69,26 @@ export class Island {
                 }
             })
         }
-        this.spots.forEach(spot => spot.checkLegal())
+        spots.forEach(spot => spot.checkLegal())
         const islandLegal = this.isLegal
-        this.spots.forEach(spot => spot.checkAvailable(firstHexalot, islandLegal))
-        const firstHexalot = this.hexalots.length === 1
-        this.spots.forEach(spot => spot.checkFree(firstHexalot))
+        spots.forEach(spot => spot.checkAvailable(singleHexalot, islandLegal))
+        const singleHexalot = this.hexalots.length === 1
+        spots.forEach(spot => spot.checkFree(singleHexalot))
         this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        return islandState.withMode(islandLegal ? IslandMode.Visiting : IslandMode.FixingIsland)
+        if (islandLegal) {
+            if (singleHexalot) {
+                const firstHexalot = this.hexalots[0]
+                const centerSpot = firstHexalot.centerSpot
+                if (!firstHexalot.occupied) {
+                    centerSpot.available = true
+                }
+                return islandState.withMode(IslandMode.Visiting).withSelectedSpot(centerSpot)
+            } else {
+                return islandState.withMode(IslandMode.Visiting)
+            }
+        } else {
+            return islandState.withMode(IslandMode.FixingIsland)
+        }
     }
 
     public save(): void {
@@ -86,6 +100,14 @@ export class Island {
         }
     }
 
+    public createHexalot(spot: Spot): Hexalot | undefined {
+        if (!spot.available) {
+            console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`)
+            return undefined
+        }
+        return this.hexalotAroundSpot(spot)
+    }
+
     public removeFreeHexalots(): void {
         const deadHexalots = this.hexalots.filter(hexalot => !hexalot.genome)
         deadHexalots.forEach(deadHexalot => {
@@ -94,14 +116,6 @@ export class Island {
                 this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords))
             })
         })
-    }
-
-    public createHexalot(spot: Spot): Hexalot | undefined {
-        if (!spot.available) {
-            console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`)
-            return undefined
-        }
-        return this.hexalotAroundSpot(spot)
     }
 
     public get midpoint(): Vector3 {
@@ -187,6 +201,7 @@ export class Island {
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
         const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory, this.appStorage)
+        hexalot.refreshFingerprint()
         this.hexalots.push(hexalot)
         return hexalot
     }

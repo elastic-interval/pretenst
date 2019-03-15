@@ -20,6 +20,7 @@ export enum Command {
     Logout = "Logout",
     MakeLand = "Make into land",
     MakeWater = "Make into water",
+    PlanFreeDrive = "Plan free drive",
     PlanJourney = "Plan journey",
     RandomGenome = "Random genome",
     ReturnHome = "Return home",
@@ -69,9 +70,13 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
             case IslandMode.FixingIsland:
                 return this.fixingIsland(islandState.selectedSpot)
             case IslandMode.Visiting:
-                return this.visiting(islandState.homeHexalot, islandState.selectedHexalot)
+                return this.visiting(islandState.selectedHexalot)
             case IslandMode.Landed:
-                return this.landed
+                const homeHexalot = islandState.homeHexalot
+                if (!homeHexalot) {
+                    throw new Error("Landed with no home?")
+                }
+                return this.landed(homeHexalot, islandState.selectedHexalot)
             case IslandMode.PlanningJourney:
                 return this.planningJourney
             case IslandMode.PlanningDrive:
@@ -88,25 +93,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                     </ActionFrame>
                 )
         }
-    }
-
-    private visiting(homeHexalot?: Hexalot, selectedHexalot?: Hexalot): JSX.Element {
-        if (selectedHexalot) {
-            if (homeHexalot) {
-                if (homeHexalot.id === selectedHexalot.id) {
-                    return this.homeHexalot(selectedHexalot)
-                } else {
-                    return this.foreignHexalot(selectedHexalot)
-                }
-            } else {
-                return this.availableHexalot
-            }
-        }
-        return (
-            <ActionFrame>
-                <p>Select a hexalot</p>
-            </ActionFrame>
-        )
     }
 
     private fixingIsland(selectedSpot?: Spot): JSX.Element {
@@ -134,6 +120,35 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                 </ActionFrame>
             )
         }
+    }
+
+    private visiting(selectedHexalot?: Hexalot): JSX.Element {
+        if (selectedHexalot) {
+            if (selectedHexalot.centerSpot.available) {
+                return this.availableHexalot
+            } else {
+                return this.foreignHexalot(selectedHexalot)
+            }
+        }
+        return (
+            <ActionFrame>
+                <p>Select a hexalot</p>
+            </ActionFrame>
+        )
+    }
+
+    private landed(homeHexalot: Hexalot, selectedHexalot?: Hexalot): JSX.Element {
+        return (
+            <ActionFrame>
+                {this.buttons("Landed", [
+                    Command.PlanFreeDrive,
+                    Command.PlanJourney,
+                    Command.Evolve,
+                    Command.DriveFree,
+                    Command.Logout,
+                ])}
+            </ActionFrame>
+        )
     }
 
     private get planningJourney(): JSX.Element {
@@ -166,21 +181,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
             <ActionFrame>
                 {this.buttons("Foreign", [
                     Command.DriveFree,
-                    Command.Logout,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private homeHexalot(hexalot: Hexalot): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Landed", [
-                    Command.PlanJourney,
-                    Command.DriveJourney,
-                    Command.Evolve,
-                    Command.Logout,
-                    Command.RandomGenome,
+                    Command.ReturnHome,
                 ])}
             </ActionFrame>
         )
@@ -204,19 +205,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
             <ActionFrame>
                 {this.buttons("Evolving", [
                     Command.ReturnHome,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private get landed(): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Landed", [
-                    Command.PlanJourney,
-                    Command.Evolve,
-                    Command.DriveFree,
-                    Command.Logout,
                 ])}
             </ActionFrame>
         )

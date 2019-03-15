@@ -44,12 +44,12 @@ export class Spot {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
     }
 
-    public checkFree(firstHexalot: boolean): void {
-        this.free = firstHexalot && !!this.centerOfHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
+    public checkFree(singleHexalot: boolean): void {
+        this.free = singleHexalot && !!this.centerOfHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
     }
 
-    public checkAvailable(firstHexalot: boolean, islandLegal: boolean): void {
-        if (firstHexalot) {
+    public checkAvailable(singleHexalot: boolean, islandLegal: boolean): void {
+        if (singleHexalot) {
             this.available = !!this.centerOfHexalot && islandLegal
         } else {
             this.available = !this.centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
@@ -84,10 +84,7 @@ export class Spot {
         }
     }
 
-    public addSurfaceGeometry(
-        meshKey: MeshKey, index: number,
-        vertices: Vector3[], faces: Face3[],
-    ): void {
+    public addSurfaceGeometry(meshKey: MeshKey, index: number,vertices: Vector3[], faces: Face3[]): void {
         const sizeFactor = this.sizeFactor
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x * sizeFactor + this.center.x,

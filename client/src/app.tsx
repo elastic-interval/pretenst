@@ -25,7 +25,6 @@ interface IAppProps {
 }
 
 export interface IAppState {
-    island: Island
     orbitDistance: OrbitDistance
     islandState: IslandState
     width: number
@@ -65,12 +64,10 @@ class App extends React.Component<IAppProps, IAppState> {
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         const island = new Island("GalapagotchIsland", this.fabricKernel, this.props.storage)
-        const islandState = island.state
         this.state = {
             infoPanel: getInfoPanelMaximized(),
             orbitDistance: this.orbitDistanceSubject.getValue(),
-            island,
-            islandState,
+            islandState: island.state,
             width: window.innerWidth,
             height: window.innerHeight,
             left: window.screenLeft,
@@ -88,7 +85,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
                 const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
-                this.props.storage.loadJourney(homeHexalot, this.state.island)
+                this.props.storage.loadJourney(homeHexalot, islandState.island)
                 location.replace(`/#/${homeHexalot.id}`)
             } else {
                 location.replace("/#/")
@@ -150,14 +147,20 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     private clickSpot = (spot: Spot) => {
-        const island = this.state.island
         const islandState = this.state.islandState
         const homeHexalot = islandState.homeHexalot
         const hexalot = spot.centerOfHexalot
-        console.log("spot", islandState.islandMode)
         switch (islandState.islandMode) {
             case IslandMode.FixingIsland:
-                islandState.withSelectedSpot(spot).dispatch()
+                if (spot.available) {
+                    islandState.withNewHomeHexalotAt(spot).dispatch()
+                } else {
+                    if (hexalot) {
+                        islandState.withFreeHexalotsRemoved.withHomeHexalot(hexalot).withRefreshedStructure().dispatch()
+                    } else {
+                        islandState.withSelectedSpot(spot).withRefreshedStructure().dispatch()
+                    }
+                }
                 break
             case IslandMode.Visiting:
                 if (hexalot) {
@@ -168,8 +171,12 @@ class App extends React.Component<IAppProps, IAppState> {
                         islandState.withHomeHexalot(hexalot).dispatch()
                     }
                 } else if (spot.available) {
-                    const newHomeHexalot = island.createHexalot(spot)
-                    islandState.withRefreshedStructure().withHomeHexalot(newHomeHexalot).dispatch()
+                    islandState.withNewHomeHexalotAt(spot).dispatch()
+                }
+                break
+            case IslandMode.Landed:
+                if (spot.available) {
+                    islandState.withNewHomeHexalotAt(spot).dispatch()
                 }
                 break
             case IslandMode.PlanningJourney:
@@ -202,7 +209,6 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     private executeCommand = (command: Command) => {
-        const island = this.state.island
         const islandState = this.state.islandState
         const homeHexalot = islandState.homeHexalot
         const gotchi = islandState.gotchi
@@ -226,8 +232,11 @@ class App extends React.Component<IAppProps, IAppState> {
                 break
             case Command.ReturnHome:
                 if (homeHexalot) {
-                    islandState.withSelectedSpot(homeHexalot.centerSpot).dispatch()
+                    islandState.withSelectedSpot(homeHexalot.centerSpot).withMode(IslandMode.Landed).dispatch()
                 }
+                break
+            case Command.PlanFreeDrive:
+                islandState.withMode(IslandMode.PlanningDrive).dispatch()
                 break
             case Command.DriveFree:
                 if (homeHexalot) {
@@ -259,7 +268,6 @@ class App extends React.Component<IAppProps, IAppState> {
                 if (homeHexalot) {
                     homeHexalot.journey = undefined
                     this.props.storage.saveJourney(homeHexalot)
-                    // todo: this.setState({journey: undefined})
                 }
                 break
             case Command.RotateLeft:
@@ -300,19 +308,15 @@ class App extends React.Component<IAppProps, IAppState> {
                 }
                 break
             case Command.ClaimHexalot:
-                if (selectedSpot) {
-                    island.removeFreeHexalots()
-                    if (selectedSpot.available) {
-                        const hexalot = island.createHexalot(selectedSpot)
-                        if (hexalot) {
-                            hexalot.refreshFingerprint()
-                            this.props.storage.setGenome(hexalot, freshGenome().genomeData)
-                            islandState.withHomeHexalot(hexalot).dispatch()
-                            break
-                        }
+                if (!homeHexalot && selectedSpot && selectedSpot.available) {
+                    const withHomeHexalot = islandState.withNewHomeHexalotAt(selectedSpot)
+                    const hexalot = withHomeHexalot.homeHexalot
+                    if (hexalot) {
+                        this.props.storage.setGenome(hexalot, freshGenome().genomeData)
                     }
-                    islandState.withRefreshedStructure().dispatch()
-                    island.save()
+                    // withHomeHexalot.island.removeFreeHexalots()
+                    withHomeHexalot.island.save()
+                    withHomeHexalot.dispatch()
                 }
                 break
             case Command.PlanJourney:
