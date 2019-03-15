@@ -1,4 +1,4 @@
-import { ADJACENT, BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
+import { ADJACENT, BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./constants"
 import { IslandStore } from "./store"
 import { HexalotID } from "./types"
 
