@@ -7,23 +7,10 @@ import { Island } from "./island"
 import { PaymentHandler } from "./payment"
 import { IKeyValueStore, IslandStore } from "./store"
 
-function authenticateUser(
-    req: Request,
-    res: Response,
-    next: NextFunction,
-): void {
-    if (!req.body.pubkey) {
-        return res.status(400).end("Missing pubkey")
-    }
-    // Until we implement Hexalot transfers, skip authentication
-    // TODO: read & verify signature
-    next()
-}
-
 function validateRequest(req: Request, res: Response, next: NextFunction): void {
     const errors = validationResult(req)
     if (!errors.isEmpty()) {
-        res.sendStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+        res.status(HttpStatus.UNPROCESSABLE_ENTITY)
             .json({errors: errors.array()})
         return
     }
@@ -64,10 +51,13 @@ export class IslandCurator {
 
         islandRouter.use("/hexalot", hexalotRouter)
 
+        hexalotRouter.use("/:hexalot_id", [
+            param("hexalot_id").isHexadecimal().isLength({min: 32, max: 32}),
+            validateRequest,
+        ])
         hexalotRouter.post(
             "/:hexalot_id/claim",
             [
-                param("hexalot_id").isHexadecimal().isLength({min: 32, max: 32}),
                 body("x").isInt(),
                 body("y").isInt(),
                 body("genome").isString(),
@@ -79,23 +69,35 @@ export class IslandCurator {
                     y,
                     genome,
                 } = req.body
+                const lotID = req.params.hexalot_id
 
-                await this.island.loadPatternFromStore()
-                this.island.claimHexalot(
-                    {x, y},
-                    req.params.hexalot_id,
-                    genome,
-                )
+                // TODO: probably gonna wanna mutex this
+                await this.island.load()
+                try {
+                    await this.island.claimHexalot(
+                        {x, y},
+                        lotID,
+                        genome,
+                    )
+                } catch (err) {
+                    res.status(400).json({errors: [err]})
+                    return
+                }
+                await this.island.save()
+                res.sendStatus(HttpStatus.OK)
             })
 
-        hexalotRouter.post("/buy", authenticateUser, async (req, res) => {
-            res.sendStatus(HttpStatus.NOT_IMPLEMENTED)
-        })
-
-        hexalotRouter.get("/", async (req, res) => {
-            // TODO: return genome, owner, parent, nonce
-            res.sendStatus(HttpStatus.NOT_IMPLEMENTED)
-        })
+        hexalotRouter.get(
+            "/:hexalot_id",
+            async (req: Request, res: Response) => {
+                await this.island.load()
+                const lot = this.island.findHexalot(req.params.hexalot_id)
+                if (!lot) {
+                    res.sendStatus(HttpStatus.NOT_FOUND)
+                    return
+                }
+                res.json(lot)
+            })
 
         return islandRouter
     }
