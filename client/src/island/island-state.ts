@@ -115,7 +115,7 @@ export class IslandState {
         return copy
     }
 
-    public withRestructure(): IslandState {
+    public get withRestructure(): IslandState {
         const island = this.island
         const legalStructure = this.island.legalStructure
         const hexalots = island.hexalots
@@ -156,18 +156,14 @@ export class IslandState {
             return this
         }
         selectedSpot.surface = surface
-        const copy = this.copy
+        const copy = this.copy.withRestructure
         const nextFree = selectedSpot.adjacentSpots.find(s => s.free && s.surface === Surface.Unknown)
         if (nextFree) {
             return copy.withSelectedSpot(nextFree)
         }
         const hexalot = selectedSpot.memberOfHexalot.length === 1 ? selectedSpot.memberOfHexalot[0] : undefined
         if (hexalot) {
-            const selected = copy.withSelectedSpot(hexalot.centerSpot)
-            if (this.legalStructure && !hexalot.occupied) {
-                hexalot.genome = freshGenome()
-            }
-            return hexalot.occupied ? selected.withHomeHexalot(hexalot) : selected.withMode(IslandMode.Visiting)
+            return copy.withSelectedSpot(hexalot.centerSpot)
         }
         return copy
     }

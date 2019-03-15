@@ -32,7 +32,7 @@ export class Island {
         private storage: AppStorage,
     ) {
         this.apply(storage.getIsland(islandName))
-        this.state = new IslandState(this, storage, IslandMode.Visiting).withRestructure()
+        this.state = new IslandState(this, storage, IslandMode.Visiting).withRestructure
         const islandStateSubject = new BehaviorSubject<IslandState>(this.state)
         this.state.legalStructure = this.legalStructure
         this.state.subject = islandStateSubject
@@ -88,9 +88,9 @@ export class Island {
     }
 
     public removeFreeHexalots(): void {
-        const deadHexalots = this.hexalots.filter(hexalot => !hexalot.genome)
-        deadHexalots.forEach(deadHexalot => {
-            this.hexalots = this.hexalots.filter(hexalot => !equals(hexalot.coords, deadHexalot.coords))
+        const freeHexalots = this.hexalots.filter(hexalot => !hexalot.occupied)
+        this.hexalots = this.hexalots.filter(hexalot => hexalot.occupied)
+        freeHexalots.forEach(deadHexalot => {
             deadHexalot.destroy().forEach(deadSpot => {
                 this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords))
             })

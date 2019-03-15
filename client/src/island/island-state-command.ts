@@ -23,7 +23,7 @@ export class IslandStateCommand {
         switch (command) {
 
             case Command.Logout:
-                return this.state.withHomeHexalot().withRestructure()
+                return this.state.withHomeHexalot().withRestructure
 
             case Command.SaveGenome:
                 if (homeHexalot && gotchi) {
@@ -119,13 +119,13 @@ export class IslandStateCommand {
 
             case Command.MakeLand:
                 if (selectedSpot && selectedSpot.free) {
-                    return state.withSurface(Surface.Land).withRestructure()
+                    return state.withSurface(Surface.Land).withRestructure
                 }
                 return state
 
             case Command.MakeWater:
                 if (selectedSpot && selectedSpot.free) {
-                    return state.withSurface(Surface.Water).withRestructure()
+                    return state.withSurface(Surface.Water).withRestructure
                 }
                 return state
 
@@ -137,7 +137,7 @@ export class IslandStateCommand {
                 return state
 
             case Command.AbandonFix:
-                return state.withFreeHexalotsRemoved
+                return state.withFreeHexalotsRemoved.withRestructure
 
             case Command.ClaimHexalot:
                 if (!homeHexalot && selectedSpot && selectedSpot.available) {
@@ -147,7 +147,7 @@ export class IslandStateCommand {
                         this.state.storage.setGenome(hexalot, freshGenome().genomeData)
                     }
                     withNewHexalot.island.save()
-                    return withNewHexalot.withRestructure()
+                    return withNewHexalot.withRestructure
                 }
                 return state
 

@@ -17,12 +17,12 @@ export class IslandStateClick {
 
             case IslandMode.FixingIsland:
                 if (spot.available) {
-                    return this.state.withNewHexalotAt(spot).withMode(IslandMode.Visiting)
+                    return this.state.withNewHexalotAt(spot).withRestructure.withMode(IslandMode.Visiting)
                 } else {
                     if (hexalot) {
-                        return this.state.withFreeHexalotsRemoved.withHomeHexalot(hexalot).withRestructure()
+                        return this.state.withFreeHexalotsRemoved.withHomeHexalot(hexalot).withRestructure
                     } else {
-                        return this.state.withSelectedSpot(spot).withRestructure()
+                        return this.state.withSelectedSpot(spot).withRestructure
                     }
                 }
 
@@ -30,19 +30,19 @@ export class IslandStateClick {
                 if (hexalot) {
                     if (!hexalot.occupied) {
                         hexalot.genome = freshGenome()
-                        return this.state.withRestructure()
+                        return this.state.withRestructure
                     } else {
-                        return this.state.withHomeHexalot(hexalot).withRestructure()
+                        return this.state.withHomeHexalot(hexalot).withRestructure
                     }
                 }
                 if (spot.available) {
-                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure()
+                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure
                 }
                 return this.state
 
             case IslandMode.Landed:
                 if (spot.available) {
-                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure()
+                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure
                 }
                 return this.state
 
