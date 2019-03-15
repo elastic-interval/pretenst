@@ -5,6 +5,7 @@ import {BehaviorSubject} from "rxjs/BehaviorSubject"
 
 import {Hexalot} from "../island/hexalot"
 import {IslandMode, IslandState} from "../island/island-state"
+import {Spot} from "../island/spot"
 
 import {OrbitDistance} from "./orbit"
 
@@ -30,7 +31,7 @@ export enum Command {
 
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
-    islandStateSubject: BehaviorSubject<IslandState>
+    islandState: IslandState
     doCommand: (command: Command) => void
 }
 
@@ -38,22 +39,24 @@ interface IActionPanelState {
     islandState: IslandState
 }
 
-interface IActionPanelProps {
-    children: Array<JSX.Element | null> | JSX.Element
+interface IContainerProps {
+    children: Array<JSX.Element | null> | JSX.Element | string
 }
 
-const ActionFrame = (props: IActionPanelProps) => <div className="action-frame">{props.children}</div>
+const ActionFrame = (props: IContainerProps) => <div className="action-frame">{props.children}</div>
+
+const Message = (props: IContainerProps) => <p>{props.children}</p>
 
 export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPanelState> {
     private subs: Subscription[] = []
 
     constructor(props: IActionsPanelProps) {
         super(props)
-        this.state = {islandState: props.islandStateSubject.getValue()}
+        this.state = {islandState: props.islandState}
     }
 
     public componentDidMount(): void {
-        this.subs.push(this.props.islandStateSubject.subscribe(islandState => this.setState({islandState})))
+        this.subs.push(this.props.islandState.subject.subscribe(islandState => this.setState({islandState})))
     }
 
     public componentWillUnmount(): void {
@@ -62,46 +65,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
 
     public render(): JSX.Element {
         const islandState = this.state.islandState
-        const homeHexalot = islandState.homeHexalot
-        const selectedHexalot = islandState.selectedHexalot
         switch (islandState.islandMode) {
             case IslandMode.FixingIsland:
-                const spot = islandState.selectedSpot
-                if (spot) {
-                    if (spot.free) {
-                        return this.freeSpot
-                    } else if (spot.available) {
-                        return this.availableHexalot
-                    } else {
-                        return (
-                            <ActionFrame>
-                                <p>You can claim this hexalot when the island has been fixed.</p>
-                            </ActionFrame>
-                        )
-                    }
-                }
-                return (
-                    <ActionFrame>
-                        <p>Fixing island?</p>
-                    </ActionFrame>
-                )
+                return this.fixingIsland(islandState.selectedSpot)
             case IslandMode.Visiting:
-                if (selectedHexalot) {
-                    if (homeHexalot) {
-                        if (homeHexalot.id === selectedHexalot.id) {
-                            return this.homeHexalot(selectedHexalot)
-                        } else {
-                            return this.foreignHexalot(selectedHexalot)
-                        }
-                    } else {
-                        return this.availableHexalot
-                    }
-                }
-                return (
-                    <ActionFrame>
-                        <p>Select a hexalot</p>
-                    </ActionFrame>
-                )
+                return this.visiting(islandState.homeHexalot, islandState.selectedHexalot)
             case IslandMode.Landed:
                 return this.landed
             case IslandMode.PlanningJourney:
@@ -119,6 +87,52 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
                         <p>Strange state {islandState.islandMode}</p>
                     </ActionFrame>
                 )
+        }
+    }
+
+    private visiting(homeHexalot?: Hexalot, selectedHexalot?: Hexalot): JSX.Element {
+        if (selectedHexalot) {
+            if (homeHexalot) {
+                if (homeHexalot.id === selectedHexalot.id) {
+                    return this.homeHexalot(selectedHexalot)
+                } else {
+                    return this.foreignHexalot(selectedHexalot)
+                }
+            } else {
+                return this.availableHexalot
+            }
+        }
+        return (
+            <ActionFrame>
+                <p>Select a hexalot</p>
+            </ActionFrame>
+        )
+    }
+
+    private fixingIsland(selectedSpot?: Spot): JSX.Element {
+        if (selectedSpot) {
+            if (selectedSpot.free) {
+                return this.freeSpot
+            } else if (selectedSpot.available) {
+                return this.availableHexalot
+            } else {
+                return (
+                    <ActionFrame>
+                        <p>You can claim this hexalot when the island has been fixed.</p>
+                    </ActionFrame>
+                )
+            }
+        } else {
+            return (
+                <ActionFrame>
+                    <Message>
+                        The island is not yet correct according to the rules.
+                        Land must be either at the edge or have two land neighbors.
+                        Water must have at least one land neighbor.
+                        Click on the marked spots and you can choose to switch them to fix the island.
+                    </Message>
+                </ActionFrame>
+            )
         }
     }
 

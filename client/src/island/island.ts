@@ -1,4 +1,4 @@
-import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {BehaviorSubject} from "rxjs"
 import {Vector3} from "three"
 
 import {AppStorage} from "../app-storage"
@@ -24,15 +24,17 @@ function hexalotWithMaxNonce(hexalots: Hexalot[]): Hexalot | undefined {
 export class Island {
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
+    public state: IslandState
 
     constructor(
         public islandName: string,
-        public islandStateSubject: BehaviorSubject<IslandState>,
         private gotchiFactory: IGotchiFactory,
         private appStorage: AppStorage,
     ) {
         this.apply(appStorage.getIsland(islandName))
-        this.refreshStructure()
+        const islandStateSubject = new BehaviorSubject<IslandState>(this.stateAfterRefresh(new IslandState(this, IslandMode.Visiting)))
+        islandStateSubject.getValue().subject = islandStateSubject
+        this.state = islandStateSubject.getValue()
     }
 
     public get isLegal(): boolean {
@@ -47,7 +49,7 @@ export class Island {
         return this.hexalots.find(hexalot => hexalot.id === fingerprint)
     }
 
-    public refreshStructure(): void {
+    public stateAfterRefresh(islandState: IslandState): IslandState {
         this.spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot)
             spot.connected = spot.adjacentSpots.length < 6
@@ -56,27 +58,23 @@ export class Island {
         while (flowChanged) {
             flowChanged = false
             this.spots.forEach(spot => {
-                if (!spot.connected) {
-                    const connectedByAdjacent = spot.adjacentSpots
-                        .find(adj => (adj.surface === spot.surface) && adj.connected)
-                    if (connectedByAdjacent) {
-                        spot.connected = true
-                        flowChanged = true
-                    }
+                if (spot.connected) {
+                    return
+                }
+                const byAdjacent = spot.adjacentSpots.find(adj => (adj.surface === spot.surface) && adj.connected)
+                if (byAdjacent) {
+                    spot.connected = true
+                    flowChanged = true
                 }
             })
         }
+        this.spots.forEach(spot => spot.checkLegal())
+        const islandLegal = this.isLegal
+        this.spots.forEach(spot => spot.checkAvailable(firstHexalot, islandLegal))
         const firstHexalot = this.hexalots.length === 1
-        const firstHexalotOccupied = firstHexalot ? this.hexalots[0].occupied : false
-        this.spots.forEach(spot => spot.refresh(firstHexalot, firstHexalotOccupied))
-        if (firstHexalot && !this.isLegal) {
-            this.hexalots[0].centerSpot.available = false
-        }
+        this.spots.forEach(spot => spot.checkFree(firstHexalot))
         this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        if (this.islandStateSubject) { // refresh if there is a state
-            const islandMode = this.isLegal ? IslandMode.Visiting : IslandMode.FixingIsland
-            this.islandStateSubject.next(this.islandStateSubject.getValue().withMode(islandMode))
-        }
+        return islandState.withMode(islandLegal ? IslandMode.Visiting : IslandMode.FixingIsland)
     }
 
     public save(): void {

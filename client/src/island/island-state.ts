@@ -1,7 +1,10 @@
+import {BehaviorSubject} from "rxjs"
+
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
 
 import {Hexalot} from "./hexalot"
+import {Island} from "./island"
 import {Journey} from "./journey"
 import {Spot, Surface} from "./spot"
 
@@ -17,7 +20,10 @@ export enum IslandMode {
 }
 
 export class IslandState {
+    public subject: BehaviorSubject<IslandState>
+
     constructor(
+        readonly island: Island,
         public islandMode: IslandMode,
         public homeHexalot?: Hexalot,
         public selectedSpot?: Spot,
@@ -51,6 +57,10 @@ export class IslandState {
                 break
         }
         return copy
+    }
+
+    public withRefreshedStructure(): IslandState {
+        return this.island.stateAfterRefresh(this)
     }
 
     public withSelectedSpot(selectedSpot?: Spot): IslandState {
@@ -103,6 +113,11 @@ export class IslandState {
         return this.selectedHexalot.id === this.homeHexalot.id ? this.homeHexalot : undefined
     }
 
+    public dispatch(): void {
+        this.island.state = this
+        this.subject.next(this)
+    }
+
     // =============================================================
 
     private recycle(): void {
@@ -115,7 +130,8 @@ export class IslandState {
     }
 
     private get copy(): IslandState {
-        return new IslandState(
+        const ditto = new IslandState(
+            this.island,
             this.islandMode,
             this.homeHexalot,
             this.selectedSpot,
@@ -125,5 +141,7 @@ export class IslandState {
             this.evolution,
             this.journey,
         )
+        ditto.subject = this.subject
+        return ditto
     }
 }

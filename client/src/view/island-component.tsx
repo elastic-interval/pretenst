@@ -4,7 +4,6 @@ import {Subscription} from "rxjs/Subscription"
 import {Geometry, Matrix4, Mesh, Vector3} from "three"
 
 import {HUNG_ALTITUDE} from "../body/fabric"
-import {Island} from "../island/island"
 import {IslandMode, IslandState} from "../island/island-state"
 import {ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH} from "../island/shapes"
 
@@ -12,15 +11,11 @@ import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL, HANGER_MATERIAL, ISLAND_MATERI
 import {MeshKey} from "./spot-selector"
 
 export interface IslandComponentProps {
-    island: Island
+    islandState: IslandState
     setMesh: (key: string, ref: Mesh) => void
 }
 
-export interface IslandComponentState {
-    islandState: IslandState
-}
-
-export class IslandComponent extends React.Component<IslandComponentProps, IslandComponentState> {
+export class IslandComponent extends React.Component<IslandComponentProps, object> {
 
     private subscription?: Subscription
     private spots: Geometry
@@ -30,8 +25,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     constructor(props: IslandComponentProps) {
         super(props)
-        const islandState = props.island.islandStateSubject.getValue()
-        this.state = {islandState}
         this.spots = this.spotsGeometry
         this.seeds = this.seedsGeometry
         this.arrow = this.arrowGeometry
@@ -40,15 +33,15 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     public componentWillMount(): void {
         if (!this.subscription) {
-            this.subscription = this.props.island.islandStateSubject.subscribe((islandState: IslandState) => {
-                this.props.island.spots.forEach(spot => spot.faceNames = [])
-                this.setState((state: IslandComponentState) => {
+            this.subscription = this.props.islandState.subject.subscribe((islandState: IslandState) => {
+                islandState.island.spots.forEach(spot => spot.faceNames = [])
+                this.setState(() => {
                     this.disposeGeometry()
                     this.spots = this.spotsGeometry
                     this.seeds = this.seedsGeometry
                     this.arrow = this.arrowGeometry
                     this.hangers = this.hangersGeometry
-                    return {islandState}
+                    return {}
                 })
             })
         }
@@ -90,15 +83,15 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     }
 
     private get spotsGeometry(): Geometry {
-        const island = this.props.island
+        const islandState = this.props.islandState
         const geometry = new Geometry()
-        const selectedHexalot = this.state.islandState.selectedHexalot
+        const selectedHexalot = islandState.selectedHexalot
         if (selectedHexalot) {
             selectedHexalot.spots.forEach((spot, index) => {
                 spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces)
             })
         } else {
-            island.spots.forEach((spot, index) => {
+            islandState.island.spots.forEach((spot, index) => {
                 spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces)
             })
         }
@@ -107,7 +100,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
     }
 
     private get hangersGeometry(): Geometry {
-        const hexalots = this.props.island.hexalots
+        const hexalots = this.props.islandState.island.hexalots
         const geometry = new Geometry()
         hexalots.forEach(hexalot => hexalot.centerSpot.addHangerGeometry(geometry.vertices))
         geometry.computeBoundingSphere()
@@ -116,7 +109,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     private get seedsGeometry(): Geometry {
         const geometry = new Geometry()
-        this.props.island.hexalots.filter(hexalot => hexalot.occupied).forEach(hexalot => {
+        const hexalots = this.props.islandState.island.hexalots
+        hexalots.filter(hexalot => hexalot.occupied).forEach(hexalot => {
             hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
         })
         geometry.computeFaceNormals()
@@ -126,7 +120,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, Islan
 
     private get arrowGeometry(): Geometry {
         const geometry = new Geometry()
-        const islandState = this.state.islandState
+        const islandState = this.props.islandState
         const hexalot = islandState.selectedHexalot
         if (!hexalot || islandState.islandMode !== IslandMode.Visiting) {
             return geometry

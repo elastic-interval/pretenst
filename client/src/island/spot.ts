@@ -44,13 +44,19 @@ export class Spot {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
     }
 
-    public refresh(firstHexalot: boolean, firstHexalotOccupied: boolean): void {
+    public checkFree(firstHexalot: boolean): void {
         this.free = firstHexalot && !!this.centerOfHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
-        if (firstHexalot && !firstHexalotOccupied) {
-            this.available = !!this.centerOfHexalot
+    }
+
+    public checkAvailable(firstHexalot: boolean, islandLegal: boolean): void {
+        if (firstHexalot) {
+            this.available = !!this.centerOfHexalot && islandLegal
         } else {
             this.available = !this.centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
         }
+    }
+
+    public checkLegal(): void {
         let landCount = 0
         let waterCount = 0
         this.adjacentSpots.forEach(adjacent => {

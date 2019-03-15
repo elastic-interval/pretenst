@@ -44,22 +44,6 @@ function updateDimensions(): object {
     }
 }
 
-function selectSpot(spot?: Spot): object {
-    return (state: IAppState) => {
-        const islandStateSubject = state.island.islandStateSubject
-        const nextIslandState = islandStateSubject.getValue().withSelectedSpot(spot)
-        const journey = nextIslandState.selectedHexalot ? nextIslandState.selectedHexalot.journey : undefined
-        islandStateSubject.next(nextIslandState)
-        return {
-            actionPanel: true,
-            spot,
-            gotchi: undefined,
-            evolution: undefined,
-            journey,
-        }
-    }
-}
-
 function getInfoPanelMaximized(): boolean {
     return "true" === localStorage.getItem("InfoPanel.maximized")
 }
@@ -80,13 +64,13 @@ class App extends React.Component<IAppProps, IAppState> {
         this.physics = new Physics(props.storage)
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        const subject = new BehaviorSubject<IslandState>(new IslandState(IslandMode.Visiting))
-        const island = new Island("GalapagotchIsland", subject, this.fabricKernel, this.props.storage)
+        const island = new Island("GalapagotchIsland", this.fabricKernel, this.props.storage)
+        const islandState = island.state
         this.state = {
             infoPanel: getInfoPanelMaximized(),
             orbitDistance: this.orbitDistanceSubject.getValue(),
             island,
-            islandState: island.islandStateSubject.getValue(),
+            islandState,
             width: window.innerWidth,
             height: window.innerHeight,
             left: window.screenLeft,
@@ -98,7 +82,7 @@ class App extends React.Component<IAppProps, IAppState> {
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
         this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
-        this.subs.push(this.state.island.islandStateSubject.subscribe(islandState => {
+        this.subs.push(this.state.islandState.subject.subscribe(islandState => {
             const homeHexalot = islandState.homeHexalot
             if (homeHexalot) {
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
@@ -123,7 +107,7 @@ class App extends React.Component<IAppProps, IAppState> {
             <div className="everything">
                 <GotchiView
                     perspectiveCamera={this.perspectiveCamera}
-                    island={this.state.island}
+                    islandState={this.state.islandState}
                     width={this.state.width}
                     height={this.state.height}
                     left={this.state.left}
@@ -156,7 +140,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     <div className="actions-panel-inner">
                         <ActionsPanel
                             orbitDistance={this.orbitDistanceSubject}
-                            islandStateSubject={this.state.island.islandStateSubject}
+                            islandState={this.state.islandState}
                             doCommand={this.executeCommand}
                         />
                     </div>
@@ -166,21 +150,26 @@ class App extends React.Component<IAppProps, IAppState> {
     }
 
     private clickSpot = (spot: Spot) => {
-        const islandStateSubject = this.state.island.islandStateSubject
+        const island = this.state.island
         const islandState = this.state.islandState
         const homeHexalot = islandState.homeHexalot
         const hexalot = spot.centerOfHexalot
         console.log("spot", islandState.islandMode)
-        switch (this.state.islandState.islandMode) {
+        switch (islandState.islandMode) {
             case IslandMode.FixingIsland:
+                islandState.withSelectedSpot(spot).dispatch()
                 break
             case IslandMode.Visiting:
                 if (hexalot) {
                     if (!hexalot.occupied) {
                         hexalot.genome = freshGenome()
-                        this.state.island.refreshStructure()
+                        islandState.withRefreshedStructure().dispatch()
+                    } else {
+                        islandState.withHomeHexalot(hexalot).dispatch()
                     }
-                    islandStateSubject.next(islandState.withHomeHexalot(hexalot))
+                } else if (spot.available) {
+                    const newHomeHexalot = island.createHexalot(spot)
+                    islandState.withRefreshedStructure().withHomeHexalot(newHomeHexalot).dispatch()
                 }
                 break
             case IslandMode.PlanningJourney:
@@ -214,7 +203,6 @@ class App extends React.Component<IAppProps, IAppState> {
 
     private executeCommand = (command: Command) => {
         const island = this.state.island
-        const islandStateSubject = island.islandStateSubject
         const islandState = this.state.islandState
         const homeHexalot = islandState.homeHexalot
         const gotchi = islandState.gotchi
@@ -222,7 +210,7 @@ class App extends React.Component<IAppProps, IAppState> {
         const selectedSpot = islandState.selectedSpot
         switch (command) {
             case Command.Logout:
-                islandStateSubject.next(islandState.withHomeHexalot())
+                islandState.withHomeHexalot().dispatch()
                 break
             case Command.SaveGenome:
                 if (homeHexalot && gotchi) {
@@ -238,14 +226,14 @@ class App extends React.Component<IAppProps, IAppState> {
                 break
             case Command.ReturnHome:
                 if (homeHexalot) {
-                    this.setState(selectSpot(homeHexalot.centerSpot))
+                    islandState.withSelectedSpot(homeHexalot.centerSpot).dispatch()
                 }
                 break
             case Command.DriveFree:
                 if (homeHexalot) {
                     const newbornGotchi = homeHexalot.createNativeGotchi()
                     if (newbornGotchi) {
-                        islandStateSubject.next(islandState.withGotchi(newbornGotchi))
+                        islandState.withGotchi(newbornGotchi).dispatch()
                     }
                 }
                 break
@@ -253,7 +241,7 @@ class App extends React.Component<IAppProps, IAppState> {
                 if (homeHexalot) {
                     const newbornGotchi = homeHexalot.createNativeGotchi()
                     if (newbornGotchi) {
-                        islandStateSubject.next(islandState.withGotchi(newbornGotchi, journey))
+                        islandState.withGotchi(newbornGotchi, journey).dispatch()
                     }
                 }
                 break
@@ -263,7 +251,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     if (firstLeg) {
                         const saveGenome = (genomeData: IGenomeData) => this.props.storage.setGenome(homeHexalot, genomeData)
                         const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
-                        this.state.island.islandStateSubject.next(islandState.withEvolution(evolution))
+                        islandState.withEvolution(evolution).dispatch()
                     }
                 }
                 break
@@ -277,13 +265,13 @@ class App extends React.Component<IAppProps, IAppState> {
             case Command.RotateLeft:
                 if (homeHexalot) {
                     homeHexalot.rotate(true)
-                    islandStateSubject.next(islandState.withSelectedSpot(homeHexalot.centerSpot))
+                    islandState.withSelectedSpot(homeHexalot.centerSpot).dispatch() // todo: rotation
                 }
                 break
             case Command.RotateRight:
                 if (homeHexalot) {
                     homeHexalot.rotate(false)
-                    islandStateSubject.next(islandState.withSelectedSpot(homeHexalot.centerSpot))
+                    islandState.withSelectedSpot(homeHexalot.centerSpot).dispatch() // todo: rotation
                 }
                 break
             case Command.ComeHere:
@@ -303,14 +291,12 @@ class App extends React.Component<IAppProps, IAppState> {
                 break
             case Command.MakeLand:
                 if (selectedSpot && selectedSpot.free) {
-                    islandStateSubject.next(islandState.withSurface(Surface.Land))
-                    island.refreshStructure()
+                    islandState.withSurface(Surface.Land).withRefreshedStructure().dispatch()
                 }
                 break
             case Command.MakeWater:
                 if (selectedSpot && selectedSpot.free) {
-                    islandStateSubject.next(islandState.withSurface(Surface.Water))
-                    island.refreshStructure()
+                    islandState.withSurface(Surface.Water).withRefreshedStructure().dispatch()
                 }
                 break
             case Command.ClaimHexalot:
@@ -321,15 +307,16 @@ class App extends React.Component<IAppProps, IAppState> {
                         if (hexalot) {
                             hexalot.refreshFingerprint()
                             this.props.storage.setGenome(hexalot, freshGenome().genomeData)
-                            islandStateSubject.next(islandState.withHomeHexalot(hexalot))
+                            islandState.withHomeHexalot(hexalot).dispatch()
+                            break
                         }
                     }
-                    island.refreshStructure()
+                    islandState.withRefreshedStructure().dispatch()
                     island.save()
                 }
                 break
             case Command.PlanJourney:
-                islandStateSubject.next(islandState.withMode(IslandMode.PlanningJourney))
+                islandState.withMode(IslandMode.PlanningJourney).dispatch()
                 break
             default:
                 throw new Error("Unknown command!")
