@@ -132,7 +132,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
         }
         return (
             <ActionFrame>
-                <p>Select a hexalot</p>
+                <p>
+                    To login, select an existing hexalot.
+                    You can also claim one of the green available hexalots,
+                    but you will probably have to fix the island before you can claim it.
+                </p>
             </ActionFrame>
         )
     }

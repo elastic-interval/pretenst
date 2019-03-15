@@ -50,8 +50,8 @@ export class Spot {
 
     public checkAvailable(singleHexalot: boolean, islandLegal: boolean): void {
         const centerOfHexalot = this.centerOfHexalot
-        if (singleHexalot && !islandLegal) {
-            this.available = !!centerOfHexalot
+        if (singleHexalot && centerOfHexalot && !centerOfHexalot.occupied) {
+            this.available = islandLegal
         } else {
             this.available = !centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
         }

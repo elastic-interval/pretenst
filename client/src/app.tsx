@@ -153,7 +153,7 @@ class App extends React.Component<IAppProps, IAppState> {
         switch (islandState.islandMode) {
             case IslandMode.FixingIsland:
                 if (spot.available) {
-                    islandState.withNewHexalotAt(spot).dispatch()
+                    islandState.withNewHexalotAt(spot).withMode(IslandMode.Visiting).dispatch()
                 } else {
                     if (hexalot) {
                         islandState.withFreeHexalotsRemoved.withHomeHexalot(hexalot).withRefreshedStructure().dispatch()
@@ -171,12 +171,12 @@ class App extends React.Component<IAppProps, IAppState> {
                         islandState.withHomeHexalot(hexalot).withRefreshedStructure().dispatch()
                     }
                 } else if (spot.available) {
-                    islandState.withNewHexalotAt(spot).dispatch()
+                    islandState.withFreeHexalotsRemoved.withNewHexalotAt(spot).dispatch()
                 }
                 break
             case IslandMode.Landed:
                 if (spot.available) {
-                    islandState.withNewHexalotAt(spot).dispatch()
+                    islandState.withFreeHexalotsRemoved.withNewHexalotAt(spot).dispatch()
                 }
                 break
             case IslandMode.PlanningJourney:
@@ -315,7 +315,7 @@ class App extends React.Component<IAppProps, IAppState> {
                         this.props.storage.setGenome(hexalot, freshGenome().genomeData)
                     }
                     withNewHexalot.island.save()
-                    withNewHexalot.dispatch()
+                    withNewHexalot.withRefreshedStructure().dispatch()
                 }
                 break
             case Command.PlanJourney:

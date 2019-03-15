@@ -65,7 +65,7 @@ export class IslandState {
     }
 
     public withNewHexalotAt(spot: Spot): IslandState {
-        const copy = this.withFreeHexalotsRemoved
+        const copy = this.copy
         this.island.createHexalot(spot)
         return copy.withSelectedSpot(spot).withRefreshedStructure()
     }
@@ -83,11 +83,17 @@ export class IslandState {
     }
 
     public withSurface(surface: Surface): IslandState {
-        if (this.selectedSpot) {
-            this.selectedSpot.surface = surface
+        const selectedSpot = this.selectedSpot
+        if (selectedSpot) {
+            selectedSpot.surface = surface
             const copy = this.copy
             copy.selectedSurface = surface
-            return copy
+            const nextFree = selectedSpot.adjacentSpots.find(s => s.free && s.surface === Surface.Unknown)
+            if (nextFree) {
+                return copy.withSelectedSpot(nextFree)
+            } else {
+                return copy
+            }
         } else {
             return this
         }

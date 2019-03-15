@@ -88,7 +88,7 @@ export class Island {
             const firstHexalot = this.hexalots[0]
             const centerSpot = firstHexalot.centerSpot
             if (!firstHexalot.occupied) {
-                centerSpot.available = true
+                centerSpot.available = islandLegal
             }
             return islandState.homeHexalot ? islandState.withSelectedSpot(centerSpot) : islandState
         }
