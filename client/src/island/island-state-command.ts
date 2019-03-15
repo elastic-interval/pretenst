@@ -18,7 +18,7 @@ export class IslandStateCommand {
         const homeHexalot = state.homeHexalot
         const gotchi = state.gotchi
         const journey = state.journey
-        const selectedSpot = state.selectedSpot
+        const spot = state.selectedSpot
 
         switch (command) {
 
@@ -118,13 +118,13 @@ export class IslandStateCommand {
                 return state
 
             case Command.MakeLand:
-                if (selectedSpot && selectedSpot.free) {
+                if (spot && spot.free) {
                     return state.withSurface(Surface.Land).withRestructure
                 }
                 return state
 
             case Command.MakeWater:
-                if (selectedSpot && selectedSpot.free) {
+                if (spot && spot.free) {
                     return state.withSurface(Surface.Water).withRestructure
                 }
                 return state
@@ -140,14 +140,19 @@ export class IslandStateCommand {
                 return state.withFreeHexalotsRemoved.withRestructure
 
             case Command.ClaimHexalot:
-                if (!homeHexalot && selectedSpot && selectedSpot.available) {
-                    const withNewHexalot = this.state.withNewHexalotAt(selectedSpot)
-                    const hexalot = withNewHexalot.selectedHexalot
-                    if (hexalot) {
-                        this.state.storage.setGenome(hexalot, freshGenome().genomeData)
+                if (spot) {
+                    const freeHexalot = spot.centerOfHexalot && !spot.centerOfHexalot.occupied
+                    if (!homeHexalot && (spot.available || freeHexalot)) {
+                        const withNewHexalot = this.state.withNewHexalotAt(spot)
+                        const hexalot = withNewHexalot.selectedHexalot
+                        if (hexalot) {
+                            const genome = freshGenome()
+                            hexalot.genome = genome
+                            this.state.storage.setGenome(hexalot, genome.genomeData)
+                        }
+                        withNewHexalot.island.save()
+                        return withNewHexalot.withRestructure
                     }
-                    withNewHexalot.island.save()
-                    return withNewHexalot.withRestructure
                 }
                 return state
 

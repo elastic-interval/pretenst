@@ -122,9 +122,8 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         if (selectedHexalot) {
             if (selectedHexalot.centerSpot.available) {
                 return this.availableHexalot
-            } else {
-                return this.foreignHexalot(selectedHexalot)
             }
+            return selectedHexalot.occupied ? this.foreignHexalot(selectedHexalot) : this.availableHexalot
         }
         return (
             <ActionFrame>
