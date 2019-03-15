@@ -58,7 +58,7 @@ export class AppStorage {
         }
     }
 
-    public loadJourney(hexalot: Hexalot, island: Island): void {
+    public loadJourney(hexalot: Hexalot, island: Island): Journey | undefined {
         const journeyString = this.storage.getItem(journeyKey(hexalot))
         if (journeyString) {
             const journey = new Journey([hexalot])
@@ -73,6 +73,7 @@ export class AppStorage {
         } else {
             hexalot.journey = undefined
         }
+        return hexalot.journey
     }
 
     public setRotation(hexalot: Hexalot, rotation: number): void {

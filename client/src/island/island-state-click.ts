@@ -36,13 +36,13 @@ export class IslandStateClick {
                     }
                 }
                 if (spot.available) {
-                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot)
+                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure()
                 }
                 return this.state
 
             case IslandMode.Landed:
                 if (spot.available) {
-                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot)
+                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure()
                 }
                 return this.state
 

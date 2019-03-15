@@ -32,9 +32,9 @@ export class Island {
         private storage: AppStorage,
     ) {
         this.apply(storage.getIsland(islandName))
-        this.state = new IslandState(this, storage, IslandMode.Visiting)
+        this.state = new IslandState(this, storage, IslandMode.Visiting).withRestructure()
         const islandStateSubject = new BehaviorSubject<IslandState>(this.state)
-        this.state.legal = this.refreshStructureLegal()
+        this.state.legalStructure = this.legalStructure
         this.state.subject = islandStateSubject
     }
 
@@ -46,7 +46,7 @@ export class Island {
         return this.hexalots.find(hexalot => hexalot.id === fingerprint)
     }
 
-    public refreshStructureLegal(): boolean {
+    public get legalStructure(): boolean {
         const spots = this.spots
         spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot)
@@ -71,7 +71,7 @@ export class Island {
     }
 
     public save(): void {
-        if (this.state.legal) {
+        if (this.legalStructure) {
             this.storage.setIsland(this.islandName, this.pattern)
             console.log(`Saved ${this.islandName}`)
         } else {
@@ -104,7 +104,7 @@ export class Island {
     }
 
     public get pattern(): IslandPattern {
-        if (!this.state.legal) {
+        if (!this.legalStructure) {
             throw new Error("Saving illegal island")
         }
         this.spots.sort(sortSpotsOnCoord)

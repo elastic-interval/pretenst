@@ -48,12 +48,13 @@ export class Spot {
         this.free = singleHexalot && !!this.centerOfHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
     }
 
-    public checkAvailable(singleHexalot: boolean, islandLegal: boolean): void {
+    public checkAvailable(singleHexalot: boolean, legalStructure: boolean): void {
+        this.available = true
         const centerOfHexalot = this.centerOfHexalot
         if (singleHexalot && centerOfHexalot && !centerOfHexalot.occupied) {
             this.available = true
         } else {
-            this.available = islandLegal && !centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
+            this.available = legalStructure && !centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => hexalot.occupied)
         }
     }
 
