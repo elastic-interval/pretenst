@@ -8,17 +8,17 @@ export class PaymentHandler {
 
     constructor(
         readonly lnRpc: LnRpc,
-        readonly islandName: string,
     ) {
         this.invoiceSettledEvents = new EventEmitter()
         this.setupSubscriptions()
     }
 
     public async createInvoice(
+        islandName: string,
         lotID: HexalotID,
         value: string,
     ): Promise<{ payReq: string, paid: Promise<Invoice> }> {
-        const memo = `galapagotchi.run/island/${this.islandName}/hexalot/${lotID}`
+        const memo = `galapagotchi.run/island/${islandName}/hexalot/${lotID}`
         const response = await this.lnRpc.addInvoice({
             memo,
             value,

@@ -1,5 +1,5 @@
 import { ADJACENT, BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./constants"
-import { IslandStore } from "./store"
+import { IKeyValueStore, IslandStore } from "./store"
 import { HexalotID } from "./types"
 
 enum Surface {
@@ -42,8 +42,8 @@ const coordsEquals = (a: ICoords, b: ICoords): boolean => a.x === b.x && a.y ===
 const coordSort = (a: ICoords, b: ICoords): number =>
     a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0
 
-function coordsToString(coords: ICoords): string {
-    return `${coords.x},${coords.y}`
+function coordsToString({x,y}: ICoords): string {
+    return `${x},${y}`
 }
 
 const plus = (a: ICoords, b: ICoords): ICoords => {
@@ -70,7 +70,7 @@ function hexalotIDToSpots(center: ICoords, hexalotID: HexalotID): ISpot[] {
     const int: bigint = BigInt(`0x${hexalotID}`)
     const spots: ISpot[] = []
     for (let i = 0n; i < 127n; i++) {
-        const surface = (int & (1n << i)) !== 0n ?
+        const surface = (int & (1n << (126n - i))) !== 0n ?
             Surface.Land :
             Surface.Water
         spots.push({
@@ -84,7 +84,7 @@ function hexalotIDToSpots(center: ICoords, hexalotID: HexalotID): ISpot[] {
 const ringIndex = (coords: ICoords, origin: ICoords): number => {
     const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
     for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
+        if (coordsEquals(ringCoords, ADJACENT[index])) {
             return index
         }
     }
@@ -96,6 +96,7 @@ function generateOctalTreePattern(
     steps: number[],
     visited: { [coords: string]: boolean },
 ): number[] {
+    // TODO: populate childHexalots
     const remainingChildren = root.childHexalots!
         .filter(child => !visited[coordsToString(child.coords)])
         .map(child => {
@@ -156,17 +157,28 @@ function refreshSpot(spot: ISpot): ISpot {
 }
 
 export class Island {
-    public spots: ISpot[] = []
-    public hexalots: IHexalot[] = []
-
-    constructor(
-        readonly islandName: string,
-        readonly store: IslandStore,
-    ) {
-    }
 
     public get isLegal(): boolean {
         return !this.spots.find(spot => !spot) // TODO
+    }
+
+    public get pattern(): IslandPattern {
+        if (!this.isLegal) {
+            throw new Error("Saving illegal island")
+        }
+        this.spots.sort(sortSpotsOnCoord)
+        return {
+            hexalots: hexalotTreeString(this.hexalots),
+            spots: spotsToHexalotID(this.spots),
+        }
+    }
+
+    public spots: ISpot[] = []
+    public hexalots: IHexalot[] = []
+    private readonly store: IslandStore
+
+    constructor(db: IKeyValueStore, islandName: string) {
+        this.store = new IslandStore(db, islandName)
     }
 
     public async load(): Promise<void> {
@@ -209,7 +221,7 @@ export class Island {
         const spots = hexalotIDToSpots(lot.coords, lotID)
         const illegalSpot = spots.find((spot: ISpot) => {
             const existing = this.getSpot(spot.coords)
-            if (!existing) {
+            if (!existing || existing.surface === Surface.Unknown) {
                 return false
             }
             return existing.surface !== spot.surface
@@ -217,8 +229,6 @@ export class Island {
         if (illegalSpot) {
             throw new Error(`illegal spot: ${JSON.stringify(illegalSpot)}`)
         }
-
-        this.refreshStructure()
 
         await this.store.setGenome(lotID, genome)
         await this.save()
@@ -248,17 +258,6 @@ export class Island {
             })
         }
         this.spots.forEach(refreshSpot)
-    }
-
-    public get pattern(): IslandPattern {
-        if (!this.isLegal) {
-            throw new Error("Saving illegal island")
-        }
-        this.spots.sort(sortSpotsOnCoord)
-        return {
-            hexalots: hexalotTreeString(this.hexalots),
-            spots: spotsToHexalotID(this.spots),
-        }
     }
 
     // ================================================================================================

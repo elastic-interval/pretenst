@@ -58,7 +58,7 @@ export class IslandStore {
     }
 
     public async getPattern(): Promise<IslandPattern | null> {
-        const pattern = await this.get(`/island/${this.islandName}/pattern`)
+        const pattern = await this.get(`pattern`)
         if (!pattern) {
             return null
         }
@@ -66,15 +66,15 @@ export class IslandStore {
     }
 
     public async setPattern(pattern: IslandPattern): Promise<void> {
-        return this.set(`/island/${this.islandName}/pattern`, pattern)
+        return this.set(`pattern`, pattern)
     }
 
     public async getGenome(id: HexalotID): Promise<string | null> {
-        return this.get(`/hexalot/${id}/genome`)
+        return this.get(`hexalot/${id}/genome`)
     }
 
     public async setGenome(id: HexalotID, genome: string): Promise<void> {
-        return this.set(`/hexalot/${id}/genome`, genome)
+        return this.set(`hexalot/${id}/genome`, genome)
     }
 
     private async set(key: string, value: any): Promise<void> {

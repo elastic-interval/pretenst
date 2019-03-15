@@ -6,7 +6,7 @@ import morgan from "morgan"
 import { homedir } from "os"
 import { join } from "path"
 
-import { IslandCurator } from "./src/curator"
+import { createRouter } from "./src/sharedWorld"
 import { LevelDBFlashStore } from "./src/store"
 
 
@@ -43,8 +43,7 @@ async function run(listenPort: number): Promise<void> {
 
     app.get("/test", (req, res) => res.end("OK"))
 
-    app.use("/island/genesis",
-        new IslandCurator("genesis", db, lnRpc).createRouter())
+    app.use("/island", createRouter(lnRpc, db))
 
     return new Promise<void>(
         resolve => app.listen(listenPort, resolve),

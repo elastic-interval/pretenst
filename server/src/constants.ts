@@ -1,5 +1,9 @@
 export const HEXALOT_PURCHASE_PRICE_SATOSHIS = "10"
 
+export const ENABLED_ISLANDS = [
+    "alpha",
+]
+
 
 export const STOP_STEP = 0
 export const BRANCH_STEP = 7
