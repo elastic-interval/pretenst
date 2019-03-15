@@ -64,10 +64,10 @@ export class IslandState {
         return copy
     }
 
-    public withNewHomeHexalotAt(spot: Spot): IslandState {
+    public withNewHexalotAt(spot: Spot): IslandState {
         const copy = this.withFreeHexalotsRemoved
-        const hexalot = this.island.createHexalot(spot)
-        return copy.withHomeHexalot(hexalot).withRefreshedStructure()
+        this.island.createHexalot(spot)
+        return copy.withSelectedSpot(spot).withRefreshedStructure()
     }
 
     public withRefreshedStructure(): IslandState {

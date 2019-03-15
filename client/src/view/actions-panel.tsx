@@ -181,7 +181,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionPan
             <ActionFrame>
                 {this.buttons("Foreign", [
                     Command.DriveFree,
-                    Command.ReturnHome,
                 ])}
             </ActionFrame>
         )

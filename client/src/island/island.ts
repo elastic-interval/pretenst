@@ -2,6 +2,7 @@ import {BehaviorSubject} from "rxjs"
 import {Vector3} from "three"
 
 import {AppStorage} from "../app-storage"
+import {freshGenome} from "../genetics/genome"
 import {IGotchiFactory} from "../gotchi/gotchi"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
@@ -71,23 +72,33 @@ export class Island {
         }
         spots.forEach(spot => spot.checkLegal())
         const islandLegal = this.isLegal
-        spots.forEach(spot => spot.checkAvailable(singleHexalot, islandLegal))
         const singleHexalot = this.hexalots.length === 1
+        const homeHexalot = islandState.homeHexalot
+        if (homeHexalot) {
+            spots.forEach(spot => spot.available = false)
+        } else {
+            spots.forEach(spot => spot.checkAvailable(singleHexalot, islandLegal))
+        }
         spots.forEach(spot => spot.checkFree(singleHexalot))
         this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        if (islandLegal) {
-            if (singleHexalot) {
-                const firstHexalot = this.hexalots[0]
-                const centerSpot = firstHexalot.centerSpot
-                if (!firstHexalot.occupied) {
-                    centerSpot.available = true
-                }
-                return islandState.withMode(IslandMode.Visiting).withSelectedSpot(centerSpot)
-            } else {
-                return islandState.withMode(IslandMode.Visiting)
-            }
-        } else {
+        if (!islandLegal) {
             return islandState.withMode(IslandMode.FixingIsland)
+        }
+        if (singleHexalot) {
+            const firstHexalot = this.hexalots[0]
+            const centerSpot = firstHexalot.centerSpot
+            if (!firstHexalot.occupied) {
+                centerSpot.available = true
+            }
+            return islandState.homeHexalot ? islandState.withSelectedSpot(centerSpot) : islandState
+        }
+        if (homeHexalot) {
+            if (!homeHexalot.occupied) {
+                this.appStorage.setGenome(homeHexalot, freshGenome().genomeData)
+            }
+            return islandState.withSelectedSpot(homeHexalot.centerSpot).withHomeHexalot(homeHexalot)
+        } else {
+            return islandState.withMode(IslandMode.Visiting)
         }
     }
 

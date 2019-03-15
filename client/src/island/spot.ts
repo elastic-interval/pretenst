@@ -49,10 +49,11 @@ export class Spot {
     }
 
     public checkAvailable(singleHexalot: boolean, islandLegal: boolean): void {
-        if (singleHexalot) {
-            this.available = !!this.centerOfHexalot && islandLegal
+        const centerOfHexalot = this.centerOfHexalot
+        if (singleHexalot && !islandLegal) {
+            this.available = !!centerOfHexalot
         } else {
-            this.available = !this.centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
+            this.available = !centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => !!hexalot.genome)
         }
     }
 
@@ -84,7 +85,7 @@ export class Spot {
         }
     }
 
-    public addSurfaceGeometry(meshKey: MeshKey, index: number,vertices: Vector3[], faces: Face3[]): void {
+    public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[]): void {
         const sizeFactor = this.sizeFactor
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x * sizeFactor + this.center.x,

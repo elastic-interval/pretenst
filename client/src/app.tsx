@@ -153,7 +153,7 @@ class App extends React.Component<IAppProps, IAppState> {
         switch (islandState.islandMode) {
             case IslandMode.FixingIsland:
                 if (spot.available) {
-                    islandState.withNewHomeHexalotAt(spot).dispatch()
+                    islandState.withNewHexalotAt(spot).dispatch()
                 } else {
                     if (hexalot) {
                         islandState.withFreeHexalotsRemoved.withHomeHexalot(hexalot).withRefreshedStructure().dispatch()
@@ -168,15 +168,15 @@ class App extends React.Component<IAppProps, IAppState> {
                         hexalot.genome = freshGenome()
                         islandState.withRefreshedStructure().dispatch()
                     } else {
-                        islandState.withHomeHexalot(hexalot).dispatch()
+                        islandState.withHomeHexalot(hexalot).withRefreshedStructure().dispatch()
                     }
                 } else if (spot.available) {
-                    islandState.withNewHomeHexalotAt(spot).dispatch()
+                    islandState.withNewHexalotAt(spot).dispatch()
                 }
                 break
             case IslandMode.Landed:
                 if (spot.available) {
-                    islandState.withNewHomeHexalotAt(spot).dispatch()
+                    islandState.withNewHexalotAt(spot).dispatch()
                 }
                 break
             case IslandMode.PlanningJourney:
@@ -216,7 +216,7 @@ class App extends React.Component<IAppProps, IAppState> {
         const selectedSpot = islandState.selectedSpot
         switch (command) {
             case Command.Logout:
-                islandState.withHomeHexalot().dispatch()
+                islandState.withHomeHexalot().withRefreshedStructure().dispatch()
                 break
             case Command.SaveGenome:
                 if (homeHexalot && gotchi) {
@@ -309,14 +309,13 @@ class App extends React.Component<IAppProps, IAppState> {
                 break
             case Command.ClaimHexalot:
                 if (!homeHexalot && selectedSpot && selectedSpot.available) {
-                    const withHomeHexalot = islandState.withNewHomeHexalotAt(selectedSpot)
-                    const hexalot = withHomeHexalot.homeHexalot
+                    const withNewHexalot = islandState.withNewHexalotAt(selectedSpot)
+                    const hexalot = withNewHexalot.selectedHexalot
                     if (hexalot) {
                         this.props.storage.setGenome(hexalot, freshGenome().genomeData)
                     }
-                    // withHomeHexalot.island.removeFreeHexalots()
-                    withHomeHexalot.island.save()
-                    withHomeHexalot.dispatch()
+                    withNewHexalot.island.save()
+                    withNewHexalot.dispatch()
                 }
                 break
             case Command.PlanJourney:
