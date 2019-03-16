@@ -1,5 +1,3 @@
-import {freshGenome} from "../genetics/genome"
-
 import {IslandMode, IslandState} from "./island-state"
 import {Journey} from "./journey"
 import {Spot} from "./spot"
@@ -11,36 +9,22 @@ export class IslandStateClick {
 
     public stateAfterClick(spot: Spot): IslandState {
 
+        console.log(`Hexalots=${this.state.island.hexalots.length} Spots=${this.state.island.spots.length}`)
+
         const hexalot = spot.centerOfHexalot
 
         switch (this.state.islandMode) {
 
 
             case IslandMode.FixingIsland: // ===========================================================================
-                if (spot.canBeClaimed) {
-                    return this.state.withSelectedSpot(spot).withRestructure
-                } else {
-                    if (hexalot) {
-                        return this.state.withFreeHexalotsRemoved.withHomeHexalot(hexalot).withRestructure
-                    } else {
-                        return this.state.withSelectedSpot(spot).withRestructure
-                    }
-                }
+                return this.state.withSelectedSpot(spot)
 
 
             case IslandMode.Visiting: // ===============================================================================
-                if (hexalot) {
-                    if (!hexalot.occupied) {
-                        hexalot.genome = freshGenome()
-                        return this.state.withRestructure
-                    } else {
-                        return this.state.withHomeHexalot(hexalot).withRestructure
-                    }
-                }
-                if (spot.canBeClaimed) {
+                if (spot.canBeClaimed && this.state.islandIsLegal) {
                     return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure
                 }
-                return this.state
+                return this.state.withSelectedSpot(spot)
 
 
             case IslandMode.Landed: // =================================================================================

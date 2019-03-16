@@ -163,6 +163,10 @@ export class IslandState {
         if (anyFree) {
             return copy.withSelectedSpot(anyFree)
         }
+        const unoccupiedHexalot = this.island.hexalots.find(h => !h.occupied)
+        if (unoccupiedHexalot) {
+            return copy.withSelectedSpot(unoccupiedHexalot.centerSpot)
+        }
         return copy
     }
 
@@ -184,6 +188,11 @@ export class IslandState {
     }
 
     public dispatch(): void {
+        const legal = this.islandIsLegal
+        const home = !!this.homeHexalot
+        const spot = this.selectedSpot ? JSON.stringify(this.selectedSpot.coords) : "-"
+        const lot = this.selectedHexalot ? JSON.stringify(this.selectedHexalot.coords) : "-"
+        console.log(`${this.islandMode}: legal=${legal} home=${home} spot=${spot} lot=${lot}`)
         this.island.state = this
         this.subject.next(this)
     }

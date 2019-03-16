@@ -138,10 +138,14 @@ export class Spot {
     }
 
     public get canBeClaimed(): boolean {
-        const freeHexalot = this.centerOfHexalot ? !this.centerOfHexalot.occupied : false
-        const landSurface = this.surface === Surface.Land
-        const occupiedAdjacent = this.adjacentHexalots.some(hexalot => hexalot.occupied)
-        return landSurface && (occupiedAdjacent || freeHexalot)
+        if (this.surface !== Surface.Land) {
+            return false
+        }
+        const centerOfHexalot = this.centerOfHexalot
+        if (centerOfHexalot) {
+            return !centerOfHexalot.occupied
+        }
+        return this.adjacentHexalots.some(hexalot => hexalot.occupied)
     }
 
     private get sizeFactor(): number {

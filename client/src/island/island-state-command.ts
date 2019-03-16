@@ -155,7 +155,7 @@ export class IslandStateCommand {
 
 
             case Command.AbandonFix: // ================================================================================
-                return state.withFreeHexalotsRemoved.withRestructure
+                return state.withSelectedSpot().withFreeHexalotsRemoved.withMode(IslandMode.Visiting).withRestructure
 
 
             case Command.ClaimHexalot: // ==============================================================================
