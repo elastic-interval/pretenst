@@ -45,18 +45,13 @@ export class Spot {
     }
 
     public checkFree(singleHexalot: boolean): void {
-        this.free = singleHexalot && !!this.centerOfHexalot || !this.memberOfHexalot.find(hexalot => !!hexalot.genome)
+        this.free = singleHexalot && !!this.centerOfHexalot || !this.memberOfHexalot.find(hexalot => hexalot.occupied)
     }
 
-    public checkAvailable(singleHexalot: boolean, legalStructure: boolean): void {
-        this.available = true
-        const centerOfHexalot = this.centerOfHexalot
-        const freeHexalot = centerOfHexalot ? !centerOfHexalot.occupied : undefined
-        if (singleHexalot && freeHexalot) {
-            this.available = true
-        } else {
-            this.available = legalStructure && !centerOfHexalot && this.surface === Surface.Land && this.adjacentHexalots.some(hexalot => hexalot.occupied)
-        }
+    public checkAvailable(): void {
+        const land = this.surface === Surface.Land
+        const occupiedAdjacent = this.adjacentHexalots.some(hexalot => hexalot.occupied)
+        this.available = land && occupiedAdjacent
     }
 
     public checkLegal(): void {

@@ -125,7 +125,7 @@ export class IslandState {
         if (homeHexalot) {
             spots.forEach(spot => spot.available = false)
         } else {
-            spots.forEach(spot => spot.checkAvailable(singleHexalot, legalStructure))
+            spots.forEach(spot => spot.checkAvailable())
         }
         spots.forEach(spot => spot.checkFree(singleHexalot))
         hexalots.forEach(hexalot => hexalot.refreshFingerprint())
@@ -136,9 +136,6 @@ export class IslandState {
         if (singleHexalot) {
             const firstHexalot = hexalots[0]
             const centerSpot = firstHexalot.centerSpot
-            if (!firstHexalot.occupied) {
-                centerSpot.available = legalStructure
-            }
             return copy.homeHexalot ? this.withSelectedSpot(centerSpot) : this
         }
         if (homeHexalot) {
