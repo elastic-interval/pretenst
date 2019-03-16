@@ -54,7 +54,7 @@ export class IslandState {
         readonly island: Island,
         readonly storage: AppStorage,
         public islandMode: IslandMode,
-        public legalStructure: boolean = false,
+        public islandIsLegal: boolean = false,
         public homeHexalot?: Hexalot,
         public selectedSpot?: Spot,
         public selectedHexalot?: Hexalot,
@@ -84,6 +84,12 @@ export class IslandState {
         } else {
             copy.selectedHexalot = undefined
         }
+        return copy
+    }
+
+    public withislandIsLegal(islandIsLegal: boolean): IslandState {
+        const copy = this.copy
+        copy.islandIsLegal = islandIsLegal
         return copy
     }
 
@@ -117,20 +123,15 @@ export class IslandState {
 
     public get withRestructure(): IslandState {
         const island = this.island
-        const legalStructure = this.island.legalStructure
+        island.recalculate()
         const hexalots = island.hexalots
         const spots = island.spots
         const singleHexalot = hexalots.length === 1
         const homeHexalot = this.homeHexalot
-        if (homeHexalot || !legalStructure || hexalots.some(h => !h.occupied)) {
-            spots.forEach(spot => spot.available = false)
-        } else {
-            spots.forEach(spot => spot.checkAvailable())
-        }
         spots.forEach(spot => spot.checkFree(singleHexalot))
         hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        const copy = this.withLegal(legalStructure)
-        if (!legalStructure) {
+        const copy = this.withislandIsLegal(island.islandIsLegal)
+        if (!copy.islandIsLegal) {
             return copy.withMode(IslandMode.FixingIsland)
         }
         if (singleHexalot) {
@@ -182,14 +183,9 @@ export class IslandState {
         return copy
     }
 
-    public withLegal(legal: boolean): IslandState {
-        const copy = this.copy
-        copy.legalStructure = legal
-        return copy
-    }
-
     public dispatch(): void {
         this.island.state = this
+        console.log("dispatch", this.islandMode, this.islandIsLegal)
         this.subject.next(this)
     }
 
@@ -209,7 +205,7 @@ export class IslandState {
             this.island,
             this.storage,
             this.islandMode,
-            this.legalStructure,
+            this.islandIsLegal,
             this.homeHexalot,
             this.selectedSpot,
             this.selectedHexalot,

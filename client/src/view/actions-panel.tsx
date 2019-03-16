@@ -4,9 +4,7 @@ import {Subscription} from "rxjs"
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
 import {Vector3} from "three"
 
-import {Hexalot} from "../island/hexalot"
 import {Command, IslandMode, IslandState} from "../island/island-state"
-import {Spot} from "../island/spot"
 
 import {OrbitDistance} from "./orbit"
 
@@ -42,196 +40,173 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     public render(): JSX.Element {
         const islandState = this.props.islandState
         switch (islandState.islandMode) {
-            case IslandMode.FixingIsland:
-                return this.FixingIsland(islandState.selectedSpot)
-            case IslandMode.Visiting:
-                return this.Visiting(islandState.selectedHexalot)
-            case IslandMode.Landed:
-                const homeHexalot = islandState.homeHexalot
-                if (!homeHexalot) {
-                    throw new Error("Landed with no home?")
-                }
-                return this.Landed(homeHexalot, islandState.selectedHexalot)
-            case IslandMode.PlanningJourney:
-                return this.PlanningJourney
-            case IslandMode.PlanningDrive:
-                return this.PlanningDrive
-            case IslandMode.Evolving:
-                return this.Evolving
-            case IslandMode.DrivingFree:
-            case IslandMode.DrivingJourney:
-                return this.DrivingGotchi
-            default:
-                return (
-                    <ActionFrame>
-                        <p>Strange state {islandState.islandMode}</p>
-                    </ActionFrame>
-                )
-        }
-    }
 
-    private FixingIsland(spot?: Spot): JSX.Element {
-        if (spot) {
-            if (spot.centerOfHexalot && !spot.centerOfHexalot.occupied && this.props.islandState.legalStructure) {
-                return this.availableHexalot
-            }
-            if (spot.free) {
-                return this.freeSpot
-            }
-            if (spot.available) {
-                return this.availableHexalot
-            } else {
-                const hexalot = spot.centerOfHexalot
-                if (hexalot) {
-                    if (hexalot.occupied) {
+
+            case IslandMode.FixingIsland: // ===========================================================================
+                const spot = islandState.selectedSpot
+                if (spot) {
+                    if (spot.canBeClaimed) {
                         return (
                             <ActionFrame>
-                                <p>Occupied</p>
+                                {this.buttons("Available", [
+                                    Command.ClaimHexalot,
+                                ])}
                             </ActionFrame>
                         )
-                    } else {
+                    }
+                    if (spot.free) {
+                        return (
+                            <ActionFrame>
+                                {this.buttons("Free", [
+                                    Command.MakeLand,
+                                    Command.MakeWater,
+                                ])}
+                            </ActionFrame>
+                        )
+                    }
+                    if (spot.centerOfHexalot && !spot.centerOfHexalot.occupied) {
                         return (
                             <ActionFrame>
                                 <p>You can claim this hexalot when the island has been fixed.</p>
-                                {this.buttons("Repair", [
+                                {this.buttons("Fixing..", [
                                     Command.JumpToFix,
                                     Command.AbandonFix,
                                 ])}
                             </ActionFrame>
                         )
                     }
-                } else {
+                }
+                return (
+                    <ActionFrame>
+                        <Message>
+                            The island is not yet correct according to the rules.
+                            Land must be either at the edge or have two land neighbors.
+                            Water must have at least one land neighbor.
+                            Click on the marked spots and you can choose to switch them to fix the island.
+                        </Message>
+                    </ActionFrame>
+                )
+
+
+            case IslandMode.Visiting: // ===============================================================================
+                const hexalot = islandState.selectedHexalot
+                if (hexalot) {
+                    if (hexalot.centerSpot.canBeClaimed) {
+                        return (
+                            <ActionFrame>
+                                {this.buttons("Available", [
+                                    Command.ClaimHexalot,
+                                ])}
+                            </ActionFrame>
+                        )
+                    }
                     return (
                         <ActionFrame>
-                            <p>Nothing to see here.</p>
+                            {this.buttons("Foreign", [
+                                Command.DriveFree,
+                            ])}
                         </ActionFrame>
                     )
                 }
-            }
-        } else {
-            return (
-                <ActionFrame>
-                    <Message>
-                        The island is not yet correct according to the rules.
-                        Land must be either at the edge or have two land neighbors.
-                        Water must have at least one land neighbor.
-                        Click on the marked spots and you can choose to switch them to fix the island.
-                    </Message>
-                </ActionFrame>
-            )
+                return (
+                    <ActionFrame>
+                        <p>
+                            To login, select an existing hexalot.
+                            You can also claim one of the green available hexalots,
+                            but you will probably have to fix the island before you can claim it.
+                        </p>
+                    </ActionFrame>
+                )
+
+
+            case IslandMode.Landed: // =================================================================================
+                if (!islandState.homeHexalot) {
+                    throw new Error("Landed with no home?")
+                }
+                return (
+                    <ActionFrame>
+                        {this.buttons("Landed", [
+                            Command.PlanFreeDrive,
+                            Command.PlanJourney,
+                            Command.Evolve,
+                            Command.DriveFree,
+                            Command.Logout,
+                        ])}
+                    </ActionFrame>
+                )
+
+
+            case IslandMode.PlanningJourney: // ========================================================================
+                return (
+                    <ActionFrame>
+                        {this.buttons("Planning journey", [
+                            Command.ForgetJourney,
+                            Command.DriveJourney,
+                            Command.Evolve,
+                            Command.ReturnHome,
+                        ])}
+                    </ActionFrame>
+                )
+
+
+            case IslandMode.PlanningDrive: // ==========================================================================
+                return (
+                    <ActionFrame>
+                        {this.buttons("Drive", [
+                            Command.RotateLeft,
+                            Command.RotateRight,
+                            Command.DriveFree,
+                        ])}
+                    </ActionFrame>
+                )
+
+
+            case IslandMode.Evolving: // ===============================================================================
+                return (
+                    <ActionFrame>
+                        {this.buttons("Evolving", [
+                            Command.ReturnHome,
+                        ])}
+                    </ActionFrame>
+                )
+
+
+            case IslandMode.DrivingFree: // ============================================================================
+                return (
+                    <ActionFrame>
+                        {this.buttons("Driving free", [
+                            Command.ReturnHome,
+                            Command.ComeHere,
+                            Command.GoThere,
+                            Command.StopMoving,
+                        ])}
+                    </ActionFrame>
+                )
+
+
+            case IslandMode.DrivingJourney: // =========================================================================
+                return (
+                    <ActionFrame>
+                        {this.buttons("Driving journey", [
+                            Command.ReturnHome,
+                            Command.StopMoving,
+                        ])}
+                    </ActionFrame>
+                )
+
+
+            default: // ================================================================================================
+                return (
+                    <ActionFrame>
+                        <p>Strange state {islandState.islandMode}</p>
+                    </ActionFrame>
+                )
+
+
         }
     }
 
-    private Visiting(selectedHexalot?: Hexalot): JSX.Element {
-        if (selectedHexalot) {
-            if (selectedHexalot.centerSpot.available) {
-                return this.availableHexalot
-            }
-            return selectedHexalot.occupied ? this.foreignHexalot(selectedHexalot) : this.availableHexalot
-        }
-        return (
-            <ActionFrame>
-                <p>
-                    To login, select an existing hexalot.
-                    You can also claim one of the green available hexalots,
-                    but you will probably have to fix the island before you can claim it.
-                </p>
-            </ActionFrame>
-        )
-    }
-
-    private Landed(homeHexalot: Hexalot, selectedHexalot?: Hexalot): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Landed", [
-                    Command.PlanFreeDrive,
-                    Command.PlanJourney,
-                    Command.Evolve,
-                    Command.DriveFree,
-                    Command.Logout,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private get PlanningJourney(): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Planning journey", [
-                    Command.ForgetJourney,
-                    Command.DriveJourney,
-                    Command.Evolve,
-                    Command.ReturnHome,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private get PlanningDrive(): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Drive", [
-                    Command.RotateLeft,
-                    Command.RotateRight,
-                    Command.DriveFree,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private foreignHexalot(hexalot: Hexalot): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Foreign", [
-                    Command.DriveFree,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private get DrivingGotchi(): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Driving", [
-                    Command.ReturnHome,
-                    Command.ComeHere,
-                    Command.GoThere,
-                    Command.StopMoving,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private get Evolving(): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Evolving", [
-                    Command.ReturnHome,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private get availableHexalot(): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Available", [
-                    Command.ClaimHexalot,
-                ])}
-            </ActionFrame>
-        )
-    }
-
-    private get freeSpot(): JSX.Element {
-        return (
-            <ActionFrame>
-                {this.buttons("Free", [
-                    Command.MakeLand,
-                    Command.MakeWater,
-                ])}
-            </ActionFrame>
-        )
-    }
+    // =================================================================================================================
 
     private buttons(prompt: string, commands: Command[]): JSX.Element {
         return (

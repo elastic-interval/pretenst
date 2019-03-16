@@ -15,8 +15,9 @@ export class IslandStateClick {
 
         switch (this.state.islandMode) {
 
-            case IslandMode.FixingIsland:
-                if (spot.available) {
+
+            case IslandMode.FixingIsland: // ===========================================================================
+                if (spot.canBeClaimed) {
                     return this.state.withNewHexalotAt(spot).withRestructure.withMode(IslandMode.Visiting)
                 } else {
                     if (hexalot) {
@@ -26,7 +27,8 @@ export class IslandStateClick {
                     }
                 }
 
-            case IslandMode.Visiting:
+
+            case IslandMode.Visiting: // ===============================================================================
                 if (hexalot) {
                     if (!hexalot.occupied) {
                         hexalot.genome = freshGenome()
@@ -35,18 +37,17 @@ export class IslandStateClick {
                         return this.state.withHomeHexalot(hexalot).withRestructure
                     }
                 }
-                if (spot.available) {
+                if (spot.canBeClaimed) {
                     return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure
                 }
                 return this.state
 
-            case IslandMode.Landed:
-                if (spot.available) {
-                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure
-                }
+
+            case IslandMode.Landed: // =================================================================================
                 return this.state
 
-            case IslandMode.PlanningJourney:
+
+            case IslandMode.PlanningJourney: // ========================================================================
                 const homeHexalot = this.state.homeHexalot
                 if (!homeHexalot) {
                     throw new Error("No home hexalot")
@@ -62,7 +63,8 @@ export class IslandStateClick {
                 }
                 return this.state // todo: no state change?
 
-            case IslandMode.PlanningDrive:
+
+            case IslandMode.PlanningDrive: // ==========================================================================
                 const target = spot.center
                 const adjacent = spot.adjacentSpots.map((s, i) => ({center: s.center, index: i}))
                 adjacent.sort((a, b) => target.distanceTo(a.center) - target.distanceTo(b.center))
@@ -73,12 +75,15 @@ export class IslandStateClick {
                 }
                 return this.state // todo: no state change?
 
-            case IslandMode.DrivingFree:
+
+            case IslandMode.DrivingFree: // ============================================================================
                 // todo
                 return this.state
 
-            default:
+
+            default: // ================================================================================================
                 throw new Error(`Unknown mode ${this.state.islandMode}`)
+
 
         }
     }

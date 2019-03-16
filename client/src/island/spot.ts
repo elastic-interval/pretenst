@@ -37,8 +37,6 @@ export class Spot {
     public faceNames: string[] = []
     public surface = Surface.Unknown
     public free = false
-    public legal = false
-    public available = false
 
     constructor(public coords: ICoords) {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
@@ -46,41 +44,6 @@ export class Spot {
 
     public checkFree(singleHexalot: boolean): void {
         this.free = singleHexalot && !!this.centerOfHexalot || !this.memberOfHexalot.find(hexalot => hexalot.occupied)
-    }
-
-    public checkAvailable(): void {
-        const occupiedHexalot = this.centerOfHexalot ? this.centerOfHexalot.occupied : false
-        const land = this.surface === Surface.Land
-        const occupiedAdjacent = this.adjacentHexalots.some(hexalot => hexalot.occupied)
-        this.available = land && occupiedAdjacent && !occupiedHexalot
-    }
-
-    public checkLegal(): void {
-        let landCount = 0
-        let waterCount = 0
-        this.adjacentSpots.forEach(adjacent => {
-            switch (adjacent.surface) {
-                case Surface.Land:
-                    landCount++
-                    break
-                case Surface.Water:
-                    waterCount++
-                    break
-            }
-        })
-        switch (this.surface) {
-            case Surface.Unknown:
-                this.legal = false
-                break
-            case Surface.Land:
-                // land must be connected and either on the edge or have adjacent at least 2 land and 1 water
-                this.legal = this.connected && this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1)
-                break
-            case Surface.Water:
-                // water must have some land around
-                this.legal = landCount > 0
-                break
-        }
     }
 
     public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[]): void {
@@ -148,14 +111,46 @@ export class Spot {
         }
     }
 
+    public get isLegal(): boolean {
+        let landCount = 0
+        let waterCount = 0
+        this.adjacentSpots.forEach(adjacent => {
+            switch (adjacent.surface) {
+                case Surface.Land:
+                    landCount++
+                    break
+                case Surface.Water:
+                    waterCount++
+                    break
+            }
+        })
+        switch (this.surface) {
+            case Surface.Land:
+                // land must be connected and either on the edge or have adjacent at least 2 land and 1 water
+                return this.connected && this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1)
+            case Surface.Water:
+                // water must have some land around
+                return landCount > 0
+            default:
+                return false
+        }
+    }
+
+    public get canBeClaimed(): boolean {
+        const freeHexalot = this.centerOfHexalot ? !this.centerOfHexalot.occupied : false
+        const landSurface = this.surface === Surface.Land
+        const occupiedAdjacent = this.adjacentHexalots.some(hexalot => hexalot.occupied)
+        return landSurface && (occupiedAdjacent || freeHexalot)
+    }
+
     private get sizeFactor(): number {
-        return this.legal ? 1 : 0.9
+        return this.isLegal ? 1 : 0.9
     }
 
     private get color(): Color {
         switch (this.surface) {
             case Surface.Land:
-                return this.available ? SURFACE_AVAILABLE_LAND_COLOR : SURFACE_LAND_COLOR
+                return this.canBeClaimed ? SURFACE_AVAILABLE_LAND_COLOR : SURFACE_LAND_COLOR
             case Surface.Water:
                 return SURFACE_WATER_COLOR
             default:

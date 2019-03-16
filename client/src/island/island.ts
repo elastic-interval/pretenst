@@ -16,26 +16,25 @@ export interface IslandPattern {
 
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
 
-function hexalotWithMaxNonce(hexalots: Hexalot[]): Hexalot | undefined {
-    const maxNonce = (withMax: Hexalot | undefined, adjacent: Hexalot) => withMax ? adjacent.nonce > withMax.nonce ? adjacent : withMax : adjacent
-    return hexalots.reduce(maxNonce, undefined)
-}
-
 export class Island {
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
     public state: IslandState
 
     constructor(
-        public islandName: string,
+        readonly islandName: string,
         private gotchiFactory: IGotchiFactory,
         private storage: AppStorage,
     ) {
         this.apply(storage.getIsland(islandName))
         this.state = new IslandState(this, storage, IslandMode.Visiting).withRestructure
         const islandStateSubject = new BehaviorSubject<IslandState>(this.state)
-        this.state.legalStructure = this.legalStructure
+        this.state.islandIsLegal = this.islandIsLegal
         this.state.subject = islandStateSubject
+    }
+
+    public get islandIsLegal(): boolean {
+        return !this.spots.some(spot => !spot.isLegal)
     }
 
     public get freeHexalot(): Hexalot | undefined {
@@ -46,7 +45,7 @@ export class Island {
         return this.hexalots.find(hexalot => hexalot.id === fingerprint)
     }
 
-    public get legalStructure(): boolean {
+    public recalculate(): void {
         const spots = this.spots
         spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot)
@@ -66,22 +65,11 @@ export class Island {
                 }
             })
         }
-        spots.forEach(spot => spot.checkLegal())
-        return !this.spots.some(spot => !spot.legal)
-    }
-
-    public save(): void {
-        if (this.legalStructure) {
-            this.storage.setIsland(this.islandName, this.pattern)
-            console.log(`Saved ${this.islandName}`)
-        } else {
-            console.log(`Not legal yet: ${this.islandName}`)
-        }
     }
 
     public createHexalot(spot: Spot): Hexalot | undefined {
-        if (!spot.available) {
-            console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`)
+        if (!spot.canBeClaimed) {
+            console.error(`Hexalot ${JSON.stringify(spot.coords)} cannot be a hexalot!`)
             return undefined
         }
         return this.hexalotAroundSpot(spot)
@@ -104,7 +92,7 @@ export class Island {
     }
 
     public get pattern(): IslandPattern {
-        if (!this.legalStructure) {
+        if (!this.islandIsLegal) {
             throw new Error("Saving illegal island")
         }
         this.spots.sort(sortSpotsOnCoord)
@@ -112,6 +100,15 @@ export class Island {
             hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToString(this.spots),
         } as IslandPattern
+    }
+
+    public save(): void {
+        if (!this.islandIsLegal) {
+            console.log("Cannot save because the island does not yet satisfy the rules")
+            return
+        }
+        this.storage.setIsland(this.islandName, this.pattern)
+        console.log(`Saved ${this.islandName}`)
     }
 
     // ================================================================================================
@@ -170,7 +167,16 @@ export class Island {
     }
 
     private hexalotAroundSpot(spot: Spot): Hexalot {
-        return this.getOrCreateHexalot(hexalotWithMaxNonce(spot.adjacentHexalots), spot.coords)
+        const hexalotParent = spot.adjacentHexalots.reduce(
+            (parent: Hexalot | undefined, candiate: Hexalot) => {
+                if (parent && parent.nonce >= candiate.nonce) {
+                    return parent
+                }
+                return candiate
+            },
+            undefined,
+        )
+        return this.getOrCreateHexalot(hexalotParent, spot.coords)
     }
 
     private getOrCreateHexalot(parent: Hexalot | undefined, coords: ICoords): Hexalot {

@@ -42,6 +42,11 @@ export const hexalotTreeString = (hexalots: Hexalot[]) => {
     return root.generateOctalTreePattern([]).join("")
 }
 
+export function hexalotWithMaxNonce(hexalots: Hexalot[]): Hexalot | undefined {
+    const maxNonce = (withMax: Hexalot | undefined, adjacent: Hexalot) => withMax ? adjacent.nonce > withMax.nonce ? adjacent : withMax : adjacent
+    return hexalots.reduce(maxNonce, undefined)
+}
+
 export class Hexalot {
     public genome?: Genome
     public journey?: Journey
@@ -88,7 +93,7 @@ export class Hexalot {
     }
 
     public get isLegal(): boolean {
-        return !this.spots.find(spot => !spot.legal)
+        return !this.spots.some(spot => !spot.isLegal)
     }
 
     public refreshFingerprint(): void {
