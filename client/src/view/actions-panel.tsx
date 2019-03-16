@@ -120,20 +120,28 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
 
             case IslandMode.Landed: // =================================================================================
-                if (!islandState.homeHexalot) {
-                    throw new Error("Landed with no home?")
+                if (islandState.selectedHome) {
+                    return (
+                        <ActionFrame>
+                            {this.buttons("Home", [
+                                Command.PlanFreeDrive,
+                                Command.PlanJourney,
+                                Command.Evolve,
+                                Command.Logout,
+                            ])}
+                        </ActionFrame>
+                    )
+                } else {
+                    return (
+                        <ActionFrame>
+                            {this.buttons("Visiting", [
+                                Command.PlanFreeDrive,
+                                Command.Logout,
+                            ])}
+                        </ActionFrame>
+                    )
+
                 }
-                return (
-                    <ActionFrame>
-                        {this.buttons("Landed", [
-                            Command.PlanFreeDrive,
-                            Command.PlanJourney,
-                            Command.Evolve,
-                            Command.DriveFree,
-                            Command.Logout,
-                        ])}
-                    </ActionFrame>
-                )
 
 
             case IslandMode.PlanningJourney: // ========================================================================

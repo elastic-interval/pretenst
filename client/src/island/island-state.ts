@@ -56,11 +56,11 @@ export class IslandState {
         public islandMode: IslandMode,
         public islandIsLegal: boolean = false,
         public homeHexalot?: Hexalot,
+        public journey?: Journey,
         public selectedSpot?: Spot,
         public selectedHexalot?: Hexalot,
         public gotchi?: Gotchi,
         public evolution?: Evolution,
-        public journey?: Journey,
     ) {
     }
 
@@ -70,6 +70,16 @@ export class IslandState {
 
     public stateAfterClick(spot: Spot): IslandState {
         return new IslandStateClick(this).stateAfterClick(spot)
+    }
+
+    public get selectedHome(): boolean {
+        return !!this.homeHexalot && !!this.selectedHexalot && this.homeHexalot.id === this.selectedHexalot.id
+    }
+
+    public withJourney(journey: Journey): IslandState {
+        const copy = this.copy
+        copy.journey = journey
+        return copy
     }
 
     public withSelectedSpot(selectedSpot?: Spot): IslandState {
@@ -106,9 +116,9 @@ export class IslandState {
     }
 
     public withHomeHexalot(hexalot?: Hexalot): IslandState {
-        const copy = this.copy.withSelectedSpot(hexalot ? hexalot.centerSpot : undefined)
+        const copy = this.copy
+        copy.islandMode = hexalot ? IslandMode.Landed : IslandMode.Visiting
         copy.homeHexalot = hexalot
-        copy.islandMode = copy.homeHexalot ? IslandMode.Landed : IslandMode.Visiting
         return copy
     }
 
@@ -215,11 +225,11 @@ export class IslandState {
             this.islandMode,
             this.islandIsLegal,
             this.homeHexalot,
+            this.journey,
             this.selectedSpot,
             this.selectedHexalot,
             this.gotchi,
             this.evolution,
-            this.journey,
         )
         ditto.subject = this.subject
         return ditto

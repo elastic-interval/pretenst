@@ -12,6 +12,7 @@ export class IslandStateClick {
         console.log(`Hexalots=${this.state.island.hexalots.length} Spots=${this.state.island.spots.length}`)
 
         const hexalot = spot.centerOfHexalot
+        const homeHexalot = this.state.homeHexalot
 
         switch (this.state.islandMode) {
 
@@ -24,26 +25,32 @@ export class IslandStateClick {
                 if (spot.canBeClaimed && this.state.islandIsLegal) {
                     return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure
                 }
+                if (hexalot) {
+                    return this.state.withHomeHexalot(hexalot).withSelectedSpot(spot).withRestructure
+                }
                 return this.state.withSelectedSpot(spot)
 
 
             case IslandMode.Landed: // =================================================================================
+                if (hexalot) {
+                    console.log("Hexy", spot.coords)
+                    return this.state.withSelectedSpot(spot)
+                }
                 return this.state
 
 
             case IslandMode.PlanningJourney: // ========================================================================
-                const homeHexalot = this.state.homeHexalot
                 if (!homeHexalot) {
                     throw new Error("No home hexalot")
                 }
-                this.state.storage.saveJourney(homeHexalot)
-                if (homeHexalot && hexalot) {
-                    const journey = homeHexalot.journey
-                    if (journey) {
-                        journey.addVisit(hexalot)
+                if (hexalot) {
+                    if (homeHexalot.journey) {
+                        homeHexalot.journey.addVisit(hexalot)
                     } else {
                         homeHexalot.journey = new Journey([homeHexalot, hexalot])
                     }
+                    this.state.storage.saveJourney(homeHexalot)
+                    return this.state.withJourney(homeHexalot.journey)
                 }
                 return this.state // todo: no state change?
 
