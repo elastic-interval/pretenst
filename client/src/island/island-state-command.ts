@@ -151,7 +151,7 @@ export class IslandStateCommand {
                             this.state.storage.setGenome(hexalot, genome.genomeData)
                         }
                         withNewHexalot.island.save()
-                        return withNewHexalot.withRestructure
+                        return withNewHexalot.withRestructure.withHomeHexalot(hexalot)
                     }
                 }
                 return state
