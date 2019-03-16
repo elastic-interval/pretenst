@@ -45,7 +45,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
             case IslandMode.FixingIsland: // ===========================================================================
                 const spot = islandState.selectedSpot
                 if (spot) {
-                    if (spot.canBeClaimed) {
+                    if (islandState.islandIsLegal && spot.canBeClaimed) {
                         return (
                             <ActionFrame>
                                 {this.buttons("Available", [

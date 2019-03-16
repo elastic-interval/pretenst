@@ -28,9 +28,7 @@ export class Island {
     ) {
         this.apply(storage.getIsland(islandName))
         this.state = new IslandState(this, storage, IslandMode.Visiting).withRestructure
-        const islandStateSubject = new BehaviorSubject<IslandState>(this.state)
-        this.state.islandIsLegal = this.islandIsLegal
-        this.state.subject = islandStateSubject
+        this.state.subject = new BehaviorSubject<IslandState>(this.state)
     }
 
     public get islandIsLegal(): boolean {

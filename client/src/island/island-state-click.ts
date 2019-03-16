@@ -18,7 +18,7 @@ export class IslandStateClick {
 
             case IslandMode.FixingIsland: // ===========================================================================
                 if (spot.canBeClaimed) {
-                    return this.state.withNewHexalotAt(spot).withRestructure.withMode(IslandMode.Visiting)
+                    return this.state.withSelectedSpot(spot).withRestructure
                 } else {
                     if (hexalot) {
                         return this.state.withFreeHexalotsRemoved.withHomeHexalot(hexalot).withRestructure

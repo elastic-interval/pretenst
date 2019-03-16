@@ -137,7 +137,7 @@ export class IslandState {
         if (singleHexalot) {
             const firstHexalot = hexalots[0]
             const centerSpot = firstHexalot.centerSpot
-            return copy.homeHexalot ? this.withSelectedSpot(centerSpot) : this
+            return copy.homeHexalot ? copy.withSelectedSpot(centerSpot) : copy
         }
         if (homeHexalot) {
             if (!homeHexalot.occupied) {
@@ -159,9 +159,9 @@ export class IslandState {
         if (nextFree) {
             return copy.withSelectedSpot(nextFree)
         }
-        const hexalot = selectedSpot.memberOfHexalot.length === 1 ? selectedSpot.memberOfHexalot[0] : undefined
-        if (hexalot) {
-            return copy.withSelectedSpot(hexalot.centerSpot)
+        const anyFree = this.island.spots.find(s => s.free && s.surface === Surface.Unknown)
+        if (anyFree) {
+            return copy.withSelectedSpot(anyFree)
         }
         return copy
     }
@@ -185,7 +185,6 @@ export class IslandState {
 
     public dispatch(): void {
         this.island.state = this
-        console.log("dispatch", this.islandMode, this.islandIsLegal)
         this.subject.next(this)
     }
 
