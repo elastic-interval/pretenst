@@ -49,9 +49,10 @@ export class Spot {
     }
 
     public checkAvailable(): void {
+        const occupiedHexalot = this.centerOfHexalot ? this.centerOfHexalot.occupied : false
         const land = this.surface === Surface.Land
         const occupiedAdjacent = this.adjacentHexalots.some(hexalot => hexalot.occupied)
-        this.available = land && occupiedAdjacent
+        this.available = land && occupiedAdjacent && !occupiedHexalot
     }
 
     public checkLegal(): void {

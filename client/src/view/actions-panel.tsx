@@ -70,14 +70,18 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
         }
     }
 
-    private FixingIsland(selectedSpot?: Spot): JSX.Element {
-        if (selectedSpot) {
-            if (selectedSpot.free) {
+    private FixingIsland(spot?: Spot): JSX.Element {
+        if (spot) {
+            if (spot.centerOfHexalot && !spot.centerOfHexalot.occupied && this.props.islandState.legalStructure) {
+                return this.availableHexalot
+            }
+            if (spot.free) {
                 return this.freeSpot
-            } else if (selectedSpot.available) {
+            }
+            if (spot.available) {
                 return this.availableHexalot
             } else {
-                const hexalot = selectedSpot.centerOfHexalot
+                const hexalot = spot.centerOfHexalot
                 if (hexalot) {
                     if (hexalot.occupied) {
                         return (

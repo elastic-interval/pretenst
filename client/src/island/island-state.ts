@@ -122,7 +122,7 @@ export class IslandState {
         const spots = island.spots
         const singleHexalot = hexalots.length === 1
         const homeHexalot = this.homeHexalot
-        if (homeHexalot) {
+        if (homeHexalot || !legalStructure || hexalots.some(h => !h.occupied)) {
             spots.forEach(spot => spot.available = false)
         } else {
             spots.forEach(spot => spot.checkAvailable())
