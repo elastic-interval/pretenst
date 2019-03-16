@@ -83,16 +83,6 @@ export class Island {
         })
     }
 
-    public removeFreeHexalots2(): void {
-        const freeHexalots = this.hexalots.filter(hexalot => !hexalot.occupied)
-        this.hexalots = this.hexalots.filter(hexalot => hexalot.occupied)
-        freeHexalots.forEach(deadHexalot => {
-            deadHexalot.destroy().forEach(deadSpot => {
-                this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords))
-            })
-        })
-    }
-
     public get midpoint(): Vector3 {
         return this.spots
             .reduce((sum: Vector3, spot: Spot) => sum.add(spot.center), new Vector3())
