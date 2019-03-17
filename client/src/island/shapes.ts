@@ -21,6 +21,8 @@ export const HEXAPOD_PROJECTION = 0.2
 export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * SURFACE_SCALE
 export const SCALE_X = SURFACE_SCALE * KINDA
 export const SCALE_Y = SURFACE_SCALE * 1.5
+export const INNER_HEXALOT_SPOTS = 91
+export const OUTER_HEXALOT_SIDE = 6
 
 export const HEXALOT_SHAPE = [
     // center

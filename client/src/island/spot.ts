@@ -122,6 +122,19 @@ export class Spot {
         }
     }
 
+    public addRaisedHexagonParts(vertices: Vector3[], height: number, outerIndex: number, side: number): void {
+        const direction = (Math.floor(outerIndex / side) + 5) % 6
+        const corner = outerIndex % side === 0
+        const vertex = (hexPoint: Vector3) => vertices.push(new Vector3(0, height, 0).add(this.center).add(hexPoint))
+        for (let a = 0; a < SIX; a++) {
+            const b = (a + 1) % SIX
+            if (direction === a || direction === b ||(corner && direction === (b + 1) % SIX)) {
+                vertex(HEXAGON_POINTS[a])
+                vertex(HEXAGON_POINTS[b])
+            }
+        }
+    }
+
     public get isLegal(): boolean {
         let landCount = 0
         let waterCount = 0

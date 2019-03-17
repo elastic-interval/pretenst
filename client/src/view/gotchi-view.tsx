@@ -2,22 +2,19 @@ import * as React from "react"
 import * as R3 from "react-three"
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
 import {Subscription} from "rxjs/Subscription"
-import {Color, Geometry, Mesh, PerspectiveCamera, Vector3} from "three"
+import {Mesh, PerspectiveCamera, Vector3} from "three"
 
-import {HUNG_ALTITUDE, NORMAL_TICKS} from "../body/fabric"
+import {NORMAL_TICKS} from "../body/fabric"
 import {IslandState} from "../island/island-state"
 
 import {EvolutionComponent} from "./evolution-component"
 import {IslandComponent} from "./island-component"
 import {JourneyComponent} from "./journey-component"
-import {GOTCHI_MATERIAL, GOTCHI_POINTER_MATERIAL, USER_POINTER_MATERIAL} from "./materials"
+import {GOTCHI, GOTCHI_ARROW} from "./materials"
 import {Orbit, OrbitDistance} from "./orbit"
 import {MeshKey, SpotSelector} from "./spot-selector"
 
 export const HIGH_ALTITUDE = 1000
-
-const SUN_POSITION = new Vector3(0, 400, 0)
-const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8)
 
 interface IGotchiViewProps {
     perspectiveCamera: PerspectiveCamera
@@ -35,7 +32,6 @@ interface IGotchiViewState {
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private subs: Subscription[] = []
-    private selectedSpotPointer: Geometry
     private orbit: Orbit
     private spotSelector: SpotSelector
     private animating = true
@@ -72,6 +68,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         }
     }
 
+    public componentWillReceiveProps(nextProps: Readonly<IGotchiViewProps>, nextContext: object): void {
+        const selectedSpot = nextProps.islandState.selectedSpot
+        if (selectedSpot) {
+            this.target = selectedSpot.center
+        } else {
+            this.target = nextProps.islandState.island.midpoint
+        }
+    }
+
     public componentWillUnmount(): void {
         this.animating = false
         this.subs.forEach(s => s.unsubscribe())
@@ -82,26 +87,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const evolution = islandState.evolution
         const gotchi = islandState.gotchi
         const journey = islandState.journey
-        const selectedSpot = islandState.selectedSpot
-        if (this.selectedSpotPointer) {
-            this.selectedSpotPointer.dispose()
-        }
-        if (selectedSpot) {
-            const centerOfHexalot = selectedSpot.centerOfHexalot
-            if (centerOfHexalot) {
-                this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(selectedSpot.center)
-            } else {
-                this.target = selectedSpot.center
-            }
-            const geometry = new Geometry()
-            if (selectedSpot) {
-                const center = selectedSpot.center
-                const occupiedHexalot = centerOfHexalot && centerOfHexalot.occupied
-                const target = occupiedHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(center) : center
-                geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)]
-                this.selectedSpotPointer = geometry
-            }
-        }
         return (
             <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
                 const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
@@ -123,33 +108,24 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                 <R3.LineSegments
                                     key="Vectors"
                                     geometry={gotchi.fabric.pointerGeometryFor(gotchi.fabric.currentDirection)}
-                                    material={GOTCHI_POINTER_MATERIAL}
+                                    material={GOTCHI_ARROW}
                                 />
                                 <R3.Mesh
                                     geometry={gotchi.fabric.facesGeometry}
-                                    material={GOTCHI_MATERIAL}
+                                    material={GOTCHI}
                                 />
                             </R3.Object3D>
-                        )}
-                        {!this.selectedSpotPointer? null: (
-                            <R3.LineSegments
-                                key="Pointer"
-                                geometry={this.selectedSpotPointer}
-                                material={USER_POINTER_MATERIAL}
-                            />
                         )}
                         {!journey ? null : (
                             <JourneyComponent journey={journey}/>
                         )}
-                        <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
-                        <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                     </R3.Scene>
                 </R3.Renderer>
             </div>
         )
     }
 
-    // ==========================
+    // =================================================================================================================
 
     private animate(): void {
         const step = () => {
