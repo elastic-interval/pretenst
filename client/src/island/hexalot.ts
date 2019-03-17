@@ -99,11 +99,11 @@ export class Hexalot {
         if (!this.genome) {
             return undefined
         }
-        return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, this.genome)
+        return this.gotchiFactory.createGotchiSeed(this, this.rotation, this.genome)
     }
 
     public createGotchiWithGenome(genome: Genome): Gotchi | undefined {
-        return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, genome)
+        return this.gotchiFactory.createGotchiSeed(this, this.rotation, genome)
     }
 
     public rotate(forward: boolean): number {

@@ -27,7 +27,7 @@ export enum Command {
     PlanFreeDrive = "Plan free drive",
     PlanJourney = "Plan journey",
     RandomGenome = "Random genome",
-    ReturnHome = "Return home",
+    Return = "Return",
     JumpToFix = "Jump to fix",
     AbandonFix = "Abandon fix",
     RotateLeft = "Rotate left",
@@ -75,6 +75,16 @@ export class IslandState {
 
     public get selectedHome(): boolean {
         return !!this.homeHexalot && !!this.selectedHexalot && this.homeHexalot.id === this.selectedHexalot.id
+    }
+
+    public get actionHexalotId(): string | undefined {
+        if (this.gotchi) {
+            return this.gotchi.home.id
+        }
+        if (this.evolution) {
+            return this.evolution.home.id
+        }
+        return undefined
     }
 
     public withJourney(journey: Journey): IslandState {

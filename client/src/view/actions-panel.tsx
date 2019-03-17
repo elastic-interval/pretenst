@@ -135,7 +135,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     return (
                         <ActionFrame>
                             {this.buttons("Visiting", [
-                                Command.PlanFreeDrive,
+                                Command.DriveFree,
                                 Command.Logout,
                             ])}
                         </ActionFrame>
@@ -151,7 +151,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             Command.ForgetJourney,
                             Command.DriveJourney,
                             Command.Evolve,
-                            Command.ReturnHome,
+                            Command.Return,
                         ])}
                     </ActionFrame>
                 )
@@ -164,7 +164,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             Command.RotateLeft,
                             Command.RotateRight,
                             Command.DriveFree,
-                            Command.ReturnHome,
+                            Command.Return,
                         ])}
                     </ActionFrame>
                 )
@@ -174,7 +174,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 return (
                     <ActionFrame>
                         {this.buttons("Evolving", [
-                            Command.ReturnHome,
+                            Command.Return,
                         ])}
                     </ActionFrame>
                 )
@@ -184,7 +184,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 return (
                     <ActionFrame>
                         {this.buttons("Driving free", [
-                            Command.ReturnHome,
+                            Command.Return,
                             Command.ComeHere,
                             Command.GoThere,
                             Command.StopMoving,
@@ -197,7 +197,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 return (
                     <ActionFrame>
                         {this.buttons("Driving journey", [
-                            Command.ReturnHome,
+                            Command.Return,
                             Command.StopMoving,
                         ])}
                     </ActionFrame>

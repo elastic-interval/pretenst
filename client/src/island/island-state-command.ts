@@ -16,6 +16,7 @@ export class IslandStateCommand {
 
         const state = this.state
         const homeHexalot = state.homeHexalot
+        const selectedHexalot = state.selectedHexalot
         const gotchi = state.gotchi
         const journey = state.journey
         const spot = state.selectedSpot
@@ -42,7 +43,10 @@ export class IslandStateCommand {
                 return state
 
 
-            case Command.ReturnHome: // ================================================================================
+            case Command.Return: // ====================================================================================
+                if (state.gotchi) {
+                    return this.state.withSelectedSpot(state.gotchi.home.centerSpot).withMode(IslandMode.Landed)
+                }
                 if (homeHexalot) {
                     return this.state.withSelectedSpot(homeHexalot.centerSpot).withMode(IslandMode.Landed)
                 }
@@ -54,8 +58,8 @@ export class IslandStateCommand {
 
 
             case Command.DriveFree: // =================================================================================
-                if (homeHexalot) {
-                    const newbornGotchi = homeHexalot.createNativeGotchi()
+                if (selectedHexalot) {
+                    const newbornGotchi = selectedHexalot.createNativeGotchi()
                     if (newbornGotchi) {
                         return this.state.withGotchi(newbornGotchi)
                     }

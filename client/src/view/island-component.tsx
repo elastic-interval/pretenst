@@ -116,7 +116,9 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private get seedsGeometry(): Geometry {
         const geometry = new Geometry()
         const hexalots = this.props.islandState.island.hexalots
-        hexalots.filter(hexalot => hexalot.occupied).forEach(hexalot => {
+        hexalots.filter(hexalot => {
+            return hexalot.occupied && hexalot.id !== this.props.islandState.actionHexalotId
+        }).forEach(hexalot => {
             hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
         })
         geometry.computeFaceNormals()

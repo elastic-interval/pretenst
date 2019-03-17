@@ -24,7 +24,7 @@ export class Evolution {
     private leg: Leg
     private midpointVector = new Vector3()
 
-    constructor(private hexalot: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
+    constructor(readonly home: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
         this.leg = firstLeg
         this.evolversNow.next(this.createPopulation())
     }
@@ -164,7 +164,7 @@ export class Evolution {
     }
 
     private createPopulation(): Evolver[] {
-        const genome = this.hexalot.genome
+        const genome = this.home.genome
         if (!genome) {
             throw new Error("No genome!")
         }
@@ -188,7 +188,7 @@ export class Evolution {
 
     private createEvolver(genome: Genome): Evolver | undefined {
         const frozenHero = this.frozenHero
-        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.hexalot.createGotchiWithGenome(genome)
+        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.home.createGotchiWithGenome(genome)
         if (!gotchi) {
             return undefined
         }
