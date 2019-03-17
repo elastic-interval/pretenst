@@ -6,7 +6,7 @@ import { HexalotID } from "./types"
 export interface IKeyValueStore {
     set(key: string, value: any): Promise<void>
 
-    get(key: string): Promise<any | null>
+    get(key: string): Promise<any | undefined>
 
     delete(key: string): Promise<void>
 }
@@ -17,8 +17,8 @@ export class InvalidHexalotError extends Error {
 export class InMemoryStore implements IKeyValueStore {
     private db: { [key: string]: any } = {}
 
-    public async get(key: string): Promise<any | null> {
-        return this.db[key] || null
+    public async get(key: string): Promise<any | undefined> {
+        return this.db[key] || undefined
     }
 
     public async set(key: string, value: any): Promise<void> {
@@ -37,15 +37,15 @@ export class LevelDBFlashStore implements IKeyValueStore {
         this.db = new FlashStore(storePath)
     }
 
-    public delete(key: string): Promise<void> {
+    public async delete(key: string): Promise<void> {
         return this.db.del(key)
     }
 
-    public async get(key: string): Promise<any | null> {
-        return await this.db.get(key) || null
+    public async get(key: string): Promise<any | undefined> {
+        return await this.db.get(key) || undefined
     }
 
-    public set(key: string, value: any): Promise<void> {
+    public async set(key: string, value: any): Promise<void> {
         return this.db.set(key, value)
     }
 }
@@ -57,10 +57,10 @@ export class IslandStore {
     ) {
     }
 
-    public async getPattern(): Promise<IslandPattern | null> {
+    public async getPattern(): Promise<IslandPattern | undefined> {
         const pattern = await this.get(`pattern`)
         if (!pattern) {
-            return null
+            return undefined
         }
         return pattern
     }
@@ -69,7 +69,7 @@ export class IslandStore {
         return this.set(`pattern`, pattern)
     }
 
-    public async getGenome(id: HexalotID): Promise<string | null> {
+    public async getGenome(id: HexalotID): Promise<string | undefined> {
         return this.get(`hexalot/${id}/genome`)
     }
 
@@ -81,7 +81,7 @@ export class IslandStore {
         return this.db.set(`/island/${this.islandName}/${key}`, value)
     }
 
-    private async get(key: string): Promise<any | null> {
+    private async get(key: string): Promise<any | undefined> {
         return this.db.get(`/island/${this.islandName}/${key}`)
     }
 }

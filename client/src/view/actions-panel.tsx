@@ -54,7 +54,7 @@ function Clicky(params: IClicky): JSX.Element {
 }
 
 interface IActionPanelProps {
-    children: Array<JSX.Element | null> | JSX.Element
+    children: Array<JSX.Element | undefined> | JSX.Element
 }
 
 const ActionPanel = (props: IActionPanelProps) => (
@@ -223,7 +223,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 <p>
                     This one can be your new home!
                 </p>
-                {!spot.canBeNewHexalot ? null : (
+                {!spot.canBeNewHexalot ? undefined : (
                     <p>
                         <Clicky props={this.props} command={Command.CLAIM_GOTCH}/>
                     </p>

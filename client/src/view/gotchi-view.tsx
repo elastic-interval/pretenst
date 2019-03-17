@@ -73,7 +73,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidMount(): void {
-        const element: Element | null = document.getElementById("gotchi-view")
+        const element: Element | undefined = document.getElementById("gotchi-view") || undefined
         if (element) {
             this.target = this.props.island.midpoint
             this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target)
@@ -107,10 +107,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             island={this.props.island}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
-                        {!evolution ? null : (
+                        {!evolution ? undefined : (
                             <EvolutionComponent evolution={evolution}/>)
                         }
-                        {!gotchi ? null : (
+                        {!gotchi ? undefined : (
                             <R3.Object3D key="Gotchi">
                                 <R3.LineSegments
                                     key="Vectors"
@@ -128,7 +128,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             geometry={this.pointerGeometry}
                             material={USER_POINTER_MATERIAL}
                         />
-                        {!this.props.journey ? null : (
+                        {!this.props.journey ? undefined : (
                             <JourneyComponent journey={this.props.journey}/>
                         )}
                         <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
@@ -160,7 +160,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         }
     }
 
-    // private get pointerGeometry(): Geometry | null {
+    // private get pointerGeometry(): Geometry | undefined {
     //     this.perspectiveCamera.updateProjectionMatrix();
     //     const upDown = this.state.orbitState === OrbitState.CRUISE ? -1 : 1;
     //     const userCoords = (x: number): Vector3 => {
@@ -177,7 +177,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     //     return geometry;
     // }
 
-    private get pointerGeometry(): Geometry | null {
+    private get pointerGeometry(): Geometry | undefined {
         const geometry = new Geometry()
         const spot = this.props.selectedSpot.getValue()
         const action = this.props.evolution || this.props.gotchi

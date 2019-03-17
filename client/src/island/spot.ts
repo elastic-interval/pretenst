@@ -205,7 +205,7 @@ const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") :
 export const spotsToString = (spots: Spot[]) => {
     const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
     const nybbleStrings = land.map((l, index, array) =>
-        (index % 4 === 0) ? array.slice(index, index + 4).join("") : null)
+        (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
     const nybbleChars = nybbleStrings.map(chunk => {
         if (chunk) {
             return parseInt(padRightTo4(chunk), 2).toString(16)

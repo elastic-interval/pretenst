@@ -55,7 +55,7 @@ const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") :
 function spotsToHexalotID(spots: ISpot[]): HexalotID {
     const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
     const nybbleStrings = land.map((l, index, array) =>
-        (index % 4 === 0) ? array.slice(index, index + 4).join("") : null)
+        (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
     const nybbleChars = nybbleStrings.map(chunk => {
         if (chunk) {
             return parseInt(padRightTo4(chunk), 2).toString(16)
@@ -140,9 +140,9 @@ export interface IslandPattern {
 
 const sortSpotsOnCoord = (a: ISpot, b: ISpot) => coordSort(a.coords, b.coords)
 
-const hexalotWithMaxNonce = (hexalots: IHexalot[]): IHexalot | null =>
+const hexalotWithMaxNonce = (hexalots: IHexalot[]): IHexalot | undefined =>
     hexalots.length === 0 ?
-        null :
+        undefined :
         hexalots.reduce((withMax, adjacent) => {
             if (withMax) {
                 return adjacent.nonce > withMax.nonce ? adjacent : withMax
@@ -209,7 +209,7 @@ export class Island {
             if (!coordsEquals(coords, ZERO)) {
                 throw new Error("genesis lot must have coords 0,0")
             }
-            lot = this.getOrCreateHexalot(null, coords)
+            lot = this.getOrCreateHexalot(undefined, coords)
         } else {
             const centerSpot = this.getSpot(coords)
             if (!centerSpot) {
@@ -263,7 +263,7 @@ export class Island {
     // ================================================================================================
 
     private applyPattern(pattern: IslandPattern): void {
-        let hexalot: IHexalot | undefined = this.getOrCreateHexalot(null, ZERO)
+        let hexalot: IHexalot | undefined = this.getOrCreateHexalot(undefined, ZERO)
         const stepStack = pattern.hexalots.split("").reverse().map(Number)
         const hexalotStack: IHexalot[] = []
         while (stepStack.length > 0) {
@@ -316,7 +316,7 @@ export class Island {
         return this.getOrCreateHexalot(adjacentMaxNonce, spot.coords)
     }
 
-    private getOrCreateHexalot(parent: IHexalot | null, coords: ICoords): IHexalot {
+    private getOrCreateHexalot(parent: IHexalot | undefined, coords: ICoords): IHexalot {
         const existing = this.hexalots.find(existingHexalot => coordsEquals(existingHexalot.coords, coords))
         if (existing) {
             return existing

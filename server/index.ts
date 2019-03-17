@@ -26,7 +26,7 @@ async function connectToLnRpc(): Promise<LnRpc> {
             macaroonPath: `./secret/${lnRpcHost}/admin.macaroon`,
         }
     }
-    console.log(`Connecting to LN RPC with config: ${JSON.stringify(config, null, 2)}`)
+    console.log(`Connecting to LN RPC with config: ${JSON.stringify(config, undefined, 2)}`)
     return createLnRpc(config)
 }
 
