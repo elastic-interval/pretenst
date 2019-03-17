@@ -3,19 +3,15 @@ import {Carousel, CarouselControl, CarouselIndicators, CarouselItem} from "react
 
 import {INFO_PAGES} from "./info-pages"
 
-export interface IInfoPanelProps {
-    master?: string
-}
-
 export interface IInfoPanelState {
     activeIndex: number
 }
 
-export class InfoPanel extends React.Component<IInfoPanelProps, IInfoPanelState> {
+export class InfoPanel extends React.Component<object, IInfoPanelState> {
 
     private animating = false
 
-    constructor(props: IInfoPanelProps) {
+    constructor(props: object) {
         super(props)
         this.state = {
             activeIndex: 0,

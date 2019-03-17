@@ -10,22 +10,29 @@ import {Evolver, IEvolver} from "./evolver"
 
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
-const MUTATION_COUNT = 18
+const MUTATION_COUNT = 5
 const MINIMUM_AGE = 15000
-const MAXIMUM_AGE = 30000
+const MAXIMUM_AGE = 25000
 const INCREASE_AGE_LIMIT = 1000
 const SURVIVAL_RATE = 0.66
 
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([])
     private rebooting = false
-    private ageLimit = 30000 // MINIMUM_AGE
+    private ageLimit = MINIMUM_AGE
     private frozenHero?: Evolver
     private leg: Leg
+    private direction: number
     private midpointVector = new Vector3()
 
-    constructor(private hexalot: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
+    constructor(readonly home: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
         this.leg = firstLeg
+        home.centerSpot.adjacentSpots.forEach((spot, index) => {
+            const hexalot = spot.centerOfHexalot
+            if (hexalot&& firstLeg.goTo.id === hexalot.id) {
+                this.direction = index
+            }
+        })
         this.evolversNow.next(this.createPopulation())
     }
 
@@ -67,7 +74,7 @@ export class Evolution {
             const behind = this.ageLimit - evolver.age
             const timeSweepTick = evolver.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind)
             if (timeSweepTick && !evolver.gestating) {
-                evolver.mutateGenome(3)
+                evolver.mutateGenome(1)
                 evolver.adjustDirection()
             }
         })
@@ -90,7 +97,7 @@ export class Evolution {
 
     private adjustAgeLimit(): void {
         const nextVisit = this.leg.visited + 1
-        this.ageLimit += INCREASE_AGE_LIMIT * nextVisit
+        this.ageLimit += INCREASE_AGE_LIMIT
         const ageLimitForLeg = MAXIMUM_AGE * nextVisit
         if (this.ageLimit >= ageLimitForLeg) {
             this.ageLimit = ageLimitForLeg + MINIMUM_AGE * nextVisit
@@ -164,7 +171,11 @@ export class Evolution {
     }
 
     private createPopulation(): Evolver[] {
-        let mutatingGenome: Genome | undefined = fromGenomeData(this.hexalot.genome.genomeData)
+        const genome = this.home.genome
+        if (!genome) {
+            throw new Error("No genome!")
+        }
+        let mutatingGenome: Genome | undefined = fromGenomeData(genome.genomeData)
         const evolvers: Evolver[] = []
         while (true) {
             const evolver = this.createEvolver(mutatingGenome)
@@ -184,7 +195,7 @@ export class Evolution {
 
     private createEvolver(genome: Genome): Evolver | undefined {
         const frozenHero = this.frozenHero
-        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.hexalot.createGotchi(genome)
+        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.home.createGotchiWithGenome(genome, this.direction)
         if (!gotchi) {
             return undefined
         }

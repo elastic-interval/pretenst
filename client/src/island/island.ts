@@ -1,10 +1,11 @@
-import {BehaviorSubject} from "rxjs/BehaviorSubject"
+import {BehaviorSubject} from "rxjs"
 import {Vector3} from "three"
 
 import {AppStorage} from "../app-storage"
 import {IGotchiFactory} from "../gotchi/gotchi"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
+import {IslandMode, IslandState} from "./island-state"
 import {ADJACENT, BRANCH_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from "./spot"
 
@@ -13,41 +14,25 @@ export interface IslandPattern {
     spots: string
 }
 
-export interface IslandState {
-    gotchiAlive: boolean
-    selectedHexalot?: Hexalot
-}
-
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
-const hexalotWithMaxNonce = (hexalots: Hexalot[]) => hexalots.reduce((withMax, adjacent) => {
-    if (withMax) {
-        return adjacent.nonce > withMax.nonce ? adjacent : withMax
-    } else {
-        return adjacent
-    }
-})
 
 export class Island {
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
+    public state: IslandState
 
     constructor(
-        public islandName: string,
-        public islandState: BehaviorSubject<IslandState>,
+        readonly islandName: string,
         private gotchiFactory: IGotchiFactory,
-        private appStorage: AppStorage,
+        private storage: AppStorage,
     ) {
-        this.apply(appStorage.getIsland(islandName))
-        // console.log("spots", this.spots.map(s =>
-        //     `(${s.coords.x},${s.coords.y})==(${s.center.x},${s.center.z})`))
+        this.apply(storage.getIsland(islandName))
+        this.state = new IslandState(0, this, storage, IslandMode.Visiting).withRestructure
+        this.state.subject = new BehaviorSubject<IslandState>(this.state)
     }
 
-    public get hexalotsWithSeeds(): Hexalot[] {
-        return this.hexalots.filter((hexalot: Hexalot, index: number) => !!hexalot.master)
-    }
-
-    public get isLegal(): boolean {
-        return !this.spots.find(spot => !spot.legal)
+    public get islandIsLegal(): boolean {
+        return this.spots.every(spot => spot.isLegal)
     }
 
     public get freeHexalot(): Hexalot | undefined {
@@ -58,41 +43,34 @@ export class Island {
         return this.hexalots.find(hexalot => hexalot.id === fingerprint)
     }
 
-    public setIslandState(gotchiAlive: boolean, selectedHexalot?: Hexalot): void {
-        this.islandState.next({gotchiAlive, selectedHexalot})
-    }
-
-    public refreshStructure(): void {
-        this.spots.forEach(spot => {
+    public recalculate(): void {
+        const spots = this.spots
+        spots.forEach(spot => {
             spot.adjacentSpots = this.getAdjacentSpots(spot)
             spot.connected = spot.adjacentSpots.length < 6
         })
         let flowChanged = true
         while (flowChanged) {
             flowChanged = false
-            this.spots.forEach(spot => {
-                if (!spot.connected) {
-                    const connectedByAdjacent = spot.adjacentSpots
-                        .find(adj => (adj.surface === spot.surface) && adj.connected)
-                    if (connectedByAdjacent) {
-                        spot.connected = true
-                        flowChanged = true
-                    }
+            spots.forEach(spot => {
+                if (spot.connected) {
+                    return
+                }
+                const byAdjacent = spot.adjacentSpots.find(adj => (adj.surface === spot.surface) && adj.connected)
+                if (byAdjacent) {
+                    spot.connected = true
+                    flowChanged = true
                 }
             })
         }
-        this.spots.forEach(spot => spot.refresh())
-        this.hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        this.islandState.next(this.islandState.getValue()) // just refresh
     }
 
-    public save(): void {
-        if (this.isLegal) {
-            this.appStorage.setIsland(this.islandName, this.pattern)
-            console.log(`Saved ${this.islandName}`)
-        } else {
-            console.log(`Not legal yet: ${this.islandName}`)
+    public createHexalot(spot: Spot): Hexalot | undefined {
+        if (!spot.canBeClaimed) {
+            console.error(`Hexalot ${JSON.stringify(spot.coords)} cannot be a hexalot!`)
+            return undefined
         }
+        return this.hexalotAroundSpot(spot)
     }
 
     public removeFreeHexalots(): void {
@@ -105,22 +83,6 @@ export class Island {
         })
     }
 
-    public createHexalot(spot: Spot, master: string): Hexalot | undefined {
-        if (this.hexalots.find(hexalot => hexalot.master === master)) {
-            console.error(`${master} already has a hexalot!`)
-            return undefined
-        }
-        if (!spot.canBeNewHexalot) {
-            console.error(`${JSON.stringify(spot.coords)} cannot be a hexalot!`)
-            return undefined
-        }
-        return this.hexalotAroundSpot(spot)
-    }
-
-    public get singleHexalot(): Hexalot | undefined {
-        return this.hexalots.length === 1 ? this.hexalots[0] : undefined
-    }
-
     public get midpoint(): Vector3 {
         return this.spots
             .reduce((sum: Vector3, spot: Spot) => sum.add(spot.center), new Vector3())
@@ -128,7 +90,7 @@ export class Island {
     }
 
     public get pattern(): IslandPattern {
-        if (!this.isLegal) {
+        if (!this.islandIsLegal) {
             throw new Error("Saving illegal island")
         }
         this.spots.sort(sortSpotsOnCoord)
@@ -136,6 +98,15 @@ export class Island {
             hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToString(this.spots),
         } as IslandPattern
+    }
+
+    public save(): void {
+        if (!this.islandIsLegal) {
+            console.log("Cannot save because the island does not yet satisfy the rules")
+            return
+        }
+        this.storage.setIsland(this.islandName, this.pattern)
+        console.log(`Saved ${this.islandName}`)
     }
 
     // ================================================================================================
@@ -185,17 +156,25 @@ export class Island {
                 const land = landStack.pop()
                 spot.surface = land ? Surface.Land : Surface.Water
             })
-        } else if (this.singleHexalot) {
-            this.singleHexalot.spots.map(spot => spot.surface = Math.random() > 0.5 ? Surface.Land : Surface.Water)
-            this.singleHexalot.spots[0].surface = Surface.Land
+        } else if (this.hexalots.length === 1) {
+            const singleHexalot = this.hexalots[0]
+            singleHexalot.spots.map(spot => spot.surface = Math.random() > 0.5 ? Surface.Land : Surface.Water)
+            singleHexalot.spots[0].surface = Surface.Land
         }
         this.hexalots.forEach(lot => lot.load())
-        this.refreshStructure()
     }
 
     private hexalotAroundSpot(spot: Spot): Hexalot {
-        const adjacentMaxNonce = hexalotWithMaxNonce(spot.adjacentHexalots)
-        return this.getOrCreateHexalot(adjacentMaxNonce, spot.coords)
+        const hexalotParent = spot.adjacentHexalots.reduce(
+            (parent: Hexalot | undefined, candiate: Hexalot) => {
+                if (parent && parent.nonce >= candiate.nonce) {
+                    return parent
+                }
+                return candiate
+            },
+            undefined,
+        )
+        return this.getOrCreateHexalot(hexalotParent, spot.coords)
     }
 
     private getOrCreateHexalot(parent: Hexalot | undefined, coords: ICoords): Hexalot {
@@ -204,7 +183,8 @@ export class Island {
             return existing
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
-        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory, this.appStorage)
+        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory, this.storage)
+        hexalot.refreshFingerprint()
         this.hexalots.push(hexalot)
         return hexalot
     }

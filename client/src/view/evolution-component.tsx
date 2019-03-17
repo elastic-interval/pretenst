@@ -5,7 +5,7 @@ import {Subscription} from "rxjs/Subscription"
 import {Evolution} from "../gotchi/evolution"
 import {Evolver} from "../gotchi/evolver"
 
-import {GOTCHI_GHOST_MATERIAL, GOTCHI_POINTER_MATERIAL} from "./materials"
+import {GOTCHI_ARROW, GOTCHI_GHOST} from "./materials"
 
 export interface IEvolutionProps {
     evolution: Evolution
@@ -45,11 +45,11 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
                         <R3.Object3D key={`Evolver${index}`}>
                             <R3.LineSegments key="Vectors"
                                              geometry={fabric.pointerGeometryFor(evolver.direction)}
-                                             material={GOTCHI_POINTER_MATERIAL}
+                                             material={GOTCHI_ARROW}
                             />
                             <R3.Mesh
                                 geometry={fabric.facesGeometry}
-                                material={GOTCHI_GHOST_MATERIAL}
+                                material={GOTCHI_GHOST}
                             />
                         </R3.Object3D>
                     )

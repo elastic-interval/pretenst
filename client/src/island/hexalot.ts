@@ -1,7 +1,7 @@
 import {Vector3} from "three"
 
 import {AppStorage} from "../app-storage"
-import {fromGenomeData, fromMaster, Genome} from "../genetics/genome"
+import {fromGenomeData, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
 
 import {Journey} from "./journey"
@@ -45,7 +45,7 @@ export const hexalotTreeString = (hexalots: Hexalot[]) => {
 }
 
 export class Hexalot {
-    public genomeStored?: Genome
+    public genome?: Genome
     public journey?: Journey
     public rotation = -1
     public nonce = 0
@@ -73,7 +73,7 @@ export class Hexalot {
         this.refreshFingerprint()
         const genomeData = this.appStorage.getGenomeData(this)
         if (genomeData) {
-            this.genomeStored = fromGenomeData(genomeData)
+            this.genome = fromGenomeData(genomeData)
         }
         this.rotation = this.appStorage.getRotation(this)
     }
@@ -85,34 +85,30 @@ export class Hexalot {
         return this.identifier
     }
 
-    public get genome(): Genome {
-        if (!this.genomeStored) {
-            this.genomeStored = fromMaster(`(${this.coords.x}, ${this.coords.y})`)
-        }
-        return this.genomeStored
+    public get occupied(): boolean {
+        return !!this.genome
     }
 
-    public deleteGenome(): void {
-        this.genomeStored = undefined
+    public get isLegal(): boolean {
+        return this.spots.every(spot => spot.isLegal)
     }
 
     public refreshFingerprint(): void {
         this.identifier = spotsToHexFingerprint(this.spots)
     }
 
-    public createGotchi(mutatedGenome?: Genome): Gotchi | undefined {
-        if (mutatedGenome) {
-            return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, mutatedGenome)
-        } else {
-            return this.gotchiFactory.createGotchiSeed(this.center, this.rotation, this.genome)
+    public createNativeGotchi(): Gotchi | undefined {
+        if (!this.genome) {
+            return undefined
         }
+        return this.gotchiFactory.createGotchiSeed(this, this.rotation, this.genome)
     }
 
-    public rotate(forward: boolean, gotchi: Gotchi): Gotchi {
-        const genome = this.genome
-        if (!genome) {
-            throw new Error("Rotate nothing")
-        }
+    public createGotchiWithGenome(genome: Genome, rotation: number): Gotchi | undefined {
+        return this.gotchiFactory.createGotchiSeed(this, rotation, genome)
+    }
+
+    public rotate(forward: boolean): number {
         let nextRotation = forward ? this.rotation + 1 : this.rotation - 1
         if (nextRotation < 0) {
             nextRotation = 5
@@ -121,16 +117,7 @@ export class Hexalot {
         }
         this.rotation = nextRotation
         this.appStorage.setRotation(this, this.rotation)
-        gotchi.recycle()
-        const gotchiEgg = this.gotchiFactory.createGotchiSeed(this.center, this.rotation, genome)
-        if (!gotchiEgg) {
-            throw new Error("Unable to rotate")
-        }
-        return gotchiEgg
-    }
-
-    get master(): string | undefined {
-        return this.genome ? this.genome.master : undefined
+        return this.rotation
     }
 
     get centerSpot(): Spot {
@@ -139,14 +126,6 @@ export class Hexalot {
 
     get center(): Vector3 {
         return this.centerSpot.center
-    }
-
-    // todo: why is this unused?
-    get canBeSeeded(): boolean {
-        if (this.genome) {
-            return false
-        }
-        return !!this.centerSpot.adjacentHexalots.find(hexalot => !!hexalot.genome)
     }
 
     public destroy(): Spot[] {

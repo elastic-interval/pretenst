@@ -2,6 +2,7 @@ import {Vector3} from "three"
 
 import {Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
+import {Hexalot} from "../island/hexalot"
 import {HEXALOT_SHAPE} from "../island/shapes"
 
 import {Fabric} from "./fabric"
@@ -93,13 +94,13 @@ export class FabricKernel implements IGotchiFactory {
         }
     }
 
-    public createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi | undefined {
+    public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {
         const newInstance = this.allocateInstance()
         if (!newInstance) {
             return undefined
         }
-        const fabric = new Fabric(newInstance).createSeed(location.x, location.z, rotation)
-        return new Gotchi(fabric, genome, this)
+        const fabric = new Fabric(newInstance).createSeed(home.center.x, home.center.z, rotation)
+        return new Gotchi(home, fabric, genome, this)
     }
 
     public copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi | undefined {
@@ -109,7 +110,7 @@ export class FabricKernel implements IGotchiFactory {
         }
         this.exports.cloneInstance(gotchi.fabric.index, newInstance.index)
         const fabric = new Fabric(newInstance)
-        return new Gotchi(fabric, genome, this)
+        return new Gotchi(gotchi.home, fabric, genome, this)
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {

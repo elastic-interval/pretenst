@@ -14,13 +14,15 @@ export const HEXAGON_POINTS = [
     new Vector3(0, 0, SURFACE_SCALE),
     new Vector3(KINDA * SURFACE_SCALE, 0, SURFACE_SCALE/2),
     new Vector3(KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE/2),
-    new Vector3(),
 ]
 
+export const HEXALOT_OUTLINE_HEIGHT = 0.3
 export const HEXAPOD_PROJECTION = 0.2
 export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * SURFACE_SCALE
 export const SCALE_X = SURFACE_SCALE * KINDA
 export const SCALE_Y = SURFACE_SCALE * 1.5
+export const INNER_HEXALOT_SPOTS = 91
+export const OUTER_HEXALOT_SIDE = 6
 
 export const HEXALOT_SHAPE = [
     // center
@@ -198,3 +200,7 @@ export const ROTATE = [
     91, 92, 93, 94, 95, 96,
 ]
 
+export const ARROW_LENGTH = 9
+export const ARROW_WIDTH = 0.6
+export const ARROW_TIP_LENGTH_FACTOR = 1.3
+export const ARROW_TIP_WIDTH_FACTOR = 1.5
