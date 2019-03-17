@@ -9,8 +9,6 @@ export class IslandStateClick {
 
     public stateAfterClick(spot: Spot): IslandState {
 
-        console.log(`Hexalots=${this.state.island.hexalots.length} Spots=${this.state.island.spots.length}`)
-
         const hexalot = spot.centerOfHexalot
         const homeHexalot = this.state.homeHexalot
 
@@ -33,7 +31,6 @@ export class IslandStateClick {
 
             case IslandMode.Landed: // =================================================================================
                 if (hexalot) {
-                    console.log("Hexy", spot.coords)
                     return this.state.withSelectedSpot(spot)
                 }
                 return this.state

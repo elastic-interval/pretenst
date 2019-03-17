@@ -35,6 +35,7 @@ interface IGotchiViewState {
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private subs: Subscription[] = []
+    private selectedSpotPointer: Geometry
     private orbit: Orbit
     private spotSelector: SpotSelector
     private animating = true
@@ -82,11 +83,23 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         const gotchi = islandState.gotchi
         const journey = islandState.journey
         const selectedSpot = islandState.selectedSpot
+        if (this.selectedSpotPointer) {
+            this.selectedSpotPointer.dispose()
+        }
         if (selectedSpot) {
-            if (selectedSpot.centerOfHexalot) {
+            const centerOfHexalot = selectedSpot.centerOfHexalot
+            if (centerOfHexalot) {
                 this.target = new Vector3(0, HUNG_ALTITUDE, 0).add(selectedSpot.center)
             } else {
                 this.target = selectedSpot.center
+            }
+            const geometry = new Geometry()
+            if (selectedSpot) {
+                const center = selectedSpot.center
+                const occupiedHexalot = centerOfHexalot && centerOfHexalot.occupied
+                const target = occupiedHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(center) : center
+                geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)]
+                this.selectedSpotPointer = geometry
             }
         }
         return (
@@ -118,11 +131,13 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                 />
                             </R3.Object3D>
                         )}
-                        <R3.LineSegments
-                            key="Pointer"
-                            geometry={this.pointerGeometry}
-                            material={USER_POINTER_MATERIAL}
-                        />
+                        {!this.selectedSpotPointer? null: (
+                            <R3.LineSegments
+                                key="Pointer"
+                                geometry={this.selectedSpotPointer}
+                                material={USER_POINTER_MATERIAL}
+                            />
+                        )}
                         {!journey ? null : (
                             <JourneyComponent journey={journey}/>
                         )}
@@ -135,20 +150,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     // ==========================
-
-    // todo: cache this, dispose old ones
-    private get pointerGeometry(): Geometry | null {
-        const geometry = new Geometry()
-        const islandState = this.props.islandState
-        const selectedSpot = islandState.selectedSpot
-        if (selectedSpot) {
-            const center = selectedSpot.center
-            const occupiedHexalot = selectedSpot.centerOfHexalot && selectedSpot.centerOfHexalot.occupied
-            const target = occupiedHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(center) : center
-            geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)]
-        }
-        return geometry
-    }
 
     private animate(): void {
         const step = () => {

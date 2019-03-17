@@ -85,15 +85,8 @@ export class IslandState {
     public withSelectedSpot(selectedSpot?: Spot): IslandState {
         const copy = this.copy
         copy.selectedSpot = selectedSpot
-        if (selectedSpot) {
-            const hexalot = selectedSpot.centerOfHexalot
-            copy.selectedHexalot = hexalot
-            if (hexalot) {
-                copy.journey = this.storage.loadJourney(hexalot, this.island)
-            }
-        } else {
-            copy.selectedHexalot = undefined
-        }
+        copy.selectedHexalot = selectedSpot ? selectedSpot.centerOfHexalot : undefined
+        copy.journey = copy.selectedHome && copy.homeHexalot ? this.storage.loadJourney(copy.homeHexalot, this.island) : undefined
         return copy
     }
 

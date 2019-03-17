@@ -164,6 +164,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             Command.RotateLeft,
                             Command.RotateRight,
                             Command.DriveFree,
+                            Command.ReturnHome,
                         ])}
                     </ActionFrame>
                 )

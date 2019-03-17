@@ -4,13 +4,20 @@ import {Geometry, Matrix4, Mesh, Vector3} from "three"
 
 import {HUNG_ALTITUDE} from "../body/fabric"
 import {IslandMode, IslandState} from "../island/island-state"
-import {ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH} from "../island/shapes"
+import {
+    ARROW_LENGTH,
+    ARROW_TIP_LENGTH_FACTOR,
+    ARROW_TIP_WIDTH_FACTOR,
+    ARROW_WIDTH,
+    HEX_RING_HEIGHT,
+} from "../island/shapes"
 
 import {
     GOTCHI_MATERIAL,
     GOTCHI_POINTER_MATERIAL,
     HANGER_MATERIAL_FREE,
     HANGER_MATERIAL_OCCUPIED,
+    HOME_HEXALOT_MATERIAL,
     ISLAND_MATERIAL,
 } from "./materials"
 import {MeshKey} from "./spot-selector"
@@ -26,6 +33,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private arrow: Geometry
     private hangersOccupied: Geometry
     private hangersFree: Geometry
+    private homeHexalot?: Geometry
 
     constructor(props: IslandComponentProps) {
         super(props)
@@ -37,13 +45,22 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IslandComponentProps>, nextContext: object): void {
-        this.props.islandState.island.spots.forEach(spot => spot.faceNames = [])
+        const islandState = nextProps.islandState
+        islandState.island.spots.forEach(spot => spot.faceNames = [])
         this.disposeGeometry()
         this.spots = this.spotsGeometry
         this.seeds = this.seedsGeometry
         this.arrow = this.arrowGeometry
         this.hangersOccupied = this.hangersGeometry(true)
         this.hangersFree = this.hangersGeometry(false)
+        const homeHexalot = islandState.homeHexalot
+        if (homeHexalot) {
+            const geometry = new Geometry()
+            homeHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEX_RING_HEIGHT)
+            homeHexalot.centerSpot.addHangerGeometry(geometry.vertices)
+            geometry.computeBoundingSphere()
+            this.homeHexalot = geometry
+        }
     }
 
     public componentWillUnmount(): void {
@@ -65,7 +82,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
                     material={GOTCHI_MATERIAL}
                 />
                 <R3.LineSegments
-                    key="Arrows"
+                    key="Arrow"
                     geometry={this.arrow}
                     material={GOTCHI_POINTER_MATERIAL}
                 />
@@ -78,6 +95,11 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
                     key="HangersFree"
                     geometry={this.hangersFree}
                     material={HANGER_MATERIAL_FREE}
+                />
+                <R3.LineSegments
+                    key="HomeHexalot"
+                    geometry={this.homeHexalot}
+                    material={HOME_HEXALOT_MATERIAL}
                 />
             </R3.Object3D>
         )
@@ -101,8 +123,13 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     }
 
     private hangersGeometry(occupied: boolean): Geometry {
-        const allHexalots = this.props.islandState.island.hexalots
-        const hexalots = occupied ? allHexalots.filter(h => h.occupied) : allHexalots.filter(h => !h.occupied)
+        const homeHexalot = this.props.islandState.homeHexalot
+        const hexalots = this.props.islandState.island.hexalots.filter(hexalot => {
+            if (homeHexalot && hexalot.id === homeHexalot.id) {
+                return false
+            }
+            return hexalot.occupied === occupied
+        })
         const geometry = new Geometry()
         hexalots.forEach(hexalot => hexalot.centerSpot.addHangerGeometry(geometry.vertices))
         geometry.computeBoundingSphere()
@@ -161,5 +188,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.arrow.dispose()
         this.hangersOccupied.dispose()
         this.hangersFree.dispose()
+        if (this.homeHexalot) {
+            this.homeHexalot.dispose()
+        }
     }
 }

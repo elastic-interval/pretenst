@@ -54,9 +54,10 @@ export class Spot {
             hexPoint.y * sizeFactor + this.center.y,
             hexPoint.z * sizeFactor + this.center.z,
         )))
+        vertices.push(this.center)
         const normalSpread = this.normalSpread
         for (let a = 0; a < SIX; a++) {
-            const offset = index * HEXAGON_POINTS.length
+            const offset = index * (HEXAGON_POINTS.length + 1)
             const b = (a + 1) % SIX
             const vertexNormals = [
                 UP,
@@ -109,6 +110,15 @@ export class Spot {
             faces.push(new Face3(left, current, next))
             this.faceNames.push(`${meshKey}:${faces.length}`)
             faces.push(new Face3(right, next, current))
+        }
+    }
+
+    public addRaisedHexagon(vertices: Vector3[], height: number): void {
+        const vertex = (hexPoint: Vector3) => vertices.push(new Vector3(0, height, 0).add(this.center).add(hexPoint))
+        for (let a = 0; a < SIX; a++) {
+            const b = (a + 1) % SIX
+            vertex(HEXAGON_POINTS[a])
+            vertex(HEXAGON_POINTS[b])
         }
     }
 
