@@ -124,7 +124,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     return (
                         <ActionFrame>
                             {this.buttons("Home", [
-                                Command.PlanFreeDrive,
+                                Command.PrepareDrive,
                                 Command.PlanJourney,
                                 Command.Evolve,
                                 Command.Logout,
@@ -156,7 +156,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case IslandMode.PlanningDrive: // ==========================================================================
+            case IslandMode.PreparingDrive: // ==========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Drive", [

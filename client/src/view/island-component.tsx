@@ -150,7 +150,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private get arrowGeometry(): Geometry | undefined {
         const islandState = this.props.islandState
         const hexalot = islandState.selectedHexalot
-        if (!hexalot || islandState.islandMode !== IslandMode.PlanningDrive) {
+        if (!hexalot || islandState.islandMode !== IslandMode.PreparingDrive) {
             return undefined
         }
         const toTransform: Vector3[] = []

@@ -53,8 +53,8 @@ export class IslandStateCommand {
                 return state
 
 
-            case Command.PlanFreeDrive: // =============================================================================
-                return state.withMode(IslandMode.PlanningDrive)
+            case Command.PrepareDrive: // =============================================================================
+                return state.withMode(IslandMode.PreparingDrive)
 
 
             case Command.DriveFree: // =================================================================================

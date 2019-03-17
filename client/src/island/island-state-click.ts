@@ -52,7 +52,7 @@ export class IslandStateClick {
                 return this.state // todo: no state change?
 
 
-            case IslandMode.PlanningDrive: // ==========================================================================
+            case IslandMode.PreparingDrive: // ==========================================================================
                 const target = spot.center
                 const adjacent = spot.adjacentSpots.map((s, i) => ({center: s.center, index: i}))
                 adjacent.sort((a, b) => target.distanceTo(a.center) - target.distanceTo(b.center))

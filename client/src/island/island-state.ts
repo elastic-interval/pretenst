@@ -14,6 +14,7 @@ import {Journey} from "./journey"
 import {Spot, Surface} from "./spot"
 
 export enum Command {
+    AbandonFix = "Abandon fix",
     ClaimHexalot = "Claim hexalot",
     ComeHere = "Come here",
     DriveFree = "Drive free",
@@ -21,15 +22,14 @@ export enum Command {
     Evolve = "Evolve",
     ForgetJourney = "Forget journey",
     GoThere = "Go there",
+    JumpToFix = "Jump to fix",
     Logout = "Logout",
     MakeLand = "Make into land",
     MakeWater = "Make into water",
-    PlanFreeDrive = "Plan free drive",
     PlanJourney = "Plan journey",
+    PrepareDrive = "Prepare drive",
     RandomGenome = "Random genome",
     Return = "Return",
-    JumpToFix = "Jump to fix",
-    AbandonFix = "Abandon fix",
     RotateLeft = "Rotate left",
     RotateRight = "Rotate right",
     SaveGenome = "Save genome",
@@ -42,8 +42,8 @@ export enum IslandMode {
     Evolving = "Evolving",
     FixingIsland = "Fixing island",
     Landed = "Landed",
-    PlanningDrive = "Planning drive",
     PlanningJourney = "Planning journey",
+    PreparingDrive = "Preparing drive",
     Visiting = "Visiting",
 }
 
