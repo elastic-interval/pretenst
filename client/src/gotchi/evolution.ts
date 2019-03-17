@@ -11,8 +11,8 @@ import {Evolver, IEvolver} from "./evolver"
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
 const MUTATION_COUNT = 5
-const MINIMUM_AGE = 20000
-const MAXIMUM_AGE = 30000
+const MINIMUM_AGE = 15000
+const MAXIMUM_AGE = 25000
 const INCREASE_AGE_LIMIT = 1000
 const SURVIVAL_RATE = 0.66
 
@@ -97,7 +97,7 @@ export class Evolution {
 
     private adjustAgeLimit(): void {
         const nextVisit = this.leg.visited + 1
-        this.ageLimit += INCREASE_AGE_LIMIT * nextVisit
+        this.ageLimit += INCREASE_AGE_LIMIT
         const ageLimitForLeg = MAXIMUM_AGE * nextVisit
         if (this.ageLimit >= ageLimitForLeg) {
             this.ageLimit = ageLimitForLeg + MINIMUM_AGE * nextVisit
