@@ -32,7 +32,7 @@ export class Island {
     }
 
     public get islandIsLegal(): boolean {
-        return !this.spots.some(spot => !spot.isLegal)
+        return this.spots.every(spot => spot.isLegal)
     }
 
     public get freeHexalot(): Hexalot | undefined {
