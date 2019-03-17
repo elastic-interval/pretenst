@@ -22,10 +22,17 @@ export class Evolution {
     private ageLimit = MINIMUM_AGE
     private frozenHero?: Evolver
     private leg: Leg
+    private direction: number
     private midpointVector = new Vector3()
 
     constructor(readonly home: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
         this.leg = firstLeg
+        home.centerSpot.adjacentSpots.forEach((spot, index) => {
+            const hexalot = spot.centerOfHexalot
+            if (hexalot&& firstLeg.goTo.id === hexalot.id) {
+                this.direction = index
+            }
+        })
         this.evolversNow.next(this.createPopulation())
     }
 
@@ -188,7 +195,7 @@ export class Evolution {
 
     private createEvolver(genome: Genome): Evolver | undefined {
         const frozenHero = this.frozenHero
-        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.home.createGotchiWithGenome(genome)
+        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.home.createGotchiWithGenome(genome, this.direction)
         if (!gotchi) {
             return undefined
         }
