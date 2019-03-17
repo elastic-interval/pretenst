@@ -16,7 +16,7 @@ export interface IGotchiFactory {
 export class Gotchi {
     private growth?: Growth
 
-    constructor(public fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
+    constructor(readonly fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
         if (fabric.isGestating) {
             this.growth = new Growth(fabric, genome.createReader(Direction.REST))
         } else {

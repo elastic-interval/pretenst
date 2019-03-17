@@ -16,7 +16,7 @@ export const HEXAGON_POINTS = [
     new Vector3(KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE/2),
 ]
 
-export const HEX_RING_HEIGHT = 0.2
+export const HEXALOT_OUTLINE_HEIGHT = 0.3
 export const HEXAPOD_PROJECTION = 0.2
 export const HEXAPOD_RADIUS = HEXAPOD_PROJECTION * SURFACE_SCALE
 export const SCALE_X = SURFACE_SCALE * KINDA

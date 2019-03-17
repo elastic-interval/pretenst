@@ -13,9 +13,9 @@ export const ISLAND = new MeshPhongMaterial({vertexColors: FaceColors, lights: t
 
 export const HANGER_OCCUPIED = new LineBasicMaterial({color: new Color("black")})
 
-export const HANGER_FREE = new LineBasicMaterial({color: new Color("white")})
+export const HANGER_FREE = new LineBasicMaterial({color: new Color("green")})
 
-export const HOME_HEXALOT = new LineBasicMaterial({color: new Color("red")})
+export const HOME_HEXALOT = new LineBasicMaterial({color: new Color("white")})
 
 export const JOURNEY = new LineBasicMaterial({color: new Color("crimson")})
 

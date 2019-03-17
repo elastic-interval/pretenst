@@ -67,7 +67,7 @@ export class Evolver {
     }
 
     public mutateGenome(mutationCount: number): void {
-        console.log(`mutating ${this.index} ${Direction[this.nextDirection]} ${mutationCount} dice`)
+        // console.log(`mutating ${this.index} ${Direction[this.nextDirection]} ${mutationCount} dice`)
         this.mutatingGenome = this.mutatingGenome.withMutatedBehavior(this.nextDirection, mutationCount)
     }
 

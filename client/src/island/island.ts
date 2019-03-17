@@ -27,7 +27,7 @@ export class Island {
         private storage: AppStorage,
     ) {
         this.apply(storage.getIsland(islandName))
-        this.state = new IslandState(this, storage, IslandMode.Visiting).withRestructure
+        this.state = new IslandState(0, this, storage, IslandMode.Visiting).withRestructure
         this.state.subject = new BehaviorSubject<IslandState>(this.state)
     }
 

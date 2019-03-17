@@ -9,7 +9,7 @@ import {
     ARROW_TIP_LENGTH_FACTOR,
     ARROW_TIP_WIDTH_FACTOR,
     ARROW_WIDTH,
-    HEX_RING_HEIGHT,
+    HEXALOT_OUTLINE_HEIGHT,
     INNER_HEXALOT_SPOTS,
     OUTER_HEXALOT_SIDE,
 } from "../island/shapes"
@@ -26,6 +26,7 @@ export interface IslandComponentProps {
 }
 
 export class IslandComponent extends React.Component<IslandComponentProps, object> {
+    private islandStateNonce = 0
     private spots: Geometry
     private seeds: Geometry
     private hangersOccupied: Geometry
@@ -45,24 +46,24 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.homeHexalot = this.homeHexalotGeometry
     }
 
-    public componentWillReceiveProps(nextProps: Readonly<IslandComponentProps>, nextContext: object): void {
-        const islandState = nextProps.islandState
-        islandState.island.spots.forEach(spot => spot.faceNames = [])
-        this.disposeGeometry()
-        this.spots = this.spotsGeometry
-        this.seeds = this.seedsGeometry
-        this.arrow = this.arrowGeometry
-        this.hangersOccupied = this.hangersGeometry(true)
-        this.hangersFree = this.hangersGeometry(false)
-        this.selectedSpot = this.selectedSpotGeometry
-        this.homeHexalot = this.homeHexalotGeometry
-    }
-
     public componentWillUnmount(): void {
         this.disposeGeometry()
     }
 
     public render(): JSX.Element {
+        const islandState = this.props.islandState
+        if (islandState.nonce > this.islandStateNonce) {
+            this.disposeGeometry()
+            islandState.island.spots.forEach(spot => spot.faceNames = [])
+            this.spots = this.spotsGeometry
+            this.seeds = this.seedsGeometry
+            this.arrow = this.arrowGeometry
+            this.hangersOccupied = this.hangersGeometry(true)
+            this.hangersFree = this.hangersGeometry(false)
+            this.selectedSpot = this.selectedSpotGeometry
+            this.homeHexalot = this.homeHexalotGeometry
+            this.islandStateNonce = islandState.nonce
+        }
         return (
             <R3.Object3D key={this.context.key}>
                 <R3.Mesh name="Spots" geometry={this.spots} material={ISLAND}
@@ -183,9 +184,9 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
             if (outerIndex < 0) {
                 return
             }
-            spot.addRaisedHexagonParts(geometry.vertices, HEX_RING_HEIGHT, outerIndex, OUTER_HEXALOT_SIDE)
+            spot.addRaisedHexagonParts(geometry.vertices, HEXALOT_OUTLINE_HEIGHT, outerIndex, OUTER_HEXALOT_SIDE)
         })
-        homeHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEX_RING_HEIGHT)
+        homeHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
         homeHexalot.centerSpot.addHangerGeometry(geometry.vertices)
         geometry.computeBoundingSphere()
         return geometry

@@ -51,6 +51,7 @@ export class IslandState {
     public subject: BehaviorSubject<IslandState>
 
     constructor(
+        readonly nonce: number,
         readonly island: Island,
         readonly storage: AppStorage,
         public islandMode: IslandMode,
@@ -195,7 +196,7 @@ export class IslandState {
         const home = !!this.homeHexalot
         const spot = this.selectedSpot ? JSON.stringify(this.selectedSpot.coords) : "-"
         const lot = this.selectedHexalot ? JSON.stringify(this.selectedHexalot.coords) : "-"
-        console.log(`${this.islandMode}: legal=${legal} home=${home} spot=${spot} lot=${lot}`)
+        console.log(`${this.nonce}:${this.islandMode}: legal=${legal} home=${home} spot=${spot} lot=${lot}`)
         this.island.state = this
         this.subject.next(this)
     }
@@ -213,6 +214,7 @@ export class IslandState {
 
     private get copy(): IslandState {
         const ditto = new IslandState(
+            this.nonce + 1,
             this.island,
             this.storage,
             this.islandMode,
