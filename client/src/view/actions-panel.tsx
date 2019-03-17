@@ -126,6 +126,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             {this.buttons("Home", [
                                 Command.PrepareDrive,
                                 Command.PlanJourney,
+                                Command.DriveJourney,
                                 Command.Evolve,
                                 Command.Logout,
                             ])}

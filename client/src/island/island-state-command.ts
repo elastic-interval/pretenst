@@ -68,6 +68,7 @@ export class IslandStateCommand {
 
 
             case Command.DriveJourney: // ==============================================================================
+                // TODO: attach journey to a gotchi
                 if (homeHexalot && journey) {
                     const newbornGotchi = homeHexalot.createNativeGotchi()
                     if (newbornGotchi) {
