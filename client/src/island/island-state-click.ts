@@ -64,13 +64,8 @@ export class IslandStateClick {
                 return this.state // todo: no state change?
 
 
-            case IslandMode.DrivingFree: // ============================================================================
-                // todo
-                return this.state
-
-
             default: // ================================================================================================
-                throw new Error(`Unknown mode ${this.state.islandMode}`)
+                return this.state
 
 
         }
