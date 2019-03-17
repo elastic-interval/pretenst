@@ -88,7 +88,7 @@ export class Hexalot {
     }
 
     public get isLegal(): boolean {
-        return !this.spots.some(spot => !spot.isLegal)
+        return this.spots.every(spot => spot.isLegal)
     }
 
     public refreshFingerprint(): void {
