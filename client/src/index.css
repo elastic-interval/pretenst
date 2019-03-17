@@ -117,7 +117,7 @@ p a, p a:hover {
 .info-panel-collapsed {
     bottom: 20px;
     left: 20px;
-    padding: 5px 5px 5px 5px;
+    padding: 5px;
     border-color: darkcyan;
     border-style: solid;
     border-radius: 10px;
