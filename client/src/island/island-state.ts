@@ -121,7 +121,12 @@ export class IslandState {
 
     public withHomeHexalot(hexalot?: Hexalot): IslandState {
         const copy = this.copy
-        copy.islandMode = hexalot ? IslandMode.Landed : IslandMode.Visiting
+        if (hexalot) {
+            copy.islandMode = IslandMode.Landed
+        } else {
+            copy.islandMode = IslandMode.Visiting
+            copy.journey = undefined
+        }
         copy.homeHexalot = hexalot
         return copy
     }

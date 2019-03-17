@@ -17,6 +17,8 @@ export const HANGER_FREE = new LineBasicMaterial({color: new Color("green")})
 
 export const HOME_HEXALOT = new LineBasicMaterial({color: new Color("white")})
 
+export const AVAILABLE_HEXALOT = new LineBasicMaterial({color: new Color("green")})
+
 export const JOURNEY = new LineBasicMaterial({color: new Color("crimson")})
 
 export const GOTCHI_ARROW = new LineBasicMaterial({color: new Color("magenta")})

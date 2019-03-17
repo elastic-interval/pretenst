@@ -20,7 +20,6 @@ export enum Surface {
 
 const SURFACE_UNKNOWN_COLOR = new Color("silver")
 const SURFACE_LAND_COLOR = new Color("tan")
-const SURFACE_AVAILABLE_LAND_COLOR = new Color("mediumseagreen")
 const SURFACE_WATER_COLOR = new Color("darkturquoise")
 const SIX = 6
 const UP = new Vector3(0, 1, 0)
@@ -178,7 +177,7 @@ export class Spot {
     private get color(): Color {
         switch (this.surface) {
             case Surface.Land:
-                return this.canBeClaimed ? SURFACE_AVAILABLE_LAND_COLOR : SURFACE_LAND_COLOR
+                return SURFACE_LAND_COLOR
             case Surface.Water:
                 return SURFACE_WATER_COLOR
             default:

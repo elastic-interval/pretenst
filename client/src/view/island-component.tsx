@@ -14,7 +14,16 @@ import {
     OUTER_HEXALOT_SIDE,
 } from "../island/shapes"
 
-import {GOTCHI, GOTCHI_ARROW, HANGER_FREE, HANGER_OCCUPIED, HOME_HEXALOT, ISLAND, SELECTED_POINTER} from "./materials"
+import {
+    AVAILABLE_HEXALOT,
+    GOTCHI,
+    GOTCHI_ARROW,
+    HANGER_FREE,
+    HANGER_OCCUPIED,
+    HOME_HEXALOT,
+    ISLAND,
+    SELECTED_POINTER,
+} from "./materials"
 import {MeshKey} from "./spot-selector"
 
 const SUN_POSITION = new Vector3(0, 400, 0)
@@ -34,6 +43,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private arrow?: Geometry
     private homeHexalot?: Geometry
     private selectedSpot?: Geometry
+    private availableHexalots?: Geometry
+    private freeHexalot?: Geometry
 
     constructor(props: IslandComponentProps) {
         super(props)
@@ -44,6 +55,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.hangersFree = this.hangersGeometry(false)
         this.selectedSpot = this.selectedSpotGeometry
         this.homeHexalot = this.homeHexalotGeometry
+        this.availableHexalots = this.availableHexalotsGeometry
+        this.freeHexalot = this.freeHexalotGeometry
     }
 
     public componentWillUnmount(): void {
@@ -62,6 +75,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
             this.hangersFree = this.hangersGeometry(false)
             this.selectedSpot = this.selectedSpotGeometry
             this.homeHexalot = this.homeHexalotGeometry
+            this.availableHexalots = this.availableHexalotsGeometry
+            this.freeHexalot = this.freeHexalotGeometry
             this.islandStateNonce = islandState.nonce
         }
         return (
@@ -80,6 +95,12 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
                 )}
                 {!this.selectedSpot ? null : (
                     <R3.LineSegments key="Pointer" geometry={this.selectedSpot} material={SELECTED_POINTER}/>
+                )}
+                {!this.availableHexalots ? null : (
+                    <R3.LineSegments key="Available" geometry={this.availableHexalots} material={AVAILABLE_HEXALOT}/>
+                )}
+                {!this.freeHexalot ? null : (
+                    <R3.LineSegments key="Free" geometry={this.freeHexalot} material={AVAILABLE_HEXALOT}/>
                 )}
                 <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                 <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
@@ -192,6 +213,36 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         homeHexalot.centerSpot.addHangerGeometry(geometry.vertices)
         geometry.computeBoundingSphere()
         return geometry
+    }
+
+    private get availableHexalotsGeometry(): Geometry | undefined {
+        const islandState = this.props.islandState
+        if (islandState.islandMode !== IslandMode.Visiting) {
+            return undefined
+        }
+        const geometry = new Geometry()
+        islandState.island.spots.filter(spot => spot.canBeClaimed).forEach(spot => {
+            spot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
+        })
+        return geometry
+    }
+
+    private get freeHexalotGeometry(): Geometry | undefined {
+        const islandState = this.props.islandState
+        const freeHexalot = islandState.island.hexalots.find(hexalot => !hexalot.occupied)
+        if (freeHexalot) {
+            const geometry = new Geometry()
+            freeHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
+            freeHexalot.spots.forEach((spot, index) => {
+                const outerIndex = index - INNER_HEXALOT_SPOTS
+                if (outerIndex < 0) {
+                    return
+                }
+                spot.addRaisedHexagonParts(geometry.vertices, HEXALOT_OUTLINE_HEIGHT, outerIndex, OUTER_HEXALOT_SIDE)
+            })
+            return geometry
+        }
+        return undefined
     }
 
     private disposeGeometry(): void {

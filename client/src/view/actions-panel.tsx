@@ -140,7 +140,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             ])}
                         </ActionFrame>
                     )
-
                 }
 
 
