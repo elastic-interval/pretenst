@@ -5,10 +5,11 @@ import {Direction} from "../body/fabric-exports"
 import {Behavior} from "../genetics/behavior"
 import {Genome, IGenomeData} from "../genetics/genome"
 import {Growth} from "../genetics/growth"
+import {Hexalot} from "../island/hexalot"
 
 export interface IGotchiFactory {
 
-    createGotchiSeed(location: Vector3, rotation: number, genome: Genome): Gotchi | undefined
+    createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined
 
     copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi | undefined
 }
@@ -16,7 +17,7 @@ export interface IGotchiFactory {
 export class Gotchi {
     private growth?: Growth
 
-    constructor(public fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
+    constructor(readonly home: Hexalot, readonly fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
         if (fabric.isGestating) {
             this.growth = new Growth(fabric, genome.createReader(Direction.REST))
         } else {
@@ -38,10 +39,6 @@ export class Gotchi {
 
     public get midpoint(): Vector3 {
         return this.fabric.midpoint
-    }
-
-    public get master(): string {
-        return this.genome.master
     }
 
     public get age(): number {

@@ -4,9 +4,8 @@ import {BufferGeometry, Float32BufferAttribute} from "three"
 
 import {Hexalot} from "../island/hexalot"
 import {Journey} from "../island/journey"
-import {Spot} from "../island/spot"
 
-import {TRIP_MATERIAL} from "./materials"
+import {JOURNEY} from "./materials"
 
 const TRIP_ALTITUDE = 0.3
 
@@ -14,28 +13,8 @@ export interface IJourneyProps {
     journey: Journey
 }
 
-export interface IJourneyState {
-    geometry?: BufferGeometry
-    nextSpot?: Spot
-}
-
-function geometryRefreshed(state: IJourneyState, props: IJourneyProps): object {
-    if (state.geometry) {
-        state.geometry.dispose()
-    }
-    const positions: number[] = []
-    props.journey.visits.forEach((hexalot: Hexalot) => {
-        const center = hexalot.centerSpot.center
-        positions.push(center.x)
-        positions.push(TRIP_ALTITUDE)
-        positions.push(center.z)
-    })
-    const geometry = new BufferGeometry()
-    geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
-    return {geometry}
-}
-
-export class JourneyComponent extends React.Component<IJourneyProps, IJourneyState> {
+export class JourneyComponent extends React.Component<IJourneyProps, object> {
+    private geometry: BufferGeometry
 
     constructor(props: IJourneyProps) {
         super(props)
@@ -43,15 +22,24 @@ export class JourneyComponent extends React.Component<IJourneyProps, IJourneySta
     }
 
     public componentWillReceiveProps(): void {
-        this.setState(geometryRefreshed)
+        const positions: number[] = []
+        this.props.journey.visits.forEach((hexalot: Hexalot) => {
+            const center = hexalot.centerSpot.center
+            positions.push(center.x)
+            positions.push(TRIP_ALTITUDE)
+            positions.push(center.z)
+        })
+        const geometry = new BufferGeometry()
+        geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
+        this.geometry = geometry
+    }
+
+    public componentWillUnmount(): void {
+        this.geometry.dispose()
     }
 
     public render(): JSX.Element {
-        if (!this.state.geometry) {
-            return <R3.Object3D key="NoTrip"/>
-        } else {
-            return <R3.Line key="Trip" geometry={this.state.geometry} material={TRIP_MATERIAL}/>
-        }
+        return <R3.Line key="Journey" geometry={this.geometry} material={JOURNEY}/>
     }
 
 }

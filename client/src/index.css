@@ -1,18 +1,15 @@
 body {
     margin: 0;
     padding: 0;
-    font-family: Verdana;
 }
 
 p a, p a:hover {
     color: #ff8582;
-    font-weight: bolder;
     text-decoration: none;
 }
 
 .btn-link {
     color: white;
-    font-weight: bolder;
 }
 
 .App {
@@ -26,28 +23,34 @@ p a, p a:hover {
 
 .floating-panel {
     position: absolute;
-    color: white;
-    background-color: black;
-    border-color: white;
-    border-style: solid;
+    color: darkcyan;
     padding: 5px 5px 5px 5px;
-    border-radius: 20px;
 }
 
-.actions-panel {
+.action-prompt {
+    color: darkcyan;
+    padding: 5px 5px 5px 5px;
+}
+
+.actions-panel-outer {
     top: 20px;
-    right: 20px;
-    width: 20%;
-    height: 20%;
+    left: 10%;
+    width: 80%;
+    height: auto;
     text-align: center;
 }
 
-.actions-panel-collapsed {
-    top: 20px;
-    right: 20px;
+.actions-panel-inner {
+    background-color: black;
+    height: auto;
+    display: inline-block;
+    border-color: darkcyan;
+    border-style: solid;
+    border-radius: 10px;
+    padding: 5px 5px 5px 5px;
 }
 
-.action-panel {
+.action-frame {
     width: 100%;
     right: 100%;
 }
@@ -60,6 +63,9 @@ p a, p a:hover {
 
 .dice {
     font-size: xx-large;
+}
+
+.command-button {
 }
 
 .gotchi-view {
@@ -93,18 +99,28 @@ p a, p a:hover {
     position: absolute;
     top: 5px;
     right: 15px;
+    height: 30px;
 }
 
 .info-panel {
+    background-color: black;
     bottom: 20px;
-    left: 20px;
-    width: 30%;
-    height: 35%;
+    left: 10%;
+    width: 80%;
+    height: auto;
+    padding: 5px;
+    border-color: darkcyan;
+    border-style: solid;
+    border-radius: 10px;
 }
 
 .info-panel-collapsed {
     bottom: 20px;
     left: 20px;
+    padding: 5px;
+    border-color: darkcyan;
+    border-style: solid;
+    border-radius: 10px;
 }
 
 .carousel {
