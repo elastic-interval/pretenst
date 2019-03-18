@@ -1,10 +1,10 @@
 import {BehaviorSubject} from "rxjs"
 import {Vector3} from "three"
 
-import {AppStorage} from "../app-storage"
 import {freshGenome} from "../genetics/genome"
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
+import {AppStorage} from "../storage/app-storage"
 
 import {Hexalot} from "./hexalot"
 import {Island} from "./island"

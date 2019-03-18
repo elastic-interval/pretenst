@@ -1,8 +1,8 @@
 import {BehaviorSubject} from "rxjs"
 import {Vector3} from "three"
 
-import {AppStorage} from "../app-storage"
 import {IGotchiFactory} from "../gotchi/gotchi"
+import {AppStorage} from "../storage/app-storage"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
 import {IslandMode, IslandState} from "./island-state"
