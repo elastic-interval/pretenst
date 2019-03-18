@@ -19,7 +19,11 @@ describe("Genetics", () => {
 
     describe("Gene reader", () => {
 
-        const reader = (dots: number) => new GeneReader([], () => DICE[dots - 1])
+        const reader = (dots: number) => new GeneReader({
+            direction: Direction.FORWARD,
+            mutationCount: 0,
+            dice: [],
+        }, () => DICE[dots - 1])
 
         it("should make the right choices given trivial dice sequences", () => {
 
@@ -78,7 +82,7 @@ describe("Genetics", () => {
     describe("Genome", () => {
 
         it("should hold direction genes", () => {
-            const genome = new Genome({geneMap: {}}, () => DICE[0])
+            const genome = new Genome([], () => DICE[0])
             expect(genome.createReader(Direction.REST).chooseFrom(2)).toBe(0)
         })
 

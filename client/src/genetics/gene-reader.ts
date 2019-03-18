@@ -1,12 +1,10 @@
 import {diceToNuance, IDie} from "./dice"
+import {IGene} from "./genome"
 
 export class GeneReader {
     private cursor = 0
 
-    constructor(private sequence: IDie[], private roll: () => IDie) {
-        if (!this.sequence) {
-            this.sequence = []
-        }
+    constructor(private gene: IGene, private roll: () => IDie) {
     }
 
     public chooseFrom(maxChoice: number): number {
@@ -25,13 +23,13 @@ export class GeneReader {
     }
 
     public get size(): number {
-        return this.sequence ? this.sequence.length : 0
+        return this.gene.dice.length
     }
 
     private next(): IDie {
-        while (this.sequence.length < this.cursor + 1) {
-            this.sequence.push(this.roll())
+        while (this.gene.dice.length < this.cursor + 1) {
+            this.gene.dice.push(this.roll())
         }
-        return this.sequence[this.cursor++]
+        return this.gene.dice[this.cursor++]
     }
 }
