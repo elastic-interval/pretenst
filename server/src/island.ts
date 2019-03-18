@@ -26,10 +26,10 @@ interface IHexalot {
     spots: ISpot[]
     coords: ICoords
     nonce: number
+    childHexalots: IHexalot[]
 
     // OPTIONAL
     id?: HexalotID
-    childHexalots?: IHexalot[]
     genomeData?: string
 }
 
@@ -163,9 +163,6 @@ export class Island {
     }
 
     public get pattern(): IslandPattern {
-        if (!this.isLegal) {
-            throw new Error("Saving illegal island")
-        }
         this.spots.sort(sortSpotsOnCoord)
         return {
             hexalots: hexalotTreeString(this.hexalots),
@@ -200,7 +197,7 @@ export class Island {
         lotID: HexalotID,
         genome: string,
     ): Promise<void> {
-        if (this.findHexalot(lotID)) {
+        if (await this.store.getGenome(lotID) !== undefined) {
             throw new Error("hexalot already claimed")
         }
         let lot: IHexalot
@@ -228,6 +225,9 @@ export class Island {
         })
         if (illegalSpot) {
             throw new Error(`illegal spot: ${JSON.stringify(illegalSpot)}`)
+        }
+        for (const spot of spots) {
+            Object.assign(this.getOrCreateSpot(spot.coords), spot)
         }
 
         await this.store.setGenome(lotID, genome)
@@ -326,6 +326,10 @@ export class Island {
             nonce: parent ? parent.nonce + 1 : 0,
             coords,
             spots,
+            childHexalots: [],
+        }
+        if (parent) {
+            parent.childHexalots.push(hexalot)
         }
         this.hexalots.push(hexalot)
         return hexalot
