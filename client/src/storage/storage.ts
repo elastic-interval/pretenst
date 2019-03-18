@@ -7,7 +7,7 @@ export interface IStorage {
 
     getIsland(islandName: string): Promise<IslandPattern>
 
-    claimHexalot(hexalot: Hexalot): Promise<IslandPattern | undefined>
+    claimHexalot(islandName: string, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandPattern | undefined>
 
     getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined>
 
