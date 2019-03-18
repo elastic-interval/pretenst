@@ -128,6 +128,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                                 Command.PlanJourney,
                                 Command.DriveJourney,
                                 Command.Evolve,
+                                Command.RandomGenome,
                                 Command.Logout,
                             ])}
                         </ActionFrame>
