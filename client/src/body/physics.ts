@@ -1,4 +1,4 @@
-import {AppStorage} from "../app-storage"
+import {AppStorage} from "../storage/app-storage"
 
 import {IFabricExports} from "./fabric-exports"
 

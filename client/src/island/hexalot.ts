@@ -1,8 +1,8 @@
 import {Vector3} from "three"
 
-import {AppStorage} from "../app-storage"
 import {fromGenomeData, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
+import {AppStorage} from "../storage/app-storage"
 
 import {Journey} from "./journey"
 import {BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"

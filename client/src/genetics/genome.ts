@@ -2,70 +2,91 @@ import {Direction} from "../body/fabric-exports"
 
 import {deserializeGene, DICE, IDie, serializeGene} from "./dice"
 import {GeneReader} from "./gene-reader"
+import {IGeneData} from "./genome"
+
+export interface IGeneData {
+    direction: Direction
+    mutationCount: number
+    geneString: string,
+}
 
 export interface IGenomeData {
-    geneMap: { [key: string]: string; }
+    genes: IGeneData[]
 }
 
 function rollTheDice(): IDie {
     return DICE[Math.floor(Math.random() * DICE.length)]
 }
 
-function freshGenomeData(): IGenomeData {
-    return {
-        geneMap: {},
-    }
-}
-
 export function freshGenome(): Genome {
-    return new Genome(freshGenomeData(), rollTheDice)
+    return new Genome([], rollTheDice)
 }
 
 export function fromGenomeData(genomeData: IGenomeData): Genome {
-    return new Genome(genomeData, rollTheDice)
+    if (!genomeData.genes) {
+        return freshGenome()
+    }
+    const genes = genomeData.genes.map(g => {
+        return {
+            direction: g.direction,
+            mutationCount: g.mutationCount,
+            dice: deserializeGene(g.geneString),
+        }
+    })
+    return new Genome(genes, rollTheDice)
+}
+
+export interface IGene {
+    direction: Direction
+    mutationCount: number
+    dice: IDie[]
 }
 
 export class Genome {
 
-    private geneMap: { [key: string]: IDie[]; } = {}
-
-    constructor(private data: IGenomeData, private roll: () => IDie) {
-        if (data.geneMap) {
-            Object.keys(data.geneMap).forEach(direction => this.geneMap[direction] = deserializeGene(data.geneMap[direction]))
-        }
+    constructor(private genes: IGene[], private roll: () => IDie) {
     }
 
     public createReader(direction: Direction): GeneReader {
-        const gene = this.geneMap[direction]
-        if (gene) {
-            return new GeneReader(gene, this.roll)
+        const existingGene = this.genes.find(g => direction === g.direction)
+        if (existingGene) {
+            return new GeneReader(existingGene, this.roll)
         } else {
-            this.geneMap[direction] = []
-            return new GeneReader(this.geneMap[direction], this.roll)
+            const freshGene: IGene = {direction, mutationCount: 0, dice: []}
+            this.genes.push(freshGene)
+            return new GeneReader(freshGene, this.roll)
         }
     }
 
     public withMutatedBehavior(direction: Direction, mutations: number): Genome {
-        const mutatedGeneMap: { [key: string]: IDie[]; } = {}
-        Object.keys(this.geneMap).forEach(key => {
-            mutatedGeneMap[key] = this.geneMap[key].slice()
+        const genesCopy: IGene[] = this.genes.map(g => {
+            return {
+                direction: g.direction,
+                mutationCount: g.mutationCount,
+                dice: g.dice.slice(),
+            }
         })
-        if (!mutatedGeneMap[direction]) {
-            mutatedGeneMap[direction] = []
+        const geneToMutate = genesCopy.find(g => direction === g.direction)
+        if (geneToMutate) {
+            for (let hit = 0; hit < mutations; hit++) {
+                const geneNumber = Math.floor(Math.random() * geneToMutate.dice.length)
+                geneToMutate.dice[geneNumber] = this.roll()
+                geneToMutate.mutationCount++
+            }
         }
-        for (let hit = 0; hit < mutations; hit++) {
-            const geneNumber = Math.floor(Math.random() * mutatedGeneMap[direction].length)
-            mutatedGeneMap[direction][geneNumber] = this.roll()
-        }
-        const genome = new Genome(freshGenomeData(), this.roll)
-        genome.geneMap = mutatedGeneMap
-        return genome
+        return new Genome(genesCopy, this.roll)
     }
 
     public get genomeData(): IGenomeData {
-        this.data.geneMap = {}
-        Object.keys(this.geneMap).forEach(key => this.data.geneMap[key] = serializeGene(this.geneMap[key]))
-        return this.data
+        return {
+            genes: this.genes.map(g => {
+                return {
+                    direction: g.direction,
+                    mutationCount: g.mutationCount,
+                    geneString: serializeGene(g.dice),
+                }
+            }),
+        }
     }
 }
 

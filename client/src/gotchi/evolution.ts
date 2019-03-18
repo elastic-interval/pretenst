@@ -11,25 +11,26 @@ import {Evolver, IEvolver} from "./evolver"
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
 const MUTATION_COUNT = 5
-const MINIMUM_AGE = 15000
-const MAXIMUM_AGE = 25000
-const INCREASE_AGE_LIMIT = 1000
 const SURVIVAL_RATE = 0.66
+const MIN_LIFESPAN = 15000
+const LIFESPAN_INCREASE = 1000
+const MAX_LIFESPAN_INCREASE = 10 * LIFESPAN_INCREASE
 
 export class Evolution {
     public evolversNow: BehaviorSubject<Evolver[]> = new BehaviorSubject<Evolver[]>([])
+    private midpointVector = new Vector3()
     private rebooting = false
-    private ageLimit = MINIMUM_AGE
     private frozenHero?: Evolver
     private leg: Leg
     private direction: number
-    private midpointVector = new Vector3()
+    private minAge = 0
+    private maxAge = MIN_LIFESPAN
 
     constructor(readonly home: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
         this.leg = firstLeg
         home.centerSpot.adjacentSpots.forEach((spot, index) => {
             const hexalot = spot.centerOfHexalot
-            if (hexalot&& firstLeg.goTo.id === hexalot.id) {
+            if (hexalot && firstLeg.goTo.id === hexalot.id) {
                 this.direction = index
             }
         })
@@ -63,7 +64,7 @@ export class Evolution {
             this.nextGenerationFromHero(heroEvolver)
             return
         }
-        const moving = evolvers.filter(evolver => evolver.age < this.ageLimit)
+        const moving = evolvers.filter(evolver => evolver.age < this.maxAge)
         if (moving.length === 0) {
             this.saveStrongest()
             this.adjustAgeLimit()
@@ -71,7 +72,7 @@ export class Evolution {
             return
         }
         moving.forEach(evolver => {
-            const behind = this.ageLimit - evolver.age
+            const behind = this.maxAge - evolver.age
             const timeSweepTick = evolver.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind)
             if (timeSweepTick && !evolver.gestating) {
                 evolver.mutateGenome(1)
@@ -89,6 +90,7 @@ export class Evolution {
     private saveStrongest(): void {
         const toSave = this.strongest
         if (toSave) {
+            console.log("saved genome")
             this.saveGenome(toSave.evolver.genomeData)
         } else {
             console.log("no strongest?")
@@ -96,13 +98,12 @@ export class Evolution {
     }
 
     private adjustAgeLimit(): void {
-        const nextVisit = this.leg.visited + 1
-        this.ageLimit += INCREASE_AGE_LIMIT
-        const ageLimitForLeg = MAXIMUM_AGE * nextVisit
-        if (this.ageLimit >= ageLimitForLeg) {
-            this.ageLimit = ageLimitForLeg + MINIMUM_AGE * nextVisit
+        this.maxAge += LIFESPAN_INCREASE
+        const lifespan = this.maxAge - this.minAge
+        if (lifespan > MIN_LIFESPAN + MAX_LIFESPAN_INCREASE) {
+            this.maxAge = this.minAge + MIN_LIFESPAN
         }
-        console.log("age limit now", this.ageLimit)
+        console.log(`MaxAge=${this.maxAge}`)
     }
 
     private get rankedEvolvers(): IEvolver[] {
@@ -128,6 +129,8 @@ export class Evolution {
             return // todo: evolution is over
         }
         this.leg = heroEvolver.leg = nextLeg
+        this.minAge = heroEvolver.age
+        this.maxAge = this.minAge + MIN_LIFESPAN
         const evolvers = this.evolversNow.getValue()
         this.evolversNow.next([heroEvolver])
         setTimeout(() => {
