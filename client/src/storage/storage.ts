@@ -1,13 +1,13 @@
 import {IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
-import {Island, IslandPattern} from "../island/island"
+import {IslandPattern} from "../island/island"
 import {Journey} from "../island/journey"
 
 export interface IStorage {
 
     getIsland(islandName: string): Promise<IslandPattern>
 
-    claimHexalot(hexalot: Hexalot): Promise<string>
+    claimHexalot(hexalot: Hexalot): Promise<IslandPattern | undefined>
 
     getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined>
 
@@ -15,7 +15,7 @@ export interface IStorage {
 
     saveJourney(hexalot: Hexalot): Promise<void>
 
-    loadJourney(hexalot: Hexalot, island: Island): Promise<Journey | undefined>
+    loadJourney(hexalot: Hexalot): Promise<Journey | undefined>
 
     setRotation(hexalot: Hexalot, rotation: number): Promise<void>
 
