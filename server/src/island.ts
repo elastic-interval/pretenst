@@ -42,7 +42,7 @@ const coordsEquals = (a: ICoords, b: ICoords): boolean => a.x === b.x && a.y ===
 const coordSort = (a: ICoords, b: ICoords): number =>
     a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0
 
-function coordsToString({x,y}: ICoords): string {
+function coordsToString({x, y}: ICoords): string {
     return `${x},${y}`
 }
 
