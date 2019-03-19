@@ -2,7 +2,7 @@ import Axios, { AxiosInstance } from "axios"
 
 import { IGenomeData } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
-import { IslandPattern } from "../island/island"
+import { Island, IslandPattern } from "../island/island"
 import { Journey } from "../island/journey"
 
 import { IStorage } from "./storage"
@@ -16,17 +16,17 @@ export class RemoteStorage implements IStorage {
         })
     }
 
-    public async getIsland(islandName: string): Promise<IslandPattern> {
-        const response = await this.client.get(`/island/${islandName}`)
+    public async getIsland(island: Island): Promise<IslandPattern> {
+        const response = await this.client.get(`/island/${island.islandName}`)
         if (response.status !== 200) {
             throw new Error(`Got HTTP response ${response.status}: ${response.statusText}`)
         }
         return response.data as IslandPattern
     }
 
-    public async claimHexalot(islandName: string, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandPattern> {
+    public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandPattern> {
         const response = await this.client.post(
-            `/island/${islandName}/claim-lot`,
+            `/island/${island.islandName}/claim-lot`,
             {
                 id: hexalot.id,
                 x: hexalot.coords.x,
@@ -76,11 +76,11 @@ export class RemoteStorage implements IStorage {
         }
     }
 
-    public async loadJourney(islandName: string, hexalot: Hexalot): Promise<Journey | undefined> {
+    public async loadJourney(island: Island, hexalot: Hexalot): Promise<Journey | undefined> {
         throw new Error("not implemented")
     }
 
-    public async saveJourney(islandName: string, hexalot: Hexalot): Promise<void> {
+    public async saveJourney(island: Island, hexalot: Hexalot): Promise<void> {
         throw new Error("not implemented")
     }
 }
