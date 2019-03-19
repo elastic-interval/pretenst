@@ -4,10 +4,10 @@ import * as ReactDOM from "react-dom"
 
 import App from "./app"
 import {IFabricExports} from "./body/fabric-exports"
+import "./index.css"
 import registerServiceWorker from "./service-worker"
 import {AppStorage} from "./storage/app-storage"
 
-import "./index.css"
 
 declare const getFabricExports: () => Promise<IFabricExports> // implementation: index.html
 const storage: AppStorage = new AppStorage(localStorage)
