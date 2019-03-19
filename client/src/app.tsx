@@ -61,7 +61,7 @@ class App extends React.Component<IAppProps, IAppState> {
         this.physics = new Physics(props.storage)
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        const island = new Island("GalapagotchIsland", this.fabricKernel, this.props.storage)
+        const island = new Island("rotterdam", this.fabricKernel, this.props.storage)
         this.state = {
             infoPanel: getInfoPanelMaximized(),
             orbitDistance: this.orbitDistanceSubject.getValue(),

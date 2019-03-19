@@ -10,9 +10,9 @@ import { IStorage } from "./storage"
 export class RemoteStorage implements IStorage {
     private readonly client: AxiosInstance
 
-    constructor() {
+    constructor(baseURL: string = "http://localhost:8000/api") {
         this.client = Axios.create({
-            baseURL: "/api",
+            baseURL,
         })
     }
 
@@ -31,7 +31,7 @@ export class RemoteStorage implements IStorage {
                 id: hexalot.id,
                 x: hexalot.coords.x,
                 y: hexalot.coords.y,
-                genomeData,
+                genomeData: JSON.stringify(genomeData),
             },
         )
         if (response.status !== 200) {

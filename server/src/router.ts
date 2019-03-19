@@ -77,7 +77,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
                 const {
                     x,
                     y,
-                    genome,
+                    genomeData,
                     id,
                 } = req.body
                 const island: Island = res.locals.island
@@ -88,7 +88,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
                     await island.claimHexalot(
                         {x, y},
                         id,
-                        genome,
+                        genomeData,
                     )
                 } catch (err) {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
@@ -128,6 +128,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
         .post(
             [
                 body("rotation").isNumeric().toFloat(),
+                validateRequest,
             ],
             async (req: Request, res: Response) => {
                 await store.setRotation(res.locals.hexalotId, req.body.rotation)
@@ -144,6 +145,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
         .post(
             [
                 body("rotation").isNumeric().toFloat(),
+                validateRequest,
             ],
             async (req: Request, res: Response) => {
                 await store.setRotation(res.locals.hexalotId, req.body.rotation)

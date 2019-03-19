@@ -3,6 +3,7 @@ import {Vector3} from "three"
 import {Direction} from "../body/fabric-exports"
 import {freshGenome, IGenomeData} from "../genetics/genome"
 import {Evolution} from "../gotchi/evolution"
+import { RemoteStorage } from "../storage/remote-storage"
 
 import {Command, IslandMode, IslandState} from "./island-state"
 import {Surface} from "./spot"
@@ -172,6 +173,11 @@ export class IslandStateCommand {
                             const genome = freshGenome()
                             hexalot.genome = genome
                             this.state.storage.setGenome(hexalot, genome.genomeData)
+                            // TODO: remove
+                            new RemoteStorage()
+                                .claimHexalot(state.island.islandName, hexalot, hexalot.genome!.genomeData)
+                                .then(console.log)
+                                .catch(console.error)
                         }
                         withNewHexalot.island.save()
                         return withNewHexalot.withRestructure.withHomeHexalot(hexalot)
