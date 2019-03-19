@@ -81,6 +81,4 @@ export class DataStore {
     public async setRotation(id: HexalotID, rotation: number): Promise<void> {
         return this.db.set(`/hexalot/${id}/rotation`, rotation)
     }
-
-    public async getJourney(islandName: string, )
 }
