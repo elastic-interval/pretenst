@@ -70,7 +70,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
                 hexalotIDValidation(body("id")),
                 body("x").isInt().toInt(),
                 body("y").isInt().toInt(),
-                body("genomeData").whitelist("012345"),
+                body("genomeData").isJSON(),
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
@@ -99,7 +99,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
         )
 
     hexalotRoute
-        .route("/genomeData")
+        .route("/genome-data")
         .get(async (req, res) => {
             const genomeData = await store.getGenome(res.locals.hexalotId)
             if (!genomeData) {
@@ -110,7 +110,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
         })
         .post(
             [
-                body("genomeData").whitelist("012345"),
+                body("genomeData").isJSON(),
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
@@ -119,5 +119,38 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
             },
         )
 
+    hexalotRoute
+        .route("/rotation")
+        .get(async (req, res) => {
+            const rotation = await store.getRotation(res.locals.hexalotId)
+            res.json(rotation)
+        })
+        .post(
+            [
+                body("rotation").isNumeric().toFloat(),
+            ],
+            async (req: Request, res: Response) => {
+                await store.setRotation(res.locals.hexalotId, req.body.rotation)
+                res.sendStatus(HttpStatus.OK)
+            },
+        )
+
+    hexalotRoute
+        .route("/journey")
+        .get(async (req, res) => {
+            const rotation = await store.getRotation(res.locals.hexalotId)
+            res.json(rotation)
+        })
+        .post(
+            [
+                body("rotation").isNumeric().toFloat(),
+            ],
+            async (req: Request, res: Response) => {
+                await store.setRotation(res.locals.hexalotId, req.body.rotation)
+                res.sendStatus(HttpStatus.OK)
+            },
+        )
+
     return root
 }
+

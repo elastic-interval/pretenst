@@ -68,4 +68,19 @@ export class DataStore {
     public async setGenome(id: HexalotID, genomeData: string): Promise<void> {
         return this.db.set(`/hexalot/${id}/genomeData`, genomeData)
     }
+
+    public async getRotation(id: HexalotID): Promise<number> {
+        let rotation = await this.db.get(`/hexalot/${id}/rotation`)
+        if (rotation === undefined) {
+            rotation = 0 // TODO: default rotation?
+            await this.db.set(`/hexalot/${id}/rotation`, rotation)
+        }
+        return rotation
+    }
+
+    public async setRotation(id: HexalotID, rotation: number): Promise<void> {
+        return this.db.set(`/hexalot/${id}/rotation`, rotation)
+    }
+
+    public async getJourney(islandName: string, )
 }

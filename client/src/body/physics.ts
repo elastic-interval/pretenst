@@ -1,4 +1,4 @@
-import {AppStorage} from "../storage/app-storage"
+import {LocalStorage} from "../storage/local-storage"
 
 import {IFabricExports} from "./fabric-exports"
 
@@ -24,7 +24,7 @@ export class Physics {
 
     private readonly featuresArray: IPhysicsFeature[]
 
-    constructor(private storage: AppStorage) {
+    constructor(private storage: LocalStorage) {
         this.featuresArray = Object.keys(PhysicsFeature).map(f => this.createFeature(PhysicsFeature[f]))
     }
 

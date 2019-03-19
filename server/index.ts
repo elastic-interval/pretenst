@@ -31,7 +31,7 @@ async function connectToLnRpc(): Promise<LnRpc> {
 }
 
 async function run(listenPort: number): Promise<void> {
-    const db = new LevelDBFlashStore(__dirname + "/data/islandsdb")
+    const db = new LevelDBFlashStore(__dirname + "/data/galapagotchi.db")
 
     const lnRpc = await connectToLnRpc()
 

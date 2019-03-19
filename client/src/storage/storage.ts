@@ -11,11 +11,11 @@ export interface IStorage {
 
     getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined>
 
-    setGenome(hexalot: Hexalot, genomeData: IGenomeData): Promise<void>
+    setGenomeData(hexalot: Hexalot, genomeData: IGenomeData): Promise<void>
 
-    saveJourney(hexalot: Hexalot): Promise<void>
+    saveJourney(islandName: string, hexalot: Hexalot): Promise<void>
 
-    loadJourney(hexalot: Hexalot): Promise<Journey | undefined>
+    loadJourney(islandName: string, hexalot: Hexalot): Promise<Journey | undefined>
 
     setRotation(hexalot: Hexalot, rotation: number): Promise<void>
 
