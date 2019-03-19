@@ -11,9 +11,6 @@ export interface IKeyValueStore {
     delete(key: string): Promise<void>
 }
 
-export class InvalidHexalotError extends Error {
-}
-
 export class InMemoryStore implements IKeyValueStore {
     private db: { [key: string]: any } = {}
 
@@ -50,38 +47,25 @@ export class LevelDBFlashStore implements IKeyValueStore {
     }
 }
 
-export class IslandStore {
+export class DataStore {
     constructor(
         readonly db: IKeyValueStore,
-        readonly islandName: string,
     ) {
     }
 
-    public async getPattern(): Promise<IslandPattern | undefined> {
-        const pattern = await this.get(`pattern`)
-        if (!pattern) {
-            return undefined
-        }
-        return pattern
+    public async getPattern(islandName: string): Promise<IslandPattern | undefined> {
+        return this.db.get(`/island/${islandName}/pattern`)
     }
 
-    public async setPattern(pattern: IslandPattern): Promise<void> {
-        return this.set(`pattern`, pattern)
+    public async setPattern(islandName: string, pattern: IslandPattern): Promise<void> {
+        return this.db.set(`/island/${islandName}/pattern`, pattern)
     }
 
     public async getGenome(id: HexalotID): Promise<string | undefined> {
-        return this.get(`hexalot/${id}/genome`)
+        return this.db.get(`/hexalot/${id}/genomeData`)
     }
 
-    public async setGenome(id: HexalotID, genome: string): Promise<void> {
-        return this.set(`hexalot/${id}/genome`, genome)
-    }
-
-    private async set(key: string, value: any): Promise<void> {
-        return this.db.set(`/island/${this.islandName}/${key}`, value)
-    }
-
-    private async get(key: string): Promise<any | undefined> {
-        return this.db.get(`/island/${this.islandName}/${key}`)
+    public async setGenome(id: HexalotID, genomeData: string): Promise<void> {
+        return this.db.set(`/hexalot/${id}/genomeData`, genomeData)
     }
 }

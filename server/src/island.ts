@@ -1,5 +1,5 @@
 import { ADJACENT, BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./constants"
-import { IKeyValueStore, IslandStore } from "./store"
+import { DataStore } from "./store"
 import { HexalotID } from "./types"
 
 enum Surface {
@@ -172,14 +172,15 @@ export class Island {
 
     public spots: ISpot[] = []
     public hexalots: IHexalot[] = []
-    private readonly store: IslandStore
 
-    constructor(db: IKeyValueStore, islandName: string) {
-        this.store = new IslandStore(db, islandName)
+    constructor(
+        readonly store: DataStore,
+        readonly islandName: string,
+    ) {
     }
 
     public async load(): Promise<void> {
-        const pattern = await this.store.getPattern()
+        const pattern = await this.store.getPattern(this.islandName)
         if (!pattern) {
             this.spots = []
             this.hexalots = []
@@ -189,7 +190,7 @@ export class Island {
     }
 
     public async save(): Promise<void> {
-        return this.store.setPattern(this.pattern)
+        return this.store.setPattern(this.islandName, this.pattern)
     }
 
     public async claimHexalot(

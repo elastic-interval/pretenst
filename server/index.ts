@@ -6,7 +6,7 @@ import morgan from "morgan"
 import { homedir } from "os"
 import { join } from "path"
 
-import { createRouter } from "./src/sharedWorld"
+import { createRouter } from "./src/router"
 import { LevelDBFlashStore } from "./src/store"
 
 
@@ -41,9 +41,7 @@ async function run(listenPort: number): Promise<void> {
 
     app.use(morgan("short"))
 
-    app.get("/test", (req, res) => res.end("OK"))
-
-    app.use("/island", createRouter(lnRpc, db))
+    app.use("/api", createRouter(lnRpc, db))
 
     return new Promise<void>(
         resolve => app.listen(listenPort, resolve),
