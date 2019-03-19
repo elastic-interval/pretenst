@@ -87,19 +87,19 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
                 <R3.Mesh name="Seeds" geometry={this.seeds} material={GOTCHI}/>
                 <R3.LineSegments key="HangersOccupied" geometry={this.hangersOccupied} material={HANGER_OCCUPIED}/>
                 <R3.LineSegments key="HangersFree" geometry={this.hangersFree} material={HANGER_FREE}/>
-                {!this.homeHexalot ? null : (
+                {!this.homeHexalot ? undefined : (
                     <R3.LineSegments key="HomeHexalot" geometry={this.homeHexalot} material={HOME_HEXALOT}/>
                 )}
-                {!this.arrow ? null : (
+                {!this.arrow ? undefined : (
                     <R3.LineSegments key="Arrow" geometry={this.arrow} material={GOTCHI_ARROW}/>
                 )}
-                {!this.selectedSpot ? null : (
+                {!this.selectedSpot ? undefined : (
                     <R3.LineSegments key="Pointer" geometry={this.selectedSpot} material={SELECTED_POINTER}/>
                 )}
-                {!this.availableHexalots ? null : (
+                {!this.availableHexalots ? undefined : (
                     <R3.LineSegments key="Available" geometry={this.availableHexalots} material={AVAILABLE_HEXALOT}/>
                 )}
-                {!this.freeHexalot ? null : (
+                {!this.freeHexalot ? undefined : (
                     <R3.LineSegments key="Free" geometry={this.freeHexalot} material={AVAILABLE_HEXALOT}/>
                 )}
                 <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
