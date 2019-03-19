@@ -173,11 +173,6 @@ export class IslandStateCommand {
                             const genome = freshGenome()
                             hexalot.genome = genome
                             this.state.storage.setGenome(hexalot, genome.genomeData)
-                            // TODO: remove
-                            new RemoteStorage()
-                                .claimHexalot(state.island.islandName, hexalot, hexalot.genome!.genomeData)
-                                .then(console.log)
-                                .catch(console.error)
                         }
                         withNewHexalot.island.save()
                         return withNewHexalot.withRestructure.withHomeHexalot(hexalot)

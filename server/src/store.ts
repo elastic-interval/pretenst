@@ -75,7 +75,7 @@ export class DataStore {
     public async getRotation(id: HexalotID): Promise<number> {
         let rotation = await this.db.get(`/hexalot/${id}/rotation`)
         if (rotation === undefined) {
-            rotation = 0 // TODO: default rotation?
+            rotation = 0
             await this.db.set(`/hexalot/${id}/rotation`, rotation)
         }
         return rotation
