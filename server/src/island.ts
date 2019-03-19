@@ -67,14 +67,15 @@ function spotsToHexalotID(spots: ISpot[]): HexalotID {
 }
 
 function hexalotIDToSpots(center: ICoords, hexalotID: HexalotID): ISpot[] {
-    const int: bigint = BigInt(`0x${hexalotID}`)
+    const intRepr: bigint = BigInt(`0x${hexalotID}`)
     const spots: ISpot[] = []
-    for (let i = 0n; i < 127n; i++) {
-        const surface = (int & (1n << (126n - i))) !== 0n ?
+    for (let i = 0; i < 127; i++) {
+        const mask = 1n << (127n - BigInt(i))
+        const surface = (intRepr & mask) !== 0n ?
             Surface.Land :
             Surface.Water
         spots.push({
-            coords: plus(center, HEXALOT_SHAPE[Number(i)]),
+            coords: plus(center, HEXALOT_SHAPE[i]),
             surface,
         })
     }
@@ -217,15 +218,15 @@ export class Island {
         }
         lot.id = lotID
         const spots = hexalotIDToSpots(lot.coords, lotID)
-        const illegalSpot = spots.find((spot: ISpot) => {
+        const illegalSpots = spots.filter((spot: ISpot) => {
             const existing = this.getSpot(spot.coords)
             if (!existing || existing.surface === Surface.Unknown) {
                 return false
             }
             return existing.surface !== spot.surface
         })
-        if (illegalSpot) {
-            throw new Error(`illegal spot: ${JSON.stringify(illegalSpot)}`)
+        if (illegalSpots.length > 0) {
+            throw new Error(`illegal spots: ${JSON.stringify(illegalSpots)}`)
         }
         for (const spot of spots) {
             Object.assign(this.getOrCreateSpot(spot.coords), spot)
