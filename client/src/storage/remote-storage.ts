@@ -16,8 +16,8 @@ export class RemoteStorage implements IStorage {
         })
     }
 
-    public async getIsland(island: Island): Promise<IslandPattern> {
-        const response = await this.client.get(`/island/${island.islandName}`)
+    public async getIslandPattern(islandName: string): Promise<IslandPattern> {
+        const response = await this.client.get(`/island/${islandName}`)
         if (response.status !== 200) {
             throw new Error(`Got HTTP response ${response.status}: ${response.statusText}`)
         }

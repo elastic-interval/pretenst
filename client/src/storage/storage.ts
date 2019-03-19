@@ -5,7 +5,7 @@ import {Journey} from "../island/journey"
 
 export interface IStorage {
 
-    getIsland(island: Island): Promise<IslandPattern>
+    getIslandPattern(islandName: string): Promise<IslandPattern>
 
     claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandPattern | undefined>
 
