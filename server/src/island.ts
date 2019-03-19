@@ -67,18 +67,22 @@ function spotsToHexalotID(spots: ISpot[]): HexalotID {
 }
 
 function hexalotIDToSpots(center: ICoords, hexalotID: HexalotID): ISpot[] {
-    const intRepr: bigint = BigInt(`0x${hexalotID}`)
     const spots: ISpot[] = []
-    for (let i = 0; i < 127; i++) {
-        const mask = 1n << (127n - BigInt(i))
-        const surface = (intRepr & mask) !== 0n ?
-            Surface.Land :
-            Surface.Water
-        spots.push({
-            coords: plus(center, HEXALOT_SHAPE[i]),
-            surface,
-        })
-    }
+
+    hexalotID.split("").map((nybStr, j) => {
+        const nyb = parseInt(nybStr, 16)
+        for (let i = 0; i < 4; i++) {
+            const surface: Surface = (nyb & (0x1 << (3 - i))) !== 0 ?
+                Surface.Land :
+                Surface.Water
+            const spot: ISpot = {
+                coords: plus(center, HEXALOT_SHAPE[j + i]),
+                surface,
+            }
+            spots.push(spot)
+        }
+    })
+    spots.splice(127, 1)
     return spots
 }
 
