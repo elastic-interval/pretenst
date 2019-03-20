@@ -1,4 +1,4 @@
-import {BehaviorSubject} from "rxjs"
+import {Subject} from "rxjs"
 import {Vector3} from "three"
 
 import {IGotchiFactory} from "../gotchi/gotchi"
@@ -9,7 +9,8 @@ import {IslandMode, IslandState} from "./island-state"
 import {ADJACENT, BRANCH_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
 import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from "./spot"
 
-export interface IslandPattern {
+export interface IslandData {
+    name: string
     hexalots: string
     spots: string
 }
@@ -17,18 +18,14 @@ export interface IslandPattern {
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
 
 export class Island {
+    public name?: string
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
     public state: IslandState
 
-    constructor(
-        readonly islandName: string,
-        private gotchiFactory: IGotchiFactory,
-        private storage: LocalStorage,
-    ) {
-        this.apply(storage.getIsland(islandName))
-        this.state = new IslandState(0, this, storage, IslandMode.Visiting).withRestructure
-        this.state.subject = new BehaviorSubject<IslandState>(this.state)
+    constructor(subject: Subject<IslandState>, islandData: IslandData, readonly gotchiFactory: IGotchiFactory, private storage: LocalStorage) {
+        this.apply(islandData)
+        this.state = new IslandState(0, this, this.storage, subject, IslandMode.Visiting).withRestructure
     }
 
     public get islandIsLegal(): boolean {
@@ -89,7 +86,7 @@ export class Island {
             .multiplyScalar(1 / this.spots.length)
     }
 
-    public get pattern(): IslandPattern {
+    public get data(): IslandData {
         if (!this.islandIsLegal) {
             throw new Error("Saving illegal island")
         }
@@ -97,23 +94,14 @@ export class Island {
         return {
             hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToString(this.spots),
-        } as IslandPattern
-    }
-
-    public save(): void {
-        if (!this.islandIsLegal) {
-            console.log("Cannot save because the island does not yet satisfy the rules")
-            return
-        }
-        this.storage.setIsland(this.islandName, this.pattern)
-        console.log(`Saved ${this.islandName}`)
+        } as IslandData
     }
 
     // ================================================================================================
 
-    private apply(pattern: IslandPattern): void {
+    private apply(data: IslandData): void {
         let hexalot: Hexalot | undefined = this.getOrCreateHexalot(undefined, zero)
-        const stepStack = pattern.hexalots.split("").reverse().map(stepChar => Number(stepChar))
+        const stepStack = data.hexalots.split("").reverse().map(stepChar => Number(stepChar))
         const hexalotStack: Hexalot[] = []
         while (stepStack.length > 0) {
             const step = stepStack.pop()
@@ -140,7 +128,7 @@ export class Island {
                     console.error("Error step")
             }
         }
-        const hexChars = pattern.spots ? pattern.spots.split("") : []
+        const hexChars = data.spots ? data.spots.split("") : []
         const numbers = hexChars.map(hexChar => parseInt(hexChar, 16))
         const booleanArrays = numbers.map(nyb => {
             const b0 = (nyb & 8) !== 0

@@ -1,8 +1,10 @@
 import {PhysicsFeature} from "../body/physics"
-import {IGenomeData} from "../genetics/genome"
+import {fromGenomeData, IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
-import {Island, IslandPattern} from "../island/island"
-import {Journey} from "../island/journey"
+import {Island, IslandData} from "../island/island"
+import {IJourneyData} from "../island/journey"
+
+import {IStorage} from "./storage"
 
 function journeyKey(hexalot: Hexalot): string {
     return `${hexalot.id}-journey`
@@ -16,7 +18,7 @@ function rotationKey(hexalot: Hexalot): string {
     return `${hexalot.id}-rotation`
 }
 
-export class LocalStorage {
+export class LocalStorage implements IStorage {
 
     constructor(private storage: Storage) {
     }
@@ -30,15 +32,19 @@ export class LocalStorage {
         this.storage.setItem(feature, factor.toFixed(3))
     }
 
-    // TODO: getIslandPattern(islandName: string): Promise<IslandPattern>
-    public getIsland(islandName: string): IslandPattern {
+    public async getIslandData(islandName: string): Promise<IslandData> {
         const patternString = this.storage.getItem(islandName)
-        return patternString ? JSON.parse(patternString) : {hexalots: "", spots: ""}
+        if (!patternString) {
+            return Promise.resolve({name: islandName, hexalots: "", spots: ""} as IslandData)
+        }
+        return Promise.resolve(JSON.parse(patternString))
     }
 
-    // TODO: claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandPattern | undefined>
-    public setIsland(islandName: string, islandPattern: IslandPattern): void {
-        this.storage.setItem(islandName, JSON.stringify(islandPattern))
+    public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData | undefined> {
+        hexalot.genome = fromGenomeData(genomeData)
+        this.setGenomeData(hexalot, genomeData)
+        this.setIsland(island.data)
+        return Promise.resolve(island.data)
     }
 
     public async getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined> {
@@ -51,31 +57,22 @@ export class LocalStorage {
         return Promise.resolve()
     }
 
-    public async saveJourney(hexalot: Hexalot): Promise<void> {
-        const journey = hexalot.journey
+    public async setJourneyData(hexalot: Hexalot, journeyData?: IJourneyData): Promise<void> {
         const key = journeyKey(hexalot)
-        if (journey) {
-            this.storage.setItem(key, journey.serialize())
+        if (journeyData) {
+            this.storage.setItem(key, JSON.stringify(journeyData))
         } else {
             this.storage.removeItem(key)
         }
         return Promise.resolve()
     }
 
-    public async loadJourney(hexalot: Hexalot, island: Island): Promise<Journey | undefined> {
+    public async getJourneyData(hexalot: Hexalot): Promise<IJourneyData | undefined> {
         const journeyString = this.storage.getItem(journeyKey(hexalot))
         if (!journeyString) {
             return Promise.resolve(undefined)
         }
-        const journey = new Journey([hexalot])
-        const fingerprints: string[] = JSON.parse(journeyString)
-        fingerprints.forEach(fingerprint => {
-            const nextHexalot = island.findHexalot(fingerprint)
-            if (nextHexalot) {
-                journey.addVisit(nextHexalot)
-            }
-        })
-        return Promise.resolve(journey)
+        return Promise.resolve(JSON.parse(journeyString))
     }
 
     public async setRotation(hexalot: Hexalot, rotation: number): Promise<void> {
@@ -89,5 +86,11 @@ export class LocalStorage {
             return Promise.resolve(parseInt(rotationString, 10))
         }
         return Promise.resolve(0)
+    }
+
+    // private ====
+
+    private setIsland(islandPattern: IslandData): void {
+        this.storage.setItem(islandPattern.name, JSON.stringify(islandPattern))
     }
 }

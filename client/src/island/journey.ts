@@ -1,4 +1,9 @@
 import {Hexalot} from "./hexalot"
+import {Island} from "./island"
+
+export interface IJourneyData {
+    hexalots: string[]
+}
 
 export class Leg {
     constructor(public journey: Journey, public visited: number, public goTo: Hexalot) {
@@ -12,6 +17,20 @@ export class Leg {
         const goTo = this.journey.hexalots[nextHexalot]
         return new Leg(this.journey, nextHexalot, goTo)
     }
+}
+
+export function fromJourneyData(island: Island, journeyData?: IJourneyData): Journey | undefined {
+    const hexalots: Hexalot[] = []
+    if (!journeyData) {
+        return undefined
+    }
+    journeyData.hexalots.forEach(hexalotId => {
+        const hexalot = island.findHexalot(hexalotId)
+        if (hexalot) {
+            hexalots.push(hexalot)
+        }
+    })
+    return new Journey(hexalots)
 }
 
 export class Journey {
@@ -36,7 +55,9 @@ export class Journey {
         return new Leg(this, 0, this.hexalots[1])
     }
 
-    public serialize(): string {
-        return JSON.stringify(this.hexalots.map(hexalot => hexalot.id))
+    public get data(): IJourneyData {
+        return {
+            hexalots: this.hexalots.map(hexalot => hexalot.id),
+        }
     }
 }

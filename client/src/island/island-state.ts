@@ -1,4 +1,4 @@
-import {BehaviorSubject} from "rxjs"
+import {Subject} from "rxjs"
 import {Vector3} from "three"
 
 import {freshGenome} from "../genetics/genome"
@@ -10,7 +10,7 @@ import {Hexalot} from "./hexalot"
 import {Island} from "./island"
 import {IslandStateClick} from "./island-state-click"
 import {IslandStateCommand} from "./island-state-command"
-import {Journey} from "./journey"
+import {fromJourneyData, Journey} from "./journey"
 import {Spot, Surface} from "./spot"
 
 export enum Command {
@@ -48,12 +48,11 @@ export enum IslandMode {
 }
 
 export class IslandState {
-    public subject: BehaviorSubject<IslandState>
-
     constructor(
         readonly nonce: number,
         readonly island: Island,
         readonly storage: LocalStorage,
+        readonly subject: Subject<IslandState>,
         public islandMode: IslandMode,
         public islandIsLegal: boolean = false,
         public homeHexalot?: Hexalot,
@@ -100,10 +99,10 @@ export class IslandState {
         copy.journey = undefined
         const home = copy.homeHexalot
         if (this.selectedHome && home) {
-            this.storage.loadJourney(home, this.island).then(journey => {
-                const withJourney = this.subject.getValue().copy
-                withJourney.journey = journey
-                this.subject.next(withJourney)
+            this.storage.getJourneyData(home).then(journeyData => {
+                const currentState = copy.copy
+                currentState.journey = fromJourneyData(this.island, journeyData)
+                this.subject.next(currentState)
             })
         }
         return copy
@@ -238,10 +237,11 @@ export class IslandState {
     }
 
     private get copy(): IslandState {
-        const ditto = new IslandState(
+        return new IslandState(
             this.nonce + 1,
             this.island,
             this.storage,
+            this.subject,
             this.islandMode,
             this.islandIsLegal,
             this.homeHexalot,
@@ -251,7 +251,5 @@ export class IslandState {
             this.gotchi,
             this.evolution,
         )
-        ditto.subject = this.subject
-        return ditto
     }
 }

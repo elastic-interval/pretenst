@@ -1,5 +1,6 @@
 import * as React from "react"
 import {Button} from "reactstrap"
+import {Subject} from "rxjs"
 import {BehaviorSubject} from "rxjs/BehaviorSubject"
 import {Subscription} from "rxjs/Subscription"
 import {PerspectiveCamera} from "three"
@@ -10,6 +11,7 @@ import {Physics} from "./body/physics"
 import {INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Island} from "./island/island"
 import {IslandState} from "./island/island-state"
+import {fromJourneyData} from "./island/journey"
 import {Surface} from "./island/spot"
 import {LocalStorage} from "./storage/local-storage"
 import {ActionsPanel} from "./view/actions-panel"
@@ -24,12 +26,12 @@ interface IAppProps {
 
 export interface IAppState {
     orbitDistance: OrbitDistance
-    islandState: IslandState
     width: number
     height: number
     left: number
     top: number
     infoPanel: boolean
+    islandState?: IslandState
 }
 
 function updateDimensions(): object {
@@ -53,6 +55,7 @@ class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
     private perspectiveCamera: PerspectiveCamera
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
+    private islandSubject = new Subject<IslandState>()
     private physics: Physics
     private fabricKernel: FabricKernel
 
@@ -61,11 +64,20 @@ class App extends React.Component<IAppProps, IAppState> {
         this.physics = new Physics(props.storage)
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        const island = new Island("rotterdam", this.fabricKernel, this.props.storage)
+        this.props.storage.getIslandData("rotterdam").then(islandData => {
+            if (islandData) {
+                const island = new Island(
+                    this.islandSubject,
+                    islandData,
+                    this.fabricKernel,
+                    this.props.storage,
+                )
+                this.setState({islandState: island.state})
+            }
+        })
         this.state = {
             infoPanel: getInfoPanelMaximized(),
             orbitDistance: this.orbitDistanceSubject.getValue(),
-            islandState: island.state,
             width: window.innerWidth,
             height: window.innerHeight,
             left: window.screenLeft,
@@ -77,15 +89,15 @@ class App extends React.Component<IAppProps, IAppState> {
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
         this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
-        this.subs.push(this.state.islandState.subject.subscribe(islandState => {
+        this.subs.push(this.islandSubject.subscribe(islandState => {
             const homeHexalot = islandState.homeHexalot
             if (homeHexalot) {
+                location.replace(`/#/${homeHexalot.id}`)
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
                 const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
-                this.props.storage.loadJourney(homeHexalot, islandState.island).then(journey => {
-                    homeHexalot.journey = journey
-                    location.replace(`/#/${homeHexalot.id}`)
+                this.props.storage.getJourneyData(homeHexalot).then(journeyData => {
+                    homeHexalot.journey = fromJourneyData(islandState.island, journeyData)
                 })
             } else {
                 location.replace("/#/")
@@ -102,15 +114,19 @@ class App extends React.Component<IAppProps, IAppState> {
     public render(): JSX.Element {
         return (
             <div className="everything">
-                <GotchiView
-                    perspectiveCamera={this.perspectiveCamera}
-                    islandState={this.state.islandState}
-                    width={this.state.width}
-                    height={this.state.height}
-                    left={this.state.left}
-                    top={this.state.top}
-                    orbitDistance={this.orbitDistanceSubject}
-                />
+                {this.state.islandState ? (
+                    <GotchiView
+                        perspectiveCamera={this.perspectiveCamera}
+                        islandState={this.state.islandState}
+                        width={this.state.width}
+                        height={this.state.height}
+                        left={this.state.left}
+                        top={this.state.top}
+                        orbitDistance={this.orbitDistanceSubject}
+                    />
+                ) : (
+                    <h1>No island!</h1>
+                )}
                 {!this.state.infoPanel ? (
                     <div className="info-panel-collapsed floating-panel">
                         <Button color="link" onClick={() => {
@@ -132,15 +148,19 @@ class App extends React.Component<IAppProps, IAppState> {
                         <InfoPanel/>
                     </div>
                 )}
-                <div className="actions-panel-outer floating-panel">
-                    <div className="actions-panel-inner">
-                        <ActionsPanel
-                            orbitDistance={this.orbitDistanceSubject}
-                            islandState={this.state.islandState}
-                            location={this.perspectiveCamera.position}
-                        />
+                {this.state.islandState ? (
+                    <div className="actions-panel-outer floating-panel">
+                        <div className="actions-panel-inner">
+                            <ActionsPanel
+                                orbitDistance={this.orbitDistanceSubject}
+                                islandState={this.state.islandState}
+                                location={this.perspectiveCamera.position}
+                            />
+                        </div>
                     </div>
-                </div>
+                ) : (
+                    <h1>No island!</h1>
+                )}
             </div>
         )
     }

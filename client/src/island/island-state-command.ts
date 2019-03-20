@@ -4,6 +4,8 @@ import {Direction} from "../body/fabric-exports"
 import {freshGenome, IGenomeData} from "../genetics/genome"
 import {Evolution} from "../gotchi/evolution"
 
+import {Hexalot} from "./hexalot"
+import {Island} from "./island"
 import {Command, IslandMode, IslandState} from "./island-state"
 import {Surface} from "./spot"
 
@@ -100,8 +102,8 @@ export class IslandStateCommand {
                 if (homeHexalot) {
                     homeHexalot.journey = undefined
                     this.state.journey = undefined
-                    this.state.storage.saveJourney(homeHexalot).then(() => {
-                        console.log("saved journey")
+                    this.state.storage.setJourneyData(homeHexalot, undefined).then(() => {
+                        console.log("cleared journey")
                     })
                     return this.state
                 }
@@ -177,14 +179,9 @@ export class IslandStateCommand {
                         const withNewHexalot = this.state.withNewHexalotAt(spot)
                         const hexalot = withNewHexalot.selectedHexalot
                         if (hexalot) {
-                            const genome = freshGenome()
-                            hexalot.genome = genome
-                            this.state.storage.setGenomeData(hexalot, genome.genomeData).then(() => {
-                                console.log("genome saved")
-                            })
+                            this.claimHexalot(hexalot, state) // todo: handle failure
                         }
-                        withNewHexalot.island.save()
-                        return withNewHexalot.withRestructure.withHomeHexalot(hexalot)
+                        return withNewHexalot.withRestructure
                     }
                 }
                 return state
@@ -199,6 +196,28 @@ export class IslandStateCommand {
 
 
         }
+    }
+
+    private claimHexalot(hexalot: Hexalot, state: IslandState): void {
+        this.state.storage.claimHexalot(this.state.island, hexalot, freshGenome().genomeData)
+            .then(islandPattern => {
+                if (islandPattern) {
+                    const island = new Island(
+                        state.subject,
+                        islandPattern,
+                        state.island.gotchiFactory,
+                        state.storage,
+                    )
+                    const newHomeHexalot = island.findHexalot(hexalot.id)
+                    if (newHomeHexalot) {
+                        state.subject.next(island.state
+                            .withHomeHexalot(newHomeHexalot)
+                            .withSelectedSpot(newHomeHexalot.centerSpot))
+                    } else {
+                        state.subject.next(island.state)
+                    }
+                }
+            })
     }
 }
 
