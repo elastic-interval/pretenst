@@ -83,8 +83,10 @@ class App extends React.Component<IAppProps, IAppState> {
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
                 const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
-                this.props.storage.loadJourney(homeHexalot, islandState.island)
-                location.replace(`/#/${homeHexalot.id}`)
+                this.props.storage.loadJourney(homeHexalot, islandState.island).then(journey => {
+                    homeHexalot.journey = journey
+                    location.replace(`/#/${homeHexalot.id}`)
+                })
             } else {
                 location.replace("/#/")
             }

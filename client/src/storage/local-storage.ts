@@ -1,8 +1,8 @@
-import { PhysicsFeature } from "../body/physics"
-import { IGenomeData } from "../genetics/genome"
-import { Hexalot } from "../island/hexalot"
-import { Island, IslandPattern } from "../island/island"
-import { Journey } from "../island/journey"
+import {PhysicsFeature} from "../body/physics"
+import {IGenomeData} from "../genetics/genome"
+import {Hexalot} from "../island/hexalot"
+import {Island, IslandPattern} from "../island/island"
+import {Journey} from "../island/journey"
 
 function journeyKey(hexalot: Hexalot): string {
     return `${hexalot.id}-journey`
@@ -30,25 +30,29 @@ export class LocalStorage {
         this.storage.setItem(feature, factor.toFixed(3))
     }
 
+    // TODO: getIslandPattern(islandName: string): Promise<IslandPattern>
     public getIsland(islandName: string): IslandPattern {
         const patternString = this.storage.getItem(islandName)
         return patternString ? JSON.parse(patternString) : {hexalots: "", spots: ""}
     }
 
+    // TODO: claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandPattern | undefined>
     public setIsland(islandName: string, islandPattern: IslandPattern): void {
         this.storage.setItem(islandName, JSON.stringify(islandPattern))
     }
 
-    public getGenomeData(hexalot: Hexalot): IGenomeData | undefined {
+    public async getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined> {
         const genomeString = this.storage.getItem(genomeKey(hexalot))
-        return genomeString ? JSON.parse(genomeString) : undefined
+        return Promise.resolve(genomeString ? JSON.parse(genomeString) : undefined)
     }
 
-    public setGenome(hexalot: Hexalot, genomeData: IGenomeData): void {
+    public async setGenomeData(hexalot: Hexalot, genomeData: IGenomeData): Promise<void> {
         this.storage.setItem(genomeKey(hexalot), JSON.stringify(genomeData))
+        return Promise.resolve()
     }
 
-    public saveJourney(hexalot: Hexalot): void {
+    // TODO: saveJourney(island: Island, hexalot: Hexalot): Promise<void>
+    public async saveJourney(hexalot: Hexalot): Promise<void> {
         const journey = hexalot.journey
         const key = journeyKey(hexalot)
         if (journey) {
@@ -56,35 +60,35 @@ export class LocalStorage {
         } else {
             this.storage.removeItem(key)
         }
+        return Promise.resolve()
     }
 
-    public loadJourney(hexalot: Hexalot, island: Island): Journey | undefined {
+    public async loadJourney(hexalot: Hexalot, island: Island): Promise<Journey | undefined> {
         const journeyString = this.storage.getItem(journeyKey(hexalot))
-        if (journeyString) {
-            const journey = new Journey([hexalot])
-            hexalot.journey = journey
-            const fingerprints: string[] = JSON.parse(journeyString)
-            fingerprints.forEach(fingerprint => {
-                const nextHexalot = island.findHexalot(fingerprint)
-                if (nextHexalot) {
-                    journey.addVisit(nextHexalot)
-                }
-            })
-        } else {
-            hexalot.journey = undefined
+        if (!journeyString) {
+            return Promise.resolve(undefined)
         }
-        return hexalot.journey
+        const journey = new Journey([hexalot])
+        const fingerprints: string[] = JSON.parse(journeyString)
+        fingerprints.forEach(fingerprint => {
+            const nextHexalot = island.findHexalot(fingerprint)
+            if (nextHexalot) {
+                journey.addVisit(nextHexalot)
+            }
+        })
+        return Promise.resolve(journey)
     }
 
-    public setRotation(hexalot: Hexalot, rotation: number): void {
+    public async setRotation(hexalot: Hexalot, rotation: number): Promise<void> {
         this.storage.setItem(rotationKey(hexalot), `${rotation}`)
+        return Promise.resolve()
     }
 
-    public getRotation(hexalot: Hexalot): number {
+    public async getRotation(hexalot: Hexalot): Promise<number> {
         const rotationString = this.storage.getItem(rotationKey(hexalot))
         if (rotationString) {
-            return parseInt(rotationString, 10)
+            return Promise.resolve(parseInt(rotationString, 10))
         }
-        return 0
+        return Promise.resolve(0)
     }
 }

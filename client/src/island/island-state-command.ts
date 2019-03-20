@@ -1,11 +1,11 @@
-import { Vector3 } from "three"
+import {Vector3} from "three"
 
-import { Direction } from "../body/fabric-exports"
-import { freshGenome, IGenomeData } from "../genetics/genome"
-import { Evolution } from "../gotchi/evolution"
+import {Direction} from "../body/fabric-exports"
+import {freshGenome, IGenomeData} from "../genetics/genome"
+import {Evolution} from "../gotchi/evolution"
 
-import { Command, IslandMode, IslandState } from "./island-state"
-import { Surface } from "./spot"
+import {Command, IslandMode, IslandState} from "./island-state"
+import {Surface} from "./spot"
 
 export class IslandStateCommand {
 
@@ -31,7 +31,9 @@ export class IslandStateCommand {
             case Command.SaveGenome: // ================================================================================
                 if (homeHexalot && gotchi) {
                     const genomeData = gotchi.genomeData
-                    state.storage.setGenome(homeHexalot, genomeData)
+                    state.storage.setGenomeData(homeHexalot, genomeData).then(() => {
+                        console.log("genome saved")
+                    })
                 }
                 return state
 
@@ -82,7 +84,11 @@ export class IslandStateCommand {
                 if (homeHexalot && journey) {
                     const firstLeg = journey.firstLeg
                     if (firstLeg) {
-                        const saveGenome = (data: IGenomeData) => this.state.storage.setGenome(homeHexalot, data)
+                        const saveGenome = (data: IGenomeData) => {
+                            this.state.storage.setGenomeData(homeHexalot, data).then(() => {
+                                console.log("genome saved")
+                            })
+                        }
                         const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
                         return this.state.withEvolution(evolution)
                     }
@@ -171,7 +177,9 @@ export class IslandStateCommand {
                         if (hexalot) {
                             const genome = freshGenome()
                             hexalot.genome = genome
-                            this.state.storage.setGenome(hexalot, genome.genomeData)
+                            this.state.storage.setGenomeData(hexalot, genome.genomeData).then(() => {
+                                console.log("genome saved")
+                            })
                         }
                         withNewHexalot.island.save()
                         return withNewHexalot.withRestructure.withHomeHexalot(hexalot)

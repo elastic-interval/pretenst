@@ -71,11 +71,12 @@ export class Hexalot {
 
     public load(): void {
         this.refreshFingerprint()
-        const genomeData = this.appStorage.getGenomeData(this)
-        if (genomeData) {
-            this.genome = fromGenomeData(genomeData)
-        }
-        this.rotation = this.appStorage.getRotation(this)
+        this.appStorage.getGenomeData(this).then(data => {
+            this.genome = data ? fromGenomeData(data) : undefined
+        })
+        this.appStorage.getRotation(this).then(rotation => {
+            this.rotation = rotation
+        })
     }
 
     public get id(): string {
@@ -116,7 +117,9 @@ export class Hexalot {
             nextRotation = 0
         }
         this.rotation = nextRotation
-        this.appStorage.setRotation(this, this.rotation)
+        this.appStorage.setRotation(this, this.rotation).then(() => {
+            console.log("saved rotation")
+        })
         return this.rotation
     }
 

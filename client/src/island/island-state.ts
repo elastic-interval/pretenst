@@ -97,7 +97,15 @@ export class IslandState {
         const copy = this.copy
         copy.selectedSpot = selectedSpot
         copy.selectedHexalot = selectedSpot ? selectedSpot.centerOfHexalot : undefined
-        copy.journey = copy.selectedHome && copy.homeHexalot ? this.storage.loadJourney(copy.homeHexalot, this.island) : undefined
+        copy.journey = undefined
+        const home = copy.homeHexalot
+        if (this.selectedHome && home) {
+            this.storage.loadJourney(home, this.island).then(journey => {
+                const withJourney = this.subject.getValue().copy
+                withJourney.journey = journey
+                this.subject.next(withJourney)
+            })
+        }
         return copy
     }
 
@@ -160,7 +168,9 @@ export class IslandState {
         }
         if (homeHexalot) {
             if (!homeHexalot.occupied) {
-                this.storage.setGenome(homeHexalot, freshGenome().genomeData)
+                this.storage.setGenomeData(homeHexalot, freshGenome().genomeData).then(() => {
+                    console.log("genome saved")
+                })
             }
             return copy.withSelectedSpot(homeHexalot.centerSpot).withHomeHexalot(homeHexalot)
         }
