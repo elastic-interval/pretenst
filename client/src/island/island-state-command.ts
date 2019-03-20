@@ -1,11 +1,11 @@
-import {Vector3} from "three"
+import { Vector3 } from "three"
 
-import {Direction} from "../body/fabric-exports"
-import {freshGenome, IGenomeData} from "../genetics/genome"
-import {Evolution} from "../gotchi/evolution"
+import { Direction } from "../body/fabric-exports"
+import { freshGenome, IGenomeData } from "../genetics/genome"
+import { Evolution } from "../gotchi/evolution"
 
-import {Command, IslandMode, IslandState} from "./island-state"
-import {Surface} from "./spot"
+import { Command, IslandMode, IslandState } from "./island-state"
+import { Surface } from "./spot"
 
 export class IslandStateCommand {
 

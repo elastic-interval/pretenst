@@ -1,6 +1,8 @@
 {
   "extends": "../tsconfig",
   "compilerOptions": {
-    "lib": ["es2015"]
+    "target": "esnext",
+    "lib": ["es2015"],
+    "jsx": "react"
   }
 }

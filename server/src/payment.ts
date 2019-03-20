@@ -8,27 +8,27 @@ export class PaymentHandler {
 
     constructor(
         readonly lnRpc: LnRpc,
-        readonly islandName: string,
     ) {
         this.invoiceSettledEvents = new EventEmitter()
         this.setupSubscriptions()
     }
 
-    public async generatePayment(
+    public async createInvoice(
+        islandName: string,
         lotID: HexalotID,
         value: string,
-    ): Promise<{ invoice: string, paid: Promise<void> }> {
-        const memo = `galapagotchi.run/island/${this.islandName}/hexalot/${lotID}`
+    ): Promise<{ payReq: string, paid: Promise<Invoice> }> {
+        const memo = `galapagotchi.run/island/${islandName}/hexalot/${lotID}`
         const response = await this.lnRpc.addInvoice({
             memo,
             value,
         })
-        const invoice = response.paymentRequest
-        const paid = new Promise<void>(resolve => {
-            this.invoiceSettledEvents.once(invoice, resolve)
+        const payReq = response.paymentRequest
+        const paid = new Promise<Invoice>(resolve => {
+            this.invoiceSettledEvents.once(payReq, resolve)
         })
         return {
-            invoice,
+            payReq,
             paid,
         }
     }
@@ -40,7 +40,7 @@ export class PaymentHandler {
         })
         subscriber.on("data", (invoice: Invoice) => {
             if (invoice.settled && invoice.paymentRequest) {
-                this.invoiceSettledEvents.emit(invoice.paymentRequest)
+                this.invoiceSettledEvents.emit(invoice.paymentRequest, invoice)
             }
         })
     }

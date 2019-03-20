@@ -4,7 +4,7 @@ import {Vector3} from "three"
 import {freshGenome} from "../genetics/genome"
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
-import {AppStorage} from "../storage/app-storage"
+import {LocalStorage} from "../storage/local-storage"
 
 import {Hexalot} from "./hexalot"
 import {Island} from "./island"
@@ -53,7 +53,7 @@ export class IslandState {
     constructor(
         readonly nonce: number,
         readonly island: Island,
-        readonly storage: AppStorage,
+        readonly storage: LocalStorage,
         public islandMode: IslandMode,
         public islandIsLegal: boolean = false,
         public homeHexalot?: Hexalot,

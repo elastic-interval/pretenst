@@ -70,6 +70,8 @@
     ],
     "no-empty": false,
     "max-line-length": [true, 160],
-    "no-debugger": false
+    "no-debugger": false,
+    "promise-function-async": true,
+    "no-null-keyword": true
   }
 }

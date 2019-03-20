@@ -1,23 +1,21 @@
 import { FlashStore } from "flash-store"
 
 import { IslandPattern } from "./island"
+import { HexalotID } from "./types"
 
 export interface IKeyValueStore {
     set(key: string, value: any): Promise<void>
 
-    get(key: string): Promise<any | null>
+    get(key: string): Promise<any | undefined>
 
     delete(key: string): Promise<void>
-}
-
-export class InvalidHexalotError extends Error {
 }
 
 export class InMemoryStore implements IKeyValueStore {
     private db: { [key: string]: any } = {}
 
-    public async get(key: string): Promise<any | null> {
-        return this.db[key] || null
+    public async get(key: string): Promise<any | undefined> {
+        return this.db[key] || undefined
     }
 
     public async set(key: string, value: any): Promise<void> {
@@ -36,44 +34,54 @@ export class LevelDBFlashStore implements IKeyValueStore {
         this.db = new FlashStore(storePath)
     }
 
-    public delete(key: string): Promise<void> {
+    public async delete(key: string): Promise<void> {
         return this.db.del(key)
     }
 
-    public async get(key: string): Promise<any | null> {
-        return await this.db.get(key) || null
+    public async get(key: string): Promise<any | undefined> {
+        return await this.db.get(key) || undefined
     }
 
-    public set(key: string, value: any): Promise<void> {
+    public async set(key: string, value: any): Promise<void> {
         return this.db.set(key, value)
     }
 }
 
-export class IslandStore {
+export class DataStore {
     constructor(
         readonly db: IKeyValueStore,
-        readonly islandName: string,
     ) {
     }
 
-    public async getPattern(): Promise<IslandPattern | null> {
-        const pattern = await this.get("pattern")
-        if (!pattern) {
-            return null
+    public async getPattern(islandName: string): Promise<IslandPattern | undefined> {
+        return (await this.db.get(`/island/${islandName}/pattern`)) || {
+            hexalots: "",
+            spots: "",
         }
-        return pattern
     }
 
-    public async setPattern(pattern: IslandPattern): Promise<void> {
-        const patternStr = JSON.stringify(pattern)
-        return this.set("pattern", patternStr)
+    public async setPattern(islandName: string, pattern: IslandPattern): Promise<void> {
+        return this.db.set(`/island/${islandName}/pattern`, pattern)
     }
 
-    private async set(key: string, value: any): Promise<void> {
-        return this.db.set(`/island/${this.islandName}/${key}`, value)
+    public async getGenome(id: HexalotID): Promise<string | undefined> {
+        return this.db.get(`/hexalot/${id}/genomeData`)
     }
 
-    private async get(key: string): Promise<any | null> {
-        return this.db.get(`/island/${this.islandName}/${key}`)
+    public async setGenome(id: HexalotID, genomeData: string): Promise<void> {
+        return this.db.set(`/hexalot/${id}/genomeData`, genomeData)
+    }
+
+    public async getRotation(id: HexalotID): Promise<number> {
+        let rotation = await this.db.get(`/hexalot/${id}/rotation`)
+        if (rotation === undefined) {
+            rotation = 0
+            await this.db.set(`/hexalot/${id}/rotation`, rotation)
+        }
+        return rotation
+    }
+
+    public async setRotation(id: HexalotID, rotation: number): Promise<void> {
+        return this.db.set(`/hexalot/${id}/rotation`, rotation)
     }
 }

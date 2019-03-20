@@ -1,8 +1,8 @@
-import {PhysicsFeature} from "../body/physics"
-import {IGenomeData} from "../genetics/genome"
-import {Hexalot} from "../island/hexalot"
-import {Island, IslandPattern} from "../island/island"
-import {Journey} from "../island/journey"
+import { PhysicsFeature } from "../body/physics"
+import { IGenomeData } from "../genetics/genome"
+import { Hexalot } from "../island/hexalot"
+import { Island, IslandPattern } from "../island/island"
+import { Journey } from "../island/journey"
 
 function journeyKey(hexalot: Hexalot): string {
     return `${hexalot.id}-journey`
@@ -16,7 +16,7 @@ function rotationKey(hexalot: Hexalot): string {
     return `${hexalot.id}-rotation`
 }
 
-export class AppStorage {
+export class LocalStorage {
 
     constructor(private storage: Storage) {
     }

@@ -6,7 +6,7 @@ import morgan from "morgan"
 import { homedir } from "os"
 import { join } from "path"
 
-import { IslandCurator } from "./src/curator"
+import { createRouter } from "./src/router"
 import { LevelDBFlashStore } from "./src/store"
 
 
@@ -26,12 +26,12 @@ async function connectToLnRpc(): Promise<LnRpc> {
             macaroonPath: `./secret/${lnRpcHost}/admin.macaroon`,
         }
     }
-    console.log(`Connecting to LN RPC with config: ${JSON.stringify(config, null, 2)}`)
+    console.log(`Connecting to LN RPC with config: ${JSON.stringify(config, undefined, 2)}`)
     return createLnRpc(config)
 }
 
 async function run(listenPort: number): Promise<void> {
-    const db = new LevelDBFlashStore(__dirname + "/data/islandsdb")
+    const db = new LevelDBFlashStore(__dirname + "/data/galapagotchi.db")
 
     const lnRpc = await connectToLnRpc()
 
@@ -39,12 +39,16 @@ async function run(listenPort: number): Promise<void> {
 
     app.use(bodyParser())
 
-    app.get("/test", (req, res) => res.end("OK"))
-
-    app.use("/island/genesis",
-        new IslandCurator("genesis", db, lnRpc).createRouter())
-
     app.use(morgan("short"))
+
+    app.use((req, res, next) => {
+        res.header("Access-Control-Allow-Origin", "*")
+        res.header("Access-Control-Allow-Methods", "GET, POST")
+        res.header("Access-Control-Allow-Headers", "Content-Type")
+        next()
+    })
+
+    app.use("/api", createRouter(lnRpc, db))
 
     return new Promise<void>(
         resolve => app.listen(listenPort, resolve),

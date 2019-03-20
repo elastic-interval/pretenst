@@ -59,7 +59,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidMount(): void {
-        const element: Element | null = document.getElementById("gotchi-view")
+        const element: Element | undefined = document.getElementById("gotchi-view") || undefined
         if (element) {
             this.target = this.props.islandState.island.midpoint
             this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target)
@@ -100,10 +100,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             islandState={this.props.islandState}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
-                        {!evolution ? null : (
+                        {!evolution ? undefined : (
                             <EvolutionComponent evolution={evolution}/>)
                         }
-                        {!gotchi ? null : (
+                        {!gotchi ? undefined : (
                             <R3.Object3D key="Gotchi">
                                 <R3.LineSegments
                                     key="Vectors"
@@ -116,7 +116,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                 />
                             </R3.Object3D>
                         )}
-                        {!journey ? null : (
+                        {!journey ? undefined : (
                             <JourneyComponent journey={journey}/>
                         )}
                     </R3.Scene>

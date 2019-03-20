@@ -2,7 +2,7 @@ import {Vector3} from "three"
 
 import {fromGenomeData, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
-import {AppStorage} from "../storage/app-storage"
+import {LocalStorage} from "../storage/local-storage"
 
 import {Journey} from "./journey"
 import {BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
@@ -18,7 +18,7 @@ interface IHexalotIndexed {
 const spotsToHexFingerprint = (spots: Spot[]): string => {
     const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
     const nybbleStrings = lit
-        .map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : null)
+        .map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
         .filter(chunk => chunk)
     const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16))
     return nybbleChars.join("")
@@ -57,7 +57,7 @@ export class Hexalot {
                 public coords: ICoords,
                 public spots: Spot[],
                 private gotchiFactory: IGotchiFactory,
-                private appStorage: AppStorage) {
+                private appStorage: LocalStorage) {
         this.spots[0].centerOfHexalot = this
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentHexalots.push(this)

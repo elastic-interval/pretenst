@@ -47,7 +47,7 @@ export class TitlePanel extends React.Component<ITitlePanelProps, ITitlePanelSta
                 <br/>
                 <strong>{this.state.orbitState}</strong>
                 <br/>
-                <strong>{spot ? `Spot(${spot.coords.x},${spot.coords.y})` : null}</strong>
+                <strong>{spot ? `Spot(${spot.coords.x},${spot.coords.y})` : undefined}</strong>
             </div>
         )
     }
