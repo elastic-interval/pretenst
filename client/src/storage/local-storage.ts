@@ -51,7 +51,6 @@ export class LocalStorage {
         return Promise.resolve()
     }
 
-    // TODO: saveJourney(island: Island, hexalot: Hexalot): Promise<void>
     public async saveJourney(hexalot: Hexalot): Promise<void> {
         const journey = hexalot.journey
         const key = journeyKey(hexalot)

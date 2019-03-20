@@ -100,7 +100,9 @@ export class IslandStateCommand {
                 if (homeHexalot) {
                     homeHexalot.journey = undefined
                     this.state.journey = undefined
-                    this.state.storage.saveJourney(homeHexalot)
+                    this.state.storage.saveJourney(homeHexalot).then(() => {
+                        console.log("saved journey")
+                    })
                     return this.state
                 }
                 return state

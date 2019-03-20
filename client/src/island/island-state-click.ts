@@ -46,7 +46,9 @@ export class IslandStateClick {
                     } else {
                         homeHexalot.journey = new Journey([homeHexalot, hexalot])
                     }
-                    this.state.storage.saveJourney(homeHexalot)
+                    this.state.storage.saveJourney(homeHexalot).then(() => {
+                        console.log("saved journey")
+                    })
                     return this.state.withJourney(homeHexalot.journey)
                 }
                 return this.state // todo: no state change?
