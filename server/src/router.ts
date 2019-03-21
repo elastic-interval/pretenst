@@ -153,7 +153,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
         })
         .post(
             [
-                body("journeyData").isArray(),
+                body("journeyData").isJSON(),
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
