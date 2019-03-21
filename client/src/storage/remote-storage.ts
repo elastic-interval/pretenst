@@ -1,6 +1,6 @@
 import Axios, { AxiosInstance } from "axios"
 
-import { IGenomeData } from "../genetics/genome"
+import { fromOptionalGenomeData, IGenomeData } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
 import { Island, IslandData } from "../island/island"
 import { IJourneyData } from "../island/journey"
@@ -25,6 +25,7 @@ export class RemoteStorage implements IStorage {
     }
 
     public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData> {
+        hexalot.genome = fromOptionalGenomeData(genomeData)
         const response = await this.client.post(
             `/island/${island.name}/claim-lot`,
             {
