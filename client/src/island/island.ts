@@ -70,6 +70,10 @@ export class Island {
 
     public set vacantHexalot(newVacant: Hexalot | undefined) {
         if (this.vacant) {
+            if (newVacant && newVacant.id === this.vacant.id) {
+                console.warn("same one!", newVacant)
+                return
+            }
             const vacant = this.vacant
             this.vacant = undefined
             vacant.destroy(deadSpot => {

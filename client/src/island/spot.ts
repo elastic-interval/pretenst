@@ -161,7 +161,7 @@ export class Spot {
         const centerOfHexalot = this.centerOfHexalot
         if (centerOfHexalot) {
             if (!vacantHexalot) {
-                return false
+                return true
             }
             return centerOfHexalot.id === vacantHexalot.id
         }

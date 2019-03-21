@@ -242,9 +242,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
             return undefined
         }
         const geometry = new Geometry()
-        if (vacantHexalot.centerSpot) { // todo: why would a disposed (no center spot) one be included?
-            vacantHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
-        }
+        vacantHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
         vacantHexalot.spots.forEach((spot, index) => {
             const outerIndex = index - INNER_HEXALOT_SPOTS
             if (outerIndex < 0) {

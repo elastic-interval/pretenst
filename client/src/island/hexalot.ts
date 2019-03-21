@@ -159,6 +159,7 @@ export class Hexalot {
     }
 
     public destroy(removeSpot: (spot: Spot) => void): void {
+        console.warn("destroy", this.id)
         if (this.spots.length === 0) {
             return
         }
