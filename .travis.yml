@@ -1,9 +1,21 @@
-language: node.js
-nvm:
-  - v11.10.1
-  - yarn
+language: node_js
+node_js:
+  - 11.10.1
 env:
   global:
-    - REACT_APP_RMEOTE_STORAGE_URI=https://galapagotchi.run/api
-script:
-  - npm
+    - REACT_APP_REMOTE_STORAGE_URI=https://galapagotchi.run/api
+before_install:
+  - openssl aes-256-cbc -K $encrypted_d9b20cc94144_key -iv $encrypted_d9b20cc94144_iv
+    -in deploy-key.enc -out deploy-key -d
+  - mv deploy-key ~/.ssh/id_rsa
+install:
+  - cd fabric/
+  - yarn
+  - cd ..
+  - cd client/
+  - yarn
+  - cd ..
+  - cd server/
+  - yarn
+  - cd ..
+
