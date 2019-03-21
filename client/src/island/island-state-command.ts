@@ -18,10 +18,11 @@ export class IslandStateCommand {
 
         const state = this.state
         const homeHexalot = state.homeHexalot
-        const selectedHexalot = state.selectedHexalot
+        const hexalot = state.selectedHexalot
         const gotchi = state.gotchi
         const journey = state.journey
         const spot = state.selectedSpot
+        const vacant = state.island.vacantHexalot
 
         switch (command) {
 
@@ -62,8 +63,8 @@ export class IslandStateCommand {
 
 
             case Command.DriveFree: // =================================================================================
-                if (selectedHexalot) {
-                    const newbornGotchi = selectedHexalot.createNativeGotchi()
+                if (hexalot) {
+                    const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
                         return this.state.withGotchi(newbornGotchi)
                     }
@@ -102,7 +103,7 @@ export class IslandStateCommand {
                 if (homeHexalot) {
                     homeHexalot.journey = undefined
                     this.state.journey = undefined
-                    this.state.storage.setJourneyData(homeHexalot, {hexalots:[homeHexalot.id]}).then(() => {
+                    this.state.storage.setJourneyData(homeHexalot, {hexalots: [homeHexalot.id]}).then(() => {
                         console.log("cleared journey")
                     })
                     return this.state
@@ -170,19 +171,16 @@ export class IslandStateCommand {
 
 
             case Command.AbandonFix: // ================================================================================
-                return state.withSelectedSpot().withFreeHexalotsRemoved.withMode(IslandMode.Visiting).withRestructure
+                state.island.vacantHexalot = undefined
+                return state.withSelectedSpot().withMode(IslandMode.Visiting).withRestructure
 
 
             case Command.ClaimHexalot: // ==============================================================================
-                if (spot) {
-                    if (!homeHexalot && spot.canBeClaimed) {
-                        const withNewHexalot = this.state.withNewHexalotAt(spot)
-                        const hexalot = withNewHexalot.selectedHexalot
-                        if (hexalot) {
-                            this.claimHexalot(hexalot, state) // todo: handle failure
-                        }
-                        return withNewHexalot.withRestructure
+                if (!homeHexalot && hexalot && vacant && vacant.id === hexalot.id) {
+                    if (hexalot) {
+                        this.claimHexalot(hexalot, state) // todo: handle failure
                     }
+                    return state.withVacantHexalotAt(hexalot.centerSpot).withRestructure
                 }
                 return state
 

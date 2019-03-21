@@ -97,7 +97,9 @@ export class IslandState {
         if (selectedSpot) {
             const hexalot = copy.selectedHexalot = selectedSpot.centerOfHexalot
             if (hexalot) {
-                const genomePresent = hexalot.fetchGenome(this.storage)
+                const genomePresent = hexalot.fetchGenome(this.storage, () => {
+                    this.island.state.dispatch()
+                })
                 console.log(`Genome present for ${hexalot.id}`, genomePresent)
             }
         } else {
@@ -117,11 +119,6 @@ export class IslandState {
         copy.recycle()
         copy.islandMode = islandMode
         return copy
-    }
-
-    public get withFreeHexalotsRemoved(): IslandState {
-        this.island.removeFreeHexalots()
-        return this // todo: no change of state?
     }
 
     public withHomeHexalot(hexalot?: Hexalot): IslandState {
@@ -144,13 +141,11 @@ export class IslandState {
         return copy
     }
 
-    public withNewHexalotAt(spot: Spot): IslandState {
+    public withVacantHexalotAt(spot: Spot): IslandState {
         const copy = this.copy
-        const hexalot = this.island.createHexalot(spot)
-        if (hexalot) {
-            return copy.withSelectedSpot(hexalot.centerSpot)
-        }
-        return copy
+        const vacant = this.island.createHexalot(spot)
+        this.island.vacantHexalot = vacant
+        return copy.withSelectedSpot(vacant.centerSpot)
     }
 
     public get withRestructure(): IslandState {
@@ -158,9 +153,15 @@ export class IslandState {
         island.recalculate()
         const hexalots = island.hexalots
         const spots = island.spots
-        const singleHexalot = hexalots.length === 1
         const homeHexalot = this.homeHexalot
-        spots.forEach(spot => spot.checkFree(singleHexalot))
+        const vacant = island.vacantHexalot
+        if (hexalots.length === 1) {
+            spots.forEach(spot => spot.free = true)
+        } else if (vacant) {
+            spots.forEach(spot => spot.free = spot.memberOfHexalot.every(hexalot => hexalot.id === vacant.id))
+        } else {
+            spots.forEach(spot => spot.free = false)
+        }
         hexalots.forEach(hexalot => hexalot.refreshId())
         const copy = this.withIslandIsLegal(island.islandIsLegal)
         if (!copy.islandIsLegal) {
@@ -178,18 +179,19 @@ export class IslandState {
             return this
         }
         selectedSpot.surface = surface
-        const copy = this.copy.withRestructure
+        selectedSpot.memberOfHexalot.forEach(hexalot => hexalot.refreshId())
+        const copy = this.copy
         const nextFree = selectedSpot.adjacentSpots.find(s => s.free && s.surface === Surface.Unknown)
         if (nextFree) {
-            return copy.withSelectedSpot(nextFree)
+            return copy.withSelectedSpot(nextFree).withRestructure
         }
         const anyFree = this.island.spots.find(s => s.free && s.surface === Surface.Unknown)
         if (anyFree) {
-            return copy.withSelectedSpot(anyFree)
+            return copy.withSelectedSpot(anyFree).withRestructure
         }
-        const unoccupiedHexalot = this.island.hexalots.find(hexalot => hexalot.vacant)
-        if (unoccupiedHexalot) {
-            return copy.withSelectedSpot(unoccupiedHexalot.centerSpot)
+        const vacantHexalot = this.island.vacantHexalot
+        if (vacantHexalot) {
+            return copy.withSelectedSpot(vacantHexalot.centerSpot).withRestructure
         }
         return copy
     }

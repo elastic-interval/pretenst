@@ -38,21 +38,36 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     }
 
     public render(): JSX.Element {
+
         const islandState = this.props.islandState
+        const vacant = islandState.island.vacantHexalot
+
         switch (islandState.islandMode) {
 
 
             case IslandMode.FixingIsland: // ===========================================================================
                 const spot = islandState.selectedSpot
                 if (spot) {
-                    if (islandState.islandIsLegal && spot.canBeClaimed) {
-                        return (
-                            <ActionFrame>
-                                {this.buttons("Available", [
-                                    Command.ClaimHexalot,
-                                ])}
-                            </ActionFrame>
-                        )
+                    if (spot.isVacantLandWithOccupiedAdjacentLand(vacant)) {
+                        if (islandState.islandIsLegal) {
+                            return (
+                                <ActionFrame>
+                                    {this.buttons("Available", [
+                                        Command.ClaimHexalot,
+                                    ])}
+                                </ActionFrame>
+                            )
+                        } else {
+                            return (
+                                <ActionFrame>
+                                    <p>You can claim this hexalot when the island has been fixed.</p>
+                                    {this.buttons("Fixing..", [
+                                        Command.JumpToFix,
+                                        Command.AbandonFix,
+                                    ])}
+                                </ActionFrame>
+                            )
+                        }
                     }
                     if (spot.free) {
                         return (
@@ -60,17 +75,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                                 {this.buttons("Free", [
                                     Command.MakeLand,
                                     Command.MakeWater,
-                                ])}
-                            </ActionFrame>
-                        )
-                    }
-                    if (spot.centerOfHexalot && spot.centerOfHexalot.vacant) {
-                        return (
-                            <ActionFrame>
-                                <p>You can claim this hexalot when the island has been fixed.</p>
-                                {this.buttons("Fixing..", [
-                                    Command.JumpToFix,
-                                    Command.AbandonFix,
                                 ])}
                             </ActionFrame>
                         )
@@ -91,7 +95,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
             case IslandMode.Visiting: // ===============================================================================
                 const hexalot = islandState.selectedHexalot
                 if (hexalot) {
-                    if (hexalot.centerSpot.canBeClaimed) {
+                    if (hexalot.centerSpot.isVacantLandWithOccupiedAdjacentLand(vacant)) {
                         return (
                             <ActionFrame>
                                 {this.buttons("Available", [

@@ -16,7 +16,7 @@ interface IHexalotIndexed {
     index: number
 }
 
-const spotsToHexFingerprint = (spots: Spot[]): string => {
+const spotsToHexId = (spots: Spot[]): string => {
     const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
     const nybbleStrings = lit
         .map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
@@ -89,14 +89,10 @@ export class Hexalot {
     }
 
     public refreshId(): void {
-        this.identifier = spotsToHexFingerprint(this.spots)
+        this.identifier = spotsToHexId(this.spots)
     }
 
-    public get vacant(): boolean {
-        return this.genomeStatus === LoadStatus.Loaded && !this.genome
-    }
-
-    public fetchGenome(storage: IStorage): boolean {
+    public fetchGenome(storage: IStorage, loaded: () => void): boolean {
         switch (this.genomeStatus) {
             case LoadStatus.Pending:
                 this.genomeStatus = LoadStatus.Busy
@@ -104,6 +100,7 @@ export class Hexalot {
                     this.genome = fromOptionalGenomeData(genomeData)
                     console.log(`Genome data arrived for ${this.id}`, genomeData)
                     this.genomeStatus = LoadStatus.Loaded
+                    loaded()
                 })
                 return false
             case LoadStatus.Busy:
@@ -161,9 +158,9 @@ export class Hexalot {
         return this.centerSpot.center
     }
 
-    public destroy(): Spot[] {
+    public destroy(removeSpot: (spot: Spot) => void): void {
         if (this.spots.length === 0) {
-            return []
+            return
         }
         if (this.parentHexalot) {
             this.parentHexalot.childHexalots = this.parentHexalot.childHexalots.filter(hexalot => !equals(this.coords, hexalot.coords))
@@ -173,9 +170,8 @@ export class Hexalot {
             this.spots[neighbor].adjacentHexalots = this.spots[neighbor].adjacentHexalots.filter(hexalot => !equals(this.coords, hexalot.coords))
         }
         this.spots.forEach(p => p.memberOfHexalot = p.memberOfHexalot.filter(hexalot => !equals(this.coords, hexalot.coords)))
-        const lightsToRemove = this.spots.filter(p => p.memberOfHexalot.length === 0)
+        this.spots.filter(p => p.memberOfHexalot.length === 0).forEach(removeSpot)
         this.spots = []
-        return lightsToRemove
     }
 
     public generateOctalTreePattern(steps: number[]): number[] {

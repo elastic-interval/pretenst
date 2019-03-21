@@ -22,6 +22,7 @@ export class Island {
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
     public state: IslandState
+    private vacant?: Hexalot
 
     constructor(subject: Subject<IslandState>, islandData: IslandData, readonly gotchiFactory: IGotchiFactory, private storage: IStorage) {
         this.apply(islandData)
@@ -33,12 +34,8 @@ export class Island {
         return this.spots.every(spot => spot.isLegal)
     }
 
-    public get freeHexalot(): Hexalot | undefined {
-        return this.hexalots.find(hexalot => !hexalot.genome)
-    }
-
-    public findHexalot(fingerprint: string): Hexalot | undefined {
-        return this.hexalots.find(hexalot => hexalot.id === fingerprint)
+    public findHexalot(id: string): Hexalot | undefined {
+        return this.hexalots.find(hexalot => hexalot.id === id)
     }
 
     public recalculate(): void {
@@ -63,22 +60,23 @@ export class Island {
         }
     }
 
-    public createHexalot(spot: Spot): Hexalot | undefined {
-        if (!spot.canBeClaimed) {
-            console.error(`Hexalot ${JSON.stringify(spot.coords)} cannot be a hexalot!`)
-            return undefined
-        }
+    public createHexalot(spot: Spot): Hexalot {
         return this.hexalotAroundSpot(spot)
     }
 
-    public removeFreeHexalots(): void {
-        const vacantHexalots = this.hexalots.filter(hexalot => hexalot.vacant)
-        vacantHexalots.forEach(vacant => {
-            this.hexalots = this.hexalots.filter(hexalot => !equals(hexalot.coords, vacant.coords))
-            vacant.destroy().forEach(deadSpot => {
+    public get vacantHexalot(): Hexalot | undefined {
+        return this.vacant
+    }
+
+    public set vacantHexalot(newVacant: Hexalot | undefined) {
+        if (this.vacant) {
+            const vacant = this.vacant
+            this.vacant = undefined
+            vacant.destroy(deadSpot => {
                 this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords))
             })
-        })
+        }
+        this.vacant = newVacant
     }
 
     public get midpoint(): Vector3 {
