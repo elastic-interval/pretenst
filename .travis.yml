@@ -5,7 +5,7 @@ env:
   global:
     - REACT_APP_REMOTE_STORAGE_URI=https://galapagotchi.run/api
 before_install:
-  - openssl aes-256-cbc -K $encrypted_d9b20cc94144_key -iv $encrypted_d9b20cc94144_iv
+  - openssl aes-256-cbc -K $encrypted_9dcca22fbdaa_key -iv $encrypted_9dcca22fbdaa_iv
     -in deploy-key.enc -out deploy-key -d
   - mv deploy-key ~/.ssh/id_rsa
 install:
@@ -18,4 +18,3 @@ install:
   - cd server/
   - yarn
   - cd ..
-
