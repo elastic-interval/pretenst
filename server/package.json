@@ -5,8 +5,7 @@
   "license": "MIT",
   "engineStrict": true,
   "engines": {
-    "node": "11.10.1",
-    "yarn": "1.13.0"
+    "node": "11.10.1"
   },
   "scripts": {
     "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node index.ts",
