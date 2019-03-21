@@ -26,5 +26,6 @@ script:
   - yarn build
   - cd ..
 after_success:
+  - ssh-keyscan -H galapagotchi.run >> ~/.ssh/known_hosts
   - scp -r client/build galapagotchi@galapagotchi.run:/home/galapagotchi/app/client/build
   - ssh "cd /home/galapagotchi/app/server && pm2 restart all"
