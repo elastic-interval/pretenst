@@ -10,11 +10,19 @@ import {BrowserStorage} from "./storage/browser-storage"
 import {RemoteStorage} from "./storage/remote-storage"
 import {IStorage} from "./storage/storage"
 
-const REMOTE_STORAGE = false
 
 declare const getFabricExports: () => Promise<IFabricExports> // implementation: index.html
 
-const storage: IStorage = REMOTE_STORAGE ? new RemoteStorage() : new BrowserStorage(localStorage)
+const REMOTE_STORAGE_URI = process.env.REACT_APP_REMOTE_STORAGE_URI
+
+let storage: IStorage
+if (REMOTE_STORAGE_URI !== undefined) {
+    console.log(`Using remote storage at ${REMOTE_STORAGE_URI}`)
+    storage = new RemoteStorage(REMOTE_STORAGE_URI)
+} else {
+    console.log("Using in-browser storage")
+    storage = new BrowserStorage(localStorage)
+}
 
 getFabricExports().then(fabricExports => {
     ReactDOM.render(

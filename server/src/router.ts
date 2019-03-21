@@ -31,6 +31,9 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
     const hexalotRoute = Router()
 
     root
+        .get("/", (req, res) => {
+            res.end("OK")
+        })
         .use(
             "/island/:islandName",
             [
@@ -60,9 +63,11 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
 
     islandRoute
         .get("/", async (req, res) => {
-            res.json(
-                await store.getPattern(res.locals.island.islandName),
-            )
+            const pattern = await store.getPattern(res.locals.island.islandName)
+            res.json({
+                name: res.locals.island.islandName,
+                ...pattern,
+            })
         })
         .post(
             "/claim-lot",
@@ -101,7 +106,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
     hexalotRoute
         .route("/genome-data")
         .get(async (req, res) => {
-            const genomeData = await store.getGenome(res.locals.hexalotId)
+            const genomeData = await store.getGenomeData(res.locals.hexalotId)
             if (!genomeData) {
                 res.sendStatus(HttpStatus.NOT_FOUND)
                 return
@@ -114,7 +119,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
-                await store.setGenome(res.locals.hexalotId, req.body.genomeData)
+                await store.setGenomeData(res.locals.hexalotId, req.body.genomeData)
                 res.sendStatus(HttpStatus.OK)
             },
         )
@@ -139,16 +144,20 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
     hexalotRoute
         .route("/journey")
         .get(async (req, res) => {
-            const rotation = await store.getRotation(res.locals.hexalotId)
-            res.json(rotation)
+            const journey = await store.getJourney(res.locals.hexalotId)
+            if (journey === undefined) {
+                res.sendStatus(404)
+                return
+            }
+            res.json(journey)
         })
         .post(
             [
-                body("rotation").isNumeric().toFloat(),
+                body("journeyData").isJSON(),
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
-                await store.setRotation(res.locals.hexalotId, req.body.rotation)
+                await store.setJourney(res.locals.hexalotId, req.body.journey)
                 res.sendStatus(HttpStatus.OK)
             },
         )

@@ -1,6 +1,6 @@
 import { FlashStore } from "flash-store"
 
-import { IslandPattern } from "./island"
+import { IJourneyData, IslandPattern } from "./island"
 import { HexalotID } from "./types"
 
 export interface IKeyValueStore {
@@ -61,15 +61,15 @@ export class DataStore {
     }
 
     public async setPattern(islandName: string, pattern: IslandPattern): Promise<void> {
-        return this.db.set(`/island/${islandName}/pattern`, pattern)
+        await this.db.set(`/island/${islandName}/pattern`, pattern)
     }
 
-    public async getGenome(id: HexalotID): Promise<string | undefined> {
+    public async getGenomeData(id: HexalotID): Promise<string | undefined> {
         return this.db.get(`/hexalot/${id}/genomeData`)
     }
 
-    public async setGenome(id: HexalotID, genomeData: string): Promise<void> {
-        return this.db.set(`/hexalot/${id}/genomeData`, genomeData)
+    public async setGenomeData(id: HexalotID, genomeData: string): Promise<void> {
+        await this.db.set(`/hexalot/${id}/genomeData`, genomeData)
     }
 
     public async getRotation(id: HexalotID): Promise<number> {
@@ -83,5 +83,19 @@ export class DataStore {
 
     public async setRotation(id: HexalotID, rotation: number): Promise<void> {
         return this.db.set(`/hexalot/${id}/rotation`, rotation)
+    }
+
+    public async getJourney(id: HexalotID): Promise<IJourneyData | undefined> {
+        return this.db.get(`/hexalot/${id}/journey`)
+    }
+
+    public async setJourney(id: HexalotID, journey: IJourneyData): Promise<void> {
+        if (!journey.hexalots) {
+            throw new Error("invalid journey format")
+        }
+        if (journey.hexalots.some((x: any) => !(x instanceof String) || x.length !== 32)) {
+            throw new Error("invalid journey")
+        }
+        await this.db.set(`/hexalot/${id}/journey`, journey)
     }
 }
