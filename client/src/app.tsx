@@ -11,7 +11,6 @@ import {Physics} from "./body/physics"
 import {INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Island} from "./island/island"
 import {IslandState} from "./island/island-state"
-import {fromJourneyData} from "./island/journey"
 import {Surface} from "./island/spot"
 import {LocalStorage} from "./storage/local-storage"
 import {ActionsPanel} from "./view/actions-panel"
@@ -72,6 +71,7 @@ class App extends React.Component<IAppProps, IAppState> {
                     this.fabricKernel,
                     this.props.storage,
                 )
+                console.log("state", island.state)
                 this.setState({islandState: island.state})
             }
         })
@@ -96,9 +96,6 @@ class App extends React.Component<IAppProps, IAppState> {
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
                 const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
-                this.props.storage.getJourneyData(homeHexalot).then(journeyData => {
-                    homeHexalot.journey = fromJourneyData(islandState.island, journeyData)
-                })
             } else {
                 location.replace("/#/")
             }

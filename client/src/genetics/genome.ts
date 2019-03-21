@@ -36,6 +36,13 @@ export function fromGenomeData(genomeData: IGenomeData): Genome {
     return new Genome(genes, rollTheDice)
 }
 
+export function fromOptionalGenomeData(genomeData?: IGenomeData): Genome | undefined {
+    if (!genomeData) {
+        return undefined
+    }
+    return fromGenomeData(genomeData)
+}
+
 export interface IGene {
     direction: Direction
     mutationCount: number

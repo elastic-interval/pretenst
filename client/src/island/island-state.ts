@@ -1,7 +1,6 @@
 import {Subject} from "rxjs"
 import {Vector3} from "three"
 
-import {freshGenome} from "../genetics/genome"
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
 import {LocalStorage} from "../storage/local-storage"
@@ -10,7 +9,7 @@ import {Hexalot} from "./hexalot"
 import {Island} from "./island"
 import {IslandStateClick} from "./island-state-click"
 import {IslandStateCommand} from "./island-state-command"
-import {fromJourneyData, Journey} from "./journey"
+import {Journey} from "./journey"
 import {Spot, Surface} from "./spot"
 
 export enum Command {
@@ -86,7 +85,7 @@ export class IslandState {
         return undefined
     }
 
-    public withJourney(journey: Journey): IslandState {
+    public withJourney(journey?: Journey): IslandState {
         const copy = this.copy
         copy.journey = journey
         return copy
@@ -95,20 +94,19 @@ export class IslandState {
     public withSelectedSpot(selectedSpot?: Spot): IslandState {
         const copy = this.copy
         copy.selectedSpot = selectedSpot
-        copy.selectedHexalot = selectedSpot ? selectedSpot.centerOfHexalot : undefined
-        copy.journey = undefined
-        const home = copy.homeHexalot
-        if (this.selectedHome && home) {
-            this.storage.getJourneyData(home).then(journeyData => {
-                const currentState = copy.copy
-                currentState.journey = fromJourneyData(this.island, journeyData)
-                this.subject.next(currentState)
-            })
+        if (selectedSpot) {
+            const hexalot = copy.selectedHexalot = selectedSpot.centerOfHexalot
+            if (hexalot) {
+                const genomePresent = hexalot.fetchGenome(this.storage)
+                console.log(`Genome present for ${hexalot.id}`, genomePresent)
+            }
+        } else {
+            copy.selectedHexalot = undefined
         }
         return copy
     }
 
-    public withislandIsLegal(islandIsLegal: boolean): IslandState {
+    public withIslandIsLegal(islandIsLegal: boolean): IslandState {
         const copy = this.copy
         copy.islandIsLegal = islandIsLegal
         return copy
@@ -128,13 +126,21 @@ export class IslandState {
 
     public withHomeHexalot(hexalot?: Hexalot): IslandState {
         const copy = this.copy
+        copy.homeHexalot = hexalot
         if (hexalot) {
             copy.islandMode = IslandMode.Landed
+            const home = copy.homeHexalot
+            if (this.selectedHome && home) {
+                const journeyPresent = home.fetchJourney(this.storage, this.island, () => {
+                    this.island.state.withJourney(home.journey).dispatch()
+                })
+                console.log(`Journey present for ${home.id}`, journeyPresent)
+                copy.journey = home.journey
+            }
         } else {
             copy.islandMode = IslandMode.Visiting
             copy.journey = undefined
         }
-        copy.homeHexalot = hexalot
         return copy
     }
 
@@ -155,23 +161,13 @@ export class IslandState {
         const singleHexalot = hexalots.length === 1
         const homeHexalot = this.homeHexalot
         spots.forEach(spot => spot.checkFree(singleHexalot))
-        hexalots.forEach(hexalot => hexalot.refreshFingerprint())
-        const copy = this.withislandIsLegal(island.islandIsLegal)
+        hexalots.forEach(hexalot => hexalot.refreshId())
+        const copy = this.withIslandIsLegal(island.islandIsLegal)
         if (!copy.islandIsLegal) {
             return copy.withMode(IslandMode.FixingIsland)
         }
-        if (singleHexalot) {
-            const firstHexalot = hexalots[0]
-            const centerSpot = firstHexalot.centerSpot
-            return copy.homeHexalot ? copy.withSelectedSpot(centerSpot) : copy
-        }
         if (homeHexalot) {
-            if (!homeHexalot.occupied) {
-                this.storage.setGenomeData(homeHexalot, freshGenome().genomeData).then(() => {
-                    console.log("genome saved")
-                })
-            }
-            return copy.withSelectedSpot(homeHexalot.centerSpot).withHomeHexalot(homeHexalot)
+            return copy.withHomeHexalot(homeHexalot)
         }
         return copy.withMode(IslandMode.Visiting)
     }
@@ -191,7 +187,7 @@ export class IslandState {
         if (anyFree) {
             return copy.withSelectedSpot(anyFree)
         }
-        const unoccupiedHexalot = this.island.hexalots.find(h => !h.occupied)
+        const unoccupiedHexalot = this.island.hexalots.find(hexalot => hexalot.vacant)
         if (unoccupiedHexalot) {
             return copy.withSelectedSpot(unoccupiedHexalot.centerSpot)
         }

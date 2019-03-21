@@ -19,7 +19,7 @@ export class Leg {
     }
 }
 
-export function fromJourneyData(island: Island, journeyData?: IJourneyData): Journey | undefined {
+export function fromOptionalJourneyData(island: Island, journeyData?: IJourneyData): Journey | undefined {
     const hexalots: Hexalot[] = []
     if (!journeyData) {
         return undefined

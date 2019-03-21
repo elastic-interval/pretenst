@@ -64,7 +64,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             </ActionFrame>
                         )
                     }
-                    if (spot.centerOfHexalot && !spot.centerOfHexalot.occupied) {
+                    if (spot.centerOfHexalot && spot.centerOfHexalot.vacant) {
                         return (
                             <ActionFrame>
                                 <p>You can claim this hexalot when the island has been fixed.</p>

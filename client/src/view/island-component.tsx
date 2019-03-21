@@ -39,7 +39,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private spots: Geometry
     private seeds: Geometry
     private hangersOccupied: Geometry
-    private hangersFree: Geometry
+    private hangersVacant: Geometry
     private arrow?: Geometry
     private homeHexalot?: Geometry
     private selectedSpot?: Geometry
@@ -51,8 +51,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.spots = this.spotsGeometry
         this.seeds = this.seedsGeometry
         this.arrow = this.arrowGeometry
-        this.hangersOccupied = this.hangersGeometry(true)
-        this.hangersFree = this.hangersGeometry(false)
+        this.hangersOccupied = this.hangersGeometryz(false)
+        this.hangersVacant = this.hangersGeometryz(true)
         this.selectedSpot = this.selectedSpotGeometry
         this.homeHexalot = this.homeHexalotGeometry
         this.availableHexalots = this.availableHexalotsGeometry
@@ -71,8 +71,8 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
             this.spots = this.spotsGeometry
             this.seeds = this.seedsGeometry
             this.arrow = this.arrowGeometry
-            this.hangersOccupied = this.hangersGeometry(true)
-            this.hangersFree = this.hangersGeometry(false)
+            this.hangersOccupied = this.hangersGeometryz(false)
+            this.hangersVacant = this.hangersGeometryz(true)
             this.selectedSpot = this.selectedSpotGeometry
             this.homeHexalot = this.homeHexalotGeometry
             this.availableHexalots = this.availableHexalotsGeometry
@@ -86,7 +86,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
                 />
                 <R3.Mesh name="Seeds" geometry={this.seeds} material={GOTCHI}/>
                 <R3.LineSegments key="HangersOccupied" geometry={this.hangersOccupied} material={HANGER_OCCUPIED}/>
-                <R3.LineSegments key="HangersFree" geometry={this.hangersFree} material={HANGER_FREE}/>
+                <R3.LineSegments key="HangersFree" geometry={this.hangersVacant} material={HANGER_FREE}/>
                 {!this.homeHexalot ? undefined : (
                     <R3.LineSegments key="HomeHexalot" geometry={this.homeHexalot} material={HOME_HEXALOT}/>
                 )}
@@ -120,13 +120,13 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         return geometry
     }
 
-    private hangersGeometry(occupied: boolean): Geometry {
+    private hangersGeometryz(vacant: boolean): Geometry {
         const homeHexalot = this.props.islandState.homeHexalot
         const hexalots = this.props.islandState.island.hexalots.filter(hexalot => {
             if (homeHexalot && hexalot.id === homeHexalot.id) {
                 return false
             }
-            return hexalot.occupied === occupied
+            return hexalot.vacant === vacant
         })
         const geometry = new Geometry()
         hexalots.forEach(hexalot => hexalot.centerSpot.addHangerGeometry(geometry.vertices))
@@ -138,7 +138,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         const geometry = new Geometry()
         const hexalots = this.props.islandState.island.hexalots
         hexalots.filter(hexalot => {
-            return hexalot.occupied && hexalot.id !== this.props.islandState.actionHexalotId
+            return !hexalot.vacant && hexalot.id !== this.props.islandState.actionHexalotId
         }).forEach(hexalot => {
             hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
         })
@@ -190,7 +190,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         const centerOfHexalot = selectedSpot.centerOfHexalot
         const geometry = new Geometry()
         const center = selectedSpot.center
-        const occupiedHexalot = centerOfHexalot && centerOfHexalot.occupied
+        const occupiedHexalot = centerOfHexalot && !centerOfHexalot.vacant
         const target = occupiedHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(center) : center
         geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)]
         return geometry
@@ -229,11 +229,11 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
 
     private get freeHexalotGeometry(): Geometry | undefined {
         const islandState = this.props.islandState
-        const freeHexalot = islandState.island.hexalots.find(hexalot => !hexalot.occupied)
-        if (freeHexalot) {
+        const vacantHexalot = islandState.island.hexalots.find(hexalot => hexalot.vacant)
+        if (vacantHexalot) {
             const geometry = new Geometry()
-            freeHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
-            freeHexalot.spots.forEach((spot, index) => {
+            vacantHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
+            vacantHexalot.spots.forEach((spot, index) => {
                 const outerIndex = index - INNER_HEXALOT_SPOTS
                 if (outerIndex < 0) {
                     return
@@ -249,7 +249,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.spots.dispose()
         this.seeds.dispose()
         this.hangersOccupied.dispose()
-        this.hangersFree.dispose()
+        this.hangersVacant.dispose()
         if (this.arrow) {
             this.arrow.dispose()
         }

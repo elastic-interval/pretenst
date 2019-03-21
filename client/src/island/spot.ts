@@ -43,7 +43,7 @@ export class Spot {
 
     public checkFree(singleHexalot: boolean): void {
         const centerOfSingle = singleHexalot && !!this.centerOfHexalot
-        this.free = !(centerOfSingle || this.memberOfHexalot.some(hexalot => hexalot.occupied))
+        this.free = !(centerOfSingle || this.memberOfHexalot.every(hexalot => hexalot.vacant))
     }
 
     public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[]): void {
@@ -165,9 +165,9 @@ export class Spot {
         }
         const centerOfHexalot = this.centerOfHexalot
         if (centerOfHexalot) {
-            return !centerOfHexalot.occupied
+            return centerOfHexalot.vacant
         }
-        return this.adjacentHexalots.some(hexalot => hexalot.occupied)
+        return this.adjacentHexalots.some(hexalot => !hexalot.vacant)
     }
 
     private get sizeFactor(): number {

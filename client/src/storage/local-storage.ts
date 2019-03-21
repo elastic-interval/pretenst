@@ -1,5 +1,5 @@
 import {PhysicsFeature} from "../body/physics"
-import {fromGenomeData, IGenomeData} from "../genetics/genome"
+import {fromOptionalGenomeData, IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
 import {Island, IslandData} from "../island/island"
 import {IJourneyData} from "../island/journey"
@@ -12,10 +12,6 @@ function journeyKey(hexalot: Hexalot): string {
 
 function genomeKey(hexalot: Hexalot): string {
     return `${hexalot.id}-genome`
-}
-
-function rotationKey(hexalot: Hexalot): string {
-    return `${hexalot.id}-rotation`
 }
 
 export class LocalStorage implements IStorage {
@@ -41,9 +37,10 @@ export class LocalStorage implements IStorage {
     }
 
     public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData | undefined> {
-        hexalot.genome = fromGenomeData(genomeData)
+        hexalot.genome = fromOptionalGenomeData(genomeData)
         this.setGenomeData(hexalot, genomeData)
-        this.setIsland(island.data)
+        const islandData = island.data
+        this.storage.setItem(islandData.name, JSON.stringify(islandData))
         return Promise.resolve(island.data)
     }
 
@@ -73,24 +70,5 @@ export class LocalStorage implements IStorage {
             return Promise.resolve(undefined)
         }
         return Promise.resolve(JSON.parse(journeyString))
-    }
-
-    public async setRotation(hexalot: Hexalot, rotation: number): Promise<void> {
-        this.storage.setItem(rotationKey(hexalot), `${rotation}`)
-        return Promise.resolve()
-    }
-
-    public async getRotation(hexalot: Hexalot): Promise<number> {
-        const rotationString = this.storage.getItem(rotationKey(hexalot))
-        if (rotationString) {
-            return Promise.resolve(parseInt(rotationString, 10))
-        }
-        return Promise.resolve(0)
-    }
-
-    // private ====
-
-    private setIsland(islandPattern: IslandData): void {
-        this.storage.setItem(islandPattern.name, JSON.stringify(islandPattern))
     }
 }

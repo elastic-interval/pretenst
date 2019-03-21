@@ -1,10 +1,11 @@
 import {Vector3} from "three"
 
-import {fromGenomeData, Genome} from "../genetics/genome"
+import {fromOptionalGenomeData, Genome} from "../genetics/genome"
 import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
-import {LocalStorage} from "../storage/local-storage"
+import {IStorage} from "../storage/storage"
 
-import {Journey} from "./journey"
+import {Island} from "./island"
+import {fromOptionalJourneyData, Journey} from "./journey"
 import {BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
 import {equals, ICoords, Spot, Surface} from "./spot"
 
@@ -44,20 +45,27 @@ export const hexalotTreeString = (hexalots: Hexalot[]) => {
     return root.generateOctalTreePattern([]).join("")
 }
 
+export enum LoadStatus {
+    Pending,
+    Busy,
+    Loaded,
+}
+
 export class Hexalot {
+    public genomeStatus = LoadStatus.Pending
     public genome?: Genome
+    public journeyStatus = LoadStatus.Pending
     public journey?: Journey
-    public rotation = -1
+    public childHexalots: Hexalot[] = []
+    public rotation = Math.floor(Math.random() * 6)
     public nonce = 0
     public visited = false
-    public childHexalots: Hexalot[] = []
     private identifier?: string
 
     constructor(public parentHexalot: Hexalot | undefined,
                 public coords: ICoords,
                 public spots: Spot[],
-                private gotchiFactory: IGotchiFactory,
-                private appStorage: LocalStorage) {
+                private gotchiFactory: IGotchiFactory) {
         this.spots[0].centerOfHexalot = this
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentHexalots.push(this)
@@ -69,16 +77,6 @@ export class Hexalot {
         }
     }
 
-    public load(): void {
-        this.refreshFingerprint()
-        this.appStorage.getGenomeData(this).then(data => {
-            this.genome = data ? fromGenomeData(data) : undefined
-        })
-        this.appStorage.getRotation(this).then(rotation => {
-            this.rotation = rotation
-        })
-    }
-
     public get id(): string {
         if (!this.identifier) {
             throw new Error("Should have refreshed fingerprint first")
@@ -86,16 +84,51 @@ export class Hexalot {
         return this.identifier
     }
 
-    public get occupied(): boolean {
-        return !!this.genome
-    }
-
     public get isLegal(): boolean {
         return this.spots.every(spot => spot.isLegal)
     }
 
-    public refreshFingerprint(): void {
+    public refreshId(): void {
         this.identifier = spotsToHexFingerprint(this.spots)
+    }
+
+    public get vacant(): boolean {
+        return this.genomeStatus === LoadStatus.Loaded && !this.genome
+    }
+
+    public fetchGenome(storage: IStorage): boolean {
+        switch (this.genomeStatus) {
+            case LoadStatus.Pending:
+                this.genomeStatus = LoadStatus.Busy
+                storage.getGenomeData(this).then(genomeData => {
+                    this.genome = fromOptionalGenomeData(genomeData)
+                    console.log(`Genome data arrived for ${this.id}`, genomeData)
+                    this.genomeStatus = LoadStatus.Loaded
+                })
+                return false
+            case LoadStatus.Busy:
+                return false
+            case LoadStatus.Loaded:
+                return true
+        }
+    }
+
+    public fetchJourney(storage: IStorage, island: Island, loaded: () => void): boolean {
+        switch (this.journeyStatus) {
+            case LoadStatus.Pending:
+                this.journeyStatus = LoadStatus.Busy
+                storage.getJourneyData(this).then(journeyData => {
+                    this.journey = fromOptionalJourneyData(island, journeyData)
+                    console.log(`Journey data arrived for ${this.id}`, journeyData)
+                    this.journeyStatus = LoadStatus.Loaded
+                    loaded()
+                })
+                return false
+            case LoadStatus.Busy:
+                return false
+            case LoadStatus.Loaded:
+                return true
+        }
     }
 
     public createNativeGotchi(): Gotchi | undefined {
@@ -117,9 +150,6 @@ export class Hexalot {
             nextRotation = 0
         }
         this.rotation = nextRotation
-        this.appStorage.setRotation(this, this.rotation).then(() => {
-            console.log("saved rotation")
-        })
         return this.rotation
     }
 
@@ -170,22 +200,3 @@ export class Hexalot {
         return steps
     }
 }
-
-// export const fingerprintToSpots = (hexString: string, spots: Spot[]) => {
-//     const numbers = hexString.split('').map(hexChar => parseInt(hexChar, 16));
-//     const booleanArrays = numbers.map(nyb => {
-//         const b0 = (nyb & 8) !== 0;
-//         const b1 = (nyb & 4) !== 0;
-//         const b2 = (nyb & 2) !== 0;
-//         const b3 = (nyb & 1) !== 0;
-//         return [b0, b1, b2, b3];
-//     });
-//     const landStack = [].concat.apply([], booleanArrays).reverse();
-//     spots.forEach(spot => spot.land = landStack.pop());
-// };
-//
-// export const hexalotFromFingerprint = (fingerprint: string, index: number, hexalotMasterLookup: (fingerprint: string) => string): Hexalot => {
-//     const hexalot = new Hexalot(undefined, {x: 0, y: 0}, GOTCH_SHAPE.map(c => new Spot(c)));
-//     fingerprintToSpots(fingerprint, hexalot.spots);
-//     return hexalot;
-// };

@@ -59,23 +59,6 @@ export class RemoteStorage implements IStorage {
         }
     }
 
-    public async getRotation(hexalot: Hexalot): Promise<number> {
-        const response = await this.client.get(`/hexalot/${hexalot.id}/rotation`)
-        if (response.status !== 200) {
-            throw new Error(`Error fetching data: ${response.statusText}`)
-        }
-        return response.data as number
-    }
-
-    public async setRotation(hexalot: Hexalot, rotation: number): Promise<void> {
-        const response = await this.client.post(`/hexalot/${hexalot.id}/rotation`, {
-            rotation,
-        })
-        if (response.status !== 200) {
-            throw new Error(`Error fetching data: ${response.statusText}`)
-        }
-    }
-
     public async getJourneyData(hexalot: Hexalot): Promise<IJourneyData | undefined> {
         throw new Error("not implemented")
     }

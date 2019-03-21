@@ -18,13 +18,14 @@ export interface IslandData {
 const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
 
 export class Island {
-    public name?: string
+    public readonly name: string
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
     public state: IslandState
 
     constructor(subject: Subject<IslandState>, islandData: IslandData, readonly gotchiFactory: IGotchiFactory, private storage: LocalStorage) {
         this.apply(islandData)
+        this.name = islandData.name
         this.state = new IslandState(0, this, this.storage, subject, IslandMode.Visiting).withRestructure
     }
 
@@ -92,6 +93,7 @@ export class Island {
         }
         this.spots.sort(sortSpotsOnCoord)
         return {
+            name: this.name,
             hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToString(this.spots),
         } as IslandData
@@ -149,7 +151,7 @@ export class Island {
             singleHexalot.spots.map(spot => spot.surface = Math.random() > 0.5 ? Surface.Land : Surface.Water)
             singleHexalot.spots[0].surface = Surface.Land
         }
-        this.hexalots.forEach(lot => lot.load())
+        this.hexalots.forEach(lot => lot.refreshId())
     }
 
     private hexalotAroundSpot(spot: Spot): Hexalot {
@@ -171,8 +173,8 @@ export class Island {
             return existing
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
-        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory, this.storage)
-        hexalot.refreshFingerprint()
+        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory)
+        hexalot.refreshId()
         this.hexalots.push(hexalot)
         return hexalot
     }
