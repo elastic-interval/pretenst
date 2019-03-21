@@ -180,7 +180,8 @@ export class IslandStateCommand {
                     if (hexalot) {
                         this.claimHexalot(hexalot, state) // todo: handle failure
                     }
-                    return state.withVacantHexalotAt(hexalot.centerSpot).withRestructure
+                    state.island.vacantHexalot = undefined
+                    return state.withHomeHexalot(hexalot).withRestructure
                 }
                 return state
 
@@ -197,25 +198,28 @@ export class IslandStateCommand {
     }
 
     private claimHexalot(hexalot: Hexalot, state: IslandState): void {
-        this.state.storage.claimHexalot(this.state.island, hexalot, freshGenome().genomeData)
-            .then(islandPattern => {
-                if (islandPattern) {
-                    const island = new Island(
-                        state.subject,
-                        islandPattern,
-                        state.island.gotchiFactory,
-                        state.storage,
-                    )
-                    const newHomeHexalot = island.findHexalot(hexalot.id)
-                    if (newHomeHexalot) {
-                        state.subject.next(island.state
-                            .withHomeHexalot(newHomeHexalot)
-                            .withSelectedSpot(newHomeHexalot.centerSpot))
-                    } else {
-                        state.subject.next(island.state)
-                    }
+        state.storage.claimHexalot(state.island, hexalot, freshGenome().genomeData).then(islandData => {
+            if (islandData) {
+                console.warn("new island")
+                const island = new Island(
+                    state.subject,
+                    islandData,
+                    state.island.gotchiFactory,
+                    state.storage,
+                )
+                const newHomeHexalot = island.findHexalot(hexalot.id)
+                if (newHomeHexalot) {
+                    console.log("new home hexalot", newHomeHexalot)
+                    island.state.subject.next(island.state
+                        .withHomeHexalot(newHomeHexalot)
+                        .withSelectedSpot(newHomeHexalot.centerSpot)
+                        .withRestructure)
+                } else {
+                    console.warn("no new home hexalot!")
+                    island.state.dispatch()
                 }
-            })
+            }
+        })
     }
 }
 

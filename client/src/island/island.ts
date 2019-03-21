@@ -22,7 +22,7 @@ export class Island {
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
     public state: IslandState
-    private vacant?: Hexalot
+    public vacantHexalot?: Hexalot
 
     constructor(subject: Subject<IslandState>, islandData: IslandData, readonly gotchiFactory: IGotchiFactory, private storage: IStorage) {
         this.apply(islandData)
@@ -62,25 +62,6 @@ export class Island {
 
     public createHexalot(spot: Spot): Hexalot {
         return this.hexalotAroundSpot(spot)
-    }
-
-    public get vacantHexalot(): Hexalot | undefined {
-        return this.vacant
-    }
-
-    public set vacantHexalot(newVacant: Hexalot | undefined) {
-        if (this.vacant) {
-            if (newVacant && newVacant.id === this.vacant.id) {
-                console.warn("same one!", newVacant)
-                return
-            }
-            const vacant = this.vacant
-            this.vacant = undefined
-            vacant.destroy(deadSpot => {
-                this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords))
-            })
-        }
-        this.vacant = newVacant
     }
 
     public get midpoint(): Vector3 {

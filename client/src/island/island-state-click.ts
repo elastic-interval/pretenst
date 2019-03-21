@@ -23,11 +23,14 @@ export class IslandStateClick {
 
             case IslandMode.Visiting: // ===============================================================================
                 if (state.islandIsLegal && spot.isVacantLandWithOccupiedAdjacentLand(vacant)) {
+                    console.log("with vacant lot")
                     return state.withVacantHexalotAt(spot).withRestructure
                 }
                 if (hexalot) {
+                    console.log("with home hexalot")
                     return state.withHomeHexalot(hexalot).withSelectedSpot(spot).withRestructure
                 }
+                console.log("with selected lot")
                 return state.withSelectedSpot(spot)
 
 

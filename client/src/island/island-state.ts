@@ -93,7 +93,6 @@ export class IslandState {
 
     public withSelectedSpot(selectedSpot?: Spot): IslandState {
         const copy = this.copy
-        copy.selectedSpot = selectedSpot
         if (selectedSpot) {
             const hexalot = copy.selectedHexalot = selectedSpot.centerOfHexalot
             if (hexalot) {
@@ -102,6 +101,7 @@ export class IslandState {
                 })
                 console.log(`Genome present for ${hexalot.id}`, genomePresent)
             }
+            copy.selectedSpot = selectedSpot
         } else {
             copy.selectedHexalot = undefined
         }
@@ -153,7 +153,6 @@ export class IslandState {
         island.recalculate()
         const hexalots = island.hexalots
         const spots = island.spots
-        const homeHexalot = this.homeHexalot
         const vacant = island.vacantHexalot
         if (hexalots.length === 1) {
             spots.forEach(spot => spot.free = true)
@@ -164,13 +163,11 @@ export class IslandState {
         }
         hexalots.forEach(hexalot => hexalot.refreshId())
         const copy = this.withIslandIsLegal(island.islandIsLegal)
+        console.log("restructure legal", copy.islandIsLegal)
         if (!copy.islandIsLegal) {
             return copy.withMode(IslandMode.FixingIsland)
         }
-        if (homeHexalot) {
-            return copy.withHomeHexalot(homeHexalot)
-        }
-        return copy.withMode(IslandMode.Visiting)
+        return copy
     }
 
     public withSurface(surface: Surface): IslandState {
