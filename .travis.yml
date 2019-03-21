@@ -18,3 +18,13 @@ install:
   - cd server/
   - yarn
   - cd ..
+script:
+  - cd fabric/
+  - yarn asbuild:optimized
+  - cd ..
+  - cd client/
+  - yarn build
+  - cd ..
+after_success:
+  - scp -r client/build galapagotchi@galapagotchi.run:/home/galapagotchi/app/client/build
+  - ssh "cd /home/galapagotchi/app/server && pm2 restart all"
