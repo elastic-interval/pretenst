@@ -13,5 +13,4 @@ before_install:
 script:
   - echo "Skipping tests"
 after_success:
-  - ssh-keyscan -H galapagotchi.run >> ~/.ssh/known_hosts
-  - ssh galapagotchi@galapagotchi.run "cd app && git fetch && git reset --hard origin/master && app/deploy.sh"
+  - ./deploy-remote.sh
