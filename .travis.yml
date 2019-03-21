@@ -1,0 +1,6 @@
+language: node.js
+env:
+  global:
+    - REACT_APP_RMEOTE_STORAGE_URI=https://galapagotchi.run/api
+script:
+  - npm
