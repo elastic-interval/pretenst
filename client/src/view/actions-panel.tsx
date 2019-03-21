@@ -83,6 +83,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 return (
                     <ActionFrame>
                         <Message>
+                            Hello.
                             The island is not yet correct according to the rules.
                             Land must be either at the edge or have two land neighbors.
                             Water must have at least one land neighbor.
