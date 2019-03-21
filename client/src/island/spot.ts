@@ -41,11 +41,6 @@ export class Spot {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
     }
 
-    public checkFree(singleHexalot: boolean): void {
-        const centerOfSingle = singleHexalot && !!this.centerOfHexalot
-        this.free = !(centerOfSingle || this.memberOfHexalot.some(hexalot => hexalot.occupied))
-    }
-
     public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[]): void {
         const sizeFactor = this.sizeFactor
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
@@ -127,7 +122,7 @@ export class Spot {
         const vertex = (hexPoint: Vector3) => vertices.push(new Vector3(0, height, 0).add(this.center).add(hexPoint))
         for (let a = 0; a < SIX; a++) {
             const b = (a + 1) % SIX
-            if (direction === a || direction === b ||(corner && direction === (b + 1) % SIX)) {
+            if (direction === a || direction === b || (corner && direction === (b + 1) % SIX)) {
                 vertex(HEXAGON_POINTS[a])
                 vertex(HEXAGON_POINTS[b])
             }
@@ -159,15 +154,21 @@ export class Spot {
         }
     }
 
-    public get canBeClaimed(): boolean {
+    public isVacantLandWithOccupiedAdjacentLand(vacantHexalot?: Hexalot): boolean {
         if (this.surface !== Surface.Land) {
             return false
         }
         const centerOfHexalot = this.centerOfHexalot
         if (centerOfHexalot) {
-            return !centerOfHexalot.occupied
+            if (!vacantHexalot) {
+                return false
+            }
+            return centerOfHexalot.id === vacantHexalot.id
         }
-        return this.adjacentHexalots.some(hexalot => hexalot.occupied)
+        if (vacantHexalot) {
+            return this.adjacentHexalots.some(hexalot => hexalot.id !==  vacantHexalot.id)
+        }
+        return this.adjacentHexalots.length > 0
     }
 
     private get sizeFactor(): number {

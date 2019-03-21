@@ -9,31 +9,36 @@ export class IslandStateClick {
 
     public stateAfterClick(spot: Spot): IslandState {
 
+        const state = this.state
         const hexalot = spot.centerOfHexalot
-        const homeHexalot = this.state.homeHexalot
+        const homeHexalot = state.homeHexalot
+        const vacant = state.island.vacantHexalot
 
-        switch (this.state.islandMode) {
+        switch (state.islandMode) {
 
 
             case IslandMode.FixingIsland: // ===========================================================================
-                return this.state.withSelectedSpot(spot)
+                return state.withSelectedSpot(spot)
 
 
             case IslandMode.Visiting: // ===============================================================================
-                if (spot.canBeClaimed && this.state.islandIsLegal) {
-                    return this.state.withFreeHexalotsRemoved.withNewHexalotAt(spot).withRestructure
+                if (state.islandIsLegal && spot.isVacantLandWithOccupiedAdjacentLand(vacant)) {
+                    console.log("with vacant lot")
+                    return state.withVacantHexalotAt(spot).withRestructure
                 }
                 if (hexalot) {
-                    return this.state.withHomeHexalot(hexalot).withSelectedSpot(spot).withRestructure
+                    console.log("with home hexalot")
+                    return state.withHomeHexalot(hexalot).withSelectedSpot(spot).withRestructure
                 }
-                return this.state.withSelectedSpot(spot)
+                console.log("with selected lot")
+                return state.withSelectedSpot(spot)
 
 
             case IslandMode.Landed: // =================================================================================
                 if (hexalot) {
-                    return this.state.withSelectedSpot(spot)
+                    return state.withSelectedSpot(spot)
                 }
-                return this.state
+                return state
 
 
             case IslandMode.PlanningJourney: // ========================================================================
@@ -46,10 +51,12 @@ export class IslandStateClick {
                     } else {
                         homeHexalot.journey = new Journey([homeHexalot, hexalot])
                     }
-                    this.state.storage.saveJourney(homeHexalot)
-                    return this.state.withJourney(homeHexalot.journey)
+                    state.storage.setJourneyData(homeHexalot, homeHexalot.journey.data).then(() => {
+                        console.log("saved journey")
+                    })
+                    return state.withJourney(homeHexalot.journey)
                 }
-                return this.state // todo: no state change?
+                return state // todo: no state change?
 
 
             case IslandMode.PreparingDrive: // ==========================================================================
@@ -61,11 +68,11 @@ export class IslandStateClick {
                 if (top) {
                     console.log(`Direction: ${top.index}`)
                 }
-                return this.state // todo: no state change?
+                return state // todo: no state change?
 
 
             default: // ================================================================================================
-                return this.state
+                return state
 
 
         }
