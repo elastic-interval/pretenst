@@ -31,6 +31,9 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
     const hexalotRoute = Router()
 
     root
+        .get("/", (req, res) => {
+            res.end("OK")
+        })
         .use(
             "/island/:islandName",
             [

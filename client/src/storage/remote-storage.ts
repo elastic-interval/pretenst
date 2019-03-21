@@ -10,10 +10,14 @@ import {IStorage} from "./storage"
 export class RemoteStorage implements IStorage {
     private readonly client: AxiosInstance
 
-    constructor(baseURL: string = "http://localhost:8000/api") {
+    constructor(baseURL: string) {
         this.client = Axios.create({
             baseURL,
         })
+        this.client.get("/")
+            .catch((e) => {
+                console.log(`ERROR: Cannot reach remote storage at ${baseURL}. Are you running the server? \n${e}`)
+            })
     }
 
     public async getIslandData(islandName: string): Promise<IslandData> {
