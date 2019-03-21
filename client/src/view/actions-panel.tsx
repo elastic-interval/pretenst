@@ -40,15 +40,26 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     public render(): JSX.Element {
 
         const islandState = this.props.islandState
-        const vacant = islandState.island.vacantHexalot
+        const island = islandState.island
+        const vacant = island.vacantHexalot
+        const spot = islandState.selectedSpot
+        const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
 
         switch (islandState.islandMode) {
 
 
             case IslandMode.FixingIsland: // ===========================================================================
-                const spot = islandState.selectedSpot
                 if (spot) {
-                    if (spot.isVacantLandWithOccupiedAdjacentLand(vacant)) {
+                    if (singleHexalot && spot.coords === singleHexalot.centerSpot.coords) {
+                        return (
+                            <ActionFrame>
+                                {this.buttons("First hexalot available", [
+                                    Command.ClaimHexalot,
+                                ])}
+                            </ActionFrame>
+                        )
+                    }
+                    if (spot.isCandidateHexalot(vacant)) {
                         if (islandState.islandIsLegal) {
                             return (
                                 <ActionFrame>
@@ -95,7 +106,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
             case IslandMode.Visiting: // ===============================================================================
                 const hexalot = islandState.selectedHexalot
                 if (hexalot) {
-                    if (hexalot.centerSpot.isVacantLandWithOccupiedAdjacentLand(vacant)) {
+                    if (hexalot.centerSpot.isCandidateHexalot(vacant)) {
                         return (
                             <ActionFrame>
                                 {this.buttons("Available", [
