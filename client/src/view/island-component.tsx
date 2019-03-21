@@ -135,8 +135,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private get vacantHangersGeometry(): Geometry {
         const vacantHexalot = this.props.islandState.island.vacantHexalot
         const geometry = new Geometry()
-        // if (vacantHexalot) { // why does a disposed one get included?
-        if (vacantHexalot && vacantHexalot.centerSpot) {
+        if (vacantHexalot) {
             vacantHexalot.centerSpot.addHangerGeometry(geometry.vertices)
         }
         return geometry

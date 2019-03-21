@@ -199,25 +199,26 @@ export class IslandStateCommand {
 
     private claimHexalot(hexalot: Hexalot, state: IslandState): void {
         state.storage.claimHexalot(state.island, hexalot, freshGenome().genomeData).then(islandData => {
-            if (islandData) {
-                console.warn("new island")
-                const island = new Island(
-                    state.subject,
-                    islandData,
-                    state.island.gotchiFactory,
-                    state.storage,
-                )
-                const newHomeHexalot = island.findHexalot(hexalot.id)
-                if (newHomeHexalot) {
-                    console.log("new home hexalot", newHomeHexalot)
-                    island.state.subject.next(island.state
-                        .withHomeHexalot(newHomeHexalot)
-                        .withSelectedSpot(newHomeHexalot.centerSpot)
-                        .withRestructure)
-                } else {
-                    console.warn("no new home hexalot!")
-                    island.state.dispatch()
-                }
+            if (!islandData) {
+                return
+            }
+            console.warn("new island")
+            const island = new Island(
+                state.subject,
+                islandData,
+                state.island.gotchiFactory,
+                state.storage,
+            )
+            const newHomeHexalot = island.findHexalot(hexalot.id)
+            if (newHomeHexalot) {
+                console.log("new home hexalot", newHomeHexalot)
+                island.state.subject.next(island.state
+                    .withHomeHexalot(newHomeHexalot)
+                    .withSelectedSpot(newHomeHexalot.centerSpot)
+                    .withRestructure)
+            } else {
+                console.warn("no new home hexalot!")
+                island.state.dispatch()
             }
         })
     }
