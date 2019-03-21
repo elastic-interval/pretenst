@@ -13,4 +13,4 @@ before_install:
 script:
   - echo "Skipping tests"
 after_success:
-  - sh deploy-remote.sh
+  - ./deploy-remote.sh
