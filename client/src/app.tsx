@@ -12,7 +12,7 @@ import {INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
 import {Island} from "./island/island"
 import {IslandState} from "./island/island-state"
 import {Surface} from "./island/spot"
-import {LocalStorage} from "./storage/local-storage"
+import {IStorage} from "./storage/storage"
 import {ActionsPanel} from "./view/actions-panel"
 import {GotchiView} from "./view/gotchi-view"
 import {InfoPanel} from "./view/info-panel"
@@ -20,7 +20,7 @@ import {OrbitDistance} from "./view/orbit"
 
 interface IAppProps {
     fabricExports: IFabricExports
-    storage: LocalStorage
+    storage: IStorage
 }
 
 export interface IAppState {
@@ -55,12 +55,11 @@ class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
     private islandSubject = new Subject<IslandState>()
-    private physics: Physics
+    private physics = new Physics()
     private fabricKernel: FabricKernel
 
     constructor(props: IAppProps) {
         super(props)
-        this.physics = new Physics(props.storage)
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         this.props.storage.getIslandData("rotterdam").then(islandData => {
@@ -71,7 +70,6 @@ class App extends React.Component<IAppProps, IAppState> {
                     this.fabricKernel,
                     this.props.storage,
                 )
-                console.log("state", island.state)
                 this.setState({islandState: island.state})
             }
         })

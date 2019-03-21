@@ -2,7 +2,7 @@ import {Subject} from "rxjs"
 import {Vector3} from "three"
 
 import {IGotchiFactory} from "../gotchi/gotchi"
-import {LocalStorage} from "../storage/local-storage"
+import {IStorage} from "../storage/storage"
 
 import {Hexalot, hexalotTreeString} from "./hexalot"
 import {IslandMode, IslandState} from "./island-state"
@@ -23,7 +23,7 @@ export class Island {
     public hexalots: Hexalot[] = []
     public state: IslandState
 
-    constructor(subject: Subject<IslandState>, islandData: IslandData, readonly gotchiFactory: IGotchiFactory, private storage: LocalStorage) {
+    constructor(subject: Subject<IslandState>, islandData: IslandData, readonly gotchiFactory: IGotchiFactory, private storage: IStorage) {
         this.apply(islandData)
         this.name = islandData.name
         this.state = new IslandState(0, this, this.storage, subject, IslandMode.Visiting).withRestructure

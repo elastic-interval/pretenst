@@ -102,7 +102,7 @@ export class IslandStateCommand {
                 if (homeHexalot) {
                     homeHexalot.journey = undefined
                     this.state.journey = undefined
-                    this.state.storage.setJourneyData(homeHexalot, undefined).then(() => {
+                    this.state.storage.setJourneyData(homeHexalot, {hexalots:[homeHexalot.id]}).then(() => {
                         console.log("cleared journey")
                     })
                     return this.state

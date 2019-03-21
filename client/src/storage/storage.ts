@@ -15,6 +15,6 @@ export interface IStorage {
 
     getJourneyData(hexalot: Hexalot): Promise<IJourneyData | undefined>
 
-    setJourneyData(hexalot: Hexalot, journey: IJourneyData): Promise<void>
+    setJourneyData(hexalot: Hexalot, journeyData: IJourneyData): Promise<void>
 
 }

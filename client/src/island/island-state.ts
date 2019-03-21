@@ -3,7 +3,7 @@ import {Vector3} from "three"
 
 import {Evolution} from "../gotchi/evolution"
 import {Gotchi} from "../gotchi/gotchi"
-import {LocalStorage} from "../storage/local-storage"
+import {IStorage} from "../storage/storage"
 
 import {Hexalot} from "./hexalot"
 import {Island} from "./island"
@@ -50,7 +50,7 @@ export class IslandState {
     constructor(
         readonly nonce: number,
         readonly island: Island,
-        readonly storage: LocalStorage,
+        readonly storage: IStorage,
         readonly subject: Subject<IslandState>,
         public islandMode: IslandMode,
         public islandIsLegal: boolean = false,

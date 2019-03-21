@@ -1,4 +1,3 @@
-import {PhysicsFeature} from "../body/physics"
 import {fromOptionalGenomeData, IGenomeData} from "../genetics/genome"
 import {Hexalot} from "../island/hexalot"
 import {Island, IslandData} from "../island/island"
@@ -14,18 +13,9 @@ function genomeKey(hexalot: Hexalot): string {
     return `${hexalot.id}-genome`
 }
 
-export class LocalStorage implements IStorage {
+export class BrowserStorage implements IStorage {
 
     constructor(private storage: Storage) {
-    }
-
-    public getPhysicsFeature(feature: PhysicsFeature): number {
-        const value = this.storage.getItem(feature)
-        return value ? parseFloat(value) : 1.0
-    }
-
-    public setPhysicsFeature(feature: PhysicsFeature, factor: number): void {
-        this.storage.setItem(feature, factor.toFixed(3))
     }
 
     public async getIslandData(islandName: string): Promise<IslandData> {
