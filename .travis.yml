@@ -1,4 +1,7 @@
 language: node.js
+nvm:
+  - v11.10.1
+  - yarn
 env:
   global:
     - REACT_APP_RMEOTE_STORAGE_URI=https://galapagotchi.run/api
