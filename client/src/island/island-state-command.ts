@@ -1,11 +1,13 @@
-import { Vector3 } from "three"
+import {Vector3} from "three"
 
-import { Direction } from "../body/fabric-exports"
-import { freshGenome, IGenomeData } from "../genetics/genome"
-import { Evolution } from "../gotchi/evolution"
+import {Direction} from "../body/fabric-exports"
+import {freshGenome, IGenomeData} from "../genetics/genome"
+import {Evolution} from "../gotchi/evolution"
 
-import { Command, IslandMode, IslandState } from "./island-state"
-import { Surface } from "./spot"
+import {Hexalot} from "./hexalot"
+import {Island} from "./island"
+import {Command, IslandMode, IslandState} from "./island-state"
+import {Surface} from "./spot"
 
 export class IslandStateCommand {
 
@@ -16,10 +18,11 @@ export class IslandStateCommand {
 
         const state = this.state
         const homeHexalot = state.homeHexalot
-        const selectedHexalot = state.selectedHexalot
+        const hexalot = state.selectedHexalot
         const gotchi = state.gotchi
         const journey = state.journey
         const spot = state.selectedSpot
+        const vacant = state.island.vacantHexalot
 
         switch (command) {
 
@@ -31,7 +34,9 @@ export class IslandStateCommand {
             case Command.SaveGenome: // ================================================================================
                 if (homeHexalot && gotchi) {
                     const genomeData = gotchi.genomeData
-                    state.storage.setGenome(homeHexalot, genomeData)
+                    state.storage.setGenomeData(homeHexalot, genomeData).then(() => {
+                        console.log("genome saved")
+                    })
                 }
                 return state
 
@@ -58,8 +63,8 @@ export class IslandStateCommand {
 
 
             case Command.DriveFree: // =================================================================================
-                if (selectedHexalot) {
-                    const newbornGotchi = selectedHexalot.createNativeGotchi()
+                if (hexalot) {
+                    const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
                         return this.state.withGotchi(newbornGotchi)
                     }
@@ -82,7 +87,11 @@ export class IslandStateCommand {
                 if (homeHexalot && journey) {
                     const firstLeg = journey.firstLeg
                     if (firstLeg) {
-                        const saveGenome = (data: IGenomeData) => this.state.storage.setGenome(homeHexalot, data)
+                        const saveGenome = (data: IGenomeData) => {
+                            this.state.storage.setGenomeData(homeHexalot, data).then(() => {
+                                console.log("genome saved")
+                            })
+                        }
                         const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
                         return this.state.withEvolution(evolution)
                     }
@@ -94,7 +103,9 @@ export class IslandStateCommand {
                 if (homeHexalot) {
                     homeHexalot.journey = undefined
                     this.state.journey = undefined
-                    this.state.storage.saveJourney(homeHexalot)
+                    this.state.storage.setJourneyData(homeHexalot, {hexalots: [homeHexalot.id]}).then(() => {
+                        console.log("cleared journey")
+                    })
                     return this.state
                 }
                 return state
@@ -160,22 +171,17 @@ export class IslandStateCommand {
 
 
             case Command.AbandonFix: // ================================================================================
-                return state.withSelectedSpot().withFreeHexalotsRemoved.withMode(IslandMode.Visiting).withRestructure
+                state.island.vacantHexalot = undefined
+                return state.withSelectedSpot().withMode(IslandMode.Visiting).withRestructure
 
 
             case Command.ClaimHexalot: // ==============================================================================
-                if (spot) {
-                    if (!homeHexalot && spot.canBeClaimed) {
-                        const withNewHexalot = this.state.withNewHexalotAt(spot)
-                        const hexalot = withNewHexalot.selectedHexalot
-                        if (hexalot) {
-                            const genome = freshGenome()
-                            hexalot.genome = genome
-                            this.state.storage.setGenome(hexalot, genome.genomeData)
-                        }
-                        withNewHexalot.island.save()
-                        return withNewHexalot.withRestructure.withHomeHexalot(hexalot)
+                if (!homeHexalot && hexalot && vacant && vacant.id === hexalot.id) {
+                    if (hexalot) {
+                        this.claimHexalot(hexalot, state) // todo: handle failure
                     }
+                    state.island.vacantHexalot = undefined
+                    return state.withHomeHexalot(hexalot).withRestructure
                 }
                 return state
 
@@ -189,6 +195,32 @@ export class IslandStateCommand {
 
 
         }
+    }
+
+    private claimHexalot(hexalot: Hexalot, state: IslandState): void {
+        state.storage.claimHexalot(state.island, hexalot, freshGenome().genomeData).then(islandData => {
+            if (!islandData) {
+                return
+            }
+            console.warn("new island")
+            const island = new Island(
+                state.subject,
+                islandData,
+                state.island.gotchiFactory,
+                state.storage,
+            )
+            const newHomeHexalot = island.findHexalot(hexalot.id)
+            if (newHomeHexalot) {
+                console.log("new home hexalot", newHomeHexalot)
+                island.state.subject.next(island.state
+                    .withHomeHexalot(newHomeHexalot)
+                    .withSelectedSpot(newHomeHexalot.centerSpot)
+                    .withRestructure)
+            } else {
+                console.warn("no new home hexalot!")
+                island.state.dispatch()
+            }
+        })
     }
 }
 

@@ -1,5 +1,3 @@
-import {LocalStorage} from "../storage/local-storage"
-
 import {IFabricExports} from "./fabric-exports"
 
 export enum PhysicsFeature {
@@ -20,11 +18,20 @@ export interface IPhysicsFeature {
     setFactor: (factor: number) => void
 }
 
+function getPhysicsFeature(feature: PhysicsFeature): number {
+    const value = localStorage.getItem(feature)
+    return value ? parseFloat(value) : 1.0
+}
+
+function setPhysicsFeature(feature: PhysicsFeature, factor: number): void {
+    localStorage.setItem(feature, factor.toFixed(3))
+}
+
 export class Physics {
 
     private readonly featuresArray: IPhysicsFeature[]
 
-    constructor(private storage: LocalStorage) {
+    constructor() {
         this.featuresArray = Object.keys(PhysicsFeature).map(f => this.createFeature(PhysicsFeature[f]))
     }
 
@@ -76,8 +83,8 @@ export class Physics {
     private createFeature(feature: PhysicsFeature): IPhysicsFeature {
         return {
             feature,
-            getFactor: () => this.storage.getPhysicsFeature(feature),
-            setFactor: (factor: number) => this.storage.setPhysicsFeature(feature, factor),
+            getFactor: () => getPhysicsFeature(feature),
+            setFactor: (factor: number) => setPhysicsFeature(feature, factor),
         }
     }
 }

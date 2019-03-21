@@ -1,11 +1,11 @@
-import Axios, { AxiosInstance } from "axios"
+import Axios, {AxiosInstance} from "axios"
 
-import { IGenomeData } from "../genetics/genome"
-import { Hexalot } from "../island/hexalot"
-import { Island, IslandPattern } from "../island/island"
-import { Journey } from "../island/journey"
+import {IGenomeData} from "../genetics/genome"
+import {Hexalot} from "../island/hexalot"
+import {Island, IslandData} from "../island/island"
+import {IJourneyData} from "../island/journey"
 
-import { IStorage } from "./storage"
+import {IStorage} from "./storage"
 
 export class RemoteStorage implements IStorage {
     private readonly client: AxiosInstance
@@ -16,17 +16,17 @@ export class RemoteStorage implements IStorage {
         })
     }
 
-    public async getIslandPattern(islandName: string): Promise<IslandPattern> {
+    public async getIslandData(islandName: string): Promise<IslandData> {
         const response = await this.client.get(`/island/${islandName}`)
         if (response.status !== 200) {
             throw new Error(`Got HTTP response ${response.status}: ${response.statusText}`)
         }
-        return response.data as IslandPattern
+        return response.data as IslandData
     }
 
-    public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandPattern> {
+    public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData> {
         const response = await this.client.post(
-            `/island/${island.islandName}/claim-lot`,
+            `/island/${island.name}/claim-lot`,
             {
                 id: hexalot.id,
                 x: hexalot.coords.x,
@@ -37,7 +37,7 @@ export class RemoteStorage implements IStorage {
         if (response.status !== 200) {
             throw new Error(`Got HTTP response ${response.status}: ${response.statusText}`)
         }
-        return response.data as IslandPattern
+        return response.data as IslandData
     }
 
     public async getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined> {
@@ -59,28 +59,11 @@ export class RemoteStorage implements IStorage {
         }
     }
 
-    public async getRotation(hexalot: Hexalot): Promise<number> {
-        const response = await this.client.get(`/hexalot/${hexalot.id}/rotation`)
-        if (response.status !== 200) {
-            throw new Error(`Error fetching data: ${response.statusText}`)
-        }
-        return response.data as number
-    }
-
-    public async setRotation(hexalot: Hexalot, rotation: number): Promise<void> {
-        const response = await this.client.post(`/hexalot/${hexalot.id}/rotation`, {
-            rotation,
-        })
-        if (response.status !== 200) {
-            throw new Error(`Error fetching data: ${response.statusText}`)
-        }
-    }
-
-    public async loadJourney(island: Island, hexalot: Hexalot): Promise<Journey | undefined> {
+    public async getJourneyData(hexalot: Hexalot): Promise<IJourneyData | undefined> {
         throw new Error("not implemented")
     }
 
-    public async saveJourney(island: Island, hexalot: Hexalot): Promise<void> {
+    public async setJourneyData(hexalot: Hexalot, journeyData: IJourneyData): Promise<void> {
         throw new Error("not implemented")
     }
 }
