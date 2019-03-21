@@ -62,17 +62,6 @@ class App extends React.Component<IAppProps, IAppState> {
         super(props)
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        this.props.storage.getIslandData("rotterdam").then(islandData => {
-            if (islandData) {
-                const island = new Island(
-                    this.islandSubject,
-                    islandData,
-                    this.fabricKernel,
-                    this.props.storage,
-                )
-                this.setState({islandState: island.state})
-            }
-        })
         this.state = {
             infoPanel: getInfoPanelMaximized(),
             orbitDistance: this.orbitDistanceSubject.getValue(),
@@ -99,6 +88,7 @@ class App extends React.Component<IAppProps, IAppState> {
             }
             this.setState({islandState})
         }))
+        this.fetchIsland("rotterdam")
     }
 
     public componentWillUnmount(): void {
@@ -158,6 +148,20 @@ class App extends React.Component<IAppProps, IAppState> {
                 )}
             </div>
         )
+    }
+
+    private fetchIsland(islandName: string): void {
+        this.props.storage.getIslandData(islandName).then(islandData => {
+            if (islandData) {
+                const island = new Island(
+                    this.islandSubject,
+                    islandData,
+                    this.fabricKernel,
+                    this.props.storage,
+                )
+                island.state.dispatch()
+            }
+        })
     }
 }
 

@@ -72,10 +72,10 @@ export class Island {
     }
 
     public removeFreeHexalots(): void {
-        const deadHexalots = this.hexalots.filter(hexalot => !hexalot.genome)
-        deadHexalots.forEach(deadHexalot => {
-            this.hexalots = this.hexalots.filter(hexalot => !equals(hexalot.coords, deadHexalot.coords))
-            deadHexalot.destroy().forEach(deadSpot => {
+        const vacantHexalots = this.hexalots.filter(hexalot => hexalot.vacant)
+        vacantHexalots.forEach(vacant => {
+            this.hexalots = this.hexalots.filter(hexalot => !equals(hexalot.coords, vacant.coords))
+            vacant.destroy().forEach(deadSpot => {
                 this.spots = this.spots.filter(spot => !equals(spot.coords, deadSpot.coords))
             })
         })
