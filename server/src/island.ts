@@ -143,6 +143,11 @@ export interface IslandPattern {
     spots: string
 }
 
+export interface IJourneyData {
+    hexalots: string[]
+}
+
+
 const sortSpotsOnCoord = (a: ISpot, b: ISpot) => coordSort(a.coords, b.coords)
 
 const hexalotWithMaxNonce = (hexalots: IHexalot[]): IHexalot | undefined =>
@@ -201,9 +206,9 @@ export class Island {
     public async claimHexalot(
         coords: ICoords,
         lotID: HexalotID,
-        genome: string,
+        genomeData: string,
     ): Promise<void> {
-        if (await this.store.getGenome(lotID) !== undefined) {
+        if (await this.store.getGenomeData(lotID) !== undefined) {
             throw new Error("hexalot already claimed")
         }
         let lot: IHexalot
@@ -236,7 +241,7 @@ export class Island {
             Object.assign(this.getOrCreateSpot(spot.coords), spot)
         }
 
-        await this.store.setGenome(lotID, genome)
+        await this.store.setGenomeData(lotID, genomeData)
         await this.save()
     }
 
