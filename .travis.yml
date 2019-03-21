@@ -13,4 +13,5 @@ before_install:
 script:
   - echo "Skipping tests"
 after_success:
+  - ssh-keyscan -H galapagotchi.run >> ~/.ssh/known_hosts
   - ssh galapagotchi@galapagotchi.run "cd app && git fetch master && git reset --hard master && app/deploy.sh"
