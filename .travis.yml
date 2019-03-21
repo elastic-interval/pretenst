@@ -10,5 +10,7 @@ before_install:
   - mv deploy-key ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
 # TODO: tests
+script:
+  - echo "Skipping tests"
 after_success:
   - ssh galapagotchi@galapagotchi.run "cd app && git fetch master && git reset --hard master && app/deploy.sh"
