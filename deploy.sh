@@ -6,7 +6,7 @@ yarn asbuild:optimized
 cd ..
 cd client
 yarn
-yarn build
+yarn build:prod
 cd ..
 cd server
 yarn
