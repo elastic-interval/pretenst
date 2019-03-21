@@ -8,24 +8,7 @@ before_install:
   - openssl aes-256-cbc -K $encrypted_9dcca22fbdaa_key -iv $encrypted_9dcca22fbdaa_iv
     -in deploy-key.enc -out deploy-key -d
   - mv deploy-key ~/.ssh/id_rsa
-install:
-  - cd fabric/
-  - yarn
-  - cd ..
-  - cd client/
-  - yarn
-  - cd ..
-  - cd server/
-  - yarn
-  - cd ..
-script:
-  - cd fabric/
-  - yarn asbuild:optimized
-  - cd ..
-  - cd client/
-  - yarn build
-  - cd ..
+  - chmod 600 ~/.ssh/id_rsa
+# TODO: tests
 after_success:
-  - ssh-keyscan -H galapagotchi.run >> ~/.ssh/known_hosts
-  - scp -r client/build galapagotchi@galapagotchi.run:/home/galapagotchi/app/client/build
-  - ssh "cd /home/galapagotchi/app/server && pm2 restart all"
+  - ssh galapagotchi@galapagotchi.run "cd app && git fetch master && git reset --hard master && app/deploy.sh"
