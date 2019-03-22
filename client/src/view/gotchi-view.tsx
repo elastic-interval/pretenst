@@ -11,8 +11,8 @@ import { Subscription } from "rxjs/Subscription"
 import { Mesh, PerspectiveCamera, Vector3 } from "three"
 
 import { NORMAL_TICKS } from "../body/fabric"
-import { Spot } from "../island/spot"
 import { Direction } from "../body/fabric-exports"
+import { Spot } from "../island/spot"
 import { IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
 

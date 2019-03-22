@@ -63,7 +63,7 @@ export class CommandHandler {
 
             case Command.Return: // ====================================================================================
                 if (state.jockey) {
-                    return trans.withSelectedSpot(state.jockey.gotchi.home.centerSpot).withMode(Mode.Landed).state
+                    return (await trans.withSelectedSpot(state.jockey.gotchi.home.centerSpot)).withMode(Mode.Landed).state
                 }
                 if (state.gotchi) {
                     return (await trans.withSelectedSpot(state.gotchi.home.centerSpot)).withMode(Mode.Landed).state
