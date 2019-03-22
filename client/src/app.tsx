@@ -1,22 +1,22 @@
 import * as React from "react"
-import {Button} from "reactstrap"
-import {Subject} from "rxjs"
-import {BehaviorSubject} from "rxjs/BehaviorSubject"
-import {Subscription} from "rxjs/Subscription"
-import {PerspectiveCamera} from "three"
+import { Button } from "reactstrap"
+import { Subject } from "rxjs"
+import { BehaviorSubject } from "rxjs/BehaviorSubject"
+import { Subscription } from "rxjs/Subscription"
+import { PerspectiveCamera } from "three"
 
-import {IFabricExports} from "./body/fabric-exports"
-import {createFabricKernel, FabricKernel} from "./body/fabric-kernel"
-import {Physics} from "./body/physics"
-import {INITIAL_JOINT_COUNT, MAX_POPULATION} from "./gotchi/evolution"
-import {Island} from "./island/island"
-import {IslandState} from "./island/island-state"
-import {Surface} from "./island/spot"
-import {IStorage} from "./storage/storage"
-import {ActionsPanel} from "./view/actions-panel"
-import {GotchiView} from "./view/gotchi-view"
-import {InfoPanel} from "./view/info-panel"
-import {OrbitDistance} from "./view/orbit"
+import { IFabricExports } from "./body/fabric-exports"
+import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
+import { Physics } from "./body/physics"
+import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
+import { Island } from "./island/island"
+import { IslandState } from "./island/island-state"
+import { Surface } from "./island/spot"
+import { IStorage } from "./storage/storage"
+import { ActionsPanel } from "./view/actions-panel"
+import { GotchiView } from "./view/gotchi-view"
+import { InfoPanel } from "./view/info-panel"
+import { OrbitDistance } from "./view/orbit"
 
 interface IAppProps {
     fabricExports: IFabricExports
@@ -152,15 +152,16 @@ class App extends React.Component<IAppProps, IAppState> {
 
     private fetchIsland(islandName: string): void {
         this.props.storage.getIslandData(islandName).then(islandData => {
-            if (islandData) {
-                const island = new Island(
-                    this.islandSubject,
-                    islandData,
-                    this.fabricKernel,
-                    this.props.storage,
-                )
-                island.state.dispatch()
+            if (!islandData) {
+                return
             }
+            const island = new Island(
+                this.islandSubject,
+                islandData,
+                this.fabricKernel,
+                this.props.storage,
+            )
+            island.state.dispatch()
         })
     }
 }
