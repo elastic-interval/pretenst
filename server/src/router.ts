@@ -72,7 +72,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
 
     islandRoute
         .get("/", async (req, res) => {
-            let pattern = await store.getIslandPattern(res.locals.island.islandName)
+            let pattern = await store.getIslandData(res.locals.island.islandName)
             if (!pattern) {
                 pattern = {
                     hexalots: "",
@@ -114,7 +114,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return
                 }
-                res.json(island.pattern)
+                res.json(island.data)
             },
         )
 

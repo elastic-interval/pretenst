@@ -143,7 +143,8 @@ interface ICoords {
     y: number
 }
 
-export interface IslandPattern {
+export interface IslandData {
+    name: string
     hexalots: string
     spots: string
 }
@@ -177,9 +178,10 @@ export class Island {
         return !this.spots.find(spot => !spot) // TODO
     }
 
-    public get pattern(): IslandPattern {
+    public get data(): IslandData {
         this.spots.sort(sortSpotsOnCoord)
         return {
+            name: this.islandName,
             hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToHexalotID(this.spots),
         }
@@ -195,17 +197,17 @@ export class Island {
     }
 
     public async load(): Promise<void> {
-        const pattern = await this.store.getIslandPattern(this.islandName)
-        if (!pattern) {
+        const data = await this.store.getIslandData(this.islandName)
+        if (!data) {
             this.spots = []
             this.hexalots = []
             return
         }
-        this.applyPattern(pattern)
+        this.applyPattern(data)
     }
 
     public async save(): Promise<void> {
-        return this.store.setPattern(this.islandName, this.pattern)
+        return this.store.setIslandData(this.islandName, this.data)
     }
 
     public async claimHexalot(
@@ -278,7 +280,7 @@ export class Island {
 
     // ================================================================================================
 
-    private applyPattern(pattern: IslandPattern): void {
+    private applyPattern(pattern: IslandData): void {
         let hexalot: IHexalot | undefined = this.getOrCreateHexalot(undefined, ZERO)
         const stepStack = pattern.hexalots.split("").reverse().map(Number)
         const hexalotStack: IHexalot[] = []
