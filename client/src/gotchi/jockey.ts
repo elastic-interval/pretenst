@@ -7,7 +7,7 @@ import { Vector3 } from "three"
 
 import { Fabric } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
-import { fromGenomeData, Genome, IGenomeData } from "../genetics/genome"
+import { Genome, IGenomeData } from "../genetics/genome"
 import { Leg } from "../island/journey"
 import { HEXAPOD_RADIUS } from "../island/shapes"
 
@@ -15,20 +15,22 @@ import { Gotchi } from "./gotchi"
 
 const MAX_VOTES = 30
 
-export interface IEvolver {
-    evolver: Evolver
+export interface IEvaluatedJockey {
+    jockey: Jockey
     distanceFromTarget: number
 }
 
-export class Evolver {
+export class Jockey {
     private votes: Direction[] = []
     private currentLeg: Leg
-    private mutatingGenome: Genome
     private nextDirection = Direction.REST
 
-    constructor(private gotchi: Gotchi, leg: Leg) {
-        this.mutatingGenome = fromGenomeData(gotchi.genomeData)
+    constructor(readonly gotchi: Gotchi, leg: Leg, private mutatingGenome?: Genome) {
         this.leg = leg
+    }
+
+    public get leg(): Leg {
+        return this.currentLeg
     }
 
     public set leg(leg: Leg) {
@@ -68,10 +70,16 @@ export class Evolver {
     }
 
     public get offspringGenome(): IGenomeData {
+        if (!this.mutatingGenome) {
+            throw new Error("Not evolving")
+        }
         return this.mutatingGenome.genomeData
     }
 
     public mutateGenome(mutationCount: number): void {
+        if (!this.mutatingGenome) {
+            throw new Error("Not evolving")
+        }
         // console.log(`mutating ${this.index} ${Direction[this.nextDirection]} ${mutationCount} dice`)
         this.mutatingGenome = this.mutatingGenome.withMutatedBehavior(this.nextDirection, mutationCount)
     }
@@ -80,9 +88,9 @@ export class Evolver {
         return this.nextDirection
     }
 
-    public get evaluated(): IEvolver {
+    public get evaluated(): IEvaluatedJockey {
         const distanceFromTarget = this.gotchi.getDistanceFrom(this.target)
-        return {evolver: this, distanceFromTarget}
+        return {jockey: this, distanceFromTarget}
     }
 
     public get touchedDestination(): boolean {
