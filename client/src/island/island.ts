@@ -20,7 +20,13 @@ export interface IslandData {
     spots: string
 }
 
-const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
+function sortSpotsOnCoord(a: Spot, b: Spot): number {
+    return coordSort(a.coords, b.coords)
+}
+
+function removeSpot(spots: Spot[], spotToRemove: Spot): Spot[] {
+    return spots.filter(s => !equals(s.coords, spotToRemove.coords))
+}
 
 export class Island {
     public readonly name: string
@@ -80,27 +86,18 @@ export class Island {
     }
 
     public get islandData(): IslandData {
-        const vacant = this.vacantHexalot
-        if (vacant) {
-            const parent = vacant.parentHexalot
+        const gone = this.vacantHexalot
+        if (gone) {
+            const parent = gone.parentHexalot
             if (!parent) {
                 throw new Error("No parent")
             }
-            parent.childHexalots = parent.childHexalots.filter(hexalot => !equals(vacant.coords, hexalot.coords))
-            vacant.spots[0].centerOfHexalot = undefined
-            for (let neighbor = 1; neighbor <= 6; neighbor++) {
-                vacant.spots[neighbor].adjacentHexalots =
-                    vacant.spots[neighbor].adjacentHexalots
-                        .filter(hexalot => !equals(vacant.coords, hexalot.coords))
-            }
-            this.spots.forEach(p => p.memberOfHexalot = p.memberOfHexalot.filter(hexalot => !equals(vacant.coords, hexalot.coords)))
-            const spotsToRemove = this.spots.filter(p => p.memberOfHexalot.length === 0)
-            const removeSpotFromIsland = (islandSpots: Spot[], spotToRemove: Spot) => {
-                return islandSpots.filter(s => equals(s.coords, spotToRemove.coords))
-            }
-            const hexalots = this.hexalots.filter(h => h.id !== vacant.id)
-            const spots = spotsToRemove.reduce(removeSpotFromIsland, this.spots)
-            spots.sort(sortSpotsOnCoord)
+            parent.childHexalots = parent.childHexalots.filter(child => child.id !== gone.id)
+            const hexalots = this.hexalots.filter(h => h.id !== gone.id)
+            const spotsToRemove = this.spots.filter(p => {
+                return p.memberOfHexalot.length === 1 && p.memberOfHexalot[0].id === gone.id
+            })
+            const spots = spotsToRemove.reduce(removeSpot, this.spots).sort(sortSpotsOnCoord)
             return {
                 name: this.name,
                 hexalots: hexalotTreeString(hexalots),
