@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { Button, ButtonGroup, ButtonToolbar } from "reactstrap"
-import { Subscription } from "rxjs"
+import { Subject, Subscription } from "rxjs"
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
@@ -16,8 +16,8 @@ import { OrbitDistance } from "./orbit"
 
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
+    stateSubject: Subject<IAppState>
     appState: IAppState
-    toAppState: (appState: IAppState) => void
     location: Vector3
 }
 
@@ -37,7 +37,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     }
 
     public componentDidMount(): void {
-        this.subs.push(this.props.appState.subject.subscribe(islandState => this.setState({islandState})))
+        this.subs.push(this.props.stateSubject.subscribe(islandState => this.setState({islandState})))
     }
 
     public componentWillUnmount(): void {
@@ -251,14 +251,17 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     }
 
     private commandButton(command: Command): JSX.Element {
-        const props = this.props
         return (
             <Button
                 key={command}
                 outline={true}
                 color="primary"
                 className="command-button"
-                onClick={() => props.toAppState(new CommandHandler(props.appState).afterCommand(command, props.location))}
+                onClick={() => {
+                    const props = this.props
+                    const commandHandler = new CommandHandler(props.appState, props.stateSubject)
+                    props.stateSubject.next(commandHandler.afterCommand(command, props.location))
+                }}
             >{command}</Button>
         )
     }

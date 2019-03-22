@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Subject } from "rxjs"
 import { Vector3 } from "three"
 
 import { Direction } from "../body/fabric-exports"
@@ -19,8 +20,8 @@ export class CommandHandler {
 
     private trans: Transition
 
-    constructor(state: IAppState) {
-        this.trans = new Transition(state)
+    constructor(state: IAppState, private subject: Subject<IAppState>) {
+        this.trans = new Transition(state, subject)
     }
 
     public afterCommand(command: Command, location: Vector3): IAppState {
@@ -215,17 +216,11 @@ export class CommandHandler {
             if (!islandData) {
                 return
             }
-            console.warn("new island")
-            const island = new Island(
-                state.subject,
-                islandData,
-                state.island.gotchiFactory,
-                state.storage,
-            )
+            const island = new Island(islandData, state.island.gotchiFactory, state.storage, this.subject)
             const newHomeHexalot = island.findHexalot(hexalot.id)
             if (newHomeHexalot) {
                 console.log("new home hexalot", newHomeHexalot)
-                // TODO
+                // TODO: figure out how to actually replace the island
                 // island.state.withHomeHexalot(newHomeHexalot)
                 //     .withSelectedSpot(newHomeHexalot.centerSpot)
                 //     .withRestructure.dispatch()

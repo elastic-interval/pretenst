@@ -108,7 +108,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
                     <GotchiView
                         perspectiveCamera={this.perspectiveCamera}
                         appState={this.state.appState}
-                        toAppState={this.toAppState}
+                        stateSubject={this.stateSubject}
                         width={this.state.width}
                         height={this.state.height}
                         left={this.state.left}
@@ -145,7 +145,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
                             <ActionsPanel
                                 orbitDistance={this.orbitDistanceSubject}
                                 appState={this.state.appState}
-                                toAppState={this.toAppState}
+                                stateSubject={this.stateSubject}
                                 location={this.perspectiveCamera.position}
                             />
                         </div>
@@ -162,12 +162,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
             if (!islandData) {
                 return
             }
-            const island = new Island(
-                this.stateSubject,
-                islandData,
-                this.fabricKernel,
-                this.props.storage,
-            )
+            const island = new Island(islandData, this.fabricKernel, this.props.storage, this.stateSubject)
             this.toAppState(island.state)
         })
     }

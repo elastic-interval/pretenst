@@ -5,6 +5,7 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
+import { Subject } from "rxjs"
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Subscription } from "rxjs/Subscription"
 import { Mesh, PerspectiveCamera, Vector3 } from "three"
@@ -29,7 +30,7 @@ interface IGotchiViewProps {
     left: number
     top: number
     appState: IAppState
-    toAppState: (appState: IAppState) => void
+    stateSubject: Subject<IAppState>
     orbitDistance: BehaviorSubject<OrbitDistance>
 }
 
@@ -99,7 +100,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
                 if (spot) {
                     const props = this.props
-                    props.toAppState(new ClickHandler(props.appState).stateAfterClick(spot))
+                    const clickHandler = new ClickHandler(props.appState, this.props.stateSubject)
+                    props.stateSubject.next(clickHandler.stateAfterClick(spot))
                 }
             }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>

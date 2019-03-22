@@ -3,6 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Subject } from "rxjs"
+
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
@@ -13,8 +15,8 @@ export class ClickHandler {
 
     private trans: Transition
 
-    constructor(state: IAppState) {
-        this.trans = new Transition(state)
+    constructor(state: IAppState, subject: Subject<IAppState>) {
+        this.trans = new Transition(state, subject)
     }
 
     public stateAfterClick(spot: Spot): IAppState {
@@ -41,7 +43,7 @@ export class ClickHandler {
                 }
                 if (hexalot) {
                     console.log("with home hexalot")
-                    return trans.withHomeHexalot(hexalot).withSelectedSpot(spot).withRestructure.state
+                    return trans.withHomeHexalot(hexalot).withRestructure.state
                 }
                 console.log("with selected lot")
                 return trans.withSelectedSpot(spot).state

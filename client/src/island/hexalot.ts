@@ -115,7 +115,7 @@ export class Hexalot {
         }
     }
 
-    public fetchJourney(storage: IStorage, island: Island, loaded: () => void): boolean {
+    public fetchJourney(storage: IStorage, island: Island, loaded: (journey: Journey) => void): boolean {
         switch (this.journeyStatus) {
             case LoadStatus.Pending:
                 this.journeyStatus = LoadStatus.Busy
@@ -123,7 +123,9 @@ export class Hexalot {
                     this.journey = fromOptionalJourneyData(island, journeyData)
                     console.log(`Journey data arrived for ${this.id}`, journeyData)
                     this.journeyStatus = LoadStatus.Loaded
-                    loaded()
+                    if (this.journey) {
+                        loaded(this.journey)
+                    }
                 })
                 return false
             case LoadStatus.Busy:

@@ -3,8 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Subject } from "rxjs"
-
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
@@ -51,7 +49,6 @@ export interface IAppState {
     readonly nonce: number
     readonly island: Island
     readonly storage: IStorage
-    readonly subject: Subject<IAppState>
     readonly mode: Mode
     readonly islandIsLegal: boolean
     readonly homeHexalot?: Hexalot

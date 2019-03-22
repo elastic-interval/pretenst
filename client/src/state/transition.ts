@@ -3,6 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Subject } from "rxjs"
+
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
@@ -15,7 +17,7 @@ export class Transition {
 
     private appState: IAppState
 
-    constructor(prev: IAppState) {
+    constructor(prev: IAppState, private subject: Subject<IAppState>) {
         this.appState = {...prev, nonce: prev.nonce + 1}
     }
 
@@ -41,7 +43,7 @@ export class Transition {
             this.appState = {...this.appState, selectedHexalot}
             if (selectedHexalot) {
                 const genomePresent = selectedHexalot.fetchGenome(this.appState.storage, () => {
-                    // todo: this.state.island.state.dispatch()
+                    // TODO: decide what kind of reaction. visually there's nothing
                 })
                 console.log(`Genome present for ${selectedHexalot.id}`, genomePresent)
             }
@@ -57,14 +59,16 @@ export class Transition {
     }
 
     public withHomeHexalot(homeHexalot?: Hexalot): Transition {
-        const appState = this.appState
-        this.appState = {...appState, homeHexalot}
+        const selectedHexalot = homeHexalot
+        const selectedSpot = homeHexalot ? homeHexalot.centerSpot : undefined
+        this.appState = {...this.appState, homeHexalot, selectedHexalot, selectedSpot}
         if (!homeHexalot) {
             return this.withMode(Mode.Visiting).withJourney()
         }
-        if (homeHexalotSelected(appState)) {
-            const journeyPresent = homeHexalot.fetchJourney(appState.storage, appState.island, () => {
-                // todo: this.state.island.state.withJourney(home.journey).dispatch()
+        if (homeHexalotSelected(this.appState)) {
+            const journeyPresent = homeHexalot.fetchJourney(this.appState.storage, this.appState.island, journey => {
+                // TODO: make sure that "this" is actually the latest state
+                this.subject.next(this.withJourney(journey).state)
             })
             console.log(`Journey present for ${homeHexalot.id}`, journeyPresent)
         }
