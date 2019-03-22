@@ -9,12 +9,13 @@
   },
   "scripts": {
     "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node index.ts",
+    "start:daemon": "pm2 start process.yml",
+    "check": "tsc -p . --noemit",
     "test": "mocha -r ts-node/register test/*.test.ts",
     "lint": "tslint --fix -p tsconfig.json",
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'"
   },
   "dependencies": {
-    "@radar/lnrpc": "0.5.2-beta.1",
     "@types/dotenv": "^6.1.0",
     "@types/express": "^4.16.1",
     "@types/express-validator": "^3.0.0",

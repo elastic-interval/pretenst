@@ -257,12 +257,14 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 outline={true}
                 color="primary"
                 className="command-button"
-                onClick={() => {
-                    const props = this.props
-                    const commandHandler = new CommandHandler(props.appState, props.stateSubject)
-                    props.stateSubject.next(commandHandler.afterCommand(command, props.location))
-                }}
+                onClick={() => this.execute(command)}
             >{command}</Button>
         )
+    }
+
+    private async execute(command: Command): Promise<void> {
+        const props = this.props
+        const nextState = await new CommandHandler(props.appState).afterCommand(command, props.location)
+        props.stateSubject.next(nextState)
     }
 }

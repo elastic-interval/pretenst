@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Subject } from "rxjs"
 import { Vector3 } from "three"
 
 import { Direction } from "../body/fabric-exports"
@@ -21,11 +20,11 @@ export class CommandHandler {
 
     private trans: Transition
 
-    constructor(private appState: IAppState, private stateSubject: Subject<IAppState>) {
-        this.trans = new Transition(appState, stateSubject)
+    constructor(private appState: IAppState) {
+        this.trans = new Transition(appState)
     }
 
-    public afterCommand(command: Command, location: Vector3): IAppState {
+    public async afterCommand(command: Command, location: Vector3): Promise<IAppState> {
 
         const trans = this.trans
         const state = trans.state
@@ -44,15 +43,13 @@ export class CommandHandler {
 
 
             case Command.Logout: // ====================================================================================
-                return trans.withHomeHexalot().withRestructure.state
+                return (await trans.withHomeHexalot()).withRestructure.state
 
 
             case Command.SaveGenome: // ================================================================================
                 if (homeHexalot && gotchi) {
                     const genomeData = gotchi.genomeData
-                    state.storage.setGenomeData(homeHexalot, genomeData).then(() => {
-                        console.log("genome saved")
-                    })
+                    await state.storage.setGenomeData(homeHexalot, genomeData)
                 }
                 return state
 
@@ -69,10 +66,10 @@ export class CommandHandler {
                     return trans.withSelectedSpot(state.jockey.gotchi.home.centerSpot).withMode(Mode.Landed).state
                 }
                 if (state.gotchi) {
-                    return trans.withSelectedSpot(state.gotchi.home.centerSpot).withMode(Mode.Landed).state
+                    return (await trans.withSelectedSpot(state.gotchi.home.centerSpot)).withMode(Mode.Landed).state
                 }
                 if (homeHexalot) {
-                    return trans.withSelectedSpot(homeHexalot.centerSpot).withMode(Mode.Landed).state
+                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).withMode(Mode.Landed).state
                 }
                 return state
 
@@ -143,7 +140,7 @@ export class CommandHandler {
             case Command.RotateLeft: // ================================================================================
                 if (homeHexalot) {
                     homeHexalot.rotate(true)
-                    return trans.withSelectedSpot(homeHexalot.centerSpot).state // todo: rotation
+                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).state
                 }
                 return state
 
@@ -151,7 +148,7 @@ export class CommandHandler {
             case Command.RotateRight: // ===============================================================================
                 if (homeHexalot) {
                     homeHexalot.rotate(false)
-                    return trans.withSelectedSpot(homeHexalot.centerSpot).state // todo: rotation
+                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).state
                 }
                 return state
 
@@ -179,14 +176,14 @@ export class CommandHandler {
 
             case Command.MakeLand: // ==================================================================================
                 if (spot && spot.free) {
-                    return trans.withSurface(Surface.Land).withRestructure.state
+                    return (await trans.withSurface(Surface.Land)).withRestructure.state
                 }
                 return state
 
 
             case Command.MakeWater: // =================================================================================
                 if (spot && spot.free) {
-                    return trans.withSurface(Surface.Water).withRestructure.state
+                    return (await trans.withSurface(Surface.Water)).withRestructure.state
                 }
                 return state
 
@@ -194,25 +191,35 @@ export class CommandHandler {
             case Command.JumpToFix: // =================================================================================
                 const unknownSpot = island.spots.find(s => s.surface === Surface.Unknown)
                 if (unknownSpot) {
-                    return trans.withSelectedSpot(unknownSpot).state
+                    return (await trans.withSelectedSpot(unknownSpot)).state
                 }
                 const illegalSpot = island.spots.find(s => !s.isLegal)
                 if (illegalSpot) {
-                    return trans.withSelectedSpot(illegalSpot).state
+                    return (await trans.withSelectedSpot(illegalSpot)).state
                 }
                 return state
 
 
             case Command.AbandonFix: // ================================================================================
+                const afterDeselect = await trans.withSelectedSpot()
+                const vacantHexalot = island.vacantHexalot
                 island.vacantHexalot = undefined
-                return trans.withSelectedSpot().withMode(Mode.Visiting).withRestructure.state
+                if (vacantHexalot) {
+                    // TODO: remove the dang thing
+                    // const removeSpotFromIsland = (islandSpots: Spot[], spotToRemove: Spot) => {
+                    //     return islandSpots.filter(s => equals(s.coords, spotToRemove.coords))
+                    // }
+                    // island.spots = vacantHexalot.destroy().reduce(removeSpotFromIsland, island.spots)
+                    // island.hexalots = island.hexalots.filter(h => h.id !== vacantHexalot.id)
+                }
+                return afterDeselect.withMode(Mode.Visiting).withRestructure.state
 
 
             case Command.ClaimHexalot: // ==============================================================================
                 if (!homeHexalot && hexalot && island.islandIsLegal && (singleHexalot || vacant && vacant.id === hexalot.id)) {
                     this.claimHexalot(hexalot)
                     island.vacantHexalot = undefined
-                    return trans.withHomeHexalot(hexalot).withRestructure.state
+                    return (await trans.withHomeHexalot(hexalot)).withRestructure.state
                 }
                 return state
 
@@ -228,21 +235,20 @@ export class CommandHandler {
         }
     }
 
-    private claimHexalot(hexalot: Hexalot): void {
+    private async claimHexalot(hexalot: Hexalot): Promise<IAppState | undefined> {
         const appState = this.appState
-        appState.storage.claimHexalot(appState.island, hexalot, freshGenome().genomeData).then(islandData => {
-            if (!islandData) {
-                console.warn("No island data arrived")
-                return
-            }
-            const island = new Island(islandData, appState.island.gotchiFactory, appState.storage, this.stateSubject, appState.nonce)
-            const newHomeHexalot = island.findHexalot(hexalot.id)
-            if (!newHomeHexalot) {
-                console.error("Cannot find home hexalot on the new island!")
-                return
-            }
-            this.stateSubject.next(new Transition(island.state, this.stateSubject).withHomeHexalot(newHomeHexalot).state)
-        })
+        const islandData = await appState.storage.claimHexalot(appState.island, hexalot, freshGenome().genomeData)
+        if (!islandData) {
+            console.warn("No island data arrived")
+            return
+        }
+        const island = new Island(islandData, appState.island.gotchiFactory, appState.storage, appState.nonce)
+        const newHomeHexalot = island.findHexalot(hexalot.id)
+        if (!newHomeHexalot) {
+            console.error("Cannot find home hexalot on the new island!")
+            return
+        }
+        return (await new Transition(island.state).withHomeHexalot(newHomeHexalot)).state
     }
 }
 

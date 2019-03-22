@@ -3,8 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Subject } from "rxjs"
-
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
@@ -15,11 +13,11 @@ export class ClickHandler {
 
     private trans: Transition
 
-    constructor(state: IAppState, subject: Subject<IAppState>) {
-        this.trans = new Transition(state, subject)
+    constructor(state: IAppState) {
+        this.trans = new Transition(state)
     }
 
-    public stateAfterClick(spot: Spot): IAppState {
+    public async stateAfterClick(spot: Spot): Promise<IAppState> {
 
         const trans = this.trans
         const state = trans.state
@@ -32,23 +30,23 @@ export class ClickHandler {
 
 
             case Mode.FixingIsland: // ===========================================================================
-                return trans.withSelectedSpot(spot).state
+                return (await trans.withSelectedSpot(spot)).state
 
 
             case Mode.Visiting: // ===============================================================================
                 if (state.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     island.vacantHexalot = island.createHexalot(spot)
-                    return trans.withSelectedSpot(spot).withMode(Mode.FixingIsland).withRestructure.state
+                    return (await trans.withSelectedSpot(spot)).withMode(Mode.FixingIsland).withRestructure.state
                 }
                 if (hexalot) {
-                    return trans.withHomeHexalot(hexalot).withRestructure.state
+                    return (await trans.withHomeHexalot(hexalot)).withRestructure.state
                 }
-                return trans.withSelectedSpot(spot).state
+                return (await trans.withSelectedSpot(spot)).state
 
 
             case Mode.Landed: // =================================================================================
                 if (hexalot) {
-                    return trans.withSelectedSpot(spot).state
+                    return (await trans.withSelectedSpot(spot)).state
                 }
                 return state
 

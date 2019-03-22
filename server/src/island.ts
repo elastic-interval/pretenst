@@ -72,23 +72,25 @@ function spotsToHexalotID(spots: ISpot[]): HexalotID {
 }
 
 function hexalotIDToSpots(center: ICoords, hexalotID: HexalotID): ISpot[] {
-    const spots: ISpot[] = []
-
-    hexalotID.split("").map((nybStr, j) => {
-        const nyb = parseInt(nybStr, 16)
-        for (let i = 0; i < 4; i++) {
-            const surface: Surface = (nyb & (0x1 << (3 - i))) !== 0 ?
-                Surface.Land :
-                Surface.Water
-            const spot: ISpot = {
-                coords: plus(center, HEXALOT_SHAPE[j + i]),
-                surface,
+    function* spotIterator(): Iterable<ISpot> {
+        let i = 0
+        for (const nybStr of hexalotID.split("")) {
+            const nyb = parseInt(nybStr, 16)
+            for (let bit = 0; bit < 4; bit++) {
+                const surface: Surface = (nyb & (0x1 << (3 - bit))) !== 0 ?
+                    Surface.Land :
+                    Surface.Water
+                yield {
+                    coords: plus(center, HEXALOT_SHAPE[i++]),
+                    surface,
+                }
+                if (i === 127) {
+                    return
+                }
             }
-            spots.push(spot)
         }
-    })
-    spots.splice(127, 1)
-    return spots
+    }
+    return [...spotIterator()]
 }
 
 const ringIndex = (coords: ICoords, origin: ICoords): number => {
@@ -106,7 +108,6 @@ function generateOctalTreePattern(
     steps: number[],
     visited: { [coords: string]: boolean },
 ): number[] {
-    // TODO: populate childHexalots
     const remainingChildren = root.childHexalots!
         .filter(child => !visited[coordsToString(child.coords)])
         .map(child => {
@@ -143,7 +144,8 @@ interface ICoords {
     y: number
 }
 
-export interface IslandPattern {
+export interface IslandData {
+    name: string
     hexalots: string
     spots: string
 }
@@ -177,9 +179,10 @@ export class Island {
         return !this.spots.find(spot => !spot) // TODO
     }
 
-    public get pattern(): IslandPattern {
+    public get data(): IslandData {
         this.spots.sort(sortSpotsOnCoord)
         return {
+            name: this.islandName,
             hexalots: hexalotTreeString(this.hexalots),
             spots: spotsToHexalotID(this.spots),
         }
@@ -195,17 +198,17 @@ export class Island {
     }
 
     public async load(): Promise<void> {
-        const pattern = await this.store.getPattern(this.islandName)
-        if (!pattern) {
+        const data = await this.store.getIslandData(this.islandName)
+        if (!data) {
             this.spots = []
             this.hexalots = []
             return
         }
-        this.applyPattern(pattern)
+        this.applyPattern(data)
     }
 
     public async save(): Promise<void> {
-        return this.store.setPattern(this.islandName, this.pattern)
+        return this.store.setIslandData(this.islandName, this.data)
     }
 
     public async claimHexalot(
@@ -278,7 +281,7 @@ export class Island {
 
     // ================================================================================================
 
-    private applyPattern(pattern: IslandPattern): void {
+    private applyPattern(pattern: IslandData): void {
         let hexalot: IHexalot | undefined = this.getOrCreateHexalot(undefined, ZERO)
         const stepStack = pattern.hexalots.split("").reverse().map(Number)
         const hexalotStack: IHexalot[] = []

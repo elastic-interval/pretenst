@@ -11,6 +11,7 @@ import { Subscription } from "rxjs/Subscription"
 import { Mesh, PerspectiveCamera, Vector3 } from "three"
 
 import { NORMAL_TICKS } from "../body/fabric"
+import { Spot } from "../island/spot"
 import { Direction } from "../body/fabric-exports"
 import { IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
@@ -102,9 +103,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
             <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
                 const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
                 if (spot) {
-                    const props = this.props
-                    const clickHandler = new ClickHandler(props.appState, this.props.stateSubject)
-                    props.stateSubject.next(clickHandler.stateAfterClick(spot))
+                    this.click(spot)
                 }
             }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
@@ -138,7 +137,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         )
     }
 
-    // =================================================================================================================
+// =================================================================================================================
+
+    private async click(spot: Spot): Promise<void> {
+        const props = this.props
+        const clickHandler = new ClickHandler(props.appState)
+        const afterClick = await clickHandler.stateAfterClick(spot)
+        props.stateSubject.next(afterClick)
+    }
 
     private animate(): void {
         const step = () => {
