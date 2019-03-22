@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node index.ts",
-    "check": "tsc -p . --noemit",
+    "check": "./node_modules/.bin/tsc -p . --noemit",
     "test": "mocha -r ts-node/register test/*.test.ts",
     "lint": "tslint --fix -p tsconfig.json",
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'"
