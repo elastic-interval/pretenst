@@ -61,7 +61,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             </ActionFrame>
                         )
                     }
-                    if (spot.isCandidateHexalot(vacant)) {
+                    if (spot.isCandidateHexalot(vacant) && !singleHexalot) {
                         if (islandState.islandIsLegal) {
                             return (
                                 <ActionFrame>
@@ -74,7 +74,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             return (
                                 <ActionFrame>
                                     <p>You can claim this hexalot when the island has been fixed.</p>
-                                    {this.buttons("Fixing..", [
+                                    {this.buttons("Fixing island", [
                                         Command.JumpToFix,
                                         Command.AbandonFix,
                                     ])}

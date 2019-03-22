@@ -11,7 +11,7 @@ import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/spot"
-import { IAppState } from "./state/app-state"
+import { IAppState, logString } from "./state/app-state"
 import { IStorage } from "./storage/storage"
 import { ActionsPanel } from "./view/actions-panel"
 import { GotchiView } from "./view/gotchi-view"
@@ -168,6 +168,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
     }
 
     private toAppState = (appState: IAppState): void => {
+        console.log(logString(appState))
         this.stateSubject.next(appState)
     }
 }

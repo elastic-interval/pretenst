@@ -18,7 +18,8 @@ export class ClickHandler {
         const state = trans.state
         const hexalot = spot.centerOfHexalot
         const homeHexalot = state.homeHexalot
-        const vacant = state.island.vacantHexalot
+        const island = state.island
+        const vacant = island.vacantHexalot
 
         switch (state.mode) {
 
@@ -30,7 +31,8 @@ export class ClickHandler {
             case Mode.Visiting: // ===============================================================================
                 if (state.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     console.log("with vacant lot")
-                    return trans.withVacantHexalotAt(spot).withRestructure.state
+                    island.vacantHexalot = island.createHexalot(spot)
+                    return trans.withSelectedSpot(spot).withMode(Mode.FixingIsland).withRestructure.state
                 }
                 if (hexalot) {
                     console.log("with home hexalot")

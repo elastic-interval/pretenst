@@ -30,6 +30,7 @@ export class Transition {
     }
 
     public withSelectedSpot(selectedSpot?: Spot): Transition {
+        this.appState = {...this.appState, selectedSpot}
         if (selectedSpot) {
             const selectedHexalot = selectedSpot.centerOfHexalot
             this.appState = {...this.appState, selectedHexalot}
@@ -65,13 +66,6 @@ export class Transition {
         return this.withMode(Mode.Landed).withJourney(homeHexalot.journey)
     }
 
-    public withVacantHexalotAt(spot: Spot): Transition {
-        const island = this.appState.island
-        const vacant = island.createHexalot(spot)
-        island.vacantHexalot = vacant
-        return this.withSelectedSpot(vacant.centerSpot)
-    }
-
     public get withRestructure(): Transition {
         const island = this.appState.island
         island.recalculate()
@@ -105,16 +99,20 @@ export class Transition {
         selectedSpot.memberOfHexalot.forEach(hexalot => hexalot.refreshId())
         const nextFree = selectedSpot.adjacentSpots.find(s => s.free && s.surface === Surface.Unknown)
         if (nextFree) {
-            return this.withSelectedSpot(nextFree).withRestructure
+            return this.withSelectedSpot(nextFree)
         }
         const island = appState.island
         const anyFree = island.spots.find(s => s.free && s.surface === Surface.Unknown)
         if (anyFree) {
-            return this.withSelectedSpot(anyFree).withRestructure
+            return this.withSelectedSpot(anyFree)
+        }
+        const illegal = island.spots.find(s => !s.isLegal)
+        if (illegal) {
+            return this.withSelectedSpot(illegal)
         }
         const vacantHexalot = island.vacantHexalot
         if (vacantHexalot) {
-            return this.withSelectedSpot(vacantHexalot.centerSpot).withRestructure
+            return this.withSelectedSpot(vacantHexalot.centerSpot)
         }
         return this
     }

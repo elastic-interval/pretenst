@@ -173,6 +173,10 @@ export class CommandHandler {
                 if (unknownSpot) {
                     return trans.withSelectedSpot(unknownSpot).state
                 }
+                const illegalSpot = island.spots.find(s => !s.isLegal)
+                if (illegalSpot) {
+                    return trans.withSelectedSpot(illegalSpot).state
+                }
                 return state
 
 
