@@ -162,7 +162,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         if (!islandData) {
             return
         }
-        const island = new Island(islandData, this.fabricKernel, this.props.storage, this.stateSubject, 0)
+        const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
         console.log(logString(island.state))
         this.stateSubject.next(island.state)
     }
