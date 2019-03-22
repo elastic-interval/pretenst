@@ -3,12 +3,10 @@
 cd fabric
 yarn
 yarn asbuild:optimized
-cd ..
-cd client
+cd ../client
 yarn
 yarn build:prod
-cd ..
-cd server
+cd ../server
 yarn
 ./node_modules/.bin/pm2 restart server
 
