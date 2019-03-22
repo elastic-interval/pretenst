@@ -33,5 +33,5 @@ export enum IslandIcosahedron {
     "jakarta" = "Jakarta",
     "chennai" = "Chennai",
     "lima" = "Lima",
-    "bangkok" = "Bangkok",
+    "rotterdam" = "Rotterdam",
 }
