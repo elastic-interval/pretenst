@@ -6,13 +6,13 @@
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
+import { Island } from "../island/island"
 import { Journey } from "../island/journey"
 import { Spot, Surface } from "../island/spot"
 
 import { IAppState, Mode } from "./app-state"
 
 export class Transition {
-
     private appState: IAppState
 
     constructor(prev: IAppState) {
@@ -21,6 +21,12 @@ export class Transition {
 
     public get state(): IAppState {
         return this.appState
+    }
+
+    public withIsland(island: Island): Transition {
+        this.recycle()
+        this.appState = {...this.appState, island}
+        return this
     }
 
     public withMode(mode: Mode): Transition {
