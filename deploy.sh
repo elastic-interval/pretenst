@@ -8,5 +8,5 @@ yarn
 yarn build:prod
 cd ../server
 yarn
-./node_modules/.bin/pm2 restart server
+pm2 start process.yml
 

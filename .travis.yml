@@ -21,5 +21,6 @@ script:
   - yarn run build
   - cd ../fabric
   - yarn run asbuild:untouched
+  - cd ..
 after_success:
   - ./deploy-remote.sh
