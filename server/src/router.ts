@@ -8,8 +8,8 @@ import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
 
-import { AllowedIslands } from "./constants"
 import { Island } from "./island"
+import { IslandIcosahedron } from "./island-icosahedron"
 import { DataStore, IKeyValueStore } from "./store"
 
 function validateRequest(req: Request, res: Response, next: NextFunction): void {
@@ -47,7 +47,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
             ],
             async (req: Request, res: Response, next: NextFunction) => {
                 const {islandName} = req.params
-                if (!AllowedIslands[islandName]) {
+                if (!IslandIcosahedron[islandName]) {
                     res.status(404).end("Island doesn't exist")
                     return
                 }
