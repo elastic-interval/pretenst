@@ -65,7 +65,7 @@ const plus = (a: ICoords, b: ICoords): ICoords => {
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
 
-function spotsToHex(spots: ISpot[]): HexalotID {
+function spotsToHex(spots: ISpot[]): string {
     const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
     const nybbleStrings = land.map((l, index, array) =>
         (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
@@ -205,7 +205,7 @@ export class Island {
             this.hexalots = []
             return
         }
-        this.applyPattern(data)
+        this.apply(data)
     }
 
     public async save(): Promise<void> {
@@ -271,7 +271,7 @@ export class Island {
 
     // ================================================================================================
 
-    private applyPattern(pattern: IslandData): void {
+    private apply(pattern: IslandData): void {
         let hexalot: IHexalot | undefined = this.getOrCreateHexalot(undefined, ZERO)
         const stepStack = pattern.hexalots.split("").reverse().map(Number)
         const hexalotStack: IHexalot[] = []
@@ -303,10 +303,10 @@ export class Island {
         const hexChars = pattern.spots ? pattern.spots.split("") : []
         const numbers = hexChars.map(hexChar => parseInt(hexChar, 16))
         const booleanArrays = numbers.map(nyb => {
-            const b0 = (nyb & 8) !== 0
-            const b1 = (nyb & 4) !== 0
-            const b2 = (nyb & 2) !== 0
-            const b3 = (nyb & 1) !== 0
+            const b0 = (nyb & (0x1 << 3)) !== 0
+            const b1 = (nyb & (0x1 << 2)) !== 0
+            const b2 = (nyb & (0x1 << 1)) !== 0
+            const b3 = (nyb & (0x1 << 0)) !== 0
             return [b0, b1, b2, b3]
         })
         const landStack = [].concat.apply([], booleanArrays).reverse()
@@ -330,10 +330,10 @@ export class Island {
         if (existing) {
             return existing
         }
-        return this.createHexalot(parent, coords)
+        return this.createHexalot(coords, parent)
     }
 
-    private createHexalot(parent: IHexalot | undefined, coords: ICoords) {
+    private createHexalot(coords: ICoords, parent: IHexalot | undefined) {
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
         const hexalot: IHexalot = {
             nonce: parent ? parent.nonce + 1 : 0,
