@@ -228,7 +228,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         }
         const vacantHexalot = islandState.island.vacantHexalot
         const geometry = new Geometry()
-        islandState.island.spots.filter(spot => spot.isVacantLandWithOccupiedAdjacentLand(vacantHexalot)).forEach(spot => {
+        islandState.island.spots.filter(spot => spot.isCandidateHexalot(vacantHexalot)).forEach(spot => {
             spot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
         })
         return geometry
@@ -265,6 +265,12 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         }
         if (this.selectedSpot) {
             this.selectedSpot.dispose()
+        }
+        if (this.availableSpots) {
+            this.availableSpots.dispose()
+        }
+        if (this.vacantHexalots) {
+            this.vacantHexalots.dispose()
         }
     }
 }

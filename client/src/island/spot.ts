@@ -154,7 +154,7 @@ export class Spot {
         }
     }
 
-    public isVacantLandWithOccupiedAdjacentLand(vacantHexalot?: Hexalot): boolean {
+    public isCandidateHexalot(vacantHexalot?: Hexalot): boolean {
         if (this.surface !== Surface.Land) {
             return false
         }

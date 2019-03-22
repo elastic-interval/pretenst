@@ -22,7 +22,9 @@ export class IslandStateCommand {
         const gotchi = state.gotchi
         const journey = state.journey
         const spot = state.selectedSpot
-        const vacant = state.island.vacantHexalot
+        const island = state.island
+        const vacant = island.vacantHexalot
+        const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
 
         switch (command) {
 
@@ -163,7 +165,7 @@ export class IslandStateCommand {
 
 
             case Command.JumpToFix: // =================================================================================
-                const unknownSpot = state.island.spots.find(s => s.surface === Surface.Unknown)
+                const unknownSpot = island.spots.find(s => s.surface === Surface.Unknown)
                 if (unknownSpot) {
                     return this.state.withSelectedSpot(unknownSpot)
                 }
@@ -171,16 +173,14 @@ export class IslandStateCommand {
 
 
             case Command.AbandonFix: // ================================================================================
-                state.island.vacantHexalot = undefined
+                island.vacantHexalot = undefined
                 return state.withSelectedSpot().withMode(IslandMode.Visiting).withRestructure
 
 
             case Command.ClaimHexalot: // ==============================================================================
-                if (!homeHexalot && hexalot && vacant && vacant.id === hexalot.id) {
-                    if (hexalot) {
-                        this.claimHexalot(hexalot, state) // todo: handle failure
-                    }
-                    state.island.vacantHexalot = undefined
+                if (!homeHexalot && hexalot && island.islandIsLegal && (singleHexalot || vacant && vacant.id === hexalot.id)) {
+                    this.claimHexalot(hexalot, state) // todo: handle failure
+                    island.vacantHexalot = undefined
                     return state.withHomeHexalot(hexalot).withRestructure
                 }
                 return state
@@ -212,10 +212,9 @@ export class IslandStateCommand {
             const newHomeHexalot = island.findHexalot(hexalot.id)
             if (newHomeHexalot) {
                 console.log("new home hexalot", newHomeHexalot)
-                island.state.subject.next(island.state
-                    .withHomeHexalot(newHomeHexalot)
+                island.state.withHomeHexalot(newHomeHexalot)
                     .withSelectedSpot(newHomeHexalot.centerSpot)
-                    .withRestructure)
+                    .withRestructure.dispatch()
             } else {
                 console.warn("no new home hexalot!")
                 island.state.dispatch()
