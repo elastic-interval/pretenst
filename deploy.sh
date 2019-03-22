@@ -10,5 +10,5 @@ yarn build:prod
 cd ..
 cd server
 yarn
-pm2 restart server
+./node_modules/.bin/pm2 restart server
 
