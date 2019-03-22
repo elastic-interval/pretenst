@@ -5,7 +5,7 @@
 
 import { FlashStore } from "flash-store"
 
-import { IJourneyData, IslandPattern } from "./island"
+import { IJourneyData, IslandData } from "./island"
 import { HexalotID } from "./types"
 
 export interface IKeyValueStore {
@@ -58,15 +58,12 @@ export class DataStore {
     ) {
     }
 
-    public async getPattern(islandName: string): Promise<IslandPattern | undefined> {
-        return (await this.db.get(`/island/${islandName}/pattern`)) || {
-            hexalots: "",
-            spots: "",
-        }
+    public async getIslandData(islandName: string): Promise<IslandData | undefined> {
+        return this.db.get(`/island/${islandName}/data`)
     }
 
-    public async setPattern(islandName: string, pattern: IslandPattern): Promise<void> {
-        await this.db.set(`/island/${islandName}/pattern`, pattern)
+    public async setIslandData(islandName: string, data: IslandData): Promise<void> {
+        await this.db.set(`/island/${islandName}/data`, data)
     }
 
     public async getGenomeData(id: HexalotID): Promise<string | undefined> {

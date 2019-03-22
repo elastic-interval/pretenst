@@ -8,8 +8,8 @@ import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
 
-import { ENABLED_ISLANDS } from "./constants"
 import { Island } from "./island"
+import { IslandIcosahedron } from "./island-icosahedron"
 import { DataStore, IKeyValueStore } from "./store"
 
 function validateRequest(req: Request, res: Response, next: NextFunction): void {
@@ -42,11 +42,15 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
         .use(
             "/island/:islandName",
             [
-                param("islandName").isIn(ENABLED_ISLANDS),
+                param("islandName").isString(),
                 validateRequest,
             ],
             async (req: Request, res: Response, next: NextFunction) => {
                 const {islandName} = req.params
+                if (!IslandIcosahedron[islandName]) {
+                    res.status(404).end("Island doesn't exist")
+                    return
+                }
                 res.locals.island = new Island(store, islandName)
                 next()
             },
@@ -68,7 +72,13 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
 
     islandRoute
         .get("/", async (req, res) => {
-            const pattern = await store.getPattern(res.locals.island.islandName)
+            let pattern = await store.getIslandData(res.locals.island.islandName)
+            if (!pattern) {
+                pattern = {
+                    hexalots: "",
+                    spots: "",
+                }
+            }
             res.json({
                 name: res.locals.island.islandName,
                 ...pattern,
@@ -104,7 +114,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return
                 }
-                res.json(island.pattern)
+                res.json(island.data)
             },
         )
 
