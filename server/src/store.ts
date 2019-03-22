@@ -58,11 +58,8 @@ export class DataStore {
     ) {
     }
 
-    public async getPattern(islandName: string): Promise<IslandPattern | undefined> {
-        return (await this.db.get(`/island/${islandName}/pattern`)) || {
-            hexalots: "",
-            spots: "",
-        }
+    public async getIslandPattern(islandName: string): Promise<IslandPattern | undefined> {
+        return this.db.get(`/island/${islandName}/pattern`)
     }
 
     public async setPattern(islandName: string, pattern: IslandPattern): Promise<void> {

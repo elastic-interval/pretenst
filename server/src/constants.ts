@@ -5,10 +5,38 @@
 
 export const HEXALOT_PURCHASE_PRICE_SATOSHIS = "10"
 
-export const ENABLED_ISLANDS = [
-    "rotterdam",
-]
-
+export enum AllowedIslands {
+    "tokyo" = "Tokyo",
+    "delhi" = "Delhi",
+    "shanghai" = "Shanghai",
+    "sao-paulo" = "SaoPaulo",
+    "mexico-city" = "MexicoCity",
+    "cairo" = "Cairo",
+    "mumbai" = "Mumbai",
+    "beijing" = "Beijing",
+    "dhaka" = "Dhaka",
+    "osaka" = "Osaka",
+    "karachi" = "Karachi",
+    "buenos-aires" = "BuenosAires",
+    "chongqing" = "Chongqing",
+    "istanbul" = "Istanbul",
+    "kolkata" = "Kolkata",
+    "manila" = "Manila",
+    "lagos" = "Lagos",
+    "rio-de-janeiro" = "RioDeJaneiro",
+    "tianjin" = "Tianjin",
+    "guangzhou" = "Guangzhou",
+    "moscow" = "Moscow",
+    "shenzen" = "Shenzen",
+    "lahore" = "Lahore",
+    "bangalore" = "Bangalore",
+    "paris" = "Paris",
+    "bogota" = "Bogota",
+    "jakarta" = "Jakarta",
+    "chennai" = "Chennai",
+    "lima" = "Lima",
+    "rotterdam" = "Rotterdam",
+}
 
 export const STOP_STEP = 0
 export const BRANCH_STEP = 7

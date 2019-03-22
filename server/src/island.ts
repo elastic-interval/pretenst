@@ -195,7 +195,7 @@ export class Island {
     }
 
     public async load(): Promise<void> {
-        const pattern = await this.store.getPattern(this.islandName)
+        const pattern = await this.store.getIslandPattern(this.islandName)
         if (!pattern) {
             this.spots = []
             this.hexalots = []
