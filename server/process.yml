@@ -1,0 +1,4 @@
+apps:
+  - name: api-server
+    interpreter: ./node_modules/.bin/ts-node
+    script: index.ts
