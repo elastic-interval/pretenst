@@ -126,7 +126,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     return (
                         <ActionFrame>
                             {this.buttons("Foreign", [
-                                Command.DriveFree,
+                                Command.RideFree,
                             ])}
                         </ActionFrame>
                     )
@@ -147,9 +147,9 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     return (
                         <ActionFrame>
                             {this.buttons("Home", [
-                                Command.PrepareDrive,
+                                Command.PrepareToRide,
                                 Command.PlanJourney,
-                                Command.DriveJourney,
+                                Command.RideJourney,
                                 Command.Evolve,
                                 Command.RandomGenome,
                                 Command.Logout,
@@ -160,7 +160,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     return (
                         <ActionFrame>
                             {this.buttons("Visiting", [
-                                Command.DriveFree,
+                                Command.RideFree,
                                 Command.Logout,
                             ])}
                         </ActionFrame>
@@ -173,7 +173,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     <ActionFrame>
                         {this.buttons("Planning journey", [
                             Command.ForgetJourney,
-                            Command.DriveJourney,
+                            Command.RideJourney,
                             Command.Evolve,
                             Command.Return,
                         ])}
@@ -181,13 +181,13 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case Mode.PreparingDrive: // ==========================================================================
+            case Mode.PreparingRide: // ==========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Drive", [
                             Command.RotateLeft,
                             Command.RotateRight,
-                            Command.DriveFree,
+                            Command.RideFree,
                             Command.Return,
                         ])}
                     </ActionFrame>
@@ -204,7 +204,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case Mode.DrivingFree: // ============================================================================
+            case Mode.RidingFree: // ============================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Driving free", [
@@ -217,7 +217,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case Mode.DrivingJourney: // =========================================================================
+            case Mode.RidingJourney: // =========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Driving journey", [

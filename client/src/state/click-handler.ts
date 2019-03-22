@@ -71,7 +71,7 @@ export class ClickHandler {
                 return state
 
 
-            case Mode.PreparingDrive: // ==========================================================================
+            case Mode.PreparingRide: // ==========================================================================
                 const target = spot.center
                 const adjacent = spot.adjacentSpots.map((s, i) => ({center: s.center, index: i}))
                 adjacent.sort((a, b) => target.distanceTo(a.center) - target.distanceTo(b.center))

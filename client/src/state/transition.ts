@@ -7,6 +7,7 @@ import { Subject } from "rxjs"
 
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
+import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Journey } from "../island/journey"
 import { Spot, Surface } from "../island/spot"
@@ -60,6 +61,12 @@ export class Transition {
 
     public withHomeHexalot(homeHexalot?: Hexalot): Transition {
         const selectedHexalot = homeHexalot
+        if (selectedHexalot) { // todo: just copied from above for now.  these will change.
+            const genomePresent = selectedHexalot.fetchGenome(this.appState.storage, () => {
+                // TODO: decide what kind of reaction. visually there's nothing
+            })
+            console.log(`Genome present for ${selectedHexalot.id}`, genomePresent)
+        }
         const selectedSpot = homeHexalot ? homeHexalot.centerSpot : undefined
         this.appState = {...this.appState, homeHexalot, selectedHexalot, selectedSpot}
         if (!homeHexalot) {
@@ -126,10 +133,17 @@ export class Transition {
         return this
     }
 
-    public withGotchi(gotchi: Gotchi, journey?: Journey): Transition {
+    public withJockey(jockey: Jockey): Transition {
         this.recycle()
-        const mode = journey ? Mode.DrivingJourney : Mode.DrivingFree
-        this.appState = {...this.appState, gotchi, journey, mode}
+        const mode = Mode.RidingJourney
+        this.appState = {...this.appState, jockey, journey: jockey.leg.journey, mode}
+        return this
+    }
+
+    public withGotchi(gotchi: Gotchi): Transition {
+        this.recycle()
+        const mode = Mode.RidingFree
+        this.appState = {...this.appState, gotchi, mode}
         return this
     }
 
@@ -140,6 +154,11 @@ export class Transition {
     }
 
     private recycle(): void {
+        const jockey = this.appState.jockey
+        if (jockey) {
+            jockey.gotchi.recycle()
+            this.appState = {...this.appState, jockey: undefined}
+        }
         const gotchi = this.appState.gotchi
         if (gotchi) {
             gotchi.recycle()
