@@ -149,9 +149,9 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private get seedsGeometry(): Geometry {
         const geometry = new Geometry()
         const hexalots = this.props.appState.island.hexalots
+        const activeHexalotId = this.activeHexalotId
         hexalots.forEach(hexalot => {
-            const actionHexalotId = this.actionHexalotId
-            if (!actionHexalotId || hexalot.id !== actionHexalotId) {
+            if (!activeHexalotId || hexalot.id !== activeHexalotId) {
                 hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
             }
         })
@@ -257,7 +257,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         return geometry
     }
 
-    public get actionHexalotId(): string | undefined {
+    public get activeHexalotId(): string | undefined {
         const state = this.props.appState
         if (state.gotchi) {
             return state.gotchi.home.id
