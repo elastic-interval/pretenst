@@ -20,8 +20,8 @@ export class CommandHandler {
 
     private trans: Transition
 
-    constructor(state: IAppState, private subject: Subject<IAppState>) {
-        this.trans = new Transition(state, subject)
+    constructor(private appState: IAppState, private stateSubject: Subject<IAppState>) {
+        this.trans = new Transition(appState, stateSubject)
     }
 
     public afterCommand(command: Command, location: Vector3): IAppState {
@@ -193,7 +193,7 @@ export class CommandHandler {
 
             case Command.ClaimHexalot: // ==============================================================================
                 if (!homeHexalot && hexalot && island.islandIsLegal && (singleHexalot || vacant && vacant.id === hexalot.id)) {
-                    this.claimHexalot(hexalot, state) // todo: handle failure
+                    this.claimHexalot(hexalot)
                     island.vacantHexalot = undefined
                     return trans.withHomeHexalot(hexalot).withRestructure.state
                 }
@@ -211,24 +211,20 @@ export class CommandHandler {
         }
     }
 
-    private claimHexalot(hexalot: Hexalot, state: IAppState): void {
-        state.storage.claimHexalot(state.island, hexalot, freshGenome().genomeData).then(islandData => {
+    private claimHexalot(hexalot: Hexalot): void {
+        const appState = this.appState
+        appState.storage.claimHexalot(appState.island, hexalot, freshGenome().genomeData).then(islandData => {
             if (!islandData) {
+                console.warn("No island data arrived")
                 return
             }
-            const island = new Island(islandData, state.island.gotchiFactory, state.storage, this.subject)
+            const island = new Island(islandData, appState.island.gotchiFactory, appState.storage, this.stateSubject, appState.nonce)
             const newHomeHexalot = island.findHexalot(hexalot.id)
-            if (newHomeHexalot) {
-                console.log("new home hexalot", newHomeHexalot)
-                // TODO: figure out how to actually replace the island
-                // island.state.withHomeHexalot(newHomeHexalot)
-                //     .withSelectedSpot(newHomeHexalot.centerSpot)
-                //     .withRestructure.dispatch()
-            } else {
-                console.warn("no new home hexalot!")
-                // TODO
-                // island.state.dispatch()
+            if (!newHomeHexalot) {
+                console.error("Cannot find home hexalot on the new island!")
+                return
             }
+            this.stateSubject.next(new Transition(island.state, this.stateSubject).withHomeHexalot(newHomeHexalot).state)
         })
     }
 }

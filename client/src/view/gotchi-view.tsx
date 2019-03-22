@@ -91,10 +91,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public render(): JSX.Element {
-        const islandState = this.props.appState
-        const evolution = islandState.evolution
-        const gotchi = islandState.gotchi
-        const journey = islandState.journey
+        const appState = this.props.appState
+        const evolution = appState.evolution
+        const gotchi = appState.gotchi
+        const journey = appState.journey
         return (
             <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
                 const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
@@ -107,7 +107,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.props.perspectiveCamera}>
                         <IslandComponent
-                            islandState={this.props.appState}
+                            appState={this.props.appState}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
                         {!evolution ? undefined : (

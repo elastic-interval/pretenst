@@ -81,8 +81,8 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
         this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
-        this.subs.push(this.stateSubject.subscribe(islandState => {
-            const homeHexalot = islandState.homeHexalot
+        this.subs.push(this.stateSubject.subscribe(appState => {
+            const homeHexalot = appState.homeHexalot
             if (homeHexalot) {
                 location.replace(`/#/${homeHexalot.id}`)
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
@@ -91,7 +91,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
             } else {
                 location.replace("/#/")
             }
-            this.setState({appState: islandState})
+            this.setState({appState})
         }))
         this.fetchIsland("rotterdam")
     }
@@ -162,7 +162,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
             if (!islandData) {
                 return
             }
-            const island = new Island(islandData, this.fabricKernel, this.props.storage, this.stateSubject)
+            const island = new Island(islandData, this.fabricKernel, this.props.storage, this.stateSubject, 0)
             this.toAppState(island.state)
         })
     }

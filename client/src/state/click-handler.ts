@@ -37,15 +37,12 @@ export class ClickHandler {
 
             case Mode.Visiting: // ===============================================================================
                 if (state.islandIsLegal && spot.isCandidateHexalot(vacant)) {
-                    console.log("with vacant lot")
                     island.vacantHexalot = island.createHexalot(spot)
                     return trans.withSelectedSpot(spot).withMode(Mode.FixingIsland).withRestructure.state
                 }
                 if (hexalot) {
-                    console.log("with home hexalot")
                     return trans.withHomeHexalot(hexalot).withRestructure.state
                 }
-                console.log("with selected lot")
                 return trans.withSelectedSpot(spot).state
 
 
@@ -71,7 +68,7 @@ export class ClickHandler {
                     })
                     return trans.withJourney(homeHexalot.journey).state
                 }
-                return state // todo: no state change?
+                return state
 
 
             case Mode.PreparingDrive: // ==========================================================================

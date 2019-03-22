@@ -37,7 +37,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     }
 
     public componentDidMount(): void {
-        this.subs.push(this.props.stateSubject.subscribe(islandState => this.setState({islandState})))
+        this.subs.push(this.props.stateSubject.subscribe(appState => this.setState({appState})))
     }
 
     public componentWillUnmount(): void {
@@ -46,13 +46,13 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
     public render(): JSX.Element {
 
-        const islandState = this.props.appState
-        const island = islandState.island
+        const appState = this.props.appState
+        const island = appState.island
         const vacant = island.vacantHexalot
-        const spot = islandState.selectedSpot
+        const spot = appState.selectedSpot
         const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
 
-        switch (islandState.mode) {
+        switch (appState.mode) {
 
 
             case Mode.FixingIsland: // ===========================================================================
@@ -67,7 +67,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                         )
                     }
                     if (spot.isCandidateHexalot(vacant) && !singleHexalot) {
-                        if (islandState.islandIsLegal) {
+                        if (appState.islandIsLegal) {
                             return (
                                 <ActionFrame>
                                     {this.buttons("Available", [
@@ -112,7 +112,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
 
             case Mode.Visiting: // ===============================================================================
-                const hexalot = islandState.selectedHexalot
+                const hexalot = appState.selectedHexalot
                 if (hexalot) {
                     if (hexalot.centerSpot.isCandidateHexalot(vacant)) {
                         return (
@@ -143,7 +143,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
 
             case Mode.Landed: // =================================================================================
-                if (homeHexalotSelected(islandState)) {
+                if (homeHexalotSelected(appState)) {
                     return (
                         <ActionFrame>
                             {this.buttons("Home", [
@@ -231,7 +231,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
             default: // ================================================================================================
                 return (
                     <ActionFrame>
-                        <p>Strange state {islandState.mode}</p>
+                        <p>Strange state {appState.mode}</p>
                     </ActionFrame>
                 )
 

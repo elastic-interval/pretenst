@@ -30,14 +30,13 @@ export class Island {
     public state: IAppState
     public vacantHexalot?: Hexalot
 
-    constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage, subject: Subject<IAppState>) {
+    constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage, subject: Subject<IAppState>, nonce: number) {
         this.apply(islandData)
         this.name = islandData.name
-        const nonce = 0
         const island = this
         const mode = Mode.Visiting
         const islandIsLegal = false
-        const appState: IAppState = {nonce, island, storage, mode, islandIsLegal}
+        const appState: IAppState = {nonce: nonce + 1, island, storage, mode, islandIsLegal}
         this.state = new Transition(appState, subject).withRestructure.state
     }
 
