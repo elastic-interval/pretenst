@@ -1,5 +1,10 @@
-import {diceToNuance, IDie} from "./dice"
-import {IGene} from "./genome"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
+import { diceToNuance, IDie } from "./dice"
+import { IGene } from "./genome"
 
 export class GeneReader {
     private cursor = 0

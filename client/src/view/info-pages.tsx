@@ -1,5 +1,10 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 import * as React from "react"
-import {Col, Container, Row} from "reactstrap"
+import { Col, Container, Row } from "reactstrap"
 
 const GALAPAGOTCHI = "https://github.com/geralddejong/galapagotchi"
 const FLUXE = "https://twitter.com/fluxe"

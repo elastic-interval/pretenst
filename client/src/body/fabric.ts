@@ -1,10 +1,15 @@
-import {BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH} from "../island/shapes"
+import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import {Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS} from "./fabric-exports"
-import {vectorFromFloatArray} from "./fabric-kernel"
-import {FaceSnapshot, IJointSnapshot} from "./face-snapshot"
+import { ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH } from "../island/shapes"
+
+import { Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
+import { vectorFromFloatArray } from "./fabric-kernel"
+import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 export const BILATERAL_MIDDLE = 0
 export const BILATERAL_RIGHT = 1

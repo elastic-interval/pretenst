@@ -1,9 +1,14 @@
-import {BehaviorSubject} from "rxjs/BehaviorSubject"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
+import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import * as THREE from "three"
-import {PerspectiveCamera, Vector3} from "three"
+import { PerspectiveCamera, Vector3 } from "three"
 import * as ORBIT_CONTROLS from "three-orbit-controls"
 
-import {HIGH_ALTITUDE} from "./gotchi-view"
+import { HIGH_ALTITUDE } from "./gotchi-view"
 
 const OrbitControls = ORBIT_CONTROLS(THREE)
 const HELICOPTER_DISTANCE = 300

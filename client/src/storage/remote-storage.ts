@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 import Axios, { AxiosInstance } from "axios"
 
 import { fromOptionalGenomeData, IGenomeData } from "../genetics/genome"
@@ -20,8 +25,8 @@ export class RemoteStorage implements IStorage {
             })
     }
 
-    public async getIslandData(islandName: string): Promise<IslandData> {
-        return this.fetchResource(`/island/${islandName}`)
+    public async getIslandData(islandName: string): Promise<IslandData | undefined> {
+        return this.fetchResource<IslandData>(`/island/${islandName}`)
     }
 
     public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData> {
@@ -39,7 +44,7 @@ export class RemoteStorage implements IStorage {
     }
 
     public async getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined> {
-        return this.fetchResource(`/hexalot/${hexalot.id}/genome-data`)
+        return this.fetchResource<IGenomeData>(`/hexalot/${hexalot.id}/genome-data`)
     }
 
     public async setGenomeData(hexalot: Hexalot, genomeData: IGenomeData): Promise<void> {
@@ -49,7 +54,7 @@ export class RemoteStorage implements IStorage {
     }
 
     public async getJourneyData(hexalot: Hexalot): Promise<IJourneyData | undefined> {
-        return this.fetchResource(`/hexalot/${hexalot.id}/journey`)
+        return this.fetchResource<IJourneyData>(`/hexalot/${hexalot.id}/journey`)
     }
 
     public async setJourneyData(hexalot: Hexalot, journeyData: IJourneyData): Promise<void> {
@@ -58,7 +63,7 @@ export class RemoteStorage implements IStorage {
         })
     }
 
-    private async fetchResource(resourcePath: string): Promise<any | undefined> {
+    private async fetchResource<T>(resourcePath: string): Promise<T | undefined> {
         try {
             const response = await this.client.get(resourcePath)
             return response.data

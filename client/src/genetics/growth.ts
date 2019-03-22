@@ -1,7 +1,12 @@
-import {Fabric} from "../body/fabric"
-import {FaceSnapshot} from "../body/face-snapshot"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {GeneReader} from "./gene-reader"
+import { Fabric } from "../body/fabric"
+import { FaceSnapshot } from "../body/face-snapshot"
+
+import { GeneReader } from "./gene-reader"
 
 const UNFOLD_JOINT = 2
 const FACE_AHEAD = 2

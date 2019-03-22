@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 // tslint:disable:no-console
 // In production, we register a service worker to serve assets from local cache.
 

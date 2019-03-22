@@ -1,12 +1,17 @@
-import {Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {Fabric} from "../body/fabric"
-import {Direction} from "../body/fabric-exports"
-import {fromGenomeData, Genome, IGenomeData} from "../genetics/genome"
-import {Leg} from "../island/journey"
-import {HEXAPOD_RADIUS} from "../island/shapes"
+import { Vector3 } from "three"
 
-import {Gotchi} from "./gotchi"
+import { Fabric } from "../body/fabric"
+import { Direction } from "../body/fabric-exports"
+import { fromGenomeData, Genome, IGenomeData } from "../genetics/genome"
+import { Leg } from "../island/journey"
+import { HEXAPOD_RADIUS } from "../island/shapes"
+
+import { Gotchi } from "./gotchi"
 
 const MAX_VOTES = 30
 

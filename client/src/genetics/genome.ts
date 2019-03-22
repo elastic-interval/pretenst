@@ -1,8 +1,13 @@
-import {Direction} from "../body/fabric-exports"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {deserializeGene, DICE, IDie, serializeGene} from "./dice"
-import {GeneReader} from "./gene-reader"
-import {IGeneData} from "./genome"
+import { Direction } from "../body/fabric-exports"
+
+import { deserializeGene, DICE, IDie, serializeGene } from "./dice"
+import { GeneReader } from "./gene-reader"
+import { IGeneData } from "./genome"
 
 export interface IGeneData {
     direction: Direction

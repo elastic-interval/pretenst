@@ -1,11 +1,16 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 import * as React from "react"
 import * as R3 from "react-three"
-import {BufferGeometry, Float32BufferAttribute} from "three"
+import { BufferGeometry, Float32BufferAttribute } from "three"
 
-import {Hexalot} from "../island/hexalot"
-import {Journey} from "../island/journey"
+import { Hexalot } from "../island/hexalot"
+import { Journey } from "../island/journey"
 
-import {JOURNEY} from "./materials"
+import { JOURNEY } from "./materials"
 
 const TRIP_ALTITUDE = 0.3
 

@@ -1,4 +1,9 @@
-import {Color, FaceColors, LineBasicMaterial, MeshPhongMaterial} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
+import { Color, FaceColors, LineBasicMaterial, MeshPhongMaterial } from "three"
 
 export const GOTCHI_GHOST = new MeshPhongMaterial({
     lights: true,

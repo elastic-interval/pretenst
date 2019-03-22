@@ -1,9 +1,14 @@
-import {fromOptionalGenomeData, IGenomeData} from "../genetics/genome"
-import {Hexalot} from "../island/hexalot"
-import {Island, IslandData} from "../island/island"
-import {IJourneyData} from "../island/journey"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {IStorage} from "./storage"
+import { fromOptionalGenomeData, IGenomeData } from "../genetics/genome"
+import { Hexalot } from "../island/hexalot"
+import { Island, IslandData } from "../island/island"
+import { IJourneyData } from "../island/journey"
+
+import { IStorage } from "./storage"
 
 function journeyKey(hexalot: Hexalot): string {
     return `${hexalot.id}-journey`
@@ -18,7 +23,7 @@ export class BrowserStorage implements IStorage {
     constructor(private storage: Storage) {
     }
 
-    public async getIslandData(islandName: string): Promise<IslandData> {
+    public async getIslandData(islandName: string): Promise<IslandData | undefined> {
         const patternString = this.storage.getItem(islandName)
         if (!patternString) {
             return Promise.resolve({name: islandName, hexalots: "", spots: ""} as IslandData)
