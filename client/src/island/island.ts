@@ -1,13 +1,14 @@
-import {Subject} from "rxjs"
-import {Vector3} from "three"
+import { Subject } from "rxjs"
+import { Vector3 } from "three"
 
-import {IGotchiFactory} from "../gotchi/gotchi"
-import {IStorage} from "../storage/storage"
+import { IGotchiFactory } from "../gotchi/gotchi"
+import { IAppState, Mode } from "../state/app-state"
+import { Transition } from "../state/transition"
+import { IStorage } from "../storage/storage"
 
-import {Hexalot, hexalotTreeString} from "./hexalot"
-import {IslandMode, IslandState} from "./island-state"
-import {ADJACENT, BRANCH_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
-import {coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero} from "./spot"
+import { Hexalot, hexalotTreeString } from "./hexalot"
+import { ADJACENT, BRANCH_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
+import { coordSort, equals, ICoords, plus, Spot, spotsToString, Surface, zero } from "./spot"
 
 export interface IslandData {
     name: string
@@ -21,13 +22,18 @@ export class Island {
     public readonly name: string
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
-    public state: IslandState
+    public state: IAppState
     public vacantHexalot?: Hexalot
 
-    constructor(subject: Subject<IslandState>, islandData: IslandData, readonly gotchiFactory: IGotchiFactory, private storage: IStorage) {
+    constructor(subject: Subject<IAppState>, islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage) {
         this.apply(islandData)
         this.name = islandData.name
-        this.state = new IslandState(0, this, this.storage, subject, IslandMode.Visiting).withRestructure
+        const nonce = 0
+        const island = this
+        const mode = Mode.Visiting
+        const islandIsLegal = false
+        const appState: IAppState = {nonce, island, storage, subject, mode, islandIsLegal}
+        this.state = new Transition(appState).withRestructure.state
     }
 
     public get islandIsLegal(): boolean {

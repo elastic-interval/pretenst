@@ -10,8 +10,8 @@ import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
-import { IslandState } from "./island/island-state"
 import { Surface } from "./island/spot"
+import { IAppState } from "./state/app-state"
 import { IStorage } from "./storage/storage"
 import { ActionsPanel } from "./view/actions-panel"
 import { GotchiView } from "./view/gotchi-view"
@@ -23,14 +23,14 @@ interface IAppProps {
     storage: IStorage
 }
 
-export interface IAppState {
+export interface IGalapagotchiState {
     orbitDistance: OrbitDistance
     width: number
     height: number
     left: number
     top: number
     infoPanel: boolean
-    islandState?: IslandState
+    appState?: IAppState
 }
 
 function updateDimensions(): object {
@@ -50,11 +50,11 @@ function setInfoPanelMaximized(maximized: boolean): void {
     localStorage.setItem("InfoPanel.maximized", maximized ? "true" : "false")
 }
 
-class App extends React.Component<IAppProps, IAppState> {
+export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState> {
     private subs: Subscription[] = []
     private perspectiveCamera: PerspectiveCamera
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
-    private islandSubject = new Subject<IslandState>()
+    private stateSubject = new Subject<IAppState>()
     private physics = new Physics()
     private fabricKernel: FabricKernel
 
@@ -76,7 +76,7 @@ class App extends React.Component<IAppProps, IAppState> {
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
         this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
-        this.subs.push(this.islandSubject.subscribe(islandState => {
+        this.subs.push(this.stateSubject.subscribe(islandState => {
             const homeHexalot = islandState.homeHexalot
             if (homeHexalot) {
                 location.replace(`/#/${homeHexalot.id}`)
@@ -86,7 +86,7 @@ class App extends React.Component<IAppProps, IAppState> {
             } else {
                 location.replace("/#/")
             }
-            this.setState({islandState})
+            this.setState({appState: islandState})
         }))
         this.fetchIsland("rotterdam")
     }
@@ -99,10 +99,11 @@ class App extends React.Component<IAppProps, IAppState> {
     public render(): JSX.Element {
         return (
             <div className="everything">
-                {this.state.islandState ? (
+                {this.state.appState ? (
                     <GotchiView
                         perspectiveCamera={this.perspectiveCamera}
-                        islandState={this.state.islandState}
+                        appState={this.state.appState}
+                        toAppState={this.toAppState}
                         width={this.state.width}
                         height={this.state.height}
                         left={this.state.left}
@@ -133,12 +134,13 @@ class App extends React.Component<IAppProps, IAppState> {
                         <InfoPanel/>
                     </div>
                 )}
-                {this.state.islandState ? (
+                {this.state.appState ? (
                     <div className="actions-panel-outer floating-panel">
                         <div className="actions-panel-inner">
                             <ActionsPanel
                                 orbitDistance={this.orbitDistanceSubject}
-                                islandState={this.state.islandState}
+                                appState={this.state.appState}
+                                toAppState={this.toAppState}
                                 location={this.perspectiveCamera.position}
                             />
                         </div>
@@ -156,14 +158,18 @@ class App extends React.Component<IAppProps, IAppState> {
                 return
             }
             const island = new Island(
-                this.islandSubject,
+                this.stateSubject,
                 islandData,
                 this.fabricKernel,
                 this.props.storage,
             )
-            island.state.dispatch()
+            this.toAppState(island.state)
         })
+    }
+
+    private toAppState = (appState: IAppState): void => {
+        this.stateSubject.next(appState)
     }
 }
 
-export default App
+export default Galapagotchi

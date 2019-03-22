@@ -1,47 +1,53 @@
-import {IslandMode, IslandState} from "./island-state"
-import {Journey} from "./journey"
-import {Spot} from "./spot"
+import { Journey } from "../island/journey"
+import { Spot } from "../island/spot"
 
-export class IslandStateClick {
+import { IAppState, Mode } from "./app-state"
+import { Transition } from "./transition"
 
-    constructor(private state: IslandState) {
+export class ClickHandler {
+
+    private trans: Transition
+
+    constructor(state: IAppState) {
+        this.trans = new Transition(state)
     }
 
-    public stateAfterClick(spot: Spot): IslandState {
+    public stateAfterClick(spot: Spot): IAppState {
 
-        const state = this.state
+        const trans = this.trans
+        const state = trans.state
         const hexalot = spot.centerOfHexalot
         const homeHexalot = state.homeHexalot
         const vacant = state.island.vacantHexalot
 
-        switch (state.islandMode) {
+        switch (state.mode) {
 
 
-            case IslandMode.FixingIsland: // ===========================================================================
-                return state.withSelectedSpot(spot)
+            case Mode.FixingIsland: // ===========================================================================
+                return trans.withSelectedSpot(spot).state
 
 
-            case IslandMode.Visiting: // ===============================================================================
+            case Mode.Visiting: // ===============================================================================
                 if (state.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     console.log("with vacant lot")
-                    return state.withVacantHexalotAt(spot).withRestructure
+                    return trans.withVacantHexalotAt(spot).withRestructure.state
                 }
                 if (hexalot) {
                     console.log("with home hexalot")
-                    return state.withHomeHexalot(hexalot).withSelectedSpot(spot).withRestructure
+                    return trans.withHomeHexalot(hexalot).withSelectedSpot(spot).withRestructure.state
                 }
                 console.log("with selected lot")
-                return state.withSelectedSpot(spot)
+                return trans.withSelectedSpot(spot).state
 
 
-            case IslandMode.Landed: // =================================================================================
+            case Mode.Landed: // =================================================================================
                 if (hexalot) {
-                    return state.withSelectedSpot(spot)
+                    return trans.withSelectedSpot(spot).state
                 }
                 return state
 
 
-            case IslandMode.PlanningJourney: // ========================================================================
+            case Mode.PlanningJourney: // ========================================================================
                 if (!homeHexalot) {
                     throw new Error("No home hexalot")
                 }
@@ -54,12 +60,12 @@ export class IslandStateClick {
                     state.storage.setJourneyData(homeHexalot, homeHexalot.journey.data).then(() => {
                         console.log("saved journey")
                     })
-                    return state.withJourney(homeHexalot.journey)
+                    return trans.withJourney(homeHexalot.journey).state
                 }
                 return state // todo: no state change?
 
 
-            case IslandMode.PreparingDrive: // ==========================================================================
+            case Mode.PreparingDrive: // ==========================================================================
                 const target = spot.center
                 const adjacent = spot.adjacentSpots.map((s, i) => ({center: s.center, index: i}))
                 adjacent.sort((a, b) => target.distanceTo(a.center) - target.distanceTo(b.center))

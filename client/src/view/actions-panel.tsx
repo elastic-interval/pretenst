@@ -1,16 +1,18 @@
 import * as React from "react"
-import {Button, ButtonGroup, ButtonToolbar} from "reactstrap"
-import {Subscription} from "rxjs"
-import {BehaviorSubject} from "rxjs/BehaviorSubject"
-import {Vector3} from "three"
+import { Button, ButtonGroup, ButtonToolbar } from "reactstrap"
+import { Subscription } from "rxjs"
+import { BehaviorSubject } from "rxjs/BehaviorSubject"
+import { Vector3 } from "three"
 
-import {Command, IslandMode, IslandState} from "../island/island-state"
+import { Command, homeHexalotSelected, IAppState, Mode } from "../state/app-state"
+import { CommandHandler } from "../state/command-handler"
 
-import {OrbitDistance} from "./orbit"
+import { OrbitDistance } from "./orbit"
 
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
-    islandState: IslandState
+    appState: IAppState
+    toAppState: (appState: IAppState) => void
     location: Vector3
 }
 
@@ -30,7 +32,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     }
 
     public componentDidMount(): void {
-        this.subs.push(this.props.islandState.subject.subscribe(islandState => this.setState({islandState})))
+        this.subs.push(this.props.appState.subject.subscribe(islandState => this.setState({islandState})))
     }
 
     public componentWillUnmount(): void {
@@ -39,16 +41,16 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
     public render(): JSX.Element {
 
-        const islandState = this.props.islandState
+        const islandState = this.props.appState
         const island = islandState.island
         const vacant = island.vacantHexalot
         const spot = islandState.selectedSpot
         const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
 
-        switch (islandState.islandMode) {
+        switch (islandState.mode) {
 
 
-            case IslandMode.FixingIsland: // ===========================================================================
+            case Mode.FixingIsland: // ===========================================================================
                 if (spot) {
                     if (singleHexalot && spot.coords === singleHexalot.centerSpot.coords) {
                         return (
@@ -104,7 +106,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case IslandMode.Visiting: // ===============================================================================
+            case Mode.Visiting: // ===============================================================================
                 const hexalot = islandState.selectedHexalot
                 if (hexalot) {
                     if (hexalot.centerSpot.isCandidateHexalot(vacant)) {
@@ -135,8 +137,8 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case IslandMode.Landed: // =================================================================================
-                if (islandState.selectedHome) {
+            case Mode.Landed: // =================================================================================
+                if (homeHexalotSelected(islandState)) {
                     return (
                         <ActionFrame>
                             {this.buttons("Home", [
@@ -161,7 +163,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 }
 
 
-            case IslandMode.PlanningJourney: // ========================================================================
+            case Mode.PlanningJourney: // ========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Planning journey", [
@@ -174,7 +176,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case IslandMode.PreparingDrive: // ==========================================================================
+            case Mode.PreparingDrive: // ==========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Drive", [
@@ -187,7 +189,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case IslandMode.Evolving: // ===============================================================================
+            case Mode.Evolving: // ===============================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Evolving", [
@@ -197,7 +199,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case IslandMode.DrivingFree: // ============================================================================
+            case Mode.DrivingFree: // ============================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Driving free", [
@@ -210,7 +212,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case IslandMode.DrivingJourney: // =========================================================================
+            case Mode.DrivingJourney: // =========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Driving journey", [
@@ -224,7 +226,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
             default: // ================================================================================================
                 return (
                     <ActionFrame>
-                        <p>Strange state {islandState.islandMode}</p>
+                        <p>Strange state {islandState.mode}</p>
                     </ActionFrame>
                 )
 
@@ -244,13 +246,14 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     }
 
     private commandButton(command: Command): JSX.Element {
+        const props = this.props
         return (
             <Button
                 key={command}
                 outline={true}
                 color="primary"
                 className="command-button"
-                onClick={() => this.props.islandState.stateAfterCommand(command, this.props.location).dispatch()}
+                onClick={() => props.toAppState(new CommandHandler(props.appState).afterCommand(command, props.location))}
             >{command}</Button>
         )
     }
