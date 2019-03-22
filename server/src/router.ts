@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { LnRpc } from "@radar/lnrpc"
 import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
@@ -28,7 +27,7 @@ const hexalotIDValidation = (idParam: ValidationChain) =>
         .isLength({max: 32, min: 32})
         .custom(id => (parseInt(id[id.length - 1], 16) & 0x1) === 0)
 
-export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
+export function createRouter(db: IKeyValueStore): Router {
     const store = new DataStore(db)
 
     const root = Router()
@@ -75,6 +74,7 @@ export function createRouter(lnRpc: LnRpc, db: IKeyValueStore): Router {
             let pattern = await store.getIslandData(res.locals.island.islandName)
             if (!pattern) {
                 pattern = {
+                    name: "name",
                     hexalots: "",
                     spots: "",
                 }

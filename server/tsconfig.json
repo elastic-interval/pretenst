@@ -1,8 +1,15 @@
 {
   "extends": "../tsconfig",
   "compilerOptions": {
+    "module": "commonjs",
     "target": "esnext",
-    "lib": ["es2015"],
+    "lib": ["es2016"],
     "jsx": "react"
-  }
+  },
+  "include": [
+    "src/**/*"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
 }

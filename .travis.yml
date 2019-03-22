@@ -9,8 +9,13 @@ before_install:
     -in deploy-key.enc -out deploy-key -d
   - mv deploy-key ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
-# TODO: tests
 script:
-  - echo "Skipping tests"
+  - echo ">>> Skipping tests"
+  - cd server
+  - yarn run check
+  - cd ../client
+  - yarn run build
+  - cd ../fabric
+  - yarn run asbuild:untouched
 after_success:
   - ./deploy-remote.sh
