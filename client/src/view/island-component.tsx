@@ -151,7 +151,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         const hexalots = this.props.islandState.island.hexalots
         hexalots.forEach(hexalot => {
             const actionHexalotId = this.actionHexalotId
-            if (actionHexalotId && hexalot.id !== actionHexalotId) {
+            if (!actionHexalotId || hexalot.id !== actionHexalotId) {
                 hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
             }
         })
