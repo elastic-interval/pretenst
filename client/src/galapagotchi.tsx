@@ -168,5 +168,3 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         })
     }
 }
-
-export default Galapagotchi
