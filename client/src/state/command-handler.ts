@@ -8,6 +8,7 @@ import { Vector3 } from "three"
 import { Direction } from "../body/fabric-exports"
 import { freshGenome, IGenomeData } from "../genetics/genome"
 import { Evolution } from "../gotchi/evolution"
+import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
 import { Surface } from "../island/spot"
@@ -29,7 +30,9 @@ export class CommandHandler {
         const state = trans.state
         const homeHexalot = state.homeHexalot
         const hexalot = state.selectedHexalot
-        const gotchi = state.gotchi
+        const jockey = state.jockey
+        const freeGotchi = state.gotchi
+        const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
         const journey = state.journey
         const spot = state.selectedSpot
         const island = state.island
@@ -59,6 +62,9 @@ export class CommandHandler {
 
 
             case Command.Return: // ====================================================================================
+                if (state.jockey) {
+                    return (await trans.withSelectedSpot(state.jockey.gotchi.home.centerSpot)).withMode(Mode.Landed).state
+                }
                 if (state.gotchi) {
                     return (await trans.withSelectedSpot(state.gotchi.home.centerSpot)).withMode(Mode.Landed).state
                 }
@@ -68,11 +74,11 @@ export class CommandHandler {
                 return state
 
 
-            case Command.PrepareDrive: // =============================================================================
-                return trans.withMode(Mode.PreparingDrive).state
+            case Command.PrepareToRide: // =============================================================================
+                return trans.withMode(Mode.PreparingRide).state
 
 
-            case Command.DriveFree: // =================================================================================
+            case Command.RideFree: // =================================================================================
                 if (hexalot) {
                     const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
@@ -82,12 +88,23 @@ export class CommandHandler {
                 return state
 
 
-            case Command.DriveJourney: // ==============================================================================
-                // TODO: attach journey to a gotchi
+            case Command.RideJourney: // ==============================================================================
                 if (homeHexalot && journey) {
+                    const firstLeg = journey.firstLeg
+                    if (!firstLeg) {
+                        return state
+                    }
+                    homeHexalot.centerSpot.adjacentSpots.forEach((adjacentSpot, index) => {
+                        const adhacentHexalot = adjacentSpot.centerOfHexalot
+                        if (adhacentHexalot && firstLeg.goTo.id === adhacentHexalot.id) {
+                            homeHexalot.rotation = index
+                        }
+                    })
                     const newbornGotchi = homeHexalot.createNativeGotchi()
+                    console.log("creating gotchi", firstLeg, newbornGotchi)
                     if (newbornGotchi) {
-                        return trans.withGotchi(newbornGotchi, journey).state
+                        const newJockey = new Jockey(newbornGotchi, firstLeg)
+                        return trans.withJockey(newJockey).state
                     }
                 }
                 return state
