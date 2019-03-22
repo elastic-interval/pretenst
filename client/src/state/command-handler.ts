@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 import { Vector3 } from "three"
 
 import { Direction } from "../body/fabric-exports"

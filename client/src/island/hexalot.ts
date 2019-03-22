@@ -1,13 +1,18 @@
-import {Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {fromOptionalGenomeData, Genome} from "../genetics/genome"
-import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
-import {IStorage} from "../storage/storage"
+import { Vector3 } from "three"
 
-import {Island} from "./island"
-import {fromOptionalJourneyData, Journey} from "./journey"
-import {BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP} from "./shapes"
-import {equals, ICoords, Spot, Surface} from "./spot"
+import { fromOptionalGenomeData, Genome } from "../genetics/genome"
+import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
+import { IStorage } from "../storage/storage"
+
+import { Island } from "./island"
+import { fromOptionalJourneyData, Journey } from "./journey"
+import { BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
+import { equals, ICoords, Spot, Surface } from "./spot"
 
 const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
 

@@ -1,8 +1,13 @@
-import * as React from "react"
-import {Mesh, PerspectiveCamera, Raycaster, Vector2} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {Island} from "../island/island"
-import {Spot} from "../island/spot"
+import * as React from "react"
+import { Mesh, PerspectiveCamera, Raycaster, Vector2 } from "three"
+
+import { Island } from "../island/island"
+import { Spot } from "../island/spot"
 
 export enum MeshKey {
     SPOTS_KEY = "Spots",

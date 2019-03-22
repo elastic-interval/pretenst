@@ -1,11 +1,16 @@
-import {Color, Face3, Matrix4, Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {HUNG_ALTITUDE, SPOT_TO_HANGER} from "../body/fabric"
-import {SEED_CORNERS} from "../body/fabric-exports"
-import {MeshKey} from "../view/spot-selector"
+import { Color, Face3, Matrix4, Vector3 } from "three"
 
-import {Hexalot} from "./hexalot"
-import {HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y} from "./shapes"
+import { HUNG_ALTITUDE, SPOT_TO_HANGER } from "../body/fabric"
+import { SEED_CORNERS } from "../body/fabric-exports"
+import { MeshKey } from "../view/spot-selector"
+
+import { Hexalot } from "./hexalot"
+import { HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y } from "./shapes"
 
 export interface ICoords {
     x: number

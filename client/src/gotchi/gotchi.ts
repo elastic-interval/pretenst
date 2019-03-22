@@ -1,11 +1,16 @@
-import {Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {Fabric} from "../body/fabric"
-import {Direction} from "../body/fabric-exports"
-import {Behavior} from "../genetics/behavior"
-import {Genome, IGenomeData} from "../genetics/genome"
-import {Growth} from "../genetics/growth"
-import {Hexalot} from "../island/hexalot"
+import { Vector3 } from "three"
+
+import { Fabric } from "../body/fabric"
+import { Direction } from "../body/fabric-exports"
+import { Behavior } from "../genetics/behavior"
+import { Genome, IGenomeData } from "../genetics/genome"
+import { Growth } from "../genetics/growth"
+import { Hexalot } from "../island/hexalot"
 
 export interface IGotchiFactory {
 

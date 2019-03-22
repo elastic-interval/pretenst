@@ -1,6 +1,11 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 import * as React from "react"
 
-import {IPhysicsFeature, Physics} from "../body/physics"
+import { IPhysicsFeature, Physics } from "../body/physics"
 
 export interface IPhysicsPanelProps {
     physics: Physics

@@ -1,7 +1,12 @@
-import * as React from "react"
-import {Carousel, CarouselControl, CarouselIndicators, CarouselItem} from "reactstrap"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {INFO_PAGES} from "./info-pages"
+import * as React from "react"
+import { Carousel, CarouselControl, CarouselIndicators, CarouselItem } from "reactstrap"
+
+import { INFO_PAGES } from "./info-pages"
 
 export interface IInfoPanelState {
     activeIndex: number

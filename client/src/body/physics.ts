@@ -1,4 +1,9 @@
-import {IFabricExports} from "./fabric-exports"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
+import { IFabricExports } from "./fabric-exports"
 
 export enum PhysicsFeature {
     GravityAbove = "Gravity Above",

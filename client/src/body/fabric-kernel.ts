@@ -1,12 +1,17 @@
-import {Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {Genome} from "../genetics/genome"
-import {Gotchi, IGotchiFactory} from "../gotchi/gotchi"
-import {Hexalot} from "../island/hexalot"
-import {HEXALOT_SHAPE} from "../island/shapes"
+import { Vector3 } from "three"
 
-import {Fabric} from "./fabric"
-import {Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports} from "./fabric-exports"
+import { Genome } from "../genetics/genome"
+import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
+import { Hexalot } from "../island/hexalot"
+import { HEXALOT_SHAPE } from "../island/shapes"
+
+import { Fabric } from "./fabric"
+import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports } from "./fabric-exports"
 
 const FLOATS_IN_VECTOR = 3
 const VECTORS_FOR_FACE = 3

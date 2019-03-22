@@ -1,12 +1,17 @@
-import {BehaviorSubject} from "rxjs/BehaviorSubject"
-import {Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {NORMAL_TICKS} from "../body/fabric"
-import {fromGenomeData, Genome, IGenomeData} from "../genetics/genome"
-import {Hexalot} from "../island/hexalot"
-import {Leg} from "../island/journey"
+import { BehaviorSubject } from "rxjs/BehaviorSubject"
+import { Vector3 } from "three"
 
-import {Evolver, IEvolver} from "./evolver"
+import { NORMAL_TICKS } from "../body/fabric"
+import { fromGenomeData, Genome, IGenomeData } from "../genetics/genome"
+import { Hexalot } from "../island/hexalot"
+import { Leg } from "../island/journey"
+
+import { Evolver, IEvolver } from "./evolver"
 
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24

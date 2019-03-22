@@ -1,8 +1,13 @@
-import {Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
 
-import {BILATERAL_MIDDLE, Fabric} from "./fabric"
-import {IFabricInstanceExports} from "./fabric-exports"
-import {vectorFromFloatArray} from "./fabric-kernel"
+import { Vector3 } from "three"
+
+import { BILATERAL_MIDDLE, Fabric } from "./fabric"
+import { IFabricInstanceExports } from "./fabric-exports"
+import { vectorFromFloatArray } from "./fabric-kernel"
 
 export interface IJointSnapshot {
     jointNumber: number

@@ -1,4 +1,9 @@
-import {Vector3} from "three"
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
+import { Vector3 } from "three"
 
 export const STOP_STEP = 0
 export const BRANCH_STEP = 7

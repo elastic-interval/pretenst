@@ -1,11 +1,16 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 import * as React from "react"
 import * as R3 from "react-three"
-import {Subscription} from "rxjs/Subscription"
+import { Subscription } from "rxjs/Subscription"
 
-import {Evolution} from "../gotchi/evolution"
-import {Evolver} from "../gotchi/evolver"
+import { Evolution } from "../gotchi/evolution"
+import { Evolver } from "../gotchi/evolver"
 
-import {GOTCHI_ARROW, GOTCHI_GHOST} from "./materials"
+import { GOTCHI_ARROW, GOTCHI_GHOST } from "./materials"
 
 export interface IEvolutionProps {
     evolution: Evolution

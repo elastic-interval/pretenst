@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 import { IGenomeData } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
 import { Island, IslandData } from "../island/island"
