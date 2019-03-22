@@ -72,15 +72,16 @@ export function createRouter(db: IKeyValueStore): Router {
     islandRoute
         .get("/", async (req, res) => {
             let pattern = await store.getIslandData(res.locals.island.islandName)
+            const islandName = res.locals.island.islandName
             if (!pattern) {
                 pattern = {
-                    name: "name",
+                    name: islandName,
                     hexalots: "",
                     spots: "",
                 }
             }
             res.json({
-                name: res.locals.island.islandName,
+                name: islandName,
                 ...pattern,
             })
         })
