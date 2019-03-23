@@ -8,7 +8,7 @@ import { Subject } from "rxjs"
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
-import { isIslandLegal, isSpotLegal, recalculateIsland, Surface } from "../island/island-logic"
+import { calculateHexalotId, isIslandLegal, isSpotLegal, recalculateIsland, Surface } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
@@ -89,7 +89,7 @@ export class Transition {
         } else {
             spots.forEach(spot => spot.free = false)
         }
-        hexalots.forEach(hexalot => hexalot.refreshId())
+        hexalots.forEach(calculateHexalotId)
         const islandIsLegal = isIslandLegal(island)
         if (islandIsLegal) {
             this.appState = {...this.appState, islandIsLegal}
@@ -106,7 +106,7 @@ export class Transition {
             return this
         }
         selectedSpot.surface = surface
-        selectedSpot.memberOfHexalot.forEach(hexalot => hexalot.refreshId())
+        selectedSpot.memberOfHexalot.forEach(calculateHexalotId)
         const nextFree = selectedSpot.adjacentSpots.find(s => s.free && s.surface === Surface.Unknown)
         if (nextFree) {
             return this.withSelectedSpot(nextFree)

@@ -29,9 +29,8 @@ export interface IHexalot {
     readonly spots: ISpot[]
     readonly childHexalots: IHexalot[]
     readonly nonce: number
+    id: string
     visited: boolean
-
-    refreshId(): void
 }
 
 export interface IIsland {
@@ -56,15 +55,6 @@ export function equals(a: ICoords, b: ICoords): boolean {
 
 export function plus(a: ICoords, b: ICoords): ICoords {
     return {x: a.x + b.x, y: a.y + b.y}
-}
-
-export function spotsToHexalotId(spots: ISpot[]): string {
-    const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
-    const nybbleStrings = lit
-        .map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
-        .filter(chunk => chunk)
-    const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16))
-    return nybbleChars.join("")
 }
 
 export function findParentHexalot(spot: ISpot): IHexalot | undefined {
@@ -162,7 +152,11 @@ export function constructIsland(data: IslandData, island: IIsland): void {
         singleHexalot.spots.map(spot => spot.surface = Math.random() > 0.5 ? Surface.Land : Surface.Water)
         singleHexalot.spots[0].surface = Surface.Land
     }
-    island.hexalots.forEach(h => h.refreshId())
+    island.hexalots.forEach(calculateHexalotId)
+}
+
+export function calculateHexalotId(hexalot: IHexalot): void {
+    hexalot.id = spotsToHexalotId(hexalot.spots)
 }
 
 export function findSpot(island: IIsland, coords: ICoords): ISpot | undefined {
@@ -192,6 +186,15 @@ export function recalculateIsland(island: IIsland): void {
 }
 
 // =====================================================================================================================
+
+function spotsToHexalotId(spots: ISpot[]): string {
+    const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
+    const nybbleStrings = lit
+        .map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
+        .filter(chunk => chunk)
+    const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16))
+    return nybbleChars.join("")
+}
 
 function greatestNonce(parent: IHexalot | undefined, candiate: IHexalot): IHexalot | undefined {
     if (parent && parent.nonce >= candiate.nonce) {

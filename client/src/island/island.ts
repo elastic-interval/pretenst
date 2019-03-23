@@ -13,6 +13,7 @@ import { IStorage } from "../storage/storage"
 
 import { Hexalot } from "./hexalot"
 import {
+    calculateHexalotId,
     constructIsland,
     equals,
     findParentHexalot,
@@ -67,7 +68,7 @@ export class Island implements IIsland {
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
         const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory)
-        hexalot.refreshId()
+        calculateHexalotId(hexalot)
         this.hexalots.push(hexalot)
         return hexalot
     }

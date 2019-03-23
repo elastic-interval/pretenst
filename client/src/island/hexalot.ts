@@ -10,7 +10,7 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { IStorage } from "../storage/storage"
 
 import { Island } from "./island"
-import { ICoords, IHexalot, spotsToHexalotId } from "./island-logic"
+import { ICoords, IHexalot } from "./island-logic"
 import { fromOptionalJourneyData, Journey } from "./journey"
 import { Spot } from "./spot"
 
@@ -21,6 +21,7 @@ export enum LoadStatus {
 }
 
 export class Hexalot implements IHexalot {
+    public id: string
     public genomeStatus = LoadStatus.Pending
     public genome?: Genome
     public journeyStatus = LoadStatus.Pending
@@ -29,7 +30,6 @@ export class Hexalot implements IHexalot {
     public rotation = Math.floor(Math.random() * 6)
     public nonce = 0
     public visited = false
-    private identifier?: string
 
     constructor(public parentHexalot: Hexalot | undefined,
                 public coords: ICoords,
@@ -44,17 +44,6 @@ export class Hexalot implements IHexalot {
             parentHexalot.childHexalots.push(this)
             this.nonce = parentHexalot.nonce + 1
         }
-    }
-
-    public get id(): string {
-        if (!this.identifier) {
-            throw new Error("Should have refreshed fingerprint first")
-        }
-        return this.identifier
-    }
-
-    public refreshId(): void {
-        this.identifier = spotsToHexalotId(this.spots)
     }
 
     public fetchGenome(storage: IStorage, loaded: () => void): boolean {
