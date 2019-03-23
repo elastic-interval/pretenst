@@ -12,8 +12,8 @@ import { Transition } from "../state/transition"
 import { IStorage } from "../storage/storage"
 
 import { Hexalot } from "./hexalot"
-import { constructIsland, equals, ICoords, IIsland, IslandData, plus } from "./island-logic"
-import { ADJACENT, HEXALOT_SHAPE } from "./shapes"
+import { constructIsland, equals, findSpot, ICoords, IIsland, IslandData, plus } from "./island-logic"
+import { HEXALOT_SHAPE } from "./shapes"
 import { Spot } from "./spot"
 
 export class Island implements IIsland {
@@ -35,28 +35,6 @@ export class Island implements IIsland {
 
     public findHexalot(id: string): Hexalot | undefined {
         return this.hexalots.find(hexalot => hexalot.id === id)
-    }
-
-    public recalculate(): void {
-        const spots = this.spots
-        spots.forEach(spot => {
-            spot.adjacentSpots = this.getAdjacentSpots(spot)
-            spot.connected = spot.adjacentSpots.length < 6
-        })
-        let flowChanged = true
-        while (flowChanged) {
-            flowChanged = false
-            spots.forEach(spot => {
-                if (spot.connected) {
-                    return
-                }
-                const byAdjacent = spot.adjacentSpots.find(adj => (adj.surface === spot.surface) && adj.connected)
-                if (byAdjacent) {
-                    spot.connected = true
-                    flowChanged = true
-                }
-            })
-        }
     }
 
     public createHexalot(spot: Spot): Hexalot {
@@ -97,28 +75,12 @@ export class Island implements IIsland {
     // ================================================================================================
 
     private getOrCreateSpot(coords: ICoords): Spot {
-        const existing = this.getSpot(coords)
+        const existing = findSpot(this, coords)
         if (existing) {
-            return existing
+            return existing as Spot
         }
         const spot = new Spot(coords)
         this.spots.push(spot)
         return spot
-    }
-
-    private getAdjacentSpots(spot: Spot): Spot[] {
-        const adjacentSpots: Spot[] = []
-        const coords = spot.coords
-        ADJACENT.forEach(a => {
-            const adjacentSpot = this.getSpot(plus(a, coords))
-            if (adjacentSpot) {
-                adjacentSpots.push(adjacentSpot)
-            }
-        })
-        return adjacentSpots
-    }
-
-    private getSpot(coords: ICoords): Spot | undefined {
-        return this.spots.find(p => equals(p.coords, coords))
     }
 }

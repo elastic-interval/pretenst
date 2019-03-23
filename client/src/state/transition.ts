@@ -8,7 +8,7 @@ import { Subject } from "rxjs"
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
-import { isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
+import { isIslandLegal, isSpotLegal, recalculateIsland, Surface } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
@@ -78,7 +78,7 @@ export class Transition {
 
     public get withRestructure(): Transition {
         const island = this.appState.island
-        island.recalculate()
+        recalculateIsland(island)
         const hexalots = island.hexalots
         const spots = island.spots
         const vacant = island.vacantHexalot

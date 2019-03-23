@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
+import { ADJACENT, BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
 
 export interface ICoords {
     x: number
@@ -18,7 +18,7 @@ export enum Surface {
 
 export interface ISpot {
     readonly coords: ICoords
-    readonly adjacentSpots: ISpot[]
+    adjacentSpots: ISpot[]
     connected: boolean
     surface: Surface
 }
@@ -26,9 +26,10 @@ export interface ISpot {
 export interface IHexalot {
     readonly coords: ICoords
     readonly spots: ISpot[]
-    childHexalots: IHexalot[]
+    readonly childHexalots: IHexalot[]
+    readonly nonce: number
     visited: boolean
-    nonce: number
+
     refreshId(): void
 }
 
@@ -36,7 +37,9 @@ export interface IIsland {
     readonly name: string
     readonly hexalots: IHexalot[]
     readonly spots: ISpot[]
+
     getOrCreateHexalot(parent: IHexalot | undefined, coords: ICoords): IHexalot
+
     hexalotAroundSpot(spot: ISpot): IHexalot
 }
 
@@ -230,3 +233,42 @@ export function constructIsland(data: IslandData, island: IIsland): void {
     }
     island.hexalots.forEach(h => h.refreshId())
 }
+
+export function findSpot(island: IIsland, coords: ICoords): ISpot | undefined {
+    return island.spots.find(p => equals(p.coords, coords))
+}
+
+function getAdjacentSpots(island: IIsland, spot: ISpot): ISpot[] {
+    const adjacentSpots: ISpot[] = []
+    const coords = spot.coords
+    ADJACENT.forEach(a => {
+        const adjacentSpot = findSpot(island, plus(a, coords))
+        if (adjacentSpot) {
+            adjacentSpots.push(adjacentSpot)
+        }
+    })
+    return adjacentSpots
+}
+
+export function recalculateIsland(island: IIsland): void {
+    const spots = island.spots
+    spots.forEach(spot => {
+        spot.adjacentSpots = getAdjacentSpots(island, spot)
+        spot.connected = spot.adjacentSpots.length < 6
+    })
+    let flowChanged = true
+    while (flowChanged) {
+        flowChanged = false
+        spots.forEach(spot => {
+            if (spot.connected) {
+                return
+            }
+            const byAdjacent = spot.adjacentSpots.find(adj => (adj.surface === spot.surface) && adj.connected)
+            if (byAdjacent) {
+                spot.connected = true
+                flowChanged = true
+            }
+        })
+    }
+}
+
