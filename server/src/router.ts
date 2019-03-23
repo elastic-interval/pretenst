@@ -132,11 +132,16 @@ export function createRouter(db: IKeyValueStore): Router {
         })
         .post(
             [
-                body("genomeData").isJSON(),
+                body("genomeData").exists(),
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
-                await store.setGenomeData(res.locals.hexalotId, req.body.genomeData)
+                const genomeData = req.body.genomeData
+                if (!genomeData.genes || !(genomeData.genes instanceof Array)) {
+                    res.status(400).send("missing required genes array")
+                    return
+                }
+                await store.setGenomeData(res.locals.hexalotId, genomeData)
                 res.sendStatus(HttpStatus.OK)
             },
         )
