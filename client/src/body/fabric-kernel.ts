@@ -8,7 +8,7 @@ import { Vector3 } from "three"
 import { Genome } from "../genetics/genome"
 import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
-import { HEXALOT_SHAPE } from "../island/shapes"
+import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { Fabric } from "./fabric"
 import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports } from "./fabric-exports"

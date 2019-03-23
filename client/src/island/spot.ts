@@ -9,17 +9,21 @@ import { HUNG_ALTITUDE, SPOT_TO_HANGER } from "../body/fabric"
 import { SEED_CORNERS } from "../body/fabric-exports"
 import { MeshKey } from "../view/spot-selector"
 
+import {
+    HEXAGON_POINTS,
+    HEXAPOD_PROJECTION,
+    LAND_NORMAL_SPREAD,
+    SCALE_X,
+    SCALE_Y,
+    SIX,
+    SURFACE_LAND_COLOR,
+    SURFACE_UNKNOWN_COLOR,
+    SURFACE_WATER_COLOR,
+    UP,
+    WATER_NORMAL_SPREAD,
+} from "./constants"
 import { Hexalot } from "./hexalot"
 import { ICoords, ISpot, isSpotLegal, Surface } from "./island-logic"
-import { HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y } from "./shapes"
-
-const SURFACE_UNKNOWN_COLOR = new Color("silver")
-const SURFACE_LAND_COLOR = new Color("tan")
-const SURFACE_WATER_COLOR = new Color("darkturquoise")
-const SIX = 6
-const UP = new Vector3(0, 1, 0)
-const LAND_NORMAL_SPREAD = 0.03
-const WATER_NORMAL_SPREAD = -0.02
 
 export class Spot implements ISpot {
     public center: Vector3

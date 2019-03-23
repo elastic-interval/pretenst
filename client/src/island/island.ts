@@ -18,12 +18,12 @@ import {
     fillIsland,
     findParentHexalot,
     findSpot,
+    HEXALOT_SHAPE,
     ICoords,
     IIsland,
     IslandData,
     plus,
 } from "./island-logic"
-import { HEXALOT_SHAPE } from "./shapes"
 import { Spot } from "./spot"
 
 export class Island implements IIsland {
