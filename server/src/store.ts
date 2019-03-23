@@ -93,12 +93,6 @@ export class DataStore {
     }
 
     public async setJourney(id: HexalotID, journey: IJourneyData): Promise<void> {
-        if (!journey.hexalots) {
-            throw new Error("invalid journey format")
-        }
-        if (journey.hexalots.some((x: any) => !(x instanceof String) || x.length !== 32)) {
-            throw new Error("invalid journey")
-        }
         await this.db.set(`/hexalot/${id}/journey`, journey)
     }
 }

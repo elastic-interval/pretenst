@@ -170,11 +170,22 @@ export function createRouter(db: IKeyValueStore): Router {
         })
         .post(
             [
-                body("journeyData").isJSON(),
+                body("journeyData").exists(),
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
-                await store.setJourney(res.locals.hexalotId, req.body.journey)
+                const journeyData = req.body.journeyData
+                if (!journeyData.hexalots || !(journeyData.hexalots instanceof Array)) {
+                    res.status(400).end("missing required hexalot array field")
+                    return
+                }
+                for (const lotId of journeyData.hexalots) {
+                    if (!/[0-9a-fA-F]{32}/.test(lotId)) {
+                        res.status(400).end(`invalid hexalot format: ${lotId}`)
+                        return
+                    }
+                }
+                await store.setJourney(res.locals.hexalotId, journeyData)
                 res.sendStatus(HttpStatus.OK)
             },
         )
