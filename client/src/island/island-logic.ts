@@ -18,6 +18,7 @@ export enum Surface {
 
 export interface ISpot {
     readonly coords: ICoords
+    adjacentHexalots: IHexalot[]
     adjacentSpots: ISpot[]
     connected: boolean
     surface: Surface
@@ -49,42 +50,12 @@ export interface IslandData {
     spots: string
 }
 
-export function coordSort(a: ICoords, b: ICoords): number {
-    return a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0
-}
-
-export function sortSpotsOnCoord(a: ISpot, b: ISpot): number {
-    return coordSort(a.coords, b.coords)
-}
-
 export function equals(a: ICoords, b: ICoords): boolean {
     return a.x === b.x && a.y === b.y
 }
 
-export function minus(a: ICoords, b: ICoords): ICoords {
-    return {x: a.x - b.x, y: a.y - b.y}
-}
-
 export function plus(a: ICoords, b: ICoords): ICoords {
     return {x: a.x + b.x, y: a.y + b.y}
-}
-
-export function padRightTo4(s: string): string {
-    return s.length < 4 ? padRightTo4(s + "0") : s
-}
-
-export function spotsToString(spots: ISpot[]): string {
-    const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
-    const nybbleStrings = land.map((l, index, array) =>
-        (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
-    const nybbleChars = nybbleStrings.map(chunk => {
-        if (chunk) {
-            return parseInt(padRightTo4(chunk), 2).toString(16)
-        } else {
-            return ""
-        }
-    })
-    return nybbleChars.join("")
 }
 
 export function spotsToHexalotId(spots: ISpot[]): string {
@@ -96,55 +67,8 @@ export function spotsToHexalotId(spots: ISpot[]): string {
     return nybbleChars.join("")
 }
 
-function ringIndex(coords: ICoords, origin: ICoords): number {
-    const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
-    for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
-            return index
-        }
-    }
-    return 0
-}
-
-function generateOctalTreePattern(hexalot: IHexalot, steps: number[]): number[] {
-    const remainingChildren = hexalot.childHexalots.filter(child => {
-        return !child.visited
-    }).map(h => {
-        const index = ringIndex(h.coords, hexalot.coords)
-        return {index, hexalot: h}
-    }).sort((a, b) => {
-        return a.index < b.index ? 1 : a.index > b.index ? -1 : 0
-    })
-    if (remainingChildren.length > 0) {
-        for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
-            if (remainingChildren.length > 0) {
-                steps.push(BRANCH_STEP)
-            }
-            steps.push(child.index > 0 ? child.index : ERROR_STEP)
-            generateOctalTreePattern(child.hexalot, steps)
-        }
-    } else {
-        steps.push(STOP_STEP)
-    }
-    hexalot.visited = true
-    return steps
-}
-
-export function hexalotTreeString(hexalots: IHexalot[]): string {
-    const root = hexalots.find(hexalot => hexalot.nonce === 0)
-    if (!root) {
-        console.error("No root hexalot found")
-        return ""
-    }
-    hexalots.forEach(hexalot => hexalot.visited = false)
-    return generateOctalTreePattern(root, []).join("")
-}
-
-export function greatestNonce(parent: IHexalot | undefined, candiate: IHexalot): IHexalot | undefined {
-    if (parent && parent.nonce >= candiate.nonce) {
-        return parent
-    }
-    return candiate
+export function findParentHexalot(spot: ISpot): IHexalot | undefined {
+    return spot.adjacentHexalots.reduce(greatestNonce, undefined)
 }
 
 export function isSpotLegal(spot: ISpot): boolean {
@@ -245,18 +169,6 @@ export function findSpot(island: IIsland, coords: ICoords): ISpot | undefined {
     return island.spots.find(p => equals(p.coords, coords))
 }
 
-function getAdjacentSpots(island: IIsland, spot: ISpot): ISpot[] {
-    const adjacentSpots: ISpot[] = []
-    const coords = spot.coords
-    ADJACENT.forEach(a => {
-        const adjacentSpot = findSpot(island, plus(a, coords))
-        if (adjacentSpot) {
-            adjacentSpots.push(adjacentSpot)
-        }
-    })
-    return adjacentSpots
-}
-
 export function recalculateIsland(island: IIsland): void {
     const spots = island.spots
     spots.forEach(spot => {
@@ -277,5 +189,96 @@ export function recalculateIsland(island: IIsland): void {
             }
         })
     }
+}
+
+// =====================================================================================================================
+
+function greatestNonce(parent: IHexalot | undefined, candiate: IHexalot): IHexalot | undefined {
+    if (parent && parent.nonce >= candiate.nonce) {
+        return parent
+    }
+    return candiate
+}
+
+function coordSort(a: ICoords, b: ICoords): number {
+    return a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0
+}
+
+function sortSpotsOnCoord(a: ISpot, b: ISpot): number {
+    return coordSort(a.coords, b.coords)
+}
+
+function ringIndex(coords: ICoords, origin: ICoords): number {
+    const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
+    for (let index = 1; index <= 6; index++) {
+        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
+            return index
+        }
+    }
+    return 0
+}
+
+function generateOctalTreePattern(hexalot: IHexalot, steps: number[]): number[] {
+    const remainingChildren = hexalot.childHexalots.filter(child => {
+        return !child.visited
+    }).map(h => {
+        const index = ringIndex(h.coords, hexalot.coords)
+        return {index, hexalot: h}
+    }).sort((a, b) => {
+        return a.index < b.index ? 1 : a.index > b.index ? -1 : 0
+    })
+    if (remainingChildren.length > 0) {
+        for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
+            if (remainingChildren.length > 0) {
+                steps.push(BRANCH_STEP)
+            }
+            steps.push(child.index > 0 ? child.index : ERROR_STEP)
+            generateOctalTreePattern(child.hexalot, steps)
+        }
+    } else {
+        steps.push(STOP_STEP)
+    }
+    hexalot.visited = true
+    return steps
+}
+
+function getAdjacentSpots(island: IIsland, spot: ISpot): ISpot[] {
+    const adjacentSpots: ISpot[] = []
+    const coords = spot.coords
+    ADJACENT.forEach(a => {
+        const adjacentSpot = findSpot(island, plus(a, coords))
+        if (adjacentSpot) {
+            adjacentSpots.push(adjacentSpot)
+        }
+    })
+    return adjacentSpots
+}
+
+function padRightTo4(s: string): string {
+    return s.length < 4 ? padRightTo4(s + "0") : s
+}
+
+function spotsToString(spots: ISpot[]): string {
+    const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
+    const nybbleStrings = land.map((l, index, array) =>
+        (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
+    const nybbleChars = nybbleStrings.map(chunk => {
+        if (chunk) {
+            return parseInt(padRightTo4(chunk), 2).toString(16)
+        } else {
+            return ""
+        }
+    })
+    return nybbleChars.join("")
+}
+
+function hexalotTreeString(hexalots: IHexalot[]): string {
+    const root = hexalots.find(hexalot => hexalot.nonce === 0)
+    if (!root) {
+        console.error("No root hexalot found")
+        return ""
+    }
+    hexalots.forEach(hexalot => hexalot.visited = false)
+    return generateOctalTreePattern(root, []).join("")
 }
 
