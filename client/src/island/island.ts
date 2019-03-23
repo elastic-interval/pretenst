@@ -14,8 +14,8 @@ import { IStorage } from "../storage/storage"
 import { Hexalot } from "./hexalot"
 import {
     calculateHexalotId,
-    constructIsland,
     equals,
+    fillIsland,
     findParentHexalot,
     findSpot,
     ICoords,
@@ -34,7 +34,7 @@ export class Island implements IIsland {
     public vacantHexalot?: Hexalot
 
     constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage, subject: Subject<IAppState>, nonce: number) {
-        constructIsland(islandData, this)
+        fillIsland(islandData, this)
         this.name = islandData.name
         const island = this
         const mode = Mode.Visiting

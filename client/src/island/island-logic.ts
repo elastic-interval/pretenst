@@ -102,7 +102,7 @@ export function extractIslandData(island: IIsland): IslandData {
     } as IslandData
 }
 
-export function constructIsland(data: IslandData, island: IIsland): void {
+export function fillIsland(data: IslandData, island: IIsland): void {
     let hexalot: IHexalot | undefined = island.getOrCreateHexalot(undefined, {x: 0, y: 0})
     const stepStack = data.hexalots.split("").reverse().map(stepChar => Number(stepChar))
     const hexalotStack: IHexalot[] = []
