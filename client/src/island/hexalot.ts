@@ -14,17 +14,10 @@ import { ICoords, IHexalot } from "./island-logic"
 import { fromOptionalJourneyData, Journey } from "./journey"
 import { Spot } from "./spot"
 
-export enum LoadStatus {
-    Pending,
-    Busy,
-    Loaded,
-}
-
 export class Hexalot implements IHexalot {
     public id: string
     public genomeStatus = LoadStatus.Pending
     public genome?: Genome
-    public journeyStatus = LoadStatus.Pending
     public journey?: Journey
     public childHexalots: Hexalot[] = []
     public rotation = Math.floor(Math.random() * 6)
@@ -46,42 +39,18 @@ export class Hexalot implements IHexalot {
         }
     }
 
-    public fetchGenome(storage: IStorage, loaded: () => void): boolean {
-        switch (this.genomeStatus) {
-            case LoadStatus.Pending:
-                this.genomeStatus = LoadStatus.Busy
-                storage.getGenomeData(this).then(genomeData => {
-                    this.genome = fromOptionalGenomeData(genomeData)
-                    console.log(`Genome data arrived for ${this.id}`, genomeData)
-                    this.genomeStatus = LoadStatus.Loaded
-                    loaded()
-                })
-                return false
-            case LoadStatus.Busy:
-                return false
-            case LoadStatus.Loaded:
-                return true
-        }
+    public async fetchGenome(storage: IStorage): Promise<Genome | undefined> {
+        const genomeData = await storage.getGenomeData(this)
+        console.log(`Genome data arrived for ${this.id}`, genomeData)
+        this.genome = fromOptionalGenomeData(genomeData)
+        return this.genome
     }
 
-    public fetchJourney(storage: IStorage, island: Island, loaded: (journey: Journey) => void): boolean {
-        switch (this.journeyStatus) {
-            case LoadStatus.Pending:
-                this.journeyStatus = LoadStatus.Busy
-                storage.getJourneyData(this).then(journeyData => {
-                    this.journey = fromOptionalJourneyData(island, journeyData)
-                    console.log(`Journey data arrived for ${this.id}`, journeyData)
-                    this.journeyStatus = LoadStatus.Loaded
-                    if (this.journey) {
-                        loaded(this.journey)
-                    }
-                })
-                return false
-            case LoadStatus.Busy:
-                return false
-            case LoadStatus.Loaded:
-                return true
-        }
+    public async fetchJourney(storage: IStorage, island: Island): Promise<Journey | undefined> {
+        const journeyData = await storage.getJourneyData(this)
+        console.log(`Journey data arrived for ${this.id}`, journeyData)
+        this.journey = fromOptionalJourneyData(island, journeyData)
+        return this.journey
     }
 
     public createNativeGotchi(): Gotchi | undefined {

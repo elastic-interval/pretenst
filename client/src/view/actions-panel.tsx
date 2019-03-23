@@ -126,7 +126,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     return (
                         <ActionFrame>
                             {this.buttons("Foreign", [
-                                Command.DriveFree,
+                                Command.RideFree,
                             ])}
                         </ActionFrame>
                     )
@@ -147,9 +147,9 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     return (
                         <ActionFrame>
                             {this.buttons("Home", [
-                                Command.PrepareDrive,
+                                Command.PrepareToRide,
                                 Command.PlanJourney,
-                                Command.DriveJourney,
+                                Command.RideJourney,
                                 Command.Evolve,
                                 Command.RandomGenome,
                                 Command.Logout,
@@ -160,7 +160,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     return (
                         <ActionFrame>
                             {this.buttons("Visiting", [
-                                Command.DriveFree,
+                                Command.RideFree,
                                 Command.Logout,
                             ])}
                         </ActionFrame>
@@ -173,7 +173,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                     <ActionFrame>
                         {this.buttons("Planning journey", [
                             Command.ForgetJourney,
-                            Command.DriveJourney,
+                            Command.RideJourney,
                             Command.Evolve,
                             Command.Return,
                         ])}
@@ -181,13 +181,13 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case Mode.PreparingDrive: // ==========================================================================
+            case Mode.PreparingRide: // ==========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Drive", [
                             Command.RotateLeft,
                             Command.RotateRight,
-                            Command.DriveFree,
+                            Command.RideFree,
                             Command.Return,
                         ])}
                     </ActionFrame>
@@ -204,7 +204,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case Mode.DrivingFree: // ============================================================================
+            case Mode.RidingFree: // ============================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Driving free", [
@@ -217,7 +217,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 )
 
 
-            case Mode.DrivingJourney: // =========================================================================
+            case Mode.RidingJourney: // =========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Driving journey", [
@@ -257,12 +257,14 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 outline={true}
                 color="primary"
                 className="command-button"
-                onClick={() => {
-                    const props = this.props
-                    const commandHandler = new CommandHandler(props.appState, props.stateSubject)
-                    props.stateSubject.next(commandHandler.afterCommand(command, props.location))
-                }}
+                onClick={() => this.execute(command)}
             >{command}</Button>
         )
+    }
+
+    private async execute(command: Command): Promise<void> {
+        const props = this.props
+        const nextState = await new CommandHandler(props.appState).afterCommand(command, props.location)
+        props.stateSubject.next(nextState)
     }
 }

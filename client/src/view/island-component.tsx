@@ -163,7 +163,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private get arrowGeometry(): Geometry | undefined {
         const appState = this.props.appState
         const hexalot = appState.selectedHexalot
-        if (!hexalot || appState.mode !== Mode.PreparingDrive) {
+        if (!hexalot || appState.mode !== Mode.PreparingRide) {
             return undefined
         }
         const toTransform: Vector3[] = []
@@ -259,6 +259,9 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
 
     public get activeHexalotId(): string | undefined {
         const state = this.props.appState
+        if (state.jockey) {
+            return state.jockey.gotchi.home.id
+        }
         if (state.gotchi) {
             return state.gotchi.home.id
         }

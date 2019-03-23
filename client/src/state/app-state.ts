@@ -5,6 +5,7 @@
 
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
+import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
 import { Journey } from "../island/journey"
@@ -15,8 +16,8 @@ export enum Command {
     AbandonFix = "Abandon fix",
     ClaimHexalot = "Claim hexalot",
     ComeHere = "Come here",
-    DriveFree = "Drive free",
-    DriveJourney = "Drive journey",
+    RideFree = "Ride free",
+    RideJourney = "Ride your journey",
     Evolve = "Evolve",
     ForgetJourney = "Forget journey",
     GoThere = "Go there",
@@ -24,8 +25,8 @@ export enum Command {
     Logout = "Logout",
     MakeLand = "Make into land",
     MakeWater = "Make into water",
-    PlanJourney = "Plan journey",
-    PrepareDrive = "Prepare drive",
+    PlanJourney = "Plan your journey",
+    PrepareToRide = "Prepare to ride",
     RandomGenome = "Random genome",
     Return = "Return",
     RotateLeft = "Rotate left",
@@ -35,13 +36,13 @@ export enum Command {
 }
 
 export enum Mode {
-    DrivingFree = "Driving free",
-    DrivingJourney = "Driving journey",
+    RidingFree = "Riding free",
+    RidingJourney = "Riding journey",
     Evolving = "Evolving",
     FixingIsland = "Fixing island",
     Landed = "Landed",
     PlanningJourney = "Planning journey",
-    PreparingDrive = "Preparing drive",
+    PreparingRide = "Preparing ride",
     Visiting = "Visiting",
 }
 
@@ -56,6 +57,7 @@ export interface IAppState {
     readonly selectedSpot?: Spot
     readonly selectedHexalot?: Hexalot
     readonly gotchi?: Gotchi
+    readonly jockey?: Jockey
     readonly evolution?: Evolution
 }
 

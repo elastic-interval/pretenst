@@ -157,14 +157,13 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         )
     }
 
-    private fetchIsland(islandName: string): void {
-        this.props.storage.getIslandData(islandName).then(islandData => {
-            if (!islandData) {
-                return
-            }
-            const island = new Island(islandData, this.fabricKernel, this.props.storage, this.stateSubject, 0)
-            console.log(logString(island.state))
-            this.stateSubject.next(island.state)
-        })
+    private async fetchIsland(islandName: string): Promise<void> {
+        const islandData = await this.props.storage.getIslandData(islandName)
+        if (!islandData) {
+            return
+        }
+        const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
+        console.log(logString(island.state))
+        this.stateSubject.next(island.state)
     }
 }

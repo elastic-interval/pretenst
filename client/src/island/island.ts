@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Subject } from "rxjs"
 import { Vector3 } from "three"
 
 import { IGotchiFactory } from "../gotchi/gotchi"
@@ -33,14 +32,14 @@ export class Island implements IIsland {
     public state: IAppState
     public vacantHexalot?: Hexalot
 
-    constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage, subject: Subject<IAppState>, nonce: number) {
+    constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage,nonce: number) {
         fillIsland(islandData, this)
         this.name = islandData.name
         const island = this
         const mode = Mode.Visiting
         const islandIsLegal = false
         const appState: IAppState = {nonce: nonce + 1, island, storage, mode, islandIsLegal}
-        this.state = new Transition(appState, subject).withRestructure.state
+        this.state = new Transition(appState).withRestructure.state
     }
 
     public findHexalot(id: string): Hexalot | undefined {

@@ -3,27 +3,32 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Subject } from "rxjs"
-
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
+import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
+import { Island } from "../island/island"
 import { calculateHexalotId, isIslandLegal, isSpotLegal, recalculateIsland, Surface } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
-import { homeHexalotSelected, IAppState, Mode } from "./app-state"
+import { IAppState, Mode } from "./app-state"
 
 export class Transition {
-
     private appState: IAppState
 
-    constructor(prev: IAppState, private subject: Subject<IAppState>) {
+    constructor(prev: IAppState) {
         this.appState = {...prev, nonce: prev.nonce + 1}
     }
 
     public get state(): IAppState {
         return this.appState
+    }
+
+    public withIsland(island: Island): Transition {
+        this.recycle()
+        this.appState = {...this.appState, island}
+        return this
     }
 
     public withMode(mode: Mode): Transition {
@@ -37,21 +42,22 @@ export class Transition {
         return this
     }
 
-    public withSelectedSpot(selectedSpot?: Spot): Transition {
-        this.appState = {...this.appState, selectedSpot}
-        if (selectedSpot) {
-            const selectedHexalot = selectedSpot.centerOfHexalot
-            this.appState = {...this.appState, selectedHexalot}
-            if (selectedHexalot) {
-                const genomePresent = selectedHexalot.fetchGenome(this.appState.storage, () => {
-                    // TODO: decide what kind of reaction. visually there's nothing
-                })
-                console.log(`Genome present for ${selectedHexalot.id}`, genomePresent)
-            }
-        } else {
-            this.appState = {...this.appState, selectedHexalot: undefined}
+    public async withSelectedHexalot(selectedHexalot?: Hexalot): Promise<Transition> {
+        this.appState = {...this.appState, selectedHexalot}
+        if (selectedHexalot && !selectedHexalot.genome) {
+            selectedHexalot.genome = await selectedHexalot.fetchGenome(this.appState.storage)
+            console.log(`Genome for ${selectedHexalot.id}`, selectedHexalot.genome)
+            return this
         }
         return this
+    }
+
+    public async withSelectedSpot(selectedSpot?: Spot): Promise<Transition> {
+        this.appState = {...this.appState, selectedSpot}
+        if (selectedSpot) {
+            return this.withSelectedHexalot(selectedSpot.centerOfHexalot)
+        }
+        return this.withSelectedHexalot()
     }
 
     public withIslandIsLegal(islandIsLegal: boolean): Transition {
@@ -59,21 +65,14 @@ export class Transition {
         return this
     }
 
-    public withHomeHexalot(homeHexalot?: Hexalot): Transition {
-        const selectedHexalot = homeHexalot
-        const selectedSpot = homeHexalot ? homeHexalot.centerSpot : undefined
-        this.appState = {...this.appState, homeHexalot, selectedHexalot, selectedSpot}
+    public async withHomeHexalot(homeHexalot?: Hexalot): Promise<Transition> {
+        this.appState = {...this.appState, homeHexalot}
         if (!homeHexalot) {
-            return this.withMode(Mode.Visiting).withJourney()
+            return this.withMode(Mode.Visiting).withJourney().withSelectedSpot()
         }
-        if (homeHexalotSelected(this.appState)) {
-            const journeyPresent = homeHexalot.fetchJourney(this.appState.storage, this.appState.island, journey => {
-                // TODO: make sure that "this" is actually the latest state
-                this.subject.next(this.withJourney(journey).state)
-            })
-            console.log(`Journey present for ${homeHexalot.id}`, journeyPresent)
-        }
-        return this.withMode(Mode.Landed).withJourney(homeHexalot.journey)
+        homeHexalot.journey = await homeHexalot.fetchJourney(this.appState.storage, this.appState.island)
+        console.log(`Journey for ${homeHexalot.id}`, homeHexalot.journey)
+        return (await this.withSelectedSpot(homeHexalot.centerSpot)).withJourney(homeHexalot.journey).withMode(Mode.Landed)
     }
 
     public get withRestructure(): Transition {
@@ -99,7 +98,7 @@ export class Transition {
         return this
     }
 
-    public withSurface(surface: Surface): Transition {
+    public async withSurface(surface: Surface): Promise<Transition> {
         const appState = this.appState
         const selectedSpot = appState.selectedSpot
         if (!selectedSpot) {
@@ -127,10 +126,17 @@ export class Transition {
         return this
     }
 
-    public withGotchi(gotchi: Gotchi, journey?: Journey): Transition {
+    public withJockey(jockey: Jockey): Transition {
         this.recycle()
-        const mode = journey ? Mode.DrivingJourney : Mode.DrivingFree
-        this.appState = {...this.appState, gotchi, journey, mode}
+        const mode = Mode.RidingJourney
+        this.appState = {...this.appState, jockey, journey: jockey.leg.journey, mode}
+        return this
+    }
+
+    public withGotchi(gotchi: Gotchi): Transition {
+        this.recycle()
+        const mode = Mode.RidingFree
+        this.appState = {...this.appState, gotchi, mode}
         return this
     }
 
@@ -141,6 +147,11 @@ export class Transition {
     }
 
     private recycle(): void {
+        const jockey = this.appState.jockey
+        if (jockey) {
+            jockey.gotchi.recycle()
+            this.appState = {...this.appState, jockey: undefined}
+        }
         const gotchi = this.appState.gotchi
         if (gotchi) {
             gotchi.recycle()

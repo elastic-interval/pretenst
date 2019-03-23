@@ -11,6 +11,8 @@ import { Subscription } from "rxjs/Subscription"
 import { Mesh, PerspectiveCamera, Vector3 } from "three"
 
 import { NORMAL_TICKS } from "../body/fabric"
+import { Direction } from "../body/fabric-exports"
+import { Spot } from "../island/spot"
 import { IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
 
@@ -93,15 +95,15 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     public render(): JSX.Element {
         const appState = this.props.appState
         const evolution = appState.evolution
-        const gotchi = appState.gotchi
+        const jockey = appState.jockey
+        const freeGotchi = appState.gotchi
+        const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
         const journey = appState.journey
         return (
             <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
                 const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
                 if (spot) {
-                    const props = this.props
-                    const clickHandler = new ClickHandler(props.appState, this.props.stateSubject)
-                    props.stateSubject.next(clickHandler.stateAfterClick(spot))
+                    this.click(spot)
                 }
             }}>
                 <R3.Renderer width={this.props.width} height={this.props.height}>
@@ -135,7 +137,14 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         )
     }
 
-    // =================================================================================================================
+// =================================================================================================================
+
+    private async click(spot: Spot): Promise<void> {
+        const props = this.props
+        const clickHandler = new ClickHandler(props.appState)
+        const afterClick = await clickHandler.stateAfterClick(spot)
+        props.stateSubject.next(afterClick)
+    }
 
     private animate(): void {
         const step = () => {
@@ -146,7 +155,21 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         evolution.iterate()
                         this.target = evolution.midpoint
                     }
-                    const gotchi = this.props.appState.gotchi
+                    const jockey = this.props.appState.jockey
+                    if (jockey) {
+                        if (jockey.touchedDestination) {
+                            const nextLeg = jockey.leg.nextLeg
+                            if (nextLeg) {
+                                jockey.leg = nextLeg
+                            } else {
+                                jockey.gotchi.nextDirection = Direction.REST
+                            }
+                        } else if (jockey.gotchi.currentDirection !== Direction.REST) {
+                            jockey.adjustDirection()
+                        }
+                    }
+                    const freeGotchi = this.props.appState.gotchi
+                    const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
                     if (gotchi) {
                         gotchi.iterate(NORMAL_TICKS)
                         this.target = gotchi.midpoint
