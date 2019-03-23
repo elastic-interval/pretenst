@@ -7,7 +7,8 @@ import Axios, { AxiosInstance } from "axios"
 
 import { fromOptionalGenomeData, IGenomeData } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
-import { Island, IslandData } from "../island/island"
+import { Island } from "../island/island"
+import { IslandData } from "../island/island-logic"
 import { IJourneyData } from "../island/journey"
 
 import { IStorage } from "./storage"

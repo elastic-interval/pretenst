@@ -8,8 +8,9 @@ import { Subject } from "rxjs"
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
+import { calculateHexalotId, isIslandLegal, isSpotLegal, recalculateIsland, Surface } from "../island/island-logic"
 import { Journey } from "../island/journey"
-import { Spot, Surface } from "../island/spot"
+import { Spot } from "../island/spot"
 
 import { homeHexalotSelected, IAppState, Mode } from "./app-state"
 
@@ -77,7 +78,7 @@ export class Transition {
 
     public get withRestructure(): Transition {
         const island = this.appState.island
-        island.recalculate()
+        recalculateIsland(island)
         const hexalots = island.hexalots
         const spots = island.spots
         const vacant = island.vacantHexalot
@@ -88,8 +89,8 @@ export class Transition {
         } else {
             spots.forEach(spot => spot.free = false)
         }
-        hexalots.forEach(hexalot => hexalot.refreshId())
-        const islandIsLegal = island.islandIsLegal
+        hexalots.forEach(calculateHexalotId)
+        const islandIsLegal = isIslandLegal(island)
         if (islandIsLegal) {
             this.appState = {...this.appState, islandIsLegal}
         } else {
@@ -105,7 +106,7 @@ export class Transition {
             return this
         }
         selectedSpot.surface = surface
-        selectedSpot.memberOfHexalot.forEach(hexalot => hexalot.refreshId())
+        selectedSpot.memberOfHexalot.forEach(calculateHexalotId)
         const nextFree = selectedSpot.adjacentSpots.find(s => s.free && s.surface === Surface.Unknown)
         if (nextFree) {
             return this.withSelectedSpot(nextFree)
@@ -115,7 +116,7 @@ export class Transition {
         if (anyFree) {
             return this.withSelectedSpot(anyFree)
         }
-        const illegal = island.spots.find(s => !s.isLegal)
+        const illegal = island.spots.find(s => !isSpotLegal(s))
         if (illegal) {
             return this.withSelectedSpot(illegal)
         }

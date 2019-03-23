@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH } from "../island/shapes"
+import { ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH } from "../island/constants"
 
 import { Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
 import { vectorFromFloatArray } from "./fabric-kernel"

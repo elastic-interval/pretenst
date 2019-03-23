@@ -11,7 +11,7 @@ import { freshGenome, IGenomeData } from "../genetics/genome"
 import { Evolution } from "../gotchi/evolution"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
-import { Surface } from "../island/spot"
+import { isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
 
 import { Command, IAppState, Mode } from "./app-state"
 import { Transition } from "./transition"
@@ -179,7 +179,7 @@ export class CommandHandler {
                 if (unknownSpot) {
                     return trans.withSelectedSpot(unknownSpot).state
                 }
-                const illegalSpot = island.spots.find(s => !s.isLegal)
+                const illegalSpot = island.spots.find(s => !isSpotLegal(s))
                 if (illegalSpot) {
                     return trans.withSelectedSpot(illegalSpot).state
                 }
@@ -192,7 +192,7 @@ export class CommandHandler {
 
 
             case Command.ClaimHexalot: // ==============================================================================
-                if (!homeHexalot && hexalot && island.islandIsLegal && (singleHexalot || vacant && vacant.id === hexalot.id)) {
+                if (!homeHexalot && hexalot && isIslandLegal(island) && (singleHexalot || vacant && vacant.id === hexalot.id)) {
                     this.claimHexalot(hexalot)
                     island.vacantHexalot = undefined
                     return trans.withHomeHexalot(hexalot).withRestructure.state
