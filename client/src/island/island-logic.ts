@@ -140,6 +140,13 @@ export function hexalotTreeString(hexalots: IHexalot[]): string {
     return generateOctalTreePattern(root, []).join("")
 }
 
+export function greatestNonce(parent: IHexalot | undefined, candiate: IHexalot): IHexalot | undefined {
+    if (parent && parent.nonce >= candiate.nonce) {
+        return parent
+    }
+    return candiate
+}
+
 export function isSpotLegal(spot: ISpot): boolean {
     let landCount = 0
     let waterCount = 0

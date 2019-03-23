@@ -12,7 +12,7 @@ import { Transition } from "../state/transition"
 import { IStorage } from "../storage/storage"
 
 import { Hexalot } from "./hexalot"
-import { constructIsland, equals, findSpot, ICoords, IIsland, IslandData, plus } from "./island-logic"
+import { constructIsland, equals, findSpot, greatestNonce, ICoords, IIsland, IslandData, plus } from "./island-logic"
 import { HEXALOT_SHAPE } from "./shapes"
 import { Spot } from "./spot"
 
@@ -48,16 +48,8 @@ export class Island implements IIsland {
     }
 
     public hexalotAroundSpot(spot: Spot): Hexalot {
-        const hexalotParent = spot.adjacentHexalots.reduce(
-            (parent: Hexalot | undefined, candiate: Hexalot) => {
-                if (parent && parent.nonce >= candiate.nonce) {
-                    return parent
-                }
-                return candiate
-            },
-            undefined,
-        )
-        return this.getOrCreateHexalot(hexalotParent, spot.coords)
+        const hexalotParent = spot.adjacentHexalots.reduce(greatestNonce, undefined)
+        return this.getOrCreateHexalot(hexalotParent as Hexalot, spot.coords)
     }
 
     public getOrCreateHexalot(parent: Hexalot | undefined, coords: ICoords): Hexalot {
