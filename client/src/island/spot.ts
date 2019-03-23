@@ -10,7 +10,7 @@ import { SEED_CORNERS } from "../body/fabric-exports"
 import { MeshKey } from "../view/spot-selector"
 
 import { Hexalot } from "./hexalot"
-import { ICoords, ISpot, Surface } from "./island-logic"
+import { ICoords, ISpot, isSpotLegal, Surface } from "./island-logic"
 import { HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y } from "./shapes"
 
 const SURFACE_UNKNOWN_COLOR = new Color("silver")
@@ -37,7 +37,7 @@ export class Spot implements ISpot {
     }
 
     public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[]): void {
-        const sizeFactor = this.sizeFactor
+        const sizeFactor = isSpotLegal(this) ? 1 : 0.9
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
             hexPoint.x * sizeFactor + this.center.x,
             hexPoint.y * sizeFactor + this.center.y,
@@ -124,31 +124,6 @@ export class Spot implements ISpot {
         }
     }
 
-    public get isLegal(): boolean {
-        let landCount = 0
-        let waterCount = 0
-        this.adjacentSpots.forEach(adjacent => {
-            switch (adjacent.surface) {
-                case Surface.Land:
-                    landCount++
-                    break
-                case Surface.Water:
-                    waterCount++
-                    break
-            }
-        })
-        switch (this.surface) {
-            case Surface.Land:
-                // land must be connected and either on the edge or have adjacent at least 2 land and 1 water
-                return this.connected && this.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1)
-            case Surface.Water:
-                // water must have some land around
-                return landCount > 0
-            default:
-                return false
-        }
-    }
-
     public isCandidateHexalot(vacantHexalot?: Hexalot): boolean {
         if (this.surface !== Surface.Land) {
             return false
@@ -164,10 +139,6 @@ export class Spot implements ISpot {
             return this.adjacentHexalots.some(hexalot => hexalot.id !==  vacantHexalot.id)
         }
         return this.adjacentHexalots.length > 0
-    }
-
-    private get sizeFactor(): number {
-        return this.isLegal ? 1 : 0.9
     }
 
     private get color(): Color {

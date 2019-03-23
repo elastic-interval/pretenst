@@ -8,7 +8,7 @@ import { Subject } from "rxjs"
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
-import { Surface } from "../island/island-logic"
+import { isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
@@ -90,7 +90,7 @@ export class Transition {
             spots.forEach(spot => spot.free = false)
         }
         hexalots.forEach(hexalot => hexalot.refreshId())
-        const islandIsLegal = island.islandIsLegal
+        const islandIsLegal = isIslandLegal(island)
         if (islandIsLegal) {
             this.appState = {...this.appState, islandIsLegal}
         } else {
@@ -116,7 +116,7 @@ export class Transition {
         if (anyFree) {
             return this.withSelectedSpot(anyFree)
         }
-        const illegal = island.spots.find(s => !s.isLegal)
+        const illegal = island.spots.find(s => !isSpotLegal(s))
         if (illegal) {
             return this.withSelectedSpot(illegal)
         }

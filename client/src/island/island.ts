@@ -33,10 +33,6 @@ export class Island implements IIsland {
         this.state = new Transition(appState, subject).withRestructure.state
     }
 
-    public get islandIsLegal(): boolean {
-        return this.spots.every(spot => spot.isLegal)
-    }
-
     public findHexalot(id: string): Hexalot | undefined {
         return this.hexalots.find(hexalot => hexalot.id === id)
     }

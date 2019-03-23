@@ -18,6 +18,8 @@ export enum Surface {
 
 export interface ISpot {
     readonly coords: ICoords
+    readonly adjacentSpots: ISpot[]
+    connected: boolean
     surface: Surface
 }
 
@@ -28,6 +30,20 @@ export interface IHexalot {
     visited: boolean
     nonce: number
     refreshId(): void
+}
+
+export interface IIsland {
+    readonly name: string
+    readonly hexalots: IHexalot[]
+    readonly spots: ISpot[]
+    getOrCreateHexalot(parent: IHexalot | undefined, coords: ICoords): IHexalot
+    hexalotAroundSpot(spot: ISpot): IHexalot
+}
+
+export interface IslandData {
+    name: string
+    hexalots: string
+    spots: string
 }
 
 export function coordSort(a: ICoords, b: ICoords): number {
@@ -121,23 +137,37 @@ export function hexalotTreeString(hexalots: IHexalot[]): string {
     return generateOctalTreePattern(root, []).join("")
 }
 
-export interface IIsland {
-    readonly name: string
-    readonly islandIsLegal: boolean
-    readonly hexalots: IHexalot[]
-    readonly spots: ISpot[]
-    getOrCreateHexalot(parent: IHexalot | undefined, coords: ICoords): IHexalot
-    hexalotAroundSpot(spot: ISpot): IHexalot
+export function isSpotLegal(spot: ISpot): boolean {
+    let landCount = 0
+    let waterCount = 0
+    spot.adjacentSpots.forEach(adjacent => {
+        switch (adjacent.surface) {
+            case Surface.Land:
+                landCount++
+                break
+            case Surface.Water:
+                waterCount++
+                break
+        }
+    })
+    switch (spot.surface) {
+        case Surface.Land:
+            // land must be connected and either on the edge or have adjacent at least 2 land and 1 water
+            return spot.connected && spot.adjacentSpots.length < 6 || (landCount >= 2 && waterCount >= 1)
+        case Surface.Water:
+            // water must have some land around
+            return landCount > 0
+        default:
+            return false
+    }
 }
 
-export interface IslandData {
-    name: string
-    hexalots: string
-    spots: string
+export function isIslandLegal(island: IIsland): boolean {
+    return island.spots.every(isSpotLegal)
 }
 
 export function extractIslandData(island: IIsland): IslandData {
-    if (!island.islandIsLegal) {
+    if (!isIslandLegal(island)) {
         throw new Error("Saving illegal island")
     }
     island.spots.sort(sortSpotsOnCoord)

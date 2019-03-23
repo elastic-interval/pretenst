@@ -10,7 +10,7 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { IStorage } from "../storage/storage"
 
 import { Island } from "./island"
-import { equals, ICoords, IHexalot, spotsToHexalotId } from "./island-logic"
+import { ICoords, IHexalot, spotsToHexalotId } from "./island-logic"
 import { fromOptionalJourneyData, Journey } from "./journey"
 import { Spot } from "./spot"
 
@@ -51,10 +51,6 @@ export class Hexalot implements IHexalot {
             throw new Error("Should have refreshed fingerprint first")
         }
         return this.identifier
-    }
-
-    public get isLegal(): boolean {
-        return this.spots.every(spot => spot.isLegal)
     }
 
     public refreshId(): void {
@@ -127,22 +123,5 @@ export class Hexalot implements IHexalot {
 
     get center(): Vector3 {
         return this.centerSpot.center
-    }
-
-    public destroy(removeSpot: (spot: Spot) => void): void {
-        console.warn("destroy", this.id)
-        if (this.spots.length === 0) {
-            return
-        }
-        if (this.parentHexalot) {
-            this.parentHexalot.childHexalots = this.parentHexalot.childHexalots.filter(hexalot => !equals(this.coords, hexalot.coords))
-        }
-        this.spots[0].centerOfHexalot = undefined
-        for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.spots[neighbor].adjacentHexalots = this.spots[neighbor].adjacentHexalots.filter(hexalot => !equals(this.coords, hexalot.coords))
-        }
-        this.spots.forEach(p => p.memberOfHexalot = p.memberOfHexalot.filter(hexalot => !equals(this.coords, hexalot.coords)))
-        this.spots.filter(p => p.memberOfHexalot.length === 0).forEach(removeSpot)
-        this.spots = []
     }
 }
