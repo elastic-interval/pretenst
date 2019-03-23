@@ -1,6 +1,7 @@
 # Galapagotchi Run!
 
 [![Join the chat at https://gitter.im/galapagotchis/community](https://badges.gitter.im/galapagotchis/community.svg)](https://gitter.im/galapagotchis/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+[![Build Status](https://travis-ci.com/beautiful-code-bv/galapagotchi.svg?branch=master)](https://travis-ci.com/beautiful-code-bv/galapagotchi)
 
 Welcome to the [galapagotchi.run](https://galapagotchi.run) project, where you can create and evolve your own personal runner. It's like a game, and together we can make it more fun!
 
