@@ -16,7 +16,6 @@ import { Spot } from "./spot"
 
 export class Hexalot implements IHexalot {
     public id: string
-    public genomeStatus = LoadStatus.Pending
     public genome?: Genome
     public journey?: Journey
     public childHexalots: Hexalot[] = []

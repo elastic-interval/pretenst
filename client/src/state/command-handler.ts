@@ -11,7 +11,7 @@ import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
-import { isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
+import { extractIslandData, isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
 
 import { Command, IAppState, Mode } from "./app-state"
 import { Transition } from "./transition"
@@ -202,8 +202,8 @@ export class CommandHandler {
 
             case Command.AbandonFix: // ================================================================================
                 const nonce = island.state.nonce + 1
-                const withoutVacant = new Island(island.islandData, island.gotchiFactory, state.storage, nonce)
-                return (await trans.withSelectedSpot()).withIsland(withoutVacant).withMode(Mode.Visiting).withRestructure.state
+                const orig = new Island(extractIslandData(island), island.gotchiFactory, state.storage, nonce)
+                return (await trans.withSelectedSpot()).withIsland(orig).withMode(Mode.Visiting).withRestructure.state
 
 
             case Command.ClaimHexalot: // ==============================================================================

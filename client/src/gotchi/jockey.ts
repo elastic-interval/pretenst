@@ -7,7 +7,7 @@ import { Vector3 } from "three"
 
 import { Fabric } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
-import { fromGenomeData, Genome, IGenomeData } from "../genetics/genome"
+import { Genome, IGenomeData } from "../genetics/genome"
 import { HEXAPOD_RADIUS } from "../island/constants"
 import { Leg } from "../island/journey"
 

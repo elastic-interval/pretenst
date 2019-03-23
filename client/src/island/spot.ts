@@ -40,6 +40,10 @@ export class Spot implements ISpot {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
     }
 
+    public isMemberOfOneHexalot(id: string): boolean {
+        return this.memberOfHexalot.length === 1 && this.memberOfHexalot[0].id === id
+    }
+
     public addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[]): void {
         const sizeFactor = isSpotLegal(this) ? 1 : 0.9
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(
@@ -140,7 +144,7 @@ export class Spot implements ISpot {
             return centerOfHexalot.id === vacantHexalot.id
         }
         if (vacantHexalot) {
-            return this.adjacentHexalots.some(hexalot => hexalot.id !==  vacantHexalot.id)
+            return this.adjacentHexalots.some(hexalot => hexalot.id !== vacantHexalot.id)
         }
         return this.adjacentHexalots.length > 0
     }

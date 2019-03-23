@@ -3,6 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Hexalot } from "./hexalot"
+
 export interface ICoords {
     x: number
     y: number
@@ -22,6 +24,8 @@ export interface ISpot {
     adjacentSpots: ISpot[]
     connected: boolean
     surface: Surface
+
+    isMemberOfOneHexalot(id: string): boolean
 }
 
 export interface IHexalot {
@@ -37,6 +41,7 @@ export interface IIsland {
     readonly name: string
     readonly hexalots: IHexalot[]
     readonly spots: ISpot[]
+    readonly vacantHexalot?: Hexalot
 
     getOrCreateHexalot(parent: IHexalot | undefined, coords: ICoords): IHexalot
 
@@ -91,6 +96,22 @@ export function isIslandLegal(island: IIsland): boolean {
 }
 
 export function extractIslandData(island: IIsland): IslandData {
+    const vacant = island.vacantHexalot
+    if (vacant) {
+        const parent = vacant.parentHexalot
+        if (!parent) {
+            throw new Error("No parent")
+        }
+        parent.childHexalots = parent.childHexalots.filter(child => child.id !== vacant.id)
+        const hexalots = island.hexalots.filter(h => h.id !== vacant.id)
+        const spotsToRemove = island.spots.filter(p => p.isMemberOfOneHexalot(vacant.id))
+        const spots = spotsToRemove.reduce(removeSpot, island.spots).sort(sortSpotsOnCoord)
+        return {
+            name: island.name,
+            hexalots: hexalotTreeString(hexalots),
+            spots: spotsToString(spots),
+        } as IslandData
+    }
     if (!isIslandLegal(island)) {
         throw new Error("Saving illegal island")
     }
@@ -188,6 +209,10 @@ export function recalculateIsland(island: IIsland): void {
 const STOP_STEP = 0
 const BRANCH_STEP = 7
 const ERROR_STEP = 8
+
+function removeSpot(spots: ISpot[], spotToRemove: ISpot): ISpot[] {
+    return spots.filter(s => !equals(s.coords, spotToRemove.coords))
+}
 
 function spotsToHexalotId(spots: ISpot[]): string {
     const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
