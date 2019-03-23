@@ -20,7 +20,13 @@ export interface IslandData {
     spots: string
 }
 
-const sortSpotsOnCoord = (a: Spot, b: Spot): number => coordSort(a.coords, b.coords)
+function sortSpotsOnCoord(a: Spot, b: Spot): number {
+    return coordSort(a.coords, b.coords)
+}
+
+function removeSpot(spots: Spot[], spotToRemove: Spot): Spot[] {
+    return spots.filter(s => !equals(s.coords, spotToRemove.coords))
+}
 
 export class Island {
     public readonly name: string
@@ -79,7 +85,25 @@ export class Island {
             .multiplyScalar(1 / this.spots.length)
     }
 
-    public get data(): IslandData {
+    public get islandData(): IslandData {
+        const gone = this.vacantHexalot
+        if (gone) {
+            const parent = gone.parentHexalot
+            if (!parent) {
+                throw new Error("No parent")
+            }
+            parent.childHexalots = parent.childHexalots.filter(child => child.id !== gone.id)
+            const hexalots = this.hexalots.filter(h => h.id !== gone.id)
+            const spotsToRemove = this.spots.filter(p => {
+                return p.memberOfHexalot.length === 1 && p.memberOfHexalot[0].id === gone.id
+            })
+            const spots = spotsToRemove.reduce(removeSpot, this.spots).sort(sortSpotsOnCoord)
+            return {
+                name: this.name,
+                hexalots: hexalotTreeString(hexalots),
+                spots: spotsToString(spots),
+            } as IslandData
+        }
         if (!this.islandIsLegal) {
             throw new Error("Saving illegal island")
         }

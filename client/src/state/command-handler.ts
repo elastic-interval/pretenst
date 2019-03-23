@@ -201,18 +201,9 @@ export class CommandHandler {
 
 
             case Command.AbandonFix: // ================================================================================
-                const afterDeselect = await trans.withSelectedSpot()
-                const vacantHexalot = island.vacantHexalot
-                island.vacantHexalot = undefined
-                if (vacantHexalot) {
-                    // TODO: remove the dang thing
-                    // const removeSpotFromIsland = (islandSpots: Spot[], spotToRemove: Spot) => {
-                    //     return islandSpots.filter(s => equals(s.coords, spotToRemove.coords))
-                    // }
-                    // island.spots = vacantHexalot.destroy().reduce(removeSpotFromIsland, island.spots)
-                    // island.hexalots = island.hexalots.filter(h => h.id !== vacantHexalot.id)
-                }
-                return afterDeselect.withMode(Mode.Visiting).withRestructure.state
+                const nonce = island.state.nonce + 1
+                const withoutVacant = new Island(island.islandData, island.gotchiFactory, state.storage, nonce)
+                return (await trans.withSelectedSpot()).withIsland(withoutVacant).withMode(Mode.Visiting).withRestructure.state
 
 
             case Command.ClaimHexalot: // ==============================================================================

@@ -34,9 +34,9 @@ export class BrowserStorage implements IStorage {
     public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData | undefined> {
         hexalot.genome = fromOptionalGenomeData(genomeData)
         this.setGenomeData(hexalot, genomeData)
-        const islandData = island.data
+        const islandData = island.islandData
         this.storage.setItem(islandData.name, JSON.stringify(islandData))
-        return Promise.resolve(island.data)
+        return Promise.resolve(islandData)
     }
 
     public async getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined> {
