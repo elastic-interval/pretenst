@@ -10,45 +10,9 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { IStorage } from "../storage/storage"
 
 import { Island } from "./island"
+import { equals, ICoords, IHexalot, spotsToHexalotId } from "./island-logic"
 import { fromOptionalJourneyData, Journey } from "./journey"
-import { BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
-import { equals, ICoords, Spot, Surface } from "./spot"
-
-const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
-
-interface IHexalotIndexed {
-    hexalot: Hexalot
-    index: number
-}
-
-const spotsToHexId = (spots: Spot[]): string => {
-    const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
-    const nybbleStrings = lit
-        .map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
-        .filter(chunk => chunk)
-    const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16))
-    return nybbleChars.join("")
-}
-
-const ringIndex = (coords: ICoords, origin: ICoords): number => {
-    const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
-    for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
-            return index
-        }
-    }
-    return 0
-}
-
-export const hexalotTreeString = (hexalots: Hexalot[]) => {
-    const root = hexalots.find(hexalot => hexalot.nonce === 0)
-    if (!root) {
-        console.error("No root hexalot found")
-        return ""
-    }
-    hexalots.forEach(hexalot => hexalot.visited = false)
-    return root.generateOctalTreePattern([]).join("")
-}
+import { Spot } from "./spot"
 
 export enum LoadStatus {
     Pending,
@@ -56,7 +20,7 @@ export enum LoadStatus {
     Loaded,
 }
 
-export class Hexalot {
+export class Hexalot implements IHexalot {
     public genomeStatus = LoadStatus.Pending
     public genome?: Genome
     public journeyStatus = LoadStatus.Pending
@@ -94,7 +58,7 @@ export class Hexalot {
     }
 
     public refreshId(): void {
-        this.identifier = spotsToHexId(this.spots)
+        this.identifier = spotsToHexalotId(this.spots)
     }
 
     public fetchGenome(storage: IStorage, loaded: () => void): boolean {
@@ -180,27 +144,5 @@ export class Hexalot {
         this.spots.forEach(p => p.memberOfHexalot = p.memberOfHexalot.filter(hexalot => !equals(this.coords, hexalot.coords)))
         this.spots.filter(p => p.memberOfHexalot.length === 0).forEach(removeSpot)
         this.spots = []
-    }
-
-    public generateOctalTreePattern(steps: number[]): number[] {
-        const remainingChildren = this.childHexalots.filter(hexalot => !hexalot.visited)
-            .map(hexalot => {
-                const index = ringIndex(hexalot.coords, this.coords)
-                return {index, hexalot} as IHexalotIndexed
-            })
-            .sort((a, b) => a.index < b.index ? 1 : a.index > b.index ? -1 : 0)
-        if (remainingChildren.length > 0) {
-            for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
-                if (remainingChildren.length > 0) {
-                    steps.push(BRANCH_STEP)
-                }
-                steps.push(child.index > 0 ? child.index : ERROR_STEP)
-                child.hexalot.generateOctalTreePattern(steps)
-            }
-        } else {
-            steps.push(STOP_STEP)
-        }
-        this.visited = true
-        return steps
     }
 }

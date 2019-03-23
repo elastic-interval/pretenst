@@ -8,8 +8,9 @@ import { Subject } from "rxjs"
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
+import { Surface } from "../island/island-logic"
 import { Journey } from "../island/journey"
-import { Spot, Surface } from "../island/spot"
+import { Spot } from "../island/spot"
 
 import { homeHexalotSelected, IAppState, Mode } from "./app-state"
 

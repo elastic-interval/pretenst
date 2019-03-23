@@ -11,7 +11,7 @@ import { freshGenome, IGenomeData } from "../genetics/genome"
 import { Evolution } from "../gotchi/evolution"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
-import { Surface } from "../island/spot"
+import { Surface } from "../island/island-logic"
 
 import { Command, IAppState, Mode } from "./app-state"
 import { Transition } from "./transition"

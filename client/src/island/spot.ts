@@ -10,18 +10,8 @@ import { SEED_CORNERS } from "../body/fabric-exports"
 import { MeshKey } from "../view/spot-selector"
 
 import { Hexalot } from "./hexalot"
+import { ICoords, ISpot, Surface } from "./island-logic"
 import { HEXAGON_POINTS, HEXAPOD_PROJECTION, SCALE_X, SCALE_Y } from "./shapes"
-
-export interface ICoords {
-    x: number
-    y: number
-}
-
-export enum Surface {
-    Unknown = "unknown",
-    Land = "land",
-    Water = "water",
-}
 
 const SURFACE_UNKNOWN_COLOR = new Color("silver")
 const SURFACE_LAND_COLOR = new Color("tan")
@@ -31,7 +21,7 @@ const UP = new Vector3(0, 1, 0)
 const LAND_NORMAL_SPREAD = 0.03
 const WATER_NORMAL_SPREAD = -0.02
 
-export class Spot {
+export class Spot implements ISpot {
     public center: Vector3
     public adjacentSpots: Spot[] = []
     public memberOfHexalot: Hexalot[] = []
@@ -201,53 +191,4 @@ export class Spot {
                 return 0
         }
     }
-}
-
-/*
-    const geometry = new BufferGeometry();
-    const positions = new Float32Array(360 * 6 / WALL_STEP_DEGREES);
-    let slot = 0;
-    for (let degrees = 0; degrees < 360; degrees += WALL_STEP_DEGREES) {
-        const r1 = Math.PI * 2 * degrees / 360;
-        const r2 = Math.PI * 2 * (degrees + WALL_STEP_DEGREES) / 360;
-        positions[slot++] = radius * Math.sin(r1) + center.x;
-        positions[slot++] = FRONTIER_ALTITUDE + center.y;
-        positions[slot++] = radius * Math.cos(r1) + center.z;
-        positions[slot++] = radius * Math.sin(r2) + center.x;
-        positions[slot++] = FRONTIER_ALTITUDE + center.y;
-        positions[slot++] = radius * Math.cos(r2) + center.z;
-    }
-    geometry.addAttribute('position', new Float32BufferAttribute(positions, 3));
-
- */
-
-export const coordSort = (a: ICoords, b: ICoords): number =>
-    a.y < b.y ? -1 : a.y > b.y ? 1 : a.x < b.x ? -1 : a.x > b.x ? 1 : 0
-
-export const zero: ICoords = {x: 0, y: 0}
-
-export const equals = (a: ICoords, b: ICoords): boolean => a.x === b.x && a.y === b.y
-
-export const minus = (a: ICoords, b: ICoords): ICoords => {
-    return {x: a.x - b.x, y: a.y - b.y}
-}
-
-export const plus = (a: ICoords, b: ICoords): ICoords => {
-    return {x: a.x + b.x, y: a.y + b.y}
-}
-
-const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
-
-export const spotsToString = (spots: Spot[]) => {
-    const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
-    const nybbleStrings = land.map((l, index, array) =>
-        (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
-    const nybbleChars = nybbleStrings.map(chunk => {
-        if (chunk) {
-            return parseInt(padRightTo4(chunk), 2).toString(16)
-        } else {
-            return ""
-        }
-    })
-    return nybbleChars.join("")
 }
