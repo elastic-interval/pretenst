@@ -17,6 +17,7 @@ import {
     IIsland,
     ISpot,
     plus,
+    recalculateIsland,
     Surface,
     ZERO,
 } from "./island-logic"
@@ -62,6 +63,7 @@ export class Island implements IIsland {
     }
 
     public async save(): Promise<void> {
+        recalculateIsland(this)
         return this.store.setIslandData(this.islandName, extractIslandData(this))
     }
 
@@ -133,15 +135,15 @@ export class Island implements IIsland {
         if (existing) {
             return existing
         }
-        const spot: ISpot = {
+        const newSpot: ISpot = {
             coords,
             surface: Surface.Unknown,
             adjacentSpots: [],
             adjacentHexalots: [],
             connected: false,
         }
-        this.spots.push(spot)
-        return spot
+        this.spots.push(newSpot)
+        return newSpot
     }
 
     // @ts-ignore
