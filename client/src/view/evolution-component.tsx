@@ -8,7 +8,7 @@ import * as R3 from "react-three"
 import { Subscription } from "rxjs/Subscription"
 
 import { Evolution } from "../gotchi/evolution"
-import { Evolver } from "../gotchi/evolver"
+import { Jockey } from "../gotchi/jockey"
 
 import { GOTCHI_ARROW, GOTCHI_GHOST } from "./materials"
 
@@ -17,7 +17,7 @@ export interface IEvolutionProps {
 }
 
 export interface IEvolutionState {
-    evolvers: Evolver[]
+    evolvers: Jockey[]
 }
 
 export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolutionState> {
@@ -27,12 +27,12 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
     constructor(props: IEvolutionProps) {
         super(props)
         this.state = {
-            evolvers: props.evolution.evolversNow.getValue(),
+            evolvers: props.evolution.currentJockeys.getValue(),
         }
     }
 
     public componentDidMount(): void {
-        this.subscription = this.props.evolution.evolversNow.subscribe(evolvers => {
+        this.subscription = this.props.evolution.currentJockeys.subscribe(evolvers => {
             this.setState({evolvers})
         })
     }

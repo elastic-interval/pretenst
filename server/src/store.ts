@@ -5,7 +5,8 @@
 
 import { FlashStore } from "flash-store"
 
-import { IJourneyData, IslandData } from "./island"
+import { IJourneyData } from "./island"
+import { IslandData } from "./island-logic"
 import { HexalotID } from "./types"
 
 export interface IKeyValueStore {

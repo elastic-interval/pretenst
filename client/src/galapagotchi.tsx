@@ -15,7 +15,7 @@ import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
-import { Surface } from "./island/spot"
+import { Surface } from "./island/island-logic"
 import { IAppState, logString } from "./state/app-state"
 import { IStorage } from "./storage/storage"
 import { ActionsPanel } from "./view/actions-panel"
@@ -157,14 +157,13 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         )
     }
 
-    private fetchIsland(islandName: string): void {
-        this.props.storage.getIslandData(islandName).then(islandData => {
-            if (!islandData) {
-                return
-            }
-            const island = new Island(islandData, this.fabricKernel, this.props.storage, this.stateSubject, 0)
-            console.log(logString(island.state))
-            this.stateSubject.next(island.state)
-        })
+    private async fetchIsland(islandName: string): Promise<void> {
+        const islandData = await this.props.storage.getIslandData(islandName)
+        if (!islandData) {
+            return
+        }
+        const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
+        console.log(logString(island.state))
+        this.stateSubject.next(island.state)
     }
 }

@@ -10,62 +10,18 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { IStorage } from "../storage/storage"
 
 import { Island } from "./island"
+import { ICoords, IHexalot } from "./island-logic"
 import { fromOptionalJourneyData, Journey } from "./journey"
-import { BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP } from "./shapes"
-import { equals, ICoords, Spot, Surface } from "./spot"
+import { Spot } from "./spot"
 
-const padRightTo4 = (s: string): string => s.length < 4 ? padRightTo4(s + "0") : s
-
-interface IHexalotIndexed {
-    hexalot: Hexalot
-    index: number
-}
-
-const spotsToHexId = (spots: Spot[]): string => {
-    const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
-    const nybbleStrings = lit
-        .map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
-        .filter(chunk => chunk)
-    const nybbleChars = nybbleStrings.map((s: string) => parseInt(padRightTo4(s), 2).toString(16))
-    return nybbleChars.join("")
-}
-
-const ringIndex = (coords: ICoords, origin: ICoords): number => {
-    const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
-    for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
-            return index
-        }
-    }
-    return 0
-}
-
-export const hexalotTreeString = (hexalots: Hexalot[]) => {
-    const root = hexalots.find(hexalot => hexalot.nonce === 0)
-    if (!root) {
-        console.error("No root hexalot found")
-        return ""
-    }
-    hexalots.forEach(hexalot => hexalot.visited = false)
-    return root.generateOctalTreePattern([]).join("")
-}
-
-export enum LoadStatus {
-    Pending,
-    Busy,
-    Loaded,
-}
-
-export class Hexalot {
-    public genomeStatus = LoadStatus.Pending
+export class Hexalot implements IHexalot {
+    public id: string
     public genome?: Genome
-    public journeyStatus = LoadStatus.Pending
     public journey?: Journey
     public childHexalots: Hexalot[] = []
     public rotation = Math.floor(Math.random() * 6)
     public nonce = 0
     public visited = false
-    private identifier?: string
 
     constructor(public parentHexalot: Hexalot | undefined,
                 public coords: ICoords,
@@ -82,57 +38,18 @@ export class Hexalot {
         }
     }
 
-    public get id(): string {
-        if (!this.identifier) {
-            throw new Error("Should have refreshed fingerprint first")
-        }
-        return this.identifier
+    public async fetchGenome(storage: IStorage): Promise<Genome | undefined> {
+        const genomeData = await storage.getGenomeData(this)
+        console.log(`Genome data arrived for ${this.id}`, genomeData)
+        this.genome = fromOptionalGenomeData(genomeData)
+        return this.genome
     }
 
-    public get isLegal(): boolean {
-        return this.spots.every(spot => spot.isLegal)
-    }
-
-    public refreshId(): void {
-        this.identifier = spotsToHexId(this.spots)
-    }
-
-    public fetchGenome(storage: IStorage, loaded: () => void): boolean {
-        switch (this.genomeStatus) {
-            case LoadStatus.Pending:
-                this.genomeStatus = LoadStatus.Busy
-                storage.getGenomeData(this).then(genomeData => {
-                    this.genome = fromOptionalGenomeData(genomeData)
-                    console.log(`Genome data arrived for ${this.id}`, genomeData)
-                    this.genomeStatus = LoadStatus.Loaded
-                    loaded()
-                })
-                return false
-            case LoadStatus.Busy:
-                return false
-            case LoadStatus.Loaded:
-                return true
-        }
-    }
-
-    public fetchJourney(storage: IStorage, island: Island, loaded: (journey: Journey) => void): boolean {
-        switch (this.journeyStatus) {
-            case LoadStatus.Pending:
-                this.journeyStatus = LoadStatus.Busy
-                storage.getJourneyData(this).then(journeyData => {
-                    this.journey = fromOptionalJourneyData(island, journeyData)
-                    console.log(`Journey data arrived for ${this.id}`, journeyData)
-                    this.journeyStatus = LoadStatus.Loaded
-                    if (this.journey) {
-                        loaded(this.journey)
-                    }
-                })
-                return false
-            case LoadStatus.Busy:
-                return false
-            case LoadStatus.Loaded:
-                return true
-        }
+    public async fetchJourney(storage: IStorage, island: Island): Promise<Journey | undefined> {
+        const journeyData = await storage.getJourneyData(this)
+        console.log(`Journey data arrived for ${this.id}`, journeyData)
+        this.journey = fromOptionalJourneyData(island, journeyData)
+        return this.journey
     }
 
     public createNativeGotchi(): Gotchi | undefined {
@@ -163,44 +80,5 @@ export class Hexalot {
 
     get center(): Vector3 {
         return this.centerSpot.center
-    }
-
-    public destroy(removeSpot: (spot: Spot) => void): void {
-        console.warn("destroy", this.id)
-        if (this.spots.length === 0) {
-            return
-        }
-        if (this.parentHexalot) {
-            this.parentHexalot.childHexalots = this.parentHexalot.childHexalots.filter(hexalot => !equals(this.coords, hexalot.coords))
-        }
-        this.spots[0].centerOfHexalot = undefined
-        for (let neighbor = 1; neighbor <= 6; neighbor++) {
-            this.spots[neighbor].adjacentHexalots = this.spots[neighbor].adjacentHexalots.filter(hexalot => !equals(this.coords, hexalot.coords))
-        }
-        this.spots.forEach(p => p.memberOfHexalot = p.memberOfHexalot.filter(hexalot => !equals(this.coords, hexalot.coords)))
-        this.spots.filter(p => p.memberOfHexalot.length === 0).forEach(removeSpot)
-        this.spots = []
-    }
-
-    public generateOctalTreePattern(steps: number[]): number[] {
-        const remainingChildren = this.childHexalots.filter(hexalot => !hexalot.visited)
-            .map(hexalot => {
-                const index = ringIndex(hexalot.coords, this.coords)
-                return {index, hexalot} as IHexalotIndexed
-            })
-            .sort((a, b) => a.index < b.index ? 1 : a.index > b.index ? -1 : 0)
-        if (remainingChildren.length > 0) {
-            for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
-                if (remainingChildren.length > 0) {
-                    steps.push(BRANCH_STEP)
-                }
-                steps.push(child.index > 0 ? child.index : ERROR_STEP)
-                child.hexalot.generateOctalTreePattern(steps)
-            }
-        } else {
-            steps.push(STOP_STEP)
-        }
-        this.visited = true
-        return steps
     }
 }
