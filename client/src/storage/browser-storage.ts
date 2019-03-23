@@ -5,7 +5,8 @@
 
 import { fromOptionalGenomeData, IGenomeData } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
-import { Island, IslandData } from "../island/island"
+import { Island } from "../island/island"
+import { extractIslandData, IslandData } from "../island/island-logic"
 import { IJourneyData } from "../island/journey"
 
 import { IStorage } from "./storage"
@@ -34,7 +35,7 @@ export class BrowserStorage implements IStorage {
     public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData | undefined> {
         hexalot.genome = fromOptionalGenomeData(genomeData)
         this.setGenomeData(hexalot, genomeData)
-        const islandData = island.islandData
+        const islandData = extractIslandData(island)
         this.storage.setItem(islandData.name, JSON.stringify(islandData))
         return Promise.resolve(islandData)
     }

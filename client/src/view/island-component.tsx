@@ -16,7 +16,7 @@ import {
     HEXALOT_OUTLINE_HEIGHT,
     INNER_HEXALOT_SPOTS,
     OUTER_HEXALOT_SIDE,
-} from "../island/shapes"
+} from "../island/constants"
 import { IAppState, Mode } from "../state/app-state"
 
 import {

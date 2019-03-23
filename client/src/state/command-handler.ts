@@ -11,7 +11,7 @@ import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
-import { Surface } from "../island/spot"
+import { extractIslandData, isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
 
 import { Command, IAppState, Mode } from "./app-state"
 import { Transition } from "./transition"
@@ -193,7 +193,7 @@ export class CommandHandler {
                 if (unknownSpot) {
                     return (await trans.withSelectedSpot(unknownSpot)).state
                 }
-                const illegalSpot = island.spots.find(s => !s.isLegal)
+                const illegalSpot = island.spots.find(s => !isSpotLegal(s))
                 if (illegalSpot) {
                     return (await trans.withSelectedSpot(illegalSpot)).state
                 }
@@ -202,12 +202,12 @@ export class CommandHandler {
 
             case Command.AbandonFix: // ================================================================================
                 const nonce = island.state.nonce + 1
-                const withoutVacant = new Island(island.islandData, island.gotchiFactory, state.storage, nonce)
-                return (await trans.withSelectedSpot()).withIsland(withoutVacant).withMode(Mode.Visiting).withRestructure.state
+                const orig = new Island(extractIslandData(island), island.gotchiFactory, state.storage, nonce)
+                return (await trans.withSelectedSpot()).withIsland(orig).withMode(Mode.Visiting).withRestructure.state
 
 
             case Command.ClaimHexalot: // ==============================================================================
-                if (!homeHexalot && hexalot && island.islandIsLegal && (singleHexalot || vacant && vacant.id === hexalot.id)) {
+                if (!homeHexalot && hexalot && isIslandLegal(island) && (singleHexalot || vacant && vacant.id === hexalot.id)) {
                     this.claimHexalot(hexalot)
                     island.vacantHexalot = undefined
                     return (await trans.withHomeHexalot(hexalot)).withRestructure.state

@@ -9,6 +9,7 @@ import HttpStatus from "http-status-codes"
 
 import { Island } from "./island"
 import { IslandIcosahedron } from "./island-icosahedron"
+import { extractIslandData } from "./island-logic"
 import { DataStore, IKeyValueStore } from "./store"
 
 function validateRequest(req: Request, res: Response, next: NextFunction): void {
@@ -50,7 +51,7 @@ export function createRouter(db: IKeyValueStore): Router {
                     res.status(404).end("Island doesn't exist")
                     return
                 }
-                res.locals.island = new Island(store, islandName)
+                res.locals.island = new Island(islandName, store, islandName)
                 next()
             },
             islandRoute,
@@ -115,7 +116,7 @@ export function createRouter(db: IKeyValueStore): Router {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return
                 }
-                res.json(island.data)
+                res.json(extractIslandData(island))
             },
         )
 
