@@ -33,7 +33,9 @@ const match = /^#\/login\?userId=([a-zA-Z0-9\-]+)$/.exec(window.location.hash)
 if (match) {
     const userId = match[1]
     console.log(`Logging in with userId=${userId}`)
-    document.cookie = `userId=${userId}`
+    const expiry = new Date()
+    expiry.setTime(expiry.getTime() + (365 * 24 * 60 * 60 * 1000))
+    document.cookie = `userId=${userId}; expires=${expiry.toUTCString()}`
     window.location.href = "/"
 }
 
