@@ -115,7 +115,7 @@ export function createRouter(db: IKeyValueStore): Router {
                     return
                 }
                 if (ownedLots.length === 1) {
-                    res.status(HttpStatus.BAD_REQUEST).end("You have already claimed a lot.")
+                    res.status(HttpStatus.FORBIDDEN).end("You have already claimed a lot.")
                     return
                 }
                 res.locals.userId = userId
