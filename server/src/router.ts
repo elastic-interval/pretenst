@@ -39,6 +39,9 @@ export function createRouter(db: IKeyValueStore): Router {
         .get("/", (req, res) => {
             res.end("OK")
         })
+        .get("/islands", (req, res) => {
+            res.json(IslandIcosahedron)
+        })
         .post("/_add-user", async (req, res) => {
             if (req.hostname !== "localhost") {
                 res.sendStatus(HttpStatus.NOT_FOUND)
