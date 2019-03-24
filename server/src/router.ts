@@ -39,6 +39,14 @@ export function createRouter(db: IKeyValueStore): Router {
         .get("/", (req, res) => {
             res.end("OK")
         })
+        .post("/_add-user", async (req, res) => {
+            if (req.hostname !== "localhost") {
+                res.sendStatus(HttpStatus.NOT_FOUND)
+                return
+            }
+            await store.addUser(req.body.userId)
+            res.sendStatus(HttpStatus.OK)
+        })
         .use(
             "/island/:islandName",
             [
@@ -95,6 +103,24 @@ export function createRouter(db: IKeyValueStore): Router {
                 body("genomeData").isJSON(),
                 validateRequest,
             ],
+            async (req: Request, res: Response, next: NextFunction) => {
+                if (!req.cookies) {
+                    res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+                    return
+                }
+                const userId = req.cookies.userId || "NOT_A_USER"
+                const ownedLots = await store.getOwnedLots(userId)
+                if (ownedLots === undefined) {
+                    res.status(HttpStatus.UNAUTHORIZED).end("Need an access code to claim lots. Ask Gerald")
+                    return
+                }
+                if (ownedLots.length === 1) {
+                    res.status(HttpStatus.BAD_REQUEST).end("You have already claimed a lot.")
+                    return
+                }
+                res.locals.userId = userId
+                next()
+            },
             async (req: Request, res: Response) => {
                 const {
                     x,
@@ -102,16 +128,13 @@ export function createRouter(db: IKeyValueStore): Router {
                     genomeData,
                     id,
                 } = req.body
+                const userId = res.locals.userId
                 const island: Island = res.locals.island
                 await island.load()
 
                 // TODO: probably gonna wanna mutex this
                 try {
-                    await island.claimHexalot(
-                        {x, y},
-                        id,
-                        genomeData,
-                    )
+                    await island.claimHexalot(userId, {x, y}, id, genomeData)
                 } catch (err) {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return
@@ -181,12 +204,12 @@ export function createRouter(db: IKeyValueStore): Router {
             async (req: Request, res: Response) => {
                 const journeyData = req.body.journeyData
                 if (!journeyData.hexalots || !(journeyData.hexalots instanceof Array)) {
-                    res.status(400).end("missing required hexalot array field")
+                    res.status(HttpStatus.BAD_REQUEST).end("missing required hexalot array field")
                     return
                 }
                 for (const lotId of journeyData.hexalots) {
                     if (!/[0-9a-fA-F]{32}/.test(lotId)) {
-                        res.status(400).end(`invalid hexalot format: ${lotId}`)
+                        res.status(HttpStatus.BAD_REQUEST).end(`invalid hexalot format: ${lotId}`)
                         return
                     }
                 }

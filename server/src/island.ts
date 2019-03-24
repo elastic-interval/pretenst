@@ -67,7 +67,7 @@ export class Island implements IIsland {
         return this.store.setIslandData(this.islandName, extractIslandData(this))
     }
 
-    public async claimHexalot(center: ICoords, lotID: HexalotID, genomeData: string): Promise<void> {
+    public async claimHexalot(userId: string, center: ICoords, lotID: HexalotID, genomeData: string): Promise<void> {
         if (await this.store.getGenomeData(lotID) !== undefined) {
             throw new Error("hexalot already claimed")
         }
@@ -91,6 +91,7 @@ export class Island implements IIsland {
             spot.surface = surfaces[i]
         })
         await this.save()
+        await this.store.addOwnedLot(userId, userId)
         await this.store.setGenomeData(lotID, genomeData)
     }
 

@@ -28,6 +28,15 @@ if (REMOTE_STORAGE_URI !== undefined) {
     storage = new BrowserStorage(localStorage)
 }
 
+// YOLO-routing
+const match = /^#\/login\?userId=([a-zA-Z0-9\-]+)$/.exec(window.location.hash)
+if (match) {
+    const userId = match[1]
+    console.log(`Logging in with userId=${userId}`)
+    document.cookie = `userId=${userId}`
+    window.location.href = "/"
+}
+
 getFabricExports().then(fabricExports => {
     ReactDOM.render(
         <Galapagotchi fabricExports={fabricExports} storage={storage}/>,

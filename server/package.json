@@ -16,13 +16,19 @@
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'"
   },
   "dependencies": {
+    "@types/axios": "^0.14.0",
+    "@types/cookie-parser": "^1.4.1",
     "@types/dotenv": "^6.1.0",
     "@types/express": "^4.16.1",
     "@types/express-validator": "^3.0.0",
     "@types/http-status-codes": "^1.2.0",
     "@types/morgan": "^1.7.35",
     "@types/node": "^11.10.4",
+    "@types/uuid": "^3.4.4",
+    "axios": "^0.18.0",
     "bignumber.js": "^8.0.2",
+    "commander": "^2.19.0",
+    "cookie-parser": "^1.4.4",
     "dotenv": "^6.2.0",
     "express": "^4.16.4",
     "express-validator": "latest",
@@ -32,7 +38,8 @@
     "pm2": "^3.4.0",
     "ts-node": "^8.0.2",
     "tslint": "^5.12.1",
-    "typescript": "^3.3.3"
+    "typescript": "^3.3.3",
+    "uuid": "^3.3.2"
   },
   "devDependencies": {
     "@types/chai": "^4.1.7",

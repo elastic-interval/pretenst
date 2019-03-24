@@ -2,9 +2,14 @@ import bodyParser from "body-parser"
 import dotenv from "dotenv"
 import express from "express"
 import morgan from "morgan"
+import cookieParser from "cookie-parser"
 
 import { createRouter } from "./src/router"
 import { LevelDBFlashStore } from "./src/store"
+
+const origin = process.env.NODE_ENV === "production" ?
+    "https://galapagotchi.run" :
+    "http://localhost:3000"
 
 async function run(listenPort: number): Promise<void> {
     const db = new LevelDBFlashStore(__dirname + "/data/galapagotchi.db")
@@ -12,11 +17,13 @@ async function run(listenPort: number): Promise<void> {
     const app = express()
 
     app.use(bodyParser())
+    app.use(cookieParser())
 
     app.use(morgan("short"))
 
     app.use((req, res, next) => {
-        res.header("Access-Control-Allow-Origin", "*")
+        res.header("Access-Control-Allow-Origin", origin)
+        res.header("Access-Control-Allow-Credentials", "true")
         res.header("Access-Control-Allow-Methods", "GET, POST")
         res.header("Access-Control-Allow-Headers", "Content-Type")
         next()
