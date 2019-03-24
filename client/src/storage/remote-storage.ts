@@ -19,6 +19,7 @@ export class RemoteStorage implements IStorage {
     constructor(baseURL: string) {
         this.client = Axios.create({
             baseURL,
+            withCredentials: true,
         })
         this.client.get("/")
             .catch((e) => {
@@ -69,7 +70,7 @@ export class RemoteStorage implements IStorage {
             const response = await this.client.get(resourcePath)
             return response.data
         } catch (e) {
-            if (e.response.status === 404) {
+            if (e.response && e.response.status && e.response.status === 404) {
                 return undefined
             }
             throw e

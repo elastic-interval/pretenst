@@ -59,6 +59,25 @@ export class DataStore {
     ) {
     }
 
+    public async addUser(userId: string): Promise<void> {
+        await this.db.set(`/user/${userId}/ownedLots`, [])
+    }
+
+    public async addOwnedLot(userId: string, lot: HexalotID): Promise<boolean> {
+        // TODO: atomic
+        const ownedLots = await this.getOwnedLots(userId)
+        if (ownedLots === undefined) {
+            return false
+        }
+        ownedLots.push(lot)
+        await this.db.set(`/user/${userId}/ownedLots`, ownedLots)
+        return true
+    }
+
+    public async getOwnedLots(userId: string): Promise<HexalotID[]> {
+        return this.db.get(`/user/${userId}/ownedLots`)
+    }
+
     public async getIslandData(islandName: string): Promise<IslandData | undefined> {
         return this.db.get(`/island/${islandName}/data`)
     }
