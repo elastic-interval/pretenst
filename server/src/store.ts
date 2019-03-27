@@ -71,7 +71,12 @@ export class DataStore {
         }
         ownedLots.push(lot)
         await this.db.set(`/user/${userId}/ownedLots`, ownedLots)
+        await this.db.set(`/hexalot/${lot}/owner`, userId)
         return true
+    }
+
+    public async getLotOwner(lot: HexalotID): Promise<string | undefined> {
+        return this.db.get(`/hexalot/${lot}/owner`)
     }
 
     public async getOwnedLots(userId: string): Promise<HexalotID[]> {
