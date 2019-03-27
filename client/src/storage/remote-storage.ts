@@ -65,6 +65,10 @@ export class RemoteStorage implements IStorage {
         })
     }
 
+    public async getLotOwner(hexalot: Hexalot): Promise<string | undefined> {
+        return this.fetchResource<string>(`/hexalot/${hexalot.id}/owner`)
+    }
+
     private async fetchResource<T>(resourcePath: string): Promise<T | undefined> {
         try {
             const response = await this.client.get(resourcePath)
@@ -75,9 +79,5 @@ export class RemoteStorage implements IStorage {
             }
             throw e
         }
-    }
-
-    public async getLotOwner(hexalot: Hexalot): Promise<string | undefined> {
-        return this.fetchResource<string>(`/hexalot/${hexalot.id}/owner`)
     }
 }
