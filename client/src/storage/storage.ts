@@ -23,4 +23,5 @@ export interface IStorage {
 
     setJourneyData(hexalot: Hexalot, journeyData: IJourneyData): Promise<void>
 
+    getLotOwner(hexalot: Hexalot): Promise<string | undefined>
 }

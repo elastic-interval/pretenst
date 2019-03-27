@@ -28,6 +28,25 @@ const hexalotIDValidation = (idParam: ValidationChain) =>
         .isLength({max: 32, min: 32})
         .custom(id => (parseInt(id[id.length - 1], 16) & 0x1) === 0)
 
+
+function checkUserIdCookie(store: DataStore): (req: Request, res: Response, next: NextFunction) => void {
+    return async (req, res, next) => {
+        if (!req.cookies) {
+            res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+            return
+        }
+        const userId = req.cookies.userId || "NOT_A_USER"
+        const ownedLots = await store.getOwnedLots(userId)
+        if (ownedLots === undefined) {
+            res.status(HttpStatus.UNAUTHORIZED).end("Need an access code. Ask Gerald")
+            return
+        }
+        res.locals.userId = userId
+        res.locals.ownedLots = ownedLots
+        next()
+    }
+}
+
 export function createRouter(db: IKeyValueStore): Router {
     const store = new DataStore(db)
 
@@ -41,6 +60,9 @@ export function createRouter(db: IKeyValueStore): Router {
         })
         .get("/islands", (req, res) => {
             res.json(IslandIcosahedron)
+        })
+        .get("/owned-lots", checkUserIdCookie(store), (req, res) => {
+            res.json(res.locals.ownedLots)
         })
         .post("/_add-user", async (req, res) => {
             if (req.hostname !== "localhost") {
@@ -106,25 +128,12 @@ export function createRouter(db: IKeyValueStore): Router {
                 body("genomeData").isJSON(),
                 validateRequest,
             ],
-            async (req: Request, res: Response, next: NextFunction) => {
-                if (!req.cookies) {
-                    res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-                    return
-                }
-                const userId = req.cookies.userId || "NOT_A_USER"
-                const ownedLots = await store.getOwnedLots(userId)
-                if (ownedLots === undefined) {
-                    res.status(HttpStatus.UNAUTHORIZED).end("Need an access code to claim lots. Ask Gerald")
-                    return
-                }
-                if (ownedLots.length === 1) {
+            checkUserIdCookie(store),
+            async (req: Request, res: Response) => {
+                if (res.locals.ownedLots.length === 1) {
                     res.status(HttpStatus.FORBIDDEN).end("You have already claimed a lot.")
                     return
                 }
-                res.locals.userId = userId
-                next()
-            },
-            async (req: Request, res: Response) => {
                 const {
                     x,
                     y,
@@ -220,6 +229,16 @@ export function createRouter(db: IKeyValueStore): Router {
                 res.sendStatus(HttpStatus.OK)
             },
         )
+
+    hexalotRoute.get("/owner", async (req, res) => {
+        const lotId = res.locals.hexalotId
+        const owner = await store.getLotOwner(lotId)
+        if (owner === undefined) {
+            res.sendStatus(404)
+            return
+        }
+        res.json(owner)
+    })
 
     return root
 }

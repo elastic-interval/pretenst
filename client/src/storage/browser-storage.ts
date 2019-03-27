@@ -67,4 +67,9 @@ export class BrowserStorage implements IStorage {
         }
         return Promise.resolve(JSON.parse(journeyString))
     }
+
+    public async getLotOwner(hexalot: Hexalot): Promise<string | undefined> {
+        // TODO
+        return undefined
+    }
 }
