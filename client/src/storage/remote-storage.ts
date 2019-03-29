@@ -31,6 +31,10 @@ export class RemoteStorage implements IStorage {
         return this.fetchResource<IslandData>(`/island/${islandName}`)
     }
 
+    public async getOwnedLots(): Promise<string[] | undefined> {
+        return this.fetchResource<string[]>("/owned-lots")
+    }
+
     public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData> {
         hexalot.genome = fromOptionalGenomeData(genomeData)
         const response = await this.client.post(
@@ -60,9 +64,7 @@ export class RemoteStorage implements IStorage {
     }
 
     public async setJourneyData(hexalot: Hexalot, journeyData: IJourneyData): Promise<void> {
-        await this.client.post(`/hexalot/${hexalot.id}/journey`, {
-            journeyData,
-        })
+        await this.client.post(`/hexalot/${hexalot.id}/journey`, {journeyData})
     }
 
     public async getLotOwner(hexalot: Hexalot): Promise<string | undefined> {
@@ -74,10 +76,8 @@ export class RemoteStorage implements IStorage {
             const response = await this.client.get(resourcePath)
             return response.data
         } catch (e) {
-            if (e.response && e.response.status && e.response.status === 404) {
-                return undefined
-            }
-            throw e
+            console.error("network problem", e)
+            return undefined
         }
     }
 }

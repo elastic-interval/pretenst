@@ -159,10 +159,6 @@ export function createRouter(db: IKeyValueStore): Router {
         .route("/genome-data")
         .get(async (req, res) => {
             const genomeData = await store.getGenomeData(res.locals.hexalotId)
-            if (!genomeData) {
-                res.sendStatus(HttpStatus.NOT_FOUND)
-                return
-            }
             res.json(genomeData)
         })
         .post(
@@ -202,10 +198,6 @@ export function createRouter(db: IKeyValueStore): Router {
         .route("/journey")
         .get(async (req, res) => {
             const journey = await store.getJourney(res.locals.hexalotId)
-            if (journey === undefined) {
-                res.sendStatus(404)
-                return
-            }
             res.json(journey)
         })
         .post(
@@ -215,7 +207,7 @@ export function createRouter(db: IKeyValueStore): Router {
             ],
             async (req: Request, res: Response) => {
                 const journeyData = req.body.journeyData
-                if (!journeyData.hexalots || !(journeyData.hexalots instanceof Array)) {
+                if (!journeyData.hexalots) {
                     res.status(HttpStatus.BAD_REQUEST).end("missing required hexalot array field")
                     return
                 }
@@ -234,7 +226,7 @@ export function createRouter(db: IKeyValueStore): Router {
         const lotId = res.locals.hexalotId
         const owner = await store.getLotOwner(lotId)
         if (owner === undefined) {
-            res.sendStatus(404)
+            res.sendStatus(HttpStatus.NOT_FOUND)
             return
         }
         res.json(owner)

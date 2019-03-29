@@ -4,6 +4,7 @@
  */
 
 import "bootstrap/dist/css/bootstrap.min.css"
+import * as Cookies from "js-cookie"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 
@@ -28,20 +29,25 @@ if (REMOTE_STORAGE_URI !== undefined) {
     storage = new BrowserStorage(localStorage)
 }
 
-// YOLO-routing
+const USER_ID = "userId"
+const userIdCookie = Cookies.get(USER_ID)
+
+// YOLO login trick
 const match = /^#\/login\?userId=([a-zA-Z0-9\-]+)$/.exec(window.location.hash)
+let userId: string | undefined
 if (match) {
-    const userId = match[1]
-    console.log(`Logging in with userId=${userId}`)
-    const expiry = new Date()
-    expiry.setTime(expiry.getTime() + (365 * 24 * 60 * 60 * 1000))
-    document.cookie = `userId=${userId}; expires=${expiry.toUTCString()}`
+    userId = match[1]
+    const expires = new Date()
+    expires.setTime(expires.getTime() + (365 * 24 * 60 * 60 * 1000))
+    Cookies.set(USER_ID, userId, {expires})
     window.location.href = "/"
+} else if (userIdCookie) {
+    userId = userIdCookie.split("=").pop()
 }
 
 getFabricExports().then(fabricExports => {
     ReactDOM.render(
-        <Galapagotchi fabricExports={fabricExports} storage={storage}/>,
+        <Galapagotchi fabricExports={fabricExports} storage={storage} userId={userId}/>,
         document.getElementById("root") as HTMLElement,
     )
     registerServiceWorker()

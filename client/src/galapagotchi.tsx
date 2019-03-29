@@ -14,18 +14,19 @@ import { IFabricExports } from "./body/fabric-exports"
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
-import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
-import { IAppState, logString } from "./state/app-state"
+import { IAppState } from "./state/app-state"
 import { IStorage } from "./storage/storage"
 import { ActionsPanel } from "./view/actions-panel"
 import { GotchiView } from "./view/gotchi-view"
 import { InfoPanel } from "./view/info-panel"
 import { OrbitDistance } from "./view/orbit"
+import { Welcome } from "./view/welcome"
 
 interface IAppProps {
     fabricExports: IFabricExports
     storage: IStorage
+    userId?: string
 }
 
 export interface IGalapagotchiState {
@@ -34,7 +35,8 @@ export interface IGalapagotchiState {
     height: number
     left: number
     top: number
-    infoPanel: boolean
+    infoPanelMaximized: boolean
+    ownedLots: string[]
     appState?: IAppState
 }
 
@@ -68,12 +70,13 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         this.state = {
-            infoPanel: getInfoPanelMaximized(),
+            infoPanelMaximized: getInfoPanelMaximized(),
             orbitDistance: this.orbitDistanceSubject.getValue(),
             width: window.innerWidth,
             height: window.innerHeight,
             left: window.screenLeft,
             top: window.screenTop,
+            ownedLots: [],
         }
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000)
     }
@@ -84,16 +87,19 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         this.subs.push(this.stateSubject.subscribe(appState => {
             const homeHexalot = appState.homeHexalot
             if (homeHexalot) {
-                location.replace(`/#/${homeHexalot.id}`)
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
                 const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
-            } else {
-                location.replace("/#/")
             }
             this.setState({appState})
         }))
-        this.fetchIsland("rotterdam")
+        this.props.storage.getOwnedLots().then(ownedLots => {
+            if (!ownedLots) {
+                this.setState({ownedLots: []})
+                return
+            }
+            this.setState({ownedLots})
+        })
     }
 
     public componentWillUnmount(): void {
@@ -103,67 +109,70 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
 
     public render(): JSX.Element {
         return (
-            <div className="everything">
-                {this.state.appState ? (
-                    <GotchiView
-                        perspectiveCamera={this.perspectiveCamera}
-                        appState={this.state.appState}
+            <div>
+                {!this.state.appState ? (
+                    <Welcome
+                        userId={this.props.userId}
+                        ownedLots={this.state.ownedLots}
+                        storage={this.props.storage}
+                        fabricKernel={this.fabricKernel}
                         stateSubject={this.stateSubject}
-                        width={this.state.width}
-                        height={this.state.height}
-                        left={this.state.left}
-                        top={this.state.top}
-                        orbitDistance={this.orbitDistanceSubject}
                     />
                 ) : (
-                    <h1>No island!</h1>
-                )}
-                {!this.state.infoPanel ? (
-                    <div className="info-panel-collapsed floating-panel">
-                        <Button color="link" onClick={() => {
-                            this.setState({infoPanel: true})
-                            setInfoPanelMaximized(true)
-                        }}>?</Button>
-                    </div>
-                ) : (
-                    <div className="info-panel floating-panel">
-                        <span>Galapagotchi</span>
-                        <div className="info-title">
-                            <div className="info-exit">
-                                <Button onClick={() => {
-                                    this.setState({infoPanel: false})
-                                    setInfoPanelMaximized(false)
-                                }}>X</Button>
+                    <div>
+                        <GotchiView
+                            perspectiveCamera={this.perspectiveCamera}
+                            userId={this.props.userId}
+                            appState={this.state.appState}
+                            stateSubject={this.stateSubject}
+                            width={this.state.width}
+                            height={this.state.height}
+                            left={this.state.left}
+                            top={this.state.top}
+                            orbitDistance={this.orbitDistanceSubject}
+                        />
+                        <div className="actions-panel-outer floating-panel">
+                            <div className="actions-panel-inner">
+                                <ActionsPanel
+                                    orbitDistance={this.orbitDistanceSubject}
+                                    appState={this.state.appState}
+                                    stateSubject={this.stateSubject}
+                                    location={this.perspectiveCamera.position}
+                                />
                             </div>
                         </div>
-                        <InfoPanel/>
+                        {this.infoPanel}
                     </div>
-                )}
-                {this.state.appState ? (
-                    <div className="actions-panel-outer floating-panel">
-                        <div className="actions-panel-inner">
-                            <ActionsPanel
-                                orbitDistance={this.orbitDistanceSubject}
-                                appState={this.state.appState}
-                                stateSubject={this.stateSubject}
-                                location={this.perspectiveCamera.position}
-                            />
-                        </div>
-                    </div>
-                ) : (
-                    <h1>No island!</h1>
                 )}
             </div>
         )
     }
 
-    private async fetchIsland(islandName: string): Promise<void> {
-        const islandData = await this.props.storage.getIslandData(islandName)
-        if (!islandData) {
-            return
+    private get infoPanel(): JSX.Element {
+        if (!this.state.infoPanelMaximized) {
+            return (
+                <div className="info-panel-collapsed floating-panel">
+                    <Button color="link" onClick={() => this.maximizeInfoPanel(true)}>?</Button>
+                </div>
+            )
+        } else {
+            return (
+                <div className="info-panel floating-panel">
+                    <span>Galapagotchi</span>
+                    <div className="info-title">
+                        <div className="info-exit">
+                            <Button onClick={() => this.maximizeInfoPanel(false)}>X</Button>
+                        </div>
+                    </div>
+                    <InfoPanel/>
+                </div>
+            )
         }
-        const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
-        console.log(logString(island.state))
-        this.stateSubject.next(island.state)
     }
+
+    private maximizeInfoPanel(infoPanelMaximized: boolean): void {
+        this.setState({infoPanelMaximized})
+        setInfoPanelMaximized(infoPanelMaximized)
+    }
+
 }

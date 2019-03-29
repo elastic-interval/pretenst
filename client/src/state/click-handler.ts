@@ -13,8 +13,8 @@ export class ClickHandler {
 
     private trans: Transition
 
-    constructor(state: IAppState) {
-        this.trans = new Transition(state)
+    constructor(appState: IAppState, private userId?: string) {
+        this.trans = new Transition(appState)
     }
 
     public async stateAfterClick(spot: Spot): Promise<IAppState> {
@@ -34,18 +34,15 @@ export class ClickHandler {
 
 
             case Mode.Visiting: // ===============================================================================
-                if (state.islandIsLegal && spot.isCandidateHexalot(vacant)) {
+                if (this.userId && !homeHexalot && state.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     island.vacantHexalot = island.createHexalot(spot)
                     return (await trans.withSelectedSpot(spot)).withMode(Mode.FixingIsland).withRestructure.state
-                }
-                if (hexalot) {
-                    return (await trans.withHomeHexalot(hexalot)).withRestructure.state
                 }
                 return (await trans.withSelectedSpot(spot)).state
 
 
             case Mode.Landed: // =================================================================================
-                if (hexalot) {
+                if (spot) {
                     return (await trans.withSelectedSpot(spot)).state
                 }
                 return state

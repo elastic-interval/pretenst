@@ -3,9 +3,13 @@
 [![Join the chat at https://gitter.im/galapagotchis/community](https://badges.gitter.im/galapagotchis/community.svg)](https://gitter.im/galapagotchis/community?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Build Status](https://travis-ci.com/beautiful-code-bv/galapagotchi.svg?branch=master)](https://travis-ci.com/beautiful-code-bv/galapagotchi)
 
+![logo](client/public/logo.png)
+
 Welcome to the [galapagotchi.run](https://galapagotchi.run) project, where you can create and evolve your own personal runner. It's like a game, and together we can make it more fun!
 
-By the way [look here](https://github.com/beautiful-code-bv/galapagotchi) or [find me](https://twitter.com/fluxe) if you are a developer interested in [WebAssembly](https://webassembly.org/), [WebGL](https://en.wikipedia.org/wiki/WebGL)/[ThreeJS](https://threejs.org/) or Darwin's [Evolution](https://en.wikipedia.org/wiki/Darwin%27s_Dangerous_Idea).
+The project is on [github](https://github.com/beautiful-code-bv/galapagotchi) and you can follow [@gapagotchi ](https://twitter.com/galapagotchi).
+ 
+Let us know if you are a developer interested in [WebAssembly](https://webassembly.org/), [WebGL](https://en.wikipedia.org/wiki/WebGL) / [ThreeJS](https://threejs.org/) or Darwin's [Evolution](https://en.wikipedia.org/wiki/Darwin%27s_Dangerous_Idea).
 
 # ⚁ ⚂ ⚃ ⚂ ⚀ ⚄ ⚅ ⚂ ⚂ ⚅ ⚂ ⚃ ⚁ ⚁ ⚄ ⚀ ⚅ ⚄ ⚅ ...
 

@@ -13,6 +13,8 @@ export interface IStorage {
 
     getIslandData(islandName: string): Promise<IslandData | undefined>
 
+    getOwnedLots(): Promise<string[] | undefined>
+
     claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData | undefined>
 
     getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined>

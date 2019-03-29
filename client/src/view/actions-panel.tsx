@@ -80,7 +80,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                                 <ActionFrame>
                                     <p>You can claim this hexalot when the island has been fixed.</p>
                                     {this.buttons("Fixing island", [
-                                        Command.JumpToFix,
+                                        Command.Terraform,
                                         Command.AbandonFix,
                                     ])}
                                 </ActionFrame>
@@ -134,9 +134,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                 return (
                     <ActionFrame>
                         <p>
-                            To login, select an existing hexalot.
-                            You can also claim one of the green available hexalots,
-                            but you will probably have to fix the island before you can claim it.
+                            You can click on one of the hexalots and go for a ride.
                         </p>
                     </ActionFrame>
                 )
@@ -152,16 +150,23 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                                 Command.RideJourney,
                                 Command.Evolve,
                                 Command.RandomGenome,
-                                Command.Logout,
+                            ])}
+                        </ActionFrame>
+                    )
+                } else if (appState.selectedHexalot) {
+                    return (
+                        <ActionFrame>
+                            {this.buttons("Visiting", [
+                                Command.RideFree,
+                                Command.Return,
                             ])}
                         </ActionFrame>
                     )
                 } else {
                     return (
                         <ActionFrame>
-                            {this.buttons("Visiting", [
-                                Command.RideFree,
-                                Command.Logout,
+                            {this.buttons("Empty spot", [
+                                Command.Return,
                             ])}
                         </ActionFrame>
                     )
