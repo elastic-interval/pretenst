@@ -112,8 +112,8 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
             <div>
                 {!this.state.appState ? (
                     <Welcome
-                        // userId={this.props.userId}
-                        ownedLots={[]}
+                        userId={this.props.userId}
+                        ownedLots={this.state.ownedLots}
                         storage={this.props.storage}
                         fabricKernel={this.fabricKernel}
                         stateSubject={this.stateSubject}
