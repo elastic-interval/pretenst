@@ -46,7 +46,7 @@ export const INFO_PAGES: JSX.Element[] = [
     (
         <div>
             <p>
-                The genes of a gotchi are not DNA like ours, but are instead frozen sequences of dice.
+                The genes of a gotchi are not DNA like ours, but are instead sequences of dice rolls.
             </p>
             <p>
                 Our DNA is coded with four molecules called "Adenine (A), Thymine (T), Cytosine (C), Guanine (G)",
