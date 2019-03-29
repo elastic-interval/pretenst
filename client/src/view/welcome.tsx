@@ -10,6 +10,7 @@ import { Subject } from "rxjs"
 import { FabricKernel } from "../body/fabric-kernel"
 import { Island } from "../island/island"
 import { IAppState, logString } from "../state/app-state"
+import { Transition } from "../state/transition"
 import { IStorage } from "../storage/storage"
 
 const GITHUB = "https://github.com/beautiful-code-bv/galapagotchi"
@@ -234,8 +235,15 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
         if (!islandData) {
             return
         }
-        const island = new Island(islandData, this.props.fabricKernel, this.props.storage, 0, homeHexalotId)
+        const island = new Island(islandData, this.props.fabricKernel, this.props.storage, 0)
         console.log(logString(island.state))
-        this.props.stateSubject.next(island.state)
+        if (!homeHexalotId) {
+            this.props.stateSubject.next(island.state)
+        } else {
+            const homeHexalot = island.findHexalot(homeHexalotId)
+            const transition = await new Transition(island.state).withHomeHexalot(homeHexalot)
+            const newState = transition.withRestructure.state
+            this.props.stateSubject.next(newState)
+        }
     }
 }

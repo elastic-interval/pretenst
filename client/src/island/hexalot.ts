@@ -14,6 +14,19 @@ import { ICoords, IHexalot } from "./island-logic"
 import { fromOptionalJourneyData, Journey } from "./journey"
 import { Spot } from "./spot"
 
+export async function fetchGenome(hexalot: Hexalot, storage: IStorage): Promise<void> {
+    if (hexalot.genome) {
+        return
+    }
+    hexalot.genome = await hexalot.fetchGenome(storage)
+    console.log(`Genome for ${hexalot.id}`, hexalot.genome)
+}
+
+export async function fetchJourney(hexalot: Hexalot, storage: IStorage, island: Island): Promise<void> {
+    hexalot.journey = await hexalot.fetchJourney(storage, island)
+    console.log(`Journey for ${hexalot.id}`, hexalot.journey)
+}
+
 export class Hexalot implements IHexalot {
     public id: string
     public genome?: Genome
@@ -40,14 +53,12 @@ export class Hexalot implements IHexalot {
 
     public async fetchGenome(storage: IStorage): Promise<Genome | undefined> {
         const genomeData = await storage.getGenomeData(this)
-        console.log(`Genome data arrived for ${this.id}`, genomeData)
         this.genome = fromOptionalGenomeData(genomeData)
         return this.genome
     }
 
     public async fetchJourney(storage: IStorage, island: Island): Promise<Journey | undefined> {
         const journeyData = await storage.getJourneyData(this)
-        console.log(`Journey data arrived for ${this.id}`, journeyData)
         this.journey = fromOptionalJourneyData(island, journeyData)
         return this.journey
     }

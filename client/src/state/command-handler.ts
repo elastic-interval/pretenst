@@ -198,8 +198,7 @@ export class CommandHandler {
 
             case Command.AbandonFix: // ================================================================================
                 const nonce = island.state.nonce + 1
-                const homeHexalotId = homeHexalot ? homeHexalot.id : undefined
-                const orig = new Island(extractIslandData(island), island.gotchiFactory, state.storage, nonce, homeHexalotId)
+                const orig = new Island(extractIslandData(island), island.gotchiFactory, state.storage, nonce)
                 return (await trans.withSelectedSpot()).withIsland(orig).withMode(Mode.Visiting).withRestructure.state
 
 
@@ -228,10 +227,10 @@ export class CommandHandler {
         const islandData = await state.storage.claimHexalot(state.island, hexalot, freshGenome().genomeData)
         if (!islandData) {
             console.warn("No island data arrived")
-            return
+            return undefined
         }
-        const island = new Island(islandData, state.island.gotchiFactory, state.storage, state.nonce, hexalot.id)
-        return island.state
+        const island = new Island(islandData, state.island.gotchiFactory, state.storage, state.nonce)
+        return (await new Transition(island.state).withHomeHexalot(hexalot)).withRestructure.state
     }
 }
 

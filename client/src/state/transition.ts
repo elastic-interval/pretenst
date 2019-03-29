@@ -6,7 +6,7 @@
 import { Evolution } from "../gotchi/evolution"
 import { Gotchi } from "../gotchi/gotchi"
 import { Jockey } from "../gotchi/jockey"
-import { Hexalot } from "../island/hexalot"
+import { fetchGenome, fetchJourney, Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
 import { calculateHexalotId, isIslandLegal, isSpotLegal, recalculateIsland, Surface } from "../island/island-logic"
 import { Journey } from "../island/journey"
@@ -44,9 +44,8 @@ export class Transition {
 
     public async withSelectedHexalot(selectedHexalot?: Hexalot): Promise<Transition> {
         this.appState = {...this.appState, selectedHexalot}
-        if (selectedHexalot && !selectedHexalot.genome) {
-            selectedHexalot.genome = await selectedHexalot.fetchGenome(this.appState.storage)
-            console.log(`Genome for ${selectedHexalot.id}`, selectedHexalot.genome)
+        if (selectedHexalot) {
+            await fetchGenome(selectedHexalot, this.appState.storage)
             return this
         }
         return this
@@ -73,8 +72,7 @@ export class Transition {
         if (!homeHexalot) {
             return this.withMode(Mode.Visiting).withJourney().withSelectedSpot()
         }
-        homeHexalot.journey = await homeHexalot.fetchJourney(this.appState.storage, this.appState.island)
-        console.log(`Journey for ${homeHexalot.id}`, homeHexalot.journey)
+        fetchJourney(homeHexalot, this.appState.storage, this.appState.island)
         return (await this.withSelectedSpot(homeHexalot.centerSpot)).withJourney(homeHexalot.journey).withMode(Mode.Landed)
     }
 

@@ -32,21 +32,14 @@ export class Island implements IIsland {
     public state: IAppState
     public vacantHexalot?: Hexalot
 
-    constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage, nonce: number, homeHexalotId?: string) {
+    constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage, nonce: number) {
         fillIsland(islandData, this)
         this.name = islandData.name
         const island = this
-        const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
-        const mode = homeHexalot ? Mode.Landed : Mode.Visiting
-        const selectedHexalot = homeHexalot ? homeHexalot : undefined
-        const selectedSpot = homeHexalot ? homeHexalot.centerSpot : undefined
+        const mode = Mode.Visiting
         const islandIsLegal = false
-        const appState: IAppState = {
-            nonce: nonce + 1,
-            island, mode, islandIsLegal, homeHexalot, selectedHexalot, selectedSpot,
-            storage,
-        }
-        this.state = new Transition(appState).withRestructure.state
+        const appState: IAppState = {nonce: nonce + 1, island, mode, islandIsLegal, storage}
+        this.state = new Transition(appState).state
     }
 
     public findHexalot(id: string): Hexalot | undefined {
