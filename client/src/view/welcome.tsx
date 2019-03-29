@@ -146,7 +146,7 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
                         It has to follow certain rules:
                     </p>
                     <p>
-                        There always has path to the edge of the island by land,
+                        There always has to be a land path to the edge of the island,
                         and land spot needs to touch two land spots.
                         Also, neither water nor land can be surrounded by its own kind.
                         That's all.
