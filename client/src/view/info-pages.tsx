@@ -30,12 +30,16 @@ export const INFO_PAGES: JSX.Element[] = [
     (
         <div>
             <p>
-                Every "hexalot" is a place with a completely unique pattern of spots
-                and it is forever connected to its neighbors.
+                A "hexalot" is a region of the island shaped like a honeycomb,
+                with 127 spots which are either land or water.
             </p>
             <p>
-                A "gotchi" emerges from a tower on the middle spot of a hexalot,
-                evolving first body shape and then muscle coordination.
+                There are no two patterns alike,
+                and since hexalots overlap each one is forever connected to its neighbors.
+            </p>
+            <p>
+                A "gotchi" is a virtual animal which is born from an egg
+                at the top of the tower in the middle of a hexalot.
             </p>
         </div>
     )
@@ -45,8 +49,12 @@ export const INFO_PAGES: JSX.Element[] = [
             <p>
                 The genes of a gotchi are not DNA like ours, but are instead frozen sequences of dice.
             </p>
+            <p>
+                Our DNA is coded with four molecules called "Adenine (A), Thymine (T), Cytosine (C), Guanine (G)",
+                so using the 4 letter alphabet of ATCG. Gotchi genes are coded as dice with 123456.
+            </p>
             <p className="dice">
-                ⚁⚂⚃⚂⚀⚄⚅⚂⚂⚅⚂⚃⚁⚁⚄⚀⚅⚄⚅...
+                ⚁ ⚂ ⚃ ⚂ ⚀ ⚄ ⚅ ⚂ ⚂ ⚅ ⚂ ⚃ ⚁ ⚁ ⚄ ⚀ ⚅ ⚄ ⚅ ...
             </p>
         </div>
     )
@@ -69,8 +77,8 @@ export const INFO_PAGES: JSX.Element[] = [
     (
         <div>
             <p>
-                A *gotchi* competes against mutations of itself, like toy bacteria might,
-                but *wow* it can evolve to run with conviction!
+                A gotchi competes against mutations of itself, like toy bacteria might,
+                but wow it can evolve to run with conviction!
             </p>
             <p>
                 As the <a href={RICHARD_DAWKINS}>Dawkins</a>-inspired evolution proceeds,

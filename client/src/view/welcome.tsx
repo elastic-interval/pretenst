@@ -77,7 +77,10 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
                     It appears that this is your first visit, at least with this web browser.
                 </p>
                 <p>
-                    This project aims to give you a fascinating experience.
+                    This project aims to give you a fascinating experience that shows you
+                    how things can evolve by Darwin's natural selection.
+                </p>
+                <p>
                     You are taken to an imaginary island where you can see inside of a toy world,
                     with toy physics, and you can evolve little robots to run.
                 </p>
