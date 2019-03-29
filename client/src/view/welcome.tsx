@@ -139,7 +139,7 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
                     </p>
                     <p>
                         It's your job to terraform the new part of the island before you can claim a home there.
-                        The terraforming is done with hexagon spots of land and water.
+                        Terraforming is done with hexagonal spots of land and water.
                         It has to follow certain rules:
                     </p>
                     <p>
