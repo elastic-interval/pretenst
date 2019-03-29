@@ -17,6 +17,7 @@ import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
 import { IAppState, logString } from "./state/app-state"
+import { Transition } from "./state/transition"
 import { IStorage } from "./storage/storage"
 import { ActionsPanel } from "./view/actions-panel"
 import { GotchiView } from "./view/gotchi-view"
@@ -26,6 +27,7 @@ import { OrbitDistance } from "./view/orbit"
 interface IAppProps {
     fabricExports: IFabricExports
     storage: IStorage
+    userId?: string
 }
 
 export interface IGalapagotchiState {
@@ -34,7 +36,8 @@ export interface IGalapagotchiState {
     height: number
     left: number
     top: number
-    infoPanel: boolean
+    infoPanelMaximized: boolean
+    ownedLots: string[]
     appState?: IAppState
 }
 
@@ -68,12 +71,13 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         this.state = {
-            infoPanel: getInfoPanelMaximized(),
+            infoPanelMaximized: getInfoPanelMaximized(),
             orbitDistance: this.orbitDistanceSubject.getValue(),
             width: window.innerWidth,
             height: window.innerHeight,
             left: window.screenLeft,
             top: window.screenTop,
+            ownedLots: [],
         }
         this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000)
     }
@@ -84,16 +88,19 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         this.subs.push(this.stateSubject.subscribe(appState => {
             const homeHexalot = appState.homeHexalot
             if (homeHexalot) {
-                location.replace(`/#/${homeHexalot.id}`)
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
                 const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
-            } else {
-                location.replace("/#/")
             }
             this.setState({appState})
         }))
-        this.fetchIsland("rotterdam")
+        this.props.storage.getOwnedLots().then(ownedLots => {
+            if (!ownedLots) {
+                this.setState({ownedLots: []})
+                return
+            }
+            this.setState({ownedLots})
+        })
     }
 
     public componentWillUnmount(): void {
@@ -103,67 +110,115 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
 
     public render(): JSX.Element {
         return (
-            <div className="everything">
-                {this.state.appState ? (
-                    <GotchiView
-                        perspectiveCamera={this.perspectiveCamera}
-                        appState={this.state.appState}
-                        stateSubject={this.stateSubject}
-                        width={this.state.width}
-                        height={this.state.height}
-                        left={this.state.left}
-                        top={this.state.top}
-                        orbitDistance={this.orbitDistanceSubject}
-                    />
-                ) : (
-                    <h1>No island!</h1>
-                )}
-                {!this.state.infoPanel ? (
-                    <div className="info-panel-collapsed floating-panel">
-                        <Button color="link" onClick={() => {
-                            this.setState({infoPanel: true})
-                            setInfoPanelMaximized(true)
-                        }}>?</Button>
-                    </div>
-                ) : (
-                    <div className="info-panel floating-panel">
-                        <span>Galapagotchi</span>
-                        <div className="info-title">
-                            <div className="info-exit">
-                                <Button onClick={() => {
-                                    this.setState({infoPanel: false})
-                                    setInfoPanelMaximized(false)
-                                }}>X</Button>
+            <div>
+                {!this.state.appState ? this.noIsland : (
+                    <div>
+                        <GotchiView
+                            perspectiveCamera={this.perspectiveCamera}
+                            appState={this.state.appState}
+                            stateSubject={this.stateSubject}
+                            width={this.state.width}
+                            height={this.state.height}
+                            left={this.state.left}
+                            top={this.state.top}
+                            orbitDistance={this.orbitDistanceSubject}
+                        />
+                        <div className="actions-panel-outer floating-panel">
+                            <div className="actions-panel-inner">
+                                <ActionsPanel
+                                    orbitDistance={this.orbitDistanceSubject}
+                                    appState={this.state.appState}
+                                    stateSubject={this.stateSubject}
+                                    location={this.perspectiveCamera.position}
+                                />
                             </div>
                         </div>
-                        <InfoPanel/>
+                        {this.infoPanel}
                     </div>
-                )}
-                {this.state.appState ? (
-                    <div className="actions-panel-outer floating-panel">
-                        <div className="actions-panel-inner">
-                            <ActionsPanel
-                                orbitDistance={this.orbitDistanceSubject}
-                                appState={this.state.appState}
-                                stateSubject={this.stateSubject}
-                                location={this.perspectiveCamera.position}
-                            />
-                        </div>
-                    </div>
-                ) : (
-                    <h1>No island!</h1>
                 )}
             </div>
         )
     }
 
-    private async fetchIsland(islandName: string): Promise<void> {
+    private get noIsland(): JSX.Element {
+        return (
+            <div className="no-island">
+                <h3>Welcome to Galapagotchi</h3>
+                {this.props.userId ? (
+                    <div>
+                        <p>{this.props.userId}</p>
+                        {this.state.ownedLots ? this.ownedLots : <h5>Checking lots</h5>}
+                    </div>
+                ) : (
+                    <div>
+                        <Button onClick={() => this.fetch()}>Visit the island</Button>
+                    </div>
+                )}
+            </div>
+        )
+    }
+
+    private get ownedLots(): JSX.Element {
+        if (this.state.ownedLots.length === 0) {
+            return (
+                <div>
+                    <h5>You don't own a lot yet</h5>
+                    <Button onClick={() => this.fetch()}>Go claim one</Button>
+                </div>
+            )
+        }
+        return (
+            <div>
+                {this.state.ownedLots.map(lot => {
+                    return <div key={lot}><Button onClick={() => this.fetch(lot)}>Visit your lot {lot}</Button><br/></div>
+                })}
+            </div>
+        )
+    }
+
+    private get infoPanel(): JSX.Element {
+        if (!this.state.infoPanelMaximized) {
+            return (
+                <div className="info-panel-collapsed floating-panel">
+                    <Button color="link" onClick={() => this.maximizeInfoPanel(true)}>?</Button>
+                </div>
+            )
+        } else {
+            return (
+                <div className="info-panel floating-panel">
+                    <span>Galapagotchi</span>
+                    <div className="info-title">
+                        <div className="info-exit">
+                            <Button onClick={() => this.maximizeInfoPanel(false)}>X</Button>
+                        </div>
+                    </div>
+                    <InfoPanel/>
+                </div>
+            )
+        }
+    }
+
+    private maximizeInfoPanel(infoPanelMaximized: boolean): void {
+        this.setState({infoPanelMaximized})
+        setInfoPanelMaximized(infoPanelMaximized)
+    }
+
+    private async fetch(homeHexalotId?: string): Promise<void> {
+        return this.fetchIsland("rotterdam", homeHexalotId)
+    }
+
+    private async fetchIsland(islandName: string, homeHexalotId?: string): Promise<void> {
         const islandData = await this.props.storage.getIslandData(islandName)
         if (!islandData) {
             return
         }
         const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
         console.log(logString(island.state))
-        this.stateSubject.next(island.state)
+        const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
+        if (homeHexalot) {
+            this.stateSubject.next((await new Transition(island.state).withHomeHexalot(homeHexalot)).state)
+        } else {
+            this.stateSubject.next(island.state)
+        }
     }
 }

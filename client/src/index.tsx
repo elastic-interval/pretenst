@@ -30,18 +30,20 @@ if (REMOTE_STORAGE_URI !== undefined) {
 
 // YOLO-routing
 const match = /^#\/login\?userId=([a-zA-Z0-9\-]+)$/.exec(window.location.hash)
+let userId: string | undefined
 if (match) {
-    const userId = match[1]
-    console.log(`Logging in with userId=${userId}`)
+    userId = match[1]
     const expiry = new Date()
     expiry.setTime(expiry.getTime() + (365 * 24 * 60 * 60 * 1000))
     document.cookie = `userId=${userId}; expires=${expiry.toUTCString()}`
     window.location.href = "/"
+} else if (document.cookie) {
+    userId = document.cookie.split("=").pop()
 }
 
 getFabricExports().then(fabricExports => {
     ReactDOM.render(
-        <Galapagotchi fabricExports={fabricExports} storage={storage}/>,
+        <Galapagotchi fabricExports={fabricExports} storage={storage} userId={userId}/>,
         document.getElementById("root") as HTMLElement,
     )
     registerServiceWorker()

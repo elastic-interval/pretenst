@@ -3,9 +3,25 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+html {
+    background-color: black;
+    height: 100%;
+}
+
 body {
     margin: 0;
     padding: 0;
+}
+
+.everything {
+    background-color: black;
+    width: 100%;
+}
+
+.no-island {
+    text-align: center;
+    color: white;
+    padding: 150px;
 }
 
 p a, p a:hover {
@@ -17,16 +33,8 @@ p a, p a:hover {
     color: white;
 }
 
-.App {
-    text-align: center;
-}
-
-.everything {
-    height: 100%;
-    width: 100%;
-}
-
 .floating-panel {
+    background: black;
     position: absolute;
     color: darkcyan;
     padding: 5px 5px 5px 5px;
@@ -46,7 +54,6 @@ p a, p a:hover {
 }
 
 .actions-panel-inner {
-    background-color: black;
     height: auto;
     display: inline-block;
     border-color: darkcyan;

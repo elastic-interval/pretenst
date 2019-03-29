@@ -152,7 +152,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                                 Command.RideJourney,
                                 Command.Evolve,
                                 Command.RandomGenome,
-                                Command.Logout,
                             ])}
                         </ActionFrame>
                     )
@@ -161,7 +160,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                         <ActionFrame>
                             {this.buttons("Visiting", [
                                 Command.RideFree,
-                                Command.Logout,
                             ])}
                         </ActionFrame>
                     )

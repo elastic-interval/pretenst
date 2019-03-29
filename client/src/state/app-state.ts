@@ -22,7 +22,6 @@ export enum Command {
     ForgetJourney = "Forget journey",
     GoThere = "Go there",
     JumpToFix = "Jump to fix",
-    Logout = "Logout",
     MakeLand = "Make into land",
     MakeWater = "Make into water",
     PlanJourney = "Plan your journey",

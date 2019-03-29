@@ -42,10 +42,6 @@ export class CommandHandler {
         switch (command) {
 
 
-            case Command.Logout: // ====================================================================================
-                return (await trans.withHomeHexalot()).withRestructure.state
-
-
             case Command.SaveGenome: // ================================================================================
                 if (homeHexalot && gotchi) {
                     const genomeData = gotchi.genomeData

@@ -9,15 +9,10 @@ const uuid = require("uuid")
 async function run(baseUrl) {
   const userId = uuid.v4()
   const port = process.env.PORT || 8000
-  console.log(`New user ID: ${userId}`)
-  await Axios.post(
-      `http://localhost:${port}/api/_add-user`,
-      {userId},
-  )
-  console.log("Added user ID to database")
-
+  await Axios.post(`http://localhost:${port}/api/_add-user`,{userId})
+  console.log(`New user added to database: "${userId}"`)
   const url = `${baseUrl}/#/login?userId=${userId}`
-  console.log(`Login link: ${url.toString()}`)
+  return `Login link: ${url.toString()}`
 }
 
 dotenv.load()
@@ -28,4 +23,4 @@ program
 
 run(program.baseUrl)
     .catch(console.error)
-    .then(() => console.log("Done"))
+    .then((response) => console.log(response))

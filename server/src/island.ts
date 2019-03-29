@@ -91,7 +91,7 @@ export class Island implements IIsland {
             spot.surface = surfaces[i]
         })
         await this.save()
-        await this.store.addOwnedLot(userId, userId)
+        await this.store.addOwnedLot(userId, lotID)
         await this.store.setGenomeData(lotID, genomeData)
     }
 
