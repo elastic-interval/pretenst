@@ -14,15 +14,14 @@ import { IFabricExports } from "./body/fabric-exports"
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
-import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
-import { IAppState, logString } from "./state/app-state"
-import { Transition } from "./state/transition"
+import { IAppState } from "./state/app-state"
 import { IStorage } from "./storage/storage"
 import { ActionsPanel } from "./view/actions-panel"
 import { GotchiView } from "./view/gotchi-view"
 import { InfoPanel } from "./view/info-panel"
 import { OrbitDistance } from "./view/orbit"
+import { Welcome } from "./view/welcome"
 
 interface IAppProps {
     fabricExports: IFabricExports
@@ -111,7 +110,15 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
     public render(): JSX.Element {
         return (
             <div>
-                {!this.state.appState ? this.noIsland : (
+                {!this.state.appState ? (
+                    <Welcome
+                        // userId={this.props.userId}
+                        ownedLots={[]}
+                        storage={this.props.storage}
+                        fabricKernel={this.fabricKernel}
+                        stateSubject={this.stateSubject}
+                    />
+                ) : (
                     <div>
                         <GotchiView
                             perspectiveCamera={this.perspectiveCamera}
@@ -136,42 +143,6 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
                         {this.infoPanel}
                     </div>
                 )}
-            </div>
-        )
-    }
-
-    private get noIsland(): JSX.Element {
-        return (
-            <div className="no-island">
-                <h3>Welcome to Galapagotchi</h3>
-                {this.props.userId ? (
-                    <div>
-                        <p>{this.props.userId}</p>
-                        {this.state.ownedLots ? this.ownedLots : <h5>Checking lots</h5>}
-                    </div>
-                ) : (
-                    <div>
-                        <Button onClick={() => this.fetch()}>Visit the island</Button>
-                    </div>
-                )}
-            </div>
-        )
-    }
-
-    private get ownedLots(): JSX.Element {
-        if (this.state.ownedLots.length === 0) {
-            return (
-                <div>
-                    <h5>You don't own a lot yet</h5>
-                    <Button onClick={() => this.fetch()}>Go claim one</Button>
-                </div>
-            )
-        }
-        return (
-            <div>
-                {this.state.ownedLots.map(lot => {
-                    return <div key={lot}><Button onClick={() => this.fetch(lot)}>Visit your lot {lot}</Button><br/></div>
-                })}
             </div>
         )
     }
@@ -203,22 +174,4 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
         setInfoPanelMaximized(infoPanelMaximized)
     }
 
-    private async fetch(homeHexalotId?: string): Promise<void> {
-        return this.fetchIsland("rotterdam", homeHexalotId)
-    }
-
-    private async fetchIsland(islandName: string, homeHexalotId?: string): Promise<void> {
-        const islandData = await this.props.storage.getIslandData(islandName)
-        if (!islandData) {
-            return
-        }
-        const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
-        console.log(logString(island.state))
-        const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
-        if (homeHexalot) {
-            this.stateSubject.next((await new Transition(island.state).withHomeHexalot(homeHexalot)).state)
-        } else {
-            this.stateSubject.next(island.state)
-        }
-    }
 }

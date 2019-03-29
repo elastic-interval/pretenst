@@ -14,14 +14,17 @@ body {
 }
 
 .everything {
+    text-align: center;
     background-color: black;
     width: 100%;
 }
 
-.no-island {
-    text-align: center;
+.welcome {
+    display: inline-block;
+    left: 500px;
     color: white;
-    padding: 150px;
+    padding: 15px;
+    width: 550px;
 }
 
 p a, p a:hover {
@@ -119,7 +122,7 @@ p a, p a:hover {
     bottom: 20px;
     left: 10%;
     width: 80%;
-    height: auto;
+    height: 25%;
     padding: 5px;
     border-color: darkcyan;
     border-style: solid;
@@ -167,7 +170,7 @@ p a, p a:hover {
 }
 
 .carousel-indicators {
-    top: 80%;
+    bottom: 10%;
 }
 
 .feature-prompt {
