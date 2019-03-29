@@ -38,8 +38,7 @@ export const INFO_PAGES: JSX.Element[] = [
                 and since hexalots overlap each one is forever connected to its neighbors.
             </p>
             <p>
-                A "gotchi" is a virtual animal which is born from an egg
-                at the top of the tower in the middle of a hexalot.
+                A "gotchi" is a virtual animal which is born and reborn from an egg at the middle of a hexalot.
             </p>
         </div>
     )
