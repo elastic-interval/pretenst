@@ -122,6 +122,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
                     <div>
                         <GotchiView
                             perspectiveCamera={this.perspectiveCamera}
+                            userId={this.props.userId}
                             appState={this.state.appState}
                             stateSubject={this.stateSubject}
                             width={this.state.width}

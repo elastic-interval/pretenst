@@ -37,6 +37,7 @@ const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8)
 export interface IslandComponentProps {
     appState: IAppState
     setMesh: (key: string, ref: Mesh) => void
+    userId?: string
 }
 
 export class IslandComponent extends React.Component<IslandComponentProps, object> {
@@ -228,7 +229,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
 
     private get availableSpotsGeometry(): Geometry | undefined {
         const appState = this.props.appState
-        if (appState.mode !== Mode.Visiting || !appState.islandIsLegal || appState.homeHexalot) {
+        if (!this.props.userId || appState.homeHexalot || !appState.islandIsLegal) {
             return undefined
         }
         const vacantHexalot = appState.island.vacantHexalot

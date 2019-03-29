@@ -31,6 +31,7 @@ interface IGotchiViewProps {
     height: number
     left: number
     top: number
+    userId?: string
     appState: IAppState
     stateSubject: Subject<IAppState>
     orbitDistance: BehaviorSubject<OrbitDistance>
@@ -109,6 +110,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                 <R3.Renderer width={this.props.width} height={this.props.height}>
                     <R3.Scene width={this.props.width} height={this.props.height} camera={this.props.perspectiveCamera}>
                         <IslandComponent
+                            userId={this.props.userId}
                             appState={this.props.appState}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
@@ -141,7 +143,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     private async click(spot: Spot): Promise<void> {
         const props = this.props
-        const clickHandler = new ClickHandler(props.appState)
+        const clickHandler = new ClickHandler(props.appState, props.userId)
         const afterClick = await clickHandler.stateAfterClick(spot)
         props.stateSubject.next(afterClick)
     }

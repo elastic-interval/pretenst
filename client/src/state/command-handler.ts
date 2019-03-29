@@ -184,7 +184,7 @@ export class CommandHandler {
                 return state
 
 
-            case Command.JumpToFix: // =================================================================================
+            case Command.Terraform: // =================================================================================
                 const unknownSpot = island.spots.find(s => s.surface === Surface.Unknown)
                 if (unknownSpot) {
                     return (await trans.withSelectedSpot(unknownSpot)).state

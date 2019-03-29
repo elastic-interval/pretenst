@@ -21,7 +21,7 @@ export enum Command {
     Evolve = "Evolve",
     ForgetJourney = "Forget journey",
     GoThere = "Go there",
-    JumpToFix = "Jump to fix",
+    Terraform = "Terraform",
     MakeLand = "Make into land",
     MakeWater = "Make into water",
     PlanJourney = "Plan your journey",
