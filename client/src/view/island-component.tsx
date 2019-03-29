@@ -228,7 +228,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
 
     private get availableSpotsGeometry(): Geometry | undefined {
         const appState = this.props.appState
-        if (appState.mode !== Mode.Visiting || !appState.islandIsLegal) {
+        if (appState.mode !== Mode.Visiting || !appState.islandIsLegal || appState.homeHexalot) {
             return undefined
         }
         const vacantHexalot = appState.island.vacantHexalot

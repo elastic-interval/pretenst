@@ -20,7 +20,7 @@ export class CommandHandler {
 
     private trans: Transition
 
-    constructor(private appState: IAppState) {
+    constructor(appState: IAppState) {
         this.trans = new Transition(appState)
     }
 
@@ -198,15 +198,17 @@ export class CommandHandler {
 
             case Command.AbandonFix: // ================================================================================
                 const nonce = island.state.nonce + 1
-                const orig = new Island(extractIslandData(island), island.gotchiFactory, state.storage, nonce)
+                const homeHexalotId = homeHexalot ? homeHexalot.id : undefined
+                const orig = new Island(extractIslandData(island), island.gotchiFactory, state.storage, nonce, homeHexalotId)
                 return (await trans.withSelectedSpot()).withIsland(orig).withMode(Mode.Visiting).withRestructure.state
 
 
             case Command.ClaimHexalot: // ==============================================================================
                 if (!homeHexalot && hexalot && isIslandLegal(island) && (singleHexalot || vacant && vacant.id === hexalot.id)) {
-                    this.claimHexalot(hexalot)
-                    island.vacantHexalot = undefined
-                    return (await trans.withHomeHexalot(hexalot)).withRestructure.state
+                    const newState = await CommandHandler.claimHexalot(state, hexalot)
+                    if (newState) {
+                        return newState
+                    }
                 }
                 return state
 
@@ -222,20 +224,14 @@ export class CommandHandler {
         }
     }
 
-    private async claimHexalot(hexalot: Hexalot): Promise<IAppState | undefined> {
-        const appState = this.appState
-        const islandData = await appState.storage.claimHexalot(appState.island, hexalot, freshGenome().genomeData)
+    private static async claimHexalot(state: IAppState, hexalot: Hexalot): Promise<IAppState | undefined> {
+        const islandData = await state.storage.claimHexalot(state.island, hexalot, freshGenome().genomeData)
         if (!islandData) {
             console.warn("No island data arrived")
             return
         }
-        const island = new Island(islandData, appState.island.gotchiFactory, appState.storage, appState.nonce)
-        const newHomeHexalot = island.findHexalot(hexalot.id)
-        if (!newHomeHexalot) {
-            console.error("Cannot find home hexalot on the new island!")
-            return
-        }
-        return (await new Transition(island.state).withHomeHexalot(newHomeHexalot)).state
+        const island = new Island(islandData, state.island.gotchiFactory, state.storage, state.nonce, hexalot.id)
+        return island.state
     }
 }
 

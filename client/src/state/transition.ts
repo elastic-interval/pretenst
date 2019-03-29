@@ -66,6 +66,9 @@ export class Transition {
     }
 
     public async withHomeHexalot(homeHexalot?: Hexalot): Promise<Transition> {
+        if (this.appState.homeHexalot) {
+            throw new Error("Not allowed")
+        }
         this.appState = {...this.appState, homeHexalot}
         if (!homeHexalot) {
             return this.withMode(Mode.Visiting).withJourney().withSelectedSpot()

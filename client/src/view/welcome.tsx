@@ -10,7 +10,6 @@ import { Subject } from "rxjs"
 import { FabricKernel } from "../body/fabric-kernel"
 import { Island } from "../island/island"
 import { IAppState, logString } from "../state/app-state"
-import { Transition } from "../state/transition"
 import { IStorage } from "../storage/storage"
 
 const GITHUB = "https://github.com/beautiful-code-bv/galapagotchi"
@@ -118,13 +117,11 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
                     You are known to us as <i>"{this.props.userId}"</i>,
                     and this information is stored in your web browser.
                 </p>
-                <p>
+                <div>
                     {this.props.ownedLots ? this.ownedLots : (
-                        <p>
-                            One moment please. Checking if you own a hexalot.
-                        </p>
+                        <span>One moment please. Checking if you own a hexalot.</span>
                     )}
-                </p>
+                </div>
             </div>
         )
     }
@@ -168,10 +165,10 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
                 </p>
                 {this.props.ownedLots.map(lot => {
                     return (
-                        <div key={lot}>
+                        <p key={lot}>
                             <Button onClick={() => this.fetch(lot)}>Go to hexalot "{lot}"</Button>
                             <br/><br/>
-                        </div>
+                        </p>
                     )
                 })}
                 <p>
@@ -237,13 +234,8 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
         if (!islandData) {
             return
         }
-        const island = new Island(islandData, this.props.fabricKernel, this.props.storage, 0)
+        const island = new Island(islandData, this.props.fabricKernel, this.props.storage, 0, homeHexalotId)
         console.log(logString(island.state))
-        const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
-        if (homeHexalot) {
-            this.props.stateSubject.next((await new Transition(island.state).withHomeHexalot(homeHexalot)).state)
-        } else {
-            this.props.stateSubject.next(island.state)
-        }
+        this.props.stateSubject.next(island.state)
     }
 }

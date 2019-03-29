@@ -76,10 +76,8 @@ export class RemoteStorage implements IStorage {
             const response = await this.client.get(resourcePath)
             return response.data
         } catch (e) {
-            if (e.response && e.response.status && e.response.status === 404) {
-                return undefined
-            }
-            throw e
+            console.error("network problem", e)
+            return undefined
         }
     }
 }

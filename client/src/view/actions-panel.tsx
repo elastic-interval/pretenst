@@ -155,11 +155,20 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             ])}
                         </ActionFrame>
                     )
-                } else {
+                } else if (appState.selectedHexalot) {
                     return (
                         <ActionFrame>
                             {this.buttons("Visiting", [
                                 Command.RideFree,
+                                Command.Return,
+                            ])}
+                        </ActionFrame>
+                    )
+                } else {
+                    return (
+                        <ActionFrame>
+                            {this.buttons("Empty spot", [
+                                Command.Return,
                             ])}
                         </ActionFrame>
                     )
