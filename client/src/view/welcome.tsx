@@ -52,10 +52,18 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
 
     public render(): JSX.Element {
         return (
-            <div className="welcome">
-                {this.props.userId ? this.welcomeBack : this.state.developer ? this.welcomeDeveloper : this.welcomeN00b}
-            </div>
+            <div className="welcome">{this.page}</div>
         )
+    }
+
+    private get page(): JSX.Element {
+        if (this.props.userId) {
+            return this.welcomeBack
+        }
+        if (this.state.developer) {
+            return this.welcomeDeveloper
+        }
+        return this.welcomeN00b
     }
 
     // N00b ============================================================================================================
