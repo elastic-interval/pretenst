@@ -6,7 +6,7 @@
 import { Vector3 } from "three"
 
 import { Direction } from "../body/fabric-exports"
-import { freshGenome, IGenomeData } from "../genetics/genome"
+import { freshGenome, fromGenomeData, IGenomeData } from "../genetics/genome"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
@@ -111,6 +111,7 @@ export class CommandHandler {
                     const firstLeg = journey.firstLeg
                     if (firstLeg) {
                         const saveGenome = (data: IGenomeData) => {
+                            homeHexalot.genome = fromGenomeData(data)
                             islandState.storage.setGenomeData(homeHexalot, data).then(() => {
                                 console.log("genome saved")
                             })
