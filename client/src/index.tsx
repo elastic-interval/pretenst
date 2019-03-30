@@ -8,8 +8,8 @@ import * as Cookies from "js-cookie"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 
+import { App } from "./app"
 import { IFabricExports } from "./body/fabric-exports"
-import { Galapagotchi } from "./galapagotchi"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
 import { BrowserStorage } from "./storage/browser-storage"
@@ -47,7 +47,7 @@ if (match) {
 
 getFabricExports().then(fabricExports => {
     ReactDOM.render(
-        <Galapagotchi fabricExports={fabricExports} storage={storage} userId={userId}/>,
+        <App fabricExports={fabricExports} storage={storage} userId={userId}/>,
         document.getElementById("root") as HTMLElement,
     )
     registerServiceWorker()

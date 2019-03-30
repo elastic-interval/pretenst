@@ -15,7 +15,7 @@ import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Surface } from "./island/island-logic"
-import { IAppState } from "./state/app-state"
+import { IslandState } from "./state/island-state"
 import { IStorage } from "./storage/storage"
 import { ActionsPanel } from "./view/actions-panel"
 import { GotchiView } from "./view/gotchi-view"
@@ -29,7 +29,7 @@ interface IAppProps {
     userId?: string
 }
 
-export interface IGalapagotchiState {
+export interface IAppState {
     orbitDistance: OrbitDistance
     width: number
     height: number
@@ -37,7 +37,7 @@ export interface IGalapagotchiState {
     top: number
     infoPanelMaximized: boolean
     ownedLots: string[]
-    appState?: IAppState
+    islandState?: IslandState
 }
 
 function updateDimensions(): object {
@@ -57,11 +57,11 @@ function setInfoPanelMaximized(maximized: boolean): void {
     localStorage.setItem("InfoPanel.maximized", maximized ? "true" : "false")
 }
 
-export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState> {
+export class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
     private perspectiveCamera: PerspectiveCamera
     private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
-    private stateSubject = new Subject<IAppState>()
+    private stateSubject = new Subject<IslandState>()
     private physics = new Physics()
     private fabricKernel: FabricKernel
 
@@ -84,14 +84,14 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
         this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
-        this.subs.push(this.stateSubject.subscribe(appState => {
-            const homeHexalot = appState.homeHexalot
+        this.subs.push(this.stateSubject.subscribe(islandState => {
+            const homeHexalot = islandState.homeHexalot
             if (homeHexalot) {
                 const spotCenters = homeHexalot.spots.map(spot => spot.center)
                 const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
                 this.fabricKernel.setHexalot(spotCenters, surface)
             }
-            this.setState({appState})
+            this.setState({islandState})
         }))
         this.props.storage.getOwnedLots().then(ownedLots => {
             if (!ownedLots) {
@@ -110,7 +110,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
     public render(): JSX.Element {
         return (
             <div>
-                {!this.state.appState ? (
+                {!this.state.islandState ? (
                     <Welcome
                         userId={this.props.userId}
                         ownedLots={this.state.ownedLots}
@@ -123,7 +123,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
                         <GotchiView
                             perspectiveCamera={this.perspectiveCamera}
                             userId={this.props.userId}
-                            appState={this.state.appState}
+                            islandState={this.state.islandState}
                             stateSubject={this.stateSubject}
                             width={this.state.width}
                             height={this.state.height}
@@ -135,7 +135,7 @@ export class Galapagotchi extends React.Component<IAppProps, IGalapagotchiState>
                             <div className="actions-panel-inner">
                                 <ActionsPanel
                                     orbitDistance={this.orbitDistanceSubject}
-                                    appState={this.state.appState}
+                                    islandState={this.state.islandState}
                                     stateSubject={this.stateSubject}
                                     location={this.perspectiveCamera.position}
                                 />

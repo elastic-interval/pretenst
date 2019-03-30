@@ -12,47 +12,47 @@ import { calculateHexalotId, isIslandLegal, isSpotLegal, recalculateIsland, Surf
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
-import { IAppState, Mode } from "./app-state"
+import { IslandState, Mode } from "./island-state"
 
 export class Transition {
-    private appState: IAppState
+    private nextState: IslandState
 
-    constructor(prev: IAppState) {
-        this.appState = {...prev, nonce: prev.nonce + 1}
+    constructor(prev: IslandState) {
+        this.nextState = {...prev, nonce: prev.nonce + 1}
     }
 
-    public get state(): IAppState {
-        return this.appState
+    public get islandState(): IslandState {
+        return this.nextState
     }
 
     public withIsland(island: Island): Transition {
         this.recycle()
-        this.appState = {...this.appState, island}
+        this.nextState = {...this.nextState, island}
         return this
     }
 
     public withMode(mode: Mode): Transition {
         this.recycle()
-        this.appState = {...this.appState, mode}
+        this.nextState = {...this.nextState, mode}
         return this
     }
 
     public withJourney(journey?: Journey): Transition {
-        this.appState = {...this.appState, journey}
+        this.nextState = {...this.nextState, journey}
         return this
     }
 
     public async withSelectedHexalot(selectedHexalot?: Hexalot): Promise<Transition> {
-        this.appState = {...this.appState, selectedHexalot}
+        this.nextState = {...this.nextState, selectedHexalot}
         if (selectedHexalot) {
-            await fetchGenome(selectedHexalot, this.appState.storage)
+            await fetchGenome(selectedHexalot, this.nextState.storage)
             return this
         }
         return this
     }
 
     public async withSelectedSpot(selectedSpot?: Spot): Promise<Transition> {
-        this.appState = {...this.appState, selectedSpot}
+        this.nextState = {...this.nextState, selectedSpot}
         if (selectedSpot) {
             return this.withSelectedHexalot(selectedSpot.centerOfHexalot)
         }
@@ -60,24 +60,24 @@ export class Transition {
     }
 
     public withIslandIsLegal(islandIsLegal: boolean): Transition {
-        this.appState = {...this.appState, islandIsLegal}
+        this.nextState = {...this.nextState, islandIsLegal}
         return this
     }
 
     public async withHomeHexalot(homeHexalot?: Hexalot): Promise<Transition> {
-        if (this.appState.homeHexalot) {
+        if (this.nextState.homeHexalot) {
             throw new Error("Not allowed")
         }
-        this.appState = {...this.appState, homeHexalot}
+        this.nextState = {...this.nextState, homeHexalot}
         if (!homeHexalot) {
             return this.withMode(Mode.Visiting).withJourney().withSelectedSpot()
         }
-        fetchJourney(homeHexalot, this.appState.storage, this.appState.island)
+        fetchJourney(homeHexalot, this.nextState.storage, this.nextState.island)
         return (await this.withSelectedSpot(homeHexalot.centerSpot)).withJourney(homeHexalot.journey).withMode(Mode.Landed)
     }
 
     public get withRestructure(): Transition {
-        const island = this.appState.island
+        const island = this.nextState.island
         recalculateIsland(island)
         const hexalots = island.hexalots
         const spots = island.spots
@@ -92,16 +92,16 @@ export class Transition {
         hexalots.forEach(calculateHexalotId)
         const islandIsLegal = isIslandLegal(island)
         if (islandIsLegal) {
-            this.appState = {...this.appState, islandIsLegal}
+            this.nextState = {...this.nextState, islandIsLegal}
         } else {
-            this.appState = {...this.appState, islandIsLegal, mode: Mode.FixingIsland}
+            this.nextState = {...this.nextState, islandIsLegal, mode: Mode.FixingIsland}
         }
         return this
     }
 
     public async withSurface(surface: Surface): Promise<Transition> {
-        const appState = this.appState
-        const selectedSpot = appState.selectedSpot
+        const islandState = this.nextState
+        const selectedSpot = islandState.selectedSpot
         if (!selectedSpot) {
             return this
         }
@@ -111,7 +111,7 @@ export class Transition {
         if (nextFree) {
             return this.withSelectedSpot(nextFree)
         }
-        const island = appState.island
+        const island = islandState.island
         const anyFree = island.spots.find(s => s.free && s.surface === Surface.Unknown)
         if (anyFree) {
             return this.withSelectedSpot(anyFree)
@@ -130,38 +130,38 @@ export class Transition {
     public withJockey(jockey: Jockey): Transition {
         this.recycle()
         const mode = Mode.RidingJourney
-        this.appState = {...this.appState, jockey, journey: jockey.leg.journey, mode}
+        this.nextState = {...this.nextState, jockey, journey: jockey.leg.journey, mode}
         return this
     }
 
     public withGotchi(gotchi: Gotchi): Transition {
         this.recycle()
         const mode = Mode.RidingFree
-        this.appState = {...this.appState, gotchi, mode}
+        this.nextState = {...this.nextState, gotchi, mode}
         return this
     }
 
     public withEvolution(evolution: Evolution): Transition {
         this.recycle()
-        this.appState = {...this.appState, evolution, mode: Mode.Evolving}
+        this.nextState = {...this.nextState, evolution, mode: Mode.Evolving}
         return this
     }
 
     private recycle(): void {
-        const jockey = this.appState.jockey
+        const jockey = this.nextState.jockey
         if (jockey) {
             jockey.gotchi.recycle()
-            this.appState = {...this.appState, jockey: undefined}
+            this.nextState = {...this.nextState, jockey: undefined}
         }
-        const gotchi = this.appState.gotchi
+        const gotchi = this.nextState.gotchi
         if (gotchi) {
             gotchi.recycle()
-            this.appState = {...this.appState, gotchi: undefined}
+            this.nextState = {...this.nextState, gotchi: undefined}
         }
-        const evolution = this.appState.evolution
+        const evolution = this.nextState.evolution
         if (evolution) {
             evolution.recycle()
-            this.appState = {...this.appState, evolution: undefined}
+            this.nextState = {...this.nextState, evolution: undefined}
         }
     }
 }

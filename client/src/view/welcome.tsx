@@ -9,7 +9,7 @@ import { Subject } from "rxjs"
 
 import { FabricKernel } from "../body/fabric-kernel"
 import { Island } from "../island/island"
-import { IAppState, logString } from "../state/app-state"
+import { IslandState, logString } from "../state/island-state"
 import { Transition } from "../state/transition"
 import { IStorage } from "../storage/storage"
 
@@ -35,7 +35,7 @@ export interface IWelcomeProps {
     userId?: string
     storage: IStorage
     fabricKernel: FabricKernel
-    stateSubject: Subject<IAppState>
+    stateSubject: Subject<IslandState>
     ownedLots: string[]
 }
 
@@ -236,13 +236,13 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
             return
         }
         const island = new Island(islandData, this.props.fabricKernel, this.props.storage, 0)
-        console.log(logString(island.state))
+        console.log(logString(island.islandState))
         if (!homeHexalotId) {
-            this.props.stateSubject.next(island.state)
+            this.props.stateSubject.next(island.islandState)
         } else {
             const homeHexalot = island.findHexalot(homeHexalotId)
-            const transition = await new Transition(island.state).withHomeHexalot(homeHexalot)
-            const newState = transition.withRestructure.state
+            const transition = await new Transition(island.islandState).withHomeHexalot(homeHexalot)
+            const newState = transition.withRestructure.islandState
             this.props.stateSubject.next(newState)
         }
     }

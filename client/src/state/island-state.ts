@@ -45,7 +45,7 @@ export enum Mode {
     Visiting = "Visiting",
 }
 
-export interface IAppState {
+export interface IslandState {
     readonly nonce: number
     readonly island: Island
     readonly storage: IStorage
@@ -60,15 +60,16 @@ export interface IAppState {
     readonly evolution?: Evolution
 }
 
-export function homeHexalotSelected(state: IAppState): boolean {
-    return !!state.homeHexalot && !!state.selectedHexalot && state.homeHexalot.id === state.selectedHexalot.id
+export function homeHexalotSelected(islandState: IslandState): boolean {
+    return !!islandState.homeHexalot && !!islandState.selectedHexalot
+        && islandState.homeHexalot.id === islandState.selectedHexalot.id
 }
 
-export function logString(state: IAppState): string {
-    const legal = state.islandIsLegal
-    const home = !!state.homeHexalot
-    const spot = state.selectedSpot ? JSON.stringify(state.selectedSpot.coords) : "-"
-    const lot = state.selectedHexalot ? JSON.stringify(state.selectedHexalot.coords) : "-"
-    return `${state.nonce}:${state.mode}: legal=${legal} home=${home} spot=${spot} lot=${lot}`
+export function logString(islandState: IslandState): string {
+    const legal = islandState.islandIsLegal
+    const home = !!islandState.homeHexalot
+    const spot = islandState.selectedSpot ? JSON.stringify(islandState.selectedSpot.coords) : "-"
+    const lot = islandState.selectedHexalot ? JSON.stringify(islandState.selectedHexalot.coords) : "-"
+    return `${islandState.nonce}:${islandState.mode}: legal=${legal} home=${home} spot=${spot} lot=${lot}`
 }
 

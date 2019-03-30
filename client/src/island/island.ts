@@ -6,7 +6,7 @@
 import { Vector3 } from "three"
 
 import { IGotchiFactory } from "../gotchi/gotchi"
-import { IAppState, Mode } from "../state/app-state"
+import { IslandState, Mode } from "../state/island-state"
 import { Transition } from "../state/transition"
 import { IStorage } from "../storage/storage"
 
@@ -29,7 +29,7 @@ export class Island implements IIsland {
     public readonly name: string
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
-    public state: IAppState
+    public islandState: IslandState
     public vacantHexalot?: Hexalot
 
     constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage, nonce: number) {
@@ -38,8 +38,8 @@ export class Island implements IIsland {
         const island = this
         const mode = Mode.Visiting
         const islandIsLegal = false
-        const appState: IAppState = {nonce: nonce + 1, island, mode, islandIsLegal, storage}
-        this.state = new Transition(appState).state
+        const islandState: IslandState = {nonce: nonce + 1, island, mode, islandIsLegal, storage}
+        this.islandState = new Transition(islandState).islandState
     }
 
     public findHexalot(id: string): Hexalot | undefined {

@@ -9,15 +9,15 @@ import { Subject, Subscription } from "rxjs"
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
-import { Command, homeHexalotSelected, IAppState, Mode } from "../state/app-state"
 import { CommandHandler } from "../state/command-handler"
+import { Command, homeHexalotSelected, IslandState, Mode } from "../state/island-state"
 
 import { OrbitDistance } from "./orbit"
 
 export interface IActionsPanelProps {
     orbitDistance: BehaviorSubject<OrbitDistance>
-    stateSubject: Subject<IAppState>
-    appState: IAppState
+    stateSubject: Subject<IslandState>
+    islandState: IslandState
     location: Vector3
 }
 
@@ -37,7 +37,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
     }
 
     public componentDidMount(): void {
-        this.subs.push(this.props.stateSubject.subscribe(appState => this.setState({appState})))
+        this.subs.push(this.props.stateSubject.subscribe(islandState => this.setState({islandState})))
     }
 
     public componentWillUnmount(): void {
@@ -46,13 +46,13 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
     public render(): JSX.Element {
 
-        const appState = this.props.appState
-        const island = appState.island
+        const islandState = this.props.islandState
+        const island = islandState.island
         const vacant = island.vacantHexalot
-        const spot = appState.selectedSpot
+        const spot = islandState.selectedSpot
         const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
 
-        switch (appState.mode) {
+        switch (islandState.mode) {
 
 
             case Mode.FixingIsland: // ===========================================================================
@@ -67,7 +67,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                         )
                     }
                     if (spot.isCandidateHexalot(vacant) && !singleHexalot) {
-                        if (appState.islandIsLegal) {
+                        if (islandState.islandIsLegal) {
                             return (
                                 <ActionFrame>
                                     {this.buttons("Available", [
@@ -112,7 +112,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
 
             case Mode.Visiting: // ===============================================================================
-                const hexalot = appState.selectedHexalot
+                const hexalot = islandState.selectedHexalot
                 if (hexalot) {
                     if (hexalot.centerSpot.isCandidateHexalot(vacant)) {
                         return (
@@ -141,7 +141,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
 
             case Mode.Landed: // =================================================================================
-                if (homeHexalotSelected(appState)) {
+                if (homeHexalotSelected(islandState)) {
                     return (
                         <ActionFrame>
                             {this.buttons("Home", [
@@ -153,7 +153,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
                             ])}
                         </ActionFrame>
                     )
-                } else if (appState.selectedHexalot) {
+                } else if (islandState.selectedHexalot) {
                     return (
                         <ActionFrame>
                             {this.buttons("Visiting", [
@@ -236,7 +236,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
             default: // ================================================================================================
                 return (
                     <ActionFrame>
-                        <p>Strange state {appState.mode}</p>
+                        <p>Strange state {islandState.mode}</p>
                     </ActionFrame>
                 )
 
@@ -269,7 +269,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
 
     private async execute(command: Command): Promise<void> {
         const props = this.props
-        const nextState = await new CommandHandler(props.appState).afterCommand(command, props.location)
+        const nextState = await new CommandHandler(props.islandState).afterCommand(command, props.location)
         props.stateSubject.next(nextState)
     }
 }

@@ -13,29 +13,29 @@ import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
 import { extractIslandData, isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
 
-import { Command, IAppState, Mode } from "./app-state"
+import { Command, IslandState, Mode } from "./island-state"
 import { Transition } from "./transition"
 
 export class CommandHandler {
 
     private trans: Transition
 
-    constructor(appState: IAppState) {
-        this.trans = new Transition(appState)
+    constructor(islandState: IslandState) {
+        this.trans = new Transition(islandState)
     }
 
-    public async afterCommand(command: Command, location: Vector3): Promise<IAppState> {
+    public async afterCommand(command: Command, location: Vector3): Promise<IslandState> {
 
         const trans = this.trans
-        const state = trans.state
-        const homeHexalot = state.homeHexalot
-        const hexalot = state.selectedHexalot
-        const jockey = state.jockey
-        const freeGotchi = state.gotchi
+        const islandState = trans.islandState
+        const homeHexalot = islandState.homeHexalot
+        const hexalot = islandState.selectedHexalot
+        const jockey = islandState.jockey
+        const freeGotchi = islandState.gotchi
         const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
-        const journey = state.journey
-        const spot = state.selectedSpot
-        const island = state.island
+        const journey = islandState.journey
+        const spot = islandState.selectedSpot
+        const island = islandState.island
         const vacant = island.vacantHexalot
         const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
 
@@ -45,50 +45,50 @@ export class CommandHandler {
             case Command.SaveGenome: // ================================================================================
                 if (homeHexalot && gotchi) {
                     const genomeData = gotchi.genomeData
-                    await state.storage.setGenomeData(homeHexalot, genomeData)
+                    await islandState.storage.setGenomeData(homeHexalot, genomeData)
                 }
-                return state
+                return islandState
 
 
             case Command.RandomGenome: // ==============================================================================
                 if (homeHexalot) {
                     homeHexalot.genome = freshGenome()
                 }
-                return state
+                return islandState
 
 
             case Command.Return: // ====================================================================================
-                if (state.jockey) {
-                    return (await trans.withSelectedSpot(state.jockey.gotchi.home.centerSpot)).withMode(Mode.Landed).state
+                if (islandState.jockey) {
+                    return (await trans.withSelectedSpot(islandState.jockey.gotchi.home.centerSpot)).withMode(Mode.Landed).islandState
                 }
-                if (state.gotchi) {
-                    return (await trans.withSelectedSpot(state.gotchi.home.centerSpot)).withMode(Mode.Landed).state
+                if (islandState.gotchi) {
+                    return (await trans.withSelectedSpot(islandState.gotchi.home.centerSpot)).withMode(Mode.Landed).islandState
                 }
                 if (homeHexalot) {
-                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).withMode(Mode.Landed).state
+                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).withMode(Mode.Landed).islandState
                 }
-                return state
+                return islandState
 
 
             case Command.PrepareToRide: // =============================================================================
-                return trans.withMode(Mode.PreparingRide).state
+                return trans.withMode(Mode.PreparingRide).islandState
 
 
             case Command.RideFree: // =================================================================================
                 if (hexalot) {
                     const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
-                        return trans.withGotchi(newbornGotchi).state
+                        return trans.withGotchi(newbornGotchi).islandState
                     }
                 }
-                return state
+                return islandState
 
 
             case Command.RideJourney: // ==============================================================================
                 if (homeHexalot && journey) {
                     const firstLeg = journey.firstLeg
                     if (!firstLeg) {
-                        return state
+                        return islandState
                     }
                     homeHexalot.centerSpot.adjacentSpots.forEach((adjacentSpot, index) => {
                         const adhacentHexalot = adjacentSpot.centerOfHexalot
@@ -100,10 +100,10 @@ export class CommandHandler {
                     console.log("creating gotchi", firstLeg, newbornGotchi)
                     if (newbornGotchi) {
                         const newJockey = new Jockey(newbornGotchi, firstLeg)
-                        return trans.withJockey(newJockey).state
+                        return trans.withJockey(newJockey).islandState
                     }
                 }
-                return state
+                return islandState
 
 
             case Command.Evolve: // ====================================================================================
@@ -111,109 +111,109 @@ export class CommandHandler {
                     const firstLeg = journey.firstLeg
                     if (firstLeg) {
                         const saveGenome = (data: IGenomeData) => {
-                            state.storage.setGenomeData(homeHexalot, data).then(() => {
+                            islandState.storage.setGenomeData(homeHexalot, data).then(() => {
                                 console.log("genome saved")
                             })
                         }
                         const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
-                        return trans.withEvolution(evolution).state
+                        return trans.withEvolution(evolution).islandState
                     }
                 }
-                return state
+                return islandState
 
 
             case Command.ForgetJourney: // =============================================================================
                 if (homeHexalot) {
                     homeHexalot.journey = undefined
-                    state.storage.setJourneyData(homeHexalot, {hexalots: [homeHexalot.id]}).then(() => {
+                    islandState.storage.setJourneyData(homeHexalot, {hexalots: [homeHexalot.id]}).then(() => {
                         console.log("cleared journey")
                     })
-                    return trans.withJourney().state
+                    return trans.withJourney().islandState
                 }
-                return state
+                return islandState
 
 
             case Command.RotateLeft: // ================================================================================
                 if (homeHexalot) {
                     homeHexalot.rotate(true)
-                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).state
+                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).islandState
                 }
-                return state
+                return islandState
 
 
             case Command.RotateRight: // ===============================================================================
                 if (homeHexalot) {
                     homeHexalot.rotate(false)
-                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).state
+                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).islandState
                 }
-                return state
+                return islandState
 
 
             case Command.ComeHere: // ==================================================================================
                 if (gotchi) {
                     gotchi.approach(location, true)
                 }
-                return state
+                return islandState
 
 
             case Command.GoThere: // ===================================================================================
                 if (gotchi) {
                     gotchi.approach(location, false)
                 }
-                return state
+                return islandState
 
 
             case Command.StopMoving: // ================================================================================
                 if (gotchi) {
                     gotchi.nextDirection = Direction.REST
                 }
-                return state
+                return islandState
 
 
             case Command.MakeLand: // ==================================================================================
                 if (spot && spot.free) {
-                    return (await trans.withSurface(Surface.Land)).withRestructure.state
+                    return (await trans.withSurface(Surface.Land)).withRestructure.islandState
                 }
-                return state
+                return islandState
 
 
             case Command.MakeWater: // =================================================================================
                 if (spot && spot.free) {
-                    return (await trans.withSurface(Surface.Water)).withRestructure.state
+                    return (await trans.withSurface(Surface.Water)).withRestructure.islandState
                 }
-                return state
+                return islandState
 
 
             case Command.Terraform: // =================================================================================
                 const unknownSpot = island.spots.find(s => s.surface === Surface.Unknown)
                 if (unknownSpot) {
-                    return (await trans.withSelectedSpot(unknownSpot)).state
+                    return (await trans.withSelectedSpot(unknownSpot)).islandState
                 }
                 const illegalSpot = island.spots.find(s => !isSpotLegal(s))
                 if (illegalSpot) {
-                    return (await trans.withSelectedSpot(illegalSpot)).state
+                    return (await trans.withSelectedSpot(illegalSpot)).islandState
                 }
-                return state
+                return islandState
 
 
             case Command.AbandonFix: // ================================================================================
-                const nonce = island.state.nonce + 1
-                const orig = new Island(extractIslandData(island), island.gotchiFactory, state.storage, nonce)
-                return (await trans.withSelectedSpot()).withIsland(orig).withMode(Mode.Visiting).withRestructure.state
+                const nonce = island.islandState.nonce + 1
+                const orig = new Island(extractIslandData(island), island.gotchiFactory, islandState.storage, nonce)
+                return (await trans.withSelectedSpot()).withIsland(orig).withMode(Mode.Visiting).withRestructure.islandState
 
 
             case Command.ClaimHexalot: // ==============================================================================
                 if (!homeHexalot && hexalot && isIslandLegal(island) && (singleHexalot || vacant && vacant.id === hexalot.id)) {
-                    const newState = await CommandHandler.claimHexalot(state, hexalot)
+                    const newState = await CommandHandler.claimHexalot(islandState, hexalot)
                     if (newState) {
                         return newState
                     }
                 }
-                return state
+                return islandState
 
 
             case Command.PlanJourney: // ===============================================================================
-                return trans.withMode(Mode.PlanningJourney).state
+                return trans.withMode(Mode.PlanningJourney).islandState
 
 
             default: // ================================================================================================
@@ -223,14 +223,14 @@ export class CommandHandler {
         }
     }
 
-    private static async claimHexalot(state: IAppState, hexalot: Hexalot): Promise<IAppState | undefined> {
-        const islandData = await state.storage.claimHexalot(state.island, hexalot, freshGenome().genomeData)
+    private static async claimHexalot(islandState: IslandState, hexalot: Hexalot): Promise<IslandState | undefined> {
+        const islandData = await islandState.storage.claimHexalot(islandState.island, hexalot, freshGenome().genomeData)
         if (!islandData) {
             console.warn("No island data arrived")
             return undefined
         }
-        const island = new Island(islandData, state.island.gotchiFactory, state.storage, state.nonce)
-        return (await new Transition(island.state).withHomeHexalot(hexalot)).withRestructure.state
+        const island = new Island(islandData, islandState.island.gotchiFactory, islandState.storage, islandState.nonce)
+        return (await new Transition(island.islandState).withHomeHexalot(hexalot)).withRestructure.islandState
     }
 }
 
