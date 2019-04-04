@@ -46,8 +46,8 @@ export class ClickHandler {
 
 
             case AppMode.Landed: // =================================================================================
-                if (spot) {
-                    return (await trans.withSelectedSpot(spot)).appState
+                if (hexalot) {
+                    return (await trans.withSelectedSpot(hexalot.centerSpot)).appState
                 }
                 return appState
 

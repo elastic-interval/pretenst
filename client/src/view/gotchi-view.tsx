@@ -88,15 +88,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, object> {
         const journey = appState.journey
         if (this.props.appState.nonce > this.appStateNonce) {
             this.appStateNonce = this.props.appState.nonce
-            console.log("======================== nonce", this.appStateNonce)
             const selectedHexalot = appState.selectedHexalot
             const selectedSpot = appState.selectedSpot
             if (selectedHexalot) {
                 this.target = selectedHexalot.seed
-                console.log("selected hexalot", selectedHexalot.coords)
             } else if (selectedSpot) {
                 this.target = selectedSpot.center
-                console.log("selected spot", selectedSpot.coords)
             } else {
                 this.target = island.midpoint
             }
@@ -147,7 +144,6 @@ export class GotchiView extends React.Component<IGotchiViewProps, object> {
         const appState = props.appState
         const clickHandler = new ClickHandler(appState, props.userId)
         const afterClick = await clickHandler.stateAfterClick(spot)
-        console.log("after click", afterClick.selectedHexalot ? afterClick.selectedHexalot.coords : "nottin")
         props.appState.updateState(afterClick)
     }
 
