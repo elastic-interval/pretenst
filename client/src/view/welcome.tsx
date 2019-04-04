@@ -5,11 +5,10 @@
 
 import * as React from "react"
 import { Button, Col, Container, Row } from "reactstrap"
-import { Subject } from "rxjs"
 
 import { FabricKernel } from "../body/fabric-kernel"
 import { Island } from "../island/island"
-import { IslandState, logString } from "../state/island-state"
+import { AppMode, IAppState, logString } from "../state/app-state"
 import { Transition } from "../state/transition"
 import { IStorage } from "../storage/storage"
 
@@ -35,8 +34,7 @@ export interface IWelcomeProps {
     userId?: string
     storage: IStorage
     fabricKernel: FabricKernel
-    stateSubject: Subject<IslandState>
-    ownedLots: string[]
+    appState: IAppState
 }
 
 export interface IWelcomeState {
@@ -119,16 +117,20 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
                     and this information is stored in your web browser.
                 </p>
                 <div>
-                    {this.props.ownedLots ? this.ownedLots : (
-                        <span>One moment please. Checking if you own a hexalot.</span>
-                    )}
+                    {this.ownedLots}
                 </div>
             </div>
         )
     }
 
-    private get ownedLots(): JSX.Element {
-        if (this.props.ownedLots.length === 0) {
+    private get ownedLots(): JSX.Element | undefined {
+        const ownedLots = this.props.appState.ownedLots
+        if (!ownedLots) {
+            return (
+                <span>One moment please. Checking if you own a hexalot.</span>
+            )
+        }
+        if (ownedLots.length === 0) {
             return (
                 <div>
                     <p>
@@ -164,7 +166,7 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
                     Until your gotchi has evolved the ability to run around, you will have to take the time to
                     evolve its body shape and muscle coordination.
                 </p>
-                {this.props.ownedLots.map(lot => {
+                {ownedLots.map(lot => {
                     return (
                         <p key={lot}>
                             <Button onClick={() => this.fetch(lot)}>Go to hexalot "{lot}"</Button>
@@ -236,14 +238,19 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
             return
         }
         const island = new Island(islandData, this.props.fabricKernel, this.props.storage, 0)
-        console.log(logString(island.islandState))
+        const appState = new Transition(this.props.appState)
+            .withIsland(island)
+            .withAppMode(AppMode.Visiting)
+            .withIslandIsLegal(false)
+            .withRestructure
+            .appState
+        console.log(logString(appState))
         if (!homeHexalotId) {
-            this.props.stateSubject.next(island.islandState)
+            this.props.appState.updateState(appState)
         } else {
             const homeHexalot = island.findHexalot(homeHexalotId)
-            const transition = await new Transition(island.islandState).withHomeHexalot(homeHexalot)
-            const newState = transition.withRestructure.islandState
-            this.props.stateSubject.next(newState)
+            const transition = await new Transition(appState).withHomeHexalot(homeHexalot)
+            this.props.appState.updateState(transition.withRestructure.appState)
         }
     }
 }

@@ -6,49 +6,53 @@
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
-import { IslandState, Mode } from "./island-state"
+import { AppMode, IAppState } from "./app-state"
 import { Transition } from "./transition"
 
 export class ClickHandler {
 
     private trans: Transition
 
-    constructor(islandState: IslandState, private userId?: string) {
-        this.trans = new Transition(islandState)
+    constructor(appState: IAppState, private userId?: string) {
+        this.trans = new Transition(appState)
     }
 
-    public async stateAfterClick(spot: Spot): Promise<IslandState> {
+    public async stateAfterClick(spot: Spot): Promise<IAppState> {
 
         const trans = this.trans
-        const islandState = trans.islandState
         const hexalot = spot.centerOfHexalot
-        const homeHexalot = islandState.homeHexalot
-        const island = islandState.island
+        const appState = trans.appState
+        const homeHexalot = appState.homeHexalot
+        const island = appState.island
+        if (!island) {
+            return appState
+        }
+
         const vacant = island.vacantHexalot
 
-        switch (islandState.mode) {
+        switch (appState.appMode) {
 
 
-            case Mode.FixingIsland: // ===========================================================================
-                return (await trans.withSelectedSpot(spot)).islandState
+            case AppMode.FixingIsland: // ===========================================================================
+                return (await trans.withSelectedSpot(spot)).appState
 
 
-            case Mode.Visiting: // ===============================================================================
-                if (this.userId && !homeHexalot && islandState.islandIsLegal && spot.isCandidateHexalot(vacant)) {
+            case AppMode.Visiting: // ===============================================================================
+                if (this.userId && !homeHexalot && appState.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     island.vacantHexalot = island.createHexalot(spot)
-                    return (await trans.withSelectedSpot(spot)).withMode(Mode.FixingIsland).withRestructure.islandState
+                    return (await trans.withSelectedSpot(spot)).withAppMode(AppMode.FixingIsland).withRestructure.appState
                 }
-                return (await trans.withSelectedSpot(spot)).islandState
+                return (await trans.withSelectedSpot(spot)).appState
 
 
-            case Mode.Landed: // =================================================================================
+            case AppMode.Landed: // =================================================================================
                 if (spot) {
-                    return (await trans.withSelectedSpot(spot)).islandState
+                    return (await trans.withSelectedSpot(spot)).appState
                 }
-                return islandState
+                return appState
 
 
-            case Mode.PlanningJourney: // ========================================================================
+            case AppMode.PlanningJourney: // ========================================================================
                 if (!homeHexalot) {
                     throw new Error("No home hexalot")
                 }
@@ -58,15 +62,15 @@ export class ClickHandler {
                     } else {
                         homeHexalot.journey = new Journey([homeHexalot, hexalot])
                     }
-                    islandState.storage.setJourneyData(homeHexalot, homeHexalot.journey.data).then(() => {
+                    appState.storage.setJourneyData(homeHexalot, homeHexalot.journey.data).then(() => {
                         console.log("saved journey")
                     })
-                    return trans.withJourney(homeHexalot.journey).islandState
+                    return trans.withJourney(homeHexalot.journey).appState
                 }
-                return islandState
+                return appState
 
 
-            case Mode.PreparingRide: // ==========================================================================
+            case AppMode.PreparingRide: // ==========================================================================
                 const target = spot.center
                 const adjacent = spot.adjacentSpots.map((s, i) => ({center: s.center, index: i}))
                 adjacent.sort((a, b) => target.distanceTo(a.center) - target.distanceTo(b.center))
@@ -75,11 +79,11 @@ export class ClickHandler {
                 if (top) {
                     console.log(`Direction: ${top.index}`)
                 }
-                return islandState // todo: no state change?
+                return appState
 
 
             default: // ================================================================================================
-                return islandState
+                return appState
 
 
         }

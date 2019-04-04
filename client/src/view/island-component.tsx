@@ -17,7 +17,7 @@ import {
     INNER_HEXALOT_SPOTS,
     OUTER_HEXALOT_SIDE,
 } from "../island/constants"
-import { IslandState, Mode } from "../state/island-state"
+import { AppMode, IAppState } from "../state/app-state"
 
 import {
     AVAILABLE_HEXALOT,
@@ -36,13 +36,13 @@ const POINTER_TOP = new Vector3(0, 60, 0)
 const HEMISPHERE_COLOR = new Color("white")
 
 export interface IslandComponentProps {
-    islandState: IslandState
+    appState: IAppState
     setMesh: (key: string, ref: Mesh) => void
     userId?: string
 }
 
 export class IslandComponent extends React.Component<IslandComponentProps, object> {
-    private islandStateNonce = 0
+    private appStateNonce = -1
     private spots: Geometry
     private seeds: Geometry
     private occupiedHangers: Geometry
@@ -70,11 +70,15 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.disposeGeometry()
     }
 
-    public render(): JSX.Element {
-        const islandState = this.props.islandState
-        if (islandState.nonce > this.islandStateNonce) {
+    public render(): JSX.Element | boolean {
+        const appState = this.props.appState
+        const island = appState.island
+        if (!island) {
+            return false
+        }
+        if (appState.nonce > this.appStateNonce) {
             this.disposeGeometry()
-            islandState.island.spots.forEach(spot => spot.faceNames = [])
+            island.spots.forEach(spot => spot.faceNames = [])
             this.spots = this.spotsGeometry
             this.seeds = this.seedsGeometry
             this.arrow = this.arrowGeometry
@@ -84,10 +88,10 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
             this.homeHexalot = this.homeHexalotGeometry
             this.availableSpots = this.availableSpotsGeometry
             this.vacantHexalots = this.vacantHexalotsGeometry
-            this.islandStateNonce = islandState.nonce
+            this.appStateNonce = appState.nonce
         }
         return (
-            <R3.Object3D key={islandState.island.name}>
+            <R3.Object3D key={island.name}>
                 <R3.Mesh name="Spots" geometry={this.spots} material={ISLAND}
                          ref={(mesh: Mesh) => this.props.setMesh(MeshKey.SPOTS_KEY, mesh)}
                 />
@@ -118,30 +122,36 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     // =================================================================================================================
 
     private get spotsGeometry(): Geometry {
-        const islandState = this.props.islandState
         const geometry = new Geometry()
-        islandState.island.spots.forEach((spot, index) => {
-            spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces)
-        })
+        const island = this.props.appState.island
+        if (island) {
+            island.spots.forEach((spot, index) => {
+                spot.addSurfaceGeometry(MeshKey.SPOTS_KEY, index, geometry.vertices, geometry.faces)
+            })
+        }
         geometry.computeBoundingSphere()
         return geometry
     }
 
     private get occupiedHangersGeometry(): Geometry {
-        const vacantHexalot = this.props.islandState.island.vacantHexalot
         const geometry = new Geometry()
-        this.props.islandState.island.hexalots.forEach(hexalot => {
-            if (vacantHexalot && vacantHexalot.id === hexalot.id) {
-                return
-            }
-            hexalot.centerSpot.addHangerGeometry(geometry.vertices)
-        })
+        const island = this.props.appState.island
+        if (island) {
+            const vacantHexalot = island.vacantHexalot
+            island.hexalots.forEach(hexalot => {
+                if (vacantHexalot && vacantHexalot.id === hexalot.id) {
+                    return
+                }
+                hexalot.centerSpot.addHangerGeometry(geometry.vertices)
+            })
+        }
         return geometry
     }
 
     private get vacantHangersGeometry(): Geometry {
-        const vacantHexalot = this.props.islandState.island.vacantHexalot
         const geometry = new Geometry()
+        const island = this.props.appState.island
+        const vacantHexalot = island ? island.vacantHexalot : undefined
         if (vacantHexalot) {
             vacantHexalot.centerSpot.addHangerGeometry(geometry.vertices)
         }
@@ -150,22 +160,25 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
 
     private get seedsGeometry(): Geometry {
         const geometry = new Geometry()
-        const hexalots = this.props.islandState.island.hexalots
-        const activeHexalotId = this.activeHexalotId
-        hexalots.forEach(hexalot => {
-            if (!activeHexalotId || hexalot.id !== activeHexalotId) {
-                hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
-            }
-        })
+        const island = this.props.appState.island
+        if (island) {
+            const hexalots = island.hexalots
+            const activeHexalotId = this.activeHexalotId
+            hexalots.forEach(hexalot => {
+                if (!activeHexalotId || hexalot.id !== activeHexalotId) {
+                    hexalot.centerSpot.addSeed(hexalot.rotation, MeshKey.SEEDS_KEY, geometry.vertices, geometry.faces)
+                }
+            })
+        }
         geometry.computeFaceNormals()
         geometry.computeBoundingSphere()
         return geometry
     }
 
     private get arrowGeometry(): Geometry | undefined {
-        const islandState = this.props.islandState
-        const hexalot = islandState.selectedHexalot
-        if (!hexalot || islandState.mode !== Mode.PreparingRide) {
+        const appState = this.props.appState
+        const hexalot = appState.selectedHexalot
+        if (!hexalot || appState.appMode !== AppMode.PreparingRide) {
             return undefined
         }
         const toTransform: Vector3[] = []
@@ -198,7 +211,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     }
 
     private get selectedSpotGeometry(): Geometry | undefined {
-        const selectedSpot = this.props.islandState.selectedSpot
+        const selectedSpot = this.props.appState.selectedSpot
         if (!selectedSpot) {
             return undefined
         }
@@ -210,7 +223,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     }
 
     private get homeHexalotGeometry(): Geometry | undefined {
-        const homeHexalot = this.props.islandState.homeHexalot
+        const homeHexalot = this.props.appState.homeHexalot
         if (!homeHexalot) {
             return undefined
         }
@@ -229,21 +242,28 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     }
 
     private get availableSpotsGeometry(): Geometry | undefined {
-        const islandState = this.props.islandState
-        if (!this.props.userId || islandState.homeHexalot || !islandState.islandIsLegal) {
+        const appState = this.props.appState
+        if (!this.props.userId || appState.homeHexalot || !appState.islandIsLegal) {
             return undefined
         }
-        const vacantHexalot = islandState.island.vacantHexalot
         const geometry = new Geometry()
-        islandState.island.spots.filter(spot => spot.isCandidateHexalot(vacantHexalot)).forEach(spot => {
-            spot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
-        })
+        const island = appState.island
+        if (island) {
+            const vacantHexalot = island.vacantHexalot
+            island.spots.filter(spot => spot.isCandidateHexalot(vacantHexalot)).forEach(spot => {
+                spot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
+            })
+        }
         return geometry
     }
 
     private get vacantHexalotsGeometry(): Geometry | undefined {
-        const islandState = this.props.islandState
-        const vacantHexalot = islandState.island.vacantHexalot
+        const appState = this.props.appState
+        const island = appState.island
+        if (!island) {
+            return undefined
+        }
+        const vacantHexalot = island.vacantHexalot
         if (!vacantHexalot) {
             return undefined
         }
@@ -260,15 +280,15 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     }
 
     public get activeHexalotId(): string | undefined {
-        const islandState = this.props.islandState
-        if (islandState.jockey) {
-            return islandState.jockey.gotchi.home.id
+        const appState = this.props.appState
+        if (appState.jockey) {
+            return appState.jockey.gotchi.home.id
         }
-        if (islandState.gotchi) {
-            return islandState.gotchi.home.id
+        if (appState.gotchi) {
+            return appState.gotchi.home.id
         }
-        if (islandState.evolution) {
-            return islandState.evolution.home.id
+        if (appState.evolution) {
+            return appState.evolution.home.id
         }
         return undefined
     }

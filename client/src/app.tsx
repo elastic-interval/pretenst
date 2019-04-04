@@ -5,49 +5,18 @@
 
 import * as React from "react"
 import { Button } from "reactstrap"
-import { Subject } from "rxjs"
-import { BehaviorSubject } from "rxjs/BehaviorSubject"
-import { Subscription } from "rxjs/Subscription"
 import { PerspectiveCamera } from "three"
 
-import { IFabricExports } from "./body/fabric-exports"
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Surface } from "./island/island-logic"
-import { IslandState } from "./state/island-state"
-import { IStorage } from "./storage/storage"
+import { AppMode, AppTransition, IAppProps, IAppState, updateDimensions } from "./state/app-state"
 import { ActionsPanel } from "./view/actions-panel"
 import { FlightMode, INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
 import { GotchiView } from "./view/gotchi-view"
 import { InfoPanel } from "./view/info-panel"
 import { Welcome } from "./view/welcome"
-
-interface IAppProps {
-    fabricExports: IFabricExports
-    storage: IStorage
-    userId?: string
-}
-
-export interface IAppState {
-    flightMode: FlightMode
-    width: number
-    height: number
-    left: number
-    top: number
-    showInfo: boolean
-    ownedLots: string[]
-    islandState?: IslandState
-}
-
-function updateDimensions(): object {
-    return {
-        width: window.innerWidth,
-        height: window.innerHeight,
-        left: window.screenLeft,
-        top: window.screenTop,
-    }
-}
 
 function getShowInfo(): boolean {
     return "true" === localStorage.getItem("InfoPanel.maximized")
@@ -58,12 +27,10 @@ function setInfoPanelMaximized(maximized: boolean): void {
 }
 
 export class App extends React.Component<IAppProps, IAppState> {
-    private subs: Subscription[] = []
     private perspectiveCamera: PerspectiveCamera
-    private flightMode = new BehaviorSubject<FlightMode>(FlightMode.Arriving)
-    private stateSubject = new Subject<IslandState>()
     private physics = new Physics()
     private fabricKernel: FabricKernel
+    private appStateNonce = -1
 
     constructor(props: IAppProps) {
         super(props)
@@ -73,25 +40,45 @@ export class App extends React.Component<IAppProps, IAppState> {
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, MINIMUM_DISTANCE, INITIAL_DISTANCE + MINIMUM_DISTANCE)
         const showInfo = getShowInfo()
-        const flightMode = this.flightMode.getValue()
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
-        this.state = {showInfo, flightMode, width, height, left, top, ownedLots}
+        const mode = AppMode.Visiting
+        const flightMode = FlightMode.Arriving
+        const self = this
+        this.state = {
+            showInfo,
+            width,
+            height,
+            left,
+            top,
+            ownedLots,
+            nonce: 0,
+            appMode: mode,
+            flightMode,
+            islandIsLegal: false,
+            storage: props.storage,
+            transitionState(transition: AppTransition): void {
+                self.setState(transition)
+            },
+            updateState(appState: IAppState): void {
+                if (self.appStateNonce === appState.nonce) {
+                    throw new Error("same nonce")
+                }
+                self.appStateNonce = appState.nonce
+                const homeHexalot = appState.homeHexalot
+                if (homeHexalot) {
+                    const spotCenters = homeHexalot.spots.map(spot => spot.center)
+                    const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
+                    self.fabricKernel.setHexalot(spotCenters, surface)
+                }
+                self.setState(appState)
+            },
+        }
     }
 
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
-        this.subs.push(this.flightMode.subscribe(flightMode => this.setState({flightMode})))
-        this.subs.push(this.stateSubject.subscribe(islandState => {
-            const homeHexalot = islandState.homeHexalot
-            if (homeHexalot) {
-                const spotCenters = homeHexalot.spots.map(spot => spot.center)
-                const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
-                this.fabricKernel.setHexalot(spotCenters, surface)
-            }
-            this.setState({islandState})
-        }))
         this.props.storage.getOwnedLots().then(ownedLots => {
             if (!ownedLots) {
                 this.setState({ownedLots: []})
@@ -103,37 +90,27 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     public componentWillUnmount(): void {
         window.removeEventListener("resize", () => this.setState(updateDimensions))
-        this.subs.forEach(s => s.unsubscribe())
     }
 
     public render(): JSX.Element {
         return (
             <div>
-                {!this.state.islandState ? (
+                {!this.state.island ? (
                     <Welcome
                         userId={this.props.userId}
-                        ownedLots={this.state.ownedLots}
                         storage={this.props.storage}
                         fabricKernel={this.fabricKernel}
-                        stateSubject={this.stateSubject}
+                        appState={this.state}
                     />
                 ) : (
                     <div>
                         <GotchiView
                             perspectiveCamera={this.perspectiveCamera}
                             userId={this.props.userId}
-                            islandState={this.state.islandState}
-                            stateSubject={this.stateSubject}
-                            width={this.state.width}
-                            height={this.state.height}
-                            left={this.state.left}
-                            top={this.state.top}
-                            flightMode={this.flightMode}
+                            appState={this.state}
                         />
                         <ActionsPanel
-                            flightMode={this.flightMode}
-                            islandState={this.state.islandState}
-                            stateSubject={this.stateSubject}
+                            appState={this.state}
                             location={this.perspectiveCamera.position}
                         />
                         {this.infoPanel}

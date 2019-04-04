@@ -3,9 +3,11 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { PerspectiveCamera, Vector3 } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
+
+import { IAppState } from "../state/app-state"
+import { Transition } from "../state/transition"
 
 export const INITIAL_DISTANCE = 15000
 export const MINIMUM_DISTANCE = 7
@@ -31,7 +33,7 @@ export class Flight {
     private target = new Vector3()
     private lastChanged = Date.now()
 
-    constructor(private orbit: OrbitControls, private mode: BehaviorSubject<FlightMode>, target: Vector3) {
+    constructor(private orbit: OrbitControls, target: Vector3) {
         orbit.enabled = false
         orbit.minPolarAngle = Math.PI * 0.1
         orbit.maxPolarAngle = 0.95 * Math.PI / 2
@@ -59,30 +61,40 @@ export class Flight {
         return Date.now() - this.lastChanged < 100
     }
 
-    public moveTargetTowards(location: Vector3): void {
-        this.vector.subVectors(location, this.target).multiplyScalar(TOWARDS_TARGET)
-        this.target.add(this.vector)
-    }
-
-    public update(): void {
+    public update(appState: IAppState, target?: Vector3): void {
         const distance = this.distance
         if (distance < CLOSE_ENOUGH) {
             const up = this.camera.up
             up.y += UPWARDS
             up.normalize()
         }
-        switch (this.mode.getValue()) {
+        switch (appState.flightMode) {
             case FlightMode.Arriving:
                 if (distance < CLOSE_ENOUGH) {
                     this.orbit.enabled = true
-                    this.mode.next(FlightMode.Piloted)
+                    appState.updateState(new Transition(appState).withFlightMode(FlightMode.Piloted).appState)
                     break
                 }
                 const dollyScale = 1 + DOLLY_SCALE_FACTOR * distance / CLOSE_ENOUGH
                 this.orbit.dollyIn(dollyScale)
                 break
+            case FlightMode.Tracking:
+                const previousDistance = this.vector.subVectors(this.camera.position, this.target).length()
+                const newDistance = this.vector.subVectors(this.camera.position, this.target).length()
+                if (newDistance > previousDistance) {
+                    this.camera.position
+                        .set(0, 0, 0)
+                        .add(this.target)
+                        .addScaledVector(this.vector, previousDistance / newDistance)
+                }
+                break
             case FlightMode.Piloted:
                 break
+        }
+        if (target) {
+            // console.log("updating with target", target)
+            this.vector.subVectors(target, this.target).multiplyScalar(TOWARDS_TARGET)
+            this.target.add(this.vector)
         }
         this.orbit.update()
     }

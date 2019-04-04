@@ -5,20 +5,17 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
-import { Subject } from "rxjs"
-import { BehaviorSubject } from "rxjs/BehaviorSubject"
-import { Subscription } from "rxjs/Subscription"
 import { Mesh, PerspectiveCamera, Vector3 } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
 import { NORMAL_TICKS } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
 import { Spot } from "../island/spot"
+import { IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
-import { IslandState } from "../state/island-state"
 
 import { EvolutionComponent } from "./evolution-component"
-import { Flight, FlightMode } from "./flight"
+import { Flight } from "./flight"
 import { IslandComponent } from "./island-component"
 import { JourneyComponent } from "./journey-component"
 import { GOTCHI, GOTCHI_ARROW } from "./materials"
@@ -26,22 +23,12 @@ import { MeshKey, SpotSelector } from "./spot-selector"
 
 interface IGotchiViewProps {
     perspectiveCamera: PerspectiveCamera
-    width: number
-    height: number
-    left: number
-    top: number
     userId?: string
-    islandState: IslandState
-    stateSubject: Subject<IslandState>
-    flightMode: BehaviorSubject<FlightMode>
+    appState: IAppState
 }
 
-interface IGotchiViewState {
-    flightMode: FlightMode
-}
-
-export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
-    private subs: Subscription[] = []
+export class GotchiView extends React.Component<IGotchiViewProps, object> {
+    private appStateNonce = -1
     private flight: Flight
     private spotSelector: SpotSelector
     private animating = true
@@ -49,75 +36,83 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     constructor(props: IGotchiViewProps) {
         super(props)
-        const flightMode = this.props.flightMode.getValue()
-        this.state = {flightMode}
+        this.state = {}
         this.spotSelector = new SpotSelector(
             this.props.perspectiveCamera,
-            this.props.islandState.island,
-            this.props.width,
-            this.props.height,
+            this.props.appState.width,
+            this.props.appState.height,
         )
     }
 
-    public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<IGotchiViewState>, snapshot: object): void {
-        if (prevProps.width !== this.props.width || prevProps.height !== this.props.height) {
-            this.props.perspectiveCamera.aspect = this.props.width / this.props.height
+    public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<object>, snapshot: object): void {
+        if (prevProps.appState.width !== this.props.appState.width || prevProps.appState.height !== this.props.appState.height) {
+            this.props.perspectiveCamera.aspect = this.props.appState.width / this.props.appState.height
             this.props.perspectiveCamera.updateProjectionMatrix()
-            this.spotSelector.setSize(this.props.width, this.props.height)
+            this.spotSelector.setSize(this.props.appState.width, this.props.appState.height)
         }
     }
 
     public componentDidMount(): void {
+        const props = this.props
         const element: HTMLElement | undefined = document.getElementById("gotchi-view") || undefined
         if (element) {
-            const islandState = this.props.islandState
-            this.target = islandState.homeHexalot ? islandState.homeHexalot.seed : islandState.island.midpoint
-            const orbitControls = new OrbitControls(this.props.perspectiveCamera, element)
-            this.flight = new Flight(orbitControls, this.props.flightMode, this.target)
+            const appState = props.appState
+            if (appState.homeHexalot) {
+                this.target = appState.homeHexalot.seed
+            } else if (appState.island) {
+                this.target = appState.island.midpoint
+            } else {
+                this.target = new Vector3()
+            }
+            const orbitControls = new OrbitControls(props.perspectiveCamera, element)
+            this.flight = new Flight(orbitControls, this.target)
             this.flight.setupCamera()
             this.animate()
-            this.subs.push(this.props.flightMode.subscribe(orbitDistance => this.setState({flightMode: orbitDistance})))
         }
-    }
-
-    public componentWillReceiveProps(nextProps: Readonly<IGotchiViewProps>, nextContext: object): void {
-        const selectedHexalot = nextProps.islandState.selectedHexalot
-        if (selectedHexalot) {
-            this.target = selectedHexalot.seed
-            return
-        }
-        const selectedSpot = nextProps.islandState.selectedSpot
-        if (selectedSpot) {
-            this.target = selectedSpot.center
-            return
-        }
-        this.target = nextProps.islandState.island.midpoint
     }
 
     public componentWillUnmount(): void {
         this.animating = false
-        this.subs.forEach(s => s.unsubscribe())
     }
 
-    public render(): JSX.Element {
-        const islandState = this.props.islandState
-        const evolution = islandState.evolution
-        const jockey = islandState.jockey
-        const freeGotchi = islandState.gotchi
+    public render(): JSX.Element | undefined {
+        const appState = this.props.appState
+        const island = appState.island
+        if (!island) {
+            return undefined
+        }
+        const evolution = appState.evolution
+        const jockey = appState.jockey
+        const freeGotchi = appState.gotchi
         const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
-        const journey = islandState.journey
+        const journey = appState.journey
+        if (this.props.appState.nonce > this.appStateNonce) {
+            this.appStateNonce = this.props.appState.nonce
+            console.log("======================== nonce", this.appStateNonce)
+            const selectedHexalot = appState.selectedHexalot
+            const selectedSpot = appState.selectedSpot
+            if (selectedHexalot) {
+                this.target = selectedHexalot.seed
+                console.log("selected hexalot", selectedHexalot.coords)
+            } else if (selectedSpot) {
+                this.target = selectedSpot.center
+                console.log("selected spot", selectedSpot.coords)
+            } else {
+                this.target = island.midpoint
+            }
+        }
         return (
             <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
-                const spot = this.spotSelector.getSpot(MeshKey.SPOTS_KEY, event)
+                const spot = this.spotSelector.getSpot(island, MeshKey.SPOTS_KEY, event)
                 if (spot) {
                     this.click(spot)
                 }
             }}>
-                <R3.Renderer width={this.props.width} height={this.props.height}>
-                    <R3.Scene width={this.props.width} height={this.props.height} camera={this.props.perspectiveCamera}>
+                <R3.Renderer width={appState.width} height={appState.height}>
+                    <R3.Scene width={appState.width} height={appState.height} camera={this.props.perspectiveCamera}>
                         <IslandComponent
                             userId={this.props.userId}
-                            islandState={this.props.islandState}
+                            appState={this.props.appState}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
                         {!evolution ? undefined : (
@@ -149,21 +144,24 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
 
     private async click(spot: Spot): Promise<void> {
         const props = this.props
-        const clickHandler = new ClickHandler(props.islandState, props.userId)
+        const appState = props.appState
+        const clickHandler = new ClickHandler(appState, props.userId)
         const afterClick = await clickHandler.stateAfterClick(spot)
-        props.stateSubject.next(afterClick)
+        console.log("after click", afterClick.selectedHexalot ? afterClick.selectedHexalot.coords : "nottin")
+        props.appState.updateState(afterClick)
     }
 
     private animate(): void {
         const step = () => {
             setTimeout(
                 () => {
-                    const evolution = this.props.islandState.evolution
+                    const appState = this.props.appState
+                    const evolution = appState.evolution
                     if (evolution) {
                         evolution.iterate()
                         this.target = evolution.midpoint
                     }
-                    const jockey = this.props.islandState.jockey
+                    const jockey = appState.jockey
                     if (jockey) {
                         if (jockey.touchedDestination) {
                             const nextLeg = jockey.leg.nextLeg
@@ -176,18 +174,16 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             jockey.adjustDirection()
                         }
                     }
-                    const freeGotchi = this.props.islandState.gotchi
+                    const freeGotchi = appState.gotchi
                     const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
                     if (gotchi) {
                         gotchi.iterate(NORMAL_TICKS)
                         this.target = gotchi.midpoint
                     }
-                    if (this.target) {
-                        this.flight.moveTargetTowards(this.target)
-                    }
                     if (this.animating) {
-                        this.flight.update()
-                        this.forceUpdate()
+                        this.flight.update(appState, this.target)
+                        // TODO: not needed?
+                        // this.forceUpdate()
                         requestAnimationFrame(step)
                     }
                 },

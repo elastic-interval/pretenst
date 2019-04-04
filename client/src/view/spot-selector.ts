@@ -20,7 +20,7 @@ export class SpotSelector {
     private mouse = new Vector2()
     private size = new Vector2()
 
-    constructor(private camera: PerspectiveCamera, private island: Island, width: number, height: number) {
+    constructor(private camera: PerspectiveCamera, width: number, height: number) {
         this.setSize(width, height)
     }
 
@@ -37,9 +37,9 @@ export class SpotSelector {
         this.size.y = height
     }
 
-    public getSpot(meshKey: MeshKey, event: React.MouseEvent<HTMLDivElement>): Spot | undefined {
+    public getSpot(island: Island, meshKey: MeshKey, event: React.MouseEvent<HTMLDivElement>): Spot | undefined {
         this.adjustRaycaster(event)
-        return this.findSpot(meshKey)
+        return this.findSpot(island, meshKey)
     }
 
     // ==================
@@ -53,13 +53,13 @@ export class SpotSelector {
         this.rayCaster.setFromCamera(this.mouse, this.camera)
     }
 
-    private findSpot(meshKey: MeshKey): Spot | undefined {
+    private findSpot(island: Island, meshKey: MeshKey): Spot | undefined {
         const mesh = this.meshes[meshKey]
         const intersections = this.rayCaster.intersectObjects([mesh], true)
             .filter(i => i.faceIndex !== undefined)
         const spots = intersections.map(intersection => {
             const faceName = `${meshKey}:${intersection.faceIndex}`
-            return this.island.spots.find(spot => spot.faceNames.indexOf(faceName) >= 0)
+            return island.spots.find(spot => spot.faceNames.indexOf(faceName) >= 0)
         })
         return spots.pop()
     }
