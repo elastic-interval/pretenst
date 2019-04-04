@@ -31,8 +31,9 @@ import {
 } from "./materials"
 import { MeshKey } from "./spot-selector"
 
-const SUN_POSITION = new Vector3(0, 400, 0)
-const HEMISPHERE_COLOR = new Color(0.8, 0.8, 0.8)
+const SUN_POSITION = new Vector3(0, 600, 0)
+const POINTER_TOP = new Vector3(0, 60, 0)
+const HEMISPHERE_COLOR = new Color("white")
 
 export interface IslandComponentProps {
     islandState: IslandState
@@ -204,7 +205,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         const center = selectedSpot.center
         const target = selectedSpot.centerOfHexalot ? new Vector3(0, HUNG_ALTITUDE, 0).add(center) : center
         const geometry = new Geometry()
-        geometry.vertices = [target, new Vector3().addVectors(target, SUN_POSITION)]
+        geometry.vertices = [target, new Vector3().addVectors(target, POINTER_TOP)]
         return geometry
     }
 

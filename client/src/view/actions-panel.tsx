@@ -12,39 +12,61 @@ import { Vector3 } from "three"
 import { CommandHandler } from "../state/command-handler"
 import { Command, homeHexalotSelected, IslandState, Mode } from "../state/island-state"
 
-import { OrbitDistance } from "./orbit"
+import { FlightMode } from "./flight"
 
 export interface IActionsPanelProps {
-    orbitDistance: BehaviorSubject<OrbitDistance>
+    flightMode: BehaviorSubject<FlightMode>
     stateSubject: Subject<IslandState>
     islandState: IslandState
     location: Vector3
+}
+
+export interface IActionsPanelState {
+    islandState: IslandState
+    visible: boolean
 }
 
 interface IContainerProps {
     children: Array<JSX.Element | null> | JSX.Element | string
 }
 
-const ActionFrame = (props: IContainerProps) => <div className="action-frame">{props.children}</div>
+const ActionFrame = (props: IContainerProps) => (
+    <div className="actions-panel-outer floating-panel">
+      <div className="actions-panel-inner">
+          <div className="action-frame">{props.children}</div>
+      </div>
+    </div>
+)
 
 const Message = (props: IContainerProps) => <p>{props.children}</p>
 
-export class ActionsPanel extends React.Component<IActionsPanelProps, object> {
+export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPanelState> {
     private subs: Subscription[] = []
 
     constructor(props: IActionsPanelProps) {
         super(props)
+        this.state = {islandState: props.islandState, visible: false}
     }
 
     public componentDidMount(): void {
-        this.subs.push(this.props.stateSubject.subscribe(islandState => this.setState({islandState})))
+        this.subs.push(this.props.stateSubject.subscribe(islandState => {
+            this.setState({islandState})
+        }))
+        this.subs.push(this.props.flightMode.subscribe(flightMode => {
+            const visible = flightMode !== FlightMode.Arriving
+            this.setState({visible})
+        }))
     }
 
     public componentWillUnmount(): void {
         this.subs.forEach(s => s.unsubscribe())
     }
 
-    public render(): JSX.Element {
+    public render(): JSX.Element | boolean {
+
+        if (!this.state.visible) {
+            return false
+        }
 
         const islandState = this.props.islandState
         const island = islandState.island

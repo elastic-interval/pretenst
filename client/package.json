@@ -23,7 +23,8 @@
     "reactstrap": "^6.5.0",
     "rxjs": "5.5.6",
     "three": "^0.83.0",
-    "three-orbit-controls": "^82.1.0"
+    "three-orbit-controls": "^82.1.0",
+    "three-orbitcontrols-ts": "^0.1.2"
   },
   "scripts": {
     "start:local": "react-scripts-ts start",

@@ -5,6 +5,7 @@
 
 import { Vector3 } from "three"
 
+import { HUNG_ALTITUDE } from "../body/fabric"
 import { fromOptionalGenomeData, Genome } from "../genetics/genome"
 import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { IStorage } from "../storage/storage"
@@ -91,5 +92,9 @@ export class Hexalot implements IHexalot {
 
     get center(): Vector3 {
         return this.centerSpot.center
+    }
+
+    get seed(): Vector3 {
+        return new Vector3(0, HUNG_ALTITUDE, 0).add(this.center)
     }
 }

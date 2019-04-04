@@ -18,9 +18,9 @@ import { Surface } from "./island/island-logic"
 import { IslandState } from "./state/island-state"
 import { IStorage } from "./storage/storage"
 import { ActionsPanel } from "./view/actions-panel"
+import { FlightMode, INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
 import { GotchiView } from "./view/gotchi-view"
 import { InfoPanel } from "./view/info-panel"
-import { OrbitDistance } from "./view/orbit"
 import { Welcome } from "./view/welcome"
 
 interface IAppProps {
@@ -30,12 +30,12 @@ interface IAppProps {
 }
 
 export interface IAppState {
-    orbitDistance: OrbitDistance
+    flightMode: FlightMode
     width: number
     height: number
     left: number
     top: number
-    infoPanelMaximized: boolean
+    showInfo: boolean
     ownedLots: string[]
     islandState?: IslandState
 }
@@ -49,7 +49,7 @@ function updateDimensions(): object {
     }
 }
 
-function getInfoPanelMaximized(): boolean {
+function getShowInfo(): boolean {
     return "true" === localStorage.getItem("InfoPanel.maximized")
 }
 
@@ -60,7 +60,7 @@ function setInfoPanelMaximized(maximized: boolean): void {
 export class App extends React.Component<IAppProps, IAppState> {
     private subs: Subscription[] = []
     private perspectiveCamera: PerspectiveCamera
-    private orbitDistanceSubject = new BehaviorSubject<OrbitDistance>(OrbitDistance.HELICOPTER)
+    private flightMode = new BehaviorSubject<FlightMode>(FlightMode.Arriving)
     private stateSubject = new Subject<IslandState>()
     private physics = new Physics()
     private fabricKernel: FabricKernel
@@ -69,21 +69,20 @@ export class App extends React.Component<IAppProps, IAppState> {
         super(props)
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        this.state = {
-            infoPanelMaximized: getInfoPanelMaximized(),
-            orbitDistance: this.orbitDistanceSubject.getValue(),
-            width: window.innerWidth,
-            height: window.innerHeight,
-            left: window.screenLeft,
-            top: window.screenTop,
-            ownedLots: [],
-        }
-        this.perspectiveCamera = new PerspectiveCamera(50, this.state.width / this.state.height, 1, 500000)
+        const width = window.innerWidth
+        const height = window.innerHeight
+        this.perspectiveCamera = new PerspectiveCamera(50, width / height, MINIMUM_DISTANCE, INITIAL_DISTANCE + MINIMUM_DISTANCE)
+        const showInfo = getShowInfo()
+        const flightMode = this.flightMode.getValue()
+        const left = window.screenLeft
+        const top = window.screenTop
+        const ownedLots: string[] = []
+        this.state = {showInfo, flightMode, width, height, left, top, ownedLots}
     }
 
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
-        this.subs.push(this.orbitDistanceSubject.subscribe(orbitDistance => this.setState({orbitDistance})))
+        this.subs.push(this.flightMode.subscribe(flightMode => this.setState({flightMode})))
         this.subs.push(this.stateSubject.subscribe(islandState => {
             const homeHexalot = islandState.homeHexalot
             if (homeHexalot) {
@@ -129,18 +128,14 @@ export class App extends React.Component<IAppProps, IAppState> {
                             height={this.state.height}
                             left={this.state.left}
                             top={this.state.top}
-                            orbitDistance={this.orbitDistanceSubject}
+                            flightMode={this.flightMode}
                         />
-                        <div className="actions-panel-outer floating-panel">
-                            <div className="actions-panel-inner">
-                                <ActionsPanel
-                                    orbitDistance={this.orbitDistanceSubject}
-                                    islandState={this.state.islandState}
-                                    stateSubject={this.stateSubject}
-                                    location={this.perspectiveCamera.position}
-                                />
-                            </div>
-                        </div>
+                        <ActionsPanel
+                            flightMode={this.flightMode}
+                            islandState={this.state.islandState}
+                            stateSubject={this.stateSubject}
+                            location={this.perspectiveCamera.position}
+                        />
                         {this.infoPanel}
                     </div>
                 )}
@@ -149,7 +144,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     }
 
     private get infoPanel(): JSX.Element {
-        if (!this.state.infoPanelMaximized) {
+        if (!this.state.showInfo) {
             return (
                 <div className="info-panel-collapsed floating-panel">
                     <Button color="link" onClick={() => this.maximizeInfoPanel(true)}>?</Button>
@@ -171,7 +166,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     }
 
     private maximizeInfoPanel(infoPanelMaximized: boolean): void {
-        this.setState({infoPanelMaximized})
+        this.setState({showInfo: infoPanelMaximized})
         setInfoPanelMaximized(infoPanelMaximized)
     }
 

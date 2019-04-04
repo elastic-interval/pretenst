@@ -9,17 +9,17 @@ import { Subscription } from "rxjs/Subscription"
 
 import { Spot } from "../island/spot"
 
-import { OrbitDistance } from "./orbit"
+import { FlightMode } from "./flight"
 
 export interface ITitlePanelProps {
     version: string
     islandName: string
-    orbitState: BehaviorSubject<OrbitDistance>
+    orbitState: BehaviorSubject<FlightMode>
     selectedSpot: BehaviorSubject<Spot | undefined>
 }
 
 export interface ITitlePanelState {
-    orbitState: OrbitDistance
+    orbitState: FlightMode
     selectedSpot?: Spot
 }
 

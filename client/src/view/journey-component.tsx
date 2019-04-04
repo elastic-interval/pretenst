@@ -5,14 +5,14 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
-import { BufferGeometry, Float32BufferAttribute } from "three"
+import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import { Hexalot } from "../island/hexalot"
+import { HUNG_ALTITUDE } from "../body/fabric"
 import { Journey } from "../island/journey"
 
 import { JOURNEY } from "./materials"
 
-const TRIP_ALTITUDE = 0.3
+const ARROW_SIZE = 0.9
 
 export interface IJourneyProps {
     journey: Journey
@@ -27,13 +27,23 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
     }
 
     public componentWillReceiveProps(): void {
-        const positions: number[] = []
-        this.props.journey.visits.forEach((hexalot: Hexalot) => {
-            const center = hexalot.centerSpot.center
-            positions.push(center.x)
-            positions.push(TRIP_ALTITUDE)
-            positions.push(center.z)
-        })
+        const journey = this.props.journey
+        const positions = new Float32Array(journey.visits.length * 6)
+        const fromTo = new Vector3()
+        for (let walk = 0; walk < journey.visits.length - 1; walk++) {
+            const from = new Vector3().add(journey.visits[walk].center)
+            const to = new Vector3().add(journey.visits[walk + 1].center)
+            fromTo.subVectors(to, from).normalize()
+            from.addScaledVector(fromTo, (1 - ARROW_SIZE) / 2)
+            to.addScaledVector(fromTo, -(1 - ARROW_SIZE) / 2)
+            let offset = walk * 6
+            positions[offset++] = from.x
+            positions[offset++] = HUNG_ALTITUDE
+            positions[offset++] = from.z
+            positions[offset++] = to.x
+            positions[offset++] = HUNG_ALTITUDE
+            positions[offset++] = to.z
+        }
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
         this.geometry = geometry
@@ -44,7 +54,7 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
     }
 
     public render(): JSX.Element {
-        return <R3.Line key="Journey" geometry={this.geometry} material={JOURNEY}/>
+        return <R3.LineSegments key="Journey" geometry={this.geometry} material={JOURNEY}/>
     }
 
 }

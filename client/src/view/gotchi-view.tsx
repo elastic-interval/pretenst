@@ -9,6 +9,7 @@ import { Subject } from "rxjs"
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Subscription } from "rxjs/Subscription"
 import { Mesh, PerspectiveCamera, Vector3 } from "three"
+import { OrbitControls } from "three-orbitcontrols-ts"
 
 import { NORMAL_TICKS } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
@@ -17,13 +18,11 @@ import { ClickHandler } from "../state/click-handler"
 import { IslandState } from "../state/island-state"
 
 import { EvolutionComponent } from "./evolution-component"
+import { Flight, FlightMode } from "./flight"
 import { IslandComponent } from "./island-component"
 import { JourneyComponent } from "./journey-component"
 import { GOTCHI, GOTCHI_ARROW } from "./materials"
-import { Orbit, OrbitDistance } from "./orbit"
 import { MeshKey, SpotSelector } from "./spot-selector"
-
-export const HIGH_ALTITUDE = 1000
 
 interface IGotchiViewProps {
     perspectiveCamera: PerspectiveCamera
@@ -34,25 +33,24 @@ interface IGotchiViewProps {
     userId?: string
     islandState: IslandState
     stateSubject: Subject<IslandState>
-    orbitDistance: BehaviorSubject<OrbitDistance>
+    flightMode: BehaviorSubject<FlightMode>
 }
 
 interface IGotchiViewState {
-    orbitDistance: OrbitDistance
+    flightMode: FlightMode
 }
 
 export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private subs: Subscription[] = []
-    private orbit: Orbit
+    private flight: Flight
     private spotSelector: SpotSelector
     private animating = true
     private target?: Vector3
 
     constructor(props: IGotchiViewProps) {
         super(props)
-        this.props.perspectiveCamera.position.addVectors(props.islandState.island.midpoint, new Vector3(0, HIGH_ALTITUDE / 2, 0))
-        const orbitDistance = this.props.orbitDistance.getValue()
-        this.state = {orbitDistance}
+        const flightMode = this.props.flightMode.getValue()
+        this.state = {flightMode}
         this.spotSelector = new SpotSelector(
             this.props.perspectiveCamera,
             this.props.islandState.island,
@@ -70,22 +68,30 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
     }
 
     public componentDidMount(): void {
-        const element: Element | undefined = document.getElementById("gotchi-view") || undefined
+        const element: HTMLElement | undefined = document.getElementById("gotchi-view") || undefined
         if (element) {
-            this.target = this.props.islandState.island.midpoint
-            this.orbit = new Orbit(element, this.props.perspectiveCamera, this.props.orbitDistance, this.target)
+            const islandState = this.props.islandState
+            this.target = islandState.homeHexalot ? islandState.homeHexalot.seed : islandState.island.midpoint
+            const orbitControls = new OrbitControls(this.props.perspectiveCamera, element)
+            this.flight = new Flight(orbitControls, this.props.flightMode, this.target)
+            this.flight.setupCamera()
             this.animate()
-            this.subs.push(this.props.orbitDistance.subscribe(orbitDistance => this.setState({orbitDistance})))
+            this.subs.push(this.props.flightMode.subscribe(orbitDistance => this.setState({flightMode: orbitDistance})))
         }
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IGotchiViewProps>, nextContext: object): void {
+        const selectedHexalot = nextProps.islandState.selectedHexalot
+        if (selectedHexalot) {
+            this.target = selectedHexalot.seed
+            return
+        }
         const selectedSpot = nextProps.islandState.selectedSpot
         if (selectedSpot) {
             this.target = selectedSpot.center
-        } else {
-            this.target = nextProps.islandState.island.midpoint
+            return
         }
+        this.target = nextProps.islandState.island.midpoint
     }
 
     public componentWillUnmount(): void {
@@ -177,10 +183,10 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                         this.target = gotchi.midpoint
                     }
                     if (this.target) {
-                        this.orbit.moveTargetTowards(this.target)
+                        this.flight.moveTargetTowards(this.target)
                     }
                     if (this.animating) {
-                        this.orbit.update()
+                        this.flight.update()
                         this.forceUpdate()
                         requestAnimationFrame(step)
                     }
