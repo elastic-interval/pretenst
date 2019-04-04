@@ -42,7 +42,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
         this.state = {visible: props.appState.flightMode !== FlightMode.Arriving}
     }
 
-    public componentWillReceiveProps(nextProps: Readonly<IActionsPanelProps>, nextContext: any): void {
+    public componentWillReceiveProps(nextProps: Readonly<IActionsPanelProps>): void {
         this.setState({visible: nextProps.appState.flightMode !== FlightMode.Arriving})
     }
 

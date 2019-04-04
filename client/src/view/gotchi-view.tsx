@@ -27,16 +27,19 @@ interface IGotchiViewProps {
     appState: IAppState
 }
 
-export class GotchiView extends React.Component<IGotchiViewProps, object> {
+interface IGotchiViewState {
+    iterating: boolean
+}
+
+export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
     private appStateNonce = -1
     private flight: Flight
     private spotSelector: SpotSelector
-    private animating = true
     private target?: Vector3
 
     constructor(props: IGotchiViewProps) {
         super(props)
-        this.state = {}
+        this.state = {iterating: false}
         this.spotSelector = new SpotSelector(
             this.props.perspectiveCamera,
             this.props.appState.width,
@@ -67,12 +70,8 @@ export class GotchiView extends React.Component<IGotchiViewProps, object> {
             const orbitControls = new OrbitControls(props.perspectiveCamera, element)
             this.flight = new Flight(orbitControls, this.target)
             this.flight.setupCamera()
-            this.animate()
+            this.beginAnimating()
         }
-    }
-
-    public componentWillUnmount(): void {
-        this.animating = false
     }
 
     public render(): JSX.Element | undefined {
@@ -88,6 +87,12 @@ export class GotchiView extends React.Component<IGotchiViewProps, object> {
         const journey = appState.journey
         if (this.props.appState.nonce > this.appStateNonce) {
             this.appStateNonce = this.props.appState.nonce
+            const iterating = !!this.props.appState.gotchi || !!this.props.appState.evolution
+            if (this.state.iterating !== iterating) {
+                setTimeout(() => { // todo: this must be a cheat
+                    this.setState({iterating})
+                })
+            }
             const selectedHexalot = appState.selectedHexalot
             const selectedSpot = appState.selectedSpot
             if (selectedHexalot) {
@@ -147,16 +152,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, object> {
         props.appState.updateState(afterClick)
     }
 
-    private animate(): void {
+    private beginAnimating(): void {
         const step = () => {
             setTimeout(
                 () => {
                     const appState = this.props.appState
-                    const evolution = appState.evolution
-                    if (evolution) {
-                        evolution.iterate()
-                        this.target = evolution.midpoint
-                    }
                     const jockey = appState.jockey
                     if (jockey) {
                         if (jockey.touchedDestination) {
@@ -172,16 +172,27 @@ export class GotchiView extends React.Component<IGotchiViewProps, object> {
                     }
                     const freeGotchi = appState.gotchi
                     const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
+                    const iterating = this.state.iterating
                     if (gotchi) {
                         gotchi.iterate(NORMAL_TICKS)
                         this.target = gotchi.midpoint
+                        if (!iterating) {
+                            this.setState({iterating: true})
+                        }
                     }
-                    if (this.animating) {
-                        this.flight.update(appState, this.target)
-                        // TODO: not needed?
-                        // this.forceUpdate()
-                        requestAnimationFrame(step)
+                    const evolution = appState.evolution
+                    if (evolution) {
+                        evolution.iterate()
+                        this.target = evolution.midpoint
+                        if (!iterating) {
+                            this.setState({iterating: true})
+                        }
                     }
+                    this.flight.update(appState, this.target)
+                    if (iterating) {
+                        this.forceUpdate()
+                    }
+                    requestAnimationFrame(step)
                 },
                 10,
             )
