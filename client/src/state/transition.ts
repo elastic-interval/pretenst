@@ -39,7 +39,6 @@ export class Transition {
     }
 
     public withFlightMode(flightMode: FlightMode): Transition {
-        this.recycle()
         this.nextState = {...this.nextState, flightMode}
         return this
     }

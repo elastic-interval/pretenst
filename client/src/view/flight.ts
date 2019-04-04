@@ -80,6 +80,7 @@ export class Flight {
                 break
             case FlightMode.Tracking:
                 const previousDistance = this.vector.subVectors(this.camera.position, this.target).length()
+                this.followTarget(target)
                 const newDistance = this.vector.subVectors(this.camera.position, this.target).length()
                 if (newDistance > previousDistance) {
                     this.camera.position
@@ -89,14 +90,17 @@ export class Flight {
                 }
                 break
             case FlightMode.Piloted:
+                this.followTarget(target)
                 break
         }
+        this.orbit.update()
+    }
+
+    private followTarget(target?: Vector3):void {
         if (target) {
-            // console.log("updating with target", target)
             this.vector.subVectors(target, this.target).multiplyScalar(TOWARDS_TARGET)
             this.target.add(this.vector)
         }
-        this.orbit.update()
     }
 
     private get distance(): number {

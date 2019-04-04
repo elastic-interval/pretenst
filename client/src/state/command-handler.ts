@@ -12,6 +12,7 @@ import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
 import { extractIslandData, isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
+import { FlightMode } from "../view/flight"
 
 import { AppMode, Command, IAppState } from "./app-state"
 import { Transition } from "./transition"
@@ -105,7 +106,7 @@ export class CommandHandler {
                     console.log("creating gotchi", firstLeg, newbornGotchi)
                     if (newbornGotchi) {
                         const newJockey = new Jockey(newbornGotchi, firstLeg)
-                        return trans.withJockey(newJockey).appState
+                        return trans.withJockey(newJockey).withFlightMode(FlightMode.Tracking).appState
                     }
                 }
                 return appState
@@ -122,7 +123,7 @@ export class CommandHandler {
                             })
                         }
                         const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
-                        return trans.withEvolution(evolution).appState
+                        return trans.withEvolution(evolution).withFlightMode(FlightMode.Tracking).appState
                     }
                 }
                 return appState
