@@ -39,7 +39,7 @@ export class Island implements IIsland {
         const mode = Mode.Visiting
         const islandIsLegal = false
         const islandState: IslandState = {nonce: nonce + 1, island, mode, islandIsLegal, storage}
-        this.islandState = new Transition(islandState).islandState
+        this.islandState = new Transition(islandState).withRestructure.islandState
     }
 
     public findHexalot(id: string): Hexalot | undefined {
