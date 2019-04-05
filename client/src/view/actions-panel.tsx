@@ -66,7 +66,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
         switch (appState.appMode) {
 
 
-            case AppMode.FixingIsland: // ===========================================================================
+            case AppMode.FixingIsland: // ==============================================================================
                 if (spot) {
                     if (singleHexalot && spot.coords === singleHexalot.centerSpot.coords) {
                         return (
@@ -122,14 +122,13 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 )
 
 
-            case AppMode.Visiting: // ===============================================================================
+            case AppMode.Visiting: // ==================================================================================
                 if (homeHexalotSelected(appState)) {
                     return (
                         <ActionFrame>
                             {this.buttons("Home", [
-                                Command.PrepareToRide,
                                 Command.PlanJourney,
-                                Command.RideJourney,
+                                Command.Ride,
                                 Command.Evolve,
                                 Command.RandomGenome,
                             ])}
@@ -148,7 +147,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                     return (
                         <ActionFrame>
                             {this.buttons("Foreign", [
-                                Command.RideFree,
+                                Command.Ride,
                                 Command.Return,
                             ])}
                         </ActionFrame>
@@ -164,12 +163,12 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 }
 
 
-            case AppMode.PlanningJourney: // ========================================================================
+            case AppMode.PlanningJourney: // ===========================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Planning journey", [
                             Command.ForgetJourney,
-                            Command.RideJourney,
+                            Command.Ride,
                             Command.Evolve,
                             Command.Return,
                         ])}
@@ -177,20 +176,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 )
 
 
-            case AppMode.PreparingRide: // ==========================================================================
-                return (
-                    <ActionFrame>
-                        {this.buttons("Drive", [
-                            Command.RotateLeft,
-                            Command.RotateRight,
-                            Command.RideFree,
-                            Command.Return,
-                        ])}
-                    </ActionFrame>
-                )
-
-
-            case AppMode.Evolving: // ===============================================================================
+            case AppMode.Evolving: // ==================================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Evolving", [
@@ -200,20 +186,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 )
 
 
-            case AppMode.RidingFree: // ============================================================================
-                return (
-                    <ActionFrame>
-                        {this.buttons("Riding free", [
-                            Command.Return,
-                            Command.ComeHere,
-                            Command.GoThere,
-                            Command.StopMoving,
-                        ])}
-                    </ActionFrame>
-                )
-
-
-            case AppMode.RidingJourney: // =========================================================================
+            case AppMode.Riding: // ====================================================================================
                 return (
                     <ActionFrame>
                         {this.buttons("Riding journey", [

@@ -45,7 +45,7 @@ export class ClickHandler {
                 if (hexalot) {
                     return (await trans.withSelectedSpot(hexalot.centerSpot)).appState
                 }
-                return (await trans.withSelectedSpot(spot)).appState
+                return appState
 
 
             case AppMode.PlanningJourney: // ========================================================================
@@ -66,23 +66,10 @@ export class ClickHandler {
                 return appState
 
 
-            case AppMode.PreparingRide: // ==========================================================================
-                const target = spot.center
-                const adjacent = spot.adjacentSpots.map((s, i) => ({center: s.center, index: i}))
-                adjacent.sort((a, b) => target.distanceTo(a.center) - target.distanceTo(b.center))
-                console.log("adjacent", adjacent)
-                const top = adjacent.pop()
-                if (top) {
-                    console.log(`Direction: ${top.index}`)
-                }
-                return appState
-
-
             // =========================================================================================================
             case AppMode.Arriving:
             case AppMode.Evolving:
-            case AppMode.RidingFree:
-            case AppMode.RidingJourney:
+            case AppMode.Riding:
                 return appState
 
 

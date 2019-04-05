@@ -5,24 +5,15 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
-import { Color, Geometry, Matrix4, Mesh, Vector3 } from "three"
+import { Color, Geometry, Mesh, Vector3 } from "three"
 
 import { HUNG_ALTITUDE } from "../body/fabric"
-import {
-    ARROW_LENGTH,
-    ARROW_TIP_LENGTH_FACTOR,
-    ARROW_TIP_WIDTH_FACTOR,
-    ARROW_WIDTH,
-    HEXALOT_OUTLINE_HEIGHT,
-    INNER_HEXALOT_SPOTS,
-    OUTER_HEXALOT_SIDE,
-} from "../island/constants"
-import { AppMode, IAppState } from "../state/app-state"
+import { HEXALOT_OUTLINE_HEIGHT, INNER_HEXALOT_SPOTS, OUTER_HEXALOT_SIDE } from "../island/constants"
+import { IAppState } from "../state/app-state"
 
 import {
     AVAILABLE_HEXALOT,
     GOTCHI,
-    GOTCHI_ARROW,
     HANGER_FREE,
     HANGER_OCCUPIED,
     HOME_HEXALOT,
@@ -32,7 +23,7 @@ import {
 import { MeshKey } from "./spot-selector"
 
 const SUN_POSITION = new Vector3(0, 600, 0)
-const POINTER_TOP = new Vector3(0, 60, 0)
+const POINTER_TOP = new Vector3(0, 120, 0)
 const HEMISPHERE_COLOR = new Color("white")
 
 export interface IslandComponentProps {
@@ -47,7 +38,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private seeds: Geometry
     private occupiedHangers: Geometry
     private vacantHangers: Geometry
-    private arrow?: Geometry
     private homeHexalot?: Geometry
     private selectedSpot?: Geometry
     private availableSpots?: Geometry
@@ -57,7 +47,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         super(props)
         this.spots = this.spotsGeometry
         this.seeds = this.seedsGeometry
-        this.arrow = this.arrowGeometry
         this.occupiedHangers = this.occupiedHangersGeometry
         this.vacantHangers = this.vacantHangersGeometry
         this.selectedSpot = this.selectedSpotGeometry
@@ -81,7 +70,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
             island.spots.forEach(spot => spot.faceNames = [])
             this.spots = this.spotsGeometry
             this.seeds = this.seedsGeometry
-            this.arrow = this.arrowGeometry
             this.occupiedHangers = this.occupiedHangersGeometry
             this.vacantHangers = this.vacantHangersGeometry
             this.selectedSpot = this.selectedSpotGeometry
@@ -100,9 +88,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
                 <R3.LineSegments key="HangersFree" geometry={this.vacantHangers} material={HANGER_FREE}/>
                 {!this.homeHexalot ? undefined : (
                     <R3.LineSegments key="HomeHexalot" geometry={this.homeHexalot} material={HOME_HEXALOT}/>
-                )}
-                {!this.arrow ? undefined : (
-                    <R3.LineSegments key="Arrow" geometry={this.arrow} material={GOTCHI_ARROW}/>
                 )}
                 {!this.selectedSpot ? undefined : (
                     <R3.LineSegments key="Pointer" geometry={this.selectedSpot} material={SELECTED_POINTER}/>
@@ -172,41 +157,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         }
         geometry.computeFaceNormals()
         geometry.computeBoundingSphere()
-        return geometry
-    }
-
-    private get arrowGeometry(): Geometry | undefined {
-        const appState = this.props.appState
-        const hexalot = appState.selectedHexalot
-        if (!hexalot || appState.appMode !== AppMode.PreparingRide) {
-            return undefined
-        }
-        const toTransform: Vector3[] = []
-        const v = () => {
-            const vec = new Vector3()
-            toTransform.push(vec)
-            return vec
-        }
-        const adjacentSpot = hexalot.spots[4]
-        const forward = new Vector3().subVectors(adjacentSpot.center, hexalot.center).normalize()
-        const right = new Vector3().add(forward).applyMatrix4(new Matrix4().makeRotationY(Math.PI / 2))
-        const arrowFromL = v().addScaledVector(right, -ARROW_WIDTH)
-        const arrowFromR = v().addScaledVector(right, ARROW_WIDTH)
-        const arrowToL = v().addScaledVector(right, -ARROW_WIDTH).addScaledVector(forward, ARROW_LENGTH)
-        const arrowToR = v().addScaledVector(right, ARROW_WIDTH).addScaledVector(forward, ARROW_LENGTH)
-        const arrowToLx = v().addScaledVector(right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(forward, ARROW_LENGTH)
-        const arrowToRx = v().addScaledVector(right, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(forward, ARROW_LENGTH)
-        const arrowTip = v().addScaledVector(forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
-        const rotationMatrix = new Matrix4().makeRotationY(Math.PI / 3 * hexalot.rotation)
-        const translationMatrix = new Matrix4().makeTranslation(hexalot.center.x, hexalot.center.y + HUNG_ALTITUDE, hexalot.center.z)
-        const transformer = translationMatrix.multiply(rotationMatrix)
-        toTransform.forEach(point => point.applyMatrix4(transformer))
-        const geometry = new Geometry()
-        geometry.vertices = [
-            arrowFromL, arrowToL, arrowFromR, arrowToR,
-            arrowToRx, arrowTip, arrowToLx, arrowTip,
-            arrowToRx, arrowToR, arrowToLx, arrowToL,
-        ]
         return geometry
     }
 
@@ -298,9 +248,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         this.seeds.dispose()
         this.occupiedHangers.dispose()
         this.vacantHangers.dispose()
-        if (this.arrow) {
-            this.arrow.dispose()
-        }
         if (this.homeHexalot) {
             this.homeHexalot.dispose()
         }

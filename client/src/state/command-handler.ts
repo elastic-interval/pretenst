@@ -78,21 +78,7 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.PrepareToRide: // =============================================================================
-                return trans.withAppMode(AppMode.PreparingRide).appState
-
-
-            case Command.RideFree: // =================================================================================
-                if (hexalot) {
-                    const newbornGotchi = hexalot.createNativeGotchi()
-                    if (newbornGotchi) {
-                        return trans.withGotchi(newbornGotchi).withAppMode(AppMode.RidingFree).appState
-                    }
-                }
-                return appState
-
-
-            case Command.RideJourney: // ==============================================================================
+            case Command.Ride: // ==============================================================================
                 if (homeHexalot && journey) {
                     const firstLeg = journey.firstLeg
                     if (!firstLeg) {
@@ -107,7 +93,7 @@ export class CommandHandler {
                     const newbornGotchi = homeHexalot.createNativeGotchi()
                     if (newbornGotchi) {
                         const newJockey = new Jockey(newbornGotchi, firstLeg)
-                        return trans.withJockey(newJockey).withAppMode(AppMode.RidingJourney).appState
+                        return trans.withJockey(newJockey).withAppMode(AppMode.Riding).appState
                     }
                 }
                 return appState

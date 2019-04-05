@@ -54,9 +54,7 @@ export enum AppMode {
     Evolving = "Evolving",
     FixingIsland = "Fixing island",
     PlanningJourney = "Planning journey",
-    PreparingRide = "Preparing ride",
-    RidingFree = "Riding free",
-    RidingJourney = "Riding journey",
+    Riding = "Riding",
     Visiting = "Visiting",
 }
 
@@ -70,11 +68,9 @@ export enum Command {
     MakeLand = "Make into land",
     MakeWater = "Make into water",
     PlanJourney = "Plan your journey",
-    PrepareToRide = "Prepare to ride",
     RandomGenome = "Random genome",
     Return = "Return",
-    RideFree = "Ride free",
-    RideJourney = "Ride your journey",
+    Ride = "Ride",
     RotateLeft = "Rotate left",
     RotateRight = "Rotate right",
     SaveGenome = "Save genome",
@@ -91,9 +87,6 @@ export function logString(appState: IAppState): string {
     const legal = appState.islandIsLegal
     const home = !!appState.homeHexalot
     const who = appState.jockey ? "jockey" : appState.gotchi ? "gotchi" : appState.evolution ? "evolution" : "-"
-    if (who === "-") {
-        console.log("WTF", appState)
-    }
     const spot = appState.selectedSpot ? JSON.stringify(appState.selectedSpot.coords) : "-"
     const lot = appState.selectedHexalot ? JSON.stringify(appState.selectedHexalot.coords) : "-"
     return `${appState.nonce}:${appState.appMode}: who=${who} legal=${legal} home=${home} spot=${spot} lot=${lot}`

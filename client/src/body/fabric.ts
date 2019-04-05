@@ -5,11 +5,14 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { ARROW_LENGTH, ARROW_TIP_LENGTH_FACTOR, ARROW_TIP_WIDTH_FACTOR, ARROW_WIDTH } from "../island/constants"
-
 import { Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
 import { vectorFromFloatArray } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
+
+const ARROW_LENGTH = 9
+const ARROW_WIDTH = 0.6
+const ARROW_TIP_LENGTH_FACTOR = 1.3
+const ARROW_TIP_WIDTH_FACTOR = 1.5
 
 export const BILATERAL_MIDDLE = 0
 export const BILATERAL_RIGHT = 1

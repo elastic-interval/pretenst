@@ -73,8 +73,7 @@ export class Flight {
                 const dollyScale = 1 + DOLLY_SCALE_FACTOR * (distance + CLOSE_ENOUGH * 2) / CLOSE_ENOUGH
                 this.orbit.dollyIn(dollyScale)
                 break
-            case AppMode.RidingFree:
-            case AppMode.RidingJourney:
+            case AppMode.Riding:
             case AppMode.Evolving:
                 this.followTarget(true, target)
                 this.followCameraDistance(TRACKING_DISTANCE)
@@ -82,8 +81,6 @@ export class Flight {
             case AppMode.FixingIsland:
                 break
             case AppMode.PlanningJourney:
-                break
-            case AppMode.PreparingRide:
                 break
             case AppMode.Visiting:
                 this.followTarget(false, target)
