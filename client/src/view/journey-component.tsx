@@ -26,8 +26,10 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
     }
 
     public componentWillReceiveProps(nextProps: IJourneyProps): void {
-        // todo: detect change!
-        console.log("next props", nextProps.journey)
+        const changed = nextProps.journey !== this.props.journey
+        if (!changed) {
+            return
+        }
         this.geometry.dispose()
         this.geometry = JourneyComponent.createGeometry(nextProps)
     }
