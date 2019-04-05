@@ -8,7 +8,7 @@ import { Button, Col, Container, Row } from "reactstrap"
 
 import { FabricKernel } from "../body/fabric-kernel"
 import { Island } from "../island/island"
-import { AppMode, IAppState, logString } from "../state/app-state"
+import { AppMode, IAppState } from "../state/app-state"
 import { Transition } from "../state/transition"
 import { IStorage } from "../storage/storage"
 
@@ -240,11 +240,10 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
         const island = new Island(islandData, this.props.fabricKernel, this.props.storage, 0)
         const appState = new Transition(this.props.appState)
             .withIsland(island)
-            .withAppMode(AppMode.Visiting)
+            .withAppMode(AppMode.Arriving)
             .withIslandIsLegal(false)
             .withRestructure
             .appState
-        console.log(logString(appState))
         if (!homeHexalotId) {
             this.props.appState.updateState(appState)
         } else {

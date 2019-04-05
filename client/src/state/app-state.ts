@@ -12,7 +12,6 @@ import { Island } from "../island/island"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 import { IStorage } from "../storage/storage"
-import { FlightMode } from "../view/flight"
 
 export interface IAppProps {
     fabricExports: IFabricExports
@@ -21,21 +20,20 @@ export interface IAppProps {
 }
 
 export type AppTransition = () => (Pick<IAppState, keyof IAppState>)
-// export type AppTransition = (prevState: Readonly<IAppState>, props: Readonly<IAppProps>) => (Pick<IAppState, keyof IAppState>)
 
 export interface IAppState {
+
+    readonly nonce: number
+    readonly appMode: AppMode
+    readonly storage: IStorage
+    readonly islandIsLegal: boolean
 
     readonly width: number
     readonly height: number
     readonly left: number
     readonly top: number
     readonly showInfo: boolean
-    readonly nonce: number
-    readonly storage: IStorage
-    readonly appMode: AppMode
-    readonly islandIsLegal: boolean
 
-    readonly flightMode: FlightMode
     readonly island?: Island
     readonly homeHexalot?: Hexalot
     readonly ownedLots?: string[]
@@ -51,37 +49,37 @@ export interface IAppState {
     transitionState(transition: AppTransition): void
 }
 
+export enum AppMode {
+    Arriving = "Arriving",
+    Evolving = "Evolving",
+    FixingIsland = "Fixing island",
+    PlanningJourney = "Planning journey",
+    PreparingRide = "Preparing ride",
+    RidingFree = "Riding free",
+    RidingJourney = "Riding journey",
+    Visiting = "Visiting",
+}
+
 export enum Command {
     AbandonFix = "Abandon fix",
     ClaimHexalot = "Claim hexalot",
     ComeHere = "Come here",
-    RideFree = "Ride free",
-    RideJourney = "Ride your journey",
     Evolve = "Evolve",
     ForgetJourney = "Forget journey",
     GoThere = "Go there",
-    Terraform = "Terraform",
     MakeLand = "Make into land",
     MakeWater = "Make into water",
     PlanJourney = "Plan your journey",
     PrepareToRide = "Prepare to ride",
     RandomGenome = "Random genome",
     Return = "Return",
+    RideFree = "Ride free",
+    RideJourney = "Ride your journey",
     RotateLeft = "Rotate left",
     RotateRight = "Rotate right",
     SaveGenome = "Save genome",
     StopMoving = "Stop moving",
-}
-
-export enum AppMode {
-    RidingFree = "Riding free",
-    RidingJourney = "Riding journey",
-    Evolving = "Evolving",
-    FixingIsland = "Fixing island",
-    Landed = "Landed",
-    PlanningJourney = "Planning journey",
-    PreparingRide = "Preparing ride",
-    Visiting = "Visiting",
+    Terraform = "Terraform",
 }
 
 export function homeHexalotSelected(appState: IAppState): boolean {
@@ -92,9 +90,13 @@ export function homeHexalotSelected(appState: IAppState): boolean {
 export function logString(appState: IAppState): string {
     const legal = appState.islandIsLegal
     const home = !!appState.homeHexalot
+    const who = appState.jockey ? "jockey" : appState.gotchi ? "gotchi" : appState.evolution ? "evolution" : "-"
+    if (who === "-") {
+        console.log("WTF", appState)
+    }
     const spot = appState.selectedSpot ? JSON.stringify(appState.selectedSpot.coords) : "-"
     const lot = appState.selectedHexalot ? JSON.stringify(appState.selectedHexalot.coords) : "-"
-    return `${appState.nonce}:${appState.appMode}: legal=${legal} home=${home} spot=${spot} lot=${lot}`
+    return `${appState.nonce}:${appState.appMode}: who=${who} legal=${legal} home=${home} spot=${spot} lot=${lot}`
 }
 
 export function updateDimensions(): object {

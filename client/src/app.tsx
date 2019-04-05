@@ -11,9 +11,9 @@ import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Surface } from "./island/island-logic"
-import { AppMode, AppTransition, IAppProps, IAppState, updateDimensions } from "./state/app-state"
+import { AppMode, AppTransition, IAppProps, IAppState, logString, updateDimensions } from "./state/app-state"
 import { ActionsPanel } from "./view/actions-panel"
-import { FlightMode, INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
+import { INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
 import { GotchiView } from "./view/gotchi-view"
 import { InfoPanel } from "./view/info-panel"
 import { Welcome } from "./view/welcome"
@@ -43,8 +43,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
-        const mode = AppMode.Visiting
-        const flightMode = FlightMode.Arriving
+        const mode = AppMode.Arriving
         const self = this
         this.state = {
             showInfo,
@@ -55,7 +54,6 @@ export class App extends React.Component<IAppProps, IAppState> {
             ownedLots,
             nonce: 0,
             appMode: mode,
-            flightMode,
             islandIsLegal: false,
             storage: props.storage,
             transitionState(transition: AppTransition): void {
@@ -67,6 +65,7 @@ export class App extends React.Component<IAppProps, IAppState> {
                 }
                 self.appStateNonce = appState.nonce
                 const homeHexalot = appState.homeHexalot
+                console.log(logString(appState))
                 if (homeHexalot) {
                     const spotCenters = homeHexalot.spots.map(spot => spot.center)
                     const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)

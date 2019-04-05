@@ -20,12 +20,12 @@ export async function fetchGenome(hexalot: Hexalot, storage: IStorage): Promise<
         return
     }
     hexalot.genome = await hexalot.fetchGenome(storage)
-    console.log(`Genome for ${hexalot.id}`, hexalot.genome)
+    // console.log(`Genome for ${hexalot.id}`, hexalot.genome)
 }
 
 export async function fetchJourney(hexalot: Hexalot, storage: IStorage, island: Island): Promise<void> {
     hexalot.journey = await hexalot.fetchJourney(storage, island)
-    console.log(`Journey for ${hexalot.id}`, hexalot.journey)
+    // console.log(`Journey for ${hexalot.id}`, hexalot.journey)
 }
 
 export class Hexalot implements IHexalot {

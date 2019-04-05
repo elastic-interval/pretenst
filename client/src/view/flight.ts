@@ -6,7 +6,7 @@
 import { PerspectiveCamera, Vector3 } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
-import { IAppState } from "../state/app-state"
+import { AppMode, IAppState } from "../state/app-state"
 import { Transition } from "../state/transition"
 
 export const INITIAL_DISTANCE = 15000
@@ -21,15 +21,6 @@ const TOWARDS_TARGET = 0.05
 const TOWARDS_HEIGHT = 0.05
 const TOWARDS_DISTANCE = 0.05
 const DOLLY_SCALE_FACTOR = 0.005
-
-export enum FlightMode {
-    Arriving = "Arriving",
-    Circling = "Circling",
-    Approaching = "Approaching",
-    Retreating = "Retreating",
-    Tracking = "Tracking",
-    Piloted = "Piloted",
-}
 
 export class Flight {
     private target = new Vector3()
@@ -72,31 +63,39 @@ export class Flight {
             up.y += UPWARDS
             up.normalize()
         }
-        switch (appState.flightMode) {
-            case FlightMode.Arriving:
+        switch (appState.appMode) {
+            case AppMode.Arriving:
                 if (distance < CLOSE_ENOUGH) {
                     this.orbit.enabled = true
-                    appState.updateState(new Transition(appState).withFlightMode(FlightMode.Piloted).appState)
+                    appState.updateState(new Transition(appState).withAppMode(AppMode.Visiting).appState)
                     break
                 }
-                const dollyScale = 1 + DOLLY_SCALE_FACTOR * distance / CLOSE_ENOUGH
+                const dollyScale = 1 + DOLLY_SCALE_FACTOR * (distance + CLOSE_ENOUGH * 2) / CLOSE_ENOUGH
                 this.orbit.dollyIn(dollyScale)
                 break
-            case FlightMode.Tracking:
+            case AppMode.RidingFree:
+            case AppMode.RidingJourney:
+            case AppMode.Evolving:
                 this.followTarget(true, target)
-                const currentDistance = this.calculateTargetToCamera().length()
-                this.cameraDistance = currentDistance * (1 - TOWARDS_DISTANCE) + TRACKING_DISTANCE * TOWARDS_DISTANCE
+                this.followCameraDistance(TRACKING_DISTANCE)
                 break
-            case FlightMode.Piloted:
+            case AppMode.FixingIsland:
+                break
+            case AppMode.PlanningJourney:
+                break
+            case AppMode.PreparingRide:
+                break
+            case AppMode.Visiting:
                 this.followTarget(false, target)
                 break
         }
         this.orbit.update()
     }
 
-    private set cameraDistance(distance: number) {
-        // assume targetToCamera has been calculated
-        this.targetToCamera.normalize().multiplyScalar(distance)
+    private followCameraDistance(idealDistance: number): void {
+        const currentDistance = this.calculateTargetToCamera().length()
+        const nextDistance = currentDistance * (1 - TOWARDS_DISTANCE) + idealDistance * TOWARDS_DISTANCE
+        this.targetToCamera.normalize().multiplyScalar(nextDistance)
         this.camera.position.addVectors(this.target, this.targetToCamera)
     }
 

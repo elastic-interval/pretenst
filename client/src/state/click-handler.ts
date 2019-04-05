@@ -42,14 +42,10 @@ export class ClickHandler {
                     island.vacantHexalot = island.createHexalot(spot)
                     return (await trans.withSelectedSpot(spot)).withAppMode(AppMode.FixingIsland).withRestructure.appState
                 }
-                return (await trans.withSelectedSpot(spot)).appState
-
-
-            case AppMode.Landed: // =================================================================================
                 if (hexalot) {
                     return (await trans.withSelectedSpot(hexalot.centerSpot)).appState
                 }
-                return appState
+                return (await trans.withSelectedSpot(spot)).appState
 
 
             case AppMode.PlanningJourney: // ========================================================================
@@ -79,6 +75,14 @@ export class ClickHandler {
                 if (top) {
                     console.log(`Direction: ${top.index}`)
                 }
+                return appState
+
+
+            // =========================================================================================================
+            case AppMode.Arriving:
+            case AppMode.Evolving:
+            case AppMode.RidingFree:
+            case AppMode.RidingJourney:
                 return appState
 
 

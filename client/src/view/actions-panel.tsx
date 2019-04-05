@@ -10,8 +10,6 @@ import { Vector3 } from "three"
 import { AppMode, Command, homeHexalotSelected, IAppState } from "../state/app-state"
 import { CommandHandler } from "../state/command-handler"
 
-import { FlightMode } from "./flight"
-
 export interface IActionsPanelProps {
     appState: IAppState
     location: Vector3
@@ -39,11 +37,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
 
     constructor(props: IActionsPanelProps) {
         super(props)
-        this.state = {visible: props.appState.flightMode !== FlightMode.Arriving}
+        this.state = {visible: props.appState.appMode !== AppMode.Arriving}
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IActionsPanelProps>): void {
-        this.setState({visible: nextProps.appState.flightMode !== FlightMode.Arriving})
+        this.setState({visible: nextProps.appState.appMode !== AppMode.Arriving})
     }
 
     public render(): JSX.Element | boolean {
@@ -61,6 +59,8 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
 
         const vacant = island.vacantHexalot
         const spot = appState.selectedSpot
+        const hexalot = appState.selectedHexalot
+        const homeHexalot = appState.homeHexalot
         const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
 
         switch (appState.appMode) {
@@ -123,35 +123,6 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
 
 
             case AppMode.Visiting: // ===============================================================================
-                const hexalot = appState.selectedHexalot
-                if (hexalot) {
-                    if (hexalot.centerSpot.isCandidateHexalot(vacant)) {
-                        return (
-                            <ActionFrame>
-                                {this.buttons("Available", [
-                                    Command.ClaimHexalot,
-                                ])}
-                            </ActionFrame>
-                        )
-                    }
-                    return (
-                        <ActionFrame>
-                            {this.buttons("Foreign", [
-                                Command.RideFree,
-                            ])}
-                        </ActionFrame>
-                    )
-                }
-                return (
-                    <ActionFrame>
-                        <p>
-                            You can click on one of the hexalots and go for a ride.
-                        </p>
-                    </ActionFrame>
-                )
-
-
-            case AppMode.Landed: // =================================================================================
                 if (homeHexalotSelected(appState)) {
                     return (
                         <ActionFrame>
@@ -164,10 +135,19 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                             ])}
                         </ActionFrame>
                     )
-                } else if (appState.selectedHexalot) {
+                } else if (hexalot) {
+                    if (!homeHexalot && hexalot.centerSpot.isCandidateHexalot(vacant)) {
+                        return (
+                            <ActionFrame>
+                                {this.buttons("Available", [
+                                    Command.ClaimHexalot,
+                                ])}
+                            </ActionFrame>
+                        )
+                    }
                     return (
                         <ActionFrame>
-                            {this.buttons("Visiting", [
+                            {this.buttons("Foreign", [
                                 Command.RideFree,
                                 Command.Return,
                             ])}
@@ -176,9 +156,9 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 } else {
                     return (
                         <ActionFrame>
-                            {this.buttons("Empty spot", [
-                                Command.Return,
-                            ])}
+                            <p>
+                                You can click on one of the hexalots and go for a ride.
+                            </p>
                         </ActionFrame>
                     )
                 }
@@ -223,7 +203,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
             case AppMode.RidingFree: // ============================================================================
                 return (
                     <ActionFrame>
-                        {this.buttons("Driving free", [
+                        {this.buttons("Riding free", [
                             Command.Return,
                             Command.ComeHere,
                             Command.GoThere,
@@ -236,7 +216,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
             case AppMode.RidingJourney: // =========================================================================
                 return (
                     <ActionFrame>
-                        {this.buttons("Driving journey", [
+                        {this.buttons("Riding journey", [
                             Command.Return,
                             Command.StopMoving,
                         ])}

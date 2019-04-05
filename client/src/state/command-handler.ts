@@ -12,7 +12,6 @@ import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
 import { extractIslandData, isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
-import { FlightMode } from "../view/flight"
 
 import { AppMode, Command, IAppState } from "./app-state"
 import { Transition } from "./transition"
@@ -65,16 +64,16 @@ export class CommandHandler {
 
             case Command.Return: // ====================================================================================
                 if (appState.jockey) {
-                    const withJockeySelected = await trans.withSelectedSpot(appState.jockey.gotchi.home.centerSpot)
-                    return withJockeySelected.withAppMode(AppMode.Landed).withFlightMode(FlightMode.Piloted).appState
+                    const atJockeyHome = await trans.withSelectedSpot(appState.jockey.gotchi.home.centerSpot)
+                    return atJockeyHome.cleared.withAppMode(AppMode.Visiting).appState
                 }
                 if (appState.gotchi) {
                     const withGotchiHomeSelected = await trans.withSelectedSpot(appState.gotchi.home.centerSpot)
-                    return withGotchiHomeSelected.withAppMode(AppMode.Landed).withFlightMode(FlightMode.Piloted).appState
+                    return withGotchiHomeSelected.cleared.withAppMode(AppMode.Visiting).appState
                 }
                 if (homeHexalot) {
                     const withHomeSelected = await trans.withSelectedSpot(homeHexalot.centerSpot)
-                    return withHomeSelected.withAppMode(AppMode.Landed).withFlightMode(FlightMode.Piloted).appState
+                    return withHomeSelected.cleared.withAppMode(AppMode.Visiting).appState
                 }
                 return appState
 
@@ -87,7 +86,7 @@ export class CommandHandler {
                 if (hexalot) {
                     const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
-                        return trans.withGotchi(newbornGotchi).withFlightMode(FlightMode.Tracking).appState
+                        return trans.withGotchi(newbornGotchi).withAppMode(AppMode.RidingFree).appState
                     }
                 }
                 return appState
@@ -106,10 +105,9 @@ export class CommandHandler {
                         }
                     })
                     const newbornGotchi = homeHexalot.createNativeGotchi()
-                    console.log("creating gotchi", firstLeg, newbornGotchi)
                     if (newbornGotchi) {
                         const newJockey = new Jockey(newbornGotchi, firstLeg)
-                        return trans.withJockey(newJockey).withFlightMode(FlightMode.Tracking).appState
+                        return trans.withJockey(newJockey).withAppMode(AppMode.RidingJourney).appState
                     }
                 }
                 return appState
@@ -126,7 +124,7 @@ export class CommandHandler {
                             })
                         }
                         const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
-                        return trans.withEvolution(evolution).withFlightMode(FlightMode.Tracking).appState
+                        return trans.withEvolution(evolution).withAppMode(AppMode.Evolving).appState
                     }
                 }
                 return appState
