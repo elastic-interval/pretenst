@@ -38,7 +38,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         const width = window.innerWidth
         const height = window.innerHeight
-        this.perspectiveCamera = new PerspectiveCamera(50, width / height, MINIMUM_DISTANCE, INITIAL_DISTANCE + MINIMUM_DISTANCE)
+        this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE + MINIMUM_DISTANCE)
         const showInfo = getShowInfo()
         const left = window.screenLeft
         const top = window.screenTop

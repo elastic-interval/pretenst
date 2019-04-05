@@ -65,13 +65,16 @@ export class CommandHandler {
 
             case Command.Return: // ====================================================================================
                 if (appState.jockey) {
-                    return (await trans.withSelectedSpot(appState.jockey.gotchi.home.centerSpot)).withAppMode(AppMode.Landed).appState
+                    const withJockeySelected = await trans.withSelectedSpot(appState.jockey.gotchi.home.centerSpot)
+                    return withJockeySelected.withAppMode(AppMode.Landed).withFlightMode(FlightMode.Piloted).appState
                 }
                 if (appState.gotchi) {
-                    return (await trans.withSelectedSpot(appState.gotchi.home.centerSpot)).withAppMode(AppMode.Landed).appState
+                    const withGotchiHomeSelected = await trans.withSelectedSpot(appState.gotchi.home.centerSpot)
+                    return withGotchiHomeSelected.withAppMode(AppMode.Landed).withFlightMode(FlightMode.Piloted).appState
                 }
                 if (homeHexalot) {
-                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).withAppMode(AppMode.Landed).appState
+                    const withHomeSelected = await trans.withSelectedSpot(homeHexalot.centerSpot)
+                    return withHomeSelected.withAppMode(AppMode.Landed).withFlightMode(FlightMode.Piloted).appState
                 }
                 return appState
 
@@ -84,7 +87,7 @@ export class CommandHandler {
                 if (hexalot) {
                     const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
-                        return trans.withGotchi(newbornGotchi).appState
+                        return trans.withGotchi(newbornGotchi).withFlightMode(FlightMode.Tracking).appState
                     }
                 }
                 return appState

@@ -271,7 +271,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
             <Button
                 key={command}
                 outline={true}
-                color="primary"
+                color="success"
                 className="command-button"
                 onClick={() => this.execute(command)}
             >{command}</Button>

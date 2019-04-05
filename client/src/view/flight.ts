@@ -14,9 +14,12 @@ export const MINIMUM_DISTANCE = 7
 export const ANGLE_ABOVE_HORIZON = Math.PI / 12
 
 const CLOSE_ENOUGH = 60
+const TRACKING_DISTANCE = 15
 
 const UPWARDS = 0.3
 const TOWARDS_TARGET = 0.05
+const TOWARDS_HEIGHT = 0.05
+const TOWARDS_DISTANCE = 0.05
 const DOLLY_SCALE_FACTOR = 0.005
 
 export enum FlightMode {
@@ -29,8 +32,9 @@ export enum FlightMode {
 }
 
 export class Flight {
-    private vector = new Vector3()
     private target = new Vector3()
+    private targetToCamera = new Vector3()
+    private targetToMovingTarget = new Vector3()
     private lastChanged = Date.now()
 
     constructor(private orbit: OrbitControls, target: Vector3) {
@@ -40,7 +44,7 @@ export class Flight {
         orbit.maxDistance = INITIAL_DISTANCE
         orbit.minDistance = MINIMUM_DISTANCE
         orbit.enableKeys = false
-        orbit.zoomSpeed = 0.25
+        orbit.zoomSpeed = 0.5
         orbit.target = this.target
         const updateLastChanged = () => this.lastChanged = Date.now()
         orbit.addEventListener("start", updateLastChanged)
@@ -62,7 +66,7 @@ export class Flight {
     }
 
     public update(appState: IAppState, target?: Vector3): void {
-        const distance = this.distance
+        const distance = this.distanceFromTarget
         if (distance < CLOSE_ENOUGH) {
             const up = this.camera.up
             up.y += UPWARDS
@@ -79,35 +83,44 @@ export class Flight {
                 this.orbit.dollyIn(dollyScale)
                 break
             case FlightMode.Tracking:
-                const previousDistance = this.vector.subVectors(this.camera.position, this.target).length()
-                this.followTarget(target)
-                const newDistance = this.vector.subVectors(this.camera.position, this.target).length()
-                if (newDistance > previousDistance) {
-                    this.camera.position
-                        .set(0, 0, 0)
-                        .add(this.target)
-                        .addScaledVector(this.vector, previousDistance / newDistance)
-                }
+                this.followTarget(true, target)
+                const currentDistance = this.calculateTargetToCamera().length()
+                this.cameraDistance = currentDistance * (1 - TOWARDS_DISTANCE) + TRACKING_DISTANCE * TOWARDS_DISTANCE
                 break
             case FlightMode.Piloted:
-                this.followTarget(target)
+                this.followTarget(false, target)
                 break
         }
         this.orbit.update()
     }
 
-    private followTarget(target?: Vector3):void {
-        if (target) {
-            this.vector.subVectors(target, this.target).multiplyScalar(TOWARDS_TARGET)
-            this.target.add(this.vector)
+    private set cameraDistance(distance: number) {
+        // assume targetToCamera has been calculated
+        this.targetToCamera.normalize().multiplyScalar(distance)
+        this.camera.position.addVectors(this.target, this.targetToCamera)
+    }
+
+    private followTarget(sameHeight: boolean, movingTarget?: Vector3): void {
+        if (movingTarget) {
+            this.target.add(this.targetToMovingTarget.subVectors(movingTarget, this.target).multiplyScalar(TOWARDS_TARGET))
+        }
+        if (sameHeight) {
+            const cameraHeight = this.camera.position.y
+            const targetHeight = this.targetToCamera.y
+            this.camera.position.y = cameraHeight * (1 - TOWARDS_HEIGHT) + targetHeight * TOWARDS_HEIGHT
         }
     }
 
-    private get distance(): number {
+    private get distanceFromTarget(): number {
         return this.camera.position.distanceTo(this.target)
+    }
+
+    private calculateTargetToCamera(): Vector3 {
+        return this.targetToCamera.subVectors(this.camera.position, this.target)
     }
 
     private get camera(): PerspectiveCamera {
         return <PerspectiveCamera>this.orbit.object
     }
+
 }

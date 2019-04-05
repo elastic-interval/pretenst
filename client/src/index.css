@@ -63,9 +63,9 @@ p a, p a:hover {
     background: black;
     border-color: darkcyan;
     border-style: solid;
-    border-radius: 0 0 10px 10px;
+    border-radius: 0 0 30px 30px;
     border-top-width: 0;
-    padding: 5px 5px 5px 5px;
+    padding: 10px 35px;
 }
 
 .action-frame {
