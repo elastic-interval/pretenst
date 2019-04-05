@@ -11,16 +11,19 @@ import { Transition } from "../state/transition"
 
 export const INITIAL_DISTANCE = 15000
 export const MINIMUM_DISTANCE = 7
-export const ANGLE_ABOVE_HORIZON = Math.PI / 12
+export const ANGLE_ABOVE_HORIZON = Math.PI * 5 / 12
 
-const CLOSE_ENOUGH = 60
+const CLOSE_ENOUGH = 100
+const LOW_ENOUGH = 30
 const TRACKING_DISTANCE = 15
+const FIXING_DISTANCE = 650
+const EDITING_DISTANCE = 550
 
 const UPWARDS = 0.3
+const TOWARDS_ABOVE = 0.001
 const TOWARDS_TARGET = 0.05
-const TOWARDS_HEIGHT = 0.05
-const TOWARDS_DISTANCE = 0.05
-const DOLLY_SCALE_FACTOR = 0.005
+const TOWARDS_HEIGHT = 0.06
+const TOWARDS_DISTANCE = 0.025
 
 export class Flight {
     private target = new Vector3()
@@ -30,7 +33,7 @@ export class Flight {
 
     constructor(private orbit: OrbitControls, target: Vector3) {
         orbit.enabled = false
-        orbit.minPolarAngle = Math.PI * 0.1
+        orbit.minPolarAngle = Math.PI * 0.01
         orbit.maxPolarAngle = 0.95 * Math.PI / 2
         orbit.maxDistance = INITIAL_DISTANCE
         orbit.minDistance = MINIMUM_DISTANCE
@@ -64,47 +67,66 @@ export class Flight {
             up.normalize()
         }
         switch (appState.appMode) {
-            case AppMode.Arriving:
-                if (distance < CLOSE_ENOUGH) {
+            case AppMode.Approaching:
+                if (Math.abs(distance - CLOSE_ENOUGH) < CLOSE_ENOUGH * 0.1 && (this.camera.position.y - LOW_ENOUGH) < LOW_ENOUGH * 0.1) {
                     this.orbit.enabled = true
-                    appState.updateState(new Transition(appState).withAppMode(AppMode.Visiting).appState)
+                    appState.updateState(new Transition(appState).withAppMode(AppMode.Exploring).appState)
                     break
                 }
-                const dollyScale = 1 + DOLLY_SCALE_FACTOR * (distance + CLOSE_ENOUGH * 2) / CLOSE_ENOUGH
-                this.orbit.dollyIn(dollyScale)
+                this.followCameraDistance(false, false, CLOSE_ENOUGH)
+                this.followCameraHeight(true, LOW_ENOUGH)
                 break
             case AppMode.Riding:
             case AppMode.Evolving:
-                this.followTarget(true, target)
-                this.followCameraDistance(TRACKING_DISTANCE)
+                this.followTarget(target)
+                this.followCameraHeight(false, this.target.y)
+                this.followCameraDistance(false, false, TRACKING_DISTANCE)
                 break
             case AppMode.FixingIsland:
+                this.towardsAbove()
+                this.followCameraDistance(true, false, FIXING_DISTANCE)
                 break
-            case AppMode.PlanningJourney:
+            case AppMode.EditingJourney:
+                this.towardsAbove()
+                this.followCameraDistance(true, false, EDITING_DISTANCE)
                 break
-            case AppMode.Visiting:
-                this.followTarget(false, target)
+            case AppMode.Exploring:
+                this.followTarget(target)
                 break
         }
         this.orbit.update()
     }
 
-    private followCameraDistance(idealDistance: number): void {
+    private towardsAbove(): void {
+        const polarAngle = this.orbit.getPolarAngle()
+        const minPolarAngle = this.orbit.minPolarAngle
+        if (polarAngle > minPolarAngle * 2) {
+            this.orbit.rotateUp(TOWARDS_ABOVE * polarAngle / minPolarAngle)
+        }
+    }
+
+    private followTarget(movingTarget?: Vector3): void {
+        if (movingTarget) {
+            this.target.add(this.targetToMovingTarget.subVectors(movingTarget, this.target).multiplyScalar(TOWARDS_TARGET))
+        }
+    }
+
+    private followCameraDistance(mayBeLarger: boolean, mayBeSmaller: boolean, idealDistance: number): void {
         const currentDistance = this.calculateTargetToCamera().length()
+        if (mayBeLarger && currentDistance > idealDistance || mayBeSmaller && currentDistance < idealDistance) {
+            return
+        }
         const nextDistance = currentDistance * (1 - TOWARDS_DISTANCE) + idealDistance * TOWARDS_DISTANCE
         this.targetToCamera.normalize().multiplyScalar(nextDistance)
         this.camera.position.addVectors(this.target, this.targetToCamera)
     }
 
-    private followTarget(sameHeight: boolean, movingTarget?: Vector3): void {
-        if (movingTarget) {
-            this.target.add(this.targetToMovingTarget.subVectors(movingTarget, this.target).multiplyScalar(TOWARDS_TARGET))
+    private followCameraHeight(mayBeSmaller: boolean, idealHeight: number): void {
+        const position = this.camera.position
+        if (mayBeSmaller && position.y < idealHeight) {
+            return
         }
-        if (sameHeight) {
-            const cameraHeight = this.camera.position.y
-            const targetHeight = this.targetToCamera.y
-            this.camera.position.y = cameraHeight * (1 - TOWARDS_HEIGHT) + targetHeight * TOWARDS_HEIGHT
-        }
+        position.y = position.y * (1 - TOWARDS_HEIGHT) + idealHeight * TOWARDS_HEIGHT
     }
 
     private get distanceFromTarget(): number {
@@ -118,5 +140,4 @@ export class Flight {
     private get camera(): PerspectiveCamera {
         return <PerspectiveCamera>this.orbit.object
     }
-
 }

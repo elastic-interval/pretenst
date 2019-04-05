@@ -240,7 +240,7 @@ export class Welcome extends React.Component<IWelcomeProps, IWelcomeState> {
         const island = new Island(islandData, this.props.fabricKernel, this.props.storage, 0)
         const appState = new Transition(this.props.appState)
             .withIsland(island)
-            .withAppMode(AppMode.Arriving)
+            .withAppMode(AppMode.Approaching)
             .withIslandIsLegal(false)
             .withRestructure
             .appState

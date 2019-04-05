@@ -5,7 +5,6 @@
 
 import { IFabricExports } from "../body/fabric-exports"
 import { Evolution } from "../gotchi/evolution"
-import { Gotchi } from "../gotchi/gotchi"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
@@ -40,7 +39,6 @@ export interface IAppState {
     readonly journey?: Journey
     readonly selectedSpot?: Spot
     readonly selectedHexalot?: Hexalot
-    readonly gotchi?: Gotchi
     readonly jockey?: Jockey
     readonly evolution?: Evolution
 
@@ -50,26 +48,25 @@ export interface IAppState {
 }
 
 export enum AppMode {
-    Arriving = "Arriving",
+    Approaching = "Approaching",
+    EditingJourney = "Editing journey",
     Evolving = "Evolving",
+    Exploring = "Exploring",
     FixingIsland = "Fixing island",
-    PlanningJourney = "Planning journey",
     Riding = "Riding",
-    Visiting = "Visiting",
 }
 
 export enum Command {
     AbandonFix = "Abandon fix",
     ClaimHexalot = "Claim hexalot",
     ComeHere = "Come here",
+    EditJourney = "Edit your journey",
     Evolve = "Evolve",
-    ForgetJourney = "Forget journey",
+    GoHome = "Go home",
     GoThere = "Go there",
     MakeLand = "Make into land",
     MakeWater = "Make into water",
-    PlanJourney = "Plan your journey",
     RandomGenome = "Random genome",
-    Return = "Return",
     Ride = "Ride",
     RotateLeft = "Rotate left",
     RotateRight = "Rotate right",
@@ -86,7 +83,7 @@ export function homeHexalotSelected(appState: IAppState): boolean {
 export function logString(appState: IAppState): string {
     const legal = appState.islandIsLegal
     const home = !!appState.homeHexalot
-    const who = appState.jockey ? "jockey" : appState.gotchi ? "gotchi" : appState.evolution ? "evolution" : "-"
+    const who = appState.jockey ? "jockey" : appState.evolution ? "evolution" : "-"
     const spot = appState.selectedSpot ? JSON.stringify(appState.selectedSpot.coords) : "-"
     const lot = appState.selectedHexalot ? JSON.stringify(appState.selectedHexalot.coords) : "-"
     return `${appState.nonce}:${appState.appMode}: who=${who} legal=${legal} home=${home} spot=${spot} lot=${lot}`

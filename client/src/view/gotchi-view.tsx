@@ -82,12 +82,11 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         }
         const evolution = appState.evolution
         const jockey = appState.jockey
-        const freeGotchi = appState.gotchi
-        const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
+        const gotchi = jockey ? jockey.gotchi : undefined
         const journey = appState.journey
-        if (this.props.appState.nonce > this.appStateNonce) {
-            this.appStateNonce = this.props.appState.nonce
-            const iterating = !!this.props.appState.gotchi || !!this.props.appState.evolution
+        if (appState.nonce > this.appStateNonce) {
+            this.appStateNonce = appState.nonce
+            const iterating = !!jockey || !!evolution
             if (this.state.iterating !== iterating) {
                 setTimeout(() => { // todo: this must be a cheat
                     this.setState({iterating})
@@ -114,7 +113,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                     <R3.Scene width={appState.width} height={appState.height} camera={this.props.perspectiveCamera}>
                         <IslandComponent
                             userId={this.props.userId}
-                            appState={this.props.appState}
+                            appState={appState}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
                         {!evolution ? undefined : (
@@ -133,7 +132,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                                 />
                             </R3.Object3D>
                         )}
-                        {!journey ? undefined : (
+                        {!journey ? console.log("journey null") : (
                             <JourneyComponent journey={journey}/>
                         )}
                     </R3.Scene>
@@ -170,8 +169,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
                             jockey.adjustDirection()
                         }
                     }
-                    const freeGotchi = appState.gotchi
-                    const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
+                    const gotchi = jockey ? jockey.gotchi : undefined
                     const iterating = this.state.iterating
                     if (gotchi) {
                         gotchi.iterate(NORMAL_TICKS)

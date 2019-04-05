@@ -43,7 +43,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
-        const mode = AppMode.Arriving
+        const mode = AppMode.Approaching
         const self = this
         this.state = {
             showInfo,

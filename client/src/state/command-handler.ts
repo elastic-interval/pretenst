@@ -37,8 +37,7 @@ export class CommandHandler {
         const homeHexalot = appState.homeHexalot
         const hexalot = appState.selectedHexalot
         const jockey = appState.jockey
-        const freeGotchi = appState.gotchi
-        const gotchi = freeGotchi ? freeGotchi : jockey ? jockey.gotchi : undefined
+        const gotchi = jockey ? jockey.gotchi : undefined
         const journey = appState.journey
         const spot = appState.selectedSpot
         const vacant = island.vacantHexalot
@@ -62,18 +61,14 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.Return: // ====================================================================================
+            case Command.GoHome: // ====================================================================================
                 if (appState.jockey) {
                     const atJockeyHome = await trans.withSelectedSpot(appState.jockey.gotchi.home.centerSpot)
-                    return atJockeyHome.cleared.withAppMode(AppMode.Visiting).appState
-                }
-                if (appState.gotchi) {
-                    const withGotchiHomeSelected = await trans.withSelectedSpot(appState.gotchi.home.centerSpot)
-                    return withGotchiHomeSelected.cleared.withAppMode(AppMode.Visiting).appState
+                    return atJockeyHome.cleared.withAppMode(AppMode.Approaching).appState
                 }
                 if (homeHexalot) {
                     const withHomeSelected = await trans.withSelectedSpot(homeHexalot.centerSpot)
-                    return withHomeSelected.cleared.withAppMode(AppMode.Visiting).appState
+                    return withHomeSelected.cleared.withAppMode(AppMode.Approaching).appState
                 }
                 return appState
 
@@ -112,17 +107,6 @@ export class CommandHandler {
                         const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
                         return trans.withEvolution(evolution).withAppMode(AppMode.Evolving).appState
                     }
-                }
-                return appState
-
-
-            case Command.ForgetJourney: // =============================================================================
-                if (homeHexalot) {
-                    homeHexalot.journey = undefined
-                    appState.storage.setJourneyData(homeHexalot, {hexalots: [homeHexalot.id]}).then(() => {
-                        console.log("cleared journey")
-                    })
-                    return trans.withJourney().appState
                 }
                 return appState
 
@@ -193,7 +177,7 @@ export class CommandHandler {
             case Command.AbandonFix: // ================================================================================
                 const nonce = appState.nonce + 1
                 const orig = new Island(extractIslandData(island), island.gotchiFactory, appState.storage, nonce)
-                return (await trans.withSelectedSpot()).withIsland(orig).withAppMode(AppMode.Visiting).withRestructure.appState
+                return (await trans.withSelectedSpot()).withIsland(orig).withAppMode(AppMode.Exploring).withRestructure.appState
 
 
             case Command.ClaimHexalot: // ==============================================================================
@@ -206,8 +190,8 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.PlanJourney: // ===============================================================================
-                return trans.withAppMode(AppMode.PlanningJourney).appState
+            case Command.EditJourney: // ===============================================================================
+                return trans.withAppMode(AppMode.EditingJourney).appState
 
 
             default: // ================================================================================================
@@ -228,7 +212,7 @@ export class CommandHandler {
             console.warn("No island data arrived")
             return undefined
         }
-        const mode = AppMode.Visiting
+        const mode = AppMode.Exploring
         const islandIsLegal = false
         const island = new Island(islandData, existingIsland.gotchiFactory, appState.storage, appState.nonce)
         const appStateClone: IAppState = {...appState, nonce: appState.nonce + 1, island, appMode: mode, islandIsLegal}

@@ -37,7 +37,7 @@ export class ClickHandler {
                 return (await trans.withSelectedSpot(spot)).appState
 
 
-            case AppMode.Visiting: // ===============================================================================
+            case AppMode.Exploring: // ===============================================================================
                 if (this.userId && !homeHexalot && appState.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     island.vacantHexalot = island.createHexalot(spot)
                     return (await trans.withSelectedSpot(spot)).withAppMode(AppMode.FixingIsland).withRestructure.appState
@@ -48,15 +48,15 @@ export class ClickHandler {
                 return appState
 
 
-            case AppMode.PlanningJourney: // ========================================================================
+            case AppMode.EditingJourney: // ========================================================================
                 if (!homeHexalot) {
                     throw new Error("No home hexalot")
                 }
                 if (hexalot) {
-                    if (homeHexalot.journey) {
-                        homeHexalot.journey.addVisit(hexalot)
-                    } else {
+                    if (!homeHexalot.journey) {
                         homeHexalot.journey = new Journey([homeHexalot, hexalot])
+                    } else if (!homeHexalot.journey.truncateVisit(hexalot)) {
+                        homeHexalot.journey.addVisit(hexalot)
                     }
                     appState.storage.setJourneyData(homeHexalot, homeHexalot.journey.data).then(() => {
                         console.log("saved journey")
@@ -67,7 +67,7 @@ export class ClickHandler {
 
 
             // =========================================================================================================
-            case AppMode.Arriving:
+            case AppMode.Approaching:
             case AppMode.Evolving:
             case AppMode.Riding:
                 return appState

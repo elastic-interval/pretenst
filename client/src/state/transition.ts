@@ -4,7 +4,6 @@
  */
 
 import { Evolution } from "../gotchi/evolution"
-import { Gotchi } from "../gotchi/gotchi"
 import { Jockey } from "../gotchi/jockey"
 import { fetchGenome, fetchJourney, Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
@@ -42,8 +41,16 @@ export class Transition {
 
     public async withSelectedHexalot(selectedHexalot?: Hexalot): Promise<Transition> {
         this.nextState = {...this.nextState, selectedHexalot}
-        if (selectedHexalot) {
+        const island = this.nextState.island
+        if (selectedHexalot && island) {
             await fetchGenome(selectedHexalot, this.nextState.storage)
+            if (selectedHexalot.journey) {
+                return this.withJourney(selectedHexalot.journey)
+            } else if (island) {
+                const journey = await fetchJourney(selectedHexalot, this.nextState.storage, island)
+                selectedHexalot.journey = journey
+                return this.withJourney(journey)
+            }
             return this
         }
         return this
@@ -63,19 +70,15 @@ export class Transition {
     }
 
     public async withHomeHexalot(homeHexalot?: Hexalot): Promise<Transition> {
-        if (this.nextState.homeHexalot) {
+        const island = this.nextState.island
+        if (this.nextState.homeHexalot || !island) {
             throw new Error("Not allowed")
         }
         this.nextState = {...this.nextState, homeHexalot}
         if (!homeHexalot) {
             return this.withJourney().withSelectedSpot()
         }
-        const island = this.nextState.island
-        if (island) {
-            fetchJourney(homeHexalot, this.nextState.storage, island)
-        }
-        const centerSpotSelected = await this.withSelectedSpot(homeHexalot.centerSpot)
-        return centerSpotSelected.withJourney(homeHexalot.journey)
+        return this.withSelectedSpot(homeHexalot.centerSpot)
     }
 
     public get withRestructure(): Transition {
@@ -137,11 +140,6 @@ export class Transition {
         return this
     }
 
-    public withGotchi(gotchi: Gotchi): Transition {
-        this.cleared.nextState = {...this.nextState, gotchi}
-        return this
-    }
-
     public withEvolution(evolution: Evolution): Transition {
         this.cleared.nextState = {...this.nextState, evolution}
         return this
@@ -152,11 +150,6 @@ export class Transition {
         if (jockey) {
             jockey.gotchi.recycle()
             this.nextState = {...this.nextState, jockey: undefined}
-        }
-        const gotchi = this.nextState.gotchi
-        if (gotchi) {
-            gotchi.recycle()
-            this.nextState = {...this.nextState, gotchi: undefined}
         }
         const evolution = this.nextState.evolution
         if (evolution) {

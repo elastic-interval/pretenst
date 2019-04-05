@@ -22,10 +22,26 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
     constructor(props: IJourneyProps) {
         super(props)
         this.state = {}
+        this.geometry = JourneyComponent.createGeometry(props)
     }
 
-    public componentWillReceiveProps(): void {
-        const journey = this.props.journey
+    public componentWillReceiveProps(nextProps: IJourneyProps): void {
+        // todo: detect change!
+        console.log("next props", nextProps.journey)
+        this.geometry.dispose()
+        this.geometry = JourneyComponent.createGeometry(nextProps)
+    }
+
+    public componentWillUnmount(): void {
+        this.geometry.dispose()
+    }
+
+    public render(): JSX.Element {
+        return <R3.LineSegments key="Journey" geometry={this.geometry} material={JOURNEY}/>
+    }
+
+    private static createGeometry(props: IJourneyProps): BufferGeometry {
+        const journey = props.journey
         const arrows = journey.visits.length - 1
         const pointsPerArrow = 18
         const positions = new Float32Array(arrows * pointsPerArrow)
@@ -65,15 +81,6 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
         }
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
-        this.geometry = geometry
+        return geometry
     }
-
-    public componentWillUnmount(): void {
-        this.geometry.dispose()
-    }
-
-    public render(): JSX.Element {
-        return <R3.LineSegments key="Journey" geometry={this.geometry} material={JOURNEY}/>
-    }
-
 }

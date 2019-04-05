@@ -234,9 +234,6 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
         if (appState.jockey) {
             return appState.jockey.gotchi.home.id
         }
-        if (appState.gotchi) {
-            return appState.gotchi.home.id
-        }
         if (appState.evolution) {
             return appState.evolution.home.id
         }

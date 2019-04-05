@@ -37,11 +37,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
 
     constructor(props: IActionsPanelProps) {
         super(props)
-        this.state = {visible: props.appState.appMode !== AppMode.Arriving}
+        this.state = {visible: props.appState.appMode !== AppMode.Approaching}
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IActionsPanelProps>): void {
-        this.setState({visible: nextProps.appState.appMode !== AppMode.Arriving})
+        this.setState({visible: nextProps.appState.appMode !== AppMode.Approaching})
     }
 
     public render(): JSX.Element | boolean {
@@ -122,15 +122,14 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 )
 
 
-            case AppMode.Visiting: // ==================================================================================
+            case AppMode.Exploring: // ==================================================================================
                 if (homeHexalotSelected(appState)) {
                     return (
                         <ActionFrame>
                             {this.buttons("Home", [
-                                Command.PlanJourney,
+                                Command.EditJourney,
                                 Command.Ride,
                                 Command.Evolve,
-                                Command.RandomGenome,
                             ])}
                         </ActionFrame>
                     )
@@ -148,7 +147,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                         <ActionFrame>
                             {this.buttons("Foreign", [
                                 Command.Ride,
-                                Command.Return,
+                                Command.GoHome,
                             ])}
                         </ActionFrame>
                     )
@@ -163,14 +162,11 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 }
 
 
-            case AppMode.PlanningJourney: // ===========================================================================
+            case AppMode.EditingJourney: // ============================================================================
                 return (
                     <ActionFrame>
-                        {this.buttons("Planning journey", [
-                            Command.ForgetJourney,
-                            Command.Ride,
-                            Command.Evolve,
-                            Command.Return,
+                        {this.buttons("Editing journey", [
+                            Command.GoHome,
                         ])}
                     </ActionFrame>
                 )
@@ -180,7 +176,8 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 return (
                     <ActionFrame>
                         {this.buttons("Evolving", [
-                            Command.Return,
+                            Command.RandomGenome,
+                            Command.GoHome,
                         ])}
                     </ActionFrame>
                 )
@@ -190,7 +187,7 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
                 return (
                     <ActionFrame>
                         {this.buttons("Riding journey", [
-                            Command.Return,
+                            Command.GoHome,
                             Command.StopMoving,
                         ])}
                     </ActionFrame>

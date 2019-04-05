@@ -46,11 +46,28 @@ export class Journey {
         return this.hexalots
     }
 
+    public truncateVisit(hexalot: Hexalot): boolean {
+        const existingIndex = this.hexalots.indexOf(hexalot)
+        if (existingIndex < 0) {
+            return false
+        }
+        this.hexalots.splice(existingIndex + 1)
+        return true
+    }
+
     public addVisit(hexalot: Hexalot): void {
-        if (this.hexalots.some(h => h.id === hexalot.id)) {
+        if (this.hexalots.length === 0) {
             return
         }
-        this.hexalots.push(hexalot)
+        const endpoint = this.hexalots[this.hexalots.length - 1]
+        if (!endpoint) {
+            return
+        }
+        const newEndpoint = endpoint.centerSpot.adjacentHexalots.find(ah => ah.id === hexalot.id)
+        if (!newEndpoint) {
+            return
+        }
+        this.hexalots.push(newEndpoint)
     }
 
     public get firstLeg(): Leg | undefined {

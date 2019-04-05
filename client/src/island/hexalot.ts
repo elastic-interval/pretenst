@@ -20,12 +20,16 @@ export async function fetchGenome(hexalot: Hexalot, storage: IStorage): Promise<
         return
     }
     hexalot.genome = await hexalot.fetchGenome(storage)
-    // console.log(`Genome for ${hexalot.id}`, hexalot.genome)
+    console.log(`Genome for ${hexalot.id}`, hexalot.genome)
 }
 
-export async function fetchJourney(hexalot: Hexalot, storage: IStorage, island: Island): Promise<void> {
-    hexalot.journey = await hexalot.fetchJourney(storage, island)
-    // console.log(`Journey for ${hexalot.id}`, hexalot.journey)
+export async function fetchJourney(hexalot: Hexalot, storage: IStorage, island: Island): Promise<Journey> {
+    const journey = await hexalot.fetchJourney(storage, island)
+    console.log(`Journey for ${hexalot.id}`, journey)
+    if (!journey) {
+        return hexalot.createRandomJourney()
+    }
+    return journey
 }
 
 export class Hexalot implements IHexalot {
@@ -64,6 +68,10 @@ export class Hexalot implements IHexalot {
         return this.journey
     }
 
+    public createRandomJourney(): Journey {
+        return this.journeyOfLength(4)
+    }
+
     public createNativeGotchi(): Gotchi | undefined {
         if (!this.genome) {
             return undefined
@@ -96,5 +104,21 @@ export class Hexalot implements IHexalot {
 
     get seed(): Vector3 {
         return new Vector3(0, HUNG_ALTITUDE, 0).add(this.center)
+    }
+
+    private journeyOfLength(visitCount: number): Journey {
+        const journeyVisits: Hexalot[] = [this]
+        while (journeyVisits.length < visitCount + 1) {
+            const endPoint = journeyVisits[journeyVisits.length - 1]
+            const landNeighbors = endPoint.centerSpot.adjacentHexalots.filter(adjacentHexalot => {
+                return journeyVisits.every(visit => visit.id !== adjacentHexalot.id)
+            })
+            if (landNeighbors.length === 0) {
+                break
+            }
+            const randomNeighbor = landNeighbors[Math.floor(Math.random() * landNeighbors.length)]
+            journeyVisits.push(randomNeighbor)
+        }
+        return new Journey(journeyVisits)
     }
 }
