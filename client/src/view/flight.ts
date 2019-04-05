@@ -60,46 +60,79 @@ export class Flight {
     }
 
     public update(appState: IAppState, target?: Vector3): void {
-        const distance = this.distanceFromTarget
-        if (distance < CLOSE_ENOUGH) {
-            const up = this.camera.up
-            up.y += UPWARDS
-            up.normalize()
-        }
         switch (appState.appMode) {
             case AppMode.Retreating:
                 break
             case AppMode.Approaching:
-                if (Math.abs(distance - CLOSE_ENOUGH) < CLOSE_ENOUGH * 0.1 && (this.camera.position.y - LOW_ENOUGH) < LOW_ENOUGH * 0.1) {
+                const distanceVariation = CLOSE_ENOUGH * 0.1
+                const followDistance = this.followCameraDistance(
+                    CLOSE_ENOUGH,
+                    CLOSE_ENOUGH - distanceVariation,
+                    CLOSE_ENOUGH + distanceVariation,
+                )
+                const heightVariation = LOW_ENOUGH * 0.1
+                const followHeight = this.followCameraHeight(
+                    LOW_ENOUGH,
+                    LOW_ENOUGH - heightVariation,
+                    LOW_ENOUGH + heightVariation,
+                )
+                if (!(followDistance || followHeight)) {
                     this.orbit.enabled = true
                     appState.updateState(new Transition(appState).withAppMode(AppMode.Exploring).appState)
-                    break
                 }
-                this.followCameraDistance(false, false, CLOSE_ENOUGH)
-                this.followCameraHeight(true, LOW_ENOUGH)
                 break
             case AppMode.Riding:
             case AppMode.Evolving:
-                this.followTarget(target)
-                this.followCameraHeight(false, this.target.y)
-                this.followCameraDistance(false, false, TRACKING_DISTANCE)
+                this.moveTowardsTarget(target)
+                const targetHeightVariation = 1
+                const cameraHeight = this.target.y
+                this.followCameraHeight(
+                    cameraHeight,
+                    cameraHeight - targetHeightVariation,
+                    cameraHeight + targetHeightVariation,
+                )
+                const trackingDistanceVariation = 1
+                this.followCameraDistance(
+                    TRACKING_DISTANCE,
+                    TRACKING_DISTANCE - trackingDistanceVariation,
+                    TRACKING_DISTANCE + trackingDistanceVariation,
+                )
                 break
             case AppMode.FixingIsland:
-                this.towardsAbove()
-                this.followCameraDistance(true, false, FIXING_DISTANCE)
+                this.moveTowardsAbove()
+                const fixingDistanceVariation = FIXING_DISTANCE * 0.1
+                this.followCameraDistance(
+                    FIXING_DISTANCE,
+                    FIXING_DISTANCE - fixingDistanceVariation,
+                    INITIAL_DISTANCE,
+                )
                 break
             case AppMode.EditingJourney:
-                this.towardsAbove()
-                this.followCameraDistance(true, false, EDITING_DISTANCE)
+                const editingDistanceVariation = EDITING_DISTANCE * 0.1
+                this.moveTowardsAbove()
+                this.followCameraDistance(
+                    EDITING_DISTANCE,
+                    EDITING_DISTANCE - editingDistanceVariation,
+                    INITIAL_DISTANCE,
+                )
                 break
             case AppMode.Exploring:
-                this.followTarget(target)
+                this.moveTowardsTarget(target)
                 break
         }
+        this.stayUpright()
         this.orbit.update()
     }
 
-    private towardsAbove(): void {
+// =================================================================================================================
+
+    private stayUpright(): void {
+        const up = this.camera.up
+        up.y += UPWARDS
+        up.normalize()
+    }
+
+    private moveTowardsAbove(): void {
         const polarAngle = this.orbit.getPolarAngle()
         const minPolarAngle = this.orbit.minPolarAngle
         if (polarAngle > minPolarAngle * 2) {
@@ -107,32 +140,31 @@ export class Flight {
         }
     }
 
-    private followTarget(movingTarget?: Vector3): void {
-        if (movingTarget) {
-            this.target.add(this.targetToMovingTarget.subVectors(movingTarget, this.target).multiplyScalar(TOWARDS_TARGET))
+    private moveTowardsTarget(movingTarget?: Vector3): void {
+        if (!movingTarget) {
+            return
         }
+        this.target.add(this.targetToMovingTarget.subVectors(movingTarget, this.target).multiplyScalar(TOWARDS_TARGET))
     }
 
-    private followCameraDistance(mayBeLarger: boolean, mayBeSmaller: boolean, idealDistance: number): void {
+    private followCameraDistance(idealDistance: number, tooLow: number, tooHigh: number): boolean {
         const currentDistance = this.calculateTargetToCamera().length()
-        if (mayBeLarger && currentDistance > idealDistance || mayBeSmaller && currentDistance < idealDistance) {
-            return
+        if (currentDistance > tooLow && currentDistance < tooHigh) {
+            return false
         }
         const nextDistance = currentDistance * (1 - TOWARDS_DISTANCE) + idealDistance * TOWARDS_DISTANCE
         this.targetToCamera.normalize().multiplyScalar(nextDistance)
         this.camera.position.addVectors(this.target, this.targetToCamera)
+        return true
     }
 
-    private followCameraHeight(mayBeSmaller: boolean, idealHeight: number): void {
+    private followCameraHeight(idealHeight: number, tooLow: number, tooHigh: number): boolean {
         const position = this.camera.position
-        if (mayBeSmaller && position.y < idealHeight) {
-            return
+        if (position.y > tooLow && position.y < tooHigh) {
+            return false
         }
         position.y = position.y * (1 - TOWARDS_HEIGHT) + idealHeight * TOWARDS_HEIGHT
-    }
-
-    private get distanceFromTarget(): number {
-        return this.camera.position.distanceTo(this.target)
+        return true
     }
 
     private calculateTargetToCamera(): Vector3 {
