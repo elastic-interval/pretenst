@@ -10,6 +10,10 @@ export interface ICoords {
     y: number
 }
 
+export function coordsToString(coords: ICoords): string {
+    return `(${coords.x},${coords.y})`
+}
+
 export const ZERO: ICoords = {x: 0, y: 0}
 
 export enum Surface {

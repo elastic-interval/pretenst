@@ -8,6 +8,7 @@ import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
+import { coordsToString } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 import { IStorage } from "../storage/storage"
@@ -84,8 +85,8 @@ export function logString(appState: IAppState): string {
     const legal = appState.islandIsLegal
     const home = !!appState.homeHexalot
     const who = appState.jockey ? "jockey" : appState.evolution ? "evolution" : "-"
-    const spot = appState.selectedSpot ? JSON.stringify(appState.selectedSpot.coords) : "-"
-    const lot = appState.selectedHexalot ? JSON.stringify(appState.selectedHexalot.coords) : "-"
+    const spot = appState.selectedSpot ? coordsToString(appState.selectedSpot.coords) : "-"
+    const lot = appState.selectedHexalot ? coordsToString(appState.selectedHexalot.coords) : "-"
     return `${appState.nonce}:${appState.appMode}: who=${who} legal=${legal} home=${home} spot=${spot} lot=${lot}`
 }
 
