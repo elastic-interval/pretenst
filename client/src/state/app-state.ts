@@ -54,7 +54,12 @@ export enum AppMode {
     Evolving = "Evolving",
     Exploring = "Exploring",
     FixingIsland = "Fixing island",
+    Retreating = "Retreating",
     Riding = "Riding",
+}
+
+export function isInTransit(appState: IAppState): boolean {
+    return appState.appMode === AppMode.Approaching || appState.appMode === AppMode.Retreating
 }
 
 export enum Command {

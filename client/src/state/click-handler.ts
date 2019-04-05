@@ -68,6 +68,7 @@ export class ClickHandler {
 
             // =========================================================================================================
             case AppMode.Approaching:
+            case AppMode.Retreating:
             case AppMode.Evolving:
             case AppMode.Riding:
                 return appState

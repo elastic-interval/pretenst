@@ -7,7 +7,7 @@ import * as React from "react"
 import { Button, ButtonGroup, ButtonToolbar } from "reactstrap"
 import { Vector3 } from "three"
 
-import { AppMode, Command, homeHexalotSelected, IAppState } from "../state/app-state"
+import { AppMode, Command, homeHexalotSelected, IAppState, isInTransit } from "../state/app-state"
 import { CommandHandler } from "../state/command-handler"
 
 export interface IActionsPanelProps {
@@ -37,11 +37,13 @@ export class ActionsPanel extends React.Component<IActionsPanelProps, IActionsPa
 
     constructor(props: IActionsPanelProps) {
         super(props)
-        this.state = {visible: props.appState.appMode !== AppMode.Approaching}
+        const visible = !isInTransit(props.appState)
+        this.state = {visible}
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IActionsPanelProps>): void {
-        this.setState({visible: nextProps.appState.appMode !== AppMode.Approaching})
+        const visible = !isInTransit(nextProps.appState)
+        this.setState({visible})
     }
 
     public render(): JSX.Element | boolean {

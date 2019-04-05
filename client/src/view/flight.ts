@@ -67,6 +67,8 @@ export class Flight {
             up.normalize()
         }
         switch (appState.appMode) {
+            case AppMode.Retreating:
+                break
             case AppMode.Approaching:
                 if (Math.abs(distance - CLOSE_ENOUGH) < CLOSE_ENOUGH * 0.1 && (this.camera.position.y - LOW_ENOUGH) < LOW_ENOUGH * 0.1) {
                     this.orbit.enabled = true
