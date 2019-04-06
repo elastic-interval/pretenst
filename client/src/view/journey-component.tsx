@@ -44,13 +44,13 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
 
     private static createGeometry(props: IJourneyProps): BufferGeometry {
         const journey = props.journey
-        const arrows = journey.visits.length - 1
-        const pointsPerArrow = 18
-        const positions = new Float32Array(arrows * pointsPerArrow)
+        const arrowCount = journey.visits.length - 1
+        const pointsPerArrow = 24
+        const positions = new Float32Array(arrowCount * pointsPerArrow)
         const forward = new Vector3()
         const up = new Vector3(0, 1, 0)
         const right = new Vector3()
-        for (let walk = 0; walk < arrows; walk++) {
+        for (let walk = 0; walk < arrowCount; walk++) {
             const from = new Vector3().add(journey.visits[walk].center)
             const to = new Vector3().add(journey.visits[walk + 1].center)
             forward.subVectors(to, from)
@@ -63,9 +63,9 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
             positions[offset++] = from.x
             positions[offset++] = HUNG_ALTITUDE
             positions[offset++] = from.z
-            positions[offset++] = to.x
+            positions[offset++] = to.x - forward.x
             positions[offset++] = HUNG_ALTITUDE
-            positions[offset++] = to.z
+            positions[offset++] = to.z - forward.z
             // arrow right side
             positions[offset++] = to.x - right.x - forward.x
             positions[offset++] = HUNG_ALTITUDE
@@ -80,6 +80,13 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
             positions[offset++] = to.x
             positions[offset++] = HUNG_ALTITUDE
             positions[offset++] = to.z
+            // arrow perpendicular
+            positions[offset++] = to.x + right.x - forward.x
+            positions[offset++] = HUNG_ALTITUDE
+            positions[offset++] = to.z + right.z - forward.z
+            positions[offset++] = to.x - right.x - forward.x
+            positions[offset++] = HUNG_ALTITUDE
+            positions[offset++] = to.z - right.z - forward.z
         }
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))

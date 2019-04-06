@@ -35,7 +35,7 @@ export class Flight {
         orbit.enabled = false
         orbit.minPolarAngle = Math.PI * 0.01
         orbit.maxPolarAngle = 0.95 * Math.PI / 2
-        orbit.maxDistance = INITIAL_DISTANCE
+        orbit.maxDistance = INITIAL_DISTANCE - CLOSE_ENOUGH * 5
         orbit.minDistance = MINIMUM_DISTANCE
         orbit.enableKeys = false
         orbit.zoomSpeed = 0.5
