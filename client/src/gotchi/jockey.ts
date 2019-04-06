@@ -39,6 +39,14 @@ export class Jockey {
         this.nextDirection = this.gotchi.nextDirection = this.voteDirection()
     }
 
+    public startMoving(): void {
+        this.leg = this.currentLeg
+    }
+
+    public stopMoving(): void {
+        this.gotchi.nextDirection = Direction.REST
+    }
+
     public adjustDirection(): boolean {
         const direction = this.voteDirection()
         if (this.nextDirection === direction) {

@@ -50,7 +50,7 @@ export interface IAppState {
 
 export enum AppMode {
     Approaching = "Approaching",
-    EditingJourney = "Editing journey",
+    Planning = "Planning",
     Evolving = "Evolving",
     Exploring = "Exploring",
     FixingIsland = "Fixing island",
@@ -66,18 +66,19 @@ export enum Command {
     AbandonFix = "Abandon fix",
     ClaimHexalot = "Claim hexalot",
     ComeHere = "Come here",
-    EditJourney = "Edit your journey",
+    DiscardGenes = "Discard genes",
+    Plan = "Plan",
     Evolve = "Evolve",
-    GoHome = "Go home",
     GoThere = "Go there",
+    Home = "Home",
     MakeLand = "Make into land",
     MakeWater = "Make into water",
-    RandomGenome = "Random genome",
     Ride = "Ride",
     RotateLeft = "Rotate left",
     RotateRight = "Rotate right",
     SaveGenome = "Save genome",
-    StopMoving = "Stop moving",
+    Start = "Start",
+    Stop = "Stop",
     Terraform = "Terraform",
 }
 

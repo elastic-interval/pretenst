@@ -5,7 +5,6 @@
 
 import { Vector3 } from "three"
 
-import { Direction } from "../body/fabric-exports"
 import { freshGenome, fromGenomeData, IGenomeData } from "../genetics/genome"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
@@ -46,7 +45,7 @@ export class CommandHandler {
         switch (command) {
 
 
-            case Command.SaveGenome: // ================================================================================
+            case Command.SaveGenome:
                 if (homeHexalot && gotchi) {
                     const genomeData = gotchi.genomeData
                     await appState.storage.setGenomeData(homeHexalot, genomeData)
@@ -54,14 +53,14 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.RandomGenome: // ==============================================================================
+            case Command.DiscardGenes:
                 if (homeHexalot) {
                     homeHexalot.genome = freshGenome()
                 }
                 return appState
 
 
-            case Command.GoHome: // ====================================================================================
+            case Command.Home:
                 if (appState.jockey) {
                     const atJockeyHome = await trans.withSelectedSpot(appState.jockey.gotchi.home.centerSpot)
                     return atJockeyHome.cleared.withAppMode(AppMode.Approaching).appState
@@ -73,7 +72,7 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.Ride: // ==============================================================================
+            case Command.Ride:
                 if (homeHexalot && journey) {
                     const firstLeg = journey.firstLeg
                     if (!firstLeg) {
@@ -94,7 +93,7 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.Evolve: // ====================================================================================
+            case Command.Evolve:
                 if (homeHexalot && journey) {
                     const firstLeg = journey.firstLeg
                     if (firstLeg) {
@@ -111,7 +110,7 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.RotateLeft: // ================================================================================
+            case Command.RotateLeft:
                 if (homeHexalot) {
                     homeHexalot.rotate(true)
                     return (await trans.withSelectedSpot(homeHexalot.centerSpot)).appState
@@ -119,7 +118,7 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.RotateRight: // ===============================================================================
+            case Command.RotateRight:
                 if (homeHexalot) {
                     homeHexalot.rotate(false)
                     return (await trans.withSelectedSpot(homeHexalot.centerSpot)).appState
@@ -127,42 +126,49 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.ComeHere: // ==================================================================================
+            case Command.ComeHere:
                 if (gotchi) {
                     gotchi.approach(location, true)
                 }
                 return appState
 
 
-            case Command.GoThere: // ===================================================================================
+            case Command.GoThere:
                 if (gotchi) {
                     gotchi.approach(location, false)
                 }
                 return appState
 
 
-            case Command.StopMoving: // ================================================================================
-                if (gotchi) {
-                    gotchi.nextDirection = Direction.REST
+            case Command.Start:
+                if (jockey) {
+                    jockey.startMoving()
                 }
                 return appState
 
 
-            case Command.MakeLand: // ==================================================================================
+            case Command.Stop:
+                if (jockey) {
+                    jockey.stopMoving()
+                }
+                return appState
+
+
+            case Command.MakeLand:
                 if (spot && spot.free) {
                     return (await trans.withSurface(Surface.Land)).withRestructure.appState
                 }
                 return appState
 
 
-            case Command.MakeWater: // =================================================================================
+            case Command.MakeWater:
                 if (spot && spot.free) {
                     return (await trans.withSurface(Surface.Water)).withRestructure.appState
                 }
                 return appState
 
 
-            case Command.Terraform: // =================================================================================
+            case Command.Terraform:
                 const unknownSpot = island.spots.find(s => s.surface === Surface.Unknown)
                 if (unknownSpot) {
                     return (await trans.withSelectedSpot(unknownSpot)).appState
@@ -174,13 +180,13 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.AbandonFix: // ================================================================================
+            case Command.AbandonFix:
                 const nonce = appState.nonce + 1
                 const orig = new Island(extractIslandData(island), island.gotchiFactory, appState.storage, nonce)
                 return (await trans.withSelectedSpot()).withIsland(orig).withAppMode(AppMode.Exploring).withRestructure.appState
 
 
-            case Command.ClaimHexalot: // ==============================================================================
+            case Command.ClaimHexalot:
                 if (!homeHexalot && hexalot && isIslandLegal(island) && (singleHexalot || vacant && vacant.id === hexalot.id)) {
                     const newState = await CommandHandler.claimHexalot(appState, hexalot)
                     if (newState) {
@@ -190,11 +196,11 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.EditJourney: // ===============================================================================
-                return trans.withAppMode(AppMode.EditingJourney).appState
+            case Command.Plan:
+                return trans.withAppMode(AppMode.Planning).appState
 
 
-            default: // ================================================================================================
+            default:
                 throw new Error("Unknown command!")
 
 

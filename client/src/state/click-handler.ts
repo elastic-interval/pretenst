@@ -48,7 +48,7 @@ export class ClickHandler {
                 return appState
 
 
-            case AppMode.EditingJourney: // ========================================================================
+            case AppMode.Planning: // ========================================================================
                 if (!homeHexalot) {
                     throw new Error("No home hexalot")
                 }

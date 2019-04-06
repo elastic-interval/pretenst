@@ -17,7 +17,7 @@ const CLOSE_ENOUGH = 100
 const LOW_ENOUGH = 30
 const TRACKING_DISTANCE = 15
 const FIXING_DISTANCE = 650
-const EDITING_DISTANCE = 550
+const PLANNING_DISTANCE = 550
 
 const UPWARDS = 0.3
 const TOWARDS_ABOVE = 0.001
@@ -107,12 +107,12 @@ export class Flight {
                     INITIAL_DISTANCE,
                 )
                 break
-            case AppMode.EditingJourney:
-                const editingDistanceVariation = EDITING_DISTANCE * 0.1
+            case AppMode.Planning:
+                const planningVariation = PLANNING_DISTANCE * 0.1
                 this.moveTowardsAbove()
                 this.followCameraDistance(
-                    EDITING_DISTANCE,
-                    EDITING_DISTANCE - editingDistanceVariation,
+                    PLANNING_DISTANCE,
+                    PLANNING_DISTANCE - planningVariation,
                     INITIAL_DISTANCE,
                 )
                 break

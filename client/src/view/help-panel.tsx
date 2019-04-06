@@ -84,10 +84,10 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
     private footer(): JSX.Element {
         return (
             <div>
-                <Dropdown group isOpen={this.state.globalCardsOpen} size="sm" toggle={() => {
+                <Dropdown group={true} isOpen={this.state.globalCardsOpen} size="sm" toggle={() => {
                     this.setState({globalCardsOpen: !this.state.globalCardsOpen})
                 }}>
-                    <DropdownToggle color="info" caret>About the project</DropdownToggle>
+                    <DropdownToggle color="info" caret>About Galapagotchi</DropdownToggle>
                     <DropdownMenu>
                         {Object.keys(GlobalCardName).map(key => {
                             return (

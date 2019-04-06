@@ -16,7 +16,7 @@ import { HelpPanel } from "./help-panel"
 
 export enum IToolbarState {
     AvailableSpot = "Available spot",
-    Editing = "Editing",
+    Planning = "Planning",
     Evolving = "Evolving",
     Fixing = "Fixing",
     Foreign = "Foreign",
@@ -91,7 +91,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         switch (appState.appMode) {
 
 
-            case AppMode.FixingIsland: // ==============================================================================
+            case AppMode.FixingIsland:
                 if (spot) {
                     if (singleHexalot && spot.coords === singleHexalot.centerSpot.coords) {
                         return this.buttonToolbar(IToolbarState.Pioneering,
@@ -128,10 +128,10 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                 )
 
 
-            case AppMode.Exploring: // ==================================================================================
+            case AppMode.Exploring:
                 if (homeHexalotSelected(appState)) {
                     return this.buttonToolbar(IToolbarState.Home,
-                        Command.EditJourney,
+                        Command.Plan,
                         Command.Ride,
                         Command.Evolve,
                     )
@@ -143,7 +143,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                     }
                     return this.buttonToolbar(IToolbarState.Foreign,
                         Command.Ride,
-                        Command.GoHome,
+                        Command.Home,
                     )
                 } else {
                     return (
@@ -154,27 +154,28 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                 }
 
 
-            case AppMode.EditingJourney: // ============================================================================
-                return this.buttonToolbar(IToolbarState.Editing,
-                    Command.GoHome,
+            case AppMode.Planning:
+                return this.buttonToolbar(IToolbarState.Planning,
+                    Command.Home,
                 )
 
 
-            case AppMode.Evolving: // ==================================================================================
+            case AppMode.Evolving:
                 return this.buttonToolbar(IToolbarState.Evolving,
-                    Command.RandomGenome,
-                    Command.GoHome,
+                    Command.DiscardGenes,
+                    Command.Home,
                 )
 
 
-            case AppMode.Riding: // ====================================================================================
+            case AppMode.Riding:
                 return this.buttonToolbar(IToolbarState.Riding,
-                    Command.GoHome,
-                    Command.StopMoving,
+                    Command.Home,
+                    Command.Start,
+                    Command.Stop,
                 )
 
 
-            default: // ================================================================================================
+            default:
                 return (
                     <p>Strange state {appState.appMode}</p>
                 )
