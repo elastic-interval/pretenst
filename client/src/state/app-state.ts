@@ -26,13 +26,13 @@ export interface IAppState {
     readonly nonce: number
     readonly appMode: AppMode
     readonly storage: IStorage
+    readonly helpVisible: boolean
     readonly islandIsLegal: boolean
 
     readonly width: number
     readonly height: number
     readonly left: number
     readonly top: number
-    readonly showInfo: boolean
 
     readonly island?: Island
     readonly homeHexalot?: Hexalot

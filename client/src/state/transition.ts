@@ -24,6 +24,11 @@ export class Transition {
         return this.nextState
     }
 
+    public withHelpVisible(helpVisible: boolean): Transition {
+        this.nextState = {...this.nextState, helpVisible}
+        return this
+    }
+
     public withIsland(island: Island): Transition {
         this.cleared.nextState = {...this.nextState, island}
         return this

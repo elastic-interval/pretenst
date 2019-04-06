@@ -4,7 +4,6 @@
  */
 
 import * as React from "react"
-import { Button } from "reactstrap"
 import { PerspectiveCamera } from "three"
 
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
@@ -12,19 +11,11 @@ import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Surface } from "./island/island-logic"
 import { AppMode, AppTransition, IAppProps, IAppState, logString, updateDimensions } from "./state/app-state"
-import { ActionsPanel } from "./view/actions-panel"
+import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
-import { GotchiView } from "./view/gotchi-view"
-import { InfoPanel } from "./view/info-panel"
+import { loadHelpVisible } from "./view/help-panel"
 import { Welcome } from "./view/welcome"
-
-function getShowInfo(): boolean {
-    return "true" === localStorage.getItem("InfoPanel.maximized")
-}
-
-function setInfoPanelMaximized(maximized: boolean): void {
-    localStorage.setItem("InfoPanel.maximized", maximized ? "true" : "false")
-}
+import { WorldView } from "./view/world-view"
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
@@ -39,14 +30,14 @@ export class App extends React.Component<IAppProps, IAppState> {
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE + MINIMUM_DISTANCE)
-        const showInfo = getShowInfo()
+        const helpVisible = loadHelpVisible()
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
         const mode = AppMode.Approaching
         const self = this
         this.state = {
-            showInfo,
+            helpVisible,
             width,
             height,
             left,
@@ -92,58 +83,29 @@ export class App extends React.Component<IAppProps, IAppState> {
     }
 
     public render(): JSX.Element {
-        return (
-            <div>
-                {!this.state.island ? (
-                    <Welcome
-                        userId={this.props.userId}
-                        storage={this.props.storage}
-                        fabricKernel={this.fabricKernel}
-                        appState={this.state}
-                    />
-                ) : (
-                    <div>
-                        <GotchiView
-                            perspectiveCamera={this.perspectiveCamera}
-                            userId={this.props.userId}
-                            appState={this.state}
-                        />
-                        <ActionsPanel
-                            appState={this.state}
-                            location={this.perspectiveCamera.position}
-                        />
-                        {this.infoPanel}
-                    </div>
-                )}
-            </div>
-        )
-    }
-
-    private get infoPanel(): JSX.Element {
-        if (!this.state.showInfo) {
+        if (!this.state.island) {
             return (
-                <div className="info-panel-collapsed floating-panel">
-                    <Button color="link" onClick={() => this.maximizeInfoPanel(true)}>?</Button>
-                </div>
-            )
-        } else {
-            return (
-                <div className="info-panel floating-panel">
-                    <span>Galapagotchi</span>
-                    <div className="info-title">
-                        <div className="info-exit">
-                            <Button onClick={() => this.maximizeInfoPanel(false)}>X</Button>
-                        </div>
-                    </div>
-                    <InfoPanel/>
-                </div>
+                <Welcome
+                    userId={this.props.userId}
+                    storage={this.props.storage}
+                    fabricKernel={this.fabricKernel}
+                    appState={this.state}
+                />
             )
         }
-    }
-
-    private maximizeInfoPanel(infoPanelMaximized: boolean): void {
-        this.setState({showInfo: infoPanelMaximized})
-        setInfoPanelMaximized(infoPanelMaximized)
+        return (
+            <div>
+                <ControlPanel
+                    appState={this.state}
+                    location={this.perspectiveCamera.position}
+                />
+                <WorldView
+                    perspectiveCamera={this.perspectiveCamera}
+                    userId={this.props.userId}
+                    appState={this.state}
+                />
+            </div>
+        )
     }
 
 }

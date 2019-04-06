@@ -21,23 +21,23 @@ import { JourneyComponent } from "./journey-component"
 import { GOTCHI, GOTCHI_ARROW } from "./materials"
 import { MeshKey, SpotSelector } from "./spot-selector"
 
-interface IGotchiViewProps {
+interface IWorldProps {
     perspectiveCamera: PerspectiveCamera
     userId?: string
     appState: IAppState
 }
 
-interface IGotchiViewState {
+interface IWorldState {
     iterating: boolean
 }
 
-export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewState> {
+export class WorldView extends React.Component<IWorldProps, IWorldState> {
     private appStateNonce = -1
     private flight: Flight
     private spotSelector: SpotSelector
     private target?: Vector3
 
-    constructor(props: IGotchiViewProps) {
+    constructor(props: IWorldProps) {
         super(props)
         this.state = {iterating: false}
         this.spotSelector = new SpotSelector(
@@ -47,7 +47,7 @@ export class GotchiView extends React.Component<IGotchiViewProps, IGotchiViewSta
         )
     }
 
-    public componentDidUpdate(prevProps: Readonly<IGotchiViewProps>, prevState: Readonly<object>, snapshot: object): void {
+    public componentDidUpdate(prevProps: Readonly<IWorldProps>, prevState: Readonly<object>, snapshot: object): void {
         if (prevProps.appState.width !== this.props.appState.width || prevProps.appState.height !== this.props.appState.height) {
             this.props.perspectiveCamera.aspect = this.props.appState.width / this.props.appState.height
             this.props.perspectiveCamera.updateProjectionMatrix()

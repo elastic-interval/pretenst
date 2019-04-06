@@ -22,10 +22,9 @@ body {
 
 .welcome {
     display: inline-block;
-    left: 500px;
     color: white;
     padding: 15px;
-    width: 550px;
+    width: 600px;
 }
 
 p a, p a:hover {
@@ -37,46 +36,43 @@ p a, p a:hover {
     color: white;
 }
 
-.floating-panel {
+.control-panel-outer {
+    text-align: center;
+    width: 100%;
+    top: 0;
+    height: auto;
     position: absolute;
     color: darkcyan;
-    padding: 5px 5px 5px 5px;
+    margin-top: 0;
 }
 
-.action-prompt {
-    color: darkcyan;
-    padding: 5px 5px 5px 5px;
-}
-
-.actions-panel-outer {
-    top: 0;
-    left: 10%;
-    width: 80%;
+.control-panel-inner {
     height: auto;
-    text-align: center;
-    padding: 0;
-}
-
-.actions-panel-inner {
-    height: auto;
+    width: 600px;
     display: inline-block;
     background: black;
     border-color: darkcyan;
     border-style: solid;
     border-radius: 0 0 30px 30px;
     border-top-width: 0;
-    padding: 10px 35px;
+    padding: 10px 25px 15px;
 }
 
-.action-frame {
-    width: 100%;
-    right: 100%;
+.btn-toolbar {
+    display: block;
 }
 
-.action-exit {
-    position: absolute;
-    top: 5px;
-    right: 15px;
+.card {
+    text-align: left;
+    background-color: black;
+    color: white;
+    border-width: 2px;
+    border-color: darkcyan;
+    border-style: solid;
+    border-radius: 10px;
+    padding: 10px;
+    margin-top: 15px;
+    margin-bottom: 5px;
 }
 
 .dice {
@@ -107,74 +103,6 @@ p a, p a:hover {
     position: absolute;
     top: 5%;
     left: 90%;
-}
-
-.info-title {
-    text-align: center;
-}
-
-.info-exit {
-    position: absolute;
-    top: 5px;
-    right: 15px;
-    height: 30px;
-}
-
-.info-panel {
-    background-color: black;
-    bottom: 0;
-    left: 10%;
-    width: 80%;
-    height: 25%;
-    padding: 5px;
-    border-color: darkcyan;
-    border-style: solid;
-    border-bottom-width: 0;
-    border-radius: 10px 10px 0px 0px;
-}
-
-.info-panel-collapsed {
-    bottom: 20px;
-    left: 20px;
-    padding: 5px;
-    border-color: darkcyan;
-    border-style: solid;
-    border-radius: 10px;
-}
-
-.carousel {
-    height: 100%;
-}
-
-.carousel-item {
-    color: white;
-    margin-left: 10%;
-    width: 80%;
-    height: 100%;
-    padding: 2% 2% 2% 2%;
-    border-style: solid;
-    border-width: 3px;
-    border-radius: 10px;
-    border-color: gray;
-}
-
-.carousel-inner {
-    height: 85%;
-}
-
-.carousel-item.active {
-}
-
-.carousel-control-prev {
-    width: 10%;
-}
-
-.carousel-control-next {
-    width: 10%;
-}
-
-.carousel-indicators {
-    bottom: 10%;
 }
 
 .feature-prompt {
