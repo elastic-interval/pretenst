@@ -178,23 +178,6 @@ export function createRouter(db: IKeyValueStore): Router {
         )
 
     hexalotRoute
-        .route("/rotation")
-        .get(async (req, res) => {
-            const rotation = await store.getRotation(res.locals.hexalotId)
-            res.json(rotation)
-        })
-        .post(
-            [
-                body("rotation").isNumeric().toFloat(),
-                validateRequest,
-            ],
-            async (req: Request, res: Response) => {
-                await store.setRotation(res.locals.hexalotId, req.body.rotation)
-                res.sendStatus(HttpStatus.OK)
-            },
-        )
-
-    hexalotRoute
         .route("/journey")
         .get(async (req, res) => {
             const journey = await store.getJourney(res.locals.hexalotId)

@@ -37,7 +37,6 @@ export class Hexalot implements IHexalot {
     public genome?: Genome
     public journey?: Journey
     public childHexalots: Hexalot[] = []
-    public rotation = Math.floor(Math.random() * 6)
     public nonce = 0
     public visited = false
 
@@ -54,6 +53,14 @@ export class Hexalot implements IHexalot {
             parentHexalot.childHexalots.push(this)
             this.nonce = parentHexalot.nonce + 1
         }
+    }
+
+    public get rotation(): number {
+        if (!this.journey || this.journey.hexalots.length < 1) {
+            return Math.floor(Math.random() * 6)
+        }
+        const first = this.journey.hexalots[1]
+        return this.centerSpot.adjacentHexalots.findIndex(adjacent => adjacent.id === first.id)
     }
 
     public async fetchGenome(storage: IStorage): Promise<Genome | undefined> {
@@ -81,17 +88,6 @@ export class Hexalot implements IHexalot {
 
     public createGotchiWithGenome(genome: Genome, rotation: number): Gotchi | undefined {
         return this.gotchiFactory.createGotchiSeed(this, rotation, genome)
-    }
-
-    public rotate(forward: boolean): number {
-        let nextRotation = forward ? this.rotation + 1 : this.rotation - 1
-        if (nextRotation < 0) {
-            nextRotation = 5
-        } else if (nextRotation > 5) {
-            nextRotation = 0
-        }
-        this.rotation = nextRotation
-        return this.rotation
     }
 
     get centerSpot(): Spot {

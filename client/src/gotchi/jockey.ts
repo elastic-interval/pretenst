@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Vector3 } from "three"
+import { BufferGeometry, Geometry, Vector3 } from "three"
 
 import { Fabric } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
@@ -37,6 +37,14 @@ export class Jockey {
         this.currentLeg = leg
         this.votes = []
         this.nextDirection = this.gotchi.nextDirection = this.voteDirection()
+    }
+
+    public get pointerGeometry(): Geometry {
+        return this.gotchi.fabric.pointerGeometryFor(this.gotchi.fabric.currentDirection)
+    }
+
+    public get facesGeometry(): BufferGeometry {
+        return this.gotchi.fabric.facesGeometry
     }
 
     public startMoving(): void {

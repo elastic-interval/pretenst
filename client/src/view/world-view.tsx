@@ -82,7 +82,6 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
         }
         const evolution = appState.evolution
         const jockey = appState.jockey
-        const gotchi = jockey ? jockey.gotchi : undefined
         const journey = appState.journey
         if (appState.nonce > this.appStateNonce) {
             this.appStateNonce = appState.nonce
@@ -119,15 +118,15 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                         {!evolution ? undefined : (
                             <EvolutionComponent evolution={evolution}/>)
                         }
-                        {!gotchi ? undefined : (
+                        {!jockey ? undefined : (
                             <R3.Object3D key="Gotchi">
                                 <R3.LineSegments
                                     key="Vectors"
-                                    geometry={gotchi.fabric.pointerGeometryFor(gotchi.fabric.currentDirection)}
+                                    geometry={jockey.pointerGeometry}
                                     material={GOTCHI_ARROW}
                                 />
                                 <R3.Mesh
-                                    geometry={gotchi.fabric.facesGeometry}
+                                    geometry={jockey.facesGeometry}
                                     material={GOTCHI}
                                 />
                             </R3.Object3D>
@@ -169,11 +168,10 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                             jockey.adjustDirection()
                         }
                     }
-                    const gotchi = jockey ? jockey.gotchi : undefined
                     const iterating = this.state.iterating
-                    if (gotchi) {
-                        gotchi.iterate(NORMAL_TICKS)
-                        this.target = gotchi.midpoint
+                    if (jockey) {
+                        jockey.gotchi.iterate(NORMAL_TICKS)
+                        this.target = jockey.gotchi.midpoint
                         if (!iterating) {
                             this.setState({iterating: true})
                         }

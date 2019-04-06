@@ -36,7 +36,6 @@ export class CommandHandler {
         const homeHexalot = appState.homeHexalot
         const hexalot = appState.selectedHexalot
         const jockey = appState.jockey
-        const gotchi = jockey ? jockey.gotchi : undefined
         const journey = appState.journey
         const spot = appState.selectedSpot
         const vacant = island.vacantHexalot
@@ -46,8 +45,8 @@ export class CommandHandler {
 
 
             case Command.SaveGenome:
-                if (homeHexalot && gotchi) {
-                    const genomeData = gotchi.genomeData
+                if (homeHexalot && jockey) {
+                    const genomeData = jockey.gotchi.genomeData
                     await appState.storage.setGenomeData(homeHexalot, genomeData)
                 }
                 return appState
@@ -78,12 +77,6 @@ export class CommandHandler {
                     if (!firstLeg) {
                         return appState
                     }
-                    homeHexalot.centerSpot.adjacentSpots.forEach((adjacentSpot, index) => {
-                        const adhacentHexalot = adjacentSpot.centerOfHexalot
-                        if (adhacentHexalot && firstLeg.goTo.id === adhacentHexalot.id) {
-                            homeHexalot.rotation = index
-                        }
-                    })
                     const newbornGotchi = homeHexalot.createNativeGotchi()
                     if (newbornGotchi) {
                         const newJockey = new Jockey(newbornGotchi, firstLeg)
@@ -106,36 +99,6 @@ export class CommandHandler {
                         const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
                         return trans.withEvolution(evolution).withAppMode(AppMode.Evolving).appState
                     }
-                }
-                return appState
-
-
-            case Command.RotateLeft:
-                if (homeHexalot) {
-                    homeHexalot.rotate(true)
-                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).appState
-                }
-                return appState
-
-
-            case Command.RotateRight:
-                if (homeHexalot) {
-                    homeHexalot.rotate(false)
-                    return (await trans.withSelectedSpot(homeHexalot.centerSpot)).appState
-                }
-                return appState
-
-
-            case Command.ComeHere:
-                if (gotchi) {
-                    gotchi.approach(location, true)
-                }
-                return appState
-
-
-            case Command.GoThere:
-                if (gotchi) {
-                    gotchi.approach(location, false)
                 }
                 return appState
 
