@@ -72,12 +72,12 @@ export class CommandHandler {
 
 
             case Command.Ride:
-                if (homeHexalot && journey) {
+                if (hexalot && journey) {
                     const firstLeg = journey.firstLeg
                     if (!firstLeg) {
                         return appState
                     }
-                    const newbornGotchi = homeHexalot.createNativeGotchi()
+                    const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
                         const newJockey = new Jockey(newbornGotchi, firstLeg)
                         return trans.withJockey(newJockey).withAppMode(AppMode.Riding).appState

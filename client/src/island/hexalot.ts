@@ -60,7 +60,14 @@ export class Hexalot implements IHexalot {
             return Math.floor(Math.random() * 6)
         }
         const first = this.journey.hexalots[1]
-        return this.centerSpot.adjacentHexalots.findIndex(adjacent => adjacent.id === first.id)
+        const rot = this.centerSpot.adjacentSpots.findIndex(spot => {
+            const adjacent = spot.centerOfHexalot
+            if (!adjacent) {
+                return false
+            }
+            return adjacent.id === first.id
+        })
+        return rot
     }
 
     public async fetchGenome(storage: IStorage): Promise<Genome | undefined> {
