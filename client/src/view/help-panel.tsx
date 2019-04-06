@@ -12,13 +12,10 @@ import {
     CardHeader,
     CardText,
     CardTitle,
-    Col,
-    Container,
     Dropdown,
     DropdownItem,
     DropdownMenu,
     DropdownToggle,
-    Row,
 } from "reactstrap"
 
 import { Command, IAppState } from "../state/app-state"
@@ -72,11 +69,11 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
         return (
             <Card>
                 <CardHeader>
-                    <CardTitle>Card for {this.props.toolbarState}</CardTitle>
+                    <CardTitle>{this.props.toolbarState}</CardTitle>
                 </CardHeader>
                 <CardBody>
                     <CardText>
-                        Hello this is the card text.  Command: {this.props.command}
+                        Hello this is the card text. Command: {this.props.command}
                     </CardText>
                 </CardBody>
                 <CardFooter>{this.footer()}</CardFooter>
@@ -86,48 +83,31 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
 
     private footer(): JSX.Element {
         return (
-            <Container>
-                <Row>
-                    <Col>
-                        <Dropdown group isOpen={this.state.globalCardsOpen} size="sm" toggle={() => {
-                            this.setState({globalCardsOpen: !this.state.globalCardsOpen})
-                        }}>
-                            <DropdownToggle color="info" caret>General info</DropdownToggle>
-                            <DropdownMenu>
-                                {Object.keys(GlobalCardName).map(key => {
-                                    return (
-                                        <DropdownItem key={key} onClick={() => {
-                                            this.setState({globalCardName: GlobalCardName[key]})
-                                        }}>{key}</DropdownItem>
-                                    )
-                                })}
-                            </DropdownMenu>
-                        </Dropdown>
-                    </Col>
-                    <Col/>
-                    <Col>
-                        <Button
-                            color="info"
-                            onClick={() => {
-                                this.setState({globalCardName: undefined})
-                                const appState = this.props.appState
-                                appState.updateState(new Transition(appState).withHelpVisible(false).appState)
-                            }}
-                        >Ok, got it</Button>
-                    </Col>
-                </Row>
-            </Container>
+            <div>
+                <Dropdown group isOpen={this.state.globalCardsOpen} size="sm" toggle={() => {
+                    this.setState({globalCardsOpen: !this.state.globalCardsOpen})
+                }}>
+                    <DropdownToggle color="info" caret>About the project</DropdownToggle>
+                    <DropdownMenu>
+                        {Object.keys(GlobalCardName).map(key => {
+                            return (
+                                <DropdownItem key={key} onClick={() => {
+                                    this.setState({globalCardName: GlobalCardName[key]})
+                                }}>{key}</DropdownItem>
+                            )
+                        })}
+                    </DropdownMenu>
+                </Dropdown>
+                <Button
+                    className="float-right"
+                    color="info"
+                    onClick={() => {
+                        this.setState({globalCardName: undefined})
+                        const appState = this.props.appState
+                        appState.updateState(new Transition(appState).withHelpVisible(false).appState)
+                    }}
+                >Ok, got it</Button>
+            </div>
         )
     }
 }
-
-const VISIBLE_KEY = "HelpPanel.visible"
-
-export function loadHelpVisible(): boolean {
-    return "true" === localStorage.getItem(VISIBLE_KEY)
-}
-
-export function saveHelpVisible(helpVisible: boolean): void {
-    localStorage.setItem(VISIBLE_KEY, helpVisible ? "true" : "false")
-}
-

@@ -12,7 +12,7 @@ import { AppMode, Command, homeHexalotSelected, IAppState, isInTransit } from ".
 import { CommandHandler } from "../state/command-handler"
 import { Transition } from "../state/transition"
 
-import { HelpPanel, saveHelpVisible } from "./help-panel"
+import { HelpPanel } from "./help-panel"
 
 export enum IToolbarState {
     AvailableSpot = "Available spot",
@@ -210,7 +210,6 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         const appState = this.props.appState
         const helpVisible = !appState.helpVisible
         appState.updateState(new Transition(appState).withHelpVisible(helpVisible).appState)
-        saveHelpVisible(helpVisible)
         this.setState({toolbarState})
     }
 

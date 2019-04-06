@@ -87,6 +87,10 @@ p a, p a:hover {
     color: white;
 }
 
+.exit-button {
+    float: right;
+}
+
 .dice {
     font-size: xx-large;
 }

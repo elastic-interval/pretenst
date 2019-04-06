@@ -13,7 +13,6 @@ import { Surface } from "./island/island-logic"
 import { AppMode, AppTransition, IAppProps, IAppState, logString, updateDimensions } from "./state/app-state"
 import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
-import { loadHelpVisible } from "./view/help-panel"
 import { Welcome } from "./view/welcome"
 import { WorldView } from "./view/world-view"
 
@@ -30,7 +29,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE + MINIMUM_DISTANCE)
-        const helpVisible = loadHelpVisible()
+        const helpVisible = false
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
