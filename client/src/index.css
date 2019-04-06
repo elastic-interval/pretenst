@@ -75,6 +75,18 @@ p a, p a:hover {
     margin-bottom: 5px;
 }
 
+.dropdown-menu {
+    background-color: black;
+    border-width: 2px;
+    border-color: darkcyan;
+    border-style: solid;
+    border-radius: 10px;
+}
+
+.dropdown-item {
+    color: white;
+}
+
 .dice {
     font-size: xx-large;
 }
