@@ -18,7 +18,7 @@ export const BILATERAL_MIDDLE = 0
 export const BILATERAL_RIGHT = 1
 export const BILATERAL_LEFT = 2
 export const HUNG_ALTITUDE = 10
-export const ITERATIONS_PER_TICK = 5
+export const ITERATIONS_PER_TICK = 50
 
 export const INTERVALS_RESERVED = 1
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0)
