@@ -15,63 +15,71 @@ export class Leg {
     }
 
     public get nextLeg(): Leg | undefined {
-        const nextHexalot = this.visited + 1
-        if (nextHexalot === this.journey.hexalots.length) {
+        const nextVisit = this.visited + 1
+        if (nextVisit === this.journey.visits.length) {
             return undefined
         }
-        const goTo = this.journey.hexalots[nextHexalot]
-        return new Leg(this.journey, nextHexalot, goTo)
+        const goTo = this.journey.visits[nextVisit]
+        return new Leg(this.journey, nextVisit, goTo)
     }
 }
 
-export function fromOptionalJourneyData(island: Island, journeyData?: IJourneyData): Journey | undefined {
-    const hexalots: Hexalot[] = []
+export function fromOptionalJourneyData(island: Island, hexalot: Hexalot, journeyData?: IJourneyData): Journey | undefined {
     if (!journeyData) {
         return undefined
     }
+    const hexalots: Hexalot[] = []
     journeyData.hexalots.forEach(hexalotId => {
-        const hexalot = island.findHexalot(hexalotId)
-        if (hexalot) {
-            hexalots.push(hexalot)
+        const foundHexalot = island.findHexalot(hexalotId)
+        if (foundHexalot) {
+            hexalots.push(foundHexalot)
         }
     })
+    if (hexalots.length < 2 || hexalots[0].id !== hexalot.id) {
+        return undefined
+    }
     return new Journey(hexalots)
 }
 
+function withEndpoint(visits: Hexalot[], hexalot: Hexalot): Journey | undefined {
+    const endIndex = visits.length - 1
+    if (endIndex < 0) {
+        return undefined
+    }
+    const endpoint = visits[endIndex]
+    const newEndpoint = endpoint.centerSpot.adjacentHexalots.find(ah => ah.id === hexalot.id)
+    if (!newEndpoint) {
+        return withEndpoint(visits.slice(0, endIndex), hexalot)
+    }
+    return new Journey(visits.concat(newEndpoint))
+}
+
 export class Journey {
-    constructor(readonly hexalots: Hexalot[]) {
+
+    constructor(private hexalots: Hexalot[]) {
+        if (hexalots.length === 0) {
+            throw new Error("Empty journey")
+        }
     }
 
     public get visits(): Hexalot[] {
         return this.hexalots
     }
 
-    public truncateVisit(hexalot: Hexalot): boolean {
+    public withTruncatedVisit(hexalot: Hexalot): Journey | undefined {
         const existingIndex = this.hexalots.indexOf(hexalot)
         if (existingIndex < 0) {
-            return false
+            return undefined
         }
-        this.hexalots.splice(existingIndex + 1)
-        return true
+        return new Journey(this.hexalots.slice(0, existingIndex + 1))
     }
 
-    public addVisit(hexalot: Hexalot): void {
-        if (this.hexalots.length === 0) {
-            return
-        }
-        const endpoint = this.hexalots[this.hexalots.length - 1]
-        if (!endpoint) {
-            return
-        }
-        const newEndpoint = endpoint.centerSpot.adjacentHexalots.find(ah => ah.id === hexalot.id)
-        if (!newEndpoint) {
-            return
-        }
-        this.hexalots.push(newEndpoint)
+    public withVisit(hexalot: Hexalot): Journey | undefined {
+        return withEndpoint(this.hexalots, hexalot)
     }
 
     public get firstLeg(): Leg | undefined {
-        if (this.visits.length < 2) {
+        if (this.hexalots.length < 2) {
             return undefined
         }
         return new Leg(this, 0, this.hexalots[1])

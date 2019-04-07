@@ -43,8 +43,12 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
     }
 
     private static createGeometry(props: IJourneyProps): BufferGeometry {
+        const geometry = new BufferGeometry()
         const journey = props.journey
         const arrowCount = journey.visits.length - 1
+        if (arrowCount < 1) {
+            return geometry
+        }
         const pointsPerArrow = 24
         const positions = new Float32Array(arrowCount * pointsPerArrow)
         const forward = new Vector3()
@@ -88,7 +92,6 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
             positions[offset++] = HUNG_ALTITUDE
             positions[offset++] = to.z - right.z - forward.z
         }
-        const geometry = new BufferGeometry()
         geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
         return geometry
     }

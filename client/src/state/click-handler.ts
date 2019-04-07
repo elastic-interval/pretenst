@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 
 import { AppMode, IAppState } from "./app-state"
@@ -53,15 +52,12 @@ export class ClickHandler {
                     throw new Error("No home hexalot")
                 }
                 if (hexalot) {
-                    if (!homeHexalot.journey) {
-                        homeHexalot.journey = new Journey([homeHexalot, hexalot])
-                    } else if (!homeHexalot.journey.truncateVisit(hexalot)) {
-                        homeHexalot.journey.addVisit(hexalot)
-                    }
-                    appState.storage.setJourneyData(homeHexalot, homeHexalot.journey.data).then(() => {
+                    const journey = homeHexalot.adjustedJourney(hexalot)
+                    homeHexalot.journey = journey
+                    appState.storage.setJourneyData(homeHexalot, journey.data).then(() => {
                         console.log("saved journey")
                     })
-                    return trans.withJourney(homeHexalot.journey).appState
+                    return trans.withJourney(journey).appState
                 }
                 return appState
 

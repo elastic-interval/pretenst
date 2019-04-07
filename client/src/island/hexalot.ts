@@ -56,18 +56,17 @@ export class Hexalot implements IHexalot {
     }
 
     public get rotation(): number {
-        if (!this.journey || this.journey.hexalots.length < 1) {
+        if (!this.journey || this.journey.visits.length < 2) {
             return Math.floor(Math.random() * 6)
         }
-        const first = this.journey.hexalots[1]
-        const rot = this.centerSpot.adjacentSpots.findIndex(spot => {
+        const first = this.journey.visits[1]
+        return this.centerSpot.adjacentSpots.findIndex(spot => {
             const adjacent = spot.centerOfHexalot
             if (!adjacent) {
                 return false
             }
             return adjacent.id === first.id
         })
-        return rot
     }
 
     public async fetchGenome(storage: IStorage): Promise<Genome | undefined> {
@@ -78,12 +77,27 @@ export class Hexalot implements IHexalot {
 
     public async fetchJourney(storage: IStorage, island: Island): Promise<Journey | undefined> {
         const journeyData = await storage.getJourneyData(this)
-        this.journey = fromOptionalJourneyData(island, journeyData)
+        this.journey = fromOptionalJourneyData(island, this, journeyData)
+        return this.journey
+    }
+
+    public adjustedJourney(hexalot: Hexalot): Journey {
+        if (!this.journey) {
+            return new Journey([this, hexalot])
+        }
+        const truncated = this.journey.withTruncatedVisit(hexalot)
+        if (truncated) {
+            return truncated
+        }
+        const extended = this.journey.withVisit(hexalot)
+        if (extended) {
+            return extended
+        }
         return this.journey
     }
 
     public createRandomJourney(): Journey {
-        return this.journeyOfLength(4)
+        return this.journeyOfLength(2)
     }
 
     public createNativeGotchi(): Gotchi | undefined {
