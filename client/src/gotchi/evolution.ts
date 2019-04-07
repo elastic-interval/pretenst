@@ -15,7 +15,7 @@ import { IEvaluatedJockey, Jockey } from "./jockey"
 
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
-// const MUTATION_COUNT = 5
+const MUTATION_COUNT = 5
 const SURVIVAL_RATE = 0.66
 const MIN_LIFESPAN = 15000
 const MAX_LIFESPAN = 25000
@@ -176,7 +176,7 @@ export class Evolution {
                 break
             }
             jockeys.push(evolvingJockey)
-            // mutatingGenome = mutatingGenome.withMutatedBehavior(evolvingJockey.nextDirection, MUTATION_COUNT)
+            mutatingGenome = mutatingGenome.withMutatedBehavior(evolvingJockey.nextDirection, MUTATION_COUNT)
         }
         return jockeys
     }
