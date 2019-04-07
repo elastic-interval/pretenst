@@ -56,6 +56,7 @@ export enum AppMode {
     FixingIsland = "Fixing island",
     Retreating = "Retreating",
     Riding = "Riding",
+    Stopped = "Stopped",
 }
 
 export function isInTransit(appState: IAppState): boolean {

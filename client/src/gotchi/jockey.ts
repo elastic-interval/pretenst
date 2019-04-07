@@ -28,6 +28,10 @@ export class Jockey {
         this.leg = leg
     }
 
+    public get isResting(): boolean {
+        return this.gotchi.isResting
+    }
+
     public get leg(): Leg {
         return this.currentLeg
     }
@@ -46,8 +50,13 @@ export class Jockey {
             } else {
                 this.gotchi.nextDirection = Direction.REST
             }
-        } else if (this.gotchi.currentDirection !== Direction.REST) {
-            this.adjustDirection()
+        }
+        if (this.fabric.nextDirection !== Direction.REST) {
+            const direction = this.voteDirection()
+            if (this.nextDirection !== direction) {
+                console.log(`${this.index} turned ${Direction[this.nextDirection]} to ${Direction[direction]}`)
+                this.gotchi.nextDirection = direction
+            }
         }
     }
 
@@ -65,16 +74,6 @@ export class Jockey {
 
     public stopMoving(): void {
         this.gotchi.nextDirection = Direction.REST
-    }
-
-    public adjustDirection(): boolean {
-        const direction = this.voteDirection()
-        if (this.nextDirection === direction) {
-            return false
-        }
-        console.log(`${this.index} turned ${Direction[this.nextDirection]} to ${Direction[direction]}`)
-        this.gotchi.nextDirection = direction
-        return true
     }
 
     public get index(): number {

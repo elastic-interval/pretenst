@@ -80,7 +80,7 @@ export class CommandHandler {
                             appState.storage.setGenomeData(homeHexalot, fittestData).then(() => {
                                 console.log("genome saved")
                             })
-                            return trans.withJockey(fittest).withAppMode(AppMode.Riding).appState
+                            return trans.withoutEvolution.withJockey(fittest).withAppMode(AppMode.Riding).appState
                         }
                     }
                     const newbornGotchi = hexalot.createNativeGotchi()
@@ -94,6 +94,9 @@ export class CommandHandler {
 
             case Command.Evolve:
                 if (homeHexalot) {
+                    if (jockey && !jockey.isResting) {
+                        throw new Error("Cannot evolve")
+                    }
                     return trans.withEvolution(homeHexalot).withAppMode(AppMode.Evolving).appState
                 }
                 return appState
@@ -102,6 +105,7 @@ export class CommandHandler {
             case Command.Start:
                 if (jockey) {
                     jockey.startMoving()
+                    return trans.withAppMode(AppMode.Riding).appState
                 }
                 return appState
 
@@ -109,6 +113,7 @@ export class CommandHandler {
             case Command.Stop:
                 if (jockey) {
                     jockey.stopMoving()
+                    return trans.withAppMode(AppMode.Stopped).appState
                 }
                 return appState
 

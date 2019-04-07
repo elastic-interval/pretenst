@@ -31,12 +31,19 @@ export class Gotchi {
         if (fabric.isGestating) {
             this.growth = new Growth(fabric, genome.createReader(Direction.REST))
         } else {
+            if (fabric.nextDirection !== Direction.REST) {
+                throw new Error("Cannot create gotchi from fabric that is not at rest")
+            }
             this.applyBehaviorGenes()
         }
     }
 
     public copyWithGenome(genome: Genome): Gotchi | undefined {
         return this.gotchiFactory.copyLiveGotchi(this, genome)
+    }
+
+    public get isResting(): boolean {
+        return this.fabric.isResting
     }
 
     public recycle(): void {
@@ -92,8 +99,12 @@ export class Gotchi {
 
     public iterate(ticks: number): boolean {
         const timeSweepTick = this.fabric.iterate(ticks)
-        if (timeSweepTick && this.growth) {
-            if (!this.growth.step()) {
+        if (!timeSweepTick) {
+            return timeSweepTick
+        }
+        if (this.growth) {
+            const growthStep = this.growth.step()
+            if (!growthStep) {
                 this.growth = undefined
                 this.applyBehaviorGenes()
                 this.fabric.endGestation()

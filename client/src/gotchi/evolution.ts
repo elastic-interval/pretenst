@@ -7,6 +7,7 @@ import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
 import { ITERATIONS_PER_TICK } from "../body/fabric"
+import { Direction } from "../body/fabric-exports"
 import { fromGenomeData, Genome } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
 import { Leg } from "../island/journey"
@@ -33,6 +34,9 @@ export class Evolution {
         private readonly prototypeJockey?: Jockey,
     ) {
         const rotateToLeg = this.leg
+        if (prototypeJockey && prototypeJockey.nextDirection !== Direction.REST) {
+            throw new Error("Cannot create evolution from jockey which is not resting")
+        }
         home.centerSpot.adjacentSpots.forEach((spot, index) => {
             const hexalot = spot.centerOfHexalot
             if (hexalot && rotateToLeg.goTo.id === hexalot.id) {
@@ -84,7 +88,6 @@ export class Evolution {
             const timeSweepTick = jockey.iterate(behind > ITERATIONS_PER_TICK ? ITERATIONS_PER_TICK : behind)
             if (timeSweepTick && !jockey.gestating) {
                 jockey.mutateGenome(1)
-                jockey.adjustDirection()
             }
         })
     }
@@ -114,7 +117,7 @@ export class Evolution {
         if (lifespan > MAX_LIFESPAN) {
             this.maxAge = this.startAge + MIN_LIFESPAN // start again
         }
-        console.log(`MaxAge=${this.maxAge}`)
+        console.log(`Age: [${this.startAge} to ${this.maxAge}] ${lifespan}`)
     }
 
     private get rankedJockeys(): IEvaluatedJockey[] {
@@ -135,8 +138,8 @@ export class Evolution {
         this.rebooting = true
         const ranked: IEvaluatedJockey[] = this.rankedJockeys
         const dead = ranked.splice(Math.ceil(ranked.length * SURVIVAL_RATE))
-        dead.forEach(e => console.log(`Dead ${e.jockey.index}:  ${e.distanceFromTarget}`))
-        ranked.forEach(e => console.log(`Ranked ${e.jockey.index}:  ${e.distanceFromTarget}`))
+        // dead.forEach(e => console.log(`Dead ${e.jockey.index}:  ${e.distanceFromTarget}`))
+        // ranked.forEach(e => console.log(`Ranked ${e.jockey.index}:  ${e.distanceFromTarget}`))
         this.currentJockeys.next(ranked.map(e => e.jockey))
         dead.forEach(e => e.jockey.recycle())
         setTimeout(() => {

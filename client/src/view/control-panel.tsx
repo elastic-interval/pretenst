@@ -171,8 +171,14 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
             case AppMode.Riding:
                 return this.buttonToolbar(IToolbarState.Riding,
                     Command.Home,
-                    Command.Start,
                     Command.Stop,
+                )
+
+
+            case AppMode.Stopped:
+                return this.buttonToolbar(IToolbarState.Riding,
+                    Command.Home,
+                    Command.Start,
                     Command.Evolve,
                 )
 

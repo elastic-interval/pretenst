@@ -15,7 +15,7 @@ export const ANGLE_ABOVE_HORIZON = Math.PI * 5 / 12
 
 const CLOSE_ENOUGH = 100
 const LOW_ENOUGH = 30
-const TRACKING_DISTANCE = 15
+const TRACKING_DISTANCE = 20
 const FIXING_DISTANCE = 650
 const PLANNING_DISTANCE = 550
 
@@ -64,6 +64,7 @@ export class Flight {
             case AppMode.Retreating:
                 break
             case AppMode.Approaching:
+                this.moveTowardsTarget(target)
                 const distanceVariation = CLOSE_ENOUGH * 0.1
                 const followDistance = this.followCameraDistance(
                     CLOSE_ENOUGH,
@@ -82,6 +83,7 @@ export class Flight {
                 }
                 break
             case AppMode.Riding:
+            case AppMode.Stopped:
             case AppMode.Evolving:
                 this.moveTowardsTarget(target)
                 const targetHeightVariation = 1
