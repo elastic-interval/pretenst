@@ -51,7 +51,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             },
             updateState(appState: IAppState): void {
                 if (self.appStateNonce === appState.nonce) {
-                    throw new Error("same nonce")
+                    throw new Error(`Same nonce! ${appState.nonce}`)
                 }
                 self.appStateNonce = appState.nonce
                 const homeHexalot = appState.homeHexalot

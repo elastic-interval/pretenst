@@ -800,9 +800,6 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
         }
     }
     let currentDirection = getCurrentDirection()
-    if (currentDirection === REST_DIRECTION) {
-        return idealSpan
-    }
     let previousDirection = getPreviousDirection()
     if (previousDirection !== currentDirection) {
         let previousSpanVariation = getIntervalSpanVariationFloat(intervalIndex, previousDirection)
