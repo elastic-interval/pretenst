@@ -105,7 +105,7 @@ export class Evolution {
             return undefined
         }
         const exceptIndex = strongest.jockey.gotchi.index
-        this.currentJockeys.next(this.currentJockeys.getValue().filter(jockey => jockey.gotchi.index === exceptIndex))
+        this.currentJockeys.next(this.currentJockeys.getValue().filter(jockey => jockey.gotchi.index !== exceptIndex))
         return strongest.jockey
     }
 
