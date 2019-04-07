@@ -49,7 +49,7 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
                     return (
                         <R3.Object3D key={`Evolver${index}`}>
                             <R3.LineSegments key="Vectors"
-                                             geometry={fabric.pointerGeometryFor(evolver.direction)}
+                                             geometry={fabric.pointerGeometryFor(evolver.nextDirection)}
                                              material={GOTCHI_ARROW}
                             />
                             <R3.Mesh

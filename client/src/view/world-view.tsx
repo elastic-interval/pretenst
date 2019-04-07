@@ -8,8 +8,7 @@ import * as R3 from "react-three"
 import { Mesh, PerspectiveCamera, Vector3 } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
-import { NORMAL_TICKS } from "../body/fabric"
-import { Direction } from "../body/fabric-exports"
+import { ITERATIONS_PER_TICK } from "../body/fabric"
 import { Spot } from "../island/spot"
 import { IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
@@ -157,20 +156,11 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                     const appState = this.props.appState
                     const jockey = appState.jockey
                     if (jockey) {
-                        if (jockey.touchedDestination) {
-                            const nextLeg = jockey.leg.nextLeg
-                            if (nextLeg) {
-                                jockey.leg = nextLeg
-                            } else {
-                                jockey.gotchi.nextDirection = Direction.REST
-                            }
-                        } else if (jockey.gotchi.currentDirection !== Direction.REST) {
-                            jockey.adjustDirection()
-                        }
+                        jockey.reorient()
                     }
                     const iterating = this.state.iterating
                     if (jockey) {
-                        jockey.gotchi.iterate(NORMAL_TICKS)
+                        jockey.gotchi.iterate(ITERATIONS_PER_TICK)
                         this.target = jockey.gotchi.midpoint
                         if (!iterating) {
                             this.setState({iterating: true})

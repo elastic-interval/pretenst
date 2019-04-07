@@ -65,6 +65,8 @@ export interface IFabricExports {
 
     getCurrentDirection(): Direction
 
+    getNextDirection(): Direction
+
     setNextDirection(direction: Direction): void
 
     iterate(ticks: number): boolean
@@ -139,6 +141,8 @@ export interface IFabricInstanceExports {
     isGestating(): boolean
 
     getCurrentDirection(): Direction
+
+    getNextDirection(): Direction
 
     setNextDirection(direction: Direction): void
 

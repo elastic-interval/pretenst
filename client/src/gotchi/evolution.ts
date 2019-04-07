@@ -6,8 +6,8 @@
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
-import { NORMAL_TICKS } from "../body/fabric"
-import { fromGenomeData, Genome, IGenomeData } from "../genetics/genome"
+import { ITERATIONS_PER_TICK } from "../body/fabric"
+import { fromGenomeData, Genome } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
 import { Leg } from "../island/journey"
 
@@ -15,31 +15,40 @@ import { IEvaluatedJockey, Jockey } from "./jockey"
 
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
-const MUTATION_COUNT = 5
+// const MUTATION_COUNT = 5
 const SURVIVAL_RATE = 0.66
 const MIN_LIFESPAN = 15000
-const LIFESPAN_INCREASE = 1000
-const MAX_LIFESPAN_INCREASE = 10 * LIFESPAN_INCREASE
+const MAX_LIFESPAN = 25000
+const INCREMENT_LIFESPAN = 1000
 
 export class Evolution {
     public currentJockeys: BehaviorSubject<Jockey[]> = new BehaviorSubject<Jockey[]>([])
     private midpointVector = new Vector3()
     private rebooting = false
-    private frozenHero?: Jockey
-    private leg: Leg
     private rotation: number
-    private minAge = 0
-    private maxAge = MIN_LIFESPAN
+    private maxAge: number
 
-    constructor(readonly home: Hexalot, firstLeg: Leg, private saveGenome: (genome: IGenomeData) => void) {
-        this.leg = firstLeg
+    constructor(
+        readonly home: Hexalot,
+        private readonly prototypeJockey?: Jockey,
+    ) {
+        const rotateToLeg = this.leg
         home.centerSpot.adjacentSpots.forEach((spot, index) => {
             const hexalot = spot.centerOfHexalot
-            if (hexalot && firstLeg.goTo.id === hexalot.id) {
+            if (hexalot && rotateToLeg.goTo.id === hexalot.id) {
                 this.rotation = index
             }
         })
         this.currentJockeys.next(this.createPopulation())
+        this.maxAge = this.startAge + MIN_LIFESPAN
+    }
+
+    public get leg(): Leg {
+        return this.prototypeJockey ? this.prototypeJockey.leg : this.home.firstLeg
+    }
+
+    public get startAge(): number {
+        return this.prototypeJockey ? this.prototypeJockey.age : 0
     }
 
     public get midpoint(): Vector3 {
@@ -63,22 +72,16 @@ export class Evolution {
         if (jockeys.length === 0 || this.rebooting) {
             return
         }
-        const heroEvolver = jockeys.find(jockey => jockey.touchedDestination)
-        if (heroEvolver) {
-            console.log("next generation from hero", heroEvolver)
-            this.nextGenerationFromHero(heroEvolver)
-            return
-        }
+        jockeys.forEach(jockey => jockey.reorient())
         const moving = jockeys.filter(jockey => jockey.age < this.maxAge)
         if (moving.length === 0) {
-            this.saveStrongest()
             this.adjustAgeLimit()
             this.nextGenerationFromSurvival()
             return
         }
         moving.forEach(jockey => {
             const behind = this.maxAge - jockey.age
-            const timeSweepTick = jockey.iterate(behind > NORMAL_TICKS ? NORMAL_TICKS : behind)
+            const timeSweepTick = jockey.iterate(behind > ITERATIONS_PER_TICK ? ITERATIONS_PER_TICK : behind)
             if (timeSweepTick && !jockey.gestating) {
                 jockey.mutateGenome(1)
                 jockey.adjustDirection()
@@ -88,32 +91,35 @@ export class Evolution {
 
     public recycle(): void {
         this.currentJockeys.getValue().forEach(jockey => jockey.recycle())
+        if (this.prototypeJockey) {
+            this.prototypeJockey.recycle()
+        }
+    }
+
+    public get extractFittest(): Jockey | undefined {
+        const strongest = this.strongest
+        if (!strongest) {
+            return undefined
+        }
+        const exceptIndex = strongest.jockey.gotchi.index
+        this.currentJockeys.next(this.currentJockeys.getValue().filter(jockey => jockey.gotchi.index === exceptIndex))
+        return strongest.jockey
     }
 
     // Privates =============================================================
 
-    private saveStrongest(): void {
-        const toSave = this.strongest
-        if (toSave) {
-            console.log("saved genome")
-            this.saveGenome(toSave.jockey.genomeData)
-        } else {
-            console.log("no strongest?")
-        }
-    }
-
     private adjustAgeLimit(): void {
-        this.maxAge += LIFESPAN_INCREASE
-        const lifespan = this.maxAge - this.minAge
-        if (lifespan > MIN_LIFESPAN + MAX_LIFESPAN_INCREASE) {
-            this.maxAge = this.minAge + MIN_LIFESPAN
+        this.maxAge += INCREMENT_LIFESPAN
+        const lifespan = this.maxAge - this.startAge
+        if (lifespan > MAX_LIFESPAN) {
+            this.maxAge = this.startAge + MIN_LIFESPAN // start again
         }
         console.log(`MaxAge=${this.maxAge}`)
     }
 
-    private get rankedEvolvers(): IEvaluatedJockey[] {
+    private get rankedJockeys(): IEvaluatedJockey[] {
         let jockeys = this.currentJockeys.getValue()
-        const frozenHero = this.frozenHero
+        const frozenHero = this.prototypeJockey
         if (frozenHero) {
             jockeys = jockeys.filter(e => e.index !== frozenHero.index)
         }
@@ -122,33 +128,12 @@ export class Evolution {
     }
 
     private get strongest(): IEvaluatedJockey | undefined {
-        return this.rankedEvolvers[0]
-    }
-
-    private nextGenerationFromHero(heroEvolver: Jockey): void {
-        this.rebooting = true
-        this.frozenHero = heroEvolver
-        const nextLeg = this.leg.nextLeg
-        if (!nextLeg) {
-            console.warn("Evolution is over")
-            return // todo: evolution is over
-        }
-        this.leg = heroEvolver.leg = nextLeg
-        this.minAge = heroEvolver.age
-        this.maxAge = this.minAge + MIN_LIFESPAN
-        const jockeys = this.currentJockeys.getValue()
-        this.currentJockeys.next([heroEvolver])
-        setTimeout(() => {
-            const otherEvolvers = jockeys.filter(jockey => jockey.index !== heroEvolver.index)
-            otherEvolvers.forEach(jockey => jockey.recycle())
-            this.currentJockeys.next(this.createPopulation())
-            this.rebooting = false
-        }, 500)
+        return this.rankedJockeys[0]
     }
 
     private nextGenerationFromSurvival(): void {
         this.rebooting = true
-        const ranked: IEvaluatedJockey[] = this.rankedEvolvers
+        const ranked: IEvaluatedJockey[] = this.rankedJockeys
         const dead = ranked.splice(Math.ceil(ranked.length * SURVIVAL_RATE))
         dead.forEach(e => console.log(`Dead ${e.jockey.index}:  ${e.distanceFromTarget}`))
         ranked.forEach(e => console.log(`Ranked ${e.jockey.index}:  ${e.distanceFromTarget}`))
@@ -167,7 +152,7 @@ export class Evolution {
             setTimeout(() => {
                 ranked.forEach(e => e.jockey.recycle())
                 ranked.map(e => e.jockey).forEach(jockey => {
-                    const reborn = this.createEvolver(fromGenomeData(jockey.genomeData))
+                    const reborn = this.createJockey(jockey.leg, fromGenomeData(jockey.genomeData))
                     if (reborn) {
                         nextGeneration.push(reborn)
                     }
@@ -186,27 +171,27 @@ export class Evolution {
         let mutatingGenome: Genome | undefined = fromGenomeData(genome.genomeData)
         const jockeys: Jockey[] = []
         while (true) {
-            const jockey = this.createEvolver(mutatingGenome)
-            if (!jockey) {
+            const evolvingJockey = this.createJockey(this.leg, mutatingGenome)
+            if (!evolvingJockey) {
                 break
             }
-            jockeys.push(jockey)
-            mutatingGenome = mutatingGenome.withMutatedBehavior(jockey.direction, MUTATION_COUNT)
+            jockeys.push(evolvingJockey)
+            // mutatingGenome = mutatingGenome.withMutatedBehavior(evolvingJockey.nextDirection, MUTATION_COUNT)
         }
         return jockeys
     }
 
     private createOffspring(parent: Jockey): Jockey | undefined {
         const offspringGenome = fromGenomeData(parent.offspringGenome)
-        return this.createEvolver(offspringGenome)
+        return this.createJockey(parent.leg, offspringGenome)
     }
 
-    private createEvolver(genome: Genome): Jockey | undefined {
-        const frozenHero = this.frozenHero
-        const gotchi = frozenHero ? frozenHero.gotchiWithGenome(genome) : this.home.createGotchiWithGenome(genome, this.rotation)
+    private createJockey(leg: Leg, genome: Genome): Jockey | undefined {
+        const prototype = this.prototypeJockey
+        const gotchi = prototype ? prototype.createGotchi(genome) : this.home.createGotchi(genome, this.rotation)
         if (!gotchi) {
             return undefined
         }
-        return new Jockey(gotchi, this.leg, fromGenomeData(gotchi.genomeData))
+        return new Jockey(gotchi, leg, fromGenomeData(gotchi.genomeData))
     }
 }

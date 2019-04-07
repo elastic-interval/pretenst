@@ -448,7 +448,7 @@ function setCurrentDirection(value: u8): void {
     setU8(statePtr + U32 + U16 * 5 + U8 * 2, value)
 }
 
-function getNextDirection(): u8 {
+export function getNextDirection(): u8 {
     return getU8(statePtr + U32 + U16 * 5 + U8 * 3)
 }
 

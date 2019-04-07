@@ -30,7 +30,7 @@ export class Transition {
     }
 
     public withIsland(island: Island): Transition {
-        this.cleared.nextState = {...this.nextState, island}
+        this.withoutJockey.withoutEvolution.nextState = {...this.nextState, island}
         return this
     }
 
@@ -141,21 +141,26 @@ export class Transition {
     }
 
     public withJockey(jockey: Jockey): Transition {
-        this.cleared.nextState = {...this.nextState, jockey, journey: jockey.leg.journey}
+        this.withoutJockey.nextState = {...this.nextState, jockey, journey: jockey.leg.journey}
         return this
     }
 
-    public withEvolution(evolution: Evolution): Transition {
-        this.cleared.nextState = {...this.nextState, evolution}
+    public withEvolution(homeHexalot: Hexalot): Transition {
+        const evolution = new Evolution(homeHexalot, this.appState.jockey)
+        this.withoutEvolution.nextState = {...this.nextState, evolution, jockey: undefined}
         return this
     }
 
-    public get cleared(): Transition {
+    public get withoutJockey(): Transition {
         const jockey = this.nextState.jockey
         if (jockey) {
             jockey.gotchi.recycle()
             this.nextState = {...this.nextState, jockey: undefined}
         }
+        return this
+    }
+
+    public get withoutEvolution(): Transition {
         const evolution = this.nextState.evolution
         if (evolution) {
             evolution.recycle()

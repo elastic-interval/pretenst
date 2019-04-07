@@ -134,6 +134,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                         Command.Plan,
                         Command.Ride,
                         Command.Evolve,
+                        Command.DiscardGenes,
                     )
                 } else if (hexalot) {
                     if (!homeHexalot && hexalot.centerSpot.isCandidateHexalot(vacant)) {
@@ -162,7 +163,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
 
             case AppMode.Evolving:
                 return this.buttonToolbar(IToolbarState.Evolving,
-                    Command.DiscardGenes,
+                    Command.Ride,
                     Command.Home,
                 )
 
@@ -172,6 +173,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                     Command.Home,
                     Command.Start,
                     Command.Stop,
+                    Command.Evolve,
                 )
 
 

@@ -23,7 +23,6 @@ export interface IEvaluatedJockey {
 export class Jockey {
     private votes: Direction[] = []
     private currentLeg: Leg
-    private nextDirection = Direction.REST
 
     constructor(readonly gotchi: Gotchi, leg: Leg, private mutatingGenome?: Genome) {
         this.leg = leg
@@ -36,7 +35,20 @@ export class Jockey {
     public set leg(leg: Leg) {
         this.currentLeg = leg
         this.votes = []
-        this.nextDirection = this.gotchi.nextDirection = this.voteDirection()
+        this.gotchi.nextDirection = this.voteDirection()
+    }
+
+    public reorient(): void {
+        if (this.touchedDestination) {
+            const nextLeg = this.leg.nextLeg
+            if (nextLeg) {
+                this.leg = nextLeg
+            } else {
+                this.gotchi.nextDirection = Direction.REST
+            }
+        } else if (this.gotchi.currentDirection !== Direction.REST) {
+            this.adjustDirection()
+        }
     }
 
     public get pointerGeometry(): Geometry {
@@ -61,7 +73,7 @@ export class Jockey {
             return false
         }
         console.log(`${this.index} turned ${Direction[this.nextDirection]} to ${Direction[direction]}`)
-        this.nextDirection = this.gotchi.nextDirection = direction
+        this.gotchi.nextDirection = direction
         return true
     }
 
@@ -100,17 +112,13 @@ export class Jockey {
         this.mutatingGenome = this.mutatingGenome.withMutatedBehavior(this.nextDirection, mutationCount)
     }
 
-    public get direction(): Direction {
-        return this.nextDirection
+    public get nextDirection(): Direction {
+        return this.fabric.nextDirection
     }
 
     public get evaluated(): IEvaluatedJockey {
         const distanceFromTarget = this.gotchi.getDistanceFrom(this.target)
         return {jockey: this, distanceFromTarget}
-    }
-
-    public get touchedDestination(): boolean {
-        return this.gotchi.getDistanceFrom(this.target) < HEXAPOD_RADIUS
     }
 
     public iterate(ticks: number): boolean {
@@ -121,7 +129,7 @@ export class Jockey {
         return this.gotchi.genomeData
     }
 
-    public gotchiWithGenome(genome: Genome): Gotchi | undefined {
+    public createGotchi(genome: Genome): Gotchi | undefined {
         return this.gotchi.copyWithGenome(genome)
     }
 
@@ -130,6 +138,10 @@ export class Jockey {
     }
 
     // ============================
+
+    private get touchedDestination(): boolean {
+        return this.gotchi.getDistanceFrom(this.target) < HEXAPOD_RADIUS
+    }
 
     private voteDirection(): Direction {
         const votes = this.votes

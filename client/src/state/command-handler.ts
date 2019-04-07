@@ -5,8 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { freshGenome, fromGenomeData, IGenomeData } from "../genetics/genome"
-import { Evolution } from "../gotchi/evolution"
+import { freshGenome, fromGenomeData } from "../genetics/genome"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
@@ -36,7 +35,6 @@ export class CommandHandler {
         const homeHexalot = appState.homeHexalot
         const hexalot = appState.selectedHexalot
         const jockey = appState.jockey
-        const journey = appState.journey
         const spot = appState.selectedSpot
         const vacant = island.vacantHexalot
         const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
@@ -62,24 +60,32 @@ export class CommandHandler {
             case Command.Home:
                 if (appState.jockey) {
                     const atJockeyHome = await trans.withSelectedSpot(appState.jockey.gotchi.home.centerSpot)
-                    return atJockeyHome.cleared.withAppMode(AppMode.Approaching).appState
+                    return atJockeyHome.withoutJockey.withAppMode(AppMode.Approaching).appState
                 }
                 if (homeHexalot) {
                     const withHomeSelected = await trans.withSelectedSpot(homeHexalot.centerSpot)
-                    return withHomeSelected.cleared.withAppMode(AppMode.Approaching).appState
+                    return withHomeSelected.withoutEvolution.withAppMode(AppMode.Approaching).appState
                 }
                 return appState
 
 
             case Command.Ride:
-                if (hexalot && journey) {
-                    const firstLeg = journey.firstLeg
-                    if (!firstLeg) {
-                        return appState
+                if (hexalot) {
+                    const evolution = appState.evolution
+                    if (evolution && homeHexalot) {
+                        const fittest = evolution.extractFittest
+                        if (fittest) {
+                            const fittestData = fittest.genomeData
+                            homeHexalot.genome = fromGenomeData(fittestData)
+                            appState.storage.setGenomeData(homeHexalot, fittestData).then(() => {
+                                console.log("genome saved")
+                            })
+                            return trans.withJockey(fittest).withAppMode(AppMode.Riding).appState
+                        }
                     }
                     const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
-                        const newJockey = new Jockey(newbornGotchi, firstLeg)
+                        const newJockey = new Jockey(newbornGotchi, hexalot.firstLeg)
                         return trans.withJockey(newJockey).withAppMode(AppMode.Riding).appState
                     }
                 }
@@ -87,18 +93,8 @@ export class CommandHandler {
 
 
             case Command.Evolve:
-                if (homeHexalot && journey) {
-                    const firstLeg = journey.firstLeg
-                    if (firstLeg) {
-                        const saveGenome = (data: IGenomeData) => {
-                            homeHexalot.genome = fromGenomeData(data)
-                            appState.storage.setGenomeData(homeHexalot, data).then(() => {
-                                console.log("genome saved")
-                            })
-                        }
-                        const evolution = new Evolution(homeHexalot, firstLeg, saveGenome)
-                        return trans.withEvolution(evolution).withAppMode(AppMode.Evolving).appState
-                    }
+                if (homeHexalot) {
+                    return trans.withEvolution(homeHexalot).withAppMode(AppMode.Evolving).appState
                 }
                 return appState
 

@@ -22,7 +22,12 @@ export interface IGotchiFactory {
 export class Gotchi {
     private growth?: Growth
 
-    constructor(readonly home: Hexalot, readonly fabric: Fabric, private genome: Genome, private gotchiFactory: IGotchiFactory) {
+    constructor(
+        readonly home: Hexalot,
+        readonly fabric: Fabric,
+        private genome: Genome,
+        private gotchiFactory: IGotchiFactory,
+    ) {
         if (fabric.isGestating) {
             this.growth = new Growth(fabric, genome.createReader(Direction.REST))
         } else {
@@ -48,10 +53,6 @@ export class Gotchi {
 
     public get age(): number {
         return this.fabric.age
-    }
-
-    public get isGestating(): boolean {
-        return this.fabric.isGestating
     }
 
     public getDistanceFrom(location: Vector3): number {

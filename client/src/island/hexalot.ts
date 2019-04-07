@@ -12,7 +12,7 @@ import { IStorage } from "../storage/storage"
 
 import { Island } from "./island"
 import { ICoords, IHexalot } from "./island-logic"
-import { fromOptionalJourneyData, Journey } from "./journey"
+import { fromOptionalJourneyData, Journey, Leg } from "./journey"
 import { Spot } from "./spot"
 
 export async function fetchGenome(hexalot: Hexalot, storage: IStorage): Promise<void> {
@@ -96,6 +96,21 @@ export class Hexalot implements IHexalot {
         return this.journey
     }
 
+    public get firstLeg(): Leg {
+        if (this.journey) {
+            const journeyFirst = this.journey.firstLeg
+            if (journeyFirst) {
+                return journeyFirst
+            }
+        }
+        const random = this.createRandomJourney()
+        const randomFirst = random.firstLeg
+        if (!randomFirst) {
+            throw new Error("Unable to create first leg")
+        }
+        return randomFirst
+    }
+
     public createRandomJourney(): Journey {
         return this.journeyOfLength(2)
     }
@@ -107,7 +122,7 @@ export class Hexalot implements IHexalot {
         return this.gotchiFactory.createGotchiSeed(this, this.rotation, this.genome)
     }
 
-    public createGotchiWithGenome(genome: Genome, rotation: number): Gotchi | undefined {
+    public createGotchi(genome: Genome, rotation: number): Gotchi | undefined {
         return this.gotchiFactory.createGotchiSeed(this, rotation, genome)
     }
 
@@ -131,6 +146,7 @@ export class Hexalot implements IHexalot {
                 return journeyVisits.every(visit => visit.id !== adjacentHexalot.id)
             })
             if (landNeighbors.length === 0) {
+                // todo: find one anyway if there are to few!
                 break
             }
             const randomNeighbor = landNeighbors[Math.floor(Math.random() * landNeighbors.length)]

@@ -265,6 +265,10 @@ class InstanceExports implements IFabricInstanceExports {
         return this.ex.setAltitude(altitude)
     }
 
+    public getNextDirection(): Direction {
+        return this.ex.getNextDirection()
+    }
+
     public setNextDirection(direction: Direction): void {
         this.ex.setNextDirection(direction)
     }
