@@ -96,6 +96,7 @@ p a, p a:hover {
 }
 
 .command-button {
+    margin: 2px;
 }
 
 .gotchi-view {

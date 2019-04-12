@@ -6,6 +6,7 @@
 import * as React from "react"
 import {
     Button,
+    ButtonToolbar,
     Card,
     CardBody,
     CardFooter,
@@ -60,7 +61,7 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
             return (
                 <Card>
                     <CardHeader>
-                        <CardTitle>Global Card: {globalCardName}</CardTitle>
+                        <CardTitle>{globalCardName}</CardTitle>
                     </CardHeader>
                     {foundCard.body}
                     <CardFooter>{this.footer()}</CardFooter>
@@ -72,8 +73,21 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
         return (
             <Card>
                 <CardBody>
-                    {toolbarStateDoc ? toolbarStateDoc.body : (<CardText>?toolbar?</CardText>)}
-                    {commandDoc ? commandDoc.body : (<CardText>?command?</CardText>)}
+                    {toolbarStateDoc ? (
+                        <div>
+                            <CardTitle>{toolbarStateDoc.title}</CardTitle>
+                            {toolbarStateDoc.body}
+                        </div>
+                    ) : false}
+                    <br/>
+                    {commandDoc ? (
+                        <div>
+                            <CardTitle>{commandDoc.title}</CardTitle>
+                            {commandDoc.body}
+                        </div>
+                    ) : (
+                        <CardText>Click on a command button to get info about each one.</CardText>
+                    )}
                 </CardBody>
                 <CardFooter>{this.footer()}</CardFooter>
             </Card>
@@ -82,7 +96,7 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
 
     private footer(): JSX.Element {
         return (
-            <div>
+            <ButtonToolbar>
                 <Dropdown group={true} isOpen={this.state.globalShowing} size="sm" toggle={() => {
                     this.setState({globalShowing: !this.state.globalShowing})
                 }}>
@@ -98,6 +112,7 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
                     </DropdownMenu>
                 </Dropdown>
                 <Button
+                    size="sm"
                     className="float-right"
                     color="info"
                     onClick={() => {
@@ -106,7 +121,7 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
                         appState.updateState(new Transition(appState).withHelpVisible(false).appState)
                     }}
                 >Ok, got it</Button>
-            </div>
+            </ButtonToolbar>
         )
     }
 }

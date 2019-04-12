@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { Button, ButtonGroup, ButtonToolbar } from "reactstrap"
+import { Button } from "reactstrap"
 import { Vector3 } from "three"
 
 import { ToolbarState } from "../docs/toolbar-state-docs"
@@ -185,21 +185,21 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
             this.setState({toolbarState})
         })
         return (
-            <ButtonToolbar>
-                <ButtonGroup>
-                    <Button
-                        color="info"
-                        active={!this.props.appState.helpVisible}
-                        onClick={() => this.toggleHelp(toolbarState)}
-                    >{toolbarState}: </Button>
-                    {commands.map(command => this.commandButton(command))}
-                    <Button
-                        color="info"
-                        active={!this.props.appState.helpVisible}
-                        onClick={() => this.toggleHelp(toolbarState)}
-                    >?</Button>
-                </ButtonGroup>
-            </ButtonToolbar>
+            <div>
+                <Button
+                    color="info"
+                    className="command-button"
+                    active={!this.props.appState.helpVisible}
+                    onClick={() => this.toggleHelp(toolbarState)}
+                >{toolbarState}: </Button>
+                {commands.map(command => this.commandButton(command))}
+                <Button
+                    color="info"
+                    className="command-button"
+                    active={!this.props.appState.helpVisible}
+                    onClick={() => this.toggleHelp(toolbarState)}
+                >?</Button>
+            </div>
         )
     }
 
@@ -207,24 +207,24 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         const appState = this.props.appState
         const helpVisible = !appState.helpVisible
         appState.updateState(new Transition(appState).withHelpVisible(helpVisible).appState)
-        this.setState({toolbarState})
+        this.setState({toolbarState, command: undefined})
     }
 
     private commandButton(command: Command): JSX.Element {
+        const helpVisible = this.props.appState.helpVisible
         return (
             <Button
                 key={command}
-                outline={true}
                 color="success"
                 className="command-button"
                 onClick={() => {
-                    if (this.props.appState.helpVisible) {
+                    if (helpVisible) {
                         this.setState({command})
                     } else {
                         this.execute(command)
                     }
                 }}
-            >{command}</Button>
+            >{helpVisible ? `?${command}?` : command}</Button>
         )
     }
 
