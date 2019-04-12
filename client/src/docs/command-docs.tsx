@@ -84,7 +84,7 @@ export const COMMAND_DOCS: ICommandDoc[] = [
             <CardText>
                 When you plan your journey, you zoom out and see the world from above.
                 Clicking on a new neighbor hexalot adds a leg to your journey,
-                and clicking on one that is already part of the makes the journey end there.
+                and clicking on one that is already in the journey makes it end there.
             </CardText>,
     },
     {
