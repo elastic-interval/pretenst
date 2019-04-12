@@ -113,7 +113,7 @@ export const COMMAND_DOCS: ICommandDoc[] = [
         title: Command.Terraform,
         body:
             <CardText>
-                After choosing a new hexalot, new spots appear at the edge of the island, but they begin
+                After choosing an unoccupied hexalot, new spots appear at the edge of the island.
                 not as land or water.  When you terraform, you decide.  The terraform button takes you to
                 any problems that still remain on the island.
             </CardText>,
