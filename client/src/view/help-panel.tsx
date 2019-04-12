@@ -71,9 +71,6 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
         const commandDoc = COMMAND_DOCS.find(d => d.title === this.props.command)
         return (
             <Card>
-                <CardHeader>
-                    <CardTitle>{this.props.toolbarState}</CardTitle>
-                </CardHeader>
                 <CardBody>
                     {toolbarStateDoc ? toolbarStateDoc.body : (<CardText>?toolbar?</CardText>)}
                     {commandDoc ? commandDoc.body : (<CardText>?command?</CardText>)}
