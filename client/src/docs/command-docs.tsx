@@ -12,18 +12,13 @@ export interface ICommandDoc {
     title: Command,
     body: JSX.Element
 }
-/*
-    Start = "Start",
-    Stop = "Stop",
-    Terraform = "Terraform",
 
- */
 export const COMMAND_DOCS: ICommandDoc[] = [
     {
-        title: Command.AbandonFix,
+        title: Command.AbandonTerraforming,
         body:
             <CardText>
-                While you are fixing the island by terraforming (creating land or water),
+                While you are terraforming the island by terraforming (creating land or water),
                 you can decide to abandon the choice you made and start again.
             </CardText>,
     },
@@ -31,7 +26,7 @@ export const COMMAND_DOCS: ICommandDoc[] = [
         title: Command.ClaimHexalot,
         body:
             <CardText>
-                When you have reserved a hexalot, and fixed the island to make sure it follows
+                When you have reserved a hexalot, and terraformed the island to make sure it follows
                 the rules, you can claim the hexalot you reserved.
                 It then belongs to you, since it is completely unique and nobody else can claim the same one.
             </CardText>,
@@ -48,20 +43,18 @@ export const COMMAND_DOCS: ICommandDoc[] = [
         title: Command.Evolve,
         body:
             <CardText>
-                You can start evolving either from the starting position hanging up in the tower
-                at the center of your hexalot, or you can ride a bit first and then start evolving.
-                Evolving creates a group of idential galapagotchis which exist in the same space
+                Evolving creates a group of competing galapagotchis which exist in the same space
                 at the same time, but have slightly mutated genes.
-                The slowest are forgotten and the new generation is made by mutating the genes
-                of the current crop of survivors.
+                They go through cycles, like generations.
+                Every time the slowest are forgotten and the new generation is made by mutating the genes
+                of the current survivors.
             </CardText>,
     },
     {
         title: Command.Home,
         body:
             <CardText>
-                Wherever you are, you can go back to your home position up in the tower in the
-                center of your hexalot.
+                Wherever you are, you can go back to your home position up in the tower.
             </CardText>,
     },
     {
@@ -114,7 +107,7 @@ export const COMMAND_DOCS: ICommandDoc[] = [
         body:
             <CardText>
                 After choosing an unoccupied hexalot, new spots appear at the edge of the island.
-               you can terraform these spots to choose whether they'll be land or water. The terraform button takes you to
+                you can terraform these spots to choose whether they'll be land or water. The terraform button takes you to
                 any problems that still remain on the island.
             </CardText>,
     },

@@ -8,14 +8,14 @@ import { CardText } from "reactstrap"
 
 export enum ToolbarState {
     AvailableSpot = "Available spot",
-    Planning = "Planning",
     Evolving = "Evolving",
-    Fixing = "Fixing",
     Foreign = "Foreign",
     FreeSpot = "Free spot",
     Home = "Home",
     Pioneering = "Pioneering",
+    Planning = "Planning",
     Riding = "Riding",
+    Terraforming = "Terraforming",
     Unknown = "Unknown",
 }
 
@@ -36,8 +36,8 @@ export const TOOLBAR_STATE_DOCS: IToolbarStateDoc[] = [
         title: ToolbarState.Planning,
         body:
             <CardText>
-                You are planning your journey.  This journey is where you galapagotchi rides when you let it go,
-                and it is the path that
+                You are planning your journey.  This journey is where you galapagotchi rides when you launch it,
+                and it is the path that the evolution will follow.
             </CardText>,
     },
     {
@@ -50,7 +50,7 @@ export const TOOLBAR_STATE_DOCS: IToolbarStateDoc[] = [
             </CardText>,
     },
     {
-        title: ToolbarState.Fixing,
+        title: ToolbarState.Terraforming,
         body:
             <CardText>
                 You have reserved a new hexalot, but this has created virgin territory at the edge
@@ -77,9 +77,9 @@ export const TOOLBAR_STATE_DOCS: IToolbarStateDoc[] = [
         title: ToolbarState.Home,
         body:
             <CardText>
-                You have selected your home hexalot, and from here you can plan your journey.
+                You have selected your home hexalot, and from here you can plan the gotchi's journey.
                 If you already have a journey planned you can try and ride it, or you can start the evolution
-                process so that your gotchi learns how to move around.
+                process so that your gotchi acquires motor skills by survival of the fittest.
             </CardText>,
     },
     {

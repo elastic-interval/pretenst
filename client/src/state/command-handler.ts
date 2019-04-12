@@ -136,7 +136,7 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.AbandonFix:
+            case Command.AbandonTerraforming:
                 const nonce = appState.nonce + 1
                 const orig = new Island(extractIslandData(island), island.gotchiFactory, appState.storage, nonce)
                 return (await trans.withSelectedSpot()).withIsland(orig).withAppMode(AppMode.Exploring).withRestructure.appState

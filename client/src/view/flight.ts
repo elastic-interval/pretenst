@@ -16,7 +16,7 @@ export const ANGLE_ABOVE_HORIZON = Math.PI * 5 / 12
 const CLOSE_ENOUGH = 100
 const LOW_ENOUGH = 30
 const TRACKING_DISTANCE = 20
-const FIXING_DISTANCE = 650
+const TERRAFORMING_DISTANCE = 650
 const PLANNING_DISTANCE = 550
 
 const UPWARDS = 0.3
@@ -100,12 +100,12 @@ export class Flight {
                     TRACKING_DISTANCE + trackingDistanceVariation,
                 )
                 break
-            case AppMode.FixingIsland:
+            case AppMode.Terraforming:
                 this.moveTowardsAbove()
-                const fixingDistanceVariation = FIXING_DISTANCE * 0.1
+                const terraformingDistanceVariation = TERRAFORMING_DISTANCE * 0.1
                 this.followCameraDistance(
-                    FIXING_DISTANCE,
-                    FIXING_DISTANCE - fixingDistanceVariation,
+                    TERRAFORMING_DISTANCE,
+                    TERRAFORMING_DISTANCE - terraformingDistanceVariation,
                     INITIAL_DISTANCE,
                 )
                 break

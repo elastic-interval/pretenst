@@ -79,7 +79,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         switch (appState.appMode) {
 
 
-            case AppMode.FixingIsland:
+            case AppMode.Terraforming:
                 if (spot) {
                     if (singleHexalot && spot.coords === singleHexalot.centerSpot.coords) {
                         return this.buttonToolbar(ToolbarState.Pioneering,
@@ -92,9 +92,9 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                                 Command.ClaimHexalot,
                             )
                         } else {
-                            return this.buttonToolbar(ToolbarState.Fixing,
+                            return this.buttonToolbar(ToolbarState.Terraforming,
                                 Command.Terraform,
-                                Command.AbandonFix,
+                                Command.AbandonTerraforming,
                             )
                         }
                     }
@@ -107,7 +107,6 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                 }
                 return (
                     <Message>
-                        Hello.
                         The island is not yet correct according to the rules.
                         Land must be either at the edge or have two land neighbors.
                         Water must have at least one land neighbor.
