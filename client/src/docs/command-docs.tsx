@@ -114,7 +114,7 @@ export const COMMAND_DOCS: ICommandDoc[] = [
         body:
             <CardText>
                 After choosing an unoccupied hexalot, new spots appear at the edge of the island.
-                not as land or water.  When you terraform, you decide.  The terraform button takes you to
+               you can terraform these spots to choose whether they'll be land or water. The terraform button takes you to
                 any problems that still remain on the island.
             </CardText>,
     },
