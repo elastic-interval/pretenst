@@ -94,7 +94,7 @@ export const TOOLBAR_STATE_DOCS: IToolbarStateDoc[] = [
         body:
             <CardText>
                 You are riding on a gotchi, which means that you tag along close behind as the gotchi
-                runs each of the legs of its journey.
+                runs each leg of its journey.
             </CardText>,
     },
     {
