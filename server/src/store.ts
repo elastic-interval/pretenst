@@ -46,6 +46,7 @@ export class LevelDBFlashStore implements IKeyValueStore {
     }
 
     public async delete(key: string): Promise<void> {
+        this.logEvent(`DELETE ${key}`)
         return this.db.del(key)
     }
 
@@ -54,15 +55,19 @@ export class LevelDBFlashStore implements IKeyValueStore {
     }
 
     public async set(key: string, value: any): Promise<void> {
-        const date = new Date().toISOString()
         const valStr = JSON.stringify(value)
-        const event = `${date} SET ${key} ${valStr}\n`
+        this.logEvent(`SET ${key} ${valStr}`)
+        return this.db.set(key, value)
+    }
+
+    private logEvent(description: string): void {
+        const date = new Date().toISOString()
+        const event = `${date} ${description}\n`
         this.eventLog.write(event, (err) => {
             if (err) {
                 console.error(`[STORE] Error writing event: ${JSON.stringify(err)}`)
             }
         })
-        return this.db.set(key, value)
     }
 }
 
