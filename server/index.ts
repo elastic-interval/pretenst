@@ -1,3 +1,4 @@
+import createLnRpc from "@radar/lnrpc"
 import bodyParser from "body-parser"
 import cookieParser from "cookie-parser"
 import dotenv from "dotenv"
@@ -17,6 +18,10 @@ async function run(listenPort: number): Promise<void> {
         `${__dirname}/data/galapagotchi.db`,
         `${__dirname}/data/event-logs/events-${startTime}.log`,
     )
+    const lnRpc = await createLnRpc({
+        server: "localhost:10009",
+        macaroonPath: "./secret/admin.macaroon",
+    })
 
     const app = express()
 
@@ -33,7 +38,7 @@ async function run(listenPort: number): Promise<void> {
         next()
     })
 
-    app.use("/api", createRouter(db))
+    app.use("/api", createRouter(db, lnRpc))
 
     return new Promise<void>(
         resolve => app.listen(listenPort, resolve),

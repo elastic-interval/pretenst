@@ -16,6 +16,7 @@
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'"
   },
   "dependencies": {
+    "@radar/lnrpc": "^0.5.2-beta.5",
     "@types/axios": "^0.14.0",
     "@types/cookie-parser": "^1.4.1",
     "@types/dotenv": "^6.1.0",

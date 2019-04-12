@@ -124,4 +124,8 @@ export class DataStore {
     public async setJourney(id: HexalotID, journey: IJourneyData): Promise<void> {
         await this.db.set(`/hexalot/${id}/journey`, journey)
     }
+
+    public async buyLot(lotId: HexalotID, userId: string): Promise<void> {
+        await this.db.set(`/hexalot/${lotId}/permanentOwner`, userId)
+    }
 }
