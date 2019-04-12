@@ -1,8 +1,8 @@
 import bodyParser from "body-parser"
+import cookieParser from "cookie-parser"
 import dotenv from "dotenv"
 import express from "express"
 import morgan from "morgan"
-import cookieParser from "cookie-parser"
 
 import { createRouter } from "./src/router"
 import { LevelDBFlashStore } from "./src/store"
@@ -12,7 +12,11 @@ const origin = process.env.NODE_ENV === "production" ?
     "http://localhost:3000"
 
 async function run(listenPort: number): Promise<void> {
-    const db = new LevelDBFlashStore(__dirname + "/data/galapagotchi.db")
+    const startTime = new Date().toISOString()
+    const db = new LevelDBFlashStore(
+        `${__dirname}/data/galapagotchi.db`,
+        `${__dirname}/data/event-logs/events-${startTime}.log`,
+    )
 
     const app = express()
 
