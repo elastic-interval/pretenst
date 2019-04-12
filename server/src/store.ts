@@ -4,6 +4,7 @@
  */
 
 import { FlashStore } from "flash-store"
+import {createWriteStream, WriteStream} from "fs"
 
 import { IJourneyData } from "./island"
 import { IslandData } from "./island-logic"
@@ -35,9 +36,13 @@ export class InMemoryStore implements IKeyValueStore {
 
 export class LevelDBFlashStore implements IKeyValueStore {
     private db: FlashStore<string, any>
+    private eventLog: WriteStream
 
-    constructor(storePath: string) {
+    constructor(storePath: string, eventLogPath: string) {
         this.db = new FlashStore(storePath)
+        this.eventLog = createWriteStream(eventLogPath, {
+            flags: "a",
+        })
     }
 
     public async delete(key: string): Promise<void> {
@@ -49,6 +54,10 @@ export class LevelDBFlashStore implements IKeyValueStore {
     }
 
     public async set(key: string, value: any): Promise<void> {
+        const date = new Date().toISOString()
+        const valStr = JSON.stringify(value)
+        const event = `${date} SET ${key} ${valStr}\n`
+        this.eventLog.write(event)
         return this.db.set(key, value)
     }
 }
