@@ -29,7 +29,7 @@ export const TOOLBAR_STATE_DOCS: IToolbarStateDoc[] = [
         title: ToolbarState.AvailableSpot,
         body:
             <CardText>
-                This spot is one that you could claim if you wanted.
+                This spot is unoccupied and can be claimed.
             </CardText>,
     },
     {
