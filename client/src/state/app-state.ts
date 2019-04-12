@@ -73,7 +73,6 @@ export enum Command {
     MakeWater = "Make into water",
     Plan = "Plan",
     Ride = "Ride",
-    SaveGenome = "Save genome",
     Start = "Start",
     Stop = "Stop",
     Terraform = "Terraform",

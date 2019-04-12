@@ -42,14 +42,6 @@ export class CommandHandler {
         switch (command) {
 
 
-            case Command.SaveGenome:
-                if (homeHexalot && jockey) {
-                    const genomeData = jockey.gotchi.genomeData
-                    await appState.storage.setGenomeData(homeHexalot, genomeData)
-                }
-                return appState
-
-
             case Command.DiscardGenes:
                 if (homeHexalot) {
                     homeHexalot.genome = freshGenome()

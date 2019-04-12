@@ -10,8 +10,7 @@ const THE_BLIND_WATCHMAKER = "https://en.wikipedia.org/wiki/The_Blind_Watchmaker
 const CHARLES_DARWIN = "https://en.wikipedia.org/wiki/Charles_Darwin"
 const RICHARD_DAWKINS = "https://en.wikipedia.org/wiki/Richard_Dawkins"
 
-export enum GlobalCardName {
-    Unknown = "???",
+export enum GlobalDocTitle {
     Navigation = "Navigation",
     Hexalot = "Hexalot",
     Genes = "Genes",
@@ -20,15 +19,15 @@ export enum GlobalCardName {
     Darwin = "Darwin",
 }
 
-export interface IGlobalCard {
-    globalCardName: GlobalCardName
-    cardBody: JSX.Element
+export interface IGlobalDoc {
+    title: GlobalDocTitle
+    body: JSX.Element
 }
 
-export const GLOBAL_CARDS: IGlobalCard[] = [
+export const GLOBAL_DOCS: IGlobalDoc[] = [
     {
-        globalCardName: GlobalCardName.Navigation,
-        cardBody:
+        title: GlobalDocTitle.Navigation,
+        body:
             <CardBody>
                 <CardText>
                     You can zoom and move around with your mouse,
@@ -46,8 +45,8 @@ export const GLOBAL_CARDS: IGlobalCard[] = [
     }
     ,
     {
-        globalCardName: GlobalCardName.Hexalot,
-        cardBody:
+        title: GlobalDocTitle.Hexalot,
+        body:
             <CardBody>
                 <CardText>
                     A "hexalot" is a region of the island shaped like a honeycomb,
@@ -64,8 +63,8 @@ export const GLOBAL_CARDS: IGlobalCard[] = [
     }
     ,
     {
-        globalCardName: GlobalCardName.Genes,
-        cardBody:
+        title: GlobalDocTitle.Genes,
+        body:
             <CardBody>
                 <CardText>
                     The genes of a gotchi are not DNA like ours, but are instead sequences of dice rolls.
@@ -81,8 +80,8 @@ export const GLOBAL_CARDS: IGlobalCard[] = [
     }
     ,
     {
-        globalCardName: GlobalCardName.Evolution,
-        cardBody:
+        title: GlobalDocTitle.Evolution,
+        body:
             <CardBody>
                 <CardText>
                     A mutated gene is a near-perfect copy, but with some dice randomly tossed.
@@ -97,8 +96,8 @@ export const GLOBAL_CARDS: IGlobalCard[] = [
     }
     ,
     {
-        globalCardName: GlobalCardName.Mutation,
-        cardBody:
+        title: GlobalDocTitle.Mutation,
+        body:
             <CardBody>
                 <CardText>
                     A gotchi competes against mutations of itself, like toy bacteria might,
@@ -113,8 +112,8 @@ export const GLOBAL_CARDS: IGlobalCard[] = [
     }
     ,
     {
-        globalCardName: GlobalCardName.Darwin,
-        cardBody:
+        title: GlobalDocTitle.Darwin,
+        body:
             <CardBody>
                 <CardText>
                     Surviving galapagotchi are the ones who froze the right dice, according to

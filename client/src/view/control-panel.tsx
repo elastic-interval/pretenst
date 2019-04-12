@@ -7,25 +7,13 @@ import * as React from "react"
 import { Button, ButtonGroup, ButtonToolbar } from "reactstrap"
 import { Vector3 } from "three"
 
+import { ToolbarState } from "../docs/toolbar-state-docs"
 import { Island } from "../island/island"
 import { AppMode, Command, homeHexalotSelected, IAppState, isInTransit } from "../state/app-state"
 import { CommandHandler } from "../state/command-handler"
 import { Transition } from "../state/transition"
 
 import { HelpPanel } from "./help-panel"
-
-export enum IToolbarState {
-    AvailableSpot = "Available spot",
-    Planning = "Planning",
-    Evolving = "Evolving",
-    Fixing = "Fixing",
-    Foreign = "Foreign",
-    FreeSpot = "Free spot",
-    Home = "Home",
-    Pioneering = "Pioneering",
-    Riding = "Riding",
-    Unknown = "Unknown",
-}
 
 export interface IControlProps {
     appState: IAppState
@@ -34,7 +22,7 @@ export interface IControlProps {
 
 export interface IControlState {
     visible: boolean
-    toolbarState: IToolbarState
+    toolbarState: ToolbarState
     command?: Command
 }
 
@@ -47,7 +35,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
     constructor(props: IControlProps) {
         super(props)
         const visible = !isInTransit(props.appState)
-        const toolbarState = IToolbarState.Unknown
+        const toolbarState = ToolbarState.Unknown
         this.state = {visible, toolbarState}
     }
 
@@ -94,24 +82,24 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
             case AppMode.FixingIsland:
                 if (spot) {
                     if (singleHexalot && spot.coords === singleHexalot.centerSpot.coords) {
-                        return this.buttonToolbar(IToolbarState.Pioneering,
+                        return this.buttonToolbar(ToolbarState.Pioneering,
                             Command.ClaimHexalot,
                         )
                     }
                     if (spot.isCandidateHexalot(vacant) && !singleHexalot) {
                         if (appState.islandIsLegal) {
-                            return this.buttonToolbar(IToolbarState.AvailableSpot,
+                            return this.buttonToolbar(ToolbarState.AvailableSpot,
                                 Command.ClaimHexalot,
                             )
                         } else {
-                            return this.buttonToolbar(IToolbarState.Fixing,
+                            return this.buttonToolbar(ToolbarState.Fixing,
                                 Command.Terraform,
                                 Command.AbandonFix,
                             )
                         }
                     }
                     if (spot.free) {
-                        return this.buttonToolbar(IToolbarState.FreeSpot,
+                        return this.buttonToolbar(ToolbarState.FreeSpot,
                             Command.MakeLand,
                             Command.MakeWater,
                         )
@@ -130,7 +118,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
 
             case AppMode.Exploring:
                 if (homeHexalotSelected(appState)) {
-                    return this.buttonToolbar(IToolbarState.Home,
+                    return this.buttonToolbar(ToolbarState.Home,
                         Command.Plan,
                         Command.Ride,
                         Command.Evolve,
@@ -138,11 +126,11 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                     )
                 } else if (hexalot) {
                     if (!homeHexalot && hexalot.centerSpot.isCandidateHexalot(vacant)) {
-                        return this.buttonToolbar(IToolbarState.AvailableSpot,
+                        return this.buttonToolbar(ToolbarState.AvailableSpot,
                             Command.ClaimHexalot,
                         )
                     }
-                    return this.buttonToolbar(IToolbarState.Foreign,
+                    return this.buttonToolbar(ToolbarState.Foreign,
                         Command.Ride,
                         Command.Home,
                     )
@@ -156,27 +144,27 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
 
 
             case AppMode.Planning:
-                return this.buttonToolbar(IToolbarState.Planning,
+                return this.buttonToolbar(ToolbarState.Planning,
                     Command.Home,
                 )
 
 
             case AppMode.Evolving:
-                return this.buttonToolbar(IToolbarState.Evolving,
+                return this.buttonToolbar(ToolbarState.Evolving,
                     Command.Ride,
                     Command.Home,
                 )
 
 
             case AppMode.Riding:
-                return this.buttonToolbar(IToolbarState.Riding,
+                return this.buttonToolbar(ToolbarState.Riding,
                     Command.Home,
                     Command.Stop,
                 )
 
 
             case AppMode.Stopped:
-                return this.buttonToolbar(IToolbarState.Riding,
+                return this.buttonToolbar(ToolbarState.Riding,
                     Command.Home,
                     Command.Start,
                     Command.Evolve,
@@ -192,7 +180,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         }
     }
 
-    private buttonToolbar(toolbarState: IToolbarState, ...commands: Command[]): JSX.Element {
+    private buttonToolbar(toolbarState: ToolbarState, ...commands: Command[]): JSX.Element {
         setTimeout(() => {
             this.setState({toolbarState})
         })
@@ -215,7 +203,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         )
     }
 
-    private toggleHelp(toolbarState: IToolbarState): void {
+    private toggleHelp(toolbarState: ToolbarState): void {
         const appState = this.props.appState
         const helpVisible = !appState.helpVisible
         appState.updateState(new Transition(appState).withHelpVisible(helpVisible).appState)
