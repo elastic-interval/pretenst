@@ -57,7 +57,11 @@ export class LevelDBFlashStore implements IKeyValueStore {
         const date = new Date().toISOString()
         const valStr = JSON.stringify(value)
         const event = `${date} SET ${key} ${valStr}\n`
-        this.eventLog.write(event)
+        this.eventLog.write(event, (err) => {
+            if (err) {
+                console.error(`[STORE] Error writing event: ${JSON.stringify(err)}`)
+            }
+        })
         return this.db.set(key, value)
     }
 }
