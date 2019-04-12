@@ -53,7 +53,7 @@ export const TOOLBAR_STATE_DOCS: IToolbarStateDoc[] = [
         title: ToolbarState.Fixing,
         body:
             <CardText>
-                You have reserved a new hexalot, but this has created a bit of virgin territory at the edge
+                You have reserved a new hexalot, but this has created virgin territory at the edge
                 of the island which you still have to terraform.
             </CardText>,
     },
