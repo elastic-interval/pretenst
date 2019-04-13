@@ -42,14 +42,6 @@ export class CommandHandler {
         switch (command) {
 
 
-            case Command.SaveGenome:
-                if (homeHexalot && jockey) {
-                    const genomeData = jockey.gotchi.genomeData
-                    await appState.storage.setGenomeData(homeHexalot, genomeData)
-                }
-                return appState
-
-
             case Command.DiscardGenes:
                 if (homeHexalot) {
                     homeHexalot.genome = freshGenome()
@@ -144,7 +136,7 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.AbandonFix:
+            case Command.AbandonTerraforming:
                 const nonce = appState.nonce + 1
                 const orig = new Island(extractIslandData(island), island.gotchiFactory, appState.storage, nonce)
                 return (await trans.withSelectedSpot()).withIsland(orig).withAppMode(AppMode.Exploring).withRestructure.appState

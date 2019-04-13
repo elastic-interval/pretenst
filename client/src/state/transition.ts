@@ -107,7 +107,7 @@ export class Transition {
         if (islandIsLegal) {
             this.nextState = {...this.nextState, islandIsLegal}
         } else {
-            this.nextState = {...this.nextState, islandIsLegal, appMode: AppMode.FixingIsland}
+            this.nextState = {...this.nextState, islandIsLegal, appMode: AppMode.Terraforming}
         }
         return this
     }

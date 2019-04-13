@@ -32,14 +32,14 @@ export class ClickHandler {
         switch (appState.appMode) {
 
 
-            case AppMode.FixingIsland: // ===========================================================================
+            case AppMode.Terraforming: // ===========================================================================
                 return (await trans.withSelectedSpot(spot)).appState
 
 
             case AppMode.Exploring: // ===============================================================================
                 if (this.userId && !homeHexalot && appState.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     island.vacantHexalot = island.createHexalot(spot)
-                    return (await trans.withSelectedSpot(spot)).withAppMode(AppMode.FixingIsland).withRestructure.appState
+                    return (await trans.withSelectedSpot(spot)).withAppMode(AppMode.Terraforming).withRestructure.appState
                 }
                 if (hexalot) {
                     return (await trans.withSelectedSpot(hexalot.centerSpot)).appState

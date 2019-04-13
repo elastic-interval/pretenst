@@ -50,13 +50,13 @@ export interface IAppState {
 
 export enum AppMode {
     Approaching = "Approaching",
-    Planning = "Planning",
     Evolving = "Evolving",
     Exploring = "Exploring",
-    FixingIsland = "Fixing island",
+    Planning = "Planning",
     Retreating = "Retreating",
     Riding = "Riding",
     Stopped = "Stopped",
+    Terraforming = "Terraforming",
 }
 
 export function isInTransit(appState: IAppState): boolean {
@@ -64,7 +64,7 @@ export function isInTransit(appState: IAppState): boolean {
 }
 
 export enum Command {
-    AbandonFix = "Abandon fix",
+    AbandonTerraforming = "Abandon Terraforming",
     ClaimHexalot = "Claim hexalot",
     DiscardGenes = "Discard genes",
     Evolve = "Evolve",
@@ -73,7 +73,6 @@ export enum Command {
     MakeWater = "Make into water",
     Plan = "Plan",
     Ride = "Ride",
-    SaveGenome = "Save genome",
     Start = "Start",
     Stop = "Stop",
     Terraform = "Terraform",
