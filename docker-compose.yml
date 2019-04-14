@@ -4,7 +4,7 @@ services:
     image: postgres:11.2
     restart: always
     environment:
-      - POSTGRES_USER=gumby
+      - POSTGRES_USER=galapagotchi
       - POSTGRES_PASSWORD=goomslatch
     ports:
       - "5432:5432"

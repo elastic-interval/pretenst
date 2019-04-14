@@ -3,6 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Hexalot } from "./models/hexalot"
+import { Spot } from "./models/spot"
+
 export interface ICoords {
     x: number
     y: number
@@ -25,7 +28,7 @@ export interface ISpot {
 }
 
 export interface IHexalot {
-    readonly coords: ICoords
+    readonly center: ICoords
     readonly spots: ISpot[]
     readonly childHexalots: IHexalot[]
     readonly nonce: number
@@ -38,9 +41,9 @@ export interface IIsland {
     readonly hexalots: IHexalot[]
     readonly spots: ISpot[]
 
-    getOrCreateHexalot(parent: IHexalot | undefined, coords: ICoords): IHexalot
+    getOrCreateHexalot(coords: ICoords, parent?: IHexalot): Promise<IHexalot>
 
-    hexalotAroundSpot(spot: ISpot): IHexalot
+    hexalotAroundSpot(spot: ISpot): Promise<IHexalot>
 }
 
 export interface IslandData {
@@ -57,8 +60,8 @@ export function plus(a: ICoords, b: ICoords): ICoords {
     return {x: a.x + b.x, y: a.y + b.y}
 }
 
-export function findParentHexalot(spot: ISpot): IHexalot | undefined {
-    return spot.adjacentHexalots.reduce(greatestNonce, undefined)
+export function findParentHexalot(spot: Spot): Hexalot | undefined {
+    return spot.adjacentHexalots.reduce(greatestNonce, undefined) as (Hexalot | undefined)
 }
 
 export function isSpotLegal(spot: ISpot): boolean {
@@ -102,8 +105,8 @@ export function extractIslandData(island: IIsland): IslandData {
     } as IslandData
 }
 
-export function fillIsland(data: IslandData, island: IIsland): void {
-    let hexalot: IHexalot | undefined = island.getOrCreateHexalot(undefined, ZERO)
+export async function fillIsland(data: IslandData, island: IIsland): Promise<void> {
+    let hexalot: IHexalot | undefined = await island.getOrCreateHexalot(ZERO)
     const stepStack = data.hexalots.split("").reverse().map(stepChar => Number(stepChar))
     const hexalotStack: IHexalot[] = []
     while (stepStack.length > 0) {
@@ -124,7 +127,7 @@ export function fillIsland(data: IslandData, island: IIsland): void {
             case 5:
             case 6:
                 if (hexalot) {
-                    hexalot = island.hexalotAroundSpot(hexalot.spots[step])
+                    hexalot = await island.hexalotAroundSpot(hexalot.spots[step])
                 }
                 break
         }
@@ -157,8 +160,8 @@ export function calculateHexalotId(hexalot: IHexalot): void {
     hexalot.id = spotsToHexalotId(hexalot.spots)
 }
 
-export function findSpot(island: IIsland, coords: ICoords): ISpot | undefined {
-    return island.spots.find(p => equals(p.coords, coords))
+export function findSpot(island: IIsland, coords: ICoords): Spot | undefined {
+    return island.spots.find(p => equals(p.coords, coords)) as (Spot | undefined)
 }
 
 export function recalculateIsland(island: IIsland): void {
@@ -189,7 +192,7 @@ const STOP_STEP = 0
 const BRANCH_STEP = 7
 const ERROR_STEP = 8
 
-function spotsToHexalotId(spots: ISpot[]): string {
+export function spotsToHexalotId(spots: ISpot[]): string {
     const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
     const nybbleStrings = lit
         .map((l, index, array) => (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
@@ -198,11 +201,11 @@ function spotsToHexalotId(spots: ISpot[]): string {
     return nybbleChars.join("")
 }
 
-function greatestNonce(parent: IHexalot | undefined, candiate: IHexalot): IHexalot | undefined {
-    if (parent && parent.nonce >= candiate.nonce) {
+function greatestNonce(parent: IHexalot | undefined, candidate: IHexalot): IHexalot | undefined {
+    if (parent && parent.nonce >= candidate.nonce) {
         return parent
     }
-    return candiate
+    return candidate
 }
 
 function coordSort(a: ICoords, b: ICoords): number {
@@ -227,7 +230,7 @@ function generateOctalTreePattern(hexalot: IHexalot, steps: number[]): number[] 
     const remainingChildren = hexalot.childHexalots.filter(child => {
         return !child.visited
     }).map(h => {
-        const index = ringIndex(h.coords, hexalot.coords)
+        const index = ringIndex(h.center, hexalot.center)
         return {index, hexalot: h}
     }).sort((a, b) => {
         return a.index < b.index ? 1 : a.index > b.index ? -1 : 0

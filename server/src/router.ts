@@ -7,10 +7,11 @@ import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
 
-import { Island } from "./island"
 import { IslandIcosahedron } from "./island-icosahedron"
 import { extractIslandData } from "./island-logic"
-import { DataStore, IKeyValueStore } from "./store"
+import { Hexalot } from "./models/hexalot"
+import { Island } from "./models/island"
+import { User } from "./models/user"
 
 function validateRequest(req: Request, res: Response, next: NextFunction): void {
     const errors = validationResult(req)
@@ -29,27 +30,26 @@ const hexalotIDValidation = (idParam: ValidationChain) =>
         .custom(id => (parseInt(id[id.length - 1], 16) & 0x1) === 0)
 
 
-function checkUserIdCookie(store: DataStore): (req: Request, res: Response, next: NextFunction) => void {
-    return async (req, res, next) => {
-        if (!req.cookies) {
-            res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-            return
-        }
-        const userId = req.cookies.userId || "NOT_A_USER"
-        const ownedLots = await store.getOwnedLots(userId)
-        if (ownedLots === undefined) {
-            res.status(HttpStatus.UNAUTHORIZED).end("Need an access code. Ask Gerald")
-            return
-        }
-        res.locals.userId = userId
-        res.locals.ownedLots = ownedLots
-        next()
+async function loadUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+    if (!req.cookies) {
+        res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+        return
     }
+    const userId = req.cookies.userId
+    if (userId === undefined) {
+        res.status(HttpStatus.BAD_REQUEST).send("missing userId cookie")
+        return
+    }
+    const user = User.findOne(userId)
+    if (user === undefined) {
+        res.status(HttpStatus.UNAUTHORIZED)
+        return
+    }
+    res.locals.user = user
+    next()
 }
 
-export function createRouter(db: IKeyValueStore): Router {
-    const store = new DataStore(db)
-
+export function createRouter(): Router {
     const root = Router()
     const islandRoute = Router()
     const hexalotRoute = Router()
@@ -61,16 +61,8 @@ export function createRouter(db: IKeyValueStore): Router {
         .get("/islands", (req, res) => {
             res.json(IslandIcosahedron)
         })
-        .get("/owned-lots", checkUserIdCookie(store), (req, res) => {
-            res.json(res.locals.ownedLots)
-        })
-        .post("/_add-user", async (req, res) => {
-            if (req.hostname !== "localhost") {
-                res.sendStatus(HttpStatus.NOT_FOUND)
-                return
-            }
-            await store.addUser(req.body.userId)
-            res.sendStatus(HttpStatus.OK)
+        .get("/me", loadUser, (req, res) => {
+            res.json(res.locals.user)
         })
         .use(
             "/island/:islandName",
@@ -80,11 +72,12 @@ export function createRouter(db: IKeyValueStore): Router {
             ],
             async (req: Request, res: Response, next: NextFunction) => {
                 const {islandName} = req.params
-                if (!IslandIcosahedron[islandName]) {
+                const island = Island.findOne(islandName)
+                if (!island) {
                     res.status(404).end("Island doesn't exist")
                     return
                 }
-                res.locals.island = new Island(islandName, store, islandName)
+                res.locals.island = island
                 next()
             },
             islandRoute,
@@ -97,7 +90,12 @@ export function createRouter(db: IKeyValueStore): Router {
             ],
             async (req: Request, res: Response, next: NextFunction) => {
                 const {hexalotId} = req.params
-                res.locals.hexalotId = hexalotId
+                const hexalot = Hexalot.findOne(hexalotId)
+                if (!hexalot) {
+                    res.sendStatus(HttpStatus.NOT_FOUND)
+                    return
+                }
+                res.locals.hexalot = hexalot
                 next()
             },
             hexalotRoute,
@@ -105,17 +103,10 @@ export function createRouter(db: IKeyValueStore): Router {
 
     islandRoute
         .get("/", async (req, res) => {
-            let pattern = await store.getIslandData(res.locals.island.islandName)
-            const islandName = res.locals.island.islandName
-            if (!pattern) {
-                pattern = {
-                    name: islandName,
-                    hexalots: "",
-                    spots: "",
-                }
-            }
+            const island: Island = res.locals.island
+            const pattern = island.compressedData
             res.json({
-                name: islandName,
+                name: island.name,
                 ...pattern,
             })
         })
@@ -128,9 +119,9 @@ export function createRouter(db: IKeyValueStore): Router {
                 body("genomeData").isJSON(),
                 validateRequest,
             ],
-            checkUserIdCookie(store),
+            loadUser,
             async (req: Request, res: Response) => {
-                if (res.locals.ownedLots.length === 1) {
+                if (res.locals.user.ownedLots.length === 1) {
                     res.status(HttpStatus.FORBIDDEN).end("You have already claimed a lot.")
                     return
                 }
@@ -142,7 +133,7 @@ export function createRouter(db: IKeyValueStore): Router {
                 } = req.body
                 const userId = res.locals.userId
                 const island: Island = res.locals.island
-                await island.load()
+                await island.reload()
 
                 // TODO: probably gonna wanna mutex this
                 try {
@@ -158,8 +149,7 @@ export function createRouter(db: IKeyValueStore): Router {
     hexalotRoute
         .route("/genome-data")
         .get(async (req, res) => {
-            const genomeData = await store.getGenomeData(res.locals.hexalotId)
-            res.json(genomeData)
+            res.json(res.locals.hexalot.genomeData)
         })
         .post(
             [
@@ -167,12 +157,14 @@ export function createRouter(db: IKeyValueStore): Router {
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
+                const hexalot = res.locals.hexalot
                 const genomeData = req.body.genomeData
                 if (!genomeData.genes || !(genomeData.genes instanceof Array)) {
                     res.status(400).send("missing required genes array")
                     return
                 }
-                await store.setGenomeData(res.locals.hexalotId, genomeData)
+                hexalot.genomeData = genomeData
+                await hexalot.save()
                 res.sendStatus(HttpStatus.OK)
             },
         )
@@ -180,8 +172,7 @@ export function createRouter(db: IKeyValueStore): Router {
     hexalotRoute
         .route("/journey")
         .get(async (req, res) => {
-            const journey = await store.getJourney(res.locals.hexalotId)
-            res.json(journey)
+            res.json(res.locals.hexalot.journey)
         })
         .post(
             [
@@ -189,6 +180,7 @@ export function createRouter(db: IKeyValueStore): Router {
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
+                const hexalot = res.locals.hexalot
                 const journeyData = req.body.journeyData
                 if (!journeyData.hexalots) {
                     res.status(HttpStatus.BAD_REQUEST).end("missing required hexalot array field")
@@ -200,19 +192,15 @@ export function createRouter(db: IKeyValueStore): Router {
                         return
                     }
                 }
-                await store.setJourney(res.locals.hexalotId, journeyData)
+                hexalot.journey = journeyData
+                await hexalot.save()
                 res.sendStatus(HttpStatus.OK)
             },
         )
 
     hexalotRoute.get("/owner", async (req, res) => {
-        const lotId = res.locals.hexalotId
-        const owner = await store.getLotOwner(lotId)
-        if (owner === undefined) {
-            res.sendStatus(HttpStatus.NOT_FOUND)
-            return
-        }
-        res.json(owner)
+        const hexalot = res.locals.hexalot
+        res.json(hexalot.owner)
     })
 
     return root
