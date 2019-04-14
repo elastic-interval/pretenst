@@ -4,17 +4,21 @@
  */
 
 import * as React from "react"
+import { Alert } from "reactstrap"
 import { PerspectiveCamera } from "three"
 
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
+import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
 import { AppMode, AppTransition, IAppProps, IAppState, logString, updateDimensions } from "./state/app-state"
+import { Transition } from "./state/transition"
 import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
-import { Welcome } from "./view/welcome"
 import { WorldView } from "./view/world-view"
+
+const SINGLE_ISLAND = "rotterdam"
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
@@ -54,11 +58,11 @@ export class App extends React.Component<IAppProps, IAppState> {
                     throw new Error(`Same nonce! ${appState.nonce}`)
                 }
                 self.appStateNonce = appState.nonce
-                const homeHexalot = appState.homeHexalot
                 console.log(logString(appState))
-                if (homeHexalot) {
-                    const spotCenters = homeHexalot.spots.map(spot => spot.center)
-                    const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
+                const hexalot = appState.selectedHexalot
+                if (hexalot) {
+                    const spotCenters = hexalot.spots.map(spot => spot.center)
+                    const surface = hexalot.spots.map(spot => spot.surface === Surface.Land)
                     self.fabricKernel.setHexalot(spotCenters, surface)
                 }
                 self.setState(appState)
@@ -68,13 +72,25 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
-        this.props.storage.getOwnedLots().then(ownedLots => {
-            if (!ownedLots) {
-                this.setState({ownedLots: []})
-                return
-            }
-            this.setState({ownedLots})
-        })
+        if (this.props.userId) {
+            this.props.storage.getOwnedLots().then(ownedLots => {
+                if (ownedLots && ownedLots.length > 0) {
+                    this.setState({ownedLots})
+                    setTimeout(() => {
+                        this.fetchIsland(SINGLE_ISLAND, ownedLots[0])
+                    }, 1000) // TODO: just to simulate delay
+                } else {
+                    this.setState({ownedLots: []})
+                    setTimeout(() => {
+                        this.fetchIsland(SINGLE_ISLAND)
+                    }, 1000) // TODO: just to simulate delay
+                }
+            })
+        } else {
+            setTimeout(() => {
+                this.fetchIsland(SINGLE_ISLAND)
+            }, 1000) // TODO: just to simulate delay
+        }
     }
 
     public componentWillUnmount(): void {
@@ -84,12 +100,13 @@ export class App extends React.Component<IAppProps, IAppState> {
     public render(): JSX.Element {
         if (!this.state.island) {
             return (
-                <Welcome
-                    userId={this.props.userId}
-                    storage={this.props.storage}
-                    fabricKernel={this.fabricKernel}
-                    appState={this.state}
-                />
+                <div className="welcome">
+                    <h1>Galapagotchi</h1>
+                    <hr/>
+                    <img alt="logo" src="logo.png"/>
+                    <hr/>
+                    <Alert color="secondary">Loading island "{SINGLE_ISLAND}"...</Alert>
+                </div>
             )
         }
         return (
@@ -107,4 +124,26 @@ export class App extends React.Component<IAppProps, IAppState> {
         )
     }
 
+    // Ok go ===========================================================================================================
+
+    private async fetchIsland(islandName: string, homeHexalotId?: string): Promise<void> {
+        const islandData = await this.props.storage.getIslandData(islandName)
+        if (!islandData) {
+            return
+        }
+        const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
+        const appState = new Transition(this.state)
+            .withIsland(island)
+            .withAppMode(AppMode.Approaching)
+            .withIslandIsLegal(false)
+            .withRestructure
+            .appState
+        if (!homeHexalotId) {
+            this.state.updateState(appState)
+        } else {
+            const homeHexalot = island.findHexalot(homeHexalotId)
+            const transition = await new Transition(appState).withHomeHexalot(homeHexalot)
+            this.state.updateState(transition.withRestructure.appState)
+        }
+    }
 }
