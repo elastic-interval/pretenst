@@ -76,7 +76,7 @@ export function createRouter(): Router {
             ],
             async (req: Request, res: Response, next: NextFunction) => {
                 const {islandName} = req.params
-                const island = await Island.findOne(islandName)
+                const island = await Island.findOne(islandName, {relations: ["hexalots", "spots"]})
                 if (!island) {
                     res.status(404).end("Island doesn't exist")
                     return
@@ -125,7 +125,8 @@ export function createRouter(): Router {
             ],
             loadUser,
             async (req: Request, res: Response) => {
-                if (res.locals.user.ownedLots.length === 1) {
+                const user = res.locals.user
+                if (user.ownedLots.length === 1) {
                     res.status(HttpStatus.FORBIDDEN).end("You have already claimed a lot.")
                     return
                 }

@@ -1,5 +1,4 @@
-import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
-import { OneToOne } from "typeorm/decorator/relations/OneToOne"
+import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
 
 import { IGenomeData } from "../../../client/src/genetics/genome"
 import { IHexalot } from "../island-logic"
@@ -17,7 +16,7 @@ export class Hexalot extends BaseEntity implements IHexalot {
     @ManyToOne(type => Hexalot)
     public parent: Hexalot
 
-    @OneToOne(type => User)
+    @ManyToOne(type => User)
     public owner: User
 
     @Column(type => Coords)
@@ -38,8 +37,9 @@ export class Hexalot extends BaseEntity implements IHexalot {
     @ManyToOne(type => Island)
     public island: Island
 
-    public visited: boolean
-
-    @OneToMany(type => Hexalot, lot => lot.parent)
+    @ManyToMany(type => Hexalot, lot => lot.parent)
+    @JoinColumn()
     public childHexalots: Hexalot[]
+
+    public visited: boolean
 }
