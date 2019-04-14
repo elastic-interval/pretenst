@@ -1,0 +1,20 @@
+version: "3.7"
+services:
+  db:
+    image: postgres:11.2
+    restart: always
+    environment:
+      - POSTGRES_USER=gumby
+      - POSTGRES_PASSWORD=goomslatch
+    ports:
+      - "5432:5432"
+
+  server:
+    build: server
+    environment:
+      - POSTGRES_URI=db
+    links:
+      - db
+    ports:
+      - "8000:8000"
+
