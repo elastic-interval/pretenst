@@ -9,7 +9,7 @@ import { Vector3 } from "three"
 
 import { ToolbarState } from "../docs/toolbar-state-docs"
 import { Island } from "../island/island"
-import { AppMode, Command, homeHexalotSelected, IAppState, isInTransit } from "../state/app-state"
+import { AppMode, Command, homeHexalotSelected, IAppState } from "../state/app-state"
 import { CommandHandler } from "../state/command-handler"
 import { Transition } from "../state/transition"
 
@@ -34,13 +34,13 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
 
     constructor(props: IControlProps) {
         super(props)
-        const visible = !isInTransit(props.appState)
+        const visible = props.appState.appMode !== AppMode.Flying
         const toolbarState = ToolbarState.Unknown
         this.state = {visible, toolbarState}
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IControlProps>): void {
-        const visible = !isInTransit(nextProps.appState)
+        const visible = nextProps.appState.appMode !== AppMode.Flying
         this.setState({visible})
     }
 

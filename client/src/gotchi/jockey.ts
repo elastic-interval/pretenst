@@ -28,6 +28,10 @@ export class Jockey {
         this.leg = leg
     }
 
+    public get height(): number {
+        return this.gotchi.fabric.midpoint.y
+    }
+
     public get isResting(): boolean {
         return this.gotchi.isResting
     }

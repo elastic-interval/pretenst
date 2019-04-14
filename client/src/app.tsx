@@ -15,7 +15,8 @@ import { Surface } from "./island/island-logic"
 import { AppMode, AppTransition, IAppProps, IAppState, logString, updateDimensions } from "./state/app-state"
 import { Transition } from "./state/transition"
 import { ControlPanel } from "./view/control-panel"
-import { INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
+import { INITIAL_DISTANCE } from "./view/flight"
+import { HexalotTarget, IslandTarget, UnknownTarget } from "./view/flight-target"
 import { WorldView } from "./view/world-view"
 
 const SINGLE_ISLAND = "rotterdam"
@@ -32,12 +33,13 @@ export class App extends React.Component<IAppProps, IAppState> {
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         const width = window.innerWidth
         const height = window.innerHeight
-        this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE + MINIMUM_DISTANCE)
+        this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)
         const helpVisible = false
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
-        const mode = AppMode.Approaching
+        const mode = AppMode.Flying
+        const flightTarget = UnknownTarget()
         const self = this
         this.state = {
             helpVisible,
@@ -46,6 +48,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             left,
             top,
             ownedLots,
+            flightTarget,
             nonce: 0,
             appMode: mode,
             islandIsLegal: false,
@@ -76,20 +79,14 @@ export class App extends React.Component<IAppProps, IAppState> {
             this.props.storage.getOwnedLots().then(ownedLots => {
                 if (ownedLots && ownedLots.length > 0) {
                     this.setState({ownedLots})
-                    setTimeout(() => {
-                        this.fetchIsland(SINGLE_ISLAND, ownedLots[0])
-                    }, 1000) // TODO: just to simulate delay
+                    this.fetchIsland(SINGLE_ISLAND, ownedLots[0])
                 } else {
                     this.setState({ownedLots: []})
-                    setTimeout(() => {
-                        this.fetchIsland(SINGLE_ISLAND)
-                    }, 1000) // TODO: just to simulate delay
+                    this.fetchIsland(SINGLE_ISLAND)
                 }
             })
         } else {
-            setTimeout(() => {
-                this.fetchIsland(SINGLE_ISLAND)
-            }, 1000) // TODO: just to simulate delay
+            this.fetchIsland(SINGLE_ISLAND)
         }
     }
 
@@ -132,16 +129,16 @@ export class App extends React.Component<IAppProps, IAppState> {
             return
         }
         const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
+        const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
+        const flightTarget = homeHexalot ? HexalotTarget(homeHexalot, AppMode.Exploring) : IslandTarget(island, AppMode.Exploring)
         const appState = new Transition(this.state)
-            .withIsland(island)
-            .withAppMode(AppMode.Approaching)
+            .withIsland(island, flightTarget)
             .withIslandIsLegal(false)
             .withRestructure
             .appState
         if (!homeHexalotId) {
             this.state.updateState(appState)
         } else {
-            const homeHexalot = island.findHexalot(homeHexalotId)
             const transition = await new Transition(appState).withHomeHexalot(homeHexalot)
             this.state.updateState(transition.withRestructure.appState)
         }

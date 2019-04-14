@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
-import { Mesh, PerspectiveCamera, Vector3 } from "three"
+import { Mesh, PerspectiveCamera } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
 import { ITERATIONS_PER_TICK } from "../body/fabric"
@@ -34,7 +34,6 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
     private appStateNonce = -1
     private flight: Flight
     private spotSelector: SpotSelector
-    private target?: Vector3
 
     constructor(props: IWorldProps) {
         super(props)
@@ -58,16 +57,8 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
         const props = this.props
         const element: HTMLElement | undefined = document.getElementById("gotchi-view") || undefined
         if (element) {
-            const appState = props.appState
-            if (appState.homeHexalot) {
-                this.target = appState.homeHexalot.seed
-            } else if (appState.island) {
-                this.target = appState.island.midpoint
-            } else {
-                this.target = new Vector3()
-            }
             const orbitControls = new OrbitControls(props.perspectiveCamera, element)
-            this.flight = new Flight(orbitControls, this.target)
+            this.flight = new Flight(orbitControls)
             this.flight.setupCamera()
             this.beginAnimating()
         }
@@ -89,15 +80,6 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                 setTimeout(() => { // todo: this must be a cheat
                     this.setState({iterating})
                 })
-            }
-            const selectedHexalot = appState.selectedHexalot
-            const selectedSpot = appState.selectedSpot
-            if (selectedHexalot) {
-                this.target = selectedHexalot.seed
-            } else if (selectedSpot) {
-                this.target = selectedSpot.center
-            } else {
-                this.target = island.midpoint
             }
         }
         return (
@@ -161,7 +143,6 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                     const iterating = this.state.iterating
                     if (jockey) {
                         jockey.gotchi.iterate(ITERATIONS_PER_TICK)
-                        this.target = jockey.gotchi.midpoint
                         if (!iterating) {
                             this.setState({iterating: true})
                         }
@@ -169,12 +150,11 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                     const evolution = appState.evolution
                     if (evolution) {
                         evolution.iterate()
-                        this.target = evolution.midpoint
                         if (!iterating) {
                             this.setState({iterating: true})
                         }
                     }
-                    this.flight.update(appState, this.target)
+                    this.flight.update(appState)
                     if (iterating) {
                         this.forceUpdate()
                     }
