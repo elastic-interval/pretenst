@@ -27,7 +27,7 @@ export class Island extends BaseEntity {
     @PrimaryColumn()
     public name: string
 
-    @Column("jsonb", {nullable: true})
+    @Column("jsonb", {default: {hexalots: "", spots: ""}})
     public compressedData: IslandData
 
     @OneToMany(type => Hexalot, lot => lot.island)

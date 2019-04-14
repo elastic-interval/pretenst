@@ -40,13 +40,17 @@ async function loadUser(req: Request, res: Response, next: NextFunction): Promis
         res.status(HttpStatus.BAD_REQUEST).send("missing userId cookie")
         return
     }
-    const user = User.findOne(userId)
-    if (user === undefined) {
-        res.status(HttpStatus.UNAUTHORIZED)
-        return
+    try {
+        const user = await User.findOne(userId)
+        if (user === undefined) {
+            res.sendStatus(HttpStatus.UNAUTHORIZED)
+            return
+        }
+        res.locals.user = user
+        next()
+    } catch (e) {
+        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(e)
     }
-    res.locals.user = user
-    next()
 }
 
 export function createRouter(): Router {
@@ -72,7 +76,7 @@ export function createRouter(): Router {
             ],
             async (req: Request, res: Response, next: NextFunction) => {
                 const {islandName} = req.params
-                const island = Island.findOne(islandName)
+                const island = await Island.findOne(islandName)
                 if (!island) {
                     res.status(404).end("Island doesn't exist")
                     return
@@ -104,10 +108,10 @@ export function createRouter(): Router {
     islandRoute
         .get("/", async (req, res) => {
             const island: Island = res.locals.island
-            const pattern = island.compressedData
+            const data = island.compressedData
             res.json({
                 name: island.name,
-                ...pattern,
+                ...data,
             })
         })
         .post(
