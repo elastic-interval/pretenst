@@ -5,3 +5,15 @@
  */
 
 export type HexalotID = string
+
+
+export enum Surface {
+    Unknown = "unknown",
+    Land = "land",
+    Water = "water",
+}
+
+export interface IslandGeography {
+    hexalots: string
+    spots: string,
+}

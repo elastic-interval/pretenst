@@ -1,6 +1,5 @@
-import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
-
-import { IHexalot } from "../island-logic"
+import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
+import { HexalotID } from "../types"
 
 import { Coords } from "./coords"
 import { Island } from "./island"
@@ -8,9 +7,9 @@ import { Spot } from "./spot"
 import { User } from "./user"
 
 @Entity()
-export class Hexalot extends BaseEntity implements IHexalot {
+export class Hexalot {
     @PrimaryColumn({length: 32})
-    public id: string
+    public id: HexalotID
 
     @ManyToOne(type => Island)
     public island: Island

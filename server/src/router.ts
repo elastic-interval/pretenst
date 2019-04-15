@@ -6,11 +6,11 @@
 import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
+import { getCustomRepository, getManager } from "typeorm"
 
-import { IslandIcosahedron } from "./island-icosahedron"
-import { Hexalot } from "./models/hexalot"
+import { Coords } from "./models/coords"
 import { Island } from "./models/island"
-import { User } from "./models/user"
+import { Repository } from "./repository"
 
 function validateRequest(req: Request, res: Response, next: NextFunction): void {
     const errors = validationResult(req)
@@ -28,41 +28,37 @@ const hexalotIDValidation = (idParam: ValidationChain) =>
         .isLength({max: 32, min: 32})
         .custom(id => (parseInt(id[id.length - 1], 16) & 0x1) === 0)
 
-
-async function loadUser(req: Request, res: Response, next: NextFunction): Promise<void> {
-    if (!req.cookies) {
-        res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-        return
-    }
-    const userId = req.cookies.userId
-    if (userId === undefined) {
-        res.status(HttpStatus.BAD_REQUEST).send("missing userId cookie")
-        return
-    }
-    try {
-        const user = await User.findOne(userId, {relations: ["ownedLots"]})
-        if (user === undefined) {
-            res.sendStatus(HttpStatus.UNAUTHORIZED)
-            return
-        }
-        res.locals.user = user
-        next()
-    } catch (e) {
-        res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(e)
-    }
-}
-
 export function createRouter(): Router {
     const root = Router()
     const islandRoute = Router()
     const hexalotRoute = Router()
 
+    const repository = getCustomRepository(Repository)
+
+    async function loadUser(req: Request, res: Response, next: NextFunction): Promise<void> {
+        if (!req.cookies) {
+            res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+            return
+        }
+        const userId = req.cookies.userId
+        if (userId === undefined) {
+            res.status(HttpStatus.BAD_REQUEST).send("missing userId cookie")
+            return
+        }
+        try {
+            res.locals.user = await repository.findUser(userId)
+            next()
+        } catch (e) {
+            res.status(HttpStatus.UNAUTHORIZED).send(e)
+        }
+    }
+
     root
         .get("/", (req, res) => {
-            res.end("OK")
+            res.sendStatus(HttpStatus.OK)
         })
-        .get("/islands", (req, res) => {
-            res.json(IslandIcosahedron)
+        .get("/islands", async (req, res) => {
+            res.json(await repository.getAllIslands())
         })
         .get("/me", loadUser, (req, res) => {
             res.json(res.locals.user)
@@ -75,13 +71,12 @@ export function createRouter(): Router {
             ],
             async (req: Request, res: Response, next: NextFunction) => {
                 const {islandName} = req.params
-                const island = await Island.findOne(islandName, {relations: ["hexalots", "spots"]})
-                if (!island) {
-                    res.status(404).end("Island doesn't exist")
-                    return
+                try {
+                    res.locals.island = await repository.findIsland(islandName)
+                    next()
+                } catch (e) {
+                    res.sendStatus(HttpStatus.NOT_FOUND)
                 }
-                res.locals.island = island
-                next()
             },
             islandRoute,
         )
@@ -93,13 +88,12 @@ export function createRouter(): Router {
             ],
             async (req: Request, res: Response, next: NextFunction) => {
                 const {hexalotId} = req.params
-                const hexalot = Hexalot.findOne(hexalotId)
-                if (!hexalot) {
+                try {
+                    res.locals.hexalot = await repository.findHexalot(hexalotId)
+                    next()
+                } catch (e) {
                     res.sendStatus(HttpStatus.NOT_FOUND)
-                    return
                 }
-                res.locals.hexalot = hexalot
-                next()
             },
             hexalotRoute,
         )
@@ -107,7 +101,7 @@ export function createRouter(): Router {
     islandRoute
         .get("/", async (req, res) => {
             const island: Island = res.locals.island
-            const data = island.compressedData
+            const data = island.geography
             res.json({
                 name: island.name,
                 ...data,
@@ -125,27 +119,34 @@ export function createRouter(): Router {
             loadUser,
             async (req: Request, res: Response) => {
                 const user = res.locals.user
-                if (user.ownedLots.length === 1) {
-                    res.status(HttpStatus.FORBIDDEN).end("You have already claimed a lot.")
-                    return
-                }
+                const island: Island = res.locals.island
                 const {
                     x,
                     y,
                     genomeData,
                     id,
                 } = req.body
-                const island: Island = res.locals.island
 
-                // TODO: probably gonna wanna mutex this
+                if (user.ownedLots.length === 1) {
+                    res.status(HttpStatus.FORBIDDEN).end("You have already claimed a lot.")
+                    return
+                }
+
                 try {
-                    await island.claimHexalot(user, {x, y}, id, genomeData)
+                    await getManager().transaction(manager =>
+                        manager.getCustomRepository(Repository).claimHexalot({
+                            owner: user,
+                            center: new Coords(x, y),
+                            id,
+                            island,
+                            genomeData,
+                        }),
+                    )
                 } catch (err) {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return
                 }
-                await island.reload()
-                res.json(island.compressedData)
+                res.json(island)
             },
         )
 
@@ -167,7 +168,7 @@ export function createRouter(): Router {
                     return
                 }
                 hexalot.genomeData = genomeData
-                await hexalot.save()
+                await repository.save([hexalot])
                 res.sendStatus(HttpStatus.OK)
             },
         )
@@ -196,7 +197,7 @@ export function createRouter(): Router {
                     }
                 }
                 hexalot.journey = journeyData
-                await hexalot.save()
+                await repository.save([hexalot])
                 res.sendStatus(HttpStatus.OK)
             },
         )
