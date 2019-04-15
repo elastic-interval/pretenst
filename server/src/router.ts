@@ -136,7 +136,6 @@ export function createRouter(): Router {
                     id,
                 } = req.body
                 const island: Island = res.locals.island
-                await island.reload()
 
                 // TODO: probably gonna wanna mutex this
                 try {
@@ -145,6 +144,7 @@ export function createRouter(): Router {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return
                 }
+                await island.reload()
                 res.json(island.compressedData)
             },
         )

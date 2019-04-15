@@ -30,12 +30,11 @@ export class Island extends BaseEntity {
     @Column("jsonb", {default: {hexalots: "", spots: ""}})
     public compressedData: IslandData
 
-    @OneToMany(type => Hexalot, lot => lot.island, {cascade: true})
+    @OneToMany(type => Hexalot, lot => lot.island, {cascade: true, eager: true})
     public hexalots: Hexalot[]
 
-    @OneToMany(type => Spot, spot => spot.island, {cascade: true})
+    @OneToMany(type => Spot, spot => spot.island, {cascade: true, eager: true})
     public spots: Spot[]
-
 
     private db?: EntityManager
 
@@ -67,10 +66,12 @@ export class Island extends BaseEntity {
                 spot.surface = surfaces[i]
             })
             user.ownedLots.push(hexalot)
-            this.compressedData = await extractIslandData(this)
-            await db.save([this, user])
+            await db.save([this, user, hexalot, ...hexalot.spots])
             this.db = undefined
         })
+        await this.reload()
+        this.compressedData = await extractIslandData(this)
+        await this.save()
     }
 
     public async getOrCreateHexalot(coords: ICoords, parent?: Hexalot): Promise<Hexalot> {
@@ -106,12 +107,14 @@ export class Island extends BaseEntity {
     }
 
     private async getOrCreateSpot(coords: ICoords): Promise<Spot> {
-        const existing = await Spot.findOne({where: {coords, island: this}})
+        const existing = await Spot.findOne({
+            where: {coords, island: this},
+        })
         if (existing) {
             return existing
         }
         const spot = Spot.create({
-            island: this,
+            island: {name: this.name},
             coords,
         })
         await this.db!.save(spot)

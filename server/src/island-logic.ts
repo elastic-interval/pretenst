@@ -74,15 +74,15 @@ export async function isSpotLegal(spot: ISpot): Promise<boolean> {
     let waterCount = 0
     const adjacentSpots = await spot.getAdjacentSpots()
     adjacentSpots.forEach(adjacent => {
-            switch (adjacent.surface) {
-                case Surface.Land:
-                    landCount++
-                    break
-                case Surface.Water:
-                    waterCount++
-                    break
-            }
-        })
+        switch (adjacent.surface) {
+            case Surface.Land:
+                landCount++
+                break
+            case Surface.Water:
+                waterCount++
+                break
+        }
+    })
     switch (spot.surface) {
         case Surface.Land:
             // land must be connected and either on the edge or have adjacent at least 2 land and 1 water
@@ -145,9 +145,9 @@ export async function recalculateIsland(island: IIsland): Promise<void> {
 
 // =====================================================================================================================
 
-// const STOP_STEP = 0
-// const BRANCH_STEP = 7
-// const ERROR_STEP = 8
+const STOP_STEP = 0
+const BRANCH_STEP = 7
+const ERROR_STEP = 8
 
 export function spotsToHexalotId(spots: ISpot[]): string {
     const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
@@ -172,40 +172,43 @@ function coordSort(a: ICoords, b: ICoords): number {
 function sortSpotsOnCoord(a: ISpot, b: ISpot): number {
     return coordSort(a.coords, b.coords)
 }
-//
-// function ringIndex(coords: ICoords, origin: ICoords): number {
-//     const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
-//     for (let index = 1; index <= 6; index++) {
-//         if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
-//             return index
-//         }
-//     }
-//     return 0
-// }
 
-// function generateOctalTreePattern(hexalot: IHexalot, steps: number[]): number[] {
-//     const remainingChildren = hexalot.childHexalots.filter(child => {
-//         return !child.visited
-//     }).map(h => {
-//         const index = ringIndex(h.center, hexalot.center)
-//         return {index, hexalot: h}
-//     }).sort((a, b) => {
-//         return a.index < b.index ? 1 : a.index > b.index ? -1 : 0
-//     })
-//     if (remainingChildren.length > 0) {
-//         for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
-//             if (remainingChildren.length > 0) {
-//                 steps.push(BRANCH_STEP)
-//             }
-//             steps.push(child.index > 0 ? child.index : ERROR_STEP)
-//             generateOctalTreePattern(child.hexalot, steps)
-//         }
-//     } else {
-//         steps.push(STOP_STEP)
-//     }
-//     hexalot.visited = true
-//     return steps
-// }
+function ringIndex(coords: ICoords, origin: ICoords): number {
+    const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
+    for (let index = 1; index <= 6; index++) {
+        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
+            return index
+        }
+    }
+    return 0
+}
+
+function generateOctalTreePattern(hexalot: IHexalot, steps: number[], visited: { [id: string]: boolean }): number[] {
+    const remainingChildren = (hexalot.childHexalots || [])
+        .filter(child => {
+            return !visited[child.id]
+        })
+        .map(h => {
+            const index = ringIndex(h.center, hexalot.center)
+            return {index, hexalot: h}
+        })
+        .sort((a, b) => {
+            return a.index < b.index ? 1 : a.index > b.index ? -1 : 0
+        })
+    if (remainingChildren.length > 0) {
+        for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
+            if (remainingChildren.length > 0) {
+                steps.push(BRANCH_STEP)
+            }
+            steps.push(child.index > 0 ? child.index : ERROR_STEP)
+            generateOctalTreePattern(child.hexalot, steps, visited)
+        }
+    } else {
+        steps.push(STOP_STEP)
+    }
+    visited[hexalot.id] = true
+    return steps
+}
 
 function padRightTo4(s: string): string {
     return s.length < 4 ? padRightTo4(s + "0") : s
@@ -230,9 +233,7 @@ function hexalotTreeString(hexalots: IHexalot[]): string {
     if (!root) {
         return ""
     }
-    // hexalots.forEach(hexalot => hexalot.visited = false)
-    return ""
-    // return generateOctalTreePattern(root, []).join("")
+    return generateOctalTreePattern(root, [], {}).join("")
 }
 
 export const HEXALOT_SHAPE = [
