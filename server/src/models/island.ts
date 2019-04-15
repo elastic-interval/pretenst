@@ -17,6 +17,7 @@ import {
     ZERO,
 } from "../island-logic"
 import { HexalotID } from "../types"
+
 import { Hexalot } from "./hexalot"
 import { Spot } from "./spot"
 import { User } from "./user"
@@ -88,9 +89,8 @@ export class Island extends BaseEntity {
     // ================================================================================================
 
     private async createHexalot(center: ICoords, parent?: Hexalot): Promise<Hexalot> {
-        const spots = await Promise.all(
-            HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, center))),
-        )
+        const promises = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, center)))
+        const spots = await Promise.all(promises)
         const id = spotsToHexalotId(spots)
         const nonce = parent ? parent.nonce + 1 : 0
         const hexalot = Hexalot.create({

@@ -15,7 +15,7 @@ export class Hexalot extends BaseEntity implements IHexalot {
     @ManyToOne(type => Island)
     public island: Island
 
-    @OneToMany(type => Spot, spot => spot.hexalot)
+    @OneToMany(type => Spot, spot => spot.hexalot, {cascade: true})
     public spots: Spot[]
 
     @ManyToOne(type => User, {nullable: true})
