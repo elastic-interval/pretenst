@@ -1,11 +1,11 @@
-import { BaseEntity, OneToMany, PrimaryColumn } from "typeorm"
+import { BaseEntity, EntityManager, getManager, OneToMany, PrimaryColumn } from "typeorm"
 import { Column } from "typeorm/decorator/columns/Column"
 import { Entity } from "typeorm/decorator/entity/Entity"
 
 import { IGenomeData } from "../../../client/src/genetics/genome"
 import {
-    ADJACENT,
     equals,
+    extractIslandData,
     findParentHexalot,
     findSpot,
     HEXALOT_SHAPE,
@@ -17,7 +17,6 @@ import {
     ZERO,
 } from "../island-logic"
 import { HexalotID } from "../types"
-
 import { Hexalot } from "./hexalot"
 import { Spot } from "./spot"
 import { User } from "./user"
@@ -30,47 +29,51 @@ export class Island extends BaseEntity {
     @Column("jsonb", {default: {hexalots: "", spots: ""}})
     public compressedData: IslandData
 
-    @OneToMany(type => Hexalot, lot => lot.island)
+    @OneToMany(type => Hexalot, lot => lot.island, {cascade: true})
     public hexalots: Hexalot[]
 
-    @OneToMany(type => Spot, spot => spot.hexalot.island)
+    @OneToMany(type => Spot, spot => spot.island, {cascade: true})
     public spots: Spot[]
 
+
+    private db?: EntityManager
+
     public async claimHexalot(user: User, center: ICoords, lotID: HexalotID, genomeData: IGenomeData): Promise<void> {
-        const existingLot = await Hexalot.findOne(lotID)
-        if (existingLot !== undefined) {
-            throw new Error("hexalot already claimed")
-        }
-        let hexalot: Hexalot
-        if (this.hexalots.length === 0) {
-            // GENESIS LOT
-            if (!equals(center, ZERO)) {
-                throw new Error("genesis lot must have coords 0,0")
+        await getManager().transaction(async db => {
+            this.db = db
+            const existingLot = await Hexalot.findOne(lotID)
+            if (existingLot !== undefined) {
+                throw new Error("hexalot already claimed")
             }
-            hexalot = await this.getOrCreateHexalot(ZERO)
-        } else {
-            const centerSpot = findSpot(this, center)
-            if (!centerSpot) {
-                throw new Error("center spot doesn't exist")
+            let hexalot: Hexalot
+            if (this.hexalots.length === 0) {
+                // GENESIS LOT
+                if (!equals(center, ZERO)) {
+                    throw new Error("genesis lot must have coords 0,0")
+                }
+                hexalot = await this.createHexalot(ZERO)
+            } else {
+                const centerSpot = findSpot(this, center)
+                if (!centerSpot) {
+                    throw new Error("center spot doesn't exist")
+                }
+                hexalot = await this.hexalotAroundSpot(centerSpot)
             }
-            hexalot = await this.hexalotAroundSpot(centerSpot)
-        }
-        hexalot.id = lotID
-        hexalot.genomeData = genomeData
-        const surfaces = hexalotIDToSurfaces(lotID)
-        hexalot.spots.forEach((spot, i) => {
-            spot.surface = surfaces[i]
+            hexalot.id = lotID
+            hexalot.genomeData = genomeData
+            const surfaces = hexalotIDToSurfaces(lotID)
+            hexalot.spots.forEach((spot, i) => {
+                spot.surface = surfaces[i]
+            })
+            user.ownedLots.push(hexalot)
+            this.compressedData = await extractIslandData(this)
+            await db.save([this, user])
+            this.db = undefined
         })
-        await hexalot.save()
-
-        user.ownedLots.push(hexalot)
-        await user.save()
-
-        await this.save()
     }
 
     public async getOrCreateHexalot(coords: ICoords, parent?: Hexalot): Promise<Hexalot> {
-        const existing = this.hexalots.find(existingHexalot => equals(existingHexalot.center, coords))
+        const existing = await this.db!.findOne(Hexalot, {where: {center: coords, island: this}})
         if (existing) {
             return existing
         }
@@ -78,52 +81,43 @@ export class Island extends BaseEntity {
     }
 
     public async hexalotAroundSpot(spot: Spot): Promise<Hexalot> {
-        return this.getOrCreateHexalot(spot.coords, findParentHexalot(spot))
+        const parent = await findParentHexalot(spot) as (Hexalot | undefined)
+        return this.getOrCreateHexalot(spot.coords, parent)
     }
 
     // ================================================================================================
 
-    private async createHexalot(coords: ICoords, parent?: Hexalot): Promise<Hexalot> {
+    private async createHexalot(center: ICoords, parent?: Hexalot): Promise<Hexalot> {
         const spots = await Promise.all(
-            HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords))),
+            HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, center))),
         )
+        const id = spotsToHexalotId(spots)
+        const nonce = parent ? parent.nonce + 1 : 0
         const hexalot = Hexalot.create({
-            id: spotsToHexalotId(spots),
-            nonce: parent ? parent.nonce + 1 : 0,
-            center: coords,
-            childHexalots: [],
-            visited: false,
+            island: this,
+            nonce,
+            id,
+            center,
+            parent,
             spots,
         })
-        for (const adjacent of ADJACENT) {
-            const adjacentSpot = await this.getOrCreateSpot(plus(coords, adjacent))
-            adjacentSpot.adjacentHexalots.push(hexalot)
-        }
-        if (parent) {
-            parent.childHexalots.push(hexalot)
-        }
-        this.hexalots.push(hexalot)
-        await hexalot.save()
+        await this.db!.save(hexalot)
         return hexalot
     }
 
     private async getOrCreateSpot(coords: ICoords): Promise<Spot> {
-        const existing = findSpot(this, coords)
+        const existing = await Spot.findOne({where: {coords, island: this}})
         if (existing) {
             return existing
         }
-        const newSpot = Spot.create({
+        const spot = Spot.create({
+            island: this,
             coords,
-            surface: Surface.Unknown,
-            adjacentSpots: [],
-            adjacentHexalots: [],
-            connected: false,
         })
-        await newSpot.save()
-        return newSpot
+        await this.db!.save(spot)
+        return spot
     }
 }
-
 
 function hexalotIDToSurfaces(hexalotID: HexalotID): Surface[] {
     function* surfaceIterator(): Iterable<Surface> {
@@ -139,8 +133,4 @@ function hexalotIDToSurfaces(hexalotID: HexalotID): Surface[] {
     }
 
     return [...surfaceIterator()].slice(0, 127)
-}
-
-export interface IJourneyData {
-    hexalots: string[]
 }

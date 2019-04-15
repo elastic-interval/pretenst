@@ -6,18 +6,14 @@ import { Island } from "../src/models/island"
 export class PopulateIslands1555272895482 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.commitTransaction()
-        await queryRunner.startTransaction()
-        const islandNames = Object.keys(IslandIcosahedron)
-        const partialEntities = islandNames.map(islandName => {
-            return {name: islandName}
-        })
-        await Island.insert(partialEntities, {transaction: true})
+        const islands = Object.keys(IslandIcosahedron)
+            .map(islandName => {
+                return {name: islandName}
+            })
+        await queryRunner.manager.insert(Island, islands)
     }
 
     public async down(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.commitTransaction()
-        await queryRunner.startTransaction()
-        await Island.delete("true")
+        await queryRunner.manager.delete(Island, "true")
     }
 }

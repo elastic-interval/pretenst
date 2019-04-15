@@ -1,10 +1,9 @@
-import { BaseEntity, Column, Entity, JoinColumn, ManyToMany, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
+import { BaseEntity, Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
 
-import { IGenomeData } from "../../../client/src/genetics/genome"
 import { IHexalot } from "../island-logic"
 
 import { Coords } from "./coords"
-import { IJourneyData, Island } from "./island"
+import { Island } from "./island"
 import { Spot } from "./spot"
 import { User } from "./user"
 
@@ -13,11 +12,14 @@ export class Hexalot extends BaseEntity implements IHexalot {
     @PrimaryColumn({length: 32})
     public id: string
 
-    @ManyToOne(type => Hexalot)
-    public parent: Hexalot
+    @ManyToOne(type => Island)
+    public island: Island
 
-    @ManyToOne(type => User)
-    public owner: User
+    @OneToMany(type => Spot, spot => spot.hexalot)
+    public spots: Spot[]
+
+    @ManyToOne(type => User, {nullable: true})
+    public owner?: User
 
     @Column(type => Coords)
     public center: Coords
@@ -25,21 +27,15 @@ export class Hexalot extends BaseEntity implements IHexalot {
     @Column("int")
     public nonce: number
 
-    @Column("jsonb")
-    public genomeData: IGenomeData
+    @ManyToOne(type => Hexalot, child => child.childHexalots, {nullable: true})
+    public parent?: Hexalot
 
-    @Column("jsonb")
-    public journey: IJourneyData
+    @OneToMany(type => Hexalot, lot => lot.parent)
+    public childHexalots?: Hexalot[]
 
-    @OneToMany(type => Spot, spot => spot.hexalot)
-    public spots: Spot[]
+    @Column("jsonb", {nullable: true})
+    public genomeData?: object
 
-    @ManyToOne(type => Island)
-    public island: Island
-
-    @ManyToMany(type => Hexalot, lot => lot.parent)
-    @JoinColumn()
-    public childHexalots: Hexalot[]
-
-    public visited: boolean
+    @Column("jsonb", {nullable: true})
+    public journey?: object
 }

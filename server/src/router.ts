@@ -8,7 +8,6 @@ import { body, param, ValidationChain, validationResult } from "express-validato
 import HttpStatus from "http-status-codes"
 
 import { IslandIcosahedron } from "./island-icosahedron"
-import { extractIslandData } from "./island-logic"
 import { Hexalot } from "./models/hexalot"
 import { Island } from "./models/island"
 import { User } from "./models/user"
@@ -41,7 +40,7 @@ async function loadUser(req: Request, res: Response, next: NextFunction): Promis
         return
     }
     try {
-        const user = await User.findOne(userId)
+        const user = await User.findOne(userId, {relations: ["ownedLots"]})
         if (user === undefined) {
             res.sendStatus(HttpStatus.UNAUTHORIZED)
             return
@@ -136,18 +135,17 @@ export function createRouter(): Router {
                     genomeData,
                     id,
                 } = req.body
-                const userId = res.locals.userId
                 const island: Island = res.locals.island
                 await island.reload()
 
                 // TODO: probably gonna wanna mutex this
                 try {
-                    await island.claimHexalot(userId, {x, y}, id, genomeData)
+                    await island.claimHexalot(user, {x, y}, id, genomeData)
                 } catch (err) {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return
                 }
-                res.json(extractIslandData(island))
+                res.json(island.compressedData)
             },
         )
 
