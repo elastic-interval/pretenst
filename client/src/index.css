@@ -24,7 +24,8 @@ body {
     display: inline-block;
     color: white;
     padding: 15px;
-    width: 600px;
+    margin-top: 10%;
+    width: 340px;
 }
 
 p a, p a:hover {

@@ -9,42 +9,39 @@ import { OrbitControls } from "three-orbitcontrols-ts"
 import { AppMode, IAppState } from "../state/app-state"
 import { Transition } from "../state/transition"
 
+import { IFlightTarget } from "./flight-target"
+
 export const INITIAL_DISTANCE = 15000
 export const MINIMUM_DISTANCE = 7
-export const ANGLE_ABOVE_HORIZON = Math.PI * 5 / 12
 
-const CLOSE_ENOUGH = 100
-const LOW_ENOUGH = 30
-const TRACKING_DISTANCE = 20
-const TERRAFORMING_DISTANCE = 650
-const PLANNING_DISTANCE = 550
+const MIN_POLAR_ANGLE = Math.PI * 0.01
+const MAX_POLAR_ANGLE = 0.98 * Math.PI / 2
 
-const UPWARDS = 0.3
-const TOWARDS_ABOVE = 0.001
+export function polarAngle(aboveness: number): number { // aboveness [0,1]
+    return (1 - aboveness) * MAX_POLAR_ANGLE + aboveness * MIN_POLAR_ANGLE
+}
+
+const ANGLE_ABOVE_HORIZON = Math.PI * 5 / 12
+
+const TOWARDS_UPWARDS = 0.3
 const TOWARDS_TARGET = 0.05
-const TOWARDS_HEIGHT = 0.06
 const TOWARDS_DISTANCE = 0.025
+const TOWARDS_ABOVE = 0.01
 
 export class Flight {
     private target = new Vector3()
     private targetToCamera = new Vector3()
     private targetToMovingTarget = new Vector3()
-    private lastChanged = Date.now()
 
-    constructor(private orbit: OrbitControls, target: Vector3) {
+    constructor(private orbit: OrbitControls) {
         orbit.enabled = false
-        orbit.minPolarAngle = Math.PI * 0.01
-        orbit.maxPolarAngle = 0.95 * Math.PI / 2
-        orbit.maxDistance = INITIAL_DISTANCE - CLOSE_ENOUGH * 5
+        orbit.minPolarAngle = MIN_POLAR_ANGLE
+        orbit.maxPolarAngle = MAX_POLAR_ANGLE
+        orbit.maxDistance = INITIAL_DISTANCE
         orbit.minDistance = MINIMUM_DISTANCE
         orbit.enableKeys = false
         orbit.zoomSpeed = 0.5
         orbit.target = this.target
-        const updateLastChanged = () => this.lastChanged = Date.now()
-        orbit.addEventListener("start", updateLastChanged)
-        orbit.addEventListener("end", updateLastChanged)
-        orbit.addEventListener("change", updateLastChanged)
-        this.target.add(target)
     }
 
     public setupCamera(): void {
@@ -55,72 +52,16 @@ export class Flight {
         )
     }
 
-    public get changing(): boolean {
-        return Date.now() - this.lastChanged < 100
-    }
-
-    public update(appState: IAppState, target?: Vector3): void {
-        switch (appState.appMode) {
-            case AppMode.Retreating:
-                break
-            case AppMode.Approaching:
-                this.moveTowardsTarget(target)
-                const distanceVariation = CLOSE_ENOUGH * 0.1
-                const followDistance = this.followCameraDistance(
-                    CLOSE_ENOUGH,
-                    CLOSE_ENOUGH - distanceVariation,
-                    CLOSE_ENOUGH + distanceVariation,
-                )
-                const heightVariation = LOW_ENOUGH * 0.1
-                const followHeight = this.followCameraHeight(
-                    LOW_ENOUGH,
-                    LOW_ENOUGH - heightVariation,
-                    LOW_ENOUGH + heightVariation,
-                )
-                if (!(followDistance || followHeight)) {
-                    this.orbit.enabled = true
-                    appState.updateState(new Transition(appState).withAppMode(AppMode.Exploring).appState)
-                }
-                break
-            case AppMode.Riding:
-            case AppMode.Stopped:
-            case AppMode.Evolving:
-                this.moveTowardsTarget(target)
-                const targetHeightVariation = 1
-                const cameraHeight = this.target.y
-                this.followCameraHeight(
-                    cameraHeight,
-                    cameraHeight - targetHeightVariation,
-                    cameraHeight + targetHeightVariation,
-                )
-                const trackingDistanceVariation = 1
-                this.followCameraDistance(
-                    TRACKING_DISTANCE,
-                    TRACKING_DISTANCE - trackingDistanceVariation,
-                    TRACKING_DISTANCE + trackingDistanceVariation,
-                )
-                break
-            case AppMode.Terraforming:
-                this.moveTowardsAbove()
-                const terraformingDistanceVariation = TERRAFORMING_DISTANCE * 0.1
-                this.followCameraDistance(
-                    TERRAFORMING_DISTANCE,
-                    TERRAFORMING_DISTANCE - terraformingDistanceVariation,
-                    INITIAL_DISTANCE,
-                )
-                break
-            case AppMode.Planning:
-                const planningVariation = PLANNING_DISTANCE * 0.1
-                this.moveTowardsAbove()
-                this.followCameraDistance(
-                    PLANNING_DISTANCE,
-                    PLANNING_DISTANCE - planningVariation,
-                    INITIAL_DISTANCE,
-                )
-                break
-            case AppMode.Exploring:
-                this.moveTowardsTarget(target)
-                break
+    public update(appState: IAppState): void {
+        const flightTarget = appState.flightTarget
+        this.moveTowardsTarget(flightTarget.location)
+        if (appState.appMode === AppMode.Flying) {
+            const distanceChanged = this.cameraFollowDistance(flightTarget)
+            const angleChanged = this.cameraFollowPolarAngle(flightTarget)
+            if (!(distanceChanged || angleChanged)) {
+                this.orbit.enabled = true
+                appState.updateState(new Transition(appState).reachedFlightTarget(flightTarget).appState)
+            }
         }
         this.stayUpright()
         this.orbit.update()
@@ -130,43 +71,36 @@ export class Flight {
 
     private stayUpright(): void {
         const up = this.camera.up
-        up.y += UPWARDS
+        up.y += TOWARDS_UPWARDS
         up.normalize()
     }
 
-    private moveTowardsAbove(): void {
-        const polarAngle = this.orbit.getPolarAngle()
-        const minPolarAngle = this.orbit.minPolarAngle
-        if (polarAngle > minPolarAngle * 2) {
-            this.orbit.rotateUp(TOWARDS_ABOVE * polarAngle / minPolarAngle)
-        }
-    }
-
-    private moveTowardsTarget(movingTarget?: Vector3): void {
-        if (!movingTarget) {
-            return
-        }
+    private moveTowardsTarget(movingTarget: Vector3): void {
         this.target.add(this.targetToMovingTarget.subVectors(movingTarget, this.target).multiplyScalar(TOWARDS_TARGET))
     }
 
-    private followCameraDistance(idealDistance: number, tooLow: number, tooHigh: number): boolean {
+    private cameraFollowDistance(target: IFlightTarget): boolean {
         const currentDistance = this.calculateTargetToCamera().length()
-        if (currentDistance > tooLow && currentDistance < tooHigh) {
+        if (currentDistance > target.tooClose && currentDistance < target.tooFar) {
             return false
         }
-        const nextDistance = currentDistance * (1 - TOWARDS_DISTANCE) + idealDistance * TOWARDS_DISTANCE
+        const nextDistance = currentDistance * (1 - TOWARDS_DISTANCE) + target.distance * TOWARDS_DISTANCE
         this.targetToCamera.normalize().multiplyScalar(nextDistance)
         this.camera.position.addVectors(this.target, this.targetToCamera)
         return true
     }
 
-    private followCameraHeight(idealHeight: number, tooLow: number, tooHigh: number): boolean {
-        const position = this.camera.position
-        if (position.y > tooLow && position.y < tooHigh) {
-            return false
+    private cameraFollowPolarAngle(target: IFlightTarget): boolean {
+        const currentPolarAngle = this.orbit.getPolarAngle()
+        if (currentPolarAngle < target.tooVertical) {
+            this.orbit.rotateUp(-TOWARDS_ABOVE)
+            return true
         }
-        position.y = position.y * (1 - TOWARDS_HEIGHT) + idealHeight * TOWARDS_HEIGHT
-        return true
+        if (currentPolarAngle > target.tooHorizontal) {
+            this.orbit.rotateUp(TOWARDS_ABOVE)
+            return true
+        }
+        return false
     }
 
     private calculateTargetToCamera(): Vector3 {

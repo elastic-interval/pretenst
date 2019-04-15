@@ -39,7 +39,7 @@ export class ClickHandler {
             case AppMode.Exploring: // ===============================================================================
                 if (this.userId && !homeHexalot && appState.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     island.vacantHexalot = island.createHexalot(spot)
-                    return (await trans.withSelectedSpot(spot)).withAppMode(AppMode.Terraforming).withRestructure.appState
+                    return (await trans.withSelectedSpot(spot)).terraforming.withRestructure.appState
                 }
                 if (hexalot) {
                     return (await trans.withSelectedSpot(hexalot.centerSpot)).appState
@@ -63,8 +63,7 @@ export class ClickHandler {
 
 
             // =========================================================================================================
-            case AppMode.Approaching:
-            case AppMode.Retreating:
+            case AppMode.Flying:
             case AppMode.Evolving:
             case AppMode.Riding:
                 return appState

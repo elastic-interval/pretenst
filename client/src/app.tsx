@@ -4,17 +4,22 @@
  */
 
 import * as React from "react"
+import { Alert } from "reactstrap"
 import { PerspectiveCamera } from "three"
 
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
+import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
 import { AppMode, AppTransition, IAppProps, IAppState, logString, updateDimensions } from "./state/app-state"
+import { Transition } from "./state/transition"
 import { ControlPanel } from "./view/control-panel"
-import { INITIAL_DISTANCE, MINIMUM_DISTANCE } from "./view/flight"
-import { Welcome } from "./view/welcome"
+import { INITIAL_DISTANCE } from "./view/flight"
+import { HexalotTarget, IslandTarget, UnknownTarget } from "./view/flight-target"
 import { WorldView } from "./view/world-view"
+
+const SINGLE_ISLAND = "rotterdam"
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
@@ -28,12 +33,13 @@ export class App extends React.Component<IAppProps, IAppState> {
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         const width = window.innerWidth
         const height = window.innerHeight
-        this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE + MINIMUM_DISTANCE)
+        this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)
         const helpVisible = false
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
-        const mode = AppMode.Approaching
+        const mode = AppMode.Flying
+        const flightTarget = UnknownTarget()
         const self = this
         this.state = {
             helpVisible,
@@ -42,6 +48,7 @@ export class App extends React.Component<IAppProps, IAppState> {
             left,
             top,
             ownedLots,
+            flightTarget,
             nonce: 0,
             appMode: mode,
             islandIsLegal: false,
@@ -54,11 +61,11 @@ export class App extends React.Component<IAppProps, IAppState> {
                     throw new Error(`Same nonce! ${appState.nonce}`)
                 }
                 self.appStateNonce = appState.nonce
-                const homeHexalot = appState.homeHexalot
                 console.log(logString(appState))
-                if (homeHexalot) {
-                    const spotCenters = homeHexalot.spots.map(spot => spot.center)
-                    const surface = homeHexalot.spots.map(spot => spot.surface === Surface.Land)
+                const hexalot = appState.selectedHexalot
+                if (hexalot) {
+                    const spotCenters = hexalot.spots.map(spot => spot.center)
+                    const surface = hexalot.spots.map(spot => spot.surface === Surface.Land)
                     self.fabricKernel.setHexalot(spotCenters, surface)
                 }
                 self.setState(appState)
@@ -68,13 +75,19 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
-        this.props.storage.getOwnedLots().then(ownedLots => {
-            if (!ownedLots) {
-                this.setState({ownedLots: []})
-                return
-            }
-            this.setState({ownedLots})
-        })
+        if (this.props.userId) {
+            this.props.storage.getOwnedLots().then(ownedLots => {
+                if (ownedLots && ownedLots.length > 0) {
+                    this.setState({ownedLots})
+                    this.fetchIsland(SINGLE_ISLAND, ownedLots[0])
+                } else {
+                    this.setState({ownedLots: []})
+                    this.fetchIsland(SINGLE_ISLAND)
+                }
+            })
+        } else {
+            this.fetchIsland(SINGLE_ISLAND)
+        }
     }
 
     public componentWillUnmount(): void {
@@ -84,12 +97,13 @@ export class App extends React.Component<IAppProps, IAppState> {
     public render(): JSX.Element {
         if (!this.state.island) {
             return (
-                <Welcome
-                    userId={this.props.userId}
-                    storage={this.props.storage}
-                    fabricKernel={this.fabricKernel}
-                    appState={this.state}
-                />
+                <div className="welcome">
+                    <h1>Galapagotchi</h1>
+                    <hr/>
+                    <img alt="logo" src="logo.png"/>
+                    <hr/>
+                    <Alert color="secondary">Loading island "{SINGLE_ISLAND}"...</Alert>
+                </div>
             )
         }
         return (
@@ -107,4 +121,26 @@ export class App extends React.Component<IAppProps, IAppState> {
         )
     }
 
+    // Ok go ===========================================================================================================
+
+    private async fetchIsland(islandName: string, homeHexalotId?: string): Promise<void> {
+        const islandData = await this.props.storage.getIslandData(islandName)
+        if (!islandData) {
+            return
+        }
+        const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
+        const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
+        const flightTarget = homeHexalot ? HexalotTarget(homeHexalot, AppMode.Exploring) : IslandTarget(island, AppMode.Exploring)
+        const appState = new Transition(this.state)
+            .withIsland(island, flightTarget)
+            .withIslandIsLegal(false)
+            .withRestructure
+            .appState
+        if (!homeHexalotId) {
+            this.state.updateState(appState)
+        } else {
+            const transition = await new Transition(appState).withHomeHexalot(homeHexalot)
+            this.state.updateState(transition.withRestructure.appState)
+        }
+    }
 }
