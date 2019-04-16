@@ -92,7 +92,7 @@ export function createRouter(): Router {
             async (req: Request, res: Response, next: NextFunction) => {
                 const {hexalotId} = req.params
                 try {
-                    res.locals.hexalot = await repository.findHexalot(hexalotId)
+                    res.locals.centerOfHexalot = await repository.findHexalot(hexalotId)
                     next()
                 } catch (e) {
                     res.sendStatus(HttpStatus.NOT_FOUND)
@@ -104,6 +104,7 @@ export function createRouter(): Router {
     islandRoute
         .get("/", async (req, res) => {
             const island = res.locals.island
+            await repository.recalculateIsland(island)
             res.json(island.compressedJSON)
         })
         .post(
@@ -152,7 +153,7 @@ export function createRouter(): Router {
     hexalotRoute
         .route("/genome-data")
         .get(async (req, res) => {
-            res.json(res.locals.hexalot.genomeData)
+            res.json(res.locals.centerOfHexalot.genomeData)
         })
         .post(
             [
@@ -160,14 +161,14 @@ export function createRouter(): Router {
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
-                const hexalot = res.locals.hexalot
+                const hexalot = res.locals.centerOfHexalot
                 const genomeData = req.body.genomeData
                 if (!genomeData.genes || !(genomeData.genes instanceof Array)) {
                     res.status(400).send("missing required genes array")
                     return
                 }
                 hexalot.genomeData = genomeData
-                await repository.save([hexalot])
+                await repository.saveHexalot(hexalot)
                 res.sendStatus(HttpStatus.OK)
             },
         )
@@ -175,7 +176,7 @@ export function createRouter(): Router {
     hexalotRoute
         .route("/journey")
         .get(async (req, res) => {
-            res.json(res.locals.hexalot.journey)
+            res.json(res.locals.centerOfHexalot.journey)
         })
         .post(
             [
@@ -183,7 +184,7 @@ export function createRouter(): Router {
                 validateRequest,
             ],
             async (req: Request, res: Response) => {
-                const hexalot = res.locals.hexalot
+                const hexalot = res.locals.centerOfHexalot
                 const journeyData = req.body.journeyData
                 if (!journeyData.hexalots) {
                     res.status(HttpStatus.BAD_REQUEST).end("missing required hexalot array field")
@@ -196,13 +197,13 @@ export function createRouter(): Router {
                     }
                 }
                 hexalot.journey = journeyData
-                await repository.save([hexalot])
+                await repository.saveHexalot(hexalot)
                 res.sendStatus(HttpStatus.OK)
             },
         )
 
     hexalotRoute.get("/owner", async (req, res) => {
-        const hexalot = res.locals.hexalot
+        const hexalot = res.locals.centerOfHexalot
         res.json(hexalot.owner)
     })
 

@@ -8,37 +8,56 @@ import { Spot } from "./models/spot"
 import { User } from "./models/user"
 import { HexalotID, Surface } from "./types"
 
+interface ILotClaim {
+    id: string
+    center: Coords
+    genomeData: object
+
+    island: Island
+    owner: User
+}
+
 @EntityRepository()
 export class Repository {
     constructor(private readonly db: EntityManager) {
     }
 
     public async findIsland(name: string): Promise<Island> {
-        return this.db.findOneOrFail(Island, name)
+        return this.db.findOneOrFail(Island, name, {
+            relations: ["spots", "hexalots"],
+        })
     }
 
     public async findHexalot(id: string): Promise<Hexalot> {
-        return this.db.findOneOrFail(Hexalot, id)
+        return this.db.findOneOrFail(Hexalot, id, {
+            relations: ["parent"],
+        })
     }
 
     public async findUser(userId: string): Promise<User> {
-        return this.db.findOneOrFail(User, userId)
+        return this.db.findOneOrFail(User, userId, {
+            relations: ["ownedLots"],
+        })
     }
 
-    public async save(entities: Array<Island | Hexalot | User | Spot>): Promise<void> {
-        await this.db.save(entities)
+    public async saveHexalot(lot: Hexalot): Promise<void> {
+        await this.db.save(lot)
     }
 
-    public async claimHexalot(lot: Partial<Hexalot>): Promise<void> {
-        let island = lot.island!
-        const center = lot.center!
-        const id = lot.id!
+    public async getAllIslands(): Promise<Island[]> {
+        return this.db.find(Island)
+    }
+
+    public async claimHexalot(lotClaim: ILotClaim): Promise<void> {
+        const island = lotClaim.island
+        const center = lotClaim.center
+        const id = lotClaim.id
 
         const existingLot = await this.db.findOne(Hexalot, id)
         if (existingLot !== undefined) {
             throw new Error("hexalot already claimed")
         }
-
+        const lot: Partial<Hexalot> = {...lotClaim}
         if (island.hexalots.length === 0) {
             // GENESIS LOT
             if (!center.equals(ZERO)) {
@@ -46,28 +65,64 @@ export class Repository {
             }
         } else {
             // NOT GENESIS LOT
-            const centerSpot = await this.db.findOneOrFail(Spot, {where: {coords: center}})
+            const centerSpot = await this.db.findOneOrFail(Spot, {
+                where: {coords: center, island: {name: island.name}},
+                relations: ["island"],
+            })
             lot.parent = await this.findParentHexalot(centerSpot)
         }
-        lot = await this.populateHexalot(lot)
+        await this.fillHexalotDetails(lot)
+        island.hexalots.push(this.db.create(Hexalot, lot))
 
-        await this.db.save([island, lot])
+        await this.db.save(island)
 
-        // Reload island with new relations
-        island = await this.db.findOneOrFail(Island, island.name)
         await this.recalculateIsland(island)
     }
 
-    public async getAllIslands(): Promise<Island[]> {
-        return this.db.find(Island)
+    public async fillHexalotDetails(lot: Partial<Hexalot>): Promise<void> {
+        const island = lot.island!
+
+        const surfaces = hexalotIDToSurfaces(lot.id!)
+        const spots = await Promise.all(
+            HEXALOT_SHAPE.map(async (offset, i) => {
+                const coords = lot.center!.plus(offset)
+                let spot = await this.db.findOne(Spot, {
+                    where: {coords, island: {name: island.name}},
+                })
+                if (!spot) {
+                    spot = this.db.create(Spot, {
+                        surface: surfaces[i],
+                        island,
+                        coords,
+                    })
+                    island.spots.push(spot)
+                }
+                return spot
+            }),
+        )
+        const centerSpot = spots[0]
+        const nonce = lot.parent ? lot.parent.nonce + 1 : 0
+        Object.assign(lot, {
+            centerSpot,
+            nonce,
+        })
     }
 
     public async recalculateIsland(island: Island): Promise<void> {
         const connected: { [spotId: number]: boolean } = {}
         const map: { [coords: string]: Spot } = {}
         const adjacent: { [spotId: number]: Spot[] } = {}
-        const spots = island.spots
 
+        // Load relations
+        island.hexalots = await this.db.find(Hexalot, {
+            where: {island: {name: island.name}},
+            relations: ["childHexalots"],
+        })
+        island.spots = await this.db.find(Spot, {
+            where: {island: {name: island.name}},
+        })
+
+        const spots = island.spots
         for (const spot of spots) {
             map[spot.coords.toString()] = spot
         }
@@ -127,12 +182,6 @@ export class Repository {
             }
         }
 
-        // Load hexalot children
-        island.hexalots = await this.db.find(Hexalot, {
-            where: {island: {name: island.name}},
-            relations: ["childHexalots"],
-        })
-
         spots.sort(sortSpotsOnCoord)
         island.geography = {
             hexalots: hexalotTreeString(island.hexalots),
@@ -141,49 +190,30 @@ export class Repository {
         await this.db.save(island)
     }
 
-    private async populateHexalot(lot: Partial<Hexalot>): Promise<Hexalot> {
-        const surfaces = hexalotIDToSurfaces(lot.id!)
-        const spots = await Promise.all(
-            HEXALOT_SHAPE.map(async (offset, i) => {
-                const coords = lot.center!.plus(offset)
-                let spot = await this.db.findOne(Spot, {
-                    where: {coords, island: {name: lot.island!.name}},
-                })
-                if (!spot) {
-                    spot = this.db.create(Spot, {
-                        surface: surfaces[i],
-                        island: lot.island!,
-                        coords,
-                    })
-                }
-                return spot
-            }),
-        )
-        const nonce = lot.parent ? lot.parent.nonce + 1 : 0
-        return this.db.create(Hexalot, {
-            ...lot,
-            nonce,
-            spots,
-        })
-    }
-
     private async adjacentHexalots(center: Spot): Promise<Hexalot[]> {
-        const spots = await Promise.all(
-            ADJACENT.map(offset => {
-                return this.db.findOne(Hexalot, {
-                    where: {
-                        center: center.coords.plus(offset),
-                        island: center.island,
-                    },
-                })
-            }),
-        )
-        return spots.filter(s => s !== undefined) as Hexalot[]
+        const where = ADJACENT.map(offset => {
+            return {
+                coords: center.coords.plus(offset),
+                island: {name: center.island.name},
+            }
+        })
+        const adjacentSpots = await this.db.find(Spot, {
+            where,
+            relations: ["centerOfHexalot"],
+        })
+        const hexalots = adjacentSpots
+            .map(spot => spot.centerOfHexalot)
+            .filter(hexalot => hexalot !== null) as Hexalot[]
+        return hexalots
     }
 
-    private async findParentHexalot(spot: Spot): Promise<Hexalot | undefined> {
-        return (await this.adjacentHexalots(spot))
+    private async findParentHexalot(spot: Spot): Promise<Hexalot> {
+        const parent = (await this.adjacentHexalots(spot))
             .reduce(greatestNonce, undefined)
+        if (!parent) {
+            throw new Error("could not find parent")
+        }
+        return parent
     }
 }
 
@@ -216,14 +246,14 @@ function ringIndex(coords: Coords, origin: Coords): number {
     return 0
 }
 
-function generateOctalTreePattern(hexalot: Hexalot, steps: number[], visited: { [id: string]: boolean }): number[] {
-    const remainingChildren = (hexalot.childHexalots || [])
+function generateOctalTreePattern(root: Hexalot, steps: number[], visited: { [id: string]: boolean }): number[] {
+    const remainingChildren = (root.childHexalots || [])
         .filter(child => {
             return !visited[child.id]
         })
-        .map(h => {
-            const index = ringIndex(h.center, hexalot.center)
-            return {index, hexalot: h}
+        .map(hexalot => {
+            const index = ringIndex(hexalot.center, root.center)
+            return {index, hexalot}
         })
         .sort((a, b) => {
             return a.index < b.index ? 1 : a.index > b.index ? -1 : 0
@@ -239,7 +269,7 @@ function generateOctalTreePattern(hexalot: Hexalot, steps: number[], visited: { 
     } else {
         steps.push(STOP_STEP)
     }
-    visited[hexalot.id] = true
+    visited[root.id] = true
     return steps
 }
 

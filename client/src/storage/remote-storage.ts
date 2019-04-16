@@ -38,6 +38,9 @@ export class RemoteStorage implements IStorage {
 
     public async getOwnedLots(): Promise<string[] | undefined> {
         const user = await this.fetchResource<IUser>("/me")
+        if (!user) {
+            return undefined
+        }
         return user!.ownedLots.map(lot => lot.id)
     }
 

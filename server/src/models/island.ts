@@ -15,10 +15,10 @@ export class Island {
     @Column("jsonb", {default: {hexalots: "", spots: ""}})
     public geography: IslandGeography
 
-    @OneToMany(type => Hexalot, lot => lot.island, {cascade: true, eager: true})
+    @OneToMany(type => Hexalot, lot => lot.island)
     public hexalots: Hexalot[]
 
-    @OneToMany(type => Spot, spot => spot.island, {cascade: true, eager: true})
+    @OneToMany(type => Spot, spot => spot.island)
     public spots: Spot[]
 
     public get compressedJSON(): object {

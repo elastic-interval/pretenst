@@ -1,4 +1,4 @@
-import { ManyToOne, PrimaryGeneratedColumn } from "typeorm"
+import { ManyToOne, OneToOne, PrimaryGeneratedColumn } from "typeorm"
 import { Column } from "typeorm/decorator/columns/Column"
 import { Entity } from "typeorm/decorator/entity/Entity"
 
@@ -19,8 +19,8 @@ export class Spot {
     @ManyToOne(type => Island, island => island.spots)
     public island: Island
 
-    @ManyToOne(type => Hexalot, lot => lot.spots)
-    public hexalot: Hexalot
+    @OneToOne(type => Hexalot, lot => lot.centerSpot, {nullable: true})
+    public centerOfHexalot?: Hexalot
 
     @Column("enum", {nullable: false, enum: Surface, default: Surface.Unknown})
     public surface: Surface

@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "asbuild:untouched": "asc index.ts -b build/untouched.wasm -t build/untouched.wat --use Math=JSMath --sourceMap --validate",
-    "asbuild:optimized": "asc index.ts -b ../client/build/fabric.wasm -t build/optimized.wat --sourceMap --validate --optimize",
+    "asbuild:optimized": "asc index.ts -b ../client/public/fabric.wasm -t build/optimized.wat --sourceMap --validate --optimize",
     "build": "npm run asbuild:untouched && npm run asbuild:optimized",
     "sym": "wasm-as build/optimized.wat -s symbols.txt -o build/sym.wasm"
   },

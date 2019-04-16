@@ -7,6 +7,6 @@ export class User {
     @PrimaryGeneratedColumn()
     public id: number
 
-    @OneToMany(type => Hexalot, lot => lot.owner, {eager: true, cascade: true})
+    @OneToMany(type => Hexalot, lot => lot.owner, {cascade: true})
     public ownedLots: Hexalot[]
 }

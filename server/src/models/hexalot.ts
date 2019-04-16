@@ -1,4 +1,4 @@
-import { Column, Entity, ManyToOne, OneToMany, PrimaryColumn } from "typeorm"
+import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn } from "typeorm"
 import { HexalotID } from "../types"
 
 import { Coords } from "./coords"
@@ -11,17 +11,15 @@ export class Hexalot {
     @PrimaryColumn({length: 32})
     public id: HexalotID
 
-    @ManyToOne(type => Island)
+    @ManyToOne(type => Island, island => island.hexalots)
     public island: Island
 
-    @OneToMany(type => Spot, spot => spot.hexalot, {cascade: true})
-    public spots: Spot[]
+    @OneToOne(type => Spot, spot => spot.centerOfHexalot)
+    @JoinColumn()
+    public centerSpot: Spot
 
     @ManyToOne(type => User, {nullable: true})
     public owner?: User
-
-    @Column(type => Coords)
-    public center: Coords
 
     @Column("int")
     public nonce: number
@@ -37,4 +35,8 @@ export class Hexalot {
 
     @Column("jsonb", {nullable: true})
     public journey?: object
+
+    public get center(): Coords {
+        return this.centerSpot.coords
+    }
 }
