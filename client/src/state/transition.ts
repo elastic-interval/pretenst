@@ -10,6 +10,14 @@ import { Island } from "../island/island"
 import { calculateHexalotId, isIslandLegal, isSpotLegal, recalculateIsland, Surface } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
+import {
+    EvolutionTarget,
+    HexalotTarget,
+    IFlightTarget,
+    JockeyTarget,
+    WithHexalot,
+    WithSpot,
+} from "../view/flight-target"
 
 import { AppMode, IAppState } from "./app-state"
 
@@ -29,13 +37,35 @@ export class Transition {
         return this
     }
 
-    public withIsland(island: Island): Transition {
+    public withIsland(island: Island, optionalFlightTarget?: IFlightTarget): Transition {
         this.withoutJockey.withoutEvolution.nextState = {...this.nextState, island}
+        if (optionalFlightTarget) {
+            this.nextState = {...this.nextState, flightTarget: optionalFlightTarget}
+        }
         return this
     }
 
-    public withAppMode(appMode: AppMode): Transition {
-        this.nextState = {...this.nextState, appMode}
+    public get terraforming(): Transition {
+        this.nextState = {...this.nextState, appMode: AppMode.Terraforming}
+        return this
+    }
+
+    public get planning(): Transition {
+        const homeHexalot = this.nextState.homeHexalot
+        if (homeHexalot) {
+            const flightTarget = HexalotTarget(homeHexalot, AppMode.Planning)
+            this.nextState = {...this.nextState, appMode: AppMode.Flying, flightTarget}
+        }
+        return this
+    }
+
+    public get exploring(): Transition {
+        this.nextState = {...this.nextState, appMode: AppMode.Exploring}
+        return this
+    }
+
+    public reachedFlightTarget(flightTarget: IFlightTarget): Transition {
+        this.nextState = {...this.nextState, appMode: flightTarget.appMode}
         return this
     }
 
@@ -47,7 +77,9 @@ export class Transition {
     public async withSelectedHexalot(selectedHexalot?: Hexalot): Promise<Transition> {
         this.nextState = {...this.nextState, selectedHexalot}
         const island = this.nextState.island
-        if (selectedHexalot && island) {
+        if (selectedHexalot) {
+            const flightTarget = WithHexalot(this.nextState.flightTarget, selectedHexalot)
+            this.nextState = {...this.nextState, flightTarget}
             await fetchGenome(selectedHexalot, this.nextState.storage)
             if (selectedHexalot.journey) {
                 return this.withJourney(selectedHexalot.journey)
@@ -56,7 +88,6 @@ export class Transition {
                 selectedHexalot.journey = journey
                 return this.withJourney(journey)
             }
-            return this
         }
         return this
     }
@@ -64,6 +95,8 @@ export class Transition {
     public async withSelectedSpot(selectedSpot?: Spot): Promise<Transition> {
         this.nextState = {...this.nextState, selectedSpot}
         if (selectedSpot) {
+            const flightTarget = WithSpot(this.nextState.flightTarget, selectedSpot)
+            this.nextState = {...this.nextState, flightTarget}
             return this.withSelectedHexalot(selectedSpot.centerOfHexalot)
         }
         return this.withSelectedHexalot()
@@ -86,6 +119,59 @@ export class Transition {
         return this.withSelectedSpot(homeHexalot.centerSpot)
     }
 
+    public withJockey(jockey: Jockey): Transition {
+        this.withoutJockey.nextState = {
+            ...this.nextState,
+            jockey,
+            journey: jockey.leg.journey,
+            flightTarget: JockeyTarget(jockey),
+            appMode: AppMode.Flying,
+        }
+        return this
+    }
+
+    public get withJockeyStopped(): Transition {
+        const appMode = AppMode.Stopped
+        this.nextState = {...this.nextState, appMode}
+        return this
+    }
+
+    public get withJockeyRiding(): Transition {
+        const appMode = AppMode.Riding
+        this.nextState = {...this.nextState, appMode}
+        return this
+    }
+
+    public withEvolution(homeHexalot: Hexalot): Transition {
+        const evolution = new Evolution(homeHexalot, this.appState.jockey)
+        this.withoutEvolution.nextState = {
+            ...this.nextState,
+            evolution,
+            jockey: undefined,
+            flightTarget: EvolutionTarget(evolution),
+            appMode: AppMode.Flying,
+        }
+        return this
+    }
+
+    public get withoutJockey(): Transition {
+        const jockey = this.nextState.jockey
+        if (jockey) {
+            jockey.gotchi.recycle()
+            this.nextState = {...this.nextState, jockey: undefined, appMode: AppMode.Flying}
+        }
+        return this
+    }
+
+    public get withoutEvolution(): Transition {
+        const evolution = this.nextState.evolution
+        if (evolution) {
+            evolution.recycle()
+            this.nextState = {...this.nextState, evolution: undefined, appMode: AppMode.Flying}
+        }
+        return this
+    }
+
     public get withRestructure(): Transition {
         const island = this.nextState.island
         if (!island) {
@@ -98,7 +184,7 @@ export class Transition {
         if (hexalots.length === 1) {
             spots.forEach(spot => spot.free = true)
         } else if (vacant) {
-            spots.forEach(spot => spot.free = spot.memberOfHexalot.every(hexalot => hexalot.id === vacant.id))
+            spots.forEach(spot => spot.free = spot.memberOfHexalot.every(h => h.id === vacant.id))
         } else {
             spots.forEach(spot => spot.free = false)
         }
@@ -140,32 +226,4 @@ export class Transition {
         return this
     }
 
-    public withJockey(jockey: Jockey): Transition {
-        this.withoutJockey.nextState = {...this.nextState, jockey, journey: jockey.leg.journey}
-        return this
-    }
-
-    public withEvolution(homeHexalot: Hexalot): Transition {
-        const evolution = new Evolution(homeHexalot, this.appState.jockey)
-        this.withoutEvolution.nextState = {...this.nextState, evolution, jockey: undefined}
-        return this
-    }
-
-    public get withoutJockey(): Transition {
-        const jockey = this.nextState.jockey
-        if (jockey) {
-            jockey.gotchi.recycle()
-            this.nextState = {...this.nextState, jockey: undefined}
-        }
-        return this
-    }
-
-    public get withoutEvolution(): Transition {
-        const evolution = this.nextState.evolution
-        if (evolution) {
-            evolution.recycle()
-            this.nextState = {...this.nextState, evolution: undefined}
-        }
-        return this
-    }
 }
