@@ -52,11 +52,11 @@ export class CommandHandler {
             case Command.Home:
                 if (appState.jockey) {
                     const atJockeyHome = await trans.withSelectedSpot(appState.jockey.gotchi.home.centerSpot)
-                    return atJockeyHome.withoutJockey.withAppMode(AppMode.Approaching).appState
+                    return atJockeyHome.withoutJockey.exploring.appState
                 }
                 if (homeHexalot) {
                     const withHomeSelected = await trans.withSelectedSpot(homeHexalot.centerSpot)
-                    return withHomeSelected.withoutEvolution.withAppMode(AppMode.Approaching).appState
+                    return withHomeSelected.withoutEvolution.exploring.appState
                 }
                 return appState
 
@@ -72,13 +72,13 @@ export class CommandHandler {
                             appState.storage.setGenomeData(homeHexalot, fittestData).then(() => {
                                 console.log("genome saved")
                             })
-                            return trans.withoutEvolution.withJockey(fittest).withAppMode(AppMode.Riding).appState
+                            return trans.withoutEvolution.withJockey(fittest).appState
                         }
                     }
                     const newbornGotchi = hexalot.createNativeGotchi()
                     if (newbornGotchi) {
                         const newJockey = new Jockey(newbornGotchi, hexalot.firstLeg)
-                        return trans.withJockey(newJockey).withAppMode(AppMode.Riding).appState
+                        return trans.withJockey(newJockey).appState
                     }
                 }
                 return appState
@@ -89,7 +89,7 @@ export class CommandHandler {
                     if (jockey && !jockey.isResting) {
                         throw new Error("Cannot evolve")
                     }
-                    return trans.withEvolution(homeHexalot).withAppMode(AppMode.Evolving).appState
+                    return trans.withEvolution(homeHexalot).appState
                 }
                 return appState
 
@@ -97,7 +97,7 @@ export class CommandHandler {
             case Command.Start:
                 if (jockey) {
                     jockey.startMoving()
-                    return trans.withAppMode(AppMode.Riding).appState
+                    return trans.withJockeyRiding.appState
                 }
                 return appState
 
@@ -105,7 +105,7 @@ export class CommandHandler {
             case Command.Stop:
                 if (jockey) {
                     jockey.stopMoving()
-                    return trans.withAppMode(AppMode.Stopped).appState
+                    return trans.withJockeyStopped.appState
                 }
                 return appState
 
@@ -139,7 +139,7 @@ export class CommandHandler {
             case Command.AbandonTerraforming:
                 const nonce = appState.nonce + 1
                 const orig = new Island(extractIslandData(island), island.gotchiFactory, appState.storage, nonce)
-                return (await trans.withSelectedSpot()).withIsland(orig).withAppMode(AppMode.Exploring).withRestructure.appState
+                return (await trans.withSelectedSpot()).withIsland(orig).withRestructure.appState
 
 
             case Command.ClaimHexalot:
@@ -153,7 +153,7 @@ export class CommandHandler {
 
 
             case Command.Plan:
-                return trans.withAppMode(AppMode.Planning).appState
+                return trans.planning.appState
 
 
             default:

@@ -12,6 +12,7 @@ import { coordsToString } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 import { IStorage } from "../storage/storage"
+import { IFlightTarget } from "../view/flight-target"
 
 export interface IAppProps {
     fabricExports: IFabricExports
@@ -34,6 +35,8 @@ export interface IAppState {
     readonly left: number
     readonly top: number
 
+    readonly flightTarget: IFlightTarget
+
     readonly island?: Island
     readonly homeHexalot?: Hexalot
     readonly ownedLots?: string[]
@@ -49,18 +52,13 @@ export interface IAppState {
 }
 
 export enum AppMode {
-    Approaching = "Approaching",
     Evolving = "Evolving",
     Exploring = "Exploring",
+    Flying = "Flying",
     Planning = "Planning",
-    Retreating = "Retreating",
     Riding = "Riding",
     Stopped = "Stopped",
     Terraforming = "Terraforming",
-}
-
-export function isInTransit(appState: IAppState): boolean {
-    return appState.appMode === AppMode.Approaching || appState.appMode === AppMode.Retreating
 }
 
 export enum Command {
