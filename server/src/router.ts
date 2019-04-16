@@ -58,7 +58,10 @@ export function createRouter(): Router {
             res.sendStatus(HttpStatus.OK)
         })
         .get("/islands", async (req, res) => {
-            res.json(await repository.getAllIslands())
+            res.json(
+                (await repository.getAllIslands())
+                    .map(island => island.compressedJSON),
+            )
         })
         .get("/me", loadUser, (req, res) => {
             res.json(res.locals.user)
@@ -100,12 +103,8 @@ export function createRouter(): Router {
 
     islandRoute
         .get("/", async (req, res) => {
-            const island: Island = res.locals.island
-            const data = island.geography
-            res.json({
-                name: island.name,
-                ...data,
-            })
+            const island = res.locals.island
+            res.json(island.compressedJSON)
         })
         .post(
             "/claim-lot",
@@ -146,7 +145,7 @@ export function createRouter(): Router {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return
                 }
-                res.json(island)
+                res.json(island.compressedJSON)
             },
         )
 

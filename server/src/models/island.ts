@@ -20,4 +20,11 @@ export class Island {
 
     @OneToMany(type => Spot, spot => spot.island, {cascade: true, eager: true})
     public spots: Spot[]
+
+    public get compressedJSON(): object {
+        return {
+            name: this.name,
+            ...this.geography,
+        }
+    }
 }

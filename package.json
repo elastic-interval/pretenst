@@ -1,0 +1,14 @@
+{
+  "name": "galapagotchi",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "git@github.com:beautiful-code-bv/galapagotchi.git",
+  "author": "Mitchell Van Der Hoeff <mitchellvanderhoeff@gmail.com>",
+  "license": "MIT",
+  "dependencies": {
+    "tslint": "^5.15.0",
+    "tslint-config-prettier": "^1.18.0",
+    "tslint-react": "^4.0.0",
+    "typescript": "^3.4.3"
+  }
+}

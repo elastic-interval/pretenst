@@ -13,6 +13,11 @@ import { IJourneyData } from "../island/journey"
 
 import { IStorage } from "./storage"
 
+interface IUser {
+    id: number
+    ownedLots: Array<{id: string}>
+}
+
 export class RemoteStorage implements IStorage {
     private readonly client: AxiosInstance
 
@@ -32,7 +37,8 @@ export class RemoteStorage implements IStorage {
     }
 
     public async getOwnedLots(): Promise<string[] | undefined> {
-        return this.fetchResource<string[]>("/owned-lots")
+        const user = await this.fetchResource<IUser>("/me")
+        return user!.ownedLots.map(lot => lot.id)
     }
 
     public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData> {

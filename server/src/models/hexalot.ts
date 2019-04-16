@@ -26,11 +26,11 @@ export class Hexalot {
     @Column("int")
     public nonce: number
 
-    @ManyToOne(type => Hexalot, child => child.childHexalots, {nullable: true})
+    @ManyToOne(type => Hexalot, parent => parent.childHexalots, {nullable: true})
     public parent?: Hexalot
 
-    @OneToMany(type => Hexalot, lot => lot.parent)
-    public childHexalots?: Hexalot[]
+    @OneToMany(type => Hexalot, child => child.parent)
+    public childHexalots: Hexalot[]
 
     @Column("jsonb", {nullable: true})
     public genomeData?: object

@@ -62,53 +62,10 @@ export class Repository {
         return this.db.find(Island)
     }
 
-    public async populateHexalot(lot: Partial<Hexalot>): Promise<Hexalot> {
-        const surfaces = hexalotIDToSurfaces(lot.id!)
-        const spots = await Promise.all(
-            HEXALOT_SHAPE.map(async (offset, i) => {
-                const coords = lot.center!.plus(offset)
-                let spot = await this.db.findOne(Spot, {where: {coords, island: lot.island!}})
-                if (!spot) {
-                    spot = this.db.create(Spot, {
-                        surface: surfaces[i],
-                        island: lot.island!,
-                        coords,
-                    })
-                }
-                return spot
-            }),
-        )
-        const nonce = lot.parent ? lot.parent.nonce + 1 : 0
-        return this.db.create(Hexalot, {
-            nonce,
-            spots,
-            ...lot,
-        })
-    }
-
-    private async adjacentHexalots(center: Spot): Promise<Hexalot[]> {
-        const spots = await Promise.all(
-            ADJACENT.map(offset => {
-                return this.db.findOne(Hexalot, {
-                    where: {
-                        center: center.coords.plus(offset),
-                        island: center.island,
-                    },
-                })
-            }),
-        )
-        return spots.filter(s => s !== undefined) as Hexalot[]
-    }
-
-    private async findParentHexalot(spot: Spot): Promise<Hexalot | undefined> {
-        return (await this.adjacentHexalots(spot))
-            .reduce(greatestNonce, undefined)
-    }
-
-    private async recalculateIsland(island: Island): Promise<void> {
-        const connected: {[spotId: number]: boolean} = {}
-        const map: {[coords: string]: Spot} = {}
-        const adjacent: {[spotId: number]: Spot[]} = {}
+    public async recalculateIsland(island: Island): Promise<void> {
+        const connected: { [spotId: number]: boolean } = {}
+        const map: { [coords: string]: Spot } = {}
+        const adjacent: { [spotId: number]: Spot[] } = {}
         const spots = island.spots
 
         for (const spot of spots) {
@@ -170,12 +127,63 @@ export class Repository {
             }
         }
 
+        // Load hexalot children
+        island.hexalots = await this.db.find(Hexalot, {
+            where: {island: {name: island.name}},
+            relations: ["childHexalots"],
+        })
+
         spots.sort(sortSpotsOnCoord)
         island.geography = {
             hexalots: hexalotTreeString(island.hexalots),
             spots: spotsToString(spots),
         }
         await this.db.save(island)
+    }
+
+    private async populateHexalot(lot: Partial<Hexalot>): Promise<Hexalot> {
+        const surfaces = hexalotIDToSurfaces(lot.id!)
+        const spots = await Promise.all(
+            HEXALOT_SHAPE.map(async (offset, i) => {
+                const coords = lot.center!.plus(offset)
+                let spot = await this.db.findOne(Spot, {
+                    where: {coords, island: {name: lot.island!.name}},
+                })
+                if (!spot) {
+                    spot = this.db.create(Spot, {
+                        surface: surfaces[i],
+                        island: lot.island!,
+                        coords,
+                    })
+                }
+                return spot
+            }),
+        )
+        const nonce = lot.parent ? lot.parent.nonce + 1 : 0
+        return this.db.create(Hexalot, {
+            ...lot,
+            nonce,
+            spots,
+        })
+    }
+
+    private async adjacentHexalots(center: Spot): Promise<Hexalot[]> {
+        const spots = await Promise.all(
+            ADJACENT.map(offset => {
+                return this.db.findOne(Hexalot, {
+                    where: {
+                        center: center.coords.plus(offset),
+                        island: center.island,
+                    },
+                })
+            }),
+        )
+        return spots.filter(s => s !== undefined) as Hexalot[]
+    }
+
+    private async findParentHexalot(spot: Spot): Promise<Hexalot | undefined> {
+        return (await this.adjacentHexalots(spot))
+            .reduce(greatestNonce, undefined)
     }
 }
 
