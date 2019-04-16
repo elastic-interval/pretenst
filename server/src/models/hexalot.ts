@@ -1,4 +1,5 @@
 import { Column, Entity, JoinColumn, ManyToOne, OneToMany, OneToOne, PrimaryColumn } from "typeorm"
+
 import { HexalotID } from "../types"
 
 import { Coords } from "./coords"

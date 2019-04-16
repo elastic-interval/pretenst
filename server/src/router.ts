@@ -133,7 +133,7 @@ export function createRouter(): Router {
                 }
 
                 try {
-                    const lot = await getManager().transaction(manager =>
+                    const lot = await getManager().transaction(async manager =>
                         manager.getCustomRepository(Repository)
                             .claimHexalot({
                                 owner: user,
