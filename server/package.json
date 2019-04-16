@@ -37,9 +37,10 @@
     "morgan": "^1.9.1",
     "pg": "^7.9.0",
     "pm2": "^3.4.0",
+    "reflect-metadata": "^0.1.13",
     "ts-node": "^8.0.2",
     "tslint": "^5.12.1",
-    "typeorm": "^0.3.0-alpha.23",
+    "typeorm": "0.2.16",
     "typescript": "^3.3.3",
     "uuid": "^3.3.2"
   },

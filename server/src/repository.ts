@@ -48,7 +48,7 @@ export class Repository {
         return this.db.find(Island)
     }
 
-    public async claimHexalot(lotClaim: ILotClaim): Promise<void> {
+    public async claimHexalot(lotClaim: ILotClaim): Promise<Hexalot> {
         const island = lotClaim.island
         const center = lotClaim.center
         const id = lotClaim.id
@@ -57,7 +57,7 @@ export class Repository {
         if (existingLot !== undefined) {
             throw new Error("hexalot already claimed")
         }
-        const lot: Partial<Hexalot> = {...lotClaim}
+        let lot: Partial<Hexalot> = {...lotClaim}
         if (island.hexalots.length === 0) {
             // GENESIS LOT
             if (!center.equals(ZERO)) {
@@ -71,41 +71,60 @@ export class Repository {
             })
             lot.parent = await this.findParentHexalot(centerSpot)
         }
-        await this.fillHexalotDetails(lot)
-        island.hexalots.push(this.db.create(Hexalot, lot))
+        lot = await this.fillHexalotDetails(lot)
 
+        island.hexalots.push(
+            this.db.create(Hexalot, lot),
+        )
         await this.db.save(island)
 
+        // This will determine whether the new island is still legal
         await this.recalculateIsland(island)
+
+        return this.db.findOneOrFail(Hexalot, lot.id)
     }
 
-    public async fillHexalotDetails(lot: Partial<Hexalot>): Promise<void> {
+    public async fillHexalotDetails(lot: Partial<Hexalot>): Promise<Partial<Hexalot>> {
         const island = lot.island!
+        const center = lot.center!
+
 
         const surfaces = hexalotIDToSurfaces(lot.id!)
-        const spots = await Promise.all(
-            HEXALOT_SHAPE.map(async (offset, i) => {
-                const coords = lot.center!.plus(offset)
-                let spot = await this.db.findOne(Spot, {
-                    where: {coords, island: {name: island.name}},
-                })
-                if (!spot) {
-                    spot = this.db.create(Spot, {
-                        surface: surfaces[i],
-                        island,
-                        coords,
-                    })
-                    island.spots.push(spot)
+        const existing: { [coords: string]: Spot } = {}
+        const spotsFromDb = await this.db.find(Spot, {
+            where: HEXALOT_SHAPE.map((offset, i) => {
+                return {
+                    coords: center.plus(offset),
+                    island: {name: island.name},
                 }
-                return spot
             }),
-        )
-        const centerSpot = spots[0]
-        const nonce = lot.parent ? lot.parent.nonce + 1 : 0
-        Object.assign(lot, {
-            centerSpot,
-            nonce,
         })
+        for (const spot of spotsFromDb) {
+            existing[spot.coords.toString()] = spot
+        }
+        const newSpots: Array<Partial<Spot>> = []
+        for (const i of Object.keys(HEXALOT_SHAPE)) {
+            const coords = center.plus(HEXALOT_SHAPE[i])
+            const existingSpot = existing[coords.toString()]
+            const newSurface = surfaces[i]
+            if (existingSpot) {
+                if (newSurface !== existingSpot.surface) {
+                    throw new Error("spot surfaces don't match up")
+                }
+            } else {
+                newSpots.push({
+                    surface: newSurface,
+                    island,
+                    coords,
+                })
+            }
+        }
+        island.spots = island.spots.concat(
+            this.db.create(Spot, newSpots),
+        )
+        lot.centerSpot = island.getSpotAtCoords(lot.center!)
+        lot.nonce = lot.parent ? lot.parent.nonce + 1 : 0
+        return lot
     }
 
     public async recalculateIsland(island: Island): Promise<void> {
@@ -201,10 +220,9 @@ export class Repository {
             where,
             relations: ["centerOfHexalot"],
         })
-        const hexalots = adjacentSpots
+        return adjacentSpots
             .map(spot => spot.centerOfHexalot)
             .filter(hexalot => hexalot !== null) as Hexalot[]
-        return hexalots
     }
 
     private async findParentHexalot(spot: Spot): Promise<Hexalot> {

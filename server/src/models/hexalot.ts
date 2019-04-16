@@ -14,7 +14,7 @@ export class Hexalot {
     @ManyToOne(type => Island, island => island.hexalots)
     public island: Island
 
-    @OneToOne(type => Spot, spot => spot.centerOfHexalot)
+    @OneToOne(type => Spot, spot => spot.centerOfHexalot, {cascade: true, eager: true})
     @JoinColumn()
     public centerSpot: Spot
 

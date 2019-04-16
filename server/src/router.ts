@@ -133,15 +133,17 @@ export function createRouter(): Router {
                 }
 
                 try {
-                    await getManager().transaction(manager =>
-                        manager.getCustomRepository(Repository).claimHexalot({
-                            owner: user,
-                            center: new Coords(x, y),
-                            id,
-                            island,
-                            genomeData,
-                        }),
+                    const lot = await getManager().transaction(manager =>
+                        manager.getCustomRepository(Repository)
+                            .claimHexalot({
+                                owner: user,
+                                center: new Coords(x, y),
+                                id,
+                                island,
+                                genomeData,
+                            }),
                     )
+                    console.log("New lot claimed!", JSON.stringify(lot))
                 } catch (err) {
                     res.status(HttpStatus.BAD_REQUEST).json({errors: [err.toString()]})
                     return

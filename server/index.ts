@@ -3,6 +3,7 @@ import cookieParser from "cookie-parser"
 import dotenv from "dotenv"
 import express from "express"
 import morgan from "morgan"
+import "reflect-metadata"
 import { createConnection } from "typeorm"
 
 import { createRouter } from "./src/router"
