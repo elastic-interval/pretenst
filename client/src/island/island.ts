@@ -6,7 +6,7 @@
 import { Vector3 } from "three"
 
 import { IGotchiFactory } from "../gotchi/gotchi"
-import { IStorage } from "../storage/storage"
+import { RemoteStorage } from "../storage/remote-storage"
 
 import { Hexalot } from "./hexalot"
 import {
@@ -18,7 +18,7 @@ import {
     HEXALOT_SHAPE,
     ICoords,
     IIsland,
-    IslandData,
+    IIslandData,
     plus,
 } from "./island-logic"
 import { Spot } from "./spot"
@@ -29,7 +29,7 @@ export class Island implements IIsland {
     public hexalots: Hexalot[] = []
     public vacantHexalot?: Hexalot
 
-    constructor(islandData: IslandData, readonly gotchiFactory: IGotchiFactory, storage: IStorage, nonce: number) {
+    constructor(islandData: IIslandData, readonly gotchiFactory: IGotchiFactory, storage: RemoteStorage, nonce: number) {
         fillIsland(islandData, this)
         this.name = islandData.name
     }

@@ -7,17 +7,20 @@ import * as React from "react"
 import { Button } from "reactstrap"
 import { Vector3 } from "three"
 
+import { API_URI } from "../constants"
 import { ToolbarState } from "../docs/toolbar-state-docs"
 import { Island } from "../island/island"
 import { AppMode, Command, homeHexalotSelected, IAppState } from "../state/app-state"
 import { CommandHandler } from "../state/command-handler"
 import { Transition } from "../state/transition"
+import { IUser } from "../storage/remote-storage"
 
 import { HelpPanel } from "./help-panel"
 
 export interface IControlProps {
     appState: IAppState
     location: Vector3
+    user?: IUser
 }
 
 export interface IControlState {
@@ -58,6 +61,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                         toolbarState={this.state.toolbarState}
                         command={this.state.command}
                     />
+                    {this.signInButton()}
                 </div>
             </div>
         )
@@ -231,5 +235,29 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         const props = this.props
         const nextState = await new CommandHandler(props.appState).afterCommand(command, props.location)
         props.appState.updateState(nextState)
+    }
+
+    private signInButton(): JSX.Element | undefined {
+        if (!this.props.user) {
+            return (
+                <div>
+                    <a href={`${API_URI}/auth/twitter`}>
+                        <img src="sign-in-with-twitter-gray.png" alt="Sign in with Twitter"/>
+                    </a>
+                </div>
+            )
+        }
+        return (
+            <div>
+                <strong>
+                    Hello, @{this.props.user.profile.username}.
+                </strong>
+                <div>
+                    <a href={`${API_URI}/auth/logout`}>
+                        Logout
+                    </a>
+                </div>
+            </div>
+        )
     }
 }

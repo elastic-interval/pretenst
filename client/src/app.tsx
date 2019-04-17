@@ -75,16 +75,15 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     public componentDidMount(): void {
         window.addEventListener("resize", () => this.setState(updateDimensions))
-        if (this.props.userId) {
-            this.props.storage.getOwnedLots().then(ownedLots => {
-                if (ownedLots && ownedLots.length > 0) {
-                    this.setState({ownedLots})
-                    this.fetchIsland(SINGLE_ISLAND, ownedLots[0])
-                } else {
-                    this.setState({ownedLots: []})
-                    this.fetchIsland(SINGLE_ISLAND)
-                }
-            })
+        if (this.props.user) {
+            const ownedLots = this.props.user!.ownedLots.map(lot => lot.id)
+            if (ownedLots && ownedLots.length > 0) {
+                this.setState({ownedLots})
+                this.fetchIsland(SINGLE_ISLAND, ownedLots[0])
+            } else {
+                this.setState({ownedLots: []})
+                this.fetchIsland(SINGLE_ISLAND)
+            }
         } else {
             this.fetchIsland(SINGLE_ISLAND)
         }
@@ -111,10 +110,11 @@ export class App extends React.Component<IAppProps, IAppState> {
                 <ControlPanel
                     appState={this.state}
                     location={this.perspectiveCamera.position}
+                    user={this.props.user}
                 />
                 <WorldView
                     perspectiveCamera={this.perspectiveCamera}
-                    userId={this.props.userId}
+                    user={this.props.user}
                     appState={this.state}
                 />
             </div>

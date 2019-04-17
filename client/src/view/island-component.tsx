@@ -10,6 +10,7 @@ import { Color, Geometry, Mesh, Vector3 } from "three"
 import { HUNG_ALTITUDE } from "../body/fabric"
 import { HEXALOT_OUTLINE_HEIGHT, INNER_HEXALOT_SPOTS, OUTER_HEXALOT_SIDE } from "../island/constants"
 import { IAppState } from "../state/app-state"
+import { IUser } from "../storage/remote-storage"
 
 import {
     AVAILABLE_HEXALOT,
@@ -26,13 +27,13 @@ const SUN_POSITION = new Vector3(0, 600, 0)
 const POINTER_TOP = new Vector3(0, 120, 0)
 const HEMISPHERE_COLOR = new Color("white")
 
-export interface IslandComponentProps {
+export interface IIslandComponentProps {
     appState: IAppState
     setMesh: (key: string, ref: Mesh) => void
-    userId?: string
+    user?: IUser
 }
 
-export class IslandComponent extends React.Component<IslandComponentProps, object> {
+export class IslandComponent extends React.Component<IIslandComponentProps, object> {
     private appStateNonce = -1
     private spots: Geometry
     private seeds: Geometry
@@ -43,7 +44,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
     private availableSpots?: Geometry
     private vacantHexalots?: Geometry
 
-    constructor(props: IslandComponentProps) {
+    constructor(props: IIslandComponentProps) {
         super(props)
         this.spots = this.spotsGeometry
         this.seeds = this.seedsGeometry
@@ -193,7 +194,7 @@ export class IslandComponent extends React.Component<IslandComponentProps, objec
 
     private get availableSpotsGeometry(): Geometry | undefined {
         const appState = this.props.appState
-        if (!this.props.userId || appState.homeHexalot || !appState.islandIsLegal) {
+        if (!this.props.user || appState.homeHexalot || !appState.islandIsLegal) {
             return undefined
         }
         const geometry = new Geometry()

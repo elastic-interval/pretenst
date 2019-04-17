@@ -12,6 +12,7 @@ import { ITERATIONS_PER_TICK } from "../body/fabric"
 import { Spot } from "../island/spot"
 import { IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
+import { IUser } from "../storage/remote-storage"
 
 import { EvolutionComponent } from "./evolution-component"
 import { Flight } from "./flight"
@@ -22,7 +23,7 @@ import { MeshKey, SpotSelector } from "./spot-selector"
 
 interface IWorldProps {
     perspectiveCamera: PerspectiveCamera
-    userId?: string
+    user?: IUser
     appState: IAppState
 }
 
@@ -92,7 +93,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                 <R3.Renderer width={appState.width} height={appState.height}>
                     <R3.Scene width={appState.width} height={appState.height} camera={this.props.perspectiveCamera}>
                         <IslandComponent
-                            userId={this.props.userId}
+                            user={this.props.user}
                             appState={appState}
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
@@ -126,7 +127,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
     private async click(spot: Spot): Promise<void> {
         const props = this.props
         const appState = props.appState
-        const clickHandler = new ClickHandler(appState, props.userId)
+        const clickHandler = new ClickHandler(appState, props.user)
         const afterClick = await clickHandler.stateAfterClick(spot)
         props.appState.updateState(afterClick)
     }
