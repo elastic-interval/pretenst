@@ -1,3 +1,4 @@
+import { Profile } from "passport-twitter"
 import { EntityManager, EntityRepository } from "typeorm"
 
 import { ADJACENT, BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP, ZERO } from "./constants"
@@ -5,6 +6,7 @@ import { Coords } from "./models/coords"
 import { Hexalot } from "./models/hexalot"
 import { Island } from "./models/island"
 import { Spot } from "./models/spot"
+import { TwitterProfile } from "./models/twitterProfile"
 import { User } from "./models/user"
 import { HexalotID, Surface } from "./types"
 
@@ -38,6 +40,17 @@ export class Repository {
         return this.db.findOneOrFail(User, userId, {
             relations: ["ownedLots"],
         })
+    }
+
+    public async findOrCreateUserByTwitterProfile(twitterProfile: Profile): Promise<User> {
+        const profile = await this.db.findOne(TwitterProfile, twitterProfile.id)
+        if (!profile) {
+            const user = this.db.create(User)
+            user.twitterProfile = this.db.create(TwitterProfile, twitterProfile)
+            await this.db.save(user)
+            return user
+        }
+        return profile.user
     }
 
     public async saveHexalot(lot: Hexalot): Promise<void> {

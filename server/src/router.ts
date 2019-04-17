@@ -6,8 +6,11 @@
 import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
+import Passport from "passport"
+import { Strategy as TwitterStrategy } from "passport-twitter"
 import { getCustomRepository, getManager } from "typeorm"
 
+import { ORIGIN } from "./constants"
 import { Coords } from "./models/coords"
 import { Island } from "./models/island"
 import { Repository } from "./repository"
@@ -32,6 +35,26 @@ export function createRouter(): Router {
     const root = Router()
     const islandRoute = Router()
     const hexalotRoute = Router()
+    const consumerKey = process.env.TWITTER_CONSUMER_API_KEY!
+    const consumerSecret = process.env.TWITTER_CONSUMER_API_SECRET!
+    if (!consumerKey || !consumerSecret) {
+        console.error("Missing envvars: TWITTER_CONSUMER_API_KEY or TWITTER_CONSUMER_API_SECRET")
+        process.exit(1)
+    }
+    Passport.use(new TwitterStrategy({
+            consumerKey,
+            consumerSecret,
+            callbackURL: `${ORIGIN}/api/auth/twitter/callback`,
+        },
+        async (token, tokenSecret, profile, done) => {
+            try {
+                const user = await repository.findOrCreateUserByTwitterProfile(profile)
+                done(undefined, user)
+            } catch (err) {
+                done(err)
+            }
+        },
+    ))
 
     const repository = getCustomRepository(Repository)
 
@@ -63,6 +86,11 @@ export function createRouter(): Router {
                     .map(island => island.compressedJSON),
             )
         })
+        .get("/auth/twitter", Passport.authenticate("twitter"))
+        .get("/auth/twitter/callback", Passport.authenticate("twitter", {
+            successRedirect: "/",
+            failureRedirect: "/login",
+        }))
         .get("/me", loadUser, (req, res) => {
             res.json(res.locals.user)
         })
