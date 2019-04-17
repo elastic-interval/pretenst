@@ -7,10 +7,12 @@ import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
 import { getCustomRepository, getManager } from "typeorm"
+import { setupAuthentication } from "./auth"
+import { GalapaRepository } from "./galapaRepository"
 
 import { Coords } from "./models/coords"
 import { Island } from "./models/island"
-import { Repository } from "./repository"
+import { User } from "./models/user"
 
 function validateRequest(req: Request, res: Response, next: NextFunction): void {
     const errors = validationResult(req)
@@ -33,25 +35,9 @@ export function createRouter(): Router {
     const islandRoute = Router()
     const hexalotRoute = Router()
 
-    const repository = getCustomRepository(Repository)
+    const repository = getCustomRepository(GalapaRepository)
 
-    async function loadUser(req: Request, res: Response, next: NextFunction): Promise<void> {
-        if (!req.cookies) {
-            res.sendStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-            return
-        }
-        const userId = req.cookies.userId
-        if (userId === undefined) {
-            res.status(HttpStatus.BAD_REQUEST).send("missing userId cookie")
-            return
-        }
-        try {
-            res.locals.user = await repository.findUser(userId)
-            next()
-        } catch (e) {
-            res.status(HttpStatus.UNAUTHORIZED).send(e)
-        }
-    }
+    const {ensureLoggedIn} = setupAuthentication(repository, root)
 
     root
         .get("/", (req, res) => {
@@ -63,9 +49,13 @@ export function createRouter(): Router {
                     .map(island => island.compressedJSON),
             )
         })
-        .get("/me", loadUser, (req, res) => {
-            res.json(res.locals.user)
+        .get("/me", ensureLoggedIn, (req, res) => {
+            const user: User = req.user
+            res.json(user.toJSON())
         })
+
+    // --- Root Branches ---
+    root
         .use(
             "/island/:islandName",
             [
@@ -101,6 +91,7 @@ export function createRouter(): Router {
             hexalotRoute,
         )
 
+    // --- /island/:islandName ---
     islandRoute
         .get("/", async (req, res) => {
             const island = res.locals.island
@@ -109,6 +100,7 @@ export function createRouter(): Router {
         })
         .post(
             "/claim-lot",
+            ensureLoggedIn,
             [
                 hexalotIDValidation(body("id")),
                 body("x").isInt().toInt(),
@@ -116,9 +108,8 @@ export function createRouter(): Router {
                 body("genomeData").isJSON(),
                 validateRequest,
             ],
-            loadUser,
             async (req: Request, res: Response) => {
-                const user = res.locals.user
+                const user: User = req.user
                 const island: Island = res.locals.island
                 const {
                     x,
@@ -134,7 +125,7 @@ export function createRouter(): Router {
 
                 try {
                     const lot = await getManager().transaction(async manager =>
-                        manager.getCustomRepository(Repository)
+                        manager.getCustomRepository(GalapaRepository)
                             .claimHexalot({
                                 owner: user,
                                 center: new Coords(x, y),
@@ -152,6 +143,7 @@ export function createRouter(): Router {
             },
         )
 
+    // --- /hexalot/:hexalotId ---
     hexalotRoute
         .route("/genome-data")
         .get(async (req, res) => {

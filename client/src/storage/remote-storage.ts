@@ -8,17 +8,21 @@ import Axios, { AxiosInstance } from "axios"
 import { fromOptionalGenomeData, IGenomeData } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
-import { IslandData } from "../island/island-logic"
+import { IIslandData } from "../island/island-logic"
 import { IJourneyData } from "../island/journey"
 
-import { IStorage } from "./storage"
-
-interface IUser {
-    id: number
-    ownedLots: Array<{id: string}>
+interface IUserProfile {
+    username: string
+    displayName: string
+    photos?: Array<{value: string}>
 }
 
-export class RemoteStorage implements IStorage {
+export interface IUser {
+    ownedLots: Array<{id: string}>
+    profile: IUserProfile
+}
+
+export class RemoteStorage {
     private readonly client: AxiosInstance
 
     constructor(baseURL: string) {
@@ -32,19 +36,11 @@ export class RemoteStorage implements IStorage {
             })
     }
 
-    public async getIslandData(islandName: string): Promise<IslandData | undefined> {
-        return this.fetchResource<IslandData>(`/island/${islandName}`)
+    public async getIslandData(islandName: string): Promise<IIslandData | undefined> {
+        return this.fetchResource<IIslandData>(`/island/${islandName}`)
     }
 
-    public async getOwnedLots(): Promise<string[] | undefined> {
-        const user = await this.fetchResource<IUser>("/me")
-        if (!user) {
-            return undefined
-        }
-        return user!.ownedLots.map(lot => lot.id)
-    }
-
-    public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IslandData> {
+    public async claimHexalot(island: Island, hexalot: Hexalot, genomeData: IGenomeData): Promise<IIslandData> {
         hexalot.genome = fromOptionalGenomeData(genomeData)
         const response = await this.client.post(
             `/island/${island.name}/claim-lot`,
@@ -55,7 +51,16 @@ export class RemoteStorage implements IStorage {
                 genomeData: JSON.stringify(genomeData),
             },
         )
-        return response.data as IslandData
+        return response.data as IIslandData
+    }
+
+    public async getUser(): Promise<IUser | undefined> {
+        try {
+            return (await this.fetchResource<IUser>("/me"))
+        } catch (e) {
+            console.log(`Could not get user:`, e)
+            return undefined
+        }
     }
 
     public async getGenomeData(hexalot: Hexalot): Promise<IGenomeData | undefined> {

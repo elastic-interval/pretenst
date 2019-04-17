@@ -52,7 +52,7 @@ export interface IIsland {
     hexalotAroundSpot(spot: ISpot): IHexalot
 }
 
-export interface IslandData {
+export interface IIslandData {
     name: string
     hexalots: string
     spots: string
@@ -99,7 +99,7 @@ export function isIslandLegal(island: IIsland): boolean {
     return island.spots.every(isSpotLegal)
 }
 
-export function extractIslandData(island: IIsland): IslandData {
+export function extractIslandData(island: IIsland): IIslandData {
     const vacant = island.vacantHexalot
     if (vacant) {
         const parent = vacant.parentHexalot
@@ -114,7 +114,7 @@ export function extractIslandData(island: IIsland): IslandData {
             name: island.name,
             hexalots: hexalotTreeString(hexalots),
             spots: spotsToString(spots),
-        } as IslandData
+        } as IIslandData
     }
     if (!isIslandLegal(island)) {
         throw new Error("Saving illegal island")
@@ -124,10 +124,10 @@ export function extractIslandData(island: IIsland): IslandData {
         name: island.name,
         hexalots: hexalotTreeString(island.hexalots),
         spots: spotsToString(island.spots),
-    } as IslandData
+    } as IIslandData
 }
 
-export function fillIsland(data: IslandData, island: IIsland): void {
+export function fillIsland(data: IIslandData, island: IIsland): void {
     let hexalot: IHexalot | undefined = island.getOrCreateHexalot(undefined, ZERO)
     const stepStack = data.hexalots.split("").reverse().map(stepChar => Number(stepChar))
     const hexalotStack: IHexalot[] = []

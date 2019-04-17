@@ -8,14 +8,14 @@ import { Vector3 } from "three"
 import { HUNG_ALTITUDE } from "../body/fabric"
 import { fromOptionalGenomeData, Genome } from "../genetics/genome"
 import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
-import { IStorage } from "../storage/storage"
+import { RemoteStorage } from "../storage/remote-storage"
 
 import { Island } from "./island"
 import { ICoords, IHexalot } from "./island-logic"
 import { fromOptionalJourneyData, Journey, Leg } from "./journey"
 import { Spot } from "./spot"
 
-export async function fetchGenome(hexalot: Hexalot, storage: IStorage): Promise<void> {
+export async function fetchGenome(hexalot: Hexalot, storage: RemoteStorage): Promise<void> {
     if (hexalot.genome) {
         return
     }
@@ -23,7 +23,7 @@ export async function fetchGenome(hexalot: Hexalot, storage: IStorage): Promise<
     console.log(`Genome for ${hexalot.id}`, hexalot.genome)
 }
 
-export async function fetchJourney(hexalot: Hexalot, storage: IStorage, island: Island): Promise<Journey> {
+export async function fetchJourney(hexalot: Hexalot, storage: RemoteStorage, island: Island): Promise<Journey> {
     const journey = await hexalot.fetchJourney(storage, island)
     console.log(`Journey for ${hexalot.id}`, journey)
     if (!journey) {
@@ -69,13 +69,13 @@ export class Hexalot implements IHexalot {
         })
     }
 
-    public async fetchGenome(storage: IStorage): Promise<Genome | undefined> {
+    public async fetchGenome(storage: RemoteStorage): Promise<Genome | undefined> {
         const genomeData = await storage.getGenomeData(this)
         this.genome = fromOptionalGenomeData(genomeData)
         return this.genome
     }
 
-    public async fetchJourney(storage: IStorage, island: Island): Promise<Journey | undefined> {
+    public async fetchJourney(storage: RemoteStorage, island: Island): Promise<Journey | undefined> {
         const journeyData = await storage.getJourneyData(this)
         this.journey = fromOptionalJourneyData(island, this, journeyData)
         return this.journey

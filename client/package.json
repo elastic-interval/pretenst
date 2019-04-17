@@ -28,9 +28,9 @@
   },
   "scripts": {
     "start:local": "react-scripts-ts start",
-    "start": "REACT_APP_REMOTE_STORAGE_URI=http://localhost:8000/api react-scripts-ts start",
+    "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
-    "build:prod": "REACT_APP_REMOTE_STORAGE_URI=https://galapagotchi.run/api react-scripts-ts build",
+    "build:prod": "NODE_ENV=production react-scripts-ts build",
     "test": "react-scripts-ts test --env=jsdom",
     "eject": "react-scripts-ts eject",
     "lint": "tslint --fix -p tsconfig.json",
