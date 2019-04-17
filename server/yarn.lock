@@ -107,6 +107,13 @@
   resolved "https://registry.yarnpkg.com/@types/chai/-/chai-4.1.7.tgz#1b8e33b61a8c09cbe1f85133071baa0dbf9fa71a"
   integrity sha512-2Y8uPt0/jwjhQ6EiluT0XCri1Dbplr0ZxfFXUz+ye13gaqE8u5gL5ppao1JrUYr9cIip5S6MvQzBS7Kke7U9VA==
 
+"@types/connect-ensure-login@^0.1.4":
+  version "0.1.4"
+  resolved "https://registry.yarnpkg.com/@types/connect-ensure-login/-/connect-ensure-login-0.1.4.tgz#6bfb5d5a3a273b08c15ceb00620ab14f8bf06244"
+  integrity sha512-MLXOS6+5MnhkB7F34xE66wX9MEEfrUJRfNM9Uv0vEre8kH13tILO9j2b7fI4xwyLXSEn9k3uIE8U46MQ1CWByw==
+  dependencies:
+    "@types/express" "*"
+
 "@types/connect@*":
   version "3.4.32"
   resolved "https://registry.yarnpkg.com/@types/connect/-/connect-3.4.32.tgz#aa0e9616b9435ccad02bc52b5b454ffc2c70ba28"
@@ -738,6 +745,11 @@ concat-map@0.0.1:
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/concat-map/-/concat-map-0.0.1.tgz#d8a96bd77fd68df7793a73036a3ba0d5405d477b"
   integrity sha1-2Klr13/Wjfd5OnMDajug1UBdR3s=
+
+connect-ensure-login@^0.1.1:
+  version "0.1.1"
+  resolved "https://registry.yarnpkg.com/connect-ensure-login/-/connect-ensure-login-0.1.1.tgz#174dcc51243b9eac23f8d98215aeb6694e2e8a12"
+  integrity sha1-F03MUSQ7nqwj+NmCFa62aU4uihI=
 
 console-control-strings@^1.0.0, console-control-strings@~1.1.0:
   version "1.1.0"
@@ -3536,6 +3548,11 @@ type-is@~1.6.16:
   dependencies:
     media-typer "0.3.0"
     mime-types "~2.1.18"
+
+typeorm-store@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/typeorm-store/-/typeorm-store-1.2.0.tgz#1f6a552fa635a4ee21401891e62cbd53f02dad0a"
+  integrity sha512-HdNV8OZcSS1ETSxXn8b0UsZc3E+S+KjOGRN0rPGiSUP74LylUEehTzMrgAekZw7h4zfAtfqqgpEILZIhoTbrZA==
 
 typeorm@0.2.16:
   version "0.2.16"

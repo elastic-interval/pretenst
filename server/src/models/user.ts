@@ -15,4 +15,9 @@ export class User {
     @OneToOne(type => TwitterProfile, profile => profile.user, {cascade: true, eager: true})
     @JoinColumn()
     public twitterProfile: TwitterProfile
+
+    public toJSON(): object {
+        const {ownedLots, twitterProfile: profile} = this
+        return {ownedLots, profile}
+    }
 }
