@@ -61,7 +61,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                         toolbarState={this.state.toolbarState}
                         command={this.state.command}
                     />
-                    {this.signInButton()}
+                    {this.userGreeting()}
                 </div>
             </div>
         )
@@ -237,7 +237,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         props.appState.updateState(nextState)
     }
 
-    private signInButton(): JSX.Element | undefined {
+    private userGreeting(): JSX.Element | undefined {
         if (!this.props.user) {
             return (
                 <div>
