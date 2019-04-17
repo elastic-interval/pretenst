@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node index.ts",
-    "start:daemon": "pm2 start process.yml",
+    "start:prod": "NODE_ENV=production ts-node index.ts",
     "check": "tsc -p . --noemit",
     "test": "mocha -r ts-node/register test/*.test.ts",
     "typeorm": "ts-node ./node_modules/typeorm/cli.js",

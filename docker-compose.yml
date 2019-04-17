@@ -27,8 +27,8 @@ services:
       - POSTGRES_URI=db
     depends_on:
       - db
-      - migrate-db
     links:
       - db
     ports:
       - "8000:8000"
+    command: "yarn start:prod"
