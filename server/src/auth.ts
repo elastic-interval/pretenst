@@ -11,7 +11,7 @@ import { GalapaRepository } from "./galapaRepository"
 import { Session as SessionEntity } from "./models/session"
 import { User } from "./models/user"
 
-export function setupTwitterAuth(repository: GalapaRepository, app: Router): {ensureLoggedIn: RequestHandler} {
+export function setupAuthentication(repository: GalapaRepository, app: Router): {ensureLoggedIn: RequestHandler} {
     const consumerKey = process.env.TWITTER_CONSUMER_API_KEY!
     const consumerSecret = process.env.TWITTER_CONSUMER_API_SECRET!
     if (!consumerKey || !consumerSecret) {
@@ -59,8 +59,12 @@ export function setupTwitterAuth(repository: GalapaRepository, app: Router): {en
 
     app
         .get("/auth/twitter", Passport.authenticate("twitter"))
+        .get("/auth/logout", (req, res) => {
+            req.logout()
+            res.redirect(`${CLIENT_ORIGIN}/`)
+        })
         .get("/auth/twitter/callback", Passport.authenticate("twitter", {
-            successRedirect: `${CLIENT_ORIGIN}`,
+            successRedirect: `${CLIENT_ORIGIN}/`,
             failureRedirect: "/login",
         }))
 

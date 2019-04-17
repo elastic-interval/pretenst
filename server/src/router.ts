@@ -7,7 +7,7 @@ import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
 import { getCustomRepository, getManager } from "typeorm"
-import { setupTwitterAuth } from "./auth"
+import { setupAuthentication } from "./auth"
 import { GalapaRepository } from "./galapaRepository"
 
 import { Coords } from "./models/coords"
@@ -37,7 +37,7 @@ export function createRouter(): Router {
 
     const repository = getCustomRepository(GalapaRepository)
 
-    const {ensureLoggedIn} = setupTwitterAuth(repository, root)
+    const {ensureLoggedIn} = setupAuthentication(repository, root)
 
     root
         .get("/", (req, res) => {
