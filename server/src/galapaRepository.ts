@@ -20,7 +20,7 @@ interface ILotClaim {
 }
 
 @EntityRepository()
-export class Repository {
+export class GalapaRepository {
     constructor(private readonly db: EntityManager) {
     }
 

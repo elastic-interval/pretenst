@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@types/axios": "^0.14.0",
+    "@types/connect-ensure-login": "^0.1.4",
     "@types/cookie-parser": "^1.4.1",
     "@types/dotenv": "^6.1.0",
     "@types/express": "^4.16.1",
@@ -32,6 +33,7 @@
     "axios": "^0.18.0",
     "bignumber.js": "^8.0.2",
     "commander": "^2.19.0",
+    "connect-ensure-login": "^0.1.1",
     "cookie-parser": "^1.4.4",
     "dotenv": "^6.2.0",
     "express": "^4.16.4",
@@ -47,6 +49,7 @@
     "ts-node": "^8.0.2",
     "tslint": "^5.12.1",
     "typeorm": "0.2.16",
+    "typeorm-store": "^1.2.0",
     "typescript": "^3.3.3",
     "uuid": "^3.3.2"
   },
