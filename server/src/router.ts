@@ -4,13 +4,14 @@
  */
 
 import { NextFunction, Request, Response, Router } from "express"
+import Session from "express-session"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
 import Passport from "passport"
 import { Strategy as TwitterStrategy } from "passport-twitter"
 import { getCustomRepository, getManager } from "typeorm"
 
-import { ORIGIN } from "./constants"
+import { API_ORIGIN } from "./constants"
 import { Coords } from "./models/coords"
 import { Island } from "./models/island"
 import { Repository } from "./repository"
@@ -31,20 +32,18 @@ const hexalotIDValidation = (idParam: ValidationChain) =>
         .isLength({max: 32, min: 32})
         .custom(id => (parseInt(id[id.length - 1], 16) & 0x1) === 0)
 
-export function createRouter(): Router {
-    const root = Router()
-    const islandRoute = Router()
-    const hexalotRoute = Router()
+function setupTwitterAuth(repository: Repository, app: Router): void {
     const consumerKey = process.env.TWITTER_CONSUMER_API_KEY!
     const consumerSecret = process.env.TWITTER_CONSUMER_API_SECRET!
     if (!consumerKey || !consumerSecret) {
         console.error("Missing envvars: TWITTER_CONSUMER_API_KEY or TWITTER_CONSUMER_API_SECRET")
         process.exit(1)
     }
+    const callbackURL = `${API_ORIGIN}/api/auth/twitter/callback`
     Passport.use(new TwitterStrategy({
             consumerKey,
             consumerSecret,
-            callbackURL: `${ORIGIN}/api/auth/twitter/callback`,
+            callbackURL,
         },
         async (token, tokenSecret, profile, done) => {
             try {
@@ -56,7 +55,27 @@ export function createRouter(): Router {
         },
     ))
 
+    app.use(Session({
+        secret: process.env.COOKIE_SECRET || "yolo bitcoin",
+    }))
+    app.use(Passport.initialize())
+    app.use(Passport.session())
+    app
+        .get("/auth/twitter", Passport.authenticate("twitter"))
+        .get("/auth/twitter/callback", Passport.authenticate("twitter", {
+            successRedirect: "/",
+            failureRedirect: "/login",
+        }))
+}
+
+export function createRouter(): Router {
+    const root = Router()
+    const islandRoute = Router()
+    const hexalotRoute = Router()
+
     const repository = getCustomRepository(Repository)
+
+    setupTwitterAuth(repository, root)
 
     async function loadUser(req: Request, res: Response, next: NextFunction): Promise<void> {
         if (!req.cookies) {
@@ -86,11 +105,6 @@ export function createRouter(): Router {
                     .map(island => island.compressedJSON),
             )
         })
-        .get("/auth/twitter", Passport.authenticate("twitter"))
-        .get("/auth/twitter/callback", Passport.authenticate("twitter", {
-            successRedirect: "/",
-            failureRedirect: "/login",
-        }))
         .get("/me", loadUser, (req, res) => {
             res.json(res.locals.user)
         })

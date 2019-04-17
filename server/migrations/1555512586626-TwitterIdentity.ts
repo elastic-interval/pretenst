@@ -3,7 +3,7 @@ import {MigrationInterface, QueryRunner} from "typeorm"
 export class TwitterIdentity1555512586626 implements MigrationInterface {
 
     public async up(queryRunner: QueryRunner): Promise<any> {
-        await queryRunner.query(`CREATE TABLE "twitter_profile" ("id" character varying NOT NULL, "username" character varying NOT NULL, "displayName" character varying NOT NULL, "photos" jsonb NOT NULL, "emails" jsonb NOT NULL, "provider" character varying NOT NULL, "gender" character varying NOT NULL, "name" jsonb NOT NULL, "_accessLevel" character varying NOT NULL, "_json" jsonb NOT NULL, "_raw" character varying NOT NULL, CONSTRAINT "PK_b0917e4ff0140c91a83a7d629ba" PRIMARY KEY ("id"))`)
+        await queryRunner.query(`CREATE TABLE "twitter_profile" ("id" character varying NOT NULL, "username" character varying NOT NULL, "displayName" character varying NOT NULL, "provider" character varying NOT NULL, "photos" jsonb, "emails" jsonb, "gender" character varying, "name" jsonb, "_accessLevel" character varying NOT NULL, "_json" jsonb, "_raw" character varying NOT NULL, CONSTRAINT "PK_b0917e4ff0140c91a83a7d629ba" PRIMARY KEY ("id"))`)
         await queryRunner.query(`ALTER TABLE "user" ADD "twitterProfileId" character varying`)
         await queryRunner.query(`ALTER TABLE "user" ADD CONSTRAINT "UQ_3b2de0c816f8c7c819559c2108d" UNIQUE ("twitterProfileId")`)
         await queryRunner.query(`ALTER TABLE "island" ALTER COLUMN "geography" SET DEFAULT '{"hexalots":"","spots":""}'`)
@@ -17,5 +17,4 @@ export class TwitterIdentity1555512586626 implements MigrationInterface {
         await queryRunner.query(`ALTER TABLE "user" DROP COLUMN "twitterProfileId"`)
         await queryRunner.query(`DROP TABLE "twitter_profile"`)
     }
-
 }
