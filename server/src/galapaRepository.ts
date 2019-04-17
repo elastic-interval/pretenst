@@ -1,4 +1,4 @@
-import { Profile } from "passport-twitter"
+import { Profile as TwitterPassportProfile } from "passport-twitter"
 import { EntityManager, EntityRepository } from "typeorm"
 
 import { ADJACENT, BRANCH_STEP, ERROR_STEP, HEXALOT_SHAPE, STOP_STEP, ZERO } from "./constants"
@@ -42,8 +42,8 @@ export class GalapaRepository {
         })
     }
 
-    public async findOrCreateUserByTwitterProfile(twitterProfile: Profile): Promise<User> {
-        const profile = await this.db.findOne(TwitterProfile, twitterProfile.id, {
+    public async findOrCreateUserByTwitterProfile(passportProfile: TwitterPassportProfile): Promise<User> {
+        const profile = await this.db.findOne(TwitterProfile, passportProfile.id, {
             relations: ["user"],
         })
         if (profile) {
@@ -51,7 +51,7 @@ export class GalapaRepository {
         }
 
         const user = this.db.create(User)
-        user.twitterProfile = this.db.create(TwitterProfile, twitterProfile)
+        user.twitterProfile = this.db.create(TwitterProfile, passportProfile)
         await this.db.save(user)
         return user
     }
