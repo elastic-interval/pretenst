@@ -6,7 +6,7 @@ services:
     restart: always
     environment:
       - POSTGRES_USER=galapagotchi
-      - POSTGRES_PASSWORD=goomslatch
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-goomslatch}
     ports:
       - "5432:5432"
 

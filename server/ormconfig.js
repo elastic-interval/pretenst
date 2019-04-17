@@ -9,7 +9,7 @@ module.exports = {
   migrations: [
     "migrations/*.ts",
   ],
-  password: "goomslatch",
+  password: process.env.DB_PASSWORD || "goomslatch",
   type: "postgres",
   username: "galapagotchi",
 }
