@@ -6,7 +6,7 @@ import morgan from "morgan"
 import "reflect-metadata"
 import { createConnection } from "typeorm"
 
-import { ORIGIN } from "./src/constants"
+import { CLIENT_ORIGIN } from "./src/constants"
 import { createRouter } from "./src/router"
 
 async function run(listenPort: number): Promise<void> {
@@ -20,7 +20,7 @@ async function run(listenPort: number): Promise<void> {
     app.use(morgan("short"))
 
     app.use((req, res, next) => {
-        res.header("Access-Control-Allow-Origin", ORIGIN)
+        res.header("Access-Control-Allow-Origin", CLIENT_ORIGIN)
         res.header("Access-Control-Allow-Credentials", "true")
         res.header("Access-Control-Allow-Methods", "GET, POST")
         res.header("Access-Control-Allow-Headers", "Content-Type")

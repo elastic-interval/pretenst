@@ -43,14 +43,17 @@ export class Repository {
     }
 
     public async findOrCreateUserByTwitterProfile(twitterProfile: Profile): Promise<User> {
-        const profile = await this.db.findOne(TwitterProfile, twitterProfile.id)
-        if (!profile) {
-            const user = this.db.create(User)
-            user.twitterProfile = this.db.create(TwitterProfile, twitterProfile)
-            await this.db.save(user)
-            return user
+        const profile = await this.db.findOne(TwitterProfile, twitterProfile.id, {
+            relations: ["user"],
+        })
+        if (profile) {
+            return profile.user!
         }
-        return profile.user
+
+        const user = this.db.create(User)
+        user.twitterProfile = this.db.create(TwitterProfile, twitterProfile)
+        await this.db.save(user)
+        return user
     }
 
     public async saveHexalot(lot: Hexalot): Promise<void> {

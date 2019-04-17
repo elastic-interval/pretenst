@@ -160,7 +160,10 @@ export const ADJACENT = [
     new Coords(1, 1), // 6
 ]
 
-export const ORIGIN = (process.env.NODE_ENV === "production") ?
+export const CLIENT_ORIGIN = (process.env.NODE_ENV === "production") ?
     "https://galapagotchi.run" :
     "http://127.0.0.1:3000"
 
+export const API_ORIGIN = (process.env.NODE_ENV === "production") ?
+    "https://galapagotchi.run" :
+    "http://127.0.0.1:8000"

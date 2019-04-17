@@ -12,7 +12,7 @@ export class User {
     @OneToMany(type => Hexalot, lot => lot.owner, {cascade: true})
     public ownedLots: Hexalot[]
 
-    @OneToOne(type => TwitterProfile, profile => profile.user, {cascade: true})
+    @OneToOne(type => TwitterProfile, profile => profile.user, {cascade: true, eager: true})
     @JoinColumn()
     public twitterProfile: TwitterProfile
 }
