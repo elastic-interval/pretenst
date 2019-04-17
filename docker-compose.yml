@@ -12,6 +12,7 @@ services:
 
   migrate-db:
     build: server
+    env_file: .env
     environment:
       - POSTGRES_URI=db
     depends_on:
@@ -22,6 +23,7 @@ services:
 
   server:
     build: server
+    env_file: .env
     restart: on-failure
     environment:
       - POSTGRES_URI=db
