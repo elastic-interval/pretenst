@@ -1,13 +1,29 @@
 {
-  "extends": "../tsconfig",
   "compilerOptions": {
     "module": "commonjs",
     "target": "esnext",
-    "lib": ["es2016"],
-    "jsx": "react"
+    "lib": [
+      "es2016"
+    ],
+    "jsx": "react",
+    "moduleResolution": "node",
+    "rootDir": "src",
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "noUnusedLocals": true,
+    "downlevelIteration": true,
+    "esModuleInterop": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true
   },
   "include": [
-    "src/**/*"
+    "index.ts",
+    "src/**/*",
+    "migrations/**/*"
   ],
   "exclude": [
     "node_modules"

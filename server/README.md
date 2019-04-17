@@ -2,26 +2,26 @@
 
 ### Run
 
-You can substitute npm for yarn
-
-`yarn install`
-`yarn run start`
-
-### Test
-
-Using [HTTPie](https://httpie.org/)
-
-To test purchase: 
-`http POST :8000/hexalot/buy X-User-Pubkey:"B9czvZ1x3sQ" X-User-Signature:fakesig parentLot=c38642d0cc44668a4a2a76c28d482f4e direction=0 newBits=1001110`
-
-To test owned lots:
-`http GET :8000/hexalot/owned X-User-Pubkey:"B9czvZ1x3sQ" X-User-Signature:fakesig`
+Easiest way to run the server is to run `docker-compose up` in the root project folder.
+This will spin up a PostgreSQL instance, migrate the database schema and run the server.
 
 
-Or using Curl
 
-Purchase:
-`curl -X POST localhost:8000/hexalot/buy -H "Content-Type: application/json"  -H X-User-Pubkey:"B9czvZ1x3sQ" -H X-User-Signature:curl -X POST localhost:8000/hexalot/buy -H "Content-Type: application/json"  -H X-User-Pubkey:"B9czvZ1x3sQ" -H X-User-Signature:fakesig -d '{"parentLot":"c38642d0cc44668a4a2a76c28d482f4e", "direction": 0, "newBits":"1001110"} -d '{"parentLot":"c38642d0cc44668a4a2a76c28d482f4e", "direction": 0, "newBits":"1001110"}`
+Otherwise, run `docker-compose up -d db` to have a DB instance running and 
+```bash
+yarn install
+yarn run start
+```
 
-Owned:
-`curl -X GET localhost:8000/hexalot/owned -H X-User-Pubkey:"B9czvZ1x3sQ" -H X-User-Signature:fakesig`
+(You can substitute npm for yarn)
+
+### Database
+
+Using [TypeORM](https://typeorm.io) and [PostgreSQL](https://www.postgresql.org)
+
+To interact with the database, use `yarn typeorm [COMMAND]`
+
+To nuke the entire database run
+`yarn typeorm schema:drop`
+
+To migrate the database, run `yarn typeorm migrate:run`

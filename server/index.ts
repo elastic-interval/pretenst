@@ -3,20 +3,17 @@ import cookieParser from "cookie-parser"
 import dotenv from "dotenv"
 import express from "express"
 import morgan from "morgan"
+import "reflect-metadata"
+import { createConnection } from "typeorm"
 
 import { createRouter } from "./src/router"
-import { LevelDBFlashStore } from "./src/store"
 
 const origin = process.env.NODE_ENV === "production" ?
     "https://galapagotchi.run" :
     "http://localhost:3000"
 
 async function run(listenPort: number): Promise<void> {
-    const startTime = new Date().toISOString()
-    const db = new LevelDBFlashStore(
-        `${__dirname}/data/galapagotchi.db`,
-        `${__dirname}/data/event-logs/events-${startTime}.log`,
-    )
+    await createConnection()
 
     const app = express()
 
@@ -33,7 +30,7 @@ async function run(listenPort: number): Promise<void> {
         next()
     })
 
-    app.use("/api", createRouter(db))
+    app.use("/api", createRouter())
 
     return new Promise<void>(
         resolve => app.listen(listenPort, resolve),
