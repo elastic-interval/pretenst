@@ -6,12 +6,13 @@ services:
     restart: always
     environment:
       - POSTGRES_USER=galapagotchi
-      - POSTGRES_PASSWORD=goomslatch
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-goomslatch}
     ports:
       - "5432:5432"
 
   migrate-db:
     build: server
+    env_file: .env
     environment:
       - POSTGRES_URI=db
     depends_on:
@@ -22,6 +23,7 @@ services:
 
   server:
     build: server
+    env_file: .env
     restart: on-failure
     environment:
       - POSTGRES_URI=db
