@@ -1,5 +1,4 @@
-import { Entity, JoinColumn, OneToMany, PrimaryGeneratedColumn } from "typeorm"
-import { OneToOne } from "typeorm/decorator/relations/OneToOne"
+import { Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm"
 
 import { Hexalot } from "./hexalot"
 import { TwitterProfile } from "./twitterProfile"

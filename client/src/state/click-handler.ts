@@ -4,6 +4,7 @@
  */
 
 import { Spot } from "../island/spot"
+import { IUser } from "../storage/remote-storage"
 
 import { AppMode, IAppState } from "./app-state"
 import { Transition } from "./transition"
@@ -12,7 +13,7 @@ export class ClickHandler {
 
     private trans: Transition
 
-    constructor(appState: IAppState, private userId?: string) {
+    constructor(appState: IAppState, private user?: IUser) {
         this.trans = new Transition(appState)
     }
 
@@ -37,7 +38,7 @@ export class ClickHandler {
 
 
             case AppMode.Exploring: // ===============================================================================
-                if (this.userId && !homeHexalot && appState.islandIsLegal && spot.isCandidateHexalot(vacant)) {
+                if (this.user && !homeHexalot && appState.islandIsLegal && spot.isCandidateHexalot(vacant)) {
                     island.vacantHexalot = island.createHexalot(spot)
                     return (await trans.withSelectedSpot(spot)).terraforming.withRestructure.appState
                 }

@@ -11,13 +11,13 @@ import { Island } from "../island/island"
 import { coordsToString } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
-import { IStorage } from "../storage/storage"
+import { IUser, RemoteStorage } from "../storage/remote-storage"
 import { IFlightTarget } from "../view/flight-target"
 
 export interface IAppProps {
     fabricExports: IFabricExports
-    storage: IStorage
-    userId?: string
+    storage: RemoteStorage
+    user?: IUser
 }
 
 export type AppTransition = () => (Pick<IAppState, keyof IAppState>)
@@ -26,7 +26,7 @@ export interface IAppState {
 
     readonly nonce: number
     readonly appMode: AppMode
-    readonly storage: IStorage
+    readonly storage: RemoteStorage
     readonly helpVisible: boolean
     readonly islandIsLegal: boolean
 
