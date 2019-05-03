@@ -75,7 +75,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         const spot = appState.selectedSpot
         const hexalot = appState.selectedHexalot
         const homeHexalot = appState.homeHexalot
-        const singleHexalot = island.hexalots.length === 1 ? island.hexalots[0] : undefined
+        const singleHexalot = island.singleHexalot
 
         const Message = (props: IContainerProps) => <p>{props.children}</p>
 

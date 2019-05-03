@@ -128,12 +128,12 @@ export class App extends React.Component<IAppProps, IAppState> {
         if (!islandData) {
             return
         }
+        console.log("Fetched island", islandData)
         const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
         const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
         const flightTarget = homeHexalot ? HexalotTarget(homeHexalot, AppMode.Exploring) : IslandTarget(island, AppMode.Exploring)
         const appState = new Transition(this.state)
             .withIsland(island, flightTarget)
-            .withIslandIsLegal(false)
             .withRestructure
             .appState
         if (!homeHexalotId) {

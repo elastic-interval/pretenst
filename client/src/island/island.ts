@@ -34,6 +34,10 @@ export class Island implements IIsland {
         this.name = islandData.name
     }
 
+    public get singleHexalot(): Hexalot | undefined {
+        return this.hexalots.length !== 1 ? undefined : this.hexalots[0]
+    }
+
     public findHexalot(id: string): Hexalot | undefined {
         return this.hexalots.find(hexalot => hexalot.id === id)
     }
