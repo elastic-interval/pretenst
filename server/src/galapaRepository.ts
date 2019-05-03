@@ -87,41 +87,30 @@ export class GalapaRepository {
             })
             lot.parent = await this.findParentHexalot(centerSpot)
         }
-        lot = await this.fillHexalotDetails(lot)
 
-        island.hexalots.push(
-            this.db.create(Hexalot, lot),
-        )
-        await this.db.save(island)
-
-        // This will determine whether the new island is still legal
-        await this.recalculateIsland(island)
-
-        return this.db.findOneOrFail(Hexalot, lot.id)
+        return this.validateAndSaveHexalot(lot)
     }
 
-    public async fillHexalotDetails(lot: Partial<Hexalot>): Promise<Partial<Hexalot>> {
+    public async validateAndSaveHexalot(lot: Partial<Hexalot>): Promise<Hexalot> {
         const island = lot.island!
         const center = lot.center!
 
-
         const surfaces = hexalotIDToSurfaces(lot.id!)
-        const existing: { [coords: string]: Spot } = {}
-        const spotsFromDb = await this.db.find(Spot, {
-            where: HEXALOT_SHAPE.map((offset, i) => {
-                return {
-                    coords: center.plus(offset),
-                    island: {name: island.name},
-                }
-            }),
+        const spotAtCoords: { [coords: string]: Spot } = {}
+        const where = HEXALOT_SHAPE.map((offset) => {
+            return {
+                coords: center.plus(offset),
+                island: {name: island.name},
+            }
         })
-        for (const spot of spotsFromDb) {
-            existing[spot.coords.toString()] = spot
+        const existingSpots = await this.db.find(Spot, { where })
+        for (const spot of existingSpots) {
+            spotAtCoords[spot.coords.toString()] = spot
         }
         const newSpots: Array<Partial<Spot>> = []
-        for (const i of Object.keys(HEXALOT_SHAPE)) {
-            const coords = center.plus(HEXALOT_SHAPE[i])
-            const existingSpot = existing[coords.toString()]
+        for (let i = 0; i < HEXALOT_SHAPE.length; i++) {
+            const {coords} = where[i]
+            const existingSpot = spotAtCoords[coords.toString()]
             const newSurface = surfaces[i]
             if (existingSpot) {
                 if (newSurface !== existingSpot.surface) {
@@ -138,9 +127,16 @@ export class GalapaRepository {
         island.spots = island.spots.concat(
             this.db.create(Spot, newSpots),
         )
+        await this.db.save(island)
+
         lot.centerSpot = island.getSpotAtCoords(lot.center!)
         lot.nonce = lot.parent ? lot.parent.nonce + 1 : 0
-        return lot
+        island.hexalots.push(this.db.create(Hexalot, lot))
+        await this.db.save(island)
+        // This will determine whether the new island is still legal
+        await this.recalculateIsland(island)
+
+        return this.db.findOneOrFail(Hexalot, lot.id)
     }
 
     public async recalculateIsland(island: Island): Promise<void> {

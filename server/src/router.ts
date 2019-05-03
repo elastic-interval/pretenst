@@ -7,9 +7,9 @@ import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
 import HttpStatus from "http-status-codes"
 import { getCustomRepository, getManager } from "typeorm"
+
 import { setupAuthentication } from "./auth"
 import { GalapaRepository } from "./galapaRepository"
-
 import { Coords } from "./models/coords"
 import { Island } from "./models/island"
 import { User } from "./models/user"
@@ -32,6 +32,7 @@ const hexalotIDValidation = (idParam: ValidationChain) =>
 
 export function createRouter(): Router {
     const root = Router()
+
     const islandRoute = Router()
     const hexalotRoute = Router()
 
@@ -43,7 +44,7 @@ export function createRouter(): Router {
         .get("/", (req, res) => {
             res.sendStatus(HttpStatus.OK)
         })
-        .get("/islands", async (req, res) => {
+        .get("/islands", async ( req, res) => {
             res.json(
                 (await repository.getAllIslands())
                     .map(island => island.compressedJSON),
