@@ -5,6 +5,7 @@
   "engines": {
     "node": "11.10.1"
   },
+  "types": "./types/index.d.ts",
   "private": true,
   "dependencies": {
     "@types/axios": "^0.14.0",
@@ -20,6 +21,7 @@
     "react-dom": "^15.4.1",
     "react-scripts-ts": "2.15.1",
     "react-three": "^0.9.7",
+    "react-twitter-embed": "^2.0.8",
     "reactstrap": "^6.5.0",
     "rxjs": "5.5.6",
     "three": "^0.83.0",
