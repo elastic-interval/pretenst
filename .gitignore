@@ -142,3 +142,6 @@ build
 
 *.wasm
 *.wasm.map
+
+.env
+

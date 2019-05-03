@@ -2,7 +2,7 @@ import bodyParser from "body-parser"
 import cookieParser from "cookie-parser"
 import dotenv from "dotenv"
 import express from "express"
-import morgan from "morgan"
+import logger from "morgan"
 import "reflect-metadata"
 import { createConnection } from "typeorm"
 
@@ -14,10 +14,10 @@ async function run(listenPort: number): Promise<void> {
 
     const app = express()
 
+    app.use(logger(":method :url [:status :response-time ms] - Cookie: :req[cookie]"))
+
     app.use(bodyParser())
     app.use(cookieParser())
-
-    app.use(morgan("short"))
 
     app.use((req, res, next) => {
         res.header("Access-Control-Allow-Origin", CLIENT_ORIGIN)

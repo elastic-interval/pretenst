@@ -1,4 +1,4 @@
-import { Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm"
+import { Column, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn } from "typeorm"
 
 import { Hexalot } from "./hexalot"
 import { TwitterProfile } from "./twitterProfile"
@@ -14,6 +14,13 @@ export class User {
     @OneToOne(type => TwitterProfile, profile => profile.user, {cascade: true, eager: true})
     @JoinColumn()
     public twitterProfile: TwitterProfile
+
+    @Column({default: false})
+    public isAdmin: boolean
+
+    public get username(): string {
+        return this.twitterProfile.username
+    }
 
     public toJSON(): object {
         const {ownedLots, twitterProfile: profile} = this

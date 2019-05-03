@@ -25,7 +25,7 @@ const ANGLE_ABOVE_HORIZON = Math.PI * 5 / 12
 
 const TOWARDS_UPWARDS = 0.3
 const TOWARDS_TARGET = 0.05
-const TOWARDS_DISTANCE = 0.025
+const TOWARDS_DISTANCE = 0.25
 const TOWARDS_ABOVE = 0.01
 
 export class Flight {

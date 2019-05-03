@@ -4,6 +4,7 @@
  */
 
 import * as React from "react"
+import { TwitterFollowButton } from "react-twitter-embed"
 import { Button } from "reactstrap"
 import { Vector3 } from "three"
 
@@ -256,6 +257,9 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                     <a href={`${API_URI}/auth/logout`}>
                         Logout
                     </a>
+                </div>
+                <div className="mt-4">
+                    <TwitterFollowButton screenName="galapagotchi" options={{size: "large"}} />
                 </div>
             </div>
         )

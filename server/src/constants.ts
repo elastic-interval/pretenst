@@ -7,6 +7,14 @@ import { Coords } from "./models/coords"
 
 export const HEXALOT_PURCHASE_PRICE_SATOSHIS = "100"
 
+export const CLIENT_ORIGIN = (process.env.NODE_ENV === "production") ?
+    "https://galapagotchi.run" :
+    "http://127.0.0.1:3000"
+
+export const API_ORIGIN = (process.env.NODE_ENV === "production") ?
+    "https://galapagotchi.run" :
+    "http://127.0.0.1:8000"
+
 export const ZERO: Coords = new Coords(0, 0)
 
 export const STOP_STEP = 0
@@ -159,11 +167,3 @@ export const ADJACENT = [
     new Coords(-1, 1),
     new Coords(1, 1), // 6
 ]
-
-export const CLIENT_ORIGIN = (process.env.NODE_ENV === "production") ?
-    "https://galapagotchi.run" :
-    "http://127.0.0.1:3000"
-
-export const API_ORIGIN = (process.env.NODE_ENV === "production") ?
-    "https://galapagotchi.run" :
-    "http://127.0.0.1:8000"
