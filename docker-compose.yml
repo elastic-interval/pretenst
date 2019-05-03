@@ -1,27 +1,7 @@
 version: "3.7"
 services:
   # TODO: mount DB volume
-  db:
-    image: postgres:11.2
-    restart: always
-    environment:
-      - POSTGRES_USER=galapagotchi
-      - POSTGRES_PASSWORD=${DB_PASSWORD:-goomslatch}
-    ports:
-      - "5432:5432"
-
-  migrate-db:
-    build: server
-    env_file: .env
-    environment:
-      - POSTGRES_URI=db
-    depends_on:
-      - db
-    links:
-      - db
-    command: "bash -c 'sleep 2 && yarn typeorm migration:run'"
-
-  server:
+  app:
     build: server
     env_file: .env
     restart: on-failure
@@ -34,3 +14,23 @@ services:
     ports:
       - "8000:8000"
     command: "yarn start:prod"
+
+  migrate-db:
+    build: server
+    env_file: .env
+    environment:
+      - POSTGRES_URI=db
+    depends_on:
+      - db
+    links:
+      - db
+    command: "bash -c 'sleep 2 && yarn typeorm migration:run'"
+
+  db:
+    image: postgres:11.2
+    restart: always
+    environment:
+      - POSTGRES_USER=galapagotchi
+      - POSTGRES_PASSWORD=${DB_PASSWORD:-goomslatch}
+    ports:
+      - "5432:5432"

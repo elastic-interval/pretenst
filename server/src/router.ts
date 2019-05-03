@@ -118,8 +118,9 @@ export function createRouter(): Router {
                     id,
                 } = req.body
 
-                if (user.ownedLots.length === 1) {
-                    res.status(HttpStatus.FORBIDDEN).end("You have already claimed a lot.")
+                if (user.ownedLots.length === 1 && !user.isAdmin) {
+                    res.status(HttpStatus.FORBIDDEN)
+                        .end("You have already claimed a lot.")
                     return
                 }
 
