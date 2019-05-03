@@ -113,7 +113,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                                 />
                             </R3.Object3D>
                         )}
-                        {!journey ? console.log("journey null") : (
+                        {!journey ? undefined : (
                             <JourneyComponent journey={journey}/>
                         )}
                     </R3.Scene>

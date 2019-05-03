@@ -102,11 +102,6 @@ export class Transition {
         return this.withSelectedHexalot()
     }
 
-    public withIslandIsLegal(islandIsLegal: boolean): Transition {
-        this.nextState = {...this.nextState, islandIsLegal}
-        return this
-    }
-
     public async withHomeHexalot(homeHexalot?: Hexalot): Promise<Transition> {
         const island = this.nextState.island
         if (this.nextState.homeHexalot || !island) {
@@ -190,10 +185,11 @@ export class Transition {
         }
         hexalots.forEach(calculateHexalotId)
         const islandIsLegal = isIslandLegal(island)
-        if (islandIsLegal) {
-            this.nextState = {...this.nextState, islandIsLegal}
-        } else {
-            this.nextState = {...this.nextState, islandIsLegal, appMode: AppMode.Terraforming}
+        this.nextState = {...this.nextState, islandIsLegal}
+        const singleHexalot = island.singleHexalot
+        if (!islandIsLegal && singleHexalot) {
+            const flightTarget = HexalotTarget(singleHexalot, AppMode.Terraforming)
+            this.nextState = {...this.nextState, flightTarget}
         }
         return this
     }
