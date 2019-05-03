@@ -14,9 +14,7 @@ async function run(listenPort: number): Promise<void> {
 
     const app = express()
 
-    app.use(logger(":method :url [:status :response-time ms] - Cookie: :req[cookie]", {
-        stream: process.stderr,
-    }))
+    app.use(logger(":method :url [:status :response-time ms] - Cookie: :req[cookie]"))
 
     app.use(bodyParser())
     app.use(cookieParser())
