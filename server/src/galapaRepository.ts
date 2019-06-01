@@ -147,8 +147,22 @@ export class GalapaRepository {
         // Load relations
         island.hexalots = await this.db.find(Hexalot, {
             where: {island: {name: island.name}},
-            relations: ["childHexalots"],
+            relations: ["parent"],
         })
+        const idToLot: {[id: string]: Hexalot} = {}
+        for (const lot of island.hexalots) {
+            idToLot[lot.id] = lot
+        }
+        for (const lot of island.hexalots) {
+            if (!lot.parent) {
+                continue
+            }
+            const parent = idToLot[lot.parent.id]
+            if (!parent.childHexalots) {
+                parent.childHexalots = []
+            }
+            parent.childHexalots.push(lot)
+        }
         island.spots = await this.db.find(Spot, {
             where: {island: {name: island.name}},
         })
