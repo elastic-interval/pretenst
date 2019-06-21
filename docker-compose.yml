@@ -3,7 +3,6 @@ services:
   # TODO: mount DB volume
   app:
     build: server
-    env_file: .env
     restart: on-failure
     environment:
       - POSTGRES_URI=db
@@ -17,7 +16,6 @@ services:
 
   migrate-db:
     build: server
-    env_file: .env
     environment:
       - POSTGRES_URI=db
     depends_on:

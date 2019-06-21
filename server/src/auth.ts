@@ -12,11 +12,11 @@ import { Session as SessionEntity } from "./models/session"
 import { User } from "./models/user"
 
 export function setupAuthentication(repository: GalapaRepository, app: Router): {ensureLoggedIn: RequestHandler} {
-    const consumerKey = process.env.TWITTER_CONSUMER_API_KEY!
-    const consumerSecret = process.env.TWITTER_CONSUMER_API_SECRET!
+    const consumerKey = process.env.TWITTER_CONSUMER_API_KEY || ""
+    const consumerSecret = process.env.TWITTER_CONSUMER_API_SECRET || ""
     if (!consumerKey || !consumerSecret) {
         console.error("Missing envvars: TWITTER_CONSUMER_API_KEY or TWITTER_CONSUMER_API_SECRET")
-        process.exit(1)
+        return {ensureLoggedIn: (req, res, next) => next()}
     }
     const callbackURL = `${API_ORIGIN}/api/auth/twitter/callback`
     Passport.use(new TwitterStrategy({
