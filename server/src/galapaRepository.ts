@@ -42,6 +42,19 @@ export class GalapaRepository {
         })
     }
 
+    public async findUserByUsername(username: string): Promise<User> {
+        const profile = await this.db.findOneOrFail(TwitterProfile, {
+            where: {username},
+            relations: ["user"],
+        })
+        return profile.user!
+    }
+
+    public async getAllUsernames(): Promise<string[]> {
+        return (await this.db.find(TwitterProfile))
+            .map(profile => profile.username)
+    }
+
     public async findOrCreateUserByTwitterProfile(passportProfile: TwitterPassportProfile): Promise<User> {
         const profile = await this.db.findOne(TwitterProfile, passportProfile.id, {
             relations: ["user"],
