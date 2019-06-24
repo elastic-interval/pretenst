@@ -4,11 +4,11 @@ import Session from "express-session"
 import Passport from "passport"
 import { Strategy as TwitterStrategy } from "passport-twitter"
 import { getConnection } from "typeorm"
-import { TypeormStore } from "typeorm-store"
+import { SessionEntity, TypeormStore } from "typeorm-store"
 
 import { API_ORIGIN, CLIENT_ORIGIN } from "./constants"
 import { GalapaRepository } from "./galapaRepository"
-import { Session as SessionEntity } from "./models/session"
+import { Session as SessionModel } from "./models/session"
 import { User } from "./models/user"
 
 export function setupAuthentication(repository: GalapaRepository, app: Router): {ensureLoggedIn: RequestHandler} {
@@ -34,7 +34,7 @@ export function setupAuthentication(repository: GalapaRepository, app: Router): 
         },
     ))
 
-    const sessionRepo = getConnection().getRepository(SessionEntity)
+    const sessionRepo = getConnection().getRepository<SessionEntity>(SessionModel)
     app.use(Session({
         store: new TypeormStore({repository: sessionRepo}),
         cookie: {
