@@ -8,7 +8,7 @@
     "node": "11.10.1"
   },
   "scripts": {
-    "start": "node $NODE_DEBUG_OPTION node_modules/.bin/ts-node index.ts",
+    "start": "ts-node index.ts",
     "start:prod": "NODE_ENV=production ts-node index.ts",
     "check": "tsc -p . --noemit",
     "test": "mocha -r ts-node/register test/*.test.ts",
@@ -16,7 +16,7 @@
     "db:drop": "yarn typeorm schema:drop",
     "db:migrate": "yarn typeorm migration:run",
     "db:seed": "ts-node ./scripts/seed_db.ts",
-    "db:hard_reset": "yarn db:drop && yarn db:migrate && yarn db:seed",
+    "db:hard_reset": "yarn db:drop && yarn db:migrate && yarn db:seeRd",
     "lint": "tslint --fix -p tsconfig.json",
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'"
   },

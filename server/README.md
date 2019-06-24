@@ -19,9 +19,11 @@ yarn run start
 
 Using [TypeORM](https://typeorm.io) and [PostgreSQL](https://www.postgresql.org)
 
-To interact with the database, use `yarn typeorm [COMMAND]`
-
 To nuke the entire database run
-`yarn typeorm schema:drop`
+`yarn db:drop`
 
-To migrate the database, run `yarn typeorm migrate:run`
+To migrate the database, run `yarn db:migrate`
+
+To seed your local DB with data, run `yarn db:seed`
+
+To do all three steps in one, run `yarn db:hard_reset`

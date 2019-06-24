@@ -29,7 +29,6 @@
     "three-orbitcontrols-ts": "^0.1.2"
   },
   "scripts": {
-    "start:local": "react-scripts-ts start",
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
     "build:prod": "NODE_ENV=production react-scripts-ts build",
