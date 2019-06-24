@@ -14,7 +14,7 @@ async function run(): Promise<void> {
         for (const filename of SEED_FILES) {
             const seedDataSql = readFileSync(`${__dirname}/sql/${filename}`)
                 .toString("utf-8")
-            console.log(`Read seed SQL file: ${filename} with ${seedDataSql.split("\n").length} lines`)
+            console.log(`Executing SQL file: ${filename} with ${seedDataSql.split("\n").length} lines`)
             await manager.query(seedDataSql)
         }
     })
