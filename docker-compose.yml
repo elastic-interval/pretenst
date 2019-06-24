@@ -6,6 +6,7 @@ services:
     restart: on-failure
     environment:
       - POSTGRES_URI=db
+      - DB_PASSWORD
     depends_on:
       - db
     links:
@@ -18,11 +19,12 @@ services:
     build: server
     environment:
       - POSTGRES_URI=db
+      - DB_PASSWORD
     depends_on:
       - db
     links:
       - db
-    command: "bash -c 'sleep 2 && yarn typeorm migration:run'"
+    command: "bash -c 'sleep 2 && yarn db:migrate'"
 
   db:
     image: postgres:11.2
