@@ -23,6 +23,7 @@
   "include": [
     "index.ts",
     "src/**/*",
+    "scripts/*.ts",
     "migrations/**/*"
   ],
   "exclude": [
