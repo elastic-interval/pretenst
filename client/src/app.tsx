@@ -34,7 +34,6 @@ export class App extends React.Component<IAppProps, IAppState> {
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)
-        const helpVisible = false
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
@@ -42,7 +41,6 @@ export class App extends React.Component<IAppProps, IAppState> {
         const flightTarget = UnknownTarget()
         const self = this
         this.state = {
-            helpVisible,
             width,
             height,
             left,

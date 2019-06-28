@@ -4,16 +4,15 @@
  */
 
 import * as React from "react"
-import { TwitterFollowButton } from "react-twitter-embed"
-import { Button } from "reactstrap"
+import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { Vector3 } from "three"
 
 import { API_URI } from "../constants"
+import { GlobalDocTitle } from "../docs/global-docs"
 import { ToolbarState } from "../docs/toolbar-state-docs"
 import { Island } from "../island/island"
 import { AppMode, Command, homeHexalotSelected, IAppState } from "../state/app-state"
 import { CommandHandler } from "../state/command-handler"
-import { Transition } from "../state/transition"
 import { IUser } from "../storage/remote-storage"
 
 import { HelpPanel } from "./help-panel"
@@ -26,8 +25,11 @@ export interface IControlProps {
 
 export interface IControlState {
     visible: boolean
+    helpVisible: boolean
     toolbarState: ToolbarState
-    command?: Command
+    toolbarCommands: Command[]
+    globalShowing: boolean
+    globalDocTitle?: GlobalDocTitle
 }
 
 interface IContainerProps {
@@ -40,7 +42,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         super(props)
         const visible = props.appState.appMode !== AppMode.Flying
         const toolbarState = ToolbarState.Unknown
-        this.state = {visible, toolbarState}
+        this.state = {visible, toolbarState, toolbarCommands: [], globalShowing: false, helpVisible: false}
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IControlProps>): void {
@@ -56,13 +58,21 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         return (
             <div className="control-panel-outer">
                 <div className="control-panel-inner">
-                    {this.frameContents(island)}
-                    <HelpPanel
-                        appState={this.props.appState}
-                        toolbarState={this.state.toolbarState}
-                        command={this.state.command}
-                    />
-                    {this.userGreeting()}
+                    <div className="control-panel-inner-left">
+                        {this.innerLeft()}
+                    </div>
+                    <div className="control-panel-inner-middle">
+                        {this.innerMiddle(island)}
+                        {!this.state.helpVisible ? false : (
+                            <HelpPanel
+                                appState={this.props.appState}
+                                toolbarState={this.state.toolbarState}
+                                toolbarCommands={this.state.toolbarCommands}
+                                globalDocTitle={this.state.globalDocTitle}
+                                cancelHelp={() => this.setState({helpVisible: false})}
+                            />
+                        )}
+                    </div>
                 </div>
             </div>
         )
@@ -70,16 +80,14 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
 
     // =================================================================================================================
 
-    private frameContents(island: Island): JSX.Element {
+    private innerMiddle(island: Island): JSX.Element {
         const appState = this.props.appState
         const vacant = island.vacantHexalot
         const spot = appState.selectedSpot
         const hexalot = appState.selectedHexalot
         const homeHexalot = appState.homeHexalot
         const singleHexalot = island.singleHexalot
-
         const Message = (props: IContainerProps) => <p>{props.children}</p>
-
 
         switch (appState.appMode) {
 
@@ -138,10 +146,19 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                         Command.Ride,
                         Command.Home,
                     )
+                } else if (this.props.user) {
+                    return (
+                        <p>
+                            You are logged in but you have not yet claimed a hexalot.
+                            The spots highlighted in green are places that you can claim.
+                            You can also click on one of the existing hexalots and go for a ride on the galapagotchi
+                            there.
+                        </p>
+                    )
                 } else {
                     return (
                         <p>
-                            You can click on one of the hexalots and go for a ride.
+                            You can click on one of the hexalots and go for a ride on the galapagotchi who lives there.
                         </p>
                     )
                 }
@@ -171,7 +188,6 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                 return this.buttonToolbar(ToolbarState.Riding,
                     Command.Home,
                     Command.Start,
-                    Command.Evolve,
                 )
 
 
@@ -184,51 +200,58 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         }
     }
 
-    private buttonToolbar(toolbarState: ToolbarState, ...commands: Command[]): JSX.Element {
+    private buttonToolbar(toolbarState: ToolbarState, ...toolbarCommands: Command[]): JSX.Element {
         setTimeout(() => {
-            this.setState({toolbarState})
+            this.setState({toolbarState, toolbarCommands})
         })
         return (
             <div>
+
                 <Button
                     color="info"
                     className="command-button"
-                    active={!this.props.appState.helpVisible}
-                    onClick={() => this.toggleHelp(toolbarState)}
+                    onClick={() => {
+                        if (this.state.helpVisible) {
+                            if (this.state.globalDocTitle) {
+                                this.setState({globalDocTitle: undefined})
+                            } else {
+                                this.setState({helpVisible: false})
+                            }
+                        } else {
+                            this.setState({helpVisible: true})
+                        }
+                    }}
                 >{toolbarState}: </Button>
-                {commands.map(command => this.commandButton(command))}
-                <Button
-                    color="info"
-                    className="command-button"
-                    active={!this.props.appState.helpVisible}
-                    onClick={() => this.toggleHelp(toolbarState)}
-                >?</Button>
+
+                {this.state.helpVisible ? false : toolbarCommands.map(command => this.commandButton(command))}
+
+                <Dropdown className="about-dropdown" group={true} isOpen={this.state.globalShowing} size="sm"
+                          toggle={() => {
+                              this.setState({globalShowing: !this.state.globalShowing})
+                          }}>
+                    <DropdownToggle color="info" caret={true}>About</DropdownToggle>
+                    <DropdownMenu>
+                        {Object.keys(GlobalDocTitle).map(key => (
+                            <DropdownItem key={key} onClick={() => {
+                                this.setState({globalDocTitle: GlobalDocTitle[key], helpVisible: true})
+                            }}>{key}</DropdownItem>
+                        ))
+                        }
+                    </DropdownMenu>
+                </Dropdown>
+
             </div>
         )
     }
 
-    private toggleHelp(toolbarState: ToolbarState): void {
-        const appState = this.props.appState
-        const helpVisible = !appState.helpVisible
-        appState.updateState(new Transition(appState).withHelpVisible(helpVisible).appState)
-        this.setState({toolbarState, command: undefined})
-    }
-
     private commandButton(command: Command): JSX.Element {
-        const helpVisible = this.props.appState.helpVisible
         return (
             <Button
                 key={command}
                 color="success"
                 className="command-button"
-                onClick={() => {
-                    if (helpVisible) {
-                        this.setState({command})
-                    } else {
-                        this.execute(command)
-                    }
-                }}
-            >{helpVisible ? `?${command}?` : command}</Button>
+                onClick={() => this.execute(command)}
+            >{command}</Button>
         )
     }
 
@@ -238,30 +261,16 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         props.appState.updateState(nextState)
     }
 
-    private userGreeting(): JSX.Element | undefined {
+    private innerLeft(): JSX.Element | undefined {
         if (!this.props.user) {
             return (
-                <div>
-                    <a href={`${API_URI}/auth/twitter`}>
-                        <img src="sign-in-with-twitter-gray.png" alt="Sign in with Twitter"/>
-                    </a>
-                </div>
+                <a href={`${API_URI}/auth/twitter`}>
+                    <img src="sign-in-with-twitter-gray.png" alt="Sign in with Twitter"/>
+                </a>
             )
         }
         return (
-            <div>
-                <strong>
-                    Hello, @{this.props.user.profile.username}.
-                </strong>
-                <div>
-                    <a href={`${API_URI}/auth/logout`}>
-                        Logout
-                    </a>
-                </div>
-                <div className="mt-4">
-                    <TwitterFollowButton screenName="galapagotchi" options={{size: "large"}} />
-                </div>
-            </div>
+            <a href={`${API_URI}/auth/logout`}>@{this.props.user.profile.username}</a>
         )
     }
 }

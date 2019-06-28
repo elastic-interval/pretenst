@@ -4,55 +4,34 @@
  */
 
 import * as React from "react"
-import {
-    Button,
-    ButtonToolbar,
-    Card,
-    CardBody,
-    CardFooter,
-    CardHeader,
-    CardText,
-    CardTitle,
-    Dropdown,
-    DropdownItem,
-    DropdownMenu,
-    DropdownToggle,
-} from "reactstrap"
+import { Button, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle } from "reactstrap"
 
-import { COMMAND_DOCS } from "../docs/command-docs"
+import { getCommandDoc } from "../docs/command-docs"
 import { GLOBAL_DOCS, GlobalDocTitle } from "../docs/global-docs"
 import { TOOLBAR_STATE_DOCS, ToolbarState } from "../docs/toolbar-state-docs"
 import { Command, IAppState } from "../state/app-state"
-import { Transition } from "../state/transition"
-
 
 export interface IHelpProps {
     appState: IAppState
     toolbarState: ToolbarState
-    command?: Command
+    toolbarCommands: Command[]
+    cancelHelp: () => void
+    globalDocTitle?: GlobalDocTitle
 }
 
 export interface IHelpState {
-    globalShowing: boolean
-    globalDocTitle?: GlobalDocTitle
+    placeholder?: boolean
 }
 
 export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
 
     constructor(props: IHelpProps) {
         super(props)
-        this.state = {globalShowing: false}
-    }
-
-    public componentWillMount(): void {
-        this.setState({globalDocTitle: undefined})
+        this.state = {}
     }
 
     public render(): JSX.Element | boolean {
-        if (!this.props.appState.helpVisible) {
-            return false
-        }
-        const globalCardName = this.state.globalDocTitle
+        const globalCardName = this.props.globalDocTitle
         if (globalCardName) {
             const foundCard = GLOBAL_DOCS.find(card => card.title === globalCardName)
             if (!foundCard) {
@@ -69,7 +48,7 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
             )
         }
         const toolbarStateDoc = TOOLBAR_STATE_DOCS.find(d => d.title === this.props.toolbarState)
-        const commandDoc = COMMAND_DOCS.find(d => d.title === this.props.command)
+        const commandDocs = this.props.toolbarCommands.map(getCommandDoc)
         return (
             <Card>
                 <CardBody>
@@ -80,14 +59,12 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
                         </div>
                     ) : false}
                     <br/>
-                    {commandDoc ? (
-                        <div>
-                            <CardTitle>{commandDoc.title}</CardTitle>
+                    {commandDocs.map(commandDoc => (
+                        <div key={commandDoc.title}>
+                            <Button color="success" className="command-button">{commandDoc.title}</Button>
                             {commandDoc.body}
                         </div>
-                    ) : (
-                        <CardText>Click on a command button to get info about each one.</CardText>
-                    )}
+                    ))}
                 </CardBody>
                 <CardFooter>{this.footer()}</CardFooter>
             </Card>
@@ -97,29 +74,11 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
     private footer(): JSX.Element {
         return (
             <ButtonToolbar>
-                <Dropdown group={true} isOpen={this.state.globalShowing} size="sm" toggle={() => {
-                    this.setState({globalShowing: !this.state.globalShowing})
-                }}>
-                    <DropdownToggle color="info" caret={true}>About Galapagotchi</DropdownToggle>
-                    <DropdownMenu>
-                        {Object.keys(GlobalDocTitle).map(key => {
-                            return (
-                                <DropdownItem key={key} onClick={() => {
-                                    this.setState({globalDocTitle: GlobalDocTitle[key]})
-                                }}>{key}</DropdownItem>
-                            )
-                        })}
-                    </DropdownMenu>
-                </Dropdown>
                 <Button
                     size="sm"
                     className="float-right"
                     color="info"
-                    onClick={() => {
-                        this.setState({globalDocTitle: undefined})
-                        const appState = this.props.appState
-                        appState.updateState(new Transition(appState).withHelpVisible(false).appState)
-                    }}
+                    onClick={() => this.props.cancelHelp()}
                 >Ok, got it</Button>
             </ButtonToolbar>
         )

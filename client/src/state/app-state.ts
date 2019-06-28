@@ -27,7 +27,6 @@ export interface IAppState {
     readonly nonce: number
     readonly appMode: AppMode
     readonly storage: RemoteStorage
-    readonly helpVisible: boolean
     readonly islandIsLegal: boolean
 
     readonly width: number

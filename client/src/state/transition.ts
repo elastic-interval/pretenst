@@ -32,11 +32,6 @@ export class Transition {
         return this.nextState
     }
 
-    public withHelpVisible(helpVisible: boolean): Transition {
-        this.nextState = {...this.nextState, helpVisible}
-        return this
-    }
-
     public withIsland(island: Island, optionalFlightTarget?: IFlightTarget): Transition {
         this.withoutJockey.withoutEvolution.nextState = {...this.nextState, island}
         if (optionalFlightTarget) {

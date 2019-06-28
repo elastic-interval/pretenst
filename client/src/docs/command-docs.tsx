@@ -13,6 +13,14 @@ export interface ICommandDoc {
     body: JSX.Element
 }
 
+export function getCommandDoc(command: Command): ICommandDoc {
+    const found = COMMAND_DOCS.find(cd => cd.title === command)
+    if (!found) {
+        throw new Error(`Command not documented: ${command}`)
+    }
+    return found
+}
+
 export const COMMAND_DOCS: ICommandDoc[] = [
     {
         title: Command.AbandonTerraforming,
