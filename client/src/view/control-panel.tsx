@@ -107,7 +107,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                         } else {
                             return this.buttonToolbar(ToolbarState.Terraforming,
                                 Command.Terraform,
-                                Command.AbandonTerraforming,
+                                Command.Cancel,
                             )
                         }
                     }
@@ -142,7 +142,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                             Command.ClaimHexalot,
                         )
                     }
-                    return this.buttonToolbar(ToolbarState.Foreign,
+                    return this.buttonToolbar(ToolbarState.Friend,
                         Command.Ride,
                         Command.Home,
                     )

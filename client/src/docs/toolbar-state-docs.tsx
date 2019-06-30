@@ -9,7 +9,7 @@ import { CardText } from "reactstrap"
 export enum ToolbarState {
     AvailableSpot = "Available spot",
     Evolving = "Evolving",
-    Foreign = "Foreign",
+    Friend = "Friend",
     FreeSpot = "Free spot",
     Home = "Home",
     Pioneering = "Pioneering",
@@ -58,7 +58,7 @@ export const TOOLBAR_STATE_DOCS: IToolbarStateDoc[] = [
             </CardText>,
     },
     {
-        title: ToolbarState.Foreign,
+        title: ToolbarState.Friend,
         body:
             <CardText>
                 You have selected somebody else's galapagotchi.  You can take it for a ride to see how well

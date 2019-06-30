@@ -23,7 +23,7 @@ export function getCommandDoc(command: Command): ICommandDoc {
 
 export const COMMAND_DOCS: ICommandDoc[] = [
     {
-        title: Command.AbandonTerraforming,
+        title: Command.Cancel,
         body:
             <CardText>
                 While you are terraforming the island by terraforming (creating land or water),

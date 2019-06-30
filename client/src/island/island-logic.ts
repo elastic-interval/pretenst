@@ -99,34 +99,6 @@ export function isIslandLegal(island: IIsland): boolean {
     return island.spots.every(isSpotLegal)
 }
 
-export function extractIslandData(island: IIsland): IIslandData {
-    const vacant = island.vacantHexalot
-    if (vacant) {
-        const parent = vacant.parentHexalot
-        if (!parent) {
-            throw new Error("No parent")
-        }
-        parent.childHexalots = parent.childHexalots.filter(child => child.id !== vacant.id)
-        const hexalots = island.hexalots.filter(h => h.id !== vacant.id)
-        const spotsToRemove = island.spots.filter(p => p.isMemberOfOneHexalot(vacant.id))
-        const spots = spotsToRemove.reduce(removeSpot, island.spots).sort(sortSpotsOnCoord)
-        return {
-            name: island.name,
-            hexalots: hexalotTreeString(hexalots),
-            spots: spotsToString(spots),
-        } as IIslandData
-    }
-    if (!isIslandLegal(island)) {
-        throw new Error("Saving illegal island")
-    }
-    island.spots.sort(sortSpotsOnCoord)
-    return {
-        name: island.name,
-        hexalots: hexalotTreeString(island.hexalots),
-        spots: spotsToString(island.spots),
-    } as IIslandData
-}
-
 export function fillIsland(data: IIslandData, island: IIsland): void {
     let hexalot: IHexalot | undefined = island.getOrCreateHexalot(undefined, ZERO)
     const stepStack = data.hexalots.split("").reverse().map(stepChar => Number(stepChar))
@@ -212,11 +184,6 @@ export function recalculateIsland(island: IIsland): void {
 
 const STOP_STEP = 0
 const BRANCH_STEP = 7
-const ERROR_STEP = 8
-
-function removeSpot(spots: ISpot[], spotToRemove: ISpot): ISpot[] {
-    return spots.filter(s => !equals(s.coords, spotToRemove.coords))
-}
 
 function spotsToHexalotId(spots: ISpot[]): string {
     const lit = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
@@ -242,40 +209,6 @@ function sortSpotsOnCoord(a: ISpot, b: ISpot): number {
     return coordSort(a.coords, b.coords)
 }
 
-function ringIndex(coords: ICoords, origin: ICoords): number {
-    const ringCoords: ICoords = {x: coords.x - origin.x, y: coords.y - origin.y}
-    for (let index = 1; index <= 6; index++) {
-        if (ringCoords.x === HEXALOT_SHAPE[index].x && ringCoords.y === HEXALOT_SHAPE[index].y) {
-            return index
-        }
-    }
-    return 0
-}
-
-function generateOctalTreePattern(hexalot: IHexalot, steps: number[]): number[] {
-    const remainingChildren = hexalot.childHexalots.filter(child => {
-        return !child.visited
-    }).map(h => {
-        const index = ringIndex(h.coords, hexalot.coords)
-        return {index, hexalot: h}
-    }).sort((a, b) => {
-        return a.index < b.index ? 1 : a.index > b.index ? -1 : 0
-    })
-    if (remainingChildren.length > 0) {
-        for (let child = remainingChildren.pop(); child; child = remainingChildren.pop()) {
-            if (remainingChildren.length > 0) {
-                steps.push(BRANCH_STEP)
-            }
-            steps.push(child.index > 0 ? child.index : ERROR_STEP)
-            generateOctalTreePattern(child.hexalot, steps)
-        }
-    } else {
-        steps.push(STOP_STEP)
-    }
-    hexalot.visited = true
-    return steps
-}
-
 function getAdjacentSpots(island: IIsland, spot: ISpot): ISpot[] {
     const adjacentSpots: ISpot[] = []
     const coords = spot.coords
@@ -290,29 +223,6 @@ function getAdjacentSpots(island: IIsland, spot: ISpot): ISpot[] {
 
 function padRightTo4(s: string): string {
     return s.length < 4 ? padRightTo4(s + "0") : s
-}
-
-function spotsToString(spots: ISpot[]): string {
-    const land = spots.map(spot => spot.surface === Surface.Land ? "1" : "0")
-    const nybbleStrings = land.map((l, index, array) =>
-        (index % 4 === 0) ? array.slice(index, index + 4).join("") : undefined)
-    const nybbleChars = nybbleStrings.map(chunk => {
-        if (chunk) {
-            return parseInt(padRightTo4(chunk), 2).toString(16)
-        } else {
-            return ""
-        }
-    })
-    return nybbleChars.join("")
-}
-
-function hexalotTreeString(hexalots: IHexalot[]): string {
-    const root = hexalots.find(hexalot => hexalot.nonce === 0)
-    if (!root) {
-        return ""
-    }
-    hexalots.forEach(hexalot => hexalot.visited = false)
-    return generateOctalTreePattern(root, []).join("")
 }
 
 export const HEXALOT_SHAPE = [

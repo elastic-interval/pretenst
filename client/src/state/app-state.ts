@@ -8,7 +8,7 @@ import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
-import { coordsToString } from "../island/island-logic"
+import { coordsToString, IIslandData } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 import { IUser, RemoteStorage } from "../storage/remote-storage"
@@ -37,6 +37,7 @@ export interface IAppState {
     readonly flightTarget: IFlightTarget
 
     readonly island?: Island
+    readonly islandData?: IIslandData
     readonly homeHexalot?: Hexalot
     readonly ownedLots?: string[]
     readonly journey?: Journey
@@ -61,7 +62,7 @@ export enum AppMode {
 }
 
 export enum Command {
-    AbandonTerraforming = "Abandon Terraforming",
+    Cancel = "Cancel",
     ClaimHexalot = "Claim hexalot",
     DiscardGenes = "Discard genes",
     Evolve = "Evolve",

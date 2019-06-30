@@ -7,7 +7,14 @@ import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { fetchGenome, fetchJourney, Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
-import { calculateHexalotId, isIslandLegal, isSpotLegal, recalculateIsland, Surface } from "../island/island-logic"
+import {
+    calculateHexalotId,
+    IIslandData,
+    isIslandLegal,
+    isSpotLegal,
+    recalculateIsland,
+    Surface,
+} from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 import {
@@ -32,8 +39,9 @@ export class Transition {
         return this.nextState
     }
 
-    public withIsland(island: Island, optionalFlightTarget?: IFlightTarget): Transition {
-        this.withoutJockey.withoutEvolution.nextState = {...this.nextState, island}
+    public async withIsland(island: Island, islandData: IIslandData, optionalFlightTarget?: IFlightTarget): Promise<Transition> {
+        const withNoneSelected = await this.withSelectedSpot()
+        withNoneSelected.withJourney().withoutEvolution.nextState = {...this.nextState, island, islandData}
         if (optionalFlightTarget) {
             this.nextState = {...this.nextState, flightTarget: optionalFlightTarget}
         }

@@ -9,7 +9,7 @@ import { freshGenome, fromGenomeData } from "../genetics/genome"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
 import { Island } from "../island/island"
-import { extractIslandData, isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
+import { isIslandLegal, isSpotLegal, Surface } from "../island/island-logic"
 
 import { AppMode, Command, IAppState } from "./app-state"
 import { Transition } from "./transition"
@@ -27,6 +27,7 @@ export class CommandHandler {
         const trans = this.trans
         const appState = trans.appState
         const island = appState.island
+        const islandData = appState.islandData
 
         if (!island) {
             return this.trans.appState
@@ -57,6 +58,10 @@ export class CommandHandler {
                 if (homeHexalot) {
                     const withHomeSelected = await trans.withSelectedSpot(homeHexalot.centerSpot)
                     return withHomeSelected.withoutEvolution.exploring.appState
+                }
+                if (hexalot) {
+                    const withUnselected = await trans.withSelectedSpot()
+                    return withUnselected.withJourney().exploring.appState
                 }
                 return appState
 
@@ -136,10 +141,14 @@ export class CommandHandler {
                 return appState
 
 
-            case Command.AbandonTerraforming:
+            case Command.Cancel:
                 const nonce = appState.nonce + 1
-                const orig = new Island(extractIslandData(island), island.gotchiFactory, appState.storage, nonce)
-                return (await trans.withSelectedSpot()).withIsland(orig).withRestructure.appState
+                if (!islandData) {
+                    return appState
+                }
+                const originalIsland = new Island(islandData, island.gotchiFactory, appState.storage, nonce)
+                const withIsland = await trans.withIsland(originalIsland, islandData)
+                return withIsland.exploring.withRestructure.appState
 
 
             case Command.ClaimHexalot:

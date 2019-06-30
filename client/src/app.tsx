@@ -130,10 +130,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
         const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
         const flightTarget = homeHexalot ? HexalotTarget(homeHexalot, AppMode.Exploring) : IslandTarget(island, AppMode.Exploring)
-        const appState = new Transition(this.state)
-            .withIsland(island, flightTarget)
-            .withRestructure
-            .appState
+        const appState = (await new Transition(this.state).withIsland(island, islandData, flightTarget)).withRestructure.appState
         if (!homeHexalotId) {
             this.state.updateState(appState)
         } else {
