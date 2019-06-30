@@ -46,7 +46,15 @@ function Ref(props: IRef): JSX.Element {
     return <span> <a href={props.href} target="_blank">{props.text}</a> </span>
 }
 
-export const GLOBAL_DOCS: IGlobalDoc[] = [
+export function getGlobalDoc(globalDocTitle: GlobalDocTitle): IGlobalDoc {
+    const foundCard = GLOBAL_DOCS.find(doc => doc.title === globalDocTitle)
+    if (!foundCard) {
+        throw new Error(`Couldn't find doc for ${globalDocTitle}`)
+    }
+    return foundCard
+}
+
+const GLOBAL_DOCS: IGlobalDoc[] = [
     {
         title: GlobalDocTitle.Navigation,
         body:

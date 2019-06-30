@@ -4,6 +4,7 @@
  */
 
 import { IFabricExports } from "../body/fabric-exports"
+import { GlobalDocTitle } from "../docs/global-docs"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
@@ -35,6 +36,9 @@ export interface IAppState {
     readonly top: number
 
     readonly flightTarget: IFlightTarget
+
+    readonly globalOpen?: boolean
+    readonly globalDocTitle?: GlobalDocTitle
 
     readonly island?: Island
     readonly islandData?: IIslandData

@@ -4,11 +4,9 @@
  */
 
 import * as React from "react"
-import { Button, Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
+import { Button } from "reactstrap"
 import { Vector3 } from "three"
 
-import { API_URI } from "../constants"
-import { GlobalDocTitle } from "../docs/global-docs"
 import { ToolbarState } from "../docs/toolbar-state-docs"
 import { Island } from "../island/island"
 import { AppMode, Command, homeHexalotSelected, IAppState } from "../state/app-state"
@@ -28,8 +26,6 @@ export interface IControlState {
     helpVisible: boolean
     toolbarState: ToolbarState
     toolbarCommands: Command[]
-    globalShowing: boolean
-    globalDocTitle?: GlobalDocTitle
 }
 
 interface IContainerProps {
@@ -42,7 +38,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         super(props)
         const visible = props.appState.appMode !== AppMode.Flying
         const toolbarState = ToolbarState.Unknown
-        this.state = {visible, toolbarState, toolbarCommands: [], globalShowing: false, helpVisible: false}
+        this.state = {visible, toolbarState, toolbarCommands: [], helpVisible: false}
     }
 
     public componentWillReceiveProps(nextProps: Readonly<IControlProps>): void {
@@ -56,31 +52,23 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
             return false
         }
         return (
-            <div className="control-panel-outer">
-                <div className="control-panel-inner">
-                    <div className="control-panel-inner-left">
-                        {this.innerLeft()}
-                    </div>
-                    <div className="control-panel-inner-middle">
-                        {this.innerMiddle(island)}
-                        {!this.state.helpVisible ? false : (
-                            <HelpPanel
-                                appState={this.props.appState}
-                                toolbarState={this.state.toolbarState}
-                                toolbarCommands={this.state.toolbarCommands}
-                                globalDocTitle={this.state.globalDocTitle}
-                                cancelHelp={() => this.setState({helpVisible: false})}
-                            />
-                        )}
-                    </div>
-                </div>
+            <div className="">
+                {this.commandButtons(island)}
+                {!this.state.helpVisible ? false : (
+                    <HelpPanel
+                        appState={this.props.appState}
+                        toolbarState={this.state.toolbarState}
+                        toolbarCommands={this.state.toolbarCommands}
+                        cancelHelp={() => this.setState({helpVisible: false})}
+                    />
+                )}
             </div>
         )
     }
 
     // =================================================================================================================
 
-    private innerMiddle(island: Island): JSX.Element {
+    private commandButtons(island: Island): JSX.Element {
         const appState = this.props.appState
         const vacant = island.vacantHexalot
         const spot = appState.selectedSpot
@@ -206,40 +194,14 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         })
         return (
             <div>
-
                 <Button
                     color="info"
                     className="command-button"
-                    onClick={() => {
-                        if (this.state.helpVisible) {
-                            if (this.state.globalDocTitle) {
-                                this.setState({globalDocTitle: undefined})
-                            } else {
-                                this.setState({helpVisible: false})
-                            }
-                        } else {
-                            this.setState({helpVisible: true})
-                        }
-                    }}
+                    onClick={() => this.setState({helpVisible: !this.state.helpVisible})}
                 >{toolbarState}: </Button>
-
-                {this.state.helpVisible ? false : toolbarCommands.map(command => this.commandButton(command))}
-
-                <Dropdown className="about-dropdown" group={true} isOpen={this.state.globalShowing} size="sm"
-                          toggle={() => {
-                              this.setState({globalShowing: !this.state.globalShowing})
-                          }}>
-                    <DropdownToggle color="info" caret={true}>About</DropdownToggle>
-                    <DropdownMenu>
-                        {Object.keys(GlobalDocTitle).map(key => (
-                            <DropdownItem key={key} onClick={() => {
-                                this.setState({globalDocTitle: GlobalDocTitle[key], helpVisible: true})
-                            }}>{key}</DropdownItem>
-                        ))
-                        }
-                    </DropdownMenu>
-                </Dropdown>
-
+                {this.state.helpVisible ? false : (
+                    toolbarCommands.map(command => this.commandButton(command))
+                )}
             </div>
         )
     }
@@ -259,18 +221,5 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
         const props = this.props
         const nextState = await new CommandHandler(props.appState).afterCommand(command, props.location)
         props.appState.updateState(nextState)
-    }
-
-    private innerLeft(): JSX.Element | undefined {
-        if (!this.props.user) {
-            return (
-                <a href={`${API_URI}/auth/twitter`}>
-                    <img src="sign-in-with-twitter-gray.png" alt="Sign in with Twitter"/>
-                </a>
-            )
-        }
-        return (
-            <a href={`${API_URI}/auth/logout`}>@{this.props.user.profile.username}</a>
-        )
     }
 }

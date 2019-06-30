@@ -4,11 +4,26 @@
  */
 
 import * as React from "react"
-import { Alert } from "reactstrap"
+import {
+    Alert,
+    Badge,
+    Button,
+    ButtonToolbar,
+    Card,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+    Dropdown,
+    DropdownItem,
+    DropdownMenu,
+    DropdownToggle,
+} from "reactstrap"
 import { PerspectiveCamera } from "three"
 
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
+import { API_URI } from "./constants"
+import { getGlobalDoc, GlobalDocTitle } from "./docs/global-docs"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
@@ -105,16 +120,81 @@ export class App extends React.Component<IAppProps, IAppState> {
         }
         return (
             <div>
-                <ControlPanel
-                    appState={this.state}
-                    location={this.perspectiveCamera.position}
-                    user={this.props.user}
-                />
+                <div>
+                    <div className="top-outer">
+                        <div className="top-left">
+                            {this.props.user ?
+                                (
+                                    <div className="user">
+                                        <a href={`${API_URI}/auth/logout`}>
+                                            <Badge>@{this.props.user.profile.username}</Badge>
+                                        </a>
+                                    </div>
+                                )
+                                :
+                                (
+                                    <div className="sign-in">
+                                        <a href={`${API_URI}/auth/twitter`}>
+                                            <img src="sign-in-with-twitter-gray.png"
+                                                 alt="Sign in with Twitter"/>
+                                        </a>
+                                    </div>
+                                )
+                            }
+                        </div>
+                        <div className="top-middle">
+                            <ControlPanel
+                                appState={this.state}
+                                location={this.perspectiveCamera.position}
+                                user={this.props.user}
+                            />
+                        </div>
+                        <div className="top-right">
+                            <Dropdown className="about-dropdown"
+                                      size="sm"
+                                      group={true}
+                                      direction="left"
+                                      isOpen={this.state.globalOpen}
+                                      toggle={() => this.setState({globalOpen: !this.state.globalOpen})}>
+                                <DropdownToggle color="info" caret={true}>About</DropdownToggle>
+                                <DropdownMenu>
+                                    {Object.keys(GlobalDocTitle).map(key => (
+                                        <DropdownItem key={key} onClick={() => {
+                                            this.setState({globalDocTitle: GlobalDocTitle[key]})
+                                        }}>{key}</DropdownItem>
+                                    ))}
+                                </DropdownMenu>
+                            </Dropdown>
+                        </div>
+                    </div>
+                </div>
                 <WorldView
                     perspectiveCamera={this.perspectiveCamera}
                     user={this.props.user}
                     appState={this.state}
                 />
+                {!this.state.globalDocTitle ? false :
+                    (
+                        <div className="global-help">
+                            <Card>
+                                <CardHeader>
+                                    <CardTitle>{this.state.globalDocTitle}</CardTitle>
+                                </CardHeader>
+                                {getGlobalDoc(this.state.globalDocTitle).body}
+                                <CardFooter>
+                                    <ButtonToolbar>
+                                        <Button
+                                            size="sm"
+                                            className="float-right"
+                                            color="info"
+                                            onClick={() => this.setState({globalDocTitle: undefined})}
+                                        >Ok, got it</Button>
+                                    </ButtonToolbar>
+                                </CardFooter>
+                            </Card>
+                        </div>
+                    )
+                }
             </div>
         )
     }

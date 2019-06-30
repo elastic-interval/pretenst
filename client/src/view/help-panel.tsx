@@ -4,10 +4,9 @@
  */
 
 import * as React from "react"
-import { Button, ButtonToolbar, Card, CardBody, CardFooter, CardHeader, CardTitle } from "reactstrap"
+import { Button, ButtonToolbar, Card, CardBody, CardFooter, CardTitle } from "reactstrap"
 
 import { getCommandDoc } from "../docs/command-docs"
-import { GLOBAL_DOCS, GlobalDocTitle } from "../docs/global-docs"
 import { TOOLBAR_STATE_DOCS, ToolbarState } from "../docs/toolbar-state-docs"
 import { Command, IAppState } from "../state/app-state"
 
@@ -16,7 +15,6 @@ export interface IHelpProps {
     toolbarState: ToolbarState
     toolbarCommands: Command[]
     cancelHelp: () => void
-    globalDocTitle?: GlobalDocTitle
 }
 
 export interface IHelpState {
@@ -31,22 +29,6 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
     }
 
     public render(): JSX.Element | boolean {
-        const globalCardName = this.props.globalDocTitle
-        if (globalCardName) {
-            const foundCard = GLOBAL_DOCS.find(card => card.title === globalCardName)
-            if (!foundCard) {
-                return false
-            }
-            return (
-                <Card>
-                    <CardHeader>
-                        <CardTitle>{globalCardName}</CardTitle>
-                    </CardHeader>
-                    {foundCard.body}
-                    <CardFooter>{this.footer()}</CardFooter>
-                </Card>
-            )
-        }
         const toolbarStateDoc = TOOLBAR_STATE_DOCS.find(d => d.title === this.props.toolbarState)
         const commandDocs = this.props.toolbarCommands.map(getCommandDoc)
         return (
