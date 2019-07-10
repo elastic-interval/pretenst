@@ -2,7 +2,7 @@
 
 Experience Darwin's evolution by natural selection for yourself: survival of the fastest runner.
 
-Follow <a href="https://twitter.com/galapagotchi?ref_src=twsrc%5Etfw" class="twitter-follow-button" data-show-count="false">@galapagotchi</a><script async src="https://platform.twitter.com/widgets.js" charset="utf-8"></script> to keep informed.
+Follow [@galapagotchi](https://twitter.com/galapagotchi) to stay informed.
 
 ---
 
@@ -16,8 +16,6 @@ The quickest way to understand a bit about this project is to see it in action:
 <a href="http://www.youtube.com/watch?feature=player_embedded&v=1ksohcGrWeM&" target="_blank">
 <img src="http://img.youtube.com/vi/1ksohcGrWeM/0.jpg" alt="Launch"  border="10" />
 </a>
-
-Watch a Galapagotchi being reborn and starting to run.
 
 ### Try it 
 
