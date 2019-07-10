@@ -112,8 +112,6 @@ export class App extends React.Component<IAppProps, IAppState> {
                 <div className="welcome">
                     <h1>Galapagotchi</h1>
                     <hr/>
-                    <img alt="logo" src="logo.png"/>
-                    <hr/>
                     <Alert color="secondary">Loading island "{SINGLE_ISLAND}"...</Alert>
                 </div>
             )
