@@ -19,7 +19,7 @@ The quickest way to understand a bit about this project is to see it in action:
 
 ### Try it 
 
-The app is live online at [https://galapagotchi.run](https://galapagotchi.run/), so you can see what it's like to experience this little fictional universe. You can test drive existing *gotchi* belonging to other people, or if you have a Twitter handle, you can claim a lot of land where you can evolve your own *gotchi*. Currently work in progress.
+The app is live online at [https://galapagotchi.run](https://galapagotchi.run/), so you can see what it's like to experience this little fictional universe. You can test drive existing *gotchi* belonging to other people, or if you have a Twitter handle, you can claim a lot of land where you can evolve your own *gotchi*. This app is a work in progress, so stay tuned or maybe contribute.
 
 ### Multiverse evolution
 
@@ -29,8 +29,8 @@ See a group of nearly equal competitors fight for survival in the same place at 
 
 ### Backstory
 
-If you want to find out what this project is all about, where it came from and where it hopes to go, we try to [explain](client/public/about/index.md) it as well as we can.
+If you want to find out what this project is all about, where it came from and where it hopes to go, we try to [explain](client/public/about/index.md) things as well as we can.
 
 ### Join us!
  
-Calling all open source tinkerers! Contact **galapagotchi@gmail.com** if you are a developer interested in [WebAssembly](https://webassembly.org/), [WebGL](https://en.wikipedia.org/wiki/WebGL) / [ThreeJS](https://threejs.org/) or Darwin's [Evolution](https://en.wikipedia.org/wiki/Darwin%27s_Dangerous_Idea). Join the gitter community.
+Calling all open source tinkerers! Contact **galapagotchi@gmail.com** if you are a developer interested in [WebAssembly](https://webassembly.org/), [WebGL](https://en.wikipedia.org/wiki/WebGL) / [ThreeJS](https://threejs.org/) or Darwin's [Evolution](https://en.wikipedia.org/wiki/Darwin%27s_Dangerous_Idea).

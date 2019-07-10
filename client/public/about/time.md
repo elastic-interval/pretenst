@@ -1,5 +1,7 @@
 # Time
 
+* finish this
+
 Time is a tricky one, because we really have trouble describing what time is for ourselves. Before we invent time, let's think about what we will expect it to do. We will want things to move over time, so for us, time is movement. But wait, where is all of this going to take place? We need space. One step at a time.
 
 So now we must invent *time*, and we'll keep it as simple as we can. Imagine *intervals* being active in the daytime, and *joints* being active at night.

@@ -4,6 +4,7 @@ Running is about a body interacting with a **surface** in the context of **gravi
 
 At first glance, gravity is nothing more than an acceleration *downward* which must be added to all of the [joints](joint.md) during every cycle of [time](time.md)
 
+* finish this
 
 So now we have a 3D movie of some kind of dance of *intervals* and *joints*, and it acts like a network of springs. Structures built like this wobble around until they more or less come to rest, depending on how hard the *intervals* push and pull. But so far, they will only float in space. There is no gravity!
 

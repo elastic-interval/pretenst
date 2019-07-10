@@ -1,6 +1,6 @@
 # Growth
 
-The *Galapagotchi* bodies are made up of [intervals](interval.md), combined to make triangles, and then extended **tripod-by-tripod** creating new tetrahedrons.  This is how the *gotchi* bodies grow.
+The *Galapagotchi* bodies are made up of [intervals](interval.md), combined to make triangles, and then extended **tripod-by-tripod** creating new tetrahedrons.  This is how the *gotchi* bodies grow, following instructions from  the growth [gene](gene.md).
 
 ![interval construction](media/interval-construction.jpg)
 
