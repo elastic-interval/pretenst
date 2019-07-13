@@ -17,3 +17,7 @@ We could say that a *muscle* has a clock face inside for each of the four [direc
 ![discrete time](media/discrete-time.png)
 
 The only source of information that a *muscle* has is **body clock** which puts a **hand** on the muscle's clock face. Every 50 or so cycles of [time](time.md), the muscles wake up and each one checks the clock and adjusts the preferred length of its [interval](interval.md).
+
+### Bilateral symmetry
+
+Muscle behavior is 
