@@ -22,7 +22,7 @@ import { HexalotTarget, IslandTarget, UnknownTarget } from "./view/flight-target
 import { WorldView } from "./view/world-view"
 
 const SINGLE_ISLAND = "rotterdam"
-const DOCS_ON_GITHUB = "https://github.com/elastic-interval/galapagotchi/blob/gerald/docs/client/public/about/index.md"
+const DOCS_ON_GITHUB = "https://github.com/elastic-interval/galapagotchi/blob/master/docs/client/public/about/index.md"
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
