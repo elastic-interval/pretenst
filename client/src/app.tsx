@@ -4,26 +4,13 @@
  */
 
 import * as React from "react"
-import {
-    Alert,
-    Badge,
-    Button,
-    ButtonToolbar,
-    Card,
-    CardFooter,
-    CardHeader,
-    CardTitle,
-    Dropdown,
-    DropdownItem,
-    DropdownMenu,
-    DropdownToggle,
-} from "reactstrap"
+import { Alert, Badge, Button, ButtonToolbar, Card, CardFooter, CardHeader, CardTitle } from "reactstrap"
 import { PerspectiveCamera } from "three"
 
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { API_URI } from "./constants"
-import { getGlobalDoc, GlobalDocTitle } from "./docs/global-docs"
+import { getGlobalDoc } from "./docs/global-docs"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
@@ -35,6 +22,7 @@ import { HexalotTarget, IslandTarget, UnknownTarget } from "./view/flight-target
 import { WorldView } from "./view/world-view"
 
 const SINGLE_ISLAND = "rotterdam"
+const DOCS_ON_GITHUB = "https://github.com/elastic-interval/galapagotchi/blob/gerald/docs/client/public/about/index.md"
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
@@ -148,21 +136,7 @@ export class App extends React.Component<IAppProps, IAppState> {
                             />
                         </div>
                         <div className="top-right">
-                            <Dropdown className="about-dropdown"
-                                      size="sm"
-                                      group={true}
-                                      direction="left"
-                                      isOpen={this.state.globalOpen}
-                                      toggle={() => this.setState({globalOpen: !this.state.globalOpen})}>
-                                <DropdownToggle color="info" caret={true}>About</DropdownToggle>
-                                <DropdownMenu>
-                                    {Object.keys(GlobalDocTitle).map(key => (
-                                        <DropdownItem key={key} onClick={() => {
-                                            this.setState({globalDocTitle: GlobalDocTitle[key]})
-                                        }}>{key}</DropdownItem>
-                                    ))}
-                                </DropdownMenu>
-                            </Dropdown>
+                            <a href={DOCS_ON_GITHUB} target="_blank">About</a>
                         </div>
                     </div>
                 </div>
