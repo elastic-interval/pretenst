@@ -9,7 +9,7 @@ import { PerspectiveCamera } from "three"
 
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
-import { API_URI } from "./constants"
+import { API_URI, DOCS_ON_GITHUB, SINGLE_ISLAND } from "./constants"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
@@ -19,9 +19,6 @@ import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE } from "./view/flight"
 import { HexalotTarget, InitialFlightState, IslandTarget } from "./view/flight-state"
 import { WorldView } from "./view/world-view"
-
-const SINGLE_ISLAND = "rotterdam"
-const DOCS_ON_GITHUB = "https://github.com/elastic-interval/galapagotchi/blob/master/client/public/about/index.md"
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
@@ -108,7 +105,7 @@ export class App extends React.Component<IAppProps, IAppState> {
                                 (
                                     <div className="user">
                                         <a href={`${API_URI}/auth/logout`}>
-                                            <Badge>@{this.props.user.profile.username}</Badge>
+                                            <Badge color="info">@{this.props.user.profile.username}</Badge>
                                         </a>
                                     </div>
                                 )
@@ -129,7 +126,7 @@ export class App extends React.Component<IAppProps, IAppState> {
                             user={this.props.user}
                         />
                         <div className="top-right">
-                            <a href={DOCS_ON_GITHUB} target="_blank">About</a>
+                            <a className="command-button btn btn-info" href={DOCS_ON_GITHUB} target="_blank">About</a>
                         </div>
                     </div>
                 </div>

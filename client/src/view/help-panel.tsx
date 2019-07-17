@@ -6,6 +6,7 @@
 import * as React from "react"
 import { Button, ButtonToolbar, Card, CardBody, CardFooter, CardTitle } from "reactstrap"
 
+import { DOCS_ON_GITHUB } from "../constants"
 import { getCommandDoc } from "../docs/command-docs"
 import { TOOLBAR_STATE_DOCS, ToolbarState } from "../docs/toolbar-state-docs"
 import { Command, IAppState } from "../state/app-state"
@@ -56,6 +57,7 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
     private footer(): JSX.Element {
         return (
             <ButtonToolbar>
+                <a className="btn btn-info command-button" href={DOCS_ON_GITHUB} target="_blank">Background information</a>
                 <Button
                     size="sm"
                     className="float-right"

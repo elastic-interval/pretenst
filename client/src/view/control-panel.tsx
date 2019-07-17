@@ -178,6 +178,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                 return this.buttonToolbar(ToolbarState.Riding,
                     Command.Home,
                     Command.Start,
+                    Command.Evolve,
                 )
 
 
