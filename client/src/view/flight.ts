@@ -9,7 +9,7 @@ import { OrbitControls } from "three-orbitcontrols-ts"
 import { AppMode, IAppState } from "../state/app-state"
 import { Transition } from "../state/transition"
 
-import { IFlightTarget } from "./flight-target"
+import { IFlightState } from "./flight-state"
 
 export const INITIAL_DISTANCE = 15000
 export const MINIMUM_DISTANCE = 7
@@ -21,12 +21,8 @@ export function polarAngle(aboveness: number): number { // aboveness [0,1]
     return (1 - aboveness) * MAX_POLAR_ANGLE + aboveness * MIN_POLAR_ANGLE
 }
 
-const ANGLE_ABOVE_HORIZON = Math.PI * 5 / 12
-
 const TOWARDS_UPWARDS = 0.3
-const TOWARDS_TARGET = 0.05
-const TOWARDS_DISTANCE = 0.25
-const TOWARDS_ABOVE = 0.01
+const TOWARDS_TARGET = 0.02
 
 export class Flight {
     private target = new Vector3()
@@ -44,24 +40,34 @@ export class Flight {
         orbit.target = this.target
     }
 
-    public setupCamera(): void {
+    public setupCamera(flightState: IFlightState): void {
+        const angleAboveHorizon = (flightState.tooHorizontal + flightState.tooVertical) / 2
+        const distance = (flightState.tooFar + flightState.tooClose) / 2
         this.camera.position.set(
             0,
-            INITIAL_DISTANCE * Math.sin(ANGLE_ABOVE_HORIZON),
-            INITIAL_DISTANCE * Math.cos(ANGLE_ABOVE_HORIZON),
+            distance * Math.sin(angleAboveHorizon),
+            distance * Math.cos(angleAboveHorizon),
         )
     }
 
     public update(appState: IAppState): void {
-        const flightTarget = appState.flightTarget
-        this.moveTowardsTarget(flightTarget.location)
-        if (appState.appMode === AppMode.Flying) {
-            const distanceChanged = this.cameraFollowDistance(flightTarget)
-            const angleChanged = this.cameraFollowPolarAngle(flightTarget)
-            if (!(distanceChanged || angleChanged)) {
-                this.orbit.enabled = true
-                appState.updateState(new Transition(appState).reachedFlightTarget(flightTarget).appState)
-            }
+        const flightState = appState.flightState
+        this.moveTowardsTarget(flightState.target)
+        switch (appState.appMode) {
+            case AppMode.Flying:
+                const distanceChanged = this.cameraFollowDistance(flightState)
+                const angleChanged = this.cameraFollowPolarAngle(flightState)
+                if (!(distanceChanged || angleChanged)) {
+                    this.orbit.enabled = true
+                    appState.updateState(new Transition(appState).reachedFlightStateTarget(flightState).appState)
+                }
+                break
+            case AppMode.Riding:
+                this.cameraFollowDistance(flightState)
+                this.cameraFollowPolarAngle(flightState)
+                break
+            default:
+                break
         }
         this.stayUpright()
         this.orbit.update()
@@ -79,25 +85,26 @@ export class Flight {
         this.target.add(this.targetToMovingTarget.subVectors(movingTarget, this.target).multiplyScalar(TOWARDS_TARGET))
     }
 
-    private cameraFollowDistance(target: IFlightTarget): boolean {
+    private cameraFollowDistance(flightState: IFlightState): boolean {
         const currentDistance = this.calculateTargetToCamera().length()
-        if (currentDistance > target.tooClose && currentDistance < target.tooFar) {
+        if (currentDistance > flightState.tooClose && currentDistance < flightState.tooFar) {
             return false
         }
-        const nextDistance = currentDistance * (1 - TOWARDS_DISTANCE) + target.distance * TOWARDS_DISTANCE
+        const distance = (flightState.tooFar + flightState.tooClose) / 2
+        const nextDistance = currentDistance * (1 - flightState.towardsDistance) + distance * flightState.towardsDistance
         this.targetToCamera.normalize().multiplyScalar(nextDistance)
         this.camera.position.addVectors(this.target, this.targetToCamera)
         return true
     }
 
-    private cameraFollowPolarAngle(target: IFlightTarget): boolean {
+    private cameraFollowPolarAngle(flightState: IFlightState): boolean {
         const currentPolarAngle = this.orbit.getPolarAngle()
-        if (currentPolarAngle < target.tooVertical) {
-            this.orbit.rotateUp(-TOWARDS_ABOVE)
+        if (currentPolarAngle < flightState.tooVertical) {
+            this.orbit.rotateUp(-flightState.towardsPolarAngle)
             return true
         }
-        if (currentPolarAngle > target.tooHorizontal) {
-            this.orbit.rotateUp(TOWARDS_ABOVE)
+        if (currentPolarAngle > flightState.tooHorizontal) {
+            this.orbit.rotateUp(flightState.towardsPolarAngle)
             return true
         }
         return false

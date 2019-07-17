@@ -17,7 +17,7 @@ import { AppMode, AppTransition, IAppProps, IAppState, logString, updateDimensio
 import { Transition } from "./state/transition"
 import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE } from "./view/flight"
-import { HexalotTarget, IslandTarget, UnknownTarget } from "./view/flight-target"
+import { HexalotTarget, InitialFlightState, IslandTarget } from "./view/flight-state"
 import { WorldView } from "./view/world-view"
 
 const SINGLE_ISLAND = "rotterdam"
@@ -39,8 +39,6 @@ export class App extends React.Component<IAppProps, IAppState> {
         const left = window.screenLeft
         const top = window.screenTop
         const ownedLots: string[] = []
-        const mode = AppMode.Flying
-        const flightTarget = UnknownTarget()
         const self = this
         this.state = {
             width,
@@ -48,9 +46,9 @@ export class App extends React.Component<IAppProps, IAppState> {
             left,
             top,
             ownedLots,
-            flightTarget,
+            flightState: InitialFlightState(),
             nonce: 0,
-            appMode: mode,
+            appMode: AppMode.Flying,
             islandIsLegal: false,
             storage: props.storage,
             transitionState(transition: AppTransition): void {
@@ -97,9 +95,7 @@ export class App extends React.Component<IAppProps, IAppState> {
         if (!this.state.island) {
             return (
                 <div className="welcome">
-                    <h1>Galapagotchi</h1>
-                    <hr/>
-                    <Alert color="secondary">Loading island "{SINGLE_ISLAND}"...</Alert>
+                    <Alert color="secondary">Visiting Galapagotchi island "{SINGLE_ISLAND}"...</Alert>
                 </div>
             )
         }
@@ -127,13 +123,11 @@ export class App extends React.Component<IAppProps, IAppState> {
                                 )
                             }
                         </div>
-                        <div className="top-middle">
-                            <ControlPanel
-                                appState={this.state}
-                                location={this.perspectiveCamera.position}
-                                user={this.props.user}
-                            />
-                        </div>
+                        <ControlPanel
+                            appState={this.state}
+                            location={this.perspectiveCamera.position}
+                            user={this.props.user}
+                        />
                         <div className="top-right">
                             <a href={DOCS_ON_GITHUB} target="_blank">About</a>
                         </div>
@@ -158,8 +152,8 @@ export class App extends React.Component<IAppProps, IAppState> {
         console.log("Fetched island", islandData)
         const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
         const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
-        const flightTarget = homeHexalot ? HexalotTarget(homeHexalot, AppMode.Exploring) : IslandTarget(island, AppMode.Exploring)
-        const appState = (await new Transition(this.state).withIsland(island, islandData, flightTarget)).withRestructure.appState
+        const flightState = homeHexalot ? HexalotTarget(homeHexalot, AppMode.Exploring) : IslandTarget(island, AppMode.Exploring)
+        const appState = (await new Transition(this.state).withIsland(island, islandData)).withFlightState(flightState).withRestructure.appState
         if (!homeHexalotId) {
             this.state.updateState(appState)
         } else {

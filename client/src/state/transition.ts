@@ -20,11 +20,11 @@ import { Spot } from "../island/spot"
 import {
     EvolutionTarget,
     HexalotTarget,
-    IFlightTarget,
+    IFlightState,
     JockeyTarget,
     WithHexalot,
     WithSpot,
-} from "../view/flight-target"
+} from "../view/flight-state"
 
 import { AppMode, IAppState } from "./app-state"
 
@@ -39,12 +39,14 @@ export class Transition {
         return this.nextState
     }
 
-    public async withIsland(island: Island, islandData: IIslandData, optionalFlightTarget?: IFlightTarget): Promise<Transition> {
+    public async withIsland(island: Island, islandData: IIslandData): Promise<Transition> {
         const withNoneSelected = await this.withSelectedSpot()
         withNoneSelected.withJourney().withoutEvolution.nextState = {...this.nextState, island, islandData}
-        if (optionalFlightTarget) {
-            this.nextState = {...this.nextState, flightTarget: optionalFlightTarget}
-        }
+        return this
+    }
+
+    public withFlightState(flightState: IFlightState): Transition {
+        this.nextState = {...this.nextState, flightState}
         return this
     }
 
@@ -57,7 +59,7 @@ export class Transition {
         const homeHexalot = this.nextState.homeHexalot
         if (homeHexalot) {
             const flightTarget = HexalotTarget(homeHexalot, AppMode.Planning)
-            this.nextState = {...this.nextState, appMode: AppMode.Flying, flightTarget}
+            this.nextState = {...this.nextState, appMode: AppMode.Flying, flightState: flightTarget}
         }
         return this
     }
@@ -67,8 +69,8 @@ export class Transition {
         return this
     }
 
-    public reachedFlightTarget(flightTarget: IFlightTarget): Transition {
-        this.nextState = {...this.nextState, appMode: flightTarget.appMode}
+    public reachedFlightStateTarget(flightState: IFlightState): Transition {
+        this.nextState = {...this.nextState, appMode: flightState.appMode}
         return this
     }
 
@@ -81,8 +83,8 @@ export class Transition {
         this.nextState = {...this.nextState, selectedHexalot}
         const island = this.nextState.island
         if (selectedHexalot) {
-            const flightTarget = WithHexalot(this.nextState.flightTarget, selectedHexalot)
-            this.nextState = {...this.nextState, flightTarget}
+            const flightState = WithHexalot(this.nextState.flightState, selectedHexalot)
+            this.nextState = {...this.nextState, flightState}
             await fetchGenome(selectedHexalot, this.nextState.storage)
             if (selectedHexalot.journey) {
                 return this.withJourney(selectedHexalot.journey)
@@ -98,8 +100,8 @@ export class Transition {
     public async withSelectedSpot(selectedSpot?: Spot): Promise<Transition> {
         this.nextState = {...this.nextState, selectedSpot}
         if (selectedSpot) {
-            const flightTarget = WithSpot(this.nextState.flightTarget, selectedSpot)
-            this.nextState = {...this.nextState, flightTarget}
+            const flightState = WithSpot(this.nextState.flightState, selectedSpot)
+            this.nextState = {...this.nextState, flightState}
             return this.withSelectedHexalot(selectedSpot.centerOfHexalot)
         }
         return this.withSelectedHexalot()
@@ -122,7 +124,7 @@ export class Transition {
             ...this.nextState,
             jockey,
             journey: jockey.leg.journey,
-            flightTarget: JockeyTarget(jockey),
+            flightState: JockeyTarget(jockey),
             appMode: AppMode.Flying,
         }
         return this
@@ -146,7 +148,7 @@ export class Transition {
             ...this.nextState,
             evolution,
             jockey: undefined,
-            flightTarget: EvolutionTarget(evolution),
+            flightState: EvolutionTarget(evolution),
             appMode: AppMode.Flying,
         }
         return this
@@ -191,8 +193,8 @@ export class Transition {
         this.nextState = {...this.nextState, islandIsLegal}
         const singleHexalot = island.singleHexalot
         if (!islandIsLegal && singleHexalot) {
-            const flightTarget = HexalotTarget(singleHexalot, AppMode.Terraforming)
-            this.nextState = {...this.nextState, flightTarget}
+            const flightState = HexalotTarget(singleHexalot, AppMode.Terraforming)
+            this.nextState = {...this.nextState, flightState}
         }
         return this
     }

@@ -22,7 +22,6 @@ export interface IControlProps {
 }
 
 export interface IControlState {
-    visible: boolean
     helpVisible: boolean
     toolbarState: ToolbarState
     toolbarCommands: Command[]
@@ -36,32 +35,34 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
 
     constructor(props: IControlProps) {
         super(props)
-        const visible = props.appState.appMode !== AppMode.Flying
         const toolbarState = ToolbarState.Unknown
-        this.state = {visible, toolbarState, toolbarCommands: [], helpVisible: false}
-    }
-
-    public componentWillReceiveProps(nextProps: Readonly<IControlProps>): void {
-        const visible = nextProps.appState.appMode !== AppMode.Flying
-        this.setState({visible})
+        this.state = {toolbarState, toolbarCommands: [], helpVisible: false}
     }
 
     public render(): JSX.Element | boolean {
         const island = this.props.appState.island
-        if (!this.state.visible || !island) {
-            return false
-        }
         return (
-            <div className="">
-                {this.commandButtons(island)}
-                {!this.state.helpVisible ? false : (
-                    <HelpPanel
-                        appState={this.props.appState}
-                        toolbarState={this.state.toolbarState}
-                        toolbarCommands={this.state.toolbarCommands}
-                        cancelHelp={() => this.setState({helpVisible: false})}
-                    />
-                )}
+            <div className="top-middle">
+                {this.props.appState.appMode === AppMode.Flying || !island ?
+                    (
+                        <Button
+                            color="info"
+                            className="command-button"
+                        >Hold on!</Button>
+                    ) :
+                    (
+                        <div>
+                            {this.commandButtons(island)}
+                            {!this.state.helpVisible ? false : (
+                                <HelpPanel
+                                    appState={this.props.appState}
+                                    toolbarState={this.state.toolbarState}
+                                    toolbarCommands={this.state.toolbarCommands}
+                                    cancelHelp={() => this.setState({helpVisible: false})}
+                                />
+                            )}
+                        </div>
+                    )}
             </div>
         )
     }

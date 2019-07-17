@@ -16,6 +16,7 @@ import { IUser } from "../storage/remote-storage"
 
 import { EvolutionComponent } from "./evolution-component"
 import { Flight } from "./flight"
+import { InitialFlightState } from "./flight-state"
 import { IslandComponent } from "./island-component"
 import { JourneyComponent } from "./journey-component"
 import { GOTCHI, GOTCHI_ARROW } from "./materials"
@@ -60,7 +61,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
         if (element) {
             const orbitControls = new OrbitControls(props.perspectiveCamera, element)
             this.flight = new Flight(orbitControls)
-            this.flight.setupCamera()
+            this.flight.setupCamera(InitialFlightState())
             this.beginAnimating()
         }
     }

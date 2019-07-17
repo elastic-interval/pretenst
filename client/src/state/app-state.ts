@@ -12,7 +12,7 @@ import { coordsToString, IIslandData } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 import { IUser, RemoteStorage } from "../storage/remote-storage"
-import { IFlightTarget } from "../view/flight-target"
+import { IFlightState } from "../view/flight-state"
 
 export interface IAppProps {
     fabricExports: IFabricExports
@@ -34,7 +34,7 @@ export interface IAppState {
     readonly left: number
     readonly top: number
 
-    readonly flightTarget: IFlightTarget
+    readonly flightState: IFlightState
 
     readonly island?: Island
     readonly islandData?: IIslandData
