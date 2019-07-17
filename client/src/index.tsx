@@ -8,6 +8,7 @@ import * as React from "react"
 import * as ReactDOM from "react-dom"
 
 import { App } from "./app"
+import { APP_EVENT, AppEvent } from "./app-event"
 import { IFabricExports } from "./body/fabric-exports"
 import { API_URI } from "./constants"
 import "./index.css"
@@ -18,6 +19,20 @@ declare const getFabricExports: () => Promise<IFabricExports> // implementation:
 
 console.log(`Using API at ${API_URI}`)
 const storage = new RemoteStorage(API_URI)
+
+APP_EVENT.subscribe(appEvent => {
+    switch (appEvent.event) {
+        case AppEvent.Command:
+            console.log(`App Event: ${appEvent.event}: ${appEvent.command}`)
+            break
+        case AppEvent.AppMode:
+            console.log(`App Event: ${appEvent.event}: ${appEvent.appMode}`)
+            break
+        default:
+            console.log(`App Event: ${appEvent.event}`)
+            break
+    }
+})
 
 async function start(): Promise<void> {
     const fabricExports = await getFabricExports()

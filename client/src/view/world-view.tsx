@@ -8,9 +8,10 @@ import * as R3 from "react-three"
 import { Mesh, PerspectiveCamera } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
+import { APP_EVENT, AppEvent } from "../app-event"
 import { ITERATIONS_PER_TICK } from "../body/fabric"
 import { Spot } from "../island/spot"
-import { IAppState } from "../state/app-state"
+import { AppMode, IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
 import { IUser } from "../storage/remote-storage"
 
@@ -36,6 +37,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
     private appStateNonce = -1
     private flight: Flight
     private spotSelector: SpotSelector
+    private appMode = AppMode.Flying
 
     constructor(props: IWorldProps) {
         super(props)
@@ -138,13 +140,20 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
             setTimeout(
                 () => {
                     const appState = this.props.appState
+                    if (appState.appMode !== this.appMode) {
+                        this.appMode = appState.appMode
+                        APP_EVENT.next({event: AppEvent.AppMode, appMode: this.appMode})
+                    }
                     const jockey = appState.jockey
                     if (jockey) {
                         jockey.reorient()
                     }
                     const iterating = this.state.iterating
                     if (jockey) {
-                        jockey.gotchi.iterate(ITERATIONS_PER_TICK)
+                        const appEvent = jockey.gotchi.iterate(ITERATIONS_PER_TICK)
+                        if (appEvent) {
+                            APP_EVENT.next({event: appEvent})
+                        }
                         if (!iterating) {
                             this.setState({iterating: true})
                         }

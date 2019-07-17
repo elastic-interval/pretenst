@@ -6,6 +6,7 @@
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
+import { AppEvent } from "../app-event"
 import { ITERATIONS_PER_TICK } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
 import { fromGenomeData, Genome } from "../genetics/genome"
@@ -85,8 +86,9 @@ export class Evolution {
         }
         moving.forEach(jockey => {
             const behind = this.maxAge - jockey.age
-            const timeSweepTick = jockey.iterate(behind > ITERATIONS_PER_TICK ? ITERATIONS_PER_TICK : behind)
-            if (timeSweepTick && !jockey.gestating) {
+            const appEvent = jockey.iterate(behind > ITERATIONS_PER_TICK ? ITERATIONS_PER_TICK : behind)
+            if (appEvent === AppEvent.Cycle) {
+                console.log("mutate")
                 jockey.mutateGenome(1)
             }
         })

@@ -13,7 +13,7 @@ import { API_URI } from "./constants"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
-import { AppMode, AppTransition, IAppProps, IAppState, logString, updateDimensions } from "./state/app-state"
+import { AppMode, AppTransition, IAppProps, IAppState, updateDimensions } from "./state/app-state"
 import { Transition } from "./state/transition"
 import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE } from "./view/flight"
@@ -59,7 +59,7 @@ export class App extends React.Component<IAppProps, IAppState> {
                     throw new Error(`Same nonce! ${appState.nonce}`)
                 }
                 self.appStateNonce = appState.nonce
-                console.log(logString(appState))
+                // console.log(logString(appState))
                 const hexalot = appState.selectedHexalot
                 if (hexalot) {
                     const spotCenters = hexalot.spots.map(spot => spot.center)
@@ -149,7 +149,6 @@ export class App extends React.Component<IAppProps, IAppState> {
         if (!islandData) {
             return
         }
-        console.log("Fetched island", islandData)
         const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
         const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
         const flightState = homeHexalot ? HexalotTarget(homeHexalot, AppMode.Exploring) : IslandTarget(island, AppMode.Exploring)

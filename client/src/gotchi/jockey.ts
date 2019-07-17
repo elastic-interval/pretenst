@@ -5,6 +5,7 @@
 
 import { BufferGeometry, Geometry, Vector3 } from "three"
 
+import { AppEvent } from "../app-event"
 import { Fabric } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
 import { Genome, IGenomeData } from "../genetics/genome"
@@ -124,7 +125,7 @@ export class Jockey {
         return {jockey: this, distanceFromTarget}
     }
 
-    public iterate(ticks: number): boolean {
+    public iterate(ticks: number): AppEvent | undefined {
         return this.gotchi.iterate(ticks)
     }
 

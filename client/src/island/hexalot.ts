@@ -20,12 +20,12 @@ export async function fetchGenome(hexalot: Hexalot, storage: RemoteStorage): Pro
         return
     }
     hexalot.genome = await hexalot.fetchGenome(storage)
-    console.log(`Genome for ${hexalot.id}`, hexalot.genome)
+    // console.log(`Genome for ${hexalot.id}`, hexalot.genome)
 }
 
 export async function fetchJourney(hexalot: Hexalot, storage: RemoteStorage, island: Island): Promise<Journey> {
     const journey = await hexalot.fetchJourney(storage, island)
-    console.log(`Journey for ${hexalot.id}`, journey)
+    // console.log(`Journey for ${hexalot.id}`, journey)
     if (!journey) {
         return hexalot.createRandomJourney()
     }

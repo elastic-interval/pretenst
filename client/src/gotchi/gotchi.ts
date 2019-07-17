@@ -5,6 +5,7 @@
 
 import { Vector3 } from "three"
 
+import { AppEvent } from "../app-event"
 import { Fabric } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
 import { Behavior } from "../genetics/behavior"
@@ -20,6 +21,7 @@ export interface IGotchiFactory {
 }
 
 export class Gotchi {
+    private growthStarted = false
     private growth?: Growth
 
     constructor(
@@ -97,10 +99,14 @@ export class Gotchi {
         this.nextDirection = towards ? distances[0].direction : distances[3].direction
     }
 
-    public iterate(ticks: number): boolean {
-        const timeSweepTick = this.fabric.iterate(ticks)
-        if (!timeSweepTick) {
-            return timeSweepTick
+    public iterate(ticks: number): AppEvent | undefined {
+        if (this.growth && !this.growthStarted) {
+            this.growthStarted = true
+            return AppEvent.StartGrowth
+        }
+        const wrapAround = this.fabric.iterate(ticks)
+        if (!wrapAround) {
+            return undefined
         }
         if (this.growth) {
             const growthStep = this.growth.step()
@@ -108,9 +114,15 @@ export class Gotchi {
                 this.growth = undefined
                 this.applyBehaviorGenes()
                 this.fabric.endGestation()
+                return AppEvent.GrowthComplete
             }
+            return AppEvent.GrowthStep
+        } else {
+            if (this.currentDirection === Direction.REST) {
+                return undefined
+            }
+            return AppEvent.Cycle
         }
-        return timeSweepTick
     }
 
     private applyBehaviorGenes(): void {

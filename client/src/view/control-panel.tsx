@@ -7,6 +7,7 @@ import * as React from "react"
 import { Button } from "reactstrap"
 import { Vector3 } from "three"
 
+import { APP_EVENT, AppEvent } from "../app-event"
 import { ToolbarState } from "../docs/toolbar-state-docs"
 import { Island } from "../island/island"
 import { AppMode, Command, homeHexalotSelected, IAppState } from "../state/app-state"
@@ -221,6 +222,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
     private async execute(command: Command): Promise<void> {
         const props = this.props
         const nextState = await new CommandHandler(props.appState).afterCommand(command, props.location)
+        APP_EVENT.next({event: AppEvent.Command, command})
         props.appState.updateState(nextState)
     }
 }
