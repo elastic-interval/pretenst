@@ -4,13 +4,12 @@
  */
 
 import * as React from "react"
-import { Alert, Badge, Button, ButtonToolbar, Card, CardFooter, CardHeader, CardTitle } from "reactstrap"
+import { Alert, Badge } from "reactstrap"
 import { PerspectiveCamera } from "three"
 
 import { createFabricKernel, FabricKernel } from "./body/fabric-kernel"
 import { Physics } from "./body/physics"
 import { API_URI } from "./constants"
-import { getGlobalDoc } from "./docs/global-docs"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
@@ -145,28 +144,6 @@ export class App extends React.Component<IAppProps, IAppState> {
                     user={this.props.user}
                     appState={this.state}
                 />
-                {!this.state.globalDocTitle ? false :
-                    (
-                        <div className="global-help">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle>{this.state.globalDocTitle}</CardTitle>
-                                </CardHeader>
-                                {getGlobalDoc(this.state.globalDocTitle).body}
-                                <CardFooter>
-                                    <ButtonToolbar>
-                                        <Button
-                                            size="sm"
-                                            className="float-right"
-                                            color="info"
-                                            onClick={() => this.setState({globalDocTitle: undefined})}
-                                        >Ok, got it</Button>
-                                    </ButtonToolbar>
-                                </CardFooter>
-                            </Card>
-                        </div>
-                    )
-                }
             </div>
         )
     }
