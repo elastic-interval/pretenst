@@ -1,6 +1,5 @@
 version: "3.7"
 services:
-  # TODO: mount DB volume
   app:
     build: server
     restart: on-failure
@@ -32,5 +31,7 @@ services:
     environment:
       - POSTGRES_USER=galapagotchi
       - POSTGRES_PASSWORD=${DB_PASSWORD:-goomslatch}
+    volumes:
+      - /var/lib/postgresql/data
     ports:
       - "5432:5432"
