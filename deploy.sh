@@ -8,4 +8,4 @@ yarn asbuild:optimized
 cd ../client
 yarn
 yarn build:prod
-docker-compose build && docker-compose up -d
+docker-compose up --build -d
