@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Direction } from "../body/fabric-exports"
-import { GotchiBody, INTERVALS_RESERVED } from "../body/gotchi-body"
+import { Direction } from "../fabric/fabric-exports"
+import { GotchiBody, INTERVALS_RESERVED } from "../fabric/gotchi-body"
 
 import { GeneReader } from "./gene-reader"
 

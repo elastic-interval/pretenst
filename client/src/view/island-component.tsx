@@ -7,7 +7,7 @@ import * as React from "react"
 import * as R3 from "react-three"
 import { Color, Geometry, Mesh, Vector3 } from "three"
 
-import { HUNG_ALTITUDE } from "../body/gotchi-body"
+import { HUNG_ALTITUDE } from "../fabric/gotchi-body"
 import { HEXALOT_OUTLINE_HEIGHT, INNER_HEXALOT_SPOTS, OUTER_HEXALOT_SIDE } from "../island/constants"
 import { IAppState } from "../state/app-state"
 import { IUser } from "../storage/remote-storage"

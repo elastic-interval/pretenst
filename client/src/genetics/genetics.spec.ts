@@ -1,8 +1,8 @@
-import {Direction} from "../body/fabric-exports"
+import { Direction } from "../fabric/fabric-exports"
 
-import {DICE, diceToNuance} from "./dice"
-import {GeneReader} from "./gene-reader"
-import {Genome} from "./genome"
+import { DICE, diceToNuance } from "./dice"
+import { GeneReader } from "./gene-reader"
+import { Genome } from "./genome"
 
 describe("Genetics", () => {
 

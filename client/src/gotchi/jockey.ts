@@ -6,8 +6,8 @@
 import { BufferGeometry, Geometry, Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { Direction } from "../body/fabric-exports"
-import { GotchiBody } from "../body/gotchi-body"
+import { Direction } from "../fabric/fabric-exports"
+import { GotchiBody } from "../fabric/gotchi-body"
 import { Genome, IGenomeData } from "../genetics/genome"
 import { HEXAPOD_RADIUS } from "../island/constants"
 import { Leg } from "../island/journey"

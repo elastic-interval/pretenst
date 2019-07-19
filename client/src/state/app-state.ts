@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IFabricExports } from "../body/fabric-exports"
+import { IFabricExports } from "../fabric/fabric-exports"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"

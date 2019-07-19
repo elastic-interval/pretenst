@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FaceSnapshot } from "../body/face-snapshot"
-import { GotchiBody } from "../body/gotchi-body"
+import { FaceSnapshot } from "../fabric/face-snapshot"
+import { GotchiBody } from "../fabric/gotchi-body"
 
 import { GeneReader } from "./gene-reader"
 

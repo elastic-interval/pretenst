@@ -5,7 +5,7 @@
 
 import * as React from "react"
 
-import { IPhysicsFeature, Physics } from "../body/physics"
+import { IPhysicsFeature, Physics } from "../fabric/physics"
 
 export interface IPhysicsPanelProps {
     physics: Physics

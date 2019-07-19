@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Direction } from "../body/fabric-exports"
+import { Direction } from "../fabric/fabric-exports"
 
 import { deserializeGene, DICE, IDie, serializeGene } from "./dice"
 import { GeneReader } from "./gene-reader"

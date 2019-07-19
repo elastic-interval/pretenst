@@ -6,8 +6,8 @@
 import { Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { Direction } from "../body/fabric-exports"
-import { GotchiBody } from "../body/gotchi-body"
+import { Direction } from "../fabric/fabric-exports"
+import { GotchiBody } from "../fabric/gotchi-body"
 import { Behavior } from "../genetics/behavior"
 import { Genome, IGenomeData } from "../genetics/genome"
 import { Growth } from "../genetics/growth"
