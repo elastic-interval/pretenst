@@ -17,6 +17,12 @@ export enum Direction {
     REVERSE = 4,
 }
 
+export enum IntervalRole {
+    MUSCLE = 0,
+    BAR = 1,
+    CABLE = 2,
+}
+
 export const SEED_CORNERS = 5
 export const SEED_RADIUS = 1
 
@@ -89,7 +95,7 @@ export interface IFabricExports {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number
+    createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number
 
     findOppositeIntervalIndex(intervalIndex: number): number
 
@@ -166,7 +172,7 @@ export interface IFabricInstanceExports {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number
+    createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number
 
     findOppositeIntervalIndex(intervalIndex: number): number
 

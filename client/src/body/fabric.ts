@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
+import { Direction, IFabricInstanceExports, IntervalRole, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
 import { vectorFromFloatArray } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
@@ -205,13 +205,13 @@ export class Fabric {
         const jointPairName = this.exports.nextJointTag()
         const left = this.exports.createJoint(jointPairName, BILATERAL_LEFT, leftLoc.x, leftLoc.y, leftLoc.z)
         const right = this.exports.createJoint(jointPairName, BILATERAL_RIGHT, rightLoc.x, rightLoc.y, rightLoc.z)
-        this.interval(hangerJoint, left, -1)
-        this.interval(hangerJoint, right, -1)
-        this.interval(left, right, -1)
+        this.muscle(hangerJoint, left, -1)
+        this.muscle(hangerJoint, right, -1)
+        this.muscle(left, right, -1)
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
-            this.interval(walk + 1, (walk + 1) % SEED_CORNERS + 1, -1)
-            this.interval(walk + 1, left, -1)
-            this.interval(walk + 1, right, -1)
+            this.muscle(walk + 1, (walk + 1) % SEED_CORNERS + 1, -1)
+            this.muscle(walk + 1, left, -1)
+            this.muscle(walk + 1, right, -1)
         }
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             this.face(left, walk + 1, (walk + 1) % SEED_CORNERS + 1)
@@ -311,12 +311,12 @@ export class Fabric {
         return this.exports.createFace(joint0Index, joint1Index, joint2Index)
     }
 
-    private interval(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, false)
+    private muscle(alphaIndex: number, omegaIndex: number, span: number): number {
+        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.MUSCLE, false)
     }
 
-    private intervalGrowth(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, true)
+    private growingMuscle(alphaIndex: number, omegaIndex: number, span: number): number {
+        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.MUSCLE, true)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
@@ -331,10 +331,10 @@ export class Fabric {
         sortedJoints.forEach(faceJoint => {
             if (faceJoint.jointNumber !== chosenJoint.jointNumber) {
                 const idealSpan = new Vector3().subVectors(faceJoint.location, apexLocation).length()
-                this.interval(faceJoint.jointIndex, apexIndex, idealSpan)
+                this.muscle(faceJoint.jointIndex, apexIndex, idealSpan)
             }
         })
-        this.intervalGrowth(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan)
+        this.growingMuscle(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan)
         const createdFaceIndexes: number[] = []
         sortedJoints.map(joint => joint.jointNumber).forEach((jointNumber: number, index: number) => { // youngest first
             switch (jointNumber) {

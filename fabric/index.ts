@@ -9,17 +9,21 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
+const MUSCLE = 0
+const BAR = 1
+const CABLE = 2
+
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
 const JOINT_NAME_SIZE: usize = U16
 const INDEX_SIZE: usize = U16
+const INTERVAL_ROLE_SIZE: usize = U8
 const MUSCLE_HIGHLOW_SIZE: usize = U8
 const VECTOR_SIZE: usize = F32 * 3
 const CLOCK_POINTS: u8 = 16
 const JOINT_RADIUS: f32 = 0.5
 const AMBIENT_JOINT_MASS: f32 = 0.1
-const BILATERAL_MIDDLE: u8 = 0
 const SEED_CORNERS: u16 = 5
 const REST_DIRECTION: u8 = 0
 const MUSCLE_DIRECTIONS: u8 = 5
@@ -605,9 +609,9 @@ function calculateDirectionVectors(): void {
 
 // Intervals =====================================================================================
 
-const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
+const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
 
-export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32, growing: boolean): usize {
+export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32, intervalRole: u8, growing: boolean): usize {
     let intervalCount = getIntervalCount()
     if (intervalCount + 1 >= intervalCountMax) {
         return ERROR
@@ -617,6 +621,7 @@ export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32,
     setAlphaIndex(intervalIndex, alphaIndex)
     setOmegaIndex(intervalIndex, omegaIndex)
     setIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex))
+    setIntervalRole(intervalIndex, intervalRole)
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
         if (direction === REST_DIRECTION) {
             setIntervalHighLow(intervalIndex, direction, growing ? GROWING_INTERVAL : MATURE_INTERVAL)
@@ -673,12 +678,20 @@ function setIdealSpan(intervalIndex: u16, idealSpan: f32): void {
     setF32(idealSpanPtr(intervalIndex), idealSpan)
 }
 
+function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
+    setU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32, intervalRole)
+}
+
+function getIntervalRole(intervalIndex: u16): u8 {
+    return getU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32)
+}
+
 function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
-    return getU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction)
+    return getU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * direction)
 }
 
 export function setIntervalHighLow(intervalIndex: u16, direction: u8, highLow: u8): void {
-    setU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32 + MUSCLE_HIGHLOW_SIZE * direction, highLow)
+    setU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * direction, highLow)
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -1031,9 +1044,25 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 function elastic(intervalIndex: u16, elasticFactor: f32): void {
     let idealSpan = interpolateCurrentSpan(intervalIndex)
-    let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * idealSpan * idealSpan
-    addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2)
-    addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2)
+    let canPush = true
+    let stressFactor: f32 = 0
+    switch (getIntervalRole(intervalIndex)) {
+        case MUSCLE:
+            stressFactor = idealSpan * idealSpan
+            break
+        case BAR:
+            stressFactor = 1
+            break
+        case CABLE:
+            stressFactor = 1
+            canPush = false
+            break
+    }
+    let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * stressFactor
+    if (canPush || stress > 0) {
+        addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2)
+        addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2)
+    }
     let mass = idealSpan * idealSpan * idealSpan
     let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)

@@ -11,7 +11,7 @@ import { Hexalot } from "../island/hexalot"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { Fabric } from "./fabric"
-import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports } from "./fabric-exports"
+import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports, IntervalRole, } from "./fabric-exports"
 
 const FLOATS_IN_VECTOR = 3
 const VECTORS_FOR_FACE = 3
@@ -193,8 +193,8 @@ class InstanceExports implements IFabricInstanceExports {
         return this.ex.createFace(joint0Index, joint1Index, joint2Index)
     }
 
-    public createInterval(alphaIndex: number, omegaIndex: number, span: number, growing: boolean): number {
-        return this.ex.createInterval(alphaIndex, omegaIndex, span, growing)
+    public createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number {
+        return this.ex.createInterval(alphaIndex, omegaIndex, idealSpan, intervalRole, growing)
     }
 
     public createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number {
