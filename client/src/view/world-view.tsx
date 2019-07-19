@@ -9,7 +9,7 @@ import { Mesh, PerspectiveCamera } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
 import { APP_EVENT, AppEvent } from "../app-event"
-import { ITERATIONS_PER_TICK } from "../body/fabric"
+import { ITERATIONS_PER_TICK } from "../body/gotchi-body"
 import { Spot } from "../island/spot"
 import { AppMode, IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"

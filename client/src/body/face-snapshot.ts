@@ -5,9 +5,9 @@
 
 import { Vector3 } from "three"
 
-import { BILATERAL_MIDDLE, Fabric } from "./fabric"
 import { IFabricInstanceExports } from "./fabric-exports"
 import { vectorFromFloatArray } from "./fabric-kernel"
+import { BILATERAL_MIDDLE, GotchiBody } from "./gotchi-body"
 
 export interface IJointSnapshot {
     jointNumber: number
@@ -23,7 +23,7 @@ export class FaceSnapshot {
     private jointSnapshots: IJointSnapshot[]
 
     constructor(
-        private fabric: Fabric,
+        private fabric: GotchiBody,
         private exports: IFabricInstanceExports,
         private fabricExports: IFabricInstanceExports,
         private faceIndex: number,

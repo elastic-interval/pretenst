@@ -6,8 +6,8 @@
 import { Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { Fabric } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
+import { GotchiBody } from "../body/gotchi-body"
 import { Behavior } from "../genetics/behavior"
 import { Genome, IGenomeData } from "../genetics/genome"
 import { Growth } from "../genetics/growth"
@@ -26,7 +26,7 @@ export class Gotchi {
 
     constructor(
         readonly home: Hexalot,
-        readonly fabric: Fabric,
+        readonly fabric: GotchiBody,
         private genome: Genome,
         private gotchiFactory: IGotchiFactory,
     ) {

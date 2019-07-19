@@ -6,7 +6,6 @@
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
 import { Direction, IFabricInstanceExports, IntervalRole, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
-import { vectorFromFloatArray } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 const ARROW_LENGTH = 9
@@ -23,7 +22,7 @@ export const ITERATIONS_PER_TICK = 60
 export const INTERVALS_RESERVED = 1
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0)
 
-export class Fabric {
+export class GotchiBody {
     private pointerGeometryStored: Geometry | undefined
     private facesGeometryStored: BufferGeometry | undefined
 
@@ -84,30 +83,6 @@ export class Fabric {
 
     public get faceCount(): number {
         return this.exports.getFaceCount()
-    }
-
-    public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
-        const createGeometry = (index: number) => {
-            const face = this.getFaceSnapshot(index)
-            const apexHeight = face.averageIdealSpan * Math.sqrt(2 / 3)
-            const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, apexHeight)
-            const faceOffset = face.index * 3
-            const faceLocations = this.exports.getFaceLocations()
-            const geometry = new Geometry()
-            geometry.vertices = [
-                vectorFromFloatArray(faceLocations, faceOffset * 3), apex,
-                vectorFromFloatArray(faceLocations, (faceOffset + 1) * 3), apex,
-                vectorFromFloatArray(faceLocations, (faceOffset + 2) * 3), apex,
-            ]
-            return geometry
-        }
-        const geometries: Geometry[] = []
-        geometries.push(createGeometry(faceIndex))
-        const oppositeFaceIndex = this.exports.findOppositeFaceIndex(faceIndex)
-        if (oppositeFaceIndex < this.exports.getFaceCount()) {
-            geometries.push(createGeometry(oppositeFaceIndex))
-        }
-        return geometries
     }
 
     public get facesGeometry(): BufferGeometry {
@@ -181,7 +156,7 @@ export class Fabric {
         return geometry
     }
 
-    public createSeed(x: number, z: number, rotation: number): Fabric {
+    public createSeed(x: number, z: number, rotation: number): GotchiBody {
         this.exports.reset()
         // prepare
         const locations: Vector3[] = []

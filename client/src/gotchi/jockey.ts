@@ -6,8 +6,8 @@
 import { BufferGeometry, Geometry, Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { Fabric } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
+import { GotchiBody } from "../body/gotchi-body"
 import { Genome, IGenomeData } from "../genetics/genome"
 import { HEXAPOD_RADIUS } from "../island/constants"
 import { Leg } from "../island/journey"
@@ -93,7 +93,7 @@ export class Jockey {
         return this.fabric.isGestating
     }
 
-    public get fabric(): Fabric {
+    public get fabric(): GotchiBody {
         return this.gotchi.fabric
     }
 

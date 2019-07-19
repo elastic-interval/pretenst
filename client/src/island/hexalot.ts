@@ -5,7 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { HUNG_ALTITUDE } from "../body/fabric"
+import { HUNG_ALTITUDE } from "../body/gotchi-body"
 import { fromOptionalGenomeData, Genome } from "../genetics/genome"
 import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { RemoteStorage } from "../storage/remote-storage"

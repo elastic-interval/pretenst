@@ -10,8 +10,8 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { Fabric } from "./fabric"
-import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports, IntervalRole, } from "./fabric-exports"
+import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
+import { GotchiBody } from "./gotchi-body"
 
 const FLOATS_IN_VECTOR = 3
 const VECTORS_FOR_FACE = 3
@@ -104,7 +104,7 @@ export class FabricKernel implements IGotchiFactory {
         if (!newInstance) {
             return undefined
         }
-        const fabric = new Fabric(newInstance).createSeed(home.center.x, home.center.z, rotation)
+        const fabric = new GotchiBody(newInstance).createSeed(home.center.x, home.center.z, rotation)
         return new Gotchi(home, fabric, genome, this)
     }
 
@@ -114,7 +114,7 @@ export class FabricKernel implements IGotchiFactory {
             return undefined
         }
         this.exports.cloneInstance(gotchi.fabric.index, newInstance.index)
-        const fabric = new Fabric(newInstance)
+        const fabric = new GotchiBody(newInstance)
         return new Gotchi(gotchi.home, fabric, genome, this)
     }
 

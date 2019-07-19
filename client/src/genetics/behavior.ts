@@ -3,13 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, INTERVALS_RESERVED } from "../body/fabric"
 import { Direction } from "../body/fabric-exports"
+import { GotchiBody, INTERVALS_RESERVED } from "../body/gotchi-body"
 
 import { GeneReader } from "./gene-reader"
 
 export class Behavior {
-    constructor(private fabric: Fabric, private direction: Direction, private behaviorGene: GeneReader) {
+    constructor(private fabric: GotchiBody, private direction: Direction, private behaviorGene: GeneReader) {
     }
 
     public apply(): void {

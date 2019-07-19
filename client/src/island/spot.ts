@@ -5,8 +5,8 @@
 
 import { Color, Face3, Matrix4, Vector3 } from "three"
 
-import { HUNG_ALTITUDE, SPOT_TO_HANGER } from "../body/fabric"
 import { SEED_CORNERS } from "../body/fabric-exports"
+import { HUNG_ALTITUDE, SPOT_TO_HANGER } from "../body/gotchi-body"
 import { MeshKey } from "../view/spot-selector"
 
 import {
