@@ -475,6 +475,7 @@ export function reset(): void {
 
 // Joints =====================================================================================
 
+// TODO: Store joint locations separately so they can be rendered as a float array
 const JOINT_SIZE: usize = VECTOR_SIZE * 3 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {

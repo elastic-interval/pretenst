@@ -44,29 +44,34 @@ export function createFabricKernel(fabricExports: IFabricExports, instanceMax: n
 interface IOffsets {
     vectorsOffset: number
     faceMidpointsOffset: number
-    faceLocationsOffset: number
     faceNormalsOffset: number
+    faceLocationsOffset: number
+    jointLocationsOffset: number
 }
 
 function createOffsets(faceCountMax: number, baseOffset: number): IOffsets {
     const offsets: IOffsets = {
         vectorsOffset: 0,
         faceMidpointsOffset: 0,
-        faceLocationsOffset: 0,
         faceNormalsOffset: 0,
+        faceLocationsOffset: 0,
+        jointLocationsOffset: 0,
     }
     // sizes
     const seedVectors = 4 * FLOATS_IN_VECTOR
     const faceVectorFloats = faceCountMax * FLOATS_IN_VECTOR
     const faceJointFloats = faceVectorFloats * VECTORS_FOR_FACE
+    const faceLocationFloats = faceVectorFloats * VECTORS_FOR_FACE
     // offsets
-    offsets.faceLocationsOffset = (
-        offsets.faceNormalsOffset = (
-            offsets.faceMidpointsOffset = (
-                offsets.vectorsOffset = baseOffset
-            ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
-        ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
-    ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets.jointLocationsOffset = (
+        offsets.faceLocationsOffset = (
+            offsets.faceNormalsOffset = (
+                offsets.faceMidpointsOffset = (
+                    offsets.vectorsOffset = baseOffset
+                ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
+            ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
+        ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
+    ) + faceLocationFloats
     return offsets
 }
 
@@ -147,6 +152,7 @@ export class FabricKernel implements IGotchiFactory {
 
 class InstanceExports implements IFabricInstanceExports {
     private vectorArray: Float32Array | undefined
+    private jointLocationsArray: Float32Array | undefined
     private faceMidpointsArray: Float32Array | undefined
     private faceLocationsArray: Float32Array | undefined
     private faceNormalsArray: Float32Array | undefined
@@ -283,7 +289,13 @@ class InstanceExports implements IFabricInstanceExports {
     }
 
     public freshGeometry(): void {
-        this.vectorArray = this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = undefined
+        this.vectorArray = this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = this.jointLocationsArray = undefined
+    }
+
+    public getJointLocation(jointIndex: number): Vector3 {
+        // todo: the joint locations are not yet located separately from the rest of the joint parts
+        // todo: so this index is INCORRECT
+        return vectorFromFloatArray(this.jointLocations, jointIndex * 3)
     }
 
     public getFaceLocations(): Float32Array {
@@ -339,6 +351,14 @@ class InstanceExports implements IFabricInstanceExports {
             this.vectorArray = new Float32Array(this.buffer, this.offsets.vectorsOffset, 4 * 3)
         }
         return this.vectorArray
+    }
+
+    public get jointLocations(): Float32Array {
+        if (!this.jointLocationsArray) {
+            this.jointLocationsArray =
+                new Float32Array(this.buffer, this.offsets.jointLocationsOffset, this.exports.getJointCount() * 3)
+        }
+        return this.jointLocationsArray
     }
 
     public get faceMidpoints(): Float32Array {

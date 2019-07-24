@@ -140,6 +140,8 @@ export interface IFabricInstanceExports {
 
     getVectors(): Float32Array
 
+    getJointLocation(jointIndex: number): Vector3
+
     reset(): void
 
     getAge(): number
