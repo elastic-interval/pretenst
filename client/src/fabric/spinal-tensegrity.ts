@@ -21,11 +21,11 @@ type Joint = number
 // type Interval = number
 type JointTag = number
 
-export class Tensegrity {
+export class SpinalTensegrity {
     private geometryStored: BufferGeometry | undefined
 
     constructor(private exports: IFabricInstanceExports) {
-        createVertebra(this, createRingLocations(10), true)
+        createVertebra(this, createRingLocations(3), true)
     }
 
     public recycle(): void {
@@ -133,7 +133,7 @@ class Vertebra {
     }
 }
 
-function createVertebra(tensegrity: Tensegrity, locations: Vector3[], rightHanded: boolean): Vertebra {
+function createVertebra(tensegrity: SpinalTensegrity, locations: Vector3[], rightHanded: boolean): Vertebra {
     const ringSize = locations.length
     const vertebra = new Vertebra(rightHanded)
     const otherLocations = createOtherRingLocations(locations, 0.3, true)
@@ -168,7 +168,7 @@ function createVertebra(tensegrity: Tensegrity, locations: Vector3[], rightHande
 class Ring {
     public joints: Joint[] = []
 
-    constructor(readonly tensegrity: Tensegrity, private readonly forward: boolean) {
+    constructor(readonly tensegrity: SpinalTensegrity, private readonly forward: boolean) {
     }
 
     public get locations(): Vector3[] {
@@ -194,7 +194,7 @@ class Ring {
     }
 }
 
-function createRing(tensegrity: Tensegrity, locations: Vector3[]): Ring {
+function createRing(tensegrity: SpinalTensegrity, locations: Vector3[]): Ring {
     const ring = new Ring(tensegrity, true)
     const normal = getNormal(getMidpoint(locations), locations, true)
     locations.forEach((location, index) => {

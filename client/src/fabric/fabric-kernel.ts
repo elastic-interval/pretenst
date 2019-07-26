@@ -293,8 +293,6 @@ class InstanceExports implements IFabricInstanceExports {
     }
 
     public getJointLocation(jointIndex: number): Vector3 {
-        // todo: the joint locations are not yet located separately from the rest of the joint parts
-        // todo: so this index is INCORRECT
         return vectorFromFloatArray(this.jointLocations, jointIndex * 3)
     }
 
