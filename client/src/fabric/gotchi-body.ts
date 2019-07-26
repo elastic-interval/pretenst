@@ -5,7 +5,14 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { Direction, IFabricInstanceExports, IntervalRole, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
+import {
+    Direction,
+    IFabricInstanceExports,
+    IntervalRole,
+    Laterality,
+    SEED_CORNERS,
+    SEED_RADIUS,
+} from "./fabric-exports"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 const ARROW_LENGTH = 9
@@ -13,9 +20,6 @@ const ARROW_WIDTH = 0.6
 const ARROW_TIP_LENGTH_FACTOR = 1.3
 const ARROW_TIP_WIDTH_FACTOR = 1.5
 
-export const BILATERAL_MIDDLE = 0
-export const BILATERAL_RIGHT = 1
-export const BILATERAL_LEFT = 2
 export const HUNG_ALTITUDE = 10
 export const ITERATIONS_PER_TICK = 60
 
@@ -172,14 +176,14 @@ export class GotchiBody {
         const transformer = translationMatrix.multiply(rotationMatrix)
         locations.forEach(location => location.applyMatrix4(transformer))
         // build
-        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, x, 0, z)
+        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), Laterality.BILATERAL_MIDDLE, x, 0, z)
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const where = locations[walk]
-            this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, where.x, where.y, where.z)
+            this.exports.createJoint(this.exports.nextJointTag(), Laterality.BILATERAL_MIDDLE, where.x, where.y, where.z)
         }
         const jointPairName = this.exports.nextJointTag()
-        const left = this.exports.createJoint(jointPairName, BILATERAL_LEFT, leftLoc.x, leftLoc.y, leftLoc.z)
-        const right = this.exports.createJoint(jointPairName, BILATERAL_RIGHT, rightLoc.x, rightLoc.y, rightLoc.z)
+        const left = this.exports.createJoint(jointPairName, Laterality.BILATERAL_LEFT, leftLoc.x, leftLoc.y, leftLoc.z)
+        const right = this.exports.createJoint(jointPairName, Laterality.BILATERAL_RIGHT, rightLoc.x, rightLoc.y, rightLoc.z)
         this.muscle(hangerJoint, left, -1)
         this.muscle(hangerJoint, right, -1)
         this.muscle(left, right, -1)

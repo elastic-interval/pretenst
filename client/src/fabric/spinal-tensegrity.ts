@@ -5,8 +5,7 @@
 
 import { BufferGeometry, Vector3 } from "three"
 
-import { IFabricInstanceExports, IntervalRole } from "./fabric-exports"
-import { BILATERAL_MIDDLE } from "./gotchi-body"
+import { IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-exports"
 
 enum IntervalSpan {
     RING_CABLE = 0.6,
@@ -18,14 +17,26 @@ enum IntervalSpan {
 }
 
 type Joint = number
-// type Interval = number
+type Interval = number
 type JointTag = number
+
+function vectorToString(vector: Vector3): string {
+    const x = vector.x.toFixed(2)
+    const y = vector.y.toFixed(2)
+    const z = vector.z.toFixed(2)
+    return `(${x},${y},${z})`
+}
 
 export class SpinalTensegrity {
     private geometryStored: BufferGeometry | undefined
+    private vertebra: Vertebra
 
     constructor(private exports: IFabricInstanceExports) {
-        createVertebra(this, createRingLocations(3), true)
+        this.vertebra = createVertebra(this, createRingLocations(6), Laterality.BILATERAL_LEFT)
+    }
+
+    public toString(): string {
+        return this.vertebra.toString()
     }
 
     public recycle(): void {
@@ -81,22 +92,22 @@ export class SpinalTensegrity {
     }
 
     public joint(jointTag: JointTag, location: Vector3): Joint {
-        return this.exports.createJoint(jointTag, BILATERAL_MIDDLE, location.x, location.y, location.z)
+        return this.exports.createJoint(jointTag, Laterality.BILATERAL_RIGHT, location.x, location.y, location.z)
     }
 
-    public bar(alphaIndex: number, omegaIndex: number, span: number): number {
+    public bar(alphaIndex: number, omegaIndex: number, span: number): Interval {
         return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.BAR, false)
     }
 
-    public growingBar(alphaIndex: number, omegaIndex: number, span: number): number {
+    public growingBar(alphaIndex: number, omegaIndex: number, span: number): Interval {
         return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.BAR, true)
     }
 
-    public cable(alphaIndex: number, omegaIndex: number, span: number): number {
+    public cable(alphaIndex: number, omegaIndex: number, span: number): Interval {
         return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.CABLE, false)
     }
 
-    public growingCable(alphaIndex: number, omegaIndex: number, span: number): number {
+    public growingCable(alphaIndex: number, omegaIndex: number, span: number): Interval {
         return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.CABLE, false)
     }
 }
@@ -105,7 +116,7 @@ class Vertebra {
     public alpha: Ring
     public omega: Ring
 
-    constructor(readonly rightHanded: boolean) {
+    constructor(readonly laterality: Laterality) {
     }
 
     public replace(vertebra: Vertebra, jointFrom: Joint, jointTo: Joint): void {
@@ -116,7 +127,7 @@ class Vertebra {
     public getEndJoints(alpha: boolean): Joint[] {
         const ring = alpha ? this.alpha : this.omega
         const joints = [...ring.joints]
-        if (this.rightHanded) {
+        if (this.laterality === Laterality.BILATERAL_LEFT) {
             const first = joints.shift()
             if (!first) {
                 throw Error()
@@ -131,24 +142,27 @@ class Vertebra {
         }
         return joints
     }
+
+    public toString(): string {
+        return `Vertebra{\n\talpha=${this.alpha.toString()}\n\tomega=${this.omega.toString()}\n}`
+    }
 }
 
-function createVertebra(tensegrity: SpinalTensegrity, locations: Vector3[], rightHanded: boolean): Vertebra {
-    const ringSize = locations.length
-    const vertebra = new Vertebra(rightHanded)
-    const otherLocations = createOtherRingLocations(locations, 0.3, true)
-    const alpha = createRing(tensegrity, locations)
-    const omega = createRing(tensegrity, otherLocations)
+function createVertebra(tensegrity: SpinalTensegrity, alphaLocations: Vector3[], laterality: Laterality): Vertebra {
+    const ringSize = alphaLocations.length
+    const omegaLocations = createOtherRingLocations(alphaLocations, 0.3, true)
+    const alpha = createRing(tensegrity, alphaLocations)
+    for (let walk = 0; walk < ringSize; walk++) {
+        const midBar = new Vector3().addVectors(alphaLocations[walk], omegaLocations[(walk + 2) % ringSize]).multiplyScalar(0.5)
+        omegaLocations[(walk + 1) % ringSize].add(midBar)
+        omegaLocations[(walk + 1) % ringSize].multiplyScalar(0.5)
+    }
+    const omega = createRing(tensegrity, omegaLocations)
     for (let walk = 0; walk < ringSize; walk++) {
         tensegrity.cable(alpha.joints[walk], omega.joints[(walk + 1) % ringSize], IntervalSpan.COUNTER_CABLE)
         if (walk % 2 === 1) {
             tensegrity.bar(alpha.joints[walk], omega.joints[(walk + 2) % ringSize], IntervalSpan.BAR)
             tensegrity.cable(alpha.joints[walk], omega.joints[walk], IntervalSpan.VERTICAL_CABLE)
-            // reposition
-            // todo: locations adjusted too late
-            // const midBar = new Vector3().addVectors(alphaLocations[walk], omegaLocations[(walk + 2) % ringSize]).multiplyScalar(0.5)
-            // otherLocations[(walk + 1) % ringSize].add(midBar)
-            // otherLocations[(walk + 1) % ringSize].multiplyScalar(0.5)
         }
     }
     for (let walk = 0; walk < ringSize; walk++) {
@@ -160,6 +174,7 @@ function createVertebra(tensegrity: SpinalTensegrity, locations: Vector3[], righ
         }
         tensegrity.cable(omega.joints[walk], omega.joints[(walk + 1) % ringSize], IntervalSpan.RING_CABLE)
     }
+    const vertebra = new Vertebra(laterality)
     vertebra.alpha = alpha
     vertebra.omega = omega
     return vertebra
@@ -192,6 +207,10 @@ class Ring {
         }
         return false
     }
+
+    public toString(): string {
+        return `Ring(${this.locations.map(vectorToString).join(",")})`
+    }
 }
 
 function createRing(tensegrity: SpinalTensegrity, locations: Vector3[]): Ring {
@@ -202,9 +221,7 @@ function createRing(tensegrity: SpinalTensegrity, locations: Vector3[]): Ring {
             location.addScaledVector(normal, 0.03)
         }
     })
-    ring.joints = locations.map((location, index) => {
-        return tensegrity.joint(index, location)
-    })
+    ring.joints = locations.map((location, index) => tensegrity.joint(index, location))
     const ringSize = locations.length
     for (let walk = 0; walk < ring.joints.length; walk++) {
         tensegrity.cable(ring.joints[walk], ring.joints[(walk + 1) % ringSize], IntervalSpan.RING_CABLE)
@@ -222,14 +239,14 @@ function createRingLocations(ringSize: number): Vector3[] {
     const locations: Vector3[] = []
     for (let walk = 0; walk < ringSize; walk++) {
         const angle = walk * 2 * Math.PI / ringSize
-        locations.push(new Vector3(radius * Math.cos(angle), radius * Math.sin(angle), 0))
+        locations.push(new Vector3(radius * Math.cos(angle), 0, radius * Math.sin(angle)))
     }
     return locations
 }
 
 function createOtherRingLocations(existingLocations: Vector3[], displacement: number, forward: boolean): Vector3[] {
     const normal = getNormal(getMidpoint(existingLocations), existingLocations, forward)
-    return [...existingLocations].map(location => location.addScaledVector(normal, displacement))
+    return existingLocations.map(location => new Vector3().add(location).addScaledVector(normal, displacement))
 }
 
 function getMidpoint(locations: Vector3[]): Vector3 {
@@ -246,9 +263,9 @@ function getNormal(midpoint: Vector3, locations: Vector3[], forward: boolean): V
         a.subVectors(locations[walk], midpoint)
         b.subVectors(locations[(walk + 1) % locations.length], midpoint)
         if (forward) {
-            cross.cross(b, a)
+            cross.crossVectors(b, a)
         } else {
-            cross.cross(a, b)
+            cross.crossVectors(a, b)
         }
         const span = cross.length()
         if (span > 0.001) {

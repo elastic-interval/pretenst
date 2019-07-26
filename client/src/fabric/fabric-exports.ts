@@ -23,6 +23,12 @@ export enum IntervalRole {
     CABLE = 2,
 }
 
+export enum Laterality {
+    BILATERAL_MIDDLE = 0,
+    BILATERAL_RIGHT = 1,
+    BILATERAL_LEFT = 2,
+}
+
 export const SEED_CORNERS = 5
 export const SEED_RADIUS = 1
 
@@ -87,7 +93,7 @@ export interface IFabricExports {
 
     getJointCount(): number
 
-    createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number
+    createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number
 
     getJointTag(jointIndex: number): number
 
@@ -166,11 +172,11 @@ export interface IFabricInstanceExports {
 
     getJointCount(): number
 
-    createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number
+    createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number
 
     getJointTag(jointIndex: number): number
 
-    getJointLaterality(jointIndex: number): number
+    getJointLaterality(jointIndex: number): Laterality
 
     getIntervalCount(): number
 

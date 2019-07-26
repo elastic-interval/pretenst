@@ -12,6 +12,7 @@ import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
 import { GotchiBody } from "./gotchi-body"
+import { SpinalTensegrity } from "./spinal-tensegrity"
 
 const FLOATS_IN_VECTOR = 3
 const VECTORS_FOR_FACE = 3
@@ -71,7 +72,7 @@ function createOffsets(faceCountMax: number, baseOffset: number): IOffsets {
                 ) + seedVectors * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
-    ) + faceLocationFloats
+    ) + faceLocationFloats * Float32Array.BYTES_PER_ELEMENT
     return offsets
 }
 
@@ -102,6 +103,14 @@ export class FabricKernel implements IGotchiFactory {
             ))
             this.instanceUsed.push(false)
         }
+    }
+
+    public createSpinalTensegrity(): SpinalTensegrity | undefined {
+        const newInstance = this.allocateInstance()
+        if (!newInstance) {
+            return undefined
+        }
+        return new SpinalTensegrity(newInstance)
     }
 
     public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {

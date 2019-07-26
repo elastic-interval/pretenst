@@ -5,9 +5,9 @@
 
 import { Vector3 } from "three"
 
-import { IFabricInstanceExports } from "./fabric-exports"
+import { IFabricInstanceExports, Laterality } from "./fabric-exports"
 import { vectorFromFloatArray } from "./fabric-kernel"
-import { BILATERAL_MIDDLE, GotchiBody } from "./gotchi-body"
+import { GotchiBody } from "./gotchi-body"
 
 export interface IJointSnapshot {
     jointNumber: number
@@ -93,11 +93,11 @@ export class FaceSnapshot {
     public get laterality(): number {
         for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
             const jointLaterality = this.fabricExports.getJointLaterality(this.fabricExports.getFaceJointIndex(this.faceIndex, jointWalk))
-            if (jointLaterality !== BILATERAL_MIDDLE) {
+            if (jointLaterality !== Laterality.BILATERAL_MIDDLE) {
                 return jointLaterality
             }
         }
-        return BILATERAL_MIDDLE
+        return Laterality.BILATERAL_MIDDLE
     }
 
     public remove(): void {
