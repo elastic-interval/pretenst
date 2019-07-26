@@ -475,7 +475,6 @@ export function reset(): void {
 
 // Joints =====================================================================================
 
-// TODO: Store joint locations separately so they can be rendered as a float array
 const JOINT_SIZE: usize = VECTOR_SIZE * 3 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
@@ -504,44 +503,48 @@ function copyJointFromNext(jointIndex: u16): void {
     setJointTag(jointIndex, getJointTag(nextIndex))
 }
 
-function jointPtr(jointIndex: u16): usize {
-    return jointOffset + jointIndex * JOINT_SIZE
-}
-
 function locationPtr(jointIndex: u16): usize {
-    return jointPtr(jointIndex)
+    return jointOffset + jointIndex * VECTOR_SIZE
 }
 
 function velocityPtr(jointIndex: u16): usize {
-    return jointPtr(jointIndex) + VECTOR_SIZE
+    return locationPtr(jointCountMax) + jointIndex * VECTOR_SIZE
 }
 
 function forcePtr(jointIndex: u16): usize {
-    return jointPtr(jointIndex) + VECTOR_SIZE * 2
+    return velocityPtr(jointCountMax) + jointIndex * VECTOR_SIZE
 }
 
 function intervalMassPtr(jointIndex: u16): usize {
-    return jointPtr(jointIndex) + VECTOR_SIZE * 3
+    return forcePtr(jointCountMax) + jointIndex * F32
 }
 
 function altitudePtr(jointIndex: u16): usize {
-    return jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32
+    return intervalMassPtr(jointCountMax) + jointIndex * F32
+}
+
+function lateralityPtr(jointIndex: u16): usize {
+    return altitudePtr(jointCountMax) + jointIndex * U8
+}
+
+function tagPtr(jointIndex: u16): usize {
+    return lateralityPtr(jointCountMax) + jointIndex * U16
 }
 
 function setJointLaterality(jointIndex: u16, laterality: u8): void {
-    setU8(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2, laterality)
+    setU8(lateralityPtr(jointIndex), laterality)
 }
 
 export function getJointLaterality(jointIndex: u16): u8 {
-    return getU8(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2)
+    return getU8(lateralityPtr(jointIndex))
 }
 
 function setJointTag(jointIndex: u16, tag: u16): void {
-    setU16(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2 + LATERALITY_SIZE, tag)
+    setU16(tagPtr(jointIndex), tag)
 }
 
 export function getJointTag(jointIndex: u16): u16 {
-    return getU16(jointPtr(jointIndex) + VECTOR_SIZE * 3 + F32 * 2 + LATERALITY_SIZE)
+    return getU16(tagPtr(jointIndex))
 }
 
 export function centralize(): void {
@@ -550,17 +553,17 @@ export function centralize(): void {
     let lowY: f32 = 10000
     let z: f32 = 0
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        x += getX(jointPtr(thisJoint))
-        let y = getY(jointPtr(thisJoint))
+        x += getX(locationPtr(thisJoint))
+        let y = getY(locationPtr(thisJoint))
         if (y < lowY) {
             lowY = y
         }
-        z += getZ(jointPtr(thisJoint))
+        z += getZ(locationPtr(thisJoint))
     }
     x = x / <f32>jointCount
     z = z / <f32>jointCount
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        let jPtr = jointPtr(thisJoint)
+        let jPtr = locationPtr(thisJoint)
         setX(jPtr, getX(jPtr) - x)
         setZ(jPtr, getZ(jPtr) - z)
     }
@@ -570,13 +573,13 @@ export function setAltitude(altitude: f32): f32 {
     let jointCount = getJointCount()
     let lowY: f32 = 10000
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        let y = getY(jointPtr(thisJoint))
+        let y = getY(locationPtr(thisJoint))
         if (y < lowY) {
             lowY = y
         }
     }
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        let jPtr = jointPtr(thisJoint)
+        let jPtr = locationPtr(thisJoint)
         setY(jPtr, getY(jPtr) + altitude - lowY)
     }
     let faceCount = getFaceCount()
