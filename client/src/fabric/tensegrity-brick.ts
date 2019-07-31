@@ -21,25 +21,20 @@ function rayVector(ray: Ray): Vector3 {
     const v = new Vector3()
     switch (ray) {
         case Ray.XP:
-            v.x = 1
-            break
+            return v.setX(1)
         case Ray.XN:
-            v.x = -1
-            break
+            return v.setX(-1)
         case Ray.YP:
-            v.y = 1
-            break
+            return v.setY(1)
         case Ray.YN:
-            v.y = -1
-            break
+            return v.setY(-1)
         case Ray.ZP:
-            v.z = 1
-            break
+            return v.setZ(1)
         case Ray.ZN:
-            v.z = -1
-            break
+            return v.setZ(-1)
+        default:
+            return v
     }
-    return v
 }
 
 function point(primaryRay: Ray, secondaryRay: Ray): Vector3 {
@@ -57,9 +52,7 @@ enum BarEnd {
 
 interface IBar {
     id: Ray
-    alphaEnd: BarEnd
     alpha: Vector3
-    omegaEnd: BarEnd
     omega: Vector3
 }
 
@@ -67,32 +60,26 @@ const BARS: IBar[] = [
     {
         id: Ray.XP,
         alpha: point(Ray.ZN, Ray.XP), omega: point(Ray.ZP, Ray.XP),
-        alphaEnd: BarEnd.XPA, omegaEnd: BarEnd.XPO,
     },
     {
         id: Ray.XN,
         alpha: point(Ray.ZN, Ray.XN), omega: point(Ray.ZP, Ray.XN),
-        alphaEnd: BarEnd.XNA, omegaEnd: BarEnd.XNO,
     },
     {
         id: Ray.YP,
         alpha: point(Ray.XN, Ray.YP), omega: point(Ray.XP, Ray.YP),
-        alphaEnd: BarEnd.YPA, omegaEnd: BarEnd.YPO,
     },
     {
         id: Ray.YN,
         alpha: point(Ray.XN, Ray.YN), omega: point(Ray.XP, Ray.YN),
-        alphaEnd: BarEnd.YNA, omegaEnd: BarEnd.YNO,
     },
     {
         id: Ray.ZP,
         alpha: point(Ray.YN, Ray.ZP), omega: point(Ray.YP, Ray.ZP),
-        alphaEnd: BarEnd.ZPA, omegaEnd: BarEnd.ZPO,
     },
     {
         id: Ray.ZN,
         alpha: point(Ray.YN, Ray.ZN), omega: point(Ray.YP, Ray.ZN),
-        alphaEnd: BarEnd.ZNA, omegaEnd: BarEnd.ZNO,
     },
 ]
 
@@ -118,13 +105,17 @@ const TRIANGLES: ITriangle[] = [
 
 type Joint = number
 type JointTag = number
-type Face = number
 
 interface Interval {
     index: number
     alpha: Joint
     omega: Joint
     span: number
+}
+
+interface IFace {
+    index: number,
+    joints: Joint[]
 }
 
 function vectorToString(indent: number): (vector: Vector3) => string {
@@ -142,23 +133,17 @@ function intervalToString(indent: number): (interval: Interval) => string {
     }
 }
 
-function onAltitude(a: Vector3, b: Vector3): number {
-    return b.y - a.y
-}
-
-/*
-function faceToString(indent: number): (interval: Interval) => string {
-    return (interval: Interval) => {
-        return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
+function faceToString(indent: number): (face: IFace) => string {
+    return (face: IFace) => {
+        return `${"\t".repeat(indent)}(${face.joints[0]}:${face.joints[1]}:${face.joints[2]})`
     }
 }
-*/
 
 export class TensegrityBrick {
     public readonly joints: Joint[]
     public readonly bars: Interval[]
     public readonly cables: Interval[]
-    public readonly faces: Face[]
+    public readonly faces: IFace[]
 
     constructor(private exports: IFabricInstanceExports) {
         const locations = BARS.reduce((vectors: Vector3[], bar: IBar): Vector3[] => {
@@ -187,16 +172,15 @@ export class TensegrityBrick {
             cables.push(this.cable(triangle.barEnds[2], triangle.barEnds[0], CABLE_SPAN))
             return cables
         }, [])
-        this.faces = TRIANGLES.map(triangle => {
-            return this.exports.createFace(triangle.barEnds[0], triangle.barEnds[1], triangle.barEnds[2])
-        })
+        this.faces = TRIANGLES.map(triangle => this.face(triangle))
     }
 
     public toString(): string {
-        const joints = this.joints.map(joint => this.exports.getJointLocation(joint)).sort(onAltitude).map(vectorToString(2)).join("\n")
+        const joints = this.joints.map(joint => this.exports.getJointLocation(joint)).map(vectorToString(2)).join("\n")
         const bars = this.bars.map(bar => intervalToString(2)(bar)).join("\n")
         const cables = this.cables.map(intervalToString(2)).join("\n")
-        return `Brick{\n\tjoints:\n${joints}\n\tbars:\n${bars}\n\tcables:\n${cables}\n}`
+        const faces = this.faces.map(faceToString(2)).join("\n")
+        return `Brick{\n\tjoints:\n${joints}\n\tbars:\n${bars}\n\tcables:\n${cables}\n\tfaces:\n${faces}`
     }
 
     private joint(jointTag: JointTag, location: Vector3): Joint {
@@ -214,6 +198,14 @@ export class TensegrityBrick {
         return {
             index: this.exports.createInterval(alpha, omega, span, IntervalRole.CABLE, false),
             alpha, omega, span,
+        }
+    }
+
+    private face(triangle: ITriangle): IFace {
+        const joints = triangle.barEnds.map(barEnd => this.joints[barEnd])
+        return {
+            index: this.exports.createFace(joints[0], joints[1], joints[2]),
+            joints,
         }
     }
 }
