@@ -30,10 +30,14 @@ export class App extends React.Component<IAppProps, IAppState> {
         super(props)
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        const spinal = this.fabricKernel.createSpinalTensegrity()
-        if (spinal) {
-            console.log("spinal", spinal.toString())
+        const brick = this.fabricKernel.createTensegrityBrick()
+        if (brick) {
+            console.log("brick", brick.toString())
         }
+        // const spinal = this.fabricKernel.createSpinalTensegrity()
+        // if (spinal) {
+        //     console.log("spinal", spinal.toString())
+        // }
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)

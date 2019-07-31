@@ -17,14 +17,26 @@ enum IntervalSpan {
 }
 
 type Joint = number
-type Interval = number
 type JointTag = number
+
+interface Interval {
+    index: number
+    alpha: Joint
+    omega: Joint
+    span: number
+}
 
 function vectorToString(vector: Vector3): string {
     const x = vector.x.toFixed(2)
     const y = vector.y.toFixed(2)
     const z = vector.z.toFixed(2)
     return `(${x},${y},${z})`
+}
+
+function intervalToString(indent: number): (interval: Interval) => string {
+    return (interval: Interval) => {
+        return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
+    }
 }
 
 export class SpinalTensegrity {
@@ -95,37 +107,44 @@ export class SpinalTensegrity {
         return this.exports.createJoint(jointTag, Laterality.BILATERAL_RIGHT, location.x, location.y, location.z)
     }
 
-    public bar(alphaIndex: number, omegaIndex: number, span: number): Interval {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.BAR, false)
+    public bar(alpha: number, omega: number, span: number): Interval {
+        return {
+            index: this.exports.createInterval(alpha, omega, span, IntervalRole.BAR, false),
+            alpha, omega, span,
+        }
     }
 
-    public growingBar(alphaIndex: number, omegaIndex: number, span: number): Interval {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.BAR, true)
+    // public growingBar(alphaIndex: number, omegaIndex: number, span: number): Interval {
+    //     return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.BAR, true)
+    // }
+
+    public cable(alpha: number, omega: number, span: number): Interval {
+        return {
+            index: this.exports.createInterval(alpha, omega, span, IntervalRole.CABLE, false),
+            alpha, omega, span,
+        }
     }
 
-    public cable(alphaIndex: number, omegaIndex: number, span: number): Interval {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.CABLE, false)
-    }
-
-    public growingCable(alphaIndex: number, omegaIndex: number, span: number): Interval {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.CABLE, false)
-    }
+    // public growingCable(alphaIndex: number, omegaIndex: number, span: number): Interval {
+    //     return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.CABLE, false)
+    // }
 }
 
 class Vertebra {
-    public alpha: Ring
-    public omega: Ring
+    public alphaRing: Ring
+    public omegaRing: Ring
+    public intervals: Interval[]
 
     constructor(readonly laterality: Laterality) {
     }
 
     public replace(vertebra: Vertebra, jointFrom: Joint, jointTo: Joint): void {
-        this.alpha.replace(jointFrom, jointTo)
-        this.omega.replace(jointFrom, jointTo)
+        this.alphaRing.replace(jointFrom, jointTo)
+        this.omegaRing.replace(jointFrom, jointTo)
     }
 
     public getEndJoints(alpha: boolean): Joint[] {
-        const ring = alpha ? this.alpha : this.omega
+        const ring = alpha ? this.alphaRing : this.omegaRing
         const joints = [...ring.joints]
         if (this.laterality === Laterality.BILATERAL_LEFT) {
             const first = joints.shift()
@@ -144,7 +163,10 @@ class Vertebra {
     }
 
     public toString(): string {
-        return `Vertebra{\n\talpha=${this.alpha.toString()}\n\tomega=${this.omega.toString()}\n}`
+        const alpha = this.alphaRing.toString()
+        const omega = this.omegaRing.toString()
+        const intervals = this.intervals.map(intervalToString(2)).join("\n")
+        return `Vertebra{\n\talphaRing=${alpha}\n\tomegaRing=${omega}\n\tintervals:\n${intervals}\n}`
     }
 }
 
@@ -158,30 +180,33 @@ function createVertebra(tensegrity: SpinalTensegrity, alphaLocations: Vector3[],
         omegaLocations[(walk + 1) % ringSize].multiplyScalar(0.5)
     }
     const omega = createRing(tensegrity, omegaLocations)
+    const intervals: Interval[] = []
     for (let walk = 0; walk < ringSize; walk++) {
-        tensegrity.cable(alpha.joints[walk], omega.joints[(walk + 1) % ringSize], IntervalSpan.COUNTER_CABLE)
+        intervals.push(tensegrity.cable(alpha.joints[walk], omega.joints[(walk + 1) % ringSize], IntervalSpan.COUNTER_CABLE))
         if (walk % 2 === 1) {
-            tensegrity.bar(alpha.joints[walk], omega.joints[(walk + 2) % ringSize], IntervalSpan.BAR)
-            tensegrity.cable(alpha.joints[walk], omega.joints[walk], IntervalSpan.VERTICAL_CABLE)
+            intervals.push(tensegrity.bar(alpha.joints[walk], omega.joints[(walk + 2) % ringSize], IntervalSpan.BAR))
+            intervals.push(tensegrity.cable(alpha.joints[walk], omega.joints[walk], IntervalSpan.VERTICAL_CABLE))
         }
     }
     for (let walk = 0; walk < ringSize; walk++) {
         const even = walk % 2 === 0
         if (even) {
-            tensegrity.cable(omega.joints[walk], omega.joints[(walk + 2) % ringSize], IntervalSpan.RING_SPRING)
+            intervals.push(tensegrity.cable(omega.joints[walk], omega.joints[(walk + 2) % ringSize], IntervalSpan.RING_SPRING))
         } else {
-            tensegrity.cable(omega.joints[walk], omega.joints[(walk + 2) % ringSize], IntervalSpan.HORIZONTAL_CABLE)
+            intervals.push(tensegrity.cable(omega.joints[walk], omega.joints[(walk + 2) % ringSize], IntervalSpan.HORIZONTAL_CABLE))
         }
-        tensegrity.cable(omega.joints[walk], omega.joints[(walk + 1) % ringSize], IntervalSpan.RING_CABLE)
+        intervals.push(tensegrity.cable(omega.joints[walk], omega.joints[(walk + 1) % ringSize], IntervalSpan.RING_CABLE))
     }
     const vertebra = new Vertebra(laterality)
-    vertebra.alpha = alpha
-    vertebra.omega = omega
+    vertebra.alphaRing = alpha
+    vertebra.omegaRing = omega
+    vertebra.intervals = intervals
     return vertebra
 }
 
 class Ring {
     public joints: Joint[] = []
+    public intervals: Interval[] = []
 
     constructor(readonly tensegrity: SpinalTensegrity, private readonly forward: boolean) {
     }
@@ -209,7 +234,9 @@ class Ring {
     }
 
     public toString(): string {
-        return `Ring(${this.locations.map(vectorToString).join(",")})`
+        const locations = this.locations.map(vectorToString).join(",")
+        const intervals = this.intervals.map(intervalToString(3)).join("\n")
+        return `Ring{\n\t\tlocations=${locations}\n\t\tintervals:\n${intervals}\n\t}`
     }
 }
 
@@ -224,11 +251,12 @@ function createRing(tensegrity: SpinalTensegrity, locations: Vector3[]): Ring {
     ring.joints = locations.map((location, index) => tensegrity.joint(index, location))
     const ringSize = locations.length
     for (let walk = 0; walk < ring.joints.length; walk++) {
-        tensegrity.cable(ring.joints[walk], ring.joints[(walk + 1) % ringSize], IntervalSpan.RING_CABLE)
+        const intervals = ring.intervals
+        intervals.push(tensegrity.cable(ring.joints[walk], ring.joints[(walk + 1) % ringSize], IntervalSpan.RING_CABLE))
         if (walk % 2 === 1) {
-            tensegrity.cable(ring.joints[walk], ring.joints[(walk + 2) % ringSize], IntervalSpan.HORIZONTAL_CABLE)
+            intervals.push(tensegrity.cable(ring.joints[walk], ring.joints[(walk + 2) % ringSize], IntervalSpan.HORIZONTAL_CABLE))
         } else {
-            tensegrity.cable(ring.joints[walk], ring.joints[(walk + 2) % ringSize], IntervalSpan.RING_SPRING)
+            intervals.push(tensegrity.cable(ring.joints[walk], ring.joints[(walk + 2) % ringSize], IntervalSpan.RING_SPRING))
         }
     }
     return ring
