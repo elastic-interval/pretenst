@@ -10,6 +10,7 @@ import { PerspectiveCamera } from "three"
 import { API_URI, DOCS_ON_GITHUB, SINGLE_ISLAND } from "./constants"
 import { createFabricKernel, FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
+import { Triangle } from "./fabric/tensegrity-brick"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
@@ -33,6 +34,8 @@ export class App extends React.Component<IAppProps, IAppState> {
         const brick = this.fabricKernel.createTensegrityBrick()
         if (brick) {
             console.log("brick", brick.toString())
+            const brick2 = brick.grow(Triangle.PPP)
+            console.log("brick2", brick2.toString())
         }
         // const spinal = this.fabricKernel.createSpinalTensegrity()
         // if (spinal) {

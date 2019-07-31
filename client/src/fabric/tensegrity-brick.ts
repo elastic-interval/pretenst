@@ -122,15 +122,23 @@ function faceToString(indent: number): (face: IFace) => string {
     }
 }
 
-function pointsFromTriangle(triangle: ITriangle): Vector3[] {
+function initialTriangle(): Vector3[] {
     const points = tensegrityBrickPoints()
-    const midpoint = triangle.barEnds.reduce((mid: Vector3, barEnd: number) => mid.add(points[barEnd]), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const midSide = new Vector3().addVectors(points[triangle.barEnds[0]], points[triangle.barEnds[1]]).multiplyScalar(0.5)
+    return TRIANGLES[Triangle.NNN].barEnds.map(barEnd => points[barEnd]).reverse()
+}
+
+function brickPointsFromTriangle(trianglePoints: Vector3[]): Vector3[] {
+    if (trianglePoints.length !== 3) {
+        throw new Error(`expected a triangle, got ${trianglePoints.length}`)
+    }
+    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
     const x = new Vector3().subVectors(midSide, midpoint).normalize()
     const y = new Vector3().sub(midpoint).normalize()
     const z = new Vector3().crossVectors(y, x).normalize()
     const transformation = new Matrix4().getInverse(new Matrix4().makeBasis(x, y, z))
     const upwards = new Vector3().setY(midpoint.length())
+    const points = tensegrityBrickPoints()
     points.forEach(p => p.applyMatrix4(transformation).add(upwards))
     return points
 }
@@ -141,9 +149,12 @@ export class TensegrityBrick {
     public readonly cables: Interval[]
     public readonly faces: IFace[]
 
-    constructor(private exports: IFabricInstanceExports, triangle: Triangle) {
-        const points = pointsFromTriangle(TRIANGLES[triangle])
+    constructor(private exports: IFabricInstanceExports, existingTriangle?: Vector3[]) {
+        const trianglePoints = existingTriangle ? existingTriangle : initialTriangle()
+        const points = brickPointsFromTriangle(trianglePoints)
         this.joints = points.map((location, index) => this.joint(index, location))
+        // const joints = this.joints.map(joint => this.exports.getJointLocation(joint)).map(vectorToString(2)).join("\n")
+        // console.log("joints", joints)
         this.bars = BARS.map(bar => {
             const barIndex = bar.id * 2
             const alpha = barIndex
@@ -159,7 +170,13 @@ export class TensegrityBrick {
         this.faces = TRIANGLES.map(tri => this.face(tri))
     }
 
+    public grow(triangle: Triangle): TensegrityBrick {
+        const trianglePoints = this.faces[triangle].joints.map(joint => this.exports.getJointLocation(joint))
+        return new TensegrityBrick(this.exports, trianglePoints)
+    }
+
     public toString(): string {
+        this.exports.freshGeometry()
         const joints = this.joints.map(joint => this.exports.getJointLocation(joint)).map(vectorToString(2)).join("\n")
         const bars = this.bars.map(bar => intervalToString(2)(bar)).join("\n")
         const cables = this.cables.map(intervalToString(2)).join("\n")
