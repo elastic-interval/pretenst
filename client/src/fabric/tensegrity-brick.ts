@@ -104,27 +104,6 @@ interface IFace {
     joints: Joint[]
 }
 
-function vectorToString(indent: number): (vector: Vector3) => string {
-    return vector => {
-        const x = vector.x.toFixed(3)
-        const y = vector.y.toFixed(3)
-        const z = vector.z.toFixed(3)
-        return `${"\t".repeat(indent)}(${x},${y},${z})`
-    }
-}
-
-function intervalToString(indent: number): (interval: Interval) => string {
-    return (interval: Interval) => {
-        return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
-    }
-}
-
-function faceToString(indent: number): (face: IFace) => string {
-    return (face: IFace) => {
-        return `${"\t".repeat(indent)}(${face.joints[0]}:${face.joints[1]}:${face.joints[2]})`
-    }
-}
-
 function baseOnTriangle(trianglePoints: Vector3[]): Matrix4 {
     if (trianglePoints.length !== 3) {
         throw new Error()
@@ -175,13 +154,39 @@ export class TensegrityBrick {
     public toString(): string {
         this.exports.freshGeometry()
         const points = this.joints.map(joint => this.exports.getJointLocation(joint))
-        const joints = points.map(vectorToString(2)).join("\n")
         const minHeight = points.reduce((height, point) => Math.min(height, point.y), Number.POSITIVE_INFINITY).toFixed(3)
         const maxHeight = points.reduce((height, point) => Math.max(height, point.y), Number.NEGATIVE_INFINITY).toFixed(3)
-        const bars = this.bars.map(bar => intervalToString(2)(bar)).join("\n")
-        const cables = this.cables.map(intervalToString(2)).join("\n")
-        const faces = this.faces.map(faceToString(2)).join("\n")
-        return `Brick{\n\theight ${minHeight} to ${maxHeight}\n\n\tjoints:\n${joints}\n\tbars:\n${bars}\n\tcables:\n${cables}\n\tfaces:\n${faces}`
+        return `Brick{\n\theight ${minHeight} to ${maxHeight}\n}`
+        // function vectorToString(indent: number): (vector: Vector3) => string {
+        //     return vector => {
+        //         const x = vector.x.toFixed(3)
+        //         const y = vector.y.toFixed(3)
+        //         const z = vector.z.toFixed(3)
+        //         return `${"\t".repeat(indent)}(${x},${y},${z})`
+        //     }
+        // }
+        //
+        // function intervalToString(indent: number): (interval: Interval) => string {
+        //     return (interval: Interval) => {
+        //         return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
+        //     }
+        // }
+        //
+        // function faceToString(indent: number): (face: IFace) => string {
+        //     return (face: IFace) => {
+        //         return `${"\t".repeat(indent)}(${face.joints[0]}:${face.joints[1]}:${face.joints[2]})`
+        //     }
+        // }
+        //
+        // this.exports.freshGeometry()
+        // const points = this.joints.map(joint => this.exports.getJointLocation(joint))
+        // const joints = points.map(vectorToString(2)).join("\n")
+        // const minHeight = points.reduce((height, point) => Math.min(height, point.y), Number.POSITIVE_INFINITY).toFixed(3)
+        // const maxHeight = points.reduce((height, point) => Math.max(height, point.y), Number.NEGATIVE_INFINITY).toFixed(3)
+        // const bars = this.bars.map(bar => intervalToString(2)(bar)).join("\n")
+        // const cables = this.cables.map(intervalToString(2)).join("\n")
+        // const faces = this.faces.map(faceToString(2)).join("\n")
+        // return `Brick{\n\theight ${minHeight} to ${maxHeight}\n\n\tjoints:\n${joints}\n\tbars:\n${bars}\n\tcables:\n${cables}\n\tfaces:\n${faces}`
     }
 
     private joint(jointTag: JointTag, location: Vector3): Joint {
