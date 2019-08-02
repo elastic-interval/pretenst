@@ -30,7 +30,7 @@ export class Jockey {
     }
 
     public get height(): number {
-        return this.gotchi.fabric.midpoint.y
+        return this.gotchi.body.midpoint.y
     }
 
     public get isResting(): boolean {
@@ -66,11 +66,11 @@ export class Jockey {
     }
 
     public get pointerGeometry(): Geometry {
-        return this.gotchi.fabric.pointerGeometryFor(this.gotchi.fabric.currentDirection)
+        return this.gotchi.body.pointerGeometryFor(this.gotchi.body.currentDirection)
     }
 
     public get facesGeometry(): BufferGeometry {
-        return this.gotchi.fabric.facesGeometry
+        return this.gotchi.body.facesGeometry
     }
 
     public startMoving(): void {
@@ -94,11 +94,11 @@ export class Jockey {
     }
 
     public get fabric(): GotchiBody {
-        return this.gotchi.fabric
+        return this.gotchi.body
     }
 
     public get vectors(): Float32Array {
-        return this.gotchi.fabric.vectors
+        return this.gotchi.body.vectors
     }
 
     public get offspringGenome(): IGenomeData {
@@ -168,8 +168,8 @@ export class Jockey {
 
     private get directionToTarget(): Direction {
         const toTarget = this.toTarget
-        const degreeForward = toTarget.dot(this.gotchi.fabric.forward)
-        const degreeRight = toTarget.dot(this.gotchi.fabric.right)
+        const degreeForward = toTarget.dot(this.gotchi.body.forward)
+        const degreeRight = toTarget.dot(this.gotchi.body.right)
         if (degreeForward > 0) {
             if (degreeRight > 0) {
                 return degreeForward > degreeRight ? Direction.FORWARD : Direction.RIGHT
@@ -187,7 +187,7 @@ export class Jockey {
 
     private get toTarget(): Vector3 {
         const toTarget = new Vector3()
-        toTarget.subVectors(this.target, this.gotchi.fabric.seed)
+        toTarget.subVectors(this.target, this.gotchi.body.seed)
         toTarget.y = 0
         toTarget.normalize()
         return toTarget

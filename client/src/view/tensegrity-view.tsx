@@ -12,6 +12,7 @@ import { ITensegrityState } from "../tensegrity"
 
 import { Flight } from "./flight"
 import { TensegrityFlightState } from "./flight-state"
+import { TENSEGRITY } from "./materials"
 import { MeshKey, SpotSelector } from "./spot-selector"
 import { SurfaceComponent } from "./surface-component"
 
@@ -30,7 +31,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
 
     constructor(props: ITensegrityViewProps) {
         super(props)
-        this.state = {iterating: false}
+        this.state = {iterating: true}
         this.spotSelector = new SpotSelector(
             this.props.perspectiveCamera,
             this.props.tensegrityState.width,
@@ -53,8 +54,8 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
             const orbitControls = new OrbitControls(props.perspectiveCamera, element)
             this.flight = new Flight(orbitControls)
             this.flight.setupCamera(TensegrityFlightState())
-            this.flight.update()
-            // this.beginAnimating()
+            this.flight.enabled = true
+            this.beginAnimating()
         }
     }
 
@@ -65,6 +66,10 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 <R3.Renderer width={tensegrityState.width} height={tensegrityState.height}>
                     <R3.Scene width={tensegrityState.width} height={tensegrityState.height}
                               camera={this.props.perspectiveCamera}>
+                        <R3.Mesh key="Tensegrity"
+                                 geometry={this.props.tensegrityState.tensegrityFabric.facesGeometry}
+                                 material={TENSEGRITY}
+                        />
                         <SurfaceComponent
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
@@ -76,21 +81,21 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
 
 // =================================================================================================================
 
-    // private beginAnimating(): void {
-    //     const step = () => {
-    //         setTimeout(
-    //             () => {
-    //                 const iterating = this.state.iterating
-    //                 this.flight.update()
-    //                 if (iterating) {
-    //                     this.forceUpdate()
-    //                 }
-    //                 requestAnimationFrame(step)
-    //             },
-    //             10,
-    //         )
-    //     }
-    //     requestAnimationFrame(step)
-    // }
+    private beginAnimating(): void {
+        const step = () => {
+            setTimeout(
+                () => {
+                    const iterating = this.state.iterating
+                    this.flight.update()
+                    if (iterating) {
+                        this.forceUpdate()
+                    }
+                    requestAnimationFrame(step)
+                },
+                100,
+            )
+        }
+        requestAnimationFrame(step)
+    }
 }
 

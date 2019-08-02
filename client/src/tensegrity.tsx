@@ -10,6 +10,7 @@ import { IFabricExports } from "./fabric/fabric-exports"
 import { createFabricKernel, FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
 import { TensegrityBrick, Triangle } from "./fabric/tensegrity-brick"
+import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import { MAX_POPULATION } from "./gotchi/evolution"
 import { updateDimensions } from "./state/app-state"
 import { INITIAL_DISTANCE } from "./view/flight"
@@ -20,6 +21,7 @@ export interface ITensegrityProps {
 }
 
 export interface ITensegrityState {
+    readonly tensegrityFabric: TensegrityFabric
     readonly width: number
     readonly height: number
     readonly left: number
@@ -35,17 +37,21 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
         super(props)
         this.physics.applyToFabric(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, 500)
-        const brick = this.fabricKernel.createTensegrityBrick()
-        if (brick) {
-            const grow = (tensegrityBrick: TensegrityBrick, triangle: Triangle): TensegrityBrick => {
-                const grown = tensegrityBrick.grow(triangle)
+        const tensegrityFabric = this.fabricKernel.createTensegrityFabric()
+        if (!tensegrityFabric) {
+            throw new Error()
+        }
+        if (tensegrityFabric) {
+            const grow = (tb: TensegrityBrick, triangle: Triangle): TensegrityBrick => {
+                const grown = tb.grow(triangle)
                 console.log(`${Triangle[triangle]}:${triangle}`, grown.toString())
                 return grown
             }
-            console.log("brick", brick.toString())
-            for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
-                grow(brick, triangle)
-            }
+            const firstBrick = tensegrityFabric.createBrick()
+            console.log("tensegrityBrick", tensegrityFabric.toString())
+            // for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
+            grow(firstBrick, Triangle.PPP)
+            // }
         }
         const width = window.innerWidth
         const height = window.innerHeight
@@ -53,6 +59,7 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
         const left = window.screenLeft
         const top = window.screenTop
         this.state = {
+            tensegrityFabric,
             width,
             height,
             left,

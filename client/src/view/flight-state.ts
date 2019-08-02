@@ -115,12 +115,12 @@ export function InitialFlightState(): IFlightState {
 
 export function TensegrityFlightState(): IFlightState {
     return <IFlightState>{
-        target: new Vector3(0, 6, 0),
-        tooFar: 40,
-        tooClose: 39,
+        target: new Vector3(0, 3.4, 0),
+        tooFar: 12,
+        tooClose: 11,
         towardsDistance: 0.04,
-        tooVertical: polarAngle(0.95),
-        tooHorizontal: polarAngle(0.92),
+        tooVertical: polarAngle(0.98),
+        tooHorizontal: polarAngle(0.94),
         towardsPolarAngle: 0.005,
         appMode: AppMode.Riding,
     }

@@ -13,7 +13,7 @@ import { HEXALOT_SHAPE } from "../island/island-logic"
 import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
 import { GotchiBody } from "./gotchi-body"
 import { SpinalTensegrity } from "./spinal-tensegrity"
-import { TensegrityBrick } from "./tensegrity-brick"
+import { TensegrityFabric } from "./tensegrity-fabric"
 
 const FLOATS_IN_VECTOR = 3
 const VECTORS_FOR_FACE = 3
@@ -114,12 +114,12 @@ export class FabricKernel implements IGotchiFactory {
         return new SpinalTensegrity(newInstance)
     }
 
-    public createTensegrityBrick(): TensegrityBrick | undefined {
+    public createTensegrityFabric(): TensegrityFabric | undefined {
         const newInstance = this.allocateInstance()
         if (!newInstance) {
             return undefined
         }
-        return new TensegrityBrick(newInstance)
+        return new TensegrityFabric(newInstance)
     }
 
     public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {
@@ -136,7 +136,7 @@ export class FabricKernel implements IGotchiFactory {
         if (!newInstance) {
             return undefined
         }
-        this.exports.cloneInstance(gotchi.fabric.index, newInstance.index)
+        this.exports.cloneInstance(gotchi.body.index, newInstance.index)
         const fabric = new GotchiBody(newInstance)
         return new Gotchi(gotchi.home, fabric, genome, this)
     }

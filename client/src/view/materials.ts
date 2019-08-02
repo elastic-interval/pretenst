@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Color, FaceColors, LineBasicMaterial, MeshPhongMaterial } from "three"
+import { Color, DoubleSide, FaceColors, LineBasicMaterial, MeshPhongMaterial } from "three"
 
 export const GOTCHI_GHOST = new MeshPhongMaterial({
     lights: true,
@@ -29,3 +29,5 @@ export const JOURNEY = new LineBasicMaterial({color: new Color("crimson")})
 export const GOTCHI_ARROW = new LineBasicMaterial({color: new Color("magenta")})
 
 export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow")})
+
+export const TENSEGRITY = new MeshPhongMaterial({lights: true, color: new Color("white"), side: DoubleSide})

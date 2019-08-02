@@ -26,14 +26,14 @@ export class Gotchi {
 
     constructor(
         readonly home: Hexalot,
-        readonly fabric: GotchiBody,
+        readonly body: GotchiBody,
         private genome: Genome,
         private gotchiFactory: IGotchiFactory,
     ) {
-        if (fabric.isGestating) {
-            this.growth = new Growth(fabric, genome.createReader(Direction.REST))
+        if (body.isGestating) {
+            this.growth = new Growth(body, genome.createReader(Direction.REST))
         } else {
-            if (fabric.nextDirection !== Direction.REST) {
+            if (body.nextDirection !== Direction.REST) {
                 throw new Error("Cannot create gotchi from fabric that is not at rest")
             }
             this.applyBehaviorGenes()
@@ -45,28 +45,28 @@ export class Gotchi {
     }
 
     public get isResting(): boolean {
-        return this.fabric.isResting
+        return this.body.isResting
     }
 
     public recycle(): void {
-        this.fabric.recycle()
+        this.body.recycle()
     }
 
     public get index(): number {
-        return this.fabric.index
+        return this.body.index
     }
 
     public get midpoint(): Vector3 {
-        return this.fabric.midpoint
+        return this.body.midpoint
     }
 
     public get age(): number {
-        return this.fabric.age
+        return this.body.age
     }
 
     public getDistanceFrom(location: Vector3): number {
-        const xx = this.fabric.vectors[0] - location.x
-        const zz = this.fabric.vectors[2] - location.z
+        const xx = this.body.vectors[0] - location.x
+        const zz = this.body.vectors[2] - location.z
         return Math.sqrt(xx * xx + zz * zz)
     }
 
@@ -75,24 +75,24 @@ export class Gotchi {
     }
 
     public get currentDirection(): Direction {
-        return this.fabric.currentDirection
+        return this.body.currentDirection
     }
 
     public set nextDirection(direction: Direction) {
-        this.fabric.nextDirection = direction
+        this.body.nextDirection = direction
     }
 
     public approach(location: Vector3, towards: boolean): void {
         const distance = (direction: Vector3, factor: number) => new Vector3()
-            .add(this.fabric.midpoint)
+            .add(this.body.midpoint)
             .addScaledVector(direction, factor)
             .sub(location)
             .length()
         const distances = [
-            {direction: Direction.FORWARD, distance: distance(this.fabric.forward, 1)},
-            {direction: Direction.LEFT, distance: distance(this.fabric.right, -1)},
-            {direction: Direction.RIGHT, distance: distance(this.fabric.right, 1)},
-            {direction: Direction.REVERSE, distance: distance(this.fabric.forward, -1)},
+            {direction: Direction.FORWARD, distance: distance(this.body.forward, 1)},
+            {direction: Direction.LEFT, distance: distance(this.body.right, -1)},
+            {direction: Direction.RIGHT, distance: distance(this.body.right, 1)},
+            {direction: Direction.REVERSE, distance: distance(this.body.forward, -1)},
         ].sort((a, b) => {
             return a.distance < b.distance ? -1 : b.distance > a.distance ? 1 : 0
         })
@@ -104,7 +104,7 @@ export class Gotchi {
             this.growthStarted = true
             return AppEvent.StartGrowth
         }
-        const wrapAround = this.fabric.iterate(ticks)
+        const wrapAround = this.body.iterate(ticks)
         if (!wrapAround) {
             return undefined
         }
@@ -113,7 +113,7 @@ export class Gotchi {
             if (!growthStep) {
                 this.growth = undefined
                 this.applyBehaviorGenes()
-                this.fabric.endGestation()
+                this.body.endGestation()
                 return AppEvent.GrowthComplete
             }
             return AppEvent.GrowthStep
@@ -127,7 +127,7 @@ export class Gotchi {
 
     private applyBehaviorGenes(): void {
         for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
-            new Behavior(this.fabric, direction, this.genome.createReader(direction)).apply()
+            new Behavior(this.body, direction, this.genome.createReader(direction)).apply()
         }
     }
 }
