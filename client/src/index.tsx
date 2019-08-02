@@ -14,8 +14,11 @@ import { IFabricExports } from "./fabric/fabric-exports"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
+import { Tensegrity } from "./tensegrity"
 
 declare const getFabricExports: () => Promise<IFabricExports> // implementation: index.html
+
+const TENSEGRITY = true
 
 console.log(`Using API at ${API_URI}`)
 const storage = new RemoteStorage(API_URI)
@@ -37,9 +40,11 @@ APP_EVENT.subscribe(appEvent => {
 async function start(): Promise<void> {
     const fabricExports = await getFabricExports()
     const user = await storage.getUser()
-
     ReactDOM.render(
-        <App fabricExports={fabricExports} storage={storage} user={user}/>,
+        TENSEGRITY ?
+            <Tensegrity fabricExports={fabricExports}/>
+            :
+            <App fabricExports={fabricExports} storage={storage} user={user}/>,
         document.getElementById("root") as HTMLElement,
     )
     registerServiceWorker()

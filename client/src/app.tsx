@@ -10,8 +10,7 @@ import { PerspectiveCamera } from "three"
 import { API_URI, DOCS_ON_GITHUB, SINGLE_ISLAND } from "./constants"
 import { createFabricKernel, FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
-import { TensegrityBrick, Triangle } from "./fabric/tensegrity-brick"
-import { MAX_POPULATION } from "./gotchi/evolution"
+import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
 import { AppMode, AppTransition, IAppProps, IAppState, updateDimensions } from "./state/app-state"
@@ -20,7 +19,6 @@ import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE } from "./view/flight"
 import { HexalotTarget, InitialFlightState, IslandTarget } from "./view/flight-state"
 import { WorldView } from "./view/world-view"
-
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
@@ -31,22 +29,7 @@ export class App extends React.Component<IAppProps, IAppState> {
     constructor(props: IAppProps) {
         super(props)
         this.physics.applyToFabric(props.fabricExports)
-        this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, 500)
-        // this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
-        const brick = this.fabricKernel.createTensegrityBrick()
-        if (brick) {
-            const grow = (tensegrityBrick: TensegrityBrick, triangle: Triangle): TensegrityBrick => {
-                const grown = tensegrityBrick.grow(triangle)
-                console.log(`${Triangle[triangle]}:${triangle}`, grown.toString())
-                return grown
-            }
-            console.log("brick", brick.toString())
-            for (let triangle = Triangle.NNN; triangle<= Triangle.PPP; triangle++) {
-                grow(brick, triangle)
-            }
-            // const brick2 = grow(brick, Triangle.NNP)
-            // grow(brick2, Triangle.PPP)
-        }
+        this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)

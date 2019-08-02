@@ -13,6 +13,7 @@ import { ITERATIONS_PER_TICK } from "../fabric/gotchi-body"
 import { Spot } from "../island/spot"
 import { AppMode, IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
+import { Transition } from "../state/transition"
 import { IUser } from "../storage/remote-storage"
 
 import { EvolutionComponent } from "./evolution-component"
@@ -135,6 +136,30 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
         props.appState.updateState(afterClick)
     }
 
+    private update(appState: IAppState): void {
+        const flightState = appState.flightState
+        const flight = this.flight
+        flight.moveTowardsTarget(flightState.target)
+        switch (appState.appMode) {
+            case AppMode.Flying:
+                const distanceChanged = flight.cameraFollowDistance(flightState)
+                const angleChanged = flight.cameraFollowPolarAngle(flightState)
+                if (!(distanceChanged || angleChanged)) {
+                    flight.enabled = true
+                    appState.updateState(new Transition(appState).reachedFlightStateTarget(flightState).appState)
+                }
+                break
+            case AppMode.Riding:
+                flight.cameraFollowDistance(flightState)
+                flight.cameraFollowPolarAngle(flightState)
+                break
+            default:
+                break
+        }
+        flight.stayUpright()
+        flight.update()
+    }
+
     private beginAnimating(): void {
         const step = () => {
             setTimeout(
@@ -165,7 +190,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                             this.setState({iterating: true})
                         }
                     }
-                    this.flight.update(appState)
+                    this.update(appState)
                     if (iterating) {
                         this.forceUpdate()
                     }
