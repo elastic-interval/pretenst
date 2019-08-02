@@ -58,18 +58,18 @@ const BAR_ARRAY: IBar[] = [
 ]
 
 export enum Triangle {
-    NNN = 0, NNP, NPN, NPP, PNN, PNP, PPN, PPP,
+    NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP,
 }
 
 const TRIANGLE_ARRAY: BarEnd[][] = [
-    [BarEnd.XNA, BarEnd.YNA, BarEnd.ZNA],
-    [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA],
-    [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA],
-    [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO],
-    [BarEnd.XPO, BarEnd.YNO, BarEnd.ZPA],
-    [BarEnd.XPA, BarEnd.YPO, BarEnd.ZNO],
-    [BarEnd.XNO, BarEnd.YPA, BarEnd.ZPO],
-    [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
+    /*NNN*/ [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA],
+    /*PNN*/ [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO], // NNN share XNA
+    /*NPN*/ [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA], // NNN share YNA
+    /*NNP*/ [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA], // NNN share ZNA
+    /*NPP*/ [BarEnd.YNO, BarEnd.XPO, BarEnd.ZPA], // PPP share XPO
+    /*PNP*/ [BarEnd.YPO, BarEnd.XPA, BarEnd.ZNO], // PPP share YPO
+    /*PPN*/ [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO], // PPP share ZPO
+    /*PPP*/ [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
 ]
 
 function createBrickPoints(): Vector3[] {
@@ -130,11 +130,15 @@ function baseOnTriangle(trianglePoints: Vector3[]): Matrix4 {
         throw new Error()
     }
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
-    const x = new Vector3().subVectors(midSide, midpoint).normalize()
-    const y = new Vector3().add(midpoint).normalize()
-    const z = new Vector3().crossVectors(y, x).normalize()
-    return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+    // const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
+    // const x = new Vector3().subVectors(midSide, midpoint).normalize()
+    const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+    const zz = new Vector3().subVectors(trianglePoints[1], midpoint)
+    const overlap = new Vector3().add(zz).normalize().multiplyScalar(-x.dot(zz))
+    const z = zz.sub(overlap).normalize()
+    const y = new Vector3().crossVectors(x, z).normalize()
+    const basis = new Matrix4().makeBasis(x, y, z)
+    return new Matrix4().getInverse(basis).setPosition(midpoint)
 }
 
 export class TensegrityBrick {
@@ -159,23 +163,25 @@ export class TensegrityBrick {
             cables.push(this.cable(barEnds[2], barEnds[0], CABLE_SPAN))
             return cables
         }, [])
-        this.faces = TRIANGLE_ARRAY.map(tri => this.face(tri))
+        this.faces = TRIANGLE_ARRAY.map(triangle => this.face(triangle))
     }
 
     public grow(triangle: Triangle): TensegrityBrick {
         const faceJoints = this.faces[triangle].joints
         const trianglePoints = faceJoints.map(joint => this.exports.getJointLocation(joint)).reverse()
-        console.log("existing", trianglePoints)
         return new TensegrityBrick(this.exports, trianglePoints)
     }
 
     public toString(): string {
         this.exports.freshGeometry()
-        const joints = this.joints.map(joint => this.exports.getJointLocation(joint)).map(vectorToString(2)).join("\n")
+        const points = this.joints.map(joint => this.exports.getJointLocation(joint))
+        const joints = points.map(vectorToString(2)).join("\n")
+        const minHeight = points.reduce((height, point) => Math.min(height, point.y), Number.POSITIVE_INFINITY).toFixed(3)
+        const maxHeight = points.reduce((height, point) => Math.max(height, point.y), Number.NEGATIVE_INFINITY).toFixed(3)
         const bars = this.bars.map(bar => intervalToString(2)(bar)).join("\n")
         const cables = this.cables.map(intervalToString(2)).join("\n")
         const faces = this.faces.map(faceToString(2)).join("\n")
-        return `Brick{\n\tjoints:\n${joints}\n\tbars:\n${bars}\n\tcables:\n${cables}\n\tfaces:\n${faces}`
+        return `Brick{\n\theight ${minHeight} to ${maxHeight}\n\n\tjoints:\n${joints}\n\tbars:\n${bars}\n\tcables:\n${cables}\n\tfaces:\n${faces}`
     }
 
     private joint(jointTag: JointTag, location: Vector3): Joint {
