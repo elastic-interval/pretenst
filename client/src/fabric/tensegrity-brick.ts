@@ -11,12 +11,8 @@ const PHI = 1.618
 const BAR_SPAN = PHI * 2
 const CABLE_SPAN = 0.1
 
-export enum Triangle {
-    NNN, NNP, NPN, NPP, PNN, PNP, PPN, PPP,
-}
-
 enum Ray {
-    XP, XN, YP, YN, ZP, ZN,
+    XP = 0, XN, YP, YN, ZP, ZN,
 }
 
 function rayVector(ray: Ray): Vector3 {
@@ -39,52 +35,59 @@ function rayVector(ray: Ray): Vector3 {
     }
 }
 
-function point(primaryRay: Ray, secondaryRay: Ray): Vector3 {
+function brickPoint(primaryRay: Ray, secondaryRay: Ray): Vector3 {
     return rayVector(primaryRay).multiplyScalar(PHI).add(rayVector(secondaryRay))
 }
 
 enum BarEnd {
-    XPA, XPO, XNA, XNO, YPA, YPO, YNA, YNO, ZPA, ZPO, ZNA, ZNO,
+    XPA = 0, XPO, XNA, XNO, YPA, YPO, YNA, YNO, ZPA, ZPO, ZNA, ZNO,
 }
 
 interface IBar {
-    id: Ray
     alpha: Vector3
     omega: Vector3
 }
 
-const BARS: IBar[] = [
-    {id: Ray.XP, alpha: point(Ray.ZN, Ray.XP), omega: point(Ray.ZP, Ray.XP)},
-    {id: Ray.XN, alpha: point(Ray.ZN, Ray.XN), omega: point(Ray.ZP, Ray.XN)},
-    {id: Ray.YP, alpha: point(Ray.XN, Ray.YP), omega: point(Ray.XP, Ray.YP)},
-    {id: Ray.YN, alpha: point(Ray.XN, Ray.YN), omega: point(Ray.XP, Ray.YN)},
-    {id: Ray.ZP, alpha: point(Ray.YN, Ray.ZP), omega: point(Ray.YP, Ray.ZP)},
-    {id: Ray.ZN, alpha: point(Ray.YN, Ray.ZN), omega: point(Ray.YP, Ray.ZN)},
+const BAR_ARRAY: IBar[] = [
+    {alpha: brickPoint(Ray.ZN, Ray.XP), omega: brickPoint(Ray.ZP, Ray.XP)},
+    {alpha: brickPoint(Ray.ZN, Ray.XN), omega: brickPoint(Ray.ZP, Ray.XN)},
+    {alpha: brickPoint(Ray.XN, Ray.YP), omega: brickPoint(Ray.XP, Ray.YP)},
+    {alpha: brickPoint(Ray.XN, Ray.YN), omega: brickPoint(Ray.XP, Ray.YN)},
+    {alpha: brickPoint(Ray.YN, Ray.ZP), omega: brickPoint(Ray.YP, Ray.ZP)},
+    {alpha: brickPoint(Ray.YN, Ray.ZN), omega: brickPoint(Ray.YP, Ray.ZN)},
 ]
 
-function tensegrityBrickPoints(): Vector3[] {
-    return BARS.reduce((vectors: Vector3[], bar: IBar): Vector3[] => {
+export enum Triangle {
+    NNN = 0, NNP, NPN, NPP, PNN, PNP, PPN, PPP,
+}
+
+const TRIANGLE_ARRAY: BarEnd[][] = [
+    [BarEnd.XNA, BarEnd.YNA, BarEnd.ZNA],
+    [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA],
+    [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA],
+    [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO],
+    [BarEnd.XPO, BarEnd.YNO, BarEnd.ZPA],
+    [BarEnd.XPA, BarEnd.YPO, BarEnd.ZNO],
+    [BarEnd.XNO, BarEnd.YPA, BarEnd.ZPO],
+    [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
+]
+
+function createBrickPoints(): Vector3[] {
+    const copyBarPoints = (vectors: Vector3[], bar: IBar): Vector3[] => {
         vectors.push(new Vector3().add(bar.alpha))
         vectors.push(new Vector3().add(bar.omega))
         return vectors
-    }, [])
+    }
+    const points = BAR_ARRAY.reduce(copyBarPoints, [])
+    const trianglePoints = TRIANGLE_ARRAY[Triangle.NNN].map((barEnd: BarEnd) => points[barEnd]).reverse()
+    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+    const y = new Vector3().sub(midpoint).normalize()
+    const z = new Vector3().crossVectors(y, x).normalize()
+    const basis = new Matrix4().makeBasis(x, y, z)
+    const fromBasis = new Matrix4().getInverse(basis).setPosition(new Vector3(0, midpoint.length(), 0))
+    return points.map(p => p.applyMatrix4(fromBasis))
 }
-
-interface ITriangle {
-    id: Triangle
-    barEnds: BarEnd[]
-}
-
-const TRIANGLES: ITriangle[] = [
-    {id: Triangle.NNN, barEnds: [BarEnd.XNA, BarEnd.YNA, BarEnd.ZNA]},
-    {id: Triangle.NNP, barEnds: [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA]},
-    {id: Triangle.NPN, barEnds: [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA]},
-    {id: Triangle.PNN, barEnds: [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO]},
-    {id: Triangle.NPP, barEnds: [BarEnd.XPO, BarEnd.YNO, BarEnd.ZPA]},
-    {id: Triangle.PNP, barEnds: [BarEnd.XPA, BarEnd.YPO, BarEnd.ZNO]},
-    {id: Triangle.PPN, barEnds: [BarEnd.XNO, BarEnd.YPA, BarEnd.ZPO]},
-    {id: Triangle.PPP, barEnds: [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO]},
-]
 
 type Joint = number
 type JointTag = number
@@ -122,25 +125,16 @@ function faceToString(indent: number): (face: IFace) => string {
     }
 }
 
-function initialTriangle(): Vector3[] {
-    const points = tensegrityBrickPoints()
-    return TRIANGLES[Triangle.NNN].barEnds.map(barEnd => points[barEnd]).reverse()
-}
-
-function brickPointsFromTriangle(trianglePoints: Vector3[]): Vector3[] {
+function baseOnTriangle(trianglePoints: Vector3[]): Matrix4 {
     if (trianglePoints.length !== 3) {
-        throw new Error(`expected a triangle, got ${trianglePoints.length}`)
+        throw new Error()
     }
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
     const x = new Vector3().subVectors(midSide, midpoint).normalize()
-    const y = new Vector3().sub(midpoint).normalize()
+    const y = new Vector3().add(midpoint).normalize()
     const z = new Vector3().crossVectors(y, x).normalize()
-    const transformation = new Matrix4().getInverse(new Matrix4().makeBasis(x, y, z))
-    const upwards = new Vector3().setY(midpoint.length())
-    const points = tensegrityBrickPoints()
-    points.forEach(p => p.applyMatrix4(transformation).add(upwards))
-    return points
+    return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
 }
 
 export class TensegrityBrick {
@@ -150,28 +144,28 @@ export class TensegrityBrick {
     public readonly faces: IFace[]
 
     constructor(private exports: IFabricInstanceExports, existingTriangle?: Vector3[]) {
-        const trianglePoints = existingTriangle ? existingTriangle : initialTriangle()
-        const points = brickPointsFromTriangle(trianglePoints)
-        this.joints = points.map((location, index) => this.joint(index, location))
-        // const joints = this.joints.map(joint => this.exports.getJointLocation(joint)).map(vectorToString(2)).join("\n")
-        // console.log("joints", joints)
-        this.bars = BARS.map(bar => {
-            const barIndex = bar.id * 2
-            const alpha = barIndex
-            const omega = barIndex + 1
+        const newPoints = createBrickPoints()
+        const xform = existingTriangle ? baseOnTriangle(existingTriangle) : undefined
+        const points = xform ? newPoints.map(p => p.applyMatrix4(xform)) : newPoints
+        this.joints = points.map((p, index) => this.joint(index, p))
+        this.bars = BAR_ARRAY.map((bar: IBar, index: number) => {
+            const alpha = index
+            const omega = index + 1
             return this.bar(alpha, omega, BAR_SPAN)
         })
-        this.cables = TRIANGLES.reduce((cables: Interval[], tri: ITriangle): Interval[] => {
-            cables.push(this.cable(tri.barEnds[0], tri.barEnds[1], CABLE_SPAN))
-            cables.push(this.cable(tri.barEnds[1], tri.barEnds[2], CABLE_SPAN))
-            cables.push(this.cable(tri.barEnds[2], tri.barEnds[0], CABLE_SPAN))
+        this.cables = TRIANGLE_ARRAY.reduce((cables: Interval[], barEnds: BarEnd[]): Interval[] => {
+            cables.push(this.cable(barEnds[0], barEnds[1], CABLE_SPAN))
+            cables.push(this.cable(barEnds[1], barEnds[2], CABLE_SPAN))
+            cables.push(this.cable(barEnds[2], barEnds[0], CABLE_SPAN))
             return cables
         }, [])
-        this.faces = TRIANGLES.map(tri => this.face(tri))
+        this.faces = TRIANGLE_ARRAY.map(tri => this.face(tri))
     }
 
     public grow(triangle: Triangle): TensegrityBrick {
-        const trianglePoints = this.faces[triangle].joints.map(joint => this.exports.getJointLocation(joint))
+        const faceJoints = this.faces[triangle].joints
+        const trianglePoints = faceJoints.map(joint => this.exports.getJointLocation(joint)).reverse()
+        console.log("existing", trianglePoints)
         return new TensegrityBrick(this.exports, trianglePoints)
     }
 
@@ -202,8 +196,8 @@ export class TensegrityBrick {
         }
     }
 
-    private face(triangle: ITriangle): IFace {
-        const joints = triangle.barEnds.map(barEnd => this.joints[barEnd])
+    private face(barEnds: BarEnd[]): IFace {
+        const joints = barEnds.map(barEnd => this.joints[barEnd])
         return {
             index: this.exports.createFace(joints[0], joints[1], joints[2]),
             joints,
