@@ -109,15 +109,13 @@ function baseOnTriangle(trianglePoints: Vector3[]): Matrix4 {
         throw new Error()
     }
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    // const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
-    // const x = new Vector3().subVectors(midSide, midpoint).normalize()
-    const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
-    const zz = new Vector3().subVectors(trianglePoints[1], midpoint)
-    const overlap = new Vector3().add(zz).normalize().multiplyScalar(-x.dot(zz))
-    const z = zz.sub(overlap).normalize()
+    const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
+    const x = new Vector3().subVectors(midSide, midpoint).normalize()
+    const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
+    const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
+    const z = u.sub(proj).normalize()
     const y = new Vector3().crossVectors(x, z).normalize()
-    const basis = new Matrix4().makeBasis(x, y, z)
-    return new Matrix4().getInverse(basis).setPosition(midpoint)
+    return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
 }
 
 export class TensegrityBrick {

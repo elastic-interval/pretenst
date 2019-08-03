@@ -46,6 +46,7 @@ export class SurfaceComponent extends React.Component<ISurfaceComponentProps, ob
     private get spotsGeometry(): Geometry {
         const geometry = new Geometry()
         this.addSurfaceGeometry(MeshKey.SPOTS_KEY, 0, geometry.vertices, geometry.faces)
+        geometry.vertices.forEach(v => v.sub(new Vector3(0, 0.01, 0)))
         geometry.computeBoundingSphere()
         return geometry
     }
