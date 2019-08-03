@@ -37,4 +37,6 @@ export const SURFACE = new MeshPhongMaterial({
     transparent: true,
 })
 
-export const TENSEGRITY = new MeshPhongMaterial({lights: true, color: new Color("white"), side: DoubleSide})
+export const TENSEGRITY_LINE = new LineBasicMaterial({color: new Color("red")})
+
+export const TENSEGRITY_FACE = new MeshPhongMaterial({lights: true, color: new Color("white"), side: DoubleSide})

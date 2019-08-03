@@ -49,6 +49,7 @@ let faceNormalOffset: usize = 0
 let faceLocationOffset: usize = 0
 let intervalOffset: usize = 0
 let faceOffset: usize = 0
+let lineOffset: usize = 0
 
 let statePtr: usize = 0
 let vectorA: usize = 0
@@ -69,6 +70,7 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     let jointsSize = jointCountMax * JOINT_SIZE
     let intervalsSize = intervalCountMax * INTERVAL_SIZE
     let facesSize = faceCountMax * FACE_SIZE
+    let lineSize = intervalCountMax * VECTOR_SIZE * 2
     // offsets
     fabricBytes = (
         statePtr = (
@@ -81,14 +83,16 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
                                     faceLocationOffset = (
                                         faceNormalOffset = (
                                             faceMidpointOffset = (
-                                                rightPtr = (
-                                                    forwardPtr = (
-                                                        seedPtr = (
-                                                            midpointPtr
+                                                lineOffset = (
+                                                    rightPtr = (
+                                                        forwardPtr = (
+                                                            seedPtr = (
+                                                                midpointPtr
+                                                            ) + VECTOR_SIZE
                                                         ) + VECTOR_SIZE
                                                     ) + VECTOR_SIZE
                                                 ) + VECTOR_SIZE
-                                            ) + VECTOR_SIZE
+                                            ) + lineSize
                                         ) + faceVectorsSize
                                     ) + faceJointVectorsSize
                                 ) + faceJointVectorsSize
@@ -633,6 +637,7 @@ export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32,
             setIntervalHighLow(intervalIndex, direction, DEFAULT_HIGH_LOW)
         }
     }
+    outputLineGeometry(intervalIndex)
     return intervalIndex
 }
 
@@ -828,6 +833,11 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
     }
 }
 
+function outputLineGeometry(intervalIndex: u16): void {
+    let outputPtr = lineOffset + intervalIndex * VECTOR_SIZE * 2
+    setVector(outputPtr, locationPtr(getAlphaIndex(intervalIndex)))
+    setVector(outputPtr + VECTOR_SIZE, locationPtr(getOmegaIndex(intervalIndex)))
+}
 
 // Faces =====================================================================================
 
@@ -1035,13 +1045,14 @@ function getNearestSpotIndex(jointIndex: u16): u8 {
 }
 
 function getTerrainUnder(jointIndex: u16): u8 {
+    return 1
     // TODO: save the three most recent spotIndexes at the joint and check mostly only those
     // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
-    let spotIndex = getNearestSpotIndex(jointIndex)
-    if (spotIndex === HEXALOT_BITS) {
-        return HEXALOT_BITS
-    }
-    return getHexalotBit(spotIndex)
+    // let spotIndex = getNearestSpotIndex(jointIndex)
+    // if (spotIndex === HEXALOT_BITS) {
+    //     return HEXALOT_BITS
+    // }
+    // return getHexalotBit(spotIndex)
 }
 
 // Physics =====================================================================================
@@ -1149,6 +1160,10 @@ export function iterate(ticks: usize): boolean {
     }
     if (currentDirection !== REST_DIRECTION) {
         setAge(getAge() + ticks)
+    }
+    let intervalCount = getIntervalCount()
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        outputLineGeometry(intervalIndex)
     }
     let faceCount = getFaceCount()
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {

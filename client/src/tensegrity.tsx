@@ -9,7 +9,7 @@ import { PerspectiveCamera } from "three"
 import { IFabricExports } from "./fabric/fabric-exports"
 import { createFabricKernel, FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
-import { IBrick, Triangle } from "./fabric/tensegrity-brick"
+import { Triangle } from "./fabric/tensegrity-brick"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import { MAX_POPULATION } from "./gotchi/evolution"
 import { updateDimensions } from "./state/app-state"
@@ -42,13 +42,8 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
             throw new Error()
         }
         if (tensegrityFabric) {
-            const grow = (tBrick: IBrick, triangle: Triangle): IBrick => {
-                const grown = tensegrityFabric.growBrick(tBrick, triangle)
-                console.log(`${Triangle[triangle]}:${triangle}`, tensegrityFabric.brickToString(grown))
-                return grown
-            }
             const firstBrick = tensegrityFabric.createBrick()
-            const secondBrick = grow(firstBrick, Triangle.PPP)
+            const secondBrick = tensegrityFabric.growBrick(firstBrick, Triangle.PPP)
             const connector = tensegrityFabric.connectBricks(firstBrick, Triangle.PPP, secondBrick, Triangle.NNN)
             console.log("connector", tensegrityFabric.connectorToString(connector))
             // grow(grow(firstBrick, Triangle.PPP), Triangle.PPP)

@@ -144,6 +144,8 @@ export interface IFabricInstanceExports {
 
     getFaceNormals(): Float32Array
 
+    getLineLocations(): Float32Array
+
     getVectors(): Float32Array
 
     getJointLocation(jointIndex: number): Vector3

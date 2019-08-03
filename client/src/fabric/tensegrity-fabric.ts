@@ -19,6 +19,7 @@ import {
 
 export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
+    private linesGeometryStored: BufferGeometry | undefined
 
     constructor(private exports: IFabricInstanceExports) {
     }
@@ -61,6 +62,10 @@ export class TensegrityFabric {
             this.facesGeometryStored.dispose()
             this.facesGeometryStored = undefined
         }
+        if (this.linesGeometryStored) {
+            this.linesGeometryStored.dispose()
+            this.linesGeometryStored = undefined
+        }
     }
 
     public get vectors(): Float32Array {
@@ -99,6 +104,16 @@ export class TensegrityFabric {
             this.facesGeometryStored.dispose()
         }
         this.facesGeometryStored = geometry
+        return geometry
+    }
+
+    public get linesGeometry(): BufferGeometry {
+        const geometry = new BufferGeometry()
+        geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getLineLocations(), 3))
+        if (this.linesGeometryStored) {
+            this.linesGeometryStored.dispose()
+        }
+        this.linesGeometryStored = geometry
         return geometry
     }
 

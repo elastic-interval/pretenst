@@ -12,7 +12,7 @@ import { ITensegrityState } from "../tensegrity"
 
 import { Flight } from "./flight"
 import { TensegrityFlightState } from "./flight-state"
-import { TENSEGRITY } from "./materials"
+import { TENSEGRITY_FACE, TENSEGRITY_LINE } from "./materials"
 import { MeshKey, SpotSelector } from "./spot-selector"
 import { SurfaceComponent } from "./surface-component"
 
@@ -61,15 +61,21 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
 
     public render(): JSX.Element | undefined {
         const tensegrityState = this.props.tensegrityState
+        const tensegrityFabric = this.props.tensegrityState.tensegrityFabric
         return (
             <div id="tensegrity-view">
                 <R3.Renderer width={tensegrityState.width} height={tensegrityState.height}>
                     <R3.Scene width={tensegrityState.width} height={tensegrityState.height}
                               camera={this.props.perspectiveCamera}>
-                        <R3.Mesh key="Tensegrity"
-                                 geometry={this.props.tensegrityState.tensegrityFabric.facesGeometry}
-                                 material={TENSEGRITY}
+                        <R3.Mesh
+                            key="Faces"
+                            geometry={tensegrityFabric.facesGeometry}
+                            material={TENSEGRITY_FACE}
                         />
+                        <R3.LineSegments
+                            key="Lines"
+                            geometry={tensegrityFabric.linesGeometry}
+                            material={TENSEGRITY_LINE}/>
                         <SurfaceComponent
                             setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
                         />
@@ -87,6 +93,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 () => {
                     const iterating = this.state.iterating
                     this.flight.update()
+                    // this.props.tensegrityState.tensegrityFabric.iterate(1)
                     if (iterating) {
                         this.forceUpdate()
                     }

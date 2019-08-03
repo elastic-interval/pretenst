@@ -9,7 +9,7 @@ import { IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-expor
 
 const PHI = 1.618
 const BAR_SPAN = PHI * 2
-const CABLE_SPAN = 0.1
+const CABLE_SPAN = 1.5
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -161,18 +161,20 @@ export function createBrick(exports: IFabricInstanceExports, trianglePoints?: Ve
     const points = xform ? newPoints.map(p => p.applyMatrix4(xform)) : newPoints
     const joints = points.map((p, index) => createJoint(exports, index, p))
     const bars = BAR_ARRAY.map((bar: IBar, index: number) => {
-        const alpha = index
-        const omega = index + 1
+        const alpha = joints[index * 2]
+        const omega = joints[index * 2 + 1]
         return createBar(exports, alpha, omega, BAR_SPAN)
     })
-    const cables = TRIANGLE_ARRAY.reduce((list: Interval[], barEnds: BarEnd[]): Interval[] => {
-        list.push(createCable(exports, barEnds[0], barEnds[1], CABLE_SPAN))
-        list.push(createCable(exports, barEnds[1], barEnds[2], CABLE_SPAN))
-        list.push(createCable(exports, barEnds[2], barEnds[0], CABLE_SPAN))
-        return list
-    }, [])
+    // const cables = TRIANGLE_ARRAY.reduce((list: Interval[], barEnds: BarEnd[]): Interval[] => {
+    //     const triangleJoints = barEnds.map(barEnd => joints[barEnd])
+    //     list.push(createCable(exports, triangleJoints[0], triangleJoints[1], CABLE_SPAN))
+    //     list.push(createCable(exports, triangleJoints[1], triangleJoints[2], CABLE_SPAN))
+    //     list.push(createCable(exports, triangleJoints[2], triangleJoints[0], CABLE_SPAN))
+    //     return list
+    // }, [])
     const faces = TRIANGLE_ARRAY.map(triangle => createFace(exports, joints, triangle))
-    return {joints, bars, cables, faces}
+    exports.freshGeometry()
+    return {joints, bars, cables:[], faces}
 }
 
 export function growBrick(exports: IFabricInstanceExports, brick: IBrick, triangle: Triangle): IBrick {
@@ -209,8 +211,8 @@ function jointsToRing(joints: IJoint[]): IJoint[] {
                     closest = otherJoint
                     return
                 }
-                const otherDistance = otherJoint.location.distanceToSquared(ringEnd.location)
-                const closestDistance = closest.location.distanceToSquared(ringEnd.location)
+                const otherDistance = otherJoint.location.distanceTo(ringEnd.location)
+                const closestDistance = closest.location.distanceTo(ringEnd.location)
                 if (otherDistance < closestDistance) {
                     closest = otherJoint
                 }
@@ -235,21 +237,21 @@ export function connectBricks(exports: IFabricInstanceExports, brickA: IBrick, t
     }
     const a = TRIANGLE_ARRAY[triangleA].map(barEnd => [brickA.joints[barEnd], brickA.joints[oppositeEnd(barEnd)]]).map(toIJoint)
     const b = TRIANGLE_ARRAY[triangleB].map(barEnd => [brickB.joints[barEnd], brickB.joints[oppositeEnd(barEnd)]]).map(toIJoint)
-    const ring = jointsToRing([...a, ...b])
+    const ring = jointsToRing(a.concat(b))
     const ringCables: Interval[] = []
     const crossCables: Interval[] = []
     for (let walk = 0; walk < ring.length; walk++) {
         const joint = ring[walk]
         const nextJoint = ring[(walk + 1) % ring.length]
         ringCables.push(createCable(exports, joint.joint, nextJoint.joint, CABLE_SPAN))
-        crossCables.push(createCable(exports, joint.joint, nextJoint.opposite, CABLE_SPAN))
-        crossCables.push(createCable(exports, nextJoint.joint, joint.opposite, CABLE_SPAN))
+        // crossCables.push(createCable(exports, joint.joint, nextJoint.opposite, CABLE_SPAN))
+        // crossCables.push(createCable(exports, nextJoint.joint, joint.opposite, CABLE_SPAN))
     }
+    exports.freshGeometry()
     return {ringCables, crossCables}
 }
 
 export function brickToString(exports: IFabricInstanceExports, brick: IBrick): string {
-    exports.freshGeometry()
     // const points = brick.joints.map(joint => exports.getJointLocation(joint))
     // const minHeight = points.reduce((height, point) => Math.min(height, point.y), Number.POSITIVE_INFINITY).toFixed(3)
     // const maxHeight = points.reduce((height, point) => Math.max(height, point.y), Number.NEGATIVE_INFINITY).toFixed(3)
@@ -275,7 +277,6 @@ export function brickToString(exports: IFabricInstanceExports, brick: IBrick): s
         }
     }
 
-    exports.freshGeometry()
     const points = brick.joints.map(joint => exports.getJointLocation(joint))
     const joints = points.map(vectorToString(2)).join("\n")
     const minHeight = points.reduce((height, point) => Math.min(height, point.y), Number.POSITIVE_INFINITY).toFixed(3)
