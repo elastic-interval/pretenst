@@ -55,6 +55,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
             this.flight = new Flight(orbitControls)
             this.flight.setupCamera(TensegrityFlightState())
             this.flight.enabled = true
+            this.props.tensegrityState.tensegrityFabric.iterate(10)
             this.beginAnimating()
         }
     }

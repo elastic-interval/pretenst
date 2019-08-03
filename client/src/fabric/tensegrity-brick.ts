@@ -174,7 +174,7 @@ export function createBrick(exports: IFabricInstanceExports, trianglePoints?: Ve
     // }, [])
     const faces = TRIANGLE_ARRAY.map(triangle => createFace(exports, joints, triangle))
     exports.freshGeometry()
-    return {joints, bars, cables:[], faces}
+    return {joints, bars, cables: [], faces}
 }
 
 export function growBrick(exports: IFabricInstanceExports, brick: IBrick, triangle: Triangle): IBrick {
@@ -192,6 +192,7 @@ interface IJoint {
     joint: Joint
     location: Vector3
     opposite: Joint
+    oppositeLocation: Vector3
 }
 
 function jointsToRing(joints: IJoint[]): IJoint[] {
@@ -233,6 +234,7 @@ export function connectBricks(exports: IFabricInstanceExports, brickA: IBrick, t
             joint: joints[0],
             location: exports.getJointLocation(joints[0]),
             opposite: joints[1],
+            oppositeLocation: exports.getJointLocation(joints[1]),
         }
     }
     const a = TRIANGLE_ARRAY[triangleA].map(barEnd => [brickA.joints[barEnd], brickA.joints[oppositeEnd(barEnd)]]).map(toIJoint)
@@ -241,11 +243,14 @@ export function connectBricks(exports: IFabricInstanceExports, brickA: IBrick, t
     const ringCables: Interval[] = []
     const crossCables: Interval[] = []
     for (let walk = 0; walk < ring.length; walk++) {
+        const prevJoint = ring[(walk + ring.length - 1) % ring.length]
         const joint = ring[walk]
         const nextJoint = ring[(walk + 1) % ring.length]
         ringCables.push(createCable(exports, joint.joint, nextJoint.joint, CABLE_SPAN))
-        // crossCables.push(createCable(exports, joint.joint, nextJoint.opposite, CABLE_SPAN))
-        // crossCables.push(createCable(exports, nextJoint.joint, joint.opposite, CABLE_SPAN))
+        const prevOpposite = joint.location.distanceTo(prevJoint.oppositeLocation)
+        const nextOpposite = joint.location.distanceTo(nextJoint.oppositeLocation)
+        const opposite = (prevOpposite < nextOpposite) ? prevJoint.opposite : nextJoint.opposite
+        crossCables.push(createCable(exports, joint.joint, opposite, CABLE_SPAN))
     }
     exports.freshGeometry()
     return {ringCables, crossCables}
