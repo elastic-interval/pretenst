@@ -6,7 +6,7 @@
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { Direction, IFabricInstanceExports } from "./fabric-exports"
-import { TensegrityBrick } from "./tensegrity-brick"
+import { brickToString, createBrick, growBrick, IBrick, Triangle } from "./tensegrity-brick"
 
 export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
@@ -14,8 +14,16 @@ export class TensegrityFabric {
     constructor(private exports: IFabricInstanceExports) {
     }
 
-    public createBrick(): TensegrityBrick {
-        return new TensegrityBrick(this.exports)
+    public createBrick(): IBrick {
+        return createBrick(this.exports)
+    }
+
+    public growBrick(brick: IBrick, triangle: Triangle): IBrick {
+        return growBrick(this.exports, brick, triangle)
+    }
+
+    public brickToString(brick: IBrick): string {
+        return brickToString(this.exports, brick)
     }
 
     public get isResting(): boolean {

@@ -9,7 +9,7 @@ import { PerspectiveCamera } from "three"
 import { IFabricExports } from "./fabric/fabric-exports"
 import { createFabricKernel, FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
-import { TensegrityBrick, Triangle } from "./fabric/tensegrity-brick"
+import { IBrick, Triangle } from "./fabric/tensegrity-brick"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import { MAX_POPULATION } from "./gotchi/evolution"
 import { updateDimensions } from "./state/app-state"
@@ -42,18 +42,17 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
             throw new Error()
         }
         if (tensegrityFabric) {
-            const grow = (tb: TensegrityBrick, triangle: Triangle): TensegrityBrick => {
-                const grown = tb.grow(triangle)
-                console.log(`${Triangle[triangle]}:${triangle}`, grown.toString())
+            const grow = (tBrick: IBrick, triangle: Triangle): IBrick => {
+                const grown = tensegrityFabric.growBrick(tBrick, triangle)
+                console.log(`${Triangle[triangle]}:${triangle}`, tensegrityFabric.brickToString(grown))
                 return grown
             }
             const firstBrick = tensegrityFabric.createBrick()
-            // grow(firstBrick, Triangle.PPP)
-            // grow(grow(firstBrick, Triangle.PPN), Triangle.PPP)
-            console.log("tensegrityBrick", tensegrityFabric.toString())
-            for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
-                grow(grow(firstBrick, triangle), Triangle.PPP)
-            }
+            grow(firstBrick, Triangle.PPP)
+            // grow(grow(firstBrick, Triangle.PPP), Triangle.PPP)
+            // for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
+            //     grow(grow(firstBrick, triangle), Triangle.PPP)
+            // }
         }
         const width = window.innerWidth
         const height = window.innerHeight
