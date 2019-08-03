@@ -7,17 +7,6 @@ import { Matrix4, Vector3 } from "three"
 
 import { IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-exports"
 
-export enum Triangle {
-    NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP,
-}
-
-export interface IBrick {
-    joints: Joint[]
-    bars: Interval[]
-    cables: Interval[]
-    faces: IFace[]
-}
-
 const PHI = 1.618
 const BAR_SPAN = PHI * 2
 const CABLE_SPAN = 0.1
@@ -72,6 +61,10 @@ const BAR_ARRAY: IBar[] = [
     {alpha: brickPoint(Ray.YN, Ray.ZN), omega: brickPoint(Ray.YP, Ray.ZN)},
 ]
 
+export enum Triangle {
+    NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP,
+}
+
 const TRIANGLE_ARRAY: BarEnd[][] = [
     /*NNN*/ [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA],
     /*PNN*/ [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO], // NNN share XNA
@@ -84,11 +77,6 @@ const TRIANGLE_ARRAY: BarEnd[][] = [
 ]
 
 // const NNN_OPPOSITES = TRIANGLE_ARRAY[Triangle.NNN].map(oppositeEnd)
-
-// interface IBrickConnector {
-//     trianglePoints: Vector3[]
-//     opposites: BarEnd[]
-// }
 
 function createBrickPoints(): Vector3[] {
     const copyBarPoints = (vectors: Vector3[], bar: IBar): Vector3[] => {
@@ -160,6 +148,13 @@ function createFace(exports: IFabricInstanceExports, joints: Joint[], barEnds: B
         index: exports.createFace(faceJoints[0], faceJoints[1], faceJoints[2]),
         joints: faceJoints,
     }
+}
+
+export interface IBrick {
+    joints: Joint[]
+    bars: Interval[]
+    cables: Interval[]
+    faces: IFace[]
 }
 
 export function createBrick(exports: IFabricInstanceExports, trianglePoints?: Vector3[]): IBrick {
