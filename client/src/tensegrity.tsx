@@ -48,7 +48,9 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
                 return grown
             }
             const firstBrick = tensegrityFabric.createBrick()
-            grow(firstBrick, Triangle.PPP)
+            const secondBrick = grow(firstBrick, Triangle.PPP)
+            const connector = tensegrityFabric.connectBricks(firstBrick, Triangle.PPP, secondBrick, Triangle.NNN)
+            console.log("connector", tensegrityFabric.connectorToString(connector))
             // grow(grow(firstBrick, Triangle.PPP), Triangle.PPP)
             // for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
             //     grow(grow(firstBrick, triangle), Triangle.PPP)

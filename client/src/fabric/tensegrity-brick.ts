@@ -43,9 +43,9 @@ enum BarEnd {
     XPA = 0, XPO, XNA, XNO, YPA, YPO, YNA, YNO, ZPA, ZPO, ZNA, ZNO,
 }
 
-// function oppositeEnd(barEnd: BarEnd): BarEnd {
-//     return barEnd % 2 === 0 ? barEnd + 1 : barEnd - 1
-// }
+export function oppositeEnd(barEnd: BarEnd): BarEnd {
+    return barEnd % 2 === 0 ? barEnd + 1 : barEnd - 1
+}
 
 interface IBar {
     alpha: Vector3
@@ -75,8 +75,6 @@ const TRIANGLE_ARRAY: BarEnd[][] = [
     /*PPN*/ [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO], // PPP share ZPO
     /*PPP*/ [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
 ]
-
-// const NNN_OPPOSITES = TRIANGLE_ARRAY[Triangle.NNN].map(oppositeEnd)
 
 function createBrickPoints(): Vector3[] {
     const copyBarPoints = (vectors: Vector3[], bar: IBar): Vector3[] => {
@@ -124,7 +122,7 @@ function baseOnTriangle(trianglePoints: Vector3[]): Matrix4 {
     return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
 }
 
-function createJoint(exports: IFabricInstanceExports,jointTag: JointTag, location: Vector3): Joint {
+function createJoint(exports: IFabricInstanceExports, jointTag: JointTag, location: Vector3): Joint {
     return exports.createJoint(jointTag, Laterality.BILATERAL_RIGHT, location.x, location.y, location.z)
 }
 
@@ -183,6 +181,73 @@ export function growBrick(exports: IFabricInstanceExports, brick: IBrick, triang
     return createBrick(exports, trianglePoints)
 }
 
+export interface IBrickConnector {
+    ringCables: Interval[]
+    crossCables: Interval[]
+}
+
+interface IJoint {
+    joint: Joint
+    location: Vector3
+    opposite: Joint
+}
+
+function jointsToRing(joints: IJoint[]): IJoint[] {
+    const ring: IJoint[] = []
+    while (joints.length > 0) {
+        const ringEnd = ring[ring.length - 1]
+        if (!ringEnd) {
+            const anyJoint = joints.pop()
+            if (!anyJoint) {
+                throw new Error()
+            }
+            ring.push(anyJoint)
+        } else {
+            let closest: IJoint | undefined
+            joints.forEach(otherJoint => {
+                if (!closest) {
+                    closest = otherJoint
+                    return
+                }
+                const otherDistance = otherJoint.location.distanceToSquared(ringEnd.location)
+                const closestDistance = closest.location.distanceToSquared(ringEnd.location)
+                if (otherDistance < closestDistance) {
+                    closest = otherJoint
+                }
+            })
+            if (!closest) {
+                throw new Error()
+            }
+            ring.push(closest)
+            joints = joints.filter(j => closest && j.joint !== closest.joint)
+        }
+    }
+    return ring
+}
+
+export function connectBricks(exports: IFabricInstanceExports, brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
+    const toIJoint = (joints: Joint[]): IJoint => {
+        return {
+            joint: joints[0],
+            location: exports.getJointLocation(joints[0]),
+            opposite: joints[1],
+        }
+    }
+    const a = TRIANGLE_ARRAY[triangleA].map(barEnd => [brickA.joints[barEnd], brickA.joints[oppositeEnd(barEnd)]]).map(toIJoint)
+    const b = TRIANGLE_ARRAY[triangleB].map(barEnd => [brickB.joints[barEnd], brickB.joints[oppositeEnd(barEnd)]]).map(toIJoint)
+    const ring = jointsToRing([...a, ...b])
+    const ringCables: Interval[] = []
+    const crossCables: Interval[] = []
+    for (let walk = 0; walk < ring.length; walk++) {
+        const joint = ring[walk]
+        const nextJoint = ring[(walk + 1) % ring.length]
+        ringCables.push(createCable(exports, joint.joint, nextJoint.joint, CABLE_SPAN))
+        crossCables.push(createCable(exports, joint.joint, nextJoint.opposite, CABLE_SPAN))
+        crossCables.push(createCable(exports, nextJoint.joint, joint.opposite, CABLE_SPAN))
+    }
+    return {ringCables, crossCables}
+}
+
 export function brickToString(exports: IFabricInstanceExports, brick: IBrick): string {
     exports.freshGeometry()
     // const points = brick.joints.map(joint => exports.getJointLocation(joint))
@@ -219,4 +284,16 @@ export function brickToString(exports: IFabricInstanceExports, brick: IBrick): s
     const cables = brick.cables.map(intervalToString(2)).join("\n")
     const faces = brick.faces.map(faceToString(2)).join("\n")
     return `Brick{\n\theight ${minHeight} to ${maxHeight}\n\n\tjoints:\n${joints}\n\tbars:\n${bars}\n\tcables:\n${cables}\n\tfaces:\n${faces}`
+}
+
+export function connectorToString(exports: IFabricInstanceExports, connector: IBrickConnector): string {
+    function intervalToString(indent: number): (interval: Interval) => string {
+        return (interval: Interval) => {
+            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
+        }
+    }
+
+    const ringCables = connector.ringCables.map(intervalToString(2)).join("\n")
+    const crossCables = connector.crossCables.map(intervalToString(2)).join("\n")
+    return `Connector{\n\tringCables:\n${ringCables}\n\tcrossCables:\n${crossCables}\n}`
 }
