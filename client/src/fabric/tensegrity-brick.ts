@@ -7,6 +7,15 @@ import { Matrix4, Vector3 } from "three"
 
 import { IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-exports"
 
+export function vectorToString(indent: number): (vector: Vector3) => string {
+    return vector => {
+        const x = vector.x.toFixed(3)
+        const y = vector.y.toFixed(3)
+        const z = vector.z.toFixed(3)
+        return `${"\t".repeat(indent)}(${x},${y},${z})`
+    }
+}
+
 const PHI = 1.618
 const BAR_SPAN = PHI * 2
 const CABLE_SPAN = 0.1
@@ -114,7 +123,7 @@ function baseOnTriangle(trianglePoints: Vector3[]): Matrix4 {
     const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
     const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
     const z = u.sub(proj).normalize()
-    const y = new Vector3().crossVectors(x, z).normalize()
+    const y = new Vector3().crossVectors(z, x).normalize()
     return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
 }
 
@@ -145,7 +154,7 @@ export class TensegrityBrick {
 
     public grow(triangle: Triangle): TensegrityBrick {
         const faceJoints = this.faces[triangle].joints
-        const trianglePoints = faceJoints.map(joint => this.exports.getJointLocation(joint)).reverse()
+        const trianglePoints = faceJoints.map(joint => this.exports.getJointLocation(joint))
         return new TensegrityBrick(this.exports, trianglePoints)
     }
 

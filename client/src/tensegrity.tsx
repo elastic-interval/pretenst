@@ -48,12 +48,12 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
                 return grown
             }
             const firstBrick = tensegrityFabric.createBrick()
-            grow(firstBrick, Triangle.PPN)
-            // grow(grow(firstBrick, Triangle.PPP), Triangle.PPP)
+            // grow(firstBrick, Triangle.PPP)
+            // grow(grow(firstBrick, Triangle.PPN), Triangle.PPP)
             console.log("tensegrityBrick", tensegrityFabric.toString())
-            // for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
-            //     grow(firstBrick, triangle)
-            // }
+            for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
+                grow(grow(firstBrick, triangle), Triangle.PPP)
+            }
         }
         const width = window.innerWidth
         const height = window.innerHeight

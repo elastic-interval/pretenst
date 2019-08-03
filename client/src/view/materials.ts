@@ -30,4 +30,11 @@ export const GOTCHI_ARROW = new LineBasicMaterial({color: new Color("magenta")})
 
 export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow")})
 
+export const SURFACE = new MeshPhongMaterial({
+    color: new Color("silver"),
+    lights: true,
+    opacity: 0.7,
+    transparent: true,
+})
+
 export const TENSEGRITY = new MeshPhongMaterial({lights: true, color: new Color("white"), side: DoubleSide})

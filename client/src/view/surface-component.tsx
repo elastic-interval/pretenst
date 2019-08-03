@@ -9,7 +9,7 @@ import { Color, Face3, Geometry, Mesh, Vector3 } from "three"
 
 import { HEXAGON_POINTS, LAND_NORMAL_SPREAD, SIX, SURFACE_LAND_COLOR, UP } from "../island/constants"
 
-import { ISLAND } from "./materials"
+import { SURFACE } from "./materials"
 import { MeshKey } from "./spot-selector"
 
 const SUN_POSITION = new Vector3(0, 600, 0)
@@ -34,7 +34,7 @@ export class SurfaceComponent extends React.Component<ISurfaceComponentProps, ob
     public render(): JSX.Element | boolean {
         return (
             <R3.Object3D key="surface">
-                <R3.Mesh name="Spots" geometry={this.spots} material={ISLAND}/>
+                <R3.Mesh name="Spots" geometry={this.spots} material={SURFACE}/>
                 <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
                 <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
             </R3.Object3D>
