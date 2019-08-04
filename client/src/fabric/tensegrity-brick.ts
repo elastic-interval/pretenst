@@ -75,13 +75,22 @@ const TRIANGLE_ARRAY: BarEnd[][] = [
     /*PPP*/ [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
 ]
 
-function createBrickPoints(): Vector3[] {
+function createBrickPoints(seed: boolean): Vector3[] {
     const copyBarPoints = (vectors: Vector3[], bar: IBar): Vector3[] => {
         vectors.push(new Vector3().add(bar.alpha))
         vectors.push(new Vector3().add(bar.omega))
         return vectors
     }
     const points = BAR_ARRAY.reduce(copyBarPoints, [])
+    if (seed) {
+        points.forEach(p => {
+            const xx = p.x
+            p.x = p.z
+            p.y += PHI
+            p.z = xx
+        })
+        return points
+    }
     const trianglePoints = TRIANGLE_ARRAY[Triangle.NNN].map((barEnd: BarEnd) => points[barEnd]).reverse()
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
@@ -155,9 +164,8 @@ export interface IBrick {
 }
 
 export function createBrick(exports: IFabricInstanceExports, trianglePoints?: Vector3[]): IBrick {
-    const newPoints = createBrickPoints()
     const xform = trianglePoints ? baseOnTriangle(trianglePoints) : undefined
-    const points = xform ? newPoints.map(p => p.applyMatrix4(xform)) : newPoints
+    const points = xform ? createBrickPoints(false).map(p => p.applyMatrix4(xform)) : createBrickPoints(false)
     const joints = points.map((p, index) => createJoint(exports, index, p))
     const bars = BAR_ARRAY.map((bar: IBar, index: number) => {
         const alpha = joints[index * 2]
@@ -252,7 +260,7 @@ export function connectBricks(exports: IFabricInstanceExports, brickA: IBrick, t
         const nextOpposite = joint.location.distanceTo(nextJoint.oppositeLocation)
         if (prevOpposite < nextOpposite) {
             crossCables.push(createCable(exports, joint.joint, prevJoint.opposite, span * 3))
-        }else {
+        } else {
             crossCables.push(createCable(exports, joint.joint, nextJoint.opposite, span * 3))
         }
     }

@@ -42,13 +42,18 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
             throw new Error()
         }
         if (tensegrityFabric) {
-            const firstBrick = tensegrityFabric.createBrick()
-            const secondBrick = tensegrityFabric.growBrick(firstBrick, Triangle.PPP)
-            const connector = tensegrityFabric.connectBricks(firstBrick, Triangle.PPP, secondBrick, Triangle.NNN)
-            console.log("connector", tensegrityFabric.connectorToString(connector))
-            // grow(grow(firstBrick, Triangle.PPP), Triangle.PPP)
+            const brick0 = tensegrityFabric.createBrick()
+            const brick1 = tensegrityFabric.growBrick(brick0, Triangle.PPP)
+            const brick2 = tensegrityFabric.growBrick(brick1, Triangle.PPP)
+            const connector01 = tensegrityFabric.connectBricks(brick0, Triangle.PPP, brick1, Triangle.NNN)
+            const connector12 = tensegrityFabric.connectBricks(brick1, Triangle.PPP, brick2, Triangle.NNN)
+            console.log("connector",
+                tensegrityFabric.connectorToString(connector01),
+                tensegrityFabric.connectorToString(connector12),
+            )
+            // grow(grow(brick0, Triangle.PPP), Triangle.PPP)
             // for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
-            //     grow(grow(firstBrick, triangle), Triangle.PPP)
+            //     grow(grow(brick0, triangle), Triangle.PPP)
             // }
         }
         const width = window.innerWidth
