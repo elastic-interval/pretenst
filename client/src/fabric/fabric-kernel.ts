@@ -227,6 +227,10 @@ class InstanceExports implements IFabricInstanceExports {
         return this.ex.createInterval(alphaIndex, omegaIndex, idealSpan, intervalRole, growing)
     }
 
+    public removeInterval(intervalIndex: number): void {
+        this.ex.removeInterval(intervalIndex)
+    }
+
     public createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number {
         return this.ex.createJoint(jointTag, laterality, x, y, z)
     }

@@ -641,6 +641,15 @@ export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32,
     return intervalIndex
 }
 
+export function removeInterval(intervalIndex: u16): void {
+    let intervalCount = getIntervalCount()
+    while (intervalIndex < intervalCount) {
+        copyIntervalFromOffset(intervalIndex, 1)
+        intervalIndex++
+    }
+    setIntervalCount(intervalCount - 1)
+}
+
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset
     setAlphaIndex(intervalIndex, getAlphaIndex(nextIndex))
