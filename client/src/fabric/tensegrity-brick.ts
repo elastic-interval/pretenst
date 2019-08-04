@@ -9,7 +9,6 @@ import { IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-expor
 
 const PHI = 1.618
 const BAR_SPAN = PHI * 2
-const CABLE_SPAN = 1.5
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -165,16 +164,17 @@ export function createBrick(exports: IFabricInstanceExports, trianglePoints?: Ve
         const omega = joints[index * 2 + 1]
         return createBar(exports, alpha, omega, BAR_SPAN)
     })
-    // const cables = TRIANGLE_ARRAY.reduce((list: Interval[], barEnds: BarEnd[]): Interval[] => {
-    //     const triangleJoints = barEnds.map(barEnd => joints[barEnd])
-    //     list.push(createCable(exports, triangleJoints[0], triangleJoints[1], CABLE_SPAN))
-    //     list.push(createCable(exports, triangleJoints[1], triangleJoints[2], CABLE_SPAN))
-    //     list.push(createCable(exports, triangleJoints[2], triangleJoints[0], CABLE_SPAN))
-    //     return list
-    // }, [])
+    const span = -0.1
+    const cables = TRIANGLE_ARRAY.reduce((list: Interval[], barEnds: BarEnd[]): Interval[] => {
+        const triangleJoints = barEnds.map(barEnd => joints[barEnd])
+        list.push(createCable(exports, triangleJoints[0], triangleJoints[1], span))
+        list.push(createCable(exports, triangleJoints[1], triangleJoints[2], span))
+        list.push(createCable(exports, triangleJoints[2], triangleJoints[0], span))
+        return list
+    }, [])
     const faces = TRIANGLE_ARRAY.map(triangle => createFace(exports, joints, triangle))
     exports.freshGeometry()
-    return {joints, bars, cables: [], faces}
+    return {joints, bars, cables, faces}
 }
 
 export function growBrick(exports: IFabricInstanceExports, brick: IBrick, triangle: Triangle): IBrick {
@@ -242,15 +242,19 @@ export function connectBricks(exports: IFabricInstanceExports, brickA: IBrick, t
     const ring = jointsToRing(a.concat(b))
     const ringCables: Interval[] = []
     const crossCables: Interval[] = []
+    const span = -0.1
     for (let walk = 0; walk < ring.length; walk++) {
         const prevJoint = ring[(walk + ring.length - 1) % ring.length]
         const joint = ring[walk]
         const nextJoint = ring[(walk + 1) % ring.length]
-        ringCables.push(createCable(exports, joint.joint, nextJoint.joint, CABLE_SPAN))
+        ringCables.push(createCable(exports, joint.joint, nextJoint.joint, span))
         const prevOpposite = joint.location.distanceTo(prevJoint.oppositeLocation)
         const nextOpposite = joint.location.distanceTo(nextJoint.oppositeLocation)
-        const opposite = (prevOpposite < nextOpposite) ? prevJoint.opposite : nextJoint.opposite
-        crossCables.push(createCable(exports, joint.joint, opposite, CABLE_SPAN))
+        if (prevOpposite < nextOpposite) {
+            crossCables.push(createCable(exports, joint.joint, prevJoint.opposite, span * 3))
+        }else {
+            crossCables.push(createCable(exports, joint.joint, nextJoint.opposite, span * 3))
+        }
     }
     exports.freshGeometry()
     return {ringCables, crossCables}

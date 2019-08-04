@@ -628,7 +628,7 @@ export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32,
     setIntervalCount(intervalCount + 1)
     setAlphaIndex(intervalIndex, alphaIndex)
     setOmegaIndex(intervalIndex, omegaIndex)
-    setIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex))
+    setIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) + idealSpan)
     setIntervalRole(intervalIndex, intervalRole)
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
         if (direction === REST_DIRECTION) {
