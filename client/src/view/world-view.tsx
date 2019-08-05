@@ -22,7 +22,7 @@ import { InitialFlightState } from "./flight-state"
 import { IslandComponent } from "./island-component"
 import { JourneyComponent } from "./journey-component"
 import { GOTCHI, GOTCHI_ARROW } from "./materials"
-import { MeshKey, SpotSelector } from "./spot-selector"
+import { MeshKey, Selector } from "./selector"
 
 interface IWorldProps {
     perspectiveCamera: PerspectiveCamera
@@ -37,13 +37,13 @@ interface IWorldState {
 export class WorldView extends React.Component<IWorldProps, IWorldState> {
     private appStateNonce = -1
     private flight: Flight
-    private spotSelector: SpotSelector
+    private selector: Selector
     private appMode = AppMode.Flying
 
     constructor(props: IWorldProps) {
         super(props)
         this.state = {iterating: false}
-        this.spotSelector = new SpotSelector(
+        this.selector = new Selector(
             this.props.perspectiveCamera,
             this.props.appState.width,
             this.props.appState.height,
@@ -54,7 +54,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
         if (prevProps.appState.width !== this.props.appState.width || prevProps.appState.height !== this.props.appState.height) {
             this.props.perspectiveCamera.aspect = this.props.appState.width / this.props.appState.height
             this.props.perspectiveCamera.updateProjectionMatrix()
-            this.spotSelector.setSize(this.props.appState.width, this.props.appState.height)
+            this.selector.setSize(this.props.appState.width, this.props.appState.height)
         }
     }
 
@@ -89,7 +89,13 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
         }
         return (
             <div id="gotchi-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
-                const spot = this.spotSelector.getSpot(island, MeshKey.SPOTS_KEY, event)
+                const spot = this.selector.select<Spot>(event, MeshKey.SPOTS_KEY, intersections => {
+                    const spots = intersections.map(intersection => {
+                        const faceName = `${MeshKey.SPOTS_KEY}:${intersection.faceIndex}`
+                        return island.spots.find(s => s.faceNames.indexOf(faceName) >= 0)
+                    })
+                    return spots.pop()
+                })
                 if (spot) {
                     this.click(spot)
                 }
@@ -99,7 +105,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                         <IslandComponent
                             user={this.props.user}
                             appState={appState}
-                            setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
+                            setMesh={(key: MeshKey, node: Mesh) => this.selector.setMesh(key, node)}
                         />
                         {!evolution ? undefined : (
                             <EvolutionComponent evolution={evolution}/>)

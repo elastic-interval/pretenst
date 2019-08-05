@@ -9,9 +9,12 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
-const MUSCLE = 0
-const BAR = 1
-const CABLE = 2
+const INTERVAL_ROLE_COUNT = 5
+const ROLE_MUSCLE: u8 = 0
+const ROLE_BAR: u8 = 1
+const ROLE_TRI_CABLE: u8 = 2
+const ROLE_RING_CABLE: u8 = 3
+const ROLE_CROSS_CABLE: u8 = 4
 
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
@@ -33,6 +36,7 @@ const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
 const LAND: u8 = 1
+const GESTATION_ELASTIC_FACTOR: f32 = 0.1
 
 // Dimensioning ================================================================================
 
@@ -158,7 +162,7 @@ export function setGravityBelowLand(factor: f32): f32 {
 
 let physicsElasticFactor: f32 = ELASTIC_FACTOR
 
-export function setElasticFactor(factor: f32): f32 {
+export function setGlobalElasticFactor(factor: f32): f32 {
     return physicsElasticFactor = ELASTIC_FACTOR * factor
 }
 
@@ -376,7 +380,17 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 // Fabric state ===============================================================================
 
-const STATE_SIZE: usize = U32 + U16 * 5 + U8 * 4 + U16 // last one is padding for multiple of 4 bytes
+const TIME_SWEEP_OFFSET = U32
+const JOINT_COUNT_OFFSET = TIME_SWEEP_OFFSET + U16
+const JOINT_TAG_COUNT_OFFSET = JOINT_COUNT_OFFSET + U16
+const INTERVAL_COUNT_OFFSET = JOINT_TAG_COUNT_OFFSET + U16
+const FACE_COUNT_OFFSET = INTERVAL_COUNT_OFFSET + U16
+const GESTATING_OFFSET = FACE_COUNT_OFFSET + U16
+const PREVIOUS_DIRECTION_OFFSET = GESTATING_OFFSET + U8
+const CURRENT_DIRECTION_OFFSET = PREVIOUS_DIRECTION_OFFSET + U8
+const NEXT_DIRECTION_OFFSET = CURRENT_DIRECTION_OFFSET + U8
+const ELASTIC_FACTOR_OFFSET = NEXT_DIRECTION_OFFSET + U8 + U16 // last one is padding for multiple of 4 bytes
+const STATE_SIZE = ELASTIC_FACTOR_OFFSET * INTERVAL_ROLE_COUNT * F32
 
 function setAge(value: u32): void {
     setU32(statePtr, value)
@@ -387,27 +401,27 @@ export function getAge(): u32 {
 }
 
 function setTimeSweep(value: u16): void {
-    setU16(statePtr + U32, value)
+    setU16(statePtr + TIME_SWEEP_OFFSET, value)
 }
 
 function getTimeSweep(): u16 {
-    return getU16(statePtr + U32)
+    return getU16(statePtr + TIME_SWEEP_OFFSET)
 }
 
 export function getJointCount(): u16 {
-    return getU16(statePtr + U32 + U16)
+    return getU16(statePtr + JOINT_COUNT_OFFSET)
 }
 
 function setJointCount(value: u16): void {
-    setU16(statePtr + U32 + U16, value)
+    setU16(statePtr + JOINT_COUNT_OFFSET, value)
 }
 
 function getJointTagCount(): u16 {
-    return getU16(statePtr + U32 + U16 * 2)
+    return getU16(statePtr + JOINT_TAG_COUNT_OFFSET)
 }
 
 function setJointTagCount(value: u16): void {
-    setU16(statePtr + U32 + U16 * 2, value)
+    setU16(statePtr + JOINT_TAG_COUNT_OFFSET, value)
 }
 
 export function nextJointTag(): u16 {
@@ -417,51 +431,61 @@ export function nextJointTag(): u16 {
 }
 
 export function getIntervalCount(): u16 {
-    return getU16(statePtr + U32 + U16 * 3)
+    return getU16(statePtr + INTERVAL_COUNT_OFFSET)
 }
 
 function setIntervalCount(value: u16): void {
-    setU16(statePtr + U32 + U16 * 3, value)
+    setU16(statePtr + INTERVAL_COUNT_OFFSET, value)
 }
 
 export function getFaceCount(): u16 {
-    return getU16(statePtr + U32 + U16 * 4)
+    return getU16(statePtr + FACE_COUNT_OFFSET)
 }
 
 function setFaceCount(value: u16): void {
-    setU16(statePtr + U32 + U16 * 4, value)
+    setU16(statePtr + FACE_COUNT_OFFSET, value)
 }
 
 export function getGestating(): u8 {
-    return getU8(statePtr + U32 + U16 * 5)
+    return getU8(statePtr + GESTATING_OFFSET)
 }
 
 function setGestating(value: u8): void {
-    setU8(statePtr + U32 + U16 * 5, value)
+    setU8(statePtr + GESTATING_OFFSET, value)
 }
 
 function getPreviousDirection(): u8 {
-    return getU8(statePtr + U32 + U16 * 5 + U8)
+    return getU8(statePtr + PREVIOUS_DIRECTION_OFFSET)
 }
 
 function setPreviousDirection(value: u8): void {
-    setU8(statePtr + U32 + U16 * 5 + U8, value)
+    setU8(statePtr + PREVIOUS_DIRECTION_OFFSET, value)
 }
 
 export function getCurrentDirection(): u8 {
-    return getU8(statePtr + U32 + U16 * 5 + U8 * 2)
+    return getU8(statePtr + CURRENT_DIRECTION_OFFSET)
 }
 
 function setCurrentDirection(value: u8): void {
-    setU8(statePtr + U32 + U16 * 5 + U8 * 2, value)
+    setU8(statePtr + CURRENT_DIRECTION_OFFSET, value)
 }
 
 export function getNextDirection(): u8 {
-    return getU8(statePtr + U32 + U16 * 5 + U8 * 3)
+    return getU8(statePtr + NEXT_DIRECTION_OFFSET)
 }
 
 export function setNextDirection(value: u8): void {
-    setU8(statePtr + U32 + U16 * 5 + U8 * 3, value)
+    setU8(statePtr + NEXT_DIRECTION_OFFSET, value)
+}
+
+export function setElasticFactor(intervalRole: u8, factor: f32): f32 {
+    let elasticFactor = ELASTIC_FACTOR * factor
+    setF32(statePtr + ELASTIC_FACTOR_OFFSET + intervalRole * F32, elasticFactor)
+    return elasticFactor
+}
+
+export function getElasticFactor(intervalRole: u8): f32 {
+    return getF32(statePtr + ELASTIC_FACTOR_OFFSET + intervalRole * F32)
 }
 
 export function reset(): void {
@@ -475,6 +499,9 @@ export function reset(): void {
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
+    for (let role = 0; role < INTERVAL_ROLE_COUNT; role++) {
+        setElasticFactor(role, 1)
+    }
 }
 
 // Joints =====================================================================================
@@ -628,7 +655,7 @@ export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32,
     setIntervalCount(intervalCount + 1)
     setAlphaIndex(intervalIndex, alphaIndex)
     setOmegaIndex(intervalIndex, omegaIndex)
-    setIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) + idealSpan)
+    setIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) * -idealSpan)
     setIntervalRole(intervalIndex, intervalRole)
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
         if (direction === REST_DIRECTION) {
@@ -1066,28 +1093,14 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 // Physics =====================================================================================
 
-function elastic(intervalIndex: u16, elasticFactor: f32): void {
-    let idealSpan = interpolateCurrentSpan(intervalIndex)
-    let canPush = true
-    let stressFactor: f32 = 0
-    switch (getIntervalRole(intervalIndex)) {
-        case MUSCLE:
-            stressFactor = idealSpan * idealSpan
-            break
-        case BAR:
-            stressFactor = 1
-            break
-        case CABLE:
-            stressFactor = 1
-            canPush = false
-            break
-    }
-    let stress = elasticFactor * (calculateSpan(intervalIndex) - idealSpan) * stressFactor
+function elastic(intervalIndex: u16, elasticFactor: f32, canPush: boolean): void {
+    let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
+    let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
     if (canPush || stress > 0) {
         addScaledVector(forcePtr(getAlphaIndex(intervalIndex)), unitPtr(intervalIndex), stress / 2)
         addScaledVector(forcePtr(getOmegaIndex(intervalIndex)), unitPtr(intervalIndex), -stress / 2)
     }
-    let mass = idealSpan * idealSpan * idealSpan
+    let mass = currentIdealSpan * currentIdealSpan * currentIdealSpan
     let alphaMass = intervalMassPtr(getAlphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = intervalMassPtr(getOmegaIndex(intervalIndex))
@@ -1130,7 +1143,11 @@ function tick(): void {
     let gestating = getGestating()
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        elastic(intervalIndex, gestating ? physicsElasticFactor * 0.1 : physicsElasticFactor)
+        let intervalRole = getIntervalRole(intervalIndex)
+        let baseFactor = getElasticFactor(intervalRole) * physicsElasticFactor
+        let canPush = (intervalRole <= ROLE_BAR)
+        let elasticFactor = gestating ? GESTATION_ELASTIC_FACTOR * baseFactor : baseFactor
+        elastic(intervalIndex, elasticFactor, canPush)
     }
     let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {

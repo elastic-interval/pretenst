@@ -20,7 +20,9 @@ export enum Direction {
 export enum IntervalRole {
     MUSCLE = 0,
     BAR = 1,
-    CABLE = 2,
+    TRI_CABLE = 2,
+    RING_CABLE = 3,
+    CROSS_CABLE = 4,
 }
 
 export enum Laterality {
@@ -55,7 +57,7 @@ export interface IFabricExports {
 
     setGravityBelowWater(factor: number): number
 
-    setElasticFactor(factor: number): number
+    setGlobalElasticFactor(factor: number): number
 
     setMaxSpanVariation(factor: number): number
 
@@ -86,6 +88,8 @@ export interface IFabricExports {
     centralize(): void
 
     setAltitude(altitude: number): number
+
+    setElasticFactor(intervalRole: IntervalRole, factor: number): number
 
     endGestation(): void
 
@@ -163,6 +167,8 @@ export interface IFabricInstanceExports {
     getNextDirection(): Direction
 
     setNextDirection(direction: Direction): void
+
+    setElasticFactor(intervalRole: IntervalRole, factor: number): number
 
     iterate(ticks: number): boolean
 

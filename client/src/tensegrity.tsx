@@ -35,13 +35,14 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
 
     constructor(props: ITensegrityProps) {
         super(props)
-        this.physics.applyToFabric(props.fabricExports)
+        this.physics.applyGlobal(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, 500)
         const tensegrityFabric = this.fabricKernel.createTensegrityFabric()
         if (!tensegrityFabric) {
             throw new Error()
         }
         if (tensegrityFabric) {
+            tensegrityFabric.applyPhysics(this.physics)
             const brick0 = tensegrityFabric.createBrick()
             const brick1 = tensegrityFabric.growBrick(brick0, Triangle.PPP)
             const brick2 = tensegrityFabric.growBrick(brick1, Triangle.PPP)

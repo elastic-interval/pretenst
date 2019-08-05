@@ -12,7 +12,6 @@ import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
 import { GotchiBody } from "./gotchi-body"
-import { SpinalTensegrity } from "./spinal-tensegrity"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const FLOATS_IN_VECTOR = 3
@@ -109,14 +108,6 @@ export class FabricKernel implements IGotchiFactory {
             ))
             this.instanceUsed.push(false)
         }
-    }
-
-    public createSpinalTensegrity(): SpinalTensegrity | undefined {
-        const newInstance = this.allocateInstance()
-        if (!newInstance) {
-            return undefined
-        }
-        return new SpinalTensegrity(newInstance)
     }
 
     public createTensegrityFabric(): TensegrityFabric | undefined {
@@ -305,6 +296,10 @@ class InstanceExports implements IFabricInstanceExports {
 
     public setNextDirection(direction: Direction): void {
         this.ex.setNextDirection(direction)
+    }
+
+    public setElasticFactor(intervalRole: IntervalRole, factor: number): number {
+        return this.ex.setElasticFactor(intervalRole, factor)
     }
 
     public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {

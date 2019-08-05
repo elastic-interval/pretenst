@@ -6,6 +6,7 @@
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { Direction, IFabricInstanceExports } from "./fabric-exports"
+import { Physics } from "./physics"
 import {
     brickToString,
     connectBricks,
@@ -22,6 +23,10 @@ export class TensegrityFabric {
     private linesGeometryStored: BufferGeometry | undefined
 
     constructor(private exports: IFabricInstanceExports) {
+    }
+
+    public applyPhysics(physics: Physics): object {
+        return physics.applyLocal(this.exports)
     }
 
     public createBrick(): IBrick {
@@ -42,6 +47,11 @@ export class TensegrityFabric {
 
     public connectorToString(connector: IBrickConnector): string {
         return connectorToString(this.exports, connector)
+    }
+
+    public findTriangle(triangleName: string): object | undefined {
+        console.log("find", triangleName)
+        return undefined
     }
 
     public get isResting(): boolean {
@@ -153,5 +163,6 @@ export class TensegrityFabric {
     public setAltitude(altitude: number): number {
         return this.exports.setAltitude(altitude)
     }
+
 }
 

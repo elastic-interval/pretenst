@@ -21,7 +21,7 @@ import {
     ISLAND,
     SELECTED_POINTER,
 } from "./materials"
-import { MeshKey } from "./spot-selector"
+import { MeshKey } from "./selector"
 
 const SUN_POSITION = new Vector3(0, 600, 0)
 const POINTER_TOP = new Vector3(0, 120, 0)

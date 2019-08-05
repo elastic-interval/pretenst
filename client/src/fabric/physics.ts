@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IFabricExports } from "./fabric-exports"
+import { IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
 
 export enum PhysicsFeature {
     GravityAbove = "Gravity Above",
@@ -12,9 +12,14 @@ export enum PhysicsFeature {
     DragAbove = "Drag Above",
     DragBelowLand = "Drag Below Land",
     DragBelowWater = "Drag Below Water",
-    ElasticFactor = "Elastic Factor",
+    GlobalElasticFactor = "Global Elastic Factor",
     MaxSpanVariation = "Maximum Span Variation",
     SpanVariationSpeed = "Span Variation Speed",
+    MuscleElasticFactor = "Muscle Elastic Factor",
+    BarElasticFactor = "Bar Elastic Factor",
+    TriangleElasticFactor = "Triangle Elastic Factor",
+    RingElasticFactor = "Ring Elastic Factor",
+    CrossElasticFactor = "Cross Elastic Factor",
 }
 
 export interface IPhysicsFeature {
@@ -44,11 +49,12 @@ export class Physics {
         return this.featuresArray
     }
 
-    public applyToFabric(fabricExports: IFabricExports): object {
+    public applyGlobal(fabricExports: IFabricExports): object {
         const featureValues = {}
         this.featuresArray.forEach(physicsFeature => {
             const factor = physicsFeature.getFactor()
             let currentValue = 0
+            let ignore = false
             switch (physicsFeature.feature) {
                 case PhysicsFeature.GravityAbove:
                     currentValue = fabricExports.setGravityAbove(factor)
@@ -68,8 +74,8 @@ export class Physics {
                 case PhysicsFeature.DragBelowWater:
                     currentValue = fabricExports.setDragBelowWater(factor)
                     break
-                case PhysicsFeature.ElasticFactor:
-                    currentValue = fabricExports.setElasticFactor(factor)
+                case PhysicsFeature.GlobalElasticFactor:
+                    currentValue = fabricExports.setGlobalElasticFactor(factor)
                     break
                 case PhysicsFeature.MaxSpanVariation:
                     currentValue = fabricExports.setMaxSpanVariation(factor)
@@ -78,9 +84,44 @@ export class Physics {
                     currentValue = fabricExports.setSpanVariationSpeed(factor)
                     break
                 default:
-                    throw new Error()
+                    ignore = true
             }
-            featureValues[physicsFeature.feature] = currentValue
+            if (!ignore) {
+                featureValues[physicsFeature.feature] = currentValue
+            }
+        })
+        return featureValues
+    }
+
+
+    public applyLocal(fabricExports: IFabricInstanceExports): object {
+        const featureValues = {}
+        this.featuresArray.forEach(physicsFeature => {
+            const factor = physicsFeature.getFactor()
+            let currentValue = 0
+            let ignore = false
+            switch (physicsFeature.feature) {
+                case PhysicsFeature.MuscleElasticFactor:
+                    currentValue = fabricExports.setElasticFactor(IntervalRole.MUSCLE, factor)
+                    break
+                case PhysicsFeature.BarElasticFactor:
+                    currentValue = fabricExports.setElasticFactor(IntervalRole.BAR, factor)
+                    break
+                case PhysicsFeature.TriangleElasticFactor:
+                    currentValue = fabricExports.setElasticFactor(IntervalRole.TRI_CABLE, factor)
+                    break
+                case PhysicsFeature.RingElasticFactor:
+                    currentValue = fabricExports.setElasticFactor(IntervalRole.RING_CABLE, factor)
+                    break
+                case PhysicsFeature.CrossElasticFactor:
+                    currentValue = fabricExports.setElasticFactor(IntervalRole.CROSS_CABLE, factor)
+                    break
+                default:
+                    ignore = true
+            }
+            if (!ignore) {
+                featureValues[physicsFeature.feature] = currentValue
+            }
         })
         return featureValues
     }

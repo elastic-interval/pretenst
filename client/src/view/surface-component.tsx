@@ -5,24 +5,20 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
-import { Color, Face3, Geometry, Mesh, Vector3 } from "three"
+import { Color, Face3, Geometry, Vector3 } from "three"
 
 import { HEXAGON_POINTS, LAND_NORMAL_SPREAD, SIX, SURFACE_LAND_COLOR, UP } from "../island/constants"
 
 import { SURFACE } from "./materials"
-import { MeshKey } from "./spot-selector"
+import { MeshKey } from "./selector"
 
 const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 
-export interface ISurfaceComponentProps {
-    setMesh: (key: string, ref: Mesh) => void
-}
-
-export class SurfaceComponent extends React.Component<ISurfaceComponentProps, object> {
+export class SurfaceComponent extends React.Component<object, object> {
     private spots: Geometry
 
-    constructor(props: ISurfaceComponentProps) {
+    constructor(props: object) {
         super(props)
         this.spots = this.spotsGeometry
     }

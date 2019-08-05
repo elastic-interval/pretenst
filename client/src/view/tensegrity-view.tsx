@@ -13,7 +13,7 @@ import { ITensegrityState } from "../tensegrity"
 import { Flight } from "./flight"
 import { TensegrityFlightState } from "./flight-state"
 import { TENSEGRITY_FACE, TENSEGRITY_LINE } from "./materials"
-import { MeshKey, SpotSelector } from "./spot-selector"
+import { MeshKey, Selector } from "./selector"
 import { SurfaceComponent } from "./surface-component"
 
 interface ITensegrityViewProps {
@@ -27,12 +27,12 @@ interface ITensegrityViewState {
 
 export class TensegrityView extends React.Component<ITensegrityViewProps, ITensegrityViewState> {
     private flight: Flight
-    private spotSelector: SpotSelector
+    private selector: Selector
 
     constructor(props: ITensegrityViewProps) {
         super(props)
         this.state = {iterating: true}
-        this.spotSelector = new SpotSelector(
+        this.selector = new Selector(
             this.props.perspectiveCamera,
             this.props.tensegrityState.width,
             this.props.tensegrityState.height,
@@ -43,7 +43,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
         if (prevProps.tensegrityState.width !== this.props.tensegrityState.width || prevProps.tensegrityState.height !== this.props.tensegrityState.height) {
             this.props.perspectiveCamera.aspect = this.props.tensegrityState.width / this.props.tensegrityState.height
             this.props.perspectiveCamera.updateProjectionMatrix()
-            this.spotSelector.setSize(this.props.tensegrityState.width, this.props.tensegrityState.height)
+            this.selector.setSize(this.props.tensegrityState.width, this.props.tensegrityState.height)
         }
     }
 
@@ -63,22 +63,32 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
         const tensegrityState = this.props.tensegrityState
         const tensegrityFabric = this.props.tensegrityState.tensegrityFabric
         return (
-            <div id="tensegrity-view">
+            <div id="tensegrity-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
+                const triangle = this.selector.select<object>(event, MeshKey.SPOTS_KEY, intersections => {
+                    const triangles = intersections.map(intersection => {
+                        const triangleName = `${MeshKey.TRIANGLES_KEY}:${intersection.faceIndex}`
+                        return this.props.tensegrityState.tensegrityFabric.findTriangle(triangleName)
+                    })
+                    return triangles.pop()
+                })
+                if (triangle) {
+                    this.click(triangle)
+                }
+            }}>
                 <R3.Renderer width={tensegrityState.width} height={tensegrityState.height}>
                     <R3.Scene width={tensegrityState.width} height={tensegrityState.height}
                               camera={this.props.perspectiveCamera}>
                         <R3.Mesh
-                            key="Faces"
+                            key="Triangles"
                             geometry={tensegrityFabric.facesGeometry}
                             material={TENSEGRITY_FACE}
+                            ref={(mesh: Mesh) => this.selector.setMesh(MeshKey.TRIANGLES_KEY, mesh)}
                         />
                         <R3.LineSegments
                             key="Lines"
                             geometry={tensegrityFabric.linesGeometry}
                             material={TENSEGRITY_LINE}/>
-                        <SurfaceComponent
-                            setMesh={(key: MeshKey, node: Mesh) => this.spotSelector.setMesh(key, node)}
-                        />
+                        <SurfaceComponent/>
                     </R3.Scene>
                 </R3.Renderer>
             </div>
@@ -86,6 +96,10 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
     }
 
 // =================================================================================================================
+
+    private click(triangle: object): void {
+        console.log("Click", triangle)
+    }
 
     private beginAnimating(): void {
         const step = () => {
@@ -99,7 +113,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                     }
                     requestAnimationFrame(step)
                 },
-                100,
+                10,
             )
         }
         requestAnimationFrame(step)

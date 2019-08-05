@@ -8,7 +8,6 @@ import { Matrix4, Vector3 } from "three"
 import { IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-exports"
 
 const PHI = 1.618
-const BAR_SPAN = PHI * 2
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -134,16 +133,9 @@ function createJoint(exports: IFabricInstanceExports, jointTag: JointTag, locati
     return exports.createJoint(jointTag, Laterality.BILATERAL_RIGHT, location.x, location.y, location.z)
 }
 
-function createBar(exports: IFabricInstanceExports, alpha: number, omega: number, span: number): Interval {
+function createInterval(exports: IFabricInstanceExports, alpha: number, omega: number, intervalRole: IntervalRole, span: number): Interval {
     return {
-        index: exports.createInterval(alpha, omega, span, IntervalRole.BAR, false),
-        alpha, omega, span,
-    }
-}
-
-function createCable(exports: IFabricInstanceExports, alpha: number, omega: number, span: number): Interval {
-    return {
-        index: exports.createInterval(alpha, omega, span, IntervalRole.CABLE, false),
+        index: exports.createInterval(alpha, omega, span, intervalRole, true),
         alpha, omega, span,
     }
 }
@@ -170,14 +162,15 @@ export function createBrick(exports: IFabricInstanceExports, trianglePoints?: Ve
     const bars = BAR_ARRAY.map((bar: IBar, index: number) => {
         const alpha = joints[index * 2]
         const omega = joints[index * 2 + 1]
-        return createBar(exports, alpha, omega, BAR_SPAN)
+        return createInterval(exports, alpha, omega, IntervalRole.BAR, PHI * 2)
     })
-    const span = -0.1
+    const triangleSpan = -0.8
+    const role = IntervalRole.TRI_CABLE
     const cables = TRIANGLE_ARRAY.reduce((list: Interval[], barEnds: BarEnd[]): Interval[] => {
         const triangleJoints = barEnds.map(barEnd => joints[barEnd])
-        list.push(createCable(exports, triangleJoints[0], triangleJoints[1], span))
-        list.push(createCable(exports, triangleJoints[1], triangleJoints[2], span))
-        list.push(createCable(exports, triangleJoints[2], triangleJoints[0], span))
+        list.push(createInterval(exports, triangleJoints[0], triangleJoints[1], role, triangleSpan))
+        list.push(createInterval(exports, triangleJoints[1], triangleJoints[2], role, triangleSpan))
+        list.push(createInterval(exports, triangleJoints[2], triangleJoints[0], role, triangleSpan))
         return list
     }, [])
     const faces = TRIANGLE_ARRAY.map(triangle => createFace(exports, joints, triangle))
@@ -250,18 +243,18 @@ export function connectBricks(exports: IFabricInstanceExports, brickA: IBrick, t
     const ring = jointsToRing(a.concat(b))
     const ringCables: Interval[] = []
     const crossCables: Interval[] = []
-    const span = -0.1
     for (let walk = 0; walk < ring.length; walk++) {
         const prevJoint = ring[(walk + ring.length - 1) % ring.length]
         const joint = ring[walk]
         const nextJoint = ring[(walk + 1) % ring.length]
-        ringCables.push(createCable(exports, joint.joint, nextJoint.joint, span))
+        ringCables.push(createInterval(exports, joint.joint, nextJoint.joint, IntervalRole.RING_CABLE, -0.95))
         const prevOpposite = joint.location.distanceTo(prevJoint.oppositeLocation)
         const nextOpposite = joint.location.distanceTo(nextJoint.oppositeLocation)
+        const crossSpan = -0.95
         if (prevOpposite < nextOpposite) {
-            crossCables.push(createCable(exports, joint.joint, prevJoint.opposite, span * 3))
+            crossCables.push(createInterval(exports, joint.joint, prevJoint.opposite, IntervalRole.CROSS_CABLE, crossSpan))
         } else {
-            crossCables.push(createCable(exports, joint.joint, nextJoint.opposite, span * 3))
+            crossCables.push(createInterval(exports, joint.joint, nextJoint.opposite, IntervalRole.CROSS_CABLE, crossSpan))
         }
     }
     exports.freshGeometry()
