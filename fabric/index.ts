@@ -499,7 +499,7 @@ export function reset(): void {
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
-    for (let role = 0; role < INTERVAL_ROLE_COUNT; role++) {
+    for (let role: u8 = 0; role < INTERVAL_ROLE_COUNT; role++) {
         setElasticFactor(role, 1)
     }
 }
