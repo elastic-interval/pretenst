@@ -9,7 +9,7 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
-const INTERVAL_ROLE_COUNT = 5
+const INTERVAL_ROLE_COUNT: u8 = 5
 const ROLE_MUSCLE: u8 = 0
 const ROLE_BAR: u8 = 1
 const ROLE_TRI_CABLE: u8 = 2
