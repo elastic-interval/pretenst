@@ -110,7 +110,7 @@ interface Interval {
     span: number
 }
 
-interface IFace {
+export interface IFace {
     index: number,
     joints: Joint[]
 }

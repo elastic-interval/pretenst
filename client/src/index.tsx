@@ -18,7 +18,7 @@ import { Tensegrity } from "./tensegrity"
 
 declare const getFabricExports: () => Promise<IFabricExports> // implementation: index.html
 
-const TENSEGRITY = false
+const TENSEGRITY = true
 
 console.log(`Using API at ${API_URI}`)
 const storage = new RemoteStorage(API_URI)

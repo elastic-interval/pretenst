@@ -8,6 +8,7 @@ import * as R3 from "react-three"
 import { Mesh, PerspectiveCamera } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
+import { IFace } from "../fabric/tensegrity-brick"
 import { ITensegrityState } from "../tensegrity"
 
 import { Flight } from "./flight"
@@ -55,6 +56,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
             this.flight = new Flight(orbitControls)
             this.flight.setupCamera(TensegrityFlightState())
             this.flight.enabled = true
+            this.props.tensegrityState.tensegrityFabric.iterate(150)
             this.beginAnimating()
         }
     }
@@ -64,10 +66,10 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
         const tensegrityFabric = this.props.tensegrityState.tensegrityFabric
         return (
             <div id="tensegrity-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
-                const triangle = this.selector.select<object>(event, MeshKey.SPOTS_KEY, intersections => {
+                const triangle = this.selector.select<IFace>(event, MeshKey.TRIANGLES_KEY, intersections => {
                     const triangles = intersections.map(intersection => {
-                        const triangleName = `${MeshKey.TRIANGLES_KEY}:${intersection.faceIndex}`
-                        return this.props.tensegrityState.tensegrityFabric.findTriangle(triangleName)
+                        const triangleIndex = intersection.faceIndex ? intersection.faceIndex / 3 : 0
+                        return this.props.tensegrityState.tensegrityFabric.findFace(triangleIndex)
                     })
                     return triangles.pop()
                 })
@@ -97,8 +99,8 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
 
 // =================================================================================================================
 
-    private click(triangle: object): void {
-        console.log("Click", triangle)
+    private click(triangle: IFace): void {
+        console.log(`Click ${triangle.joints}`)
     }
 
     private beginAnimating(): void {
@@ -107,7 +109,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 () => {
                     const iterating = this.state.iterating
                     this.flight.update()
-                    this.props.tensegrityState.tensegrityFabric.iterate(10)
+                    // this.props.tensegrityState.tensegrityFabric.iterate(1)
                     if (iterating) {
                         this.forceUpdate()
                     }

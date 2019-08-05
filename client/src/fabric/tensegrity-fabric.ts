@@ -15,10 +15,12 @@ import {
     growBrick,
     IBrick,
     IBrickConnector,
+    IFace,
     Triangle,
 } from "./tensegrity-brick"
 
 export class TensegrityFabric {
+    private faces: IFace[] = []
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
@@ -30,11 +32,15 @@ export class TensegrityFabric {
     }
 
     public createBrick(): IBrick {
-        return createBrick(this.exports)
+        let brick = createBrick(this.exports)
+        this.faces.push(...brick.faces)
+        return brick
     }
 
-    public growBrick(brick: IBrick, triangle: Triangle): IBrick {
-        return growBrick(this.exports, brick, triangle)
+    public growBrick(existingBrick: IBrick, triangle: Triangle): IBrick {
+        let brick = growBrick(this.exports, existingBrick, triangle)
+        this.faces.push(...brick.faces)
+        return brick
     }
 
     public connectBricks(brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
@@ -49,9 +55,9 @@ export class TensegrityFabric {
         return connectorToString(this.exports, connector)
     }
 
-    public findTriangle(triangleName: string): object | undefined {
-        console.log("find", triangleName)
-        return undefined
+    public findFace(triangleIndex: number): IFace | undefined {
+        console.log("find face", triangleIndex)
+        return this.faces[triangleIndex]
     }
 
     public get isResting(): boolean {
