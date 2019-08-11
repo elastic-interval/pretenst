@@ -63,15 +63,28 @@ export enum Triangle {
     NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP,
 }
 
-const TRIANGLE_ARRAY: BarEnd[][] = [
-    /*NNN*/ [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA],
-    /*PNN*/ [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO], // NNN share XNA
-    /*NPN*/ [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA], // NNN share YNA
-    /*NNP*/ [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA], // NNN share ZNA
-    /*NPP*/ [BarEnd.YNO, BarEnd.XPO, BarEnd.ZPA], // PPP share XPO
-    /*PNP*/ [BarEnd.YPO, BarEnd.XPA, BarEnd.ZNO], // PPP share YPO
-    /*PPN*/ [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO], // PPP share ZPO
-    /*PPP*/ [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
+export enum Ring {
+    NN = 0, // [BarEnd.ZNO, BarEnd.XPA, BarEnd.YNO, BarEnd.ZPA, BarEnd.XNO, BarEnd.YPA],
+    PN = 1, // [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNO, BarEnd.YPO, BarEnd.XPO, BarEnd.ZPA],
+    NP = 2, // [BarEnd.XNA, BarEnd.YPA, BarEnd.ZPO, BarEnd.XPO, BarEnd.YNO, BarEnd.ZNA],
+    PP = 3, // [BarEnd.YNA, BarEnd.ZNA, BarEnd.XPA, BarEnd.YPO, BarEnd.ZPO, BarEnd.XNO],
+}
+
+interface ITriangle {
+    name: Triangle
+    barEnds: BarEnd[]
+    ring: Ring[]
+}
+
+const TRIANGLE_ARRAY: ITriangle[] = [
+    {name: Triangle.NNN, barEnds: [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA], ring: [Ring.NP, Ring.PN, Ring.PP]},
+    {name: Triangle.PNN, barEnds: [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO], ring: [Ring.PN, Ring.NN, Ring.NP]},
+    {name: Triangle.NPN, barEnds: [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA], ring: [Ring.PP, Ring.NP, Ring.NN]},
+    {name: Triangle.NNP, barEnds: [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA], ring: [Ring.NN, Ring.PN, Ring.PP]},
+    {name: Triangle.NPP, barEnds: [BarEnd.YNO, BarEnd.XPO, BarEnd.ZPA], ring: [Ring.PN, Ring.NP, Ring.NN]},
+    {name: Triangle.PNP, barEnds: [BarEnd.YPO, BarEnd.XPA, BarEnd.ZNO], ring: [Ring.PP, Ring.NN, Ring.NP]},
+    {name: Triangle.PPN, barEnds: [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO], ring: [Ring.NN, Ring.PP, Ring.PN]},
+    {name: Triangle.PPP, barEnds: [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO], ring: [Ring.NP, Ring.PP, Ring.PN]},
 ]
 
 function createBrickPoints(seed: boolean): Vector3[] {
@@ -90,7 +103,7 @@ function createBrickPoints(seed: boolean): Vector3[] {
         })
         return points
     }
-    const trianglePoints = TRIANGLE_ARRAY[Triangle.NNN].map((barEnd: BarEnd) => points[barEnd]).reverse()
+    const trianglePoints = TRIANGLE_ARRAY[Triangle.NNN].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
     const y = new Vector3().sub(midpoint).normalize()
@@ -152,6 +165,7 @@ export interface IBrick {
     joints: Joint[]
     bars: Interval[]
     cables: Interval[]
+    rings: Interval[][]
     faces: IFace[]
 }
 
@@ -166,16 +180,19 @@ export function createBrick(exports: IFabricInstanceExports, trianglePoints?: Ve
     })
     const triangleSpan = -0.8
     const role = IntervalRole.TRI_CABLE
-    const cables = TRIANGLE_ARRAY.reduce((list: Interval[], barEnds: BarEnd[]): Interval[] => {
-        const triangleJoints = barEnds.map(barEnd => joints[barEnd])
-        list.push(createInterval(exports, triangleJoints[0], triangleJoints[1], role, triangleSpan))
-        list.push(createInterval(exports, triangleJoints[1], triangleJoints[2], role, triangleSpan))
-        list.push(createInterval(exports, triangleJoints[2], triangleJoints[0], role, triangleSpan))
-        return list
-    }, [])
-    const faces = TRIANGLE_ARRAY.map(triangle => createFace(exports, joints, triangle))
+    const cables: Interval[] = []
+    const rings: Interval[][] = [[], [], [], []]
+    TRIANGLE_ARRAY.forEach(triangle => {
+        const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
+        for (let walk = 0; walk < 3; walk++) {
+            const interval = createInterval(exports, triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, triangleSpan)
+            cables.push(interval)
+            rings[triangle.ring[walk]].push(interval)
+        }
+    })
+    const faces = TRIANGLE_ARRAY.map(triangle => createFace(exports, joints, triangle.barEnds))
     exports.freshGeometry()
-    return {joints, bars, cables, faces}
+    return {joints, bars, cables, rings, faces}
 }
 
 export function growBrick(exports: IFabricInstanceExports, brick: IBrick, triangle: Triangle): IBrick {
@@ -238,8 +255,8 @@ export function connectBricks(exports: IFabricInstanceExports, brickA: IBrick, t
             oppositeLocation: exports.getJointLocation(joints[1]),
         }
     }
-    const a = TRIANGLE_ARRAY[triangleA].map(barEnd => [brickA.joints[barEnd], brickA.joints[oppositeEnd(barEnd)]]).map(toIJoint)
-    const b = TRIANGLE_ARRAY[triangleB].map(barEnd => [brickB.joints[barEnd], brickB.joints[oppositeEnd(barEnd)]]).map(toIJoint)
+    const a = TRIANGLE_ARRAY[triangleA].barEnds.map(barEnd => [brickA.joints[barEnd], brickA.joints[oppositeEnd(barEnd)]]).map(toIJoint)
+    const b = TRIANGLE_ARRAY[triangleB].barEnds.map(barEnd => [brickB.joints[barEnd], brickB.joints[oppositeEnd(barEnd)]]).map(toIJoint)
     const ring = jointsToRing(a.concat(b))
     const ringCables: Interval[] = []
     const crossCables: Interval[] = []
