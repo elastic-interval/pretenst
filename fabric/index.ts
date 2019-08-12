@@ -253,10 +253,35 @@ const MAX_SPAN_VARIATION: f32 = 0.1
 const TIME_SWEEP_SPEED: f32 = 30.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
+
+export function setDragAbove(factor: f32): f32 {
+    return physicsDragAbove = DRAG_ABOVE * factor
+}
+
 let physicsGravityAbove: f32 = GRAVITY_ABOVE
+
+export function setGravityAbove(factor: f32): f32 {
+    return physicsGravityAbove = GRAVITY_ABOVE * factor
+}
+
 let physicsDragBelowWater: f32 = DRAG_BELOW_WATER
+
+export function setDragBelowWater(factor: f32): f32 {
+    return physicsDragBelowWater = DRAG_BELOW_WATER * factor
+}
+
 let physicsGravityBelowWater: f32 = GRAVITY_BELOW_WATER
+
+export function setGravityBelowWater(factor: f32): f32 {
+    return physicsGravityBelowWater = GRAVITY_BELOW_WATER * factor
+}
+
 let physicsDragBelowLand: f32 = DRAG_BELOW_LAND
+
+export function setDragBelowLand(factor: f32): f32 {
+    return physicsDragBelowLand = DRAG_BELOW_LAND * factor
+}
+
 let physicsGravityBelowLand: f32 = GRAVITY_BELOW_LAND
 let pushElasticFactor: f32 = PUSH_ELASTIC_FACTOR
 let pullElasticFactor: f32 = PULL_ELASTIC_FACTOR
