@@ -39,11 +39,11 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, object> {
                             this.applyPhysics()
                         }
                         return (
-                            <div>
+                            <div key={feature.name}>
                                 <Row>
                                     <Badge color="secondary">{feature.name}</Badge>
                                 </Row>
-                                <Row key={feature.name}>
+                                <Row>
                                     <Col xs="6">
                                         <ButtonGroup className="physics-button-group">
                                             <Button className="physics-adjust-button" color="primary"
