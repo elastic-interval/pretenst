@@ -5,10 +5,10 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
-import { Mesh, PerspectiveCamera } from "three"
+import { Mesh, PerspectiveCamera, Vector3 } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
-import { IFace, Triangle } from "../fabric/tensegrity-brick"
+import { IFace, Joint, Triangle } from "../fabric/tensegrity-brick"
 import { ITensegrityState } from "../tensegrity"
 
 import { Flight } from "./flight"
@@ -69,15 +69,29 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 if (!event.shiftKey) {
                     return
                 }
-                const face = this.selector.select<IFace>(event, MeshKey.TRIANGLES_KEY, intersections => {
-                    const triangles = intersections.map(intersection => {
+                const closestFace = this.selector.select<IFace>(event, MeshKey.TRIANGLES_KEY, intersections => {
+                    const faces = intersections.map(intersection => {
                         const triangleIndex = intersection.faceIndex ? intersection.faceIndex / 3 : 0
-                        return this.props.tensegrityState.tensegrityFabric.findFace(triangleIndex)
+                        const foundFace = tensegrityFabric.findFace(triangleIndex)
+                        if (!foundFace) {
+                            throw new Error()
+                        }
+                        return foundFace
                     })
-                    return triangles.pop()
+                    const camera = this.flight.cameraPosition
+                    const midpoint = (face: IFace): Vector3 => {
+                        return face.joints.reduce((mid: Vector3, joint: Joint) =>
+                            mid.add(tensegrityFabric.getJointLocation(joint)), new Vector3()).multiplyScalar(1.0 / 3.0)
+                    }
+                    faces.sort((a: IFace, b: IFace) => {
+                        const toA = camera.distanceToSquared(midpoint(a))
+                        const toB = camera.distanceToSquared(midpoint(b))
+                        return toA < toB ? 1 : toA > toB ? -1 : 0
+                    })
+                    return faces.pop()
                 })
-                if (face) {
-                    this.click(face)
+                if (closestFace) {
+                    this.click(closestFace)
                 }
             }}>
                 <R3.Renderer width={tensegrityState.width} height={tensegrityState.height}>

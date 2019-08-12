@@ -89,6 +89,10 @@ export class Flight {
         this.orbit.enabled = enable
     }
 
+    public get cameraPosition(): Vector3 {
+        return this.camera.position
+    }
+
     private calculateTargetToCamera(): Vector3 {
         return this.targetToCamera.subVectors(this.camera.position, this.target)
     }
