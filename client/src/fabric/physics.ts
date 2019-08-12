@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
+import {IFabricExports, IFabricInstanceExports, IntervalRole} from "./fabric-exports"
 
 export enum PhysicsFeature {
     GravityAbove = "Gravity Above",
@@ -23,9 +23,9 @@ export enum PhysicsFeature {
 }
 
 export interface IPhysicsFeature {
-    feature: PhysicsFeature
-    getFactor: () => number
+    name: PhysicsFeature
     setFactor: (factor: number) => void
+    factor: number
 }
 
 function getPhysicsFeature(feature: PhysicsFeature): number {
@@ -51,11 +51,11 @@ export class Physics {
 
     public applyGlobal(fabricExports: IFabricExports): object {
         const featureValues = {}
-        this.featuresArray.forEach(physicsFeature => {
-            const factor = physicsFeature.getFactor()
+        this.featuresArray.forEach(feature => {
+            const factor = feature.factor
             let currentValue = 0
             let ignore = false
-            switch (physicsFeature.feature) {
+            switch (feature.name) {
                 case PhysicsFeature.GravityAbove:
                     currentValue = fabricExports.setGravityAbove(factor)
                     break
@@ -87,7 +87,7 @@ export class Physics {
                     ignore = true
             }
             if (!ignore) {
-                featureValues[physicsFeature.feature] = currentValue
+                featureValues[feature.name] = currentValue
             }
         })
         return featureValues
@@ -96,11 +96,11 @@ export class Physics {
 
     public applyLocal(fabricExports: IFabricInstanceExports): object {
         const featureValues = {}
-        this.featuresArray.forEach(physicsFeature => {
-            const factor = physicsFeature.getFactor()
+        this.featuresArray.forEach(feature => {
+            const factor = feature.factor
             let currentValue = 0
             let ignore = false
-            switch (physicsFeature.feature) {
+            switch (feature.name) {
                 case PhysicsFeature.MuscleElasticFactor:
                     currentValue = fabricExports.setElasticFactor(IntervalRole.MUSCLE, factor)
                     break
@@ -120,17 +120,21 @@ export class Physics {
                     ignore = true
             }
             if (!ignore) {
-                featureValues[physicsFeature.feature] = currentValue
+                featureValues[feature.name] = currentValue
             }
         })
         return featureValues
     }
 
     private createFeature(feature: PhysicsFeature): IPhysicsFeature {
-        return {
-            feature,
-            getFactor: () => getPhysicsFeature(feature),
-            setFactor: (factor: number) => setPhysicsFeature(feature, factor),
+        const f = {
+            name: feature,
+            setFactor: (factor: number) => {
+                setPhysicsFeature(feature, factor)
+                f.factor = factor
+            },
+            factor: getPhysicsFeature(feature),
         }
+        return f
     }
 }

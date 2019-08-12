@@ -4,17 +4,18 @@
  */
 
 import * as React from "react"
-import { PerspectiveCamera } from "three"
+import {PerspectiveCamera} from "three"
 
-import { IFabricExports } from "./fabric/fabric-exports"
-import { createFabricKernel, FabricKernel } from "./fabric/fabric-kernel"
-import { Physics } from "./fabric/physics"
-import { Triangle } from "./fabric/tensegrity-brick"
-import { TensegrityFabric } from "./fabric/tensegrity-fabric"
-import { MAX_POPULATION } from "./gotchi/evolution"
-import { updateDimensions } from "./state/app-state"
-import { INITIAL_DISTANCE } from "./view/flight"
-import { TensegrityView } from "./view/tensegrity-view"
+import {IFabricExports} from "./fabric/fabric-exports"
+import {createFabricKernel, FabricKernel} from "./fabric/fabric-kernel"
+import {Physics} from "./fabric/physics"
+import {Triangle} from "./fabric/tensegrity-brick"
+import {TensegrityFabric} from "./fabric/tensegrity-fabric"
+import {MAX_POPULATION} from "./gotchi/evolution"
+import {updateDimensions} from "./state/app-state"
+import {INITIAL_DISTANCE} from "./view/flight"
+import {PhysicsPanel} from "./view/physics-panel"
+import {TensegrityView} from "./view/tensegrity-view"
 
 export interface ITensegrityProps {
     fabricExports: IFabricExports
@@ -92,6 +93,11 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
                 <TensegrityView
                     perspectiveCamera={this.perspectiveCamera}
                     tensegrityState={this.state}
+                />
+                <PhysicsPanel
+                    physics={this.physics}
+                    fabricExports={this.props.fabricExports}
+                    fabricInstanceExports={this.state.tensegrityFabric.exports}
                 />
             </div>
         )

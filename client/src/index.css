@@ -175,18 +175,6 @@ p a, p a:hover {
     left: 90%;
 }
 
-.feature-prompt {
-    display: inline-block;
-    text-align: right;
-    font-weight: bold;
-    margin-right: 10px;
-}
-
-.feature-value {
-    display: inline-block;
-    width: 300px;
-}
-
 .user {
     font-size: larger;
     padding: 0 6px 6px 6px;
@@ -200,4 +188,34 @@ p a, p a:hover {
     display: block;
     height: 100%;
     max-height: 100%;
+}
+
+.feature-prompt {
+    display: inline-block;
+    text-align: right;
+    font-weight: bold;
+    margin-right: 10px;
+}
+
+.btn-primary,.btn-danger {
+    margin: 3px;
+}
+
+.feature-value {
+    text-align: right;
+    display: inline-block;
+    width: 60%;
+    border-style: solid;
+    border-color: black;
+}
+
+.physics-panel {
+    text-align: left;
+    background-color: white;
+    position: absolute;
+    top: 0;
+    right: 0;
+    height: auto;
+    width: 20%;
+    padding: 10px;
 }

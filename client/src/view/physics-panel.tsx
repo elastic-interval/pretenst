@@ -4,96 +4,57 @@
  */
 
 import * as React from "react"
+import {Badge, Button, ButtonGroup, Col, Container, Row} from "reactstrap"
 
-import { IPhysicsFeature, Physics } from "../fabric/physics"
+import {IFabricExports, IFabricInstanceExports} from "../fabric/fabric-exports"
+import {Physics} from "../fabric/physics"
 
 export interface IPhysicsPanelProps {
     physics: Physics
+    fabricExports: IFabricExports
+    fabricInstanceExports: IFabricInstanceExports
 }
 
-export interface IPhysicsPanelState {
-    feature?: IPhysicsFeature
-    value?: number
-}
-
-function featureSelected(feature: IPhysicsFeature): () => object {
-    return (): object => {
-        return {
-            feature,
-            value: feature.getFactor(),
-        }
-    }
-}
-
-export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPanelState> {
+export class PhysicsPanel extends React.Component<IPhysicsPanelProps, object> {
 
     constructor(props: IPhysicsPanelProps) {
         super(props)
         this.state = {}
     }
 
-    public featureUp(): void {
-        const feature = this.state.feature
-        if (feature) {
-            feature.setFactor(feature.getFactor() * 1.1)
-            this.setState(featureSelected(feature))
-        }
-    }
-
-    public featureDown(): void {
-        const feature = this.state.feature
-        if (feature) {
-            feature.setFactor(feature.getFactor() * 0.9)
-            this.setState(featureSelected(feature))
-        }
-    }
-
-    public featureReset(): void {
-        const feature = this.state.feature
-        if (feature) {
-            feature.setFactor(1)
-            this.setState(featureSelected(feature))
-        }
+    public applyPhysics(): void {
+        this.props.physics.applyGlobal(this.props.fabricExports)
+        this.props.physics.applyLocal(this.props.fabricInstanceExports)
     }
 
     public render(): JSX.Element {
-        const feature = this.state.feature
-        const value = this.state.value
         return (
-            <div key="control-panel">
+            <div className="physics-panel">
                 <h3>Physics</h3>
-                <div>
-                    {
-                        this.props.physics.features.map(physicsFeature => {
-                            return (
-                                <span key={physicsFeature.feature}>
-                                    <button onClick={() => this.setState(featureSelected(physicsFeature))}>
-                                        {physicsFeature.feature}
-                                    </button>
-                                </span>)
-                        })
-                    }
-                </div>
-                <div>
-                    {
-                        !feature || !value ?
-                            <div className="feature-prompt">choose one</div>
-                            :
-                            <div>
-                                <div className="feature-prompt">{feature.feature}</div>
-                                <div>
-                                    <button onClick={() => this.featureUp()}>+</button>
-                                    <button onClick={() => this.featureDown()}>-</button>
-                                </div>
-                                <div>
-                                    <strong className="feature-value">{value}</strong>
-                                </div>
-                                <div>
-                                    <button onClick={() => this.featureReset()}>reset</button>
-                                </div>
-                            </div>
-                    }
-                </div>
+                <Container>
+                    {this.props.physics.features.map(feature => {
+                        return (
+                            <Row key={feature.name}>
+                                <Col xs="6">
+                                    <Badge color="secondary">{feature.name}</Badge>
+                                </Col>
+                                <Col xs="3">
+                                    <ButtonGroup>
+                                        <Button size="sm" color="primary"
+                                                onClick={() => feature.setFactor(feature.factor * 1.1)}>+</Button>
+                                        <Button size="sm" color="primary"
+                                                onClick={() => feature.setFactor(feature.factor * 0.9)}>-</Button>
+                                        <Button size="sm" color="danger"
+                                                onClick={() => feature.setFactor(1)}>1</Button>
+                                    </ButtonGroup>
+                                </Col>
+                                <Col xs="3">
+                                    <Badge className="float-right" color="light">{feature.factor.toFixed(4)}</Badge>
+                                </Col>
+                            </Row>
+                        )
+                    })}
+                </Container>
             </div>
         )
     }

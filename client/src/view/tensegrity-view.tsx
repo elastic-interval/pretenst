@@ -5,17 +5,17 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
-import { Mesh, PerspectiveCamera } from "three"
-import { OrbitControls } from "three-orbitcontrols-ts"
+import {Mesh, PerspectiveCamera} from "three"
+import {OrbitControls} from "three-orbitcontrols-ts"
 
-import { IFace } from "../fabric/tensegrity-brick"
-import { ITensegrityState } from "../tensegrity"
+import {IFace} from "../fabric/tensegrity-brick"
+import {ITensegrityState} from "../tensegrity"
 
-import { Flight } from "./flight"
-import { TensegrityFlightState } from "./flight-state"
-import { TENSEGRITY_FACE, TENSEGRITY_LINE } from "./materials"
-import { MeshKey, Selector } from "./selector"
-import { SurfaceComponent } from "./surface-component"
+import {Flight} from "./flight"
+import {TensegrityFlightState} from "./flight-state"
+import {TENSEGRITY_FACE, TENSEGRITY_LINE} from "./materials"
+import {MeshKey, Selector} from "./selector"
+import {SurfaceComponent} from "./surface-component"
 
 interface ITensegrityViewProps {
     perspectiveCamera: PerspectiveCamera
@@ -109,7 +109,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 () => {
                     const iterating = this.state.iterating
                     this.flight.update()
-                    // this.props.tensegrityState.tensegrityFabric.iterate(1)
+                    this.props.tensegrityState.tensegrityFabric.iterate(1)
                     if (iterating) {
                         this.forceUpdate()
                     }

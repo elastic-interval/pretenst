@@ -3,10 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
+import {BufferGeometry, Float32BufferAttribute, Vector3} from "three"
 
-import { Direction, IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-exports"
-import { Physics } from "./physics"
+import {Direction, IFabricInstanceExports, IntervalRole, Laterality} from "./fabric-exports"
+import {Physics} from "./physics"
 import {
     brickToString,
     connectBricks,
@@ -27,7 +27,7 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(private exports: IFabricInstanceExports) {
+    constructor(readonly exports: IFabricInstanceExports) {
     }
 
     public applyPhysics(physics: Physics): object {
