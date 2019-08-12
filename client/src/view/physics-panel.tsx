@@ -34,30 +34,31 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, object> {
                 <h3>Physics</h3>
                 <Container>
                     {this.props.physics.features.map(feature => {
-                        const currentValue = feature.factor$.getValue()
                         const setFactor = (factor: number): void => {
                             feature.setFactor(factor)
                             this.applyPhysics()
                         }
                         return (
-                            <Row key={feature.name}>
-                                <Col xs="6">
+                            <div>
+                                <Row>
                                     <Badge color="secondary">{feature.name}</Badge>
-                                </Col>
-                                <Col xs="3">
-                                    <ButtonGroup>
-                                        <Button size="sm" color="primary"
-                                                onClick={() => setFactor(currentValue * 1.1)}>+</Button>
-                                        <Button size="sm" color="primary"
-                                                onClick={() => setFactor(currentValue * 0.9)}>-</Button>
-                                        <Button size="sm" color="danger"
-                                                onClick={() => setFactor(1)}>1</Button>
-                                    </ButtonGroup>
-                                </Col>
-                                <Col xs="3">
-                                    <FactorBadge feature={feature}/>
-                                </Col>
-                            </Row>
+                                </Row>
+                                <Row key={feature.name}>
+                                    <Col xs="6">
+                                        <ButtonGroup className="physics-button-group">
+                                            <Button className="physics-adjust-button" color="primary"
+                                                    onClick={() => setFactor(feature.factor$.getValue() * 1.1)}>+</Button>
+                                            <Button className="physics-adjust-button" color="primary"
+                                                    onClick={() => setFactor(feature.factor$.getValue() * 0.9)}>-</Button>
+                                            <Button className="physics-adjust-button" color="danger"
+                                                    onClick={() => setFactor(1)}>1</Button>
+                                        </ButtonGroup>
+                                    </Col>
+                                    <Col xs="6">
+                                        <FactorBadge feature={feature}/>
+                                    </Col>
+                                </Row>
+                            </div>
                         )
                     })}
                 </Container>
@@ -95,7 +96,7 @@ class FactorBadge extends React.Component<IBadgeProps, IBadgeState> {
 
     public render(): JSX.Element {
         return (
-            <Badge className="float-right" color="light">{this.state.formattedValue}</Badge>
+            <Badge color="light">{this.state.formattedValue}</Badge>
         )
     }
 }

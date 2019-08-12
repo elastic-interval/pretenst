@@ -209,6 +209,15 @@ p a, p a:hover {
     border-color: black;
 }
 
+.physics-button-group {
+    width: 100%;
+}
+
+.physics-adjust-button {
+    margin: 1px;
+    padding: 1px;
+}
+
 .physics-panel {
     text-align: left;
     background-color: white;
@@ -216,6 +225,6 @@ p a, p a:hover {
     top: 0;
     right: 0;
     height: auto;
-    width: 20%;
+    width: auto;
     padding: 10px;
 }
