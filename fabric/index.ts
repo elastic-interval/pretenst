@@ -1091,7 +1091,7 @@ function tick(): void {
     }
 }
 
-export function iterate(ticks: usize): boolean {
+export function iterate(ticks: u16): boolean {
     let wrapAround = false
     let timeSweepStep: u16 = <u16>timeSweepSpeed
     let currentDirection = getCurrentDirection()
@@ -1102,9 +1102,8 @@ export function iterate(ticks: usize): boolean {
         setTimeSweep(timeSweep)
         if (timeSweep < current) {
             wrapAround = true
-            if (getGestating()) {
-                setTimeSweep(0)
-            } else {
+            setTimeSweep(0)
+            if (!getGestating()) {
                 setPreviousDirection(currentDirection)
                 let nextDirection = getNextDirection()
                 if (nextDirection !== currentDirection) {
@@ -1114,9 +1113,7 @@ export function iterate(ticks: usize): boolean {
         }
         tick()
     }
-    if (currentDirection !== REST_DIRECTION) {
-        setAge(getAge() + ticks)
-    }
+    setAge(getAge() + ticks)
     let faceCount = getFaceCount()
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex)
