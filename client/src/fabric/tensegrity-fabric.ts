@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import { Direction, IFabricInstanceExports } from "./fabric-exports"
+import { Direction, IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-exports"
 import { Physics } from "./physics"
 import {
     brickToString,
@@ -16,11 +16,14 @@ import {
     IBrick,
     IBrickConnector,
     IFace,
+    Interval,
+    Joint,
     Triangle,
 } from "./tensegrity-brick"
 
 export class TensegrityFabric {
     private faces: IFace[] = []
+    private intervals: Interval[] = []
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
@@ -32,27 +35,54 @@ export class TensegrityFabric {
     }
 
     public createBrick(): IBrick {
-        let brick = createBrick(this.exports)
+        let brick = createBrick(this)
         this.faces.push(...brick.faces)
+        this.intervals.push(...brick.cables)
         return brick
     }
 
     public growBrick(existingBrick: IBrick, triangle: Triangle): IBrick {
-        let brick = growBrick(this.exports, existingBrick, triangle)
+        let brick = growBrick(this, existingBrick, triangle)
         this.faces.push(...brick.faces)
+        this.intervals.push(...brick.cables)
         return brick
     }
 
     public connectBricks(brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
-        return connectBricks(this.exports, brickA, triangleA, brickB, triangleB)
+        let connector = connectBricks(this, brickA, triangleA, brickB, triangleB)
+        this.intervals.push(...connector.ringCables, ...connector.crossCables)
+        return connector
+    }
+
+    public removeFace(face: IFace): void {
+        this.exports.removeFace(face.index)
+        this.faces = this.faces.filter(existing => existing.index !== face.index)
+        this.faces.forEach(existing => {
+            if (existing.index > face.index) {
+                existing.index--
+            }
+        })
+        face.cables.forEach(interval => {
+            this.removeInterval(interval)
+        })
+    }
+
+    public removeInterval(interval: Interval): void {
+        this.exports.removeInterval(interval.index)
+        this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
+        this.intervals.forEach(existing => {
+            if (existing.index > interval.index) {
+                existing.index--
+            }
+        })
     }
 
     public brickToString(brick: IBrick): string {
-        return brickToString(this.exports, brick)
+        return brickToString(this, brick)
     }
 
     public connectorToString(connector: IBrickConnector): string {
-        return connectorToString(this.exports, connector)
+        return connectorToString(this, connector)
     }
 
     public findFace(triangleIndex: number): IFace | undefined {
@@ -170,5 +200,26 @@ export class TensegrityFabric {
         return this.exports.setAltitude(altitude)
     }
 
+    // ===
+
+    public getJointLocation(joint: Joint): Vector3 {
+        return this.exports.getJointLocation(joint)
+    }
+
+    public freshGeometry(): void {
+        this.exports.freshGeometry()
+    }
+
+    public createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number {
+        return this.exports.createJoint(jointTag, laterality, x, y, z)
+    }
+
+    public createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number {
+        return this.exports.createInterval(alphaIndex, omegaIndex, idealSpan, intervalRole, growing)
+    }
+
+    public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
+        return this.exports.createFace(joint0Index, joint1Index, joint2Index)
+    }
 }
 

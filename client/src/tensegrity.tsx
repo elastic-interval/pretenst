@@ -45,17 +45,24 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
             tensegrityFabric.applyPhysics(this.physics)
             const brick0 = tensegrityFabric.createBrick()
             const brick1 = tensegrityFabric.growBrick(brick0, Triangle.PPP)
-            const brick2 = tensegrityFabric.growBrick(brick1, Triangle.PPP)
             const connector01 = tensegrityFabric.connectBricks(brick0, Triangle.PPP, brick1, Triangle.NNN)
-            const connector12 = tensegrityFabric.connectBricks(brick1, Triangle.PPP, brick2, Triangle.NNN)
-            console.log("connector",
-                tensegrityFabric.connectorToString(connector01),
-                tensegrityFabric.connectorToString(connector12),
-            )
+            console.log("connector", tensegrityFabric.connectorToString(connector01))
+
+            // const brick0 = tensegrityFabric.createBrick()
+            // const brick1 = tensegrityFabric.growBrick(brick0, Triangle.PPP)
+            // const brick2 = tensegrityFabric.growBrick(brick1, Triangle.PPP)
+            // const connector01 = tensegrityFabric.connectBricks(brick0, Triangle.PPP, brick1, Triangle.NNN)
+            // const connector12 = tensegrityFabric.connectBricks(brick1, Triangle.PPP, brick2, Triangle.NNN)
+            // console.log("connector",
+            //     tensegrityFabric.connectorToString(connector01),
+            //     tensegrityFabric.connectorToString(connector12),
+            // )
+
             // grow(grow(brick0, Triangle.PPP), Triangle.PPP)
             // for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
             //     grow(grow(brick0, triangle), Triangle.PPP)
             // }
+
         }
         const width = window.innerWidth
         const height = window.innerHeight
