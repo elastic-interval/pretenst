@@ -126,6 +126,8 @@ export interface Interval {
 
 export interface IFace {
     index: number
+    brick: IBrick
+    triangle: Triangle
     joints: Joint[]
     cables: Interval[]
 }
@@ -155,13 +157,15 @@ function createInterval(fabric: TensegrityFabric, alpha: number, omega: number, 
     }
 }
 
-function createFace(fabric: TensegrityFabric, triangle: ITriangle, joints: Joint[], cables: Interval[]): IFace {
-    const faceJoints = triangle.barEnds.map(barEnd => joints[barEnd])
-    const faceCables = [0,1,2].map(offset => cables[triangle.name * 3 + offset])
-    return {
-        index: fabric.createFace(faceJoints[0], faceJoints[1], faceJoints[2]),
-        joints: faceJoints,
-        cables: faceCables,
+function createFace(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle): IFace {
+    const joints = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => brick.joints[barEnd])
+    const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
+    return <IFace>{
+        index: fabric.createFace(joints[0], joints[1], joints[2]),
+        brick,
+        triangle,
+        joints,
+        cables,
     }
 }
 
@@ -182,21 +186,22 @@ export function createBrick(fabric: TensegrityFabric, trianglePoints?: Vector3[]
         const omega = joints[index * 2 + 1]
         return createInterval(fabric, alpha, omega, IntervalRole.BAR, PHI * 2)
     })
+    const brick: IBrick = {joints, bars, cables: [], rings: [[], [], [], []], faces: []}
     const triangleSpan = -0.8
     const role = IntervalRole.TRI_CABLE
-    const cables: Interval[] = []
-    const rings: Interval[][] = [[], [], [], []]
     TRIANGLE_ARRAY.forEach(triangle => {
         const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
             const interval = createInterval(fabric, triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, triangleSpan)
-            cables.push(interval)
-            rings[triangle.ringMember[walk]].push(interval)
+            brick.cables.push(interval)
+            brick.rings[triangle.ringMember[walk]].push(interval)
         }
     })
-    const faces = TRIANGLE_ARRAY.map(triangle => createFace(fabric, triangle, joints, cables))
+    TRIANGLE_ARRAY.forEach(triangle => {
+        brick.faces.push(createFace(fabric, brick, triangle.name))
+    })
     fabric.freshGeometry()
-    return {joints, bars, cables, rings, faces}
+    return brick
 }
 
 export function growBrick(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle): IBrick {
@@ -268,10 +273,10 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         const prevJoint = ring[(walk + ring.length - 1) % ring.length]
         const joint = ring[walk]
         const nextJoint = ring[(walk + 1) % ring.length]
-        ringCables.push(createInterval(fabric, joint.joint, nextJoint.joint, IntervalRole.RING_CABLE, -0.95))
+        ringCables.push(createInterval(fabric, joint.joint, nextJoint.joint, IntervalRole.RING_CABLE, -0.5))
         const prevOpposite = joint.location.distanceTo(prevJoint.oppositeLocation)
         const nextOpposite = joint.location.distanceTo(nextJoint.oppositeLocation)
-        const crossSpan = -0.95
+        const crossSpan = -0.7
         if (prevOpposite < nextOpposite) {
             crossCables.push(createInterval(fabric, joint.joint, prevJoint.opposite, IntervalRole.CROSS_CABLE, crossSpan))
         } else {

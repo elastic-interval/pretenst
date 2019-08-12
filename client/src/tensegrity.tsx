@@ -4,18 +4,17 @@
  */
 
 import * as React from "react"
-import {PerspectiveCamera} from "three"
+import { PerspectiveCamera } from "three"
 
-import {IFabricExports} from "./fabric/fabric-exports"
-import {createFabricKernel, FabricKernel} from "./fabric/fabric-kernel"
-import {Physics} from "./fabric/physics"
-import {Triangle} from "./fabric/tensegrity-brick"
-import {TensegrityFabric} from "./fabric/tensegrity-fabric"
-import {MAX_POPULATION} from "./gotchi/evolution"
-import {updateDimensions} from "./state/app-state"
-import {INITIAL_DISTANCE} from "./view/flight"
-import {PhysicsPanel} from "./view/physics-panel"
-import {TensegrityView} from "./view/tensegrity-view"
+import { IFabricExports } from "./fabric/fabric-exports"
+import { createFabricKernel, FabricKernel } from "./fabric/fabric-kernel"
+import { Physics } from "./fabric/physics"
+import { TensegrityFabric } from "./fabric/tensegrity-fabric"
+import { MAX_POPULATION } from "./gotchi/evolution"
+import { updateDimensions } from "./state/app-state"
+import { INITIAL_DISTANCE } from "./view/flight"
+import { PhysicsPanel } from "./view/physics-panel"
+import { TensegrityView } from "./view/tensegrity-view"
 
 export interface ITensegrityProps {
     fabricExports: IFabricExports
@@ -44,26 +43,7 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
         }
         if (tensegrityFabric) {
             tensegrityFabric.applyPhysics(this.physics)
-            const brick0 = tensegrityFabric.createBrick()
-            const brick1 = tensegrityFabric.growBrick(brick0, Triangle.PPP)
-            const connector01 = tensegrityFabric.connectBricks(brick0, Triangle.PPP, brick1, Triangle.NNN)
-            console.log("connector", tensegrityFabric.connectorToString(connector01))
-
-            // const brick0 = tensegrityFabric.createBrick()
-            // const brick1 = tensegrityFabric.growBrick(brick0, Triangle.PPP)
-            // const brick2 = tensegrityFabric.growBrick(brick1, Triangle.PPP)
-            // const connector01 = tensegrityFabric.connectBricks(brick0, Triangle.PPP, brick1, Triangle.NNN)
-            // const connector12 = tensegrityFabric.connectBricks(brick1, Triangle.PPP, brick2, Triangle.NNN)
-            // console.log("connector",
-            //     tensegrityFabric.connectorToString(connector01),
-            //     tensegrityFabric.connectorToString(connector12),
-            // )
-
-            // grow(grow(brick0, Triangle.PPP), Triangle.PPP)
-            // for (let triangle = Triangle.NNN; triangle <= Triangle.PPP; triangle++) {
-            //     grow(grow(brick0, triangle), Triangle.PPP)
-            // }
-
+            tensegrityFabric.createBrick()
         }
         const width = window.innerWidth
         const height = window.innerHeight

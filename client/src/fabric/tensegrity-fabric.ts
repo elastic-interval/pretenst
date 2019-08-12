@@ -3,10 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import {BufferGeometry, Float32BufferAttribute, Vector3} from "three"
+import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import {Direction, IFabricInstanceExports, IntervalRole, Laterality} from "./fabric-exports"
-import {Physics} from "./physics"
+import { Direction, IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-exports"
+import { Physics } from "./physics"
 import {
     brickToString,
     connectBricks,
@@ -41,11 +41,11 @@ export class TensegrityFabric {
         return brick
     }
 
-    public growBrick(existingBrick: IBrick, triangle: Triangle): IBrick {
-        let brick = growBrick(this, existingBrick, triangle)
-        this.faces.push(...brick.faces)
-        this.intervals.push(...brick.cables)
-        return brick
+    public growBrick(brick: IBrick, triangle: Triangle): IBrick {
+        const newBrick = growBrick(this, brick, triangle)
+        this.faces.push(...newBrick.faces)
+        this.intervals.push(...newBrick.cables)
+        return newBrick
     }
 
     public connectBricks(brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
@@ -86,7 +86,6 @@ export class TensegrityFabric {
     }
 
     public findFace(triangleIndex: number): IFace | undefined {
-        console.log("find face", triangleIndex)
         return this.faces[triangleIndex]
     }
 

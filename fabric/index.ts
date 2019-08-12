@@ -679,6 +679,7 @@ export function removeInterval(intervalIndex: u16): void {
 
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset
+    setIntervalRole(intervalIndex, getIntervalRole(nextIndex))
     setAlphaIndex(intervalIndex, getAlphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, getOmegaIndex(nextIndex))
     setIdealSpan(intervalIndex, getIdealSpan(nextIndex))

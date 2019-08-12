@@ -3,7 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import {IFabricExports, IFabricInstanceExports, IntervalRole} from "./fabric-exports"
+import { BehaviorSubject } from "rxjs"
+
+import { IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
 
 export enum PhysicsFeature {
     GravityAbove = "Gravity Above",
@@ -25,7 +27,7 @@ export enum PhysicsFeature {
 export interface IPhysicsFeature {
     name: PhysicsFeature
     setFactor: (factor: number) => void
-    factor: number
+    factor$: BehaviorSubject<number>
 }
 
 function getPhysicsFeature(feature: PhysicsFeature): number {
@@ -52,7 +54,7 @@ export class Physics {
     public applyGlobal(fabricExports: IFabricExports): object {
         const featureValues = {}
         this.featuresArray.forEach(feature => {
-            const factor = feature.factor
+            const factor = feature.factor$.getValue()
             let currentValue = 0
             let ignore = false
             switch (feature.name) {
@@ -97,7 +99,7 @@ export class Physics {
     public applyLocal(fabricExports: IFabricInstanceExports): object {
         const featureValues = {}
         this.featuresArray.forEach(feature => {
-            const factor = feature.factor
+            const factor = feature.factor$.getValue()
             let currentValue = 0
             let ignore = false
             switch (feature.name) {
@@ -127,14 +129,14 @@ export class Physics {
     }
 
     private createFeature(feature: PhysicsFeature): IPhysicsFeature {
-        const f = {
+        const factor = new BehaviorSubject<number>(getPhysicsFeature(feature))
+        return {
             name: feature,
-            setFactor: (factor: number) => {
-                setPhysicsFeature(feature, factor)
-                f.factor = factor
+            setFactor: (newFactor: number) => {
+                setPhysicsFeature(feature, newFactor)
+                factor.next(newFactor)
             },
-            factor: getPhysicsFeature(feature),
+            factor$: factor,
         }
-        return f
     }
 }

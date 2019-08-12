@@ -5,17 +5,17 @@
 
 import * as React from "react"
 import * as R3 from "react-three"
-import {Mesh, PerspectiveCamera} from "three"
-import {OrbitControls} from "three-orbitcontrols-ts"
+import { Mesh, PerspectiveCamera } from "three"
+import { OrbitControls } from "three-orbitcontrols-ts"
 
-import {IFace} from "../fabric/tensegrity-brick"
-import {ITensegrityState} from "../tensegrity"
+import { IFace, Triangle } from "../fabric/tensegrity-brick"
+import { ITensegrityState } from "../tensegrity"
 
-import {Flight} from "./flight"
-import {TensegrityFlightState} from "./flight-state"
-import {TENSEGRITY_FACE, TENSEGRITY_LINE} from "./materials"
-import {MeshKey, Selector} from "./selector"
-import {SurfaceComponent} from "./surface-component"
+import { Flight } from "./flight"
+import { TensegrityFlightState } from "./flight-state"
+import { TENSEGRITY_FACE, TENSEGRITY_LINE } from "./materials"
+import { MeshKey, Selector } from "./selector"
+import { SurfaceComponent } from "./surface-component"
 
 interface ITensegrityViewProps {
     perspectiveCamera: PerspectiveCamera
@@ -66,15 +66,18 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
         const tensegrityFabric = this.props.tensegrityState.tensegrityFabric
         return (
             <div id="tensegrity-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
-                const triangle = this.selector.select<IFace>(event, MeshKey.TRIANGLES_KEY, intersections => {
+                if (!event.shiftKey) {
+                    return
+                }
+                const face = this.selector.select<IFace>(event, MeshKey.TRIANGLES_KEY, intersections => {
                     const triangles = intersections.map(intersection => {
                         const triangleIndex = intersection.faceIndex ? intersection.faceIndex / 3 : 0
                         return this.props.tensegrityState.tensegrityFabric.findFace(triangleIndex)
                     })
                     return triangles.pop()
                 })
-                if (triangle) {
-                    this.click(triangle)
+                if (face) {
+                    this.click(face)
                 }
             }}>
                 <R3.Renderer width={tensegrityState.width} height={tensegrityState.height}>
@@ -99,8 +102,10 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
 
 // =================================================================================================================
 
-    private click(triangle: IFace): void {
-        console.log(`Click ${triangle.joints}`)
+    private click(face: IFace): void {
+        console.log("Face", face)
+        const brick = this.props.tensegrityState.tensegrityFabric.growBrick(face.brick, face.triangle)
+        this.props.tensegrityState.tensegrityFabric.connectBricks(face.brick, face.triangle, brick, Triangle.NNN)
     }
 
     private beginAnimating(): void {
@@ -109,7 +114,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 () => {
                     const iterating = this.state.iterating
                     this.flight.update()
-                    this.props.tensegrityState.tensegrityFabric.iterate(1)
+                    this.props.tensegrityState.tensegrityFabric.iterate(10)
                     if (iterating) {
                         this.forceUpdate()
                     }
