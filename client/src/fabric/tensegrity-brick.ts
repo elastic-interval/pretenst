@@ -150,7 +150,7 @@ function barsToPoints(vectors: Vector3[], bar: IBar): Vector3[] {
 //     return points
 // }
 
-function createBrickPointsOnOrigin(base: Triangle): Vector3 [] {
+function createBrickPointsOnOrigin(base: Triangle, altitudeFactor: number): Vector3 [] {
     const points = BAR_ARRAY.reduce(barsToPoints, [])
     const trianglePoints = TRIANGLE_ARRAY[base].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
@@ -158,7 +158,7 @@ function createBrickPointsOnOrigin(base: Triangle): Vector3 [] {
     const y = new Vector3().sub(midpoint).normalize()
     const z = new Vector3().crossVectors(y, x).normalize()
     const basis = new Matrix4().makeBasis(x, y, z)
-    const fromBasis = new Matrix4().getInverse(basis).setPosition(new Vector3(0, midpoint.length(), 0))
+    const fromBasis = new Matrix4().getInverse(basis).setPosition(new Vector3(0, midpoint.length() * altitudeFactor, 0))
     return points.map(p => p.applyMatrix4(fromBasis))
 }
 
@@ -246,20 +246,19 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
     TRIANGLE_ARRAY.forEach(triangle => {
         brick.faces.push(createFace(fabric, brick, triangle.name))
     })
-    fabric.freshGeometry()
     return brick
 }
 
 export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
     const base = Triangle.NNN
-    return createBrick(fabric, createBrickPointsOnOrigin(base), base)
+    return createBrick(fabric, createBrickPointsOnOrigin(base, 1.3), base)
 }
 
 export function createBrickOnTriangle(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle): IBrick {
     const trianglePoints = brick.faces[triangle].joints.map(joint => fabric.getJointLocation(joint))
     const xform = xformToTriangle(trianglePoints)
     const base = TRIANGLE_ARRAY[triangle].negative ? Triangle.PPP : Triangle.NNN
-    return createBrick(fabric, createBrickPointsOnOrigin(base).map(p => p.applyMatrix4(xform)), base)
+    return createBrick(fabric, createBrickPointsOnOrigin(base, 0.8).map(p => p.applyMatrix4(xform)), base)
 }
 
 export interface IBrickConnector {
@@ -336,7 +335,6 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
     }
     fabric.removeFace(brickA.faces[triangleA])
     fabric.removeFace(brickB.faces[triangleB])
-    fabric.freshGeometry()
     return {ringCables, crossCables}
 }
 

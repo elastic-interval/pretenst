@@ -132,7 +132,7 @@ export interface IFabricInstanceExports {
 
     recycle(): void
 
-    freshGeometry(): void
+    discardGeometry(): void
 
     getDimensions(): IFabricDimensions
 

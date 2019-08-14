@@ -219,7 +219,7 @@ export class GotchiBody {
 
     public endGestation(): void {
         this.exports.endGestation()
-        this.exports.freshGeometry()
+        this.exports.discardGeometry()
     }
 
     public get age(): number {
@@ -329,7 +329,7 @@ export class GotchiBody {
             }
         })
         faceToReplace.remove()
-        this.exports.freshGeometry()
+        this.exports.discardGeometry()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
             .map(index => new FaceSnapshot(this, this.exports, this.exports, index))

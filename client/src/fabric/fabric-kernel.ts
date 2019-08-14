@@ -163,7 +163,7 @@ export class FabricKernel implements IGotchiFactory {
             return undefined
         }
         this.instanceUsed[freeIndex] = true
-        this.instanceArray[freeIndex].freshGeometry()
+        this.instanceArray[freeIndex].discardGeometry()
         return this.instanceArray[freeIndex]
     }
 }
@@ -316,7 +316,7 @@ class InstanceExports implements IFabricInstanceExports {
         return this.exports
     }
 
-    public freshGeometry(): void {
+    public discardGeometry(): void {
         this.vectorArray = this.faceMidpointsArray = this.faceLocationsArray =
             this.faceNormalsArray = this.jointLocationsArray = this.linesArray = this.lineColorsArray = undefined
     }

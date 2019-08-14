@@ -36,6 +36,7 @@ export class TensegrityFabric {
 
     public createBrick(): IBrick {
         let brick = createBrickOnOrigin(this)
+        this.exports.discardGeometry()
         this.faces.push(...brick.faces)
         this.intervals.push(...brick.cables)
         return brick
@@ -43,6 +44,7 @@ export class TensegrityFabric {
 
     public growBrick(brick: IBrick, triangle: Triangle): IBrick {
         const newBrick = createBrickOnTriangle(this, brick, triangle)
+        this.exports.discardGeometry()
         this.faces.push(...newBrick.faces)
         this.intervals.push(...newBrick.cables)
         return newBrick
@@ -50,6 +52,7 @@ export class TensegrityFabric {
 
     public connectBricks(brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
         let connector = connectBricks(this, brickA, triangleA, brickB, triangleB)
+        this.exports.discardGeometry()
         this.intervals.push(...connector.ringCables, ...connector.crossCables)
         return connector
     }
@@ -75,6 +78,7 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
+        this.exports.discardGeometry()
     }
 
     public brickToString(brick: IBrick): string {
@@ -181,7 +185,7 @@ export class TensegrityFabric {
 
     public endGestation(): void {
         this.exports.endGestation()
-        this.exports.freshGeometry()
+        this.exports.discardGeometry()
     }
 
     public get age(): number {
@@ -204,10 +208,6 @@ export class TensegrityFabric {
 
     public getJointLocation(joint: Joint): Vector3 {
         return this.exports.getJointLocation(joint)
-    }
-
-    public freshGeometry(): void {
-        this.exports.freshGeometry()
     }
 
     public createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number {
