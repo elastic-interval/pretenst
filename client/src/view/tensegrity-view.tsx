@@ -121,6 +121,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
         let fabric = this.props.tensegrityState.fabric
         const brick = fabric.growBrick(face.brick, face.triangle)
         fabric.connectBricks(face.brick, face.triangle, brick, Triangle.NNN)
+        fabric.iterate(1)
         fabric.centralize()
     }
 
@@ -130,7 +131,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 () => {
                     const iterating = this.state.iterating
                     this.flight.update()
-                    this.props.tensegrityState.fabric.iterate(1)
+                    // this.props.tensegrityState.fabric.iterate(1)
                     if (iterating) {
                         this.forceUpdate()
                     }

@@ -11,8 +11,8 @@ import {
     brickToString,
     connectBricks,
     connectorToString,
-    createBrick,
-    growBrick,
+    createBrickOnOrigin,
+    createBrickOnTriangle,
     IBrick,
     IBrickConnector,
     IFace,
@@ -35,14 +35,14 @@ export class TensegrityFabric {
     }
 
     public createBrick(): IBrick {
-        let brick = createBrick(this)
+        let brick = createBrickOnOrigin(this)
         this.faces.push(...brick.faces)
         this.intervals.push(...brick.cables)
         return brick
     }
 
     public growBrick(brick: IBrick, triangle: Triangle): IBrick {
-        const newBrick = growBrick(this, brick, triangle)
+        const newBrick = createBrickOnTriangle(this, brick, triangle)
         this.faces.push(...newBrick.faces)
         this.intervals.push(...newBrick.cables)
         return newBrick
