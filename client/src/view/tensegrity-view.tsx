@@ -8,7 +8,7 @@ import * as R3 from "react-three"
 import { Mesh, PerspectiveCamera, Vector3 } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
-import { IFace, Joint, Triangle } from "../fabric/tensegrity-brick"
+import { IFace, Joint } from "../fabric/tensegrity-brick"
 import { ITensegrityState } from "../tensegrity"
 
 import { Flight } from "./flight"
@@ -120,8 +120,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
         console.log("Face", face)
         let fabric = this.props.tensegrityState.fabric
         const brick = fabric.growBrick(face.brick, face.triangle)
-        fabric.connectBricks(face.brick, face.triangle, brick, Triangle.NNN)
-        fabric.iterate(1)
+        fabric.connectBricks(face.brick, face.triangle, brick, brick.base)
         fabric.centralize()
     }
 
@@ -131,7 +130,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 () => {
                     const iterating = this.state.iterating
                     this.flight.update()
-                    // this.props.tensegrityState.fabric.iterate(1)
+                    this.props.tensegrityState.fabric.iterate(1)
                     if (iterating) {
                         this.forceUpdate()
                     }

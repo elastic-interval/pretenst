@@ -9,7 +9,7 @@ import { IntervalRole, Laterality } from "./fabric-exports"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const PHI = 1.618
-const BAR_SPAN = 5.5
+const BAR_SPAN = 8
 const TRIANGLE_SPAN = 1
 const RING_SPAN = 0.01
 const CROSS_SPAN = 1
@@ -150,9 +150,9 @@ function barsToPoints(vectors: Vector3[], bar: IBar): Vector3[] {
 //     return points
 // }
 
-function createBrickPointsOnOrigin(): Vector3 [] {
+function createBrickPointsOnOrigin(base: Triangle): Vector3 [] {
     const points = BAR_ARRAY.reduce(barsToPoints, [])
-    const trianglePoints = TRIANGLE_ARRAY[Triangle.NNN].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
+    const trianglePoints = TRIANGLE_ARRAY[base].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
     const y = new Vector3().sub(midpoint).normalize()
@@ -218,6 +218,7 @@ function createFace(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle)
 }
 
 export interface IBrick {
+    base: Triangle
     joints: Joint[]
     bars: Interval[]
     cables: Interval[]
@@ -225,14 +226,14 @@ export interface IBrick {
     faces: IFace[]
 }
 
-function createBrick(fabric: TensegrityFabric, points: Vector3[]): IBrick {
+function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle): IBrick {
     const joints = points.map((p, index) => createJoint(fabric, index, p))
     const bars = BAR_ARRAY.map((bar: IBar, index: number) => {
         const alpha = joints[index * 2]
         const omega = joints[index * 2 + 1]
         return createInterval(fabric, alpha, omega, IntervalRole.BAR, BAR_SPAN)
     })
-    const brick: IBrick = {joints, bars, cables: [], rings: [[], [], [], []], faces: []}
+    const brick: IBrick = {base, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
     const role = IntervalRole.TRI_CABLE
     TRIANGLE_ARRAY.forEach(triangle => {
         const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
@@ -250,13 +251,15 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[]): IBrick {
 }
 
 export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
-    return createBrick(fabric, createBrickPointsOnOrigin())
+    const base = Triangle.NNN
+    return createBrick(fabric, createBrickPointsOnOrigin(base), base)
 }
 
 export function createBrickOnTriangle(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle): IBrick {
     const trianglePoints = brick.faces[triangle].joints.map(joint => fabric.getJointLocation(joint))
     const xform = xformToTriangle(trianglePoints)
-    return createBrick(fabric, createBrickPointsOnOrigin().map(p => p.applyMatrix4(xform)))
+    const base = TRIANGLE_ARRAY[triangle].negative ? Triangle.PPP : Triangle.NNN
+    return createBrick(fabric, createBrickPointsOnOrigin(base).map(p => p.applyMatrix4(xform)), base)
 }
 
 export interface IBrickConnector {
