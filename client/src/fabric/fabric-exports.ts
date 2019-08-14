@@ -152,6 +152,8 @@ export interface IFabricInstanceExports {
 
     getLineLocations(): Float32Array
 
+    getLineColors(): Float32Array
+
     getVectors(): Float32Array
 
     getJointLocation(jointIndex: number): Vector3

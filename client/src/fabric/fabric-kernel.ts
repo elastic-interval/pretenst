@@ -45,6 +45,7 @@ export function createFabricKernel(fabricExports: IFabricExports, instanceMax: n
 interface IOffsets {
     vectorsOffset: number
     lineOffset: number
+    lineColorsOffset: number
     faceMidpointsOffset: number
     faceNormalsOffset: number
     faceLocationsOffset: number
@@ -55,6 +56,7 @@ function createOffsets(faceCountMax: number, intervalCountMax: number, baseOffse
     const offsets: IOffsets = {
         vectorsOffset: 0,
         lineOffset: 0,
+        lineColorsOffset: 0,
         faceMidpointsOffset: 0,
         faceNormalsOffset: 0,
         faceLocationsOffset: 0,
@@ -72,8 +74,10 @@ function createOffsets(faceCountMax: number, intervalCountMax: number, baseOffse
             offsets.faceNormalsOffset = (
                 offsets.faceMidpointsOffset = (
                     offsets.lineOffset = (
-                        offsets.vectorsOffset = baseOffset
-                    ) + seedVectorFloats * Float32Array.BYTES_PER_ELEMENT
+                        offsets.lineColorsOffset = (
+                            offsets.vectorsOffset = baseOffset
+                        ) + seedVectorFloats * Float32Array.BYTES_PER_ELEMENT
+                    ) + lineFloats * Float32Array.BYTES_PER_ELEMENT
                 ) + lineFloats * Float32Array.BYTES_PER_ELEMENT
             ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
         ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
@@ -171,6 +175,7 @@ class InstanceExports implements IFabricInstanceExports {
     private faceLocationsArray: Float32Array | undefined
     private faceNormalsArray: Float32Array | undefined
     private linesArray: Float32Array | undefined
+    private lineColorsArray: Float32Array | undefined
     private midpointVector = new Vector3()
     private seedVector = new Vector3()
     private forwardVector = new Vector3()
@@ -312,7 +317,8 @@ class InstanceExports implements IFabricInstanceExports {
     }
 
     public freshGeometry(): void {
-        this.vectorArray = this.faceMidpointsArray = this.faceLocationsArray = this.faceNormalsArray = this.jointLocationsArray = this.linesArray = undefined
+        this.vectorArray = this.faceMidpointsArray = this.faceLocationsArray =
+            this.faceNormalsArray = this.jointLocationsArray = this.linesArray = this.lineColorsArray = undefined
     }
 
     public getJointLocation(jointIndex: number): Vector3 {
@@ -333,6 +339,10 @@ class InstanceExports implements IFabricInstanceExports {
 
     public getLineLocations(): Float32Array {
         return this.lines
+    }
+
+    public getLineColors(): Float32Array {
+        return this.lineColors
     }
 
     public getForward(): Vector3 {
@@ -416,6 +426,14 @@ class InstanceExports implements IFabricInstanceExports {
                 new Float32Array(this.buffer, this.offsets.lineOffset, this.exports.getIntervalCount() * 3 * 2)
         }
         return this.linesArray
+    }
+
+    public get lineColors(): Float32Array {
+        if (!this.lineColorsArray) {
+            this.lineColorsArray =
+                new Float32Array(this.buffer, this.offsets.lineColorsOffset, this.exports.getIntervalCount() * 3 * 2)
+        }
+        return this.lineColorsArray
     }
 
 }

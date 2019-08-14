@@ -54,6 +54,7 @@ let faceLocationOffset: usize = 0
 let intervalOffset: usize = 0
 let faceOffset: usize = 0
 let lineOffset: usize = 0
+let lineColorOffset: usize = 0
 
 let statePtr: usize = 0
 let vectorA: usize = 0
@@ -88,14 +89,16 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
                                         faceNormalOffset = (
                                             faceMidpointOffset = (
                                                 lineOffset = (
-                                                    rightPtr = (
-                                                        forwardPtr = (
-                                                            seedPtr = (
-                                                                midpointPtr
+                                                    lineColorOffset = (
+                                                        rightPtr = (
+                                                            forwardPtr = (
+                                                                seedPtr = (
+                                                                    midpointPtr
+                                                                ) + VECTOR_SIZE
                                                             ) + VECTOR_SIZE
                                                         ) + VECTOR_SIZE
                                                     ) + VECTOR_SIZE
-                                                ) + VECTOR_SIZE
+                                                ) + lineSize
                                             ) + lineSize
                                         ) + faceVectorsSize
                                     ) + faceJointVectorsSize
@@ -871,9 +874,20 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
 }
 
 function outputLineGeometry(intervalIndex: u16): void {
-    let outputPtr = lineOffset + intervalIndex * VECTOR_SIZE * 2
-    setVector(outputPtr, locationPtr(getAlphaIndex(intervalIndex)))
-    setVector(outputPtr + VECTOR_SIZE, locationPtr(getOmegaIndex(intervalIndex)))
+    let linePtr = lineOffset + intervalIndex * VECTOR_SIZE * 2
+    setVector(linePtr, locationPtr(getAlphaIndex(intervalIndex)))
+    setVector(linePtr + VECTOR_SIZE, locationPtr(getOmegaIndex(intervalIndex)))
+    let lineColorPtr = lineColorOffset + intervalIndex * VECTOR_SIZE * 2
+    let intervalRole = getIntervalRole(intervalIndex)
+    let red: f32 = intervalRole === ROLE_BAR ? 1.0 : 0.0
+    let green: f32 = 0.0
+    let blue: f32 = intervalRole === ROLE_BAR ? 0.0 : 1.0
+    setX(lineColorPtr, red)
+    setY(lineColorPtr, green)
+    setZ(lineColorPtr, blue)
+    setX(lineColorPtr + VECTOR_SIZE, red)
+    setY(lineColorPtr + VECTOR_SIZE, green)
+    setZ(lineColorPtr + VECTOR_SIZE, blue)
 }
 
 // Faces =====================================================================================

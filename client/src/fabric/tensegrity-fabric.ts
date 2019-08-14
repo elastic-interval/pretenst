@@ -155,6 +155,7 @@ export class TensegrityFabric {
     public get linesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getLineLocations(), 3))
+        geometry.addAttribute("color", new Float32BufferAttribute(this.exports.getLineColors(), 3))
         if (this.linesGeometryStored) {
             this.linesGeometryStored.dispose()
         }

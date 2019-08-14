@@ -21,7 +21,7 @@ export interface ITensegrityProps {
 }
 
 export interface ITensegrityState {
-    readonly tensegrityFabric: TensegrityFabric
+    readonly fabric: TensegrityFabric
     readonly width: number
     readonly height: number
     readonly left: number
@@ -37,26 +37,20 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
         super(props)
         this.physics.applyGlobal(props.fabricExports)
         this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, 500)
-        const tensegrityFabric = this.fabricKernel.createTensegrityFabric()
-        if (!tensegrityFabric) {
+        const fabric = this.fabricKernel.createTensegrityFabric()
+        if (!fabric) {
             throw new Error()
         }
-        if (tensegrityFabric) {
-            tensegrityFabric.applyPhysics(this.physics)
-            tensegrityFabric.createBrick()
+        if (fabric) {
+            fabric.applyPhysics(this.physics)
+            fabric.createBrick()
         }
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)
         const left = window.screenLeft
         const top = window.screenTop
-        this.state = {
-            tensegrityFabric,
-            width,
-            height,
-            left,
-            top,
-        }
+        this.state = {fabric, width, height, left, top}
     }
 
     public componentDidMount(): void {
@@ -77,7 +71,7 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
                 <PhysicsPanel
                     physics={this.physics}
                     fabricExports={this.props.fabricExports}
-                    fabricInstanceExports={this.state.tensegrityFabric.exports}
+                    fabricInstanceExports={this.state.fabric.exports}
                 />
             </div>
         )

@@ -56,14 +56,14 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
             this.flight = new Flight(orbitControls)
             this.flight.setupCamera(TensegrityFlightState())
             this.flight.enabled = true
-            this.props.tensegrityState.tensegrityFabric.iterate(1)
+            this.props.tensegrityState.fabric.iterate(1)
             this.beginAnimating()
         }
     }
 
     public render(): JSX.Element | undefined {
-        const tensegrityState = this.props.tensegrityState
-        const tensegrityFabric = this.props.tensegrityState.tensegrityFabric
+        const state = this.props.tensegrityState
+        const fabric = this.props.tensegrityState.fabric
         return (
             <div id="tensegrity-view" onMouseDownCapture={(event: React.MouseEvent<HTMLDivElement>) => {
                 if (!event.shiftKey) {
@@ -72,7 +72,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 const closestFace = this.selector.select<IFace>(event, MeshKey.TRIANGLES_KEY, intersections => {
                     const faces = intersections.map(intersection => {
                         const triangleIndex = intersection.faceIndex ? intersection.faceIndex / 3 : 0
-                        const foundFace = tensegrityFabric.findFace(triangleIndex)
+                        const foundFace = fabric.findFace(triangleIndex)
                         if (!foundFace) {
                             throw new Error()
                         }
@@ -81,7 +81,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                     const camera = this.flight.cameraPosition
                     const midpoint = (face: IFace): Vector3 => {
                         return face.joints.reduce((mid: Vector3, joint: Joint) =>
-                            mid.add(tensegrityFabric.getJointLocation(joint)), new Vector3()).multiplyScalar(1.0 / 3.0)
+                            mid.add(fabric.getJointLocation(joint)), new Vector3()).multiplyScalar(1.0 / 3.0)
                     }
                     faces.sort((a: IFace, b: IFace) => {
                         const toA = camera.distanceToSquared(midpoint(a))
@@ -94,18 +94,18 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                     this.click(closestFace)
                 }
             }}>
-                <R3.Renderer width={tensegrityState.width} height={tensegrityState.height}>
-                    <R3.Scene width={tensegrityState.width} height={tensegrityState.height}
+                <R3.Renderer width={state.width} height={state.height}>
+                    <R3.Scene width={state.width} height={state.height}
                               camera={this.props.perspectiveCamera}>
                         <R3.Mesh
                             key="Triangles"
-                            geometry={tensegrityFabric.facesGeometry}
+                            geometry={fabric.facesGeometry}
                             material={TENSEGRITY_FACE}
                             ref={(mesh: Mesh) => this.selector.setMesh(MeshKey.TRIANGLES_KEY, mesh)}
                         />
                         <R3.LineSegments
                             key="Lines"
-                            geometry={tensegrityFabric.linesGeometry}
+                            geometry={fabric.linesGeometry}
                             material={TENSEGRITY_LINE}/>
                         <SurfaceComponent/>
                     </R3.Scene>
@@ -118,8 +118,8 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
 
     private click(face: IFace): void {
         console.log("Face", face)
-        const brick = this.props.tensegrityState.tensegrityFabric.growBrick(face.brick, face.triangle)
-        this.props.tensegrityState.tensegrityFabric.connectBricks(face.brick, face.triangle, brick, Triangle.NNN)
+        const brick = this.props.tensegrityState.fabric.growBrick(face.brick, face.triangle)
+        this.props.tensegrityState.fabric.connectBricks(face.brick, face.triangle, brick, Triangle.NNN)
     }
 
     private beginAnimating(): void {
@@ -128,7 +128,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 () => {
                     const iterating = this.state.iterating
                     this.flight.update()
-                    this.props.tensegrityState.tensegrityFabric.iterate(10)
+                    this.props.tensegrityState.fabric.iterate(10)
                     if (iterating) {
                         this.forceUpdate()
                     }
