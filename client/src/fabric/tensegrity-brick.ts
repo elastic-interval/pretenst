@@ -9,6 +9,10 @@ import { IntervalRole, Laterality } from "./fabric-exports"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const PHI = 1.618
+const BAR_SPAN = 5.5
+const TRIANGLE_SPAN = 1
+const RING_SPAN = 0.01
+const CROSS_SPAN = 1
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -73,19 +77,60 @@ export enum Ring {
 
 interface ITriangle {
     name: Triangle
+    negative: boolean
     barEnds: BarEnd[]
     ringMember: Ring[]
 }
 
 const TRIANGLE_ARRAY: ITriangle[] = [
-    {name: Triangle.NNN, barEnds: [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA], ringMember: [Ring.NP, Ring.PN, Ring.PP]},
-    {name: Triangle.PNN, barEnds: [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO], ringMember: [Ring.PN, Ring.NN, Ring.NP]},
-    {name: Triangle.NPN, barEnds: [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA], ringMember: [Ring.PP, Ring.NP, Ring.NN]},
-    {name: Triangle.NNP, barEnds: [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA], ringMember: [Ring.NN, Ring.PN, Ring.PP]},
-    {name: Triangle.NPP, barEnds: [BarEnd.YNO, BarEnd.XPO, BarEnd.ZPA], ringMember: [Ring.PN, Ring.NP, Ring.NN]},
-    {name: Triangle.PNP, barEnds: [BarEnd.YPO, BarEnd.XPA, BarEnd.ZNO], ringMember: [Ring.PP, Ring.NN, Ring.NP]},
-    {name: Triangle.PPN, barEnds: [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO], ringMember: [Ring.NN, Ring.PP, Ring.PN]},
-    {name: Triangle.PPP, barEnds: [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO], ringMember: [Ring.NP, Ring.PP, Ring.PN]},
+    {
+        name: Triangle.NNN,
+        negative: true,
+        barEnds: [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA],
+        ringMember: [Ring.NP, Ring.PN, Ring.PP],
+    },
+    {
+        name: Triangle.PNN,
+        negative: false,
+        barEnds: [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO],
+        ringMember: [Ring.PN, Ring.NN, Ring.NP],
+    },
+    {
+        name: Triangle.NPN,
+        negative: false,
+        barEnds: [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA],
+        ringMember: [Ring.PP, Ring.NP, Ring.NN],
+    },
+    {
+        name: Triangle.NNP,
+        negative: false,
+        barEnds: [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA],
+        ringMember: [Ring.NN, Ring.PN, Ring.PP],
+    },
+    {
+        name: Triangle.NPP,
+        negative: true,
+        barEnds: [BarEnd.YNO, BarEnd.XPO, BarEnd.ZPA],
+        ringMember: [Ring.PN, Ring.NP, Ring.NN],
+    },
+    {
+        name: Triangle.PNP,
+        negative: true,
+        barEnds: [BarEnd.YPO, BarEnd.XPA, BarEnd.ZNO],
+        ringMember: [Ring.PP, Ring.NN, Ring.NP],
+    },
+    {
+        name: Triangle.PPN,
+        negative: true,
+        barEnds: [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO],
+        ringMember: [Ring.NN, Ring.PP, Ring.PN],
+    },
+    {
+        name: Triangle.PPP,
+        negative: false,
+        barEnds: [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
+        ringMember: [Ring.NP, Ring.PP, Ring.PN],
+    },
 ]
 
 function createBrickPoints(seed: boolean): Vector3[] {
@@ -184,15 +229,14 @@ export function createBrick(fabric: TensegrityFabric, trianglePoints?: Vector3[]
     const bars = BAR_ARRAY.map((bar: IBar, index: number) => {
         const alpha = joints[index * 2]
         const omega = joints[index * 2 + 1]
-        return createInterval(fabric, alpha, omega, IntervalRole.BAR, PHI * 2)
+        return createInterval(fabric, alpha, omega, IntervalRole.BAR, BAR_SPAN)
     })
     const brick: IBrick = {joints, bars, cables: [], rings: [[], [], [], []], faces: []}
-    const triangleSpan = -0.8
     const role = IntervalRole.TRI_CABLE
     TRIANGLE_ARRAY.forEach(triangle => {
         const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
-            const interval = createInterval(fabric, triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, triangleSpan)
+            const interval = createInterval(fabric, triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, TRIANGLE_SPAN)
             brick.cables.push(interval)
             brick.rings[triangle.ringMember[walk]].push(interval)
         }
@@ -273,14 +317,13 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         const prevJoint = ring[(walk + ring.length - 1) % ring.length]
         const joint = ring[walk]
         const nextJoint = ring[(walk + 1) % ring.length]
-        ringCables.push(createInterval(fabric, joint.joint, nextJoint.joint, IntervalRole.RING_CABLE, -0.5))
+        ringCables.push(createInterval(fabric, joint.joint, nextJoint.joint, IntervalRole.RING_CABLE, RING_SPAN))
         const prevOpposite = joint.location.distanceTo(prevJoint.oppositeLocation)
         const nextOpposite = joint.location.distanceTo(nextJoint.oppositeLocation)
-        const crossSpan = -0.7
         if (prevOpposite < nextOpposite) {
-            crossCables.push(createInterval(fabric, joint.joint, prevJoint.opposite, IntervalRole.CROSS_CABLE, crossSpan))
+            crossCables.push(createInterval(fabric, joint.joint, prevJoint.opposite, IntervalRole.CROSS_CABLE, CROSS_SPAN))
         } else {
-            crossCables.push(createInterval(fabric, joint.joint, nextJoint.opposite, IntervalRole.CROSS_CABLE, crossSpan))
+            crossCables.push(createInterval(fabric, joint.joint, nextJoint.opposite, IntervalRole.CROSS_CABLE, CROSS_SPAN))
         }
     }
     fabric.removeFace(brickA.faces[triangleA])

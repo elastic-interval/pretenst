@@ -118,8 +118,10 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
 
     private click(face: IFace): void {
         console.log("Face", face)
-        const brick = this.props.tensegrityState.fabric.growBrick(face.brick, face.triangle)
-        this.props.tensegrityState.fabric.connectBricks(face.brick, face.triangle, brick, Triangle.NNN)
+        let fabric = this.props.tensegrityState.fabric
+        const brick = fabric.growBrick(face.brick, face.triangle)
+        fabric.connectBricks(face.brick, face.triangle, brick, Triangle.NNN)
+        fabric.centralize()
     }
 
     private beginAnimating(): void {
@@ -128,7 +130,7 @@ export class TensegrityView extends React.Component<ITensegrityViewProps, ITense
                 () => {
                     const iterating = this.state.iterating
                     this.flight.update()
-                    this.props.tensegrityState.fabric.iterate(10)
+                    this.props.tensegrityState.fabric.iterate(1)
                     if (iterating) {
                         this.forceUpdate()
                     }
