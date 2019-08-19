@@ -4,16 +4,19 @@
  */
 
 import * as React from "react"
-import { useRef, useState } from "react"
-import { Canvas, CanvasContext, extend, ReactThreeFiber, useRender } from "react-three-fiber"
-import { PerspectiveCamera, Scene } from "three"
+import { useEffect, useRef, useState } from "react"
+import { Canvas, CanvasContext, extend, ReactThreeFiber, useRender, useThree } from "react-three-fiber"
+import { Mesh, PerspectiveCamera, Raycaster, Scene, Vector2, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricExports } from "./fabric/fabric-exports"
 import { createFabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
+import { IFace, Joint } from "./fabric/tensegrity-brick"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import { MAX_POPULATION } from "./gotchi/evolution"
+import { Flight } from "./view/flight"
+import { TensegrityFlightState } from "./view/flight-state"
 import { TENSEGRITY_FACE, TENSEGRITY_LINE } from "./view/materials"
 import { PhysicsPanel } from "./view/physics-panel"
 import { SurfaceComponent } from "./view/surface-component"
@@ -74,14 +77,26 @@ export interface IFabricState {
 }
 
 function FabricView({fabric}: IFabricState): JSX.Element {
+    const rayCaster = new Raycaster()
     const [time, setTime] = useState<number>(0)
     const scene = useRef<Scene>()
     const camera = useRef<PerspectiveCamera>()
     const controls = useRef<OrbitControls>()
+    const triangleMesh = useRef<Mesh>()
+    const {size, setDefaultCamera} = useThree()
+    let flight: Flight | undefined
+    useEffect(() => {
+        if (camera.current) {
+            setDefaultCamera(camera.current)
+        }
+    }, [])
     useRender(({gl, canvas}: CanvasContext, timestamp: number) => {
-        const currentControls = controls.current
-        if (currentControls) {
-            currentControls.update()
+        if (flight) {
+            flight.update()
+        } else if (controls.current && camera.current) {
+            flight = new Flight(controls.current)
+            flight.setupCamera(TensegrityFlightState())
+            flight.enabled = true
         }
         fabric.iterate(1)
         setTime(timestamp)
@@ -89,31 +104,58 @@ function FabricView({fabric}: IFabricState): JSX.Element {
     if (!time) {
         console.log("time", time)
     }
+    const root = document.getElementById("root") as HTMLElement
+    const onMouseDownCapture = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (!event.shiftKey) {
+            return
+        }
+        const mouse = new Vector2((event.clientX / size.width) * 2 - 1, -(event.clientY / size.height) * 2 + 1)
+        if (camera.current && triangleMesh.current) {
+            rayCaster.setFromCamera(mouse, camera.current)
+            const intersections = rayCaster.intersectObjects([triangleMesh.current], true)
+                .filter(i => i.faceIndex !== undefined)
+            const faces = intersections.map(intersection => {
+                const triangleIndex = intersection.faceIndex ? intersection.faceIndex : 0
+                const foundFace = fabric.findFace(triangleIndex)
+                return foundFace
+            })
+            const cameraPosition = camera.current.position
+            const midpoint = (face: IFace): Vector3 => {
+                return face.joints.reduce((mid: Vector3, joint: Joint) =>
+                    mid.add(fabric.getJointLocation(joint)), new Vector3()).multiplyScalar(1.0 / 3.0)
+            }
+            faces.sort((a: IFace, b: IFace) => {
+                const toA = cameraPosition.distanceToSquared(midpoint(a))
+                const toB = cameraPosition.distanceToSquared(midpoint(b))
+                return toA < toB ? 1 : toA > toB ? -1 : 0
+            })
+            const closestFace = faces.pop()
+            if (closestFace) {
+                const brick = fabric.growBrick(closestFace.brick, closestFace.triangle)
+                fabric.connectBricks(closestFace.brick, closestFace.triangle, brick, brick.base)
+                fabric.iterate(1)
+                fabric.centralize()
+            }
+        }
+    }
     return (
         <group>
-            <perspectiveCamera
-                ref={camera}
-                position={[1, 3, 6]}
-                onUpdate={(self: PerspectiveCamera) => self.updateProjectionMatrix()}
-            />
+            <perspectiveCamera ref={camera}/>
             {camera.current && (
                 <>
                     <orbitControls
                         ref={controls}
-                        args={[camera.current]}
+                        args={[camera.current, root]}
                         enableDamping={true}
                         dampingFactor={0.1}
                         rotateSpeed={0.1}/>
                     <scene ref={scene}>
                         <mesh
                             key="Triangles"
+                            ref={triangleMesh}
                             geometry={fabric.facesGeometry}
                             material={TENSEGRITY_FACE}
-                            onPointerDown={
-                                (event: React.MouseEvent<HTMLDivElement>) => {
-                                    console.log("event", event)
-                                }
-                            }
+                            onPointerDown={onMouseDownCapture}
                         />
                         <lineSegments
                             key="Lines"

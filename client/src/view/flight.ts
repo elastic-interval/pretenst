@@ -35,6 +35,7 @@ export class Flight {
         orbit.enableKeys = false
         orbit.zoomSpeed = 0.5
         orbit.target = this.target
+        orbit.enablePan = true
     }
 
     public setupCamera(flightState: IFlightState): void {
