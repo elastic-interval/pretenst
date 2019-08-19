@@ -4,7 +4,7 @@
  */
 
 import { PerspectiveCamera, Vector3 } from "three"
-import { OrbitControls } from "three-orbitcontrols-ts"
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFlightState } from "./flight-state"
 

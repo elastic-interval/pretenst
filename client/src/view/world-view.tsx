@@ -6,19 +6,13 @@
 import * as React from "react"
 import { Canvas } from "react-three-fiber"
 import { Mesh, PerspectiveCamera } from "three"
-import { OrbitControls } from "three-orbitcontrols-ts"
 
-import { APP_EVENT, AppEvent } from "../app-event"
-import { ITERATIONS_PER_TICK } from "../fabric/gotchi-body"
 import { Spot } from "../island/spot"
-import { AppMode, IAppState } from "../state/app-state"
+import { IAppState } from "../state/app-state"
 import { ClickHandler } from "../state/click-handler"
-import { Transition } from "../state/transition"
 import { IUser } from "../storage/remote-storage"
 
 import { EvolutionComponent } from "./evolution-component"
-import { Flight } from "./flight"
-import { InitialFlightState } from "./flight-state"
 import { IslandComponent } from "./island-component"
 import { JourneyComponent } from "./journey-component"
 import { GOTCHI, GOTCHI_ARROW } from "./materials"
@@ -36,9 +30,8 @@ interface IWorldState {
 
 export class WorldView extends React.Component<IWorldProps, IWorldState> {
     private appStateNonce = -1
-    private flight: Flight
+    // private flight: Flight
     private selector: Selector
-    private appMode = AppMode.Flying
 
     constructor(props: IWorldProps) {
         super(props)
@@ -59,14 +52,14 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
     }
 
     public componentDidMount(): void {
-        const props = this.props
-        const element: HTMLElement | undefined = document.getElementById("gotchi-view") || undefined
-        if (element) {
-            const orbitControls = new OrbitControls(props.perspectiveCamera, element)
-            this.flight = new Flight(orbitControls)
-            this.flight.setupCamera(InitialFlightState())
-            this.beginAnimating()
-        }
+        // const props = this.props
+        // const element: HTMLElement | undefined = document.getElementById("gotchi-view") || undefined
+        // if (element) {
+        //     const orbitControls = new OrbitControls(props.perspectiveCamera, element)
+        //     this.flight = new Flight(orbitControls)
+        //     this.flight.setupCamera(InitialFlightState())
+        //     this.beginAnimating()
+        // }
     }
 
     public render(): JSX.Element | undefined {
@@ -142,70 +135,70 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
         props.appState.updateState(afterClick)
     }
 
-    private update(appState: IAppState): void {
-        const flightState = appState.flightState
-        const flight = this.flight
-        flight.moveTowardsTarget(flightState.target)
-        switch (appState.appMode) {
-            case AppMode.Flying:
-                const distanceChanged = flight.cameraFollowDistance(flightState)
-                const angleChanged = flight.cameraFollowPolarAngle(flightState)
-                if (!(distanceChanged || angleChanged)) {
-                    flight.enabled = true
-                    appState.updateState(new Transition(appState).reachedFlightStateTarget(flightState).appState)
-                }
-                break
-            case AppMode.Riding:
-                flight.cameraFollowDistance(flightState)
-                flight.cameraFollowPolarAngle(flightState)
-                break
-            default:
-                break
-        }
-        flight.stayUpright()
-        flight.update()
-    }
+    // private update(appState: IAppState): void {
+    //     const flightState = appState.flightState
+    //     const flight = this.flight
+    //     flight.moveTowardsTarget(flightState.target)
+    //     switch (appState.appMode) {
+    //         case AppMode.Flying:
+    //             const distanceChanged = flight.cameraFollowDistance(flightState)
+    //             const angleChanged = flight.cameraFollowPolarAngle(flightState)
+    //             if (!(distanceChanged || angleChanged)) {
+    //                 flight.enabled = true
+    //                 appState.updateState(new Transition(appState).reachedFlightStateTarget(flightState).appState)
+    //             }
+    //             break
+    //         case AppMode.Riding:
+    //             flight.cameraFollowDistance(flightState)
+    //             flight.cameraFollowPolarAngle(flightState)
+    //             break
+    //         default:
+    //             break
+    //     }
+    //     flight.stayUpright()
+    //     flight.update()
+    // }
 
-    private beginAnimating(): void {
-        const step = () => {
-            setTimeout(
-                () => {
-                    const appState = this.props.appState
-                    if (appState.appMode !== this.appMode) {
-                        this.appMode = appState.appMode
-                        APP_EVENT.next({event: AppEvent.AppMode, appMode: this.appMode})
-                    }
-                    const jockey = appState.jockey
-                    if (jockey) {
-                        jockey.reorient()
-                    }
-                    const iterating = this.state.iterating
-                    if (jockey) {
-                        const appEvent = jockey.gotchi.iterate(ITERATIONS_PER_TICK)
-                        if (appEvent) {
-                            APP_EVENT.next({event: appEvent})
-                        }
-                        if (!iterating) {
-                            this.setState({iterating: true})
-                        }
-                    }
-                    const evolution = appState.evolution
-                    if (evolution) {
-                        evolution.iterate()
-                        if (!iterating) {
-                            this.setState({iterating: true})
-                        }
-                    }
-                    this.update(appState)
-                    if (iterating) {
-                        this.forceUpdate()
-                    }
-                    requestAnimationFrame(step)
-                },
-                10,
-            )
-        }
-        requestAnimationFrame(step)
-    }
+    // private beginAnimating(): void {
+    //     const step = () => {
+    //         setTimeout(
+    //             () => {
+    //                 const appState = this.props.appState
+    //                 if (appState.appMode !== this.appMode) {
+    //                     this.appMode = appState.appMode
+    //                     APP_EVENT.next({event: AppEvent.AppMode, appMode: this.appMode})
+    //                 }
+    //                 const jockey = appState.jockey
+    //                 if (jockey) {
+    //                     jockey.reorient()
+    //                 }
+    //                 const iterating = this.state.iterating
+    //                 if (jockey) {
+    //                     const appEvent = jockey.gotchi.iterate(ITERATIONS_PER_TICK)
+    //                     if (appEvent) {
+    //                         APP_EVENT.next({event: appEvent})
+    //                     }
+    //                     if (!iterating) {
+    //                         this.setState({iterating: true})
+    //                     }
+    //                 }
+    //                 const evolution = appState.evolution
+    //                 if (evolution) {
+    //                     evolution.iterate()
+    //                     if (!iterating) {
+    //                         this.setState({iterating: true})
+    //                     }
+    //                 }
+    //                 this.update(appState)
+    //                 if (iterating) {
+    //                     this.forceUpdate()
+    //                 }
+    //                 requestAnimationFrame(step)
+    //             },
+    //             10,
+    //         )
+    //     }
+    //     requestAnimationFrame(step)
+    // }
 }
 

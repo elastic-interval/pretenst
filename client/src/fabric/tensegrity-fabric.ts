@@ -24,6 +24,10 @@ import {
 export class TensegrityFabric {
     private faces: IFace[] = []
     private intervals: IInterval[] = []
+    private faceLocations = new Float32BufferAttribute([], 3)
+    private faceNormals = new Float32BufferAttribute([], 3)
+    private lineLocations = new Float32BufferAttribute([], 3)
+    private lineColors = new Float32BufferAttribute([], 3)
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
@@ -37,6 +41,7 @@ export class TensegrityFabric {
     public createBrick(): IBrick {
         let brick = createBrickOnOrigin(this)
         this.exports.discardGeometry()
+        this.disposeOfGeometry()
         this.faces.push(...brick.faces)
         this.intervals.push(...brick.cables)
         return brick
@@ -45,6 +50,7 @@ export class TensegrityFabric {
     public growBrick(brick: IBrick, triangle: Triangle): IBrick {
         const newBrick = createBrickOnTriangle(this, brick, triangle)
         this.exports.discardGeometry()
+        this.disposeOfGeometry()
         this.faces.push(...newBrick.faces)
         this.intervals.push(...newBrick.cables)
         return newBrick
@@ -53,6 +59,7 @@ export class TensegrityFabric {
     public connectBricks(brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
         let connector = connectBricks(this, brickA, triangleA, brickB, triangleB)
         this.exports.discardGeometry()
+        this.disposeOfGeometry()
         this.intervals.push(...connector.ringCables, ...connector.crossCables)
         return connector
     }
@@ -79,6 +86,7 @@ export class TensegrityFabric {
             }
         })
         this.exports.discardGeometry()
+        this.disposeOfGeometry()
     }
 
     public brickToString(brick: IBrick): string {
@@ -146,25 +154,27 @@ export class TensegrityFabric {
     }
 
     public get facesGeometry(): BufferGeometry {
-        const geometry = new BufferGeometry()
-        geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getFaceLocations(), 3))
-        geometry.addAttribute("normal", new Float32BufferAttribute(this.exports.getFaceNormals(), 3))
-        if (this.facesGeometryStored) {
-            this.facesGeometryStored.dispose()
+        if (!this.facesGeometryStored) {
+            const geometry = new BufferGeometry()
+            this.faceLocations = new Float32BufferAttribute(this.exports.getFaceLocations(), 3)
+            this.faceNormals = new Float32BufferAttribute(this.exports.getFaceNormals(), 3)
+            geometry.addAttribute("position", this.faceLocations)
+            geometry.addAttribute("normal", this.faceNormals)
+            this.facesGeometryStored = geometry
         }
-        this.facesGeometryStored = geometry
-        return geometry
+        return this.facesGeometryStored
     }
 
     public get linesGeometry(): BufferGeometry {
-        const geometry = new BufferGeometry()
-        geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getLineLocations(), 3))
-        geometry.addAttribute("color", new Float32BufferAttribute(this.exports.getLineColors(), 3))
-        if (this.linesGeometryStored) {
-            this.linesGeometryStored.dispose()
+        if (!this.linesGeometryStored) {
+            const geometry = new BufferGeometry()
+            this.lineLocations = new Float32BufferAttribute(this.exports.getLineLocations(), 3)
+            this.lineColors = new Float32BufferAttribute(this.exports.getLineColors(), 3)
+            geometry.addAttribute("position", this.lineLocations)
+            geometry.addAttribute("color", this.lineColors)
+            this.linesGeometryStored = geometry
         }
-        this.linesGeometryStored = geometry
-        return geometry
+        return this.linesGeometryStored
     }
 
     public get currentDirection(): Direction {
@@ -180,6 +190,7 @@ export class TensegrityFabric {
     }
 
     public iterate(ticks: number): boolean {
+        this.disposeOfGeometry()
         return this.exports.iterate(ticks)
     }
 
