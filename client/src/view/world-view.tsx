@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import * as R3 from "react-three"
+import { Canvas } from "react-three-fiber"
 import { Mesh, PerspectiveCamera } from "three"
 import { OrbitControls } from "three-orbitcontrols-ts"
 
@@ -100,8 +100,8 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                     this.click(spot)
                 }
             }}>
-                <R3.Renderer width={appState.width} height={appState.height}>
-                    <R3.Scene width={appState.width} height={appState.height} camera={this.props.perspectiveCamera}>
+                <Canvas>
+                    <group>
                         <IslandComponent
                             user={this.props.user}
                             appState={appState}
@@ -111,23 +111,23 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
                             <EvolutionComponent evolution={evolution}/>)
                         }
                         {!jockey ? undefined : (
-                            <R3.Object3D key="Gotchi">
-                                <R3.LineSegments
+                            <group key="Gotchi">
+                                <lineSegments
                                     key="Vectors"
                                     geometry={jockey.pointerGeometry}
                                     material={GOTCHI_ARROW}
                                 />
-                                <R3.Mesh
+                                <mesh
                                     geometry={jockey.facesGeometry}
                                     material={GOTCHI}
                                 />
-                            </R3.Object3D>
+                            </group>
                         )}
                         {!journey ? undefined : (
                             <JourneyComponent journey={journey}/>
                         )}
-                    </R3.Scene>
-                </R3.Renderer>
+                    </group>
+                </Canvas>
             </div>
         )
     }

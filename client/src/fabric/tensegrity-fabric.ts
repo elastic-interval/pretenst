@@ -16,14 +16,14 @@ import {
     IBrick,
     IBrickConnector,
     IFace,
-    Interval,
+    IInterval,
     Joint,
     Triangle,
 } from "./tensegrity-brick"
 
 export class TensegrityFabric {
     private faces: IFace[] = []
-    private intervals: Interval[] = []
+    private intervals: IInterval[] = []
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
@@ -70,7 +70,7 @@ export class TensegrityFabric {
         })
     }
 
-    public removeInterval(interval: Interval): void {
+    public removeInterval(interval: IInterval): void {
         this.exports.removeInterval(interval.index)
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
         this.intervals.forEach(existing => {

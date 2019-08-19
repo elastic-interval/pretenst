@@ -4,7 +4,6 @@
  */
 
 import * as React from "react"
-import { PerspectiveCamera } from "three"
 
 import { IFabricExports } from "./fabric/fabric-exports"
 import { createFabricKernel, FabricKernel } from "./fabric/fabric-kernel"
@@ -12,7 +11,6 @@ import { Physics } from "./fabric/physics"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import { MAX_POPULATION } from "./gotchi/evolution"
 import { updateDimensions } from "./state/app-state"
-import { INITIAL_DISTANCE } from "./view/flight"
 import { PhysicsPanel } from "./view/physics-panel"
 import { TensegrityView } from "./view/tensegrity-view"
 
@@ -29,7 +27,6 @@ export interface ITensegrityState {
 }
 
 export class Tensegrity extends React.Component<ITensegrityProps, ITensegrityState> {
-    private perspectiveCamera: PerspectiveCamera
     private physics = new Physics()
     private fabricKernel: FabricKernel
 
@@ -47,7 +44,6 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
         }
         const width = window.innerWidth
         const height = window.innerHeight
-        this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)
         const left = window.screenLeft
         const top = window.screenTop
         this.state = {fabric, width, height, left, top}
@@ -63,9 +59,8 @@ export class Tensegrity extends React.Component<ITensegrityProps, ITensegritySta
 
     public render(): JSX.Element {
         return (
-            <div>
+            <div className="the-whole-page">
                 <TensegrityView
-                    perspectiveCamera={this.perspectiveCamera}
                     tensegrityState={this.state}
                 />
                 <PhysicsPanel

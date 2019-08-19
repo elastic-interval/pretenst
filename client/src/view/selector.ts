@@ -4,7 +4,8 @@
  */
 
 import * as React from "react"
-import { Intersection, Mesh, PerspectiveCamera, Raycaster, Vector2 } from "three"
+import { Camera } from "react-three-fiber"
+import { Intersection, Mesh, Raycaster, Vector2 } from "three"
 
 export enum MeshKey {
     SPOTS_KEY = "Spots",
@@ -18,7 +19,7 @@ export class Selector {
     private mouse = new Vector2()
     private size = new Vector2()
 
-    constructor(private camera: PerspectiveCamera, width: number, height: number) {
+    constructor(private camera: Camera, width: number, height: number) {
         this.setSize(width, height)
     }
 

@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import * as R3 from "react-three"
+import { Canvas } from "react-three-fiber"
 import { Color, Geometry, Mesh, Vector3 } from "three"
 
 import { HUNG_ALTITUDE } from "../fabric/gotchi-body"
@@ -80,28 +80,28 @@ export class IslandComponent extends React.Component<IIslandComponentProps, obje
             this.appStateNonce = appState.nonce
         }
         return (
-            <R3.Object3D key={island.name}>
-                <R3.Mesh name="Spots" geometry={this.spots} material={ISLAND}
+            <Canvas key={island.name}>
+                <mesh name="Spots" geometry={this.spots} material={ISLAND}
                          ref={(mesh: Mesh) => this.props.setMesh(MeshKey.SPOTS_KEY, mesh)}
                 />
-                <R3.Mesh name="Seeds" geometry={this.seeds} material={GOTCHI}/>
-                <R3.LineSegments key="HangersOccupied" geometry={this.occupiedHangers} material={HANGER_OCCUPIED}/>
-                <R3.LineSegments key="HangersFree" geometry={this.vacantHangers} material={HANGER_FREE}/>
+                <mesh name="Seeds" geometry={this.seeds} material={GOTCHI}/>
+                <lineSegments key="HangersOccupied" geometry={this.occupiedHangers} material={HANGER_OCCUPIED}/>
+                <lineSegments key="HangersFree" geometry={this.vacantHangers} material={HANGER_FREE}/>
                 {!this.homeHexalot ? undefined : (
-                    <R3.LineSegments key="HomeHexalot" geometry={this.homeHexalot} material={HOME_HEXALOT}/>
+                    <lineSegments key="HomeHexalot" geometry={this.homeHexalot} material={HOME_HEXALOT}/>
                 )}
                 {!this.selectedSpot ? undefined : (
-                    <R3.LineSegments key="Pointer" geometry={this.selectedSpot} material={SELECTED_POINTER}/>
+                    <lineSegments key="Pointer" geometry={this.selectedSpot} material={SELECTED_POINTER}/>
                 )}
                 {!this.availableSpots ? undefined : (
-                    <R3.LineSegments key="Available" geometry={this.availableSpots} material={AVAILABLE_HEXALOT}/>
+                    <lineSegments key="Available" geometry={this.availableSpots} material={AVAILABLE_HEXALOT}/>
                 )}
                 {!this.vacantHexalots ? undefined : (
-                    <R3.LineSegments key="Free" geometry={this.vacantHexalots} material={AVAILABLE_HEXALOT}/>
+                    <lineSegments key="Free" geometry={this.vacantHexalots} material={AVAILABLE_HEXALOT}/>
                 )}
-                <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
-                <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
-            </R3.Object3D>
+                <pointLight distance={1000} decay={0.01} position={SUN_POSITION}/>
+                <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+            </Canvas>
         )
     }
 

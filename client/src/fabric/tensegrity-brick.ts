@@ -165,7 +165,7 @@ function createBrickPointsOnOrigin(base: Triangle, altitudeFactor: number): Vect
 export type Joint = number
 export type JointTag = number
 
-export interface Interval {
+export interface IInterval {
     index: number
     alpha: Joint
     omega: Joint
@@ -177,7 +177,7 @@ export interface IFace {
     brick: IBrick
     triangle: Triangle
     joints: Joint[]
-    cables: Interval[]
+    cables: IInterval[]
 }
 
 function xformToTriangle(trianglePoints: Vector3[]): Matrix4 {
@@ -198,7 +198,7 @@ function createJoint(fabric: TensegrityFabric, jointTag: JointTag, location: Vec
     return fabric.createJoint(jointTag, Laterality.BILATERAL_RIGHT, location.x, location.y, location.z)
 }
 
-function createInterval(fabric: TensegrityFabric, alpha: number, omega: number, intervalRole: IntervalRole, span: number): Interval {
+function createInterval(fabric: TensegrityFabric, alpha: number, omega: number, intervalRole: IntervalRole, span: number): IInterval {
     return {
         index: fabric.createInterval(alpha, omega, span, intervalRole, true),
         alpha, omega, span,
@@ -220,9 +220,9 @@ function createFace(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle)
 export interface IBrick {
     base: Triangle
     joints: Joint[]
-    bars: Interval[]
-    cables: Interval[]
-    rings: Interval[][]
+    bars: IInterval[]
+    cables: IInterval[]
+    rings: IInterval[][]
     faces: IFace[]
 }
 
@@ -262,8 +262,8 @@ export function createBrickOnTriangle(fabric: TensegrityFabric, brick: IBrick, t
 }
 
 export interface IBrickConnector {
-    ringCables: Interval[]
-    crossCables: Interval[]
+    ringCables: IInterval[]
+    crossCables: IInterval[]
 }
 
 interface IJoint {
@@ -318,8 +318,8 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
     const a = TRIANGLE_ARRAY[triangleA].barEnds.map(barEnd => [brickA.joints[barEnd], brickA.joints[oppositeEnd(barEnd)]]).map(toIJoint)
     const b = TRIANGLE_ARRAY[triangleB].barEnds.map(barEnd => [brickB.joints[barEnd], brickB.joints[oppositeEnd(barEnd)]]).map(toIJoint)
     const ring = jointsToRing(a.concat(b))
-    const ringCables: Interval[] = []
-    const crossCables: Interval[] = []
+    const ringCables: IInterval[] = []
+    const crossCables: IInterval[] = []
     for (let walk = 0; walk < ring.length; walk++) {
         const prevJoint = ring[(walk + ring.length - 1) % ring.length]
         const joint = ring[walk]
@@ -352,8 +352,8 @@ export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
         }
     }
 
-    function intervalToString(indent: number): (interval: Interval) => string {
-        return (interval: Interval) => {
+    function intervalToString(indent: number): (interval: IInterval) => string {
+        return (interval: IInterval) => {
             return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
         }
     }
@@ -375,8 +375,8 @@ export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
 }
 
 export function connectorToString(fabric: TensegrityFabric, connector: IBrickConnector): string {
-    function intervalToString(indent: number): (interval: Interval) => string {
-        return (interval: Interval) => {
+    function intervalToString(indent: number): (interval: IInterval) => string {
+        return (interval: IInterval) => {
             return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
         }
     }

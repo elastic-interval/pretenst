@@ -12,19 +12,18 @@
     "@types/js-cookie": "^2.2.2",
     "@types/react-dom": "^16.8.2",
     "@types/reactstrap": "^6.4.3",
-    "@types/three": "^0.92.25",
     "ajv": "^6.5.4",
     "axios": "^0.18.0",
     "bootstrap": "^4.1.3",
     "js-cookie": "^2.2.0",
-    "react": "^15.4.1",
-    "react-dom": "^15.4.1",
-    "react-scripts-ts": "2.15.1",
-    "react-three": "^0.9.7",
+    "react": "^16.9.0",
+    "react-dom": "^16.9.0",
+    "react-scripts-ts": "^3.1.0",
+    "react-three-fiber": "^2.3.6",
     "react-twitter-embed": "^2.0.8",
-    "reactstrap": "^6.5.0",
+    "reactstrap": "^8.0.1",
     "rxjs": "5.5.6",
-    "three": "^0.83.0",
+    "three": "^0.107.0",
     "three-orbit-controls": "^82.1.0",
     "three-orbitcontrols-ts": "^0.1.2"
   },
@@ -40,6 +39,6 @@
   "devDependencies": {
     "@types/jest": "^22.2.3",
     "@types/node": "^9.6.35",
-    "typescript": "^2.9.2"
+    "typescript": "^3.5.3"
   }
 }

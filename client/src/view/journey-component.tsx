@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import * as R3 from "react-three"
+import { Canvas } from "react-three-fiber"
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { HUNG_ALTITUDE } from "../fabric/gotchi-body"
@@ -39,7 +39,11 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
     }
 
     public render(): JSX.Element {
-        return <R3.LineSegments key="Journey" geometry={this.geometry} material={JOURNEY}/>
+        return (
+            <Canvas>
+                <lineSegments key="Journey" geometry={this.geometry} material={JOURNEY}/>
+            </Canvas>
+        )
     }
 
     private static createGeometry(props: IJourneyProps): BufferGeometry {

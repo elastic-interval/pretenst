@@ -4,7 +4,6 @@
  */
 
 import * as React from "react"
-import * as R3 from "react-three"
 import { Color, Face3, Geometry, Vector3 } from "three"
 
 import { HEXAGON_POINTS, LAND_NORMAL_SPREAD, SIX, SURFACE_LAND_COLOR, UP } from "../island/constants"
@@ -29,11 +28,11 @@ export class SurfaceComponent extends React.Component<object, object> {
 
     public render(): JSX.Element | boolean {
         return (
-            <R3.Object3D key="surface">
-                <R3.Mesh name="Spots" geometry={this.spots} material={SURFACE}/>
-                <R3.PointLight key="Sun" distance="1000" decay="0.01" position={SUN_POSITION}/>
-                <R3.HemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
-            </R3.Object3D>
+            <group key="surface">
+                <mesh name="Spots" geometry={this.spots} material={SURFACE}/>
+                <pointLight key="Sun" distance={1000} decay={0.01} position={SUN_POSITION}/>
+                <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+            </group>
         )
     }
 
