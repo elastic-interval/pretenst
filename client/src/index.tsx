@@ -14,7 +14,7 @@ import { IFabricExports } from "./fabric/fabric-exports"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
-import { Tensegrity } from "./tensegrity"
+import { TensegrityView } from "./view/tensegrity-view"
 
 declare const getFabricExports: () => Promise<IFabricExports> // implementation: index.html
 
@@ -40,15 +40,13 @@ APP_EVENT.subscribe(appEvent => {
 async function start(): Promise<void> {
     const fabricExports = await getFabricExports()
     const user = await storage.getUser()
-    ReactDOM.render(
-        TENSEGRITY ?
-            <Tensegrity fabricExports={fabricExports}/>
-            :
-            <App fabricExports={fabricExports} storage={storage} user={user}/>,
-        document.getElementById("root") as HTMLElement,
-    )
+    const root = document.getElementById("root") as HTMLElement
+    if (TENSEGRITY) {
+        ReactDOM.render(<TensegrityView fabricExports={fabricExports}/>, root)
+    } else {
+        ReactDOM.render(<App fabricExports={fabricExports} storage={storage} user={user}/>, root)
+    }
     registerServiceWorker()
-
 }
 
 start()

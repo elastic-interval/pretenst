@@ -41,10 +41,11 @@ export const TENSEGRITY_LINE = new LineBasicMaterial({
     vertexColors: VertexColors,
 })
 
+
 export const TENSEGRITY_FACE = new MeshPhongMaterial({
     lights: true,
     color: new Color("white"),
     side: DoubleSide,
-    // transparent: true,
-    // opacity: 0.6,
+    transparent: true,
+    opacity: 0.6,
 })
