@@ -14,6 +14,7 @@ const BAR_SPAN = 2 * PHI + PRETENSION * 2.5
 const TRIANGLE_SPAN = 2 - PRETENSION
 const RING_SPAN = TRIANGLE_SPAN / 4
 const CROSS_SPAN = RING_SPAN
+const SETTLED_MIDPOINT = 0.83
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -40,7 +41,7 @@ function rayVector(ray: Ray): Vector3 {
 }
 
 function brickPoint(primaryRay: Ray, secondaryRay: Ray): Vector3 {
-    return rayVector(primaryRay).multiplyScalar(PHI).add(rayVector(secondaryRay))
+    return rayVector(primaryRay).multiplyScalar(PHI).addScaledVector(rayVector(secondaryRay), SETTLED_MIDPOINT)
 }
 
 enum BarEnd {
@@ -78,6 +79,7 @@ export enum Ring {
 
 interface ITriangle {
     name: Triangle
+    opposite: Triangle
     negative: boolean
     barEnds: BarEnd[]
     ringMember: Ring[]
@@ -86,48 +88,56 @@ interface ITriangle {
 const TRIANGLE_ARRAY: ITriangle[] = [
     {
         name: Triangle.NNN,
+        opposite: Triangle.PPP,
         negative: true,
         barEnds: [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA],
         ringMember: [Ring.NP, Ring.PN, Ring.PP],
     },
     {
         name: Triangle.PNN,
+        opposite: Triangle.NPP,
         negative: false,
         barEnds: [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO],
         ringMember: [Ring.PN, Ring.NN, Ring.NP],
     },
     {
         name: Triangle.NPN,
+        opposite: Triangle.PNP,
         negative: false,
         barEnds: [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA],
         ringMember: [Ring.PP, Ring.NP, Ring.NN],
     },
     {
         name: Triangle.NNP,
+        opposite: Triangle.PPN,
         negative: false,
         barEnds: [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA],
         ringMember: [Ring.NN, Ring.PN, Ring.PP],
     },
     {
         name: Triangle.NPP,
+        opposite: Triangle.PNN,
         negative: true,
         barEnds: [BarEnd.YNO, BarEnd.XPO, BarEnd.ZPA],
         ringMember: [Ring.PN, Ring.NP, Ring.NN],
     },
     {
         name: Triangle.PNP,
+        opposite: Triangle.NPN,
         negative: true,
         barEnds: [BarEnd.YPO, BarEnd.XPA, BarEnd.ZNO],
         ringMember: [Ring.PP, Ring.NN, Ring.NP],
     },
     {
         name: Triangle.PPN,
+        opposite: Triangle.NNP,
         negative: true,
         barEnds: [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO],
         ringMember: [Ring.NN, Ring.PP, Ring.PN],
     },
     {
         name: Triangle.PPP,
+        opposite: Triangle.NNN,
         negative: false,
         barEnds: [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
         ringMember: [Ring.NP, Ring.PP, Ring.PN],
@@ -176,6 +186,7 @@ export interface IInterval {
 
 export interface IFace {
     index: number
+    canGrow: boolean
     brick: IBrick
     triangle: Triangle
     joints: Joint[]
@@ -212,6 +223,7 @@ function createFace(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle)
     const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
     return <IFace>{
         index: fabric.createFace(joints[0], joints[1], joints[2]),
+        canGrow: true,
         brick,
         triangle,
         joints,
@@ -335,8 +347,14 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
             crossCables.push(createInterval(fabric, joint.joint, nextJoint.opposite, IntervalRole.CROSS_CABLE, CROSS_SPAN))
         }
     }
-    fabric.removeFace(brickA.faces[triangleA])
-    fabric.removeFace(brickB.faces[triangleB])
+    fabric.removeFace(brickA.faces[triangleA], true)
+    fabric.removeFace(brickB.faces[triangleB], true)
+    TRIANGLE_ARRAY.filter(t => t.opposite !== triangleA && t.negative !== TRIANGLE_ARRAY[triangleA].negative).forEach(triangle => {
+        brickA.faces[triangle.name].canGrow = false
+    })
+    TRIANGLE_ARRAY.filter(t => t.opposite !== triangleB && t.negative !== TRIANGLE_ARRAY[triangleB].negative).forEach(triangle => {
+        brickB.faces[triangle.name].canGrow = false
+    })
     return {ringCables, crossCables}
 }
 

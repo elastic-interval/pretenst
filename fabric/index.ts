@@ -36,7 +36,7 @@ const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
 const LAND: u8 = 1
-const GESTATION_DRAG_FACTOR: f32 = 50
+const GESTATION_DRAG_FACTOR: f32 = 100
 
 // Dimensioning ================================================================================
 
@@ -1152,8 +1152,7 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
     }
 }
 
-function tick(): void {
-    let gestating = isGestating()
+function tick(gestating: boolean): void {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let intervalRole = getIntervalRole(intervalIndex)
@@ -1177,6 +1176,7 @@ export function iterate(ticks: u16): boolean {
     let wrapAround = false
     let timeSweepStep: u16 = <u16>timeSweepSpeed
     let currentDirection = getCurrentDirection()
+    let gestating = isGestating() === GESTATING
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         let timeSweep = getTimeSweep()
         let current = timeSweep
@@ -1194,7 +1194,7 @@ export function iterate(ticks: u16): boolean {
             }
             setGestating(NOT_GESTATING)
         }
-        tick()
+        tick(gestating)
     }
     setAge(getAge() + <u32>ticks)
     let intervalCount = getIntervalCount()

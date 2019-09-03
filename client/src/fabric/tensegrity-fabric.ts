@@ -64,7 +64,7 @@ export class TensegrityFabric {
         return connector
     }
 
-    public removeFace(face: IFace): void {
+    public removeFace(face: IFace, removeIntervals: boolean): void {
         this.exports.removeFace(face.index)
         this.faces = this.faces.filter(existing => existing.index !== face.index)
         this.faces.forEach(existing => {
@@ -72,9 +72,9 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
-        face.cables.forEach(interval => {
-            this.removeInterval(interval)
-        })
+        if (removeIntervals) {
+            face.cables.forEach(interval => this.removeInterval(interval))
+        }
     }
 
     public removeInterval(interval: IInterval): void {

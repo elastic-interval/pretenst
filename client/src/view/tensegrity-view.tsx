@@ -90,7 +90,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
     }
     const root = document.getElementById("root") as HTMLElement
     const onPointerUp = (event: React.MouseEvent<HTMLDivElement>) => {
-        if (selectedFace) {
+        if (selectedFace && selectedFace.canGrow) {
             const brick = fabric.growBrick(selectedFace.brick, selectedFace.triangle)
             fabric.connectBricks(selectedFace.brick, selectedFace.triangle, brick, brick.base)
             fabric.iterate(1)
