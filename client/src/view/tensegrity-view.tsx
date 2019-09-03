@@ -68,6 +68,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
     const controls = useRef<OrbitControls>()
     const triangleMesh = useRef<Mesh>()
     const {size, setDefaultCamera} = useThree()
+    const flightState = TensegrityFlightState(fabric)
     let flight: Flight | undefined
     useEffect(() => {
         if (camera.current) {
@@ -77,9 +78,10 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
     useRender(({gl, canvas}: CanvasContext, timestamp: number) => {
         if (flight) {
             flight.update()
+            flight.moveTowardsTarget(flightState.target)
         } else if (controls.current && camera.current) {
             flight = new Flight(controls.current)
-            flight.setupCamera(TensegrityFlightState())
+            flight.setupCamera(flightState)
             flight.enabled = true
         }
         fabric.iterate(50)
@@ -93,8 +95,6 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
         if (selectedFace && selectedFace.canGrow) {
             const brick = fabric.growBrick(selectedFace.brick, selectedFace.triangle)
             fabric.connectBricks(selectedFace.brick, selectedFace.triangle, brick, brick.base)
-            fabric.iterate(1)
-            fabric.centralize()
         }
     }
     const onPointerMove = (event: React.MouseEvent<HTMLDivElement>) => {

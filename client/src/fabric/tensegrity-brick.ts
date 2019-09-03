@@ -347,14 +347,14 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
             crossCables.push(createInterval(fabric, joint.joint, nextJoint.opposite, IntervalRole.CROSS_CABLE, CROSS_SPAN))
         }
     }
-    fabric.removeFace(brickA.faces[triangleA], true)
-    fabric.removeFace(brickB.faces[triangleB], true)
-    TRIANGLE_ARRAY.filter(t => t.opposite !== triangleA && t.negative !== TRIANGLE_ARRAY[triangleA].negative).forEach(triangle => {
-        brickA.faces[triangle.name].canGrow = false
-    })
-    TRIANGLE_ARRAY.filter(t => t.opposite !== triangleB && t.negative !== TRIANGLE_ARRAY[triangleB].negative).forEach(triangle => {
-        brickB.faces[triangle.name].canGrow = false
-    })
+    const removeFace = (triangle: Triangle, brick: IBrick) => {
+        fabric.removeFace(brick.faces[triangle], true)
+        TRIANGLE_ARRAY.filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_ARRAY[triangle].negative).forEach(t => {
+            brick.faces[t.name].canGrow = false
+        })
+    }
+    removeFace(triangleA, brickA)
+    removeFace(triangleB, brickB)
     return {ringCables, crossCables}
 }
 

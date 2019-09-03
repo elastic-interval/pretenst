@@ -5,6 +5,7 @@
 
 import { Vector3 } from "three"
 
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
@@ -113,14 +114,16 @@ export function InitialFlightState(): IFlightState {
     }
 }
 
-export function TensegrityFlightState(): IFlightState {
+export function TensegrityFlightState(fabric: TensegrityFabric): IFlightState {
     return <IFlightState>{
-        target: new Vector3(0, 3.4, 0),
+        get target(): Vector3 {
+            return fabric.midpoint
+        },
         tooFar: 12,
         tooClose: 11,
         towardsDistance: 0.04,
         tooVertical: polarAngle(0.98),
-        tooHorizontal: polarAngle(0.94),
+        tooHorizontal: polarAngle(0.5),
         towardsPolarAngle: 0.005,
         appMode: AppMode.Riding,
     }
