@@ -8,11 +8,12 @@ import { Matrix4, Vector3 } from "three"
 import { IntervalRole, Laterality } from "./fabric-exports"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
-const PHI = 1.618
-const BAR_SPAN = 8
-const TRIANGLE_SPAN = 1
-const RING_SPAN = 0.01
-const CROSS_SPAN = 1
+const PHI = 1.61803398875
+const PRETENSION = 1
+const BAR_SPAN = 2 * PHI + PRETENSION * 2.5
+const TRIANGLE_SPAN = 2 - PRETENSION
+const RING_SPAN = TRIANGLE_SPAN / 4
+const CROSS_SPAN = RING_SPAN
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -150,8 +151,9 @@ function barsToPoints(vectors: Vector3[], bar: IBar): Vector3[] {
 //     return points
 // }
 
-function createBrickPointsOnOrigin(base: Triangle, altitudeFactor: number): Vector3 [] {
+function createBrickPointsOnOrigin(base: Triangle, altitudeFactor: number, scale: number): Vector3 [] {
     const points = BAR_ARRAY.reduce(barsToPoints, [])
+    points.forEach(point => point.multiplyScalar(scale))
     const trianglePoints = TRIANGLE_ARRAY[base].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
@@ -200,7 +202,7 @@ function createJoint(fabric: TensegrityFabric, jointTag: JointTag, location: Vec
 
 function createInterval(fabric: TensegrityFabric, alpha: number, omega: number, intervalRole: IntervalRole, span: number): IInterval {
     return {
-        index: fabric.createInterval(alpha, omega, span, intervalRole, true),
+        index: fabric.createInterval(alpha, omega, span, intervalRole, false),
         alpha, omega, span,
     }
 }
@@ -251,14 +253,14 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
 
 export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
     const base = Triangle.NNN
-    return createBrick(fabric, createBrickPointsOnOrigin(base, 1.3), base)
+    return createBrick(fabric, createBrickPointsOnOrigin(base, 2.6, 1.0), base)
 }
 
 export function createBrickOnTriangle(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle): IBrick {
     const trianglePoints = brick.faces[triangle].joints.map(joint => fabric.getJointLocation(joint))
     const xform = xformToTriangle(trianglePoints)
     const base = TRIANGLE_ARRAY[triangle].negative ? Triangle.PPP : Triangle.NNN
-    return createBrick(fabric, createBrickPointsOnOrigin(base, 0.8).map(p => p.applyMatrix4(xform)), base)
+    return createBrick(fabric, createBrickPointsOnOrigin(base, 0.8, 1.0).map(p => p.applyMatrix4(xform)), base)
 }
 
 export interface IBrickConnector {

@@ -36,7 +36,7 @@ const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
 const LAND: u8 = 1
-const GESTATION_ELASTIC_FACTOR: f32 = 0.1
+const GESTATION_DRAG_FACTOR: f32 = 50
 
 // Dimensioning ================================================================================
 
@@ -449,7 +449,7 @@ function setFaceCount(value: u16): void {
     setU16(statePtr + FACE_COUNT_OFFSET, value)
 }
 
-export function getGestating(): u8 {
+export function isGestating(): u8 {
     return getU8(statePtr + GESTATING_OFFSET)
 }
 
@@ -633,7 +633,7 @@ function calculateJointMidpoint(): void {
 }
 
 function calculateDirectionVectors(): void {
-    let rightJoint = getGestating() ? SEED_CORNERS + 1 : SEED_CORNERS // hanger joint still there
+    let rightJoint = isGestating() ? SEED_CORNERS + 1 : SEED_CORNERS // hanger joint still there
     let leftJoint = rightJoint + 1
     addVectors(seedPtr, locationPtr(rightJoint), locationPtr(leftJoint))
     multiplyScalar(seedPtr, 0.5)
@@ -668,6 +668,8 @@ export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32,
         }
     }
     outputLineGeometry(intervalIndex)
+    setTimeSweep(1)
+    setGestating(GESTATING)
     return intervalIndex
 }
 
@@ -1025,10 +1027,6 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Birth =======================================================================================
 
-export function isGestating(): boolean {
-    return getGestating() === GESTATING
-}
-
 export function endGestation(): void {
     setGestating(NOT_GESTATING)
     let jointCount = getJointCount() - 1
@@ -1155,22 +1153,21 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
 }
 
 function tick(): void {
-    let gestating = getGestating()
+    let gestating = isGestating()
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let intervalRole = getIntervalRole(intervalIndex)
-        let baseFactor = getElasticFactor(intervalRole) * physicsElasticFactor
+        let elasticFactor = getElasticFactor(intervalRole) * physicsElasticFactor
         let canPush = (intervalRole <= ROLE_BAR)
-        let elasticFactor = gestating ? GESTATION_ELASTIC_FACTOR * baseFactor : baseFactor
         elastic(intervalIndex, elasticFactor, canPush)
     }
     let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? 50 : 1))
+        exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? GESTATION_DRAG_FACTOR : 1))
         addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getF32(intervalMassPtr(jointIndex)))
         zero(forcePtr(jointIndex))
     }
-    for (let jointIndex: u16 = gestating ? 1 : 0; jointIndex < jointCount; jointIndex++) {
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         add(locationPtr(jointIndex), velocityPtr(jointIndex))
         setF32(intervalMassPtr(jointIndex), AMBIENT_JOINT_MASS)
     }
@@ -1188,13 +1185,14 @@ export function iterate(ticks: u16): boolean {
         if (timeSweep < current) {
             wrapAround = true
             setTimeSweep(0)
-            if (!getGestating()) {
+            if (!isGestating()) {
                 setPreviousDirection(currentDirection)
                 let nextDirection = getNextDirection()
                 if (nextDirection !== currentDirection) {
                     setCurrentDirection(nextDirection)
                 }
             }
+            setGestating(NOT_GESTATING)
         }
         tick()
     }

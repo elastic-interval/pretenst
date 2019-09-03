@@ -33,7 +33,7 @@ declare global {
     }
 }
 
-export function TensegrityView({fabricExports}: {fabricExports: IFabricExports}): JSX.Element {
+export function TensegrityView({fabricExports}: { fabricExports: IFabricExports }): JSX.Element {
     const physics = new Physics()
     physics.applyGlobal(fabricExports)
     const fabricKernel = createFabricKernel(fabricExports, MAX_POPULATION, 500)
@@ -59,9 +59,10 @@ export function TensegrityView({fabricExports}: {fabricExports: IFabricExports})
     )
 }
 
-function FabricView({fabric}:{fabric: TensegrityFabric}): JSX.Element {
+function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
     const rayCaster = new Raycaster()
     const [time, setTime] = useState<number>(0)
+    const [selectedFace, setSelectedFace] = useState<IFace | undefined>()
     const scene = useRef<Scene>()
     const camera = useRef<PerspectiveCamera>()
     const controls = useRef<OrbitControls>()
@@ -81,17 +82,25 @@ function FabricView({fabric}:{fabric: TensegrityFabric}): JSX.Element {
             flight.setupCamera(TensegrityFlightState())
             flight.enabled = true
         }
-        fabric.iterate(1)
+        fabric.iterate(50)
         setTime(timestamp)
     })
     if (!time) {
         console.log("time", time)
     }
     const root = document.getElementById("root") as HTMLElement
-    const onMouseDownCapture = (event: React.MouseEvent<HTMLDivElement>) => {
-        if (!event.shiftKey) {
-            return
+    const onPointerUp = (event: React.MouseEvent<HTMLDivElement>) => {
+        if (selectedFace) {
+            const brick = fabric.growBrick(selectedFace.brick, selectedFace.triangle)
+            fabric.connectBricks(selectedFace.brick, selectedFace.triangle, brick, brick.base)
+            fabric.iterate(1)
+            fabric.centralize()
         }
+    }
+    const onPointerMove = (event: React.MouseEvent<HTMLDivElement>) => {
+        setSelectedFace(undefined)
+    }
+    const onPointerDown = (event: React.MouseEvent<HTMLDivElement>) => {
         const mouse = new Vector2((event.clientX / size.width) * 2 - 1, -(event.clientY / size.height) * 2 + 1)
         if (camera.current && triangleMesh.current) {
             rayCaster.setFromCamera(mouse, camera.current)
@@ -113,10 +122,7 @@ function FabricView({fabric}:{fabric: TensegrityFabric}): JSX.Element {
             })
             const closestFace = faces.pop()
             if (closestFace) {
-                const brick = fabric.growBrick(closestFace.brick, closestFace.triangle)
-                fabric.connectBricks(closestFace.brick, closestFace.triangle, brick, brick.base)
-                fabric.iterate(1)
-                fabric.centralize()
+                setSelectedFace(closestFace)
             }
         }
     }
@@ -128,17 +134,20 @@ function FabricView({fabric}:{fabric: TensegrityFabric}): JSX.Element {
                     <orbitControls
                         ref={controls}
                         args={[camera.current, root]}
-                        enableDamping={true}
-                        dampingFactor={0.1}
-                        rotateSpeed={0.1}/>
+                        panSpeed={5.0}
+                        rotateSpeed={0.5}/>
                     <scene ref={scene}>
-                        <mesh
-                            key="Triangles"
-                            ref={triangleMesh}
-                            geometry={fabric.facesGeometry}
-                            material={TENSEGRITY_FACE}
-                            onPointerDown={onMouseDownCapture}
-                        />
+                        { fabric.isGestating ? undefined : (
+                            <mesh
+                                key="Triangles"
+                                ref={triangleMesh}
+                                geometry={fabric.facesGeometry}
+                                material={TENSEGRITY_FACE}
+                                onPointerDown={onPointerDown}
+                                onPointerMove={onPointerMove}
+                                onPointerUp={onPointerUp}
+                            />
+                        )}
                         <lineSegments
                             key="Lines"
                             geometry={fabric.linesGeometry}

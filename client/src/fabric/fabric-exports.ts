@@ -77,6 +77,8 @@ export interface IFabricExports {
 
     isGestating(): boolean
 
+    endGestation(): void
+
     getCurrentDirection(): Direction
 
     getNextDirection(): Direction
@@ -90,8 +92,6 @@ export interface IFabricExports {
     setAltitude(altitude: number): number
 
     setElasticFactor(intervalRole: IntervalRole, factor: number): number
-
-    endGestation(): void
 
     nextJointTag(): number
 
