@@ -311,6 +311,10 @@ class InstanceExports implements IFabricInstanceExports {
         this.ex.setIntervalHighLow(intervalIndex, direction, highLow)
     }
 
+    public setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
+        this.ex.setIntervalRole(intervalIndex, intervalRole)
+    }
+
     private get ex(): IFabricExports {
         this.exports.setInstance(this.index)
         return this.exports

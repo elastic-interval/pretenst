@@ -107,6 +107,8 @@ export interface IFabricExports {
 
     createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number
 
+    setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
+
     removeInterval(intervalIndex: number): void
 
     findOppositeIntervalIndex(intervalIndex: number): number
@@ -199,6 +201,8 @@ export interface IFabricInstanceExports {
     findOppositeIntervalIndex(intervalIndex: number): number
 
     setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
+
+    setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
     getFaceCount(): number
 

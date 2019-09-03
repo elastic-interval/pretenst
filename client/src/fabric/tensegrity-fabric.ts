@@ -79,6 +79,7 @@ export class TensegrityFabric {
 
     public removeInterval(interval: IInterval): void {
         this.exports.removeInterval(interval.index)
+        interval.removed = true
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
         this.intervals.forEach(existing => {
             if (existing.index > interval.index) {
@@ -227,6 +228,10 @@ export class TensegrityFabric {
 
     public createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number {
         return this.exports.createInterval(alphaIndex, omegaIndex, idealSpan, intervalRole, growing)
+    }
+
+    public setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
+        this.exports.setIntervalRole(intervalIndex, intervalRole)
     }
 
     public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {

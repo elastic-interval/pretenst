@@ -134,7 +134,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
                     <orbitControls
                         ref={controls}
                         args={[camera.current, root]}
-                        panSpeed={5.0}
+                        panSpeed={2.0}
                         rotateSpeed={0.5}/>
                     <scene ref={scene}>
                         { fabric.isGestating ? undefined : (

@@ -12,7 +12,7 @@ const PHI = 1.61803398875
 const PRETENSION = 1
 const BAR_SPAN = 2 * PHI + PRETENSION * 2.5
 const TRIANGLE_SPAN = 2 - PRETENSION
-const RING_SPAN = TRIANGLE_SPAN / 4
+const RING_SPAN = TRIANGLE_SPAN / 2
 const CROSS_SPAN = RING_SPAN
 const SETTLED_MIDPOINT = 0.83
 
@@ -83,6 +83,7 @@ interface ITriangle {
     negative: boolean
     barEnds: BarEnd[]
     ringMember: Ring[]
+    ring: Ring
 }
 
 const TRIANGLE_ARRAY: ITriangle[] = [
@@ -92,6 +93,7 @@ const TRIANGLE_ARRAY: ITriangle[] = [
         negative: true,
         barEnds: [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA],
         ringMember: [Ring.NP, Ring.PN, Ring.PP],
+        ring: Ring.NN,
     },
     {
         name: Triangle.PNN,
@@ -99,6 +101,7 @@ const TRIANGLE_ARRAY: ITriangle[] = [
         negative: false,
         barEnds: [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO],
         ringMember: [Ring.PN, Ring.NN, Ring.NP],
+        ring: Ring.PP,
     },
     {
         name: Triangle.NPN,
@@ -106,6 +109,7 @@ const TRIANGLE_ARRAY: ITriangle[] = [
         negative: false,
         barEnds: [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA],
         ringMember: [Ring.PP, Ring.NP, Ring.NN],
+        ring: Ring.PN,
     },
     {
         name: Triangle.NNP,
@@ -113,6 +117,7 @@ const TRIANGLE_ARRAY: ITriangle[] = [
         negative: false,
         barEnds: [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA],
         ringMember: [Ring.NN, Ring.PN, Ring.PP],
+        ring: Ring.NP,
     },
     {
         name: Triangle.NPP,
@@ -120,6 +125,7 @@ const TRIANGLE_ARRAY: ITriangle[] = [
         negative: true,
         barEnds: [BarEnd.YNO, BarEnd.XPO, BarEnd.ZPA],
         ringMember: [Ring.PN, Ring.NP, Ring.NN],
+        ring: Ring.PP,
     },
     {
         name: Triangle.PNP,
@@ -127,6 +133,7 @@ const TRIANGLE_ARRAY: ITriangle[] = [
         negative: true,
         barEnds: [BarEnd.YPO, BarEnd.XPA, BarEnd.ZNO],
         ringMember: [Ring.PP, Ring.NN, Ring.NP],
+        ring: Ring.PN,
     },
     {
         name: Triangle.PPN,
@@ -134,6 +141,7 @@ const TRIANGLE_ARRAY: ITriangle[] = [
         negative: true,
         barEnds: [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO],
         ringMember: [Ring.NN, Ring.PP, Ring.PN],
+        ring: Ring.NP,
     },
     {
         name: Triangle.PPP,
@@ -141,6 +149,7 @@ const TRIANGLE_ARRAY: ITriangle[] = [
         negative: false,
         barEnds: [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO],
         ringMember: [Ring.NP, Ring.PP, Ring.PN],
+        ring: Ring.NN,
     },
 ]
 
@@ -179,6 +188,7 @@ export type JointTag = number
 
 export interface IInterval {
     index: number
+    removed: boolean
     alpha: Joint
     omega: Joint
     span: number
@@ -212,8 +222,9 @@ function createJoint(fabric: TensegrityFabric, jointTag: JointTag, location: Vec
 }
 
 function createInterval(fabric: TensegrityFabric, alpha: number, omega: number, intervalRole: IntervalRole, span: number): IInterval {
-    return {
+    return <IInterval>{
         index: fabric.createInterval(alpha, omega, span, intervalRole, false),
+        removed: false,
         alpha, omega, span,
     }
 }
@@ -257,9 +268,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
             brick.rings[triangle.ringMember[walk]].push(interval)
         }
     })
-    TRIANGLE_ARRAY.forEach(triangle => {
-        brick.faces.push(createFace(fabric, brick, triangle.name))
-    })
+    TRIANGLE_ARRAY.forEach(triangle => brick.faces.push(createFace(fabric, brick, triangle.name)))
     return brick
 }
 
@@ -348,10 +357,13 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         }
     }
     const removeFace = (triangle: Triangle, brick: IBrick) => {
-        fabric.removeFace(brick.faces[triangle], true)
+        const face = brick.faces[triangle]
+        fabric.removeFace(face, true)
         TRIANGLE_ARRAY.filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_ARRAY[triangle].negative).forEach(t => {
             brick.faces[t.name].canGrow = false
         })
+        const triangleRing = TRIANGLE_ARRAY[triangle].ring
+        brick.rings[triangleRing].forEach(interval => fabric.setIntervalRole(interval.index, IntervalRole.RING_CABLE))
     }
     removeFace(triangleA, brickA)
     removeFace(triangleB, brickB)

@@ -729,7 +729,7 @@ function setIdealSpan(intervalIndex: u16, idealSpan: f32): void {
     setF32(idealSpanPtr(intervalIndex), idealSpan)
 }
 
-function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
+export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
     setU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32, intervalRole)
 }
 
