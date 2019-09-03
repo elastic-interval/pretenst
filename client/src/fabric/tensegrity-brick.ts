@@ -363,7 +363,9 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
             brick.faces[t.name].canGrow = false
         })
         const triangleRing = TRIANGLE_ARRAY[triangle].ring
-        brick.rings[triangleRing].forEach(interval => fabric.setIntervalRole(interval.index, IntervalRole.RING_CABLE))
+        brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => (
+            fabric.setIntervalRole(interval.index, IntervalRole.RING_CABLE)
+        ))
     }
     removeFace(triangleA, brickA)
     removeFace(triangleB, brickB)
