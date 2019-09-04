@@ -33,7 +33,7 @@ export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow"
 export const SURFACE = new MeshPhongMaterial({
     color: new Color("silver"),
     lights: true,
-    opacity: 0.7,
+    opacity: 0.3,
     transparent: true,
 })
 
