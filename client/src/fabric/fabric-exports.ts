@@ -63,10 +63,6 @@ export interface IFabricExports {
 
     setSpanVariationSpeed(factor: number): number
 
-    setMaxPull(factor: number): number
-
-    setMaxPush(factor: number): number
-
     init(joints: number, intervals: number, faces: number, instances: number): number
 
     setInstance(index: number): void

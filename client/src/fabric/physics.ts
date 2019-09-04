@@ -17,8 +17,6 @@ export enum PhysicsFeature {
     GlobalElasticFactor = "Global Elastic Factor",
     MaxSpanVariation = "Maximum Span Variation",
     SpanVariationSpeed = "Span Variation Speed",
-    MaxPull = "Maximum Pull",
-    MaxPush = "Maximum Push",
     MuscleElasticFactor = "Muscle Elastic Factor",
     BarElasticFactor = "Bar Elastic Factor",
     TriangleElasticFactor = "Triangle Elastic Factor",
@@ -86,12 +84,6 @@ export class Physics {
                     break
                 case PhysicsFeature.SpanVariationSpeed:
                     currentValue = fabricExports.setSpanVariationSpeed(factor)
-                    break
-                case PhysicsFeature.MaxPull:
-                    currentValue = fabricExports.setMaxPull(factor)
-                    break
-                case PhysicsFeature.MaxPush:
-                    currentValue = fabricExports.setMaxPush(factor)
                     break
                 default:
                     ignore = true
