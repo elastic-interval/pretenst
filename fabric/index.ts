@@ -127,8 +127,8 @@ const GLOBAL_ELASTIC_FACTOR: f32 = 0.5767999887466431
 const MAX_SPAN_VARIATION: f32 = 0.1
 const TIME_SWEEP_SPEED: f32 = 30
 
-const MAX_PULL: f32 = 1.53
-const MAX_PUSH: f32 = 3.6
+const MAX_PULL: f32 = 5
+const MAX_PUSH: f32 = 9
 const STRESS_FACTOR_CHANGE: f32 = 0.01
 const STRESS_FACTOR_LIMIT_TOLERANCE = STRESS_FACTOR_CHANGE * 3
 const WITHIN_LIMITS: u8 = 0
@@ -146,9 +146,6 @@ const PUSH_TOUCHES_MAX: u8 = 11
 const PULL_TOUCHES_MAX: u8 = 12
 const PUSH_TOUCHES_MIN: u8 = 13
 const PULL_TOUCHES_MIN: u8 = 14
-
-const MIN_COLOR: f32 = 0.05
-const MAX_COLOR: f32 = 1.0
 
 let maxPull: f32 = MAX_PULL
 let minPull: f32 = 0
@@ -686,7 +683,7 @@ export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32,
     setIntervalCount(intervalCount + 1)
     setAlphaIndex(intervalIndex, alphaIndex)
     setOmegaIndex(intervalIndex, omegaIndex)
-    setIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) * -idealSpan)
+    setIntervalIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) * -idealSpan)
     setIntervalRole(intervalIndex, intervalRole)
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
         if (direction === REST_DIRECTION) {
@@ -715,7 +712,7 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setIntervalRole(intervalIndex, getIntervalRole(nextIndex))
     setAlphaIndex(intervalIndex, getAlphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, getOmegaIndex(nextIndex))
-    setIdealSpan(intervalIndex, getIdealSpan(nextIndex))
+    setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(nextIndex))
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
         setIntervalHighLow(intervalIndex, direction, getIntervalHighLow(nextIndex, direction))
     }
@@ -729,48 +726,56 @@ function getAlphaIndex(intervalIndex: u16): u16 {
     return getU16(intervalPtr(intervalIndex))
 }
 
-function setAlphaIndex(intervalIndex: u16, v: u16): void {
-    setU16(intervalPtr(intervalIndex), v)
+function setAlphaIndex(intervalIndex: u16, index: u16): void {
+    setU16(intervalPtr(intervalIndex), index)
 }
 
 function getOmegaIndex(intervalIndex: u16): u16 {
     return getU16(intervalPtr(intervalIndex) + INDEX_SIZE)
 }
 
-function setOmegaIndex(intervalIndex: u16, v: u16): void {
-    setU16(intervalPtr(intervalIndex) + INDEX_SIZE, v)
+function setOmegaIndex(intervalIndex: u16, index: u16): void {
+    setU16(intervalPtr(intervalIndex) + INDEX_SIZE, index)
 }
 
 function unitPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE
+    return intervalPtr(intervalIndex) + INDEX_SIZE * 2
 }
 
 function idealSpanPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE
+    return unitPtr(intervalIndex) + VECTOR_SIZE
 }
 
-function getIdealSpan(intervalIndex: u16): f32 {
+function getIntervalIdealSpan(intervalIndex: u16): f32 {
     return getF32(idealSpanPtr(intervalIndex))
 }
 
-function setIdealSpan(intervalIndex: u16, idealSpan: f32): void {
+export function setIntervalIdealSpan(intervalIndex: u16, idealSpan: f32): void {
     setF32(idealSpanPtr(intervalIndex), idealSpan)
 }
 
-export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
-    setU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32, intervalRole)
+function rolePtr(intervalIndex: u16): usize {
+    return idealSpanPtr(intervalIndex) + F32
 }
 
 function getIntervalRole(intervalIndex: u16): u8 {
-    return getU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32)
+    return getU8(rolePtr(intervalIndex))
+}
+
+export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
+    setU8(rolePtr(intervalIndex), intervalRole)
+}
+
+function highLowPtr(intervalIndex: u16): usize {
+    return rolePtr(intervalIndex) + INTERVAL_ROLE_SIZE
 }
 
 function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
-    return getU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * direction)
+    return getU8(highLowPtr(intervalIndex) + MUSCLE_HIGHLOW_SIZE * direction)
 }
 
 export function setIntervalHighLow(intervalIndex: u16, direction: u8, highLow: u8): void {
-    setU8(intervalPtr(intervalIndex) + INDEX_SIZE * 2 + VECTOR_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * direction, highLow)
+    setU8(highLowPtr(intervalIndex) + MUSCLE_HIGHLOW_SIZE * direction, highLow)
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -880,7 +885,7 @@ function getIntervalSpanVariationFloat(intervalIndex: u16, direction: u8): f32 {
 function interpolateCurrentSpan(intervalIndex: u16): f32 {
     let timeSweep = getTimeSweep()
     let progress = <f32>timeSweep / 65536
-    let idealSpan = getIdealSpan(intervalIndex)
+    let idealSpan = getIntervalIdealSpan(intervalIndex)
     let intervalState = getIntervalHighLow(intervalIndex, REST_DIRECTION)
     if (intervalState === GROWING_INTERVAL) {
         if (timeSweep === 0) { // done growing
@@ -956,7 +961,7 @@ function outputLineGeometry(intervalIndex: u16): u8 {
             return LOWER_MIN_PULL_LIMIT
         }
         let color = (stress - minPull) / (maxPull - minPull)
-        setLineColor(lineColorPtr,  1.0 - color, 1.0 - color, color)
+        setLineColor(lineColorPtr, 1.0 - color, 1.0 - color, color)
         let tooLowForMax: boolean = stress < maxPull - STRESS_FACTOR_LIMIT_TOLERANCE
         let tooHighForMin: boolean = stress > minPull + STRESS_FACTOR_LIMIT_TOLERANCE
         if (tooLowForMax && !tooHighForMin) {
@@ -1015,9 +1020,9 @@ export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
     let interval0 = findIntervalIndex(joint0, joint1)
     let interval1 = findIntervalIndex(joint1, joint2)
     let interval2 = findIntervalIndex(joint2, joint0)
-    let ideal0 = getIdealSpan(interval0)
-    let ideal1 = getIdealSpan(interval1)
-    let ideal2 = getIdealSpan(interval2)
+    let ideal0 = getIntervalIdealSpan(interval0)
+    let ideal1 = getIntervalIdealSpan(interval1)
+    let ideal2 = getIntervalIdealSpan(interval2)
     return (ideal0 + ideal1 + ideal2) / 3
 }
 

@@ -315,6 +315,10 @@ class InstanceExports implements IFabricInstanceExports {
         this.ex.setIntervalRole(intervalIndex, intervalRole)
     }
 
+    public setIntervalIdealSpan(intervalIndex: number, span: number): void {
+        this.ex.setIntervalIdealSpan(intervalIndex, span)
+    }
+
     private get ex(): IFabricExports {
         this.exports.setInstance(this.index)
         return this.exports
