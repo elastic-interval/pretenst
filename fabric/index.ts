@@ -123,8 +123,10 @@ const DRAG_BELOW_LAND: f32 = 0.9607399702072144
 const DRAG_BELOW_WATER: f32 = 0.001
 const GRAVITY_BELOW_LAND: f32 = -0.002540299901738763
 const GRAVITY_BELOW_WATER: f32 = -0.00001
-const ELASTIC_FACTOR: f32 = 0.5767999887466431
+const GLOBAL_ELASTIC_FACTOR: f32 = 0.5767999887466431
 const MAX_SPAN_VARIATION: f32 = 0.1
+const MAX_PULL: f32 = 1.53
+const MAX_PUSH: f32 = 3.6
 const TIME_SWEEP_SPEED: f32 = 30
 
 let physicsDragAbove: f32 = DRAG_ABOVE
@@ -163,10 +165,10 @@ export function setGravityBelowLand(factor: f32): f32 {
     return physicsGravityBelowLand = GRAVITY_BELOW_LAND * factor
 }
 
-let physicsElasticFactor: f32 = ELASTIC_FACTOR
+let globalElasticFactor: f32 = GLOBAL_ELASTIC_FACTOR
 
 export function setGlobalElasticFactor(factor: f32): f32 {
-    return physicsElasticFactor = ELASTIC_FACTOR * factor
+    return globalElasticFactor = GLOBAL_ELASTIC_FACTOR * factor
 }
 
 let maxSpanVariation: f32 = MAX_SPAN_VARIATION
@@ -179,6 +181,18 @@ let timeSweepSpeed: f32 = TIME_SWEEP_SPEED
 
 export function setSpanVariationSpeed(factor: f32): f32 {
     return timeSweepSpeed = TIME_SWEEP_SPEED * factor
+}
+
+let maxPull: f32 = MAX_PULL
+
+export function setMaxPull(factor: f32): f32 {
+    return maxPull = MAX_PULL * factor
+}
+
+let maxPush: f32 = MAX_PUSH
+
+export function setMaxPush(factor: f32): f32 {
+    return maxPush = MAX_PUSH * factor
 }
 
 // Instances ====================================================================================
@@ -482,7 +496,7 @@ export function setNextDirection(value: u8): void {
 }
 
 export function setElasticFactor(intervalRole: u8, factor: f32): f32 {
-    let elasticFactor = ELASTIC_FACTOR * factor
+    let elasticFactor = GLOBAL_ELASTIC_FACTOR * factor
     setF32(statePtr + ELASTIC_FACTOR_OFFSET + intervalRole * F32, elasticFactor)
     return elasticFactor
 }
@@ -875,21 +889,32 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
     }
 }
 
-function outputLineGeometry(intervalIndex: u16): void {
-    let linePtr = lineOffset + intervalIndex * VECTOR_SIZE * 2
-    setVector(linePtr, locationPtr(getAlphaIndex(intervalIndex)))
-    setVector(linePtr + VECTOR_SIZE, locationPtr(getOmegaIndex(intervalIndex)))
-    let lineColorPtr = lineColorOffset + intervalIndex * VECTOR_SIZE * 2
-    let intervalRole = getIntervalRole(intervalIndex)
-    let red: f32 = intervalRole === ROLE_BAR ? 1.0 : 0.0
-    let green: f32 = 0.0
-    let blue: f32 = intervalRole === ROLE_BAR ? 0.0 : 1.0
+function setLineColor(lineColorPtr: usize, red: f32, green: f32, blue: f32): void {
     setX(lineColorPtr, red)
     setY(lineColorPtr, green)
     setZ(lineColorPtr, blue)
     setX(lineColorPtr + VECTOR_SIZE, red)
     setY(lineColorPtr + VECTOR_SIZE, green)
     setZ(lineColorPtr + VECTOR_SIZE, blue)
+}
+
+function outputLineGeometry(intervalIndex: u16): void {
+    let linePtr = lineOffset + intervalIndex * VECTOR_SIZE * 2
+    setVector(linePtr, locationPtr(getAlphaIndex(intervalIndex)))
+    setVector(linePtr + VECTOR_SIZE, locationPtr(getOmegaIndex(intervalIndex)))
+    let lineColorPtr = lineColorOffset + intervalIndex * VECTOR_SIZE * 2
+    let intervalRole = getIntervalRole(intervalIndex)
+    let elasticFactor = getElasticFactor(intervalRole) * globalElasticFactor
+    let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
+    let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
+    let push: boolean = stress < 0
+    let relative = (push ? -stress / maxPush : stress / maxPull) / elasticFactor
+    if (relative > 1.0) {
+        setLineColor(lineColorPtr, 1.0, 1.0, 1.0)
+    } else {
+        const high = relative * relative
+        setLineColor(lineColorPtr, push ? high : 0.0, (1.0 - high) / 4, push ? 0.0 : high)
+    }
 }
 
 // Faces =====================================================================================
@@ -1106,7 +1131,10 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 // Physics =====================================================================================
 
-function elastic(intervalIndex: u16, elasticFactor: f32, canPush: boolean): void {
+function intervalPhysics(intervalIndex: u16): void {
+    let intervalRole = getIntervalRole(intervalIndex)
+    let elasticFactor = getElasticFactor(intervalRole) * globalElasticFactor
+    let canPush = (intervalRole <= ROLE_BAR)
     let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
     let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
     if (canPush || stress > 0) {
@@ -1120,7 +1148,7 @@ function elastic(intervalIndex: u16, elasticFactor: f32, canPush: boolean): void
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
+function jointPhysics(jointIndex: u16, dragAbove: f32): void {
     let velocityVectorPtr = velocityPtr(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(locationPtr(jointIndex))
@@ -1155,14 +1183,11 @@ function exertJointPhysics(jointIndex: u16, dragAbove: f32): void {
 function tick(gestating: boolean): void {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        let intervalRole = getIntervalRole(intervalIndex)
-        let elasticFactor = getElasticFactor(intervalRole) * physicsElasticFactor
-        let canPush = (intervalRole <= ROLE_BAR)
-        elastic(intervalIndex, elasticFactor, canPush)
+        intervalPhysics(intervalIndex)
     }
     let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        exertJointPhysics(jointIndex, physicsDragAbove * (gestating ? GESTATION_DRAG_FACTOR : 1))
+        jointPhysics(jointIndex, physicsDragAbove * (gestating ? GESTATION_DRAG_FACTOR : 1))
         addScaledVector(velocityPtr(jointIndex), forcePtr(jointIndex), 1.0 / getF32(intervalMassPtr(jointIndex)))
         zero(forcePtr(jointIndex))
     }

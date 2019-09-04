@@ -84,7 +84,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
             flight.setupCamera(flightState)
             flight.enabled = true
         }
-        fabric.iterate(50)
+        fabric.iterate(30)
         setTime(timestamp)
     })
     if (!time) {
