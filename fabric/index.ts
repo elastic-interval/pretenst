@@ -129,8 +129,8 @@ const TIME_SWEEP_SPEED: f32 = 30
 
 const MAX_PULL: f32 = 1.53
 const MAX_PUSH: f32 = 3.6
-const STRESS_FACTOR_CHANGE: f32 = 0.001
-const STRESS_FACTOR_LIMIT_TOLERANCE = STRESS_FACTOR_CHANGE * 100
+const STRESS_FACTOR_CHANGE: f32 = 0.01
+const STRESS_FACTOR_LIMIT_TOLERANCE = STRESS_FACTOR_CHANGE * 3
 const WITHIN_LIMITS: u8 = 0
 const RAISE_MAX_PUSH_LIMIT: u8 = 1
 const TIGHTEN_MAX_PUSH_LIMIT: u8 = 2
@@ -920,33 +920,49 @@ function outputLineGeometry(intervalIndex: u16): u8 {
     let intervalRole = getIntervalRole(intervalIndex)
     let elasticFactor = getElasticFactor(intervalRole) * globalElasticFactor
     let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
-    let signedStress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
-    let push: boolean = signedStress < 0
-    let stress = push ? -signedStress : signedStress
-    let relative = (push ? (stress - minPush) / (maxPush - minPush) : (stress - minPull) / (maxPull - minPull)) / elasticFactor
-    if (relative > MAX_COLOR) {
-        setLineColor(lineColorPtr, 1.0, 1.0, 1.0)
-        return push ? RAISE_MAX_PUSH_LIMIT : RAISE_MAX_PULL_LIMIT
+    let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
+    if (stress < 0) { // PUSH
+        stress = -stress
+        if (stress > maxPush) {
+            setLineColor(lineColorPtr, 0.0, 1.0, 0.0)
+            return RAISE_MAX_PUSH_LIMIT
+        }
+        if (stress < minPush) {
+            setLineColor(lineColorPtr, 0.0, 1.0, 0.0)
+            return LOWER_MIN_PUSH_LIMIT
+        }
+        let color = (stress - minPush) / (maxPush - minPush)
+        setLineColor(lineColorPtr, color, (1.0 - color) * 0.75, 0.0)
+        let tooLowForMax: boolean = stress < maxPush - STRESS_FACTOR_LIMIT_TOLERANCE
+        let tooHighForMin: boolean = stress > minPush + STRESS_FACTOR_LIMIT_TOLERANCE
+        if (tooLowForMax && !tooHighForMin) {
+            return PUSH_TOUCHES_MIN
+        }
+        if (tooHighForMin && !tooLowForMax) {
+            return PUSH_TOUCHES_MAX
+        }
+        return PUSH_WITHIN_LIMITS
+    } else { // PULL
+        if (stress > maxPull) {
+            setLineColor(lineColorPtr, 0.0, 1.0, 0.0)
+            return RAISE_MAX_PULL_LIMIT
+        }
+        if (stress < minPull) {
+            setLineColor(lineColorPtr, 0.0, 1.0, 0.0)
+            return LOWER_MIN_PULL_LIMIT
+        }
+        let color = (stress - minPull) / (maxPull - minPull)
+        setLineColor(lineColorPtr, 0.0, (1.0 - color) * 0.75, color)
+        let tooLowForMax: boolean = stress < maxPull - STRESS_FACTOR_LIMIT_TOLERANCE
+        let tooHighForMin: boolean = stress > minPull + STRESS_FACTOR_LIMIT_TOLERANCE
+        if (tooLowForMax && !tooHighForMin) {
+            return PULL_TOUCHES_MIN
+        }
+        if (tooHighForMin && !tooLowForMax) {
+            return PULL_TOUCHES_MAX
+        }
+        return PULL_WITHIN_LIMITS
     }
-    if (relative < MIN_COLOR) {
-        setLineColor(lineColorPtr, 1.0, 1.0, 1.0)
-        return push ? LOWER_MIN_PUSH_LIMIT : LOWER_MIN_PULL_LIMIT
-    }
-    setLineColor(
-        lineColorPtr,
-        push ? relative : 0.0,
-        1.0 - relative,
-        push ? 1.0 - relative : relative,
-    )
-    let tooLowForMax: boolean = relative < MAX_COLOR - STRESS_FACTOR_LIMIT_TOLERANCE
-    let tooHighForMin: boolean = relative > MIN_COLOR + STRESS_FACTOR_LIMIT_TOLERANCE
-    if (tooLowForMax && !tooHighForMin) {
-        return push ? PUSH_TOUCHES_MIN : PULL_TOUCHES_MIN
-    }
-    if (tooHighForMin && !tooLowForMax) {
-        return push ? PUSH_TOUCHES_MAX : PULL_TOUCHES_MAX
-    }
-    return push ? PUSH_WITHIN_LIMITS : PULL_WITHIN_LIMITS
 }
 
 // Faces =====================================================================================
@@ -1309,23 +1325,29 @@ export function iterate(ticks: u16): boolean {
         case TIGHTEN_MAX_PUSH_LIMIT:
             maxPush -= STRESS_FACTOR_CHANGE
             break
-        case RAISE_MAX_PUSH_LIMIT:
-            maxPush += STRESS_FACTOR_CHANGE
-            break
         case TIGHTEN_MAX_PULL_LIMIT:
             maxPull -= STRESS_FACTOR_CHANGE
+            break
+        case TIGHTEN_MIN_PUSH_LIMIT:
+            if (maxPush - minPush < STRESS_FACTOR_LIMIT_TOLERANCE * 2) {
+                break
+            }
+            minPush += STRESS_FACTOR_CHANGE
+            break
+        case TIGHTEN_MIN_PULL_LIMIT:
+            if (maxPull - minPull < STRESS_FACTOR_LIMIT_TOLERANCE * 2) {
+                break
+            }
+            minPull += STRESS_FACTOR_CHANGE
+            break
+        case RAISE_MAX_PUSH_LIMIT:
+            maxPush += STRESS_FACTOR_CHANGE
             break
         case RAISE_MAX_PULL_LIMIT:
             maxPull += STRESS_FACTOR_CHANGE
             break
-        case TIGHTEN_MIN_PUSH_LIMIT:
-            minPush += STRESS_FACTOR_CHANGE
-            break
         case LOWER_MIN_PUSH_LIMIT:
             minPush -= STRESS_FACTOR_CHANGE
-            break
-        case TIGHTEN_MIN_PULL_LIMIT:
-            minPull += STRESS_FACTOR_CHANGE
             break
         case LOWER_MIN_PULL_LIMIT:
             minPull -= STRESS_FACTOR_CHANGE
