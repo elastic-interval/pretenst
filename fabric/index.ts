@@ -912,6 +912,10 @@ function setLineColor(lineColorPtr: usize, red: f32, green: f32, blue: f32): voi
     setZ(lineColorPtr + VECTOR_SIZE, blue)
 }
 
+function setLineBlank(lineColorPtr: usize): void {
+    setLineColor(lineColorPtr, 0.0, 0.0, 0.0)
+}
+
 function outputLineGeometry(intervalIndex: u16): u8 {
     let linePtr = lineOffset + intervalIndex * VECTOR_SIZE * 2
     setVector(linePtr, locationPtr(getAlphaIndex(intervalIndex)))
@@ -924,15 +928,15 @@ function outputLineGeometry(intervalIndex: u16): u8 {
     if (stress < 0) { // PUSH
         stress = -stress
         if (stress > maxPush) {
-            setLineColor(lineColorPtr, 0.0, 1.0, 0.0)
+            setLineBlank(lineColorPtr)
             return RAISE_MAX_PUSH_LIMIT
         }
         if (stress < minPush) {
-            setLineColor(lineColorPtr, 0.0, 1.0, 0.0)
+            setLineBlank(lineColorPtr)
             return LOWER_MIN_PUSH_LIMIT
         }
         let color = (stress - minPush) / (maxPush - minPush)
-        setLineColor(lineColorPtr, color, (1.0 - color) * 0.75, 0.0)
+        setLineColor(lineColorPtr, color, 1.0 - color, 1.0 - color)
         let tooLowForMax: boolean = stress < maxPush - STRESS_FACTOR_LIMIT_TOLERANCE
         let tooHighForMin: boolean = stress > minPush + STRESS_FACTOR_LIMIT_TOLERANCE
         if (tooLowForMax && !tooHighForMin) {
@@ -944,15 +948,15 @@ function outputLineGeometry(intervalIndex: u16): u8 {
         return PUSH_WITHIN_LIMITS
     } else { // PULL
         if (stress > maxPull) {
-            setLineColor(lineColorPtr, 0.0, 1.0, 0.0)
+            setLineBlank(lineColorPtr)
             return RAISE_MAX_PULL_LIMIT
         }
         if (stress < minPull) {
-            setLineColor(lineColorPtr, 0.0, 1.0, 0.0)
+            setLineBlank(lineColorPtr)
             return LOWER_MIN_PULL_LIMIT
         }
         let color = (stress - minPull) / (maxPull - minPull)
-        setLineColor(lineColorPtr, 0.0, (1.0 - color) * 0.75, color)
+        setLineColor(lineColorPtr,  1.0 - color, 1.0 - color, color)
         let tooLowForMax: boolean = stress < maxPull - STRESS_FACTOR_LIMIT_TOLERANCE
         let tooHighForMin: boolean = stress > minPull + STRESS_FACTOR_LIMIT_TOLERANCE
         if (tooLowForMax && !tooHighForMin) {
