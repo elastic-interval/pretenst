@@ -55,7 +55,7 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
     }
     return (
         <div className="the-whole-page">
-            <Canvas invalidateFrameloop>
+            <Canvas>
                 <FabricView fabric={fabric}/>
             </Canvas>
             <PhysicsPanel
@@ -72,7 +72,6 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
     const sphereGeometry = new SphereGeometry(0.2, 16, 16)
     const rayCaster = new Raycaster()
     const [holdFaceEvent, setHoldFaceEvent] = useState<React.MouseEvent<HTMLDivElement> | undefined>()
-    const [selectedFace, setSelectedFace] = useState<IFace | undefined>()
     const [dragJointEvent, setDragJointEvent] = useState<React.MouseEvent<HTMLDivElement> | undefined>()
     const [age, setAge] = useState<number>(0)
     const {camera} = useThree()
@@ -85,6 +84,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
         if (flight) {
             flight.update()
             flight.moveTowardsTarget(flightState.target)
+            flight.autoRotate = !fabric.selectedFace && !fabric.selectedJoint
         } else if (controls.current) {
             flight = new Flight(controls.current)
             flight.setupCamera(flightState)
@@ -147,13 +147,13 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
     const facePointerUp = () => {
         const face = holdFaceEvent ? findFace(holdFaceEvent) : undefined
         if (face) {
-            if (!selectedFace || face.index !== selectedFace.index) {
-                setSelectedFace(face)
-            } else if (selectedFace.canGrow) {
-                const brick = fabric.growBrick(selectedFace.brick, selectedFace.triangle)
-                fabric.connectBricks(selectedFace.brick, selectedFace.triangle, brick, brick.base)
+            if (!fabric.selectedFace || face.index !== fabric.selectedFace.index) {
+                fabric.selectedFace = face
+            } else if (fabric.selectedFace.canGrow) {
+                const brick = fabric.growBrick(fabric.selectedFace.brick, fabric.selectedFace.triangle)
+                fabric.connectBricks(fabric.selectedFace.brick, fabric.selectedFace.triangle, brick, brick.base)
                 fabric.selectedJoint = undefined
-                setSelectedFace(undefined)
+                fabric.selectedFace = undefined
             }
         }
     }
@@ -213,13 +213,13 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
                 return TENSEGRITY_JOINT_SELECTED
         }
     }
+    const selectedFace = fabric.selectedFace
+    const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
     return (
         <group>
             <orbitControls
                 ref={controls}
                 args={[camera, root]}
-                panSpeed={2.0}
-                rotateSpeed={0.5}
             />
             <scene
                 onPointerUp={sceneRelease}
@@ -256,10 +256,10 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
                             material={selectedFace.canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
                             onClick={() => {
                                 fabric.selectedJoint = joint
-                                setSelectedFace(undefined)
+                                fabric.selectedFace = undefined
                             }}
-                            onPointerDown={event => event.stopPropagation()}
-                            onPointerUp={event => event.stopPropagation()}
+                            onPointerDown={stopPropagation}
+                            onPointerUp={stopPropagation}
                         />
                     )))}
                 <lineSegments
