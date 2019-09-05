@@ -32,6 +32,7 @@ export enum SpanAdjustment {
 export class TensegrityFabric {
     public spanAdjustment = SpanAdjustment.NONE
     public selectedJoint: Joint | undefined
+    public selectedFace: IFace | undefined
 
     private faces: IFace[] = []
     private intervals: IInterval[] = []

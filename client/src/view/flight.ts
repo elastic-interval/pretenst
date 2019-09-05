@@ -35,7 +35,8 @@ export class Flight {
         orbit.enableKeys = false
         orbit.zoomSpeed = 0.5
         orbit.target = this.target
-        orbit.enablePan = true
+        orbit.enablePan = false
+        console.log("this.orbit", this.orbit)
     }
 
     public setupCamera(flightState: IFlightState): void {
@@ -45,6 +46,10 @@ export class Flight {
         const z = distance * Math.cos(angleAboveHorizon)
         this.camera.position.set(0, y, z)
         this.target.set(flightState.target.x, flightState.target.y, flightState.target.z)
+    }
+
+    public set autoRotate(rotate: boolean) {
+        this.orbit.autoRotate = rotate
     }
 
     public stayUpright(): void {
@@ -84,6 +89,10 @@ export class Flight {
 
     public update(): void {
         this.orbit.update()
+    }
+
+    public rotateLeft(): void {
+        // this.orbit.rotateLeft(0.01)
     }
 
     public set enabled(enable: boolean) {
