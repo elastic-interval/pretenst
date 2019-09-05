@@ -1371,3 +1371,16 @@ export function iterate(ticks: u16): boolean {
     return wrapAround
 }
 
+export function multiplyAdjacentIdealSpan(jointIndex: u16, bar: boolean, factor: f32): void {
+    let intervalCount = getIntervalCount()
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        if (getAlphaIndex(intervalIndex) !== jointIndex && getOmegaIndex(intervalIndex) !== jointIndex) {
+            continue
+        }
+        let intervalIsBar: boolean = getIntervalRole(intervalIndex) === ROLE_BAR
+        if (intervalIsBar !== bar) {
+            continue
+        }
+        setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(intervalIndex) * factor)
+    }
+}

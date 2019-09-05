@@ -142,7 +142,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
         setSelectedJoint(undefined)
         setHoldFace(event)
     }
-    const scenePointerUp = () => {
+    const sceneRelease = () => {
         const currentControls = controls.current
         if (currentControls) {
             currentControls.enabled = true
@@ -150,9 +150,19 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
         setDragJoint(undefined)
     }
     const scenePointerMove = (event: React.MouseEvent<HTMLDivElement>) => {
-        setHoldFace(undefined)
-        if (selectedJoint !== undefined && dragJoint !== undefined) {
-            console.log("movementY", event.movementY)
+        if (holdFace) {
+            setHoldFace(undefined)
+        }
+        if (selectedJoint !== undefined && dragJoint !== undefined && event.movementY) {
+            const changeSpan = (movement: number, bar: boolean) => {
+                if (movement === 0) {
+                    return
+                }
+                const factor = 1.0 + 0.001 * movement
+                fabric.multiplyAdjacentIdealSpan(selectedJoint, bar, factor)
+            }
+            changeSpan(-event.movementY, false)
+            changeSpan(event.movementX, true)
         }
     }
     const selectedJointDown = (event: React.MouseEvent<HTMLDivElement>, joint: Joint) => {
@@ -164,8 +174,8 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
         setDragJoint(joint)
     }
     const selectedJointClick = (event: React.MouseEvent<HTMLDivElement>) => {
-        console.log("click selected joint")
         event.stopPropagation()
+        setSelectedJoint(undefined)
     }
     return (
         <group>
@@ -180,7 +190,8 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
                     />
                     <scene
                         ref={scene}
-                        onPointerUp={scenePointerUp}
+                        onPointerUp={sceneRelease}
+                        onPointerOut={sceneRelease}
                         onPointerMove={scenePointerMove}
                     >
                         {fabric.isGestating ? undefined : (

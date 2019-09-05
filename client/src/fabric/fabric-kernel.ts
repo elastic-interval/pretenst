@@ -319,6 +319,10 @@ class InstanceExports implements IFabricInstanceExports {
         this.ex.setIntervalIdealSpan(intervalIndex, span)
     }
 
+    public multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void {
+        this.ex.multiplyAdjacentIdealSpan(jointIndex, bar, factor)
+    }
+
     private get ex(): IFabricExports {
         this.exports.setInstance(this.index)
         return this.exports

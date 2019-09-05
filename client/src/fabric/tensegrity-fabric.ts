@@ -242,6 +242,10 @@ export class TensegrityFabric {
         this.exports.setIntervalIdealSpan(intervalIndex, span)
     }
 
+    public multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void {
+        this.exports.multiplyAdjacentIdealSpan(jointIndex, bar, factor)
+    }
+
     public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
         return this.exports.createFace(joint0Index, joint1Index, joint2Index)
     }

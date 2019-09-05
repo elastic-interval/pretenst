@@ -111,6 +111,8 @@ export interface IFabricExports {
 
     setIntervalIdealSpan(intervalIndex: number, span: number): void
 
+    multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void
+
     removeInterval(intervalIndex: number): void
 
     findOppositeIntervalIndex(intervalIndex: number): number
@@ -209,6 +211,8 @@ export interface IFabricInstanceExports {
     setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
     setIntervalIdealSpan(intervalIndex: number, span: number): void
+
+    multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void
 
     getFaceCount(): number
 
