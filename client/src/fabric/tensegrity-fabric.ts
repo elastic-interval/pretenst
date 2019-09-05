@@ -21,7 +21,18 @@ import {
     Triangle,
 } from "./tensegrity-brick"
 
+export enum SpanAdjustment {
+    NONE,
+    BAR_LONGER,
+    BAR_SHORTER,
+    CABLES_LONGER,
+    CABLES_SHORTER,
+}
+
 export class TensegrityFabric {
+    public spanAdjustment = SpanAdjustment.NONE
+    public selectedJoint: Joint | undefined
+
     private faces: IFace[] = []
     private intervals: IInterval[] = []
     private faceLocations = new Float32BufferAttribute([], 3)
