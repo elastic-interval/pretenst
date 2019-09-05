@@ -21,6 +21,8 @@ import { TensegrityFlightState } from "./flight-state"
 import {
     TENSEGRITY_FACE,
     TENSEGRITY_JOINT,
+    TENSEGRITY_JOINT_ADJUSTING_BAR,
+    TENSEGRITY_JOINT_ADJUSTING_CABLE,
     TENSEGRITY_JOINT_CAN_GROW,
     TENSEGRITY_JOINT_SELECTED,
     TENSEGRITY_LINE,
@@ -199,6 +201,18 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
         event.stopPropagation()
         fabric.selectedJoint = undefined
     }
+    const selectedJointMaterial = () => {
+        switch (fabric.spanAdjustment) {
+            case SpanAdjustment.BAR_LONGER:
+            case SpanAdjustment.BAR_SHORTER:
+                return TENSEGRITY_JOINT_ADJUSTING_BAR
+            case SpanAdjustment.CABLES_LONGER:
+            case SpanAdjustment.CABLES_SHORTER:
+                return TENSEGRITY_JOINT_ADJUSTING_CABLE
+            default:
+                return TENSEGRITY_JOINT_SELECTED
+        }
+    }
     return (
         <group>
             <orbitControls
@@ -228,7 +242,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
                             key={`J${fabric.selectedJoint}`}
                             geometry={sphereGeometry}
                             position={fabric.getJointLocation(fabric.selectedJoint)}
-                            material={TENSEGRITY_JOINT_SELECTED}
+                            material={selectedJointMaterial()}
                             onPointerDown={selectedJointDown}
                             onClick={selectedJointClick}
                         />

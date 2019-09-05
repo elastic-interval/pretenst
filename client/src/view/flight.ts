@@ -9,7 +9,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFlightState } from "./flight-state"
 
 export const INITIAL_DISTANCE = 15000
-export const MINIMUM_DISTANCE = 7
+export const MINIMUM_DISTANCE = 3
 
 const MIN_POLAR_ANGLE = Math.PI * 0.001
 const MAX_POLAR_ANGLE = 0.999 * Math.PI / 2

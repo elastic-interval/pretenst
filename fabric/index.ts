@@ -917,8 +917,12 @@ function setLineColor(lineColorPtr: usize, red: f32, green: f32, blue: f32): voi
     setZ(lineColorPtr + VECTOR_SIZE, blue)
 }
 
-function setLineBlank(lineColorPtr: usize): void {
-    setLineColor(lineColorPtr, 0.0, 0.0, 0.0)
+function setLineBlank(lineColorPtr: usize, push: boolean): void {
+    if (push) {
+        setLineColor(lineColorPtr, 1.0, 1.0, 1.0)
+    } else {
+        setLineColor(lineColorPtr, 0.0, 0.0, 0.0)
+    }
 }
 
 function outputLineGeometry(intervalIndex: u16): u8 {
@@ -933,11 +937,11 @@ function outputLineGeometry(intervalIndex: u16): u8 {
     if (stress < 0) { // PUSH
         stress = -stress
         if (stress > maxPush) {
-            setLineBlank(lineColorPtr)
+            setLineBlank(lineColorPtr, true)
             return RAISE_MAX_PUSH_LIMIT
         }
         if (stress < minPush) {
-            setLineBlank(lineColorPtr)
+            setLineBlank(lineColorPtr, true)
             return LOWER_MIN_PUSH_LIMIT
         }
         let color = (stress - minPush) / (maxPush - minPush)
@@ -953,11 +957,11 @@ function outputLineGeometry(intervalIndex: u16): u8 {
         return PUSH_WITHIN_LIMITS
     } else { // PULL
         if (stress > maxPull) {
-            setLineBlank(lineColorPtr)
+            setLineBlank(lineColorPtr, false)
             return RAISE_MAX_PULL_LIMIT
         }
         if (stress < minPull) {
-            setLineBlank(lineColorPtr)
+            setLineBlank(lineColorPtr, false)
             return LOWER_MIN_PULL_LIMIT
         }
         let color = (stress - minPull) / (maxPull - minPull)
