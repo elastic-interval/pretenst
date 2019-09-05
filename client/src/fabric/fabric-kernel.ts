@@ -333,6 +333,15 @@ class InstanceExports implements IFabricInstanceExports {
         return vectorFromFloatArray(this.jointLocations, jointIndex * 3)
     }
 
+    public getJointLocations(): Vector3[] {
+        const array: Vector3[] = []
+        const jointCount = this.getJointCount()
+        for (let jointIndex = 0; jointIndex < jointCount; jointIndex++) {
+            array.push(this.getJointLocation(jointIndex))
+        }
+        return array
+    }
+
     public getFaceLocations(): Float32Array {
         return this.faceLocations
     }

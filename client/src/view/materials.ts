@@ -41,11 +41,31 @@ export const TENSEGRITY_LINE = new LineBasicMaterial({
     vertexColors: VertexColors,
 })
 
-
 export const TENSEGRITY_FACE = new MeshPhongMaterial({
     lights: true,
     color: new Color("white"),
     side: DoubleSide,
     transparent: true,
     opacity: 0.2,
+})
+
+export const TENSEGRITY_JOINT = new MeshPhongMaterial({
+    lights: true,
+    color: new Color("darkslateblue"),
+    transparent: true,
+    opacity: 0.6,
+})
+
+export const TENSEGRITY_JOINT_SELECTED = new MeshPhongMaterial({
+    lights: true,
+    color: new Color("palevioletred"),
+    transparent: true,
+    opacity: 0.6,
+})
+
+export const TENSEGRITY_JOINT_CAN_GROW = new MeshPhongMaterial({
+    lights: true,
+    color: new Color("green"),
+    transparent: true,
+    opacity: 0.6,
 })

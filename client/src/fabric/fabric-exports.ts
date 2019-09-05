@@ -162,6 +162,8 @@ export interface IFabricInstanceExports {
 
     getJointLocation(jointIndex: number): Vector3
 
+    getJointLocations(): Vector3[]
+
     reset(): void
 
     getAge(): number

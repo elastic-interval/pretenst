@@ -36,7 +36,7 @@ const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
 const LAND: u8 = 1
-const GESTATION_DRAG_FACTOR: f32 = 100
+const GESTATION_DRAG_FACTOR: f32 = 200
 
 // Dimensioning ================================================================================
 

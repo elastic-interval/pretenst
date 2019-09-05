@@ -222,6 +222,10 @@ export class TensegrityFabric {
         return this.exports.getJointLocation(joint)
     }
 
+    public getJointLocations(): Vector3[] {
+        return this.exports.getJointLocations()
+    }
+
     public createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number {
         return this.exports.createJoint(jointTag, laterality, x, y, z)
     }
