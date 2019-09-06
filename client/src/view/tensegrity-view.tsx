@@ -229,7 +229,6 @@ function FaceSelection({fabric, geometry}:
                             fabric.connectBricks(fabric.selectedFace.brick, fabric.selectedFace.triangle, brick, brick.base)
                             fabric.cancelSelection()
                         }
-
                     }}
                     onPointerDown={stopPropagation}
                     onPointerUp={stopPropagation}
@@ -306,11 +305,11 @@ function IntervalSelection({fabric, geometry}:
                                }): JSX.Element {
     return (
         <>
-            {fabric.intervals.map((interval: IInterval) => (
+            {fabric.intervals.filter(interval => !interval.removed).map((interval: IInterval) => (
                 <mesh
-                    key={`J${interval.index}`}
+                    key={`I${interval.index}`}
                     geometry={geometry}
-                    position={fabric.exports.getLineMidpoint(interval.index)}
+                    position={fabric.exports.getIntervalMidpoint(interval.index)}
                     material={TENSEGRITY_JOINT}
                     onClick={() => fabric.selectedInterval = interval}
                     onPointerDown={stopPropagation}
@@ -330,9 +329,9 @@ function SelectedInterval({fabric, geometry, selectedInterval, onClick}:
                               }): JSX.Element {
     return (
         <mesh
-            key={`J${selectedInterval.index}`}
+            key={`I${selectedInterval.index}`}
             geometry={geometry}
-            position={fabric.exports.getLineMidpoint(selectedInterval.index)}
+            position={fabric.exports.getIntervalMidpoint(selectedInterval.index)}
             material={TENSEGRITY_JOINT_SELECTED}
             onClick={onClick}
         />

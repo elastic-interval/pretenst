@@ -100,8 +100,7 @@ export class TensegrityFabric {
         this.exports.discardGeometry()
         this.disposeOfGeometry()
         this.faces.push(...brick.faces)
-        this.intervals.push(...brick.bars)
-        this.intervals.push(...brick.cables)
+        this.intervals.push(...brick.bars, ...brick.cables)
         return brick
     }
 
@@ -110,16 +109,16 @@ export class TensegrityFabric {
         this.exports.discardGeometry()
         this.disposeOfGeometry()
         this.faces.push(...newBrick.faces)
-        this.intervals.push(...newBrick.bars)
-        this.intervals.push(...newBrick.cables)
+        this.intervals.push(...newBrick.bars, ...newBrick.cables)
         return newBrick
     }
 
     public connectBricks(brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
-        let connector = connectBricks(this, brickA, triangleA, brickB, triangleB)
+        const connector = connectBricks(this, brickA, triangleA, brickB, triangleB)
         this.exports.discardGeometry()
         this.disposeOfGeometry()
-        this.intervals.push(...connector.ringCables, ...connector.crossCables)
+        this.intervals.push(...connector.cables)
+        connector.facesToRemove.forEach(face => this.removeFace(face, true))
         return connector
     }
 

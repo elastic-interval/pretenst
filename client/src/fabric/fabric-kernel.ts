@@ -376,7 +376,7 @@ export class InstanceExports {
         return this.lineColors
     }
 
-    public getLineMidpoint(intervalIndex: number): Vector3 {
+    public getIntervalMidpoint(intervalIndex: number): Vector3 {
         const a = this.getIntervalLocation(intervalIndex * 2)
         const b = this.getIntervalLocation(intervalIndex * 2 + 1)
         return new Vector3().add(a).add(b).multiplyScalar(0.5)

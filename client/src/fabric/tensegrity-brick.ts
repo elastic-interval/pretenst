@@ -189,6 +189,7 @@ export type JointTag = number
 export interface IInterval {
     index: number
     removed: boolean
+    intervalRole: IntervalRole
     alpha: Joint
     omega: Joint
     span: number
@@ -225,6 +226,7 @@ function createInterval(fabric: TensegrityFabric, alpha: number, omega: number, 
     return <IInterval>{
         index: fabric.exports.createInterval(alpha, omega, span, intervalRole, false),
         removed: false,
+        intervalRole,
         alpha, omega, span,
     }
 }
@@ -285,8 +287,8 @@ export function createBrickOnTriangle(fabric: TensegrityFabric, brick: IBrick, t
 }
 
 export interface IBrickConnector {
-    ringCables: IInterval[]
-    crossCables: IInterval[]
+    cables: IInterval[]
+    facesToRemove: IFace[]
 }
 
 interface IJoint {
@@ -341,36 +343,37 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
     const a = TRIANGLE_ARRAY[triangleA].barEnds.map(barEnd => [brickA.joints[barEnd], brickA.joints[oppositeEnd(barEnd)]]).map(toIJoint)
     const b = TRIANGLE_ARRAY[triangleB].barEnds.map(barEnd => [brickB.joints[barEnd], brickB.joints[oppositeEnd(barEnd)]]).map(toIJoint)
     const ring = jointsToRing(a.concat(b))
-    const ringCables: IInterval[] = []
-    const crossCables: IInterval[] = []
+    const cables: IInterval[] = []
     for (let walk = 0; walk < ring.length; walk++) {
         const prevJoint = ring[(walk + ring.length - 1) % ring.length]
         const joint = ring[walk]
         const nextJoint = ring[(walk + 1) % ring.length]
-        ringCables.push(createInterval(fabric, joint.joint, nextJoint.joint, IntervalRole.RING_CABLE, RING_SPAN))
+        cables.push(createInterval(fabric, joint.joint, nextJoint.joint, IntervalRole.RING_CABLE, RING_SPAN))
         const prevOpposite = joint.location.distanceTo(prevJoint.oppositeLocation)
         const nextOpposite = joint.location.distanceTo(nextJoint.oppositeLocation)
         if (prevOpposite < nextOpposite) {
-            crossCables.push(createInterval(fabric, joint.joint, prevJoint.opposite, IntervalRole.CROSS_CABLE, CROSS_SPAN))
+            cables.push(createInterval(fabric, joint.joint, prevJoint.opposite, IntervalRole.CROSS_CABLE, CROSS_SPAN))
         } else {
-            crossCables.push(createInterval(fabric, joint.joint, nextJoint.opposite, IntervalRole.CROSS_CABLE, CROSS_SPAN))
+            cables.push(createInterval(fabric, joint.joint, nextJoint.opposite, IntervalRole.CROSS_CABLE, CROSS_SPAN))
         }
     }
+    const facesToRemove: IFace[] = []
     const removeFace = (triangle: Triangle, brick: IBrick) => {
         const face = brick.faces[triangle]
-        fabric.removeFace(face, true)
+        facesToRemove.push(face)
         TRIANGLE_ARRAY.filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_ARRAY[triangle].negative).forEach(t => {
             brick.faces[t.name].canGrow = false
         })
         const triangleRing = TRIANGLE_ARRAY[triangle].ring
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
+            interval.intervalRole = IntervalRole.RING_CABLE
             fabric.exports.setIntervalRole(interval.index, IntervalRole.RING_CABLE)
             fabric.exports.setIntervalIdealSpan(interval.index, RING_SPAN)
         })
     }
     removeFace(triangleA, brickA)
     removeFace(triangleB, brickB)
-    return {ringCables, crossCables}
+    return {cables, facesToRemove}
 }
 
 export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
@@ -416,7 +419,6 @@ export function connectorToString(fabric: TensegrityFabric, connector: IBrickCon
         }
     }
 
-    const ringCables = connector.ringCables.map(intervalToString(2)).join("\n")
-    const crossCables = connector.crossCables.map(intervalToString(2)).join("\n")
-    return `Connector{\n\tringCables:\n${ringCables}\n\tcrossCables:\n${crossCables}\n}`
+    const cables = connector.cables.map(intervalToString(2)).join("\n")
+    return `Connector{\n\tcables:\n${cables}\n}`
 }
