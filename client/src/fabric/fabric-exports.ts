@@ -111,6 +111,10 @@ export interface IFabricExports {
 
     multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void
 
+    multiplyIntervalIdealSpan(intervalIndex: number, factor: number): void
+
+    multiplyFaceIdealSpan(faceIndex: number, factor: number): void
+
     removeInterval(intervalIndex: number): void
 
     findOppositeIntervalIndex(intervalIndex: number): number

@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { Direction, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS, } from "./fabric-exports"
+import { Direction, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 

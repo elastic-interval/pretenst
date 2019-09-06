@@ -319,8 +319,16 @@ export class InstanceExports {
         this.ex.setIntervalIdealSpan(intervalIndex, span)
     }
 
-    public multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void {
+    public multiplyJointIdealSpan(jointIndex: number, bar: boolean, factor: number): void {
         this.ex.multiplyAdjacentIdealSpan(jointIndex, bar, factor)
+    }
+
+    public multiplyIntervalIdealSpan(intervalIndex: number, factor: number): void {
+        this.ex.multiplyIntervalIdealSpan(intervalIndex, factor)
+    }
+
+    public multiplyFaceIdealSpan(faceIndex: number, factor: number): void {
+        this.ex.multiplyFaceIdealSpan(faceIndex, factor)
     }
 
     private get ex(): IFabricExports {

@@ -117,7 +117,7 @@ export function InitialFlightState(): IFlightState {
 export function TensegrityFlightState(fabric: TensegrityFabric): IFlightState {
     return <IFlightState>{
         get target(): Vector3 {
-            return fabric.midpoint
+            return fabric.exports.midpoint
         },
         tooFar: 12,
         tooClose: 11,

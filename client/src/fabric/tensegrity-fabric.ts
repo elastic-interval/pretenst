@@ -3,9 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute } from "three"
 
-import { Direction, IntervalRole, Laterality } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
 import { Physics } from "./physics"
 import {
@@ -22,14 +21,6 @@ import {
     Triangle,
 } from "./tensegrity-brick"
 
-export enum SpanAdjustment {
-    NONE,
-    BAR_LONGER,
-    BAR_SHORTER,
-    CABLES_LONGER,
-    CABLES_SHORTER,
-}
-
 export enum Selectable {
     NONE,
     JOINT,
@@ -40,14 +31,13 @@ export enum Selectable {
 }
 
 export class TensegrityFabric {
-    public spanAdjustment = SpanAdjustment.NONE
-    public selectedJoint: Joint | undefined
-    public selectedFace: IFace | undefined
-    public selectedInterval: IInterval | undefined
-    public selectable: Selectable = Selectable.NONE
-    public faces: IFace[] = []
     public intervals: IInterval[] = []
+    public faces: IFace[] = []
 
+    private _selectable: Selectable = Selectable.NONE
+    private _selectedJoint: Joint | undefined
+    private _selectedInterval: IInterval | undefined
+    private _selectedFace: IFace | undefined
     private faceLocations = new Float32BufferAttribute([], 3)
     private faceNormals = new Float32BufferAttribute([], 3)
     private lineLocations = new Float32BufferAttribute([], 3)
@@ -56,6 +46,49 @@ export class TensegrityFabric {
     private linesGeometryStored: BufferGeometry | undefined
 
     constructor(readonly exports: InstanceExports) {
+    }
+
+    get selectable(): Selectable {
+        return this._selectable
+    }
+
+    set selectable(value: Selectable) {
+        this.cancelSelection()
+        this._selectable = value
+    }
+
+    get selectedJoint(): number | undefined {
+        return this._selectedJoint
+    }
+
+    set selectedJoint(value: number | undefined) {
+        this.cancelSelection()
+        this._selectedJoint = value
+    }
+
+    get selectedInterval(): IInterval | undefined {
+        return this._selectedInterval
+    }
+
+    set selectedInterval(value: IInterval | undefined) {
+        this.cancelSelection()
+        this._selectedInterval = value
+    }
+
+    get selectedFace(): IFace | undefined {
+        return this._selectedFace
+    }
+
+    set selectedFace(value: IFace | undefined) {
+        this.cancelSelection()
+        this._selectedFace = value
+    }
+
+    public cancelSelection(): void {
+        this._selectedJoint = undefined
+        this._selectedInterval = undefined
+        this._selectedFace = undefined
+        this._selectable = Selectable.NONE
     }
 
     public applyPhysics(physics: Physics): object {
@@ -67,6 +100,7 @@ export class TensegrityFabric {
         this.exports.discardGeometry()
         this.disposeOfGeometry()
         this.faces.push(...brick.faces)
+        this.intervals.push(...brick.bars)
         this.intervals.push(...brick.cables)
         return brick
     }
@@ -76,6 +110,7 @@ export class TensegrityFabric {
         this.exports.discardGeometry()
         this.disposeOfGeometry()
         this.faces.push(...newBrick.faces)
+        this.intervals.push(...newBrick.bars)
         this.intervals.push(...newBrick.cables)
         return newBrick
     }
@@ -122,17 +157,9 @@ export class TensegrityFabric {
         return connectorToString(this, connector)
     }
 
-    public get isResting(): boolean {
-        return this.currentDirection === Direction.REST && this.nextDirection === Direction.REST
-    }
-
     public recycle(): void {
         this.disposeOfGeometry()
         this.exports.recycle()
-    }
-
-    public get index(): number {
-        return this.exports.index
     }
 
     public disposeOfGeometry(): void {
@@ -144,22 +171,6 @@ export class TensegrityFabric {
             this.linesGeometryStored.dispose()
             this.linesGeometryStored = undefined
         }
-    }
-
-    public get vectors(): Float32Array {
-        return this.exports.getVectors()
-    }
-
-    public get midpoint(): Vector3 {
-        return this.exports.getMidpoint()
-    }
-
-    public get forward(): Vector3 {
-        return this.exports.getForward()
-    }
-
-    public get right(): Vector3 {
-        return this.exports.getRight()
     }
 
     public get jointCount(): number {
@@ -198,80 +209,9 @@ export class TensegrityFabric {
         return this.linesGeometryStored
     }
 
-    public get currentDirection(): Direction {
-        return this.exports.getCurrentDirection()
-    }
-
-    public get nextDirection(): Direction {
-        return this.exports.getNextDirection()
-    }
-
-    public set nextDirection(direction: Direction) {
-        this.exports.setNextDirection(direction)
-    }
-
     public iterate(ticks: number): boolean {
         this.disposeOfGeometry()
         return this.exports.iterate(ticks)
-    }
-
-    public endGestation(): void {
-        this.exports.endGestation()
-        this.exports.discardGeometry()
-    }
-
-    public get age(): number {
-        return this.exports.getAge()
-    }
-
-    public get isGestating(): boolean {
-        return this.exports.isGestating()
-    }
-
-    public centralize(): void {
-        this.exports.centralize()
-    }
-
-    public setAltitude(altitude: number): number {
-        return this.exports.setAltitude(altitude)
-    }
-
-    // ===
-
-    public getJointLocation(joint: Joint): Vector3 {
-        return this.exports.getJointLocation(joint)
-    }
-
-    public getFaceMidpoint(faceIndex: number): Vector3 {
-        return this.exports.getFaceMidpoint(faceIndex)
-    }
-
-    public getLineMidpoint(intervalIndex: number): Vector3 {
-        return this.exports.getLineMidpoint(intervalIndex)
-    }
-
-    public createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number {
-        return this.exports.createJoint(jointTag, laterality, x, y, z)
-    }
-
-    public createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, idealSpan, intervalRole, growing)
-    }
-
-    public setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
-        this.exports.setIntervalRole(intervalIndex, intervalRole)
-    }
-
-    public setIntervalIdealSpan(intervalIndex: number, span: number): void {
-        this.exports.setIntervalIdealSpan(intervalIndex, span)
-    }
-
-    public multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void {
-        this.exports.multiplyAdjacentIdealSpan(jointIndex, bar, factor)
-    }
-
-    public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
-        return this.exports.createFace(joint0Index, joint1Index, joint2Index)
     }
 }
 

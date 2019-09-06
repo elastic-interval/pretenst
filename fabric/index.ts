@@ -1388,3 +1388,19 @@ export function multiplyAdjacentIdealSpan(jointIndex: u16, bar: boolean, factor:
         setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(intervalIndex) * factor)
     }
 }
+
+export function multiplyIntervalIdealSpan(intervalIndex: u16, factor: f32): void {
+    setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(intervalIndex) * factor)
+}
+
+export function multiplyFaceIdealSpan(faceIndex: u16, factor: f32): void {
+    let a = getFaceJointIndex(faceIndex, 0)
+    let b = getFaceJointIndex(faceIndex, 1)
+    let c = getFaceJointIndex(faceIndex, 2)
+    let ab = findIntervalIndex(a, b)
+    let bc = findIntervalIndex(b, c)
+    let ca = findIntervalIndex(c, a)
+    setIntervalIdealSpan(ab, getIntervalIdealSpan(ab) * factor)
+    setIntervalIdealSpan(bc, getIntervalIdealSpan(ab) * factor)
+    setIntervalIdealSpan(ca, getIntervalIdealSpan(ab) * factor)
+}
