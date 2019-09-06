@@ -5,14 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import {
-    Direction,
-    IFabricInstanceExports,
-    IntervalRole,
-    Laterality,
-    SEED_CORNERS,
-    SEED_RADIUS,
-} from "./fabric-exports"
+import { Direction, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS, } from "./fabric-exports"
+import { InstanceExports } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 const ARROW_LENGTH = 9
@@ -30,7 +24,7 @@ export class GotchiBody {
     private pointerGeometryStored: Geometry | undefined
     private facesGeometryStored: BufferGeometry | undefined
 
-    constructor(private exports: IFabricInstanceExports) {
+    constructor(private exports: InstanceExports) {
     }
 
     public get isResting(): boolean {
@@ -258,7 +252,7 @@ export class GotchiBody {
     }
 
     public getFaceSnapshot(faceIndex: number): FaceSnapshot {
-        return new FaceSnapshot(this, this.exports, this.exports, faceIndex)
+        return new FaceSnapshot(this, this.exports, faceIndex)
     }
 
     public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
@@ -332,7 +326,7 @@ export class GotchiBody {
         this.exports.discardGeometry()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
-            .map(index => new FaceSnapshot(this, this.exports, this.exports, index))
+            .map(index => new FaceSnapshot(this, this.exports, index))
     }
 }
 

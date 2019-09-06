@@ -5,7 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import { Direction, IFabricInstanceExports, IntervalRole, Laterality } from "./fabric-exports"
+import { Direction, IntervalRole, Laterality } from "./fabric-exports"
+import { InstanceExports } from "./fabric-kernel"
 import { Physics } from "./physics"
 import {
     brickToString,
@@ -33,6 +34,7 @@ export enum Selectable {
     NONE,
     JOINT,
     FACE,
+    INTERVAL,
     BAR,
     CABLE,
 }
@@ -41,10 +43,11 @@ export class TensegrityFabric {
     public spanAdjustment = SpanAdjustment.NONE
     public selectedJoint: Joint | undefined
     public selectedFace: IFace | undefined
+    public selectedInterval: IInterval | undefined
     public selectable: Selectable = Selectable.NONE
+    public faces: IFace[] = []
+    public intervals: IInterval[] = []
 
-    private faces: IFace[] = []
-    private intervals: IInterval[] = []
     private faceLocations = new Float32BufferAttribute([], 3)
     private faceNormals = new Float32BufferAttribute([], 3)
     private lineLocations = new Float32BufferAttribute([], 3)
@@ -52,7 +55,7 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(readonly exports: IFabricInstanceExports) {
+    constructor(readonly exports: InstanceExports) {
     }
 
     public applyPhysics(physics: Physics): object {
@@ -117,10 +120,6 @@ export class TensegrityFabric {
 
     public connectorToString(connector: IBrickConnector): string {
         return connectorToString(this, connector)
-    }
-
-    public findFace(triangleIndex: number): IFace | undefined {
-        return this.faces[triangleIndex]
     }
 
     public get isResting(): boolean {
@@ -243,16 +242,12 @@ export class TensegrityFabric {
         return this.exports.getJointLocation(joint)
     }
 
-    public getJointLocations(): Vector3[] {
-        return this.exports.getJointLocations()
-    }
-
     public getFaceMidpoint(faceIndex: number): Vector3 {
         return this.exports.getFaceMidpoint(faceIndex)
     }
 
-    public getFaceMidpoints(): Vector3[] {
-        return this.exports.getFaceMidpoints()
+    public getLineMidpoint(intervalIndex: number): Vector3 {
+        return this.exports.getLineMidpoint(intervalIndex)
     }
 
     public createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number {

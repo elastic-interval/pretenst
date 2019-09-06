@@ -5,7 +5,8 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
+import { IFabricExports, IntervalRole } from "./fabric-exports"
+import { InstanceExports } from "./fabric-kernel"
 
 export enum PhysicsFeature {
     GravityAbove = "Gravity Above",
@@ -96,7 +97,7 @@ export class Physics {
     }
 
 
-    public applyLocal(fabricExports: IFabricInstanceExports): object {
+    public applyLocal(instanceExports: InstanceExports): object {
         const featureValues = {}
         this.featuresArray.forEach(feature => {
             const factor = feature.factor$.getValue()
@@ -104,19 +105,19 @@ export class Physics {
             let ignore = false
             switch (feature.name) {
                 case PhysicsFeature.MuscleElasticFactor:
-                    currentValue = fabricExports.setElasticFactor(IntervalRole.MUSCLE, factor)
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.MUSCLE, factor)
                     break
                 case PhysicsFeature.BarElasticFactor:
-                    currentValue = fabricExports.setElasticFactor(IntervalRole.BAR, factor)
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.BAR, factor)
                     break
                 case PhysicsFeature.TriangleElasticFactor:
-                    currentValue = fabricExports.setElasticFactor(IntervalRole.TRI_CABLE, factor)
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.TRI_CABLE, factor)
                     break
                 case PhysicsFeature.RingElasticFactor:
-                    currentValue = fabricExports.setElasticFactor(IntervalRole.RING_CABLE, factor)
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.RING_CABLE, factor)
                     break
                 case PhysicsFeature.CrossElasticFactor:
-                    currentValue = fabricExports.setElasticFactor(IntervalRole.CROSS_CABLE, factor)
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.CROSS_CABLE, factor)
                     break
                 default:
                     ignore = true

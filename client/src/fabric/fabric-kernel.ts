@@ -10,7 +10,7 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { Direction, IFabricDimensions, IFabricExports, IFabricInstanceExports, IntervalRole } from "./fabric-exports"
+import { Direction, IFabricDimensions, IFabricExports, IntervalRole } from "./fabric-exports"
 import { GotchiBody } from "./gotchi-body"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
@@ -86,7 +86,7 @@ function createOffsets(faceCountMax: number, intervalCountMax: number, baseOffse
 }
 
 export class FabricKernel implements IGotchiFactory {
-    private instanceArray: IFabricInstanceExports[] = []
+    private instanceArray: InstanceExports[] = []
     private instanceUsed: boolean[] = []
     private arrayBuffer: ArrayBuffer
     private spotCenters: Float32Array
@@ -157,7 +157,7 @@ export class FabricKernel implements IGotchiFactory {
 
     // ==============================================================
 
-    private allocateInstance(): IFabricInstanceExports | undefined {
+    private allocateInstance(): InstanceExports | undefined {
         const freeIndex = this.instanceUsed.indexOf(false)
         if (freeIndex < 0) {
             return undefined
@@ -168,7 +168,7 @@ export class FabricKernel implements IGotchiFactory {
     }
 }
 
-class InstanceExports implements IFabricInstanceExports {
+export class InstanceExports {
     private vectorArray: Float32Array | undefined
     private jointLocationsArray: Float32Array | undefined
     private faceMidpointsArray: Float32Array | undefined
@@ -337,15 +337,6 @@ class InstanceExports implements IFabricInstanceExports {
         return vectorFromFloatArray(this.jointLocations, jointIndex * 3)
     }
 
-    public getJointLocations(): Vector3[] {
-        const array: Vector3[] = []
-        const jointCount = this.getJointCount()
-        for (let jointIndex = 0; jointIndex < jointCount; jointIndex++) {
-            array.push(this.getJointLocation(jointIndex))
-        }
-        return array
-    }
-
     public getFaceLocations(): Float32Array {
         return this.faceLocations
     }
@@ -361,13 +352,8 @@ class InstanceExports implements IFabricInstanceExports {
         return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
     }
 
-    public getFaceMidpoints(): Vector3[] {
-        const array: Vector3[] = []
-        const faceCount = this.getFaceCount()
-        for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
-            array.push(this.getFaceMidpoint(faceIndex))
-        }
-        return array
+    public getIntervalLocation(intervalIndex: number): Vector3 {
+        return vectorFromFloatArray(this.lines, intervalIndex * 3)
     }
 
     public getFaceNormals(): Float32Array {
@@ -380,6 +366,12 @@ class InstanceExports implements IFabricInstanceExports {
 
     public getLineColors(): Float32Array {
         return this.lineColors
+    }
+
+    public getLineMidpoint(intervalIndex: number): Vector3 {
+        const a = this.getIntervalLocation(intervalIndex * 2)
+        const b = this.getIntervalLocation(intervalIndex * 2 + 1)
+        return new Vector3().add(a).add(b).multiplyScalar(0.5)
     }
 
     public getForward(): Vector3 {

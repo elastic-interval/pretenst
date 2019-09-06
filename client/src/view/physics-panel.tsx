@@ -7,13 +7,14 @@ import * as React from "react"
 import { Badge, Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 import { Subscription } from "rxjs"
 
-import { IFabricExports, IFabricInstanceExports } from "../fabric/fabric-exports"
+import { IFabricExports } from "../fabric/fabric-exports"
+import { InstanceExports } from "../fabric/fabric-kernel"
 import { IPhysicsFeature, Physics } from "../fabric/physics"
 
 export interface IPhysicsPanelProps {
     physics: Physics
     fabricExports: IFabricExports
-    fabricInstanceExports: IFabricInstanceExports
+    instanceExports: InstanceExports
 }
 
 export class PhysicsPanel extends React.Component<IPhysicsPanelProps, object> {
@@ -25,7 +26,7 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, object> {
 
     public applyPhysics(): void {
         this.props.physics.applyGlobal(this.props.fabricExports)
-        this.props.physics.applyLocal(this.props.fabricInstanceExports)
+        this.props.physics.applyLocal(this.props.instanceExports)
     }
 
     public render(): JSX.Element {

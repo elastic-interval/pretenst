@@ -3,8 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Vector3 } from "three"
-
 export interface IMemory {
     buffer: ArrayBuffer
 }
@@ -118,103 +116,6 @@ export interface IFabricExports {
     findOppositeIntervalIndex(intervalIndex: number): number
 
     setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
-
-    getFaceCount(): number
-
-    createFace(joint0Index: number, joint1Index: number, joint2Index: number): number
-
-    removeFace(faceIndex: number): void
-
-    findOppositeFaceIndex(faceIndex: number): number
-
-    getFaceJointIndex(faceIndex: number, jointNumber: number): number
-
-    getFaceAverageIdealSpan(faceIndex: number): number
-}
-
-export interface IFabricInstanceExports {
-
-    index: Readonly<number>
-
-    recycle(): void
-
-    discardGeometry(): void
-
-    getDimensions(): IFabricDimensions
-
-    getMidpoint(): Vector3
-
-    getSeed(): Vector3
-
-    getForward(): Vector3
-
-    getRight(): Vector3
-
-    getFaceMidpoint(faceIndex: number): Vector3
-
-    getFaceMidpoints(): Vector3[]
-
-    getFaceLocations(): Float32Array
-
-    getFaceNormals(): Float32Array
-
-    getLineLocations(): Float32Array
-
-    getLineColors(): Float32Array
-
-    getVectors(): Float32Array
-
-    getJointLocation(jointIndex: number): Vector3
-
-    getJointLocations(): Vector3[]
-
-    reset(): void
-
-    getAge(): number
-
-    isGestating(): boolean
-
-    getCurrentDirection(): Direction
-
-    getNextDirection(): Direction
-
-    setNextDirection(direction: Direction): void
-
-    setElasticFactor(intervalRole: IntervalRole, factor: number): number
-
-    iterate(ticks: number): boolean
-
-    centralize(): void
-
-    setAltitude(altitude: number): number
-
-    endGestation(): void
-
-    nextJointTag(): number
-
-    getJointCount(): number
-
-    createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number
-
-    getJointTag(jointIndex: number): number
-
-    getJointLaterality(jointIndex: number): Laterality
-
-    getIntervalCount(): number
-
-    createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number
-
-    removeInterval(intervalIndex: number): void
-
-    findOppositeIntervalIndex(intervalIndex: number): number
-
-    setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
-
-    setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
-
-    setIntervalIdealSpan(intervalIndex: number, span: number): void
-
-    multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void
 
     getFaceCount(): number
 

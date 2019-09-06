@@ -33,7 +33,7 @@ export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow"
 export const SURFACE = new MeshPhongMaterial({
     color: new Color("silver"),
     lights: true,
-    opacity: 0.3,
+    opacity: 0.25,
     transparent: true,
 })
 
@@ -46,36 +46,20 @@ export const TENSEGRITY_FACE = new MeshPhongMaterial({
     color: new Color("white"),
     side: DoubleSide,
     transparent: true,
-    opacity: 0.2,
+    opacity: 0.6,
 })
 
 export const TENSEGRITY_JOINT = new MeshPhongMaterial({
     lights: true,
     color: new Color("darkslateblue"),
-    transparent: true,
-    opacity: 0.6,
 })
 
 export const TENSEGRITY_JOINT_SELECTED = new MeshPhongMaterial({
     lights: true,
     color: new Color("darkslateblue"),
-    transparent: true,
-    opacity: 0.6,
-})
-
-export const TENSEGRITY_JOINT_ADJUSTING_BAR = new MeshPhongMaterial({
-    lights: true,
-    color: new Color("red"),
-})
-
-export const TENSEGRITY_JOINT_ADJUSTING_CABLE = new MeshPhongMaterial({
-    lights: true,
-    color: new Color("blue"),
 })
 
 export const TENSEGRITY_JOINT_CAN_GROW = new MeshPhongMaterial({
     lights: true,
     color: new Color("green"),
-    transparent: true,
-    opacity: 0.6,
 })
