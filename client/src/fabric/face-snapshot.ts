@@ -77,7 +77,8 @@ export class FaceSnapshot {
     }
 
     public get midpoint(): Vector3 {
-        return vectorFromFloatArray(this.exports.getFaceMidpoints(), this.faceIndex * 3)
+        throw new Error()
+        // return vectorFromFloatArray(this.exports.getFaceMidpoints(), this.faceIndex * 3)
     }
 
     public get normal(): Vector3 {

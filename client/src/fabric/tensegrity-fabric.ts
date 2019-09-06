@@ -29,10 +29,19 @@ export enum SpanAdjustment {
     CABLES_SHORTER,
 }
 
+export enum Selectable {
+    NONE,
+    JOINT,
+    FACE,
+    BAR,
+    CABLE,
+}
+
 export class TensegrityFabric {
     public spanAdjustment = SpanAdjustment.NONE
     public selectedJoint: Joint | undefined
     public selectedFace: IFace | undefined
+    public selectable: Selectable = Selectable.NONE
 
     private faces: IFace[] = []
     private intervals: IInterval[] = []
@@ -236,6 +245,14 @@ export class TensegrityFabric {
 
     public getJointLocations(): Vector3[] {
         return this.exports.getJointLocations()
+    }
+
+    public getFaceMidpoint(faceIndex: number): Vector3 {
+        return this.exports.getFaceMidpoint(faceIndex)
+    }
+
+    public getFaceMidpoints(): Vector3[] {
+        return this.exports.getFaceMidpoints()
     }
 
     public createJoint(jointTag: number, laterality: Laterality, x: number, y: number, z: number): number {

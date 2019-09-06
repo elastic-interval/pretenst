@@ -34,6 +34,7 @@ export class Flight {
         orbit.minDistance = MINIMUM_DISTANCE
         orbit.enableKeys = false
         orbit.zoomSpeed = 0.5
+        orbit.autoRotateSpeed = 0.5
         orbit.target = this.target
         orbit.enablePan = false
         console.log("this.orbit", this.orbit)

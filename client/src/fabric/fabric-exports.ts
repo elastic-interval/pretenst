@@ -150,7 +150,9 @@ export interface IFabricInstanceExports {
 
     getRight(): Vector3
 
-    getFaceMidpoints(): Float32Array
+    getFaceMidpoint(faceIndex: number): Vector3
+
+    getFaceMidpoints(): Vector3[]
 
     getFaceLocations(): Float32Array
 

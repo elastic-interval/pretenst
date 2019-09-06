@@ -350,8 +350,24 @@ class InstanceExports implements IFabricInstanceExports {
         return this.faceLocations
     }
 
-    public getFaceMidpoints(): Float32Array {
-        return this.faceMidpoints
+    public getFaceLocation(faceIndex: number): Vector3 {
+        return vectorFromFloatArray(this.faceLocations, faceIndex * 3)
+    }
+
+    public getFaceMidpoint(faceIndex: number): Vector3 {
+        const a = this.getFaceLocation(faceIndex * 3)
+        const b = this.getFaceLocation(faceIndex * 3 + 1)
+        const c = this.getFaceLocation(faceIndex * 3 + 2)
+        return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
+    }
+
+    public getFaceMidpoints(): Vector3[] {
+        const array: Vector3[] = []
+        const faceCount = this.getFaceCount()
+        for (let faceIndex = 0; faceIndex < faceCount; faceIndex++) {
+            array.push(this.getFaceMidpoint(faceIndex))
+        }
+        return array
     }
 
     public getFaceNormals(): Float32Array {
