@@ -110,6 +110,12 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
             case "i":
                 fabric.selectable = Selectable.INTERVAL
                 break
+            case "h":
+                fabric.exports.setAltitude(5)
+                break
+            case "c":
+                fabric.exports.centralize()
+                break
             default:
                 console.log("Key", event.key)
         }
