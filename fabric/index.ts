@@ -945,7 +945,7 @@ function outputLineGeometry(intervalIndex: u16): u8 {
             return LOWER_MIN_PUSH_LIMIT
         }
         let color = (stress - minPush) / (maxPush - minPush)
-        setLineColor(lineColorPtr, color, 1.0 - color, 1.0 - color)
+        setLineColor(lineColorPtr, color, 0.2 + (1.0 - color) / 3, 0.0)
         let tooLowForMax: boolean = stress < maxPush - STRESS_FACTOR_LIMIT_TOLERANCE
         let tooHighForMin: boolean = stress > minPush + STRESS_FACTOR_LIMIT_TOLERANCE
         if (tooLowForMax && !tooHighForMin) {
@@ -965,7 +965,7 @@ function outputLineGeometry(intervalIndex: u16): u8 {
             return LOWER_MIN_PULL_LIMIT
         }
         let color = (stress - minPull) / (maxPull - minPull)
-        setLineColor(lineColorPtr, 1.0 - color, 1.0 - color, color)
+        setLineColor(lineColorPtr, 0.3 + (1.0 - color) / 3, 0.3 + (1.0 - color) / 3, color)
         let tooLowForMax: boolean = stress < maxPull - STRESS_FACTOR_LIMIT_TOLERANCE
         let tooHighForMin: boolean = stress > minPull + STRESS_FACTOR_LIMIT_TOLERANCE
         if (tooLowForMax && !tooHighForMin) {
