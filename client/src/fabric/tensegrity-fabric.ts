@@ -84,6 +84,11 @@ export class TensegrityFabric {
         this._selectedFace = value
     }
 
+    get selectionActive(): boolean {
+        return this._selectable !== Selectable.NONE ||
+            this._selectedFace !== undefined || this._selectedJoint !== undefined || this._selectedInterval !== undefined
+    }
+
     public cancelSelection(): void {
         this._selectedJoint = undefined
         this._selectedInterval = undefined

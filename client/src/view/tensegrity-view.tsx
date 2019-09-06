@@ -144,7 +144,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
         if (flight) {
             flight.update()
             flight.moveTowardsTarget(flightState.target)
-            flight.autoRotate = !fabric.selectedFace && !fabric.selectedJoint && !fabric.selectedInterval
+            flight.autoRotate = !fabric.selectionActive
         } else if (controls.current) {
             flight = new Flight(controls.current)
             flight.setupCamera(flightState)
@@ -226,7 +226,7 @@ function FaceSelection({fabric, geometry}:
                     key={`F${face.index}`}
                     geometry={geometry}
                     position={fabric.exports.getFaceMidpoint(face.index)}
-                    material={TENSEGRITY_JOINT}
+                    material={face.canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
                     onClick={() => {
                         if (!fabric.selectedFace || face.index !== fabric.selectedFace.index) {
                             fabric.selectedFace = face
