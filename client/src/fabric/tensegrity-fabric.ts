@@ -183,7 +183,7 @@ export class TensegrityFabric {
             this.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BOW_CROSS)
             this.exports.setIntervalIdealSpan(ab.index, bowCrossSpan)
             this.createInterval(a, c, IntervalRole.BOW_MID, bowMidSpan)
-            this.exports.setIntervalRole(cd.index, IntervalRole.BOW_END)
+            this.exports.setIntervalRole(cd.index, cd.intervalRole = IntervalRole.BOW_END)
             this.exports.setIntervalIdealSpan(ab.index, bowEndSpan)
         })
     }
