@@ -172,14 +172,12 @@ export class TensegrityFabric {
                 return aLoc.distanceToSquared(oppositeA) < aLoc.distanceToSquared(oppositeB) ? cableA : cableB
             })
             const c = opposite(b, bc)
-            const ac = this.createInterval(a, c, IntervalRole.BOW_MID, bowMidSpan)
             const d = this.joints[b.oppositeIndex]
             this.removeInterval(this.findInterval(a, d))
             this.removeInterval(bc)
             this.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BOW_CROSS)
             this.exports.setIntervalIdealSpan(ab.index, bowCrossSpan)
-            this.exports.setIntervalRole(ac.index, ac.intervalRole = IntervalRole.BOW_MID)
-            this.exports.setIntervalIdealSpan(ab.index, bowMidSpan)
+            this.createInterval(a, c, IntervalRole.BOW_MID, bowMidSpan)
             this.exports.setIntervalRole(this.findInterval(c, d).index, IntervalRole.BOW_END)
             this.exports.setIntervalIdealSpan(ab.index, bowEndSpan)
         })
