@@ -16,6 +16,12 @@ const ROLE_TRI_CABLE: u8 = 2
 const ROLE_RING_CABLE: u8 = 3
 const ROLE_CROSS_CABLE: u8 = 4
 
+const ELASTIC_MUSCLE: f32 = 1
+const ELASTIC_BAR: f32 = 1
+const ELASTIC_TRI_CABLE: f32 = 1
+const ELASTIC_RING_CABLE: f32 = 1
+const ELASTIC_CROSS_CABLE: f32 = 2.5
+
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
@@ -117,13 +123,13 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
 
 // Physics =====================================================================================
 
-const DRAG_ABOVE: f32 = 0.00009539999882690609
-const GRAVITY_ABOVE: f32 = 0.000018920998627436347
-const DRAG_BELOW_LAND: f32 = 0.9607399702072144
+const DRAG_ABOVE: f32 = 0.00008
+const GRAVITY_ABOVE: f32 = 0.000019
+const DRAG_BELOW_LAND: f32 = 0.96
 const DRAG_BELOW_WATER: f32 = 0.001
-const GRAVITY_BELOW_LAND: f32 = -0.002540299901738763
+const GRAVITY_BELOW_LAND: f32 = -0.005
 const GRAVITY_BELOW_WATER: f32 = -0.00001
-const GLOBAL_ELASTIC_FACTOR: f32 = 0.5767999887466431
+const GLOBAL_ELASTIC_FACTOR: f32 = 1.0
 const MAX_SPAN_VARIATION: f32 = 0.1
 const TIME_SWEEP_SPEED: f32 = 30
 
@@ -513,7 +519,25 @@ export function setElasticFactor(intervalRole: u8, factor: f32): f32 {
 }
 
 export function getElasticFactor(intervalRole: u8): f32 {
-    return getF32(statePtr + ELASTIC_FACTOR_OFFSET + intervalRole * F32)
+    let roleFactor: f32 = 1.0
+    switch(intervalRole) {
+        case ROLE_MUSCLE:
+            roleFactor = ELASTIC_MUSCLE
+            break
+        case ROLE_BAR:
+            roleFactor = ELASTIC_BAR
+            break
+        case ROLE_TRI_CABLE:
+            roleFactor = ELASTIC_TRI_CABLE
+            break
+        case ROLE_RING_CABLE:
+            roleFactor = ELASTIC_RING_CABLE
+            break
+        case ROLE_CROSS_CABLE:
+            roleFactor = ELASTIC_CROSS_CABLE
+            break
+    }
+    return getF32(statePtr + ELASTIC_FACTOR_OFFSET + intervalRole * F32) * roleFactor
 }
 
 export function reset(): void {
