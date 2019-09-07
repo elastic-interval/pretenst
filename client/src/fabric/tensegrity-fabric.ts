@@ -174,13 +174,8 @@ export class TensegrityFabric {
             const c = opposite(b, bc)
             const d = this.joints[b.oppositeIndex]
             const cd = this.findInterval(c, d)
-            if (!cd) {
-                console.log("cd not found", c, d)
-                return
-            }
             const ad = this.findInterval(a, d)
-            if (!ad) {
-                console.log("ad not found", a, d)
+            if (!cd || !ad) {
                 return
             }
             this.removeInterval(ad)
