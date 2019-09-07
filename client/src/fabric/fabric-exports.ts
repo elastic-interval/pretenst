@@ -8,19 +8,22 @@ export interface IMemory {
 }
 
 export enum Direction {
-    REST = 0,
-    FORWARD = 1,
-    LEFT = 2,
-    RIGHT = 3,
-    REVERSE = 4,
+    REST,
+    FORWARD,
+    LEFT,
+    RIGHT,
+    REVERSE,
 }
 
 export enum IntervalRole {
-    MUSCLE = 0,
-    BAR = 1,
-    TRI_CABLE = 2,
-    RING_CABLE = 3,
-    CROSS_CABLE = 4,
+    MUSCLE,
+    BAR,
+    TRI_CABLE,
+    RING_CABLE,
+    CROSS_CABLE,
+    BOW_CROSS,
+    BOW_MID,
+    BOW_END,
 }
 
 export enum Laterality {

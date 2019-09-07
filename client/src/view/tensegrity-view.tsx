@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricExports } from "../fabric/fabric-exports"
 import { createFabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
-import { IFace, IInterval, Joint } from "../fabric/tensegrity-brick"
+import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { MAX_POPULATION } from "../gotchi/evolution"
 
@@ -58,11 +58,11 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
     useEffect(() => viewRef.current ? viewRef.current.focus() : undefined)
     const factor = (up: boolean) => 1.0 + (up ? 0.005 : -0.005)
     const onKeyDownCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        const handleJoint = (joint: Joint | undefined, bar: boolean, up: boolean) => {
+        const handleJoint = (joint: IJoint | undefined, bar: boolean, up: boolean) => {
             if (joint === undefined) {
                 return
             }
-            fabric.exports.multiplyJointIdealSpan(joint, bar, factor(up))
+            fabric.exports.multiplyJointIdealSpan(joint.index, bar, factor(up))
         }
         const handleInterval = (interval: IInterval | undefined, up: boolean) => {
             if (interval === undefined) {
@@ -277,7 +277,7 @@ function JointSelection({fabric, geometry}:
                     geometry={geometry}
                     position={fabric.exports.getJointLocation(jointIndex)}
                     material={TENSEGRITY_JOINT}
-                    onClick={() => fabric.selectedJoint = jointIndex}
+                    onClick={() => fabric.selectedJoint = fabric.joints[jointIndex]}
                     onPointerDown={stopPropagation}
                     onPointerUp={stopPropagation}
                 />
@@ -290,14 +290,14 @@ function SelectedJoint({fabric, geometry, selectedJoint, onClick}:
                            {
                                fabric: TensegrityFabric,
                                geometry: Geometry,
-                               selectedJoint: Joint,
+                               selectedJoint: IJoint,
                                onClick: (event: React.MouseEvent<HTMLDivElement>) => void,
                            }): JSX.Element {
     return (
         <mesh
-            key={`J${selectedJoint}`}
+            key={`J${selectedJoint.index}`}
             geometry={geometry}
-            position={fabric.exports.getJointLocation(selectedJoint)}
+            position={fabric.exports.getJointLocation(selectedJoint.index)}
             material={TENSEGRITY_JOINT_SELECTED}
             onClick={onClick}
         />

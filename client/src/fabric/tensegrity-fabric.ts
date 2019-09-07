@@ -3,8 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BufferGeometry, Float32BufferAttribute } from "three"
+import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
+import { IntervalRole, Laterality } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
 import { Physics } from "./physics"
 import {
@@ -17,8 +18,10 @@ import {
     IBrickConnector,
     IFace,
     IInterval,
-    Joint,
+    IJoint,
+    JointTag,
     Triangle,
+    TRIANGLE_ARRAY,
 } from "./tensegrity-brick"
 
 export enum Selectable {
@@ -31,11 +34,12 @@ export enum Selectable {
 }
 
 export class TensegrityFabric {
+    public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public faces: IFace[] = []
 
     private _selectable: Selectable = Selectable.NONE
-    private _selectedJoint: Joint | undefined
+    private _selectedJoint: IJoint | undefined
     private _selectedInterval: IInterval | undefined
     private _selectedFace: IFace | undefined
     private faceLocations = new Float32BufferAttribute([], 3)
@@ -57,11 +61,11 @@ export class TensegrityFabric {
         this._selectable = value
     }
 
-    get selectedJoint(): number | undefined {
+    get selectedJoint(): IJoint | undefined {
         return this._selectedJoint
     }
 
-    set selectedJoint(value: number | undefined) {
+    set selectedJoint(value: IJoint | undefined) {
         this.cancelSelection()
         this._selectedJoint = value
     }
@@ -104,8 +108,6 @@ export class TensegrityFabric {
         let brick = createBrickOnOrigin(this)
         this.exports.discardGeometry()
         this.disposeOfGeometry()
-        this.faces.push(...brick.faces)
-        this.intervals.push(...brick.bars, ...brick.cables)
         return brick
     }
 
@@ -113,8 +115,6 @@ export class TensegrityFabric {
         const newBrick = createBrickOnTriangle(this, brick, triangle)
         this.exports.discardGeometry()
         this.disposeOfGeometry()
-        this.faces.push(...newBrick.faces)
-        this.intervals.push(...newBrick.bars, ...newBrick.cables)
         return newBrick
     }
 
@@ -122,7 +122,6 @@ export class TensegrityFabric {
         const connector = connectBricks(this, brickA, triangleA, brickB, triangleB)
         this.exports.discardGeometry()
         this.disposeOfGeometry()
-        this.intervals.push(...connector.cables)
         connector.facesToRemove.forEach(face => this.removeFace(face, true))
         return connector
     }
@@ -151,6 +150,69 @@ export class TensegrityFabric {
         })
         this.exports.discardGeometry()
         this.disposeOfGeometry()
+    }
+
+    public optimize(): void {
+        const bowMidSpan = 0.3
+        const bowCrossSpan = 0.3
+        const bowEndSpan = 0.3
+        const crossCables = this.intervals.filter(interval => interval.intervalRole === IntervalRole.CROSS_CABLE)
+        const opposite = (joint: IJoint, cable: IInterval) => cable.alpha.index === joint.index ? cable.omega : cable.alpha
+        crossCables.forEach(ab => {
+            const a = ab.alpha
+            const aLoc = this.exports.getJointLocation(a.index)
+            const b = ab.omega
+            const cablesB = this.intervals.filter(interval => (
+                interval.intervalRole !== IntervalRole.CROSS_CABLE && interval.intervalRole !== IntervalRole.BAR &&
+                (interval.alpha.index === b.index || interval.omega.index === b.index)
+            ))
+            const bc = cablesB.reduce((cableA, cableB) => {
+                const oppositeA = this.exports.getJointLocation(opposite(b, cableA).index)
+                const oppositeB = this.exports.getJointLocation(opposite(b, cableB).index)
+                return aLoc.distanceToSquared(oppositeA) < aLoc.distanceToSquared(oppositeB) ? cableA : cableB
+            })
+            const c = opposite(b, bc)
+            const ac = this.createInterval(a, c, IntervalRole.BOW_MID, bowMidSpan)
+            const d = this.joints[b.oppositeIndex]
+            this.removeInterval(this.findInterval(a, d))
+            this.removeInterval(bc)
+            this.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BOW_CROSS)
+            this.exports.setIntervalIdealSpan(ab.index, bowCrossSpan)
+            this.exports.setIntervalRole(ac.index, ac.intervalRole = IntervalRole.BOW_MID)
+            this.exports.setIntervalIdealSpan(ab.index, bowMidSpan)
+            this.exports.setIntervalRole(this.findInterval(c, d).index, IntervalRole.BOW_END)
+            this.exports.setIntervalIdealSpan(ab.index, bowEndSpan)
+        })
+    }
+
+    public createJointIndex(jointTag: JointTag, location: Vector3): number {
+        return this.exports.createJoint(jointTag, Laterality.BILATERAL_RIGHT, location.x, location.y, location.z)
+    }
+
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, span: number): IInterval {
+        const interval = <IInterval>{
+            index: this.exports.createInterval(alpha.index, omega.index, span, intervalRole, false),
+            removed: false,
+            intervalRole,
+            alpha, omega, span,
+        }
+        this.intervals.push(interval)
+        return interval
+    }
+
+    public createFace(brick: IBrick, triangle: Triangle): IFace {
+        const joints = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => brick.joints[barEnd])
+        const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
+        const face = <IFace>{
+            index: this.exports.createFace(joints[0].index, joints[1].index, joints[2].index),
+            canGrow: true,
+            brick,
+            triangle,
+            joints,
+            cables,
+        }
+        this.faces.push(face)
+        return face
     }
 
     public brickToString(brick: IBrick): string {
@@ -216,6 +278,17 @@ export class TensegrityFabric {
     public iterate(ticks: number): boolean {
         this.disposeOfGeometry()
         return this.exports.iterate(ticks)
+    }
+
+    private findInterval(joint1: IJoint, joint2: IJoint): IInterval {
+        const found = this.intervals.find(interval => (
+            (interval.alpha.index === joint1.index && interval.omega.index === joint2.index) ||
+            (interval.alpha.index === joint2.index && interval.omega.index === joint1.index)
+        ))
+        if (!found) {
+            throw new Error()
+        }
+        return found
     }
 }
 
