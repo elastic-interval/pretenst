@@ -9,18 +9,22 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
-const INTERVAL_ROLE_COUNT: u8 = 5
+const INTERVAL_ROLE_COUNT: u8 = 8
 const ROLE_MUSCLE: u8 = 0
 const ROLE_BAR: u8 = 1
 const ROLE_TRI_CABLE: u8 = 2
 const ROLE_RING_CABLE: u8 = 3
 const ROLE_CROSS_CABLE: u8 = 4
+const ROLE_BOW_CROSS: u8 = 5
+const ROLE_BOW_MID: u8 = 6
+const ROLE_BOW_END: u8 = 7
 
 const ELASTIC_MUSCLE: f32 = 1
 const ELASTIC_BAR: f32 = 1
 const ELASTIC_TRI_CABLE: f32 = 1
 const ELASTIC_RING_CABLE: f32 = 1
 const ELASTIC_CROSS_CABLE: f32 = 2.5
+const ELASTIC_BOW_CABLE: f32 = 5
 
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
@@ -520,7 +524,7 @@ export function setElasticFactor(intervalRole: u8, factor: f32): f32 {
 
 export function getElasticFactor(intervalRole: u8): f32 {
     let roleFactor: f32 = 1.0
-    switch(intervalRole) {
+    switch (intervalRole) {
         case ROLE_MUSCLE:
             roleFactor = ELASTIC_MUSCLE
             break
@@ -535,6 +539,15 @@ export function getElasticFactor(intervalRole: u8): f32 {
             break
         case ROLE_CROSS_CABLE:
             roleFactor = ELASTIC_CROSS_CABLE
+            break
+        case ROLE_BOW_CROSS:
+            roleFactor = ELASTIC_BOW_CABLE
+            break
+        case ROLE_BOW_MID:
+            roleFactor = ELASTIC_BOW_CABLE
+            break
+        case ROLE_BOW_END:
+            roleFactor = ELASTIC_BOW_CABLE
             break
     }
     return getF32(statePtr + ELASTIC_FACTOR_OFFSET + intervalRole * F32) * roleFactor

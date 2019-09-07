@@ -153,9 +153,9 @@ export class TensegrityFabric {
     }
 
     public optimize(): void {
-        const bowMidSpan = 0.3
         const bowCrossSpan = 0.3
-        const bowEndSpan = 0.3
+        const bowMidSpan = 0.1
+        const bowEndSpan = 0.2
         const crossCables = this.intervals.filter(interval => interval.intervalRole === IntervalRole.CROSS_CABLE)
         const opposite = (joint: IJoint, cable: IInterval) => cable.alpha.index === joint.index ? cable.omega : cable.alpha
         crossCables.forEach(ab => {
@@ -173,12 +173,22 @@ export class TensegrityFabric {
             })
             const c = opposite(b, bc)
             const d = this.joints[b.oppositeIndex]
-            this.removeInterval(this.findInterval(a, d))
+            const cd = this.findInterval(c, d)
+            if (!cd) {
+                console.log("cd not found", c, d)
+                return
+            }
+            const ad = this.findInterval(a, d)
+            if (!ad) {
+                console.log("ad not found", a, d)
+                return
+            }
+            this.removeInterval(ad)
             this.removeInterval(bc)
             this.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BOW_CROSS)
             this.exports.setIntervalIdealSpan(ab.index, bowCrossSpan)
             this.createInterval(a, c, IntervalRole.BOW_MID, bowMidSpan)
-            this.exports.setIntervalRole(this.findInterval(c, d).index, IntervalRole.BOW_END)
+            this.exports.setIntervalRole(cd.index, IntervalRole.BOW_END)
             this.exports.setIntervalIdealSpan(ab.index, bowEndSpan)
         })
     }
@@ -278,15 +288,11 @@ export class TensegrityFabric {
         return this.exports.iterate(ticks)
     }
 
-    private findInterval(joint1: IJoint, joint2: IJoint): IInterval {
-        const found = this.intervals.find(interval => (
+    private findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
+        return this.intervals.find(interval => (
             (interval.alpha.index === joint1.index && interval.omega.index === joint2.index) ||
             (interval.alpha.index === joint2.index && interval.omega.index === joint1.index)
         ))
-        if (!found) {
-            throw new Error()
-        }
-        return found
     }
 }
 

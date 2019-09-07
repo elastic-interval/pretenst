@@ -23,6 +23,9 @@ export enum PhysicsFeature {
     TriangleElasticFactor = "Triangle Elastic Factor",
     RingElasticFactor = "Ring Elastic Factor",
     CrossElasticFactor = "Cross Elastic Factor",
+    BowCrossElasticFactor = "Bow Cross Elastic Factor",
+    BowMidElasticFactor = "Bow Mid Elastic Factor",
+    BowEndElasticFactor = "Bow End Elastic Factor",
 }
 
 export interface IPhysicsFeature {
@@ -118,6 +121,15 @@ export class Physics {
                     break
                 case PhysicsFeature.CrossElasticFactor:
                     currentValue = instanceExports.setElasticFactor(IntervalRole.CROSS_CABLE, factor)
+                    break
+                case PhysicsFeature.BowCrossElasticFactor:
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_CROSS, factor)
+                    break
+                case PhysicsFeature.BowMidElasticFactor:
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_MID, factor)
+                    break
+                case PhysicsFeature.BowEndElasticFactor:
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_END, factor)
                     break
                 default:
                     ignore = true

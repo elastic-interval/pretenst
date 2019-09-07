@@ -116,6 +116,9 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
             case "c":
                 fabric.exports.centralize()
                 break
+            case "o":
+                fabric.optimize()
+                break
             default:
                 console.log("Key", event.key)
         }
