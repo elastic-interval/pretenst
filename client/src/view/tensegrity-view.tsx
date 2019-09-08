@@ -101,14 +101,14 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
                 handleFace(fabric.selectedFace, true)
                 handleInterval(fabric.selectedInterval, true)
                 break
-            case "j":
+            case "Control":
                 fabric.selectable = Selectable.JOINT
                 break
-            case "f":
-                fabric.selectable = Selectable.FACE
-                break
-            case "i":
+            case "Alt":
                 fabric.selectable = Selectable.INTERVAL
+                break
+            case "Meta":
+                fabric.selectable = Selectable.FACE
                 break
             case "h":
                 fabric.exports.setAltitude(5)
@@ -123,9 +123,12 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
                 console.log("Key", event.key)
         }
     }
+    const onKeyUpCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        fabric.selectable = Selectable.NONE
+    }
     return (
         <div ref={viewRef} tabIndex={1} id="tensegrity-view" className="the-whole-page"
-             onKeyDownCapture={onKeyDownCapture}
+             onKeyDownCapture={onKeyDownCapture} onKeyUpCapture={onKeyUpCapture}
         >
             <Canvas>
                 <FabricView fabric={fabric}/>

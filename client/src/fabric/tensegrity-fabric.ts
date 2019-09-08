@@ -57,7 +57,9 @@ export class TensegrityFabric {
     }
 
     set selectable(value: Selectable) {
-        this.cancelSelection()
+        if (value !== Selectable.NONE) {
+            this.cancelSelection()
+        }
         this._selectable = value
     }
 
