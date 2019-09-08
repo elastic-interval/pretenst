@@ -27,16 +27,16 @@ import {
 export enum Selectable {
     NONE,
     JOINT,
-    FACE,
     INTERVAL,
-    BAR,
-    CABLE,
+    FACE,
+    GROW_FACE,
 }
 
 export class TensegrityFabric {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public faces: IFace[] = []
+    public autoRotate = false
 
     private _selectable: Selectable = Selectable.NONE
     private _selectedJoint: IJoint | undefined
@@ -59,6 +59,7 @@ export class TensegrityFabric {
     set selectable(value: Selectable) {
         if (value !== Selectable.NONE) {
             this.cancelSelection()
+            this.autoRotate = false
         }
         this._selectable = value
     }
@@ -68,7 +69,9 @@ export class TensegrityFabric {
     }
 
     set selectedJoint(value: IJoint | undefined) {
+        console.log("selected joint", value)
         this.cancelSelection()
+        this._selectable = Selectable.NONE
         this._selectedJoint = value
     }
 
@@ -78,6 +81,7 @@ export class TensegrityFabric {
 
     set selectedInterval(value: IInterval | undefined) {
         this.cancelSelection()
+        this._selectable = Selectable.NONE
         this._selectedInterval = value
     }
 
@@ -87,6 +91,7 @@ export class TensegrityFabric {
 
     set selectedFace(value: IFace | undefined) {
         this.cancelSelection()
+        this._selectable = Selectable.NONE
         this._selectedFace = value
     }
 
@@ -99,7 +104,6 @@ export class TensegrityFabric {
         this._selectedJoint = undefined
         this._selectedInterval = undefined
         this._selectedFace = undefined
-        this._selectable = Selectable.NONE
     }
 
     public applyPhysics(physics: Physics): object {
