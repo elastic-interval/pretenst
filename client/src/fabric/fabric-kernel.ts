@@ -68,20 +68,13 @@ function createOffsets(faceCountMax: number, intervalCountMax: number, baseOffse
     const faceJointFloats = faceVectorFloats * VECTORS_FOR_FACE
     const faceLocationFloats = faceVectorFloats * VECTORS_FOR_FACE
     const lineFloats = intervalCountMax * FLOATS_IN_VECTOR * 2
-    // offsets
-    offsets.jointLocationsOffset = (
-        offsets.faceLocationsOffset = (
-            offsets.faceNormalsOffset = (
-                offsets.faceMidpointsOffset = (
-                    offsets.lineOffset = (
-                        offsets.lineColorsOffset = (
-                            offsets.vectorsOffset = baseOffset
-                        ) + seedVectorFloats * Float32Array.BYTES_PER_ELEMENT
-                    ) + lineFloats * Float32Array.BYTES_PER_ELEMENT
-                ) + lineFloats * Float32Array.BYTES_PER_ELEMENT
-            ) + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
-        ) + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
-    ) + faceLocationFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets.vectorsOffset = baseOffset
+    offsets.lineColorsOffset = offsets.vectorsOffset + seedVectorFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets.lineOffset = offsets.lineColorsOffset + lineFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets.faceMidpointsOffset = offsets.lineOffset + lineFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets.faceNormalsOffset = offsets.faceMidpointsOffset + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets.faceLocationsOffset = offsets.faceNormalsOffset + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets.jointLocationsOffset = offsets.faceLocationsOffset + faceLocationFloats * Float32Array.BYTES_PER_ELEMENT
     return offsets
 }
 

@@ -46,7 +46,7 @@ const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
 const LAND: u8 = 1
-const GESTATION_DRAG_FACTOR: f32 = 200
+const GESTATION_DRAG_FACTOR: f32 = 300
 
 // Dimensioning ================================================================================
 
@@ -62,6 +62,9 @@ let faceMidpointOffset: usize = 0
 let faceNormalOffset: usize = 0
 let faceLocationOffset: usize = 0
 let intervalOffset: usize = 0
+// TODO let intervalMidpointOffset: usize = 0
+// TODO let intervalUnitOffset: usize = 0
+// TODO let intervalStressOffset: usize = 0
 let faceOffset: usize = 0
 let lineOffset: usize = 0
 let lineColorOffset: usize = 0
@@ -80,49 +83,116 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     intervalCountMax = intervalsPerFabric
     faceCountMax = facesPerFabric
     instanceCountMax = instances
-    let faceVectorsSize = faceCountMax * VECTOR_SIZE
-    let faceJointVectorsSize = faceVectorsSize * 3
-    let jointsSize = jointCountMax * JOINT_SIZE
-    let intervalsSize = intervalCountMax * INTERVAL_SIZE
-    let facesSize = faceCountMax * FACE_SIZE
-    let lineSize = intervalCountMax * VECTOR_SIZE * 2
-    // offsets
-    fabricBytes = (
-        statePtr = (
-            vectorB = (
-                vectorA = (
-                    vector = (
-                        faceOffset = (
-                            intervalOffset = (
-                                jointOffset = (
-                                    faceLocationOffset = (
-                                        faceNormalOffset = (
-                                            faceMidpointOffset = (
-                                                lineOffset = (
-                                                    lineColorOffset = (
-                                                        rightPtr = (
-                                                            forwardPtr = (
-                                                                seedPtr = (
-                                                                    midpointPtr
-                                                                ) + VECTOR_SIZE
-                                                            ) + VECTOR_SIZE
-                                                        ) + VECTOR_SIZE
-                                                    ) + VECTOR_SIZE
-                                                ) + lineSize
-                                            ) + lineSize
-                                        ) + faceVectorsSize
-                                    ) + faceJointVectorsSize
-                                ) + faceJointVectorsSize
-                            ) + jointsSize
-                        ) + intervalsSize
-                    ) + facesSize
-                ) + VECTOR_SIZE
-            ) + VECTOR_SIZE
-        ) + VECTOR_SIZE
-    ) + STATE_SIZE
+    seedPtr = midpointPtr + VECTOR_SIZE
+    forwardPtr = seedPtr + VECTOR_SIZE
+    rightPtr = forwardPtr + VECTOR_SIZE
+    lineColorOffset = rightPtr + VECTOR_SIZE
+    lineOffset = lineColorOffset + intervalCountMax * VECTOR_SIZE * 2
+    faceMidpointOffset = lineOffset + intervalCountMax * VECTOR_SIZE * 2
+    faceNormalOffset = faceMidpointOffset + faceCountMax * VECTOR_SIZE
+    faceLocationOffset = faceNormalOffset + faceCountMax * VECTOR_SIZE * 3
+    jointOffset = faceLocationOffset + faceCountMax * VECTOR_SIZE * 3
+    intervalOffset = jointOffset + jointCountMax * JOINT_SIZE
+    faceOffset = intervalOffset + intervalCountMax * INTERVAL_SIZE
+    vector = faceOffset + faceCountMax * FACE_SIZE
+    vectorA = vector + VECTOR_SIZE
+    vectorB = vectorA + VECTOR_SIZE
+    statePtr = vectorB + VECTOR_SIZE
+    fabricBytes = statePtr + STATE_SIZE
     let blocks = (HEXALOT_SIZE + fabricBytes * instanceCountMax) >> 16
     memory.grow(blocks + 1)
     return fabricBytes
+}
+
+// Joint Pointers =========================================================================
+
+@inline()
+function locationPtr(jointIndex: u16): usize {
+    return jointOffset + jointIndex * VECTOR_SIZE
+}
+
+@inline()
+function velocityPtr(jointIndex: u16): usize {
+    return locationPtr(jointCountMax) + jointIndex * VECTOR_SIZE
+}
+
+@inline()
+function forcePtr(jointIndex: u16): usize {
+    return velocityPtr(jointCountMax) + jointIndex * VECTOR_SIZE
+}
+
+@inline()
+function intervalMassPtr(jointIndex: u16): usize {
+    return forcePtr(jointCountMax) + jointIndex * F32
+}
+
+@inline()
+function altitudePtr(jointIndex: u16): usize {
+    return intervalMassPtr(jointCountMax) + jointIndex * F32
+}
+
+@inline()
+function lateralityPtr(jointIndex: u16): usize {
+    return altitudePtr(jointCountMax) + jointIndex * U8
+}
+
+@inline()
+function tagPtr(jointIndex: u16): usize {
+    return lateralityPtr(jointCountMax) + jointIndex * U16
+}
+
+// Interval Pointers =========================================================================
+
+@inline()
+function alphaPtr(intervalIndex: u16): usize {
+    return intervalOffset + intervalIndex * INDEX_SIZE
+}
+
+@inline()
+function omegaPtr(intervalIndex: u16): usize {
+    return alphaPtr(intervalCountMax) + intervalIndex * INDEX_SIZE
+}
+
+@inline()
+function idealSpanPtr(intervalIndex: u16): usize {
+    return omegaPtr(intervalCountMax) + intervalIndex * F32
+}
+
+@inline()
+function rolePtr(intervalIndex: u16): usize {
+    return idealSpanPtr(intervalCountMax) + intervalIndex * F32
+}
+
+@inline()
+function highLowPtr(intervalIndex: u16): usize {
+    return rolePtr(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
+}
+
+@inline() // TODO
+function unitPtr(intervalIndex: u16): usize {
+    return highLowPtr(intervalCountMax) + intervalIndex * VECTOR_SIZE
+}
+
+// Face Pointers =========================================================================
+
+@inline()
+function facePtr(faceIndex: u16): usize {
+    return faceOffset + faceIndex * FACE_SIZE
+}
+
+@inline()
+function outputMidpointPtr(faceIndex: u16): usize {
+    return faceMidpointOffset + faceIndex * VECTOR_SIZE
+}
+
+@inline()
+function outputNormalPtr(faceIndex: u16, jointNumber: u16): usize {
+    return faceNormalOffset + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
+}
+
+@inline()
+function outputLocationPtr(faceIndex: u16, jointNumber: u16): usize {
+    return faceLocationOffset + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
 }
 
 // Physics =====================================================================================
@@ -599,34 +669,6 @@ function copyJointFromNext(jointIndex: u16): void {
     setJointTag(jointIndex, getJointTag(nextIndex))
 }
 
-function locationPtr(jointIndex: u16): usize {
-    return jointOffset + jointIndex * VECTOR_SIZE
-}
-
-function velocityPtr(jointIndex: u16): usize {
-    return locationPtr(jointCountMax) + jointIndex * VECTOR_SIZE
-}
-
-function forcePtr(jointIndex: u16): usize {
-    return velocityPtr(jointCountMax) + jointIndex * VECTOR_SIZE
-}
-
-function intervalMassPtr(jointIndex: u16): usize {
-    return forcePtr(jointCountMax) + jointIndex * F32
-}
-
-function altitudePtr(jointIndex: u16): usize {
-    return intervalMassPtr(jointCountMax) + jointIndex * F32
-}
-
-function lateralityPtr(jointIndex: u16): usize {
-    return altitudePtr(jointCountMax) + jointIndex * U8
-}
-
-function tagPtr(jointIndex: u16): usize {
-    return lateralityPtr(jointCountMax) + jointIndex * U16
-}
-
 function setJointLaterality(jointIndex: u16, laterality: u8): void {
     setU8(lateralityPtr(jointIndex), laterality)
 }
@@ -755,32 +797,20 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     }
 }
 
-function intervalPtr(intervalIndex: u16): usize {
-    return intervalOffset + intervalIndex * INTERVAL_SIZE
-}
-
 function getAlphaIndex(intervalIndex: u16): u16 {
-    return getU16(intervalPtr(intervalIndex))
+    return getU16(alphaPtr(intervalIndex))
 }
 
 function setAlphaIndex(intervalIndex: u16, index: u16): void {
-    setU16(intervalPtr(intervalIndex), index)
+    setU16(alphaPtr(intervalIndex), index)
 }
 
 function getOmegaIndex(intervalIndex: u16): u16 {
-    return getU16(intervalPtr(intervalIndex) + INDEX_SIZE)
+    return getU16(omegaPtr(intervalIndex))
 }
 
 function setOmegaIndex(intervalIndex: u16, index: u16): void {
-    setU16(intervalPtr(intervalIndex) + INDEX_SIZE, index)
-}
-
-function unitPtr(intervalIndex: u16): usize {
-    return intervalPtr(intervalIndex) + INDEX_SIZE * 2
-}
-
-function idealSpanPtr(intervalIndex: u16): usize {
-    return unitPtr(intervalIndex) + VECTOR_SIZE
+    setU16(omegaPtr(intervalIndex), index)
 }
 
 function getIntervalIdealSpan(intervalIndex: u16): f32 {
@@ -791,20 +821,12 @@ export function setIntervalIdealSpan(intervalIndex: u16, idealSpan: f32): void {
     setF32(idealSpanPtr(intervalIndex), idealSpan)
 }
 
-function rolePtr(intervalIndex: u16): usize {
-    return idealSpanPtr(intervalIndex) + F32
-}
-
 function getIntervalRole(intervalIndex: u16): u8 {
     return getU8(rolePtr(intervalIndex))
 }
 
 export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
     setU8(rolePtr(intervalIndex), intervalRole)
-}
-
-function highLowPtr(intervalIndex: u16): usize {
-    return rolePtr(intervalIndex) + INTERVAL_ROLE_SIZE
 }
 
 function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
@@ -1019,10 +1041,6 @@ function outputLineGeometry(intervalIndex: u16): u8 {
 
 const FACE_SIZE: usize = INDEX_SIZE * 3
 
-function facePtr(faceIndex: u16): usize {
-    return faceOffset + faceIndex * FACE_SIZE
-}
-
 export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {
     return getU16(facePtr(faceIndex) + jointNumber * INDEX_SIZE)
 }
@@ -1033,18 +1051,6 @@ function setFaceJointIndex(faceIndex: u16, jointNumber: u16, v: u16): void {
 
 function getFaceTag(faceIndex: u16, jointNumber: u16): u16 {
     return getJointTag(getFaceJointIndex(faceIndex, jointNumber))
-}
-
-function outputMidpointPtr(faceIndex: u16): usize {
-    return faceMidpointOffset + faceIndex * VECTOR_SIZE
-}
-
-function outputNormalPtr(faceIndex: u16, jointNumber: u16): usize {
-    return faceNormalOffset + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
-}
-
-function outputLocationPtr(faceIndex: u16, jointNumber: u16): usize {
-    return faceLocationOffset + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
 }
 
 function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
