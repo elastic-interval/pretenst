@@ -40,6 +40,10 @@ const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
 const LAND: u8 = 1
 
+const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
+const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
+
+
 // Dimensioning ================================================================================
 
 let jointCountMax: u16 = 0
@@ -55,7 +59,7 @@ let _faceMidpoints: usize = 0
 let _faceNormals: usize = 0
 let _faceLocations: usize = 0
 let _intervals: usize = 0
-// TODO let _intervalUnits: usize = 0
+let _intervalUnits: usize = 0
 // TODO let _intervalStresses: usize = 0
 // TODO let _intervalMidpoints: usize = 0
 let _faces: usize = 0
@@ -85,7 +89,8 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     _faceNormals = _faceMidpoints + faceCountMax * VECTOR_SIZE
     _faceLocations = _faceNormals + faceCountMax * VECTOR_SIZE * 3
     _jointLocations = _faceLocations + faceCountMax * VECTOR_SIZE * 3
-    _joints = _jointLocations + jointCountMax * VECTOR_SIZE
+    _intervalUnits = _jointLocations + jointCountMax * VECTOR_SIZE
+    _joints = _intervalUnits + intervalCountMax * VECTOR_SIZE
     _intervals = _joints + jointCountMax * JOINT_SIZE
     _faces = _intervals + intervalCountMax * INTERVAL_SIZE
     _vX = _faces + faceCountMax * FACE_SIZE
@@ -159,7 +164,7 @@ function _highLowArray(intervalIndex: u16): usize {
 
 @inline()
 function _unit(intervalIndex: u16): usize {
-    return _highLowArray(intervalCountMax) + intervalIndex * VECTOR_SIZE
+    return _intervalUnits + intervalIndex * VECTOR_SIZE
 }
 
 // Face Pointers =========================================================================
@@ -638,8 +643,6 @@ export function reset(): void {
 
 // Joints =====================================================================================
 
-const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
-
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
     let jointCount = getJointCount()
     if (jointCount + 1 >= jointCountMax) {
@@ -748,17 +751,16 @@ function calculateDirectionVectors(): void {
 
 // Intervals =====================================================================================
 
-const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + VECTOR_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
-
-export function createInterval(alphaIndex: u16, omegaIndex: u16, idealSpan: f32, intervalRole: u8, growing: boolean): usize {
+export function createInterval(alpha: u16, omega: u16, idealSpan: f32, intervalRole: u8, growing: boolean): usize {
     let intervalCount = getIntervalCount()
     if (intervalCount + 1 >= intervalCountMax) {
         return ERROR
     }
     let intervalIndex = intervalCount
     setIntervalCount(intervalCount + 1)
-    setAlphaIndex(intervalIndex, alphaIndex)
-    setOmegaIndex(intervalIndex, omegaIndex)
+    setAlphaIndex(intervalIndex, alpha)
+    setOmegaIndex(intervalIndex, omega)
+    zero(_unit(intervalIndex))
     setIntervalIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) * -idealSpan)
     setIntervalRole(intervalIndex, intervalRole)
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
@@ -788,6 +790,7 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setIntervalRole(intervalIndex, getIntervalRole(nextIndex))
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
+    setVector(_unit(intervalIndex), _unit(nextIndex))
     setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(nextIndex))
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
         setIntervalHighLow(intervalIndex, direction, getIntervalHighLow(nextIndex, direction))

@@ -43,38 +43,42 @@ export function createFabricKernel(fabricExports: IFabricExports, instanceMax: n
 }
 
 interface IOffsets {
-    vectorsOffset: number
-    lineOffset: number
-    lineColorsOffset: number
-    faceMidpointsOffset: number
-    faceNormalsOffset: number
-    faceLocationsOffset: number
-    jointLocationsOffset: number
+    _vectors: number
+    _lineLocations: number
+    _lineColors: number
+    _faceMidpoints: number
+    _faceNormals: number
+    _faceLocations: number
+    _jointLocations: number
+    _intervalUnits: number
 }
 
-function createOffsets(faceCountMax: number, intervalCountMax: number, baseOffset: number): IOffsets {
+function createOffsets(jointCountMax: number, intervalCountMax: number, faceCountMax: number, baseOffset: number): IOffsets {
     const offsets: IOffsets = {
-        vectorsOffset: 0,
-        lineOffset: 0,
-        lineColorsOffset: 0,
-        faceMidpointsOffset: 0,
-        faceNormalsOffset: 0,
-        faceLocationsOffset: 0,
-        jointLocationsOffset: 0,
+        _vectors: 0,
+        _lineLocations: 0,
+        _lineColors: 0,
+        _faceMidpoints: 0,
+        _faceNormals: 0,
+        _faceLocations: 0,
+        _jointLocations: 0,
+        _intervalUnits: 0,
     }
     // sizes
     const seedVectorFloats = 4 * FLOATS_IN_VECTOR
     const faceVectorFloats = faceCountMax * FLOATS_IN_VECTOR
     const faceJointFloats = faceVectorFloats * VECTORS_FOR_FACE
     const faceLocationFloats = faceVectorFloats * VECTORS_FOR_FACE
+    const jointLocationFloats = jointCountMax * FLOATS_IN_VECTOR
     const lineFloats = intervalCountMax * FLOATS_IN_VECTOR * 2
-    offsets.vectorsOffset = baseOffset
-    offsets.lineColorsOffset = offsets.vectorsOffset + seedVectorFloats * Float32Array.BYTES_PER_ELEMENT
-    offsets.lineOffset = offsets.lineColorsOffset + lineFloats * Float32Array.BYTES_PER_ELEMENT
-    offsets.faceMidpointsOffset = offsets.lineOffset + lineFloats * Float32Array.BYTES_PER_ELEMENT
-    offsets.faceNormalsOffset = offsets.faceMidpointsOffset + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
-    offsets.faceLocationsOffset = offsets.faceNormalsOffset + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
-    offsets.jointLocationsOffset = offsets.faceLocationsOffset + faceLocationFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._vectors = baseOffset
+    offsets._lineColors = offsets._vectors + seedVectorFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._lineLocations = offsets._lineColors + lineFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._faceMidpoints = offsets._lineLocations + lineFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._faceNormals = offsets._faceMidpoints + faceVectorFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._faceLocations = offsets._faceNormals + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._jointLocations = offsets._faceLocations + faceLocationFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._intervalUnits = offsets._jointLocations + jointLocationFloats * Float32Array.BYTES_PER_ELEMENT
     return offsets
 }
 
@@ -97,7 +101,7 @@ export class FabricKernel implements IGotchiFactory {
         for (let index = 0; index < dimensions.instanceMax; index++) {
             this.instanceArray.push(new InstanceExports(
                 this.arrayBuffer,
-                createOffsets(dimensions.faceCountMax, dimensions.intervalCountMax, HEXALOT_SIZE + index * fabricBytes),
+                createOffsets(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, HEXALOT_SIZE + index * fabricBytes),
                 exports,
                 dimensions,
                 index,
@@ -163,12 +167,13 @@ export class FabricKernel implements IGotchiFactory {
 
 export class InstanceExports {
     private vectorArray: Float32Array | undefined
-    private jointLocationsArray: Float32Array | undefined
-    private faceMidpointsArray: Float32Array | undefined
-    private faceLocationsArray: Float32Array | undefined
-    private faceNormalsArray: Float32Array | undefined
-    private linesArray: Float32Array | undefined
     private lineColorsArray: Float32Array | undefined
+    private lineLocationsArray: Float32Array | undefined
+    private faceMidpointsArray: Float32Array | undefined
+    private faceNormalsArray: Float32Array | undefined
+    private faceLocationsArray: Float32Array | undefined
+    private jointLocationsArray: Float32Array | undefined
+    private intervalUnitsArray: Float32Array | undefined
     private midpointVector = new Vector3()
     private seedVector = new Vector3()
     private forwardVector = new Vector3()
@@ -331,11 +336,15 @@ export class InstanceExports {
 
     public discardGeometry(): void {
         this.vectorArray = this.faceMidpointsArray = this.faceLocationsArray =
-            this.faceNormalsArray = this.jointLocationsArray = this.linesArray = this.lineColorsArray = undefined
+            this.faceNormalsArray = this.jointLocationsArray = this.lineLocationsArray = this.lineColorsArray = undefined
     }
 
     public getJointLocation(jointIndex: number): Vector3 {
         return vectorFromFloatArray(this.jointLocations, jointIndex * 3)
+    }
+
+    public getIntervalUnit(intervalIndex: number): Vector3 {
+        return vectorFromFloatArray(this.intervalUnits, intervalIndex * 3)
     }
 
     public getFaceLocations(): Float32Array {
@@ -354,7 +363,7 @@ export class InstanceExports {
     }
 
     public getIntervalLocation(intervalIndex: number): Vector3 {
-        return vectorFromFloatArray(this.lines, intervalIndex * 3)
+        return vectorFromFloatArray(this.lineLocations, intervalIndex * 3)
     }
 
     public getFaceNormals(): Float32Array {
@@ -362,7 +371,7 @@ export class InstanceExports {
     }
 
     public getLineLocations(): Float32Array {
-        return this.lines
+        return this.lineLocations
     }
 
     public getLineColors(): Float32Array {
@@ -413,57 +422,65 @@ export class InstanceExports {
 
     public get vectors(): Float32Array {
         if (!this.vectorArray) {
-            this.vectorArray = new Float32Array(this.buffer, this.offsets.vectorsOffset, 4 * 3)
+            this.vectorArray = new Float32Array(this.buffer, this.offsets._vectors, 4 * 3)
         }
         return this.vectorArray
-    }
-
-    public get jointLocations(): Float32Array {
-        if (!this.jointLocationsArray) {
-            this.jointLocationsArray =
-                new Float32Array(this.buffer, this.offsets.jointLocationsOffset, this.exports.getJointCount() * 3)
-        }
-        return this.jointLocationsArray
-    }
-
-    public get faceMidpoints(): Float32Array {
-        if (!this.faceMidpointsArray) {
-            this.faceMidpointsArray =
-                new Float32Array(this.buffer, this.offsets.faceMidpointsOffset, this.exports.getFaceCount() * 3)
-        }
-        return this.faceMidpointsArray
-    }
-
-    public get faceLocations(): Float32Array {
-        if (!this.faceLocationsArray) {
-            this.faceLocationsArray =
-                new Float32Array(this.buffer, this.offsets.faceLocationsOffset, this.exports.getFaceCount() * 3 * 3)
-        }
-        return this.faceLocationsArray
-    }
-
-    public get faceNormals(): Float32Array {
-        if (!this.faceNormalsArray) {
-            this.faceNormalsArray =
-                new Float32Array(this.buffer, this.offsets.faceNormalsOffset, this.exports.getFaceCount() * 3 * 3)
-        }
-        return this.faceNormalsArray
-    }
-
-    public get lines(): Float32Array {
-        if (!this.linesArray) {
-            this.linesArray =
-                new Float32Array(this.buffer, this.offsets.lineOffset, this.exports.getIntervalCount() * 3 * 2)
-        }
-        return this.linesArray
     }
 
     public get lineColors(): Float32Array {
         if (!this.lineColorsArray) {
             this.lineColorsArray =
-                new Float32Array(this.buffer, this.offsets.lineColorsOffset, this.exports.getIntervalCount() * 3 * 2)
+                new Float32Array(this.buffer, this.offsets._lineColors, this.exports.getIntervalCount() * 3 * 2)
         }
         return this.lineColorsArray
+    }
+
+    public get lineLocations(): Float32Array {
+        if (!this.lineLocationsArray) {
+            this.lineLocationsArray =
+                new Float32Array(this.buffer, this.offsets._lineLocations, this.exports.getIntervalCount() * 3 * 2)
+        }
+        return this.lineLocationsArray
+    }
+
+    public get faceMidpoints(): Float32Array {
+        if (!this.faceMidpointsArray) {
+            this.faceMidpointsArray =
+                new Float32Array(this.buffer, this.offsets._faceMidpoints, this.exports.getFaceCount() * 3)
+        }
+        return this.faceMidpointsArray
+    }
+
+    public get faceNormals(): Float32Array {
+        if (!this.faceNormalsArray) {
+            this.faceNormalsArray =
+                new Float32Array(this.buffer, this.offsets._faceNormals, this.exports.getFaceCount() * 3 * 3)
+        }
+        return this.faceNormalsArray
+    }
+
+    public get faceLocations(): Float32Array {
+        if (!this.faceLocationsArray) {
+            this.faceLocationsArray =
+                new Float32Array(this.buffer, this.offsets._faceLocations, this.exports.getFaceCount() * 3 * 3)
+        }
+        return this.faceLocationsArray
+    }
+
+    public get jointLocations(): Float32Array {
+        if (!this.jointLocationsArray) {
+            this.jointLocationsArray =
+                new Float32Array(this.buffer, this.offsets._jointLocations, this.exports.getJointCount() * 3)
+        }
+        return this.jointLocationsArray
+    }
+
+    public get intervalUnits(): Float32Array {
+        if (!this.intervalUnitsArray) {
+            this.intervalUnitsArray =
+                new Float32Array(this.buffer, this.offsets._intervalUnits, this.exports.getIntervalCount() * 3)
+        }
+        return this.intervalUnitsArray
     }
 
 }
