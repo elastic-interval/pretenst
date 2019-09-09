@@ -122,9 +122,6 @@ export class Physics {
                 case PhysicsFeature.CrossElasticFactor:
                     currentValue = instanceExports.setElasticFactor(IntervalRole.CROSS_CABLE, factor)
                     break
-                case PhysicsFeature.BowCrossElasticFactor:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_CROSS, factor)
-                    break
                 case PhysicsFeature.BowMidElasticFactor:
                     currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_MID, factor)
                     break

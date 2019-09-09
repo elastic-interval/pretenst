@@ -21,7 +21,6 @@ export enum IntervalRole {
     TRI_CABLE,
     RING_CABLE,
     CROSS_CABLE,
-    BOW_CROSS,
     BOW_MID,
     BOW_END,
 }

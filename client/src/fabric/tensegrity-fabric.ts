@@ -112,21 +112,21 @@ export class TensegrityFabric {
 
     public createBrick(): IBrick {
         let brick = createBrickOnOrigin(this)
-        this.exports.discardGeometry()
+        this.exports.clear()
         this.disposeOfGeometry()
         return brick
     }
 
     public growBrick(brick: IBrick, triangle: Triangle): IBrick {
         const newBrick = createBrickOnTriangle(this, brick, triangle)
-        this.exports.discardGeometry()
+        this.exports.clear()
         this.disposeOfGeometry()
         return newBrick
     }
 
     public connectBricks(brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
         const connector = connectBricks(this, brickA, triangleA, brickB, triangleB)
-        this.exports.discardGeometry()
+        this.exports.clear()
         this.disposeOfGeometry()
         connector.facesToRemove.forEach(face => this.removeFace(face, true))
         return connector
@@ -154,7 +154,7 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
-        this.exports.discardGeometry()
+        this.exports.clear()
         this.disposeOfGeometry()
     }
 
@@ -186,7 +186,7 @@ export class TensegrityFabric {
             }
             this.removeInterval(ad)
             this.removeInterval(bc)
-            this.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BOW_CROSS)
+            this.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BOW_END)
             this.exports.setIntervalIdealSpan(ab.index, bowCrossSpan)
             this.createInterval(a, c, IntervalRole.BOW_MID, bowMidSpan)
             this.exports.setIntervalRole(cd.index, cd.intervalRole = IntervalRole.BOW_END)

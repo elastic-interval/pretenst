@@ -51,6 +51,7 @@ interface IOffsets {
     _faceLocations: number
     _jointLocations: number
     _intervalUnits: number
+    _intervalStresses: number
 }
 
 function createOffsets(jointCountMax: number, intervalCountMax: number, faceCountMax: number, baseOffset: number): IOffsets {
@@ -63,6 +64,7 @@ function createOffsets(jointCountMax: number, intervalCountMax: number, faceCoun
         _faceLocations: 0,
         _jointLocations: 0,
         _intervalUnits: 0,
+        _intervalStresses: 0,
     }
     // sizes
     const seedVectorFloats = 4 * FLOATS_IN_VECTOR
@@ -70,6 +72,7 @@ function createOffsets(jointCountMax: number, intervalCountMax: number, faceCoun
     const faceJointFloats = faceVectorFloats * VECTORS_FOR_FACE
     const faceLocationFloats = faceVectorFloats * VECTORS_FOR_FACE
     const jointLocationFloats = jointCountMax * FLOATS_IN_VECTOR
+    const intervalUnitFloats = intervalCountMax * FLOATS_IN_VECTOR
     const lineFloats = intervalCountMax * FLOATS_IN_VECTOR * 2
     offsets._vectors = baseOffset
     offsets._lineColors = offsets._vectors + seedVectorFloats * Float32Array.BYTES_PER_ELEMENT
@@ -79,6 +82,7 @@ function createOffsets(jointCountMax: number, intervalCountMax: number, faceCoun
     offsets._faceLocations = offsets._faceNormals + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
     offsets._jointLocations = offsets._faceLocations + faceLocationFloats * Float32Array.BYTES_PER_ELEMENT
     offsets._intervalUnits = offsets._jointLocations + jointLocationFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._intervalStresses = offsets._intervalUnits + intervalUnitFloats * Float32Array.BYTES_PER_ELEMENT
     return offsets
 }
 
@@ -160,20 +164,39 @@ export class FabricKernel implements IGotchiFactory {
             return undefined
         }
         this.instanceUsed[freeIndex] = true
-        this.instanceArray[freeIndex].discardGeometry()
+        this.instanceArray[freeIndex].clear()
         return this.instanceArray[freeIndex]
     }
 }
 
+class LazyFloatArray {
+    private array: Float32Array | undefined
+
+    constructor(private buffer: ArrayBuffer, private offset: number, private length: () => number) {
+    }
+
+    public get floats(): Float32Array {
+        if (this.array) {
+            return this.array
+        }
+        return this.array = new Float32Array(this.buffer, this.offset, this.length())
+    }
+
+    public clear(): void {
+        this.array = undefined
+    }
+}
+
 export class InstanceExports {
-    private vectorArray: Float32Array | undefined
-    private lineColorsArray: Float32Array | undefined
-    private lineLocationsArray: Float32Array | undefined
-    private faceMidpointsArray: Float32Array | undefined
-    private faceNormalsArray: Float32Array | undefined
-    private faceLocationsArray: Float32Array | undefined
-    private jointLocationsArray: Float32Array | undefined
-    private intervalUnitsArray: Float32Array | undefined
+    private vectors: LazyFloatArray
+    private lineColors: LazyFloatArray
+    private lineLocations: LazyFloatArray
+    private faceMidpoints: LazyFloatArray
+    private faceNormals: LazyFloatArray
+    private faceLocations: LazyFloatArray
+    private jointLocations: LazyFloatArray
+    private intervalUnits: LazyFloatArray
+    private intervalStresses: LazyFloatArray
     private midpointVector = new Vector3()
     private seedVector = new Vector3()
     private forwardVector = new Vector3()
@@ -187,6 +210,15 @@ export class InstanceExports {
         private fabricIndex: number,
         private recycleFabric: (index: number) => void,
     ) {
+        this.vectors = new LazyFloatArray(this.buffer, this.offsets._vectors, () => 3 * 4)
+        this.lineColors = new LazyFloatArray(this.buffer, this.offsets._lineColors, () => this.exports.getIntervalCount() * 3 * 2)
+        this.lineLocations = new LazyFloatArray(this.buffer, this.offsets._lineLocations, () => this.exports.getIntervalCount() * 3 * 2)
+        this.faceMidpoints = new LazyFloatArray(this.buffer, this.offsets._faceMidpoints, () => this.exports.getFaceCount() * 3)
+        this.faceNormals = new LazyFloatArray(this.buffer, this.offsets._faceNormals, () => this.exports.getFaceCount() * 3 * 3)
+        this.faceLocations = new LazyFloatArray(this.buffer, this.offsets._faceLocations, () => this.exports.getFaceCount() * 3 * 3)
+        this.jointLocations = new LazyFloatArray(this.buffer, this.offsets._jointLocations, () => this.exports.getJointCount() * 3)
+        this.intervalUnits = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.exports.getIntervalCount() * 3)
+        this.intervalStresses = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.exports.getIntervalCount())
     }
 
     public get index(): number {
@@ -334,25 +366,31 @@ export class InstanceExports {
         return this.exports
     }
 
-    public discardGeometry(): void {
-        this.vectorArray = this.faceMidpointsArray = this.faceLocationsArray =
-            this.faceNormalsArray = this.jointLocationsArray = this.lineLocationsArray = this.lineColorsArray = undefined
+    public clear(): void {
+        this.faceMidpoints.clear()
+        this.faceLocations.clear()
+        this.faceNormals.clear()
+        this.jointLocations.clear()
+        this.lineLocations.clear()
+        this.lineColors.clear()
+        this.intervalUnits.clear()
+        this.intervalStresses.clear()
     }
 
     public getJointLocation(jointIndex: number): Vector3 {
-        return vectorFromFloatArray(this.jointLocations, jointIndex * 3)
+        return vectorFromFloatArray(this.jointLocations.floats, jointIndex * 3)
     }
 
     public getIntervalUnit(intervalIndex: number): Vector3 {
-        return vectorFromFloatArray(this.intervalUnits, intervalIndex * 3)
+        return vectorFromFloatArray(this.intervalUnits.floats, intervalIndex * 3)
     }
 
     public getFaceLocations(): Float32Array {
-        return this.faceLocations
+        return this.faceLocations.floats
     }
 
     public getFaceLocation(faceIndex: number): Vector3 {
-        return vectorFromFloatArray(this.faceLocations, faceIndex * 3)
+        return vectorFromFloatArray(this.faceLocations.floats, faceIndex * 3)
     }
 
     public getFaceMidpoint(faceIndex: number): Vector3 {
@@ -363,19 +401,19 @@ export class InstanceExports {
     }
 
     public getIntervalLocation(intervalIndex: number): Vector3 {
-        return vectorFromFloatArray(this.lineLocations, intervalIndex * 3)
+        return vectorFromFloatArray(this.lineLocations.floats, intervalIndex * 3)
     }
 
     public getFaceNormals(): Float32Array {
-        return this.faceNormals
+        return this.faceNormals.floats
     }
 
     public getLineLocations(): Float32Array {
-        return this.lineLocations
+        return this.lineLocations.floats
     }
 
     public getLineColors(): Float32Array {
-        return this.lineColors
+        return this.lineColors.floats
     }
 
     public getIntervalMidpoint(intervalIndex: number): Vector3 {
@@ -401,86 +439,23 @@ export class InstanceExports {
     }
 
     public getVectors(): Float32Array {
-        return this.vectors
+        return this.vectors.floats
     }
 
     public get midpoint(): Vector3 {
-        return vectorFromFloatArray(this.vectors, 0, this.midpointVector)
+        return vectorFromFloatArray(this.vectors.floats, 0, this.midpointVector)
     }
 
     public get seed(): Vector3 {
-        return vectorFromFloatArray(this.vectors, 3, this.seedVector)
+        return vectorFromFloatArray(this.vectors.floats, 3, this.seedVector)
     }
 
     public get forward(): Vector3 {
-        return vectorFromFloatArray(this.vectors, 6, this.forwardVector)
+        return vectorFromFloatArray(this.vectors.floats, 6, this.forwardVector)
     }
 
     public get right(): Vector3 {
-        return vectorFromFloatArray(this.vectors, 9, this.rightVector)
+        return vectorFromFloatArray(this.vectors.floats, 9, this.rightVector)
     }
-
-    public get vectors(): Float32Array {
-        if (!this.vectorArray) {
-            this.vectorArray = new Float32Array(this.buffer, this.offsets._vectors, 4 * 3)
-        }
-        return this.vectorArray
-    }
-
-    public get lineColors(): Float32Array {
-        if (!this.lineColorsArray) {
-            this.lineColorsArray =
-                new Float32Array(this.buffer, this.offsets._lineColors, this.exports.getIntervalCount() * 3 * 2)
-        }
-        return this.lineColorsArray
-    }
-
-    public get lineLocations(): Float32Array {
-        if (!this.lineLocationsArray) {
-            this.lineLocationsArray =
-                new Float32Array(this.buffer, this.offsets._lineLocations, this.exports.getIntervalCount() * 3 * 2)
-        }
-        return this.lineLocationsArray
-    }
-
-    public get faceMidpoints(): Float32Array {
-        if (!this.faceMidpointsArray) {
-            this.faceMidpointsArray =
-                new Float32Array(this.buffer, this.offsets._faceMidpoints, this.exports.getFaceCount() * 3)
-        }
-        return this.faceMidpointsArray
-    }
-
-    public get faceNormals(): Float32Array {
-        if (!this.faceNormalsArray) {
-            this.faceNormalsArray =
-                new Float32Array(this.buffer, this.offsets._faceNormals, this.exports.getFaceCount() * 3 * 3)
-        }
-        return this.faceNormalsArray
-    }
-
-    public get faceLocations(): Float32Array {
-        if (!this.faceLocationsArray) {
-            this.faceLocationsArray =
-                new Float32Array(this.buffer, this.offsets._faceLocations, this.exports.getFaceCount() * 3 * 3)
-        }
-        return this.faceLocationsArray
-    }
-
-    public get jointLocations(): Float32Array {
-        if (!this.jointLocationsArray) {
-            this.jointLocationsArray =
-                new Float32Array(this.buffer, this.offsets._jointLocations, this.exports.getJointCount() * 3)
-        }
-        return this.jointLocationsArray
-    }
-
-    public get intervalUnits(): Float32Array {
-        if (!this.intervalUnitsArray) {
-            this.intervalUnitsArray =
-                new Float32Array(this.buffer, this.offsets._intervalUnits, this.exports.getIntervalCount() * 3)
-        }
-        return this.intervalUnitsArray
-    }
-
 }
+

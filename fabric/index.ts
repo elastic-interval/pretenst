@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 declare function logBoolean(idx: u32, b: boolean): void
 
 declare function logFloat(idx: u32, f: f32): void
@@ -15,9 +20,8 @@ const ROLE_BAR: u8 = 1
 const ROLE_TRI_CABLE: u8 = 2
 const ROLE_RING_CABLE: u8 = 3
 const ROLE_CROSS_CABLE: u8 = 4
-const ROLE_BOW_CROSS: u8 = 5
-const ROLE_BOW_MID: u8 = 6
-const ROLE_BOW_END: u8 = 7
+const ROLE_BOW_MID: u8 = 5
+const ROLE_BOW_END: u8 = 6
 
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
@@ -60,8 +64,7 @@ let _faceNormals: usize = 0
 let _faceLocations: usize = 0
 let _intervals: usize = 0
 let _intervalUnits: usize = 0
-// TODO let _intervalStresses: usize = 0
-// TODO let _intervalMidpoints: usize = 0
+let _intervalStresses: usize = 0
 let _faces: usize = 0
 let _lineLocations: usize = 0
 let _lineColors: usize = 0
@@ -90,7 +93,8 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     _faceLocations = _faceNormals + faceCountMax * VECTOR_SIZE * 3
     _jointLocations = _faceLocations + faceCountMax * VECTOR_SIZE * 3
     _intervalUnits = _jointLocations + jointCountMax * VECTOR_SIZE
-    _joints = _intervalUnits + intervalCountMax * VECTOR_SIZE
+    _intervalStresses = _intervalUnits + intervalCountMax * VECTOR_SIZE
+    _joints = _intervalStresses + intervalCountMax * F32
     _intervals = _joints + jointCountMax * JOINT_SIZE
     _faces = _intervals + intervalCountMax * INTERVAL_SIZE
     _vX = _faces + faceCountMax * FACE_SIZE
@@ -209,30 +213,6 @@ const ELASTIC_CROSS_CABLE: f32 = 2.5
 const ELASTIC_BOW_CABLE: f32 = 5
 
 const GESTATION_DRAG_FACTOR: f32 = 300
-const MAX_PULL: f32 = 5
-const MAX_PUSH: f32 = 9
-const STRESS_FACTOR_CHANGE: f32 = 0.01
-const STRESS_FACTOR_LIMIT_TOLERANCE = STRESS_FACTOR_CHANGE * 3
-const WITHIN_LIMITS: u8 = 0
-const RAISE_MAX_PUSH_LIMIT: u8 = 1
-const TIGHTEN_MAX_PUSH_LIMIT: u8 = 2
-const RAISE_MAX_PULL_LIMIT: u8 = 3
-const TIGHTEN_MAX_PULL_LIMIT: u8 = 4
-const TIGHTEN_MIN_PUSH_LIMIT: u8 = 5
-const LOWER_MIN_PUSH_LIMIT: u8 = 6
-const TIGHTEN_MIN_PULL_LIMIT: u8 = 7
-const LOWER_MIN_PULL_LIMIT: u8 = 8
-const PULL_WITHIN_LIMITS: u8 = 9
-const PUSH_WITHIN_LIMITS: u8 = 10
-const PUSH_TOUCHES_MAX: u8 = 11
-const PULL_TOUCHES_MAX: u8 = 12
-const PUSH_TOUCHES_MIN: u8 = 13
-const PULL_TOUCHES_MIN: u8 = 14
-
-let maxPull: f32 = MAX_PULL
-let minPull: f32 = 0
-let maxPush: f32 = MAX_PUSH
-let minPush: f32 = 0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
 
@@ -612,9 +592,6 @@ export function getElasticFactor(intervalRole: u8): f32 {
         case ROLE_CROSS_CABLE:
             roleFactor = ELASTIC_CROSS_CABLE
             break
-        case ROLE_BOW_CROSS:
-            roleFactor = ELASTIC_BOW_CABLE
-            break
         case ROLE_BOW_MID:
             roleFactor = ELASTIC_BOW_CABLE
             break
@@ -770,7 +747,6 @@ export function createInterval(alpha: u16, omega: u16, idealSpan: f32, intervalR
             setIntervalHighLow(intervalIndex, direction, DEFAULT_HIGH_LOW)
         }
     }
-    outputLineGeometry(intervalIndex)
     setTimeSweep(1)
     setGestating(GESTATING)
     return intervalIndex
@@ -835,6 +811,14 @@ function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
 
 export function setIntervalHighLow(intervalIndex: u16, direction: u8, highLow: u8): void {
     setU8(_highLowArray(intervalIndex) + MUSCLE_HIGHLOW_SIZE * direction, highLow)
+}
+
+function getStress(intervalIndex: u16): f32 {
+    return getF32(_intervalStresses + F32 * intervalIndex)
+}
+
+function setStress(intervalIndex: u16, stress: f32): void {
+    setF32(_intervalStresses + F32 * intervalIndex, stress)
 }
 
 function calculateSpan(intervalIndex: u16): f32 {
@@ -984,56 +968,54 @@ function setLineBlank(_color: usize, push: boolean): void {
     }
 }
 
-function outputLineGeometry(intervalIndex: u16): u8 {
-    let _linePoint = _lineLocations + intervalIndex * VECTOR_SIZE * 2
-    setVector(_linePoint, _location(alphaIndex(intervalIndex)))
-    setVector(_linePoint + VECTOR_SIZE, _location(omegaIndex(intervalIndex)))
-    let _lineColor = _lineColors + intervalIndex * VECTOR_SIZE * 2
-    let intervalRole = getIntervalRole(intervalIndex)
-    let elasticFactor = getElasticFactor(intervalRole) * globalElasticFactor
-    let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
-    let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
-    if (stress < 0) { // PUSH
-        stress = -stress
-        if (stress > maxPush) {
-            setLineBlank(_lineColor, true)
-            return RAISE_MAX_PUSH_LIMIT
+function outputLinesGeometry(): void {
+    let intervalCount = getIntervalCount()
+    let minPush: f32 = 1000
+    let maxPush: f32 = 0
+    let minPull: f32 = 1000
+    let maxPull: f32 = 0
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        let stress = getStress(intervalIndex)
+        if (stress < 0) { // PUSH
+            stress = -stress
+            if (stress < minPush) {
+                minPush = stress
+            }
+            if (stress > maxPush) {
+                maxPush  = stress
+            }
         }
-        if (stress < minPush) {
-            setLineBlank(_lineColor, true)
-            return LOWER_MIN_PUSH_LIMIT
+        if (stress > 0) { // PULL
+            if (stress < minPull) {
+                minPull = stress
+            }
+            if (stress > maxPull) {
+                maxPull  = stress
+            }
         }
-        let color = (stress - minPush) / (maxPush - minPush)
-        setLineColor(_lineColor, color, 0.2 + (1.0 - color) / 3, 0.0)
-        let tooLowForMax: boolean = stress < maxPush - STRESS_FACTOR_LIMIT_TOLERANCE
-        let tooHighForMin: boolean = stress > minPush + STRESS_FACTOR_LIMIT_TOLERANCE
-        if (tooLowForMax && !tooHighForMin) {
-            return PUSH_TOUCHES_MIN
+    }
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        let _linePoint = _lineLocations + intervalIndex * VECTOR_SIZE * 2
+        setVector(_linePoint, _location(alphaIndex(intervalIndex)))
+        setVector(_linePoint + VECTOR_SIZE, _location(omegaIndex(intervalIndex)))
+        let _lineColor = _lineColors + intervalIndex * VECTOR_SIZE * 2
+        let stress = getStress(intervalIndex)
+        if (stress < 0) { // PUSH
+            stress = -stress
+            if (stress > maxPush || stress < minPush) {
+                setLineBlank(_lineColor, true)
+                return
+            }
+            let color = (stress - minPush) / (maxPush - minPush)
+            setLineColor(_lineColor, color, 0.2 + (1.0 - color) / 3, 0.0)
+        } else { // PULL
+            if (stress > maxPull || stress < minPull) {
+                setLineBlank(_lineColor, false)
+                return
+            }
+            let color = (stress - minPull) / (maxPull - minPull)
+            setLineColor(_lineColor, 0.3 + (1.0 - color) / 3, 0.3 + (1.0 - color) / 3, color)
         }
-        if (tooHighForMin && !tooLowForMax) {
-            return PUSH_TOUCHES_MAX
-        }
-        return PUSH_WITHIN_LIMITS
-    } else { // PULL
-        if (stress > maxPull) {
-            setLineBlank(_lineColor, false)
-            return RAISE_MAX_PULL_LIMIT
-        }
-        if (stress < minPull) {
-            setLineBlank(_lineColor, false)
-            return LOWER_MIN_PULL_LIMIT
-        }
-        let color = (stress - minPull) / (maxPull - minPull)
-        setLineColor(_lineColor, 0.3 + (1.0 - color) / 3, 0.3 + (1.0 - color) / 3, color)
-        let tooLowForMax: boolean = stress < maxPull - STRESS_FACTOR_LIMIT_TOLERANCE
-        let tooHighForMin: boolean = stress > minPull + STRESS_FACTOR_LIMIT_TOLERANCE
-        if (tooLowForMax && !tooHighForMin) {
-            return PULL_TOUCHES_MIN
-        }
-        if (tooHighForMin && !tooLowForMax) {
-            return PULL_TOUCHES_MAX
-        }
-        return PULL_WITHIN_LIMITS
     }
 }
 
@@ -1238,10 +1220,10 @@ function getTerrainUnder(jointIndex: u16): u8 {
 function intervalPhysics(intervalIndex: u16): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let elasticFactor = getElasticFactor(intervalRole) * globalElasticFactor
-    let canPush = (intervalRole <= ROLE_BAR)
     let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
     let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
-    if (canPush || stress > 0) {
+    setStress(intervalIndex, stress)
+    if (intervalRole <= ROLE_BAR || stress > 0) {
         addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
         addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -stress / 2)
     }
@@ -1301,56 +1283,6 @@ function tick(gestating: boolean): void {
     }
 }
 
-function lineGeometry(): u8 {
-    let intervalCount = getIntervalCount()
-    let pushTouchesMin: u16 = 0
-    let pushTouchesMax: u16 = 0
-    let pullTouchesMin: u16 = 0
-    let pullTouchesMax: u16 = 0
-    let grossLimitViolation = WITHIN_LIMITS
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        let violation = outputLineGeometry(intervalIndex)
-        switch (violation) {
-            case RAISE_MAX_PUSH_LIMIT:
-            case LOWER_MIN_PUSH_LIMIT:
-            case RAISE_MAX_PULL_LIMIT:
-            case LOWER_MIN_PULL_LIMIT:
-                if (grossLimitViolation === WITHIN_LIMITS) {
-                    grossLimitViolation = violation
-                }
-                break
-            case PUSH_TOUCHES_MIN:
-                pushTouchesMin++
-                break
-            case PUSH_TOUCHES_MAX:
-                pushTouchesMax++
-                break
-            case PULL_TOUCHES_MIN:
-                pullTouchesMin++
-                break
-            case PULL_TOUCHES_MAX:
-                pullTouchesMax++
-                break
-        }
-    }
-    if (grossLimitViolation !== WITHIN_LIMITS) {
-        return grossLimitViolation
-    }
-    if (!pullTouchesMin) {
-        return TIGHTEN_MIN_PULL_LIMIT
-    }
-    if (!pullTouchesMax) {
-        return TIGHTEN_MAX_PULL_LIMIT
-    }
-    if (!pushTouchesMin) {
-        return TIGHTEN_MIN_PUSH_LIMIT
-    }
-    if (!pushTouchesMax) {
-        return TIGHTEN_MAX_PUSH_LIMIT
-    }
-    return WITHIN_LIMITS
-}
-
 export function iterate(ticks: u16): boolean {
     let wrapAround = false
     let timeSweepStep: u16 = <u16>timeSweepSpeed
@@ -1376,39 +1308,7 @@ export function iterate(ticks: u16): boolean {
         tick(gestating)
     }
     setAge(getAge() + <u32>ticks)
-    let stressViolation = lineGeometry()
-    switch (stressViolation) {
-        case TIGHTEN_MAX_PUSH_LIMIT:
-            maxPush -= STRESS_FACTOR_CHANGE
-            break
-        case TIGHTEN_MAX_PULL_LIMIT:
-            maxPull -= STRESS_FACTOR_CHANGE
-            break
-        case TIGHTEN_MIN_PUSH_LIMIT:
-            if (maxPush - minPush < STRESS_FACTOR_LIMIT_TOLERANCE * 2) {
-                break
-            }
-            minPush += STRESS_FACTOR_CHANGE
-            break
-        case TIGHTEN_MIN_PULL_LIMIT:
-            if (maxPull - minPull < STRESS_FACTOR_LIMIT_TOLERANCE * 2) {
-                break
-            }
-            minPull += STRESS_FACTOR_CHANGE
-            break
-        case RAISE_MAX_PUSH_LIMIT:
-            maxPush += STRESS_FACTOR_CHANGE
-            break
-        case RAISE_MAX_PULL_LIMIT:
-            maxPull += STRESS_FACTOR_CHANGE
-            break
-        case LOWER_MIN_PUSH_LIMIT:
-            minPush -= STRESS_FACTOR_CHANGE
-            break
-        case LOWER_MIN_PULL_LIMIT:
-            minPull -= STRESS_FACTOR_CHANGE
-            break
-    }
+    outputLinesGeometry()
     let faceCount = getFaceCount()
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
         outputFaceGeometry(faceIndex)
