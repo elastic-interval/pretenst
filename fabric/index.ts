@@ -17,9 +17,9 @@ const F32 = sizeof<f32>()
 enum IntervalRole {
     MUSCLE = 0,
     BAR = 1,
-    TRI_CABLE = 2,
-    RING_CABLE = 3,
-    CROSS_CABLE = 4,
+    TRIANGLE = 2,
+    RING = 3,
+    CROSS = 4,
     BOW_MID = 5,
     BOW_END = 6,
 }
@@ -585,13 +585,13 @@ export function getElasticFactor(intervalRole: u8): f32 {
         case IntervalRole.BAR:
             roleFactor = ELASTIC_BAR
             break
-        case IntervalRole.TRI_CABLE:
+        case IntervalRole.TRIANGLE:
             roleFactor = ELASTIC_TRI_CABLE
             break
-        case IntervalRole.RING_CABLE:
+        case IntervalRole.RING:
             roleFactor = ELASTIC_RING_CABLE
             break
-        case IntervalRole.CROSS_CABLE:
+        case IntervalRole.CROSS:
             roleFactor = ELASTIC_CROSS_CABLE
             break
         case IntervalRole.BOW_MID:

@@ -246,7 +246,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
     }, [])
     fabric.joints.push(...joints)
     const brick: IBrick = {base, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
-    const role = IntervalRole.TRI_CABLE
+    const role = IntervalRole.TRIANGLE
     TRIANGLE_ARRAY.forEach(triangle => {
         const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
@@ -328,12 +328,12 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         const jointLocation = fabric.exports.getJointLocation(joint.index)
         const nextJoint = ring[(walk + 1) % ring.length]
         const nextJointOppositeLocation = fabric.exports.getJointLocation(nextJoint.oppositeIndex)
-        const ringCable = fabric.createInterval( joint, nextJoint, IntervalRole.RING_CABLE, RING_SPAN)
+        const ringCable = fabric.createInterval( joint, nextJoint, IntervalRole.RING, RING_SPAN)
         cables.push(ringCable)
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.CROSS_CABLE, CROSS_SPAN)
+        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.CROSS, CROSS_SPAN)
         cables.push(crossCable)
     }
     const handleFace = (triangle: Triangle, brick: IBrick): IFace => {
@@ -343,8 +343,8 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         })
         const triangleRing = TRIANGLE_ARRAY[triangle].ring
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
-            interval.intervalRole = IntervalRole.RING_CABLE
-            fabric.exports.setIntervalRole(interval.index, IntervalRole.RING_CABLE)
+            interval.intervalRole = IntervalRole.RING
+            fabric.exports.setIntervalRole(interval.index, IntervalRole.RING)
             fabric.exports.setIntervalIdealSpan(interval.index, RING_SPAN)
         })
         return face

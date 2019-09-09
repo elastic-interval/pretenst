@@ -162,14 +162,14 @@ export class TensegrityFabric {
         const bowCrossSpan = 0.3
         const bowMidSpan = 0.1
         const bowEndSpan = 0.2
-        const crossCables = this.intervals.filter(interval => interval.intervalRole === IntervalRole.CROSS_CABLE)
+        const crossCables = this.intervals.filter(interval => interval.intervalRole === IntervalRole.CROSS)
         const opposite = (joint: IJoint, cable: IInterval) => cable.alpha.index === joint.index ? cable.omega : cable.alpha
         crossCables.forEach(ab => {
             const a = ab.alpha
             const aLoc = this.exports.getJointLocation(a.index)
             const b = ab.omega
             const cablesB = this.intervals.filter(interval => (
-                interval.intervalRole !== IntervalRole.CROSS_CABLE && interval.intervalRole !== IntervalRole.BAR &&
+                interval.intervalRole !== IntervalRole.CROSS && interval.intervalRole !== IntervalRole.BAR &&
                 (interval.alpha.index === b.index || interval.omega.index === b.index)
             ))
             const bc = cablesB.reduce((cableA, cableB) => {

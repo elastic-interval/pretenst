@@ -15,17 +15,16 @@ export enum PhysicsFeature {
     DragAbove = "Drag Above",
     DragBelowLand = "Drag Below Land",
     DragBelowWater = "Drag Below Water",
-    GlobalElasticFactor = "Global Elastic Factor",
     MaxSpanVariation = "Maximum Span Variation",
     SpanVariationSpeed = "Span Variation Speed",
-    MuscleElasticFactor = "Muscle Elastic Factor",
-    BarElasticFactor = "Bar Elastic Factor",
-    TriangleElasticFactor = "Triangle Elastic Factor",
-    RingElasticFactor = "Ring Elastic Factor",
-    CrossElasticFactor = "Cross Elastic Factor",
-    BowCrossElasticFactor = "Bow Cross Elastic Factor",
-    BowMidElasticFactor = "Bow Mid Elastic Factor",
-    BowEndElasticFactor = "Bow End Elastic Factor",
+    GlobalElastic = "Global Elastic",
+    MuscleElastic = "Muscle Elastic",
+    BarElastic = "Bar Elastic",
+    TriangleElastic = "Triangle Elastic",
+    RingElastic = "Ring Elastic",
+    CrossElastic = "Cross Elastic",
+    BowMidElastic = "Bow Mid Elastic",
+    BowEndElastic = "Bow End Elastic",
 }
 
 export interface IPhysicsFeature {
@@ -80,7 +79,7 @@ export class Physics {
                 case PhysicsFeature.DragBelowWater:
                     currentValue = fabricExports.setDragBelowWater(factor)
                     break
-                case PhysicsFeature.GlobalElasticFactor:
+                case PhysicsFeature.GlobalElastic:
                     currentValue = fabricExports.setGlobalElasticFactor(factor)
                     break
                 case PhysicsFeature.MaxSpanVariation:
@@ -107,25 +106,25 @@ export class Physics {
             let currentValue = 0
             let ignore = false
             switch (feature.name) {
-                case PhysicsFeature.MuscleElasticFactor:
+                case PhysicsFeature.MuscleElastic:
                     currentValue = instanceExports.setElasticFactor(IntervalRole.MUSCLE, factor)
                     break
-                case PhysicsFeature.BarElasticFactor:
+                case PhysicsFeature.BarElastic:
                     currentValue = instanceExports.setElasticFactor(IntervalRole.BAR, factor)
                     break
-                case PhysicsFeature.TriangleElasticFactor:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.TRI_CABLE, factor)
+                case PhysicsFeature.TriangleElastic:
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.TRIANGLE, factor)
                     break
-                case PhysicsFeature.RingElasticFactor:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.RING_CABLE, factor)
+                case PhysicsFeature.RingElastic:
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.RING, factor)
                     break
-                case PhysicsFeature.CrossElasticFactor:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.CROSS_CABLE, factor)
+                case PhysicsFeature.CrossElastic:
+                    currentValue = instanceExports.setElasticFactor(IntervalRole.CROSS, factor)
                     break
-                case PhysicsFeature.BowMidElasticFactor:
+                case PhysicsFeature.BowMidElastic:
                     currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_MID, factor)
                     break
-                case PhysicsFeature.BowEndElasticFactor:
+                case PhysicsFeature.BowEndElastic:
                     currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_END, factor)
                     break
                 default:
