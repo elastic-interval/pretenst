@@ -50,15 +50,16 @@ let instanceCountMax: u16 = 0
 let fabricBytes: usize = 0
 
 let _joints: usize = 0
+let _jointLocations: usize = 0
 let _faceMidpoints: usize = 0
 let _faceNormals: usize = 0
-let _facePoints: usize = 0
+let _faceLocations: usize = 0
 let _intervals: usize = 0
-// TODO let _intervalMidpoints: usize = 0
 // TODO let _intervalUnits: usize = 0
 // TODO let _intervalStresses: usize = 0
+// TODO let _intervalMidpoints: usize = 0
 let _faces: usize = 0
-let _linePoints: usize = 0
+let _lineLocations: usize = 0
 let _lineColors: usize = 0
 
 let _state: usize = 0
@@ -79,11 +80,12 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     _forward = _seed + VECTOR_SIZE
     _right = _forward + VECTOR_SIZE
     _lineColors = _right + VECTOR_SIZE
-    _linePoints = _lineColors + intervalCountMax * VECTOR_SIZE * 2
-    _faceMidpoints = _linePoints + intervalCountMax * VECTOR_SIZE * 2
+    _lineLocations = _lineColors + intervalCountMax * VECTOR_SIZE * 2
+    _faceMidpoints = _lineLocations + intervalCountMax * VECTOR_SIZE * 2
     _faceNormals = _faceMidpoints + faceCountMax * VECTOR_SIZE
-    _facePoints = _faceNormals + faceCountMax * VECTOR_SIZE * 3
-    _joints = _facePoints + faceCountMax * VECTOR_SIZE * 3
+    _faceLocations = _faceNormals + faceCountMax * VECTOR_SIZE * 3
+    _jointLocations = _faceLocations + faceCountMax * VECTOR_SIZE * 3
+    _joints = _jointLocations + jointCountMax * VECTOR_SIZE
     _intervals = _joints + jointCountMax * JOINT_SIZE
     _faces = _intervals + intervalCountMax * INTERVAL_SIZE
     _vX = _faces + faceCountMax * FACE_SIZE
@@ -100,12 +102,12 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
 
 @inline()
 function _location(jointIndex: u16): usize {
-    return _joints + jointIndex * VECTOR_SIZE
+    return _jointLocations + jointIndex * VECTOR_SIZE
 }
 
 @inline()
 function _velocity(jointIndex: u16): usize {
-    return _location(jointCountMax) + jointIndex * VECTOR_SIZE
+    return _joints + jointIndex * VECTOR_SIZE
 }
 
 @inline()
@@ -179,7 +181,7 @@ function _faceNormal(faceIndex: u16, jointNumber: u16): usize {
 
 @inline()
 function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
-    return _facePoints + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
+    return _faceLocations + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
 }
 
 // Physics =====================================================================================
@@ -636,7 +638,7 @@ export function reset(): void {
 
 // Joints =====================================================================================
 
-const JOINT_SIZE: usize = VECTOR_SIZE * 3 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
+const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
     let jointCount = getJointCount()
@@ -980,7 +982,7 @@ function setLineBlank(_color: usize, push: boolean): void {
 }
 
 function outputLineGeometry(intervalIndex: u16): u8 {
-    let _linePoint = _linePoints + intervalIndex * VECTOR_SIZE * 2
+    let _linePoint = _lineLocations + intervalIndex * VECTOR_SIZE * 2
     setVector(_linePoint, _location(alphaIndex(intervalIndex)))
     setVector(_linePoint + VECTOR_SIZE, _location(omegaIndex(intervalIndex)))
     let _lineColor = _lineColors + intervalIndex * VECTOR_SIZE * 2
