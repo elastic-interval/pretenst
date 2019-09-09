@@ -16,13 +16,13 @@ export enum Direction {
 }
 
 export enum IntervalRole {
-    MUSCLE,
-    BAR,
-    TRI_CABLE,
-    RING_CABLE,
-    CROSS_CABLE,
-    BOW_MID,
-    BOW_END,
+    MUSCLE = 0,
+    BAR = 1,
+    TRI_CABLE = 2,
+    RING_CABLE = 3,
+    CROSS_CABLE = 4,
+    BOW_MID = 5,
+    BOW_END = 6,
 }
 
 export enum Laterality {

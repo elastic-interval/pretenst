@@ -14,15 +14,17 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
-const INTERVAL_ROLE_COUNT: u8 = 8
-const ROLE_MUSCLE: u8 = 0
-const ROLE_BAR: u8 = 1
-const ROLE_TRI_CABLE: u8 = 2
-const ROLE_RING_CABLE: u8 = 3
-const ROLE_CROSS_CABLE: u8 = 4
-const ROLE_BOW_MID: u8 = 5
-const ROLE_BOW_END: u8 = 6
+enum IntervalRole {
+    MUSCLE = 0,
+    BAR = 1,
+    TRI_CABLE = 2,
+    RING_CABLE = 3,
+    CROSS_CABLE = 4,
+    BOW_MID = 5,
+    BOW_END = 6,
+}
 
+const INTERVAL_ROLE_COUNT: u8 = 8
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
@@ -577,25 +579,23 @@ export function setElasticFactor(intervalRole: u8, factor: f32): f32 {
 export function getElasticFactor(intervalRole: u8): f32 {
     let roleFactor: f32 = 1.0
     switch (intervalRole) {
-        case ROLE_MUSCLE:
+        case IntervalRole.MUSCLE:
             roleFactor = ELASTIC_MUSCLE
             break
-        case ROLE_BAR:
+        case IntervalRole.BAR:
             roleFactor = ELASTIC_BAR
             break
-        case ROLE_TRI_CABLE:
+        case IntervalRole.TRI_CABLE:
             roleFactor = ELASTIC_TRI_CABLE
             break
-        case ROLE_RING_CABLE:
+        case IntervalRole.RING_CABLE:
             roleFactor = ELASTIC_RING_CABLE
             break
-        case ROLE_CROSS_CABLE:
+        case IntervalRole.CROSS_CABLE:
             roleFactor = ELASTIC_CROSS_CABLE
             break
-        case ROLE_BOW_MID:
-            roleFactor = ELASTIC_BOW_CABLE
-            break
-        case ROLE_BOW_END:
+        case IntervalRole.BOW_MID:
+        case IntervalRole.BOW_END:
             roleFactor = ELASTIC_BOW_CABLE
             break
     }
@@ -982,7 +982,7 @@ function outputLinesGeometry(): void {
                 minPush = stress
             }
             if (stress > maxPush) {
-                maxPush  = stress
+                maxPush = stress
             }
         }
         if (stress > 0) { // PULL
@@ -990,7 +990,7 @@ function outputLinesGeometry(): void {
                 minPull = stress
             }
             if (stress > maxPull) {
-                maxPull  = stress
+                maxPull = stress
             }
         }
     }
@@ -1223,7 +1223,7 @@ function intervalPhysics(intervalIndex: u16): void {
     let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
     let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
     setStress(intervalIndex, stress)
-    if (intervalRole <= ROLE_BAR || stress > 0) {
+    if (intervalRole === IntervalRole.MUSCLE || intervalRole === IntervalRole.BAR || stress > 0) {
         addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
         addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -stress / 2)
     }
@@ -1324,7 +1324,7 @@ export function multiplyAdjacentIdealSpan(jointIndex: u16, bar: boolean, factor:
         if (alphaIndex(intervalIndex) !== jointIndex && omegaIndex(intervalIndex) !== jointIndex) {
             continue
         }
-        let intervalIsBar: boolean = getIntervalRole(intervalIndex) === ROLE_BAR
+        let intervalIsBar: boolean = getIntervalRole(intervalIndex) === IntervalRole.MUSCLE
         if (intervalIsBar !== bar) {
             continue
         }
