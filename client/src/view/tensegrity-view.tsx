@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricExports } from "../fabric/fabric-exports"
 import { createFabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
-import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick"
+import { IFace, IInterval, IJoint, Triangle } from "../fabric/tensegrity-brick"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { MAX_POPULATION } from "../gotchi/evolution"
 
@@ -51,7 +51,11 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
     }
     if (fabric) {
         fabric.applyPhysics(physics)
-        fabric.createBrick()
+        const b = fabric.createBrick()
+        const face = b.faces[Triangle.PPP]
+        const brick = fabric.growBrick(face.brick, face.triangle)
+        fabric.connectBricks(face.brick, face.triangle, brick, brick.base)
+
     }
     // tslint:disable-next-line:no-null-keyword
     const viewRef = useRef<HTMLDivElement | null>(null)
@@ -160,7 +164,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
             flight.setupCamera(flightState)
             flight.enabled = true
         }
-        fabric.iterate(10)
+        fabric.iterate(50)
         if (fabric.exports.isGestating()) {
             console.log("gestating")
         }

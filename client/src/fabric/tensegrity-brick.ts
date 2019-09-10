@@ -13,6 +13,8 @@ const BAR_SPAN = 2 * PHI
 const CABLE_SPAN = 2
 const RING_SPAN = 1.5
 const CROSS_SPAN = 2
+const BOW_MID_SPAN = CABLE_SPAN / 5
+const BOW_END_SPAN = (RING_SPAN + CROSS_SPAN) / 2 - BOW_MID_SPAN
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -262,7 +264,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
 
 export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
     const base = Triangle.NNN
-    return createBrick(fabric, createBrickPointsOnOrigin(base, 2.6, 1.0), base)
+    return createBrick(fabric, createBrickPointsOnOrigin(base, 1.6, 1.0), base)
 }
 
 export function createBrickOnTriangle(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle): IBrick {
@@ -359,7 +361,6 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
 export function optimizeFabric(fabric: TensegrityFabric): void {
     const crossCables = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Cross)
     const opposite = (joint: IJoint, cable: IInterval) => cable.alpha.index === joint.index ? cable.omega : cable.alpha
-    const bowSpan = CABLE_SPAN / 3
     crossCables.forEach(ab => {
         const a = ab.alpha
         const aLoc = fabric.exports.getJointLocation(a.index)
@@ -380,13 +381,13 @@ export function optimizeFabric(fabric: TensegrityFabric): void {
         if (!cd || !ad) {
             return
         }
-        fabric.removeInterval(ad)
-        fabric.removeInterval(bc)
-        fabric.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BowEnd)
-        fabric.exports.setIntervalIdealSpan(ab.index, bowSpan)
-        fabric.createInterval(a, c, IntervalRole.BowMid, bowSpan)
-        fabric.exports.setIntervalRole(cd.index, cd.intervalRole = IntervalRole.BowEnd)
-        fabric.exports.setIntervalIdealSpan(ab.index, bowSpan)
+        fabric.removeInterval(ab)
+        fabric.removeInterval(cd)
+        fabric.exports.setIntervalRole(bc.index, bc.intervalRole = IntervalRole.BowEnd)
+        fabric.exports.setIntervalIdealSpan(bc.index, BOW_END_SPAN)
+        fabric.createInterval(c, a, IntervalRole.BowMid, BOW_MID_SPAN)
+        fabric.exports.setIntervalRole(ad.index, ad.intervalRole = IntervalRole.BowEnd)
+        fabric.exports.setIntervalIdealSpan(ad.index, BOW_END_SPAN)
     })
 }
 
