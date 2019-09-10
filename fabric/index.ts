@@ -216,58 +216,51 @@ const ELASTIC_BOW_CABLE: f32 = 5
 
 const GESTATION_DRAG_FACTOR: f32 = 300
 
+enum GlobalFeature {
+    GravityAbove = 0,
+    GravityBelowLand = 1,
+    GravityBelowWater = 2,
+    DragAbove = 3,
+    DragBelowLand = 4,
+    DragBelowWater = 5,
+    MaxSpanVariation = 6,
+    SpanVariationSpeed = 7,
+    GlobalElastic = 8,
+}
+
 let physicsDragAbove: f32 = DRAG_ABOVE
-
-export function setDragAbove(factor: f32): f32 {
-    return physicsDragAbove = DRAG_ABOVE * factor
-}
-
 let physicsGravityAbove: f32 = GRAVITY_ABOVE
-
-export function setGravityAbove(factor: f32): f32 {
-    return physicsGravityAbove = GRAVITY_ABOVE * factor
-}
-
 let physicsDragBelowWater: f32 = DRAG_BELOW_WATER
-
-export function setDragBelowWater(factor: f32): f32 {
-    return physicsDragBelowWater = DRAG_BELOW_WATER * factor
-}
-
 let physicsGravityBelowWater: f32 = GRAVITY_BELOW_WATER
-
-export function setGravityBelowWater(factor: f32): f32 {
-    return physicsGravityBelowWater = GRAVITY_BELOW_WATER * factor
-}
-
 let physicsDragBelowLand: f32 = DRAG_BELOW_LAND
-
-export function setDragBelowLand(factor: f32): f32 {
-    return physicsDragBelowLand = DRAG_BELOW_LAND * factor
-}
-
 let physicsGravityBelowLand: f32 = GRAVITY_BELOW_LAND
-
-export function setGravityBelowLand(factor: f32): f32 {
-    return physicsGravityBelowLand = GRAVITY_BELOW_LAND * factor
-}
-
 let globalElasticFactor: f32 = GLOBAL_ELASTIC_FACTOR
-
-export function setGlobalElasticFactor(factor: f32): f32 {
-    return globalElasticFactor = GLOBAL_ELASTIC_FACTOR * factor
-}
-
 let maxSpanVariation: f32 = MAX_SPAN_VARIATION
-
-export function setMaxSpanVariation(factor: f32): f32 {
-    return maxSpanVariation = MAX_SPAN_VARIATION * factor
-}
-
 let timeSweepSpeed: f32 = TIME_SWEEP_SPEED
 
-export function setSpanVariationSpeed(factor: f32): f32 {
-    return timeSweepSpeed = TIME_SWEEP_SPEED * factor
+export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32 {
+    switch (globalFeature) {
+        case GlobalFeature.GravityAbove:
+            return physicsGravityAbove = GRAVITY_ABOVE * factor
+        case GlobalFeature.GravityBelowLand:
+            return physicsGravityBelowLand = GRAVITY_BELOW_LAND * factor
+        case GlobalFeature.GravityBelowWater:
+            return physicsGravityBelowWater = GRAVITY_BELOW_WATER * factor
+        case GlobalFeature.DragAbove:
+            return physicsDragAbove = DRAG_ABOVE * factor
+        case GlobalFeature.DragBelowLand:
+            return physicsDragBelowLand = DRAG_BELOW_LAND * factor
+        case GlobalFeature.DragBelowWater:
+            return physicsDragBelowWater = DRAG_BELOW_WATER * factor
+        case GlobalFeature.MaxSpanVariation:
+            return maxSpanVariation = MAX_SPAN_VARIATION * factor
+        case GlobalFeature.SpanVariationSpeed:
+            return timeSweepSpeed = TIME_SWEEP_SPEED * factor
+        case GlobalFeature.GlobalElastic:
+            return globalElasticFactor = GLOBAL_ELASTIC_FACTOR * factor
+        default:
+            return 0
+    }
 }
 
 // Instances ====================================================================================

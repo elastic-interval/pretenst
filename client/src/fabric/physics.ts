@@ -5,7 +5,7 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricExports, IntervalRole } from "./fabric-exports"
+import { GlobalFeature, IFabricExports, IntervalRole } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
 
 export enum PhysicsFeature {
@@ -60,33 +60,36 @@ export class Physics {
             const factor = feature.factor$.getValue()
             let currentValue = 0
             let ignore = false
+            const handle = (globalFeature: GlobalFeature) => {
+                currentValue = fabricExports.setGlobalFeature(globalFeature, factor)
+            }
             switch (feature.name) {
                 case PhysicsFeature.GravityAbove:
-                    currentValue = fabricExports.setGravityAbove(factor)
+                    handle(GlobalFeature.GravityAbove)
                     break
                 case PhysicsFeature.GravityBelowLand:
-                    currentValue = fabricExports.setGravityBelowLand(factor)
+                    handle(GlobalFeature.GravityBelowLand)
                     break
                 case PhysicsFeature.GravityBelowWater:
-                    currentValue = fabricExports.setGravityBelowWater(factor)
+                    handle(GlobalFeature.GravityBelowWater)
                     break
                 case PhysicsFeature.DragAbove:
-                    currentValue = fabricExports.setDragAbove(factor)
+                    handle(GlobalFeature.DragAbove)
                     break
                 case PhysicsFeature.DragBelowLand:
-                    currentValue = fabricExports.setDragBelowLand(factor)
+                    handle(GlobalFeature.DragBelowLand)
                     break
                 case PhysicsFeature.DragBelowWater:
-                    currentValue = fabricExports.setDragBelowWater(factor)
+                    handle(GlobalFeature.DragBelowWater)
                     break
                 case PhysicsFeature.GlobalElastic:
-                    currentValue = fabricExports.setGlobalElasticFactor(factor)
+                    handle(GlobalFeature.GlobalElastic)
                     break
                 case PhysicsFeature.MaxSpanVariation:
-                    currentValue = fabricExports.setMaxSpanVariation(factor)
+                    handle(GlobalFeature.MaxSpanVariation)
                     break
                 case PhysicsFeature.SpanVariationSpeed:
-                    currentValue = fabricExports.setSpanVariationSpeed(factor)
+                    handle(GlobalFeature.SpanVariationSpeed)
                     break
                 default:
                     ignore = true
@@ -105,27 +108,30 @@ export class Physics {
             const factor = feature.factor$.getValue()
             let currentValue = 0
             let ignore = false
+            const handle = (intervalRole: IntervalRole) => {
+                currentValue = instanceExports.setElasticFactor(intervalRole, factor)
+            }
             switch (feature.name) {
                 case PhysicsFeature.MuscleElastic:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.MUSCLE, factor)
+                    handle(IntervalRole.MUSCLE)
                     break
                 case PhysicsFeature.BarElastic:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.BAR, factor)
+                    handle(IntervalRole.BAR)
                     break
                 case PhysicsFeature.TriangleElastic:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.TRIANGLE, factor)
+                    handle(IntervalRole.TRIANGLE)
                     break
                 case PhysicsFeature.RingElastic:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.RING, factor)
+                    handle(IntervalRole.RING)
                     break
                 case PhysicsFeature.CrossElastic:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.CROSS, factor)
+                    handle(IntervalRole.CROSS)
                     break
                 case PhysicsFeature.BowMidElastic:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_MID, factor)
+                    handle(IntervalRole.BOW_MID)
                     break
                 case PhysicsFeature.BowEndElastic:
-                    currentValue = instanceExports.setElasticFactor(IntervalRole.BOW_END, factor)
+                    handle(IntervalRole.BOW_END)
                     break
                 default:
                     ignore = true

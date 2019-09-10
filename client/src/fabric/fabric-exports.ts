@@ -31,6 +31,18 @@ export enum Laterality {
     BILATERAL_LEFT = 2,
 }
 
+export enum GlobalFeature {
+    GravityAbove = 0,
+    GravityBelowLand = 1,
+    GravityBelowWater = 2,
+    DragAbove = 3,
+    DragBelowLand = 4,
+    DragBelowWater = 5,
+    MaxSpanVariation = 6,
+    SpanVariationSpeed = 7,
+    GlobalElastic = 8,
+}
+
 export const SEED_CORNERS = 5
 export const SEED_RADIUS = 1
 
@@ -45,23 +57,7 @@ export interface IFabricExports {
 
     memory: IMemory
 
-    setDragAbove(factor: number): number
-
-    setGravityAbove(factor: number): number
-
-    setDragBelowLand(factor: number): number
-
-    setGravityBelowLand(factor: number): number
-
-    setDragBelowWater(factor: number): number
-
-    setGravityBelowWater(factor: number): number
-
-    setGlobalElasticFactor(factor: number): number
-
-    setMaxSpanVariation(factor: number): number
-
-    setSpanVariationSpeed(factor: number): number
+    setGlobalFeature(globalFeature: GlobalFeature, factor: number): number
 
     init(joints: number, intervals: number, faces: number, instances: number): number
 

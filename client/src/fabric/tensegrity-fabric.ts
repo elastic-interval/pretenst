@@ -73,6 +73,9 @@ export class TensegrityFabric {
         this.cancelSelection()
         this._selectable = Selectable.NONE
         this._selectedJoint = value
+        if (value) {
+            console.log("joint", value)
+        }
     }
 
     get selectedInterval(): IInterval | undefined {
@@ -83,6 +86,9 @@ export class TensegrityFabric {
         this.cancelSelection()
         this._selectable = Selectable.NONE
         this._selectedInterval = value
+        if (value) {
+            console.log("interval", value)
+        }
     }
 
     get selectedFace(): IFace | undefined {
@@ -159,9 +165,7 @@ export class TensegrityFabric {
     }
 
     public optimize(): void {
-        const bowCrossSpan = 0.3
-        const bowMidSpan = 0.1
-        const bowEndSpan = 0.2
+        const bowSpan = 0.1
         const crossCables = this.intervals.filter(interval => interval.intervalRole === IntervalRole.CROSS)
         const opposite = (joint: IJoint, cable: IInterval) => cable.alpha.index === joint.index ? cable.omega : cable.alpha
         crossCables.forEach(ab => {
@@ -187,10 +191,10 @@ export class TensegrityFabric {
             this.removeInterval(ad)
             this.removeInterval(bc)
             this.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BOW_END)
-            this.exports.setIntervalIdealSpan(ab.index, bowCrossSpan)
-            this.createInterval(a, c, IntervalRole.BOW_MID, bowMidSpan)
+            this.exports.setIntervalIdealSpan(ab.index, bowSpan)
+            this.createInterval(a, c, IntervalRole.BOW_MID, bowSpan)
             this.exports.setIntervalRole(cd.index, cd.intervalRole = IntervalRole.BOW_END)
-            this.exports.setIntervalIdealSpan(ab.index, bowEndSpan)
+            this.exports.setIntervalIdealSpan(ab.index, bowSpan/6)
         })
     }
 
