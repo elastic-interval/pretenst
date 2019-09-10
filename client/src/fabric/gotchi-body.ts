@@ -28,7 +28,7 @@ export class GotchiBody {
     }
 
     public get isResting(): boolean {
-        return this.currentDirection === Direction.REST && this.nextDirection === Direction.REST
+        return this.currentDirection === Direction.Rest && this.nextDirection === Direction.Rest
     }
 
     public recycle(): void {
@@ -105,7 +105,7 @@ export class GotchiBody {
         const arrowToRx = v()
         const arrowTip = v()
         switch (direction) {
-            case Direction.FORWARD:
+            case Direction.Forward:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.right, -ARROW_WIDTH)
@@ -114,7 +114,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.right, ARROW_WIDTH)
                 arrowTip.addScaledVector(this.forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.LEFT:
+            case Direction.TurnLeft:
                 arrowToL.addScaledVector(this.forward, -ARROW_WIDTH).addScaledVector(this.right, -ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.forward, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, -ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.forward, -ARROW_WIDTH)
@@ -123,7 +123,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.forward, ARROW_WIDTH)
                 arrowTip.addScaledVector(this.right, -ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.RIGHT:
+            case Direction.TurnRight:
                 arrowToL.addScaledVector(this.forward, ARROW_WIDTH).addScaledVector(this.right, ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.forward, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.forward, ARROW_WIDTH)
@@ -132,7 +132,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.forward, -ARROW_WIDTH)
                 arrowTip.addScaledVector(this.right, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.REVERSE:
+            case Direction.Reverse:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, -ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, -ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.right, -ARROW_WIDTH)
@@ -170,14 +170,14 @@ export class GotchiBody {
         const transformer = translationMatrix.multiply(rotationMatrix)
         locations.forEach(location => location.applyMatrix4(transformer))
         // build
-        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), Laterality.BILATERAL_MIDDLE, x, 0, z)
+        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), Laterality.Middle, x, 0, z)
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const where = locations[walk]
-            this.exports.createJoint(this.exports.nextJointTag(), Laterality.BILATERAL_MIDDLE, where.x, where.y, where.z)
+            this.exports.createJoint(this.exports.nextJointTag(), Laterality.Middle, where.x, where.y, where.z)
         }
         const jointPairName = this.exports.nextJointTag()
-        const left = this.exports.createJoint(jointPairName, Laterality.BILATERAL_LEFT, leftLoc.x, leftLoc.y, leftLoc.z)
-        const right = this.exports.createJoint(jointPairName, Laterality.BILATERAL_RIGHT, rightLoc.x, rightLoc.y, rightLoc.z)
+        const left = this.exports.createJoint(jointPairName, Laterality.LeftSide, leftLoc.x, leftLoc.y, leftLoc.z)
+        const right = this.exports.createJoint(jointPairName, Laterality.RightSide, rightLoc.x, rightLoc.y, rightLoc.z)
         this.muscle(hangerJoint, left, -1)
         this.muscle(hangerJoint, right, -1)
         this.muscle(left, right, -1)
@@ -209,11 +209,6 @@ export class GotchiBody {
 
     public iterate(ticks: number): boolean {
         return this.exports.iterate(ticks)
-    }
-
-    public endGestation(): void {
-        this.exports.endGestation()
-        this.exports.clear()
     }
 
     public get age(): number {
@@ -263,12 +258,12 @@ export class GotchiBody {
         const oppositeIntervalIndex = this.exports.findOppositeIntervalIndex(intervalIndex)
         if (oppositeIntervalIndex < this.intervalCount) {
             switch (direction) {
-                case Direction.FORWARD:
-                case Direction.REVERSE:
+                case Direction.Forward:
+                case Direction.Reverse:
                     this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow)
                     break
-                case Direction.RIGHT:
-                case Direction.LEFT:
+                case Direction.TurnRight:
+                case Direction.TurnLeft:
                     const low = Math.floor(highLow / 16)
                     const high = highLow % 16
                     const lowHigh = low + high * 16
@@ -285,11 +280,11 @@ export class GotchiBody {
     }
 
     private muscle(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.MUSCLE, false)
+        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.Muscle, false)
     }
 
     private growingMuscle(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.MUSCLE, true)
+        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.Muscle, true)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {

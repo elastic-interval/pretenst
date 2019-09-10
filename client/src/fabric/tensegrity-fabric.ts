@@ -20,6 +20,7 @@ import {
     IInterval,
     IJoint,
     JointTag,
+    optimizeFabric,
     Triangle,
     TRIANGLE_ARRAY,
 } from "./tensegrity-brick"
@@ -165,46 +166,16 @@ export class TensegrityFabric {
     }
 
     public optimize(): void {
-        const bowSpan = 0.1
-        const crossCables = this.intervals.filter(interval => interval.intervalRole === IntervalRole.CROSS)
-        const opposite = (joint: IJoint, cable: IInterval) => cable.alpha.index === joint.index ? cable.omega : cable.alpha
-        crossCables.forEach(ab => {
-            const a = ab.alpha
-            const aLoc = this.exports.getJointLocation(a.index)
-            const b = ab.omega
-            const cablesB = this.intervals.filter(interval => (
-                interval.intervalRole !== IntervalRole.CROSS && interval.intervalRole !== IntervalRole.BAR &&
-                (interval.alpha.index === b.index || interval.omega.index === b.index)
-            ))
-            const bc = cablesB.reduce((cableA, cableB) => {
-                const oppositeA = this.exports.getJointLocation(opposite(b, cableA).index)
-                const oppositeB = this.exports.getJointLocation(opposite(b, cableB).index)
-                return aLoc.distanceToSquared(oppositeA) < aLoc.distanceToSquared(oppositeB) ? cableA : cableB
-            })
-            const c = opposite(b, bc)
-            const d = this.joints[b.oppositeIndex]
-            const cd = this.findInterval(c, d)
-            const ad = this.findInterval(a, d)
-            if (!cd || !ad) {
-                return
-            }
-            this.removeInterval(ad)
-            this.removeInterval(bc)
-            this.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BOW_END)
-            this.exports.setIntervalIdealSpan(ab.index, bowSpan)
-            this.createInterval(a, c, IntervalRole.BOW_MID, bowSpan)
-            this.exports.setIntervalRole(cd.index, cd.intervalRole = IntervalRole.BOW_END)
-            this.exports.setIntervalIdealSpan(ab.index, bowSpan/6)
-        })
+        optimizeFabric(this)
     }
 
     public createJointIndex(jointTag: JointTag, location: Vector3): number {
-        return this.exports.createJoint(jointTag, Laterality.BILATERAL_RIGHT, location.x, location.y, location.z)
+        return this.exports.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, span: number): IInterval {
         const interval = <IInterval>{
-            index: this.exports.createInterval(alpha.index, omega.index, span, intervalRole, false),
+            index: this.exports.createInterval(alpha.index, omega.index, span, intervalRole, true),
             removed: false,
             intervalRole,
             alpha, omega, span,
@@ -293,7 +264,7 @@ export class TensegrityFabric {
         return this.exports.iterate(ticks)
     }
 
-    private findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
+    public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
         return this.intervals.find(interval => (
             (interval.alpha.index === joint1.index && interval.omega.index === joint2.index) ||
             (interval.alpha.index === joint2.index && interval.omega.index === joint1.index)

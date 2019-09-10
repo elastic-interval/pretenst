@@ -160,7 +160,10 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
             flight.setupCamera(flightState)
             flight.enabled = true
         }
-        fabric.iterate(30)
+        fabric.iterate(10)
+        if (fabric.exports.isGestating()) {
+            console.log("gestating")
+        }
         setAge(fabric.exports.getAge())
     }
     useRender(render)

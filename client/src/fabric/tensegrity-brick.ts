@@ -9,12 +9,10 @@ import { IntervalRole } from "./fabric-exports"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const PHI = 1.61803398875
-const PRETENSION = 1
-const BAR_SPAN = 2 * PHI + PRETENSION * 2.5
-const TRIANGLE_SPAN = 2 - PRETENSION
-const RING_SPAN = TRIANGLE_SPAN / 4
-const CROSS_SPAN = RING_SPAN / 5
-const SETTLED_MIDPOINT = 0.83
+const BAR_SPAN = 2 * PHI
+const CABLE_SPAN = 2
+const RING_SPAN = 1.5
+const CROSS_SPAN = 2
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -41,7 +39,7 @@ function rayVector(ray: Ray): Vector3 {
 }
 
 function brickPoint(primaryRay: Ray, secondaryRay: Ray): Vector3 {
-    return rayVector(primaryRay).multiplyScalar(PHI).addScaledVector(rayVector(secondaryRay), SETTLED_MIDPOINT)
+    return rayVector(primaryRay).multiplyScalar(PHI).add(rayVector(secondaryRay))
 }
 
 enum BarEnd {
@@ -238,7 +236,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
         const omegaIndex = jointIndexes[index * 2 + 1]
         const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
         const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
-        return fabric.createInterval(alpha, omega, IntervalRole.BAR, BAR_SPAN)
+        return fabric.createInterval(alpha, omega, IntervalRole.Bar, BAR_SPAN)
     })
     const joints = bars.reduce((arr: IJoint[], bar) => {
         arr.push(bar.alpha, bar.omega)
@@ -246,11 +244,11 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
     }, [])
     fabric.joints.push(...joints)
     const brick: IBrick = {base, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
-    const role = IntervalRole.TRIANGLE
+    const role = IntervalRole.Triangle
     TRIANGLE_ARRAY.forEach(triangle => {
         const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
-            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, TRIANGLE_SPAN)
+            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, CABLE_SPAN)
             brick.cables.push(interval)
             brick.rings[triangle.ringMember[walk]].push(interval)
         }
@@ -328,12 +326,12 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         const jointLocation = fabric.exports.getJointLocation(joint.index)
         const nextJoint = ring[(walk + 1) % ring.length]
         const nextJointOppositeLocation = fabric.exports.getJointLocation(nextJoint.oppositeIndex)
-        const ringCable = fabric.createInterval( joint, nextJoint, IntervalRole.RING, RING_SPAN)
+        const ringCable = fabric.createInterval(joint, nextJoint, IntervalRole.Ring, RING_SPAN)
         cables.push(ringCable)
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.CROSS, CROSS_SPAN)
+        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.Cross, CROSS_SPAN)
         cables.push(crossCable)
     }
     const handleFace = (triangle: Triangle, brick: IBrick): IFace => {
@@ -343,8 +341,8 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         })
         const triangleRing = TRIANGLE_ARRAY[triangle].ring
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
-            interval.intervalRole = IntervalRole.RING
-            fabric.exports.setIntervalRole(interval.index, IntervalRole.RING)
+            interval.intervalRole = IntervalRole.Ring
+            fabric.exports.setIntervalRole(interval.index, IntervalRole.Ring)
             fabric.exports.setIntervalIdealSpan(interval.index, RING_SPAN)
         })
         return face
@@ -356,6 +354,40 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
             handleFace(triangleB, brickB),
         ],
     }
+}
+
+export function optimizeFabric(fabric: TensegrityFabric): void {
+    const crossCables = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Cross)
+    const opposite = (joint: IJoint, cable: IInterval) => cable.alpha.index === joint.index ? cable.omega : cable.alpha
+    const bowSpan = CABLE_SPAN / 3
+    crossCables.forEach(ab => {
+        const a = ab.alpha
+        const aLoc = fabric.exports.getJointLocation(a.index)
+        const b = ab.omega
+        const cablesB = fabric.intervals.filter(interval => (
+            interval.intervalRole !== IntervalRole.Cross && interval.intervalRole !== IntervalRole.Bar &&
+            (interval.alpha.index === b.index || interval.omega.index === b.index)
+        ))
+        const bc = cablesB.reduce((cableA, cableB) => {
+            const oppositeA = fabric.exports.getJointLocation(opposite(b, cableA).index)
+            const oppositeB = fabric.exports.getJointLocation(opposite(b, cableB).index)
+            return aLoc.distanceToSquared(oppositeA) < aLoc.distanceToSquared(oppositeB) ? cableA : cableB
+        })
+        const c = opposite(b, bc)
+        const d = fabric.joints[b.oppositeIndex]
+        const cd = fabric.findInterval(c, d)
+        const ad = fabric.findInterval(a, d)
+        if (!cd || !ad) {
+            return
+        }
+        fabric.removeInterval(ad)
+        fabric.removeInterval(bc)
+        fabric.exports.setIntervalRole(ab.index, ab.intervalRole = IntervalRole.BowEnd)
+        fabric.exports.setIntervalIdealSpan(ab.index, bowSpan)
+        fabric.createInterval(a, c, IntervalRole.BowMid, bowSpan)
+        fabric.exports.setIntervalRole(cd.index, cd.intervalRole = IntervalRole.BowEnd)
+        fabric.exports.setIntervalIdealSpan(ab.index, bowSpan)
+    })
 }
 
 export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {

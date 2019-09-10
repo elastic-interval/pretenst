@@ -53,10 +53,10 @@ export class Jockey {
             if (nextLeg) {
                 this.leg = nextLeg
             } else {
-                this.gotchi.nextDirection = Direction.REST
+                this.gotchi.nextDirection = Direction.Rest
             }
         }
-        if (this.fabric.nextDirection !== Direction.REST) {
+        if (this.fabric.nextDirection !== Direction.Rest) {
             const direction = this.voteDirection()
             if (this.nextDirection !== direction) {
                 console.log(`${this.index} turned ${Direction[this.nextDirection]} to ${Direction[direction]}`)
@@ -78,7 +78,7 @@ export class Jockey {
     }
 
     public stopMoving(): void {
-        this.gotchi.nextDirection = Direction.REST
+        this.gotchi.nextDirection = Direction.Rest
     }
 
     public get index(): number {
@@ -158,7 +158,7 @@ export class Jockey {
             c[vote]++
             return c
         }, [0, 0, 0, 0, 0])
-        for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
+        for (let direction = Direction.Forward; direction <= Direction.Reverse; direction++) {
             if (voteCounts[direction] === MAX_VOTES && this.nextDirection !== direction) {
                 return direction
             }
@@ -172,15 +172,15 @@ export class Jockey {
         const degreeRight = toTarget.dot(this.gotchi.body.right)
         if (degreeForward > 0) {
             if (degreeRight > 0) {
-                return degreeForward > degreeRight ? Direction.FORWARD : Direction.RIGHT
+                return degreeForward > degreeRight ? Direction.Forward : Direction.TurnRight
             } else {
-                return degreeForward > -degreeRight ? Direction.FORWARD : Direction.LEFT
+                return degreeForward > -degreeRight ? Direction.Forward : Direction.TurnLeft
             }
         } else {
             if (degreeRight > 0) {
-                return -degreeForward > degreeRight ? Direction.REVERSE : Direction.RIGHT
+                return -degreeForward > degreeRight ? Direction.Reverse : Direction.TurnRight
             } else {
-                return -degreeForward > -degreeRight ? Direction.REVERSE : Direction.LEFT
+                return -degreeForward > -degreeRight ? Direction.Reverse : Direction.TurnLeft
             }
         }
     }

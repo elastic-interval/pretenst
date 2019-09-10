@@ -119,8 +119,8 @@ export function TensegrityFlightState(fabric: TensegrityFabric): IFlightState {
         get target(): Vector3 {
             return fabric.exports.midpoint
         },
-        tooFar: 12,
-        tooClose: 11,
+        tooFar: 5,
+        tooClose: 4,
         towardsDistance: 0.04,
         tooVertical: polarAngle(0.98),
         tooHorizontal: polarAngle(0.5),

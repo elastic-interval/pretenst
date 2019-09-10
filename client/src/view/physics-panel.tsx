@@ -36,24 +36,37 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, object> {
                 <Container>
                     {this.props.physics.features.map(feature => {
                         const setFactor = (factor: number): void => {
-                            feature.setFactor(factor)
-                            this.applyPhysics()
+                            if (factor > 0) {
+                                feature.setFactor(factor)
+                                this.applyPhysics()
+                            }
                         }
                         return (
-                            <div key={feature.name}>
+                            <div key={feature.label}>
                                 <Row>
-                                    <Badge color="secondary">{feature.name}</Badge>
+                                    <Badge color="secondary">{feature.label}</Badge>
                                 </Row>
                                 <Row>
                                     <Col xs="6">
-                                        <ButtonGroup className="physics-button-group">
-                                            <Button className="physics-adjust-button" color="primary"
-                                                    onClick={() => setFactor(feature.factor$.getValue() * 1.1)}>+</Button>
-                                            <Button className="physics-adjust-button" color="primary"
-                                                    onClick={() => setFactor(feature.factor$.getValue() * 0.9)}>-</Button>
-                                            <Button className="physics-adjust-button" color="danger"
-                                                    onClick={() => setFactor(1)}>1</Button>
-                                        </ButtonGroup>
+                                        {feature.isGlobal ? (
+                                            <ButtonGroup className="physics-button-group">
+                                                <Button className="physics-adjust-button" color="primary"
+                                                        onClick={() => setFactor(feature.factor$.getValue() * 1.1)}>⨉</Button>
+                                                <Button className="physics-adjust-button" color="primary"
+                                                        onClick={() => setFactor(feature.factor$.getValue() / 1.1)}>÷</Button>
+                                                <Button className="physics-adjust-button" color="danger"
+                                                        onClick={() => setFactor(1)}>1</Button>
+                                            </ButtonGroup>
+                                        ) : (
+                                            <ButtonGroup className="physics-button-group">
+                                                <Button className="physics-adjust-button" color="primary"
+                                                        onClick={() => setFactor(feature.factor$.getValue() + 1)}>+</Button>
+                                                <Button className="physics-adjust-button" color="primary"
+                                                        onClick={() => setFactor(feature.factor$.getValue() - 1)}>-</Button>
+                                                <Button className="physics-adjust-button" color="danger"
+                                                        onClick={() => setFactor(1)}>1</Button>
+                                            </ButtonGroup>
+                                        )}
                                     </Col>
                                     <Col xs="6">
                                         <FactorBadge feature={feature}/>

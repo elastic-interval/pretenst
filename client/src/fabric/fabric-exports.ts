@@ -8,27 +8,27 @@ export interface IMemory {
 }
 
 export enum Direction {
-    REST,
-    FORWARD,
-    LEFT,
-    RIGHT,
-    REVERSE,
+    Rest,
+    Forward,
+    TurnLeft,
+    TurnRight,
+    Reverse,
 }
 
 export enum IntervalRole {
-    MUSCLE = 0,
-    BAR = 1,
-    TRIANGLE = 2,
-    RING = 3,
-    CROSS = 4,
-    BOW_MID = 5,
-    BOW_END = 6,
+    Muscle = 0,
+    Bar = 1,
+    Triangle = 2,
+    Ring = 3,
+    Cross = 4,
+    BowMid = 5,
+    BowEnd = 6,
 }
 
 export enum Laterality {
-    BILATERAL_MIDDLE = 0,
-    BILATERAL_RIGHT = 1,
-    BILATERAL_LEFT = 2,
+    Middle = 0,
+    RightSide = 1,
+    LeftSide = 2,
 }
 
 export enum GlobalFeature {
@@ -72,8 +72,6 @@ export interface IFabricExports {
     getAge(): number
 
     isGestating(): boolean
-
-    endGestation(): void
 
     getCurrentDirection(): Direction
 

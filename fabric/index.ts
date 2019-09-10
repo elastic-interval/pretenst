@@ -15,13 +15,13 @@ const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
 enum IntervalRole {
-    MUSCLE = 0,
-    BAR = 1,
-    TRIANGLE = 2,
-    RING = 3,
-    CROSS = 4,
-    BOW_MID = 5,
-    BOW_END = 6,
+    Muscle = 0,
+    Bar = 1,
+    Triangle = 2,
+    Ring = 3,
+    Cross = 4,
+    BowMid = 5,
+    BowEnd = 6,
 }
 
 const INTERVAL_ROLE_COUNT: u8 = 8
@@ -197,24 +197,8 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 
 // Physics =====================================================================================
 
-const DRAG_ABOVE: f32 = 0.00008
-const GRAVITY_ABOVE: f32 = 0.000019
-const DRAG_BELOW_LAND: f32 = 0.96
-const DRAG_BELOW_WATER: f32 = 0.001
-const GRAVITY_BELOW_LAND: f32 = -0.005
-const GRAVITY_BELOW_WATER: f32 = -0.00001
-const GLOBAL_ELASTIC_FACTOR: f32 = 1.0
-const MAX_SPAN_VARIATION: f32 = 0.1
-const TIME_SWEEP_SPEED: f32 = 30
-
-const ELASTIC_MUSCLE: f32 = 1
-const ELASTIC_BAR: f32 = 1
-const ELASTIC_TRI_CABLE: f32 = 1
-const ELASTIC_RING_CABLE: f32 = 1
-const ELASTIC_CROSS_CABLE: f32 = 2.5
-const ELASTIC_BOW_CABLE: f32 = 5
-
-const GESTATION_DRAG_FACTOR: f32 = 300
+const GESTATION_DRAG_FACTOR: f32 = 1000
+const GESTATION_TIME_SWEEP_FACTOR: f32 = 2
 
 enum GlobalFeature {
     GravityAbove = 0,
@@ -227,6 +211,16 @@ enum GlobalFeature {
     SpanVariationSpeed = 7,
     GlobalElastic = 8,
 }
+
+const DRAG_ABOVE: f32 = 0.00008
+const GRAVITY_ABOVE: f32 = 0.000019
+const DRAG_BELOW_LAND: f32 = 0.96
+const DRAG_BELOW_WATER: f32 = 0.001
+const GRAVITY_BELOW_LAND: f32 = -0.005
+const GRAVITY_BELOW_WATER: f32 = -0.00001
+const GLOBAL_ELASTIC_FACTOR: f32 = 1.0
+const MAX_SPAN_VARIATION: f32 = 0.1
+const TIME_SWEEP_SPEED: f32 = 30.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
 let physicsGravityAbove: f32 = GRAVITY_ABOVE
@@ -535,7 +529,8 @@ export function isGestating(): u8 {
     return getU8(_state + GESTATING_OFFSET)
 }
 
-function setGestating(value: u8): void {
+function setGestating(value: u8, timeSweep: u16): void {
+    setTimeSweep(timeSweep)
     setU8(_state + GESTATING_OFFSET, value)
 }
 
@@ -570,29 +565,7 @@ export function setElasticFactor(intervalRole: u8, factor: f32): f32 {
 }
 
 export function getElasticFactor(intervalRole: u8): f32 {
-    let roleFactor: f32 = 1.0
-    switch (intervalRole) {
-        case IntervalRole.MUSCLE:
-            roleFactor = ELASTIC_MUSCLE
-            break
-        case IntervalRole.BAR:
-            roleFactor = ELASTIC_BAR
-            break
-        case IntervalRole.TRIANGLE:
-            roleFactor = ELASTIC_TRI_CABLE
-            break
-        case IntervalRole.RING:
-            roleFactor = ELASTIC_RING_CABLE
-            break
-        case IntervalRole.CROSS:
-            roleFactor = ELASTIC_CROSS_CABLE
-            break
-        case IntervalRole.BOW_MID:
-        case IntervalRole.BOW_END:
-            roleFactor = ELASTIC_BOW_CABLE
-            break
-    }
-    return getF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32) * roleFactor
+    return getF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32)
 }
 
 export function reset(): void {
@@ -602,7 +575,7 @@ export function reset(): void {
     setJointTagCount(0)
     setIntervalCount(0)
     setFaceCount(0)
-    setGestating(GESTATING)
+    setGestating(GESTATING, 0)
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
@@ -740,8 +713,7 @@ export function createInterval(alpha: u16, omega: u16, idealSpan: f32, intervalR
             setIntervalHighLow(intervalIndex, direction, DEFAULT_HIGH_LOW)
         }
     }
-    setTimeSweep(1)
-    setGestating(GESTATING)
+    setGestating(GESTATING, 0)
     return intervalIndex
 }
 
@@ -787,6 +759,12 @@ function getIntervalIdealSpan(intervalIndex: u16): f32 {
 }
 
 export function setIntervalIdealSpan(intervalIndex: u16, idealSpan: f32): void {
+    if (idealSpan < 0) {
+        return
+    }
+    // When you can no longer assume they're careful to keep changes small
+    // setGestating(GESTATING)
+    // setIntervalHighLow(intervalIndex, REST_DIRECTION, GROWING_INTERVAL)
     setF32(_idealSpan(intervalIndex), idealSpan)
 }
 
@@ -931,6 +909,9 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
             let currentSpan: f32 = calculateSpan(intervalIndex)
             return currentSpan * (1 - progress) + idealSpan * progress
         }
+    }
+    if (getIntervalRole(intervalIndex) !== IntervalRole.Muscle) {
+        return idealSpan
     }
     let currentDirection = getCurrentDirection()
     let previousDirection = getPreviousDirection()
@@ -1129,34 +1110,6 @@ export function removeFace(deadFaceIndex: u16): void {
     setFaceCount(faceCount)
 }
 
-// Birth =======================================================================================
-
-export function endGestation(): void {
-    setGestating(NOT_GESTATING)
-    let jointCount = getJointCount() - 1
-    setJointCount(jointCount)
-    // remove the hanger joint, and consequences
-    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        copyJointFromNext(jointIndex)
-    }
-    let intervalCount = getIntervalCount() - 2
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        copyIntervalFromOffset(intervalIndex, 2)
-    }
-    setIntervalCount(intervalCount)
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        setAlphaIndex(intervalIndex, alphaIndex(intervalIndex) - 1)
-        setOmegaIndex(intervalIndex, omegaIndex(intervalIndex) - 1)
-    }
-    let faceCount = getFaceCount()
-    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
-        for (let jointNumber: u16 = 0; jointNumber < 3; jointNumber++) {
-            let jointIndex = getFaceJointIndex(faceIndex, jointNumber)
-            setFaceJointIndex(faceIndex, jointNumber, jointIndex - 1)
-        }
-    }
-}
-
 // Hexalot ====================================================================================
 
 const HEXALOT_BITS_ALIGNED: u8 = 128
@@ -1216,7 +1169,7 @@ function intervalPhysics(intervalIndex: u16): void {
     let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
     let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
     setStress(intervalIndex, stress)
-    if (intervalRole === IntervalRole.MUSCLE || intervalRole === IntervalRole.BAR || stress > 0) {
+    if (intervalRole === IntervalRole.Muscle || intervalRole === IntervalRole.Bar || stress > 0) {
         addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
         addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -stress / 2)
     }
@@ -1278,9 +1231,9 @@ function tick(gestating: boolean): void {
 
 export function iterate(ticks: u16): boolean {
     let wrapAround = false
-    let timeSweepStep: u16 = <u16>timeSweepSpeed
-    let currentDirection = getCurrentDirection()
     let gestating = isGestating() === GESTATING
+    let timeSweepStep: u16 = <u16>(gestating ? timeSweepSpeed * GESTATION_TIME_SWEEP_FACTOR : timeSweepSpeed)
+    let currentDirection = getCurrentDirection()
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         let timeSweep = getTimeSweep()
         let current = timeSweep
@@ -1288,7 +1241,6 @@ export function iterate(ticks: u16): boolean {
         setTimeSweep(timeSweep)
         if (timeSweep < current) {
             wrapAround = true
-            setTimeSweep(0)
             if (!isGestating()) {
                 setPreviousDirection(currentDirection)
                 let nextDirection = getNextDirection()
@@ -1296,7 +1248,7 @@ export function iterate(ticks: u16): boolean {
                     setCurrentDirection(nextDirection)
                 }
             }
-            setGestating(NOT_GESTATING)
+            setGestating(NOT_GESTATING, 0)
         }
         tick(gestating)
     }
@@ -1317,7 +1269,7 @@ export function multiplyAdjacentIdealSpan(jointIndex: u16, bar: boolean, factor:
         if (alphaIndex(intervalIndex) !== jointIndex && omegaIndex(intervalIndex) !== jointIndex) {
             continue
         }
-        let intervalIsBar: boolean = getIntervalRole(intervalIndex) === IntervalRole.MUSCLE
+        let intervalIsBar: boolean = getIntervalRole(intervalIndex) === IntervalRole.Muscle
         if (intervalIsBar !== bar) {
             continue
         }
@@ -1329,14 +1281,8 @@ export function multiplyIntervalIdealSpan(intervalIndex: u16, factor: f32): void
     setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(intervalIndex) * factor)
 }
 
-export function multiplyFaceIdealSpan(faceIndex: u16, factor: f32): void {
-    let a = getFaceJointIndex(faceIndex, 0)
-    let b = getFaceJointIndex(faceIndex, 1)
-    let c = getFaceJointIndex(faceIndex, 2)
-    let ab = findIntervalIndex(a, b)
-    let bc = findIntervalIndex(b, c)
-    let ca = findIntervalIndex(c, a)
-    setIntervalIdealSpan(ab, getIntervalIdealSpan(ab) * factor)
-    setIntervalIdealSpan(bc, getIntervalIdealSpan(ab) * factor)
-    setIntervalIdealSpan(ca, getIntervalIdealSpan(ab) * factor)
+export function multiplyFaceIdealSpan(faceIndex: u16, bar: boolean, factor: f32): void {
+    multiplyAdjacentIdealSpan(getFaceJointIndex(faceIndex, 0), bar, factor)
+    multiplyAdjacentIdealSpan(getFaceJointIndex(faceIndex, 1), bar, factor)
+    multiplyAdjacentIdealSpan(getFaceJointIndex(faceIndex, 2), bar, factor)
 }

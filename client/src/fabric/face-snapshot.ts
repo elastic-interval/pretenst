@@ -93,11 +93,11 @@ export class FaceSnapshot {
     public get laterality(): number {
         for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
             const jointLaterality = this.exports.getJointLaterality(this.exports.getFaceJointIndex(this.faceIndex, jointWalk))
-            if (jointLaterality !== Laterality.BILATERAL_MIDDLE) {
+            if (jointLaterality !== Laterality.Middle) {
                 return jointLaterality
             }
         }
-        return Laterality.BILATERAL_MIDDLE
+        return Laterality.Middle
     }
 
     public remove(): void {

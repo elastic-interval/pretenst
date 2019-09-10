@@ -35,7 +35,7 @@ export class Evolution {
         private readonly prototypeJockey?: Jockey,
     ) {
         const rotateToLeg = this.leg
-        if (prototypeJockey && prototypeJockey.nextDirection !== Direction.REST) {
+        if (prototypeJockey && prototypeJockey.nextDirection !== Direction.Rest) {
             throw new Error("Cannot create evolution from jockey which is not resting")
         }
         home.centerSpot.adjacentSpots.forEach((spot, index) => {

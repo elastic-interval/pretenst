@@ -261,10 +261,6 @@ export class InstanceExports {
         return this.ex.createJoint(jointTag, laterality, x, y, z)
     }
 
-    public endGestation(): void {
-        this.ex.endGestation()
-    }
-
     public getFaceCount(): number {
         return this.ex.getFaceCount()
     }

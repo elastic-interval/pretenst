@@ -31,9 +31,9 @@ export class Gotchi {
         private gotchiFactory: IGotchiFactory,
     ) {
         if (body.isGestating) {
-            this.growth = new Growth(body, genome.createReader(Direction.REST))
+            this.growth = new Growth(body, genome.createReader(Direction.Rest))
         } else {
-            if (body.nextDirection !== Direction.REST) {
+            if (body.nextDirection !== Direction.Rest) {
                 throw new Error("Cannot create gotchi from fabric that is not at rest")
             }
             this.applyBehaviorGenes()
@@ -89,10 +89,10 @@ export class Gotchi {
             .sub(location)
             .length()
         const distances = [
-            {direction: Direction.FORWARD, distance: distance(this.body.forward, 1)},
-            {direction: Direction.LEFT, distance: distance(this.body.right, -1)},
-            {direction: Direction.RIGHT, distance: distance(this.body.right, 1)},
-            {direction: Direction.REVERSE, distance: distance(this.body.forward, -1)},
+            {direction: Direction.Forward, distance: distance(this.body.forward, 1)},
+            {direction: Direction.TurnLeft, distance: distance(this.body.right, -1)},
+            {direction: Direction.TurnRight, distance: distance(this.body.right, 1)},
+            {direction: Direction.Reverse, distance: distance(this.body.forward, -1)},
         ].sort((a, b) => {
             return a.distance < b.distance ? -1 : b.distance > a.distance ? 1 : 0
         })
@@ -113,12 +113,12 @@ export class Gotchi {
             if (!growthStep) {
                 this.growth = undefined
                 this.applyBehaviorGenes()
-                this.body.endGestation()
+                // TODO: this.body.endGestation()
                 return AppEvent.GrowthComplete
             }
             return AppEvent.GrowthStep
         } else {
-            if (this.currentDirection === Direction.REST) {
+            if (this.currentDirection === Direction.Rest) {
                 return undefined
             }
             return AppEvent.Cycle
@@ -126,7 +126,7 @@ export class Gotchi {
     }
 
     private applyBehaviorGenes(): void {
-        for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
+        for (let direction = Direction.Forward; direction <= Direction.Reverse; direction++) {
             new Behavior(this.body, direction, this.genome.createReader(direction)).apply()
         }
     }
