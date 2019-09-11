@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
-import { Canvas, extend, ReactThreeFiber, useRender, useThree } from "react-three-fiber"
+import { Canvas, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { Geometry, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
@@ -180,14 +180,15 @@ function FabricView({fabric}:
                         }): JSX.Element {
     const [age, setAge] = useState<number>(0)
     const {camera} = useThree()
-    const orbitControls = useRef<OrbitControls>()
+    const orbitControls = useUpdate<OrbitControls>(controls => {
+        controls.minPolarAngle = -0.1 * Math.PI / 2
+        controls.maxPolarAngle = 0.999 * Math.PI / 2
+        controls.maxDistance = 1000
+        controls.minDistance = 15
+    }, [fabric])
     const render = () => {
         const controls = orbitControls.current
         if (controls) {
-            controls.minPolarAngle = -0.1 * Math.PI / 2
-            controls.maxPolarAngle = 0.999 * Math.PI / 2
-            controls.maxDistance = 1000
-            controls.minDistance = 15
             controls.target.add(new Vector3().subVectors(fabric.exports.midpoint, controls.target).multiplyScalar(TOWARDS_TARGET))
             controls.update()
             controls.autoRotate = fabric.autoRotate
@@ -199,10 +200,11 @@ function FabricView({fabric}:
     const selectedJoint = fabric.selectedJoint
     const selectedFace = fabric.selectedFace
     const selectedInterval = fabric.selectedInterval
+    const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
     return (
         <group>
             <orbitControls ref={orbitControls}
-                           args={[camera, document.getElementById("tensegrity-view") as HTMLElement]}/>
+                           args={[camera, tensegrityView]}/>
             <scene>
                 <mesh key="faces" geometry={fabric.facesGeometry} material={TENSEGRITY_FACE}/>
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={TENSEGRITY_LINE}/>
