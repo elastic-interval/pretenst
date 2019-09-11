@@ -165,6 +165,7 @@ export class FabricKernel implements IGotchiFactory {
         }
         this.instanceUsed[freeIndex] = true
         this.instanceArray[freeIndex].clear()
+        this.instanceArray[freeIndex].reset()
         return this.instanceArray[freeIndex]
     }
 }
@@ -329,8 +330,12 @@ export class InstanceExports {
         this.ex.setNextDirection(direction)
     }
 
-    public setElasticFactor(intervalRole: IntervalRole, factor: number): number {
-        return this.ex.setElasticFactor(intervalRole, factor)
+    public getRoleIdealSpan(intervalRole: IntervalRole): number {
+        return this.ex.getRoleIdealSpan(intervalRole)
+    }
+
+    public setRoleIdealSpan(intervalRole: IntervalRole, factor: number): void {
+        this.ex.setRoleIdealSpan(intervalRole, factor)
     }
 
     public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {

@@ -40,7 +40,8 @@ export enum GlobalFeature {
     DragBelowWater = 5,
     MaxSpanVariation = 6,
     SpanVariationSpeed = 7,
-    GlobalElastic = 8,
+    PushElastic = 8,
+    PullElastic = 9,
 }
 
 export const SEED_CORNERS = 5
@@ -85,7 +86,9 @@ export interface IFabricExports {
 
     setAltitude(altitude: number): number
 
-    setElasticFactor(intervalRole: IntervalRole, factor: number): number
+    getRoleIdealSpan(intervalRole: IntervalRole): number
+
+    setRoleIdealSpan(intervalRole: IntervalRole, factor: number): void
 
     nextJointTag(): number
 

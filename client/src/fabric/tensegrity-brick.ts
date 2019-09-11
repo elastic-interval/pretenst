@@ -9,12 +9,7 @@ import { IntervalRole } from "./fabric-exports"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const PHI = 1.61803398875
-const BAR_SPAN = 2 * PHI
-const CABLE_SPAN = 2
-const RING_SPAN = 1.5
-const CROSS_SPAN = 2
-const BOW_MID_SPAN = CABLE_SPAN / 5
-const BOW_END_SPAN = (RING_SPAN + CROSS_SPAN) / 2 - BOW_MID_SPAN
+const SPAN = 1.0
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -238,7 +233,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
         const omegaIndex = jointIndexes[index * 2 + 1]
         const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
         const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
-        return fabric.createInterval(alpha, omega, IntervalRole.Bar, BAR_SPAN)
+        return fabric.createInterval(alpha, omega, IntervalRole.Bar, SPAN)
     })
     const joints = bars.reduce((arr: IJoint[], bar) => {
         arr.push(bar.alpha, bar.omega)
@@ -250,7 +245,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
     TRIANGLE_ARRAY.forEach(triangle => {
         const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
-            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, CABLE_SPAN)
+            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, SPAN)
             brick.cables.push(interval)
             brick.rings[triangle.ringMember[walk]].push(interval)
         }
@@ -264,7 +259,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
 
 export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
     const base = Triangle.NNN
-    return createBrick(fabric, createBrickPointsOnOrigin(base, 1.6, 1.0), base)
+    return createBrick(fabric, createBrickPointsOnOrigin(base, 4, 1.0), base)
 }
 
 export function createBrickOnTriangle(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle): IBrick {
@@ -328,12 +323,12 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         const jointLocation = fabric.exports.getJointLocation(joint.index)
         const nextJoint = ring[(walk + 1) % ring.length]
         const nextJointOppositeLocation = fabric.exports.getJointLocation(nextJoint.oppositeIndex)
-        const ringCable = fabric.createInterval(joint, nextJoint, IntervalRole.Ring, RING_SPAN)
+        const ringCable = fabric.createInterval(joint, nextJoint, IntervalRole.Ring, SPAN)
         cables.push(ringCable)
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.Cross, CROSS_SPAN)
+        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.Cross, SPAN)
         cables.push(crossCable)
     }
     const handleFace = (triangle: Triangle, brick: IBrick): IFace => {
@@ -345,7 +340,7 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
             interval.intervalRole = IntervalRole.Ring
             fabric.exports.setIntervalRole(interval.index, IntervalRole.Ring)
-            fabric.exports.setIntervalIdealSpan(interval.index, RING_SPAN)
+            fabric.exports.setIntervalIdealSpan(interval.index, SPAN)
         })
         return face
     }
@@ -384,10 +379,10 @@ export function optimizeFabric(fabric: TensegrityFabric): void {
         fabric.removeInterval(ab)
         fabric.removeInterval(cd)
         fabric.exports.setIntervalRole(bc.index, bc.intervalRole = IntervalRole.BowEnd)
-        fabric.exports.setIntervalIdealSpan(bc.index, BOW_END_SPAN)
-        fabric.createInterval(c, a, IntervalRole.BowMid, BOW_MID_SPAN)
+        fabric.exports.setIntervalIdealSpan(bc.index, SPAN)
+        fabric.createInterval(c, a, IntervalRole.BowMid, SPAN)
         fabric.exports.setIntervalRole(ad.index, ad.intervalRole = IntervalRole.BowEnd)
-        fabric.exports.setIntervalIdealSpan(ad.index, BOW_END_SPAN)
+        fabric.exports.setIntervalIdealSpan(ad.index, SPAN)
     })
 }
 

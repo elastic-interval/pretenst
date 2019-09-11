@@ -29,15 +29,16 @@ export interface IPhysicsFeature {
     isGlobal: boolean
     setFactor: (factor: number) => void
     factor$: BehaviorSubject<number>
+    defaultValue: number
 }
 
-function getPhysicsFeature(label: string): number {
+function getPhysicsFeature(label: string, defaultValue: number): number {
     const value = localStorage.getItem(label)
-    return value ? parseFloat(value) : 1.0
+    return value ? parseFloat(value) : defaultValue
 }
 
 function setPhysicsFeature(label: string, factor: number): void {
-    localStorage.setItem(label, factor.toFixed(3))
+    localStorage.setItem(label, factor.toFixed(10))
 }
 
 export class Physics {
@@ -46,10 +47,10 @@ export class Physics {
 
     constructor() {
         this.featuresArray = [
-            ...Object.keys(GlobalFeature).filter(key=> key.length > 1)
+            ...Object.keys(GlobalFeature).filter(key => key.length > 1)
                 .map(key => GlobalFeature[key])
                 .map(globalFeature => this.createFeature({globalFeature})),
-            ...Object.keys(IntervalRole).filter(key=> key.length > 1)
+            ...Object.keys(IntervalRole).filter(key => key.length > 1)
                 .map(key => IntervalRole[key])
                 .map(intervalRole => this.createFeature({intervalRole})),
         ]
@@ -72,32 +73,44 @@ export class Physics {
         return featureValues
     }
 
+    public acquireLocal(instanceExports: InstanceExports): void {
+        this.featuresArray.forEach(feature => {
+            const intervalRole = feature.name.intervalRole
+            if (intervalRole === undefined) {
+                return
+            }
+            feature.defaultValue = instanceExports.getRoleIdealSpan(intervalRole)
+            const defaultValue = getPhysicsFeature(feature.label, feature.defaultValue)
+            instanceExports.setRoleIdealSpan(intervalRole, defaultValue)
+            feature.factor$.next(defaultValue)
+        })
+    }
 
-    public applyLocal(instanceExports: InstanceExports): object {
-        const featureValues = {}
+    public applyLocal(instanceExports: InstanceExports): void {
         this.featuresArray.forEach(feature => {
             const intervalRole = feature.name.intervalRole
             if (intervalRole === undefined) {
                 return
             }
             const factor = feature.factor$.getValue()
-            featureValues[feature.label] = instanceExports.setElasticFactor(intervalRole, factor)
+            instanceExports.setRoleIdealSpan(intervalRole, factor)
         })
-        return featureValues
     }
 
     private createFeature(name: IFeatureName): IPhysicsFeature {
         const label = nameLabel(name)
-        const factor = new BehaviorSubject<number>(getPhysicsFeature(label))
+        const isGlobal = name.globalFeature !== undefined
+        const factor = new BehaviorSubject<number>(getPhysicsFeature(label, 1.0))
         return {
             label,
             name,
-            isGlobal: name.globalFeature !== undefined,
+            isGlobal,
             setFactor: (newFactor: number) => {
                 setPhysicsFeature(label, newFactor)
                 factor.next(newFactor)
             },
             factor$: factor,
+            defaultValue: isGlobal ? 1.0 : factor.getValue(),
         }
     }
 }

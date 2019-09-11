@@ -41,6 +41,8 @@ declare global {
 
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 
+const ITERATIONS_PER_FRAME = 100
+
 export function TensegrityView({fabricExports}: { fabricExports: IFabricExports }): JSX.Element {
     const physics = new Physics()
     physics.applyGlobal(fabricExports)
@@ -49,13 +51,17 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
     if (!fabric) {
         throw new Error()
     }
+    const twoBricks = true
     if (fabric) {
-        fabric.applyPhysics(physics)
-        const b = fabric.createBrick()
-        const face = b.faces[Triangle.PPP]
-        const brick = fabric.growBrick(face.brick, face.triangle)
-        fabric.connectBricks(face.brick, face.triangle, brick, brick.base)
-
+        physics.acquireLocal(fabric.exports)
+        if (twoBricks) {
+            const b = fabric.createBrick()
+            const face = b.faces[Triangle.PPP]
+            const brick = fabric.growBrick(face.brick, face.triangle)
+            fabric.connectBricks(face.brick, face.triangle, brick, brick.base)
+        } else {
+            fabric.createBrick()
+        }
     }
     // tslint:disable-next-line:no-null-keyword
     const viewRef = useRef<HTMLDivElement | null>(null)
@@ -164,7 +170,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
             flight.setupCamera(flightState)
             flight.enabled = true
         }
-        fabric.iterate(50)
+        fabric.iterate(ITERATIONS_PER_FRAME)
         if (fabric.exports.isGestating()) {
             console.log("gestating")
         }

@@ -25,6 +25,16 @@ enum IntervalRole {
 }
 
 const INTERVAL_ROLE_COUNT: u8 = 8
+const MUSCLE_SPAN: f32 = 1.0
+const PHI: f32 = 1.61803398875
+const BAR_SPAN: f32 = 2 * PHI
+const CABLE_SPAN: f32 = 2
+const RING_SPAN: f32 = 1.9736472338
+const CROSS_SPAN: f32 = 1.4266350440
+const BOW_MID_SPAN: f32 = CABLE_SPAN / 5
+const BOW_END_SPAN: f32 = (RING_SPAN + CROSS_SPAN) / 2 - BOW_MID_SPAN
+
+const MIN_COLOR: f32 = 0.2
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
@@ -48,7 +58,6 @@ const LAND: u8 = 1
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
 const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
-
 
 // Dimensioning ================================================================================
 
@@ -111,31 +120,37 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
 
 // Joint Pointers =========================================================================
 
+// @ts-ignore
 @inline()
 function _location(jointIndex: u16): usize {
     return _jointLocations + jointIndex * VECTOR_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _velocity(jointIndex: u16): usize {
     return _joints + jointIndex * VECTOR_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _force(jointIndex: u16): usize {
     return _velocity(jointCountMax) + jointIndex * VECTOR_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _intervalMass(jointIndex: u16): usize {
     return _force(jointCountMax) + jointIndex * F32
 }
 
+// @ts-ignore
 @inline()
 function _laterality(jointIndex: u16): usize {
     return _force(jointCountMax) + jointIndex * U8
 }
 
+// @ts-ignore
 @inline()
 function _jointTag(jointIndex: u16): usize {
     return _laterality(jointCountMax) + jointIndex * U16
@@ -143,31 +158,37 @@ function _jointTag(jointIndex: u16): usize {
 
 // Interval Pointers =========================================================================
 
+// @ts-ignore
 @inline()
 function _alpha(intervalIndex: u16): usize {
     return _intervals + intervalIndex * INDEX_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _omega(intervalIndex: u16): usize {
     return _alpha(intervalCountMax) + intervalIndex * INDEX_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _idealSpan(intervalIndex: u16): usize {
     return _omega(intervalCountMax) + intervalIndex * F32
 }
 
+// @ts-ignore
 @inline()
 function _intervalRole(intervalIndex: u16): usize {
     return _idealSpan(intervalCountMax) + intervalIndex * F32
 }
 
+// @ts-ignore
 @inline()
 function _highLowArray(intervalIndex: u16): usize {
     return _intervalRole(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _unit(intervalIndex: u16): usize {
     return _intervalUnits + intervalIndex * VECTOR_SIZE
@@ -175,21 +196,25 @@ function _unit(intervalIndex: u16): usize {
 
 // Face Pointers =========================================================================
 
+// @ts-ignore
 @inline()
 function _face(faceIndex: u16): usize {
     return _faces + faceIndex * FACE_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _faceMidpoint(faceIndex: u16): usize {
     return _faceMidpoints + faceIndex * VECTOR_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _faceNormal(faceIndex: u16, jointNumber: u16): usize {
     return _faceNormals + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
 }
 
+// @ts-ignore
 @inline()
 function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
     return _faceLocations + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
@@ -197,7 +222,7 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 
 // Physics =====================================================================================
 
-const GESTATION_DRAG_FACTOR: f32 = 1000
+const GESTATION_DRAG_FACTOR: f32 = 100
 const GESTATION_TIME_SWEEP_FACTOR: f32 = 1
 
 enum GlobalFeature {
@@ -209,7 +234,8 @@ enum GlobalFeature {
     DragBelowWater = 5,
     MaxSpanVariation = 6,
     SpanVariationSpeed = 7,
-    GlobalElastic = 8,
+    PushElastic = 8,
+    PullElastic = 9,
 }
 
 const DRAG_ABOVE: f32 = 0.00008
@@ -218,7 +244,8 @@ const DRAG_BELOW_LAND: f32 = 0.96
 const DRAG_BELOW_WATER: f32 = 0.001
 const GRAVITY_BELOW_LAND: f32 = -0.005
 const GRAVITY_BELOW_WATER: f32 = -0.00001
-const GLOBAL_ELASTIC_FACTOR: f32 = 1.0
+const PUSH_ELASTIC_FACTOR: f32 = 1.0
+const PULL_ELASTIC_FACTOR: f32 = 1.0
 const MAX_SPAN_VARIATION: f32 = 0.1
 const TIME_SWEEP_SPEED: f32 = 30.0
 
@@ -228,7 +255,8 @@ let physicsDragBelowWater: f32 = DRAG_BELOW_WATER
 let physicsGravityBelowWater: f32 = GRAVITY_BELOW_WATER
 let physicsDragBelowLand: f32 = DRAG_BELOW_LAND
 let physicsGravityBelowLand: f32 = GRAVITY_BELOW_LAND
-let globalElasticFactor: f32 = GLOBAL_ELASTIC_FACTOR
+let pushElasticFactor: f32 = PUSH_ELASTIC_FACTOR
+let pullElasticFactor: f32 = PULL_ELASTIC_FACTOR
 let maxSpanVariation: f32 = MAX_SPAN_VARIATION
 let timeSweepSpeed: f32 = TIME_SWEEP_SPEED
 
@@ -250,8 +278,10 @@ export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32
             return maxSpanVariation = MAX_SPAN_VARIATION * factor
         case GlobalFeature.SpanVariationSpeed:
             return timeSweepSpeed = TIME_SWEEP_SPEED * factor
-        case GlobalFeature.GlobalElastic:
-            return globalElasticFactor = GLOBAL_ELASTIC_FACTOR * factor
+        case GlobalFeature.PushElastic:
+            return pushElasticFactor = PUSH_ELASTIC_FACTOR * factor
+        case GlobalFeature.PullElastic:
+            return pullElasticFactor = PULL_ELASTIC_FACTOR * factor
         default:
             return 0
     }
@@ -277,86 +307,103 @@ export function cloneInstance(fromIndex: u16, toIndex: u16): void {
 
 // Peek and Poke ================================================================================
 
+// @ts-ignore
 @inline()
 function getU8(vPtr: usize): u8 {
     return load<u8>(instancePtr + vPtr)
 }
 
+// @ts-ignore
 @inline()
 function setU8(vPtr: usize, value: u8): void {
     store<u8>(instancePtr + vPtr, value)
 }
 
+// @ts-ignore
 @inline()
 function getU16(vPtr: usize): u16 {
     return load<u16>(instancePtr + vPtr)
 }
 
+// @ts-ignore
 @inline()
 function setU16(vPtr: usize, value: u16): void {
     store<u16>(instancePtr + vPtr, value)
 }
 
+// @ts-ignore
 @inline()
 function getU32(vPtr: usize): u32 {
     return load<u32>(instancePtr + vPtr)
 }
 
+// @ts-ignore
 @inline()
 function setU32(vPtr: usize, value: u32): void {
     store<u32>(instancePtr + vPtr, value)
 }
 
+// @ts-ignore
 @inline()
 function getF32(vPtr: usize): f32 {
     return load<f32>(instancePtr + vPtr)
 }
 
+// @ts-ignore
 @inline()
 function setF32(vPtr: usize, value: f32): void {
     store<f32>(instancePtr + vPtr, value)
 }
 
+// @ts-ignore
 @inline()
 function getX(vPtr: usize): f32 {
     return load<f32>(instancePtr + vPtr)
 }
 
+// @ts-ignore
 @inline()
 function setX(vPtr: usize, value: f32): void {
     store<f32>(instancePtr + vPtr, value)
 }
 
+// @ts-ignore
 @inline()
 function getY(vPtr: usize): f32 {
     return load<f32>(instancePtr + vPtr + F32)
 }
 
+// @ts-ignore
 @inline()
 function setY(vPtr: usize, value: f32): void {
     store<f32>(instancePtr + vPtr + F32, value)
 }
 
+// @ts-ignore
 @inline()
 function getZ(vPtr: usize): f32 {
     return load<f32>(instancePtr + vPtr + F32 * 2)
 }
 
+// @ts-ignore
 @inline()
 function setZ(vPtr: usize, value: f32): void {
     store<f32>(instancePtr + vPtr + F32 * 2, value)
 }
 
+// @ts-ignore
 @inline()
 function getU8Global(vPtr: usize): u8 {
     return load<u8>(vPtr)
 }
 
+// @ts-ignore
 @inline()
 function getF32Global(vPtr: usize): f32 {
     return load<f32>(vPtr)
 }
 
+// @ts-ignore
 @inline
 function abs(value: f32): f32 {
     return value < 0 ? -value : value
@@ -558,13 +605,11 @@ export function setNextDirection(value: u8): void {
     setU8(_state + NEXT_DIRECTION_OFFSET, value)
 }
 
-export function setElasticFactor(intervalRole: u8, factor: f32): f32 {
-    let elasticFactor = GLOBAL_ELASTIC_FACTOR * factor
-    setF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32, elasticFactor)
-    return elasticFactor
+export function setRoleIdealSpan(intervalRole: u8, span: f32): void {
+    setF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32, span)
 }
 
-export function getElasticFactor(intervalRole: u8): f32 {
+export function getRoleIdealSpan(intervalRole: u8): f32 {
     return getF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32)
 }
 
@@ -579,9 +624,13 @@ export function reset(): void {
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
-    for (let role: u8 = 0; role < INTERVAL_ROLE_COUNT; role++) {
-        setElasticFactor(role, 1)
-    }
+    setRoleIdealSpan(<u8>IntervalRole.Muscle, MUSCLE_SPAN)
+    setRoleIdealSpan(<u8>IntervalRole.Bar, BAR_SPAN)
+    setRoleIdealSpan(<u8>IntervalRole.Triangle, CABLE_SPAN)
+    setRoleIdealSpan(<u8>IntervalRole.Ring, RING_SPAN)
+    setRoleIdealSpan(<u8>IntervalRole.Cross, CROSS_SPAN)
+    setRoleIdealSpan(<u8>IntervalRole.BowMid, BOW_MID_SPAN)
+    setRoleIdealSpan(<u8>IntervalRole.BowEnd, BOW_END_SPAN)
 }
 
 // Joints =====================================================================================
@@ -899,7 +948,8 @@ function getIntervalSpanVariationFloat(intervalIndex: u16, direction: u8): f32 {
 function interpolateCurrentSpan(intervalIndex: u16): f32 {
     let timeSweep = getTimeSweep()
     let progress = <f32>timeSweep / 65536
-    let idealSpan = getIntervalIdealSpan(intervalIndex)
+    let intervalRole = getIntervalRole(intervalIndex)
+    let idealSpan = getIntervalIdealSpan(intervalIndex) * getRoleIdealSpan(intervalRole)
     let intervalState = getIntervalHighLow(intervalIndex, REST_DIRECTION)
     if (intervalState === GROWING_INTERVAL) {
         if (timeSweep === 0) { // done growing
@@ -981,14 +1031,16 @@ function outputLinesGeometry(): void {
                 return
             }
             let color = (stress - minPush) / (maxPush - minPush)
-            setLineColor(_lineColor, color, 0.2 + (1.0 - color) / 3, 0.0)
-        } else { // PULL
+            setLineColor(_lineColor, MIN_COLOR + color * (1 - MIN_COLOR), MIN_COLOR, MIN_COLOR)
+        } else if (stress > 0) { // PULL
             if (stress > maxPull || stress < minPull) {
                 setLineBlank(_lineColor, false)
                 return
             }
             let color = (stress - minPull) / (maxPull - minPull)
-            setLineColor(_lineColor, 0.3 + (1.0 - color) / 3, 0.3 + (1.0 - color) / 3, color)
+            setLineColor(_lineColor, MIN_COLOR, MIN_COLOR, MIN_COLOR + color * (1 - MIN_COLOR))
+        } else {
+            setLineColor(_lineColor, 0, 1, 0)
         }
     }
 }
@@ -1165,14 +1217,19 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 function intervalPhysics(intervalIndex: u16): void {
     let intervalRole = getIntervalRole(intervalIndex)
-    let elasticFactor = getElasticFactor(intervalRole) * globalElasticFactor
     let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
-    let stress = (calculateSpan(intervalIndex) - currentIdealSpan) * elasticFactor
-    setStress(intervalIndex, stress)
-    if (intervalRole === IntervalRole.Muscle || intervalRole === IntervalRole.Bar || stress > 0) {
-        addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
-        addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -stress / 2)
+    let stress = calculateSpan(intervalIndex) - currentIdealSpan
+    if (intervalRole !== IntervalRole.Muscle && intervalRole !== IntervalRole.Bar && stress < 0) {
+        stress = 0
     }
+    if (stress < 0) { // PUSH
+        stress *= pushElasticFactor
+    } else { // PULL
+        stress *= pullElasticFactor
+    }
+    setStress(intervalIndex, stress)
+    addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
+    addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -stress / 2)
     let mass = currentIdealSpan * currentIdealSpan * currentIdealSpan
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)

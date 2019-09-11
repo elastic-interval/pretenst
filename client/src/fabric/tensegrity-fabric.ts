@@ -7,7 +7,6 @@ import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { IntervalRole, Laterality } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
-import { Physics } from "./physics"
 import {
     brickToString,
     connectBricks,
@@ -111,10 +110,6 @@ export class TensegrityFabric {
         this._selectedJoint = undefined
         this._selectedInterval = undefined
         this._selectedFace = undefined
-    }
-
-    public applyPhysics(physics: Physics): object {
-        return physics.applyLocal(this.exports)
     }
 
     public createBrick(): IBrick {
