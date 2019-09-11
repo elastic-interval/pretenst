@@ -9,7 +9,7 @@ import { IntervalRole } from "./fabric-exports"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const PHI = 1.61803398875
-const SPAN = 1.0
+const SPAN = 0.0
 
 enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -259,7 +259,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
 
 export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
     const base = Triangle.NNN
-    return createBrick(fabric, createBrickPointsOnOrigin(base, 4, 1.0), base)
+    return createBrick(fabric, createBrickPointsOnOrigin(base, 2, 1.0), base)
 }
 
 export function createBrickOnTriangle(fabric: TensegrityFabric, brick: IBrick, triangle: Triangle): IBrick {
@@ -340,7 +340,7 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
             interval.intervalRole = IntervalRole.Ring
             fabric.exports.setIntervalRole(interval.index, IntervalRole.Ring)
-            fabric.exports.setIntervalIdealSpan(interval.index, SPAN)
+            fabric.exports.setSpanDivergence(interval.index, SPAN)
         })
         return face
     }
@@ -353,9 +353,15 @@ export function connectBricks(fabric: TensegrityFabric, brickA: IBrick, triangle
     }
 }
 
-export function optimizeFabric(fabric: TensegrityFabric): void {
+export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {
     const crossCables = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Cross)
     const opposite = (joint: IJoint, cable: IInterval) => cable.alpha.index === joint.index ? cable.omega : cable.alpha
+    const finish = (removeA: IInterval, removeB: IInterval, adjustA: IInterval, adjustB: IInterval, role: IntervalRole) => {
+        fabric.removeInterval(removeA)
+        fabric.removeInterval(removeB)
+        fabric.exports.setIntervalRole(adjustA.index, adjustA.intervalRole = role)
+        fabric.exports.setIntervalRole(adjustB.index, adjustB.intervalRole = role)
+    }
     crossCables.forEach(ab => {
         const a = ab.alpha
         const aLoc = fabric.exports.getJointLocation(a.index)
@@ -376,13 +382,12 @@ export function optimizeFabric(fabric: TensegrityFabric): void {
         if (!cd || !ad) {
             return
         }
-        fabric.removeInterval(ab)
-        fabric.removeInterval(cd)
-        fabric.exports.setIntervalRole(bc.index, bc.intervalRole = IntervalRole.BowEnd)
-        fabric.exports.setIntervalIdealSpan(bc.index, SPAN)
         fabric.createInterval(c, a, IntervalRole.BowMid, SPAN)
-        fabric.exports.setIntervalRole(ad.index, ad.intervalRole = IntervalRole.BowEnd)
-        fabric.exports.setIntervalIdealSpan(ad.index, SPAN)
+        if (highCross) {
+            finish(ab, cd, bc, ad, IntervalRole.BowEndHigh)
+        } else {
+            finish(bc, ad, ab, cd, IntervalRole.BowEndLow)
+        }
     })
 }
 

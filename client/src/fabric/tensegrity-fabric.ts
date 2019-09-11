@@ -160,8 +160,8 @@ export class TensegrityFabric {
         this.disposeOfGeometry()
     }
 
-    public optimize(): void {
-        optimizeFabric(this)
+    public optimize(highCross: boolean): void {
+        optimizeFabric(this, highCross)
     }
 
     public createJointIndex(jointTag: JointTag, location: Vector3): number {

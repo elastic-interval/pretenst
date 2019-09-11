@@ -41,7 +41,7 @@ declare global {
 
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 
-const ITERATIONS_PER_FRAME = 100
+const ITERATIONS_PER_FRAME = 10
 
 export function TensegrityView({fabricExports}: { fabricExports: IFabricExports }): JSX.Element {
     const physics = new Physics()
@@ -78,13 +78,13 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
             if (interval === undefined) {
                 return
             }
-            fabric.exports.multiplyIntervalIdealSpan(interval.index, factor(up))
+            fabric.exports.setSpanDivergence(interval.index, factor(up))
         }
-        const handleFace = (face: IFace | undefined, up: boolean) => {
+        const handleFace = (face: IFace | undefined, bar: boolean, up: boolean) => {
             if (face === undefined) {
                 return
             }
-            fabric.exports.multiplyFaceIdealSpan(face.index, factor(up))
+            fabric.exports.setFaceSpanDivergence(face.index, bar, factor(up))
         }
         switch (event.key) {
             case " ":
@@ -97,22 +97,22 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
                 break
             case "ArrowUp":
                 handleJoint(fabric.selectedJoint, true, true)
-                handleFace(fabric.selectedFace, true)
+                handleFace(fabric.selectedFace, true, true)
                 handleInterval(fabric.selectedInterval, true)
                 break
             case "ArrowDown":
                 handleJoint(fabric.selectedJoint, true, false)
-                handleFace(fabric.selectedFace, false)
+                handleFace(fabric.selectedFace, true, false)
                 handleInterval(fabric.selectedInterval, false)
                 break
             case "ArrowLeft":
                 handleJoint(fabric.selectedJoint, false, false)
-                handleFace(fabric.selectedFace, false)
+                handleFace(fabric.selectedFace, false, false)
                 handleInterval(fabric.selectedInterval, false)
                 break
             case "ArrowRight":
                 handleJoint(fabric.selectedJoint, false, true)
-                handleFace(fabric.selectedFace, true)
+                handleFace(fabric.selectedFace, false, true)
                 handleInterval(fabric.selectedInterval, true)
                 break
             case "Alt":
@@ -124,14 +124,17 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
             case "Shift":
                 fabric.selectable = event.metaKey ? Selectable.GROW_FACE : Selectable.FACE
                 break
-            case "h":
+            case "j":
                 fabric.exports.setAltitude(5)
                 break
             case "c":
                 fabric.exports.centralize()
                 break
-            case "o":
-                fabric.optimize()
+            case "l":
+                fabric.optimize(false)
+                break
+            case "h":
+                fabric.optimize(true)
                 break
             default:
                 console.log("Key", event.key)

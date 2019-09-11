@@ -346,20 +346,16 @@ export class InstanceExports {
         this.ex.setIntervalRole(intervalIndex, intervalRole)
     }
 
-    public setIntervalIdealSpan(intervalIndex: number, span: number): void {
-        this.ex.setIntervalIdealSpan(intervalIndex, span)
+    public setSpanDivergence(intervalIndex: number, span: number): void {
+        this.ex.setSpanDivergence(intervalIndex, span)
     }
 
     public multiplyJointIdealSpan(jointIndex: number, bar: boolean, factor: number): void {
-        this.ex.multiplyAdjacentIdealSpan(jointIndex, bar, factor)
+        this.ex.setJointSpanDivergence(jointIndex, bar, factor)
     }
 
-    public multiplyIntervalIdealSpan(intervalIndex: number, factor: number): void {
-        this.ex.multiplyIntervalIdealSpan(intervalIndex, factor)
-    }
-
-    public multiplyFaceIdealSpan(faceIndex: number, factor: number): void {
-        this.ex.multiplyFaceIdealSpan(faceIndex, factor)
+    public setFaceSpanDivergence(faceIndex: number, bar: boolean, factor: number): void {
+        this.ex.setFaceSpanDivergence(faceIndex, bar, factor)
     }
 
     private get ex(): IFabricExports {

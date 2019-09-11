@@ -21,7 +21,8 @@ enum IntervalRole {
     Ring = 3,
     Cross = 4,
     BowMid = 5,
-    BowEnd = 6,
+    BowEndLow = 6,
+    BowEndHigh = 7,
 }
 
 const INTERVAL_ROLE_COUNT: u8 = 8
@@ -29,12 +30,14 @@ const MUSCLE_SPAN: f32 = 1.0
 const PHI: f32 = 1.61803398875
 const BAR_SPAN: f32 = 2 * PHI
 const CABLE_SPAN: f32 = 2
-const RING_SPAN: f32 = 1.9736472338
-const CROSS_SPAN: f32 = 1.4266350440
-const BOW_MID_SPAN: f32 = CABLE_SPAN / 5
-const BOW_END_SPAN: f32 = (RING_SPAN + CROSS_SPAN) / 2 - BOW_MID_SPAN
+const RING_SPAN: f32 = 1.74
+const CROSS_SPAN: f32 = 1.82
+const BOW_MID_SPAN: f32 = 0.8520879139
+const BOW_END_LOW_SPAN: f32 = 1.3799999952
+const BOW_END_HIGH_SPAN: f32 = 1.5705686808
 
 const MIN_COLOR: f32 = 0.2
+const MIN_STRESS: f32 = 0.00001
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
@@ -222,7 +225,7 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 
 // Physics =====================================================================================
 
-const GESTATION_DRAG_FACTOR: f32 = 100
+const GESTATION_DRAG_FACTOR: f32 = 1000
 const GESTATION_TIME_SWEEP_FACTOR: f32 = 1
 
 enum GlobalFeature {
@@ -630,7 +633,8 @@ export function reset(): void {
     setRoleIdealSpan(<u8>IntervalRole.Ring, RING_SPAN)
     setRoleIdealSpan(<u8>IntervalRole.Cross, CROSS_SPAN)
     setRoleIdealSpan(<u8>IntervalRole.BowMid, BOW_MID_SPAN)
-    setRoleIdealSpan(<u8>IntervalRole.BowEnd, BOW_END_SPAN)
+    setRoleIdealSpan(<u8>IntervalRole.BowEndLow, BOW_END_LOW_SPAN)
+    setRoleIdealSpan(<u8>IntervalRole.BowEndHigh, BOW_END_HIGH_SPAN)
 }
 
 // Joints =====================================================================================
@@ -753,7 +757,7 @@ export function createInterval(alpha: u16, omega: u16, idealSpan: f32, intervalR
     setAlphaIndex(intervalIndex, alpha)
     setOmegaIndex(intervalIndex, omega)
     zero(_unit(intervalIndex))
-    setIntervalIdealSpan(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) * -idealSpan)
+    setSpanDivergence(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) * -idealSpan)
     setIntervalRole(intervalIndex, intervalRole)
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
         if (direction === REST_DIRECTION) {
@@ -781,7 +785,7 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
-    setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(nextIndex))
+    setSpanDivergence(intervalIndex, getSpanDivergence(nextIndex))
     for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
         setIntervalHighLow(intervalIndex, direction, getIntervalHighLow(nextIndex, direction))
     }
@@ -803,11 +807,11 @@ function setOmegaIndex(intervalIndex: u16, index: u16): void {
     setU16(_omega(intervalIndex), index)
 }
 
-function getIntervalIdealSpan(intervalIndex: u16): f32 {
+function getSpanDivergence(intervalIndex: u16): f32 {
     return getF32(_idealSpan(intervalIndex))
 }
 
-export function setIntervalIdealSpan(intervalIndex: u16, idealSpan: f32): void {
+export function setSpanDivergence(intervalIndex: u16, idealSpan: f32): void {
     if (idealSpan < 0) {
         return
     }
@@ -949,7 +953,7 @@ function interpolateCurrentSpan(intervalIndex: u16): f32 {
     let timeSweep = getTimeSweep()
     let progress = <f32>timeSweep / 65536
     let intervalRole = getIntervalRole(intervalIndex)
-    let idealSpan = getIntervalIdealSpan(intervalIndex) * getRoleIdealSpan(intervalRole)
+    let idealSpan = getRoleIdealSpan(intervalRole) + getSpanDivergence(intervalIndex)
     let intervalState = getIntervalHighLow(intervalIndex, REST_DIRECTION)
     if (intervalState === GROWING_INTERVAL) {
         if (timeSweep === 0) { // done growing
@@ -1024,7 +1028,7 @@ function outputLinesGeometry(): void {
         setVector(_linePoint + VECTOR_SIZE, _location(omegaIndex(intervalIndex)))
         let _lineColor = _lineColors + intervalIndex * VECTOR_SIZE * 2
         let stress = getStress(intervalIndex)
-        if (stress < 0) { // PUSH
+        if (stress < -MIN_STRESS) { // PUSH
             stress = -stress
             if (stress > maxPush || stress < minPush) {
                 setLineBlank(_lineColor, true)
@@ -1032,7 +1036,7 @@ function outputLinesGeometry(): void {
             }
             let color = (stress - minPush) / (maxPush - minPush)
             setLineColor(_lineColor, MIN_COLOR + color * (1 - MIN_COLOR), MIN_COLOR, MIN_COLOR)
-        } else if (stress > 0) { // PULL
+        } else if (stress > MIN_STRESS) { // PULL
             if (stress > maxPull || stress < minPull) {
                 setLineBlank(_lineColor, false)
                 return
@@ -1075,9 +1079,9 @@ export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
     let interval0 = findIntervalIndex(joint0, joint1)
     let interval1 = findIntervalIndex(joint1, joint2)
     let interval2 = findIntervalIndex(joint2, joint0)
-    let ideal0 = getIntervalIdealSpan(interval0)
-    let ideal1 = getIntervalIdealSpan(interval1)
-    let ideal2 = getIntervalIdealSpan(interval2)
+    let ideal0 = getSpanDivergence(interval0)
+    let ideal1 = getSpanDivergence(interval1)
+    let ideal2 = getSpanDivergence(interval2)
     return (ideal0 + ideal1 + ideal2) / 3
 }
 
@@ -1320,26 +1324,22 @@ export function iterate(ticks: u16): boolean {
     return wrapAround
 }
 
-export function multiplyAdjacentIdealSpan(jointIndex: u16, bar: boolean, factor: f32): void {
+export function setJointSpanDivergence(jointIndex: u16, bar: boolean, factor: f32): void {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         if (alphaIndex(intervalIndex) !== jointIndex && omegaIndex(intervalIndex) !== jointIndex) {
             continue
         }
-        let intervalIsBar: boolean = getIntervalRole(intervalIndex) === IntervalRole.Muscle
+        let intervalIsBar: boolean = getIntervalRole(intervalIndex) === IntervalRole.Bar
         if (intervalIsBar !== bar) {
             continue
         }
-        setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(intervalIndex) * factor)
+        setSpanDivergence(intervalIndex, getSpanDivergence(intervalIndex) * factor)
     }
 }
 
-export function multiplyIntervalIdealSpan(intervalIndex: u16, factor: f32): void {
-    setIntervalIdealSpan(intervalIndex, getIntervalIdealSpan(intervalIndex) * factor)
-}
-
-export function multiplyFaceIdealSpan(faceIndex: u16, bar: boolean, factor: f32): void {
-    multiplyAdjacentIdealSpan(getFaceJointIndex(faceIndex, 0), bar, factor)
-    multiplyAdjacentIdealSpan(getFaceJointIndex(faceIndex, 1), bar, factor)
-    multiplyAdjacentIdealSpan(getFaceJointIndex(faceIndex, 2), bar, factor)
+export function setFaceSpanDivergence(faceIndex: u16, bar: boolean, factor: f32): void {
+    setJointSpanDivergence(getFaceJointIndex(faceIndex, 0), bar, factor)
+    setJointSpanDivergence(getFaceJointIndex(faceIndex, 1), bar, factor)
+    setJointSpanDivergence(getFaceJointIndex(faceIndex, 2), bar, factor)
 }

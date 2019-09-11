@@ -22,7 +22,8 @@ export enum IntervalRole {
     Ring = 3,
     Cross = 4,
     BowMid = 5,
-    BowEnd = 6,
+    BowEndLow = 6,
+    BowEndHigh = 7,
 }
 
 export enum Laterality {
@@ -106,13 +107,11 @@ export interface IFabricExports {
 
     setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
-    setIntervalIdealSpan(intervalIndex: number, span: number): void
+    setSpanDivergence(intervalIndex: number, span: number): void
 
-    multiplyAdjacentIdealSpan(jointIndex: number, bar: boolean, factor: number): void
+    setJointSpanDivergence(jointIndex: number, bar: boolean, factor: number): void
 
-    multiplyIntervalIdealSpan(intervalIndex: number, factor: number): void
-
-    multiplyFaceIdealSpan(faceIndex: number, factor: number): void
+    setFaceSpanDivergence(faceIndex: number, bar: boolean, factor: number): void
 
     removeInterval(intervalIndex: number): void
 
