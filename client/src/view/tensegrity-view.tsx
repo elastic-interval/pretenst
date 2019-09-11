@@ -6,7 +6,7 @@
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Canvas, extend, ReactThreeFiber, useRender, useThree } from "react-three-fiber"
-import { Geometry, SphereGeometry } from "three"
+import { Geometry, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricExports } from "../fabric/fabric-exports"
@@ -15,8 +15,6 @@ import { Physics } from "../fabric/physics"
 import { IFace, IInterval, IJoint, Triangle } from "../fabric/tensegrity-brick"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { Flight } from "./flight"
-import { TensegrityFlightState } from "./flight-state"
 import {
     TENSEGRITY_FACE,
     TENSEGRITY_JOINT,
@@ -39,8 +37,10 @@ declare global {
 }
 
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
+const SPHERE = new SphereGeometry(0.12, 16, 16)
 
 const ITERATIONS_PER_FRAME = 10
+const TOWARDS_TARGET = 0.02
 
 export function TensegrityView({fabricExports, fabricKernel, physics}:
                                    {
@@ -48,50 +48,59 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                                        fabricKernel: FabricKernel,
                                        physics: Physics,
                                    }): JSX.Element {
+    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const createTower = (size: number, name: string): TensegrityFabric => {
-        const freshFabric = fabricKernel.createTensegrityFabric(name)
-        if (!freshFabric) {
+        const tower = fabricKernel.createTensegrityFabric(name)
+        if (!tower) {
             throw new Error()
         }
-        if (freshFabric) {
-            physics.acquireLocal(freshFabric.exports)
-            let brick = freshFabric.createBrick()
-            while (--size > 0) {
-                const face = brick.faces[Triangle.PPP]
-                const nextBrick = freshFabric.growBrick(face.brick, face.triangle)
-                freshFabric.connectBricks(face.brick, face.triangle, nextBrick, nextBrick.base)
-            }
+        physics.acquireLocal(tower.exports)
+        let brick = tower.createBrick()
+        while (--size > 0) {
+            const face = brick.faces[Triangle.PPP]
+            const nextBrick = tower.growBrick(face.brick, face.triangle)
+            tower.connectBricks(face.brick, face.triangle, nextBrick, nextBrick.base)
+            brick = nextBrick
         }
-        return freshFabric
+        console.log("fabric " + tower.name, tower.exports.index)
+        return tower
     }
-    const [fabric, setFabric] = useState<TensegrityFabric>(createTower(1, "init"))
     // tslint:disable-next-line:no-null-keyword
     const viewRef = useRef<HTMLDivElement | null>(null)
-    useEffect(() => viewRef.current ? viewRef.current.focus() : undefined)
+    useEffect(() => {
+        if (viewRef.current) {
+            viewRef.current.focus()
+        }
+    })
     const factor = (up: boolean) => 1.0 + (up ? 0.005 : -0.005)
     const onKeyDownCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
         const handleJoint = (joint: IJoint | undefined, bar: boolean, up: boolean) => {
-            if (joint === undefined) {
+            if (joint === undefined || !fabric) {
                 return
             }
             fabric.exports.multiplyJointIdealSpan(joint.index, bar, factor(up))
         }
         const handleInterval = (interval: IInterval | undefined, up: boolean) => {
-            if (interval === undefined) {
+            if (interval === undefined || !fabric) {
                 return
             }
             fabric.exports.setSpanDivergence(interval.index, factor(up))
         }
         const handleFace = (face: IFace | undefined, bar: boolean, up: boolean) => {
-            if (face === undefined) {
+            if (face === undefined || !fabric) {
                 return
             }
             fabric.exports.setFaceSpanDivergence(face.index, bar, factor(up))
         }
+        const key = event.key
+        if (["1", "2", "3", "4", "5", "6", "7", "8", "9"].indexOf(key) >= 0) {
+            setFabric(createTower(parseInt(key, 10), key))
+            return
+        }
+        if (!fabric) {
+            return
+        }
         switch (event.key) {
-            case "1":
-                setFabric(createTower(1, "yes"))
-                break
             case " ":
                 if (fabric.selectionActive) {
                     fabric.selectable = Selectable.NONE
@@ -146,6 +155,9 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
         }
     }
     const onKeyUpCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
+        if (!fabric) {
+            return
+        }
         fabric.selectable = Selectable.NONE
     }
     return (
@@ -153,69 +165,68 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
              onKeyDownCapture={onKeyDownCapture} onKeyUpCapture={onKeyUpCapture}
         >
             <Canvas>
-                <FabricView fabric={fabric}/>
+                {!fabric ? undefined :
+                    <FabricView fabric={fabric}/>}
             </Canvas>
-            <PhysicsPanel physics={physics} fabricExports={fabricExports} instanceExports={fabric.exports}/>
+            {!fabric ? undefined :
+                <PhysicsPanel physics={physics} fabricExports={fabricExports} instanceExports={fabric.exports}/>}
         </div>
     )
 }
 
-function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
-    const root = document.getElementById("tensegrity-view") as HTMLElement
-    const sphere = new SphereGeometry(0.12, 16, 16)
+function FabricView({fabric}:
+                        {
+                            fabric: TensegrityFabric,
+                        }): JSX.Element {
     const [age, setAge] = useState<number>(0)
     const {camera} = useThree()
-    const controls = useRef<OrbitControls>()
-    const flightState = TensegrityFlightState(fabric)
-    let flight: Flight | undefined
+    const orbitControls = useRef<OrbitControls>()
     const render = () => {
-        if (flight) {
-            flight.update()
-            flight.moveTowardsTarget(flightState.target)
-            flight.autoRotate = fabric.autoRotate
-        } else if (controls.current) {
-            flight = new Flight(flightState, controls.current)
+        const controls = orbitControls.current
+        if (controls) {
+            controls.minPolarAngle = -0.1 * Math.PI / 2
+            controls.maxPolarAngle = 0.999 * Math.PI / 2
+            controls.maxDistance = 1000
+            controls.minDistance = 15
+            controls.target.add(new Vector3().subVectors(fabric.exports.midpoint, controls.target).multiplyScalar(TOWARDS_TARGET))
+            controls.update()
+            controls.autoRotate = fabric.autoRotate
         }
         fabric.iterate(ITERATIONS_PER_FRAME)
-        if (fabric.exports.isGestating()) {
-            console.log("gestating")
-        }
         setAge(fabric.exports.getAge())
     }
-    useRender(render)
-    if (age < 0) {
-        throw new Error()
-    }
+    useRender(render, true, [fabric, age])
     const selectedJoint = fabric.selectedJoint
     const selectedFace = fabric.selectedFace
     const selectedInterval = fabric.selectedInterval
     return (
         <group>
-            <orbitControls ref={controls} args={[camera, root]}/>
+            <orbitControls ref={orbitControls}
+                           args={[camera, document.getElementById("tensegrity-view") as HTMLElement]}/>
             <scene>
                 <mesh key="faces" geometry={fabric.facesGeometry} material={TENSEGRITY_FACE}/>
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={TENSEGRITY_LINE}/>
                 <SurfaceComponent/>
                 {fabric.selectable !== Selectable.FACE ? undefined : (
-                    <FaceSelection fabric={fabric} geometry={sphere} grow={false}/>
+                    <FaceSelection fabric={fabric} geometry={SPHERE} grow={false}/>
                 )}
                 {fabric.selectable !== Selectable.GROW_FACE ? undefined : (
-                    <FaceSelection fabric={fabric} geometry={sphere} grow={true}/>
+                    <FaceSelection fabric={fabric} geometry={SPHERE} grow={true}/>
                 )}
                 {fabric.selectable !== Selectable.JOINT ? undefined : (
-                    <JointSelection fabric={fabric} geometry={sphere}/>)}
+                    <JointSelection fabric={fabric} geometry={SPHERE}/>)}
                 )}
                 {fabric.selectable !== Selectable.INTERVAL ? undefined : (
-                    <IntervalSelection fabric={fabric} geometry={sphere}/>)}
+                    <IntervalSelection fabric={fabric} geometry={SPHERE}/>)}
                 )}
                 {selectedJoint === undefined ? undefined : (
-                    <SelectedJoint fabric={fabric} geometry={sphere} selectedJoint={selectedJoint}/>
+                    <SelectedJoint fabric={fabric} geometry={SPHERE} selectedJoint={selectedJoint}/>
                 )}
                 {selectedFace === undefined ? undefined : (
-                    <SelectedFace fabric={fabric} geometry={sphere} selectedFace={selectedFace}/>
+                    <SelectedFace fabric={fabric} geometry={SPHERE} selectedFace={selectedFace}/>
                 )}
                 {selectedInterval === undefined ? undefined : (
-                    <SelectedInterval fabric={fabric} geometry={sphere} selectedInterval={selectedInterval}/>
+                    <SelectedInterval fabric={fabric} geometry={SPHERE} selectedInterval={selectedInterval}/>
                 )}
             </scene>
         </group>

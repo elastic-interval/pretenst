@@ -242,7 +242,7 @@ enum GlobalFeature {
 }
 
 const DRAG_ABOVE: f32 = 0.00008
-const GRAVITY_ABOVE: f32 = 0.000019
+const GRAVITY_ABOVE: f32 = 0.000008
 const DRAG_BELOW_LAND: f32 = 0.96
 const DRAG_BELOW_WATER: f32 = 0.001
 const GRAVITY_BELOW_LAND: f32 = -0.005
