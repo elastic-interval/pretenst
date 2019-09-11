@@ -26,8 +26,9 @@ export class Flight {
     private targetToCamera = new Vector3()
     private targetToMovingTarget = new Vector3()
 
-    constructor(private orbit: OrbitControls) {
-        orbit.enabled = false
+    constructor(flightState: IFlightState, readonly orbitGiven?: OrbitControls) {
+        const orbit = this.orbit
+        orbit.enabled = true
         orbit.minPolarAngle = MIN_POLAR_ANGLE
         orbit.maxPolarAngle = MAX_POLAR_ANGLE
         orbit.maxDistance = INITIAL_DISTANCE
@@ -37,16 +38,14 @@ export class Flight {
         orbit.autoRotateSpeed = 0.5
         orbit.target = this.target
         orbit.enablePan = false
-        console.log("this.orbit", this.orbit)
-    }
-
-    public setupCamera(flightState: IFlightState): void {
         const angleAboveHorizon = (flightState.tooHorizontal + flightState.tooVertical) / 2
         const distance = (flightState.tooFar + flightState.tooClose) / 2
         const y = distance * Math.sin(angleAboveHorizon)
         const z = distance * Math.cos(angleAboveHorizon)
         this.camera.position.set(0, y, z)
-        this.target.set(flightState.target.x, flightState.target.y, flightState.target.z)
+        const target = flightState.target
+        console.log("target", target)
+        this.target.set(target.x, target.y, target.z)
     }
 
     public set autoRotate(rotate: boolean) {
@@ -110,5 +109,12 @@ export class Flight {
 
     private get camera(): PerspectiveCamera {
         return <PerspectiveCamera>this.orbit.object
+    }
+
+    private get orbit(): OrbitControls {
+        if (!this.orbitGiven) {
+            throw new Error()
+        }
+        return this.orbitGiven
     }
 }

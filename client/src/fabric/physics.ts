@@ -82,7 +82,9 @@ export class Physics {
             feature.defaultValue = instanceExports.getRoleIdealSpan(intervalRole)
             const defaultValue = getPhysicsFeature(feature.label, feature.defaultValue)
             instanceExports.setRoleIdealSpan(intervalRole, defaultValue)
-            feature.factor$.next(defaultValue)
+            if (feature.factor$.getValue() !== defaultValue) {
+                feature.factor$.next(defaultValue)
+            }
         })
     }
 

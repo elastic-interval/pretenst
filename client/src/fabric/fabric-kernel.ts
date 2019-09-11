@@ -115,12 +115,12 @@ export class FabricKernel implements IGotchiFactory {
         }
     }
 
-    public createTensegrityFabric(): TensegrityFabric | undefined {
+    public createTensegrityFabric(name: string): TensegrityFabric | undefined {
         const newInstance = this.allocateInstance()
         if (!newInstance) {
             return undefined
         }
-        return new TensegrityFabric(newInstance)
+        return new TensegrityFabric(newInstance, name)
     }
 
     public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {

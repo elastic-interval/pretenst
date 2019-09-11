@@ -49,7 +49,7 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(readonly exports: InstanceExports) {
+    constructor(readonly exports: InstanceExports, readonly name: string) {
     }
 
     get selectable(): Selectable {

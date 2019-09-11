@@ -10,11 +10,10 @@ import { Geometry, SphereGeometry } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricExports } from "../fabric/fabric-exports"
-import { createFabricKernel } from "../fabric/fabric-kernel"
+import { FabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
 import { IFace, IInterval, IJoint, Triangle } from "../fabric/tensegrity-brick"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { MAX_POPULATION } from "../gotchi/evolution"
 
 import { Flight } from "./flight"
 import { TensegrityFlightState } from "./flight-state"
@@ -43,26 +42,29 @@ const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopP
 
 const ITERATIONS_PER_FRAME = 10
 
-export function TensegrityView({fabricExports}: { fabricExports: IFabricExports }): JSX.Element {
-    const physics = new Physics()
-    physics.applyGlobal(fabricExports)
-    const fabricKernel = createFabricKernel(fabricExports, MAX_POPULATION, 500)
-    const fabric = fabricKernel.createTensegrityFabric()
-    if (!fabric) {
-        throw new Error()
-    }
-    const twoBricks = true
-    if (fabric) {
-        physics.acquireLocal(fabric.exports)
-        if (twoBricks) {
-            const b = fabric.createBrick()
-            const face = b.faces[Triangle.PPP]
-            const brick = fabric.growBrick(face.brick, face.triangle)
-            fabric.connectBricks(face.brick, face.triangle, brick, brick.base)
-        } else {
-            fabric.createBrick()
+export function TensegrityView({fabricExports, fabricKernel, physics}:
+                                   {
+                                       fabricExports: IFabricExports,
+                                       fabricKernel: FabricKernel,
+                                       physics: Physics,
+                                   }): JSX.Element {
+    const createTower = (size: number, name: string): TensegrityFabric => {
+        const freshFabric = fabricKernel.createTensegrityFabric(name)
+        if (!freshFabric) {
+            throw new Error()
         }
+        if (freshFabric) {
+            physics.acquireLocal(freshFabric.exports)
+            let brick = freshFabric.createBrick()
+            while (--size > 0) {
+                const face = brick.faces[Triangle.PPP]
+                const nextBrick = freshFabric.growBrick(face.brick, face.triangle)
+                freshFabric.connectBricks(face.brick, face.triangle, nextBrick, nextBrick.base)
+            }
+        }
+        return freshFabric
     }
+    const [fabric, setFabric] = useState<TensegrityFabric>(createTower(1, "init"))
     // tslint:disable-next-line:no-null-keyword
     const viewRef = useRef<HTMLDivElement | null>(null)
     useEffect(() => viewRef.current ? viewRef.current.focus() : undefined)
@@ -87,6 +89,9 @@ export function TensegrityView({fabricExports}: { fabricExports: IFabricExports 
             fabric.exports.setFaceSpanDivergence(face.index, bar, factor(up))
         }
         switch (event.key) {
+            case "1":
+                setFabric(createTower(1, "yes"))
+                break
             case " ":
                 if (fabric.selectionActive) {
                     fabric.selectable = Selectable.NONE
@@ -169,9 +174,7 @@ function FabricView({fabric}: { fabric: TensegrityFabric }): JSX.Element {
             flight.moveTowardsTarget(flightState.target)
             flight.autoRotate = fabric.autoRotate
         } else if (controls.current) {
-            flight = new Flight(controls.current)
-            flight.setupCamera(flightState)
-            flight.enabled = true
+            flight = new Flight(flightState, controls.current)
         }
         fabric.iterate(ITERATIONS_PER_FRAME)
         if (fabric.exports.isGestating()) {
