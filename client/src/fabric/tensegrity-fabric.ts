@@ -7,22 +7,17 @@ import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { IntervalRole, Laterality } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
+import { brickToString, connectorToString, createBrickOnOrigin, optimizeFabric, } from "./tensegrity-brick"
 import {
-    brickToString,
-    connectBricks,
-    connectorToString,
-    createBrickOnOrigin,
-    createBrickOnTriangle,
     IBrick,
-    IBrickConnector,
+    IConnector,
     IFace,
     IInterval,
     IJoint,
     JointTag,
-    optimizeFabric,
     Triangle,
     TRIANGLE_ARRAY,
-} from "./tensegrity-brick"
+} from "./tensegrity-brick-types"
 
 export enum Selectable {
     NONE,
@@ -113,25 +108,10 @@ export class TensegrityFabric {
     }
 
     public createBrick(): IBrick {
-        let brick = createBrickOnOrigin(this)
+        const brick = createBrickOnOrigin(this)
         this.exports.clear()
         this.disposeOfGeometry()
         return brick
-    }
-
-    public growBrick(brick: IBrick, triangle: Triangle): IBrick {
-        const newBrick = createBrickOnTriangle(this, brick, triangle)
-        this.exports.clear()
-        this.disposeOfGeometry()
-        return newBrick
-    }
-
-    public connectBricks(brickA: IBrick, triangleA: Triangle, brickB: IBrick, triangleB: Triangle): IBrickConnector {
-        const connector = connectBricks(this, brickA, triangleA, brickB, triangleB)
-        this.exports.clear()
-        this.disposeOfGeometry()
-        connector.facesToRemove.forEach(face => this.removeFace(face, true))
-        return connector
     }
 
     public removeFace(face: IFace, removeIntervals: boolean): void {
@@ -198,7 +178,7 @@ export class TensegrityFabric {
         return brickToString(this, brick)
     }
 
-    public connectorToString(connector: IBrickConnector): string {
+    public connectorToString(connector: IConnector): string {
         return connectorToString(this, connector)
     }
 

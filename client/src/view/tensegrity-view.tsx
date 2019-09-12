@@ -12,7 +12,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricExports } from "../fabric/fabric-exports"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
-import { IFace, IInterval, IJoint, Triangle } from "../fabric/tensegrity-brick"
+import { execute } from "../fabric/tensegrity-brick"
+import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import {
@@ -49,20 +50,13 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                                        physics: Physics,
                                    }): JSX.Element {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const createTower = (size: number, name: string): TensegrityFabric => {
+    const createTower = (name: string): TensegrityFabric => {
         const tower = fabricKernel.createTensegrityFabric(name)
         if (!tower) {
             throw new Error()
         }
         physics.acquireLocal(tower.exports)
-        let brick = tower.createBrick()
-        while (--size > 0) {
-            const face = brick.faces[Triangle.PPP]
-            const nextBrick = tower.growBrick(face.brick, face.triangle)
-            tower.connectBricks(face.brick, face.triangle, nextBrick, nextBrick.base)
-            brick = nextBrick
-        }
-        console.log("fabric " + tower.name, tower.exports.index)
+        execute(tower.createBrick(), name) // name serving as commands
         return tower
     }
     // tslint:disable-next-line:no-null-keyword
@@ -92,10 +86,37 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
             }
             fabric.exports.setFaceSpanDivergence(face.index, bar, factor(up))
         }
-        const key = event.key
-        if (["1", "2", "3", "4", "5", "6", "7", "8", "9"].indexOf(key) >= 0) {
-            setFabric(createTower(parseInt(key, 10), key))
-            return
+        switch (event.key) {
+            case "0":
+                setFabric(createTower(""))
+                break
+            case "1":
+                setFabric(createTower("F"))
+                break
+            case "2":
+                setFabric(createTower("FF"))
+                break
+            case "3":
+                setFabric(createTower("FFFFFFF"))
+                break
+            case "4":
+                setFabric(createTower("FF1"))
+                break
+            case "5":
+                setFabric(createTower("FF1F"))
+                break
+            case "6":
+                setFabric(createTower("FF1FF1FF"))
+                break
+            case "7":
+                setFabric(createTower("FF1F"))
+                break
+            case "8":
+                setFabric(createTower("FF1B"))
+                break
+            case "9":
+                setFabric(createTower("FFFF1BBBBB3BBB"))
+                break
         }
         if (!fabric) {
             return
@@ -184,7 +205,7 @@ function FabricView({fabric}:
         controls.minPolarAngle = -0.1 * Math.PI / 2
         controls.maxPolarAngle = 0.999 * Math.PI / 2
         controls.maxDistance = 1000
-        controls.minDistance = 15
+        controls.minDistance = 3
     }, [fabric])
     const render = () => {
         const controls = orbitControls.current
@@ -252,8 +273,7 @@ function FaceSelection({fabric, geometry, grow}:
                     material={grow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
                     onClick={() => {
                         if (grow) {
-                            const brick = fabric.growBrick(face.brick, face.triangle)
-                            fabric.connectBricks(face.brick, face.triangle, brick, brick.base)
+                            execute(face.brick, "F")
                             fabric.cancelSelection()
                         } else {
                             fabric.selectedFace = face

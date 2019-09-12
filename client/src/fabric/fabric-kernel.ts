@@ -230,6 +230,17 @@ export class InstanceExports {
         this.recycleFabric(this.fabricIndex)
     }
 
+    public clear(): void {
+        this.faceMidpoints.clear()
+        this.faceLocations.clear()
+        this.faceNormals.clear()
+        this.jointLocations.clear()
+        this.lineLocations.clear()
+        this.lineColors.clear()
+        this.intervalUnits.clear()
+        this.intervalStresses.clear()
+    }
+
     public getDimensions(): IFabricDimensions {
         return this.dimensions
     }
@@ -358,22 +369,6 @@ export class InstanceExports {
         this.ex.setFaceSpanDivergence(faceIndex, bar, factor)
     }
 
-    private get ex(): IFabricExports {
-        this.exports.setInstance(this.index)
-        return this.exports
-    }
-
-    public clear(): void {
-        this.faceMidpoints.clear()
-        this.faceLocations.clear()
-        this.faceNormals.clear()
-        this.jointLocations.clear()
-        this.lineLocations.clear()
-        this.lineColors.clear()
-        this.intervalUnits.clear()
-        this.intervalStresses.clear()
-    }
-
     public getJointLocation(jointIndex: number): Vector3 {
         return vectorFromFloatArray(this.jointLocations.floats, jointIndex * 3)
     }
@@ -453,6 +448,11 @@ export class InstanceExports {
 
     public get right(): Vector3 {
         return vectorFromFloatArray(this.vectors.floats, 9, this.rightVector)
+    }
+
+    private get ex(): IFabricExports {
+        this.exports.setInstance(this.index)
+        return this.exports
     }
 }
 
