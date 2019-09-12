@@ -100,22 +100,22 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                 setFabric(createTower("FFFFFFF"))
                 break
             case "4":
-                setFabric(createTower("FF1"))
+                setFabric(createTower("FFF1FFF"))
                 break
             case "5":
                 setFabric(createTower("FF1FF2FF3FF"))
                 break
             case "6":
-                setFabric(createTower("FF1FF1FF"))
+                setFabric(createTower("FF1FF1FF1FF"))
                 break
             case "7":
-                setFabric(createTower("FF1F"))
+                setFabric(createTower("F123123123123"))
                 break
             case "8":
-                setFabric(createTower("FF1B"))
+                setFabric(createTower("FF123FF"))
                 break
             case "9":
-                setFabric(createTower("FFFF1BBBBB3BBB"))
+                setFabric(createTower("FFF1FFF2FFF3FFF1FFF2FFF3FFF"))
                 break
         }
         if (!fabric) {
