@@ -206,6 +206,7 @@ function FabricView({fabric}:
         controls.maxPolarAngle = 0.999 * Math.PI / 2
         controls.maxDistance = 1000
         controls.minDistance = 3
+        controls.enableKeys = false
     }, [fabric])
     const render = () => {
         const controls = orbitControls.current
