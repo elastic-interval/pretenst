@@ -31,7 +31,7 @@ export function createBrickOnFace(face: IFace): IBrick {
     const triangle = face.triangle
     const trianglePoints = brick.faces[triangle].joints.map(joint => brick.fabric.exports.getJointLocation(joint.index))
     const xform = xformToTriangle(trianglePoints)
-    const points = createBrickPointsOnOrigin(triangle, 0.8, 1.0)
+    const points = createBrickPointsOnOrigin(Triangle.PPP, 0.8, 1.0)
     const movedToFace = points.map(p => p.applyMatrix4(xform))
     return createBrick(brick.fabric, movedToFace, Triangle.NNN)
 }
@@ -46,7 +46,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
     const createRingCable = (index: number) => {
         const joint = ring[index]
         const nextJoint = ring[(index + 1) % ring.length]
-        const ringCable = fabric.createInterval(joint, nextJoint, IntervalRole.Ring, 1000)
+        const ringCable = fabric.createInterval(joint, nextJoint, IntervalRole.Ring, SPAN)
         cables.push(ringCable)
     }
     const createCrossCable = (index: number) => {
@@ -59,7 +59,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.Cross, 1000)
+        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.Cross, SPAN)
         cables.push(crossCable)
     }
     for (let walk = 0; walk < ring.length; walk++) {
@@ -92,10 +92,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
 export function createConnectedBrick(brick: IBrick, triangle: Triangle): IBrick {
     const face = brick.faces[triangle]
     const next = createBrickOnFace(face)
-    console.log("negative", TRIANGLE_ARRAY[triangle].negative)
-    const base = next.base
-    console.log("next base", Triangle[base])
-    const connector = connectBricks(face, next.faces[base])
+    const connector = connectBricks(face, next.faces[next.base])
     connector.facesToRemove.forEach(faceToRemove => brick.fabric.removeFace(faceToRemove, true))
     return next
 }
@@ -106,9 +103,6 @@ export function execute(brick: IBrick, commands: string): void {
         switch (command) {
             case "F":
                 current = createConnectedBrick(current, Triangle.PPP)
-                break
-            case "B":
-                current = createConnectedBrick(current, Triangle.NNN)
                 break
             case "1":
                 current = createConnectedBrick(current, Triangle.PNP)

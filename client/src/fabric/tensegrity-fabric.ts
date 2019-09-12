@@ -7,7 +7,7 @@ import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { IntervalRole, Laterality } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
-import { brickToString, connectorToString, createBrickOnOrigin, optimizeFabric, } from "./tensegrity-brick"
+import { brickToString, connectorToString, createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
 import {
     IBrick,
     IConnector,
