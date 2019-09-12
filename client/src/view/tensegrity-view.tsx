@@ -40,7 +40,7 @@ declare global {
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 const SPHERE = new SphereGeometry(0.12, 16, 16)
 
-const ITERATIONS_PER_FRAME = 10
+const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.02
 
 export function TensegrityView({fabricExports, fabricKernel, physics}:
