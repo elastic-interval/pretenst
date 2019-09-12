@@ -99,19 +99,52 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle): IBrick 
 
 export function execute(brick: IBrick, commands: string): void {
     let current = brick
+    let branch: string | undefined
     commands.split("").forEach(command => {
+        const create = (triangle: Triangle) => {
+            if (branch) {
+                branch += command
+            } else {
+                current = createConnectedBrick(current, triangle)
+            }
+        }
         switch (command) {
             case "F":
-                current = createConnectedBrick(current, Triangle.PPP)
+                create(Triangle.PPP)
                 break
             case "1":
-                current = createConnectedBrick(current, Triangle.PNP)
+                create(Triangle.PNP)
                 break
             case "2":
-                current = createConnectedBrick(current, Triangle.PPN)
+                create(Triangle.PPN)
                 break
             case "3":
-                current = createConnectedBrick(current, Triangle.NPP)
+                create(Triangle.NPP)
+                break
+            case "(":
+                branch = "1"
+                break
+            case ",":
+                if (!branch) {
+                    break
+                }
+                switch (branch.charAt(0)) {
+                    case "1":
+                        execute(current, branch)
+                        branch = "2"
+                        break
+                    case "2":
+                        execute(current, branch)
+                        branch = "3"
+                        break
+                }
+                break
+            case ")":
+                if (!branch || branch.charAt(0) !== "3") {
+                    throw new Error()
+                }
+                execute(current, branch)
+                branch = undefined
                 break
         }
     })
