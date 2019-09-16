@@ -160,7 +160,7 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                 fabric.selectable = event.metaKey ? Selectable.GROW_FACE : Selectable.FACE
                 break
             case "j":
-                fabric.exports.setAltitude(5)
+                fabric.exports.setAltitude(25)
                 break
             case "c":
                 fabric.exports.centralize()
