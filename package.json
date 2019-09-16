@@ -2,7 +2,7 @@
   "name": "galapagotchi",
   "version": "1.0.0",
   "main": "index.js",
-  "repository": "git@github.com:beautiful-code-bv/galapagotchi.git",
+  "repository": "git@github.com:elastic-interval/galapagotchi.git",
   "author": "Mitchell Van Der Hoeff <mitchellvanderhoeff@gmail.com>",
   "license": "MIT",
   "dependencies": {

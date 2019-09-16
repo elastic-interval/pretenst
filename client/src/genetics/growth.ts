@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric } from "../body/fabric"
-import { FaceSnapshot } from "../body/face-snapshot"
+import { FaceSnapshot } from "../fabric/face-snapshot"
+import { GotchiBody } from "../fabric/gotchi-body"
 
 import { GeneReader } from "./gene-reader"
 
@@ -15,7 +15,7 @@ export class Growth {
 
     private growingFaces: FaceSnapshot [] = []
 
-    constructor(private fabric: Fabric, private growthGene: GeneReader) {
+    constructor(private fabric: GotchiBody, private growthGene: GeneReader) {
         this.growingFaces.push(fabric.getFaceSnapshot(0))
         this.growingFaces.push(fabric.getFaceSnapshot(2))
         this.growingFaces.push(fabric.getFaceSnapshot(4))

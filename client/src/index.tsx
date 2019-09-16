@@ -9,13 +9,18 @@ import * as ReactDOM from "react-dom"
 
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
-import { IFabricExports } from "./body/fabric-exports"
 import { API_URI } from "./constants"
+import { IFabricDimensions, IFabricExports } from "./fabric/fabric-exports"
+import { FabricKernel } from "./fabric/fabric-kernel"
+import { Physics } from "./fabric/physics"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
+import { TensegrityView } from "./view/tensegrity-view"
 
 declare const getFabricExports: () => Promise<IFabricExports> // implementation: index.html
+
+const TENSEGRITY = true
 
 console.log(`Using API at ${API_URI}`)
 const storage = new RemoteStorage(API_URI)
@@ -37,13 +42,23 @@ APP_EVENT.subscribe(appEvent => {
 async function start(): Promise<void> {
     const fabricExports = await getFabricExports()
     const user = await storage.getUser()
-
-    ReactDOM.render(
-        <App fabricExports={fabricExports} storage={storage} user={user}/>,
-        document.getElementById("root") as HTMLElement,
-    )
+    const root = document.getElementById("root") as HTMLElement
+    if (TENSEGRITY) {
+        const physics = new Physics()
+        const dimensions: IFabricDimensions = {
+            instanceMax: 30,
+            jointCountMax: 6000,
+            intervalCountMax: 15000,
+            faceCountMax: 4000,
+        }
+        const fabricKernel = new FabricKernel(fabricExports, dimensions)
+        physics.applyGlobal(fabricExports)
+        ReactDOM.render(<TensegrityView fabricExports={fabricExports} physics={physics}
+                                        fabricKernel={fabricKernel}/>, root)
+    } else {
+        ReactDOM.render(<App fabricExports={fabricExports} storage={storage} user={user}/>, root)
+    }
     registerServiceWorker()
-
 }
 
 start()

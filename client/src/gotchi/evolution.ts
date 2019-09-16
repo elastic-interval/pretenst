@@ -7,8 +7,8 @@ import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { ITERATIONS_PER_TICK } from "../body/fabric"
-import { Direction } from "../body/fabric-exports"
+import { Direction } from "../fabric/fabric-exports"
+import { ITERATIONS_PER_TICK } from "../fabric/gotchi-body"
 import { fromGenomeData, Genome } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
 import { Leg } from "../island/journey"
@@ -35,7 +35,7 @@ export class Evolution {
         private readonly prototypeJockey?: Jockey,
     ) {
         const rotateToLeg = this.leg
-        if (prototypeJockey && prototypeJockey.nextDirection !== Direction.REST) {
+        if (prototypeJockey && prototypeJockey.nextDirection !== Direction.Rest) {
             throw new Error("Cannot create evolution from jockey which is not resting")
         }
         home.centerSpot.adjacentSpots.forEach((spot, index) => {

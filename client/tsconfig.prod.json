@@ -1,0 +1,21 @@
+{
+  "extends": "../tsconfig",
+  "compilerOptions": {
+    "outDir": "build/dist",
+    "module": "esnext",
+    "lib": ["es6", "dom"],
+    "sourceMap": true,
+    "allowJs": true,
+    "jsx": "react"
+  },
+  "exclude": [
+    "assembly",
+    "node_modules",
+    "build",
+    "scripts",
+    "acceptance-tests",
+    "webpack",
+    "jest",
+    "src/setupTests.ts"
+  ]
+}

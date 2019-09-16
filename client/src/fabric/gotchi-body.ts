@@ -5,8 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { Direction, IFabricInstanceExports, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
-import { vectorFromFloatArray } from "./fabric-kernel"
+import { Direction, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
+import { InstanceExports } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 const ARROW_LENGTH = 9
@@ -14,24 +14,21 @@ const ARROW_WIDTH = 0.6
 const ARROW_TIP_LENGTH_FACTOR = 1.3
 const ARROW_TIP_WIDTH_FACTOR = 1.5
 
-export const BILATERAL_MIDDLE = 0
-export const BILATERAL_RIGHT = 1
-export const BILATERAL_LEFT = 2
 export const HUNG_ALTITUDE = 10
 export const ITERATIONS_PER_TICK = 60
 
 export const INTERVALS_RESERVED = 1
 export const SPOT_TO_HANGER = new Vector3(0, HUNG_ALTITUDE, 0)
 
-export class Fabric {
+export class GotchiBody {
     private pointerGeometryStored: Geometry | undefined
     private facesGeometryStored: BufferGeometry | undefined
 
-    constructor(private exports: IFabricInstanceExports) {
+    constructor(private exports: InstanceExports) {
     }
 
     public get isResting(): boolean {
-        return this.currentDirection === Direction.REST && this.nextDirection === Direction.REST
+        return this.currentDirection === Direction.Rest && this.nextDirection === Direction.Rest
     }
 
     public recycle(): void {
@@ -86,30 +83,6 @@ export class Fabric {
         return this.exports.getFaceCount()
     }
 
-    public getFaceHighlightGeometries(faceIndex: number): Geometry[] {
-        const createGeometry = (index: number) => {
-            const face = this.getFaceSnapshot(index)
-            const apexHeight = face.averageIdealSpan * Math.sqrt(2 / 3)
-            const apex = new Vector3().add(face.midpoint).addScaledVector(face.normal, apexHeight)
-            const faceOffset = face.index * 3
-            const faceLocations = this.exports.getFaceLocations()
-            const geometry = new Geometry()
-            geometry.vertices = [
-                vectorFromFloatArray(faceLocations, faceOffset * 3), apex,
-                vectorFromFloatArray(faceLocations, (faceOffset + 1) * 3), apex,
-                vectorFromFloatArray(faceLocations, (faceOffset + 2) * 3), apex,
-            ]
-            return geometry
-        }
-        const geometries: Geometry[] = []
-        geometries.push(createGeometry(faceIndex))
-        const oppositeFaceIndex = this.exports.findOppositeFaceIndex(faceIndex)
-        if (oppositeFaceIndex < this.exports.getFaceCount()) {
-            geometries.push(createGeometry(oppositeFaceIndex))
-        }
-        return geometries
-    }
-
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getFaceLocations(), 3))
@@ -132,7 +105,7 @@ export class Fabric {
         const arrowToRx = v()
         const arrowTip = v()
         switch (direction) {
-            case Direction.FORWARD:
+            case Direction.Forward:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.right, -ARROW_WIDTH)
@@ -141,7 +114,7 @@ export class Fabric {
                 arrowFromR.addScaledVector(this.right, ARROW_WIDTH)
                 arrowTip.addScaledVector(this.forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.LEFT:
+            case Direction.TurnLeft:
                 arrowToL.addScaledVector(this.forward, -ARROW_WIDTH).addScaledVector(this.right, -ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.forward, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, -ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.forward, -ARROW_WIDTH)
@@ -150,7 +123,7 @@ export class Fabric {
                 arrowFromR.addScaledVector(this.forward, ARROW_WIDTH)
                 arrowTip.addScaledVector(this.right, -ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.RIGHT:
+            case Direction.TurnRight:
                 arrowToL.addScaledVector(this.forward, ARROW_WIDTH).addScaledVector(this.right, ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.forward, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.forward, ARROW_WIDTH)
@@ -159,7 +132,7 @@ export class Fabric {
                 arrowFromR.addScaledVector(this.forward, -ARROW_WIDTH)
                 arrowTip.addScaledVector(this.right, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.REVERSE:
+            case Direction.Reverse:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, -ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, -ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.right, -ARROW_WIDTH)
@@ -181,7 +154,7 @@ export class Fabric {
         return geometry
     }
 
-    public createSeed(x: number, z: number, rotation: number): Fabric {
+    public createSeed(x: number, z: number, rotation: number): GotchiBody {
         this.exports.reset()
         // prepare
         const locations: Vector3[] = []
@@ -197,21 +170,21 @@ export class Fabric {
         const transformer = translationMatrix.multiply(rotationMatrix)
         locations.forEach(location => location.applyMatrix4(transformer))
         // build
-        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, x, 0, z)
+        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), Laterality.Middle, x, 0, z)
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const where = locations[walk]
-            this.exports.createJoint(this.exports.nextJointTag(), BILATERAL_MIDDLE, where.x, where.y, where.z)
+            this.exports.createJoint(this.exports.nextJointTag(), Laterality.Middle, where.x, where.y, where.z)
         }
         const jointPairName = this.exports.nextJointTag()
-        const left = this.exports.createJoint(jointPairName, BILATERAL_LEFT, leftLoc.x, leftLoc.y, leftLoc.z)
-        const right = this.exports.createJoint(jointPairName, BILATERAL_RIGHT, rightLoc.x, rightLoc.y, rightLoc.z)
-        this.interval(hangerJoint, left, -1)
-        this.interval(hangerJoint, right, -1)
-        this.interval(left, right, -1)
+        const left = this.exports.createJoint(jointPairName, Laterality.LeftSide, leftLoc.x, leftLoc.y, leftLoc.z)
+        const right = this.exports.createJoint(jointPairName, Laterality.RightSide, rightLoc.x, rightLoc.y, rightLoc.z)
+        this.muscle(hangerJoint, left, -1)
+        this.muscle(hangerJoint, right, -1)
+        this.muscle(left, right, -1)
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
-            this.interval(walk + 1, (walk + 1) % SEED_CORNERS + 1, -1)
-            this.interval(walk + 1, left, -1)
-            this.interval(walk + 1, right, -1)
+            this.muscle(walk + 1, (walk + 1) % SEED_CORNERS + 1, -1)
+            this.muscle(walk + 1, left, -1)
+            this.muscle(walk + 1, right, -1)
         }
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             this.face(left, walk + 1, (walk + 1) % SEED_CORNERS + 1)
@@ -236,11 +209,6 @@ export class Fabric {
 
     public iterate(ticks: number): boolean {
         return this.exports.iterate(ticks)
-    }
-
-    public endGestation(): void {
-        this.exports.endGestation()
-        this.exports.freshGeometry()
     }
 
     public get age(): number {
@@ -279,7 +247,7 @@ export class Fabric {
     }
 
     public getFaceSnapshot(faceIndex: number): FaceSnapshot {
-        return new FaceSnapshot(this, this.exports, this.exports, faceIndex)
+        return new FaceSnapshot(this, this.exports, faceIndex)
     }
 
     public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
@@ -290,12 +258,12 @@ export class Fabric {
         const oppositeIntervalIndex = this.exports.findOppositeIntervalIndex(intervalIndex)
         if (oppositeIntervalIndex < this.intervalCount) {
             switch (direction) {
-                case Direction.FORWARD:
-                case Direction.REVERSE:
+                case Direction.Forward:
+                case Direction.Reverse:
                     this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow)
                     break
-                case Direction.RIGHT:
-                case Direction.LEFT:
+                case Direction.TurnRight:
+                case Direction.TurnLeft:
                     const low = Math.floor(highLow / 16)
                     const high = highLow % 16
                     const lowHigh = low + high * 16
@@ -311,12 +279,12 @@ export class Fabric {
         return this.exports.createFace(joint0Index, joint1Index, joint2Index)
     }
 
-    private interval(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, false)
+    private muscle(alphaIndex: number, omegaIndex: number, span: number): number {
+        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.Muscle, false)
     }
 
-    private intervalGrowth(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, true)
+    private growingMuscle(alphaIndex: number, omegaIndex: number, span: number): number {
+        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.Muscle, true)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
@@ -331,10 +299,10 @@ export class Fabric {
         sortedJoints.forEach(faceJoint => {
             if (faceJoint.jointNumber !== chosenJoint.jointNumber) {
                 const idealSpan = new Vector3().subVectors(faceJoint.location, apexLocation).length()
-                this.interval(faceJoint.jointIndex, apexIndex, idealSpan)
+                this.muscle(faceJoint.jointIndex, apexIndex, idealSpan)
             }
         })
-        this.intervalGrowth(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan)
+        this.growingMuscle(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan)
         const createdFaceIndexes: number[] = []
         sortedJoints.map(joint => joint.jointNumber).forEach((jointNumber: number, index: number) => { // youngest first
             switch (jointNumber) {
@@ -350,10 +318,10 @@ export class Fabric {
             }
         })
         faceToReplace.remove()
-        this.exports.freshGeometry()
+        this.exports.clear()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
-            .map(index => new FaceSnapshot(this, this.exports, this.exports, index))
+            .map(index => new FaceSnapshot(this, this.exports, index))
     }
 }
 

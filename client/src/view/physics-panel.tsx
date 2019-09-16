@@ -4,99 +4,111 @@
  */
 
 import * as React from "react"
+import { Badge, Button, ButtonGroup, Col, Container, Row } from "reactstrap"
+import { Subscription } from "rxjs"
 
-import { IPhysicsFeature, Physics } from "../body/physics"
+import { IFabricExports } from "../fabric/fabric-exports"
+import { InstanceExports } from "../fabric/fabric-kernel"
+import { IPhysicsFeature, Physics } from "../fabric/physics"
 
 export interface IPhysicsPanelProps {
     physics: Physics
+    fabricExports: IFabricExports
+    instanceExports: InstanceExports
 }
 
-export interface IPhysicsPanelState {
-    feature?: IPhysicsFeature
-    value?: number
-}
-
-function featureSelected(feature: IPhysicsFeature): () => object {
-    return (): object => {
-        return {
-            feature,
-            value: feature.getFactor(),
-        }
-    }
-}
-
-export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPanelState> {
+export class PhysicsPanel extends React.Component<IPhysicsPanelProps, object> {
 
     constructor(props: IPhysicsPanelProps) {
         super(props)
         this.state = {}
     }
 
-    public featureUp(): void {
-        const feature = this.state.feature
-        if (feature) {
-            feature.setFactor(feature.getFactor() * 1.1)
-            this.setState(featureSelected(feature))
-        }
-    }
-
-    public featureDown(): void {
-        const feature = this.state.feature
-        if (feature) {
-            feature.setFactor(feature.getFactor() * 0.9)
-            this.setState(featureSelected(feature))
-        }
-    }
-
-    public featureReset(): void {
-        const feature = this.state.feature
-        if (feature) {
-            feature.setFactor(1)
-            this.setState(featureSelected(feature))
-        }
+    public applyPhysics(): void {
+        this.props.physics.applyGlobal(this.props.fabricExports)
+        this.props.physics.applyLocal(this.props.instanceExports)
     }
 
     public render(): JSX.Element {
-        const feature = this.state.feature
-        const value = this.state.value
         return (
-            <div key="control-panel">
+            <div className="physics-panel">
                 <h3>Physics</h3>
-                <div>
-                    {
-                        this.props.physics.features.map(physicsFeature => {
-                            return (
-                                <span key={physicsFeature.feature}>
-                                    <button onClick={() => this.setState(featureSelected(physicsFeature))}>
-                                        {physicsFeature.feature}
-                                    </button>
-                                </span>)
-                        })
-                    }
-                </div>
-                <div>
-                    {
-                        !feature || !value ?
-                            <div className="feature-prompt">choose one</div>
-                            :
-                            <div>
-                                <div className="feature-prompt">{feature.feature}</div>
-                                <div>
-                                    <button onClick={() => this.featureUp()}>+</button>
-                                    <button onClick={() => this.featureDown()}>-</button>
-                                </div>
-                                <div>
-                                    <strong className="feature-value">{value}</strong>
-                                </div>
-                                <div>
-                                    <button onClick={() => this.featureReset()}>reset</button>
-                                </div>
+                <Container>
+                    {this.props.physics.features.map(feature => {
+                        const setFactor = (factor?: number): void => {
+                            if (factor === undefined) {
+                                feature.setFactor(feature.defaultValue)
+                            } else if (factor > 0) {
+                                feature.setFactor(factor)
+                            }
+                            this.applyPhysics()
+                        }
+                        const change = 1 + (feature.isGlobal ? 0.1 : 0.01)
+                        return (
+                            <div key={feature.label}>
+                                <Row>
+                                    <Badge color="secondary">{feature.label}</Badge>
+                                </Row>
+                                <Row>
+                                    <Col xs="6">
+                                        <ButtonGroup className="physics-button-group">
+                                            <Button className="physics-adjust-button" color="primary"
+                                                    onClick={() => {
+                                                        setFactor(feature.factor$.getValue() * change)
+                                                    }}>⨉</Button>
+                                            <Button className="physics-adjust-button" color="primary"
+                                                    onClick={() => {
+                                                        setFactor(feature.factor$.getValue() / change)
+                                                    }}>÷</Button>
+                                            <Button className="physics-adjust-button" color="danger"
+                                                    onClick={() => {
+                                                        setFactor(undefined)
+                                                    }}>=</Button>
+                                        </ButtonGroup>
+                                    </Col>
+                                    <Col xs="6">
+                                        <FactorBadge feature={feature}/>
+                                    </Col>
+                                </Row>
                             </div>
-                    }
-                </div>
+                        )
+                    })}
+                </Container>
             </div>
         )
     }
 }
 
-//
+interface IBadgeProps {
+    feature: IPhysicsFeature
+}
+
+interface IBadgeState {
+    formattedValue: string
+}
+
+class FactorBadge extends React.Component<IBadgeProps, IBadgeState> {
+
+    private subscription: Subscription
+
+    constructor(props: IBadgeProps) {
+        super(props)
+        this.state = {formattedValue: "?"}
+    }
+
+    public componentDidMount(): void {
+        this.subscription = this.props.feature.factor$.subscribe(factor => {
+            this.setState({formattedValue: factor.toFixed(10)})
+        })
+    }
+
+    public componentWillUnmount(): void {
+        this.subscription.unsubscribe()
+    }
+
+    public render(): JSX.Element {
+        return (
+            <Badge color="light">{this.state.formattedValue}</Badge>
+        )
+    }
+}

@@ -1,8 +1,8 @@
-import {Direction} from "../body/fabric-exports"
+import { Direction } from "../fabric/fabric-exports"
 
-import {DICE, diceToNuance} from "./dice"
-import {GeneReader} from "./gene-reader"
-import {Genome} from "./genome"
+import { DICE, diceToNuance } from "./dice"
+import { GeneReader } from "./gene-reader"
+import { Genome } from "./genome"
 
 describe("Genetics", () => {
 
@@ -20,7 +20,7 @@ describe("Genetics", () => {
     describe("Gene reader", () => {
 
         const reader = (dots: number) => new GeneReader({
-            direction: Direction.FORWARD,
+            direction: Direction.Forward,
             mutationCount: 0,
             dice: [],
         }, () => DICE[dots - 1])
@@ -83,7 +83,7 @@ describe("Genetics", () => {
 
         it("should hold direction genes", () => {
             const genome = new Genome([], () => DICE[0])
-            expect(genome.createReader(Direction.REST).chooseFrom(2)).toBe(0)
+            expect(genome.createReader(Direction.Rest).chooseFrom(2)).toBe(0)
         })
 
     })

@@ -6,8 +6,8 @@
 import { BufferGeometry, Geometry, Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { Fabric } from "../body/fabric"
-import { Direction } from "../body/fabric-exports"
+import { Direction } from "../fabric/fabric-exports"
+import { GotchiBody } from "../fabric/gotchi-body"
 import { Genome, IGenomeData } from "../genetics/genome"
 import { HEXAPOD_RADIUS } from "../island/constants"
 import { Leg } from "../island/journey"
@@ -30,7 +30,7 @@ export class Jockey {
     }
 
     public get height(): number {
-        return this.gotchi.fabric.midpoint.y
+        return this.gotchi.body.midpoint.y
     }
 
     public get isResting(): boolean {
@@ -53,10 +53,10 @@ export class Jockey {
             if (nextLeg) {
                 this.leg = nextLeg
             } else {
-                this.gotchi.nextDirection = Direction.REST
+                this.gotchi.nextDirection = Direction.Rest
             }
         }
-        if (this.fabric.nextDirection !== Direction.REST) {
+        if (this.fabric.nextDirection !== Direction.Rest) {
             const direction = this.voteDirection()
             if (this.nextDirection !== direction) {
                 console.log(`${this.index} turned ${Direction[this.nextDirection]} to ${Direction[direction]}`)
@@ -66,11 +66,11 @@ export class Jockey {
     }
 
     public get pointerGeometry(): Geometry {
-        return this.gotchi.fabric.pointerGeometryFor(this.gotchi.fabric.currentDirection)
+        return this.gotchi.body.pointerGeometryFor(this.gotchi.body.currentDirection)
     }
 
     public get facesGeometry(): BufferGeometry {
-        return this.gotchi.fabric.facesGeometry
+        return this.gotchi.body.facesGeometry
     }
 
     public startMoving(): void {
@@ -78,7 +78,7 @@ export class Jockey {
     }
 
     public stopMoving(): void {
-        this.gotchi.nextDirection = Direction.REST
+        this.gotchi.nextDirection = Direction.Rest
     }
 
     public get index(): number {
@@ -93,12 +93,12 @@ export class Jockey {
         return this.fabric.isGestating
     }
 
-    public get fabric(): Fabric {
-        return this.gotchi.fabric
+    public get fabric(): GotchiBody {
+        return this.gotchi.body
     }
 
     public get vectors(): Float32Array {
-        return this.gotchi.fabric.vectors
+        return this.gotchi.body.vectors
     }
 
     public get offspringGenome(): IGenomeData {
@@ -158,7 +158,7 @@ export class Jockey {
             c[vote]++
             return c
         }, [0, 0, 0, 0, 0])
-        for (let direction = Direction.FORWARD; direction <= Direction.REVERSE; direction++) {
+        for (let direction = Direction.Forward; direction <= Direction.Reverse; direction++) {
             if (voteCounts[direction] === MAX_VOTES && this.nextDirection !== direction) {
                 return direction
             }
@@ -168,26 +168,26 @@ export class Jockey {
 
     private get directionToTarget(): Direction {
         const toTarget = this.toTarget
-        const degreeForward = toTarget.dot(this.gotchi.fabric.forward)
-        const degreeRight = toTarget.dot(this.gotchi.fabric.right)
+        const degreeForward = toTarget.dot(this.gotchi.body.forward)
+        const degreeRight = toTarget.dot(this.gotchi.body.right)
         if (degreeForward > 0) {
             if (degreeRight > 0) {
-                return degreeForward > degreeRight ? Direction.FORWARD : Direction.RIGHT
+                return degreeForward > degreeRight ? Direction.Forward : Direction.TurnRight
             } else {
-                return degreeForward > -degreeRight ? Direction.FORWARD : Direction.LEFT
+                return degreeForward > -degreeRight ? Direction.Forward : Direction.TurnLeft
             }
         } else {
             if (degreeRight > 0) {
-                return -degreeForward > degreeRight ? Direction.REVERSE : Direction.RIGHT
+                return -degreeForward > degreeRight ? Direction.Reverse : Direction.TurnRight
             } else {
-                return -degreeForward > -degreeRight ? Direction.REVERSE : Direction.LEFT
+                return -degreeForward > -degreeRight ? Direction.Reverse : Direction.TurnLeft
             }
         }
     }
 
     private get toTarget(): Vector3 {
         const toTarget = new Vector3()
-        toTarget.subVectors(this.target, this.gotchi.fabric.seed)
+        toTarget.subVectors(this.target, this.gotchi.body.seed)
         toTarget.y = 0
         toTarget.normalize()
         return toTarget

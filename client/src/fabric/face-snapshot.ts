@@ -5,9 +5,9 @@
 
 import { Vector3 } from "three"
 
-import { BILATERAL_MIDDLE, Fabric } from "./fabric"
-import { IFabricInstanceExports } from "./fabric-exports"
-import { vectorFromFloatArray } from "./fabric-kernel"
+import { Laterality } from "./fabric-exports"
+import { InstanceExports, vectorFromFloatArray } from "./fabric-kernel"
+import { GotchiBody } from "./gotchi-body"
 
 export interface IJointSnapshot {
     jointNumber: number
@@ -23,16 +23,15 @@ export class FaceSnapshot {
     private jointSnapshots: IJointSnapshot[]
 
     constructor(
-        private fabric: Fabric,
-        private exports: IFabricInstanceExports,
-        private fabricExports: IFabricInstanceExports,
+        private fabric: GotchiBody,
+        private exports: InstanceExports,
         private faceIndex: number,
         private derived?: boolean,
     ) {
         this.jointSnapshots = TRIANGLE
             .map(jointNumber => {
-                const jointIndex = fabricExports.getFaceJointIndex(faceIndex, jointNumber)
-                const tag = fabricExports.getJointTag(jointIndex)
+                const jointIndex = exports.getFaceJointIndex(faceIndex, jointNumber)
+                const tag = exports.getJointTag(jointIndex)
                 const location = vectorFromFloatArray(this.exports.getFaceLocations(), (faceIndex * 3 + jointNumber) * 3)
                 return {jointNumber, jointIndex, tag, location} as IJointSnapshot
             })
@@ -41,12 +40,12 @@ export class FaceSnapshot {
     public get fresh(): FaceSnapshot {
         // potentially walk back the index, due to deletions since last time
         let faceIndex = this.faceIndex
-        if (faceIndex >= this.fabricExports.getFaceCount()) {
-            faceIndex = this.fabricExports.getFaceCount() - 1
+        if (faceIndex >= this.exports.getFaceCount()) {
+            faceIndex = this.exports.getFaceCount() - 1
         }
         while (faceIndex >= 0) {
             const differentJoints = this.joints.filter(jointSnapshot => {
-                const currentJointIndex = this.fabricExports.getFaceJointIndex(faceIndex, jointSnapshot.jointNumber)
+                const currentJointIndex = this.exports.getFaceJointIndex(faceIndex, jointSnapshot.jointNumber)
                 return currentJointIndex !== jointSnapshot.jointIndex
             })
             if (differentJoints.length === 0) {
@@ -57,7 +56,7 @@ export class FaceSnapshot {
                 throw new Error("Face not found!")
             }
         }
-        return new FaceSnapshot(this.fabric, this.exports, this.fabricExports, faceIndex, true)
+        return new FaceSnapshot(this.fabric, this.exports, faceIndex, true)
     }
 
     public get isDerived(): boolean {
@@ -73,11 +72,12 @@ export class FaceSnapshot {
     }
 
     public get averageIdealSpan(): number {
-        return this.fabricExports.getFaceAverageIdealSpan(this.faceIndex)
+        return this.exports.getFaceAverageIdealSpan(this.faceIndex)
     }
 
     public get midpoint(): Vector3 {
-        return vectorFromFloatArray(this.exports.getFaceMidpoints(), this.faceIndex * 3)
+        throw new Error()
+        // return vectorFromFloatArray(this.exports.getFaceMidpoints(), this.faceIndex * 3)
     }
 
     public get normal(): Vector3 {
@@ -92,16 +92,16 @@ export class FaceSnapshot {
 
     public get laterality(): number {
         for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
-            const jointLaterality = this.fabricExports.getJointLaterality(this.fabricExports.getFaceJointIndex(this.faceIndex, jointWalk))
-            if (jointLaterality !== BILATERAL_MIDDLE) {
+            const jointLaterality = this.exports.getJointLaterality(this.exports.getFaceJointIndex(this.faceIndex, jointWalk))
+            if (jointLaterality !== Laterality.Middle) {
                 return jointLaterality
             }
         }
-        return BILATERAL_MIDDLE
+        return Laterality.Middle
     }
 
     public remove(): void {
         // maybe fresh first
-        this.fabricExports.removeFace(this.faceIndex)
+        this.exports.removeFace(this.faceIndex)
     }
 }
