@@ -10,10 +10,9 @@ import * as ReactDOM from "react-dom"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { IFabricExports } from "./fabric/fabric-exports"
-import { createFabricKernel } from "./fabric/fabric-kernel"
+import { IFabricDimensions, IFabricExports } from "./fabric/fabric-exports"
+import { FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
-import { MAX_POPULATION } from "./gotchi/evolution"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
@@ -46,9 +45,16 @@ async function start(): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
     if (TENSEGRITY) {
         const physics = new Physics()
-        const fabricKernel = createFabricKernel(fabricExports, MAX_POPULATION, 500)
+        const dimensions: IFabricDimensions = {
+            instanceMax: 30,
+            jointCountMax: 6000,
+            intervalCountMax: 15000,
+            faceCountMax: 4000,
+        }
+        const fabricKernel = new FabricKernel(fabricExports, dimensions)
         physics.applyGlobal(fabricExports)
-        ReactDOM.render(<TensegrityView fabricExports={fabricExports} physics={physics} fabricKernel={fabricKernel}/>, root)
+        ReactDOM.render(<TensegrityView fabricExports={fabricExports} physics={physics}
+                                        fabricKernel={fabricKernel}/>, root)
     } else {
         ReactDOM.render(<App fabricExports={fabricExports} storage={storage} user={user}/>, root)
     }

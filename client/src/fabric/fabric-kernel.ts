@@ -30,9 +30,13 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
     }
 }
 
-export function createFabricKernel(fabricExports: IFabricExports, instanceMax: number, jointCountMax: number): FabricKernel {
-    const intervalCountMax = jointCountMax * 3 + 30
-    const faceCountMax = jointCountMax * 2 + 20
+export function createFabricKernel(
+    fabricExports: IFabricExports,
+    instanceMax: number,
+    jointCountMax: number,
+    intervalCountMax: number,
+    faceCountMax: number,
+): FabricKernel {
     const dimensions: IFabricDimensions = {
         instanceMax,
         jointCountMax,

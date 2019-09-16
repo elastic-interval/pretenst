@@ -120,10 +120,57 @@ function executeGrowth(growthTree: IGrowthTree[]): IGrowthTree[] {
     return growing
 }
 
+function parseBetween(between: string): { turnA: string, turnB: string, turnC: string } {
+    const commaIndexes: number[] = []
+    let level = 0
+    for (let walk = 0; walk < between.length; walk++) {
+        const ch = between.charAt(walk)
+        if (ch === "(") {
+            level++
+        }
+        if (ch === ")") {
+            level--
+        }
+        if (ch === "," && level === 0) {
+            commaIndexes.push(walk)
+        }
+    }
+    if (commaIndexes.length !== 2) {
+        throw new Error("Commas")
+    }
+    const turnA = between.substring(0, commaIndexes[0])
+    const turnB = between.substring(commaIndexes[0] + 1, commaIndexes[1])
+    const turnC = between.substring(commaIndexes[1] + 1)
+    return {turnA, turnB, turnC}
+}
+
+function parseCommands(commands: string): IGrowthTree {
+    const command = commands.charAt(0)
+    if (command === "0") {
+        if (commands.length === 1) {
+            return {}
+        }
+        if (commands.charAt(1) !== "(") {
+            throw new Error("Open")
+        }
+        const lastClose = commands.lastIndexOf(")")
+        if (lastClose !== commands.length - 1) {
+            throw new Error("Close")
+        }
+        const between = commands.substring(2, lastClose)
+        const {turnA, turnB, turnC} = parseBetween(between)
+        return {turnA: parseCommands(turnA), turnB: parseCommands(turnB), turnC: parseCommands(turnC)}
+    }
+    if (command >= "0" && command <= "9") {
+        const forwardCount = parseInt(command, 10)
+        const nextCount = (forwardCount - 1).toString(10)
+        return {forward: parseCommands(nextCount.toString() + commands.substr(1))}
+    }
+    throw new Error("Syntax error")
+}
+
 export function execute(brick: IBrick, commands: string): void {
-    const stack = commands.split("").reverse()
-    const growthTree: IGrowthTree = parseCommands(stack)
-    console.log("Growth Tree", JSON.stringify(growthTree, undefined, 2))
+    const growthTree: IGrowthTree = parseCommands(commands)
     growthTree.brick = brick
     let growing: IGrowthTree[] = [growthTree]
     while (growing.length > 0) {
@@ -215,30 +262,6 @@ export function connectorToString(fabric: TensegrityFabric, connector: IConnecto
 
     const cables = connector.cables.map(intervalToString(2)).join("\n")
     return `Connector{\n\tcables:\n${cables}\n}`
-}
-
-function parseCommands(commands: string[]): IGrowthTree {
-    const command = commands.pop()
-    if (command === undefined || command === "," || command === ")") {
-        return {}
-    }
-    if (command === "(") {
-        return {
-            turnA: parseCommands(commands),
-            turnB: parseCommands(commands),
-            turnC: parseCommands(commands),
-        }
-    }
-    if (command === "0") {
-        return parseCommands(commands)
-    }
-    if (command >= "0" && command <= "9") {
-        const forwardCount = parseInt(command, 10)
-        const nextCount = (forwardCount - 1).toString(10)
-        commands.push(nextCount)
-        return {forward: parseCommands(commands)}
-    }
-    throw new Error("Syntax error")
 }
 
 function xformToTriangle(trianglePoints: Vector3[]): Matrix4 {
