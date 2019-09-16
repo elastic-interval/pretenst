@@ -98,7 +98,7 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle): IBrick 
     return next
 }
 
-function executeGrowth(growthTree: IGrowthTree[]): IGrowthTree[] {
+export function executeGrowthTrees(growthTree: IGrowthTree[]): IGrowthTree[] {
     const growing: IGrowthTree[] = []
     growthTree.forEach(tree => {
         const brick = tree.brick
@@ -120,31 +120,31 @@ function executeGrowth(growthTree: IGrowthTree[]): IGrowthTree[] {
     return growing
 }
 
-function parseBetween(between: string): { turnA: string, turnB: string, turnC: string } {
-    const commaIndexes: number[] = []
-    let level = 0
-    for (let walk = 0; walk < between.length; walk++) {
-        const ch = between.charAt(walk)
-        if (ch === "(") {
-            level++
+export function parseCommands(commands: string): IGrowthTree {
+    function parseBetween(between: string): { turnA: string, turnB: string, turnC: string } {
+        const commaIndexes: number[] = []
+        let level = 0
+        for (let walk = 0; walk < between.length; walk++) {
+            const ch = between.charAt(walk)
+            if (ch === "(") {
+                level++
+            }
+            if (ch === ")") {
+                level--
+            }
+            if (ch === "," && level === 0) {
+                commaIndexes.push(walk)
+            }
         }
-        if (ch === ")") {
-            level--
+        if (commaIndexes.length !== 2) {
+            throw new Error("Commas")
         }
-        if (ch === "," && level === 0) {
-            commaIndexes.push(walk)
-        }
+        const turnA = between.substring(0, commaIndexes[0])
+        const turnB = between.substring(commaIndexes[0] + 1, commaIndexes[1])
+        const turnC = between.substring(commaIndexes[1] + 1)
+        return {turnA, turnB, turnC}
     }
-    if (commaIndexes.length !== 2) {
-        throw new Error("Commas")
-    }
-    const turnA = between.substring(0, commaIndexes[0])
-    const turnB = between.substring(commaIndexes[0] + 1, commaIndexes[1])
-    const turnC = between.substring(commaIndexes[1] + 1)
-    return {turnA, turnB, turnC}
-}
 
-function parseCommands(commands: string): IGrowthTree {
     const command = commands.charAt(0)
     if (command === "0") {
         if (commands.length === 1) {
@@ -167,16 +167,6 @@ function parseCommands(commands: string): IGrowthTree {
         return {forward: parseCommands(nextCount.toString() + commands.substr(1))}
     }
     throw new Error("Syntax error")
-}
-
-export function execute(brick: IBrick, commands: string): void {
-    const growthTree: IGrowthTree = parseCommands(commands)
-    growthTree.brick = brick
-    let growing: IGrowthTree[] = [growthTree]
-    while (growing.length > 0) {
-        growing = executeGrowth(growing)
-    }
-    console.log("fabric " + brick.fabric.name, brick.fabric.exports.index)
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {

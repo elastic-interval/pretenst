@@ -7,11 +7,18 @@ import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { IntervalRole, Laterality } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
-import { brickToString, connectorToString, createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
+import {
+    brickToString,
+    connectorToString,
+    createBrickOnOrigin,
+    optimizeFabric,
+    parseCommands,
+} from "./tensegrity-brick"
 import {
     IBrick,
     IConnector,
     IFace,
+    IGrowthTree,
     IInterval,
     IJoint,
     JointTag,
@@ -32,6 +39,7 @@ export class TensegrityFabric {
     public intervals: IInterval[] = []
     public faces: IFace[] = []
     public autoRotate = false
+    public growing: IGrowthTree[]
 
     private _selectable: Selectable = Selectable.NONE
     private _selectedJoint: IJoint | undefined
@@ -45,6 +53,9 @@ export class TensegrityFabric {
     private linesGeometryStored: BufferGeometry | undefined
 
     constructor(readonly exports: InstanceExports, readonly name: string) {
+        const growthTree = parseCommands(name)
+        growthTree.brick = this.createBrick()
+        this.growing = [growthTree]
     }
 
     get selectable(): Selectable {

@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricExports } from "../fabric/fabric-exports"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
-import { execute } from "../fabric/tensegrity-brick"
+import { executeGrowthTrees } from "../fabric/tensegrity-brick"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -50,14 +50,13 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                                        physics: Physics,
                                    }): JSX.Element {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const createTower = (name: string): TensegrityFabric => {
-        const tower = fabricKernel.createTensegrityFabric(name)
-        if (!tower) {
+    const createFabric = (name: string): TensegrityFabric => {
+        const newFabric = fabricKernel.createTensegrityFabric(name)
+        if (!newFabric) {
             throw new Error()
         }
-        physics.acquireLocal(tower.exports)
-        execute(tower.createBrick(), name) // name serving as commands
-        return tower
+        physics.acquireLocal(newFabric.exports)
+        return newFabric
     }
     // tslint:disable-next-line:no-null-keyword
     const viewRef = useRef<HTMLDivElement | null>(null)
@@ -88,34 +87,34 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
         }
         switch (event.key) {
             case "0":
-                setFabric(createTower("0"))
+                setFabric(createFabric("0"))
                 break
             case "1":
-                setFabric(createTower("1"))
+                setFabric(createFabric("1"))
                 break
             case "2":
-                setFabric(createTower("2"))
+                setFabric(createFabric("2"))
                 break
             case "3":
-                setFabric(createTower("9"))
+                setFabric(createFabric("9"))
                 break
             case "4":
-                setFabric(createTower("3(1,1,1)"))
+                setFabric(createFabric("3(1,1,1)"))
                 break
             case "5":
-                setFabric(createTower("4(0,4,0)"))
+                setFabric(createFabric("4(0,4,0)"))
                 break
             case "6":
-                setFabric(createTower("4(4,4(1,1,1),4)"))
+                setFabric(createFabric("4(4,4(1,1,1),4)"))
                 break
             case "7":
-                setFabric(createTower("3(3(3,3,3),3(3,3,3),3(3,3,3))"))
+                setFabric(createFabric("3(3(3,3,3),3(3,3,3),3(3,3,3))"))
                 break
             case "8":
-                setFabric(createTower("0"))
+                setFabric(createFabric("9(9,9,9)"))
                 break
             case "9":
-                setFabric(createTower("0"))
+                setFabric(createFabric("0"))
                 break
         }
         if (!fabric) {
@@ -216,6 +215,9 @@ function FabricView({fabric}:
             controls.autoRotate = fabric.autoRotate
         }
         fabric.iterate(ITERATIONS_PER_FRAME)
+        if (!fabric.exports.isGestating() && fabric.growing.length > 0) {
+            fabric.growing = executeGrowthTrees(fabric.growing)
+        }
         setAge(fabric.exports.getAge())
     }
     useRender(render, true, [fabric, age])
@@ -274,8 +276,8 @@ function FaceSelection({fabric, geometry, grow}:
                     material={grow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
                     onClick={() => {
                         if (grow) {
-                            execute(face.brick, "F")
-                            fabric.cancelSelection()
+                            // execute(face.brick, "F")
+                            // fabric.cancelSelection()
                         } else {
                             fabric.selectedFace = face
                         }
