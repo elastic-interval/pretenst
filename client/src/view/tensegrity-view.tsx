@@ -23,6 +23,7 @@ import {
     TENSEGRITY_JOINT_SELECTED,
     TENSEGRITY_LINE,
 } from "./materials"
+import { NewFabricView } from "./new-fabric-view"
 import { PhysicsPanel } from "./physics-panel"
 import { SurfaceComponent } from "./surface-component"
 
@@ -84,38 +85,6 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                 return
             }
             fabric.exports.setFaceSpanDivergence(face.index, bar, factor(up))
-        }
-        switch (event.key) {
-            case "0":
-                setFabric(createFabric("0"))
-                break
-            case "1":
-                setFabric(createFabric("1"))
-                break
-            case "2":
-                setFabric(createFabric("2"))
-                break
-            case "3":
-                setFabric(createFabric("9"))
-                break
-            case "4":
-                setFabric(createFabric("3(1,1,1)"))
-                break
-            case "5":
-                setFabric(createFabric("4(0,4,0)"))
-                break
-            case "6":
-                setFabric(createFabric("4(4,4(1,1,1),4)"))
-                break
-            case "7":
-                setFabric(createFabric("3(3(3,3,3),3(3,3,3),3(3,3,3))"))
-                break
-            case "8":
-                setFabric(createFabric("9(9,9,9)"))
-                break
-            case "9":
-                setFabric(createFabric("0"))
-                break
         }
         if (!fabric) {
             return
@@ -185,7 +154,7 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
              onKeyDownCapture={onKeyDownCapture} onKeyUpCapture={onKeyUpCapture}
         >
             {fabric ? undefined :
-                <h1 className="text-white text-center mt-3">Press a number key to select a Fabric.</h1>
+                <NewFabricView loadFabricCode={(code) => setFabric(createFabric(code))}/>
             }
             <Canvas>
                 {!fabric ? undefined :

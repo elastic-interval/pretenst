@@ -81,6 +81,7 @@
       "allow-leading-underscore",
       "require-const-for-all-caps",
       "allow-pascal-case"
-    ]
+    ],
+    "@eslint-plugin-react/jsx-boolean-value": false
   }
 }
