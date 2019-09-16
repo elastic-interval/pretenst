@@ -36,7 +36,7 @@ export function NewFabricView({loadFabricCode}: {
                 <InputGroup size="lg">
                     <InputGroupButtonDropdown addonType="append" isOpen={dropdownOpen}
                                               toggle={() => setDropdownOpen(!dropdownOpen)}>
-                        <DropdownToggle caret>
+                        <DropdownToggle caret={true}>
                             Load Preset
                         </DropdownToggle>
                         <DropdownMenu>
