@@ -126,10 +126,10 @@ export function parseCommands(commands: string): IGrowthTree {
         let level = 0
         for (let walk = 0; walk < between.length; walk++) {
             const ch = between.charAt(walk)
-            if (ch === "(") {
+            if (ch === "[") {
                 level++
             }
-            if (ch === ")") {
+            if (ch === "]") {
                 level--
             }
             if (ch === "," && level === 0) {
@@ -150,10 +150,10 @@ export function parseCommands(commands: string): IGrowthTree {
         if (commands.length === 1) {
             return {}
         }
-        if (commands.charAt(1) !== "(") {
+        if (commands.charAt(1) !== "[") {
             throw new Error("Open")
         }
-        const lastClose = commands.lastIndexOf(")")
+        const lastClose = commands.lastIndexOf("]")
         if (lastClose !== commands.length - 1) {
             throw new Error("Close")
         }
