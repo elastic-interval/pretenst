@@ -18,6 +18,7 @@
     "js-cookie": "^2.2.0",
     "react": "^16.9.0",
     "react-dom": "^16.9.0",
+    "react-icons": "^3.7.0",
     "react-scripts-ts": "^3.1.0",
     "react-three-fiber": "^2.3.6",
     "react-twitter-embed": "^2.0.8",

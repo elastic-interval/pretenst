@@ -184,6 +184,9 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
         <div ref={viewRef} tabIndex={1} id="tensegrity-view" className="the-whole-page"
              onKeyDownCapture={onKeyDownCapture} onKeyUpCapture={onKeyUpCapture}
         >
+            {fabric ? undefined :
+                <h1 className="text-white text-center mt-3">Press a number key to select a Fabric.</h1>
+            }
             <Canvas>
                 {!fabric ? undefined :
                     <FabricView fabric={fabric}/>}
