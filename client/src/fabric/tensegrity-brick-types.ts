@@ -152,3 +152,11 @@ export interface IConnector {
     cables: IInterval[]
     facesToRemove: IFace[]
 }
+
+export interface IGrowthTree {
+    forward?: IGrowthTree,
+    turnA?: IGrowthTree,
+    turnB?: IGrowthTree,
+    turnC?: IGrowthTree,
+    brick?: IBrick,
+}

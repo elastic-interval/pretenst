@@ -13,6 +13,7 @@ import {
     IBrick,
     IConnector,
     IFace,
+    IGrowthTree,
     IInterval,
     IJoint,
     SPAN,
@@ -97,59 +98,38 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle): IBrick 
     return next
 }
 
-export function execute(brick: IBrick, commands: string): void {
-    let current = brick
-    let branch: string | undefined
-    commands.split("").forEach(command => {
-        const create = (triangle: Triangle) => {
-            if (branch) {
-                branch += command
-            } else {
-                current = createConnectedBrick(current, triangle)
+function executeGrowth(growthTree: IGrowthTree[]): IGrowthTree[] {
+    const growing: IGrowthTree[] = []
+    growthTree.forEach(tree => {
+        const brick = tree.brick
+        if (!brick) {
+            throw new Error()
+        }
+        const grow = (next: IGrowthTree | undefined, triangle: Triangle) => {
+            if (!next) {
+                return
             }
+            next.brick = createConnectedBrick(brick, triangle)
+            growing.push(next)
         }
-        switch (command) {
-            case "F":
-                create(Triangle.PPP)
-                break
-            case "1":
-                create(Triangle.PNP)
-                break
-            case "2":
-                create(Triangle.PPN)
-                break
-            case "3":
-                create(Triangle.NPP)
-                break
-            case "(":
-                branch = "1"
-                break
-            case ",":
-                if (!branch) {
-                    break
-                }
-                switch (branch.charAt(0)) {
-                    case "1":
-                        execute(current, branch)
-                        branch = "2"
-                        break
-                    case "2":
-                        execute(current, branch)
-                        branch = "3"
-                        break
-                }
-                break
-            case ")":
-                if (!branch || branch.charAt(0) !== "3") {
-                    throw new Error()
-                }
-                execute(current, branch)
-                branch = undefined
-                break
-        }
+        grow(tree.forward, Triangle.PPP)
+        grow(tree.turnA, Triangle.NPP)
+        grow(tree.turnB, Triangle.PNP)
+        grow(tree.turnC, Triangle.PPN)
     })
-    const fabric = brick.fabric
-    console.log("fabric " + fabric.name, fabric.exports.index)
+    return growing
+}
+
+export function execute(brick: IBrick, commands: string): void {
+    const stack = commands.split("").reverse()
+    const growthTree: IGrowthTree = parseCommands(stack)
+    console.log("Growth Tree", JSON.stringify(growthTree, undefined, 2))
+    growthTree.brick = brick
+    let growing: IGrowthTree[] = [growthTree]
+    while (growing.length > 0) {
+        growing = executeGrowth(growing)
+    }
+    console.log("fabric " + brick.fabric.name, brick.fabric.exports.index)
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {
@@ -235,6 +215,30 @@ export function connectorToString(fabric: TensegrityFabric, connector: IConnecto
 
     const cables = connector.cables.map(intervalToString(2)).join("\n")
     return `Connector{\n\tcables:\n${cables}\n}`
+}
+
+function parseCommands(commands: string[]): IGrowthTree {
+    const command = commands.pop()
+    if (command === undefined || command === "," || command === ")") {
+        return {}
+    }
+    if (command === "(") {
+        return {
+            turnA: parseCommands(commands),
+            turnB: parseCommands(commands),
+            turnC: parseCommands(commands),
+        }
+    }
+    if (command === "0") {
+        return parseCommands(commands)
+    }
+    if (command >= "0" && command <= "9") {
+        const forwardCount = parseInt(command, 10)
+        const nextCount = (forwardCount - 1).toString(10)
+        commands.push(nextCount)
+        return {forward: parseCommands(commands)}
+    }
+    throw new Error("Syntax error")
 }
 
 function xformToTriangle(trianglePoints: Vector3[]): Matrix4 {
