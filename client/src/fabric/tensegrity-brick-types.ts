@@ -54,6 +54,7 @@ export interface IFace {
     triangle: Triangle
     joints: IJoint[]
     cables: IInterval[]
+    location?: Vector3
 }
 
 export interface IBarDefinition {

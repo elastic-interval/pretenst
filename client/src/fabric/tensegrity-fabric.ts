@@ -54,6 +54,7 @@ export class TensegrityFabric {
 
     constructor(readonly exports: InstanceExports, readonly name: string) {
         const growthTree = parseCommands(name)
+        console.log("growth tree", JSON.stringify(growthTree, undefined, 2))
         growthTree.brick = this.createBrick()
         this.growing = [growthTree]
     }
@@ -105,6 +106,15 @@ export class TensegrityFabric {
         this.cancelSelection()
         this._selectable = Selectable.NONE
         this._selectedFace = value
+    }
+
+    get growthFacesWithLocations(): IFace[] {
+        return this.faces
+            .filter(f => f.canGrow)
+            .map(face => {
+                face.location = this.exports.getFaceLocation(face.index)
+                return face
+            })
     }
 
     get selectionActive(): boolean {

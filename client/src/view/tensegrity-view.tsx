@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricExports } from "../fabric/fabric-exports"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
-import { executeGrowthTrees } from "../fabric/tensegrity-brick"
+import { connectByProximity, executeGrowthTrees } from "../fabric/tensegrity-brick"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -138,6 +138,9 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                 break
             case "h":
                 fabric.optimize(true)
+                break
+            case "x":
+                connectByProximity(fabric)
                 break
             default:
                 console.log("Key", event.key)

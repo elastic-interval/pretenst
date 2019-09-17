@@ -16,7 +16,7 @@ import {
 export function NewFabricView({loadFabricCode}: {
     loadFabricCode: (fabricCode: string) => void,
 }): JSX.Element {
-    const [fabricCode, setFabricCode] = useState<string>("")
+    const [fabricCode, setFabricCode] = useState<string>("0[1=0[2=0[3=1]]]")
     const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
 
     function PresetFabric({code, name}: { code: string, name: string }): JSX.Element {

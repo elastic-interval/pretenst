@@ -98,59 +98,74 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle): IBrick 
     return next
 }
 
-export function executeGrowthTrees(growthTree: IGrowthTree[]): IGrowthTree[] {
-    const growing: IGrowthTree[] = []
-    growthTree.forEach(tree => {
+export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
+    const after: IGrowthTree[] = []
+    before.forEach(tree => {
         const brick = tree.brick
         if (!brick) {
             throw new Error()
         }
         const grow = (next: IGrowthTree | undefined, triangle: Triangle) => {
-            if (!next) {
+            if (!next || Object.keys(next).length === 0) {
                 return
             }
             next.brick = createConnectedBrick(brick, triangle)
-            growing.push(next)
+            after.push(next)
         }
         grow(tree.forward, Triangle.PPP)
         grow(tree.turnA, Triangle.NPP)
         grow(tree.turnB, Triangle.PNP)
         grow(tree.turnC, Triangle.PPN)
     })
-    return growing
+    return after
 }
 
 export function parseCommands(commands: string): IGrowthTree {
     function parseBetween(between: string): { turnA: string, turnB: string, turnC: string } {
-        const commaIndexes: number[] = []
-        let level = 0
-        for (let walk = 0; walk < between.length; walk++) {
-            const ch = between.charAt(walk)
-            if (ch === "[") {
-                level++
+        const equalsIndex = between.indexOf("=")
+        if (equalsIndex === 1) {
+            const afterEquals = between.substring(2)
+            switch (between.charAt(0)) {
+                case "1":
+                    return {turnA: afterEquals, turnB: "0", turnC: "0"}
+                case "2":
+                    return {turnA: "0", turnB: afterEquals, turnC: "0"}
+                case "3":
+                    return {turnA: "0", turnB: "0", turnC: afterEquals}
+                default:
+                    throw new Error("Syntax")
             }
-            if (ch === "]") {
-                level--
+        } else {
+            const commaIndexes: number[] = []
+            let level = 0
+            for (let walk = 0; walk < between.length; walk++) {
+                const ch = between.charAt(walk)
+                if (ch === "[") {
+                    level++
+                }
+                if (ch === "]") {
+                    level--
+                }
+                if (ch === "," && level === 0) {
+                    commaIndexes.push(walk)
+                }
             }
-            if (ch === "," && level === 0) {
-                commaIndexes.push(walk)
+            if (commaIndexes.length !== 2) {
+                throw new Error(`Commas: [${between}]`)
             }
+            const turnA = between.substring(0, commaIndexes[0])
+            const turnB = between.substring(commaIndexes[0] + 1, commaIndexes[1])
+            const turnC = between.substring(commaIndexes[1] + 1)
+            return {turnA, turnB, turnC}
         }
-        if (commaIndexes.length !== 2) {
-            throw new Error("Commas")
-        }
-        const turnA = between.substring(0, commaIndexes[0])
-        const turnB = between.substring(commaIndexes[0] + 1, commaIndexes[1])
-        const turnC = between.substring(commaIndexes[1] + 1)
-        return {turnA, turnB, turnC}
     }
 
     const command = commands.charAt(0)
-    if (command === "0") {
+    if (command === "0" || command === "[") {
         if (commands.length === 1) {
             return {}
         }
-        if (commands.charAt(1) !== "[") {
+        if (commands.charAt(1) !== "[" && command !== "[") {
             throw new Error("Open")
         }
         const lastClose = commands.lastIndexOf("]")
@@ -161,7 +176,7 @@ export function parseCommands(commands: string): IGrowthTree {
         const {turnA, turnB, turnC} = parseBetween(between)
         return {turnA: parseCommands(turnA), turnB: parseCommands(turnB), turnC: parseCommands(turnC)}
     }
-    if (command >= "0" && command <= "9") {
+    if (command >= "1" && command <= "9") {
         const forwardCount = parseInt(command, 10)
         const nextCount = (forwardCount - 1).toString(10)
         return {forward: parseCommands(nextCount.toString() + commands.substr(1))}
@@ -205,6 +220,32 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
             finish(bc, ad, ab, cd, IntervalRole.BowEndLow)
         }
     })
+}
+
+interface IFacePair {
+    faceA: IFace
+    faceB: IFace
+    distance: number
+}
+
+export function connectByProximity(fabric: TensegrityFabric): void {
+    const faces = fabric.growthFacesWithLocations
+    const facePairs: IFacePair[] = []
+    faces.forEach((faceA, indexA) => {
+        faces.forEach((faceB, indexB) => {
+            if (indexB >= indexA) {
+                return
+            }
+            const locationA = faceA.location
+            const locationB = faceB.location
+            if (locationA && locationB) {
+                const distance = locationA.distanceTo(locationB)
+                facePairs.push({faceA, faceB, distance})
+            }
+        })
+    })
+    facePairs.sort((a, b) => a.distance - b.distance)
+    console.log("facePairs", facePairs)
 }
 
 export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
