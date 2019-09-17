@@ -37,12 +37,53 @@ export function createBrickOnFace(face: IFace): IBrick {
     return createBrick(brick.fabric, movedToFace, Triangle.NNN)
 }
 
+interface IJointPair {
+    jointA: IJoint
+    locationA: Vector3
+    jointB: IJoint
+    locationB: Vector3
+    distance: number
+}
+
+function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoint[] {
+    const jointsA: IJoint[] = TRIANGLE_ARRAY[faceA.triangle].barEnds.map(barEnd => faceA.brick.joints[barEnd])
+    const jointsB: IJoint[] = TRIANGLE_ARRAY[faceB.triangle].barEnds.map(barEnd => faceB.brick.joints[barEnd])
+    const jointPairs: IJointPair[] = []
+    jointsA.forEach(jointA => {
+        jointsB.forEach(jointB => {
+            const locationA = fabric.exports.getJointLocation(jointA.index)
+            const locationB = fabric.exports.getJointLocation(jointB.index)
+            const distance = locationA.distanceTo(locationB)
+            jointPairs.push({jointA, locationA, jointB, locationB, distance})
+        })
+    })
+    jointPairs.sort((a, b) => a.distance - b.distance)
+    // console.log("jointPairs", jointPairs.map(p => `${p.jointA.index}:${p.jointB.index}=${p.distance}`))
+    const ring: IJoint[] = []
+    let takeA = TRIANGLE_ARRAY[faceA.triangle].negative
+    let pairIndex = 0
+    while (ring.length < 6) {
+        const jointPair = jointPairs[pairIndex]
+        if (!jointPair) {
+            throw new Error()
+        }
+        jointPairs.splice(pairIndex, 1)
+        if (takeA) {
+            ring.push(jointPair.jointA)
+            pairIndex = jointPairs.findIndex(p => p.jointB === jointPair.jointB)
+            takeA = false
+        } else {
+            ring.push(jointPair.jointB)
+            pairIndex = jointPairs.findIndex(p => p.jointA === jointPair.jointA)
+            takeA = true
+        }
+    }
+    return ring
+}
+
 export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
-    const a: IJoint[] = TRIANGLE_ARRAY[faceA.triangle].barEnds.map(barEnd => faceA.brick.joints[barEnd])
-    const b: IJoint[] = TRIANGLE_ARRAY[faceB.triangle].barEnds.map(barEnd => faceB.brick.joints[barEnd])
-    const joints = a.concat(b)
     const fabric = faceA.brick.fabric
-    const ring = jointsToRing(fabric, joints)
+    const ring = facesToRing(fabric, faceA, faceB)
     const cables: IInterval[] = []
     const createRingCable = (index: number) => {
         const joint = ring[index]
@@ -224,8 +265,13 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
 
 export interface IFacePair {
     faceA: IFace
+    locationA: Vector3
+    normalA: Vector3
     faceB: IFace
+    locationB: Vector3
+    normalB: Vector3
     distance: number
+    dot: number
 }
 
 export function closestFacePairs(fabric: TensegrityFabric, maxDistance: number): IFacePair[] {
@@ -238,16 +284,27 @@ export function closestFacePairs(fabric: TensegrityFabric, maxDistance: number):
             }
             const locationA = fabric.exports.getFaceMidpoint(faceA.index)
             const locationB = fabric.exports.getFaceMidpoint(faceB.index)
-            if (locationA && locationB) {
-                const distance = locationA.distanceTo(locationB)
-                if (distance < maxDistance) {
-                    facePairs.push({faceA, faceB, distance})
-                }
+            const distance = locationA.distanceTo(locationB)
+            if (distance >= maxDistance) {
+                return
             }
+            const normalA = fabric.exports.getFaceNormal(faceA.index)
+            const normalB = fabric.exports.getFaceNormal(faceB.index)
+            const dot = normalA.dot(normalB)
+            if (dot > -0.2) {
+                return
+            }
+            facePairs.push({faceA, locationA, normalA, faceB, locationB, normalB, distance, dot})
         })
     })
     facePairs.sort((a, b) => a.distance - b.distance)
     return facePairs
+}
+
+export function connectClosestFacePair(fabric: TensegrityFabric): void {
+    const closestPairs = closestFacePairs(fabric, 5)
+    const facePair = closestPairs[0]
+    connectBricks(facePair.faceA, facePair.faceB)
 }
 
 export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
@@ -309,42 +366,6 @@ function xformToTriangle(trianglePoints: Vector3[]): Matrix4 {
     const z = u.sub(proj).normalize()
     const y = new Vector3().crossVectors(z, x).normalize()
     return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-}
-
-function jointsToRing(fabric: TensegrityFabric, joints: IJoint[]): IJoint[] {
-    const ring: IJoint[] = []
-    while (joints.length > 0) {
-        const ringEnd = ring[ring.length - 1]
-        if (!ringEnd) {
-            const anyJoint = joints.pop()
-            if (!anyJoint) {
-                throw new Error()
-            }
-            ring.push(anyJoint)
-        } else {
-            const ringEndLocation = fabric.exports.getJointLocation(ringEnd.index)
-            let closest: IJoint | undefined
-            joints.forEach(otherJoint => {
-                if (!closest) {
-                    closest = otherJoint
-                    return
-                }
-                const otherLocation = fabric.exports.getJointLocation(otherJoint.index)
-                const otherDistance = otherLocation.distanceTo(ringEndLocation)
-                const closestLocation = fabric.exports.getJointLocation(closest.index)
-                const closestDistance = closestLocation.distanceTo(ringEndLocation)
-                if (otherDistance < closestDistance) {
-                    closest = otherJoint
-                }
-            })
-            if (!closest) {
-                throw new Error()
-            }
-            ring.push(closest)
-            joints = joints.filter(j => closest && j.index !== closest.index)
-        }
-    }
-    return ring
 }
 
 function barsToPoints(vectors: Vector3[], bar: IBarDefinition): Vector3[] {

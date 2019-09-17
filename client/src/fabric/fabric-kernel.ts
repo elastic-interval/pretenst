@@ -402,6 +402,15 @@ export class InstanceExports {
         return this.faceNormals.floats
     }
 
+    public getFaceNormal(faceIndex: number): Vector3 {
+        const normals = this.faceNormals.floats
+        const index = faceIndex * 3
+        const a = vectorFromFloatArray(normals, 3 * index)
+        const b = vectorFromFloatArray(normals, 3 * (index + 1))
+        const c = vectorFromFloatArray(normals, 3 * (index + 2))
+        return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
+    }
+
     public getLineLocations(): Float32Array {
         return this.lineLocations.floats
     }
