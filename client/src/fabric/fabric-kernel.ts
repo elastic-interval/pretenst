@@ -385,14 +385,12 @@ export class InstanceExports {
         return this.faceLocations.floats
     }
 
-    public getFaceLocation(faceIndex: number): Vector3 {
-        return vectorFromFloatArray(this.faceLocations.floats, faceIndex * 3)
-    }
-
     public getFaceMidpoint(faceIndex: number): Vector3 {
-        const a = this.getFaceLocation(faceIndex * 3)
-        const b = this.getFaceLocation(faceIndex * 3 + 1)
-        const c = this.getFaceLocation(faceIndex * 3 + 2)
+        const locations = this.faceLocations.floats
+        const index = faceIndex * 3
+        const a = vectorFromFloatArray(locations, 3 * index)
+        const b = vectorFromFloatArray(locations, 3 * (index + 1))
+        const c = vectorFromFloatArray(locations, 3 * (index + 2))
         return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
     }
 

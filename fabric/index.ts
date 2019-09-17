@@ -226,7 +226,7 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 // Physics =====================================================================================
 
 const GESTATION_DRAG_FACTOR: f32 = 1000
-const GESTATION_TIME_SWEEP_FACTOR: f32 = 1
+const GESTATION_TIME_SWEEP_FACTOR: f32 = 5
 
 enum GlobalFeature {
     GravityAbove = 0,

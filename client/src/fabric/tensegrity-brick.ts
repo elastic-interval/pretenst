@@ -222,30 +222,32 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
     })
 }
 
-interface IFacePair {
+export interface IFacePair {
     faceA: IFace
     faceB: IFace
     distance: number
 }
 
-export function connectByProximity(fabric: TensegrityFabric): void {
-    const faces = fabric.growthFacesWithLocations
+export function closestFacePairs(fabric: TensegrityFabric, maxDistance: number): IFacePair[] {
+    const faces = fabric.growthFaces
     const facePairs: IFacePair[] = []
     faces.forEach((faceA, indexA) => {
         faces.forEach((faceB, indexB) => {
             if (indexB >= indexA) {
                 return
             }
-            const locationA = faceA.location
-            const locationB = faceB.location
+            const locationA = fabric.exports.getFaceMidpoint(faceA.index)
+            const locationB = fabric.exports.getFaceMidpoint(faceB.index)
             if (locationA && locationB) {
                 const distance = locationA.distanceTo(locationB)
-                facePairs.push({faceA, faceB, distance})
+                if (distance < maxDistance) {
+                    facePairs.push({faceA, faceB, distance})
+                }
             }
         })
     })
     facePairs.sort((a, b) => a.distance - b.distance)
-    console.log("facePairs", facePairs)
+    return facePairs
 }
 
 export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {

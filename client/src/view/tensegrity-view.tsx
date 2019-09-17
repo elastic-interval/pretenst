@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricExports } from "../fabric/fabric-exports"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
-import { connectByProximity, executeGrowthTrees } from "../fabric/tensegrity-brick"
+import { closestFacePairs, executeGrowthTrees } from "../fabric/tensegrity-brick"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -41,7 +41,7 @@ declare global {
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 const SPHERE = new SphereGeometry(0.12, 16, 16)
 
-const ITERATIONS_PER_FRAME = 30
+const ITERATIONS_PER_FRAME = 50
 const TOWARDS_TARGET = 0.02
 
 export function TensegrityView({fabricExports, fabricKernel, physics}:
@@ -91,6 +91,9 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
         }
         switch (event.key) {
             case " ":
+                fabric.exports.setAltitude(25)
+                break
+            case "Enter":
                 if (fabric.selectionActive) {
                     fabric.selectable = Selectable.NONE
                     fabric.cancelSelection()
@@ -118,17 +121,20 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                 handleFace(fabric.selectedFace, false, true)
                 handleInterval(fabric.selectedInterval, true)
                 break
-            case "Alt":
+            case "i":
                 fabric.selectable = Selectable.INTERVAL
                 break
-            case "Meta":
-                fabric.selectable = event.shiftKey ? Selectable.GROW_FACE : Selectable.JOINT
-                break
-            case "Shift":
-                fabric.selectable = event.metaKey ? Selectable.GROW_FACE : Selectable.FACE
+            case "F":
+                fabric.selectable = Selectable.GROW_FACE
                 break
             case "j":
-                fabric.exports.setAltitude(25)
+                fabric.selectable = Selectable.JOINT
+                break
+            case "f":
+                fabric.selectable = Selectable.FACE
+                break
+            case "Backspace":
+                setFabric(undefined)
                 break
             case "c":
                 fabric.exports.centralize()
@@ -140,24 +146,23 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                 fabric.optimize(true)
                 break
             case "x":
-                connectByProximity(fabric)
+                const facePairs = closestFacePairs(fabric, 5)
+                console.log("facePairs", facePairs.map(pair => `${pair.faceA.index}:${pair.faceB.index}=${pair.distance}`))
+                break
+            case "Alt":
+            case "Meta":
+            case "Shift":
                 break
             default:
                 console.log("Key", event.key)
         }
     }
-    const onKeyUpCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (!fabric) {
-            return
-        }
-        fabric.selectable = Selectable.NONE
-    }
     return (
         <div ref={viewRef} tabIndex={1} id="tensegrity-view" className="the-whole-page"
-             onKeyDownCapture={onKeyDownCapture} onKeyUpCapture={onKeyUpCapture}
+             onKeyDownCapture={onKeyDownCapture}
         >
             {fabric ? undefined :
-                <NewFabricView loadFabricCode={(code) => setFabric(createFabric(code))}/>
+                <NewFabricView loadFabric={(code) => setFabric(createFabric(code))}/>
             }
             <Canvas>
                 {!fabric ? undefined :
@@ -209,10 +214,10 @@ function FabricView({fabric}:
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={TENSEGRITY_LINE}/>
                 <SurfaceComponent/>
                 {fabric.selectable !== Selectable.FACE ? undefined : (
-                    <FaceSelection fabric={fabric} geometry={SPHERE} grow={false}/>
+                    <FaceSelection fabric={fabric} geometry={SPHERE} canGrow={false}/>
                 )}
                 {fabric.selectable !== Selectable.GROW_FACE ? undefined : (
-                    <FaceSelection fabric={fabric} geometry={SPHERE} grow={true}/>
+                    <FaceSelection fabric={fabric} geometry={SPHERE} canGrow={true}/>
                 )}
                 {fabric.selectable !== Selectable.JOINT ? undefined : (
                     <JointSelection fabric={fabric} geometry={SPHERE}/>)}
@@ -234,13 +239,13 @@ function FabricView({fabric}:
     )
 }
 
-function FaceSelection({fabric, geometry, grow}:
+function FaceSelection({fabric, geometry, canGrow}:
                            {
                                fabric: TensegrityFabric,
                                geometry: Geometry,
-                               grow: boolean,
+                               canGrow: boolean,
                            }): JSX.Element {
-    const faces = grow ? fabric.faces.filter(face => face.canGrow) : fabric.faces
+    const faces = canGrow ? fabric.faces.filter(face => face.canGrow) : fabric.faces
     return (
         <>
             {faces.map((face: IFace) => (
@@ -248,17 +253,8 @@ function FaceSelection({fabric, geometry, grow}:
                     key={`F${face.index}`}
                     geometry={geometry}
                     position={fabric.exports.getFaceMidpoint(face.index)}
-                    material={grow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
-                    onClick={() => {
-                        if (grow) {
-                            // execute(face.brick, "F")
-                            // fabric.cancelSelection()
-                        } else {
-                            fabric.selectedFace = face
-                        }
-                    }}
-                    onPointerDown={stopPropagation}
-                    onPointerUp={stopPropagation}
+                    material={canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
+                    onClick={() => fabric.selectedFace = face}
                 />
             ))}
         </>
