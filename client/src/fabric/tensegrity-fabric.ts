@@ -7,6 +7,7 @@ import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { IntervalRole, Laterality } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
+import { Physics } from "./physics"
 import {
     brickToString,
     connectClosestFacePair,
@@ -54,7 +55,7 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(readonly exports: InstanceExports, readonly name: string, altitude: number) {
+    constructor(readonly exports: InstanceExports, readonly physics: Physics, readonly name: string, altitude: number) {
         const growth = parseConstructionCode(name)
         growth.growing[0].brick = this.createBrick(altitude)
         this.growth = growth
@@ -269,23 +270,30 @@ export class TensegrityFabric {
         if (growth && !gestating) {
             if (growth.growing.length > 0) {
                 growth.growing = executeGrowthTrees(growth.growing)
+                this.exports.centralize()
             }
-            if (growth.growing.length === 0 && growth.optimizationStack.length > 0) {
-                const optimization = growth.optimizationStack.pop()
-                switch(optimization) {
-                    case "L":
-                        optimizeFabric(this, false)
-                        break
-                    case "H":
-                        optimizeFabric(this, true)
-                        break
-                    case "X":
-                        this.setGestating(25)
-                        growth.optimizationStack.push("Connect")
-                        break
-                    case "Connect":
-                        connectClosestFacePair(this)
-                        break
+            if (growth.growing.length === 0) {
+                if (growth.optimizationStack.length > 0) {
+                    const optimization = growth.optimizationStack.pop()
+                    switch (optimization) {
+                        case "L":
+                            optimizeFabric(this, false)
+                            break
+                        case "H":
+                            optimizeFabric(this, true)
+                            break
+                        case "X":
+                            this.setGestating(25)
+                            growth.optimizationStack.push("Connect")
+                            break
+                        case "Connect":
+                            connectClosestFacePair(this)
+                            break
+                    }
+                } else {
+                    this.setGestating(5)
+                    this.physics.applyLocal(this.exports)
+                    this.growth = undefined
                 }
             }
         }

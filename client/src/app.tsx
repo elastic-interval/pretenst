@@ -21,7 +21,7 @@ import { INITIAL_DISTANCE } from "./view/flight"
 import { HexalotTarget, InitialFlightState, IslandTarget } from "./view/flight-state"
 import { WorldView } from "./view/world-view"
 
-function createFabricKernel(fabricExports: IFabricExports, instanceMax: number, jointCountMax: number): FabricKernel {
+function createFabricKernel(fabricExports: IFabricExports, physics: Physics, instanceMax: number, jointCountMax: number): FabricKernel {
     const intervalCountMax = jointCountMax * 3 + 30
     const faceCountMax = jointCountMax * 2 + 20
     const dimensions: IFabricDimensions = {
@@ -30,19 +30,17 @@ function createFabricKernel(fabricExports: IFabricExports, instanceMax: number, 
         intervalCountMax,
         faceCountMax,
     }
-    return new FabricKernel(fabricExports, dimensions)
+    return new FabricKernel(fabricExports, physics, dimensions)
 }
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
-    private physics = new Physics()
     private fabricKernel: FabricKernel
     private appStateNonce = -1
 
     constructor(props: IAppProps) {
         super(props)
-        this.physics.applyGlobal(props.fabricExports)
-        this.fabricKernel = createFabricKernel(props.fabricExports, MAX_POPULATION, INITIAL_JOINT_COUNT)
+        this.fabricKernel = createFabricKernel(props.fabricExports, props.physics, MAX_POPULATION, INITIAL_JOINT_COUNT)
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)

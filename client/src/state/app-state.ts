@@ -4,6 +4,7 @@
  */
 
 import { IFabricExports } from "../fabric/fabric-exports"
+import { Physics } from "../fabric/physics"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
@@ -16,6 +17,7 @@ import { IFlightState } from "../view/flight-state"
 
 export interface IAppProps {
     fabricExports: IFabricExports
+    physics: Physics
     storage: RemoteStorage
     user?: IUser
 }

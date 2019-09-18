@@ -39,24 +39,47 @@ APP_EVENT.subscribe(appEvent => {
     }
 })
 
+function getPhysicsFeature(label: string, defaultValue: number): number {
+    const value = localStorage.getItem(label)
+    return value ? parseFloat(value) : defaultValue
+}
+
+function setPhysicsFeature(label: string, factor: number): void {
+    localStorage.setItem(label, factor.toFixed(10))
+}
+
 async function start(): Promise<void> {
     const fabricExports = await getFabricExports()
     const user = await storage.getUser()
     const root = document.getElementById("root") as HTMLElement
+    const physics = new Physics({getPhysicsFeature, setPhysicsFeature})
     if (TENSEGRITY) {
-        const physics = new Physics()
         const dimensions: IFabricDimensions = {
             instanceMax: 30,
             jointCountMax: 6000,
             intervalCountMax: 15000,
             faceCountMax: 4000,
         }
-        const fabricKernel = new FabricKernel(fabricExports, dimensions)
+        const fabricKernel = new FabricKernel(fabricExports, physics, dimensions)
         physics.applyGlobal(fabricExports)
-        ReactDOM.render(<TensegrityView fabricExports={fabricExports} physics={physics}
-                                        fabricKernel={fabricKernel}/>, root)
+        ReactDOM.render(
+            <TensegrityView
+                fabricExports={fabricExports}
+                physics={physics}
+                fabricKernel={fabricKernel}
+            />,
+            root,
+        )
     } else {
-        ReactDOM.render(<App fabricExports={fabricExports} storage={storage} user={user}/>, root)
+        ReactDOM.render(
+            <App
+                fabricExports={fabricExports}
+                physics={physics}
+                storage={storage}
+                user={user}
+            />,
+            root,
+        )
     }
     registerServiceWorker()
 }

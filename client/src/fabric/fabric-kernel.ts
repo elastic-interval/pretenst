@@ -12,6 +12,7 @@ import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { Direction, IFabricDimensions, IFabricExports, IntervalRole } from "./fabric-exports"
 import { GotchiBody } from "./gotchi-body"
+import { Physics } from "./physics"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const FLOATS_IN_VECTOR = 3
@@ -28,22 +29,6 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
     } else {
         return new Vector3(array[index], array[index + 1], array[index + 2])
     }
-}
-
-export function createFabricKernel(
-    fabricExports: IFabricExports,
-    instanceMax: number,
-    jointCountMax: number,
-    intervalCountMax: number,
-    faceCountMax: number,
-): FabricKernel {
-    const dimensions: IFabricDimensions = {
-        instanceMax,
-        jointCountMax,
-        intervalCountMax,
-        faceCountMax,
-    }
-    return new FabricKernel(fabricExports, dimensions)
 }
 
 interface IOffsets {
@@ -97,7 +82,7 @@ export class FabricKernel implements IGotchiFactory {
     private spotCenters: Float32Array
     private surface: Int8Array
 
-    constructor(private exports: IFabricExports, dimensions: IFabricDimensions) {
+    constructor(private exports: IFabricExports, private physics: Physics, dimensions: IFabricDimensions) {
         const fabricBytes = exports.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
         this.arrayBuffer = exports.memory.buffer
         this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
@@ -124,7 +109,7 @@ export class FabricKernel implements IGotchiFactory {
         if (!newInstance) {
             return undefined
         }
-        return new TensegrityFabric(newInstance, name, altitude)
+        return new TensegrityFabric(newInstance, this.physics, name, altitude)
     }
 
     public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {
