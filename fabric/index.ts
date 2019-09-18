@@ -27,14 +27,14 @@ enum IntervalRole {
 
 const INTERVAL_ROLE_COUNT: u8 = 8
 const MUSCLE_SPAN: f32 = 1.0
-const PHI: f32 = 1.61803398875
+const PHI: f32 = 1.618
 const BAR_SPAN: f32 = 2 * PHI
-const CABLE_SPAN: f32 = 2
-const RING_SPAN: f32 = 1.74
-const CROSS_SPAN: f32 = 1.82
-const BOW_MID_SPAN: f32 = 0.8520879139
-const BOW_END_LOW_SPAN: f32 = 1.3799999952
-const BOW_END_HIGH_SPAN: f32 = 1.5705686808
+const CABLE_SPAN: f32 = 2.123
+const RING_SPAN: f32 = 1.775
+const CROSS_SPAN: f32 = 1.583
+const BOW_MID_SPAN: f32 = 0.8521
+const BOW_END_LOW_SPAN: f32 = 1.380
+const BOW_END_HIGH_SPAN: f32 = 1.571
 
 const MIN_COLOR: f32 = 0.2
 const MIN_STRESS: f32 = 0.00001
@@ -57,6 +57,8 @@ const GROWING_INTERVAL: u8 = 1
 const MATURE_INTERVAL: u8 = 2
 const GESTATING: u8 = 1
 const NOT_GESTATING: u8 = 0
+const GESTATION_DRAG_FACTOR: f32 = 300
+const GESTATION_TIME_SWEEP_FACTOR: f32 = 3
 const LAND: u8 = 1
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
@@ -224,9 +226,6 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 }
 
 // Physics =====================================================================================
-
-const GESTATION_DRAG_FACTOR: f32 = 1000
-const GESTATION_TIME_SWEEP_FACTOR: f32 = 5
 
 enum GlobalFeature {
     GravityAbove = 0,
@@ -1266,12 +1265,15 @@ function intervalPhysics(intervalIndex: u16): void {
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(jointIndex: u16, dragAbove: f32): void {
+function jointPhysics(jointIndex: u16): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
+    let gestating = isGestating() === GESTATING
+    let dragAbove = physicsDragAbove * (gestating ? GESTATION_DRAG_FACTOR : 1)
+    let gravityAbove = gestating ? <f32>0 : physicsGravityAbove
     if (altitude > JOINT_RADIUS) { // far above
-        setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
+        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityAbove)
         multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
     } else {
         let land = getTerrainUnder(jointIndex) === LAND
@@ -1283,7 +1285,7 @@ function jointPhysics(jointIndex: u16, dragAbove: f32): void {
             if (velocityY < 0 && land) {
                 multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
             }
-            let gravityValue: f32 = physicsGravityAbove * degreeAbove + physicsGravityBelow * degreeBelow
+            let gravityValue: f32 = gravityAbove * degreeAbove + physicsGravityBelow * degreeBelow
             setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
             let drag = dragAbove * degreeAbove + physicsDragBelow * degreeBelow
             multiplyScalar(_velocity(jointIndex), 1 - drag)
@@ -1305,7 +1307,7 @@ function tick(gestating: boolean): void {
     }
     let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        jointPhysics(jointIndex, physicsDragAbove * (gestating ? GESTATION_DRAG_FACTOR : 1))
+        jointPhysics(jointIndex)
         addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
         zero(_force(jointIndex))
     }

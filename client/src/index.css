@@ -227,6 +227,6 @@ p a, p a:hover {
     top: 0;
     right: 0;
     height: auto;
-    width: 30%;
+    width: auto;
     padding: 10px;
 }

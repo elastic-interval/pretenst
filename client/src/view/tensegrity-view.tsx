@@ -42,7 +42,8 @@ const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopP
 const SPHERE = new SphereGeometry(0.12, 16, 16)
 
 const ITERATIONS_PER_FRAME = 50
-const TOWARDS_TARGET = 0.02
+const TOWARDS_TARGET = 0.01
+const ALTITUDE = 20
 
 export function TensegrityView({fabricExports, fabricKernel, physics}:
                                    {
@@ -52,7 +53,7 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                                    }): JSX.Element {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const createFabric = (name: string): TensegrityFabric => {
-        const newFabric = fabricKernel.createTensegrityFabric(name)
+        const newFabric = fabricKernel.createTensegrityFabric(name, ALTITUDE)
         if (!newFabric) {
             throw new Error()
         }
@@ -185,14 +186,17 @@ function FabricView({fabric}:
         controls.maxDistance = 1000
         controls.minDistance = 3
         controls.enableKeys = false
+        const mp = new Vector3(0, ALTITUDE, 0)
+        orbitControls.current.target.set(mp.x, mp.y, mp.z)
+        camera.position.set(mp.x, ALTITUDE, mp.z + ALTITUDE)
+        camera.lookAt(orbitControls.current.target)
+        controls.update()
     }, [fabric])
     const render = () => {
-        const controls = orbitControls.current
-        if (controls) {
-            controls.target.add(new Vector3().subVectors(fabric.exports.midpoint, controls.target).multiplyScalar(TOWARDS_TARGET))
-            controls.update()
-            controls.autoRotate = fabric.autoRotate
-        }
+        const towardsTarget = new Vector3().subVectors(fabric.exports.midpoint, orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
+        orbitControls.current.target.add(towardsTarget)
+        orbitControls.current.update()
+        orbitControls.current.autoRotate = fabric.autoRotate
         fabric.iterate(ITERATIONS_PER_FRAME)
         if (!fabric.exports.isGestating() && fabric.growing.length > 0) {
             fabric.growing = executeGrowthTrees(fabric.growing)

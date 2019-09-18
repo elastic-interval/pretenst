@@ -52,9 +52,9 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(readonly exports: InstanceExports, readonly name: string) {
+    constructor(readonly exports: InstanceExports, readonly name: string, altitude: number) {
         const growthTree = parseCommands(name)
-        growthTree.brick = this.createBrick()
+        growthTree.brick = this.createBrick(altitude)
         this.growing = [growthTree]
     }
 
@@ -124,8 +124,8 @@ export class TensegrityFabric {
         this._selectedFace = undefined
     }
 
-    public createBrick(): IBrick {
-        const brick = createBrickOnOrigin(this)
+    public createBrick(altitude: number): IBrick {
+        const brick = createBrickOnOrigin(this, altitude)
         this.exports.clear()
         this.disposeOfGeometry()
         return brick

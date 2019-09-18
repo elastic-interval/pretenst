@@ -22,8 +22,8 @@ import {
 } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
-export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
-    const points = createBrickPointsOnOrigin(Triangle.PPP, 3, 1.0)
+export function createBrickOnOrigin(fabric: TensegrityFabric, altitude: number): IBrick {
+    const points = createBrickPointsOnOrigin(Triangle.PPP, altitude, 1.0)
     return createBrick(fabric, points, Triangle.NNN)
 }
 
@@ -60,7 +60,7 @@ function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoi
     jointPairs.sort((a, b) => a.distance - b.distance)
     // console.log("jointPairs", jointPairs.map(p => `${p.jointA.index}:${p.jointB.index}=${p.distance}`))
     const ring: IJoint[] = []
-    let takeA = TRIANGLE_ARRAY[faceA.triangle].negative
+    let takeA = true
     let pairIndex = 0
     while (ring.length < 6) {
         const jointPair = jointPairs[pairIndex]
@@ -77,6 +77,9 @@ function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoi
             pairIndex = jointPairs.findIndex(p => p.jointA === jointPair.jointA)
             takeA = true
         }
+    }
+    if (TRIANGLE_ARRAY[faceA.triangle].negative) {
+        ring.reverse()
     }
     return ring
 }
@@ -304,7 +307,8 @@ export function closestFacePairs(fabric: TensegrityFabric, maxDistance: number):
 export function connectClosestFacePair(fabric: TensegrityFabric): void {
     const closestPairs = closestFacePairs(fabric, 5)
     const facePair = closestPairs[0]
-    connectBricks(facePair.faceA, facePair.faceB)
+    const connector = connectBricks(facePair.faceA, facePair.faceB)
+    connector.facesToRemove.forEach(faceToRemove => fabric.removeFace(faceToRemove, true))
 }
 
 export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
