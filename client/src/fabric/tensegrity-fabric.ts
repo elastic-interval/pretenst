@@ -9,16 +9,18 @@ import { IntervalRole, Laterality } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
 import {
     brickToString,
+    connectClosestFacePair,
     connectorToString,
     createBrickOnOrigin,
+    executeGrowthTrees,
     optimizeFabric,
-    parseCommands,
+    parseConstructionCode,
 } from "./tensegrity-brick"
 import {
     IBrick,
     IConnector,
     IFace,
-    IGrowthTree,
+    IGrowth,
     IInterval,
     IJoint,
     JointTag,
@@ -39,7 +41,7 @@ export class TensegrityFabric {
     public intervals: IInterval[] = []
     public faces: IFace[] = []
     public autoRotate = false
-    public growing: IGrowthTree[]
+    public growth?: IGrowth
 
     private _selectable: Selectable = Selectable.NONE
     private _selectedJoint: IJoint | undefined
@@ -53,9 +55,14 @@ export class TensegrityFabric {
     private linesGeometryStored: BufferGeometry | undefined
 
     constructor(readonly exports: InstanceExports, readonly name: string, altitude: number) {
-        const growthTree = parseCommands(name)
-        growthTree.brick = this.createBrick(altitude)
-        this.growing = [growthTree]
+        const growth = parseConstructionCode(name)
+        growth.growing[0].brick = this.createBrick(altitude)
+        this.growth = growth
+    }
+
+
+    public setGestating(countdown: number): void {
+        this.exports.setGestating(countdown)
     }
 
     get selectable(): Selectable {
@@ -253,7 +260,36 @@ export class TensegrityFabric {
 
     public iterate(ticks: number): boolean {
         this.disposeOfGeometry()
-        return this.exports.iterate(ticks)
+        const wrapAround = this.exports.iterate(ticks)
+        if (!wrapAround) {
+            return false
+        }
+        const gestating = this.exports.isGestating()
+        const growth = this.growth
+        if (growth && !gestating) {
+            if (growth.growing.length > 0) {
+                growth.growing = executeGrowthTrees(growth.growing)
+            }
+            if (growth.growing.length === 0 && growth.optimizationStack.length > 0) {
+                const optimization = growth.optimizationStack.pop()
+                switch(optimization) {
+                    case "L":
+                        optimizeFabric(this, false)
+                        break
+                    case "H":
+                        optimizeFabric(this, true)
+                        break
+                    case "X":
+                        this.setGestating(25)
+                        growth.optimizationStack.push("Connect")
+                        break
+                    case "Connect":
+                        connectClosestFacePair(this)
+                        break
+                }
+            }
+        }
+        return true
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {

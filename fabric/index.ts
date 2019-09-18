@@ -55,8 +55,6 @@ const MUSCLE_DIRECTIONS: u8 = 5
 const DEFAULT_HIGH_LOW: u8 = 0x08
 const GROWING_INTERVAL: u8 = 1
 const MATURE_INTERVAL: u8 = 2
-const GESTATING: u8 = 1
-const NOT_GESTATING: u8 = 0
 const GESTATION_DRAG_FACTOR: f32 = 300
 const GESTATION_TIME_SWEEP_FACTOR: f32 = 3
 const LAND: u8 = 1
@@ -599,13 +597,24 @@ function setFaceCount(value: u16): void {
     setU16(_state + FACE_COUNT_OFFSET, value)
 }
 
-export function isGestating(): u8 {
+function getGestating(): u8 {
     return getU8(_state + GESTATING_OFFSET)
 }
 
-function setGestating(value: u8, timeSweep: u16): void {
-    setTimeSweep(timeSweep)
-    setU8(_state + GESTATING_OFFSET, value)
+export function setGestating(countdown: u8): void {
+    setTimeSweep(0)
+    setU8(_state + GESTATING_OFFSET, countdown)
+}
+
+export function isGestating(): boolean {
+    return getGestating() > 0
+}
+
+function nextGestation(next: u8): void {
+    if (next < 0) {
+        return
+    }
+    setGestating(next)
 }
 
 function getPreviousDirection(): u8 {
@@ -647,7 +656,7 @@ export function reset(): void {
     setJointTagCount(0)
     setIntervalCount(0)
     setFaceCount(0)
-    setGestating(GESTATING, 0)
+    setGestating(0)
     setPreviousDirection(REST_DIRECTION)
     setCurrentDirection(REST_DIRECTION)
     setNextDirection(REST_DIRECTION)
@@ -790,7 +799,7 @@ export function createInterval(alpha: u16, omega: u16, idealSpan: f32, intervalR
             setIntervalHighLow(intervalIndex, direction, DEFAULT_HIGH_LOW)
         }
     }
-    setGestating(GESTATING, 0)
+    setGestating(1)
     return intervalIndex
 }
 
@@ -1269,9 +1278,9 @@ function jointPhysics(jointIndex: u16): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
-    let gestating = isGestating() === GESTATING
-    let dragAbove = physicsDragAbove * (gestating ? GESTATION_DRAG_FACTOR : 1)
-    let gravityAbove = gestating ? <f32>0 : physicsGravityAbove
+    let gestating = getGestating()
+    let dragAbove = physicsDragAbove * (gestating === 0 ? 1 : GESTATION_DRAG_FACTOR/<f32>gestating)
+    let gravityAbove = gestating > 0 ? <f32>0 : physicsGravityAbove
     if (altitude > JOINT_RADIUS) { // far above
         setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityAbove)
         multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
@@ -1319,7 +1328,7 @@ function tick(gestating: boolean): void {
 
 export function iterate(ticks: u16): boolean {
     let wrapAround = false
-    let gestating = isGestating() === GESTATING
+    let gestating = getGestating()
     let timeSweepStep: u16 = <u16>(gestating ? timeSweepSpeed * GESTATION_TIME_SWEEP_FACTOR : timeSweepSpeed)
     let currentDirection = getCurrentDirection()
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
@@ -1329,16 +1338,18 @@ export function iterate(ticks: u16): boolean {
         setTimeSweep(timeSweep)
         if (timeSweep < current) {
             wrapAround = true
-            if (!isGestating()) {
+            if (gestating === 0) {
                 setPreviousDirection(currentDirection)
                 let nextDirection = getNextDirection()
                 if (nextDirection !== currentDirection) {
                     setCurrentDirection(nextDirection)
                 }
             }
-            setGestating(NOT_GESTATING, 0)
+            if (gestating > 0) {
+                nextGestation(gestating - 1)
+            }
         }
-        tick(gestating)
+        tick(gestating > 0)
     }
     setAge(getAge() + <u32>ticks)
     outputLinesGeometry()

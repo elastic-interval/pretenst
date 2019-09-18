@@ -160,3 +160,8 @@ export interface IGrowthTree {
     turnC?: IGrowthTree,
     brick?: IBrick,
 }
+
+export interface IGrowth {
+    growing: IGrowthTree []
+    optimizationStack: string[]
+}

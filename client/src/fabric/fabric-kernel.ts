@@ -373,6 +373,10 @@ export class InstanceExports {
         this.ex.setFaceSpanDivergence(faceIndex, bar, factor)
     }
 
+    public setGestating(countdown: number): void {
+        this.ex.setGestating(countdown)
+    }
+
     public getJointLocation(jointIndex: number): Vector3 {
         return vectorFromFloatArray(this.jointLocations.floats, jointIndex * 3)
     }

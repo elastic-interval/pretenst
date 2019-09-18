@@ -75,6 +75,8 @@ export interface IFabricExports {
 
     isGestating(): boolean
 
+    setGestating(countdown: number): void
+
     getCurrentDirection(): Direction
 
     getNextDirection(): Direction

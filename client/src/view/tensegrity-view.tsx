@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricExports } from "../fabric/fabric-exports"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
-import { connectClosestFacePair, executeGrowthTrees } from "../fabric/tensegrity-brick"
+import { connectClosestFacePair } from "../fabric/tensegrity-brick"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -198,9 +198,6 @@ function FabricView({fabric}:
         orbitControls.current.update()
         orbitControls.current.autoRotate = fabric.autoRotate
         fabric.iterate(ITERATIONS_PER_FRAME)
-        if (!fabric.exports.isGestating() && fabric.growing.length > 0) {
-            fabric.growing = executeGrowthTrees(fabric.growing)
-        }
         setAge(fabric.exports.getAge())
     }
     useRender(render, true, [fabric, age])

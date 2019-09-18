@@ -13,6 +13,7 @@ import {
     IBrick,
     IConnector,
     IFace,
+    IGrowth,
     IGrowthTree,
     IInterval,
     IJoint,
@@ -21,6 +22,52 @@ import {
     TRIANGLE_ARRAY,
 } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
+
+function createBrickPointsOnOrigin(base: Triangle, altitude: number, scale: number): Vector3 [] {
+    const points = BAR_ARRAY.reduce(barsToPoints, [])
+    points.forEach(point => point.multiplyScalar(scale))
+    const newBase = TRIANGLE_ARRAY[base].opposite
+    const trianglePoints = TRIANGLE_ARRAY[newBase].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
+    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+    const y = new Vector3().sub(midpoint).normalize()
+    const z = new Vector3().crossVectors(y, x).normalize()
+    const basis = new Matrix4().makeBasis(x, y, z)
+    const fromBasis = new Matrix4().getInverse(basis).setPosition(new Vector3(0, midpoint.length() * altitude, 0))
+    return points.map(p => p.applyMatrix4(fromBasis))
+}
+
+function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: Triangle): IBrick {
+    const jointIndexes = points.map((p, index) => fabric.createJointIndex(index, p))
+    const bars = BAR_ARRAY.map(({}: IBarDefinition, index: number) => {
+        const alphaIndex = jointIndexes[index * 2]
+        const omegaIndex = jointIndexes[index * 2 + 1]
+        const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
+        const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
+        return fabric.createInterval(alpha, omega, IntervalRole.Bar, SPAN)
+    })
+    const joints = bars.reduce((arr: IJoint[], bar) => {
+        arr.push(bar.alpha, bar.omega)
+        return arr
+    }, [])
+    fabric.joints.push(...joints)
+    const brick: IBrick = {base: baseTriangle, fabric, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
+    const role = IntervalRole.Triangle
+    TRIANGLE_ARRAY.forEach(triangle => {
+        const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
+        for (let walk = 0; walk < 3; walk++) {
+            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, SPAN)
+            brick.cables.push(interval)
+            brick.rings[triangle.ringMember[walk]].push(interval)
+        }
+    })
+    TRIANGLE_ARRAY.forEach(triangle => {
+        const face = fabric.createFace(brick, triangle.name)
+        brick.faces.push(face)
+    })
+    fabric.exports.clear()
+    return brick
+}
 
 export function createBrickOnOrigin(fabric: TensegrityFabric, altitude: number): IBrick {
     const points = createBrickPointsOnOrigin(Triangle.PPP, altitude, 1.0)
@@ -164,7 +211,7 @@ export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
     return after
 }
 
-export function parseCommands(commands: string): IGrowthTree {
+export function parseConstructionCode(constructionCode: string): IGrowth {
     function parseBetween(between: string): { turnA: string, turnB: string, turnC: string } {
         const equalsIndex = between.indexOf("=")
         if (equalsIndex === 1) {
@@ -204,28 +251,37 @@ export function parseCommands(commands: string): IGrowthTree {
         }
     }
 
-    const command = commands.charAt(0)
-    if (command === "0" || command === "[") {
-        if (commands.length === 1) {
-            return {}
+    function parseCommands(commands: string): IGrowthTree {
+        const command = commands.charAt(0)
+        if (command === "0" || command === "[") {
+            if (commands.length === 1) {
+                return {}
+            }
+            if (commands.charAt(1) !== "[" && command !== "[") {
+                throw new Error("Open")
+            }
+            const lastClose = commands.lastIndexOf("]")
+            if (lastClose !== commands.length - 1) {
+                throw new Error("Close")
+            }
+            const between = commands.substring(2, lastClose)
+            const {turnA, turnB, turnC} = parseBetween(between)
+            return {turnA: parseCommands(turnA), turnB: parseCommands(turnB), turnC: parseCommands(turnC)}
         }
-        if (commands.charAt(1) !== "[" && command !== "[") {
-            throw new Error("Open")
+        if (command >= "1" && command <= "9") {
+            const forwardCount = parseInt(command, 10)
+            const nextCount = (forwardCount - 1).toString(10)
+            return {forward: parseCommands(nextCount.toString() + commands.substr(1))}
         }
-        const lastClose = commands.lastIndexOf("]")
-        if (lastClose !== commands.length - 1) {
-            throw new Error("Close")
-        }
-        const between = commands.substring(2, lastClose)
-        const {turnA, turnB, turnC} = parseBetween(between)
-        return {turnA: parseCommands(turnA), turnB: parseCommands(turnB), turnC: parseCommands(turnC)}
+        throw new Error("Syntax error")
     }
-    if (command >= "1" && command <= "9") {
-        const forwardCount = parseInt(command, 10)
-        const nextCount = (forwardCount - 1).toString(10)
-        return {forward: parseCommands(nextCount.toString() + commands.substr(1))}
-    }
-    throw new Error("Syntax error")
+
+    const commandEndIndex = constructionCode.lastIndexOf("]")
+    const commandString = constructionCode.substring(0, commandEndIndex + 1)
+    const growthTree = parseCommands(commandString)
+    const optimizationStack = constructionCode.substring(commandEndIndex + 1).split("").reverse()
+    // const optimizations = (commandString.length === constructionCode.length) ? [] : constructionCode.substring(commandEndIndex + 1).split("")
+    return {growing: [growthTree], optimizationStack}
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {
@@ -388,49 +444,3 @@ function barsToPoints(vectors: Vector3[], bar: IBarDefinition): Vector3[] {
 //     })
 //     return points
 // }
-
-function createBrickPointsOnOrigin(base: Triangle, altitude: number, scale: number): Vector3 [] {
-    const points = BAR_ARRAY.reduce(barsToPoints, [])
-    points.forEach(point => point.multiplyScalar(scale))
-    const newBase = TRIANGLE_ARRAY[base].opposite
-    const trianglePoints = TRIANGLE_ARRAY[newBase].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
-    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
-    const y = new Vector3().sub(midpoint).normalize()
-    const z = new Vector3().crossVectors(y, x).normalize()
-    const basis = new Matrix4().makeBasis(x, y, z)
-    const fromBasis = new Matrix4().getInverse(basis).setPosition(new Vector3(0, midpoint.length() * altitude, 0))
-    return points.map(p => p.applyMatrix4(fromBasis))
-}
-
-function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: Triangle): IBrick {
-    const jointIndexes = points.map((p, index) => fabric.createJointIndex(index, p))
-    const bars = BAR_ARRAY.map(({}: IBarDefinition, index: number) => {
-        const alphaIndex = jointIndexes[index * 2]
-        const omegaIndex = jointIndexes[index * 2 + 1]
-        const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
-        const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
-        return fabric.createInterval(alpha, omega, IntervalRole.Bar, SPAN)
-    })
-    const joints = bars.reduce((arr: IJoint[], bar) => {
-        arr.push(bar.alpha, bar.omega)
-        return arr
-    }, [])
-    fabric.joints.push(...joints)
-    const brick: IBrick = {base: baseTriangle, fabric, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
-    const role = IntervalRole.Triangle
-    TRIANGLE_ARRAY.forEach(triangle => {
-        const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
-        for (let walk = 0; walk < 3; walk++) {
-            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, SPAN)
-            brick.cables.push(interval)
-            brick.rings[triangle.ringMember[walk]].push(interval)
-        }
-    })
-    TRIANGLE_ARRAY.forEach(triangle => {
-        const face = fabric.createFace(brick, triangle.name)
-        brick.faces.push(face)
-    })
-    fabric.exports.clear()
-    return brick
-}
