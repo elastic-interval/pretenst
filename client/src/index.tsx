@@ -10,7 +10,7 @@ import * as ReactDOM from "react-dom"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { IFabricDimensions, IFabricExports } from "./fabric/fabric-exports"
+import { IFabricDimensions, IFabricEngine } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
 import "./index.css"
@@ -18,7 +18,7 @@ import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
 
-declare const getFabricExports: () => Promise<IFabricExports> // implementation: index.html
+declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
 const TENSEGRITY = true
 
@@ -49,11 +49,11 @@ function setPhysicsFeature(label: string, factor: number): void {
 }
 
 async function start(): Promise<void> {
-    const fabricExports = await getFabricExports()
+    const engine = await getFabricEngine()
     const user = await storage.getUser()
     const root = document.getElementById("root") as HTMLElement
     const physics = new Physics({getPhysicsFeature, setPhysicsFeature})
-    physics.applyGlobal(fabricExports)
+    physics.applyGlobal(engine)
     if (TENSEGRITY) {
         const dimensions: IFabricDimensions = {
             instanceMax: 30,
@@ -61,10 +61,10 @@ async function start(): Promise<void> {
             intervalCountMax: 15000,
             faceCountMax: 4000,
         }
-        const fabricKernel = new FabricKernel(fabricExports, physics, dimensions)
+        const fabricKernel = new FabricKernel(engine, physics, dimensions)
         ReactDOM.render(
             <TensegrityView
-                fabricExports={fabricExports}
+                engine={engine}
                 physics={physics}
                 fabricKernel={fabricKernel}
             />,
@@ -73,7 +73,7 @@ async function start(): Promise<void> {
     } else {
         ReactDOM.render(
             <App
-                fabricExports={fabricExports}
+                engine={engine}
                 physics={physics}
                 storage={storage}
                 user={user}

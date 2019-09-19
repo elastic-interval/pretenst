@@ -5,7 +5,7 @@
 
 import { Matrix4, Vector3 } from "three"
 
-import { IntervalRole } from "./fabric-exports"
+import { IntervalRole } from "./fabric-engine"
 import {
     BAR_ARRAY,
     BarEnd,
@@ -64,7 +64,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: 
         const face = fabric.createFace(brick, triangle.name)
         brick.faces.push(face)
     })
-    fabric.exports.clear()
+    fabric.instance.clear()
     return brick
 }
 
@@ -76,7 +76,7 @@ export function createBrickOnOrigin(fabric: TensegrityFabric, altitude: number):
 export function createBrickOnFace(face: IFace): IBrick {
     const brick = face.brick
     const triangle = face.triangle
-    const trianglePoints = brick.faces[triangle].joints.map(joint => brick.fabric.exports.getJointLocation(joint.index))
+    const trianglePoints = brick.faces[triangle].joints.map(joint => brick.fabric.instance.getJointLocation(joint.index))
     const xform = xformToTriangle(trianglePoints)
     const points = createBrickPointsOnOrigin(Triangle.PPP, 0.8, 1.0)
     const movedToFace = points.map(p => p.applyMatrix4(xform))
@@ -97,8 +97,8 @@ function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoi
     const jointPairs: IJointPair[] = []
     jointsA.forEach(jointA => {
         jointsB.forEach(jointB => {
-            const locationA = fabric.exports.getJointLocation(jointA.index)
-            const locationB = fabric.exports.getJointLocation(jointB.index)
+            const locationA = fabric.instance.getJointLocation(jointA.index)
+            const locationB = fabric.instance.getJointLocation(jointB.index)
             const distance = locationA.distanceTo(locationB)
             jointPairs.push({jointA, locationA, jointB, locationB, distance})
         })
@@ -144,9 +144,9 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         const joint = ring[index]
         const nextJoint = ring[(index + 1) % ring.length]
         const prevJoint = ring[(index + ring.length - 1) % ring.length]
-        const prevJointOppositeLocation = fabric.exports.getJointLocation(prevJoint.oppositeIndex)
-        const jointLocation = fabric.exports.getJointLocation(joint.index)
-        const nextJointOppositeLocation = fabric.exports.getJointLocation(nextJoint.oppositeIndex)
+        const prevJointOppositeLocation = fabric.instance.getJointLocation(prevJoint.oppositeIndex)
+        const jointLocation = fabric.instance.getJointLocation(joint.index)
+        const nextJointOppositeLocation = fabric.instance.getJointLocation(nextJoint.oppositeIndex)
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
@@ -166,7 +166,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         })
         const triangleRing = TRIANGLE_ARRAY[triangle].ring
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
-            fabric.exports.changeRestIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
+            fabric.instance.changeRestIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
         })
         return face
     }
@@ -289,20 +289,20 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
     const finish = (removeA: IInterval, removeB: IInterval, adjustA: IInterval, adjustB: IInterval, role: IntervalRole) => {
         fabric.removeInterval(removeA)
         fabric.removeInterval(removeB)
-        fabric.exports.changeRestIntervalRole(adjustA.index, adjustA.intervalRole = role)
-        fabric.exports.changeRestIntervalRole(adjustB.index, adjustB.intervalRole = role)
+        fabric.instance.changeRestIntervalRole(adjustA.index, adjustA.intervalRole = role)
+        fabric.instance.changeRestIntervalRole(adjustB.index, adjustB.intervalRole = role)
     }
     crossCables.forEach(ab => {
         const a = ab.alpha
-        const aLoc = fabric.exports.getJointLocation(a.index)
+        const aLoc = fabric.instance.getJointLocation(a.index)
         const b = ab.omega
         const cablesB = fabric.intervals.filter(interval => (
             interval.intervalRole !== IntervalRole.Cross && interval.intervalRole !== IntervalRole.Bar &&
             (interval.alpha.index === b.index || interval.omega.index === b.index)
         ))
         const bc = cablesB.reduce((cableA, cableB) => {
-            const oppositeA = fabric.exports.getJointLocation(opposite(b, cableA).index)
-            const oppositeB = fabric.exports.getJointLocation(opposite(b, cableB).index)
+            const oppositeA = fabric.instance.getJointLocation(opposite(b, cableA).index)
+            const oppositeB = fabric.instance.getJointLocation(opposite(b, cableB).index)
             return aLoc.distanceToSquared(oppositeA) < aLoc.distanceToSquared(oppositeB) ? cableA : cableB
         })
         const c = opposite(b, bc)
@@ -340,14 +340,14 @@ export function closestFacePairs(fabric: TensegrityFabric, maxDistance: number):
             if (indexB >= indexA) {
                 return
             }
-            const locationA = fabric.exports.getFaceMidpoint(faceA.index)
-            const locationB = fabric.exports.getFaceMidpoint(faceB.index)
+            const locationA = fabric.instance.getFaceMidpoint(faceA.index)
+            const locationB = fabric.instance.getFaceMidpoint(faceB.index)
             const distance = locationA.distanceTo(locationB)
             if (distance >= maxDistance) {
                 return
             }
-            const normalA = fabric.exports.getFaceNormal(faceA.index)
-            const normalB = fabric.exports.getFaceNormal(faceB.index)
+            const normalA = fabric.instance.getFaceNormal(faceA.index)
+            const normalB = fabric.instance.getFaceNormal(faceB.index)
             const dot = normalA.dot(normalB)
             if (dot > -0.2) {
                 return
@@ -392,7 +392,7 @@ export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
         }
     }
 
-    const points = brick.joints.map(joint => fabric.exports.getJointLocation(joint.index))
+    const points = brick.joints.map(joint => fabric.instance.getJointLocation(joint.index))
     const joints = points.map(vectorToString(2)).join("\n")
     const minHeight = points.reduce((height, point) => Math.min(height, point.y), Number.POSITIVE_INFINITY).toFixed(3)
     const maxHeight = points.reduce((height, point) => Math.max(height, point.y), Number.NEGATIVE_INFINITY).toFixed(3)

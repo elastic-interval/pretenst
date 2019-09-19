@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricState } from "../fabric/fabric-exports"
+import { FabricState } from "../fabric/fabric-engine"
 
 import { deserializeGene, DICE, IDie, serializeGene } from "./dice"
 import { GeneReader } from "./gene-reader"

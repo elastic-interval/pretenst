@@ -27,15 +27,15 @@ enum IntervalRole {
 
 const PRETENST: f32 = 1.0
 const INTERVAL_ROLE_COUNT: u8 = 8
-const MUSCLE_SPAN: f32 = 1.0
+const MUSCLE_LENGTH: f32 = 1.0
 const PHI: f32 = 1.618
-const BAR_SPAN: f32 = 2 * PHI * PRETENST
-const CABLE_SPAN: f32 = 2.123
-const RING_SPAN: f32 = 1.775
-const CROSS_SPAN: f32 = 1.583
-const BOW_MID_SPAN: f32 = 0.8521
-const BOW_END_LOW_SPAN: f32 = 1.380
-const BOW_END_HIGH_SPAN: f32 = 1.571
+const BAR_LENGTH: f32 = 2 * PHI * PRETENST
+const CABLE_LENGTH: f32 = 2.123
+const RING_LENGTH: f32 = 1.775
+const CROSS_LENGTH: f32 = 1.583
+const BOW_MID_LENGTH: f32 = 0.8521
+const BOW_END_LOW_LENGTH: f32 = 1.380
+const BOW_END_HIGH_LENGTH: f32 = 1.571
 
 const MIN_COLOR: f32 = 0.2
 const MIN_STRESS: f32 = 0.00001
@@ -47,7 +47,6 @@ const INDEX_SIZE: usize = U16
 const INTERVAL_ROLE_SIZE: usize = U8
 const INTERVAL_AGE_SIZE: usize = U16
 const VECTOR_SIZE: usize = F32 * 3
-const CLOCK_POINTS: u8 = 16
 const JOINT_RADIUS: f32 = 0.1
 const AMBIENT_JOINT_MASS: f32 = 0.1
 const REST_STATE: u8 = 0
@@ -174,14 +173,14 @@ function _omega(intervalIndex: u16): usize {
 
 // @ts-ignore
 @inline()
-function _currentSpan(intervalIndex: u16): usize {
+function _currentLength(intervalIndex: u16): usize {
     return _omega(intervalCountMax) + intervalIndex * F32
 }
 
 // @ts-ignore
 @inline()
 function _intervalRole(intervalIndex: u16): usize {
-    return _currentSpan(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
+    return _currentLength(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
 }
 
 // @ts-ignore
@@ -192,7 +191,7 @@ function _intervalAge(intervalIndex: u16): usize {
 
 // @ts-ignore
 @inline()
-function _stateSpanArray(intervalIndex: u16): usize {
+function _stateLengthArray(intervalIndex: u16): usize {
     return _intervalAge(intervalCountMax) + intervalIndex * F32 * STATE_COUNT
 }
 
@@ -237,7 +236,7 @@ enum GlobalFeature {
     DragAbove = 3,
     DragBelowLand = 4,
     DragBelowWater = 5,
-    SpanVariationSpeed = 7,
+    LengthVariationSpeed = 7,
     PushElastic = 8,
     PullElastic = 9,
 }
@@ -250,7 +249,7 @@ const GRAVITY_BELOW_LAND: f32 = -0.1
 const GRAVITY_BELOW_WATER: f32 = -0.00001
 const PUSH_ELASTIC_FACTOR: f32 = 25.0
 const PULL_ELASTIC_FACTOR: f32 = 15.0
-const MAX_SPAN_VARIATION: f32 = 0.1
+const MAX_LENGTH_VARIATION: f32 = 0.1
 const TIME_SWEEP_SPEED: f32 = 30.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
@@ -302,7 +301,7 @@ export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32
             return physicsDragBelowLand = DRAG_BELOW_LAND * factor
         case GlobalFeature.DragBelowWater:
             return physicsDragBelowWater = DRAG_BELOW_WATER * factor
-        case GlobalFeature.SpanVariationSpeed:
+        case GlobalFeature.LengthVariationSpeed:
             return timeSweepSpeed = TIME_SWEEP_SPEED * factor
         case GlobalFeature.PushElastic:
             return pushElasticFactor = PUSH_ELASTIC_FACTOR * factor
@@ -642,18 +641,18 @@ export function setNextState(value: u8): void {
     setU8(_state + NEXT_STATE_OFFSET, value)
 }
 
-export function setRoleSpan(intervalRole: u8, span: f32): void {
-    setF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32, span)
+export function setRoleLength(intervalRole: u8, length: f32): void {
+    setF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32, length)
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         if (getIntervalRole(intervalIndex) !== intervalRole) {
             continue
         }
-        changeRestSpan(intervalIndex, span)
+        changeRestLength(intervalIndex, length)
     }
 }
 
-export function getRoleSpan(intervalRole: u8): f32 {
+export function getRoleLength(intervalRole: u8): f32 {
     return getF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32)
 }
 
@@ -668,14 +667,14 @@ export function reset(): void {
     setPreviousState(REST_STATE)
     setCurrentState(REST_STATE)
     setNextState(REST_STATE)
-    setRoleSpan(<u8>IntervalRole.Muscle, MUSCLE_SPAN)
-    setRoleSpan(<u8>IntervalRole.Bar, BAR_SPAN)
-    setRoleSpan(<u8>IntervalRole.Triangle, CABLE_SPAN)
-    setRoleSpan(<u8>IntervalRole.Ring, RING_SPAN)
-    setRoleSpan(<u8>IntervalRole.Cross, CROSS_SPAN)
-    setRoleSpan(<u8>IntervalRole.BowMid, BOW_MID_SPAN)
-    setRoleSpan(<u8>IntervalRole.BowEndLow, BOW_END_LOW_SPAN)
-    setRoleSpan(<u8>IntervalRole.BowEndHigh, BOW_END_HIGH_SPAN)
+    setRoleLength(<u8>IntervalRole.Muscle, MUSCLE_LENGTH)
+    setRoleLength(<u8>IntervalRole.Bar, BAR_LENGTH)
+    setRoleLength(<u8>IntervalRole.Triangle, CABLE_LENGTH)
+    setRoleLength(<u8>IntervalRole.Ring, RING_LENGTH)
+    setRoleLength(<u8>IntervalRole.Cross, CROSS_LENGTH)
+    setRoleLength(<u8>IntervalRole.BowMid, BOW_MID_LENGTH)
+    setRoleLength(<u8>IntervalRole.BowEndLow, BOW_END_LOW_LENGTH)
+    setRoleLength(<u8>IntervalRole.BowEndHigh, BOW_END_HIGH_LENGTH)
 }
 
 // Joints =====================================================================================
@@ -799,12 +798,12 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize 
     setAlphaIndex(intervalIndex, alpha)
     setOmegaIndex(intervalIndex, omega)
     zero(_unit(intervalIndex))
-    initializeCurrentSpan(intervalIndex, calculateLength(intervalIndex))
+    initializeCurrentLength(intervalIndex, calculateLength(intervalIndex))
     initializeIntervalRole(intervalIndex, intervalRole)
     setU16(_intervalAge(intervalIndex), INTERVAL_AGE_BORN)
-    let idealSpan = getRoleSpan(intervalRole)
+    let idealLength = getRoleLength(intervalRole)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
-        setIntervalStateSpan(intervalIndex, state, idealSpan)
+        setIntervalStateLength(intervalIndex, state, idealLength)
     }
     setGestating(1)
     return intervalIndex
@@ -826,9 +825,9 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
-    initializeCurrentSpan(intervalIndex, getCurrentSpan(nextIndex))
+    initializeCurrentLength(intervalIndex, getCurrentLength(nextIndex))
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
-        setIntervalStateSpan(intervalIndex, state, getIntervalStateSpan(nextIndex, state))
+        setIntervalStateLength(intervalIndex, state, getIntervalStateLength(nextIndex, state))
     }
 }
 
@@ -848,18 +847,18 @@ function setOmegaIndex(intervalIndex: u16, index: u16): void {
     setU16(_omega(intervalIndex), index)
 }
 
-function getCurrentSpan(intervalIndex: u16): f32 {
-    return getF32(_currentSpan(intervalIndex))
+function getCurrentLength(intervalIndex: u16): f32 {
+    return getF32(_currentLength(intervalIndex))
 }
 
-function initializeCurrentSpan(intervalIndex: u16, idealSpan: f32): void {
-    setF32(_currentSpan(intervalIndex), idealSpan)
+function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
+    setF32(_currentLength(intervalIndex), idealLength)
 }
 
-export function changeRestSpan(intervalIndex: u16, restSpan: f32): void {
+export function changeRestLength(intervalIndex: u16, restLength: f32): void {
     resetIntervalAge(intervalIndex)
-    initializeCurrentSpan(intervalIndex, getIntervalStateSpan(intervalIndex, REST_STATE))
-    setIntervalStateSpan(intervalIndex, REST_STATE, restSpan)
+    initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
+    setIntervalStateLength(intervalIndex, REST_STATE, restLength)
 }
 
 function getIntervalRole(intervalIndex: u16): u8 {
@@ -875,8 +874,8 @@ export function changeRestIntervalRole(intervalIndex: u16, intervalRole: u8): vo
     if (existingRole === intervalRole) {
         return
     }
-    initializeCurrentSpan(intervalIndex, getRoleSpan(existingRole))
-    setIntervalStateSpan(intervalIndex, REST_STATE, getRoleSpan(intervalRole))
+    initializeCurrentLength(intervalIndex, getRoleLength(existingRole))
+    setIntervalStateLength(intervalIndex, REST_STATE, getRoleLength(intervalRole))
     resetIntervalAge(intervalIndex)
     setU8(_intervalRole(intervalIndex), intervalRole)
 }
@@ -898,12 +897,12 @@ function resetIntervalAge(intervalIndex: u16): void {
     setU16(_intervalAge(intervalIndex), INTERVAL_AGE_BORN)
 }
 
-function getIntervalStateSpan(intervalIndex: u16, state: u8): f32 {
-    return getF32(_stateSpanArray(intervalIndex) + F32 * state)
+function getIntervalStateLength(intervalIndex: u16, state: u8): f32 {
+    return getF32(_stateLengthArray(intervalIndex) + F32 * state)
 }
 
-export function setIntervalStateSpan(intervalIndex: u16, state: u8, stateSpan: f32): void {
-    setF32(_stateSpanArray(intervalIndex) + F32 * state, stateSpan)
+export function setIntervalStateLength(intervalIndex: u16, state: u8, stateLength: f32): void {
+    setF32(_stateLengthArray(intervalIndex) + F32 * state, stateLength)
 }
 
 function getStress(intervalIndex: u16): f32 {
@@ -917,9 +916,9 @@ function setStress(intervalIndex: u16, stress: f32): void {
 function calculateLength(intervalIndex: u16): f32 {
     let unit = _unit(intervalIndex)
     subVectors(unit, _location(omegaIndex(intervalIndex)), _location(alphaIndex(intervalIndex)))
-    let span = length(unit)
-    multiplyScalar(unit, 1 / span)
-    return span
+    let length = length(unit)
+    multiplyScalar(unit, 1 / length)
+    return length
 }
 
 function findIntervalIndex(joint0: u16, joint1: u16): u16 {
@@ -957,15 +956,15 @@ function advance(clockPoint: u32): u32 {
     return clockPoint + 65536
 }
 
-function interpolateCurrentSpan(intervalIndex: u16, state: u8): f32 {
-    let currentSpan = getCurrentSpan(intervalIndex)
+function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
+    let currentLength = getCurrentLength(intervalIndex)
     let intervalAge = getIntervalAge(intervalIndex)
     if (intervalAge === INTERVAL_AGE_ADULT) {
-        return currentSpan
+        return currentLength
     }
     let progress = <f32>intervalAge / <f32>INTERVAL_AGE_ADULT
-    let stateSpan = getIntervalStateSpan(intervalIndex, state)
-    return currentSpan * (1 - progress) + stateSpan * progress
+    let stateLength = getIntervalStateLength(intervalIndex, state)
+    return currentLength * (1 - progress) + stateLength * progress
 }
 
 function setLineColor(_color: usize, red: f32, green: f32, blue: f32): void {
@@ -1198,8 +1197,8 @@ function getTerrainUnder(jointIndex: u16): u8 {
 function intervalPhysics(intervalIndex: u16, gestating: u8, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
     getCurrentState()
-    let currentSpan = interpolateCurrentSpan(intervalIndex, state)
-    let stress = calculateLength(intervalIndex) - currentSpan
+    let currentLength = interpolateCurrentLength(intervalIndex, state)
+    let stress = calculateLength(intervalIndex) - currentLength
     if (intervalRole !== IntervalRole.Muscle && intervalRole !== IntervalRole.Bar && stress < 0) {
         stress = 0
     }
@@ -1211,7 +1210,7 @@ function intervalPhysics(intervalIndex: u16, gestating: u8, state: u8): void {
     setStress(intervalIndex, stress)
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -stress / 2)
-    let mass = currentSpan * currentSpan * currentSpan
+    let mass = currentLength * currentLength * currentLength
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = _intervalMass(omegaIndex(intervalIndex))
@@ -1258,7 +1257,7 @@ function tick(gestating: u8, state: u8): void {
         intervalPhysics(intervalIndex, gestating, state)
         let reachedAdult = incrementIntervalAge(intervalIndex)
         if (reachedAdult) {
-            initializeCurrentSpan(intervalIndex, getIntervalStateSpan(intervalIndex, REST_STATE))
+            initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
         }
     }
     let jointCount = getJointCount()

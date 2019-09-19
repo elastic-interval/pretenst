@@ -8,14 +8,14 @@ import { FaChevronDown } from "react-icons/all"
 import { Badge, Button, ButtonGroup, Col, Collapse, Container, Row } from "reactstrap"
 import { Subscription } from "rxjs"
 
-import { IFabricExports } from "../fabric/fabric-exports"
-import { InstanceExports } from "../fabric/fabric-kernel"
+import { IFabricEngine } from "../fabric/fabric-engine"
+import { FabricInstance } from "../fabric/fabric-kernel"
 import { IPhysicsFeature, Physics } from "../fabric/physics"
 
 export interface IPhysicsPanelProps {
     physics: Physics
-    fabricExports: IFabricExports
-    instanceExports: InstanceExports
+    engine: IFabricEngine
+    instance: FabricInstance
 }
 
 export interface IPhysicsPanelState {
@@ -32,8 +32,8 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPa
     }
 
     public applyPhysics(): void {
-        this.props.physics.applyGlobal(this.props.fabricExports)
-        this.props.physics.applyLocal(this.props.instanceExports)
+        this.props.physics.applyGlobal(this.props.engine)
+        this.props.physics.applyLocal(this.props.instance)
     }
 
     public toggleCollapse(): void {

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IFabricExports } from "../fabric/fabric-exports"
+import { IFabricEngine } from "../fabric/fabric-engine"
 import { Physics } from "../fabric/physics"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
@@ -16,7 +16,7 @@ import { IUser, RemoteStorage } from "../storage/remote-storage"
 import { IFlightState } from "../view/flight-state"
 
 export interface IAppProps {
-    fabricExports: IFabricExports
+    engine: IFabricEngine
     physics: Physics
     storage: RemoteStorage
     user?: IUser
