@@ -52,11 +52,11 @@ const JOINT_RADIUS: f32 = 0.1
 const AMBIENT_JOINT_MASS: f32 = 0.1
 const REST_STATE: u8 = 0
 const STATE_COUNT: u8 = 5
-const GESTATION_DRAG_FACTOR: f32 = 3
 const LAND: u8 = 1
 
 const INTERVAL_AGE_BORN: u16 = 0
-const INTERVAL_AGE_ADULT: u16 = 300
+const INTERVAL_AGE_ADULT: u16 = 500
+const GESTATION_DRAG_FACTOR: f32 = 10
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
 const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + INTERVAL_AGE_SIZE + F32 * STATE_COUNT
@@ -1306,5 +1306,14 @@ export function iterate(ticks: u16): boolean {
     }
     calculateJointMidpoint()
     calculateDirectionVectors()
+    if (gestating) {
+        let intervalCount = getIntervalCount()
+        for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+            if (getIntervalAge(intervalIndex) !== INTERVAL_AGE_ADULT) {
+                return false
+            }
+        }
+        return true
+    }
     return wrapAround
 }

@@ -261,13 +261,12 @@ export class TensegrityFabric {
 
     public iterate(ticks: number): boolean {
         this.disposeOfGeometry()
-        const wrapAround = this.exports.iterate(ticks)
-        if (!wrapAround) {
+        const changeHappened = this.exports.iterate(ticks)
+        if (!changeHappened) {
             return false
         }
-        const gestating = this.exports.isGestating()
         const growth = this.growth
-        if (growth && !gestating) {
+        if (growth) {
             if (growth.growing.length > 0) {
                 growth.growing = executeGrowthTrees(growth.growing)
                 this.exports.centralize()
@@ -291,7 +290,7 @@ export class TensegrityFabric {
                             break
                     }
                 } else {
-                    this.setGestating(2)
+                    this.setGestating(1)
                     this.physics.applyLocal(this.exports)
                     this.growth = undefined
                 }
