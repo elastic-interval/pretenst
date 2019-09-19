@@ -12,7 +12,7 @@ import {
     InputGroupButtonDropdown,
 } from "reactstrap"
 
-const FABRIC_CODE = "FabricCode"
+const FABRIC_CODE_KEY = "FabricCode"
 
 function fetchFabricCode(): string {
     const item = localStorage.getItem(FABRIC_CODE)
