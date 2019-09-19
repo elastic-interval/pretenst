@@ -17,7 +17,6 @@ import {
     IGrowthTree,
     IInterval,
     IJoint,
-    SPAN,
     Triangle,
     TRIANGLE_ARRAY,
 } from "./tensegrity-brick-types"
@@ -44,7 +43,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: 
         const omegaIndex = jointIndexes[index * 2 + 1]
         const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
         const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
-        return fabric.createInterval(alpha, omega, IntervalRole.Bar, SPAN)
+        return fabric.createInterval(alpha, omega, IntervalRole.Bar)
     })
     const joints = bars.reduce((arr: IJoint[], bar) => {
         arr.push(bar.alpha, bar.omega)
@@ -56,7 +55,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: 
     TRIANGLE_ARRAY.forEach(triangle => {
         const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
-            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, SPAN)
+            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role)
             brick.cables.push(interval)
             brick.rings[triangle.ringMember[walk]].push(interval)
         }
@@ -138,7 +137,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
     const createRingCable = (index: number) => {
         const joint = ring[index]
         const nextJoint = ring[(index + 1) % ring.length]
-        const ringCable = fabric.createInterval(joint, nextJoint, IntervalRole.Ring, SPAN)
+        const ringCable = fabric.createInterval(joint, nextJoint, IntervalRole.Ring)
         cables.push(ringCable)
     }
     const createCrossCable = (index: number) => {
@@ -151,7 +150,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.Cross, SPAN)
+        const crossCable = fabric.createInterval(joint, partnerJoint, IntervalRole.Cross)
         cables.push(crossCable)
     }
     for (let walk = 0; walk < ring.length; walk++) {
@@ -167,8 +166,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         })
         const triangleRing = TRIANGLE_ARRAY[triangle].ring
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
-            interval.intervalRole = IntervalRole.Ring
-            fabric.exports.setIntervalRole(interval.index, IntervalRole.Ring)
+            fabric.exports.changeRestIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
         })
         return face
     }
@@ -273,10 +271,11 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
             const nextCount = (forwardCount - 1).toString(10)
             return {forward: parseCommands(nextCount.toString() + commands.substr(1))}
         }
-        throw new Error("Syntax error")
+        throw new Error("Syntax error: " + command)
     }
 
-    const commandEndIndex = constructionCode.lastIndexOf("]")
+    const endOfCommands = constructionCode.lastIndexOf("]")
+    const commandEndIndex = endOfCommands < 0 ? constructionCode.length : endOfCommands
     const commandString = constructionCode.substring(0, commandEndIndex + 1)
     const growthTree = parseCommands(commandString)
     const optimizationStack = constructionCode.substring(commandEndIndex + 1).split("").reverse()
@@ -290,8 +289,8 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
     const finish = (removeA: IInterval, removeB: IInterval, adjustA: IInterval, adjustB: IInterval, role: IntervalRole) => {
         fabric.removeInterval(removeA)
         fabric.removeInterval(removeB)
-        fabric.exports.setIntervalRole(adjustA.index, adjustA.intervalRole = role)
-        fabric.exports.setIntervalRole(adjustB.index, adjustB.intervalRole = role)
+        fabric.exports.changeRestIntervalRole(adjustA.index, adjustA.intervalRole = role)
+        fabric.exports.changeRestIntervalRole(adjustB.index, adjustB.intervalRole = role)
     }
     crossCables.forEach(ab => {
         const a = ab.alpha
@@ -313,7 +312,7 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
         if (!cd || !ad) {
             return
         }
-        fabric.createInterval(c, a, IntervalRole.BowMid, SPAN)
+        fabric.createInterval(c, a, IntervalRole.BowMid)
         if (highCross) {
             finish(ab, cd, bc, ad, IntervalRole.BowEndHigh)
         } else {
@@ -383,7 +382,7 @@ export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
 
     function intervalToString(indent: number): (interval: IInterval) => string {
         return (interval: IInterval) => {
-            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
+            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})`
         }
     }
 
@@ -406,7 +405,7 @@ export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
 export function connectorToString(fabric: TensegrityFabric, connector: IConnector): string {
     function intervalToString(indent: number): (interval: IInterval) => string {
         return (interval: IInterval) => {
-            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})=${interval.span}`
+            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})`
         }
     }
 

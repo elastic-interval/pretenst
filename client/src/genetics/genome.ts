@@ -3,14 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Direction } from "../fabric/fabric-exports"
+import { FabricState } from "../fabric/fabric-exports"
 
 import { deserializeGene, DICE, IDie, serializeGene } from "./dice"
 import { GeneReader } from "./gene-reader"
 import { IGeneData } from "./genome"
 
 export interface IGeneData {
-    direction: Direction
+    state: FabricState
     mutationCount: number
     geneString: string,
 }
@@ -33,7 +33,7 @@ export function fromGenomeData(genomeData: IGenomeData): Genome {
     }
     const genes = genomeData.genes.map(g => {
         return {
-            direction: g.direction,
+            state: g.state,
             mutationCount: g.mutationCount,
             dice: deserializeGene(g.geneString),
         }
@@ -49,7 +49,7 @@ export function fromOptionalGenomeData(genomeData?: IGenomeData): Genome | undef
 }
 
 export interface IGene {
-    direction: Direction
+    state: FabricState
     mutationCount: number
     dice: IDie[]
 }
@@ -59,26 +59,26 @@ export class Genome {
     constructor(private genes: IGene[], private roll: () => IDie) {
     }
 
-    public createReader(direction: Direction): GeneReader {
-        const existingGene = this.genes.find(g => direction === g.direction)
+    public createReader(state: FabricState): GeneReader {
+        const existingGene = this.genes.find(g => state === g.state)
         if (existingGene) {
             return new GeneReader(existingGene, this.roll)
         } else {
-            const freshGene: IGene = {direction, mutationCount: 0, dice: []}
+            const freshGene: IGene = {state, mutationCount: 0, dice: []}
             this.genes.push(freshGene)
             return new GeneReader(freshGene, this.roll)
         }
     }
 
-    public withMutatedBehavior(direction: Direction, mutations: number): Genome {
+    public withMutatedBehavior(direction: FabricState, mutations: number): Genome {
         const genesCopy: IGene[] = this.genes.map(g => {
             return {
-                direction: g.direction,
+                state: g.state,
                 mutationCount: g.mutationCount,
                 dice: g.dice.slice(),
             }
         })
-        const geneToMutate = genesCopy.find(g => direction === g.direction)
+        const geneToMutate = genesCopy.find(g => direction === g.state)
         if (geneToMutate) {
             for (let hit = 0; hit < mutations; hit++) {
                 const geneNumber = Math.floor(Math.random() * geneToMutate.dice.length)
@@ -93,7 +93,7 @@ export class Genome {
         return {
             genes: this.genes.map(g => {
                 return {
-                    direction: g.direction,
+                    state: g.state,
                     mutationCount: g.mutationCount,
                     geneString: serializeGene(g.dice),
                 }

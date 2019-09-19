@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { Direction, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
+import { FabricState, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
 import { InstanceExports } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
@@ -28,7 +28,7 @@ export class GotchiBody {
     }
 
     public get isResting(): boolean {
-        return this.currentDirection === Direction.Rest && this.nextDirection === Direction.Rest
+        return this.currentState === FabricState.Rest && this.nextState === FabricState.Rest
     }
 
     public recycle(): void {
@@ -79,10 +79,6 @@ export class GotchiBody {
         return this.exports.getIntervalCount()
     }
 
-    public get faceCount(): number {
-        return this.exports.getFaceCount()
-    }
-
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getFaceLocations(), 3))
@@ -94,7 +90,7 @@ export class GotchiBody {
         return geometry
     }
 
-    public pointerGeometryFor(direction: Direction): Geometry {
+    public pointerGeometryFor(state: FabricState): Geometry {
         const geometry = new Geometry()
         const v = () => new Vector3().add(this.seed)
         const arrowFromL = v()
@@ -104,8 +100,8 @@ export class GotchiBody {
         const arrowToLx = v()
         const arrowToRx = v()
         const arrowTip = v()
-        switch (direction) {
-            case Direction.Forward:
+        switch (state) {
+            case FabricState.Forward:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.right, -ARROW_WIDTH)
@@ -114,7 +110,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.right, ARROW_WIDTH)
                 arrowTip.addScaledVector(this.forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.TurnLeft:
+            case FabricState.TurnLeft:
                 arrowToL.addScaledVector(this.forward, -ARROW_WIDTH).addScaledVector(this.right, -ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.forward, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, -ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.forward, -ARROW_WIDTH)
@@ -123,7 +119,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.forward, ARROW_WIDTH)
                 arrowTip.addScaledVector(this.right, -ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.TurnRight:
+            case FabricState.TurnRight:
                 arrowToL.addScaledVector(this.forward, ARROW_WIDTH).addScaledVector(this.right, ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.forward, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.forward, ARROW_WIDTH)
@@ -132,7 +128,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.forward, -ARROW_WIDTH)
                 arrowTip.addScaledVector(this.right, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case Direction.Reverse:
+            case FabricState.Reverse:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, -ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, -ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.right, -ARROW_WIDTH)
@@ -178,13 +174,13 @@ export class GotchiBody {
         const jointPairName = this.exports.nextJointTag()
         const left = this.exports.createJoint(jointPairName, Laterality.LeftSide, leftLoc.x, leftLoc.y, leftLoc.z)
         const right = this.exports.createJoint(jointPairName, Laterality.RightSide, rightLoc.x, rightLoc.y, rightLoc.z)
-        this.muscle(hangerJoint, left, -1)
-        this.muscle(hangerJoint, right, -1)
-        this.muscle(left, right, -1)
+        this.muscle(hangerJoint, left)
+        this.muscle(hangerJoint, right)
+        this.muscle(left, right)
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
-            this.muscle(walk + 1, (walk + 1) % SEED_CORNERS + 1, -1)
-            this.muscle(walk + 1, left, -1)
-            this.muscle(walk + 1, right, -1)
+            this.muscle(walk + 1, (walk + 1) % SEED_CORNERS + 1)
+            this.muscle(walk + 1, left)
+            this.muscle(walk + 1, right)
         }
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             this.face(left, walk + 1, (walk + 1) % SEED_CORNERS + 1)
@@ -195,16 +191,16 @@ export class GotchiBody {
         return this
     }
 
-    public get currentDirection(): Direction {
-        return this.exports.getCurrentDirection()
+    public get currentState(): FabricState {
+        return this.exports.getCurrentState()
     }
 
-    public get nextDirection(): Direction {
-        return this.exports.getNextDirection()
+    public get nextState(): FabricState {
+        return this.exports.getNextState()
     }
 
-    public set nextDirection(direction: Direction) {
-        this.exports.setNextDirection(direction)
+    public set nextState(state: FabricState) {
+        this.exports.setNextState(state)
     }
 
     public iterate(ticks: number): boolean {
@@ -217,10 +213,6 @@ export class GotchiBody {
 
     public get isGestating(): boolean {
         return this.exports.isGestating()
-    }
-
-    public centralize(): void {
-        this.exports.centralize()
     }
 
     public setAltitude(altitude: number): number {
@@ -250,59 +242,32 @@ export class GotchiBody {
         return new FaceSnapshot(this, this.exports, faceIndex)
     }
 
-    public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
-        if (intervalIndex < INTERVALS_RESERVED || intervalIndex >= this.intervalCount) {
-            throw new Error(`Bad interval index index ${intervalIndex}`)
-        }
-        this.exports.setIntervalHighLow(intervalIndex, direction, highLow)
-        const oppositeIntervalIndex = this.exports.findOppositeIntervalIndex(intervalIndex)
-        if (oppositeIntervalIndex < this.intervalCount) {
-            switch (direction) {
-                case Direction.Forward:
-                case Direction.Reverse:
-                    this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, highLow)
-                    break
-                case Direction.TurnRight:
-                case Direction.TurnLeft:
-                    const low = Math.floor(highLow / 16)
-                    const high = highLow % 16
-                    const lowHigh = low + high * 16
-                    this.exports.setIntervalHighLow(oppositeIntervalIndex, direction, lowHigh)
-                    break
-            }
-        }
-    }
-
     // ==========================================================
 
     private face(joint0Index: number, joint1Index: number, joint2Index: number): number {
         return this.exports.createFace(joint0Index, joint1Index, joint2Index)
     }
 
-    private muscle(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.Muscle, false)
-    }
-
-    private growingMuscle(alphaIndex: number, omegaIndex: number, span: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, span, IntervalRole.Muscle, true)
+    private muscle(alphaIndex: number, omegaIndex: number): number {
+        return this.exports.createInterval(alphaIndex, omegaIndex, IntervalRole.Muscle)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
         const jointIndex = faceToReplace.joints.map(faceJoint => faceJoint.jointIndex)
         const sortedJoints = faceToReplace.joints.sort((a: IJointSnapshot, b: IJointSnapshot) => b.tag - a.tag)
         const chosenJoint = sortedJoints[faceJointIndex]
-        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplace.averageIdealSpan * 0.1)
+        const faceToReplaceAverageSpan = 1 // TODO
+        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplaceAverageSpan * 0.1)
         const apexIndex = this.exports.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z)
         if (apexIndex >= this.exports.getDimensions().jointCountMax) {
             return []
         }
         sortedJoints.forEach(faceJoint => {
             if (faceJoint.jointNumber !== chosenJoint.jointNumber) {
-                const idealSpan = new Vector3().subVectors(faceJoint.location, apexLocation).length()
-                this.muscle(faceJoint.jointIndex, apexIndex, idealSpan)
+                this.muscle(faceJoint.jointIndex, apexIndex)
             }
         })
-        this.growingMuscle(chosenJoint.jointIndex, apexIndex, faceToReplace.averageIdealSpan)
+        this.muscle(chosenJoint.jointIndex, apexIndex)
         const createdFaceIndexes: number[] = []
         sortedJoints.map(joint => joint.jointNumber).forEach((jointNumber: number, index: number) => { // youngest first
             switch (jointNumber) {

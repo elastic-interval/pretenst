@@ -50,7 +50,7 @@ export class EvolutionComponent extends React.Component<IEvolutionProps, IEvolut
                         return (
                             <group key={`Evolver${index}`}>
                                 <lineSegments key="Vectors"
-                                              geometry={fabric.pointerGeometryFor(evolver.nextDirection)}
+                                              geometry={fabric.pointerGeometryFor(evolver.nextState)}
                                               material={GOTCHI_ARROW}
                                 />
                                 <mesh

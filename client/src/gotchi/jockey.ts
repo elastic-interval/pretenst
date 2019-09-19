@@ -6,7 +6,7 @@
 import { BufferGeometry, Geometry, Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { Direction } from "../fabric/fabric-exports"
+import { FabricState } from "../fabric/fabric-exports"
 import { GotchiBody } from "../fabric/gotchi-body"
 import { Genome, IGenomeData } from "../genetics/genome"
 import { HEXAPOD_RADIUS } from "../island/constants"
@@ -22,7 +22,7 @@ export interface IEvaluatedJockey {
 }
 
 export class Jockey {
-    private votes: Direction[] = []
+    private votes: FabricState[] = []
     private currentLeg: Leg
 
     constructor(readonly gotchi: Gotchi, leg: Leg, private mutatingGenome?: Genome) {
@@ -44,7 +44,7 @@ export class Jockey {
     public set leg(leg: Leg) {
         this.currentLeg = leg
         this.votes = []
-        this.gotchi.nextDirection = this.voteDirection()
+        this.gotchi.nextState = this.voteState()
     }
 
     public reorient(): void {
@@ -53,20 +53,21 @@ export class Jockey {
             if (nextLeg) {
                 this.leg = nextLeg
             } else {
-                this.gotchi.nextDirection = Direction.Rest
+                this.gotchi.nextState = FabricState.Rest
             }
         }
-        if (this.fabric.nextDirection !== Direction.Rest) {
-            const direction = this.voteDirection()
-            if (this.nextDirection !== direction) {
-                console.log(`${this.index} turned ${Direction[this.nextDirection]} to ${Direction[direction]}`)
-                this.gotchi.nextDirection = direction
+        if (this.fabric.nextState !== FabricState.Rest) {
+            const state = this.voteState()
+            // todo: fix all this
+            if (this.nextState !== state) {
+                console.log(`${this.index} turned ${FabricState[this.nextState]} to ${FabricState[state]}`)
+                this.gotchi.nextState = state
             }
         }
     }
 
     public get pointerGeometry(): Geometry {
-        return this.gotchi.body.pointerGeometryFor(this.gotchi.body.currentDirection)
+        return this.gotchi.body.pointerGeometryFor(this.gotchi.body.currentState)
     }
 
     public get facesGeometry(): BufferGeometry {
@@ -78,7 +79,7 @@ export class Jockey {
     }
 
     public stopMoving(): void {
-        this.gotchi.nextDirection = Direction.Rest
+        this.gotchi.nextState = FabricState.Rest
     }
 
     public get index(): number {
@@ -113,11 +114,11 @@ export class Jockey {
             throw new Error("Not evolving")
         }
         // console.log(`mutating ${this.index} ${Direction[this.nextDirection]} ${mutationCount} dice`)
-        this.mutatingGenome = this.mutatingGenome.withMutatedBehavior(this.nextDirection, mutationCount)
+        this.mutatingGenome = this.mutatingGenome.withMutatedBehavior(this.nextState, mutationCount)
     }
 
-    public get nextDirection(): Direction {
-        return this.fabric.nextDirection
+    public get nextState(): FabricState {
+        return this.fabric.nextState
     }
 
     public get evaluated(): IEvaluatedJockey {
@@ -147,7 +148,7 @@ export class Jockey {
         return this.gotchi.getDistanceFrom(this.target) < HEXAPOD_RADIUS
     }
 
-    private voteDirection(): Direction {
+    private voteState(): FabricState {
         const votes = this.votes
         const latestVote = this.directionToTarget
         votes.push(latestVote)
@@ -158,29 +159,29 @@ export class Jockey {
             c[vote]++
             return c
         }, [0, 0, 0, 0, 0])
-        for (let direction = Direction.Forward; direction <= Direction.Reverse; direction++) {
-            if (voteCounts[direction] === MAX_VOTES && this.nextDirection !== direction) {
-                return direction
+        for (let state = FabricState.Forward; state <= FabricState.Reverse; state++) {
+            if (voteCounts[state] === MAX_VOTES && this.nextState !== state) {
+                return state
             }
         }
         return latestVote
     }
 
-    private get directionToTarget(): Direction {
+    private get directionToTarget(): FabricState {
         const toTarget = this.toTarget
         const degreeForward = toTarget.dot(this.gotchi.body.forward)
         const degreeRight = toTarget.dot(this.gotchi.body.right)
         if (degreeForward > 0) {
             if (degreeRight > 0) {
-                return degreeForward > degreeRight ? Direction.Forward : Direction.TurnRight
+                return degreeForward > degreeRight ? FabricState.Forward : FabricState.TurnRight
             } else {
-                return degreeForward > -degreeRight ? Direction.Forward : Direction.TurnLeft
+                return degreeForward > -degreeRight ? FabricState.Forward : FabricState.TurnLeft
             }
         } else {
             if (degreeRight > 0) {
-                return -degreeForward > degreeRight ? Direction.Reverse : Direction.TurnRight
+                return -degreeForward > degreeRight ? FabricState.Reverse : FabricState.TurnRight
             } else {
-                return -degreeForward > -degreeRight ? Direction.Reverse : Direction.TurnLeft
+                return -degreeForward > -degreeRight ? FabricState.Reverse : FabricState.TurnLeft
             }
         }
     }

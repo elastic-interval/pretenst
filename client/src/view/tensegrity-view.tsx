@@ -41,7 +41,7 @@ declare global {
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 const SPHERE = new SphereGeometry(0.12, 16, 16)
 
-const ITERATIONS_PER_FRAME = 50
+const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 20
 
@@ -73,19 +73,20 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
             if (joint === undefined || !fabric) {
                 return
             }
-            fabric.exports.multiplyJointIdealSpan(joint.index, bar, factor(up))
+            // TODO fabric.exports.multiplyJointSpan(joint.index, bar, factor(up))
         }
         const handleInterval = (interval: IInterval | undefined, up: boolean) => {
             if (interval === undefined || !fabric) {
                 return
             }
-            fabric.exports.setSpanDivergence(interval.index, factor(up))
+            // TODO: this will not work, because it's not a factor!
+            fabric.exports.changeRestSpan(interval.index, factor(up))
         }
         const handleFace = (face: IFace | undefined, bar: boolean, up: boolean) => {
             if (face === undefined || !fabric) {
                 return
             }
-            fabric.exports.setFaceSpanDivergence(face.index, bar, factor(up))
+            // TODO: fabric.exports.setFaceSpanDivergence(face.index, bar, factor(up))
         }
         if (!fabric) {
             return

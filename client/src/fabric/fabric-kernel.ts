@@ -10,7 +10,7 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { Direction, IFabricDimensions, IFabricExports, IntervalRole } from "./fabric-exports"
+import { FabricState, IFabricDimensions, IFabricExports, IntervalRole } from "./fabric-exports"
 import { GotchiBody } from "./gotchi-body"
 import { Physics } from "./physics"
 import { TensegrityFabric } from "./tensegrity-fabric"
@@ -250,8 +250,8 @@ export class InstanceExports {
         return this.ex.createFace(joint0Index, joint1Index, joint2Index)
     }
 
-    public createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number {
-        return this.ex.createInterval(alphaIndex, omegaIndex, idealSpan, intervalRole, growing)
+    public createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole): number {
+        return this.ex.createInterval(alphaIndex, omegaIndex, intervalRole)
     }
 
     public removeInterval(intervalIndex: number): void {
@@ -274,12 +274,8 @@ export class InstanceExports {
         return this.ex.findOppositeIntervalIndex(intervalIndex)
     }
 
-    public getCurrentDirection(): Direction {
-        return this.ex.getCurrentDirection()
-    }
-
-    public getFaceAverageIdealSpan(faceIndex: number): number {
-        return this.ex.getFaceAverageIdealSpan(faceIndex)
+    public getCurrentState(): FabricState {
+        return this.ex.getCurrentState()
     }
 
     public getFaceJointIndex(faceIndex: number, jointNumber: number): number {
@@ -322,40 +318,32 @@ export class InstanceExports {
         return this.ex.setAltitude(altitude)
     }
 
-    public getNextDirection(): Direction {
-        return this.ex.getNextDirection()
+    public getNextState(): FabricState {
+        return this.ex.getNextState()
     }
 
-    public setNextDirection(direction: Direction): void {
-        this.ex.setNextDirection(direction)
+    public setNextState(state: FabricState): void {
+        this.ex.setNextState(state)
     }
 
-    public getRoleIdealSpan(intervalRole: IntervalRole): number {
-        return this.ex.getRoleIdealSpan(intervalRole)
+    public getRoleSpan(intervalRole: IntervalRole): number {
+        return this.ex.getRoleSpan(intervalRole)
     }
 
-    public setRoleIdealSpan(intervalRole: IntervalRole, factor: number): void {
-        this.ex.setRoleIdealSpan(intervalRole, factor)
+    public setRoleSpan(intervalRole: IntervalRole, factor: number): void {
+        this.ex.setRoleSpan(intervalRole, factor)
     }
 
-    public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
-        this.ex.setIntervalHighLow(intervalIndex, direction, highLow)
+    public setIntervalStateSpan(intervalIndex: number, state: FabricState, span: number): void {
+        this.ex.setIntervalStateSpan(intervalIndex, state, span)
     }
 
-    public setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
-        this.ex.setIntervalRole(intervalIndex, intervalRole)
+    public changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
+        this.ex.changeRestIntervalRole(intervalIndex, intervalRole)
     }
 
-    public setSpanDivergence(intervalIndex: number, span: number): void {
-        this.ex.setSpanDivergence(intervalIndex, span)
-    }
-
-    public multiplyJointIdealSpan(jointIndex: number, bar: boolean, factor: number): void {
-        this.ex.setJointSpanDivergence(jointIndex, bar, factor)
-    }
-
-    public setFaceSpanDivergence(faceIndex: number, bar: boolean, factor: number): void {
-        this.ex.setFaceSpanDivergence(faceIndex, bar, factor)
+    public changeRestSpan(intervalIndex: number, span: number): void {
+        this.ex.changeRestSpan(intervalIndex, span)
     }
 
     public setGestating(countdown: number): void {

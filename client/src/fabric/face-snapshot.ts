@@ -71,10 +71,6 @@ export class FaceSnapshot {
         return this.jointSnapshots
     }
 
-    public get averageIdealSpan(): number {
-        return this.exports.getFaceAverageIdealSpan(this.faceIndex)
-    }
-
     public get midpoint(): Vector3 {
         throw new Error()
         // return vectorFromFloatArray(this.exports.getFaceMidpoints(), this.faceIndex * 3)

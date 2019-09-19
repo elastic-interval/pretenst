@@ -53,6 +53,7 @@ async function start(): Promise<void> {
     const user = await storage.getUser()
     const root = document.getElementById("root") as HTMLElement
     const physics = new Physics({getPhysicsFeature, setPhysicsFeature})
+    physics.applyGlobal(fabricExports)
     if (TENSEGRITY) {
         const dimensions: IFabricDimensions = {
             instanceMax: 30,
@@ -61,7 +62,6 @@ async function start(): Promise<void> {
             faceCountMax: 4000,
         }
         const fabricKernel = new FabricKernel(fabricExports, physics, dimensions)
-        physics.applyGlobal(fabricExports)
         ReactDOM.render(
             <TensegrityView
                 fabricExports={fabricExports}

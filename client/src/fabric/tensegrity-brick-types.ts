@@ -9,7 +9,6 @@ import { IntervalRole } from "./fabric-exports"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 export const PHI = 1.61803398875
-export const SPAN = 0.0
 
 export enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -44,7 +43,6 @@ export interface IInterval {
     intervalRole: IntervalRole
     alpha: IJoint
     omega: IJoint
-    span: number
 }
 
 export interface IFace {

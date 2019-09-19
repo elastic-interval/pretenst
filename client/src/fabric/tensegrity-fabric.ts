@@ -173,12 +173,12 @@ export class TensegrityFabric {
         return this.exports.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, span: number): IInterval {
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval {
         const interval = <IInterval>{
-            index: this.exports.createInterval(alpha.index, omega.index, span, intervalRole, true),
+            index: this.exports.createInterval(alpha.index, omega.index, intervalRole),
             removed: false,
             intervalRole,
-            alpha, omega, span,
+            alpha, omega,
         }
         this.intervals.push(interval)
         return interval
@@ -283,7 +283,7 @@ export class TensegrityFabric {
                             optimizeFabric(this, true)
                             break
                         case "X":
-                            this.setGestating(25)
+                            this.setGestating(3)
                             growth.optimizationStack.push("Connect")
                             break
                         case "Connect":
@@ -291,7 +291,7 @@ export class TensegrityFabric {
                             break
                     }
                 } else {
-                    this.setGestating(5)
+                    this.setGestating(2)
                     this.physics.applyLocal(this.exports)
                     this.growth = undefined
                 }
