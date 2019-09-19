@@ -187,9 +187,9 @@ function FabricView({fabric}:
         controls.maxDistance = 1000
         controls.minDistance = 3
         controls.enableKeys = false
-        const mp = new Vector3(0, ALTITUDE, 0)
-        orbitControls.current.target.set(mp.x, mp.y, mp.z)
-        camera.position.set(mp.x, ALTITUDE, mp.z + ALTITUDE)
+        const midpoint = new Vector3(0, ALTITUDE, 0)
+        orbitControls.current.target.set(midpoint.x, midpoint.y, midpoint.z)
+        camera.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE)
         camera.lookAt(orbitControls.current.target)
         controls.update()
     }, [fabric])
