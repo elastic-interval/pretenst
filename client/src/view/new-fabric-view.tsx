@@ -15,7 +15,7 @@ import {
 const FABRIC_CODE_KEY = "FabricCode"
 
 function fetchFabricCode(): string {
-    const item = localStorage.getItem(FABRIC_CODE)
+    const item = localStorage.getItem(FABRIC_CODE_KEY)
     if (!item) {
         return ""
     }
@@ -23,7 +23,7 @@ function fetchFabricCode(): string {
 }
 
 function storeFabricCode(fabricCode: string): void {
-    localStorage.setItem(FABRIC_CODE, fabricCode)
+    localStorage.setItem(FABRIC_CODE_KEY, fabricCode)
 }
 
 export function NewFabricView({loadFabric}: {
