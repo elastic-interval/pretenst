@@ -73,20 +73,20 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
             if (joint === undefined || !fabric) {
                 return
             }
-            // TODO fabric.exports.multiplyJointSpan(joint.index, bar, factor(up))
+            // TODO fabric.exports.multiplyJointLength(joint.index, bar, factor(up))
         }
         const handleInterval = (interval: IInterval | undefined, up: boolean) => {
             if (interval === undefined || !fabric) {
                 return
             }
             // TODO: this will not work, because it's not a factor!
-            fabric.exports.changeRestSpan(interval.index, factor(up))
+            fabric.exports.changeRestLength(interval.index, factor(up))
         }
         const handleFace = (face: IFace | undefined, bar: boolean, up: boolean) => {
             if (face === undefined || !fabric) {
                 return
             }
-            // TODO: fabric.exports.setFaceSpanDivergence(face.index, bar, factor(up))
+            // TODO: fabric.exports.setFaceLengthDivergence(face.index, bar, factor(up))
         }
         if (!fabric) {
             return

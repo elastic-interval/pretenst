@@ -75,7 +75,7 @@ export class Physics {
             if (intervalRole === undefined) {
                 return
             }
-            feature.defaultValue = instanceExports.getRoleSpan(intervalRole)
+            feature.defaultValue = instanceExports.getRoleLength(intervalRole)
             const defaultValue = this.storage ? this.storage.getPhysicsFeature(feature.label, feature.defaultValue) : feature.defaultValue
             if (feature.factor$.getValue() !== defaultValue) {
                 feature.factor$.next(defaultValue)
@@ -90,7 +90,7 @@ export class Physics {
                 return
             }
             const factor = feature.factor$.getValue()
-            instanceExports.setRoleSpan(intervalRole, factor)
+            instanceExports.setRoleLength(intervalRole, factor)
         })
     }
 

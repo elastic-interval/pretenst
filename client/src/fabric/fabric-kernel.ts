@@ -326,24 +326,24 @@ export class InstanceExports {
         this.ex.setNextState(state)
     }
 
-    public getRoleSpan(intervalRole: IntervalRole): number {
-        return this.ex.getRoleSpan(intervalRole)
+    public getRoleLength(intervalRole: IntervalRole): number {
+        return this.ex.getRoleLength(intervalRole)
     }
 
-    public setRoleSpan(intervalRole: IntervalRole, factor: number): void {
-        this.ex.setRoleSpan(intervalRole, factor)
+    public setRoleLength(intervalRole: IntervalRole, factor: number): void {
+        this.ex.setRoleLength(intervalRole, factor)
     }
 
-    public setIntervalStateSpan(intervalIndex: number, state: FabricState, span: number): void {
-        this.ex.setIntervalStateSpan(intervalIndex, state, span)
+    public setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void {
+        this.ex.setIntervalStateLength(intervalIndex, state, length)
     }
 
     public changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
         this.ex.changeRestIntervalRole(intervalIndex, intervalRole)
     }
 
-    public changeRestSpan(intervalIndex: number, span: number): void {
-        this.ex.changeRestSpan(intervalIndex, span)
+    public changeRestLength(intervalIndex: number, length: number): void {
+        this.ex.changeRestLength(intervalIndex, length)
     }
 
     public setGestating(countdown: number): void {

@@ -39,7 +39,7 @@ export enum GlobalFeature {
     DragAbove = 3,
     DragBelowLand = 4,
     DragBelowWater = 5,
-    SpanVariationSpeed = 6,
+    LengthVariationSpeed = 6,
     PushElastic = 7,
     PullElastic = 8,
 }
@@ -88,9 +88,9 @@ export interface IFabricExports {
 
     setAltitude(altitude: number): number
 
-    getRoleSpan(intervalRole: IntervalRole): number
+    getRoleLength(intervalRole: IntervalRole): number
 
-    setRoleSpan(intervalRole: IntervalRole, factor: number): void
+    setRoleLength(intervalRole: IntervalRole, factor: number): void
 
     nextJointTag(): number
 
@@ -108,13 +108,13 @@ export interface IFabricExports {
 
     changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
-    changeRestSpan(intervalIndex: number, span: number): void
+    changeRestLength(intervalIndex: number, length: number): void
 
     removeInterval(intervalIndex: number): void
 
     findOppositeIntervalIndex(intervalIndex: number): number
 
-    setIntervalStateSpan(intervalIndex: number, state: FabricState, span: number): void
+    setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void
 
     getFaceCount(): number
 

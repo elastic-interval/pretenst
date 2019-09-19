@@ -256,8 +256,8 @@ export class GotchiBody {
         const jointIndex = faceToReplace.joints.map(faceJoint => faceJoint.jointIndex)
         const sortedJoints = faceToReplace.joints.sort((a: IJointSnapshot, b: IJointSnapshot) => b.tag - a.tag)
         const chosenJoint = sortedJoints[faceJointIndex]
-        const faceToReplaceAverageSpan = 1 // TODO
-        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplaceAverageSpan * 0.1)
+        const faceToReplaceAverageLength = 1 // TODO
+        const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplaceAverageLength * 0.1)
         const apexIndex = this.exports.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z)
         if (apexIndex >= this.exports.getDimensions().jointCountMax) {
             return []
