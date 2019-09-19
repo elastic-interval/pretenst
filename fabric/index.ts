@@ -25,16 +25,17 @@ enum IntervalRole {
     BowEndHigh = 7,
 }
 
+const PRETENST: f32 = 1.0
 const INTERVAL_ROLE_COUNT: u8 = 8
-const MUSCLE_SPAN: f32 = 1.0
-const PHI: f32 = 1.61803398875
-const BAR_SPAN: f32 = 2 * PHI
-const CABLE_SPAN: f32 = 2
-const RING_SPAN: f32 = 1.74
-const CROSS_SPAN: f32 = 1.82
-const BOW_MID_SPAN: f32 = 0.8520879139
-const BOW_END_LOW_SPAN: f32 = 1.3799999952
-const BOW_END_HIGH_SPAN: f32 = 1.5705686808
+const MUSCLE_LENGTH: f32 = 1.0
+const PHI: f32 = 1.618
+const BAR_LENGTH: f32 = 2 * PHI * PRETENST
+const CABLE_LENGTH: f32 = 2.123
+const RING_LENGTH: f32 = 1.775
+const CROSS_LENGTH: f32 = 1.583
+const BOW_MID_LENGTH: f32 = 0.8521
+const BOW_END_LOW_LENGTH: f32 = 1.380
+const BOW_END_HIGH_LENGTH: f32 = 1.571
 
 const MIN_COLOR: f32 = 0.2
 const MIN_STRESS: f32 = 0.00001
@@ -44,23 +45,20 @@ const LATERALITY_SIZE: usize = U8
 const JOINT_NAME_SIZE: usize = U16
 const INDEX_SIZE: usize = U16
 const INTERVAL_ROLE_SIZE: usize = U8
-const MUSCLE_HIGHLOW_SIZE: usize = U8
+const INTERVAL_AGE_SIZE: usize = U16
 const VECTOR_SIZE: usize = F32 * 3
-const CLOCK_POINTS: u8 = 16
 const JOINT_RADIUS: f32 = 0.1
 const AMBIENT_JOINT_MASS: f32 = 0.1
-const SEED_CORNERS: u16 = 5
-const REST_DIRECTION: u8 = 0
-const MUSCLE_DIRECTIONS: u8 = 5
-const DEFAULT_HIGH_LOW: u8 = 0x08
-const GROWING_INTERVAL: u8 = 1
-const MATURE_INTERVAL: u8 = 2
-const GESTATING: u8 = 1
-const NOT_GESTATING: u8 = 0
+const REST_STATE: u8 = 0
+const STATE_COUNT: u8 = 5
 const LAND: u8 = 1
 
+const INTERVAL_AGE_BORN: u16 = 0
+const INTERVAL_AGE_ADULT: u16 = 500
+const GESTATION_DRAG_FACTOR: f32 = 10
+
 const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
-const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + MUSCLE_HIGHLOW_SIZE * MUSCLE_DIRECTIONS
+const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + INTERVAL_AGE_SIZE + F32 * STATE_COUNT
 
 // Dimensioning ================================================================================
 
@@ -175,20 +173,26 @@ function _omega(intervalIndex: u16): usize {
 
 // @ts-ignore
 @inline()
-function _idealSpan(intervalIndex: u16): usize {
+function _currentLength(intervalIndex: u16): usize {
     return _omega(intervalCountMax) + intervalIndex * F32
 }
 
 // @ts-ignore
 @inline()
 function _intervalRole(intervalIndex: u16): usize {
-    return _idealSpan(intervalCountMax) + intervalIndex * F32
+    return _currentLength(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
 }
 
 // @ts-ignore
 @inline()
-function _highLowArray(intervalIndex: u16): usize {
-    return _intervalRole(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
+function _intervalAge(intervalIndex: u16): usize {
+    return _intervalRole(intervalCountMax) + intervalIndex * INTERVAL_AGE_SIZE
+}
+
+// @ts-ignore
+@inline()
+function _stateLengthArray(intervalIndex: u16): usize {
+    return _intervalAge(intervalCountMax) + intervalIndex * F32 * STATE_COUNT
 }
 
 // @ts-ignore
@@ -225,9 +229,6 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 
 // Physics =====================================================================================
 
-const GESTATION_DRAG_FACTOR: f32 = 1000
-const GESTATION_TIME_SWEEP_FACTOR: f32 = 1
-
 enum GlobalFeature {
     GravityAbove = 0,
     GravityBelowLand = 1,
@@ -235,8 +236,7 @@ enum GlobalFeature {
     DragAbove = 3,
     DragBelowLand = 4,
     DragBelowWater = 5,
-    MaxSpanVariation = 6,
-    SpanVariationSpeed = 7,
+    LengthVariationSpeed = 7,
     PushElastic = 8,
     PullElastic = 9,
 }
@@ -249,7 +249,7 @@ const GRAVITY_BELOW_LAND: f32 = -0.1
 const GRAVITY_BELOW_WATER: f32 = -0.00001
 const PUSH_ELASTIC_FACTOR: f32 = 25.0
 const PULL_ELASTIC_FACTOR: f32 = 15.0
-const MAX_SPAN_VARIATION: f32 = 0.1
+const MAX_LENGTH_VARIATION: f32 = 0.1
 const TIME_SWEEP_SPEED: f32 = 30.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
@@ -285,7 +285,6 @@ export function setDragBelowLand(factor: f32): f32 {
 let physicsGravityBelowLand: f32 = GRAVITY_BELOW_LAND
 let pushElasticFactor: f32 = PUSH_ELASTIC_FACTOR
 let pullElasticFactor: f32 = PULL_ELASTIC_FACTOR
-let maxSpanVariation: f32 = MAX_SPAN_VARIATION
 let timeSweepSpeed: f32 = TIME_SWEEP_SPEED
 
 export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32 {
@@ -302,9 +301,7 @@ export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32
             return physicsDragBelowLand = DRAG_BELOW_LAND * factor
         case GlobalFeature.DragBelowWater:
             return physicsDragBelowWater = DRAG_BELOW_WATER * factor
-        case GlobalFeature.MaxSpanVariation:
-            return maxSpanVariation = MAX_SPAN_VARIATION * factor
-        case GlobalFeature.SpanVariationSpeed:
+        case GlobalFeature.LengthVariationSpeed:
             return timeSweepSpeed = TIME_SWEEP_SPEED * factor
         case GlobalFeature.PushElastic:
             return pushElasticFactor = PUSH_ELASTIC_FACTOR * factor
@@ -540,10 +537,10 @@ const JOINT_TAG_COUNT_OFFSET = JOINT_COUNT_OFFSET + U16
 const INTERVAL_COUNT_OFFSET = JOINT_TAG_COUNT_OFFSET + U16
 const FACE_COUNT_OFFSET = INTERVAL_COUNT_OFFSET + U16
 const GESTATING_OFFSET = FACE_COUNT_OFFSET + U16
-const PREVIOUS_DIRECTION_OFFSET = GESTATING_OFFSET + U8
-const CURRENT_DIRECTION_OFFSET = PREVIOUS_DIRECTION_OFFSET + U8
-const NEXT_DIRECTION_OFFSET = CURRENT_DIRECTION_OFFSET + U8
-const ELASTIC_FACTOR_OFFSET = NEXT_DIRECTION_OFFSET + U8 + U16 // last one is padding for multiple of 4 bytes
+const PREVIOUS_STATE_OFFSET = GESTATING_OFFSET + U8
+const CURRENT_STATE_OFFSET = PREVIOUS_STATE_OFFSET + U8
+const NEXT_STATE_OFFSET = CURRENT_STATE_OFFSET + U8
+const ELASTIC_FACTOR_OFFSET = NEXT_STATE_OFFSET + U8 + U16 // last one is padding for multiple of 4 bytes
 const STATE_SIZE = ELASTIC_FACTOR_OFFSET * INTERVAL_ROLE_COUNT * F32
 
 function setAge(value: u32): void {
@@ -600,44 +597,62 @@ function setFaceCount(value: u16): void {
     setU16(_state + FACE_COUNT_OFFSET, value)
 }
 
-export function isGestating(): u8 {
+function getGestating(): u8 {
     return getU8(_state + GESTATING_OFFSET)
 }
 
-function setGestating(value: u8, timeSweep: u16): void {
-    setTimeSweep(timeSweep)
-    setU8(_state + GESTATING_OFFSET, value)
+export function setGestating(countdown: u8): void {
+    setTimeSweep(0)
+    setU8(_state + GESTATING_OFFSET, countdown)
 }
 
-function getPreviousDirection(): u8 {
-    return getU8(_state + PREVIOUS_DIRECTION_OFFSET)
+export function isGestating(): boolean {
+    return getGestating() > 0
 }
 
-function setPreviousDirection(value: u8): void {
-    setU8(_state + PREVIOUS_DIRECTION_OFFSET, value)
+function nextGestation(next: u8): void {
+    if (next < 0) {
+        return
+    }
+    setGestating(next)
 }
 
-export function getCurrentDirection(): u8 {
-    return getU8(_state + CURRENT_DIRECTION_OFFSET)
+function getPreviousState(): u8 {
+    return getU8(_state + PREVIOUS_STATE_OFFSET)
 }
 
-function setCurrentDirection(value: u8): void {
-    setU8(_state + CURRENT_DIRECTION_OFFSET, value)
+function setPreviousState(value: u8): void {
+    setU8(_state + PREVIOUS_STATE_OFFSET, value)
 }
 
-export function getNextDirection(): u8 {
-    return getU8(_state + NEXT_DIRECTION_OFFSET)
+export function getCurrentState(): u8 {
+    return getU8(_state + CURRENT_STATE_OFFSET)
 }
 
-export function setNextDirection(value: u8): void {
-    setU8(_state + NEXT_DIRECTION_OFFSET, value)
+function setCurrentState(value: u8): void {
+    setU8(_state + CURRENT_STATE_OFFSET, value)
 }
 
-export function setRoleIdealSpan(intervalRole: u8, span: f32): void {
-    setF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32, span)
+export function getNextState(): u8 {
+    return getU8(_state + NEXT_STATE_OFFSET)
 }
 
-export function getRoleIdealSpan(intervalRole: u8): f32 {
+export function setNextState(value: u8): void {
+    setU8(_state + NEXT_STATE_OFFSET, value)
+}
+
+export function setRoleLength(intervalRole: u8, length: f32): void {
+    setF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32, length)
+    let intervalCount = getIntervalCount()
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        if (getIntervalRole(intervalIndex) !== intervalRole) {
+            continue
+        }
+        changeRestLength(intervalIndex, length)
+    }
+}
+
+export function getRoleLength(intervalRole: u8): f32 {
     return getF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32)
 }
 
@@ -648,18 +663,18 @@ export function reset(): void {
     setJointTagCount(0)
     setIntervalCount(0)
     setFaceCount(0)
-    setGestating(GESTATING, 0)
-    setPreviousDirection(REST_DIRECTION)
-    setCurrentDirection(REST_DIRECTION)
-    setNextDirection(REST_DIRECTION)
-    setRoleIdealSpan(<u8>IntervalRole.Muscle, MUSCLE_SPAN)
-    setRoleIdealSpan(<u8>IntervalRole.Bar, BAR_SPAN)
-    setRoleIdealSpan(<u8>IntervalRole.Triangle, CABLE_SPAN)
-    setRoleIdealSpan(<u8>IntervalRole.Ring, RING_SPAN)
-    setRoleIdealSpan(<u8>IntervalRole.Cross, CROSS_SPAN)
-    setRoleIdealSpan(<u8>IntervalRole.BowMid, BOW_MID_SPAN)
-    setRoleIdealSpan(<u8>IntervalRole.BowEndLow, BOW_END_LOW_SPAN)
-    setRoleIdealSpan(<u8>IntervalRole.BowEndHigh, BOW_END_HIGH_SPAN)
+    setGestating(0)
+    setPreviousState(REST_STATE)
+    setCurrentState(REST_STATE)
+    setNextState(REST_STATE)
+    setRoleLength(<u8>IntervalRole.Muscle, MUSCLE_LENGTH)
+    setRoleLength(<u8>IntervalRole.Bar, BAR_LENGTH)
+    setRoleLength(<u8>IntervalRole.Triangle, CABLE_LENGTH)
+    setRoleLength(<u8>IntervalRole.Ring, RING_LENGTH)
+    setRoleLength(<u8>IntervalRole.Cross, CROSS_LENGTH)
+    setRoleLength(<u8>IntervalRole.BowMid, BOW_MID_LENGTH)
+    setRoleLength(<u8>IntervalRole.BowEndLow, BOW_END_LOW_LENGTH)
+    setRoleLength(<u8>IntervalRole.BowEndHigh, BOW_END_HIGH_LENGTH)
 }
 
 // Joints =====================================================================================
@@ -758,21 +773,22 @@ function calculateJointMidpoint(): void {
 }
 
 function calculateDirectionVectors(): void {
-    let rightJoint = isGestating() ? SEED_CORNERS + 1 : SEED_CORNERS // hanger joint still there
-    let leftJoint = rightJoint + 1
-    addVectors(_seed, _location(rightJoint), _location(leftJoint))
-    multiplyScalar(_seed, 0.5)
-    subVectors(_right, _location(rightJoint), _location(leftJoint))
-    setY(_right, 0) // horizontal, should be near already
-    multiplyScalar(_right, 1 / length(_right))
-    setAll(_vX, 0, 1, 0) // up
-    crossVectors(_forward, _vX, _right)
-    multiplyScalar(_forward, 1 / length(_forward))
+    // TODO: change this to tensegrity
+    // let rightJoint = (getGestating() > 0) ? SEED_CORNERS + 1 : SEED_CORNERS // hanger joint still there
+    // let leftJoint = rightJoint + 1
+    // addVectors(_seed, _location(rightJoint), _location(leftJoint))
+    // multiplyScalar(_seed, 0.5)
+    // subVectors(_right, _location(rightJoint), _location(leftJoint))
+    // setY(_right, 0) // horizontal, should be near already
+    // multiplyScalar(_right, 1 / length(_right))
+    // setAll(_vX, 0, 1, 0) // up
+    // crossVectors(_forward, _vX, _right)
+    // multiplyScalar(_forward, 1 / length(_forward))
 }
 
 // Intervals =====================================================================================
 
-export function createInterval(alpha: u16, omega: u16, idealSpan: f32, intervalRole: u8, growing: boolean): usize {
+export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize {
     let intervalCount = getIntervalCount()
     if (intervalCount + 1 >= intervalCountMax) {
         return ERROR
@@ -782,16 +798,14 @@ export function createInterval(alpha: u16, omega: u16, idealSpan: f32, intervalR
     setAlphaIndex(intervalIndex, alpha)
     setOmegaIndex(intervalIndex, omega)
     zero(_unit(intervalIndex))
-    setSpanDivergence(intervalIndex, idealSpan > 0 ? idealSpan : calculateSpan(intervalIndex) * -idealSpan)
-    setIntervalRole(intervalIndex, intervalRole)
-    for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
-        if (direction === REST_DIRECTION) {
-            setIntervalHighLow(intervalIndex, direction, growing ? GROWING_INTERVAL : MATURE_INTERVAL)
-        } else {
-            setIntervalHighLow(intervalIndex, direction, DEFAULT_HIGH_LOW)
-        }
+    initializeCurrentLength(intervalIndex, calculateLength(intervalIndex))
+    initializeIntervalRole(intervalIndex, intervalRole)
+    setU16(_intervalAge(intervalIndex), INTERVAL_AGE_BORN)
+    let idealLength = getRoleLength(intervalRole)
+    for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
+        setIntervalStateLength(intervalIndex, state, idealLength)
     }
-    setGestating(GESTATING, 0)
+    setGestating(1)
     return intervalIndex
 }
 
@@ -806,13 +820,14 @@ export function removeInterval(intervalIndex: u16): void {
 
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset
-    setIntervalRole(intervalIndex, getIntervalRole(nextIndex))
+    initializeIntervalRole(intervalIndex, getIntervalRole(nextIndex))
+    setU16(_intervalAge(intervalIndex), getIntervalAge(nextIndex))
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
-    setSpanDivergence(intervalIndex, getSpanDivergence(nextIndex))
-    for (let direction: u8 = 0; direction < MUSCLE_DIRECTIONS; direction++) {
-        setIntervalHighLow(intervalIndex, direction, getIntervalHighLow(nextIndex, direction))
+    initializeCurrentLength(intervalIndex, getCurrentLength(nextIndex))
+    for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
+        setIntervalStateLength(intervalIndex, state, getIntervalStateLength(nextIndex, state))
     }
 }
 
@@ -832,34 +847,62 @@ function setOmegaIndex(intervalIndex: u16, index: u16): void {
     setU16(_omega(intervalIndex), index)
 }
 
-function getSpanDivergence(intervalIndex: u16): f32 {
-    return getF32(_idealSpan(intervalIndex))
+function getCurrentLength(intervalIndex: u16): f32 {
+    return getF32(_currentLength(intervalIndex))
 }
 
-export function setSpanDivergence(intervalIndex: u16, idealSpan: f32): void {
-    if (idealSpan < 0) {
-        return
-    }
-    // When you can no longer assume they're careful to keep changes small
-    // setGestating(GESTATING)
-    // setIntervalHighLow(intervalIndex, REST_DIRECTION, GROWING_INTERVAL)
-    setF32(_idealSpan(intervalIndex), idealSpan)
+function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
+    setF32(_currentLength(intervalIndex), idealLength)
+}
+
+export function changeRestLength(intervalIndex: u16, restLength: f32): void {
+    resetIntervalAge(intervalIndex)
+    initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
+    setIntervalStateLength(intervalIndex, REST_STATE, restLength)
 }
 
 function getIntervalRole(intervalIndex: u16): u8 {
     return getU8(_intervalRole(intervalIndex))
 }
 
-export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
+function initializeIntervalRole(intervalIndex: u16, intervalRole: u8): void {
     setU8(_intervalRole(intervalIndex), intervalRole)
 }
 
-function getIntervalHighLow(intervalIndex: u16, direction: u8): u8 {
-    return getU8(_highLowArray(intervalIndex) + MUSCLE_HIGHLOW_SIZE * direction)
+export function changeRestIntervalRole(intervalIndex: u16, intervalRole: u8): void {
+    let existingRole = getIntervalRole(intervalIndex)
+    if (existingRole === intervalRole) {
+        return
+    }
+    initializeCurrentLength(intervalIndex, getRoleLength(existingRole))
+    setIntervalStateLength(intervalIndex, REST_STATE, getRoleLength(intervalRole))
+    resetIntervalAge(intervalIndex)
+    setU8(_intervalRole(intervalIndex), intervalRole)
 }
 
-export function setIntervalHighLow(intervalIndex: u16, direction: u8, highLow: u8): void {
-    setU8(_highLowArray(intervalIndex) + MUSCLE_HIGHLOW_SIZE * direction, highLow)
+function getIntervalAge(intervalIndex: u16): u16 {
+    return getU16(_intervalAge(intervalIndex))
+}
+
+function incrementIntervalAge(intervalIndex: u16): boolean {
+    let intervalAge = getIntervalAge(intervalIndex)
+    if (intervalAge === INTERVAL_AGE_ADULT) {
+        return false
+    }
+    setU16(_intervalAge(intervalIndex), intervalAge + 1)
+    return intervalAge + 1 === INTERVAL_AGE_ADULT
+}
+
+function resetIntervalAge(intervalIndex: u16): void {
+    setU16(_intervalAge(intervalIndex), INTERVAL_AGE_BORN)
+}
+
+function getIntervalStateLength(intervalIndex: u16, state: u8): f32 {
+    return getF32(_stateLengthArray(intervalIndex) + F32 * state)
+}
+
+export function setIntervalStateLength(intervalIndex: u16, state: u8, stateLength: f32): void {
+    setF32(_stateLengthArray(intervalIndex) + F32 * state, stateLength)
 }
 
 function getStress(intervalIndex: u16): f32 {
@@ -870,12 +913,12 @@ function setStress(intervalIndex: u16, stress: f32): void {
     setF32(_intervalStresses + F32 * intervalIndex, stress)
 }
 
-function calculateSpan(intervalIndex: u16): f32 {
+function calculateLength(intervalIndex: u16): f32 {
     let unit = _unit(intervalIndex)
     subVectors(unit, _location(omegaIndex(intervalIndex)), _location(alphaIndex(intervalIndex)))
-    let span = length(unit)
-    multiplyScalar(unit, 1 / span)
-    return span
+    let length = length(unit)
+    multiplyScalar(unit, 1 / length)
+    return length
 }
 
 function findIntervalIndex(joint0: u16, joint1: u16): u16 {
@@ -913,95 +956,15 @@ function advance(clockPoint: u32): u32 {
     return clockPoint + 65536
 }
 
-function getIntervalSpanVariationFloat(intervalIndex: u16, direction: u8): f32 {
-    if (direction === REST_DIRECTION) {
-        return 0
+function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
+    let currentLength = getCurrentLength(intervalIndex)
+    let intervalAge = getIntervalAge(intervalIndex)
+    if (intervalAge === INTERVAL_AGE_ADULT) {
+        return currentLength
     }
-    let highLow: u8 = getIntervalHighLow(intervalIndex, direction)
-    let highClockPoint: u32 = <u32>(highLow / CLOCK_POINTS) << 12
-    let lowClockPoint: u32 = <u32>(highLow % CLOCK_POINTS) << 12
-    if (highClockPoint === lowClockPoint) {
-        lowClockPoint += 1 << 12
-    }
-    let pointsFromHigh: u32
-    let pointsFromLow: u32
-    let timeSweep = getTimeSweep()
-    if (timeSweep === lowClockPoint) {
-        pointsFromHigh = 1
-        pointsFromLow = 0
-    } else if (timeSweep === highClockPoint) {
-        pointsFromHigh = 0
-        pointsFromLow = 1
-    } else if (lowClockPoint < highClockPoint) {
-        // L-H
-        if (timeSweep > lowClockPoint) {
-            if (timeSweep < highClockPoint) {
-                // L-t-H
-                pointsFromLow = timeSweep - lowClockPoint
-                pointsFromHigh = highClockPoint - timeSweep
-            } else {
-                // L-H-t (H-t-L)
-                pointsFromLow = advance(lowClockPoint) - timeSweep
-                pointsFromHigh = timeSweep - highClockPoint
-            }
-        } else {
-            // t-L-H (L-H-t)
-            pointsFromLow = lowClockPoint - timeSweep
-            pointsFromHigh = advance(timeSweep) - highClockPoint
-        }
-    } else {
-        // H-L
-        if (timeSweep > highClockPoint) {
-            if (timeSweep < lowClockPoint) {
-                // H-t-L
-                pointsFromHigh = timeSweep - highClockPoint
-                pointsFromLow = lowClockPoint - timeSweep
-            } else {
-                // H-L-t (L-t-H)
-                pointsFromHigh = advance(highClockPoint) - timeSweep
-                pointsFromLow = timeSweep - lowClockPoint
-            }
-        } else {
-            // t-H-L (H-L-t)
-            pointsFromHigh = highClockPoint - timeSweep
-            pointsFromLow = advance(timeSweep) - lowClockPoint
-        }
-    }
-    let both: u32 = pointsFromHigh + pointsFromLow
-    let lowToHigh: f32 = <f32>both
-    let degreeHigh = <f32>pointsFromLow / lowToHigh
-    let degreeLow = <f32>pointsFromHigh / lowToHigh
-    return degreeHigh * maxSpanVariation + degreeLow * -maxSpanVariation
-}
-
-function interpolateCurrentSpan(intervalIndex: u16): f32 {
-    let timeSweep = getTimeSweep()
-    let progress = <f32>timeSweep / 65536
-    let intervalRole = getIntervalRole(intervalIndex)
-    let idealSpan = getRoleIdealSpan(intervalRole) + getSpanDivergence(intervalIndex)
-    let intervalState = getIntervalHighLow(intervalIndex, REST_DIRECTION)
-    if (intervalState === GROWING_INTERVAL) {
-        if (timeSweep === 0) { // done growing
-            setIntervalHighLow(intervalIndex, REST_DIRECTION, MATURE_INTERVAL)
-            return idealSpan
-        } else { // busy growing
-            let currentSpan: f32 = calculateSpan(intervalIndex)
-            return currentSpan * (1 - progress) + idealSpan * progress
-        }
-    }
-    if (getIntervalRole(intervalIndex) !== IntervalRole.Muscle) {
-        return idealSpan
-    }
-    let currentDirection = getCurrentDirection()
-    let previousDirection = getPreviousDirection()
-    if (previousDirection !== currentDirection) {
-        let previousSpanVariation = getIntervalSpanVariationFloat(intervalIndex, previousDirection)
-        let spanVariation = getIntervalSpanVariationFloat(intervalIndex, currentDirection)
-        return idealSpan + idealSpan * (progress * spanVariation + (1 - progress) * previousSpanVariation)
-    } else {
-        let spanVariation = getIntervalSpanVariationFloat(intervalIndex, currentDirection)
-        return idealSpan + idealSpan * spanVariation
-    }
+    let progress = <f32>intervalAge / <f32>INTERVAL_AGE_ADULT
+    let stateLength = getIntervalStateLength(intervalIndex, state)
+    return currentLength * (1 - progress) + stateLength * progress
 }
 
 function setLineColor(_color: usize, red: f32, green: f32, blue: f32): void {
@@ -1095,19 +1058,6 @@ function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize)
     multiplyScalar(_vX, 1 / length(_vX))
     addScaledVector(normal, _vX, 0.7)
     multiplyScalar(normal, 1 / length(normal))
-}
-
-export function getFaceAverageIdealSpan(faceIndex: u16): f32 {
-    let joint0 = getFaceJointIndex(faceIndex, 0)
-    let joint1 = getFaceJointIndex(faceIndex, 1)
-    let joint2 = getFaceJointIndex(faceIndex, 2)
-    let interval0 = findIntervalIndex(joint0, joint1)
-    let interval1 = findIntervalIndex(joint1, joint2)
-    let interval2 = findIntervalIndex(joint2, joint0)
-    let ideal0 = getSpanDivergence(interval0)
-    let ideal1 = getSpanDivergence(interval1)
-    let ideal2 = getSpanDivergence(interval2)
-    return (ideal0 + ideal1 + ideal2) / 3
 }
 
 // Triangles and normals depicting the faces =================================================
@@ -1244,34 +1194,37 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 // Physics =====================================================================================
 
-function intervalPhysics(intervalIndex: u16): void {
+function intervalPhysics(intervalIndex: u16, gestating: u8, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
-    let currentIdealSpan = interpolateCurrentSpan(intervalIndex)
-    let stress = calculateSpan(intervalIndex) - currentIdealSpan
+    getCurrentState()
+    let currentLength = interpolateCurrentLength(intervalIndex, state)
+    let stress = calculateLength(intervalIndex) - currentLength
     if (intervalRole !== IntervalRole.Muscle && intervalRole !== IntervalRole.Bar && stress < 0) {
         stress = 0
     }
     if (stress < 0) { // PUSH
-        stress *= pushElasticFactor
+        stress *= gestating ? PUSH_ELASTIC_FACTOR : pushElasticFactor
     } else { // PULL
-        stress *= pullElasticFactor
+        stress *= gestating ? PULL_ELASTIC_FACTOR : pullElasticFactor
     }
     setStress(intervalIndex, stress)
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -stress / 2)
-    let mass = currentIdealSpan * currentIdealSpan * currentIdealSpan
+    let mass = currentLength * currentLength * currentLength
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = _intervalMass(omegaIndex(intervalIndex))
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(jointIndex: u16, dragAbove: f32): void {
+function jointPhysics(jointIndex: u16, gestating: u8): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
+    let dragAbove = physicsDragAbove * (gestating === 0 ? 1 : GESTATION_DRAG_FACTOR / <f32>gestating)
+    let gravityAbove = gestating > 0 ? <f32>0 : physicsGravityAbove
     if (altitude > JOINT_RADIUS) { // far above
-        setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
+        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityAbove)
         multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
     } else {
         let land = getTerrainUnder(jointIndex) === LAND
@@ -1283,7 +1236,7 @@ function jointPhysics(jointIndex: u16, dragAbove: f32): void {
             if (velocityY < 0 && land) {
                 multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
             }
-            let gravityValue: f32 = physicsGravityAbove * degreeAbove + physicsGravityBelow * degreeBelow
+            let gravityValue: f32 = gravityAbove * degreeAbove + physicsGravityBelow * degreeBelow
             setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
             let drag = dragAbove * degreeAbove + physicsDragBelow * degreeBelow
             multiplyScalar(_velocity(jointIndex), 1 - drag)
@@ -1298,14 +1251,18 @@ function jointPhysics(jointIndex: u16, dragAbove: f32): void {
     }
 }
 
-function tick(gestating: boolean): void {
+function tick(gestating: u8, state: u8): void {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        intervalPhysics(intervalIndex)
+        intervalPhysics(intervalIndex, gestating, state)
+        let reachedAdult = incrementIntervalAge(intervalIndex)
+        if (reachedAdult) {
+            initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
+        }
     }
     let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        jointPhysics(jointIndex, physicsDragAbove * (gestating ? GESTATION_DRAG_FACTOR : 1))
+        jointPhysics(jointIndex, gestating)
         addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
         zero(_force(jointIndex))
     }
@@ -1317,9 +1274,9 @@ function tick(gestating: boolean): void {
 
 export function iterate(ticks: u16): boolean {
     let wrapAround = false
-    let gestating = isGestating() === GESTATING
-    let timeSweepStep: u16 = <u16>(gestating ? timeSweepSpeed * GESTATION_TIME_SWEEP_FACTOR : timeSweepSpeed)
-    let currentDirection = getCurrentDirection()
+    let gestating = getGestating()
+    let timeSweepStep: u16 = <u16>timeSweepSpeed
+    let currentState = getCurrentState()
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
         let timeSweep = getTimeSweep()
         let current = timeSweep
@@ -1327,16 +1284,18 @@ export function iterate(ticks: u16): boolean {
         setTimeSweep(timeSweep)
         if (timeSweep < current) {
             wrapAround = true
-            if (!isGestating()) {
-                setPreviousDirection(currentDirection)
-                let nextDirection = getNextDirection()
-                if (nextDirection !== currentDirection) {
-                    setCurrentDirection(nextDirection)
+            if (gestating === 0) {
+                setPreviousState(currentState)
+                let nextState = getNextState()
+                if (nextState !== currentState) {
+                    setCurrentState(nextState)
                 }
             }
-            setGestating(NOT_GESTATING, 0)
+            if (gestating > 0) {
+                nextGestation(gestating - 1)
+            }
         }
-        tick(gestating)
+        tick(gestating, currentState)
     }
     setAge(getAge() + <u32>ticks)
     outputLinesGeometry()
@@ -1346,25 +1305,14 @@ export function iterate(ticks: u16): boolean {
     }
     calculateJointMidpoint()
     calculateDirectionVectors()
-    return wrapAround
-}
-
-export function setJointSpanDivergence(jointIndex: u16, bar: boolean, factor: f32): void {
-    let intervalCount = getIntervalCount()
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        if (alphaIndex(intervalIndex) !== jointIndex && omegaIndex(intervalIndex) !== jointIndex) {
-            continue
+    if (gestating) {
+        let intervalCount = getIntervalCount()
+        for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+            if (getIntervalAge(intervalIndex) !== INTERVAL_AGE_ADULT) {
+                return false
+            }
         }
-        let intervalIsBar: boolean = getIntervalRole(intervalIndex) === IntervalRole.Bar
-        if (intervalIsBar !== bar) {
-            continue
-        }
-        setSpanDivergence(intervalIndex, getSpanDivergence(intervalIndex) * factor)
+        return true
     }
-}
-
-export function setFaceSpanDivergence(faceIndex: u16, bar: boolean, factor: f32): void {
-    setJointSpanDivergence(getFaceJointIndex(faceIndex, 0), bar, factor)
-    setJointSpanDivergence(getFaceJointIndex(faceIndex, 1), bar, factor)
-    setJointSpanDivergence(getFaceJointIndex(faceIndex, 2), bar, factor)
+    return wrapAround
 }

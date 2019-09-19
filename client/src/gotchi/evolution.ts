@@ -7,7 +7,7 @@ import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { Direction } from "../fabric/fabric-exports"
+import { FabricState } from "../fabric/fabric-engine"
 import { ITERATIONS_PER_TICK } from "../fabric/gotchi-body"
 import { fromGenomeData, Genome } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"
@@ -19,9 +19,9 @@ export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
 const MUTATION_COUNT = 5
 const SURVIVAL_RATE = 0.66
-const MIN_LIFESPAN = 15000
-const MAX_LIFESPAN = 25000
-const INCREMENT_LIFESPAN = 1000
+const MIN_LIFELENGTH = 15000
+const MAX_LIFELENGTH = 25000
+const INCREMENT_LIFELENGTH = 1000
 
 export class Evolution {
     public currentJockeys: BehaviorSubject<Jockey[]> = new BehaviorSubject<Jockey[]>([])
@@ -35,7 +35,7 @@ export class Evolution {
         private readonly prototypeJockey?: Jockey,
     ) {
         const rotateToLeg = this.leg
-        if (prototypeJockey && prototypeJockey.nextDirection !== Direction.Rest) {
+        if (prototypeJockey && prototypeJockey.nextState !== FabricState.Rest) {
             throw new Error("Cannot create evolution from jockey which is not resting")
         }
         home.centerSpot.adjacentSpots.forEach((spot, index) => {
@@ -45,7 +45,7 @@ export class Evolution {
             }
         })
         this.currentJockeys.next(this.createPopulation())
-        this.maxAge = this.startAge + MIN_LIFESPAN
+        this.maxAge = this.startAge + MIN_LIFELENGTH
     }
 
     public get leg(): Leg {
@@ -114,12 +114,12 @@ export class Evolution {
     // Privates =============================================================
 
     private adjustAgeLimit(): void {
-        this.maxAge += INCREMENT_LIFESPAN
-        const lifespan = this.maxAge - this.startAge
-        if (lifespan > MAX_LIFESPAN) {
-            this.maxAge = this.startAge + MIN_LIFESPAN // start again
+        this.maxAge += INCREMENT_LIFELENGTH
+        const lifelength = this.maxAge - this.startAge
+        if (lifelength > MAX_LIFELENGTH) {
+            this.maxAge = this.startAge + MIN_LIFELENGTH // start again
         }
-        console.log(`Age: [${this.startAge} to ${this.maxAge}] ${lifespan}`)
+        console.log(`Age: [${this.startAge} to ${this.maxAge}] ${lifelength}`)
     }
 
     private get rankedJockeys(): IEvaluatedJockey[] {
@@ -181,7 +181,7 @@ export class Evolution {
                 break
             }
             jockeys.push(evolvingJockey)
-            mutatingGenome = mutatingGenome.withMutatedBehavior(evolvingJockey.nextDirection, MUTATION_COUNT)
+            mutatingGenome = mutatingGenome.withMutatedBehavior(evolvingJockey.nextState, MUTATION_COUNT)
         }
         return jockeys
     }

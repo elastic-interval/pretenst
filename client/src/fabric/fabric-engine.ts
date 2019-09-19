@@ -7,7 +7,7 @@ export interface IMemory {
     buffer: ArrayBuffer
 }
 
-export enum Direction {
+export enum FabricState {
     Rest,
     Forward,
     TurnLeft,
@@ -39,10 +39,9 @@ export enum GlobalFeature {
     DragAbove = 3,
     DragBelowLand = 4,
     DragBelowWater = 5,
-    MaxSpanVariation = 6,
-    SpanVariationSpeed = 7,
-    PushElastic = 8,
-    PullElastic = 9,
+    LengthVariationSpeed = 6,
+    PushElastic = 7,
+    PullElastic = 8,
 }
 
 export const SEED_CORNERS = 5
@@ -55,7 +54,7 @@ export interface IFabricDimensions {
     faceCountMax: number,
 }
 
-export interface IFabricExports {
+export interface IFabricEngine {
 
     memory: IMemory
 
@@ -75,11 +74,13 @@ export interface IFabricExports {
 
     isGestating(): boolean
 
-    getCurrentDirection(): Direction
+    setGestating(countdown: number): void
 
-    getNextDirection(): Direction
+    getCurrentState(): FabricState
 
-    setNextDirection(direction: Direction): void
+    getNextState(): FabricState
+
+    setNextState(state: FabricState): void
 
     iterate(ticks: number): boolean
 
@@ -87,9 +88,9 @@ export interface IFabricExports {
 
     setAltitude(altitude: number): number
 
-    getRoleIdealSpan(intervalRole: IntervalRole): number
+    getRoleLength(intervalRole: IntervalRole): number
 
-    setRoleIdealSpan(intervalRole: IntervalRole, factor: number): void
+    setRoleLength(intervalRole: IntervalRole, factor: number): void
 
     nextJointTag(): number
 
@@ -103,21 +104,17 @@ export interface IFabricExports {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number
+    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole): number
 
-    setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
+    changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
-    setSpanDivergence(intervalIndex: number, span: number): void
-
-    setJointSpanDivergence(jointIndex: number, bar: boolean, factor: number): void
-
-    setFaceSpanDivergence(faceIndex: number, bar: boolean, factor: number): void
+    changeRestLength(intervalIndex: number, length: number): void
 
     removeInterval(intervalIndex: number): void
 
     findOppositeIntervalIndex(intervalIndex: number): number
 
-    setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void
+    setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void
 
     getFaceCount(): number
 
@@ -128,6 +125,4 @@ export interface IFabricExports {
     findOppositeFaceIndex(faceIndex: number): number
 
     getFaceJointIndex(faceIndex: number, jointNumber: number): number
-
-    getFaceAverageIdealSpan(faceIndex: number): number
 }

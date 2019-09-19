@@ -5,20 +5,23 @@
 
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import { IntervalRole, Laterality } from "./fabric-exports"
-import { InstanceExports } from "./fabric-kernel"
+import { IntervalRole, Laterality } from "./fabric-engine"
+import { FabricInstance } from "./fabric-kernel"
+import { Physics } from "./physics"
 import {
     brickToString,
+    connectClosestFacePair,
     connectorToString,
     createBrickOnOrigin,
+    executeGrowthTrees,
     optimizeFabric,
-    parseCommands,
+    parseConstructionCode,
 } from "./tensegrity-brick"
 import {
     IBrick,
     IConnector,
     IFace,
-    IGrowthTree,
+    IGrowth,
     IInterval,
     IJoint,
     JointTag,
@@ -39,7 +42,7 @@ export class TensegrityFabric {
     public intervals: IInterval[] = []
     public faces: IFace[] = []
     public autoRotate = false
-    public growing: IGrowthTree[]
+    public growth?: IGrowth
 
     private _selectable: Selectable = Selectable.NONE
     private _selectedJoint: IJoint | undefined
@@ -52,10 +55,15 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(readonly exports: InstanceExports, readonly name: string) {
-        const growthTree = parseCommands(name)
-        growthTree.brick = this.createBrick()
-        this.growing = [growthTree]
+    constructor(readonly instance: FabricInstance, readonly physics: Physics, readonly name: string, altitude: number) {
+        const growth = parseConstructionCode(name)
+        growth.growing[0].brick = this.createBrick(altitude)
+        this.growth = growth
+    }
+
+
+    public setGestating(countdown: number): void {
+        this.instance.setGestating(countdown)
     }
 
     get selectable(): Selectable {
@@ -90,6 +98,7 @@ export class TensegrityFabric {
 
     set selectedInterval(value: IInterval | undefined) {
         this.cancelSelection()
+        console.log("selected interval", value)
         this._selectable = Selectable.NONE
         this._selectedInterval = value
         if (value) {
@@ -103,8 +112,13 @@ export class TensegrityFabric {
 
     set selectedFace(value: IFace | undefined) {
         this.cancelSelection()
+        console.log("selected face", value)
         this._selectable = Selectable.NONE
         this._selectedFace = value
+    }
+
+    get growthFaces(): IFace[] {
+        return this.faces.filter(f => f.canGrow)
     }
 
     get selectionActive(): boolean {
@@ -118,15 +132,15 @@ export class TensegrityFabric {
         this._selectedFace = undefined
     }
 
-    public createBrick(): IBrick {
-        const brick = createBrickOnOrigin(this)
-        this.exports.clear()
+    public createBrick(altitude: number): IBrick {
+        const brick = createBrickOnOrigin(this, altitude)
+        this.instance.clear()
         this.disposeOfGeometry()
         return brick
     }
 
     public removeFace(face: IFace, removeIntervals: boolean): void {
-        this.exports.removeFace(face.index)
+        this.instance.removeFace(face.index)
         this.faces = this.faces.filter(existing => existing.index !== face.index)
         this.faces.forEach(existing => {
             if (existing.index > face.index) {
@@ -139,7 +153,7 @@ export class TensegrityFabric {
     }
 
     public removeInterval(interval: IInterval): void {
-        this.exports.removeInterval(interval.index)
+        this.instance.removeInterval(interval.index)
         interval.removed = true
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
         this.intervals.forEach(existing => {
@@ -147,7 +161,7 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
-        this.exports.clear()
+        this.instance.clear()
         this.disposeOfGeometry()
     }
 
@@ -156,15 +170,15 @@ export class TensegrityFabric {
     }
 
     public createJointIndex(jointTag: JointTag, location: Vector3): number {
-        return this.exports.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
+        return this.instance.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, span: number): IInterval {
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval {
         const interval = <IInterval>{
-            index: this.exports.createInterval(alpha.index, omega.index, span, intervalRole, true),
+            index: this.instance.createInterval(alpha.index, omega.index, intervalRole),
             removed: false,
             intervalRole,
-            alpha, omega, span,
+            alpha, omega,
         }
         this.intervals.push(interval)
         return interval
@@ -174,7 +188,7 @@ export class TensegrityFabric {
         const joints = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => brick.joints[barEnd])
         const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
         const face = <IFace>{
-            index: this.exports.createFace(joints[0].index, joints[1].index, joints[2].index),
+            index: this.instance.createFace(joints[0].index, joints[1].index, joints[2].index),
             canGrow: true,
             brick,
             triangle,
@@ -195,7 +209,7 @@ export class TensegrityFabric {
 
     public recycle(): void {
         this.disposeOfGeometry()
-        this.exports.recycle()
+        this.instance.recycle()
     }
 
     public disposeOfGeometry(): void {
@@ -210,22 +224,22 @@ export class TensegrityFabric {
     }
 
     public get jointCount(): number {
-        return this.exports.getJointCount()
+        return this.instance.getJointCount()
     }
 
     public get intervalCount(): number {
-        return this.exports.getIntervalCount()
+        return this.instance.getIntervalCount()
     }
 
     public get faceCount(): number {
-        return this.exports.getFaceCount()
+        return this.instance.getFaceCount()
     }
 
     public get facesGeometry(): BufferGeometry {
         if (!this.facesGeometryStored) {
             const geometry = new BufferGeometry()
-            this.faceLocations = new Float32BufferAttribute(this.exports.getFaceLocations(), 3)
-            this.faceNormals = new Float32BufferAttribute(this.exports.getFaceNormals(), 3)
+            this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
+            this.faceNormals = new Float32BufferAttribute(this.instance.getFaceNormals(), 3)
             geometry.addAttribute("position", this.faceLocations)
             geometry.addAttribute("normal", this.faceNormals)
             this.facesGeometryStored = geometry
@@ -236,8 +250,8 @@ export class TensegrityFabric {
     public get linesGeometry(): BufferGeometry {
         if (!this.linesGeometryStored) {
             const geometry = new BufferGeometry()
-            this.lineLocations = new Float32BufferAttribute(this.exports.getLineLocations(), 3)
-            this.lineColors = new Float32BufferAttribute(this.exports.getLineColors(), 3)
+            this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
+            this.lineColors = new Float32BufferAttribute(this.instance.getLineColors(), 3)
             geometry.addAttribute("position", this.lineLocations)
             geometry.addAttribute("color", this.lineColors)
             this.linesGeometryStored = geometry
@@ -247,7 +261,42 @@ export class TensegrityFabric {
 
     public iterate(ticks: number): boolean {
         this.disposeOfGeometry()
-        return this.exports.iterate(ticks)
+        const changeHappened = this.instance.iterate(ticks)
+        if (!changeHappened) {
+            return false
+        }
+        const growth = this.growth
+        if (growth) {
+            if (growth.growing.length > 0) {
+                growth.growing = executeGrowthTrees(growth.growing)
+                this.instance.centralize()
+            }
+            if (growth.growing.length === 0) {
+                if (growth.optimizationStack.length > 0) {
+                    const optimization = growth.optimizationStack.pop()
+                    switch (optimization) {
+                        case "L":
+                            optimizeFabric(this, false)
+                            break
+                        case "H":
+                            optimizeFabric(this, true)
+                            break
+                        case "X":
+                            this.setGestating(3)
+                            growth.optimizationStack.push("Connect")
+                            break
+                        case "Connect":
+                            connectClosestFacePair(this)
+                            break
+                    }
+                } else {
+                    this.setGestating(1)
+                    this.physics.applyLocal(this.instance)
+                    this.growth = undefined
+                }
+            }
+        }
+        return true
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {

@@ -5,8 +5,8 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { GlobalFeature, IFabricExports, IntervalRole } from "./fabric-exports"
-import { InstanceExports } from "./fabric-kernel"
+import { GlobalFeature, IFabricEngine, IntervalRole } from "./fabric-engine"
+import { FabricInstance } from "./fabric-kernel"
 
 export interface IFeatureName {
     globalFeature?: GlobalFeature
@@ -32,20 +32,16 @@ export interface IPhysicsFeature {
     defaultValue: number
 }
 
-function getPhysicsFeature(label: string, defaultValue: number): number {
-    const value = localStorage.getItem(label)
-    return value ? parseFloat(value) : defaultValue
-}
-
-function setPhysicsFeature(label: string, factor: number): void {
-    localStorage.setItem(label, factor.toFixed(10))
+export interface IPhysicsFeatureStorage {
+    getPhysicsFeature: (label: string, defaultValue: number) => number
+    setPhysicsFeature: (label: string, factor: number) => void
 }
 
 export class Physics {
 
     private readonly featuresArray: IPhysicsFeature[]
 
-    constructor() {
+    constructor(private storage?: IPhysicsFeatureStorage) {
         this.featuresArray = [
             ...Object.keys(GlobalFeature).filter(key => key.length > 1)
                 .map(key => GlobalFeature[key])
@@ -60,7 +56,7 @@ export class Physics {
         return this.featuresArray
     }
 
-    public applyGlobal(fabricExports: IFabricExports): object {
+    public applyGlobal(engine: IFabricEngine): object {
         const featureValues = {}
         this.featuresArray.forEach(feature => {
             const globalFeature = feature.name.globalFeature
@@ -68,51 +64,56 @@ export class Physics {
                 return
             }
             const factor = feature.factor$.getValue()
-            featureValues[feature.label] = fabricExports.setGlobalFeature(globalFeature, factor)
+            featureValues[feature.label] = engine.setGlobalFeature(globalFeature, factor)
         })
         return featureValues
     }
 
-    public acquireLocal(instanceExports: InstanceExports): void {
+    public acquireLocal(instance: FabricInstance): void {
         this.featuresArray.forEach(feature => {
             const intervalRole = feature.name.intervalRole
             if (intervalRole === undefined) {
                 return
             }
-            feature.defaultValue = instanceExports.getRoleIdealSpan(intervalRole)
-            const defaultValue = getPhysicsFeature(feature.label, feature.defaultValue)
-            instanceExports.setRoleIdealSpan(intervalRole, defaultValue)
+            feature.defaultValue = instance.getRoleLength(intervalRole)
+            const defaultValue = this.storage ? this.storage.getPhysicsFeature(feature.label, feature.defaultValue) : feature.defaultValue
             if (feature.factor$.getValue() !== defaultValue) {
                 feature.factor$.next(defaultValue)
             }
         })
     }
 
-    public applyLocal(instanceExports: InstanceExports): void {
+    public applyLocal(instance: FabricInstance): void {
         this.featuresArray.forEach(feature => {
             const intervalRole = feature.name.intervalRole
             if (intervalRole === undefined) {
                 return
             }
             const factor = feature.factor$.getValue()
-            instanceExports.setRoleIdealSpan(intervalRole, factor)
+            instance.setRoleLength(intervalRole, factor)
         })
     }
 
     private createFeature(name: IFeatureName): IPhysicsFeature {
         const label = nameLabel(name)
         const isGlobal = name.globalFeature !== undefined
-        const factor = new BehaviorSubject<number>(getPhysicsFeature(label, 1.0))
+        const factor = new BehaviorSubject<number>(this.getFeature(label, 1.0))
         return {
             label,
             name,
             isGlobal,
             setFactor: (newFactor: number) => {
-                setPhysicsFeature(label, newFactor)
+                if (this.storage) {
+                    this.storage.setPhysicsFeature(label, newFactor)
+                }
                 factor.next(newFactor)
             },
             factor$: factor,
             defaultValue: isGlobal ? 1.0 : factor.getValue(),
         }
+    }
+
+    private getFeature(label: string, defaultValue: number): number {
+        return this.storage ? this.storage.getPhysicsFeature(label, defaultValue) : defaultValue
     }
 }

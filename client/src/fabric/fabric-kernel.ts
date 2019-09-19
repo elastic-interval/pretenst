@@ -10,8 +10,9 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { Direction, IFabricDimensions, IFabricExports, IntervalRole } from "./fabric-exports"
+import { FabricState, IFabricDimensions, IFabricEngine, IntervalRole } from "./fabric-engine"
 import { GotchiBody } from "./gotchi-body"
+import { Physics } from "./physics"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const FLOATS_IN_VECTOR = 3
@@ -28,22 +29,6 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
     } else {
         return new Vector3(array[index], array[index + 1], array[index + 2])
     }
-}
-
-export function createFabricKernel(
-    fabricExports: IFabricExports,
-    instanceMax: number,
-    jointCountMax: number,
-    intervalCountMax: number,
-    faceCountMax: number,
-): FabricKernel {
-    const dimensions: IFabricDimensions = {
-        instanceMax,
-        jointCountMax,
-        intervalCountMax,
-        faceCountMax,
-    }
-    return new FabricKernel(fabricExports, dimensions)
 }
 
 interface IOffsets {
@@ -91,15 +76,15 @@ function createOffsets(jointCountMax: number, intervalCountMax: number, faceCoun
 }
 
 export class FabricKernel implements IGotchiFactory {
-    private instanceArray: InstanceExports[] = []
+    private instanceArray: FabricInstance[] = []
     private instanceUsed: boolean[] = []
     private arrayBuffer: ArrayBuffer
     private spotCenters: Float32Array
     private surface: Int8Array
 
-    constructor(private exports: IFabricExports, dimensions: IFabricDimensions) {
-        const fabricBytes = exports.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
-        this.arrayBuffer = exports.memory.buffer
+    constructor(private engine: IFabricEngine, private physics: Physics, dimensions: IFabricDimensions) {
+        const fabricBytes = engine.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
+        this.arrayBuffer = engine.memory.buffer
         this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
         this.surface = new Int8Array(this.arrayBuffer, SPOT_CENTERS_SIZE, HEXALOT_BITS)
         const byteLength = this.arrayBuffer.byteLength
@@ -107,10 +92,10 @@ export class FabricKernel implements IGotchiFactory {
             throw new Error(`Zero byte length! ${fabricBytes}`)
         }
         for (let index = 0; index < dimensions.instanceMax; index++) {
-            this.instanceArray.push(new InstanceExports(
+            this.instanceArray.push(new FabricInstance(
                 this.arrayBuffer,
                 createOffsets(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, HEXALOT_SIZE + index * fabricBytes),
-                exports,
+                engine,
                 dimensions,
                 index,
                 toFree => this.instanceUsed[toFree] = false,
@@ -119,12 +104,12 @@ export class FabricKernel implements IGotchiFactory {
         }
     }
 
-    public createTensegrityFabric(name: string): TensegrityFabric | undefined {
+    public createTensegrityFabric(name: string, altitude: number): TensegrityFabric | undefined {
         const newInstance = this.allocateInstance()
         if (!newInstance) {
             return undefined
         }
-        return new TensegrityFabric(newInstance, name)
+        return new TensegrityFabric(newInstance, this.physics, name, altitude)
     }
 
     public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {
@@ -141,7 +126,7 @@ export class FabricKernel implements IGotchiFactory {
         if (!newInstance) {
             return undefined
         }
-        this.exports.cloneInstance(gotchi.body.index, newInstance.index)
+        this.engine.cloneInstance(gotchi.body.index, newInstance.index)
         const fabric = new GotchiBody(newInstance)
         return new Gotchi(gotchi.home, fabric, genome, this)
     }
@@ -162,7 +147,7 @@ export class FabricKernel implements IGotchiFactory {
 
     // ==============================================================
 
-    private allocateInstance(): InstanceExports | undefined {
+    private allocateInstance(): FabricInstance | undefined {
         const freeIndex = this.instanceUsed.indexOf(false)
         if (freeIndex < 0) {
             return undefined
@@ -192,7 +177,7 @@ class LazyFloatArray {
     }
 }
 
-export class InstanceExports {
+export class FabricInstance {
     private vectors: LazyFloatArray
     private lineColors: LazyFloatArray
     private lineLocations: LazyFloatArray
@@ -210,20 +195,20 @@ export class InstanceExports {
     constructor(
         private buffer: ArrayBuffer,
         private offsets: IOffsets,
-        private exports: IFabricExports,
+        private engine: IFabricEngine,
         private dimensions: IFabricDimensions,
         private fabricIndex: number,
         private recycleFabric: (index: number) => void,
     ) {
         this.vectors = new LazyFloatArray(this.buffer, this.offsets._vectors, () => 3 * 4)
-        this.lineColors = new LazyFloatArray(this.buffer, this.offsets._lineColors, () => this.exports.getIntervalCount() * 3 * 2)
-        this.lineLocations = new LazyFloatArray(this.buffer, this.offsets._lineLocations, () => this.exports.getIntervalCount() * 3 * 2)
-        this.faceMidpoints = new LazyFloatArray(this.buffer, this.offsets._faceMidpoints, () => this.exports.getFaceCount() * 3)
-        this.faceNormals = new LazyFloatArray(this.buffer, this.offsets._faceNormals, () => this.exports.getFaceCount() * 3 * 3)
-        this.faceLocations = new LazyFloatArray(this.buffer, this.offsets._faceLocations, () => this.exports.getFaceCount() * 3 * 3)
-        this.jointLocations = new LazyFloatArray(this.buffer, this.offsets._jointLocations, () => this.exports.getJointCount() * 3)
-        this.intervalUnits = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.exports.getIntervalCount() * 3)
-        this.intervalStresses = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.exports.getIntervalCount())
+        this.lineColors = new LazyFloatArray(this.buffer, this.offsets._lineColors, () => this.engine.getIntervalCount() * 3 * 2)
+        this.lineLocations = new LazyFloatArray(this.buffer, this.offsets._lineLocations, () => this.engine.getIntervalCount() * 3 * 2)
+        this.faceMidpoints = new LazyFloatArray(this.buffer, this.offsets._faceMidpoints, () => this.engine.getFaceCount() * 3)
+        this.faceNormals = new LazyFloatArray(this.buffer, this.offsets._faceNormals, () => this.engine.getFaceCount() * 3 * 3)
+        this.faceLocations = new LazyFloatArray(this.buffer, this.offsets._faceLocations, () => this.engine.getFaceCount() * 3 * 3)
+        this.jointLocations = new LazyFloatArray(this.buffer, this.offsets._jointLocations, () => this.engine.getJointCount() * 3)
+        this.intervalUnits = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.engine.getIntervalCount() * 3)
+        this.intervalStresses = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.engine.getIntervalCount())
     }
 
     public get index(): number {
@@ -265,8 +250,8 @@ export class InstanceExports {
         return this.ex.createFace(joint0Index, joint1Index, joint2Index)
     }
 
-    public createInterval(alphaIndex: number, omegaIndex: number, idealSpan: number, intervalRole: IntervalRole, growing: boolean): number {
-        return this.ex.createInterval(alphaIndex, omegaIndex, idealSpan, intervalRole, growing)
+    public createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole): number {
+        return this.ex.createInterval(alphaIndex, omegaIndex, intervalRole)
     }
 
     public removeInterval(intervalIndex: number): void {
@@ -289,12 +274,8 @@ export class InstanceExports {
         return this.ex.findOppositeIntervalIndex(intervalIndex)
     }
 
-    public getCurrentDirection(): Direction {
-        return this.ex.getCurrentDirection()
-    }
-
-    public getFaceAverageIdealSpan(faceIndex: number): number {
-        return this.ex.getFaceAverageIdealSpan(faceIndex)
+    public getCurrentState(): FabricState {
+        return this.ex.getCurrentState()
     }
 
     public getFaceJointIndex(faceIndex: number, jointNumber: number): number {
@@ -337,40 +318,36 @@ export class InstanceExports {
         return this.ex.setAltitude(altitude)
     }
 
-    public getNextDirection(): Direction {
-        return this.ex.getNextDirection()
+    public getNextState(): FabricState {
+        return this.ex.getNextState()
     }
 
-    public setNextDirection(direction: Direction): void {
-        this.ex.setNextDirection(direction)
+    public setNextState(state: FabricState): void {
+        this.ex.setNextState(state)
     }
 
-    public getRoleIdealSpan(intervalRole: IntervalRole): number {
-        return this.ex.getRoleIdealSpan(intervalRole)
+    public getRoleLength(intervalRole: IntervalRole): number {
+        return this.ex.getRoleLength(intervalRole)
     }
 
-    public setRoleIdealSpan(intervalRole: IntervalRole, factor: number): void {
-        this.ex.setRoleIdealSpan(intervalRole, factor)
+    public setRoleLength(intervalRole: IntervalRole, factor: number): void {
+        this.ex.setRoleLength(intervalRole, factor)
     }
 
-    public setIntervalHighLow(intervalIndex: number, direction: Direction, highLow: number): void {
-        this.ex.setIntervalHighLow(intervalIndex, direction, highLow)
+    public setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void {
+        this.ex.setIntervalStateLength(intervalIndex, state, length)
     }
 
-    public setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
-        this.ex.setIntervalRole(intervalIndex, intervalRole)
+    public changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
+        this.ex.changeRestIntervalRole(intervalIndex, intervalRole)
     }
 
-    public setSpanDivergence(intervalIndex: number, span: number): void {
-        this.ex.setSpanDivergence(intervalIndex, span)
+    public changeRestLength(intervalIndex: number, length: number): void {
+        this.ex.changeRestLength(intervalIndex, length)
     }
 
-    public multiplyJointIdealSpan(jointIndex: number, bar: boolean, factor: number): void {
-        this.ex.setJointSpanDivergence(jointIndex, bar, factor)
-    }
-
-    public setFaceSpanDivergence(faceIndex: number, bar: boolean, factor: number): void {
-        this.ex.setFaceSpanDivergence(faceIndex, bar, factor)
+    public setGestating(countdown: number): void {
+        this.ex.setGestating(countdown)
     }
 
     public getJointLocation(jointIndex: number): Vector3 {
@@ -385,14 +362,12 @@ export class InstanceExports {
         return this.faceLocations.floats
     }
 
-    public getFaceLocation(faceIndex: number): Vector3 {
-        return vectorFromFloatArray(this.faceLocations.floats, faceIndex * 3)
-    }
-
     public getFaceMidpoint(faceIndex: number): Vector3 {
-        const a = this.getFaceLocation(faceIndex * 3)
-        const b = this.getFaceLocation(faceIndex * 3 + 1)
-        const c = this.getFaceLocation(faceIndex * 3 + 2)
+        const locations = this.faceLocations.floats
+        const index = faceIndex * 3
+        const a = vectorFromFloatArray(locations, 3 * index)
+        const b = vectorFromFloatArray(locations, 3 * (index + 1))
+        const c = vectorFromFloatArray(locations, 3 * (index + 2))
         return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
     }
 
@@ -402,6 +377,15 @@ export class InstanceExports {
 
     public getFaceNormals(): Float32Array {
         return this.faceNormals.floats
+    }
+
+    public getFaceNormal(faceIndex: number): Vector3 {
+        const normals = this.faceNormals.floats
+        const index = faceIndex * 3
+        const a = vectorFromFloatArray(normals, 3 * index)
+        const b = vectorFromFloatArray(normals, 3 * (index + 1))
+        const c = vectorFromFloatArray(normals, 3 * (index + 2))
+        return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
     }
 
     public getLineLocations(): Float32Array {
@@ -454,9 +438,9 @@ export class InstanceExports {
         return vectorFromFloatArray(this.vectors.floats, 9, this.rightVector)
     }
 
-    private get ex(): IFabricExports {
-        this.exports.setInstance(this.index)
-        return this.exports
+    private get ex(): IFabricEngine {
+        this.engine.setInstance(this.index)
+        return this.engine
     }
 }
 

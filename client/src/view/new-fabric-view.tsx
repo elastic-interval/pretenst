@@ -12,11 +12,25 @@ import {
     InputGroupButtonDropdown,
 } from "reactstrap"
 
+const FABRIC_CODE_KEY = "FabricCode"
 
-export function NewFabricView({loadFabricCode}: {
-    loadFabricCode: (fabricCode: string) => void,
+function fetchFabricCode(): string {
+    const item = localStorage.getItem(FABRIC_CODE_KEY)
+    if (!item) {
+        return ""
+    }
+    return item
+}
+
+function storeFabricCode(fabricCode: string): void {
+    localStorage.setItem(FABRIC_CODE_KEY, fabricCode)
+}
+
+export function NewFabricView({loadFabric}: {
+    loadFabric: (fabricCode: string) => void,
 }): JSX.Element {
-    const [fabricCode, setFabricCode] = useState<string>("")
+
+    const [fabricCode, setFabricCode] = useState<string>(fetchFabricCode)
     const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
 
     function PresetFabric({code, name}: { code: string, name: string }): JSX.Element {
@@ -51,6 +65,7 @@ export function NewFabricView({loadFabricCode}: {
                             <PresetFabric name="WTF" code="4[4,4[1,1,1],4]"/>
                             <PresetFabric name="Nine Branch Tree" code="3[3[3,3,3],3[3,3,3],3[3,3,3]]"/>
                             <PresetFabric name="Super Long Quadra" code="9[9,9,9]" />
+                            <PresetFabric  name="Wobbly Loop" code="1[3=2[1=2[3=2[2=2[2=2[2=1]]]]]]X"/>
                         </DropdownMenu>
                     </InputGroupButtonDropdown>
                     <Input value={fabricCode}
@@ -59,7 +74,10 @@ export function NewFabricView({loadFabricCode}: {
                            onChange={(e) => setFabricCode(e.target.value)}
                     />
                     <InputGroupAddon addonType="append">
-                        <Button color="success" onClick={() => loadFabricCode(fabricCode)}>
+                        <Button color="success" onClick={() => {
+                            loadFabric(fabricCode)
+                            storeFabricCode(fabricCode)
+                        }}>
                             Start
                         </Button>
                     </InputGroupAddon>
