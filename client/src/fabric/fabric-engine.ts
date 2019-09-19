@@ -54,7 +54,7 @@ export interface IFabricDimensions {
     faceCountMax: number,
 }
 
-export interface IFabricExports {
+export interface IFabricEngine {
 
     memory: IMemory
 

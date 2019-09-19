@@ -5,8 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { FabricState, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS } from "./fabric-exports"
-import { InstanceExports } from "./fabric-kernel"
+import { FabricState, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS } from "./fabric-engine"
+import { FabricInstance } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 const ARROW_LENGTH = 9
@@ -24,7 +24,7 @@ export class GotchiBody {
     private pointerGeometryStored: Geometry | undefined
     private facesGeometryStored: BufferGeometry | undefined
 
-    constructor(private exports: InstanceExports) {
+    constructor(private instance: FabricInstance) {
     }
 
     public get isResting(): boolean {
@@ -33,11 +33,11 @@ export class GotchiBody {
 
     public recycle(): void {
         this.disposeOfGeometry()
-        this.exports.recycle()
+        this.instance.recycle()
     }
 
     public get index(): number {
-        return this.exports.index
+        return this.instance.index
     }
 
     public disposeOfGeometry(): void {
@@ -52,37 +52,37 @@ export class GotchiBody {
     }
 
     public get vectors(): Float32Array {
-        return this.exports.getVectors()
+        return this.instance.getVectors()
     }
 
     public get midpoint(): Vector3 {
-        return this.exports.getMidpoint()
+        return this.instance.getMidpoint()
     }
 
     public get seed(): Vector3 {
-        return this.exports.getSeed()
+        return this.instance.getSeed()
     }
 
     public get forward(): Vector3 {
-        return this.exports.getForward()
+        return this.instance.getForward()
     }
 
     public get right(): Vector3 {
-        return this.exports.getRight()
+        return this.instance.getRight()
     }
 
     public get jointCount(): number {
-        return this.exports.getJointCount()
+        return this.instance.getJointCount()
     }
 
     public get intervalCount(): number {
-        return this.exports.getIntervalCount()
+        return this.instance.getIntervalCount()
     }
 
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry()
-        geometry.addAttribute("position", new Float32BufferAttribute(this.exports.getFaceLocations(), 3))
-        geometry.addAttribute("normal", new Float32BufferAttribute(this.exports.getFaceNormals(), 3))
+        geometry.addAttribute("position", new Float32BufferAttribute(this.instance.getFaceLocations(), 3))
+        geometry.addAttribute("normal", new Float32BufferAttribute(this.instance.getFaceNormals(), 3))
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose()
         }
@@ -151,7 +151,7 @@ export class GotchiBody {
     }
 
     public createSeed(x: number, z: number, rotation: number): GotchiBody {
-        this.exports.reset()
+        this.instance.reset()
         // prepare
         const locations: Vector3[] = []
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
@@ -166,14 +166,14 @@ export class GotchiBody {
         const transformer = translationMatrix.multiply(rotationMatrix)
         locations.forEach(location => location.applyMatrix4(transformer))
         // build
-        const hangerJoint = this.exports.createJoint(this.exports.nextJointTag(), Laterality.Middle, x, 0, z)
+        const hangerJoint = this.instance.createJoint(this.instance.nextJointTag(), Laterality.Middle, x, 0, z)
         for (let walk = 0; walk < SEED_CORNERS; walk++) {
             const where = locations[walk]
-            this.exports.createJoint(this.exports.nextJointTag(), Laterality.Middle, where.x, where.y, where.z)
+            this.instance.createJoint(this.instance.nextJointTag(), Laterality.Middle, where.x, where.y, where.z)
         }
-        const jointPairName = this.exports.nextJointTag()
-        const left = this.exports.createJoint(jointPairName, Laterality.LeftSide, leftLoc.x, leftLoc.y, leftLoc.z)
-        const right = this.exports.createJoint(jointPairName, Laterality.RightSide, rightLoc.x, rightLoc.y, rightLoc.z)
+        const jointPairName = this.instance.nextJointTag()
+        const left = this.instance.createJoint(jointPairName, Laterality.LeftSide, leftLoc.x, leftLoc.y, leftLoc.z)
+        const right = this.instance.createJoint(jointPairName, Laterality.RightSide, rightLoc.x, rightLoc.y, rightLoc.z)
         this.muscle(hangerJoint, left)
         this.muscle(hangerJoint, right)
         this.muscle(left, right)
@@ -192,42 +192,42 @@ export class GotchiBody {
     }
 
     public get currentState(): FabricState {
-        return this.exports.getCurrentState()
+        return this.instance.getCurrentState()
     }
 
     public get nextState(): FabricState {
-        return this.exports.getNextState()
+        return this.instance.getNextState()
     }
 
     public set nextState(state: FabricState) {
-        this.exports.setNextState(state)
+        this.instance.setNextState(state)
     }
 
     public iterate(ticks: number): boolean {
-        return this.exports.iterate(ticks)
+        return this.instance.iterate(ticks)
     }
 
     public get age(): number {
-        return this.exports.getAge()
+        return this.instance.getAge()
     }
 
     public get isGestating(): boolean {
-        return this.exports.isGestating()
+        return this.instance.isGestating()
     }
 
     public setAltitude(altitude: number): number {
-        return this.exports.setAltitude(altitude)
+        return this.instance.setAltitude(altitude)
     }
 
     public unfold(faceIndex: number, jointNumber: number): FaceSnapshot [] {
         const newJointCount = this.jointCount + 2
-        if (newJointCount >= this.exports.getDimensions().jointCountMax) {
+        if (newJointCount >= this.instance.getDimensions().jointCountMax) {
             return []
         }
-        const apexTag = this.exports.nextJointTag()
-        let oppositeFaceIndex = this.exports.findOppositeFaceIndex(faceIndex)
+        const apexTag = this.instance.nextJointTag()
+        let oppositeFaceIndex = this.instance.findOppositeFaceIndex(faceIndex)
         const freshFaces = this.unfoldFace(this.getFaceSnapshot(faceIndex), jointNumber, apexTag)
-        if (oppositeFaceIndex < this.exports.getDimensions().faceCountMax) {
+        if (oppositeFaceIndex < this.instance.getDimensions().faceCountMax) {
             if (oppositeFaceIndex > faceIndex) {
                 oppositeFaceIndex-- // since faceIndex was deleted
             }
@@ -239,17 +239,17 @@ export class GotchiBody {
     }
 
     public getFaceSnapshot(faceIndex: number): FaceSnapshot {
-        return new FaceSnapshot(this, this.exports, faceIndex)
+        return new FaceSnapshot(this, this.instance, faceIndex)
     }
 
     // ==========================================================
 
     private face(joint0Index: number, joint1Index: number, joint2Index: number): number {
-        return this.exports.createFace(joint0Index, joint1Index, joint2Index)
+        return this.instance.createFace(joint0Index, joint1Index, joint2Index)
     }
 
     private muscle(alphaIndex: number, omegaIndex: number): number {
-        return this.exports.createInterval(alphaIndex, omegaIndex, IntervalRole.Muscle)
+        return this.instance.createInterval(alphaIndex, omegaIndex, IntervalRole.Muscle)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
@@ -258,8 +258,8 @@ export class GotchiBody {
         const chosenJoint = sortedJoints[faceJointIndex]
         const faceToReplaceAverageLength = 1 // TODO
         const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplaceAverageLength * 0.1)
-        const apexIndex = this.exports.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z)
-        if (apexIndex >= this.exports.getDimensions().jointCountMax) {
+        const apexIndex = this.instance.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z)
+        if (apexIndex >= this.instance.getDimensions().jointCountMax) {
             return []
         }
         sortedJoints.forEach(faceJoint => {
@@ -283,10 +283,10 @@ export class GotchiBody {
             }
         })
         faceToReplace.remove()
-        this.exports.clear()
+        this.instance.clear()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
-            .map(index => new FaceSnapshot(this, this.exports, index))
+            .map(index => new FaceSnapshot(this, this.instance, index))
     }
 }
 

@@ -6,7 +6,7 @@
 import { Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { FabricState } from "../fabric/fabric-exports"
+import { FabricState } from "../fabric/fabric-engine"
 import { GotchiBody } from "../fabric/gotchi-body"
 import { Behavior } from "../genetics/behavior"
 import { Genome, IGenomeData } from "../genetics/genome"

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricState } from "../fabric/fabric-exports"
+import { FabricState } from "../fabric/fabric-engine"
 import { GotchiBody, INTERVALS_RESERVED } from "../fabric/gotchi-body"
 
 import { GeneReader } from "./gene-reader"

@@ -1,4 +1,4 @@
-import { FabricState } from "../fabric/fabric-exports"
+import { FabricState } from "../fabric/fabric-engine"
 
 import { DICE, diceToNuance } from "./dice"
 import { GeneReader } from "./gene-reader"

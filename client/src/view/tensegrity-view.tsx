@@ -9,7 +9,7 @@ import { Canvas, extend, ReactThreeFiber, useRender, useThree, useUpdate } from 
 import { Geometry, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { IFabricExports } from "../fabric/fabric-exports"
+import { IFabricEngine } from "../fabric/fabric-engine"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
 import { connectClosestFacePair } from "../fabric/tensegrity-brick"
@@ -45,9 +45,9 @@ const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 20
 
-export function TensegrityView({fabricExports, fabricKernel, physics}:
+export function TensegrityView({engine, fabricKernel, physics}:
                                    {
-                                       fabricExports: IFabricExports,
+                                       engine: IFabricEngine,
                                        fabricKernel: FabricKernel,
                                        physics: Physics,
                                    }): JSX.Element {
@@ -57,7 +57,7 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
         if (!newFabric) {
             throw new Error()
         }
-        physics.acquireLocal(newFabric.exports)
+        physics.acquireLocal(newFabric.instance)
         return newFabric
     }
     // tslint:disable-next-line:no-null-keyword
@@ -73,27 +73,25 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
             if (joint === undefined || !fabric) {
                 return
             }
-            // TODO fabric.exports.multiplyJointLength(joint.index, bar, factor(up))
         }
         const handleInterval = (interval: IInterval | undefined, up: boolean) => {
             if (interval === undefined || !fabric) {
                 return
             }
             // TODO: this will not work, because it's not a factor!
-            fabric.exports.changeRestLength(interval.index, factor(up))
+            fabric.instance.changeRestLength(interval.index, factor(up))
         }
         const handleFace = (face: IFace | undefined, bar: boolean, up: boolean) => {
             if (face === undefined || !fabric) {
                 return
             }
-            // TODO: fabric.exports.setFaceLengthDivergence(face.index, bar, factor(up))
         }
         if (!fabric) {
             return
         }
         switch (event.key) {
             case " ":
-                fabric.exports.setAltitude(25)
+                fabric.instance.setAltitude(25)
                 break
             case "Enter":
                 if (fabric.selectionActive) {
@@ -139,7 +137,7 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                 setFabric(undefined)
                 break
             case "c":
-                fabric.exports.centralize()
+                fabric.instance.centralize()
                 break
             case "l":
                 fabric.optimize(false)
@@ -170,7 +168,7 @@ export function TensegrityView({fabricExports, fabricKernel, physics}:
                     <FabricView fabric={fabric}/>}
             </Canvas>
             {!fabric ? undefined :
-                <PhysicsPanel physics={physics} fabricExports={fabricExports} instanceExports={fabric.exports}/>}
+                <PhysicsPanel physics={physics} engine={engine} instance={fabric.instance}/>}
         </div>
     )
 }
@@ -194,12 +192,12 @@ function FabricView({fabric}:
         controls.update()
     }, [fabric])
     const render = () => {
-        const towardsTarget = new Vector3().subVectors(fabric.exports.midpoint, orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
+        const towardsTarget = new Vector3().subVectors(fabric.instance.midpoint, orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = fabric.autoRotate
         fabric.iterate(ITERATIONS_PER_FRAME)
-        setAge(fabric.exports.getAge())
+        setAge(fabric.instance.getAge())
     }
     useRender(render, true, [fabric, age])
     const selectedJoint = fabric.selectedJoint
@@ -253,7 +251,7 @@ function FaceSelection({fabric, geometry, canGrow}:
                 <mesh
                     key={`F${face.index}`}
                     geometry={geometry}
-                    position={fabric.exports.getFaceMidpoint(face.index)}
+                    position={fabric.instance.getFaceMidpoint(face.index)}
                     material={canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
                     onClick={() => fabric.selectedFace = face}
                 />
@@ -272,7 +270,7 @@ function SelectedFace({fabric, geometry, selectedFace}:
         <mesh
             key={`F${selectedFace.index}`}
             geometry={geometry}
-            position={fabric.exports.getFaceMidpoint(selectedFace.index)}
+            position={fabric.instance.getFaceMidpoint(selectedFace.index)}
             material={TENSEGRITY_JOINT}
             onPointerDown={stopPropagation}
             onPointerUp={stopPropagation}
@@ -291,7 +289,7 @@ function JointSelection({fabric, geometry}:
                 <mesh
                     key={`J${jointIndex}`}
                     geometry={geometry}
-                    position={fabric.exports.getJointLocation(jointIndex)}
+                    position={fabric.instance.getJointLocation(jointIndex)}
                     material={TENSEGRITY_JOINT}
                     onClick={() => fabric.selectedJoint = fabric.joints[jointIndex]}
                     onPointerDown={stopPropagation}
@@ -312,7 +310,7 @@ function SelectedJoint({fabric, geometry, selectedJoint}:
         <mesh
             key={`J${selectedJoint.index}`}
             geometry={geometry}
-            position={fabric.exports.getJointLocation(selectedJoint.index)}
+            position={fabric.instance.getJointLocation(selectedJoint.index)}
             material={TENSEGRITY_JOINT_SELECTED}
         />
     )
@@ -329,7 +327,7 @@ function IntervalSelection({fabric, geometry}:
                 <mesh
                     key={`I${interval.index}`}
                     geometry={geometry}
-                    position={fabric.exports.getIntervalMidpoint(interval.index)}
+                    position={fabric.instance.getIntervalMidpoint(interval.index)}
                     material={TENSEGRITY_JOINT}
                     onClick={() => fabric.selectedInterval = interval}
                     onPointerDown={stopPropagation}
@@ -350,7 +348,7 @@ function SelectedInterval({fabric, geometry, selectedInterval}:
         <mesh
             key={`I${selectedInterval.index}`}
             geometry={geometry}
-            position={fabric.exports.getIntervalMidpoint(selectedInterval.index)}
+            position={fabric.instance.getIntervalMidpoint(selectedInterval.index)}
             material={TENSEGRITY_JOINT_SELECTED}
         />
     )

@@ -8,7 +8,7 @@ import { Alert, Badge } from "reactstrap"
 import { PerspectiveCamera } from "three"
 
 import { API_URI, DOCS_ON_GITHUB, SINGLE_ISLAND } from "./constants"
-import { IFabricDimensions, IFabricExports } from "./fabric/fabric-exports"
+import { IFabricDimensions, IFabricEngine } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
 import { INITIAL_JOINT_COUNT, MAX_POPULATION } from "./gotchi/evolution"
@@ -21,7 +21,7 @@ import { INITIAL_DISTANCE } from "./view/flight"
 import { HexalotTarget, InitialFlightState, IslandTarget } from "./view/flight-state"
 import { WorldView } from "./view/world-view"
 
-function createFabricKernel(fabricExports: IFabricExports, physics: Physics, instanceMax: number, jointCountMax: number): FabricKernel {
+function createFabricKernel(engine: IFabricEngine, physics: Physics, instanceMax: number, jointCountMax: number): FabricKernel {
     const intervalCountMax = jointCountMax * 3 + 30
     const faceCountMax = jointCountMax * 2 + 20
     const dimensions: IFabricDimensions = {
@@ -30,7 +30,7 @@ function createFabricKernel(fabricExports: IFabricExports, physics: Physics, ins
         intervalCountMax,
         faceCountMax,
     }
-    return new FabricKernel(fabricExports, physics, dimensions)
+    return new FabricKernel(engine, physics, dimensions)
 }
 
 export class App extends React.Component<IAppProps, IAppState> {
@@ -40,7 +40,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     constructor(props: IAppProps) {
         super(props)
-        this.fabricKernel = createFabricKernel(props.fabricExports, props.physics, MAX_POPULATION, INITIAL_JOINT_COUNT)
+        this.fabricKernel = createFabricKernel(props.engine, props.physics, MAX_POPULATION, INITIAL_JOINT_COUNT)
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)

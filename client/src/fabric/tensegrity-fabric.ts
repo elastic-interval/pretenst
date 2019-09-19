@@ -5,8 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import { IntervalRole, Laterality } from "./fabric-exports"
-import { InstanceExports } from "./fabric-kernel"
+import { IntervalRole, Laterality } from "./fabric-engine"
+import { FabricInstance } from "./fabric-kernel"
 import { Physics } from "./physics"
 import {
     brickToString,
@@ -55,7 +55,7 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(readonly exports: InstanceExports, readonly physics: Physics, readonly name: string, altitude: number) {
+    constructor(readonly instance: FabricInstance, readonly physics: Physics, readonly name: string, altitude: number) {
         const growth = parseConstructionCode(name)
         growth.growing[0].brick = this.createBrick(altitude)
         this.growth = growth
@@ -63,7 +63,7 @@ export class TensegrityFabric {
 
 
     public setGestating(countdown: number): void {
-        this.exports.setGestating(countdown)
+        this.instance.setGestating(countdown)
     }
 
     get selectable(): Selectable {
@@ -134,13 +134,13 @@ export class TensegrityFabric {
 
     public createBrick(altitude: number): IBrick {
         const brick = createBrickOnOrigin(this, altitude)
-        this.exports.clear()
+        this.instance.clear()
         this.disposeOfGeometry()
         return brick
     }
 
     public removeFace(face: IFace, removeIntervals: boolean): void {
-        this.exports.removeFace(face.index)
+        this.instance.removeFace(face.index)
         this.faces = this.faces.filter(existing => existing.index !== face.index)
         this.faces.forEach(existing => {
             if (existing.index > face.index) {
@@ -153,7 +153,7 @@ export class TensegrityFabric {
     }
 
     public removeInterval(interval: IInterval): void {
-        this.exports.removeInterval(interval.index)
+        this.instance.removeInterval(interval.index)
         interval.removed = true
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
         this.intervals.forEach(existing => {
@@ -161,7 +161,7 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
-        this.exports.clear()
+        this.instance.clear()
         this.disposeOfGeometry()
     }
 
@@ -170,12 +170,12 @@ export class TensegrityFabric {
     }
 
     public createJointIndex(jointTag: JointTag, location: Vector3): number {
-        return this.exports.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
+        return this.instance.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval {
         const interval = <IInterval>{
-            index: this.exports.createInterval(alpha.index, omega.index, intervalRole),
+            index: this.instance.createInterval(alpha.index, omega.index, intervalRole),
             removed: false,
             intervalRole,
             alpha, omega,
@@ -188,7 +188,7 @@ export class TensegrityFabric {
         const joints = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => brick.joints[barEnd])
         const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
         const face = <IFace>{
-            index: this.exports.createFace(joints[0].index, joints[1].index, joints[2].index),
+            index: this.instance.createFace(joints[0].index, joints[1].index, joints[2].index),
             canGrow: true,
             brick,
             triangle,
@@ -209,7 +209,7 @@ export class TensegrityFabric {
 
     public recycle(): void {
         this.disposeOfGeometry()
-        this.exports.recycle()
+        this.instance.recycle()
     }
 
     public disposeOfGeometry(): void {
@@ -224,22 +224,22 @@ export class TensegrityFabric {
     }
 
     public get jointCount(): number {
-        return this.exports.getJointCount()
+        return this.instance.getJointCount()
     }
 
     public get intervalCount(): number {
-        return this.exports.getIntervalCount()
+        return this.instance.getIntervalCount()
     }
 
     public get faceCount(): number {
-        return this.exports.getFaceCount()
+        return this.instance.getFaceCount()
     }
 
     public get facesGeometry(): BufferGeometry {
         if (!this.facesGeometryStored) {
             const geometry = new BufferGeometry()
-            this.faceLocations = new Float32BufferAttribute(this.exports.getFaceLocations(), 3)
-            this.faceNormals = new Float32BufferAttribute(this.exports.getFaceNormals(), 3)
+            this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
+            this.faceNormals = new Float32BufferAttribute(this.instance.getFaceNormals(), 3)
             geometry.addAttribute("position", this.faceLocations)
             geometry.addAttribute("normal", this.faceNormals)
             this.facesGeometryStored = geometry
@@ -250,8 +250,8 @@ export class TensegrityFabric {
     public get linesGeometry(): BufferGeometry {
         if (!this.linesGeometryStored) {
             const geometry = new BufferGeometry()
-            this.lineLocations = new Float32BufferAttribute(this.exports.getLineLocations(), 3)
-            this.lineColors = new Float32BufferAttribute(this.exports.getLineColors(), 3)
+            this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
+            this.lineColors = new Float32BufferAttribute(this.instance.getLineColors(), 3)
             geometry.addAttribute("position", this.lineLocations)
             geometry.addAttribute("color", this.lineColors)
             this.linesGeometryStored = geometry
@@ -261,7 +261,7 @@ export class TensegrityFabric {
 
     public iterate(ticks: number): boolean {
         this.disposeOfGeometry()
-        const changeHappened = this.exports.iterate(ticks)
+        const changeHappened = this.instance.iterate(ticks)
         if (!changeHappened) {
             return false
         }
@@ -269,7 +269,7 @@ export class TensegrityFabric {
         if (growth) {
             if (growth.growing.length > 0) {
                 growth.growing = executeGrowthTrees(growth.growing)
-                this.exports.centralize()
+                this.instance.centralize()
             }
             if (growth.growing.length === 0) {
                 if (growth.optimizationStack.length > 0) {
@@ -291,7 +291,7 @@ export class TensegrityFabric {
                     }
                 } else {
                     this.setGestating(1)
-                    this.physics.applyLocal(this.exports)
+                    this.physics.applyLocal(this.instance)
                     this.growth = undefined
                 }
             }

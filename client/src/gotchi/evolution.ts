@@ -7,7 +7,7 @@ import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { FabricState } from "../fabric/fabric-exports"
+import { FabricState } from "../fabric/fabric-engine"
 import { ITERATIONS_PER_TICK } from "../fabric/gotchi-body"
 import { fromGenomeData, Genome } from "../genetics/genome"
 import { Hexalot } from "../island/hexalot"

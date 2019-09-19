@@ -5,8 +5,8 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { GlobalFeature, IFabricExports, IntervalRole } from "./fabric-exports"
-import { InstanceExports } from "./fabric-kernel"
+import { GlobalFeature, IFabricEngine, IntervalRole } from "./fabric-engine"
+import { FabricInstance } from "./fabric-kernel"
 
 export interface IFeatureName {
     globalFeature?: GlobalFeature
@@ -56,7 +56,7 @@ export class Physics {
         return this.featuresArray
     }
 
-    public applyGlobal(fabricExports: IFabricExports): object {
+    public applyGlobal(engine: IFabricEngine): object {
         const featureValues = {}
         this.featuresArray.forEach(feature => {
             const globalFeature = feature.name.globalFeature
@@ -64,18 +64,18 @@ export class Physics {
                 return
             }
             const factor = feature.factor$.getValue()
-            featureValues[feature.label] = fabricExports.setGlobalFeature(globalFeature, factor)
+            featureValues[feature.label] = engine.setGlobalFeature(globalFeature, factor)
         })
         return featureValues
     }
 
-    public acquireLocal(instanceExports: InstanceExports): void {
+    public acquireLocal(instance: FabricInstance): void {
         this.featuresArray.forEach(feature => {
             const intervalRole = feature.name.intervalRole
             if (intervalRole === undefined) {
                 return
             }
-            feature.defaultValue = instanceExports.getRoleLength(intervalRole)
+            feature.defaultValue = instance.getRoleLength(intervalRole)
             const defaultValue = this.storage ? this.storage.getPhysicsFeature(feature.label, feature.defaultValue) : feature.defaultValue
             if (feature.factor$.getValue() !== defaultValue) {
                 feature.factor$.next(defaultValue)
@@ -83,14 +83,14 @@ export class Physics {
         })
     }
 
-    public applyLocal(instanceExports: InstanceExports): void {
+    public applyLocal(instance: FabricInstance): void {
         this.featuresArray.forEach(feature => {
             const intervalRole = feature.name.intervalRole
             if (intervalRole === undefined) {
                 return
             }
             const factor = feature.factor$.getValue()
-            instanceExports.setRoleLength(intervalRole, factor)
+            instance.setRoleLength(intervalRole, factor)
         })
     }
 
