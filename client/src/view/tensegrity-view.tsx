@@ -16,13 +16,7 @@ import { connectClosestFacePair } from "../fabric/tensegrity-brick"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import {
-    TENSEGRITY_FACE,
-    TENSEGRITY_JOINT,
-    TENSEGRITY_JOINT_CAN_GROW,
-    TENSEGRITY_JOINT_SELECTED,
-    TENSEGRITY_LINE,
-} from "./materials"
+import { TENSEGRITY_FACE, TENSEGRITY_JOINT, TENSEGRITY_JOINT_CAN_GROW, TENSEGRITY_JOINT_SELECTED, TENSEGRITY_LINE } from "./materials"
 import { NewFabricView } from "./new-fabric-view"
 import { PhysicsPanel } from "./physics-panel"
 import { SurfaceComponent } from "./surface-component"
@@ -31,7 +25,7 @@ extend({OrbitControls})
 
 declare global {
     namespace JSX {
-        // tslint:disable-next-line:interface-name
+        // eslint-disable-next-line @typescript-eslint/interface-name-prefix
         interface IntrinsicElements {
             orbitControls: ReactThreeFiber.Object3DNode<OrbitControls, typeof OrbitControls>
         }
@@ -46,11 +40,11 @@ const TOWARDS_TARGET = 0.01
 const ALTITUDE = 20
 
 export function TensegrityView({engine, fabricKernel, physics}:
-                                   {
-                                       engine: IFabricEngine,
-                                       fabricKernel: FabricKernel,
-                                       physics: Physics,
-                                   }): JSX.Element {
+{
+    engine: IFabricEngine,
+    fabricKernel: FabricKernel,
+    physics: Physics,
+}): JSX.Element {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const createFabric = (name: string): TensegrityFabric => {
         const newFabric = fabricKernel.createTensegrityFabric(name, ALTITUDE)
@@ -158,7 +152,7 @@ export function TensegrityView({engine, fabricKernel, physics}:
     }
     return (
         <div ref={viewRef} tabIndex={1} id="tensegrity-view" className="the-whole-page"
-             onKeyDownCapture={onKeyDownCapture}
+            onKeyDownCapture={onKeyDownCapture}
         >
             {fabric ? undefined :
                 <NewFabricView loadFabric={(code) => setFabric(createFabric(code))}/>
@@ -174,9 +168,9 @@ export function TensegrityView({engine, fabricKernel, physics}:
 }
 
 function FabricView({fabric}:
-                        {
-                            fabric: TensegrityFabric,
-                        }): JSX.Element {
+{
+    fabric: TensegrityFabric,
+}): JSX.Element {
     const [age, setAge] = useState<number>(0)
     const {camera} = useThree()
     const orbitControls = useUpdate<OrbitControls>(controls => {
@@ -207,7 +201,7 @@ function FabricView({fabric}:
     return (
         <group>
             <orbitControls ref={orbitControls}
-                           args={[camera, tensegrityView]}/>
+                args={[camera, tensegrityView]}/>
             <scene>
                 <mesh key="faces" geometry={fabric.facesGeometry} material={TENSEGRITY_FACE}/>
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={TENSEGRITY_LINE}/>
@@ -239,11 +233,11 @@ function FabricView({fabric}:
 }
 
 function FaceSelection({fabric, geometry, canGrow}:
-                           {
-                               fabric: TensegrityFabric,
-                               geometry: Geometry,
-                               canGrow: boolean,
-                           }): JSX.Element {
+{
+    fabric: TensegrityFabric,
+    geometry: Geometry,
+    canGrow: boolean,
+}): JSX.Element {
     const faces = canGrow ? fabric.faces.filter(face => face.canGrow) : fabric.faces
     return (
         <>
@@ -261,11 +255,11 @@ function FaceSelection({fabric, geometry, canGrow}:
 }
 
 function SelectedFace({fabric, geometry, selectedFace}:
-                          {
-                              fabric: TensegrityFabric,
-                              geometry: Geometry,
-                              selectedFace: IFace,
-                          }): JSX.Element {
+{
+    fabric: TensegrityFabric,
+    geometry: Geometry,
+    selectedFace: IFace,
+}): JSX.Element {
     return (
         <mesh
             key={`F${selectedFace.index}`}
@@ -279,10 +273,10 @@ function SelectedFace({fabric, geometry, selectedFace}:
 }
 
 function JointSelection({fabric, geometry}:
-                            {
-                                fabric: TensegrityFabric,
-                                geometry: Geometry,
-                            }): JSX.Element {
+{
+    fabric: TensegrityFabric,
+    geometry: Geometry,
+}): JSX.Element {
     return (
         <>
             {[...Array(fabric.jointCount)].map((x, jointIndex) => (
@@ -301,11 +295,11 @@ function JointSelection({fabric, geometry}:
 }
 
 function SelectedJoint({fabric, geometry, selectedJoint}:
-                           {
-                               fabric: TensegrityFabric,
-                               geometry: Geometry,
-                               selectedJoint: IJoint,
-                           }): JSX.Element {
+{
+    fabric: TensegrityFabric,
+    geometry: Geometry,
+    selectedJoint: IJoint,
+}): JSX.Element {
     return (
         <mesh
             key={`J${selectedJoint.index}`}
@@ -317,10 +311,10 @@ function SelectedJoint({fabric, geometry, selectedJoint}:
 }
 
 function IntervalSelection({fabric, geometry}:
-                               {
-                                   fabric: TensegrityFabric,
-                                   geometry: Geometry,
-                               }): JSX.Element {
+{
+    fabric: TensegrityFabric,
+    geometry: Geometry,
+}): JSX.Element {
     return (
         <>
             {fabric.intervals.filter(interval => !interval.removed).map((interval: IInterval) => (
@@ -339,11 +333,11 @@ function IntervalSelection({fabric, geometry}:
 }
 
 function SelectedInterval({fabric, geometry, selectedInterval}:
-                              {
-                                  fabric: TensegrityFabric,
-                                  geometry: Geometry,
-                                  selectedInterval: IInterval,
-                              }): JSX.Element {
+{
+    fabric: TensegrityFabric,
+    geometry: Geometry,
+    selectedInterval: IInterval,
+}): JSX.Element {
     return (
         <mesh
             key={`I${selectedInterval.index}`}

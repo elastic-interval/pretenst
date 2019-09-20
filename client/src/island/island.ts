@@ -29,7 +29,7 @@ export class Island implements IIsland {
     public hexalots: Hexalot[] = []
     public vacantHexalot?: Hexalot
 
-    constructor(islandData: IIslandData, readonly gotchiFactory: IGotchiFactory, storage: RemoteStorage, nonce: number) {
+    constructor(islandData: IIslandData, public readonly gotchiFactory: IGotchiFactory, storage: RemoteStorage, nonce: number) {
         fillIsland(islandData, this)
         this.name = islandData.name
     }

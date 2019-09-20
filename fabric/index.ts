@@ -513,7 +513,7 @@ function distance(a: usize, b: usize): f32 {
     return <f32>sqrt(dx * dx + dy * dy + dz * dz)
 }
 
-function length(vPtr: usize): f32 {
+function magnitude(vPtr: usize): f32 {
     return <f32>sqrt(quadrance(vPtr))
 }
 
@@ -916,7 +916,7 @@ function setStress(intervalIndex: u16, stress: f32): void {
 function calculateLength(intervalIndex: u16): f32 {
     let unit = _unit(intervalIndex)
     subVectors(unit, _location(omegaIndex(intervalIndex)), _location(alphaIndex(intervalIndex)))
-    let length = length(unit)
+    let length = magnitude(unit)
     multiplyScalar(unit, 1 / length)
     return length
 }
@@ -1055,9 +1055,9 @@ function getFaceTag(faceIndex: u16, jointNumber: u16): u16 {
 
 function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
     subVectors(_vX, location, midpoint)
-    multiplyScalar(_vX, 1 / length(_vX))
+    multiplyScalar(_vX, 1 / magnitude(_vX))
     addScaledVector(normal, _vX, 0.7)
-    multiplyScalar(normal, 1 / length(normal))
+    multiplyScalar(normal, 1 / magnitude(normal))
 }
 
 // Triangles and normals depicting the faces =================================================
@@ -1084,7 +1084,7 @@ function outputFaceGeometry(faceIndex: u16): void {
     subVectors(_vA, loc1, loc0)
     subVectors(_vB, loc2, loc0)
     crossVectors(normal0, _vA, _vB)
-    multiplyScalar(normal0, 1 / length(normal0))
+    multiplyScalar(normal0, 1 / magnitude(normal0))
     setVector(normal1, normal0)
     setVector(normal2, normal0)
     // adjust them

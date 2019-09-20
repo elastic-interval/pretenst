@@ -26,7 +26,7 @@ export class Flight {
     private targetToCamera = new Vector3()
     private targetToMovingTarget = new Vector3()
 
-    constructor(flightState: IFlightState, readonly orbitGiven?: OrbitControls) {
+    constructor(flightState: IFlightState, public readonly orbitGiven?: OrbitControls) {
         const orbit = this.orbit
         orbit.enabled = true
         orbit.minPolarAngle = MIN_POLAR_ANGLE

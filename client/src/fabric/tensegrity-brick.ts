@@ -381,15 +381,11 @@ export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
     }
 
     function intervalToString(indent: number): (interval: IInterval) => string {
-        return (interval: IInterval) => {
-            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})`
-        }
+        return (interval: IInterval) => `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})`
     }
 
     function faceToString(indent: number): (face: IFace) => string {
-        return (face: IFace) => {
-            return `${"\t".repeat(indent)}(${face.joints[0]}:${face.joints[1]}:${face.joints[2]})`
-        }
+        return (face: IFace) => `${"\t".repeat(indent)}(${face.joints[0]}:${face.joints[1]}:${face.joints[2]})`
     }
 
     const points = brick.joints.map(joint => fabric.instance.getJointLocation(joint.index))
@@ -404,9 +400,7 @@ export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
 
 export function connectorToString(fabric: TensegrityFabric, connector: IConnector): string {
     function intervalToString(indent: number): (interval: IInterval) => string {
-        return (interval: IInterval) => {
-            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})`
-        }
+        return (interval: IInterval) => `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})`
     }
 
     const cables = connector.cables.map(intervalToString(2)).join("\n")
