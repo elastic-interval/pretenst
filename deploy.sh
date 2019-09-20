@@ -2,6 +2,7 @@
 
 set -x
 
+yarn
 cd fabric
 yarn
 yarn asbuild:optimized
