@@ -22,7 +22,23 @@ import {
 } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
+// function createBrickPointsUpright(): Vector3[] {
+//     const points = BAR_ARRAY.reduce(barsToPoints, [])
+//     points.forEach(p => {
+//         const xx = p.x
+//         p.x = p.z
+//         p.y += PHI
+//         p.z = xx
+//     })
+//     return points
+// }
+
 function createBrickPointsOnOrigin(base: Triangle, altitude: number, scale: number): Vector3 [] {
+    const barsToPoints = (vectors: Vector3[], bar: IBarDefinition): Vector3[] => {
+        vectors.push(new Vector3().add(bar.alpha))
+        vectors.push(new Vector3().add(bar.omega))
+        return vectors
+    }
     const points = BAR_ARRAY.reduce(barsToPoints, [])
     points.forEach(point => point.multiplyScalar(scale))
     const newBase = TRIANGLE_ARRAY[base].opposite
@@ -77,7 +93,14 @@ export function createBrickOnFace(face: IFace): IBrick {
     const brick = face.brick
     const triangle = face.triangle
     const trianglePoints = brick.faces[triangle].joints.map(joint => brick.fabric.instance.getJointLocation(joint.index))
-    const xform = xformToTriangle(trianglePoints)
+    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
+    const x = new Vector3().subVectors(midSide, midpoint).normalize()
+    const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
+    const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
+    const z = u.sub(proj).normalize()
+    const y = new Vector3().crossVectors(z, x).normalize()
+    const xform= new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
     const points = createBrickPointsOnOrigin(Triangle.PPP, 0.8, 1.0)
     const movedToFace = points.map(p => p.applyMatrix4(xform))
     return createBrick(brick.fabric, movedToFace, Triangle.NNN)
@@ -365,81 +388,3 @@ export function connectClosestFacePair(fabric: TensegrityFabric): void {
     const connector = connectBricks(facePair.faceA, facePair.faceB)
     connector.facesToRemove.forEach(faceToRemove => fabric.removeFace(faceToRemove, true))
 }
-
-export function brickToString(fabric: TensegrityFabric, brick: IBrick): string {
-    // const points = brick.joints.map(joint => fabric.getJointLocation(joint))
-    // const minHeight = points.reduce((height, point) => Math.min(height, point.y), Number.POSITIVE_INFINITY).toFixed(3)
-    // const maxHeight = points.reduce((height, point) => Math.max(height, point.y), Number.NEGATIVE_INFINITY).toFixed(3)
-    // return `Brick{\n\theight ${minHeight} to ${maxHeight}\n}`
-    function vectorToString(indent: number): (vector: Vector3) => string {
-        return vector => {
-            const x = vector.x.toFixed(3)
-            const y = vector.y.toFixed(3)
-            const z = vector.z.toFixed(3)
-            return `${"\t".repeat(indent)}(${x},${y},${z})`
-        }
-    }
-
-    function intervalToString(indent: number): (interval: IInterval) => string {
-        return (interval: IInterval) => {
-            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})`
-        }
-    }
-
-    function faceToString(indent: number): (face: IFace) => string {
-        return (face: IFace) => {
-            return `${"\t".repeat(indent)}(${face.joints[0]}:${face.joints[1]}:${face.joints[2]})`
-        }
-    }
-
-    const points = brick.joints.map(joint => fabric.instance.getJointLocation(joint.index))
-    const joints = points.map(vectorToString(2)).join("\n")
-    const minHeight = points.reduce((height, point) => Math.min(height, point.y), Number.POSITIVE_INFINITY).toFixed(3)
-    const maxHeight = points.reduce((height, point) => Math.max(height, point.y), Number.NEGATIVE_INFINITY).toFixed(3)
-    const bars = brick.bars.map(bar => intervalToString(2)(bar)).join("\n")
-    const cables = brick.cables.map(intervalToString(2)).join("\n")
-    const faces = brick.faces.map(faceToString(2)).join("\n")
-    return `Brick{\n\theight ${minHeight} to ${maxHeight}\n\n\tjoints:\n${joints}\n\tbars:\n${bars}\n\tcables:\n${cables}\n\tfaces:\n${faces}`
-}
-
-export function connectorToString(fabric: TensegrityFabric, connector: IConnector): string {
-    function intervalToString(indent: number): (interval: IInterval) => string {
-        return (interval: IInterval) => {
-            return `${"\t".repeat(indent)}(${interval.alpha}:${interval.omega})`
-        }
-    }
-
-    const cables = connector.cables.map(intervalToString(2)).join("\n")
-    return `Connector{\n\tcables:\n${cables}\n}`
-}
-
-function xformToTriangle(trianglePoints: Vector3[]): Matrix4 {
-    if (trianglePoints.length !== 3) {
-        throw new Error()
-    }
-    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-    const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
-    const x = new Vector3().subVectors(midSide, midpoint).normalize()
-    const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
-    const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
-    const z = u.sub(proj).normalize()
-    const y = new Vector3().crossVectors(z, x).normalize()
-    return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-}
-
-function barsToPoints(vectors: Vector3[], bar: IBarDefinition): Vector3[] {
-    vectors.push(new Vector3().add(bar.alpha))
-    vectors.push(new Vector3().add(bar.omega))
-    return vectors
-}
-
-// function createBrickPointsUpright(): Vector3[] {
-//     const points = BAR_ARRAY.reduce(barsToPoints, [])
-//     points.forEach(p => {
-//         const xx = p.x
-//         p.x = p.z
-//         p.y += PHI
-//         p.z = xx
-//     })
-//     return points
-// }

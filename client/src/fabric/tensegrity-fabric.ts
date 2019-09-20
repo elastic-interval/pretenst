@@ -9,9 +9,7 @@ import { IntervalRole, Laterality } from "./fabric-engine"
 import { FabricInstance } from "./fabric-kernel"
 import { Physics } from "./physics"
 import {
-    brickToString,
     connectClosestFacePair,
-    connectorToString,
     createBrickOnOrigin,
     executeGrowthTrees,
     optimizeFabric,
@@ -19,7 +17,6 @@ import {
 } from "./tensegrity-brick"
 import {
     IBrick,
-    IConnector,
     IFace,
     IGrowth,
     IInterval,
@@ -35,6 +32,12 @@ export enum Selectable {
     INTERVAL,
     FACE,
     GROW_FACE,
+}
+
+interface IFabricOutput {
+    name: string
+    joints: Array<{ index: string, x: string, y: string, z: string }>
+    intervals: Array<{ joints: string, type: string }>
 }
 
 export class TensegrityFabric {
@@ -199,14 +202,6 @@ export class TensegrityFabric {
         return face
     }
 
-    public brickToString(brick: IBrick): string {
-        return brickToString(this, brick)
-    }
-
-    public connectorToString(connector: IConnector): string {
-        return connectorToString(this, connector)
-    }
-
     public recycle(): void {
         this.disposeOfGeometry()
         this.instance.recycle()
@@ -304,6 +299,28 @@ export class TensegrityFabric {
             (interval.alpha.index === joint1.index && interval.omega.index === joint2.index) ||
             (interval.alpha.index === joint2.index && interval.omega.index === joint1.index)
         ))
+    }
+
+    public get output(): IFabricOutput {
+        const numberToString = (n: number) => n.toFixed(5).replace(".", ",")
+        return {
+            name: this.name,
+            joints: this.joints.map(joint => {
+                const vector = this.instance.getJointLocation(joint.index)
+                return {
+                    index: (joint.index + 1).toString(),
+                    x: numberToString(vector.x),
+                    y: numberToString(vector.z),
+                    z: numberToString(vector.y),
+                }
+            }),
+            intervals: this.intervals.map(interval => {
+                return {
+                    joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
+                    type: IntervalRole[interval.intervalRole],
+                }
+            }),
+        }
     }
 }
 

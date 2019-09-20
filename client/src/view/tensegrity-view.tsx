@@ -43,7 +43,7 @@ const SPHERE = new SphereGeometry(0.12, 16, 16)
 
 const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
-const ALTITUDE = 20
+const ALTITUDE = 1
 
 export function TensegrityView({engine, fabricKernel, physics}:
                                    {
@@ -147,6 +147,24 @@ export function TensegrityView({engine, fabricKernel, physics}:
                 break
             case "x":
                 connectClosestFacePair(fabric)
+                break
+            case "D":
+                const csvJoints: string[][] = []
+                const csvIntervals: string[][] = []
+                const output = fabric.output
+                csvJoints.push(["index", "x", "y", "z"])
+                output.joints.forEach(joint => {
+                    csvJoints.push([joint.index, joint.x, joint.y, joint.z])
+                })
+                csvIntervals.push(["joints", "type"])
+                output.intervals.forEach(interval => {
+                    csvIntervals.push([`"=""${interval.joints}"""`, interval.type])
+                })
+                console.log("Joints =======================\n", csvJoints.map(a => a.join(";")).join("\n"))
+                console.log("Intervals =======================\n", csvIntervals.map(a => a.join(";")).join("\n"))
+                break
+            case "d":
+                console.log(JSON.stringify(fabric.output, undefined, 4))
                 break
             case "Alt":
             case "Meta":
