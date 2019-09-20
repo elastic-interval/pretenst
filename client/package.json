@@ -30,8 +30,8 @@
     "start": "react-scripts-ts start",
     "build": "react-scripts-ts build",
     "build:prod": "NODE_ENV=production react-scripts-ts build",
-    "test": "react-scripts-ts test --env=jsdom",
     "eject": "react-scripts-ts eject",
+    "test": "react-scripts-ts test --env=jsdom",
     "lint": "tslint --fix -p tsconfig.json",
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'",
     "postinstall": "node ./workaround-three-types"

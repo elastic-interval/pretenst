@@ -2,7 +2,6 @@
   "compilerOptions": {
     "target": "es5",
     "moduleResolution": "node",
-    "rootDir": "src",
     "forceConsistentCasingInFileNames": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
