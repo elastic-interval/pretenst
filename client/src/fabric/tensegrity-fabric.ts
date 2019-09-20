@@ -36,8 +36,8 @@ export enum Selectable {
 
 interface IFabricOutput {
     name: string
-    joints: Array<{ index: string, x: string, y: string, z: string }>
-    intervals: Array<{ joints: string, type: string }>
+    joints: { index: string, x: string, y: string, z: string }[]
+    intervals: { joints: string, type: string }[]
 }
 
 export class TensegrityFabric {
@@ -58,7 +58,7 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(readonly instance: FabricInstance, readonly physics: Physics, readonly name: string, altitude: number) {
+    constructor(public readonly instance: FabricInstance, public readonly physics: Physics, public readonly name: string, altitude: number) {
         const growth = parseConstructionCode(name)
         growth.growing[0].brick = this.createBrick(altitude)
         this.growth = growth
@@ -69,11 +69,11 @@ export class TensegrityFabric {
         this.instance.setGestating(countdown)
     }
 
-    get selectable(): Selectable {
+    public get selectable(): Selectable {
         return this._selectable
     }
 
-    set selectable(value: Selectable) {
+    public set selectable(value: Selectable) {
         if (value !== Selectable.NONE) {
             this.cancelSelection()
             this.autoRotate = false
@@ -81,11 +81,11 @@ export class TensegrityFabric {
         this._selectable = value
     }
 
-    get selectedJoint(): IJoint | undefined {
+    public get selectedJoint(): IJoint | undefined {
         return this._selectedJoint
     }
 
-    set selectedJoint(value: IJoint | undefined) {
+    public set selectedJoint(value: IJoint | undefined) {
         console.log("selected joint", value)
         this.cancelSelection()
         this._selectable = Selectable.NONE
@@ -95,11 +95,11 @@ export class TensegrityFabric {
         }
     }
 
-    get selectedInterval(): IInterval | undefined {
+    public get selectedInterval(): IInterval | undefined {
         return this._selectedInterval
     }
 
-    set selectedInterval(value: IInterval | undefined) {
+    public set selectedInterval(value: IInterval | undefined) {
         this.cancelSelection()
         console.log("selected interval", value)
         this._selectable = Selectable.NONE
@@ -109,22 +109,22 @@ export class TensegrityFabric {
         }
     }
 
-    get selectedFace(): IFace | undefined {
+    public get selectedFace(): IFace | undefined {
         return this._selectedFace
     }
 
-    set selectedFace(value: IFace | undefined) {
+    public set selectedFace(value: IFace | undefined) {
         this.cancelSelection()
         console.log("selected face", value)
         this._selectable = Selectable.NONE
         this._selectedFace = value
     }
 
-    get growthFaces(): IFace[] {
+    public get growthFaces(): IFace[] {
         return this.faces.filter(f => f.canGrow)
     }
 
-    get selectionActive(): boolean {
+    public get selectionActive(): boolean {
         return this._selectable !== Selectable.NONE ||
             this._selectedFace !== undefined || this._selectedJoint !== undefined || this._selectedInterval !== undefined
     }
@@ -314,12 +314,10 @@ export class TensegrityFabric {
                     z: numberToString(vector.y),
                 }
             }),
-            intervals: this.intervals.map(interval => {
-                return {
-                    joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
-                    type: IntervalRole[interval.intervalRole],
-                }
-            }),
+            intervals: this.intervals.map(interval => ({
+                joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
+                type: IntervalRole[interval.intervalRole],
+            })),
         }
     }
 }
