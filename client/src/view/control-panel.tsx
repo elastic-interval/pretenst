@@ -56,7 +56,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                             {this.commandButtons(island)}
                             {!this.state.helpVisible ? false : (
                                 <HelpPanel
-                                    State={this.props.appState}
+                                    appState={this.props.appState}
                                     toolbarState={this.state.toolbarState}
                                     toolbarCommands={this.state.toolbarCommands}
                                     cancelHelp={() => this.setState({helpVisible: false})}

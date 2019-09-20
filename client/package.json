@@ -82,6 +82,7 @@
   "scripts": {
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
+    "build:prod": "NODE_ENV=production node scripts/build.js",
     "test": "node scripts/test.js --env=jsdom",
     "lint": "npx eslint --ext .tsx,.ts src/ --fix",
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'",
