@@ -65,7 +65,7 @@ export function NewFabricView({loadFabric}: {
                             <PresetFabric name="WTF" code="4[4,4[1,1,1],4]"/>
                             <PresetFabric name="Nine Branch Tree" code="3[3[3,3,3],3[3,3,3],3[3,3,3]]"/>
                             <PresetFabric name="Super Long Quadra" code="9[9,9,9]" />
-                            <PresetFabric  name="Wobbly Loop" code="1[3=2[1=2[3=2[2=2[2=2[2=1]]]]]]X"/>
+                            <PresetFabric name="Wobbly Loop" code="1[3=2[1=2[3=2[2=2[2=2[2=1]]]]]]X"/>
                         </DropdownMenu>
                     </InputGroupButtonDropdown>
                     <Input value={fabricCode}
