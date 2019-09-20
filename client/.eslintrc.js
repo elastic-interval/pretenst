@@ -98,7 +98,7 @@ module.exports = {
       "error",
       {
         "rulesDirectory": [
-          "/Users/mitch/Developer/galapagotchi/client/node_modules/tslint-react/rules",
+          "./node_modules/tslint-react/rules",
         ],
         "rules": {
           "comment-format": [
