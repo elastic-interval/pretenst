@@ -3,7 +3,7 @@
   "version": "0.1.0",
   "engineStrict": true,
   "engines": {
-    "node": "11.10.1"
+    "node": "12.10.0"
   },
   "types": "./types/index.d.ts",
   "private": true,

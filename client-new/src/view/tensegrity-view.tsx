@@ -24,8 +24,8 @@ import { SurfaceComponent } from "./surface-component"
 extend({OrbitControls})
 
 declare global {
-    module JSX {
-        // tslint:disable-next-line:interface-name
+    namespace JSX {
+        // eslint-disable-next-line @typescript-eslint/interface-name-prefix
         interface IntrinsicElements {
             orbitControls: ReactThreeFiber.Object3DNode<OrbitControls, typeof OrbitControls>
         }
