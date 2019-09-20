@@ -25,8 +25,8 @@ export class Gotchi {
     private growth?: Growth
 
     constructor(
-        readonly home: Hexalot,
-        readonly body: GotchiBody,
+        public readonly home: Hexalot,
+        public readonly body: GotchiBody,
         private genome: Genome,
         private gotchiFactory: IGotchiFactory,
     ) {
@@ -93,9 +93,7 @@ export class Gotchi {
             {state: FabricState.TurnLeft, distance: distance(this.body.right, -1)},
             {state: FabricState.TurnRight, distance: distance(this.body.right, 1)},
             {state: FabricState.Reverse, distance: distance(this.body.forward, -1)},
-        ].sort((a, b) => {
-            return a.distance < b.distance ? -1 : b.distance > a.distance ? 1 : 0
-        })
+        ].sort((a, b) => a.distance < b.distance ? -1 : b.distance > a.distance ? 1 : 0)
         this.nextState = towards ? distances[0].state : distances[3].state
     }
 

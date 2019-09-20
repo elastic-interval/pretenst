@@ -125,7 +125,7 @@ export class WorldView extends React.Component<IWorldProps, IWorldState> {
         )
     }
 
-// =================================================================================================================
+    // =================================================================================================================
 
     private async click(spot: Spot): Promise<void> {
         const props = this.props

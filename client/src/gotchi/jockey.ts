@@ -25,7 +25,7 @@ export class Jockey {
     private votes: FabricState[] = []
     private currentLeg: Leg
 
-    constructor(readonly gotchi: Gotchi, leg: Leg, private mutatingGenome?: Genome) {
+    constructor(public readonly gotchi: Gotchi, leg: Leg, private mutatingGenome?: Genome) {
         this.leg = leg
     }
 

@@ -11,7 +11,7 @@ export interface IJourneyData {
 }
 
 export class Leg {
-    constructor(readonly journey: Journey, public visited: number, public goTo: Hexalot) {
+    constructor(public readonly journey: Journey, public visited: number, public goTo: Hexalot) {
     }
 
     public get nextLeg(): Leg | undefined {

@@ -31,7 +31,7 @@ export class Evolution {
     private maxAge: number
 
     constructor(
-        readonly home: Hexalot,
+        public readonly home: Hexalot,
         private readonly prototypeJockey?: Jockey,
     ) {
         const rotateToLeg = this.leg

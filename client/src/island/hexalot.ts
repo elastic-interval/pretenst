@@ -41,9 +41,9 @@ export class Hexalot implements IHexalot {
     public visited = false
 
     constructor(public parentHexalot: Hexalot | undefined,
-                public coords: ICoords,
-                public spots: Spot[],
-                private gotchiFactory: IGotchiFactory) {
+        public coords: ICoords,
+        public spots: Spot[],
+        private gotchiFactory: IGotchiFactory) {
         this.spots[0].centerOfHexalot = this
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentHexalots.push(this)
@@ -126,15 +126,15 @@ export class Hexalot implements IHexalot {
         return this.gotchiFactory.createGotchiSeed(this, rotation, genome)
     }
 
-    get centerSpot(): Spot {
+    public get centerSpot(): Spot {
         return this.spots[0]
     }
 
-    get center(): Vector3 {
+    public get center(): Vector3 {
         return this.centerSpot.center
     }
 
-    get seed(): Vector3 {
+    public get seed(): Vector3 {
         return new Vector3(0, HUNG_ALTITUDE, 0).add(this.center)
     }
 
@@ -142,9 +142,7 @@ export class Hexalot implements IHexalot {
         const journeyVisits: Hexalot[] = [this]
         while (journeyVisits.length < visitCount + 1) {
             const endPoint = journeyVisits[journeyVisits.length - 1]
-            const landNeighbors = endPoint.centerSpot.adjacentHexalots.filter(adjacentHexalot => {
-                return journeyVisits.every(visit => visit.id !== adjacentHexalot.id)
-            })
+            const landNeighbors = endPoint.centerSpot.adjacentHexalots.filter(adjacentHexalot => journeyVisits.every(visit => visit.id !== adjacentHexalot.id))
             if (landNeighbors.length === 0) {
                 // todo: find one anyway if there are to few!
                 break

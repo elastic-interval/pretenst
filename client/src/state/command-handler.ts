@@ -22,6 +22,24 @@ export class CommandHandler {
         this.trans = new Transition(appState)
     }
 
+    private static async claimHexalot(appState: IAppState, hexalot: Hexalot): Promise<IAppState | undefined> {
+        const existingIsland = appState.island
+        if (!existingIsland) {
+            console.warn("No existing island")
+            return undefined
+        }
+        const islandData = await appState.storage.claimHexalot(existingIsland, hexalot, freshGenome().genomeData)
+        if (!islandData) {
+            console.warn("No island data arrived")
+            return undefined
+        }
+        const mode = AppMode.Exploring
+        const islandIsLegal = false
+        const island = new Island(islandData, existingIsland.gotchiFactory, appState.storage, appState.nonce)
+        const appStateClone: IAppState = {...appState, nonce: appState.nonce + 1, island, appMode: mode, islandIsLegal}
+        return (await new Transition(appStateClone).withHomeHexalot(hexalot)).withRestructure.appState
+    }
+
     public async afterCommand(command: Command, location: Vector3): Promise<IAppState> {
 
         const trans = this.trans
@@ -170,24 +188,6 @@ export class CommandHandler {
 
 
         }
-    }
-
-    private static async claimHexalot(appState: IAppState, hexalot: Hexalot): Promise<IAppState | undefined> {
-        const existingIsland = appState.island
-        if (!existingIsland) {
-            console.warn("No existing island")
-            return undefined
-        }
-        const islandData = await appState.storage.claimHexalot(existingIsland, hexalot, freshGenome().genomeData)
-        if (!islandData) {
-            console.warn("No island data arrived")
-            return undefined
-        }
-        const mode = AppMode.Exploring
-        const islandIsLegal = false
-        const island = new Island(islandData, existingIsland.gotchiFactory, appState.storage, appState.nonce)
-        const appStateClone: IAppState = {...appState, nonce: appState.nonce + 1, island, appMode: mode, islandIsLegal}
-        return (await new Transition(appStateClone).withHomeHexalot(hexalot)).withRestructure.appState
     }
 }
 
