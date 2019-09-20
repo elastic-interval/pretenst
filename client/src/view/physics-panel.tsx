@@ -72,17 +72,17 @@ export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPa
                                         <Col xs="6">
                                             <ButtonGroup className="physics-button-group">
                                                 <Button className="physics-adjust-button" color="primary"
-                                                        onClick={() => {
-                                                            setFactor(feature.factor$.getValue() * change)
-                                                        }}>⨉</Button>
+                                                    onClick={() => {
+                                                        setFactor(feature.factor$.getValue() * change)
+                                                    }}>⨉</Button>
                                                 <Button className="physics-adjust-button" color="primary"
-                                                        onClick={() => {
-                                                            setFactor(feature.factor$.getValue() / change)
-                                                        }}>÷</Button>
+                                                    onClick={() => {
+                                                        setFactor(feature.factor$.getValue() / change)
+                                                    }}>÷</Button>
                                                 <Button className="physics-adjust-button" color="danger"
-                                                        onClick={() => {
-                                                            setFactor(undefined)
-                                                        }}>=</Button>
+                                                    onClick={() => {
+                                                        setFactor(undefined)
+                                                    }}>=</Button>
                                             </ButtonGroup>
                                         </Col>
                                         <Col xs="6">

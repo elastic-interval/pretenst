@@ -35,7 +35,8 @@ module.exports = {
     "@typescript-eslint/no-namespace": "off",
     "@typescript-eslint/no-parameter-properties": "off",
     "@typescript-eslint/no-type-alias": ["error", {
-        "allowAliases": "always",
+      "allowAliases": "always",
+      "allowCallbacks": "always"
     }],
     "@typescript-eslint/no-use-before-declare": "off",
     "@typescript-eslint/no-var-requires": "error",

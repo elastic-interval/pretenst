@@ -29,7 +29,7 @@ export interface IControlState {
 }
 
 interface IContainerProps {
-    children: Array<JSX.Element | null> | JSX.Element | string
+    children: (JSX.Element | null)[] | JSX.Element | string
 }
 
 export class ControlPanel extends React.Component<IControlProps, IControlState> {
@@ -56,7 +56,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                             {this.commandButtons(island)}
                             {!this.state.helpVisible ? false : (
                                 <HelpPanel
-                                    appState={this.props.appState}
+                                    State={this.props.appState}
                                     toolbarState={this.state.toolbarState}
                                     toolbarCommands={this.state.toolbarCommands}
                                     cancelHelp={() => this.setState({helpVisible: false})}
@@ -215,7 +215,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
                 key={command}
                 color="success"
                 className="command-button"
-                onClick={() => this.execute(command)}
+                onClick={async () => this.execute(command)}
             >{command}</Button>
         )
     }

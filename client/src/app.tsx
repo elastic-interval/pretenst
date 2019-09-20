@@ -125,7 +125,7 @@ export class App extends React.Component<IAppProps, IAppState> {
                                     <div className="sign-in">
                                         <a href={`${API_URI}/auth/twitter`}>
                                             <img src="sign-in-with-twitter-gray.png"
-                                                 alt="Sign in with Twitter"/>
+                                                alt="Sign in with Twitter"/>
                                         </a>
                                     </div>
                                 )

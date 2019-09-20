@@ -82,7 +82,7 @@ export class IslandComponent extends React.Component<IIslandComponentProps, obje
         return (
             <Canvas key={island.name}>
                 <mesh name="Spots" geometry={this.spots} material={ISLAND}
-                         ref={(mesh: Mesh) => this.props.setMesh(MeshKey.SPOTS_KEY, mesh)}
+                    ref={(mesh: Mesh) => this.props.setMesh(MeshKey.SPOTS_KEY, mesh)}
                 />
                 <mesh name="Seeds" geometry={this.seeds} material={GOTCHI}/>
                 <lineSegments key="HangersOccupied" geometry={this.occupiedHangers} material={HANGER_OCCUPIED}/>

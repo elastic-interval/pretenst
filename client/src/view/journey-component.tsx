@@ -25,27 +25,6 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
         this.geometry = JourneyComponent.createGeometry(props)
     }
 
-    public componentWillReceiveProps(nextProps: IJourneyProps): void {
-        const changed = nextProps.journey !== this.props.journey
-        if (!changed) {
-            return
-        }
-        this.geometry.dispose()
-        this.geometry = JourneyComponent.createGeometry(nextProps)
-    }
-
-    public componentWillUnmount(): void {
-        this.geometry.dispose()
-    }
-
-    public render(): JSX.Element {
-        return (
-            <Canvas>
-                <lineSegments key="Journey" geometry={this.geometry} material={JOURNEY}/>
-            </Canvas>
-        )
-    }
-
     private static createGeometry(props: IJourneyProps): BufferGeometry {
         const geometry = new BufferGeometry()
         const journey = props.journey
@@ -98,5 +77,26 @@ export class JourneyComponent extends React.Component<IJourneyProps, object> {
         }
         geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
         return geometry
+    }
+
+    public componentWillReceiveProps(nextProps: IJourneyProps): void {
+        const changed = nextProps.journey !== this.props.journey
+        if (!changed) {
+            return
+        }
+        this.geometry.dispose()
+        this.geometry = JourneyComponent.createGeometry(nextProps)
+    }
+
+    public componentWillUnmount(): void {
+        this.geometry.dispose()
+    }
+
+    public render(): JSX.Element {
+        return (
+            <Canvas>
+                <lineSegments key="Journey" geometry={this.geometry} material={JOURNEY}/>
+            </Canvas>
+        )
     }
 }

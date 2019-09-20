@@ -14,11 +14,11 @@ import { IJourneyData } from "../island/journey"
 interface IUserProfile {
     username: string
     displayName: string
-    photos?: Array<{value: string}>
+    photos?: {value: string}[]
 }
 
 export interface IUser {
-    ownedLots: Array<{id: string}>
+    ownedLots: {id: string}[]
     profile: IUserProfile
 }
 

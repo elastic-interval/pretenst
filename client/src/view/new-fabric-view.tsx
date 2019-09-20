@@ -49,7 +49,7 @@ export function NewFabricView({loadFabric}: {
             <Col md={{size: 8, offset: 2}}>
                 <InputGroup size="lg">
                     <InputGroupButtonDropdown addonType="append" isOpen={dropdownOpen}
-                                              toggle={() => setDropdownOpen(!dropdownOpen)}>
+                        toggle={() => setDropdownOpen(!dropdownOpen)}>
                         <DropdownToggle caret={true}>
                             Load Preset
                         </DropdownToggle>
@@ -69,9 +69,9 @@ export function NewFabricView({loadFabric}: {
                         </DropdownMenu>
                     </InputGroupButtonDropdown>
                     <Input value={fabricCode}
-                           className="text-monospace"
-                           placeholder="Fabric Code e.g. 3[1,1,1]"
-                           onChange={(e) => setFabricCode(e.target.value)}
+                        className="text-monospace"
+                        placeholder="Fabric Code e.g. 3[1,1,1]"
+                        onChange={(e) => setFabricCode(e.target.value)}
                     />
                     <InputGroupAddon addonType="append">
                         <Button color="success" onClick={() => {
