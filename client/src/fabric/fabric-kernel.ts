@@ -294,10 +294,6 @@ export class FabricInstance {
         return this.ex.getIntervalCount()
     }
 
-    public isGestating(): boolean {
-        return this.ex.isGestating()
-    }
-
     public iterate(ticks: number): boolean {
         return this.ex.iterate(ticks)
     }
@@ -344,10 +340,6 @@ export class FabricInstance {
 
     public changeRestLength(intervalIndex: number, length: number): void {
         this.ex.changeRestLength(intervalIndex, length)
-    }
-
-    public setGestating(countdown: number): void {
-        this.ex.setGestating(countdown)
     }
 
     public getJointLocation(jointIndex: number): Vector3 {

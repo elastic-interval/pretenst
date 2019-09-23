@@ -9,13 +9,19 @@ declare function logFloat(idx: u32, f: f32): void
 
 declare function logInt(idx: u32, i: i32): void
 
-const U8 = sizeof<u8>()
-const U16 = sizeof<u16>()
-const U32 = sizeof<u32>()
-const F32 = sizeof<f32>()
+enum GlobalFeature {
+    GravityAbove = 0,
+    GravityBelowLand = 1,
+    GravityBelowWater = 2,
+    DragAbove = 3,
+    DragBelowLand = 4,
+    DragBelowWater = 5,
+    PushElastic = 6,
+    PullElastic = 7,
+    IntervalCountdown = 8
+}
 
 enum IntervalRole {
-    Muscle = 0,
     Bar = 1,
     Triangle = 2,
     Ring = 3,
@@ -25,9 +31,13 @@ enum IntervalRole {
     BowEndHigh = 7,
 }
 
+const U8 = sizeof<u8>()
+const U16 = sizeof<u16>()
+const U32 = sizeof<u32>()
+const F32 = sizeof<f32>()
+
 const PRETENST: f32 = 1.0
 const INTERVAL_ROLE_COUNT: u8 = 8
-const MUSCLE_LENGTH: f32 = 1.0
 const PHI: f32 = 1.618
 const BAR_LENGTH: f32 = 2 * PHI * PRETENST
 const CABLE_LENGTH: f32 = 2.123
@@ -45,20 +55,17 @@ const LATERALITY_SIZE: usize = U8
 const JOINT_NAME_SIZE: usize = U16
 const INDEX_SIZE: usize = U16
 const INTERVAL_ROLE_SIZE: usize = U8
-const INTERVAL_AGE_SIZE: usize = U16
+const INTERVAL_COUNTDOWN_SIZE: usize = U16
 const VECTOR_SIZE: usize = F32 * 3
 const JOINT_RADIUS: f32 = 0.1
 const AMBIENT_JOINT_MASS: f32 = 0.1
 const REST_STATE: u8 = 0
 const STATE_COUNT: u8 = 5
 const LAND: u8 = 1
-
-const INTERVAL_AGE_BORN: u16 = 0
-const INTERVAL_AGE_ADULT: u16 = 500
-const GESTATION_DRAG_FACTOR: f32 = 10
+const BUSY_DRAG_FACTOR: f32 = 10
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
-const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + INTERVAL_AGE_SIZE + F32 * STATE_COUNT
+const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + INTERVAL_COUNTDOWN_SIZE + F32 * STATE_COUNT
 
 // Dimensioning ================================================================================
 
@@ -185,14 +192,14 @@ function _intervalRole(intervalIndex: u16): usize {
 
 // @ts-ignore
 @inline()
-function _intervalAge(intervalIndex: u16): usize {
-    return _intervalRole(intervalCountMax) + intervalIndex * INTERVAL_AGE_SIZE
+function _intervalCountdown(intervalIndex: u16): usize {
+    return _intervalRole(intervalCountMax) + intervalIndex * INTERVAL_COUNTDOWN_SIZE
 }
 
 // @ts-ignore
 @inline()
 function _stateLengthArray(intervalIndex: u16): usize {
-    return _intervalAge(intervalCountMax) + intervalIndex * F32 * STATE_COUNT
+    return _intervalCountdown(intervalCountMax) + intervalIndex * F32 * STATE_COUNT
 }
 
 // @ts-ignore
@@ -229,18 +236,6 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 
 // Physics =====================================================================================
 
-enum GlobalFeature {
-    GravityAbove = 0,
-    GravityBelowLand = 1,
-    GravityBelowWater = 2,
-    DragAbove = 3,
-    DragBelowLand = 4,
-    DragBelowWater = 5,
-    LengthVariationSpeed = 7,
-    PushElastic = 8,
-    PullElastic = 9,
-}
-
 const DRAG_ABOVE: f32 = 0.0001
 const GRAVITY_ABOVE: f32 = 0.00001
 const DRAG_BELOW_LAND: f32 = 1.0
@@ -249,8 +244,7 @@ const GRAVITY_BELOW_LAND: f32 = -0.1
 const GRAVITY_BELOW_WATER: f32 = -0.00001
 const PUSH_ELASTIC_FACTOR: f32 = 25.0
 const PULL_ELASTIC_FACTOR: f32 = 15.0
-const MAX_LENGTH_VARIATION: f32 = 0.1
-const TIME_SWEEP_SPEED: f32 = 30.0
+const INTERVAL_COUNTDOWN: f32 = 100.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
 
@@ -285,7 +279,7 @@ export function setDragBelowLand(factor: f32): f32 {
 let physicsGravityBelowLand: f32 = GRAVITY_BELOW_LAND
 let pushElasticFactor: f32 = PUSH_ELASTIC_FACTOR
 let pullElasticFactor: f32 = PULL_ELASTIC_FACTOR
-let timeSweepSpeed: f32 = TIME_SWEEP_SPEED
+let intervalCountdown: f32 = INTERVAL_COUNTDOWN
 
 export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32 {
     switch (globalFeature) {
@@ -301,12 +295,12 @@ export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32
             return physicsDragBelowLand = DRAG_BELOW_LAND * factor
         case GlobalFeature.DragBelowWater:
             return physicsDragBelowWater = DRAG_BELOW_WATER * factor
-        case GlobalFeature.LengthVariationSpeed:
-            return timeSweepSpeed = TIME_SWEEP_SPEED * factor
         case GlobalFeature.PushElastic:
             return pushElasticFactor = PUSH_ELASTIC_FACTOR * factor
         case GlobalFeature.PullElastic:
             return pullElasticFactor = PULL_ELASTIC_FACTOR * factor
+        case GlobalFeature.IntervalCountdown:
+            return intervalCountdown = INTERVAL_COUNTDOWN * factor
         default:
             return 0
     }
@@ -531,13 +525,12 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 // Fabric state ===============================================================================
 
-const TIME_SWEEP_OFFSET = U32
-const JOINT_COUNT_OFFSET = TIME_SWEEP_OFFSET + U16
+const JOINT_COUNT_OFFSET = U32
 const JOINT_TAG_COUNT_OFFSET = JOINT_COUNT_OFFSET + U16
 const INTERVAL_COUNT_OFFSET = JOINT_TAG_COUNT_OFFSET + U16
 const FACE_COUNT_OFFSET = INTERVAL_COUNT_OFFSET + U16
-const GESTATING_OFFSET = FACE_COUNT_OFFSET + U16
-const PREVIOUS_STATE_OFFSET = GESTATING_OFFSET + U8
+const BUSY_COUNTDOWN_OFFSET = FACE_COUNT_OFFSET + U16
+const PREVIOUS_STATE_OFFSET = BUSY_COUNTDOWN_OFFSET + U16
 const CURRENT_STATE_OFFSET = PREVIOUS_STATE_OFFSET + U8
 const NEXT_STATE_OFFSET = CURRENT_STATE_OFFSET + U8
 const ELASTIC_FACTOR_OFFSET = NEXT_STATE_OFFSET + U8 + U16 // last one is padding for multiple of 4 bytes
@@ -549,14 +542,6 @@ function setAge(value: u32): void {
 
 export function getAge(): u32 {
     return getU32(_state)
-}
-
-function setTimeSweep(value: u16): void {
-    setU16(_state + TIME_SWEEP_OFFSET, value)
-}
-
-function getTimeSweep(): u16 {
-    return getU16(_state + TIME_SWEEP_OFFSET)
 }
 
 export function getJointCount(): u16 {
@@ -597,24 +582,16 @@ function setFaceCount(value: u16): void {
     setU16(_state + FACE_COUNT_OFFSET, value)
 }
 
-function getGestating(): u8 {
-    return getU8(_state + GESTATING_OFFSET)
+function getBusyCountdown(): u16 {
+    return getU16(_state + BUSY_COUNTDOWN_OFFSET)
 }
 
-export function setGestating(countdown: u8): void {
-    setTimeSweep(0)
-    setU8(_state + GESTATING_OFFSET, countdown)
+export function setBusyCountdown(countdown: u16): void {
+    setU16(_state + BUSY_COUNTDOWN_OFFSET, countdown)
 }
 
-export function isGestating(): boolean {
-    return getGestating() > 0
-}
-
-function nextGestation(next: u8): void {
-    if (next < 0) {
-        return
-    }
-    setGestating(next)
+export function isBusy(): boolean {
+    return getBusyCountdown() > 0
 }
 
 function getPreviousState(): u8 {
@@ -658,16 +635,14 @@ export function getRoleLength(intervalRole: u8): f32 {
 
 export function reset(): void {
     setAge(0)
-    setTimeSweep(0)
     setJointCount(0)
     setJointTagCount(0)
     setIntervalCount(0)
     setFaceCount(0)
-    setGestating(0)
+    setBusyCountdown(0)
     setPreviousState(REST_STATE)
     setCurrentState(REST_STATE)
     setNextState(REST_STATE)
-    setRoleLength(<u8>IntervalRole.Muscle, MUSCLE_LENGTH)
     setRoleLength(<u8>IntervalRole.Bar, BAR_LENGTH)
     setRoleLength(<u8>IntervalRole.Triangle, CABLE_LENGTH)
     setRoleLength(<u8>IntervalRole.Ring, RING_LENGTH)
@@ -772,20 +747,6 @@ function calculateJointMidpoint(): void {
     multiplyScalar(_midpoint, 1.0 / <f32>jointCount)
 }
 
-function calculateDirectionVectors(): void {
-    // TODO: change this to tensegrity
-    // let rightJoint = (getGestating() > 0) ? SEED_CORNERS + 1 : SEED_CORNERS // hanger joint still there
-    // let leftJoint = rightJoint + 1
-    // addVectors(_seed, _location(rightJoint), _location(leftJoint))
-    // multiplyScalar(_seed, 0.5)
-    // subVectors(_right, _location(rightJoint), _location(leftJoint))
-    // setY(_right, 0) // horizontal, should be near already
-    // multiplyScalar(_right, 1 / length(_right))
-    // setAll(_vX, 0, 1, 0) // up
-    // crossVectors(_forward, _vX, _right)
-    // multiplyScalar(_forward, 1 / length(_forward))
-}
-
 // Intervals =====================================================================================
 
 export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize {
@@ -800,12 +761,13 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize 
     zero(_unit(intervalIndex))
     initializeCurrentLength(intervalIndex, calculateLength(intervalIndex))
     initializeIntervalRole(intervalIndex, intervalRole)
-    setU16(_intervalAge(intervalIndex), INTERVAL_AGE_BORN)
     let idealLength = getRoleLength(intervalRole)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, idealLength)
     }
-    setGestating(1)
+    let countdown: u16 = <u16>intervalCountdown
+    setIntervalCountdown(intervalIndex, countdown)
+    setBusyCountdown(countdown)
     return intervalIndex
 }
 
@@ -821,7 +783,7 @@ export function removeInterval(intervalIndex: u16): void {
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset
     initializeIntervalRole(intervalIndex, getIntervalRole(nextIndex))
-    setU16(_intervalAge(intervalIndex), getIntervalAge(nextIndex))
+    setU16(_intervalCountdown(intervalIndex), getIntervalCountdown(nextIndex))
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
@@ -855,12 +817,6 @@ function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
     setF32(_currentLength(intervalIndex), idealLength)
 }
 
-export function changeRestLength(intervalIndex: u16, restLength: f32): void {
-    resetIntervalAge(intervalIndex)
-    initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
-    setIntervalStateLength(intervalIndex, REST_STATE, restLength)
-}
-
 function getIntervalRole(intervalIndex: u16): u8 {
     return getU8(_intervalRole(intervalIndex))
 }
@@ -876,25 +832,26 @@ export function changeRestIntervalRole(intervalIndex: u16, intervalRole: u8): vo
     }
     initializeCurrentLength(intervalIndex, getRoleLength(existingRole))
     setIntervalStateLength(intervalIndex, REST_STATE, getRoleLength(intervalRole))
-    resetIntervalAge(intervalIndex)
     setU8(_intervalRole(intervalIndex), intervalRole)
+    let countdown = <u16>intervalCountdown
+    setIntervalCountdown(intervalIndex, countdown)
+    setBusyCountdown(countdown)
 }
 
-function getIntervalAge(intervalIndex: u16): u16 {
-    return getU16(_intervalAge(intervalIndex))
+export function changeRestLength(intervalIndex: u16, restLength: f32): void {
+    initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
+    setIntervalStateLength(intervalIndex, REST_STATE, restLength)
+    let countdown = <u16>intervalCountdown
+    setIntervalCountdown(intervalIndex, countdown)
+    setBusyCountdown(countdown)
 }
 
-function incrementIntervalAge(intervalIndex: u16): boolean {
-    let intervalAge = getIntervalAge(intervalIndex)
-    if (intervalAge === INTERVAL_AGE_ADULT) {
-        return false
-    }
-    setU16(_intervalAge(intervalIndex), intervalAge + 1)
-    return intervalAge + 1 === INTERVAL_AGE_ADULT
+function getIntervalCountdown(intervalIndex: u16): u16 {
+    return getU16(_intervalCountdown(intervalIndex))
 }
 
-function resetIntervalAge(intervalIndex: u16): void {
-    setU16(_intervalAge(intervalIndex), INTERVAL_AGE_BORN)
+function setIntervalCountdown(intervalIndex: u16, countdown: u16): void {
+    setU16(_intervalCountdown(intervalIndex), countdown)
 }
 
 function getIntervalStateLength(intervalIndex: u16, state: u8): f32 {
@@ -952,17 +909,13 @@ export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
     return intervalCountMax
 }
 
-function advance(clockPoint: u32): u32 {
-    return clockPoint + 65536
-}
-
 function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
     let currentLength = getCurrentLength(intervalIndex)
-    let intervalAge = getIntervalAge(intervalIndex)
-    if (intervalAge === INTERVAL_AGE_ADULT) {
+    let countdown = getIntervalCountdown(intervalIndex)
+    if (countdown === 0) {
         return currentLength
     }
-    let progress = <f32>intervalAge / <f32>INTERVAL_AGE_ADULT
+    let progress = (intervalCountdown - <f32>countdown) / intervalCountdown
     let stateLength = getIntervalStateLength(intervalIndex, state)
     return currentLength * (1 - progress) + stateLength * progress
 }
@@ -1194,18 +1147,18 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 // Physics =====================================================================================
 
-function intervalPhysics(intervalIndex: u16, gestating: u8, state: u8): void {
+function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
     getCurrentState()
     let currentLength = interpolateCurrentLength(intervalIndex, state)
     let stress = calculateLength(intervalIndex) - currentLength
-    if (intervalRole !== IntervalRole.Muscle && intervalRole !== IntervalRole.Bar && stress < 0) {
+    if (intervalRole !== IntervalRole.Bar && stress < 0) {
         stress = 0
     }
     if (stress < 0) { // PUSH
-        stress *= gestating ? PUSH_ELASTIC_FACTOR : pushElasticFactor
+        stress *= busy ? PUSH_ELASTIC_FACTOR : pushElasticFactor
     } else { // PULL
-        stress *= gestating ? PULL_ELASTIC_FACTOR : pullElasticFactor
+        stress *= busy ? PULL_ELASTIC_FACTOR : pullElasticFactor
     }
     setStress(intervalIndex, stress)
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
@@ -1217,12 +1170,12 @@ function intervalPhysics(intervalIndex: u16, gestating: u8, state: u8): void {
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(jointIndex: u16, gestating: u8): void {
+function jointPhysics(jointIndex: u16, busy: boolean): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
-    let dragAbove = physicsDragAbove * (gestating === 0 ? 1 : GESTATION_DRAG_FACTOR / <f32>gestating)
-    let gravityAbove = gestating > 0 ? <f32>0 : physicsGravityAbove
+    let dragAbove = physicsDragAbove * (busy ? BUSY_DRAG_FACTOR : 1)
+    let gravityAbove = busy ? <f32>0 : physicsGravityAbove
     if (altitude > JOINT_RADIUS) { // far above
         setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityAbove)
         multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
@@ -1251,18 +1204,27 @@ function jointPhysics(jointIndex: u16, gestating: u8): void {
     }
 }
 
-function tick(gestating: u8, state: u8): void {
+function tick(maxIntervalCountdown: u16, state: u8): u16 {
     let intervalCount = getIntervalCount()
+    let busy = isBusy()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        intervalPhysics(intervalIndex, gestating, state)
-        let reachedAdult = incrementIntervalAge(intervalIndex)
-        if (reachedAdult) {
+        intervalPhysics(intervalIndex, busy, state)
+        let countdown = getIntervalCountdown(intervalIndex)
+        if (countdown === 0) {
+            continue
+        }
+        if (countdown > maxIntervalCountdown) {
+            maxIntervalCountdown = countdown
+        }
+        countdown--
+        setIntervalCountdown(intervalIndex, countdown)
+        if (countdown === 0) { // reached the end just now
             initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
         }
     }
     let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        jointPhysics(jointIndex, gestating)
+        jointPhysics(jointIndex, busy)
         addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
         zero(_force(jointIndex))
     }
@@ -1270,32 +1232,14 @@ function tick(gestating: u8, state: u8): void {
         add(_location(jointIndex), _velocity(jointIndex))
         setF32(_intervalMass(jointIndex), AMBIENT_JOINT_MASS)
     }
+    return maxIntervalCountdown
 }
 
 export function iterate(ticks: u16): boolean {
-    let wrapAround = false
-    let gestating = getGestating()
-    let timeSweepStep: u16 = <u16>timeSweepSpeed
     let currentState = getCurrentState()
+    let maxIntervalCountdown: u16 = 0
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        let timeSweep = getTimeSweep()
-        let current = timeSweep
-        timeSweep += timeSweepStep
-        setTimeSweep(timeSweep)
-        if (timeSweep < current) {
-            wrapAround = true
-            if (gestating === 0) {
-                setPreviousState(currentState)
-                let nextState = getNextState()
-                if (nextState !== currentState) {
-                    setCurrentState(nextState)
-                }
-            }
-            if (gestating > 0) {
-                nextGestation(gestating - 1)
-            }
-        }
-        tick(gestating, currentState)
+        maxIntervalCountdown = tick(maxIntervalCountdown, currentState)
     }
     setAge(getAge() + <u32>ticks)
     outputLinesGeometry()
@@ -1304,15 +1248,17 @@ export function iterate(ticks: u16): boolean {
         outputFaceGeometry(faceIndex)
     }
     calculateJointMidpoint()
-    calculateDirectionVectors()
-    if (gestating) {
-        let intervalCount = getIntervalCount()
-        for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-            if (getIntervalAge(intervalIndex) !== INTERVAL_AGE_ADULT) {
-                return false
-            }
+    if (maxIntervalCountdown === 0) {
+        let busyCountdown = getBusyCountdown()
+        if (busyCountdown === 0) {
+            return false
         }
-        return true
+        let nextCountdown: u16 = busyCountdown - ticks
+        if (nextCountdown > busyCountdown) { // rollover
+            setBusyCountdown(0)
+        } else {
+            setBusyCountdown(nextCountdown)
+        }
     }
-    return wrapAround
+    return true
 }

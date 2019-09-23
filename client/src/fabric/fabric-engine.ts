@@ -7,16 +7,20 @@ export interface IMemory {
     buffer: ArrayBuffer
 }
 
-export enum FabricState {
-    Rest,
-    Forward,
-    TurnLeft,
-    TurnRight,
-    Reverse,
+
+export enum GlobalFeature {
+    GravityAbove = 0,
+    GravityBelowLand = 1,
+    GravityBelowWater = 2,
+    DragAbove = 3,
+    DragBelowLand = 4,
+    DragBelowWater = 5,
+    PushElastic = 6,
+    PullElastic = 7,
+    IntervalCountdown = 8,
 }
 
 export enum IntervalRole {
-    Muscle = 0,
     Bar = 1,
     Triangle = 2,
     Ring = 3,
@@ -26,26 +30,19 @@ export enum IntervalRole {
     BowEndHigh = 7,
 }
 
+export enum FabricState {
+    Rest,
+    Forward,
+    TurnLeft,
+    TurnRight,
+    Reverse,
+}
+
 export enum Laterality {
     Middle = 0,
     RightSide = 1,
     LeftSide = 2,
 }
-
-export enum GlobalFeature {
-    GravityAbove = 0,
-    GravityBelowLand = 1,
-    GravityBelowWater = 2,
-    DragAbove = 3,
-    DragBelowLand = 4,
-    DragBelowWater = 5,
-    LengthVariationSpeed = 6,
-    PushElastic = 7,
-    PullElastic = 8,
-}
-
-export const SEED_CORNERS = 5
-export const SEED_RADIUS = 1
 
 export interface IFabricDimensions {
     instanceMax: number,
@@ -71,10 +68,6 @@ export interface IFabricEngine {
     reset(): void
 
     getAge(): number
-
-    isGestating(): boolean
-
-    setGestating(countdown: number): void
 
     getCurrentState(): FabricState
 
@@ -125,4 +118,5 @@ export interface IFabricEngine {
     findOppositeFaceIndex(faceIndex: number): number
 
     getFaceJointIndex(faceIndex: number, jointNumber: number): number
+
 }

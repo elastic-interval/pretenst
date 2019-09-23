@@ -64,11 +64,6 @@ export class TensegrityFabric {
         this.growth = growth
     }
 
-
-    public setGestating(countdown: number): void {
-        this.instance.setGestating(countdown)
-    }
-
     public get selectable(): Selectable {
         return this._selectable
     }
@@ -256,9 +251,9 @@ export class TensegrityFabric {
 
     public iterate(ticks: number): boolean {
         this.disposeOfGeometry()
-        const changeHappened = this.instance.iterate(ticks)
-        if (!changeHappened) {
-            return false
+        const busy = this.instance.iterate(ticks)
+        if (busy) {
+            return busy
         }
         const growth = this.growth
         if (growth) {
@@ -277,7 +272,6 @@ export class TensegrityFabric {
                             optimizeFabric(this, true)
                             break
                         case "X":
-                            this.setGestating(3)
                             growth.optimizationStack.push("Connect")
                             break
                         case "Connect":
@@ -285,13 +279,12 @@ export class TensegrityFabric {
                             break
                     }
                 } else {
-                    this.setGestating(1)
                     this.physics.applyLocal(this.instance)
                     this.growth = undefined
                 }
             }
         }
-        return true
+        return busy
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
@@ -321,4 +314,3 @@ export class TensegrityFabric {
         }
     }
 }
-

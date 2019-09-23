@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { FabricState, IntervalRole, Laterality, SEED_CORNERS, SEED_RADIUS } from "./fabric-engine"
+import { FabricState, IntervalRole, Laterality } from "./fabric-engine"
 import { FabricInstance } from "./fabric-kernel"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
@@ -151,6 +151,8 @@ export class GotchiBody {
     }
 
     public createSeed(x: number, z: number, rotation: number): GotchiBody {
+        const SEED_CORNERS = 5 // TODO: get rid of the seed
+        const SEED_RADIUS = 2 // TODO: get rid of it
         this.instance.reset()
         // prepare
         const locations: Vector3[] = []
@@ -211,10 +213,6 @@ export class GotchiBody {
         return this.instance.getAge()
     }
 
-    public get isGestating(): boolean {
-        return this.instance.isGestating()
-    }
-
     public setAltitude(altitude: number): number {
         return this.instance.setAltitude(altitude)
     }
@@ -248,8 +246,8 @@ export class GotchiBody {
         return this.instance.createFace(joint0Index, joint1Index, joint2Index)
     }
 
-    private muscle(alphaIndex: number, omegaIndex: number): number {
-        return this.instance.createInterval(alphaIndex, omegaIndex, IntervalRole.Muscle)
+    private muscle(alphaIndex: number, omegaIndex: number): number { // TODO: no more muscles
+        return this.instance.createInterval(alphaIndex, omegaIndex, IntervalRole.Bar)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {

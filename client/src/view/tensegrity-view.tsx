@@ -16,7 +16,13 @@ import { connectClosestFacePair } from "../fabric/tensegrity-brick"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { TENSEGRITY_FACE, TENSEGRITY_JOINT, TENSEGRITY_JOINT_CAN_GROW, TENSEGRITY_JOINT_SELECTED, TENSEGRITY_LINE } from "./materials"
+import {
+    TENSEGRITY_FACE,
+    TENSEGRITY_JOINT,
+    TENSEGRITY_JOINT_CAN_GROW,
+    TENSEGRITY_JOINT_SELECTED,
+    TENSEGRITY_LINE,
+} from "./materials"
 import { NewFabricView } from "./new-fabric-view"
 import { PhysicsPanel } from "./physics-panel"
 import { SurfaceComponent } from "./surface-component"
@@ -37,10 +43,9 @@ const SPHERE = new SphereGeometry(0.12, 16, 16)
 
 const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
-const ALTITUDE = 1
+const ALTITUDE = 10
 
-export function TensegrityView({engine, fabricKernel, physics}:
-{
+export function TensegrityView({engine, fabricKernel, physics}: {
     engine: IFabricEngine,
     fabricKernel: FabricKernel,
     physics: Physics,
@@ -62,7 +67,7 @@ export function TensegrityView({engine, fabricKernel, physics}:
         }
     })
     const factor = (up: boolean) => 1.0 + (up ? 0.005 : -0.005)
-    const onKeyDownCapture = (event: React.KeyboardEvent<HTMLDivElement>) => {
+    const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
         const handleJoint = (joint: IJoint | undefined, bar: boolean, up: boolean) => {
             if (joint === undefined || !fabric) {
                 return
@@ -169,9 +174,7 @@ export function TensegrityView({engine, fabricKernel, physics}:
         }
     }
     return (
-        <div ref={viewRef} tabIndex={1} id="tensegrity-view" className="the-whole-page"
-            onKeyDownCapture={onKeyDownCapture}
-        >
+        <div ref={viewRef} tabIndex={1} id="tensegrity-view" className="the-whole-page" onKeyDownCapture={onKeyDown}>
             {fabric ? undefined :
                 <NewFabricView loadFabric={(code) => setFabric(createFabric(code))}/>
             }
@@ -185,8 +188,7 @@ export function TensegrityView({engine, fabricKernel, physics}:
     )
 }
 
-function FabricView({fabric}:
-{
+function FabricView({fabric}: {
     fabric: TensegrityFabric,
 }): JSX.Element {
     const [age, setAge] = useState<number>(0)
@@ -199,7 +201,7 @@ function FabricView({fabric}:
         controls.enableKeys = false
         const midpoint = new Vector3(0, ALTITUDE, 0)
         orbitControls.current.target.set(midpoint.x, midpoint.y, midpoint.z)
-        camera.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE)
+        camera.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
         camera.lookAt(orbitControls.current.target)
         controls.update()
     }, [fabric])
@@ -218,8 +220,7 @@ function FabricView({fabric}:
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
     return (
         <group>
-            <orbitControls ref={orbitControls}
-                args={[camera, tensegrityView]}/>
+            <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
             <scene>
                 <mesh key="faces" geometry={fabric.facesGeometry} material={TENSEGRITY_FACE}/>
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={TENSEGRITY_LINE}/>
@@ -250,8 +251,7 @@ function FabricView({fabric}:
     )
 }
 
-function FaceSelection({fabric, geometry, canGrow}:
-{
+function FaceSelection({fabric, geometry, canGrow}: {
     fabric: TensegrityFabric,
     geometry: Geometry,
     canGrow: boolean,
@@ -272,8 +272,7 @@ function FaceSelection({fabric, geometry, canGrow}:
     )
 }
 
-function SelectedFace({fabric, geometry, selectedFace}:
-{
+function SelectedFace({fabric, geometry, selectedFace}: {
     fabric: TensegrityFabric,
     geometry: Geometry,
     selectedFace: IFace,
@@ -290,8 +289,7 @@ function SelectedFace({fabric, geometry, selectedFace}:
     )
 }
 
-function JointSelection({fabric, geometry}:
-{
+function JointSelection({fabric, geometry}: {
     fabric: TensegrityFabric,
     geometry: Geometry,
 }): JSX.Element {
@@ -312,8 +310,7 @@ function JointSelection({fabric, geometry}:
     )
 }
 
-function SelectedJoint({fabric, geometry, selectedJoint}:
-{
+function SelectedJoint({fabric, geometry, selectedJoint}: {
     fabric: TensegrityFabric,
     geometry: Geometry,
     selectedJoint: IJoint,
@@ -328,8 +325,7 @@ function SelectedJoint({fabric, geometry, selectedJoint}:
     )
 }
 
-function IntervalSelection({fabric, geometry}:
-{
+function IntervalSelection({fabric, geometry}: {
     fabric: TensegrityFabric,
     geometry: Geometry,
 }): JSX.Element {
@@ -350,8 +346,7 @@ function IntervalSelection({fabric, geometry}:
     )
 }
 
-function SelectedInterval({fabric, geometry, selectedInterval}:
-{
+function SelectedInterval({fabric, geometry, selectedInterval}: {
     fabric: TensegrityFabric,
     geometry: Geometry,
     selectedInterval: IInterval,
