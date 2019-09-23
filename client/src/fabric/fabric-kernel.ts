@@ -80,13 +80,13 @@ export class FabricKernel implements IGotchiFactory {
     private instanceUsed: boolean[] = []
     private arrayBuffer: ArrayBuffer
     private spotCenters: Float32Array
-    private surface: Int8Array
+    private hexalotBits: Int8Array
 
     constructor(private engine: IFabricEngine, private physics: Physics, dimensions: IFabricDimensions) {
         const fabricBytes = engine.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
         this.arrayBuffer = engine.memory.buffer
         this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
-        this.surface = new Int8Array(this.arrayBuffer, SPOT_CENTERS_SIZE, HEXALOT_BITS)
+        this.hexalotBits = new Int8Array(this.arrayBuffer, SPOT_CENTERS_SIZE, HEXALOT_BITS)
         const byteLength = this.arrayBuffer.byteLength
         if (byteLength === 0) {
             throw new Error(`Zero byte length! ${fabricBytes}`)
@@ -141,7 +141,7 @@ export class FabricKernel implements IGotchiFactory {
             this.spotCenters[index * FLOATS_IN_VECTOR + 2] = center.z
         })
         surface.forEach((land, index) => {
-            this.surface[index] = land ? 1 : 0
+            this.hexalotBits[index] = land ? 1 : 0
         })
     }
 

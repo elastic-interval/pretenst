@@ -73,6 +73,7 @@ let jointCountMax: u16 = 0
 let intervalCountMax: u16 = 0
 let faceCountMax: u16 = 0
 let instanceCountMax: u16 = 0
+let useHexalot: boolean = false;
 
 let fabricBytes: usize = 0
 
@@ -1135,14 +1136,16 @@ function getNearestSpotIndex(jointIndex: u16): u8 {
 }
 
 function getTerrainUnder(jointIndex: u16): u8 {
-    return 1
+    if (!useHexalot) {
+        return LAND
+    }
     // TODO: save the three most recent spotIndexes at the joint and check mostly only those
     // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
-    // let spotIndex = getNearestSpotIndex(jointIndex)
-    // if (spotIndex === HEXALOT_BITS) {
-    //     return HEXALOT_BITS
-    // }
-    // return getHexalotBit(spotIndex)
+    let spotIndex = getNearestSpotIndex(jointIndex)
+    if (spotIndex === HEXALOT_BITS) {
+        return HEXALOT_BITS
+    }
+    return getHexalotBit(spotIndex)
 }
 
 // Physics =====================================================================================
