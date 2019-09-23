@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { Canvas, CanvasContext, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
+import { Canvas, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { Geometry, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
