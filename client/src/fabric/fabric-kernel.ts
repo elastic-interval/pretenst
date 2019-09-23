@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -104,12 +105,12 @@ export class FabricKernel implements IGotchiFactory {
         }
     }
 
-    public createTensegrityFabric(name: string, altitude: number): TensegrityFabric | undefined {
+    public createTensegrityFabric(name: string): TensegrityFabric | undefined {
         const newInstance = this.allocateInstance()
         if (!newInstance) {
             return undefined
         }
-        return new TensegrityFabric(newInstance, this.physics, name, altitude)
+        return new TensegrityFabric(newInstance, this.physics, name)
     }
 
     public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {
@@ -198,7 +199,7 @@ export class FabricInstance {
         private engine: IFabricEngine,
         private dimensions: IFabricDimensions,
         private fabricIndex: number,
-        private recycleFabric: (index: number) => void,
+        private releaseInstance: (index: number) => void,
     ) {
         this.vectors = new LazyFloatArray(this.buffer, this.offsets._vectors, () => 3 * 4)
         this.lineColors = new LazyFloatArray(this.buffer, this.offsets._lineColors, () => this.engine.getIntervalCount() * 3 * 2)
@@ -215,8 +216,9 @@ export class FabricInstance {
         return this.fabricIndex
     }
 
-    public recycle(): void {
-        this.recycleFabric(this.fabricIndex)
+    public release(): void {
+        this.releaseInstance(this.fabricIndex)
+        this.ex.reset()
     }
 
     public clear(): void {

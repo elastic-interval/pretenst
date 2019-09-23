@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -13,6 +14,7 @@ import { API_URI } from "./constants"
 import { IFabricDimensions, IFabricEngine } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { Physics } from "./fabric/physics"
+import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
@@ -53,20 +55,35 @@ async function start(): Promise<void> {
     const user = await storage.getUser()
     const root = document.getElementById("root") as HTMLElement
     const physics = new Physics({getPhysicsFeature, setPhysicsFeature})
+    const fabricCache: Record<string, TensegrityFabric> = {}
     physics.applyGlobal(engine)
     if (TENSEGRITY) {
         const dimensions: IFabricDimensions = {
-            instanceMax: 30,
+            instanceMax: 10,
             jointCountMax: 6000,
             intervalCountMax: 15000,
             faceCountMax: 4000,
         }
         const fabricKernel = new FabricKernel(engine, physics, dimensions)
+        const getFabric = (name: string) => {
+            const cached = fabricCache[name]
+            if (cached) {
+                cached.disposeOfGeometry()
+                return cached
+            }
+            const newFabric = fabricKernel.createTensegrityFabric(name)
+            if (!newFabric) {
+                throw new Error()
+            }
+            physics.acquireLocal(newFabric.instance)
+            fabricCache[name] = newFabric
+            return newFabric
+        }
         ReactDOM.render(
             <TensegrityView
                 engine={engine}
                 physics={physics}
-                fabricKernel={fabricKernel}
+                getFabric={getFabric}
             />,
             root,
         )

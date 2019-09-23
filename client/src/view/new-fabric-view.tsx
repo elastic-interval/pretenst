@@ -1,3 +1,8 @@
+/*
+ * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ */
+
 import * as React from "react"
 import { useState } from "react"
 import {
@@ -10,79 +15,95 @@ import {
     InputGroup,
     InputGroupAddon,
     InputGroupButtonDropdown,
+    Row,
 } from "reactstrap"
 
 const FABRIC_CODE_KEY = "FabricCode"
 
-function fetchFabricCode(): string {
-    const item = localStorage.getItem(FABRIC_CODE_KEY)
+const FABRIC_BUFFERS: IFabricBuffer[] = [
+    {name: "One", code: "0"},
+    {name: "Two", code: "1"},
+    {name: "Three", code: "2"},
+    {name: "Nine", code: "9"},
+    {name: "Tripod", code: "1[3,3,3]"},
+    {name: "Bent Worm", code: "4[2=4]"},
+    {name: "WTF", code: "4[4,4[1,1,1],4]"},
+    {name: "Tree", code: "3[3[3,3,3],3[3,3,3],3[3,3,3]]"},
+    {name: "Mega-Mast", code: "9[9,9,9]"},
+    {name: "Zigzag Loop", code: "1[3=2[1=2[3=2[2=2[2=2[2=1]]]]]]X"},
+]
+
+export const DEFAULT_NAME = FABRIC_BUFFERS[0].name
+
+export function fetchFabricCode(bufferName: string): string {
+    const item = localStorage.getItem(FABRIC_CODE_KEY + bufferName)
     if (!item) {
-        return ""
+        const found = FABRIC_BUFFERS.find(buffer => buffer.name === bufferName)
+        if (!found) {
+            throw new Error()
+        }
+        return found.code
     }
     return item
 }
 
-function storeFabricCode(fabricCode: string): void {
-    localStorage.setItem(FABRIC_CODE_KEY, fabricCode)
+function storeFabricCode(bufferName: string, fabricCode: string): void {
+    localStorage.setItem(FABRIC_CODE_KEY + bufferName, fabricCode)
 }
 
-export function NewFabricView({loadFabric}: {
-    loadFabric: (fabricCode: string) => void,
+interface IFabricBuffer {
+    name: string
+    code: string
+}
+
+export function NewFabricView({constructFabric, selectBuffer, defaultBufferName}: {
+    defaultBufferName: string
+    constructFabric: (fabricCode: string) => void,
+    selectBuffer: (bufferName: string) => void,
 }): JSX.Element {
-
-    const [fabricCode, setFabricCode] = useState<string>(fetchFabricCode)
-    const [dropdownOpen, setDropdownOpen] = useState<boolean>(false)
-
-    function PresetFabric({code, name}: { code: string, name: string }): JSX.Element {
-        return (
-            <DropdownItem onClick={() => setFabricCode(code)}>
-                {name}
-            </DropdownItem>
-        )
-    }
+    const [bufferName, setBufferName] = useState<string>(defaultBufferName)
+    const [fabricCode, setFabricCode] = useState<string>(fetchFabricCode(defaultBufferName))
+    const [buffersOpen, setBuffersOpen] = useState<boolean>(false)
 
     return (
-        <div className="w-100 flex flex-column align-items-center">
-            <div>
-                <h1 className="text-white m-4">New Fabric</h1>
-            </div>
-            <Col md={{size: 8, offset: 2}}>
-                <InputGroup size="lg">
-                    <InputGroupButtonDropdown addonType="append" isOpen={dropdownOpen}
-                        toggle={() => setDropdownOpen(!dropdownOpen)}>
-                        <DropdownToggle caret={true}>
-                            Load Preset
-                        </DropdownToggle>
-                        <DropdownMenu>
-                            <PresetFabric name="Seed" code="0" />
-                            <PresetFabric name="Worm-1" code="1" />
-                            <PresetFabric name="Worm-2" code="2" />
-                            <PresetFabric name="Worm-3" code="3" />
-                            <PresetFabric name="Worm-9" code="9" />
-                            <PresetFabric name="Long Leg Tripod" code="1[3,3,3]" />
-                            <PresetFabric name="Short Leg Tripod" code="3[1,1,1]"/>
-                            <PresetFabric name="Bent Worm-4" code="4[0,4,0]"/>
-                            <PresetFabric name="WTF" code="4[4,4[1,1,1],4]"/>
-                            <PresetFabric name="Nine Branch Tree" code="3[3[3,3,3],3[3,3,3],3[3,3,3]]"/>
-                            <PresetFabric name="Super Long Quadra" code="9[9,9,9]" />
-                            <PresetFabric name="Wobbly Loop" code="1[3=2[1=2[3=2[2=2[2=2[2=1]]]]]]X"/>
-                        </DropdownMenu>
-                    </InputGroupButtonDropdown>
-                    <Input value={fabricCode}
-                        className="text-monospace"
-                        placeholder="Fabric Code e.g. 3[1,1,1]"
-                        onChange={(e) => setFabricCode(e.target.value)}
-                    />
-                    <InputGroupAddon addonType="append">
-                        <Button color="success" onClick={() => {
-                            loadFabric(fabricCode)
-                            storeFabricCode(fabricCode)
-                        }}>
-                            Start
-                        </Button>
-                    </InputGroupAddon>
-                </InputGroup>
-            </Col>
+        <div className="floating w-50 flex flex-column align-items-center">
+            <Row>
+                <Col md={{size: 12}}>
+                    <InputGroup size="lg">
+                        <InputGroupButtonDropdown addonType="append" isOpen={buffersOpen}
+                                                  toggle={() => setBuffersOpen(!buffersOpen)}>
+                            <DropdownToggle caret={true}>
+                                {bufferName}
+                            </DropdownToggle>
+                            <DropdownMenu>
+                                {FABRIC_BUFFERS.map(buffer => (
+                                    <DropdownItem key={"Buffer" + buffer.name} onClick={() => {
+                                        if (bufferName === buffer.name) {
+                                            return
+                                        }
+                                        setBufferName(buffer.name)
+                                        setFabricCode(fetchFabricCode(buffer.name))
+                                        selectBuffer(buffer.name)
+                                    }
+                                    }>{buffer.name}</DropdownItem>
+                                ))}
+                            </DropdownMenu>
+                        </InputGroupButtonDropdown>
+                        <Input value={fabricCode}
+                               tabIndex={1}
+                               className="text-monospace"
+                               placeholder="Fabric Code e.g. 3[1,1,1]"
+                               onChange={(e) => setFabricCode(e.target.value)}
+                        />
+                        <InputGroupAddon addonType="append">
+                            <Button color="success" onClick={() => {
+                                storeFabricCode(bufferName, fabricCode)
+                                constructFabric(fabricCode)
+                            }}>Construct</Button>
+                        </InputGroupAddon>
+                    </InputGroup>
+                </Col>
+            </Row>
         </div>
     )
 }

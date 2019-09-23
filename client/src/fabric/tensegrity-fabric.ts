@@ -58,8 +58,16 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(public readonly instance: FabricInstance, public readonly physics: Physics, public readonly name: string, altitude: number) {
-        const growth = parseConstructionCode(name)
+    constructor(public readonly instance: FabricInstance, public readonly physics: Physics, public readonly name: string) {
+    }
+
+    public startConstruction(constructionCode: string, altitude: number): void {
+        this.instance.reset()
+        const growth = parseConstructionCode(constructionCode)
+        if (!growth.growing.length) {
+            this.createBrick(altitude)
+            return
+        }
         growth.growing[0].brick = this.createBrick(altitude)
         this.growth = growth
     }
@@ -197,9 +205,12 @@ export class TensegrityFabric {
         return face
     }
 
-    public recycle(): void {
+    public release(): void {
+        this.joints = []
+        this.intervals = []
+        this.faces = []
         this.disposeOfGeometry()
-        this.instance.recycle()
+        this.instance.release()
     }
 
     public disposeOfGeometry(): void {

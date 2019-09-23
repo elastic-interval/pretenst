@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -152,11 +153,11 @@ export interface IConnector {
 }
 
 export interface IGrowthTree {
-    forward?: IGrowthTree,
-    turnA?: IGrowthTree,
-    turnB?: IGrowthTree,
-    turnC?: IGrowthTree,
-    brick?: IBrick,
+    forward?: IGrowthTree
+    turnA?: IGrowthTree
+    turnB?: IGrowthTree
+    turnC?: IGrowthTree
+    brick?: IBrick
 }
 
 export interface IGrowth {

@@ -100,7 +100,7 @@ export function createBrickOnFace(face: IFace): IBrick {
     const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
     const z = u.sub(proj).normalize()
     const y = new Vector3().crossVectors(z, x).normalize()
-    const xform= new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+    const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
     const points = createBrickPointsOnOrigin(Triangle.PPP, 0.8, 1.0)
     const movedToFace = points.map(p => p.applyMatrix4(xform))
     return createBrick(brick.fabric, movedToFace, Triangle.NNN)
@@ -218,7 +218,7 @@ export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
             throw new Error()
         }
         const grow = (next: IGrowthTree | undefined, triangle: Triangle) => {
-            if (!next || Object.keys(next).length === 0) {
+            if (!next) {
                 return
             }
             next.brick = createConnectedBrick(brick, triangle)
@@ -233,17 +233,17 @@ export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
 }
 
 export function parseConstructionCode(constructionCode: string): IGrowth {
-    function parseBetween(between: string): { turnA: string, turnB: string, turnC: string } {
+    function parseBetween(between: string): { turnA?: string, turnB?: string, turnC?: string } {
         const equalsIndex = between.indexOf("=")
         if (equalsIndex === 1) {
             const afterEquals = between.substring(2)
             switch (between.charAt(0)) {
                 case "1":
-                    return {turnA: afterEquals, turnB: "0", turnC: "0"}
+                    return {turnA: afterEquals}
                 case "2":
-                    return {turnA: "0", turnB: afterEquals, turnC: "0"}
+                    return {turnB: afterEquals}
                 case "3":
-                    return {turnA: "0", turnB: "0", turnC: afterEquals}
+                    return {turnC: afterEquals}
                 default:
                     throw new Error("Syntax")
             }
@@ -272,13 +272,13 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
         }
     }
 
-    function parseCommands(commands: string): IGrowthTree {
+    function parseCommands(commands?: string): IGrowthTree | undefined {
+        if (!commands || commands === "0") {
+            return undefined
+        }
         const command = commands.charAt(0)
-        if (command === "0" || command === "[") {
-            if (commands.length === 1) {
-                return {}
-            }
-            if (commands.charAt(1) !== "[" && command !== "[") {
+        if (command === "0") {
+            if (commands.charAt(1) !== "[") {
                 throw new Error("Open")
             }
             const lastClose = commands.lastIndexOf("]")
@@ -291,8 +291,10 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
         }
         if (command >= "1" && command <= "9") {
             const forwardCount = parseInt(command, 10)
-            const nextCount = (forwardCount - 1).toString(10)
-            return {forward: parseCommands(nextCount.toString() + commands.substr(1))}
+            const nextCount = forwardCount - 1
+            const nextTree = parseCommands(nextCount.toString() + commands.substr(1))
+            const forward = nextTree ? nextTree : {}
+            return {forward}
         }
         throw new Error("Syntax error: " + command)
     }
@@ -301,9 +303,10 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
     const commandEndIndex = endOfCommands < 0 ? constructionCode.length : endOfCommands
     const commandString = constructionCode.substring(0, commandEndIndex + 1)
     const growthTree = parseCommands(commandString)
+    console.warn(growthTree)
+    const growing = growthTree ? [growthTree] : []
     const optimizationStack = constructionCode.substring(commandEndIndex + 1).split("").reverse()
-    // const optimizations = (commandString.length === constructionCode.length) ? [] : constructionCode.substring(commandEndIndex + 1).split("")
-    return {growing: [growthTree], optimizationStack}
+    return {growing, optimizationStack}
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {

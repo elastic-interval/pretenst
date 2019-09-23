@@ -245,7 +245,7 @@ const GRAVITY_BELOW_LAND: f32 = -0.1
 const GRAVITY_BELOW_WATER: f32 = -0.00001
 const PUSH_ELASTIC_FACTOR: f32 = 25.0
 const PULL_ELASTIC_FACTOR: f32 = 15.0
-const INTERVAL_COUNTDOWN: f32 = 100.0
+const INTERVAL_COUNTDOWN: f32 = 300.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
 
@@ -740,8 +740,11 @@ export function setAltitude(altitude: f32): f32 {
 }
 
 function calculateJointMidpoint(): void {
-    let jointCount = getJointCount()
     zero(_midpoint)
+    let jointCount = getJointCount()
+    if (jointCount <= 0) {
+        return
+    }
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         add(_midpoint, _location(jointIndex))
     }

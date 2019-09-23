@@ -4,13 +4,12 @@
  */
 
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
-import { Canvas, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
+import { useState } from "react"
+import { Canvas, CanvasContext, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { Geometry, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
-import { FabricKernel } from "../fabric/fabric-kernel"
 import { Physics } from "../fabric/physics"
 import { connectClosestFacePair } from "../fabric/tensegrity-brick"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
@@ -23,7 +22,7 @@ import {
     TENSEGRITY_JOINT_SELECTED,
     TENSEGRITY_LINE,
 } from "./materials"
-import { NewFabricView } from "./new-fabric-view"
+import { DEFAULT_NAME, fetchFabricCode, NewFabricView } from "./new-fabric-view"
 import { PhysicsPanel } from "./physics-panel"
 import { SurfaceComponent } from "./surface-component"
 
@@ -31,10 +30,11 @@ extend({OrbitControls})
 
 declare global {
     namespace JSX {
-        // eslint-disable-next-line @typescript-eslint/interface-name-prefix
+        /* eslint-disable @typescript-eslint/interface-name-prefix */
         interface IntrinsicElements {
             orbitControls: ReactThreeFiber.Object3DNode<OrbitControls, typeof OrbitControls>
         }
+        /* eslint-enable @typescript-eslint/interface-name-prefix */
     }
 }
 
@@ -44,28 +44,26 @@ const SPHERE = new SphereGeometry(0.12, 16, 16)
 const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 10
+const FABRIC_BUFFER_KEY = "FabricBuffer"
 
-export function TensegrityView({engine, fabricKernel, physics}: {
+function loadFabricBufferName(): string {
+    const bufferName = localStorage.getItem(FABRIC_BUFFER_KEY)
+    if (!bufferName) {
+        return DEFAULT_NAME
+    }
+    return bufferName
+}
+
+function storeFabricBufferName(name: string): void {
+    localStorage.setItem(FABRIC_BUFFER_KEY, name)
+}
+
+export function TensegrityView({engine, getFabric, physics}: {
     engine: IFabricEngine,
-    fabricKernel: FabricKernel,
+    getFabric: (name: string) => TensegrityFabric,
     physics: Physics,
 }): JSX.Element {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const createFabric = (name: string): TensegrityFabric => {
-        const newFabric = fabricKernel.createTensegrityFabric(name, ALTITUDE)
-        if (!newFabric) {
-            throw new Error()
-        }
-        physics.acquireLocal(newFabric.instance)
-        return newFabric
-    }
-    // tslint:disable-next-line:no-null-keyword
-    const viewRef = useRef<HTMLDivElement | null>(null)
-    useEffect(() => {
-        if (viewRef.current) {
-            viewRef.current.focus()
-        }
-    })
     const factor = (up: boolean) => 1.0 + (up ? 0.005 : -0.005)
     const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
         const handleJoint = (joint: IJoint | undefined, bar: boolean, up: boolean) => {
@@ -133,7 +131,6 @@ export function TensegrityView({engine, fabricKernel, physics}: {
                 fabric.selectable = Selectable.FACE
                 break
             case "Backspace":
-                setFabric(undefined)
                 break
             case "c":
                 fabric.instance.centralize()
@@ -174,13 +171,30 @@ export function TensegrityView({engine, fabricKernel, physics}: {
         }
     }
     return (
-        <div ref={viewRef} tabIndex={1} id="tensegrity-view" className="the-whole-page" onKeyDownCapture={onKeyDown}>
-            {fabric ? undefined :
-                <NewFabricView loadFabric={(code) => setFabric(createFabric(code))}/>
-            }
+        <div tabIndex={1} id="tensegrity-view" className="the-whole-page" onKeyDownCapture={onKeyDown}>
+            <NewFabricView
+                defaultBufferName={loadFabricBufferName()}
+                constructFabric={code => {
+                    if (fabric) {
+                        fabric.startConstruction(code, ALTITUDE)
+                    } else {
+                        const fetched = getFabric(loadFabricBufferName())
+                        fetched.startConstruction(code, ALTITUDE)
+                        setFabric(fetched)
+                        return
+                    }
+                }}
+                selectBuffer={bufferName => {
+                    storeFabricBufferName(bufferName)
+                    const bufferFabric = getFabric(bufferName)
+                    if (bufferFabric.joints.length === 0) {
+                        bufferFabric.startConstruction(fetchFabricCode(bufferName), ALTITUDE)
+                    }
+                    setFabric(bufferFabric)
+                }}
+            />
             <Canvas>
-                {!fabric ? undefined :
-                    <FabricView fabric={fabric}/>}
+                {!fabric ? undefined : <FabricView fabric={fabric}/>}
             </Canvas>
             {!fabric ? undefined :
                 <PhysicsPanel physics={physics} engine={engine} instance={fabric.instance}/>}

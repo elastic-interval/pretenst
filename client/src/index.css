@@ -230,3 +230,8 @@ p a, p a:hover {
     width: auto;
     padding: 10px;
 }
+
+.new-fabric-panel {
+    position: absolute;
+    width: 80%;
+}

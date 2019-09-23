@@ -33,7 +33,7 @@ export class GotchiBody {
 
     public recycle(): void {
         this.disposeOfGeometry()
-        this.instance.recycle()
+        this.instance.release()
     }
 
     public get index(): number {
