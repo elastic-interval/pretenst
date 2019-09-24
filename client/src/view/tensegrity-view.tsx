@@ -44,7 +44,7 @@ const SPHERE = new SphereGeometry(0.12, 16, 16)
 
 const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
-const ALTITUDE = 10
+const ALTITUDE = 6
 
 export function TensegrityView({engine, getFabric, physics}: {
     engine: IFabricEngine,

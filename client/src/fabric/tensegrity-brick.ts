@@ -240,6 +240,9 @@ export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
 
 export function parseConstructionCode(constructionCode: string): IGrowth {
     function parseBetween(between: string): { turnA?: string, turnB?: string, turnC?: string } {
+        if (between.length === 0) {
+            return {}
+        }
         const equalsIndex = between.indexOf("=")
         if (equalsIndex === 1) {
             const afterEquals = between.substring(2)
@@ -278,27 +281,34 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
         }
     }
 
-    function parseCommands(commands?: string): IGrowthTree | undefined {
-        if (!commands || commands === "0") {
+    function parseCommands(reduce: boolean, commands?: string): IGrowthTree | undefined {
+        if (!commands) {
             return undefined
         }
         const command = commands.charAt(0)
+        if (reduce && command >= "1" && command <= "9") {
+            const forwardCount = parseInt(command, 10)
+            const nextCount = forwardCount - 1
+            return parseCommands(false, nextCount.toString() + commands.substr(1))
+        }
         if (command === "0") {
-            if (commands.charAt(1) !== "[") {
+            if (commands.length > 1 && commands.charAt(1) !== "[") {
                 throw new Error("Open")
             }
             const lastClose = commands.lastIndexOf("]")
-            if (lastClose !== commands.length - 1) {
+            if (lastClose >= 0 && lastClose !== commands.length - 1) {
                 throw new Error("Close")
             }
-            const between = commands.substring(2, lastClose)
+            const between = commands.substring(2, lastClose >= 0 ? lastClose : undefined)
             const {turnA, turnB, turnC} = parseBetween(between)
-            return {turnA: parseCommands(turnA), turnB: parseCommands(turnB), turnC: parseCommands(turnC)}
+            return {
+                turnA: parseCommands(true, turnA),
+                turnB: parseCommands(true, turnB),
+                turnC: parseCommands(true, turnC),
+            }
         }
         if (command >= "1" && command <= "9") {
-            const forwardCount = parseInt(command, 10)
-            const nextCount = forwardCount - 1
-            const nextTree = parseCommands(nextCount.toString() + commands.substr(1))
+            const nextTree = parseCommands(true, commands)
             const forward = nextTree ? nextTree : {}
             return {forward}
         }
@@ -308,7 +318,7 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
     const endOfCommands = constructionCode.lastIndexOf("]")
     const commandEndIndex = endOfCommands < 0 ? constructionCode.length : endOfCommands
     const commandString = constructionCode.substring(0, commandEndIndex + 1)
-    const growthTree = parseCommands(commandString)
+    const growthTree = parseCommands(false, commandString)
     const growing: IGrowthTree[] = growthTree ? [growthTree] : [{}]
     const optimizationStack = constructionCode.substring(commandEndIndex + 1).split("").reverse()
     return {growing, optimizationStack}
