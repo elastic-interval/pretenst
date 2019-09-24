@@ -62,7 +62,7 @@ export class TensegrityFabric {
     }
 
     public startConstruction(constructionCode: string, altitude: number): void {
-        this.instance.reset()
+        this.reset()
         const growth = parseConstructionCode(constructionCode)
         if (!growth.growing.length) {
             this.createBrick(altitude)
@@ -206,11 +206,15 @@ export class TensegrityFabric {
     }
 
     public release(): void {
+        this.instance.release()
+    }
+
+    public reset(): void {
         this.joints = []
         this.intervals = []
         this.faces = []
         this.disposeOfGeometry()
-        this.instance.release()
+        this.instance.reset()
     }
 
     public disposeOfGeometry(): void {
@@ -261,8 +265,8 @@ export class TensegrityFabric {
     }
 
     public iterate(ticks: number): boolean {
-        this.disposeOfGeometry()
         const busy = this.instance.iterate(ticks)
+        this.disposeOfGeometry()
         if (busy) {
             return busy
         }

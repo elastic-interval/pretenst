@@ -68,7 +68,6 @@ async function start(): Promise<void> {
         const getFabric = (name: string) => {
             const cached = fabricCache[name]
             if (cached) {
-                cached.disposeOfGeometry()
                 return cached
             }
             const newFabric = fabricKernel.createTensegrityFabric(name)

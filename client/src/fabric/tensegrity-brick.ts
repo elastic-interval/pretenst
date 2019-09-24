@@ -90,6 +90,7 @@ export function createBrickOnOrigin(fabric: TensegrityFabric, altitude: number):
 }
 
 export function createBrickOnFace(face: IFace): IBrick {
+    const negativeFace = TRIANGLE_ARRAY[face.triangle].negative
     const brick = face.brick
     const triangle = face.triangle
     const trianglePoints = brick.faces[triangle].joints.map(joint => brick.fabric.instance.getJointLocation(joint.index))
@@ -101,9 +102,11 @@ export function createBrickOnFace(face: IFace): IBrick {
     const z = u.sub(proj).normalize()
     const y = new Vector3().crossVectors(z, x).normalize()
     const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-    const points = createBrickPointsOnOrigin(Triangle.PPP, 0.8, 1.0)
+    const base = negativeFace ? Triangle.NNN : Triangle.PPP
+    const points = createBrickPointsOnOrigin(base, 0.8, 1.0)
     const movedToFace = points.map(p => p.applyMatrix4(xform))
-    return createBrick(brick.fabric, movedToFace, Triangle.NNN)
+    const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
+    return createBrick(brick.fabric, movedToFace, baseTriangle)
 }
 
 interface IJointPair {
@@ -220,6 +223,9 @@ export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
         const grow = (next: IGrowthTree | undefined, triangle: Triangle) => {
             if (!next) {
                 return
+            }
+            if (brick.base === Triangle.PPP) {
+                triangle = TRIANGLE_ARRAY[triangle].opposite
             }
             next.brick = createConnectedBrick(brick, triangle)
             after.push(next)
