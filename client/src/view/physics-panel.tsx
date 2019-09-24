@@ -27,12 +27,9 @@ export function PhysicsPanel({engine, physics, instance}: {
 
     return (
         <div className="physics-panel flex flex-column">
-            <h3 className="col-12">
-                <Button size="lg" block={true} onClick={() => setOpen(!open)}>
-                    <FaSlidersH/>
-                </Button>
-            </h3>
+            <Button size="md" block={true} onClick={() => setOpen(!open)}><FaSlidersH/></Button>
             <Collapse isOpen={open}>
+                <hr/>
                 <Container className="col-12">
                     {physics.features.map(feature => {
                         const setFactor = (factor?: number): void => {

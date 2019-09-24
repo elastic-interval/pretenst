@@ -303,8 +303,7 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
     const commandEndIndex = endOfCommands < 0 ? constructionCode.length : endOfCommands
     const commandString = constructionCode.substring(0, commandEndIndex + 1)
     const growthTree = parseCommands(commandString)
-    console.warn(growthTree)
-    const growing = growthTree ? [growthTree] : []
+    const growing: IGrowthTree[] = growthTree ? [growthTree] : [{}]
     const optimizationStack = constructionCode.substring(commandEndIndex + 1).split("").reverse()
     return {growing, optimizationStack}
 }

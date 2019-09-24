@@ -59,7 +59,7 @@ async function start(): Promise<void> {
     physics.applyGlobal(engine)
     if (TENSEGRITY) {
         const dimensions: IFabricDimensions = {
-            instanceMax: 10,
+            instanceMax: 30,
             jointCountMax: 6000,
             intervalCountMax: 15000,
             faceCountMax: 4000,

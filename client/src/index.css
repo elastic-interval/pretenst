@@ -233,5 +233,6 @@ p a, p a:hover {
 
 .new-fabric-panel {
     position: absolute;
-    width: 80%;
+    left: 0;
+    bottom: 0;
 }
