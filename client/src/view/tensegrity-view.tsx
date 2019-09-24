@@ -5,13 +5,13 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { Canvas, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
+import { Canvas, DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { Geometry, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { Physics } from "../fabric/physics"
-import { connectClosestFacePair } from "../fabric/tensegrity-brick"
+import { connectClosestFacePair, createConnectedBrick } from "../fabric/tensegrity-brick"
 import { IFace, IInterval, IJoint } from "../fabric/tensegrity-brick-types"
 import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { loadFabricCode, loadStorageIndex } from "../storage/local-storage"
@@ -35,6 +35,7 @@ declare global {
         interface IntrinsicElements {
             orbitControls: ReactThreeFiber.Object3DNode<OrbitControls, typeof OrbitControls>
         }
+
         /* eslint-enable @typescript-eslint/interface-name-prefix */
     }
 }
@@ -62,19 +63,19 @@ export function TensegrityView({engine, getFabric, physics}: {
         }
     })
     const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        const handleJoint = (joint: IJoint | undefined, bar: boolean, up: boolean) => {
+        const adjustJoint = (joint: IJoint | undefined, bar: boolean, up: boolean) => {
             if (joint === undefined || !fabric) {
                 return
             }
         }
-        const handleInterval = (interval: IInterval | undefined, up: boolean) => {
+        const adjustInterval = (interval: IInterval | undefined, up: boolean) => {
             if (interval === undefined || !fabric) {
                 return
             }
             // TODO: this will not work, because it's not a factor!
             fabric.instance.changeRestLength(interval.index, factor(up))
         }
-        const handleFace = (face: IFace | undefined, bar: boolean, up: boolean) => {
+        const adjustFace = (face: IFace | undefined, bar: boolean, up: boolean) => {
             if (face === undefined || !fabric) {
                 return
             }
@@ -82,11 +83,12 @@ export function TensegrityView({engine, getFabric, physics}: {
         if (!fabric) {
             return
         }
+        const selectedFace = fabric.selectedFace
         switch (event.key) {
-            case " ":
+            case "a":
                 fabric.instance.setAltitude(25)
                 break
-            case "Enter":
+            case " ":
                 if (fabric.selectionActive) {
                     fabric.selectable = Selectable.NONE
                     fabric.cancelSelection()
@@ -95,29 +97,29 @@ export function TensegrityView({engine, getFabric, physics}: {
                 }
                 break
             case "ArrowUp":
-                handleJoint(fabric.selectedJoint, true, true)
-                handleFace(fabric.selectedFace, true, true)
-                handleInterval(fabric.selectedInterval, true)
+                adjustJoint(fabric.selectedJoint, true, true)
+                adjustFace(selectedFace, true, true)
+                adjustInterval(fabric.selectedInterval, true)
                 break
             case "ArrowDown":
-                handleJoint(fabric.selectedJoint, true, false)
-                handleFace(fabric.selectedFace, true, false)
-                handleInterval(fabric.selectedInterval, false)
+                adjustJoint(fabric.selectedJoint, true, false)
+                adjustFace(selectedFace, true, false)
+                adjustInterval(fabric.selectedInterval, false)
                 break
             case "ArrowLeft":
-                handleJoint(fabric.selectedJoint, false, false)
-                handleFace(fabric.selectedFace, false, false)
-                handleInterval(fabric.selectedInterval, false)
+                adjustJoint(fabric.selectedJoint, false, false)
+                adjustFace(selectedFace, false, false)
+                adjustInterval(fabric.selectedInterval, false)
                 break
             case "ArrowRight":
-                handleJoint(fabric.selectedJoint, false, true)
-                handleFace(fabric.selectedFace, false, true)
-                handleInterval(fabric.selectedInterval, true)
+                adjustJoint(fabric.selectedJoint, false, true)
+                adjustFace(selectedFace, false, true)
+                adjustInterval(fabric.selectedInterval, true)
                 break
             case "i":
                 fabric.selectable = Selectable.INTERVAL
                 break
-            case "F":
+            case "g":
                 fabric.selectable = Selectable.GROW_FACE
                 break
             case "j":
@@ -265,7 +267,14 @@ function FaceSelection({fabric, geometry, canGrow}: {
                     geometry={geometry}
                     position={fabric.instance.getFaceMidpoint(face.index)}
                     material={canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
-                    onClick={() => fabric.selectedFace = face}
+                    onClick={(event: DomEvent) => {
+                        if (event.shiftKey && canGrow) {
+                            createConnectedBrick(face.brick, face.triangle)
+                            fabric.selectedFace = undefined
+                        } else {
+                            fabric.selectedFace = face
+                        }
+                    }}
                 />
             ))}
         </>
@@ -282,7 +291,13 @@ function SelectedFace({fabric, geometry, selectedFace}: {
             key={`F${selectedFace.index}`}
             geometry={geometry}
             position={fabric.instance.getFaceMidpoint(selectedFace.index)}
-            material={TENSEGRITY_JOINT}
+            material={selectedFace.canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
+            onClick={(event: DomEvent) => {
+                if (event.shiftKey && selectedFace.canGrow) {
+                    createConnectedBrick(selectedFace.brick, selectedFace.triangle)
+                    fabric.selectedFace = undefined
+                }
+            }}
             onPointerDown={stopPropagation}
             onPointerUp={stopPropagation}
         />

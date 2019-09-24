@@ -118,7 +118,6 @@ export class TensegrityFabric {
 
     public set selectedFace(value: IFace | undefined) {
         this.cancelSelection()
-        console.log("selected face", value)
         this._selectable = Selectable.NONE
         this._selectedFace = value
     }
