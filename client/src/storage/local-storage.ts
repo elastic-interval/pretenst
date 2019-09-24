@@ -14,7 +14,7 @@ const STORAGE_BOOTSTRAP: string[] = [
     "9",
     "1[3,3,3]",
     "4[2=4]",
-    "4[4,4[1,1,1],4]",
+    "1[1,3[1,1,1],4]",
     "3[3[3,3,3],3[3,3,3],3[3,3,3]]",
     "9[9,9,9]}",
     "1[3=2[1=2[3=2[2=2[2=2[2=1]]]]]]X",
@@ -23,7 +23,6 @@ const STORAGE_BOOTSTRAP: string[] = [
 export function loadFabricCode(): string[] {
     const item = localStorage.getItem(FABRIC_CODE_KEY)
     if (!item) {
-        storeFabricCode(STORAGE_BOOTSTRAP)
         return STORAGE_BOOTSTRAP
     }
     return JSON.parse(item)

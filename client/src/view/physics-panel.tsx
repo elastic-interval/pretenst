@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FaSlidersH } from "react-icons/all"
 import { Badge, Button, ButtonGroup, Col, Collapse, Container, Row } from "reactstrap"
 
@@ -21,8 +21,16 @@ export function PhysicsPanel({engine, physics, instance}: {
     const [open, setOpen] = useState<boolean>(false)
 
     function FactorBadge({feature}: { feature: IPhysicsFeature }): JSX.Element {
-        const formattedValue = feature.factor$.getValue().toFixed(10)
-        return <Badge color="light">{formattedValue}</Badge>
+        const [factor, setFactor] = useState<string>(feature.factor$.getValue().toFixed(10))
+        useEffect(() => {
+            const subscription = feature.factor$.subscribe(newFactor => {
+                setFactor(newFactor.toFixed(10))
+            })
+            return () => {
+                subscription.unsubscribe()
+            }
+        })
+        return <Badge color="light">{factor}</Badge>
     }
 
     return (

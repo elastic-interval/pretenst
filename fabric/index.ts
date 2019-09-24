@@ -1176,12 +1176,10 @@ function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(jointIndex: u16, busy: boolean): void {
+function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
-    let dragAbove = physicsDragAbove * (busy ? BUSY_DRAG_FACTOR : 1)
-    let gravityAbove = busy ? <f32>0 : physicsGravityAbove
     if (altitude > JOINT_RADIUS) { // far above
         setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityAbove)
         multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
@@ -1210,9 +1208,8 @@ function jointPhysics(jointIndex: u16, busy: boolean): void {
     }
 }
 
-function tick(maxIntervalCountdown: u16, state: u8): u16 {
+function tick(maxIntervalCountdown: u16, state: u8, busy: boolean): u16 {
     let intervalCount = getIntervalCount()
-    let busy = isBusy()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         intervalPhysics(intervalIndex, busy, state)
         let countdown = getIntervalCountdown(intervalIndex)
@@ -1229,8 +1226,10 @@ function tick(maxIntervalCountdown: u16, state: u8): u16 {
         }
     }
     let jointCount = getJointCount()
+    let dragAbove = physicsDragAbove * (busy ? BUSY_DRAG_FACTOR : 1)
+    let gravityAbove = busy ? <f32>0 : physicsGravityAbove
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        jointPhysics(jointIndex, busy)
+        jointPhysics(jointIndex, gravityAbove, dragAbove)
         addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
         zero(_force(jointIndex))
     }
@@ -1244,8 +1243,9 @@ function tick(maxIntervalCountdown: u16, state: u8): u16 {
 export function iterate(ticks: u16): boolean {
     let currentState = getCurrentState()
     let maxIntervalCountdown: u16 = 0
+    let busy = isBusy()
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        maxIntervalCountdown = tick(maxIntervalCountdown, currentState)
+        maxIntervalCountdown = tick(maxIntervalCountdown, currentState, busy)
     }
     setAge(getAge() + <u32>ticks)
     outputLinesGeometry()
@@ -1261,9 +1261,11 @@ export function iterate(ticks: u16): boolean {
         }
         let nextCountdown: u16 = busyCountdown - ticks
         if (nextCountdown > busyCountdown) { // rollover
-            setBusyCountdown(0)
-        } else {
-            setBusyCountdown(nextCountdown)
+            nextCountdown = 0
+        }
+        setBusyCountdown(nextCountdown)
+        if (nextCountdown === 0) {
+            return false
         }
     }
     return true
