@@ -236,6 +236,10 @@ export class FabricInstance {
         return this.dimensions
     }
 
+    public extendBusyCountdown(factor: number): void {
+        this.ex.extendBusyCountdown(factor)
+    }
+
     public reset(): void {
         return this.ex.reset()
     }

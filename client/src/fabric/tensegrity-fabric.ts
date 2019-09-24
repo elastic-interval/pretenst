@@ -282,9 +282,11 @@ export class TensegrityFabric {
                     switch (optimization) {
                         case "L":
                             optimizeFabric(this, false)
+                            this.instance.extendBusyCountdown(3)
                             break
                         case "H":
                             optimizeFabric(this, true)
+                            this.instance.extendBusyCountdown(2)
                             break
                         case "X":
                             growth.optimizationStack.push("Connect")

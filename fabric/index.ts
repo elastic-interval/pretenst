@@ -62,7 +62,7 @@ const AMBIENT_JOINT_MASS: f32 = 0.1
 const REST_STATE: u8 = 0
 const STATE_COUNT: u8 = 5
 const LAND: u8 = 1
-const BUSY_DRAG_FACTOR: f32 = 10
+const BUSY_DRAG_FACTOR: f32 = 60
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
 const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + INTERVAL_COUNTDOWN_SIZE + F32 * STATE_COUNT
@@ -593,6 +593,11 @@ export function setBusyCountdown(countdown: u16): void {
 
 export function isBusy(): boolean {
     return getBusyCountdown() > 0
+}
+
+export function extendBusyCountdown(factor: f32): void {
+    let countdown = <u16>(intervalCountdown * factor)
+    setBusyCountdown(countdown)
 }
 
 function getPreviousState(): u8 {

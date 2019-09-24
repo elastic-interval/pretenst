@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -64,6 +65,8 @@ export interface IFabricEngine {
     cloneInstance(fromIndex: number, index: number): void
 
     // below methods use instance index
+
+    extendBusyCountdown(factor: number): void
 
     reset(): void
 
