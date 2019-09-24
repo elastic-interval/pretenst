@@ -242,6 +242,7 @@ export class TensegrityFabric {
 
     public get facesGeometry(): BufferGeometry {
         if (!this.facesGeometryStored) {
+            this.instance.iterate(0)
             const geometry = new BufferGeometry()
             this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
             this.faceNormals = new Float32BufferAttribute(this.instance.getFaceNormals(), 3)
@@ -254,6 +255,7 @@ export class TensegrityFabric {
 
     public get linesGeometry(): BufferGeometry {
         if (!this.linesGeometryStored) {
+            this.instance.iterate(0)
             const geometry = new BufferGeometry()
             this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
             this.lineColors = new Float32BufferAttribute(this.instance.getLineColors(), 3)
