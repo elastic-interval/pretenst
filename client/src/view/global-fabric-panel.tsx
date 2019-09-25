@@ -14,6 +14,7 @@ import {
     FaRegFolder,
     FaRegFolderOpen,
     FaStarOfDavid,
+    FaSyncAlt,
 } from "react-icons/all"
 import {
     Button,
@@ -29,9 +30,10 @@ import { connectClosestFacePair } from "../fabric/tensegrity-brick"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { dumpToCSV, loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
 
-export function GlobalFabricPanel({constructFabric, fabric}: {
+export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
     constructFabric: (fabricCode: string) => void,
     fabric?: TensegrityFabric,
+    cancelSelection: () => void,
 }): JSX.Element {
 
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
@@ -47,6 +49,7 @@ export function GlobalFabricPanel({constructFabric, fabric}: {
         if (!fabric) {
             return
         }
+        cancelSelection()
         operation(fabric)
     }
 
@@ -81,6 +84,7 @@ export function GlobalFabricPanel({constructFabric, fabric}: {
                     <Button onClick={() => withFabric(f => f.optimize(true))}><FaBolt/>H</Button>
                     <Button onClick={() => withFabric(f => f.instance.setAltitude(25))}><FaParachuteBox/></Button>
                     <Button onClick={() => withFabric(connectClosestFacePair)}><FaStarOfDavid/></Button>
+                    <Button onClick={() => withFabric(f => f.autoRotate = !f.autoRotate)}><FaSyncAlt/></Button>
                     <Button onClick={() => withFabric(dumpToCSV)}><FaDownload/></Button>
                 </ButtonGroup>
             </ButtonToolbar>

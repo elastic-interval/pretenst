@@ -122,6 +122,7 @@ export function BuildingPanel({fabric, selection, setSelection}: {
             <>
                 <ButtonToolbar>
                     <SelectableChoice/>
+                    <Cancel/>
                 </ButtonToolbar>
             </>
         )

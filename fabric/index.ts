@@ -239,7 +239,7 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 
 const DRAG_ABOVE: f32 = 0.0001
 const GRAVITY_ABOVE: f32 = 0.00001
-const DRAG_BELOW_LAND: f32 = 1.0
+const DRAG_BELOW_LAND: f32 = 0.6
 const DRAG_BELOW_WATER: f32 = 0.001
 const GRAVITY_BELOW_LAND: f32 = -0.03
 const GRAVITY_BELOW_WATER: f32 = -0.00001

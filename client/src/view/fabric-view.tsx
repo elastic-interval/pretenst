@@ -50,8 +50,8 @@ export function FabricView({fabric, selection, setSelection}: {
     const [age, setAge] = useState<number>(0)
     const {camera} = useThree()
     const orbitControls = useUpdate<OrbitControls>(controls => {
-        controls.minPolarAngle = -0.1 * Math.PI / 2
-        controls.maxPolarAngle = 0.999 * Math.PI / 2
+        controls.minPolarAngle = -0.98 * Math.PI / 2
+        controls.maxPolarAngle = 0.8 * Math.PI
         controls.maxDistance = 1000
         controls.minDistance = 3
         controls.enableKeys = false

@@ -54,15 +54,20 @@ export function TensegrityView({engine, getFabric, physics}: {
             <Canvas>
                 {!fabric ? undefined : <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
             </Canvas>
-            <GlobalFabricPanel fabric={fabric} constructFabric={code => {
-                if (fabric) {
-                    fabric.startConstruction(code, ALTITUDE)
-                } else {
-                    const fetched = getFabric(code)
-                    fetched.startConstruction(code, ALTITUDE)
-                    setFabric(fetched)
-                }
-            }}/>
+            <GlobalFabricPanel
+                fabric={fabric}
+                constructFabric={code => {
+                    setSelection({})
+                    if (fabric) {
+                        fabric.startConstruction(code, ALTITUDE)
+                    } else {
+                        const fetched = getFabric(code)
+                        fetched.startConstruction(code, ALTITUDE)
+                        setFabric(fetched)
+                    }
+                }}
+                cancelSelection={() => setSelection({})}
+            />
             {!fabric ? undefined :
                 <PhysicsPanel physics={physics} engine={engine} instance={fabric.instance}/>
             }
