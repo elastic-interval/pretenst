@@ -11,8 +11,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { Physics } from "../fabric/physics"
 import { connectClosestFacePair } from "../fabric/tensegrity-brick"
-import { IFace, IInterval, IJoint, ISelection, selectionActive } from "../fabric/tensegrity-brick-types"
-import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { ISelection, Selectable } from "../fabric/tensegrity-brick-types"
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { loadFabricCode, loadStorageIndex } from "../storage/local-storage"
 
 import { BuildingPanel } from "./building-panel"
@@ -42,7 +42,6 @@ export function TensegrityView({engine, getFabric, physics}: {
 }): JSX.Element {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selection, setSelection] = useState<ISelection>({})
-    const factor = (up: boolean) => 1.0 + (up ? 0.005 : -0.005)
     useEffect(() => {
         if (!fabric) {
             const code = loadFabricCode()[loadStorageIndex()]
@@ -52,71 +51,15 @@ export function TensegrityView({engine, getFabric, physics}: {
         }
     })
     const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        const adjustJoint = (joint: IJoint | undefined, bar: boolean, up: boolean) => {
-            if (joint === undefined || !fabric) {
-                return
-            }
-        }
-        const adjustInterval = (interval: IInterval | undefined, up: boolean) => {
-            if (interval === undefined || !fabric) {
-                return
-            }
-            // TODO: this will not work, because it's not a factor!
-            fabric.instance.changeRestLength(interval.index, factor(up))
-        }
-        const adjustFace = (face: IFace | undefined, bar: boolean, up: boolean) => {
-            if (face === undefined || !fabric) {
-                return
-            }
-        }
         if (!fabric) {
             return
         }
-        const selectedFace = selection.selectedFace
         switch (event.key) {
             case "a":
                 fabric.instance.setAltitude(25)
                 break
-            case " ":
-                if (selectionActive(selection)) {
-                    setSelection({})
-                } else {
-                    fabric.autoRotate = !fabric.autoRotate
-                }
-                break
-            case "ArrowUp":
-                adjustJoint(selection.selectedJoint, true, true)
-                adjustFace(selectedFace, true, true)
-                adjustInterval(selection.selectedInterval, true)
-                break
-            case "ArrowDown":
-                adjustJoint(selection.selectedJoint, true, false)
-                adjustFace(selectedFace, true, false)
-                adjustInterval(selection.selectedInterval, false)
-                break
-            case "ArrowLeft":
-                adjustJoint(selection.selectedJoint, false, false)
-                adjustFace(selectedFace, false, false)
-                adjustInterval(selection.selectedInterval, false)
-                break
-            case "ArrowRight":
-                adjustJoint(selection.selectedJoint, false, true)
-                adjustFace(selectedFace, false, true)
-                adjustInterval(selection.selectedInterval, true)
-                break
             case "i":
                 setSelection({selectable: Selectable.INTERVAL})
-                break
-            case "g":
-                setSelection({selectable: Selectable.GROW_FACE})
-                break
-            case "j":
-                setSelection({selectable: Selectable.JOINT})
-                break
-            case "f":
-                setSelection({selectable: Selectable.FACE})
-                break
-            case "Backspace":
                 break
             case "c":
                 fabric.instance.centralize()
@@ -148,33 +91,30 @@ export function TensegrityView({engine, getFabric, physics}: {
             case "d":
                 console.log(JSON.stringify(fabric.output, undefined, 4))
                 break
-            case "Alt":
-            case "Meta":
-            case "Shift":
-                break
             default:
                 console.log("Key", event.key)
         }
     }
     return (
         <div tabIndex={1} id="tensegrity-view" className="the-whole-page" onKeyDownCapture={onKeyDown}>
-            <BuildingPanel selection={selection}/>
-            <NewFabricView
-                constructFabric={code => {
-                    if (fabric) {
-                        fabric.startConstruction(code, ALTITUDE)
-                    } else {
-                        const fetched = getFabric(code)
-                        fetched.startConstruction(code, ALTITUDE)
-                        setFabric(fetched)
-                    }
-                }}
-            />
+            <NewFabricView constructFabric={code => {
+                if (fabric) {
+                    fabric.startConstruction(code, ALTITUDE)
+                } else {
+                    const fetched = getFabric(code)
+                    fetched.startConstruction(code, ALTITUDE)
+                    setFabric(fetched)
+                }
+            }}/>
             <Canvas>
                 {!fabric ? undefined : <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
             </Canvas>
             {!fabric ? undefined :
-                <PhysicsPanel physics={physics} engine={engine} instance={fabric.instance}/>}
+                <PhysicsPanel physics={physics} engine={engine} instance={fabric.instance}/>
+            }
+            {!fabric ? undefined :
+                <BuildingPanel fabric={fabric} selection={selection} setSelection={setSelection}/>
+            }
         </div>
     )
 }

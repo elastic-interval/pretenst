@@ -855,6 +855,11 @@ export function changeRestLength(intervalIndex: u16, restLength: f32): void {
     setBusyCountdown(countdown)
 }
 
+export function multiplyRestLength(intervalIndex: u16, factor: f32): void {
+    let restLength = getIntervalStateLength(intervalIndex, REST_STATE)
+    changeRestLength(intervalIndex, restLength * factor)
+}
+
 function getIntervalCountdown(intervalIndex: u16): u16 {
     return getU16(_intervalCountdown(intervalIndex))
 }

@@ -26,13 +26,6 @@ import {
     TRIANGLE_ARRAY,
 } from "./tensegrity-brick-types"
 
-export enum Selectable {
-    JOINT = "Joint",
-    INTERVAL = "Interval",
-    FACE = "Face",
-    GROW_FACE = "GrowFace",
-}
-
 interface IFabricOutput {
     name: string
     joints: { index: string, x: string, y: string, z: string }[]

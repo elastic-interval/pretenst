@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -105,6 +104,8 @@ export interface IFabricEngine {
     changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
     changeRestLength(intervalIndex: number, length: number): void
+
+    multiplyRestLength(intervalIndex: number, length: number): void
 
     removeInterval(intervalIndex: number): void
 

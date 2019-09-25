@@ -7,7 +7,6 @@ import * as React from "react"
 import { useState } from "react"
 import { FaRecycle, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
 import {
-    Badge,
     Button,
     Col,
     DropdownItem,
@@ -38,21 +37,17 @@ export function NewFabricView({constructFabric}: {
     }
 
     return (
-        <div className="new-fabric-panel floating w-50 flex flex-column align-items-center">
+        <div className="new-fabric-panel">
             <Row>
                 <Col md={{size: 12}}>
                     <InputGroup size="lg">
                         <InputGroupButtonDropdown addonType="append" isOpen={open}
                                                   toggle={() => setOpen(!open)}>
                             <DropdownToggle>
-                                <Row>
-                                    <Col>
-                                        {open ? <FaRegFolderOpen/> : <FaRegFolder/>}
-                                    </Col>
-                                    <Col>
-                                        <h3><Badge color="info  ">{loadFabricCode()[storageIndex]}</Badge></h3>
-                                    </Col>
-                                </Row>
+                                <span>
+                                    {open ? <FaRegFolderOpen/> : <FaRegFolder/>}&nbsp;&nbsp;&nbsp;
+                                    <strong>{loadFabricCode()[storageIndex]}</strong>
+                                </span>
                             </DropdownToggle>
                             <DropdownMenu>
                                 {loadFabricCode().map((code, index) => (
@@ -61,9 +56,7 @@ export function NewFabricView({constructFabric}: {
                                     </DropdownItem>
                                 ))}
                             </DropdownMenu>
-                            <Button onClick={reconstruct}>
-                                <FaRecycle/>
-                            </Button>
+                            <Button onClick={reconstruct}><FaRecycle/></Button>
                         </InputGroupButtonDropdown>
                     </InputGroup>
                 </Col>

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -346,6 +345,10 @@ export class FabricInstance {
 
     public changeRestLength(intervalIndex: number, length: number): void {
         this.ex.changeRestLength(intervalIndex, length)
+    }
+
+    public multiplyRestLength(intervalIndex: number, factor: number): void {
+        this.ex.multiplyRestLength(intervalIndex, factor)
     }
 
     public getJointLocation(jointIndex: number): Vector3 {

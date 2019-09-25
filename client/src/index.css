@@ -222,10 +222,9 @@ p a, p a:hover {
 
 .physics-panel {
     text-align: left;
-    background-color: white;
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 1em;
+    right: 1em;
     height: auto;
     width: auto;
     padding: 10px;
@@ -233,13 +232,15 @@ p a, p a:hover {
 
 .new-fabric-panel {
     position: absolute;
-    left: 0;
-    top: 0;
+    left: 1em;
+    top: 1em;
 }
 
-.building-panel {
-    background-color: white;
+.bottom-container {
     position: absolute;
-    right: 0;
-    bottom: 0;
+    width: 100%;
+    bottom: 1em;
+    flex-flow: row nowrap;
+    align-content: center;
 }
+

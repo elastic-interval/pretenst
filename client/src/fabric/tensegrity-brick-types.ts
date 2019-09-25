@@ -6,7 +6,7 @@
 import { Vector3 } from "three"
 
 import { IntervalRole } from "./fabric-engine"
-import { Selectable, TensegrityFabric } from "./tensegrity-fabric"
+import { TensegrityFabric } from "./tensegrity-fabric"
 
 export const PHI = 1.61803398875
 
@@ -164,13 +164,15 @@ export interface IGrowth {
     optimizationStack: string[]
 }
 
+export enum Selectable {
+    JOINT = "Joint",
+    INTERVAL = "Interval",
+    FACE = "Face",
+}
+
 export interface ISelection {
     readonly selectable?: Selectable
     readonly selectedJoint?: IJoint
     readonly selectedInterval?: IInterval
     readonly selectedFace?: IFace
-}
-
-export function selectionActive(selection: ISelection): boolean {
-    return selection.selectedFace !== undefined || selection.selectedJoint !== undefined || selection.selectedInterval !== undefined
 }

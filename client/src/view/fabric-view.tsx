@@ -10,8 +10,8 @@ import { SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
-import { IFace, IInterval, ISelection } from "../fabric/tensegrity-brick-types"
-import { Selectable, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IFace, IInterval, ISelection, Selectable } from "../fabric/tensegrity-brick-types"
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import {
     TENSEGRITY_FACE,
@@ -73,9 +73,10 @@ export function FabricView({fabric, selection, setSelection}: {
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
 
     function IntervalSelection(): JSX.Element {
+        const invisible = selection.selectable !== Selectable.INTERVAL
         return (
             <>
-                {selection.selectable !== Selectable.INTERVAL ? undefined :
+                {invisible ? undefined :
                     fabric.intervals.filter(interval => !interval.removed).map((interval: IInterval) => (
                         <mesh
                             key={`I${interval.index}`}
@@ -91,9 +92,10 @@ export function FabricView({fabric, selection, setSelection}: {
     }
 
     function JointSelection(): JSX.Element {
+        const invisible = selection.selectable !== Selectable.JOINT
         return (
             <>
-                {selection.selectable !== Selectable.JOINT ? undefined : [...Array(fabric.jointCount)].map((x, jointIndex) => (
+                {invisible ? undefined : [...Array(fabric.jointCount)].map((x, jointIndex) => (
                     <mesh
                         key={`J${jointIndex}`}
                         geometry={SPHERE}
@@ -107,18 +109,18 @@ export function FabricView({fabric, selection, setSelection}: {
         )
     }
 
-    function FaceSelection({canGrow}: { canGrow: boolean }): JSX.Element {
-        const faces = canGrow ? fabric.faces.filter(face => face.canGrow) : fabric.faces
+    function FaceSelection(): JSX.Element {
+        const invisible = selection.selectable !== Selectable.FACE
         return (
             <>
-                {selection.selectable !== Selectable.FACE ? undefined : faces.map((face: IFace) => (
+                {invisible ? undefined : fabric.faces.map((face: IFace) => (
                     <mesh
                         key={`FS${face.index}`}
                         geometry={SPHERE}
                         position={fabric.instance.getFaceMidpoint(face.index)}
-                        material={canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
+                        material={face.canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
                         onPointerDown={(event: DomEvent) => {
-                            if (event.shiftKey && canGrow) {
+                            if (event.shiftKey && face.canGrow) {
                                 createConnectedBrick(face.brick, face.triangle)
                                 setSelection({})
                             } else {
@@ -191,8 +193,7 @@ export function FabricView({fabric, selection, setSelection}: {
                 <mesh key="faces" geometry={fabric.facesGeometry} material={TENSEGRITY_FACE}/>
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={TENSEGRITY_LINE}/>
                 <SurfaceComponent/>
-                <FaceSelection canGrow={false}/>
-                <FaceSelection canGrow={true}/>
+                <FaceSelection/>
                 <JointSelection/>
                 <IntervalSelection/>
                 <SelectedJoint/>
