@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { FaAngleLeft, FaAngleRight, FaRegHandPointer, FaTimes } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaRegHandPointer, FaTimes } from "react-icons/all"
 import { Button, ButtonGroup, ButtonToolbar } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
@@ -74,8 +74,8 @@ export function BuildingPanel({fabric, selection, setSelection}: {
             <ButtonToolbar>
                 <ButtonGroup>
                     {face.canGrow ? <Button onClick={grow}>Grow</Button> : undefined}
-                    <Button onClick={adjustUp(false)}><FaAngleLeft/></Button>
-                    <Button onClick={adjustUp(true)}><FaAngleRight/></Button>
+                    <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
+                    <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
                 </ButtonGroup>
                 <SelectableChoice/>
                 <Cancel/>
@@ -92,8 +92,8 @@ export function BuildingPanel({fabric, selection, setSelection}: {
         return (
             <ButtonToolbar>
                 <ButtonGroup>
-                    <Button onClick={adjustUp(false)}><FaAngleLeft/></Button>
-                    <Button onClick={adjustUp(true)}><FaAngleRight/></Button>
+                    <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
+                    <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
                 </ButtonGroup>
                 <SelectableChoice/>
                 <Cancel/>
@@ -108,8 +108,8 @@ export function BuildingPanel({fabric, selection, setSelection}: {
         return (
             <ButtonToolbar>
                 <ButtonGroup>
-                    <Button onClick={adjustUp(false)}><FaAngleLeft/></Button>
-                    <Button onClick={adjustUp(true)}><FaAngleRight/></Button>
+                    <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
+                    <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
                 </ButtonGroup>
                 <SelectableChoice/>
                 <Cancel/>
