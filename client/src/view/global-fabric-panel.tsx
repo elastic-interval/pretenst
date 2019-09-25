@@ -79,7 +79,6 @@ export function GlobalFabricPanel({constructFabric, fabric}: {
                     <Button onClick={() => withFabric(f => f.instance.centralize())}><FaCompressArrowsAlt/></Button>
                     <Button onClick={() => withFabric(f => f.optimize(false))}><FaBolt/>L</Button>
                     <Button onClick={() => withFabric(f => f.optimize(true))}><FaBolt/>H</Button>
-                    <Button onClick={() => withFabric(f => f.optimize(true))}><FaBolt/>H</Button>
                     <Button onClick={() => withFabric(f => f.instance.setAltitude(25))}><FaParachuteBox/></Button>
                     <Button onClick={() => withFabric(connectClosestFacePair)}><FaStarOfDavid/></Button>
                     <Button onClick={() => withFabric(dumpToCSV)}><FaDownload/></Button>
