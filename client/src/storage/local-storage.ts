@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -9,7 +10,7 @@ const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
 
 const STORAGE_BOOTSTRAP: string[] = [
-    "0",
+    "",
     "1",
     "2",
     "9",
@@ -18,6 +19,7 @@ const STORAGE_BOOTSTRAP: string[] = [
     "3[3,3,3[3,3,3]]L",
     "2[2,2,2[2,2,2]]H",
     "4[2=4]",
+    "6[0,1,1]",
     "1[1,3[1,1,1],4]",
     "3[3[3,3,3],3[3,3,3],3[3,3,3]]",
     "3[3[3,3,3],3[3,3,3],3[3,3,3]]L",

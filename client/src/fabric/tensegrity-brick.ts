@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -286,9 +287,12 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
             return undefined
         }
         const command = commands.charAt(0)
-        if (reduce && command >= "1" && command <= "9") {
+        if (reduce && command <= "9") {
             const forwardCount = parseInt(command, 10)
             const nextCount = forwardCount - 1
+            if (nextCount < 0) {
+                return undefined
+            }
             return parseCommands(false, nextCount.toString() + commands.substr(1))
         }
         if (command === "0") {
