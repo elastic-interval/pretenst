@@ -1,8 +1,9 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
+
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
@@ -47,4 +48,20 @@ export function loadStorageIndex(): number {
 
 export function storeStorageIndex(index: number): void {
     localStorage.setItem(STORAGE_INDEX_KEY, index.toString(10))
+}
+
+export function dumpToCSV(fabric: TensegrityFabric): void {
+    const csvJoints: string[][] = []
+    const csvIntervals: string[][] = []
+    const output = fabric.output
+    csvJoints.push(["index", "x", "y", "z"])
+    output.joints.forEach(joint => {
+        csvJoints.push([joint.index, joint.x, joint.y, joint.z])
+    })
+    csvIntervals.push(["joints", "type"])
+    output.intervals.forEach(interval => {
+        csvIntervals.push([`"=""${interval.joints}"""`, interval.type])
+    })
+    localStorage.setItem("Joints", csvJoints.map(a => a.join(";")).join("\n"))
+    localStorage.setItem("Intervals", csvIntervals.map(a => a.join(";")).join("\n"))
 }

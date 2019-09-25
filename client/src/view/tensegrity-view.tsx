@@ -10,14 +10,13 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { Physics } from "../fabric/physics"
-import { connectClosestFacePair } from "../fabric/tensegrity-brick"
-import { ISelection, Selectable } from "../fabric/tensegrity-brick-types"
+import { ISelection } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { loadFabricCode, loadStorageIndex } from "../storage/local-storage"
 
 import { BuildingPanel } from "./building-panel"
 import { FabricView } from "./fabric-view"
-import { NewFabricView } from "./new-fabric-view"
+import { GlobalFabricPanel } from "./global-fabric-panel"
 import { PhysicsPanel } from "./physics-panel"
 
 extend({OrbitControls})
@@ -50,54 +49,12 @@ export function TensegrityView({engine, getFabric, physics}: {
             setFabric(fetched)
         }
     })
-    const onKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
-        if (!fabric) {
-            return
-        }
-        switch (event.key) {
-            case "a":
-                fabric.instance.setAltitude(25)
-                break
-            case "i":
-                setSelection({selectable: Selectable.INTERVAL})
-                break
-            case "c":
-                fabric.instance.centralize()
-                break
-            case "l":
-                fabric.optimize(false)
-                break
-            case "h":
-                fabric.optimize(true)
-                break
-            case "x":
-                connectClosestFacePair(fabric)
-                break
-            case "D":
-                const csvJoints: string[][] = []
-                const csvIntervals: string[][] = []
-                const output = fabric.output
-                csvJoints.push(["index", "x", "y", "z"])
-                output.joints.forEach(joint => {
-                    csvJoints.push([joint.index, joint.x, joint.y, joint.z])
-                })
-                csvIntervals.push(["joints", "type"])
-                output.intervals.forEach(interval => {
-                    csvIntervals.push([`"=""${interval.joints}"""`, interval.type])
-                })
-                console.log("Joints =======================\n", csvJoints.map(a => a.join(";")).join("\n"))
-                console.log("Intervals =======================\n", csvIntervals.map(a => a.join(";")).join("\n"))
-                break
-            case "d":
-                console.log(JSON.stringify(fabric.output, undefined, 4))
-                break
-            default:
-                console.log("Key", event.key)
-        }
-    }
     return (
-        <div tabIndex={1} id="tensegrity-view" className="the-whole-page" onKeyDownCapture={onKeyDown}>
-            <NewFabricView constructFabric={code => {
+        <div tabIndex={1} id="tensegrity-view" className="the-whole-page">
+            <Canvas>
+                {!fabric ? undefined : <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
+            </Canvas>
+            <GlobalFabricPanel fabric={fabric} constructFabric={code => {
                 if (fabric) {
                     fabric.startConstruction(code, ALTITUDE)
                 } else {
@@ -106,9 +63,6 @@ export function TensegrityView({engine, getFabric, physics}: {
                     setFabric(fetched)
                 }
             }}/>
-            <Canvas>
-                {!fabric ? undefined : <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
-            </Canvas>
             {!fabric ? undefined :
                 <PhysicsPanel physics={physics} engine={engine} instance={fabric.instance}/>
             }

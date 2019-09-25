@@ -7,7 +7,6 @@ export interface IMemory {
     buffer: ArrayBuffer
 }
 
-
 export enum GlobalFeature {
     GravityAbove = 0,
     GravityBelowLand = 1,
