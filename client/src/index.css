@@ -234,5 +234,12 @@ p a, p a:hover {
 .new-fabric-panel {
     position: absolute;
     left: 0;
+    top: 0;
+}
+
+.building-panel {
+    background-color: white;
+    position: absolute;
+    right: 0;
     bottom: 0;
 }

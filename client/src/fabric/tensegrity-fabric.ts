@@ -27,11 +27,10 @@ import {
 } from "./tensegrity-brick-types"
 
 export enum Selectable {
-    NONE,
-    JOINT,
-    INTERVAL,
-    FACE,
-    GROW_FACE,
+    JOINT = "Joint",
+    INTERVAL = "Interval",
+    FACE = "Face",
+    GROW_FACE = "GrowFace",
 }
 
 interface IFabricOutput {
@@ -47,10 +46,6 @@ export class TensegrityFabric {
     public autoRotate = false
     public growth?: IGrowth
 
-    private _selectable: Selectable = Selectable.NONE
-    private _selectedJoint: IJoint | undefined
-    private _selectedInterval: IInterval | undefined
-    private _selectedFace: IFace | undefined
     private faceLocations = new Float32BufferAttribute([], 3)
     private faceNormals = new Float32BufferAttribute([], 3)
     private lineLocations = new Float32BufferAttribute([], 3)
@@ -72,69 +67,8 @@ export class TensegrityFabric {
         this.growth = growth
     }
 
-    public get selectable(): Selectable {
-        return this._selectable
-    }
-
-    public set selectable(value: Selectable) {
-        if (value !== Selectable.NONE) {
-            this.cancelSelection()
-            this.autoRotate = false
-        }
-        this._selectable = value
-    }
-
-    public get selectedJoint(): IJoint | undefined {
-        return this._selectedJoint
-    }
-
-    public set selectedJoint(value: IJoint | undefined) {
-        console.log("selected joint", value)
-        this.cancelSelection()
-        this._selectable = Selectable.NONE
-        this._selectedJoint = value
-        if (value) {
-            console.log("joint", value)
-        }
-    }
-
-    public get selectedInterval(): IInterval | undefined {
-        return this._selectedInterval
-    }
-
-    public set selectedInterval(value: IInterval | undefined) {
-        this.cancelSelection()
-        console.log("selected interval", value)
-        this._selectable = Selectable.NONE
-        this._selectedInterval = value
-        if (value) {
-            console.log("interval", value)
-        }
-    }
-
-    public get selectedFace(): IFace | undefined {
-        return this._selectedFace
-    }
-
-    public set selectedFace(value: IFace | undefined) {
-        this.cancelSelection()
-        this._selectable = Selectable.NONE
-        this._selectedFace = value
-    }
-
     public get growthFaces(): IFace[] {
         return this.faces.filter(f => f.canGrow)
-    }
-
-    public get selectionActive(): boolean {
-        return this._selectable !== Selectable.NONE ||
-            this._selectedFace !== undefined || this._selectedJoint !== undefined || this._selectedInterval !== undefined
-    }
-
-    public cancelSelection(): void {
-        this._selectedJoint = undefined
-        this._selectedInterval = undefined
-        this._selectedFace = undefined
     }
 
     public createBrick(altitude: number): IBrick {

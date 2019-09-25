@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -7,7 +6,7 @@
 import { Vector3 } from "three"
 
 import { IntervalRole } from "./fabric-engine"
-import { TensegrityFabric } from "./tensegrity-fabric"
+import { Selectable, TensegrityFabric } from "./tensegrity-fabric"
 
 export const PHI = 1.61803398875
 
@@ -163,4 +162,15 @@ export interface IGrowthTree {
 export interface IGrowth {
     growing: IGrowthTree []
     optimizationStack: string[]
+}
+
+export interface ISelection {
+    readonly selectable?: Selectable
+    readonly selectedJoint?: IJoint
+    readonly selectedInterval?: IInterval
+    readonly selectedFace?: IFace
+}
+
+export function selectionActive(selection: ISelection): boolean {
+    return selection.selectedFace !== undefined || selection.selectedJoint !== undefined || selection.selectedInterval !== undefined
 }
