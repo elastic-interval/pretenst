@@ -10,7 +10,7 @@ const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
 
 const STORAGE_BOOTSTRAP: string[] = [
-    "",
+    "0",
     "1",
     "2",
     "9",

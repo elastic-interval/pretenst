@@ -169,7 +169,6 @@ export enum Selectable {
     JOINT = "Joint",
     BAR = "Bar",
     CABLE = "Cable",
-    FACE = "Face",
 }
 
 export interface ISelection {
@@ -189,8 +188,4 @@ export function facePartSelectable(selection: ISelection): boolean {
 
 export function selectionActive(selection: ISelection): boolean {
     return !(!selection.selectable && !selection.selectedFace && !selection.selectedJoint && !selection.selectedInterval)
-}
-
-export function frozen(selection: ISelection): boolean {
-    return selection.selectable === Selectable.FACE
 }

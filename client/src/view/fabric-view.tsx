@@ -3,21 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import * as React from "react"
-import { useState } from "react"
+import React, { useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
-import { SphereGeometry, Vector3 } from "three"
+import { Object3D, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
-import {
-    facePartSelectable,
-    frozen,
-    IFace,
-    IInterval,
-    ISelection,
-    Selectable, selectionActive,
-} from "../fabric/tensegrity-brick-types"
+import { facePartSelectable, IInterval, ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import {
@@ -55,7 +47,8 @@ export function FabricView({fabric, selection, setSelection}: {
     setSelection: (s: ISelection) => void,
 }): JSX.Element {
     const [age, setAge] = useState<number>(0)
-    const {camera} = useThree()
+    const {camera, raycaster} = useThree()
+
     const orbitControls = useUpdate<OrbitControls>(controls => {
         controls.minPolarAngle = -0.98 * Math.PI / 2
         controls.maxPolarAngle = 0.8 * Math.PI
@@ -73,7 +66,7 @@ export function FabricView({fabric, selection, setSelection}: {
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = fabric.autoRotate
-        fabric.iterate(frozen(selection) ? 0 : ITERATIONS_PER_FRAME)
+        fabric.iterate(ITERATIONS_PER_FRAME)
         setAge(fabric.instance.getAge())
     }
     useRender(render, true, [fabric, selection, age])
@@ -123,34 +116,6 @@ export function FabricView({fabric, selection, setSelection}: {
                         />
                     ))
                 }
-            </>
-        )
-    }
-
-    function FaceSelection(): JSX.Element {
-        if (selection.selectable !== Selectable.FACE) {
-            return <>{undefined}</>
-        }
-        return (
-            <>
-                {fabric.faces.map((face: IFace) => (
-                    <mesh
-                        key={`FS${face.index}`}
-                        geometry={SPHERE}
-                        position={fabric.instance.getFaceMidpoint(face.index)}
-                        material={face.canGrow ? TENSEGRITY_JOINT_CAN_GROW : TENSEGRITY_JOINT}
-                        onPointerDown={(event: DomEvent) => {
-                            if (event.shiftKey && face.canGrow) {
-                                createConnectedBrick(face.brick, face.triangle)
-                                setSelection({})
-                            } else {
-                                setSelection({selectedFace: face})
-                            }
-                            event.stopPropagation()
-                        }}
-                        onPointerUp={stopPropagation}
-                    />
-                ))}
             </>
         )
     }
@@ -207,13 +172,39 @@ export function FabricView({fabric, selection, setSelection}: {
     }
 
     function Faces(): JSX.Element {
-        const onClick = () => {
-            if (selectionActive(selection)) {
+        const meshRef = useRef<Object3D>()
+        const onPointerDown = () => {
+            if (facePartSelectable(selection)) {
                 return
             }
-            setSelection({selectable: Selectable.FACE})
+            const mesh = meshRef.current
+            if (!mesh) {
+                return
+            }
+            const intersections = raycaster.intersectObjects([mesh], true)
+            const faces = intersections.map(intersection => intersection.faceIndex).map(faceIndex => {
+                if (faceIndex === undefined) {
+                    return undefined
+                }
+                return fabric.faces[faceIndex]
+            })
+            const topFace = faces.reverse().pop()
+            if (topFace) {
+                setSelection({selectedFace: topFace})
+            }
         }
-        return <mesh onPointerDown={onClick} geometry={fabric.facesGeometry} material={TENSEGRITY_FACE}/>
+        return (
+            <mesh
+                ref={meshRef}
+                onPointerDown={onPointerDown}
+                geometry={fabric.facesGeometry}
+                material={TENSEGRITY_FACE}
+            />
+        )
+    }
+
+    function Lines(): JSX.Element {
+        return <lineSegments key="lines" geometry={fabric.linesGeometry} material={TENSEGRITY_LINE}/>
     }
 
     return (
@@ -221,9 +212,8 @@ export function FabricView({fabric, selection, setSelection}: {
             <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
             <scene>
                 <Faces/>
-                <lineSegments key="lines" geometry={fabric.linesGeometry} material={TENSEGRITY_LINE}/>
+                <Lines/>
                 <SurfaceComponent/>
-                <FaceSelection/>
                 <JointSelection/>
                 <IntervalSelection/>
                 <SelectedFace/>
