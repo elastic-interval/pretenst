@@ -5,7 +5,7 @@
 
 import React, { useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
-import { Object3D, SphereGeometry, Vector3 } from "three"
+import { Euler, Object3D, Quaternion, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
@@ -34,8 +34,11 @@ declare global {
     }
 }
 
-const SPHERE = new SphereGeometry(0.3, 16, 16)
+const SPHERE_RADIUS = 0.3
+const SPHERE = new SphereGeometry(SPHERE_RADIUS, 16, 16)
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
+const Y_AXIS = new Vector3(0, 1, 0)
+const JOINT_SCALE = new Vector3(0.7, 0.7, 0.7)
 
 const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
@@ -46,6 +49,7 @@ export function FabricView({fabric, selection, setSelection}: {
     selection: ISelection,
     setSelection: (s: ISelection) => void,
 }): JSX.Element {
+
     const [age, setAge] = useState<number>(0)
     const {camera, raycaster} = useThree()
 
@@ -61,16 +65,28 @@ export function FabricView({fabric, selection, setSelection}: {
         camera.lookAt(orbitControls.current.target)
         controls.update()
     }, [fabric])
-    const render = () => {
+
+    useRender(() => {
         const towardsTarget = new Vector3().subVectors(fabric.instance.midpoint, orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = fabric.autoRotate
         fabric.iterate(ITERATIONS_PER_FRAME)
         setAge(fabric.instance.getAge())
-    }
-    useRender(render, true, [fabric, selection, age])
+    }, true, [fabric, selection, age])
+
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
+
+    function orientInterval(interval: IInterval): { scale: Vector3, rotation: Euler } {
+        const unit = fabric.instance.getIntervalUnit(interval.index)
+        const quaternion = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
+        const alphaLocation = fabric.instance.getJointLocation(interval.alpha.index)
+        const omegaLocation = fabric.instance.getJointLocation(interval.omega.index)
+        const intervalLength = alphaLocation.distanceTo(omegaLocation)
+        const scale = new Vector3(SPHERE_RADIUS, intervalLength / SPHERE_RADIUS / 2, SPHERE_RADIUS)
+        const rotation = new Euler().setFromQuaternion(quaternion)
+        return {scale, rotation}
+    }
 
     function IntervalSelection(): JSX.Element {
         const selectedFace = selection.selectedFace
@@ -82,16 +98,21 @@ export function FabricView({fabric, selection, setSelection}: {
             <>
                 {intervals
                     .filter(interval => !interval.removed)
-                    .map((interval: IInterval) => (
-                        <mesh
-                            key={`I${interval.index}`}
-                            geometry={SPHERE}
-                            position={fabric.instance.getIntervalMidpoint(interval.index)}
-                            material={TENSEGRITY_JOINT}
-                            onPointerDown={() => setSelection({selectedInterval: interval})}
-                            onPointerUp={stopPropagation}
-                        />
-                    ))
+                    .map((interval: IInterval) => {
+                        const {scale, rotation} = orientInterval(interval)
+                        return (
+                            <mesh
+                                key={`I${interval.index}`}
+                                geometry={SPHERE}
+                                position={fabric.instance.getIntervalMidpoint(interval.index)}
+                                rotation={rotation}
+                                scale={scale}
+                                material={TENSEGRITY_JOINT}
+                                onPointerDown={() => setSelection({selectedInterval: interval})}
+                                onPointerUp={stopPropagation}
+                            />
+                        )
+                    })
                 }
             </>
         )
@@ -110,6 +131,7 @@ export function FabricView({fabric, selection, setSelection}: {
                             key={`J${joint.index}`}
                             geometry={SPHERE}
                             position={fabric.instance.getJointLocation(joint.index)}
+                            scale={JOINT_SCALE}
                             material={TENSEGRITY_JOINT}
                             onPointerDown={() => setSelection({selectedJoint: joint})}
                             onPointerUp={stopPropagation}
@@ -147,10 +169,13 @@ export function FabricView({fabric, selection, setSelection}: {
         if (!selectedInterval) {
             return <group/>
         }
+        const {scale, rotation} = orientInterval(selectedInterval)
         return (
             <mesh
                 geometry={SPHERE}
                 position={fabric.instance.getIntervalMidpoint(selectedInterval.index)}
+                scale={scale}
+                rotation={rotation}
                 material={TENSEGRITY_JOINT_SELECTED}
             />
         )
@@ -166,6 +191,7 @@ export function FabricView({fabric, selection, setSelection}: {
                 key={`J${selectedJoint.index}`}
                 geometry={SPHERE}
                 position={fabric.instance.getJointLocation(selectedJoint.index)}
+                scale={JOINT_SCALE}
                 material={TENSEGRITY_JOINT_SELECTED}
             />
         )
