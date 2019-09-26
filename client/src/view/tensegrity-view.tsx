@@ -39,8 +39,10 @@ export function TensegrityView({engine, getFabric, physics}: {
     getFabric: (name: string) => TensegrityFabric,
     physics: Physics,
 }): JSX.Element {
+
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selection, setSelection] = useState<ISelection>({})
+
     useEffect(() => {
         if (!fabric) {
             const code = loadFabricCode()[loadStorageIndex()]
@@ -49,25 +51,26 @@ export function TensegrityView({engine, getFabric, physics}: {
             setFabric(fetched)
         }
     })
+
+    function constructFabric(code: string): void {
+        setSelection({})
+        if (fabric) {
+            fabric.startConstruction(code, ALTITUDE)
+        } else {
+            const fetched = getFabric(code)
+            fetched.startConstruction(code, ALTITUDE)
+            setFabric(fetched)
+        }
+    }
+
     return (
         <div tabIndex={1} id="tensegrity-view" className="the-whole-page">
             <Canvas>
                 {!fabric ? undefined : <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
             </Canvas>
-            <GlobalFabricPanel
-                fabric={fabric}
-                constructFabric={code => {
-                    setSelection({})
-                    if (fabric) {
-                        fabric.startConstruction(code, ALTITUDE)
-                    } else {
-                        const fetched = getFabric(code)
-                        fetched.startConstruction(code, ALTITUDE)
-                        setFabric(fetched)
-                    }
-                }}
-                cancelSelection={() => setSelection({})}
-            />
+            <GlobalFabricPanel fabric={fabric}
+                               constructFabric={constructFabric}
+                               cancelSelection={() => setSelection({})}/>
             {!fabric ? undefined :
                 <PhysicsPanel physics={physics} engine={engine} instance={fabric.instance}/>
             }

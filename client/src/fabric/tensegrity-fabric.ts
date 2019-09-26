@@ -23,7 +23,7 @@ import {
     IJoint,
     JointTag,
     Triangle,
-    TRIANGLE_ARRAY,
+    TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
 
 export interface IFabricOutput {
@@ -117,8 +117,8 @@ export class TensegrityFabric {
     }
 
     public createFace(brick: IBrick, triangle: Triangle): IFace {
-        const joints = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => brick.joints[barEnd])
-        const bars = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => {
+        const joints = TRIANGLE_DEFINITIONS[triangle].barEnds.map(barEnd => brick.joints[barEnd])
+        const bars = TRIANGLE_DEFINITIONS[triangle].barEnds.map(barEnd => {
             const foundBar = brick.bars.find(bar => {
                 const endJoint = brick.joints[barEnd]
                 return endJoint.index === bar.alpha.index || endJoint.index === bar.omega.index

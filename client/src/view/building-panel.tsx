@@ -65,7 +65,7 @@ export function BuildingPanel({fabric, selection, setSelection}: {
                 : selection.selectable === Selectable.CABLE ? face.cables
                 : selection.selectable === Selectable.JOINT ? fabric.intervals.filter(touchesFace)
                     : []
-        const adjustUp = (up: boolean) => () => intervals.forEach(interval => {
+        const adjustValue = (up: boolean) => () => intervals.forEach(interval => {
             fabric.instance.multiplyRestLength(interval.index, adjustment(up))
         })
 
@@ -78,8 +78,8 @@ export function BuildingPanel({fabric, selection, setSelection}: {
                 </ButtonGroup>
                 {intervals.length === 0 ? undefined : (
                     <ButtonGroup>
-                        <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
-                        <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
+                        <Button onClick={adjustValue(false)}><FaArrowDown/></Button>
+                        <Button onClick={adjustValue(true)}><FaArrowUp/></Button>
                     </ButtonGroup>
                 )}
                 <ButtonGroup>
@@ -93,7 +93,7 @@ export function BuildingPanel({fabric, selection, setSelection}: {
     }
 
     function Joint({joint}: { joint: IJoint }): JSX.Element {
-        const adjustUp = (up: boolean) => () => {
+        const adjustValue = (up: boolean) => () => {
             fabric.intervals
                 .filter(i => i.alpha.index === joint.index || i.omega.index === joint.index)
                 .forEach(interval => fabric.instance.multiplyRestLength(interval.index, adjustment(up)))
@@ -101,8 +101,8 @@ export function BuildingPanel({fabric, selection, setSelection}: {
         return (
             <ButtonToolbar>
                 <ButtonGroup>
-                    <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
-                    <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
+                    <Button onClick={adjustValue(false)}><FaArrowDown/></Button>
+                    <Button onClick={adjustValue(true)}><FaArrowUp/></Button>
                 </ButtonGroup>
                 <Cancel/>
             </ButtonToolbar>
@@ -110,14 +110,14 @@ export function BuildingPanel({fabric, selection, setSelection}: {
     }
 
     function Interval({interval}: { interval: IInterval }): JSX.Element {
-        const adjustUp = (up: boolean) => () => {
+        const adjustValue = (up: boolean) => () => {
             fabric.instance.multiplyRestLength(interval.index, adjustment(up))
         }
         return (
             <ButtonToolbar>
                 <ButtonGroup>
-                    <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
-                    <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
+                    <Button onClick={adjustValue(false)}><FaArrowDown/></Button>
+                    <Button onClick={adjustValue(true)}><FaArrowUp/></Button>
                 </ButtonGroup>
                 <Cancel/>
             </ButtonToolbar>

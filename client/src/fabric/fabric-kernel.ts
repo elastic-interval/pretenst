@@ -217,7 +217,7 @@ export class FabricInstance {
 
     public release(): void {
         this.releaseInstance(this.fabricIndex)
-        this.ex.reset()
+        this.fabricEngine.reset()
     }
 
     public clear(): void {
@@ -236,119 +236,119 @@ export class FabricInstance {
     }
 
     public extendBusyCountdown(factor: number): void {
-        this.ex.extendBusyCountdown(factor)
+        this.fabricEngine.extendBusyCountdown(factor)
     }
 
     public reset(): void {
-        return this.ex.reset()
+        return this.fabricEngine.reset()
     }
 
     public getAge(): number {
-        return this.ex.getAge()
+        return this.fabricEngine.getAge()
     }
 
     public centralize(): void {
-        this.ex.centralize()
+        this.fabricEngine.centralize()
     }
 
     public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
-        return this.ex.createFace(joint0Index, joint1Index, joint2Index)
+        return this.fabricEngine.createFace(joint0Index, joint1Index, joint2Index)
     }
 
     public createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole): number {
-        return this.ex.createInterval(alphaIndex, omegaIndex, intervalRole)
+        return this.fabricEngine.createInterval(alphaIndex, omegaIndex, intervalRole)
     }
 
     public removeInterval(intervalIndex: number): void {
-        this.ex.removeInterval(intervalIndex)
+        this.fabricEngine.removeInterval(intervalIndex)
     }
 
     public createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number {
-        return this.ex.createJoint(jointTag, laterality, x, y, z)
+        return this.fabricEngine.createJoint(jointTag, laterality, x, y, z)
     }
 
     public getFaceCount(): number {
-        return this.ex.getFaceCount()
+        return this.fabricEngine.getFaceCount()
     }
 
     public findOppositeFaceIndex(faceIndex: number): number {
-        return this.ex.findOppositeFaceIndex(faceIndex)
+        return this.fabricEngine.findOppositeFaceIndex(faceIndex)
     }
 
     public findOppositeIntervalIndex(intervalIndex: number): number {
-        return this.ex.findOppositeIntervalIndex(intervalIndex)
+        return this.fabricEngine.findOppositeIntervalIndex(intervalIndex)
     }
 
     public getCurrentState(): FabricState {
-        return this.ex.getCurrentState()
+        return this.fabricEngine.getCurrentState()
     }
 
     public getFaceJointIndex(faceIndex: number, jointNumber: number): number {
-        return this.ex.getFaceJointIndex(faceIndex, jointNumber)
+        return this.fabricEngine.getFaceJointIndex(faceIndex, jointNumber)
     }
 
     public getJointLaterality(jointIndex: number): number {
-        return this.ex.getJointLaterality(jointIndex)
+        return this.fabricEngine.getJointLaterality(jointIndex)
     }
 
     public getJointTag(jointIndex: number): number {
-        return this.ex.getJointTag(jointIndex)
+        return this.fabricEngine.getJointTag(jointIndex)
     }
 
     public getIntervalCount(): number {
-        return this.ex.getIntervalCount()
+        return this.fabricEngine.getIntervalCount()
     }
 
     public iterate(ticks: number): boolean {
-        return this.ex.iterate(ticks)
+        return this.fabricEngine.iterate(ticks)
     }
 
     public getJointCount(): number {
-        return this.ex.getJointCount()
+        return this.fabricEngine.getJointCount()
     }
 
     public nextJointTag(): number {
-        return this.ex.nextJointTag()
+        return this.fabricEngine.nextJointTag()
     }
 
     public removeFace(faceIndex: number): void {
-        this.ex.removeFace(faceIndex)
+        this.fabricEngine.removeFace(faceIndex)
     }
 
     public setAltitude(altitude: number): number {
-        return this.ex.setAltitude(altitude)
+        return this.fabricEngine.setAltitude(altitude)
     }
 
     public getNextState(): FabricState {
-        return this.ex.getNextState()
+        return this.fabricEngine.getNextState()
     }
 
     public setNextState(state: FabricState): void {
-        this.ex.setNextState(state)
+        this.fabricEngine.setNextState(state)
     }
 
     public getRoleLength(intervalRole: IntervalRole): number {
-        return this.ex.getRoleLength(intervalRole)
+        return this.fabricEngine.getRoleLength(intervalRole)
     }
 
     public setRoleLength(intervalRole: IntervalRole, factor: number): void {
-        this.ex.setRoleLength(intervalRole, factor)
+        this.fabricEngine.setRoleLength(intervalRole, factor)
     }
 
     public setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void {
-        this.ex.setIntervalStateLength(intervalIndex, state, length)
+        this.fabricEngine.setIntervalStateLength(intervalIndex, state, length)
     }
 
     public changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
-        this.ex.changeRestIntervalRole(intervalIndex, intervalRole)
+        this.fabricEngine.changeRestIntervalRole(intervalIndex, intervalRole)
     }
 
     public changeRestLength(intervalIndex: number, length: number): void {
-        this.ex.changeRestLength(intervalIndex, length)
+        this.fabricEngine.changeRestLength(intervalIndex, length)
     }
 
     public multiplyRestLength(intervalIndex: number, factor: number): void {
-        this.ex.multiplyRestLength(intervalIndex, factor)
+        this.fabricEngine.multiplyRestLength(intervalIndex, factor)
     }
 
     public getJointLocation(jointIndex: number): Vector3 {
@@ -439,7 +439,7 @@ export class FabricInstance {
         return vectorFromFloatArray(this.vectors.floats, 9, this.rightVector)
     }
 
-    private get ex(): IFabricEngine {
+    private get fabricEngine(): IFabricEngine {
         this.engine.setInstance(this.index)
         return this.engine
     }

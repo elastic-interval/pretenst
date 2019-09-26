@@ -102,7 +102,7 @@ export interface ITriangleDefinition {
     ring: Ring
 }
 
-export const TRIANGLE_ARRAY: ITriangleDefinition[] = [
+export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
     {
         name: Triangle.NNN, opposite: Triangle.PPP, negative: true, ring: Ring.NN,
         barEnds: [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA], ringMember: [Ring.NP, Ring.PN, Ring.PP],
