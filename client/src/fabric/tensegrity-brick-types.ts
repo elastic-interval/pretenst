@@ -51,6 +51,7 @@ export interface IFace {
     brick: IBrick
     triangle: Triangle
     joints: IJoint[]
+    bars: IInterval[]
     cables: IInterval[]
 }
 
@@ -166,13 +167,30 @@ export interface IGrowth {
 
 export enum Selectable {
     JOINT = "Joint",
-    INTERVAL = "Interval",
+    BAR = "Bar",
+    CABLE = "Cable",
     FACE = "Face",
 }
 
 export interface ISelection {
     readonly selectable?: Selectable
+    readonly selectedFace?: IFace
     readonly selectedJoint?: IJoint
     readonly selectedInterval?: IInterval
-    readonly selectedFace?: IFace
+}
+
+export function facePartSelectable(selection: ISelection): boolean {
+    return (
+        selection.selectable === Selectable.BAR ||
+        selection.selectable === Selectable.CABLE ||
+        selection.selectable === Selectable.JOINT
+    )
+}
+
+export function selectionActive(selection: ISelection): boolean {
+    return !(!selection.selectable && !selection.selectedFace && !selection.selectedJoint && !selection.selectedInterval)
+}
+
+export function frozen(selection: ISelection): boolean {
+    return selection.selectable === Selectable.FACE
 }

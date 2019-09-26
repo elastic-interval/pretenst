@@ -118,13 +118,24 @@ export class TensegrityFabric {
 
     public createFace(brick: IBrick, triangle: Triangle): IFace {
         const joints = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => brick.joints[barEnd])
+        const bars = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => {
+            const foundBar = brick.bars.find(bar => {
+                const endJoint = brick.joints[barEnd]
+                return endJoint.index === bar.alpha.index || endJoint.index === bar.omega.index
+            })
+            if (foundBar === undefined) {
+                throw new Error()
+            }
+            return foundBar
+        })
         const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
-        const face = <IFace>{
+        const face: IFace = {
             index: this.instance.createFace(joints[0].index, joints[1].index, joints[2].index),
             canGrow: true,
             brick,
             triangle,
             joints,
+            bars,
             cables,
         }
         this.faces.push(face)

@@ -8,7 +8,15 @@ import { FaArrowDown, FaArrowUp, FaRegHandPointer, FaTimes } from "react-icons/a
 import { Button, ButtonGroup, ButtonToolbar } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
-import { IFace, IInterval, IJoint, ISelection, Selectable } from "../fabric/tensegrity-brick-types"
+import {
+    facePartSelectable,
+    IFace,
+    IInterval,
+    IJoint,
+    ISelection,
+    Selectable,
+    selectionActive,
+} from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 export function BuildingPanel({fabric, selection, setSelection}: {
@@ -24,31 +32,9 @@ export function BuildingPanel({fabric, selection, setSelection}: {
 
     function SelectableButton({selectable, disabled}: { selectable: Selectable, disabled?: boolean }): JSX.Element {
         return (
-            <Button disabled={disabled} onClick={() => setSelection({selectable})}>
+            <Button disabled={disabled} onClick={() => setSelection({...selection, selectable})}>
                 <FaRegHandPointer/> {selectable}
             </Button>
-        )
-    }
-
-    function SelectableChoice(): JSX.Element {
-        function MaybeSelectable({selectable}: { selectable: Selectable }): JSX.Element {
-            return <SelectableButton disabled={selection.selectable === selectable} selectable={selectable}/>
-        }
-
-        return (
-            <ButtonGroup>
-                <MaybeSelectable selectable={Selectable.FACE}/>
-                <MaybeSelectable selectable={Selectable.JOINT}/>
-                <MaybeSelectable selectable={Selectable.INTERVAL}/>
-            </ButtonGroup>
-        )
-    }
-
-    function ChooseSelectionType(): JSX.Element {
-        return (
-            <ButtonToolbar>
-                <SelectableChoice/>
-            </ButtonToolbar>
         )
     }
 
@@ -63,22 +49,45 @@ export function BuildingPanel({fabric, selection, setSelection}: {
     }
 
     function Face({face}: { face: IFace }): JSX.Element {
+        function MaybeSelectable({selectable}: { selectable: Selectable }): JSX.Element {
+            return <SelectableButton disabled={selection.selectable === selectable} selectable={selectable}/>
+        }
+
         const grow = () => {
             createConnectedBrick(face.brick, face.triangle)
-            setSelection({selectable: Selectable.FACE})
+            setSelection({})
         }
-        const adjustUp = (up: boolean) => () => {
-            face.cables.forEach(cable => fabric.instance.multiplyRestLength(cable.index, adjustment(up)))
-        }
+        const touchesFace = (interval: IInterval) => face.joints.some(joint => (
+            interval.alpha.index === joint.index || interval.omega.index === joint.index
+        ))
+        const intervals =
+            selection.selectable === Selectable.BAR ? face.bars
+                : selection.selectable === Selectable.CABLE ? face.cables
+                : selection.selectable === Selectable.JOINT ? fabric.intervals.filter(touchesFace)
+                    : []
+        const adjustUp = (up: boolean) => () => intervals.forEach(interval => {
+            fabric.instance.multiplyRestLength(interval.index, adjustment(up))
+        })
+
         return (
             <ButtonToolbar>
                 <ButtonGroup>
-                    {face.canGrow ? <Button onClick={grow}>Grow</Button> : undefined}
-                    <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
-                    <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
+                    {!face.canGrow || facePartSelectable(selection) ? undefined :
+                        <Button onClick={grow}>Grow</Button>
+                    }
                 </ButtonGroup>
-                <SelectableChoice/>
-                <Cancel/>
+                {intervals.length === 0 ? undefined : (
+                    <ButtonGroup>
+                        <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
+                        <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
+                    </ButtonGroup>
+                )}
+                <ButtonGroup>
+                    <MaybeSelectable selectable={Selectable.JOINT}/>
+                    <MaybeSelectable selectable={Selectable.BAR}/>
+                    <MaybeSelectable selectable={Selectable.CABLE}/>
+                    <Cancel/>
+                </ButtonGroup>
             </ButtonToolbar>
         )
     }
@@ -95,7 +104,6 @@ export function BuildingPanel({fabric, selection, setSelection}: {
                     <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
                     <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
                 </ButtonGroup>
-                <SelectableChoice/>
                 <Cancel/>
             </ButtonToolbar>
         )
@@ -111,40 +119,26 @@ export function BuildingPanel({fabric, selection, setSelection}: {
                     <Button onClick={adjustUp(false)}><FaArrowDown/></Button>
                     <Button onClick={adjustUp(true)}><FaArrowUp/></Button>
                 </ButtonGroup>
-                <SelectableChoice/>
                 <Cancel/>
             </ButtonToolbar>
         )
     }
 
-    function NothingSelected(): JSX.Element {
-        return (
-            <>
-                <ButtonToolbar>
-                    <SelectableChoice/>
-                    <Cancel/>
-                </ButtonToolbar>
-            </>
-        )
+    if (!selectionActive(selection)) {
+        return <div/>
     }
-
-    const nothingSelected = !(selection.selectedFace || selection.selectedJoint || selection.selectedInterval)
 
     return (
         <div className="bottom-container">
-            <>
-                {!selection.selectable && nothingSelected ? (
-                    <ChooseSelectionType/>
-                ) : nothingSelected ? (
-                    <NothingSelected/>
-                ) : (
-                    <>
-                        {!selection.selectedFace ? undefined : <Face face={selection.selectedFace}/>}
-                        {!selection.selectedJoint ? undefined : <Joint joint={selection.selectedJoint}/>}
-                        {!selection.selectedInterval ? undefined : <Interval interval={selection.selectedInterval}/>}
-                    </>
-                )}
-            </>
+            {!selection.selectedFace ? undefined :
+                <Face face={selection.selectedFace}/>
+            }
+            {!selection.selectedJoint ? undefined :
+                <Joint joint={selection.selectedJoint}/>
+            }
+            {!selection.selectedInterval ? undefined :
+                <Interval interval={selection.selectedInterval}/>
+            }
         </div>
     )
 }
