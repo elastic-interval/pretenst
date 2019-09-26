@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import * as FileSaver from "file-saver"
 import * as React from "react"
 import { useState } from "react"
 import {
@@ -27,8 +28,26 @@ import {
 } from "reactstrap"
 
 import { connectClosestFacePair } from "../fabric/tensegrity-brick"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { dumpToCSV, loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
+import { IFabricOutput, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
+
+function extractJointBlob(output: IFabricOutput): Blob {
+    const csvJoints: string[][] = []
+    csvJoints.push(["index", "x", "y", "z"])
+    output.joints.forEach(joint => csvJoints.push([joint.index, joint.x, joint.y, joint.z]))
+    const jointsFile = csvJoints.map(a => a.join(";")).join("\n")
+    return new Blob([jointsFile], {type: "application/csv"})
+}
+
+function extractIntervalBlob(output: IFabricOutput): Blob {
+    const csvIntervals: string[][] = []
+    csvIntervals.push(["joints", "type"])
+    output.intervals.forEach(interval => {
+        csvIntervals.push([`"=""${interval.joints}"""`, interval.type])
+    })
+    const intervalsFile = csvIntervals.map(a => a.join(";")).join("\n")
+    return new Blob([intervalsFile], {type: "application/csv"})
+}
 
 export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
     constructFabric: (fabricCode: string) => void,
@@ -79,7 +98,13 @@ export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
                 &nbsp;&nbsp;&nbsp;
                 <ButtonGroup>
                     <Button onClick={() => constructFabric(loadFabricCode()[storageIndex])}><FaRecycle/></Button>
-                    <Button onClick={() => withFabric(dumpToCSV)}><FaDownload/></Button>
+                    <Button onClick={() => withFabric(f => {
+                        const dateString = new Date().toISOString()
+                            .replace(/[.].*/, "").replace(/[:T_]/g, "-")
+                        const output = f.output
+                        FileSaver.saveAs(extractJointBlob(output), `${dateString}-joints.csv`)
+                        FileSaver.saveAs(extractIntervalBlob(output), `${dateString}-intervals.csv`)
+                    })}><FaDownload/></Button>
                 </ButtonGroup>
                 &nbsp;&nbsp;&nbsp;
                 <ButtonGroup>

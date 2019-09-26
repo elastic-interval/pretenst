@@ -26,7 +26,7 @@ import {
     TRIANGLE_ARRAY,
 } from "./tensegrity-brick-types"
 
-interface IFabricOutput {
+export interface IFabricOutput {
     name: string
     joints: { index: string, x: string, y: string, z: string }[]
     intervals: { joints: string, type: string }[]
