@@ -24,7 +24,7 @@ module.exports = {
         },
       },
     ],
-    "@typescript-eslint/indent": ["error", 4],
+    "@typescript-eslint/indent": "off",
     "@typescript-eslint/interface-name-prefix": ["error", "always"],
     "@typescript-eslint/member-delimiter-style": "off",
     "@typescript-eslint/member-ordering": "error",

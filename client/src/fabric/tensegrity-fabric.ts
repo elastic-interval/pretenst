@@ -23,18 +23,10 @@ import {
     IJoint,
     JointTag,
     Triangle,
-    TRIANGLE_ARRAY,
+    TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
 
-export enum Selectable {
-    NONE,
-    JOINT,
-    INTERVAL,
-    FACE,
-    GROW_FACE,
-}
-
-interface IFabricOutput {
+export interface IFabricOutput {
     name: string
     joints: { index: string, x: string, y: string, z: string }[]
     intervals: { joints: string, type: string }[]
@@ -47,10 +39,6 @@ export class TensegrityFabric {
     public autoRotate = false
     public growth?: IGrowth
 
-    private _selectable: Selectable = Selectable.NONE
-    private _selectedJoint: IJoint | undefined
-    private _selectedInterval: IInterval | undefined
-    private _selectedFace: IFace | undefined
     private faceLocations = new Float32BufferAttribute([], 3)
     private faceNormals = new Float32BufferAttribute([], 3)
     private lineLocations = new Float32BufferAttribute([], 3)
@@ -58,81 +46,22 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(public readonly instance: FabricInstance, public readonly physics: Physics, public readonly name: string, altitude: number) {
-        const growth = parseConstructionCode(name)
+    constructor(public readonly instance: FabricInstance, public readonly physics: Physics, public readonly name: string) {
+    }
+
+    public startConstruction(constructionCode: string, altitude: number): void {
+        this.reset()
+        const growth = parseConstructionCode(constructionCode)
+        if (!growth.growing.length) {
+            this.createBrick(altitude)
+            return
+        }
         growth.growing[0].brick = this.createBrick(altitude)
         this.growth = growth
     }
 
-
-    public setGestating(countdown: number): void {
-        this.instance.setGestating(countdown)
-    }
-
-    public get selectable(): Selectable {
-        return this._selectable
-    }
-
-    public set selectable(value: Selectable) {
-        if (value !== Selectable.NONE) {
-            this.cancelSelection()
-            this.autoRotate = false
-        }
-        this._selectable = value
-    }
-
-    public get selectedJoint(): IJoint | undefined {
-        return this._selectedJoint
-    }
-
-    public set selectedJoint(value: IJoint | undefined) {
-        console.log("selected joint", value)
-        this.cancelSelection()
-        this._selectable = Selectable.NONE
-        this._selectedJoint = value
-        if (value) {
-            console.log("joint", value)
-        }
-    }
-
-    public get selectedInterval(): IInterval | undefined {
-        return this._selectedInterval
-    }
-
-    public set selectedInterval(value: IInterval | undefined) {
-        this.cancelSelection()
-        console.log("selected interval", value)
-        this._selectable = Selectable.NONE
-        this._selectedInterval = value
-        if (value) {
-            console.log("interval", value)
-        }
-    }
-
-    public get selectedFace(): IFace | undefined {
-        return this._selectedFace
-    }
-
-    public set selectedFace(value: IFace | undefined) {
-        this.cancelSelection()
-        console.log("selected face", value)
-        this._selectable = Selectable.NONE
-        this._selectedFace = value
-    }
-
     public get growthFaces(): IFace[] {
         return this.faces.filter(f => f.canGrow)
-    }
-
-    public get selectionActive(): boolean {
-        return this._selectable !== Selectable.NONE ||
-            this._selectedFace !== undefined || this._selectedJoint !== undefined || this._selectedInterval !== undefined
-    }
-
-    public cancelSelection(): void {
-        this._selectedJoint = undefined
-        this._selectedInterval = undefined
-        this._selectedFace = undefined
     }
 
     public createBrick(altitude: number): IBrick {
@@ -188,23 +117,41 @@ export class TensegrityFabric {
     }
 
     public createFace(brick: IBrick, triangle: Triangle): IFace {
-        const joints = TRIANGLE_ARRAY[triangle].barEnds.map(barEnd => brick.joints[barEnd])
+        const joints = TRIANGLE_DEFINITIONS[triangle].barEnds.map(barEnd => brick.joints[barEnd])
+        const bars = TRIANGLE_DEFINITIONS[triangle].barEnds.map(barEnd => {
+            const foundBar = brick.bars.find(bar => {
+                const endJoint = brick.joints[barEnd]
+                return endJoint.index === bar.alpha.index || endJoint.index === bar.omega.index
+            })
+            if (foundBar === undefined) {
+                throw new Error()
+            }
+            return foundBar
+        })
         const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
-        const face = <IFace>{
+        const face: IFace = {
             index: this.instance.createFace(joints[0].index, joints[1].index, joints[2].index),
             canGrow: true,
             brick,
             triangle,
             joints,
+            bars,
             cables,
         }
         this.faces.push(face)
         return face
     }
 
-    public recycle(): void {
+    public release(): void {
+        this.instance.release()
+    }
+
+    public reset(): void {
+        this.joints = []
+        this.intervals = []
+        this.faces = []
         this.disposeOfGeometry()
-        this.instance.recycle()
+        this.instance.reset()
     }
 
     public disposeOfGeometry(): void {
@@ -232,6 +179,7 @@ export class TensegrityFabric {
 
     public get facesGeometry(): BufferGeometry {
         if (!this.facesGeometryStored) {
+            this.instance.iterate(0)
             const geometry = new BufferGeometry()
             this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
             this.faceNormals = new Float32BufferAttribute(this.instance.getFaceNormals(), 3)
@@ -244,6 +192,7 @@ export class TensegrityFabric {
 
     public get linesGeometry(): BufferGeometry {
         if (!this.linesGeometryStored) {
+            this.instance.iterate(0)
             const geometry = new BufferGeometry()
             this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
             this.lineColors = new Float32BufferAttribute(this.instance.getLineColors(), 3)
@@ -255,10 +204,10 @@ export class TensegrityFabric {
     }
 
     public iterate(ticks: number): boolean {
+        const busy = this.instance.iterate(ticks)
         this.disposeOfGeometry()
-        const changeHappened = this.instance.iterate(ticks)
-        if (!changeHappened) {
-            return false
+        if (busy) {
+            return busy
         }
         const growth = this.growth
         if (growth) {
@@ -272,12 +221,13 @@ export class TensegrityFabric {
                     switch (optimization) {
                         case "L":
                             optimizeFabric(this, false)
+                            this.instance.extendBusyCountdown(3)
                             break
                         case "H":
                             optimizeFabric(this, true)
+                            this.instance.extendBusyCountdown(2)
                             break
                         case "X":
-                            this.setGestating(3)
                             growth.optimizationStack.push("Connect")
                             break
                         case "Connect":
@@ -285,13 +235,12 @@ export class TensegrityFabric {
                             break
                     }
                 } else {
-                    this.setGestating(1)
-                    this.physics.applyLocal(this.instance)
+                    this.physics.applyLocalFeatures(this.instance)
                     this.growth = undefined
                 }
             }
         }
-        return true
+        return busy
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
@@ -321,4 +270,3 @@ export class TensegrityFabric {
         }
     }
 }
-

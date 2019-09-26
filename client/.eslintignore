@@ -2,3 +2,4 @@ scripts/
 config/
 build/
 public/
+fabric/index.ts

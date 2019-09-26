@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -5,7 +6,6 @@
 
 import { Color, Face3, Matrix4, Vector3 } from "three"
 
-import { SEED_CORNERS } from "../fabric/fabric-engine"
 import { HUNG_ALTITUDE, SPOT_TO_HANGER } from "../fabric/gotchi-body"
 import { MeshKey } from "../view/selector"
 
@@ -78,6 +78,7 @@ export class Spot implements ISpot {
     }
 
     public addSeed(rotation: number, meshKey: MeshKey, vertices: Vector3[], faces: Face3[]): void {
+        const SEED_CORNERS = 5 // TODO: get rid of the seed
         const toTransform: Vector3[] = []
         const hanger = new Vector3(0, HUNG_ALTITUDE, 0)
         const offset = vertices.length

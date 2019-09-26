@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -33,6 +34,7 @@ export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow"
 export const SURFACE = new MeshPhongMaterial({
     color: new Color("silver"),
     lights: true,
+    side: DoubleSide,
     opacity: 0.25,
     transparent: true,
 })

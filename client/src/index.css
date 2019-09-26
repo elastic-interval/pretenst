@@ -144,12 +144,12 @@ p a, p a:hover {
 }
 
 .command-button {
-    padding : .2rem;
+    padding: .2rem;
     margin: .2rem;
 }
 
 .about-dropdown {
-    padding : .2rem;
+    padding: .2rem;
     margin: .21rem;
     float: right;
 }
@@ -199,34 +199,46 @@ p a, p a:hover {
     margin-right: 10px;
 }
 
-.btn-primary,.btn-danger {
+.btn-primary, .btn-danger {
     margin: 3px;
-}
-
-.feature-value {
-    text-align: right;
-    display: inline-block;
-    width: 60%;
-    border-style: solid;
-    border-color: black;
-}
-
-.physics-button-group {
-    width: 100%;
-}
-
-.physics-adjust-button {
-    margin: 2px;
-    padding: 1px;
 }
 
 .physics-panel {
     text-align: left;
-    background-color: white;
     position: absolute;
-    top: 0;
-    right: 0;
+    top: 1em;
+    right: 1em;
     height: auto;
     width: auto;
     padding: 10px;
 }
+
+.physics-feature {
+    color: white;
+    margin-top: 0.1em;
+}
+
+.physics-factor {
+    font-family: monospace;
+    font-size: large;
+    padding: 0.4em;
+}
+
+.physics-factor-adjusted {
+    color: orange;
+}
+
+.new-fabric-panel {
+    position: absolute;
+    left: 1em;
+    top: 1em;
+}
+
+.bottom-container {
+    position: absolute;
+    width: 100%;
+    bottom: 1em;
+    flex-flow: row nowrap;
+    align-content: center;
+}
+

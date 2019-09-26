@@ -51,6 +51,7 @@ export interface IFace {
     brick: IBrick
     triangle: Triangle
     joints: IJoint[]
+    bars: IInterval[]
     cables: IInterval[]
 }
 
@@ -101,7 +102,7 @@ export interface ITriangleDefinition {
     ring: Ring
 }
 
-export const TRIANGLE_ARRAY: ITriangleDefinition[] = [
+export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
     {
         name: Triangle.NNN, opposite: Triangle.PPP, negative: true, ring: Ring.NN,
         barEnds: [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA], ringMember: [Ring.NP, Ring.PN, Ring.PP],
@@ -152,14 +153,39 @@ export interface IConnector {
 }
 
 export interface IGrowthTree {
-    forward?: IGrowthTree,
-    turnA?: IGrowthTree,
-    turnB?: IGrowthTree,
-    turnC?: IGrowthTree,
-    brick?: IBrick,
+    forward?: IGrowthTree
+    turnA?: IGrowthTree
+    turnB?: IGrowthTree
+    turnC?: IGrowthTree
+    brick?: IBrick
 }
 
 export interface IGrowth {
     growing: IGrowthTree []
     optimizationStack: string[]
+}
+
+export enum Selectable {
+    JOINT = "Joint",
+    BAR = "Bar",
+    CABLE = "Cable",
+}
+
+export interface ISelection {
+    readonly selectable?: Selectable
+    readonly selectedFace?: IFace
+    readonly selectedJoint?: IJoint
+    readonly selectedInterval?: IInterval
+}
+
+export function facePartSelectable(selection: ISelection): boolean {
+    return (
+        selection.selectable === Selectable.BAR ||
+        selection.selectable === Selectable.CABLE ||
+        selection.selectable === Selectable.JOINT
+    )
+}
+
+export function selectionActive(selection: ISelection): boolean {
+    return !(!selection.selectable && !selection.selectedFace && !selection.selectedJoint && !selection.selectedInterval)
 }

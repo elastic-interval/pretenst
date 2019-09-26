@@ -90,10 +90,6 @@ export class Jockey {
         return this.gotchi.age
     }
 
-    public get gestating(): boolean {
-        return this.fabric.isGestating
-    }
-
     public get fabric(): GotchiBody {
         return this.gotchi.body
     }

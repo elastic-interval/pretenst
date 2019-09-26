@@ -4,131 +4,80 @@
  */
 
 import * as React from "react"
-import { FaChevronDown } from "react-icons/all"
-import { Badge, Button, ButtonGroup, Col, Collapse, Container, Row } from "reactstrap"
-import { Subscription } from "rxjs"
+import { useEffect, useState } from "react"
+import { FaArrowDown, FaArrowUp, FaSlidersH } from "react-icons/all"
+import { Button, ButtonGroup, Col, Collapse, Container, Row } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { FabricInstance } from "../fabric/fabric-kernel"
 import { IPhysicsFeature, Physics } from "../fabric/physics"
 
-export interface IPhysicsPanelProps {
-    physics: Physics
-    engine: IFabricEngine
-    instance: FabricInstance
-}
+export function PhysicsPanel({engine, physics, instance}: {
+    engine: IFabricEngine,
+    physics: Physics,
+    instance: FabricInstance,
+}): JSX.Element {
 
-export interface IPhysicsPanelState {
-    open: boolean
-}
+    const [open, setOpen] = useState<boolean>(false)
 
-export class PhysicsPanel extends React.Component<IPhysicsPanelProps, IPhysicsPanelState> {
-
-    constructor(props: IPhysicsPanelProps) {
-        super(props)
-        this.state = {
-            open: false,
-        }
-    }
-
-    public applyPhysics(): void {
-        this.props.physics.applyGlobal(this.props.engine)
-        this.props.physics.applyLocal(this.props.instance)
-    }
-
-    public toggleCollapse(): void {
-        this.setState({
-            open: !this.state.open,
+    function Factor({feature}: { feature: IPhysicsFeature }): JSX.Element {
+        const [factor, setFactor] = useState<string>(feature.factor$.getValue().toFixed(10))
+        useEffect(() => {
+            const subscription = feature.factor$.subscribe(newFactor => {
+                setFactor(newFactor.toFixed(10))
+            })
+            return () => {
+                subscription.unsubscribe()
+            }
         })
+        const atDefault = Math.abs(feature.factor$.getValue() - feature.defaultValue) < 0.00001
+        const className = "physics-factor" + (atDefault ? "" : " physics-factor-adjusted")
+        return <strong className={className}>{factor}</strong>
     }
 
-    public render(): JSX.Element {
-        return (
-            <div className="physics-panel flex flex-column">
-                <h3 className="col-12">
-                    <Button size="lg" block={true} onClick={() => this.toggleCollapse()}>
-                        Physics
-                        <FaChevronDown/>
-                    </Button>
-                </h3>
-                <Collapse isOpen={this.state.open}>
-                    <Container className="col-12">
-                        {this.props.physics.features.map(feature => {
-                            const setFactor = (factor?: number): void => {
-                                if (factor === undefined) {
-                                    feature.setFactor(feature.defaultValue)
-                                } else if (factor > 0) {
-                                    feature.setFactor(factor)
-                                }
-                                this.applyPhysics()
-                            }
-                            const change = 1 + (feature.isGlobal ? 0.1 : 0.01)
-                            return (
-                                <div key={feature.label}>
-                                    <Row>
-                                        <Badge color="secondary">{feature.label}</Badge>
-                                    </Row>
-                                    <Row>
-                                        <Col xs="6">
-                                            <ButtonGroup className="physics-button-group">
-                                                <Button className="physics-adjust-button" color="primary"
-                                                    onClick={() => {
-                                                        setFactor(feature.factor$.getValue() * change)
-                                                    }}>⨉</Button>
-                                                <Button className="physics-adjust-button" color="primary"
-                                                    onClick={() => {
-                                                        setFactor(feature.factor$.getValue() / change)
-                                                    }}>÷</Button>
-                                                <Button className="physics-adjust-button" color="danger"
-                                                    onClick={() => {
-                                                        setFactor(undefined)
-                                                    }}>=</Button>
-                                            </ButtonGroup>
-                                        </Col>
-                                        <Col xs="6">
-                                            <FactorBadge feature={feature}/>
-                                        </Col>
-                                    </Row>
-                                </div>
-                            )
-                        })}
-                    </Container>
-                </Collapse>
-            </div>
-        )
-    }
-}
-
-interface IBadgeProps {
-    feature: IPhysicsFeature
-}
-
-interface IBadgeState {
-    formattedValue: string
-}
-
-class FactorBadge extends React.Component<IBadgeProps, IBadgeState> {
-
-    private subscription: Subscription
-
-    constructor(props: IBadgeProps) {
-        super(props)
-        this.state = {formattedValue: "?"}
-    }
-
-    public componentDidMount(): void {
-        this.subscription = this.props.feature.factor$.subscribe(factor => {
-            this.setState({formattedValue: factor.toFixed(10)})
-        })
-    }
-
-    public componentWillUnmount(): void {
-        this.subscription.unsubscribe()
-    }
-
-    public render(): JSX.Element {
-        return (
-            <Badge color="light">{this.state.formattedValue}</Badge>
-        )
-    }
+    return (
+        <div className="physics-panel flex flex-column">
+            <Button block={true} onClick={() => setOpen(!open)}><FaSlidersH/></Button>
+            <Collapse isOpen={open}>
+                {physics.features.map(feature => {
+                    const setFactor = (factor?: number): void => {
+                        if (factor === undefined) {
+                            feature.setFactor(feature.defaultValue)
+                        } else if (factor > 0) {
+                            feature.setFactor(factor)
+                        }
+                        physics.applyGlobalFeatures(engine)
+                        feature.apply(instance)
+                    }
+                    const change = 1 + (feature.isGlobal ? 0.1 : 0.01)
+                    return (
+                        <div key={feature.label} className="physics-feature">
+                            <Container>
+                                <Row>
+                                    <Col>
+                                        {feature.label}
+                                    </Col>
+                                </Row>
+                                <Row>
+                                    <Col>
+                                        <ButtonGroup>
+                                            <Button size="sm" onClick={() => {
+                                                setFactor(feature.factor$.getValue() / change)
+                                            }}> <FaArrowDown/></Button>
+                                            <Button size="sm" onClick={() => {
+                                                setFactor(feature.factor$.getValue() * change)
+                                            }}><FaArrowUp/></Button>
+                                            <Button size="sm" onClick={() => {
+                                                setFactor(undefined)
+                                            }}><Factor feature={feature}/></Button>
+                                        </ButtonGroup>
+                                    </Col>
+                                </Row>
+                            </Container>
+                        </div>
+                    )
+                })}
+            </Collapse>
+        </div>
+    )
 }

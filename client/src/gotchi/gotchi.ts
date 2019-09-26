@@ -20,6 +20,7 @@ export interface IGotchiFactory {
     copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi | undefined
 }
 
+
 export class Gotchi {
     private growthStarted = false
     private growth?: Growth
@@ -30,7 +31,8 @@ export class Gotchi {
         private genome: Genome,
         private gotchiFactory: IGotchiFactory,
     ) {
-        if (body.isGestating) {
+        const bodyIsBusy = true
+        if (bodyIsBusy) {
             this.growth = new Growth(body, genome.createReader(FabricState.Rest))
         } else {
             if (body.nextState !== FabricState.Rest) {

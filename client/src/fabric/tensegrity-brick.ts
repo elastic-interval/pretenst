@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -18,7 +19,7 @@ import {
     IInterval,
     IJoint,
     Triangle,
-    TRIANGLE_ARRAY,
+    TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
@@ -41,8 +42,8 @@ function createBrickPointsOnOrigin(base: Triangle, altitude: number, scale: numb
     }
     const points = BAR_ARRAY.reduce(barsToPoints, [])
     points.forEach(point => point.multiplyScalar(scale))
-    const newBase = TRIANGLE_ARRAY[base].opposite
-    const trianglePoints = TRIANGLE_ARRAY[newBase].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
+    const newBase = TRIANGLE_DEFINITIONS[base].opposite
+    const trianglePoints = TRIANGLE_DEFINITIONS[newBase].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
     const y = new Vector3().sub(midpoint).normalize()
@@ -68,7 +69,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: 
     fabric.joints.push(...joints)
     const brick: IBrick = {base: baseTriangle, fabric, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
     const role = IntervalRole.Triangle
-    TRIANGLE_ARRAY.forEach(triangle => {
+    TRIANGLE_DEFINITIONS.forEach(triangle => {
         const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
             const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role)
@@ -76,7 +77,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: 
             brick.rings[triangle.ringMember[walk]].push(interval)
         }
     })
-    TRIANGLE_ARRAY.forEach(triangle => {
+    TRIANGLE_DEFINITIONS.forEach(triangle => {
         const face = fabric.createFace(brick, triangle.name)
         brick.faces.push(face)
     })
@@ -90,6 +91,7 @@ export function createBrickOnOrigin(fabric: TensegrityFabric, altitude: number):
 }
 
 export function createBrickOnFace(face: IFace): IBrick {
+    const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
     const brick = face.brick
     const triangle = face.triangle
     const trianglePoints = brick.faces[triangle].joints.map(joint => brick.fabric.instance.getJointLocation(joint.index))
@@ -100,10 +102,12 @@ export function createBrickOnFace(face: IFace): IBrick {
     const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
     const z = u.sub(proj).normalize()
     const y = new Vector3().crossVectors(z, x).normalize()
-    const xform= new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-    const points = createBrickPointsOnOrigin(Triangle.PPP, 0.8, 1.0)
+    const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+    const base = negativeFace ? Triangle.NNN : Triangle.PPP
+    const points = createBrickPointsOnOrigin(base, 0.8, 1.0)
     const movedToFace = points.map(p => p.applyMatrix4(xform))
-    return createBrick(brick.fabric, movedToFace, Triangle.NNN)
+    const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
+    return createBrick(brick.fabric, movedToFace, baseTriangle)
 }
 
 interface IJointPair {
@@ -115,8 +119,8 @@ interface IJointPair {
 }
 
 function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoint[] {
-    const jointsA: IJoint[] = TRIANGLE_ARRAY[faceA.triangle].barEnds.map(barEnd => faceA.brick.joints[barEnd])
-    const jointsB: IJoint[] = TRIANGLE_ARRAY[faceB.triangle].barEnds.map(barEnd => faceB.brick.joints[barEnd])
+    const jointsA: IJoint[] = TRIANGLE_DEFINITIONS[faceA.triangle].barEnds.map(barEnd => faceA.brick.joints[barEnd])
+    const jointsB: IJoint[] = TRIANGLE_DEFINITIONS[faceB.triangle].barEnds.map(barEnd => faceB.brick.joints[barEnd])
     const jointPairs: IJointPair[] = []
     jointsA.forEach(jointA => {
         jointsB.forEach(jointB => {
@@ -147,7 +151,7 @@ function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoi
             takeA = true
         }
     }
-    if (TRIANGLE_ARRAY[faceA.triangle].negative) {
+    if (TRIANGLE_DEFINITIONS[faceA.triangle].negative) {
         ring.reverse()
     }
     return ring
@@ -184,10 +188,10 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         const triangle = faceToRemove.triangle
         const brick = faceToRemove.brick
         const face = brick.faces[triangle]
-        TRIANGLE_ARRAY.filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_ARRAY[triangle].negative).forEach(t => {
+        TRIANGLE_DEFINITIONS.filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_DEFINITIONS[triangle].negative).forEach(t => {
             brick.faces[t.name].canGrow = false
         })
-        const triangleRing = TRIANGLE_ARRAY[triangle].ring
+        const triangleRing = TRIANGLE_DEFINITIONS[triangle].ring
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
             fabric.instance.changeRestIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
         })
@@ -218,8 +222,11 @@ export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
             throw new Error()
         }
         const grow = (next: IGrowthTree | undefined, triangle: Triangle) => {
-            if (!next || Object.keys(next).length === 0) {
+            if (!next) {
                 return
+            }
+            if (brick.base === Triangle.PPP) {
+                triangle = TRIANGLE_DEFINITIONS[triangle].opposite
             }
             next.brick = createConnectedBrick(brick, triangle)
             after.push(next)
@@ -233,17 +240,20 @@ export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
 }
 
 export function parseConstructionCode(constructionCode: string): IGrowth {
-    function parseBetween(between: string): { turnA: string, turnB: string, turnC: string } {
+    function parseBetween(between: string): { turnA?: string, turnB?: string, turnC?: string } {
+        if (between.length === 0) {
+            return {}
+        }
         const equalsIndex = between.indexOf("=")
         if (equalsIndex === 1) {
             const afterEquals = between.substring(2)
             switch (between.charAt(0)) {
                 case "1":
-                    return {turnA: afterEquals, turnB: "0", turnC: "0"}
+                    return {turnA: afterEquals}
                 case "2":
-                    return {turnA: "0", turnB: afterEquals, turnC: "0"}
+                    return {turnB: afterEquals}
                 case "3":
-                    return {turnA: "0", turnB: "0", turnC: afterEquals}
+                    return {turnC: afterEquals}
                 default:
                     throw new Error("Syntax")
             }
@@ -272,27 +282,39 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
         }
     }
 
-    function parseCommands(commands: string): IGrowthTree {
+    function parseCommands(reduce: boolean, commands?: string): IGrowthTree | undefined {
+        if (!commands) {
+            return undefined
+        }
         const command = commands.charAt(0)
-        if (command === "0" || command === "[") {
-            if (commands.length === 1) {
-                return {}
+        if (reduce && command <= "9") {
+            const forwardCount = parseInt(command, 10)
+            const nextCount = forwardCount - 1
+            if (nextCount < 0) {
+                return undefined
             }
-            if (commands.charAt(1) !== "[" && command !== "[") {
+            return parseCommands(false, nextCount.toString() + commands.substr(1))
+        }
+        if (command === "0") {
+            if (commands.length > 1 && commands.charAt(1) !== "[") {
                 throw new Error("Open")
             }
             const lastClose = commands.lastIndexOf("]")
-            if (lastClose !== commands.length - 1) {
+            if (lastClose >= 0 && lastClose !== commands.length - 1) {
                 throw new Error("Close")
             }
-            const between = commands.substring(2, lastClose)
+            const between = commands.substring(2, lastClose >= 0 ? lastClose : undefined)
             const {turnA, turnB, turnC} = parseBetween(between)
-            return {turnA: parseCommands(turnA), turnB: parseCommands(turnB), turnC: parseCommands(turnC)}
+            return {
+                turnA: parseCommands(true, turnA),
+                turnB: parseCommands(true, turnB),
+                turnC: parseCommands(true, turnC),
+            }
         }
         if (command >= "1" && command <= "9") {
-            const forwardCount = parseInt(command, 10)
-            const nextCount = (forwardCount - 1).toString(10)
-            return {forward: parseCommands(nextCount.toString() + commands.substr(1))}
+            const nextTree = parseCommands(true, commands)
+            const forward = nextTree ? nextTree : {}
+            return {forward}
         }
         throw new Error("Syntax error: " + command)
     }
@@ -300,10 +322,10 @@ export function parseConstructionCode(constructionCode: string): IGrowth {
     const endOfCommands = constructionCode.lastIndexOf("]")
     const commandEndIndex = endOfCommands < 0 ? constructionCode.length : endOfCommands
     const commandString = constructionCode.substring(0, commandEndIndex + 1)
-    const growthTree = parseCommands(commandString)
+    const growthTree = parseCommands(false, commandString)
+    const growing: IGrowthTree[] = growthTree ? [growthTree] : [{}]
     const optimizationStack = constructionCode.substring(commandEndIndex + 1).split("").reverse()
-    // const optimizations = (commandString.length === constructionCode.length) ? [] : constructionCode.substring(commandEndIndex + 1).split("")
-    return {growing: [growthTree], optimizationStack}
+    return {growing, optimizationStack}
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {

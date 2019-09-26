@@ -30,6 +30,16 @@ export interface IPhysicsFeature {
     setFactor: (factor: number) => void
     factor$: BehaviorSubject<number>
     defaultValue: number
+    apply: (instance: FabricInstance) => void
+}
+
+function applyFeature(instance: FabricInstance, feature: IPhysicsFeature): void {
+    const intervalRole = feature.name.intervalRole
+    if (intervalRole === undefined) {
+        return
+    }
+    const factor = feature.factor$.getValue()
+    instance.setRoleLength(intervalRole, factor)
 }
 
 export interface IPhysicsFeatureStorage {
@@ -56,7 +66,7 @@ export class Physics {
         return this.featuresArray
     }
 
-    public applyGlobal(engine: IFabricEngine): object {
+    public applyGlobalFeatures(engine: IFabricEngine): object {
         const featureValues = {}
         this.featuresArray.forEach(feature => {
             const globalFeature = feature.name.globalFeature
@@ -69,7 +79,7 @@ export class Physics {
         return featureValues
     }
 
-    public acquireLocal(instance: FabricInstance): void {
+    public acquireLocalFeatures(instance: FabricInstance): void {
         this.featuresArray.forEach(feature => {
             const intervalRole = feature.name.intervalRole
             if (intervalRole === undefined) {
@@ -83,22 +93,17 @@ export class Physics {
         })
     }
 
-    public applyLocal(instance: FabricInstance): void {
-        this.featuresArray.forEach(feature => {
-            const intervalRole = feature.name.intervalRole
-            if (intervalRole === undefined) {
-                return
-            }
-            const factor = feature.factor$.getValue()
-            instance.setRoleLength(intervalRole, factor)
-        })
+    public applyLocalFeatures(instance: FabricInstance): void {
+        this.featuresArray
+            .filter(feature => !!feature.name.intervalRole)
+            .forEach(feature => applyFeature(instance, feature))
     }
 
     private createFeature(name: IFeatureName): IPhysicsFeature {
         const label = nameLabel(name)
         const isGlobal = name.globalFeature !== undefined
         const factor = new BehaviorSubject<number>(this.getFeature(label, 1.0))
-        return {
+        const feature = {
             label,
             name,
             isGlobal,
@@ -110,7 +115,9 @@ export class Physics {
             },
             factor$: factor,
             defaultValue: isGlobal ? 1.0 : factor.getValue(),
+            apply: (instance: FabricInstance) => applyFeature(instance, feature),
         }
+        return feature
     }
 
     private getFeature(label: string, defaultValue: number): number {
