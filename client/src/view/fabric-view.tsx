@@ -40,7 +40,7 @@ const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopP
 
 const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
-const ALTITUDE = 6
+const ALTITUDE = 4
 
 export function FabricView({fabric, selection, setSelection}: {
     fabric: TensegrityFabric,
@@ -66,7 +66,7 @@ export function FabricView({fabric, selection, setSelection}: {
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = fabric.autoRotate
-        fabric.iterate(ITERATIONS_PER_FRAME)
+        fabric.iterate(selection.selectable ? 0 : ITERATIONS_PER_FRAME)
         setAge(fabric.instance.getAge())
     }
     useRender(render, true, [fabric, selection, age])

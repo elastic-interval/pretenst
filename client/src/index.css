@@ -224,6 +224,10 @@ p a, p a:hover {
     padding: 0.4em;
 }
 
+.physics-factor-adjusted {
+    color: orange;
+}
+
 .new-fabric-panel {
     position: absolute;
     left: 1em;

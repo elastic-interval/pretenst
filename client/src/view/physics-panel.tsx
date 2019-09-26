@@ -20,7 +20,7 @@ export function PhysicsPanel({engine, physics, instance}: {
 
     const [open, setOpen] = useState<boolean>(false)
 
-    function FactorButton({feature}: { feature: IPhysicsFeature }): JSX.Element {
+    function Factor({feature}: { feature: IPhysicsFeature }): JSX.Element {
         const [factor, setFactor] = useState<string>(feature.factor$.getValue().toFixed(10))
         useEffect(() => {
             const subscription = feature.factor$.subscribe(newFactor => {
@@ -30,7 +30,9 @@ export function PhysicsPanel({engine, physics, instance}: {
                 subscription.unsubscribe()
             }
         })
-        return <strong className="physics-factor">{factor}</strong>
+        const atDefault = Math.abs(feature.factor$.getValue() - feature.defaultValue) < 0.00001
+        const className = "physics-factor" + (atDefault ? "" : " physics-factor-adjusted")
+        return <strong className={className}>{factor}</strong>
     }
 
     return (
@@ -44,8 +46,8 @@ export function PhysicsPanel({engine, physics, instance}: {
                         } else if (factor > 0) {
                             feature.setFactor(factor)
                         }
-                        physics.applyGlobal(engine)
-                        physics.applyLocal(instance)
+                        physics.applyGlobalFeatures(engine)
+                        feature.apply(instance)
                     }
                     const change = 1 + (feature.isGlobal ? 0.1 : 0.01)
                     return (
@@ -67,7 +69,7 @@ export function PhysicsPanel({engine, physics, instance}: {
                                             }}><FaArrowUp/></Button>
                                             <Button size="sm" onClick={() => {
                                                 setFactor(undefined)
-                                            }}><FactorButton feature={feature}/></Button>
+                                            }}><Factor feature={feature}/></Button>
                                         </ButtonGroup>
                                     </Col>
                                 </Row>

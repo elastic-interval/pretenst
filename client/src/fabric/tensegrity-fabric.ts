@@ -224,7 +224,7 @@ export class TensegrityFabric {
                             break
                     }
                 } else {
-                    this.physics.applyLocal(this.instance)
+                    this.physics.applyLocalFeatures(this.instance)
                     this.growth = undefined
                 }
             }

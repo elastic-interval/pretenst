@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -56,7 +55,7 @@ async function start(): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
     const physics = new Physics({getPhysicsFeature, setPhysicsFeature})
     const fabricCache: Record<string, TensegrityFabric> = {}
-    physics.applyGlobal(engine)
+    physics.applyGlobalFeatures(engine)
     if (TENSEGRITY) {
         const dimensions: IFabricDimensions = {
             instanceMax: 30,
@@ -74,7 +73,7 @@ async function start(): Promise<void> {
             if (!newFabric) {
                 throw new Error()
             }
-            physics.acquireLocal(newFabric.instance)
+            physics.acquireLocalFeatures(newFabric.instance)
             fabricCache[name] = newFabric
             return newFabric
         }
