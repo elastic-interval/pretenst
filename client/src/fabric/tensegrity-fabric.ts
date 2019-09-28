@@ -60,6 +60,14 @@ export class TensegrityFabric {
         this.growth = growth
     }
 
+    public intervalsByStress(low: number, high: number): IInterval[] {
+        return this.intervals.filter(interval => {
+            const stress = this.instance.getIntervalStress(interval.index)
+            // console.log(`I${interval.index}`, stress)
+            return stress > low && stress < high
+        })
+    }
+
     public get growthFaces(): IFace[] {
         return this.faces.filter(f => f.canGrow)
     }

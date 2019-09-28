@@ -8,6 +8,7 @@ import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } fro
 import { Euler, Object3D, Quaternion, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
+import { IntervalRole } from "../fabric/fabric-engine"
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import { facePartSelectable, IInterval, ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -172,13 +173,14 @@ export function FabricView({fabric, selection, setSelection}: {
             return <group/>
         }
         const {scale, rotation} = orientInterval(selectedInterval)
+        const bar = selectedInterval.intervalRole === IntervalRole.Bar
         return (
             <mesh
                 geometry={SPHERE}
                 position={fabric.instance.getIntervalMidpoint(selectedInterval.index)}
                 scale={scale}
                 rotation={rotation}
-                material={TENSEGRITY_JOINT_CANNOT_GROW}
+                material={bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE}
             />
         )
     }
@@ -201,7 +203,7 @@ export function FabricView({fabric, selection, setSelection}: {
 
     function Faces(): JSX.Element {
         const meshRef = useRef<Object3D>()
-        const onPointerDown = () => {
+        const onClick = () => {
             if (facePartSelectable(selection)) {
                 return
             }
@@ -224,7 +226,7 @@ export function FabricView({fabric, selection, setSelection}: {
         return (
             <mesh
                 ref={meshRef}
-                onPointerDown={onPointerDown}
+                onClick={onClick}
                 geometry={fabric.facesGeometry}
                 material={TENSEGRITY_FACE}
             />
