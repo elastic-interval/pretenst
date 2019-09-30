@@ -1271,6 +1271,7 @@ export function iterate(ticks: u16): boolean {
         }
         let nextCountdown: u16 = busyCountdown - ticks
         if (nextCountdown > busyCountdown) { // rollover
+            setAltitude(0)
             nextCountdown = 0
         }
         setBusyCountdown(nextCountdown)

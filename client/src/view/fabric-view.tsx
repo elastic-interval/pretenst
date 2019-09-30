@@ -3,20 +3,24 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import React, { useRef, useState } from "react"
+import * as React from "react"
+import { useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { Euler, Object3D, Quaternion, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
+import { IntervalRole } from "../fabric/fabric-engine"
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import { facePartSelectable, IInterval, ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import {
+    TENSEGRITY_BAR,
+    TENSEGRITY_CABLE,
     TENSEGRITY_FACE,
     TENSEGRITY_JOINT,
     TENSEGRITY_JOINT_CAN_GROW,
-    TENSEGRITY_JOINT_SELECTED,
+    TENSEGRITY_JOINT_CANNOT_GROW,
     TENSEGRITY_LINE,
 } from "./materials"
 import { SurfaceComponent } from "./surface-component"
@@ -34,11 +38,11 @@ declare global {
     }
 }
 
-const SPHERE_RADIUS = 0.3
+const SPHERE_RADIUS = 0.35
 const SPHERE = new SphereGeometry(SPHERE_RADIUS, 16, 16)
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 const Y_AXIS = new Vector3(0, 1, 0)
-const JOINT_SCALE = new Vector3(0.7, 0.7, 0.7)
+const JOINT_SCALE = new Vector3(0.6, 0.6, 0.6)
 
 const ITERATIONS_PER_FRAME = 30
 const TOWARDS_TARGET = 0.01
@@ -93,7 +97,8 @@ export function FabricView({fabric, selection, setSelection}: {
         if ((selection.selectable !== Selectable.BAR && selection.selectable !== Selectable.CABLE) || !selectedFace) {
             return <>{undefined}</>
         }
-        const intervals = (selection.selectable === Selectable.BAR) ? selectedFace.bars : selectedFace.cables
+        const bar = selection.selectable === Selectable.BAR
+        const intervals = bar ? selectedFace.bars : selectedFace.cables
         return (
             <>
                 {intervals
@@ -107,7 +112,7 @@ export function FabricView({fabric, selection, setSelection}: {
                                 position={fabric.instance.getIntervalMidpoint(interval.index)}
                                 rotation={rotation}
                                 scale={scale}
-                                material={TENSEGRITY_JOINT}
+                                material={bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE}
                                 onPointerDown={() => setSelection({selectedInterval: interval})}
                                 onPointerUp={stopPropagation}
                             />
@@ -170,13 +175,14 @@ export function FabricView({fabric, selection, setSelection}: {
             return <group/>
         }
         const {scale, rotation} = orientInterval(selectedInterval)
+        const bar = selectedInterval.intervalRole === IntervalRole.Bar
         return (
             <mesh
                 geometry={SPHERE}
                 position={fabric.instance.getIntervalMidpoint(selectedInterval.index)}
                 scale={scale}
                 rotation={rotation}
-                material={TENSEGRITY_JOINT_SELECTED}
+                material={bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE}
             />
         )
     }
@@ -192,17 +198,14 @@ export function FabricView({fabric, selection, setSelection}: {
                 geometry={SPHERE}
                 position={fabric.instance.getJointLocation(selectedJoint.index)}
                 scale={JOINT_SCALE}
-                material={TENSEGRITY_JOINT_SELECTED}
+                material={TENSEGRITY_JOINT_CANNOT_GROW}
             />
         )
     }
 
     function Faces(): JSX.Element {
         const meshRef = useRef<Object3D>()
-        const onPointerDown = () => {
-            if (facePartSelectable(selection)) {
-                return
-            }
+        const onClick = () => {
             const mesh = meshRef.current
             if (!mesh) {
                 return
@@ -216,13 +219,13 @@ export function FabricView({fabric, selection, setSelection}: {
             })
             const topFace = faces.reverse().pop()
             if (topFace) {
-                setSelection({selectedFace: topFace})
+                setSelection({selectable: Selectable.FACE, selectedFace: topFace})
             }
         }
         return (
             <mesh
                 ref={meshRef}
-                onPointerDown={onPointerDown}
+                onClick={onClick}
                 geometry={fabric.facesGeometry}
                 material={TENSEGRITY_FACE}
             />

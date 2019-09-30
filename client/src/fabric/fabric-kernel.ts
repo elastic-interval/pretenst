@@ -359,6 +359,10 @@ export class FabricInstance {
         return vectorFromFloatArray(this.intervalUnits.floats, intervalIndex * 3)
     }
 
+    public getIntervalStress(intervalIndex: number): number {
+        return this.intervalStresses.floats[intervalIndex]
+    }
+
     public getFaceLocations(): Float32Array {
         return this.faceLocations.floats
     }

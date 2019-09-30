@@ -53,15 +53,25 @@ export const TENSEGRITY_FACE = new MeshPhongMaterial({
 
 export const TENSEGRITY_JOINT = new MeshPhongMaterial({
     lights: true,
-    color: new Color("darkslateblue"),
+    color: new Color("rebeccapurple"),
 })
 
-export const TENSEGRITY_JOINT_SELECTED = new MeshPhongMaterial({
+export const TENSEGRITY_BAR = new MeshPhongMaterial({
     lights: true,
-    color: new Color("darkslateblue"),
+    color: new Color("darkred"),
+})
+
+export const TENSEGRITY_CABLE = new MeshPhongMaterial({
+    lights: true,
+    color: new Color("mediumblue"),
+})
+
+export const TENSEGRITY_JOINT_CANNOT_GROW = new MeshPhongMaterial({
+    lights: true,
+    color: new Color("turquoise"),
 })
 
 export const TENSEGRITY_JOINT_CAN_GROW = new MeshPhongMaterial({
     lights: true,
-    color: new Color("green"),
+    color: new Color("forestgreen"),
 })

@@ -4,7 +4,6 @@
  */
 
 html {
-    background-color: black;
     height: 100%;
 }
 
@@ -14,11 +13,30 @@ body {
     height: 100%;
 }
 
+a, a:hover {
+    color: orange;
+}
+
 .the-whole-page {
-    top: 0;
-    text-align: center;
     background-color: black;
-    width: 100%;
+    top: 0;
+    width: auto;
+    height: 100%;
+}
+
+.left-panel {
+    display: block;
+    color: white;
+    background-color: #242628;
+    width: 18em;
+    height: 100%;
+}
+
+.middle-panel {
+    position: absolute;
+    top: 0;
+    left: 18em;
+    right: 0;
     height: 100%;
 }
 
@@ -28,11 +46,6 @@ body {
     padding: 15px;
     margin-top: 3%;
     width: 340px;
-}
-
-p a, p a:hover {
-    color: #ff8582;
-    text-decoration: none;
 }
 
 .btn-link {
@@ -112,16 +125,6 @@ p a, p a:hover {
     display: block;
 }
 
-.card {
-    text-align: left;
-    background-color: black;
-    color: white;
-    border-width: 2px;
-    border-style: solid;
-    padding: 10px;
-    margin-top: 15px;
-    margin-bottom: 5px;
-}
 
 .dropdown-menu {
     background-color: black;
@@ -192,53 +195,22 @@ p a, p a:hover {
     max-height: 100%;
 }
 
-.feature-prompt {
-    display: inline-block;
-    text-align: right;
-    font-weight: bold;
-    margin-right: 10px;
-}
-
 .btn-primary, .btn-danger {
     margin: 3px;
 }
 
 .physics-panel {
-    text-align: left;
-    position: absolute;
-    top: 1em;
-    right: 1em;
-    height: auto;
-    width: auto;
-    padding: 10px;
+    font-size: small;
 }
 
 .physics-feature {
     color: white;
-    margin-top: 0.1em;
 }
 
 .physics-factor {
     font-family: monospace;
-    font-size: large;
-    padding: 0.4em;
 }
 
 .physics-factor-adjusted {
     color: orange;
 }
-
-.new-fabric-panel {
-    position: absolute;
-    left: 1em;
-    top: 1em;
-}
-
-.bottom-container {
-    position: absolute;
-    width: 100%;
-    bottom: 1em;
-    flex-flow: row nowrap;
-    align-content: center;
-}
-
