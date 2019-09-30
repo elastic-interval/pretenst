@@ -16,6 +16,15 @@ import { GlobalFabricPanel } from "./global-fabric-panel"
 import { PhysicsPanel } from "./physics-panel"
 import { TensegrityEditPanel } from "./tensegrity-edit-panel"
 
+enum TabName {
+    Global = "Global",
+    Physics = "Physics",
+    Edit = "Edit",
+}
+
+const TABS = Object.keys(TabName).map(key => TabName[key])
+// const tabs = [TabName.Global, TabName.Physics, TabName.Edit]
+
 export function TensegrityControl({engine, physics, fabric, constructFabric, selection, setSelection}: {
     engine: IFabricEngine,
     physics: Physics,
@@ -25,10 +34,10 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
     setSelection: (s: ISelection) => void,
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState("1")
+    const [activeTab, setActiveTab] = useState<TabName>(TabName.Global)
 
     useEffect(() => {
-        if (activeTab === "3") {
+        if (activeTab === TabName.Edit) {
             setSelection({...selection, selectable: Selectable.FACE})
         } else {
             setSelection({selectable: undefined})
@@ -36,46 +45,38 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
     }, [activeTab])
 
     useEffect(() => {
-        if (activeTab !== "3" && selection.selectable) {
-            setActiveTab("3")
+        if (activeTab !== TabName.Edit && selection.selectable) {
+            setActiveTab(TabName.Edit)
         }
     }, [selection])
 
     return (
         <div>
             <Nav tabs={true}>
-                <NavItem>
-                    <NavLink active={activeTab === "1"} onClick={() => setActiveTab("1")}>
-                        Global
-                    </NavLink>
-                </NavItem>
-                <NavItem>
-                    <NavLink active={activeTab === "2"} onClick={() => setActiveTab("2")}>
-                        Physics
-                    </NavLink>
-                </NavItem>
-                <NavItem>
-                    <NavLink active={activeTab === "3"} onClick={() => setActiveTab("3")}>
-                        Edit
-                    </NavLink>
-                </NavItem>
+                {TABS.map(tab => (
+                    <NavItem key={tab}>
+                        <NavLink active={activeTab === tab} onClick={() => setActiveTab(tab)}>
+                            {tab}
+                        </NavLink>
+                    </NavItem>
+                ))}
             </Nav>
             <TabContent activeTab={activeTab}>
-                <TabPane tabId="1">
+                <TabPane tabId={TabName.Global}>
                     <GlobalFabricPanel
                         constructFabric={constructFabric}
                         fabric={fabric}
                         cancelSelection={() => setSelection({})}
                     />
                 </TabPane>
-                <TabPane tabId="2">
+                <TabPane tabId={TabName.Physics}>
                     <PhysicsPanel
                         engine={engine}
                         physics={physics}
                         fabric={fabric}
                     />
                 </TabPane>
-                <TabPane tabId="3">
+                <TabPane tabId={TabName.Edit}>
                     <TensegrityEditPanel
                         fabric={fabric}
                         selection={selection}
