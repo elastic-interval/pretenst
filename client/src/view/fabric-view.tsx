@@ -3,7 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import React, { useRef, useState } from "react"
+import * as React from "react"
+import { useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { Euler, Object3D, Quaternion, SphereGeometry, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
@@ -14,7 +15,8 @@ import { facePartSelectable, IInterval, ISelection, Selectable } from "../fabric
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import {
-    TENSEGRITY_BAR, TENSEGRITY_CABLE,
+    TENSEGRITY_BAR,
+    TENSEGRITY_CABLE,
     TENSEGRITY_FACE,
     TENSEGRITY_JOINT,
     TENSEGRITY_JOINT_CAN_GROW,
@@ -204,9 +206,6 @@ export function FabricView({fabric, selection, setSelection}: {
     function Faces(): JSX.Element {
         const meshRef = useRef<Object3D>()
         const onClick = () => {
-            if (facePartSelectable(selection)) {
-                return
-            }
             const mesh = meshRef.current
             if (!mesh) {
                 return

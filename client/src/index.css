@@ -4,7 +4,6 @@
  */
 
 html {
-    background-color: black;
     height: 100%;
 }
 
@@ -15,10 +14,23 @@ body {
 }
 
 .the-whole-page {
-    top: 0;
-    text-align: center;
     background-color: black;
-    width: 100%;
+    top: 0;
+    width: auto;
+    height: 100%;
+}
+
+.left-panel {
+    display: block;
+    width: 14em;
+    height: 100%;
+}
+
+.middle-panel {
+    position: absolute;
+    top: 0;
+    left: 14em;
+    right: 0;
     height: 100%;
 }
 
@@ -28,11 +40,6 @@ body {
     padding: 15px;
     margin-top: 3%;
     width: 340px;
-}
-
-p a, p a:hover {
-    color: #ff8582;
-    text-decoration: none;
 }
 
 .btn-link {
@@ -204,34 +211,19 @@ p a, p a:hover {
 }
 
 .physics-panel {
-    text-align: left;
-    position: absolute;
-    top: 1em;
-    right: 1em;
-    height: auto;
-    width: auto;
-    padding: 10px;
+    font-size: small;
 }
 
 .physics-feature {
     color: white;
-    margin-top: 0.1em;
 }
 
 .physics-factor {
     font-family: monospace;
-    font-size: large;
-    padding: 0.4em;
 }
 
 .physics-factor-adjusted {
     color: orange;
-}
-
-.new-fabric-panel {
-    position: absolute;
-    left: 1em;
-    top: 1em;
 }
 
 .bottom-container {
@@ -241,4 +233,3 @@ p a, p a:hover {
     flex-flow: row nowrap;
     align-content: center;
 }
-

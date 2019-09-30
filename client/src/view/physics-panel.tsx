@@ -5,8 +5,8 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaSlidersH } from "react-icons/all"
-import { Button, ButtonGroup, Col, Collapse, Container, Row } from "reactstrap"
+import { FaArrowDown, FaArrowUp } from "react-icons/all"
+import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { FabricInstance } from "../fabric/fabric-kernel"
@@ -17,8 +17,6 @@ export function PhysicsPanel({engine, physics, instance}: {
     physics: Physics,
     instance: FabricInstance,
 }): JSX.Element {
-
-    const [open, setOpen] = useState<boolean>(false)
 
     function Factor({feature}: { feature: IPhysicsFeature }): JSX.Element {
         const [factor, setFactor] = useState<string>(feature.factor$.getValue().toFixed(10))
@@ -37,9 +35,8 @@ export function PhysicsPanel({engine, physics, instance}: {
 
     return (
         <div className="physics-panel flex flex-column">
-            <Button block={true} onClick={() => setOpen(!open)}><FaSlidersH/></Button>
-            <Collapse isOpen={open}>
-                {physics.features.map(feature => {
+            {
+                physics.features.map(feature => {
                     const setFactor = (factor?: number): void => {
                         if (factor === undefined) {
                             feature.setFactor(feature.defaultValue)
@@ -51,33 +48,29 @@ export function PhysicsPanel({engine, physics, instance}: {
                     }
                     const change = 1 + (feature.isGlobal ? 0.1 : 0.01)
                     return (
-                        <div key={feature.label} className="physics-feature">
-                            <Container>
-                                <Row>
-                                    <Col>
-                                        {feature.label}
-                                    </Col>
-                                </Row>
-                                <Row>
-                                    <Col>
-                                        <ButtonGroup>
-                                            <Button size="sm" onClick={() => {
-                                                setFactor(feature.factor$.getValue() / change)
-                                            }}> <FaArrowDown/></Button>
-                                            <Button size="sm" onClick={() => {
-                                                setFactor(feature.factor$.getValue() * change)
-                                            }}><FaArrowUp/></Button>
-                                            <Button size="sm" onClick={() => {
-                                                setFactor(undefined)
-                                            }}><Factor feature={feature}/></Button>
-                                        </ButtonGroup>
-                                    </Col>
-                                </Row>
-                            </Container>
-                        </div>
+                        <Container key={feature.label} className="physics-feature no-gutters">
+                            <Row noGutters={true}>
+                                <Col xs={{size: 9}}>
+                                    <Button onClick={() => setFactor(undefined)} className="w-100">
+                                        <div className="small">{feature.label}</div>
+                                        <Factor feature={feature}/>
+                                    </Button>
+                                </Col>
+                                <Col xs={{size: 3}} className="align-self-center">
+                                    <ButtonGroup>
+                                        <Button size="sm" onClick={() => {
+                                            setFactor(feature.factor$.getValue() * change)
+                                        }}><FaArrowUp/></Button>
+                                        <Button size="sm" onClick={() => {
+                                            setFactor(feature.factor$.getValue() / change)
+                                        }}> <FaArrowDown/></Button>
+                                    </ButtonGroup>
+                                </Col>
+                            </Row>
+                        </Container>
                     )
-                })}
-            </Collapse>
+                })
+            }
         </div>
     )
 }

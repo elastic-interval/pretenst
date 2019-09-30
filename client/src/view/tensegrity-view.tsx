@@ -16,8 +16,7 @@ import { loadFabricCode, loadStorageIndex } from "../storage/local-storage"
 
 import { BuildingPanel } from "./building-panel"
 import { FabricView } from "./fabric-view"
-import { GlobalFabricPanel } from "./global-fabric-panel"
-import { PhysicsPanel } from "./physics-panel"
+import { TensegrityControl } from "./tensegrity-control"
 
 extend({OrbitControls})
 
@@ -39,6 +38,8 @@ export function TensegrityView({engine, getFabric, physics}: {
     getFabric: (name: string) => TensegrityFabric,
     physics: Physics,
 }): JSX.Element {
+
+    // const [open, setOpen] = useState<boolean>(false) todo maybe
 
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selection, setSelection] = useState<ISelection>({})
@@ -64,19 +65,25 @@ export function TensegrityView({engine, getFabric, physics}: {
     }
 
     return (
-        <div tabIndex={1} id="tensegrity-view" className="the-whole-page">
-            <Canvas>
-                {!fabric ? undefined : <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
-            </Canvas>
-            <GlobalFabricPanel fabric={fabric}
-                               constructFabric={constructFabric}
-                               cancelSelection={() => setSelection({})}/>
-            {!fabric ? undefined :
-                <PhysicsPanel physics={physics} engine={engine} instance={fabric.instance}/>
-            }
-            {!fabric ? undefined :
-                <BuildingPanel fabric={fabric} selection={selection} setSelection={setSelection}/>
-            }
+        <div className="the-whole-page">
+            <div className="left-panel">
+                <TensegrityControl
+                    engine={engine}
+                    physics={physics}
+                    fabric={fabric}
+                    constructFabric={constructFabric}
+                    cancelSelection={() => setSelection({})}
+                />
+            </div>
+            <div id="tensegrity-view" className="middle-panel">
+                <Canvas>
+                    {!fabric ? undefined :
+                        <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
+                </Canvas>
+                {!fabric ? undefined :
+                    <BuildingPanel fabric={fabric} selection={selection} setSelection={setSelection}/>
+                }
+            </div>
         </div>
     )
 }
