@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -50,16 +51,16 @@ export function PhysicsPanel({engine, physics, fabric}: {
                     }
                     const change = 1 + (feature.isGlobal ? 0.1 : 0.01)
                     return (
-                        <Container key={feature.label} className="physics-feature no-gutters">
+                        <Container key={feature.label} className="physics-feature no-gutters my-1">
                             <Row noGutters={true}>
                                 <Col xs={{size: 9}}>
-                                    <Button onClick={() => setFactor(undefined)} className="w-100">
+                                    <Button onClick={() => setFactor(undefined)} className="w-100 border-info">
                                         <div className="small">{feature.label}</div>
                                         <Factor feature={feature}/>
                                     </Button>
                                 </Col>
-                                <Col xs={{size: 3}} className="align-self-center">
-                                    <ButtonGroup>
+                                <Col xs={{size: 3}}>
+                                    <ButtonGroup className="h-100">
                                         <Button className="border-info" size="sm" onClick={() => {
                                             setFactor(feature.factor$.getValue() * change)
                                         }}><FaArrowUp/></Button>

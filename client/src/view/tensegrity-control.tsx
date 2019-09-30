@@ -23,7 +23,6 @@ enum TabName {
 }
 
 const TABS = Object.keys(TabName).map(key => TabName[key])
-// const tabs = [TabName.Global, TabName.Physics, TabName.Edit]
 
 export function TensegrityControl({engine, physics, fabric, constructFabric, selection, setSelection}: {
     engine: IFabricEngine,
@@ -55,7 +54,7 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
             <Nav tabs={true}>
                 {TABS.map(tab => (
                     <NavItem key={tab}>
-                        <NavLink active={activeTab === tab} onClick={() => setActiveTab(tab)}>
+                        <NavLink href="#" active={activeTab === tab} onClick={() => setActiveTab(tab)}>
                             {tab}
                         </NavLink>
                     </NavItem>

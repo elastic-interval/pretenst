@@ -13,6 +13,10 @@ body {
     height: 100%;
 }
 
+a, a:hover {
+    color: orange;
+}
+
 .the-whole-page {
     background-color: black;
     top: 0;
@@ -23,7 +27,7 @@ body {
 .left-panel {
     display: block;
     color: white;
-    background-color: #6c757d;
+    background-color: #242628;
     width: 18em;
     height: 100%;
 }
