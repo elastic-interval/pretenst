@@ -22,14 +22,16 @@ body {
 
 .left-panel {
     display: block;
-    width: 14em;
+    color: white;
+    background-color: #6c757d;
+    width: 18em;
     height: 100%;
 }
 
 .middle-panel {
     position: absolute;
     top: 0;
-    left: 14em;
+    left: 18em;
     right: 0;
     height: 100%;
 }
@@ -119,16 +121,6 @@ body {
     display: block;
 }
 
-.card {
-    text-align: left;
-    background-color: black;
-    color: white;
-    border-width: 2px;
-    border-style: solid;
-    padding: 10px;
-    margin-top: 15px;
-    margin-bottom: 5px;
-}
 
 .dropdown-menu {
     background-color: black;
@@ -199,13 +191,6 @@ body {
     max-height: 100%;
 }
 
-.feature-prompt {
-    display: inline-block;
-    text-align: right;
-    font-weight: bold;
-    margin-right: 10px;
-}
-
 .btn-primary, .btn-danger {
     margin: 3px;
 }
@@ -224,12 +209,4 @@ body {
 
 .physics-factor-adjusted {
     color: orange;
-}
-
-.bottom-container {
-    position: absolute;
-    width: 100%;
-    bottom: 1em;
-    flex-flow: row nowrap;
-    align-content: center;
 }

@@ -75,43 +75,45 @@ export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
     const buttonClass = "text-left my-2 mx-1 btn-info"
 
     return (
-        <ButtonGroup className="w-75 align-self-center my-4" vertical={true}>
-            <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
-                <DropdownToggle>
-                    {open ? <FaRegFolderOpen/> : <FaRegFolder/>} Choose
-                </DropdownToggle>
-                <DropdownMenu>
-                    {loadFabricCode().map((code, index) => (
-                        <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
-                            {code}
-                        </DropdownItem>
-                    ))}
-                </DropdownMenu>
-            </ButtonDropdown>
-            <Button className={buttonClass} onClick={() => withFabric(f => f.optimize(false))}>
-                <FaBolt/> L Optimize
-            </Button>
-            <Button className={buttonClass} onClick={() => withFabric(f => f.optimize(true))}>
-                <FaBolt/> H Optimize
-            </Button>
-            <Button className={buttonClass} onClick={() => withFabric(connectClosestFacePair)}>
-                <FaStarOfDavid/> Connect
-            </Button>
-            <Button className={buttonClass} onClick={() => withFabric(f => f.instance.setAltitude(10))}>
-                <FaParachuteBox/> Jump
-            </Button>
-            <Button className={buttonClass} onClick={() => withFabric(f => f.autoRotate = !f.autoRotate)}>
-                <FaSyncAlt/> Rotate
-            </Button>
-            <Button className={buttonClass} onClick={() => withFabric(f => f.instance.centralize())}>
-                <FaCompressArrowsAlt/> Centralize
-            </Button>
-            <Button className={buttonClass} onClick={() => withFabric(saveFiles)}>
-                <FaDownload/> Download
-            </Button>
-            <Button className={buttonClass} onClick={() => constructFabric(loadFabricCode()[storageIndex])}>
-                <FaRecycle/> Rebuild
-            </Button>
-        </ButtonGroup>
+        <div className="text-center">
+            <ButtonGroup className="w-75 align-self-center my-4" vertical={true}>
+                <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
+                    <DropdownToggle>
+                        {open ? <FaRegFolderOpen/> : <FaRegFolder/>} Choose a program
+                    </DropdownToggle>
+                    <DropdownMenu>
+                        {loadFabricCode().map((code, index) => (
+                            <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
+                                {code}
+                            </DropdownItem>
+                        ))}
+                    </DropdownMenu>
+                </ButtonDropdown>
+                <Button className={buttonClass} onClick={() => withFabric(f => f.optimize(false))}>
+                    <FaBolt/> L Optimize
+                </Button>
+                <Button className={buttonClass} onClick={() => withFabric(f => f.optimize(true))}>
+                    <FaBolt/> H Optimize
+                </Button>
+                <Button className={buttonClass} onClick={() => withFabric(connectClosestFacePair)}>
+                    <FaStarOfDavid/> Connect
+                </Button>
+                <Button className={buttonClass} onClick={() => withFabric(f => f.instance.setAltitude(10))}>
+                    <FaParachuteBox/> Jump
+                </Button>
+                <Button className={buttonClass} onClick={() => withFabric(f => f.autoRotate = !f.autoRotate)}>
+                    <FaSyncAlt/> Rotate
+                </Button>
+                <Button className={buttonClass} onClick={() => withFabric(f => f.instance.centralize())}>
+                    <FaCompressArrowsAlt/> Centralize
+                </Button>
+                <Button className={buttonClass} onClick={() => withFabric(saveFiles)}>
+                    <FaDownload/> Download
+                </Button>
+                <Button className={buttonClass} onClick={() => constructFabric(loadFabricCode()[storageIndex])}>
+                    <FaRecycle/> Rebuild
+                </Button>
+            </ButtonGroup>
+        </div>
     )
 }

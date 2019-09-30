@@ -219,7 +219,7 @@ export function FabricView({fabric, selection, setSelection}: {
             })
             const topFace = faces.reverse().pop()
             if (topFace) {
-                setSelection({selectedFace: topFace})
+                setSelection({selectable: Selectable.FACE, selectedFace: topFace})
             }
         }
         return (

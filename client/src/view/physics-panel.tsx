@@ -9,13 +9,13 @@ import { FaArrowDown, FaArrowUp } from "react-icons/all"
 import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
-import { FabricInstance } from "../fabric/fabric-kernel"
 import { IPhysicsFeature, Physics } from "../fabric/physics"
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function PhysicsPanel({engine, physics, instance}: {
+export function PhysicsPanel({engine, physics, fabric}: {
     engine: IFabricEngine,
     physics: Physics,
-    instance: FabricInstance,
+    fabric?: TensegrityFabric,
 }): JSX.Element {
 
     function Factor({feature}: { feature: IPhysicsFeature }): JSX.Element {
@@ -44,7 +44,9 @@ export function PhysicsPanel({engine, physics, instance}: {
                             feature.setFactor(factor)
                         }
                         physics.applyGlobalFeatures(engine)
-                        feature.apply(instance)
+                        if (fabric) {
+                            feature.apply(fabric.instance)
+                        }
                     }
                     const change = 1 + (feature.isGlobal ? 0.1 : 0.01)
                     return (
@@ -58,10 +60,10 @@ export function PhysicsPanel({engine, physics, instance}: {
                                 </Col>
                                 <Col xs={{size: 3}} className="align-self-center">
                                     <ButtonGroup>
-                                        <Button size="sm" onClick={() => {
+                                        <Button className="border-info" size="sm" onClick={() => {
                                             setFactor(feature.factor$.getValue() * change)
                                         }}><FaArrowUp/></Button>
-                                        <Button size="sm" onClick={() => {
+                                        <Button className="border-info" size="sm" onClick={() => {
                                             setFactor(feature.factor$.getValue() / change)
                                         }}> <FaArrowDown/></Button>
                                     </ButtonGroup>

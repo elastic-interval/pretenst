@@ -14,7 +14,6 @@ import { ISelection } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { loadFabricCode, loadStorageIndex } from "../storage/local-storage"
 
-import { BuildingPanel } from "./building-panel"
 import { FabricView } from "./fabric-view"
 import { TensegrityControl } from "./tensegrity-control"
 
@@ -72,7 +71,8 @@ export function TensegrityView({engine, getFabric, physics}: {
                     physics={physics}
                     fabric={fabric}
                     constructFabric={constructFabric}
-                    cancelSelection={() => setSelection({})}
+                    selection={selection}
+                    setSelection={setSelection}
                 />
             </div>
             <div id="tensegrity-view" className="middle-panel">
@@ -80,9 +80,6 @@ export function TensegrityView({engine, getFabric, physics}: {
                     {!fabric ? undefined :
                         <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
                 </Canvas>
-                {!fabric ? undefined :
-                    <BuildingPanel fabric={fabric} selection={selection} setSelection={setSelection}/>
-                }
             </div>
         </div>
     )
