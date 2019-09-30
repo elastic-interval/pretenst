@@ -90,10 +90,10 @@ export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
                     </DropdownMenu>
                 </ButtonDropdown>
                 <Button className={buttonClass} onClick={() => withFabric(f => f.optimize(false))}>
-                    <FaBolt/> L Optimize
+                    <FaBolt/> Short Optimize
                 </Button>
                 <Button className={buttonClass} onClick={() => withFabric(f => f.optimize(true))}>
-                    <FaBolt/> H Optimize
+                    <FaBolt/> Long Optimize
                 </Button>
                 <Button className={buttonClass} onClick={() => withFabric(connectClosestFacePair)}>
                     <FaStarOfDavid/> Connect
