@@ -1,5 +1,5 @@
 {
-  "name": "client-new",
+  "name": "galapagotchi-client",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -85,6 +85,7 @@
     "workbox-webpack-plugin": "4.3.1"
   },
   "scripts": {
+    "prestart": "cd ../fabric-engine && yarn build && cp ./build/untouched.wasm ../galapagotchi-client/build",
     "start": "node scripts/start.js",
     "build": "node scripts/build.js",
     "test": "node scripts/test.js --env=jsdom",

@@ -17,8 +17,7 @@
     "db:migrate": "yarn typeorm migration:run",
     "db:seed": "ts-node ./scripts/seed_db.ts",
     "db:hard_reset": "yarn db:drop && yarn db:migrate && yarn db:seed",
-    "lint": "tslint --fix -p tsconfig.json",
-    "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'"
+    "lint": "tslint --fix -p tsconfig.json"
   },
   "dependencies": {
     "@types/axios": "^0.14.0",
