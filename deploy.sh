@@ -4,7 +4,7 @@ set -x
 
 cd fabric
 yarn
-yarn asbuild:optimized
+yarn build:prod
 
 cd ../client
 yarn

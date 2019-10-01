@@ -20,7 +20,7 @@ script:
   - cd ../client
   - yarn run build
   - cd ../fabric
-  - yarn run asbuild:untouched
+  - yarn run build
   - cd ..
 after_success:
   - ./deploy-remote.sh
