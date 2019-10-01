@@ -12,6 +12,7 @@ import { Physics } from "../fabric/physics"
 import { ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
+import { AdjustPanel } from "./adjust-panel"
 import { GlobalFabricPanel } from "./global-fabric-panel"
 import { PhysicsPanel } from "./physics-panel"
 import { TensegrityEditPanel } from "./tensegrity-edit-panel"
@@ -20,6 +21,7 @@ enum TabName {
     Global = "Global",
     Physics = "Physics",
     Edit = "Edit",
+    Adjust = "Adjust",
 }
 
 const TABS = Object.keys(TabName).map(key => TabName[key])
@@ -33,7 +35,7 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
     setSelection: (s: ISelection) => void,
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState<TabName>(TabName.Global)
+    const [activeTab, setActiveTab] = useState<TabName>(TabName.Adjust)
 
     useEffect(() => {
         if (activeTab === TabName.Edit) {
@@ -50,7 +52,7 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
     }, [selection])
 
     return (
-        <div>
+        <div className="tensegrity-control">
             <Nav tabs={true}>
                 {TABS.map(tab => (
                     <NavItem key={tab}>
@@ -60,7 +62,7 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
                     </NavItem>
                 ))}
             </Nav>
-            <TabContent activeTab={activeTab}>
+            <TabContent className="h-100" activeTab={activeTab}>
                 <TabPane tabId={TabName.Global}>
                     <GlobalFabricPanel
                         constructFabric={constructFabric}
@@ -81,6 +83,9 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
                         selection={selection}
                         setSelection={setSelection}
                     />
+                </TabPane>
+                <TabPane className="h-100" tabId={TabName.Adjust}>
+                    <AdjustPanel fabric={fabric} domain={[0, 1.61]} values={[0.17, 0.63]}/>
                 </TabPane>
             </TabContent>
         </div>

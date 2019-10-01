@@ -17,6 +17,17 @@ a, a:hover {
     color: orange;
 }
 
+.adjust-panel {
+    border-color: white;
+    border-style: solid;
+    border-width: 1px;
+    height: 100%
+}
+
+.tensegrity-control {
+    height: 95%
+}
+
 .the-whole-page {
     background-color: black;
     top: 0;
@@ -28,14 +39,14 @@ a, a:hover {
     display: block;
     color: white;
     background-color: #242628;
-    width: 18em;
+    width: 20em;
     height: 100%;
 }
 
 .middle-panel {
     position: absolute;
     top: 0;
-    left: 18em;
+    left: 20em;
     right: 0;
     height: 100%;
 }
