@@ -47,8 +47,6 @@ const BOW_MID_LENGTH: f32 = 0.8521
 const BOW_END_LOW_LENGTH: f32 = 1.380
 const BOW_END_HIGH_LENGTH: f32 = 1.571
 
-const MIN_COLOR: f32 = 0.2
-const MIN_STRESS: f32 = 0.00001
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
 const LATERALITY_SIZE: usize = U8
@@ -248,35 +246,10 @@ const PULL_ELASTIC_FACTOR: f32 = 15.0
 const INTERVAL_COUNTDOWN: f32 = 300.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
-
-export function setDragAbove(factor: f32): f32 {
-    return physicsDragAbove = DRAG_ABOVE * factor
-}
-
 let physicsGravityAbove: f32 = GRAVITY_ABOVE
-
-export function setGravityAbove(factor: f32): f32 {
-    return physicsGravityAbove = GRAVITY_ABOVE * factor
-}
-
 let physicsDragBelowWater: f32 = DRAG_BELOW_WATER
-
-export function setDragBelowWater(factor: f32): f32 {
-    return physicsDragBelowWater = DRAG_BELOW_WATER * factor
-}
-
 let physicsGravityBelowWater: f32 = GRAVITY_BELOW_WATER
-
-export function setGravityBelowWater(factor: f32): f32 {
-    return physicsGravityBelowWater = GRAVITY_BELOW_WATER * factor
-}
-
 let physicsDragBelowLand: f32 = DRAG_BELOW_LAND
-
-export function setDragBelowLand(factor: f32): f32 {
-    return physicsDragBelowLand = DRAG_BELOW_LAND * factor
-}
-
 let physicsGravityBelowLand: f32 = GRAVITY_BELOW_LAND
 let pushElasticFactor: f32 = PUSH_ELASTIC_FACTOR
 let pullElasticFactor: f32 = PULL_ELASTIC_FACTOR
@@ -943,37 +916,65 @@ function setLineColor(_color: usize, red: f32, green: f32, blue: f32): void {
     setZ(_color + VECTOR_SIZE, blue)
 }
 
-function setLineBlank(_color: usize, push: boolean): void {
-    if (push) {
-        setLineColor(_color, 1.0, 1.0, 1.0)
-    } else {
-        setLineColor(_color, 0.0, 0.0, 0.0)
+enum Limit {
+    MinBar = 0,
+    MaxBar = 1,
+    MinCable = 2,
+    MaxCable = 3,
+}
+
+const LIMIT: f32 = 1000
+
+let minBar: f32 = LIMIT
+let maxBar: f32 = -LIMIT
+let minCable: f32 = LIMIT
+let maxCable: f32 = -LIMIT
+
+export function getLimit(limit: Limit): f32 {
+    switch (limit) {
+        case Limit.MinBar:
+            return minBar
+        case Limit.MaxBar:
+            return maxBar
+        case Limit.MinCable:
+            return minCable
+        case Limit.MaxCable:
+            return maxCable
+        default:
+            return 666
     }
 }
 
+let barSlackLimit: f32 = 0
+let cableSlackLimit: f32 = 0
+
+export function setSlackLimits(barSlack: f32, cableSlack: f32): void {
+    barSlackLimit = barSlack
+    cableSlackLimit = cableSlack
+}
+
 function outputLinesGeometry(): void {
+    minBar = LIMIT
+    maxBar = -LIMIT
+    minCable = LIMIT
+    maxCable = -LIMIT
     let intervalCount = getIntervalCount()
-    let minPush: f32 = 1000
-    let maxPush: f32 = 0
-    let minPull: f32 = 1000
-    let maxPull: f32 = 0
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let stress = getStress(intervalIndex)
-        if (stress < 0) { // PUSH
-            stress = -stress
-            if (stress < minPush) {
-                minPush = stress
+        let intervalRole = getIntervalRole(intervalIndex)
+        if (intervalRole === IntervalRole.Bar) {
+            if (stress < minBar) {
+                minBar = stress
             }
-            if (stress > maxPush) {
-                maxPush = stress
+            if (stress > maxBar) {
+                maxBar = stress
             }
-        }
-        if (stress > 0) { // PULL
-            if (stress < minPull) {
-                minPull = stress
+        } else { // cable role
+            if (stress < minCable) {
+                minCable = stress
             }
-            if (stress > maxPull) {
-                maxPull = stress
+            if (stress > maxCable) {
+                maxCable = stress
             }
         }
     }
@@ -983,23 +984,21 @@ function outputLinesGeometry(): void {
         setVector(_linePoint + VECTOR_SIZE, _location(omegaIndex(intervalIndex)))
         let _lineColor = _lineColors + intervalIndex * VECTOR_SIZE * 2
         let stress = getStress(intervalIndex)
-        if (stress < -MIN_STRESS) { // PUSH
-            stress = -stress
-            if (stress > maxPush || stress < minPush) {
-                setLineBlank(_lineColor, true)
-                return
+        let intervalRole = getIntervalRole(intervalIndex)
+        if (intervalRole === IntervalRole.Bar) {
+            let intensity = (stress - minBar) / (maxBar - minBar)
+            if (intensity < barSlackLimit) {
+                setLineColor(_lineColor, 0, 1, 0)
+            } else {
+                setLineColor(_lineColor, 1, 0, 0)
             }
-            let color = (stress - minPush) / (maxPush - minPush)
-            setLineColor(_lineColor, MIN_COLOR + color * (1 - MIN_COLOR), MIN_COLOR, MIN_COLOR)
-        } else if (stress > MIN_STRESS) { // PULL
-            if (stress > maxPull || stress < minPull) {
-                setLineBlank(_lineColor, false)
-                return
+        } else { // a cable role
+            let intensity = (stress - minCable) / (maxCable - minCable)
+            if (intensity < cableSlackLimit) {
+                setLineColor(_lineColor, 0, 1, 0)
+            } else {
+                setLineColor(_lineColor, 0, 0, 1)
             }
-            let color = (stress - minPull) / (maxPull - minPull)
-            setLineColor(_lineColor, MIN_COLOR, MIN_COLOR, MIN_COLOR + color * (1 - MIN_COLOR))
-        } else {
-            setLineColor(_lineColor, 0, 1, 0)
         }
     }
 }

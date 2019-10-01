@@ -85,7 +85,7 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
                     />
                 </TabPane>
                 <TabPane className="h-100" tabId={TabName.Adjust}>
-                    <AdjustPanel fabric={fabric} domain={[0, 1.61]} values={[0.17, 0.63]}/>
+                    <AdjustPanel fabric={fabric}/>
                 </TabPane>
             </TabContent>
         </div>

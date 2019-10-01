@@ -10,7 +10,7 @@ import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
 import { Hexalot } from "../island/hexalot"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { FabricState, IFabricDimensions, IFabricEngine, IntervalRole } from "./fabric-engine"
+import { FabricState, IFabricDimensions, IFabricEngine, IntervalRole, Limit } from "./fabric-engine"
 import { GotchiBody } from "./gotchi-body"
 import { Physics } from "./physics"
 import { TensegrityFabric } from "./tensegrity-fabric"
@@ -245,6 +245,14 @@ export class FabricInstance {
 
     public getAge(): number {
         return this.fabricEngine.getAge()
+    }
+
+    public getLimit(limit: Limit): number {
+        return this.fabricEngine.getLimit(limit)
+    }
+
+    public setSlackLimits(barSlack: number, cableSlack: number): void {
+        this.fabricEngine.setSlackLimits(barSlack, cableSlack)
     }
 
     public centralize(): void {

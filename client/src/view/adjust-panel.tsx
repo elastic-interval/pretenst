@@ -4,57 +4,62 @@
  */
 
 import * as React from "react"
-import { CSSProperties } from "react"
+import { CSSProperties, useState } from "react"
 import { GetHandleProps, GetRailProps, Handles, Rail, Slider } from "react-compound-slider"
 import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
+import { Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-const buttonClass = "text-left my-3 btn-info"
+const BUTTON_CLASS = "text-left my-3 btn-info"
+const DOMAIN = [0, 100]
+const VALUES = [0]
 
-export function AdjustPanel({fabric, domain, values}: {
+export function AdjustPanel({fabric}: {
     fabric?: TensegrityFabric,
-    domain: number[],
-    values: number[],
 }): JSX.Element {
 
     if (!fabric) {
         return <div/>
     }
-    const sliderStyle: CSSProperties = {  // Give the slider some width
-        position: "relative",
-        height: "90%",
-        marginTop: "30%",
-        marginBottom: "30%",
-        borderRadius: 12,
-        border: "2px solid steelblue",
-    }
+
+    const [cableSlack, setCableSlack] = useState(0)
+
     const onChange = (changedValues: number[]) => {
-        console.log(changedValues)
+        const percent = changedValues[0]
+        const proportion = percent / 100
+        const minCable = fabric.instance.getLimit(Limit.MinCable)
+        const maxCable = fabric.instance.getLimit(Limit.MaxCable)
+        const newSlack = (1 - proportion) * minCable + proportion * maxCable
+        setCableSlack(newSlack)
+        fabric.instance.setSlackLimits(0, proportion)
     }
     return (
         <Container className="adjust-panel">
             <Row className="h-100">
                 <Col xs={{size: 6}}>
                     <Slider
+                        reversed={true}
                         vertical={true}
-                        step={0.01}
-                        rootStyle={sliderStyle}
-                        domain={domain}
-                        values={values}
+                        step={-0.01}
+                        rootStyle={{
+                            position: "relative",
+                            height: "90%",
+                            marginTop: "30%",
+                            marginBottom: "30%",
+                            borderRadius: 12,
+                            border: "2px solid steelblue",
+                        }}
+                        domain={DOMAIN}
+                        values={VALUES}
                         onChange={onChange}
                     >
-                        <Rail>
-                            {({getRailProps}) => (
-                                <SliderRail getRailProps={getRailProps}/>
-                            )}
-                        </Rail>
+                        <Rail>{({getRailProps}) => <SliderRail getRailProps={getRailProps}/>}</Rail>
                         <Handles>
                             {({handles, getHandleProps}) => (
                                 <>
                                     {handles.map(handle => (
-                                        <Handle key={handle.id} domain={domain}
-                                                handle={handle} getHandleProps={getHandleProps}/>
+                                        <Handle key={handle.id} handle={handle} getHandleProps={getHandleProps}/>
                                     ))}
                                 </>
                             )}
@@ -63,9 +68,8 @@ export function AdjustPanel({fabric, domain, values}: {
                 </Col>
                 <Col xs={{size: 6}} className="my-auto">
                     <ButtonGroup vertical={true} className="w-100">
-                        <Button className={buttonClass}>And..</Button>
-                        <Button className={buttonClass}>then</Button>
-                        <Button className={buttonClass}>And..</Button>
+                        <Button className={BUTTON_CLASS}>Lengthen {cableSlack.toFixed(5)}</Button>
+                        <Button className={BUTTON_CLASS}>And..</Button>
                     </ButtonGroup>
                 </Col>
             </Row>
@@ -102,8 +106,7 @@ function SliderRail({getRailProps}: { getRailProps: GetRailProps }): JSX.Element
     )
 }
 
-export function Handle({domain, handle, getHandleProps}: {
-    domain: number[],
+export function Handle({handle, getHandleProps}: {
     handle: { id: string, value: number, percent: number },
     getHandleProps: GetHandleProps,
 }): JSX.Element {
@@ -126,8 +129,8 @@ export function Handle({domain, handle, getHandleProps}: {
             />
             <div
                 role="slider"
-                aria-valuemin={domain[0]}
-                aria-valuemax={domain[1]}
+                aria-valuemin={DOMAIN[0]}
+                aria-valuemax={DOMAIN[1]}
                 aria-valuenow={handle.value}
                 style={{
                     top: `${handle.percent}%`,
@@ -143,8 +146,8 @@ export function Handle({domain, handle, getHandleProps}: {
             />
             <div
                 role="slider"
-                aria-valuemin={domain[0]}
-                aria-valuemax={domain[1]}
+                aria-valuemin={DOMAIN[0]}
+                aria-valuemax={DOMAIN[1]}
                 aria-valuenow={handle.value}
                 style={{
                     top: `${handle.percent}%`,
@@ -152,7 +155,8 @@ export function Handle({domain, handle, getHandleProps}: {
                     transform: "translate(2em, -50%)",
                     zIndex: 2,
                 }}
-            >{handle.value.toFixed(2)}</div>
+            >{handle.value.toFixed(2)}%
+            </div>
         </>
     )
 }
