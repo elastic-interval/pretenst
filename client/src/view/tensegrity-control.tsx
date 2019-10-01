@@ -38,17 +38,17 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
     const [activeTab, setActiveTab] = useState<TabName>(TabName.Adjust)
 
     useEffect(() => {
-        if (activeTab === TabName.Edit) {
-            setSelection({...selection, selectable: Selectable.FACE})
-        } else {
-            setSelection({selectable: undefined})
-        }
+        // if (activeTab === TabName.Edit) {
+        //     setSelection({...selection, selectable: Selectable.FACE})
+        // } else {
+        //     setSelection({selectable: undefined})
+        // }
     }, [activeTab])
 
     useEffect(() => {
-        if (activeTab !== TabName.Edit && selection.selectable) {
-            setActiveTab(TabName.Edit)
-        }
+        // if (activeTab !== TabName.Edit && selection.selectable) {
+        //     setActiveTab(TabName.Edit)
+        // }
     }, [selection])
 
     return (
@@ -85,7 +85,12 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
                     />
                 </TabPane>
                 <TabPane className="h-100" tabId={TabName.Adjust}>
-                    <AdjustPanel fabric={fabric}/>
+                    <AdjustPanel
+                        fabric={fabric}
+                        setStressSelection={(on: boolean) => {
+                            setSelection({selectable: on ? Selectable.STRESS : undefined})
+                        }}
+                    />
                 </TabPane>
             </TabContent>
         </div>

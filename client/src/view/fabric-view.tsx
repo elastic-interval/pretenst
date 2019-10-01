@@ -93,6 +93,30 @@ export function FabricView({fabric, selection, setSelection}: {
     }
 
     function IntervalSelection(): JSX.Element {
+        if (selection.selectable === Selectable.STRESS) {
+            return (
+                <>
+                    {fabric.intervals.filter(interval => interval.selected)
+                        .filter(interval => !interval.removed)
+                        .map((interval: IInterval) => {
+                            const {scale, rotation} = orientInterval(interval)
+                            return (
+                                <mesh
+                                    key={`I${interval.index}`}
+                                    geometry={SPHERE}
+                                    position={fabric.instance.getIntervalMidpoint(interval.index)}
+                                    rotation={rotation}
+                                    scale={scale}
+                                    material={TENSEGRITY_CABLE}
+                                    onPointerDown={() => setSelection({selectedInterval: interval})}
+                                    onPointerUp={stopPropagation}
+                                />
+                            )
+                        })
+                    }
+                </>
+            )
+        }
         const selectedFace = selection.selectedFace
         if ((selection.selectable !== Selectable.BAR && selection.selectable !== Selectable.CABLE) || !selectedFace) {
             return <>{undefined}</>

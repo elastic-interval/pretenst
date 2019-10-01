@@ -242,7 +242,7 @@ const DRAG_BELOW_WATER: f32 = 0.001
 const GRAVITY_BELOW_LAND: f32 = -0.03
 const GRAVITY_BELOW_WATER: f32 = -0.00001
 const PUSH_ELASTIC_FACTOR: f32 = 25.0
-const PULL_ELASTIC_FACTOR: f32 = 15.0
+const PULL_ELASTIC_FACTOR: f32 = 5.0
 const INTERVAL_COUNTDOWN: f32 = 300.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
@@ -987,14 +987,14 @@ function outputLinesGeometry(): void {
         let intervalRole = getIntervalRole(intervalIndex)
         if (intervalRole === IntervalRole.Bar) {
             let intensity = (stress - minBar) / (maxBar - minBar)
-            if (intensity < barSlackLimit) {
+            if (barSlackLimit < 0.5 ? intensity < barSlackLimit : intensity > barSlackLimit) {
                 setLineColor(_lineColor, 0, 1, 0)
             } else {
                 setLineColor(_lineColor, 1, 0, 0)
             }
         } else { // a cable role
             let intensity = (stress - minCable) / (maxCable - minCable)
-            if (intensity < cableSlackLimit) {
+            if (cableSlackLimit < 0.5 ? intensity < cableSlackLimit : intensity > cableSlackLimit) {
                 setLineColor(_lineColor, 0, 1, 0)
             } else {
                 setLineColor(_lineColor, 0, 0, 1)
@@ -1164,16 +1164,12 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
-    getCurrentState()
     let currentLength = interpolateCurrentLength(intervalIndex, state)
     let stress = calculateLength(intervalIndex) - currentLength
-    if (intervalRole !== IntervalRole.Bar && stress < 0) {
-        stress = 0
-    }
-    if (stress < 0) { // PUSH
-        stress *= busy ? PUSH_ELASTIC_FACTOR : pushElasticFactor
-    } else { // PULL
-        stress *= busy ? PULL_ELASTIC_FACTOR : pullElasticFactor
+    if (intervalRole === IntervalRole.Bar) {
+        stress = stress * (busy ? PUSH_ELASTIC_FACTOR : pushElasticFactor)
+    } else { // cable
+        stress = stress * (stress < 0 ? 0 : (busy ? PULL_ELASTIC_FACTOR : pullElasticFactor))
     }
     setStress(intervalIndex, stress)
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)

@@ -6,17 +6,19 @@
 import * as React from "react"
 import { CSSProperties, useState } from "react"
 import { GetHandleProps, GetRailProps, Handles, Rail, Slider } from "react-compound-slider"
+import { FaArrowDown, FaArrowUp, FaHandPointDown, FaHandPointUp } from "react-icons/all"
 import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
-import { Limit } from "../fabric/fabric-engine"
+import { IntervalRole, Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 const BUTTON_CLASS = "text-left my-3 btn-info"
 const DOMAIN = [0, 100]
 const VALUES = [0]
 
-export function AdjustPanel({fabric}: {
+export function AdjustPanel({fabric, setStressSelection}: {
     fabric?: TensegrityFabric,
+    setStressSelection: (on: boolean) => void,
 }): JSX.Element {
 
     if (!fabric) {
@@ -24,16 +26,52 @@ export function AdjustPanel({fabric}: {
     }
 
     const [cableSlack, setCableSlack] = useState(0)
+    const [proportion, setProportion] = useState(0)
+    const [selectOn, setSelectOn] = useState(false)
 
-    const onChange = (changedValues: number[]) => {
-        const percent = changedValues[0]
-        const proportion = percent / 100
+    const slackFromProportion = (proportionValue: number) => {
         const minCable = fabric.instance.getLimit(Limit.MinCable)
         const maxCable = fabric.instance.getLimit(Limit.MaxCable)
-        const newSlack = (1 - proportion) * minCable + proportion * maxCable
-        setCableSlack(newSlack)
-        fabric.instance.setSlackLimits(0, proportion)
+        return (1 - proportionValue) * minCable + proportionValue * maxCable
     }
+
+    const proportionTo = (proportionValue: number) => {
+        setProportion(proportionValue)
+        setCableSlack(slackFromProportion(proportionValue))
+        fabric.instance.setSlackLimits(0, proportionValue)
+    }
+
+    const onChange = (changedPercent: number[]) => {
+        const percent = changedPercent[0]
+        proportionTo(percent / 100)
+    }
+
+    const onSelect = () => {
+        fabric.intervals.forEach(interval => {
+            if (interval.intervalRole === IntervalRole.Bar) {
+                return
+            }
+            const intervalStress = fabric.instance.getIntervalStress(interval.index)
+            interval.selected = proportion < 0.5 ? intervalStress < cableSlack : intervalStress > cableSlack
+        })
+        setStressSelection(true)
+        setSelectOn(true)
+    }
+
+    function adjustment(up: boolean): number {
+        const factor = 1.1
+        return up ? factor : (1 / factor)
+    }
+
+    const adjustValue = (up: boolean) => () => fabric.intervals.filter(interval => interval.selected).forEach(interval => {
+        fabric.instance.multiplyRestLength(interval.index, adjustment(up))
+        setStressSelection(false)
+        setSelectOn(false)
+        setTimeout(() => {
+            setCableSlack(slackFromProportion(proportion))
+        }, 1000)
+    })
+
     return (
         <Container className="adjust-panel">
             <Row className="h-100">
@@ -68,8 +106,15 @@ export function AdjustPanel({fabric}: {
                 </Col>
                 <Col xs={{size: 6}} className="my-auto">
                     <ButtonGroup vertical={true} className="w-100">
-                        <Button className={BUTTON_CLASS}>Lengthen {cableSlack.toFixed(5)}</Button>
-                        <Button className={BUTTON_CLASS}>And..</Button>
+                        <Button className={BUTTON_CLASS} onClick={onSelect}>
+                            {proportion < 0.5 ? <FaHandPointDown/> : <FaHandPointUp/>} {cableSlack.toFixed(3)}
+                        </Button>
+                        <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(true)}>
+                            <FaArrowUp/> Lengthen
+                        </Button>
+                        <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(false)}>
+                            <FaArrowDown/> Shorten
+                        </Button>
                     </ButtonGroup>
                 </Col>
             </Row>

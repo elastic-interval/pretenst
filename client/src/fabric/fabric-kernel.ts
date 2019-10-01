@@ -208,7 +208,7 @@ export class FabricInstance {
         this.faceLocations = new LazyFloatArray(this.buffer, this.offsets._faceLocations, () => this.engine.getFaceCount() * 3 * 3)
         this.jointLocations = new LazyFloatArray(this.buffer, this.offsets._jointLocations, () => this.engine.getJointCount() * 3)
         this.intervalUnits = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.engine.getIntervalCount() * 3)
-        this.intervalStresses = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.engine.getIntervalCount())
+        this.intervalStresses = new LazyFloatArray(this.buffer, this.offsets._intervalStresses, () => this.engine.getIntervalCount())
     }
 
     public get index(): number {
