@@ -1,11 +1,10 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
 import * as React from "react"
-import { FaArrowDown, FaArrowUp, FaRegHandPointer } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaRegHandPointer, FaTimes } from "react-icons/all"
 import { Alert, Button, ButtonGroup } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
@@ -126,6 +125,16 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
         )
     }
 
+    function CancelButton(): JSX.Element {
+        return (
+            <Button
+                className={BUTTON_CLASS}
+                onClick={() => setSelection({})}>
+                <FaTimes/> Cancel selection
+            </Button>
+        )
+    }
+
     const nothingSelected = !(selection.selectedJoint || selection.selectedInterval || selection.selectedFace)
 
     return (
@@ -146,6 +155,11 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
                     <Face face={selection.selectedFace}/>
                 ) : undefined
             }
+            {nothingSelected? undefined: (
+                <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
+                    <CancelButton/>
+                </ButtonGroup>
+            )}
         </div>
     )
 }

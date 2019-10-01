@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
@@ -35,21 +35,7 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
     setSelection: (s: ISelection) => void,
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState<TabName>(TabName.Adjust)
-
-    useEffect(() => {
-        // if (activeTab === TabName.Edit) {
-        //     setSelection({...selection, selectable: Selectable.FACE})
-        // } else {
-        //     setSelection({selectable: undefined})
-        // }
-    }, [activeTab])
-
-    useEffect(() => {
-        // if (activeTab !== TabName.Edit && selection.selectable) {
-        //     setActiveTab(TabName.Edit)
-        // }
-    }, [selection])
+    const [activeTab, setActiveTab] = useState<TabName>(TabName.Global)
 
     return (
         <div className="tensegrity-control">
