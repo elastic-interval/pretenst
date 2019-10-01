@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -44,6 +43,7 @@ export interface IInterval {
     intervalRole: IntervalRole
     alpha: IJoint
     omega: IJoint
+    selected?: boolean
 }
 
 export interface IFace {
@@ -171,6 +171,7 @@ export enum Selectable {
     JOINT = "Joint",
     BAR = "Bar",
     CABLE = "Cable",
+    STRESS = "Stress",
 }
 
 export interface ISelection {

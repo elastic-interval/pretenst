@@ -4,15 +4,15 @@
  */
 
 import * as React from "react"
-import { FaArrowDown, FaArrowUp, FaRegHandPointer } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaRegHandPointer, FaTimes } from "react-icons/all"
 import { Alert, Button, ButtonGroup } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import { facePartSelectable, IFace, IInterval, IJoint, ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-const buttonClass = "text-left my-2 mx-1 btn-info"
-const buttonGroupClass = "w-75 align-self-center my-4"
+const BUTTON_CLASS = "text-left my-2 mx-1 btn-info"
+const BUTTON_GROUP_CLASS = "w-75 align-self-center my-4"
 
 export function TensegrityEditPanel({fabric, selection, setSelection}: {
     fabric?: TensegrityFabric,
@@ -27,7 +27,7 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
 
     function SelectableButton({selectable, disabled}: { selectable: Selectable, disabled?: boolean }): JSX.Element {
         return (
-            <Button className={buttonClass} disabled={disabled}
+            <Button className={BUTTON_CLASS} disabled={disabled}
                     onClick={() => setSelection({...selection, selectable})}>
                 <FaRegHandPointer/> Select {selectable}s
             </Button>
@@ -69,19 +69,19 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
         })
 
         return (
-            <ButtonGroup className={buttonGroupClass} vertical={true}>
+            <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
                 {intervals.length === 0 ? undefined : (
                     <>
-                        <Button className={buttonClass} onClick={adjustValue(true)}>
+                        <Button className={BUTTON_CLASS} onClick={adjustValue(true)}>
                             <FaArrowUp/> Lengthen
                         </Button>
-                        <Button className={buttonClass} onClick={adjustValue(false)}>
+                        <Button className={BUTTON_CLASS} onClick={adjustValue(false)}>
                             <FaArrowDown/> Shorten
                         </Button>
                     </>
                 )}
                 {!face.canGrow || facePartSelectable(selection) ? undefined :
-                    <Button className={buttonClass} onClick={grow}>Grow</Button>
+                    <Button className={BUTTON_CLASS} onClick={grow}>Grow</Button>
                 }
             </ButtonGroup>
         )
@@ -96,11 +96,11 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
             }
         }
         return (
-            <ButtonGroup className={buttonGroupClass} vertical={true}>
-                <Button className={buttonClass} onClick={adjustValue(true)}>
+            <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
+                <Button className={BUTTON_CLASS} onClick={adjustValue(true)}>
                     <FaArrowUp/> Lengthen
                 </Button>
-                <Button className={buttonClass} onClick={adjustValue(false)}>
+                <Button className={BUTTON_CLASS} onClick={adjustValue(false)}>
                     <FaArrowDown/> Shorten
                 </Button>
             </ButtonGroup>
@@ -114,14 +114,24 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
             }
         }
         return (
-            <ButtonGroup className={buttonGroupClass} vertical={true}>
-                <Button className={buttonClass} onClick={adjustValue(true)}>
+            <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
+                <Button className={BUTTON_CLASS} onClick={adjustValue(true)}>
                     <FaArrowUp/> Lengthen
                 </Button>
-                <Button className={buttonClass} onClick={adjustValue(false)}>
+                <Button className={BUTTON_CLASS} onClick={adjustValue(false)}>
                     <FaArrowDown/> Shorten
                 </Button>
             </ButtonGroup>
+        )
+    }
+
+    function CancelButton(): JSX.Element {
+        return (
+            <Button
+                className={BUTTON_CLASS}
+                onClick={() => setSelection({})}>
+                <FaTimes/> Cancel selection
+            </Button>
         )
     }
 
@@ -132,7 +142,7 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
             {nothingSelected ? (
                 <Alert className="my-5">Select a face to start editing</Alert>
             ) : (
-                <ButtonGroup className={buttonGroupClass} vertical={true}>
+                <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
                     <Selectables/>
                 </ButtonGroup>
             )}
@@ -145,6 +155,11 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
                     <Face face={selection.selectedFace}/>
                 ) : undefined
             }
+            {nothingSelected? undefined: (
+                <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
+                    <CancelButton/>
+                </ButtonGroup>
+            )}
         </div>
     )
 }

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -43,6 +44,13 @@ export enum Laterality {
     LeftSide = 2,
 }
 
+export enum Limit {
+    MinBar = 0,
+    MaxBar = 1,
+    MinCable = 2,
+    MaxCable = 3,
+}
+
 export interface IFabricDimensions {
     instanceMax: number,
     jointCountMax: number,
@@ -55,6 +63,10 @@ export interface IFabricEngine {
     memory: IMemory
 
     setGlobalFeature(globalFeature: GlobalFeature, factor: number): number
+
+    getLimit(limit: Limit): number
+
+    setSlackLimits(barSlack: number, cableSlack: number): void
 
     init(joints: number, intervals: number, faces: number, instances: number): number
 

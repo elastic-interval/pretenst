@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
@@ -12,6 +12,7 @@ import { Physics } from "../fabric/physics"
 import { ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
+import { AdjustPanel } from "./adjust-panel"
 import { GlobalFabricPanel } from "./global-fabric-panel"
 import { PhysicsPanel } from "./physics-panel"
 import { TensegrityEditPanel } from "./tensegrity-edit-panel"
@@ -20,6 +21,7 @@ enum TabName {
     Global = "Global",
     Physics = "Physics",
     Edit = "Edit",
+    Adjust = "Adjust",
 }
 
 const TABS = Object.keys(TabName).map(key => TabName[key])
@@ -35,22 +37,8 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
 
     const [activeTab, setActiveTab] = useState<TabName>(TabName.Global)
 
-    useEffect(() => {
-        if (activeTab === TabName.Edit) {
-            setSelection({...selection, selectable: Selectable.FACE})
-        } else {
-            setSelection({selectable: undefined})
-        }
-    }, [activeTab])
-
-    useEffect(() => {
-        if (activeTab !== TabName.Edit && selection.selectable) {
-            setActiveTab(TabName.Edit)
-        }
-    }, [selection])
-
     return (
-        <div>
+        <div className="tensegrity-control">
             <Nav tabs={true}>
                 {TABS.map(tab => (
                     <NavItem key={tab}>
@@ -60,7 +48,7 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
                     </NavItem>
                 ))}
             </Nav>
-            <TabContent activeTab={activeTab}>
+            <TabContent className="h-100" activeTab={activeTab}>
                 <TabPane tabId={TabName.Global}>
                     <GlobalFabricPanel
                         constructFabric={constructFabric}
@@ -80,6 +68,14 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
                         fabric={fabric}
                         selection={selection}
                         setSelection={setSelection}
+                    />
+                </TabPane>
+                <TabPane className="h-100" tabId={TabName.Adjust}>
+                    <AdjustPanel
+                        fabric={fabric}
+                        setStressSelection={(on: boolean) => {
+                            setSelection({selectable: on ? Selectable.STRESS : undefined})
+                        }}
                     />
                 </TabPane>
             </TabContent>
