@@ -86,7 +86,6 @@ export function AdjustPanel({fabric, setStressSelection}: {
                             marginTop: "30%",
                             marginBottom: "30%",
                             borderRadius: 12,
-                            border: "2px solid steelblue",
                         }}
                         domain={DOMAIN}
                         values={VALUES}
@@ -107,7 +106,7 @@ export function AdjustPanel({fabric, setStressSelection}: {
                 <Col xs={{size: 6}} className="my-auto">
                     <ButtonGroup vertical={true} className="w-100">
                         <Button className={BUTTON_CLASS} onClick={onSelect}>
-                            {proportion < 0.5 ? <FaHandPointDown/> : <FaHandPointUp/>} {cableSlack.toFixed(3)}
+                            {proportion < 0.5 ? <FaHandPointDown/> : <FaHandPointUp/>} {cableSlack.toFixed(4)}
                         </Button>
                         <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(true)}>
                             <FaArrowUp/> Lengthen
@@ -127,7 +126,7 @@ function SliderRail({getRailProps}: { getRailProps: GetRailProps }): JSX.Element
         position: "absolute",
         height: "100%",
         width: "3em",
-        // transform: "translate(-20%, 0%)",
+        transform: "translate(1.2em, 0%)",
         borderRadius: 7,
         cursor: "pointer",
         // border: "1px solid white",
@@ -137,7 +136,7 @@ function SliderRail({getRailProps}: { getRailProps: GetRailProps }): JSX.Element
         position: "absolute",
         height: "100%",
         width: "1em",
-        // transform: "translate(-20%, 0%)",
+        transform: "translate(1.2em, 0%)",
         borderRadius: 7,
         pointerEvents: "none",
         backgroundColor: "rgb(155,155,155)",
@@ -161,7 +160,7 @@ export function Handle({handle, getHandleProps}: {
                 style={{
                     top: `${handle.percent}%`,
                     position: "absolute",
-                    transform: "translate(-20%, -50%)",
+                    transform: "translate(1em, -50%)",
                     WebkitTapHighlightColor: "rgba(0,0,0,0)",
                     zIndex: 5,
                     width: 42,
@@ -180,7 +179,7 @@ export function Handle({handle, getHandleProps}: {
                 style={{
                     top: `${handle.percent}%`,
                     position: "absolute",
-                    transform: "translate(-20%, -50%)",
+                    transform: "translate(1em, -50%)",
                     zIndex: 2,
                     width: 24,
                     height: 24,
@@ -197,7 +196,7 @@ export function Handle({handle, getHandleProps}: {
                 style={{
                     top: `${handle.percent}%`,
                     position: "absolute",
-                    transform: "translate(2em, -50%)",
+                    transform: "translate(3em, -50%)",
                     zIndex: 2,
                 }}
             >{handle.value.toFixed(2)}%
