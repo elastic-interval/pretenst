@@ -21,7 +21,7 @@ import { TensegrityView } from "./view/tensegrity-view"
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
-const TENSEGRITY = true
+const TENSEGRITY = process.env.REACT_APP_ENABLED_APP === "pretenst"
 
 console.log(`Using API at ${API_URI}`)
 const storage = new RemoteStorage(API_URI)
