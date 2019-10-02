@@ -5,8 +5,7 @@
   "main": "index.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "asc index.ts -b build/untouched.wasm -t build/untouched.wat --use Math=JSMath --sourceMap --validate",
-    "build:prod": "asc index.ts -b build/fabric.wasm -t build/optimized.wat --sourceMap --validate --optimize",
+    "build": "asc index.ts -b build/fabric.wasm -t build/optimized.wat --sourceMap --validate --optimize",
     "sym": "wasm-as build/optimized.wat -s symbols.txt -o build/sym.wasm"
   },
   "author": "Gerald A. de Jong",

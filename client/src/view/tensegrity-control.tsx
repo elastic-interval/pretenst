@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -73,8 +74,8 @@ export function TensegrityControl({engine, physics, fabric, constructFabric, sel
                 <TabPane className="h-100" tabId={TabName.Adjust}>
                     <AdjustPanel
                         fabric={fabric}
-                        setStressSelection={(on: boolean) => {
-                            setSelection({selectable: on ? Selectable.STRESS : undefined})
+                        setDisplacementSelection={(on: boolean) => {
+                            setSelection({selectable: on ? Selectable.DISPLACEMENT : undefined})
                         }}
                     />
                 </TabPane>

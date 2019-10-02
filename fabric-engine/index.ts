@@ -63,7 +63,7 @@ const LAND: u8 = 1
 const BUSY_DRAG_FACTOR: f32 = 60
 
 const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
-const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + INTERVAL_ROLE_SIZE + INTERVAL_COUNTDOWN_SIZE + F32 * STATE_COUNT
+const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + F32 + INTERVAL_ROLE_SIZE + INTERVAL_COUNTDOWN_SIZE + F32 * STATE_COUNT
 
 // Dimensioning ================================================================================
 
@@ -82,7 +82,7 @@ let _faceNormals: usize = 0
 let _faceLocations: usize = 0
 let _intervals: usize = 0
 let _intervalUnits: usize = 0
-let _intervalStresses: usize = 0
+let _intervalDisplacements: usize = 0
 let _faces: usize = 0
 let _lineLocations: usize = 0
 let _lineColors: usize = 0
@@ -111,8 +111,8 @@ export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabr
     _faceLocations = _faceNormals + faceCountMax * VECTOR_SIZE * 3
     _jointLocations = _faceLocations + faceCountMax * VECTOR_SIZE * 3
     _intervalUnits = _jointLocations + jointCountMax * VECTOR_SIZE
-    _intervalStresses = _intervalUnits + intervalCountMax * VECTOR_SIZE
-    _joints = _intervalStresses + intervalCountMax * F32
+    _intervalDisplacements = _intervalUnits + intervalCountMax * VECTOR_SIZE
+    _joints = _intervalDisplacements + intervalCountMax * F32
     _intervals = _joints + jointCountMax * JOINT_SIZE
     _faces = _intervals + intervalCountMax * INTERVAL_SIZE
     _vX = _faces + faceCountMax * FACE_SIZE
@@ -185,8 +185,14 @@ function _currentLength(intervalIndex: u16): usize {
 
 // @ts-ignore
 @inline()
+function _elasticFactor(intervalIndex: u16): usize {
+    return _currentLength(intervalCountMax) + intervalIndex * F32
+}
+
+// @ts-ignore
+@inline()
 function _intervalRole(intervalIndex: u16): usize {
-    return _currentLength(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
+    return _elasticFactor(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
 }
 
 // @ts-ignore
@@ -243,6 +249,7 @@ const GRAVITY_BELOW_LAND: f32 = -0.03
 const GRAVITY_BELOW_WATER: f32 = -0.00001
 const PUSH_ELASTIC_FACTOR: f32 = 25.0
 const PULL_ELASTIC_FACTOR: f32 = 5.0
+const DEFAULT_ELASTIC_FACTOR: f32 = 1.0
 const INTERVAL_COUNTDOWN: f32 = 300.0
 
 let physicsDragAbove: f32 = DRAG_ABOVE
@@ -742,6 +749,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize 
     setOmegaIndex(intervalIndex, omega)
     zero(_unit(intervalIndex))
     initializeCurrentLength(intervalIndex, calculateLength(intervalIndex))
+    setElasticFactor(intervalIndex, DEFAULT_ELASTIC_FACTOR)
     initializeIntervalRole(intervalIndex, intervalRole)
     let idealLength = getRoleLength(intervalRole)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
@@ -770,6 +778,7 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
     initializeCurrentLength(intervalIndex, getCurrentLength(nextIndex))
+    setElasticFactor(intervalIndex, getElasticFactor(nextIndex))
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, getIntervalStateLength(nextIndex, state))
     }
@@ -797,6 +806,14 @@ function getCurrentLength(intervalIndex: u16): f32 {
 
 function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
     setF32(_currentLength(intervalIndex), idealLength)
+}
+
+function getElasticFactor(intervalIndex: u16): f32 {
+    return getF32(_elasticFactor(intervalIndex))
+}
+
+export function setElasticFactor(intervalIndex: u16, elasticFactor: f32): void {
+    setF32(_elasticFactor(intervalIndex), elasticFactor)
 }
 
 function getIntervalRole(intervalIndex: u16): u8 {
@@ -849,12 +866,12 @@ export function setIntervalStateLength(intervalIndex: u16, state: u8, stateLengt
     setF32(_stateLengthArray(intervalIndex) + F32 * state, stateLength)
 }
 
-function getStress(intervalIndex: u16): f32 {
-    return getF32(_intervalStresses + F32 * intervalIndex)
+function getDisplacement(intervalIndex: u16): f32 {
+    return getF32(_intervalDisplacements + F32 * intervalIndex)
 }
 
-function setStress(intervalIndex: u16, stress: f32): void {
-    setF32(_intervalStresses + F32 * intervalIndex, stress)
+function setDisplacement(intervalIndex: u16, displacement: f32): void {
+    setF32(_intervalDisplacements + F32 * intervalIndex, displacement)
 }
 
 function calculateLength(intervalIndex: u16): f32 {
@@ -917,29 +934,29 @@ function setLineColor(_color: usize, red: f32, green: f32, blue: f32): void {
 }
 
 enum Limit {
-    MinBar = 0,
-    MaxBar = 1,
-    MinCable = 2,
-    MaxCable = 3,
+    MinBarDisplacement = 0,
+    MaxBarDisplacement = 1,
+    MinCableDisplacement = 2,
+    MaxCableDisplacement = 3,
 }
 
-const LIMIT: f32 = 1000
+const BIG_DISPLACEMENT: f32 = 1000
 
-let minBar: f32 = LIMIT
-let maxBar: f32 = -LIMIT
-let minCable: f32 = LIMIT
-let maxCable: f32 = -LIMIT
+let minBarDisplacement: f32 = BIG_DISPLACEMENT
+let maxBarDisplacement: f32 = -BIG_DISPLACEMENT
+let minCableDisplacement: f32 = BIG_DISPLACEMENT
+let maxCableDisplacement: f32 = -BIG_DISPLACEMENT
 
 export function getLimit(limit: Limit): f32 {
     switch (limit) {
-        case Limit.MinBar:
-            return minBar
-        case Limit.MaxBar:
-            return maxBar
-        case Limit.MinCable:
-            return minCable
-        case Limit.MaxCable:
-            return maxCable
+        case Limit.MinBarDisplacement:
+            return minBarDisplacement
+        case Limit.MaxBarDisplacement:
+            return maxBarDisplacement
+        case Limit.MinCableDisplacement:
+            return minCableDisplacement
+        case Limit.MaxCableDisplacement:
+            return maxCableDisplacement
         default:
             return 666
     }
@@ -954,27 +971,27 @@ export function setSlackLimits(barSlack: f32, cableSlack: f32): void {
 }
 
 function outputLinesGeometry(): void {
-    minBar = LIMIT
-    maxBar = -LIMIT
-    minCable = LIMIT
-    maxCable = -LIMIT
+    minBarDisplacement = BIG_DISPLACEMENT
+    maxBarDisplacement = -BIG_DISPLACEMENT
+    minCableDisplacement = BIG_DISPLACEMENT
+    maxCableDisplacement = -BIG_DISPLACEMENT
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        let stress = getStress(intervalIndex)
+        let displacement = getDisplacement(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         if (intervalRole === IntervalRole.Bar) {
-            if (stress < minBar) {
-                minBar = stress
+            if (displacement < minBarDisplacement) {
+                minBarDisplacement = displacement
             }
-            if (stress > maxBar) {
-                maxBar = stress
+            if (displacement > maxBarDisplacement) {
+                maxBarDisplacement = displacement
             }
         } else { // cable role
-            if (stress < minCable) {
-                minCable = stress
+            if (displacement < minCableDisplacement) {
+                minCableDisplacement = displacement
             }
-            if (stress > maxCable) {
-                maxCable = stress
+            if (displacement > maxCableDisplacement) {
+                maxCableDisplacement = displacement
             }
         }
     }
@@ -983,17 +1000,17 @@ function outputLinesGeometry(): void {
         setVector(_linePoint, _location(alphaIndex(intervalIndex)))
         setVector(_linePoint + VECTOR_SIZE, _location(omegaIndex(intervalIndex)))
         let _lineColor = _lineColors + intervalIndex * VECTOR_SIZE * 2
-        let stress = getStress(intervalIndex)
+        let displacement = getDisplacement(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         if (intervalRole === IntervalRole.Bar) {
-            let intensity = (stress - minBar) / (maxBar - minBar)
+            let intensity = (displacement - minBarDisplacement) / (maxBarDisplacement - minBarDisplacement)
             if (barSlackLimit < 0.5 ? intensity < barSlackLimit : intensity > barSlackLimit) {
                 setLineColor(_lineColor, 0, 1, 0)
             } else {
                 setLineColor(_lineColor, 1, 0, 0)
             }
         } else { // a cable role
-            let intensity = (stress - minCable) / (maxCable - minCable)
+            let intensity = (displacement - minCableDisplacement) / (maxCableDisplacement - minCableDisplacement)
             if (cableSlackLimit < 0.5 ? intensity < cableSlackLimit : intensity > cableSlackLimit) {
                 setLineColor(_lineColor, 0, 1, 0)
             } else {
@@ -1165,15 +1182,18 @@ function getTerrainUnder(jointIndex: u16): u8 {
 function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let currentLength = interpolateCurrentLength(intervalIndex, state)
-    let stress = calculateLength(intervalIndex) - currentLength
-    if (intervalRole === IntervalRole.Bar) {
-        stress = stress * (busy ? PUSH_ELASTIC_FACTOR : pushElasticFactor)
-    } else { // cable
-        stress = stress * (stress < 0 ? 0 : (busy ? PULL_ELASTIC_FACTOR : pullElasticFactor))
-    }
-    setStress(intervalIndex, stress)
-    addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), stress / 2)
-    addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -stress / 2)
+    let elasticFactor = getElasticFactor(intervalIndex)
+    let displacement = calculateLength(intervalIndex) - currentLength
+    setDisplacement(intervalIndex, displacement)
+    let force = displacement * elasticFactor * (
+        (intervalRole === IntervalRole.Bar) ? (
+            busy ? PUSH_ELASTIC_FACTOR : pushElasticFactor
+        ) : (
+            displacement < 0 ? 0 : (busy ? PULL_ELASTIC_FACTOR : pullElasticFactor)
+        )
+    )
+    addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
+    addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
     let mass = currentLength * currentLength * currentLength
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -45,10 +44,10 @@ export enum Laterality {
 }
 
 export enum Limit {
-    MinBar = 0,
-    MaxBar = 1,
-    MinCable = 2,
-    MaxCable = 3,
+    MinBarDisplacement = 0,
+    MaxBarDisplacement = 1,
+    MinCableDisplacement = 2,
+    MaxCableDisplacement = 3,
 }
 
 export interface IFabricDimensions {
@@ -111,6 +110,8 @@ export interface IFabricEngine {
     getIntervalCount(): number
 
     createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole): number
+
+    setElasticFactor(intervalIndex: number, elasticFactor: number): void
 
     changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 

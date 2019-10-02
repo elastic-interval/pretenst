@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { CSSProperties, useState } from "react"
+import { CSSProperties, useEffect, useState } from "react"
 import { GetHandleProps, GetRailProps, Handles, Rail, Slider } from "react-compound-slider"
 import { FaArrowDown, FaArrowUp, FaHandPointDown, FaHandPointUp } from "react-icons/all"
 import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
@@ -12,38 +12,49 @@ import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-const BUTTON_CLASS = "text-left my-3 btn-info"
+const BUTTON_CLASS = "my-3 btn-info"
 const DOMAIN = [0, 100]
 const VALUES = [0]
+const ELASTIC_FACTORS = [0.3, 0.9, 1.0, 1.1, 1.5]
 
-export function AdjustPanel({fabric, setStressSelection}: {
+export function AdjustPanel({fabric, setDisplacementSelection}: {
     fabric?: TensegrityFabric,
-    setStressSelection: (on: boolean) => void,
+    setDisplacementSelection: (on: boolean) => void,
 }): JSX.Element {
 
     if (!fabric) {
         return <div/>
     }
 
-    const [cableSlack, setCableSlack] = useState(0)
-    const [proportion, setProportion] = useState(0)
+    const [cableDisplacement, setCableDisplacement] = useState(0)
+    const [nuance, setNuance] = useState(0)
     const [selectOn, setSelectOn] = useState(false)
 
-    const slackFromProportion = (proportionValue: number) => {
-        const minCable = fabric.instance.getLimit(Limit.MinCable)
-        const maxCable = fabric.instance.getLimit(Limit.MaxCable)
-        return (1 - proportionValue) * minCable + proportionValue * maxCable
+    const displacementFromNuance = (nuanceValue: number) => {
+        const min = fabric.instance.getLimit(Limit.MinCableDisplacement)
+        const max = fabric.instance.getLimit(Limit.MaxCableDisplacement)
+        return (1 - nuanceValue) * min + nuanceValue * max
     }
 
-    const proportionTo = (proportionValue: number) => {
-        setProportion(proportionValue)
-        setCableSlack(slackFromProportion(proportionValue))
-        fabric.instance.setSlackLimits(0, proportionValue)
+    useEffect(() => {
+        const ticker = setInterval(() => setCableDisplacement(displacementFromNuance(nuance)), 1000)
+        return () => clearInterval(ticker)
+    }, [nuance])
+
+    const changeNuanceTo = (nuanceValue: number) => {
+        setNuance(nuanceValue)
+        setCableDisplacement(displacementFromNuance(nuanceValue))
+        fabric.instance.setSlackLimits(0, nuanceValue)
     }
 
     const onChange = (changedPercent: number[]) => {
         const percent = changedPercent[0]
-        proportionTo(percent / 100)
+        changeNuanceTo(percent / 100)
+    }
+
+    const switchSelection = (on: boolean) => {
+        setDisplacementSelection(on)
+        setSelectOn(on)
     }
 
     const onSelect = () => {
@@ -51,11 +62,10 @@ export function AdjustPanel({fabric, setStressSelection}: {
             if (interval.intervalRole === IntervalRole.Bar) {
                 return
             }
-            const intervalStress = fabric.instance.getIntervalStress(interval.index)
-            interval.selected = proportion < 0.5 ? intervalStress < cableSlack : intervalStress > cableSlack
+            const intervalStress = fabric.instance.getIntervalDisplacement(interval.index)
+            interval.selected = nuance < 0.5 ? intervalStress < cableDisplacement : intervalStress > cableDisplacement
         })
-        setStressSelection(true)
-        setSelectOn(true)
+        switchSelection(true)
     }
 
     function adjustment(up: boolean): number {
@@ -65,17 +75,13 @@ export function AdjustPanel({fabric, setStressSelection}: {
 
     const adjustValue = (up: boolean) => () => fabric.intervals.filter(interval => interval.selected).forEach(interval => {
         fabric.instance.multiplyRestLength(interval.index, adjustment(up))
-        setStressSelection(false)
-        setSelectOn(false)
-        setTimeout(() => {
-            setCableSlack(slackFromProportion(proportion))
-        }, 1000)
+        switchSelection(false)
     })
 
     return (
         <Container className="adjust-panel">
             <Row className="h-100">
-                <Col xs={{size: 6}}>
+                <Col xs={{size: 5}}>
                     <Slider
                         reversed={true}
                         vertical={true}
@@ -96,17 +102,29 @@ export function AdjustPanel({fabric, setStressSelection}: {
                             {({handles, getHandleProps}) => (
                                 <>
                                     {handles.map(handle => (
-                                        <Handle key={handle.id} handle={handle} getHandleProps={getHandleProps}/>
+                                        <Handle
+                                            key={handle.id}
+                                            handle={handle}
+                                            getHandleProps={getHandleProps}
+                                            cableDisplacement={cableDisplacement}
+                                        />
                                     ))}
                                 </>
                             )}
                         </Handles>
                     </Slider>
                 </Col>
-                <Col xs={{size: 6}} className="my-auto">
+                <Col xs={{size: 7}} className="my-auto">
                     <ButtonGroup vertical={true} className="w-100">
-                        <Button className={BUTTON_CLASS} onClick={onSelect}>
-                            {proportion < 0.5 ? <FaHandPointDown/> : <FaHandPointUp/>} {cableSlack.toFixed(4)}
+                        <Button disabled={nuance < 0.5} className={BUTTON_CLASS} onClick={onSelect}>
+                            <FaHandPointUp/> Select above
+                            <br/>
+                            {cableDisplacement.toFixed(4)}
+                        </Button>
+                        <Button disabled={nuance > 0.5} className={BUTTON_CLASS} onClick={onSelect}>
+                            <FaHandPointDown/> Select below
+                            <br/>
+                            {cableDisplacement.toFixed(4)}
                         </Button>
                         <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(true)}>
                             <FaArrowUp/> Lengthen
@@ -114,6 +132,12 @@ export function AdjustPanel({fabric, setStressSelection}: {
                         <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(false)}>
                             <FaArrowDown/> Shorten
                         </Button>
+                        {ELASTIC_FACTORS.map(factor => (
+                            <Button key={factor} disabled={!selectOn} className={BUTTON_CLASS} onClick={() => {
+                                fabric.intervals.forEach(interval => fabric.instance.setElasticFactor(interval.index, factor))
+                                switchSelection(false)
+                            }}>Elastic = {factor.toFixed(1)}</Button>
+                        ))}
                     </ButtonGroup>
                 </Col>
             </Row>
@@ -150,9 +174,10 @@ function SliderRail({getRailProps}: { getRailProps: GetRailProps }): JSX.Element
     )
 }
 
-export function Handle({handle, getHandleProps}: {
+export function Handle({handle, getHandleProps, cableDisplacement}: {
     handle: { id: string, value: number, percent: number },
     getHandleProps: GetHandleProps,
+    cableDisplacement: number,
 }): JSX.Element {
     return (
         <>
@@ -185,7 +210,7 @@ export function Handle({handle, getHandleProps}: {
                     height: 24,
                     borderRadius: "50%",
                     boxShadow: "1px 1px 1px 1px rgba(0, 0, 0, 0.3)",
-                    backgroundColor: "#ffc400",
+                    backgroundColor: "#00ff00",
                 }}
             />
             <div
@@ -199,7 +224,10 @@ export function Handle({handle, getHandleProps}: {
                     transform: "translate(3em, -50%)",
                     zIndex: 2,
                 }}
-            >{handle.value.toFixed(2)}%
+            >
+                {handle.value.toFixed(2)}%
+                <br/>
+                {cableDisplacement.toFixed(4)}
             </div>
         </>
     )

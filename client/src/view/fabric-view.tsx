@@ -93,7 +93,7 @@ export function FabricView({fabric, selection, setSelection}: {
     }
 
     function IntervalSelection(): JSX.Element {
-        if (selection.selectable === Selectable.STRESS) {
+        if (selection.selectable === Selectable.DISPLACEMENT) {
             return (
                 <>
                     {fabric.intervals.filter(interval => interval.selected)
