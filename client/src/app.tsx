@@ -116,7 +116,7 @@ export class App extends React.Component<IAppProps, IAppState> {
                                 (
                                     <div className="user">
                                         <a href={`${API_URI}/auth/logout`}>
-                                            <Badge color="info">@{this.props.user.profile.username}</Badge>
+                                            <Badge color="info">@{this.props.user!.profile.username}</Badge>
                                         </a>
                                     </div>
                                 )

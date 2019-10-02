@@ -10,17 +10,14 @@ before_install:
   - mv deploy-key ~/.ssh/id_rsa
   - chmod 600 ~/.ssh/id_rsa
 install:
-  - cd server && yarn install && cd ..
-  - cd fabric && yarn install && cd ..
+  - cd fabric-engine && yarn install && cd ..
   - cd client && yarn install && cd ..
 script:
   - echo ">>> Skipping tests"
-  - cd server
-  - yarn run check
   - cd ../client
   - yarn run build
-  - cd ../fabric
-  - yarn run asbuild:untouched
+  - cd ../fabric-engine
+  - yarn run build
   - cd ..
 after_success:
   - ./deploy-remote.sh

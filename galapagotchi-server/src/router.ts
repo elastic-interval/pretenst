@@ -5,7 +5,7 @@
 
 import { NextFunction, Request, Response, Router } from "express"
 import { body, param, ValidationChain, validationResult } from "express-validator/check"
-import HttpStatus from "http-status-codes"
+import * as HttpStatus from "http-status-codes"
 import { getCustomRepository, getManager } from "typeorm"
 
 import { setupAuthentication } from "./auth"

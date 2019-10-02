@@ -2,9 +2,9 @@
 
 set -x
 
-cd fabric
+cd fabric-engine
 yarn
-yarn asbuild:optimized
+yarn build:prod
 
 cd ../client
 yarn

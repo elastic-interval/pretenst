@@ -1,5 +1,5 @@
 {
-  "name": "client-new",
+  "name": "galapagotchi-client",
   "version": "0.1.0",
   "private": true,
   "dependencies": {
@@ -10,7 +10,7 @@
     "@types/jest": "24.0.18",
     "@types/js-cookie": "^2.2.2",
     "@types/node": "12.7.5",
-    "@types/react": "16.9.2",
+    "@types/react": "^16.9.4",
     "@types/react-dom": "16.9.0",
     "@types/reactstrap": "^6.4.3",
     "@typescript-eslint/eslint-plugin": "^2.2.0",
@@ -85,8 +85,11 @@
     "workbox-webpack-plugin": "4.3.1"
   },
   "scripts": {
-    "start": "node scripts/start.js",
-    "build": "node scripts/build.js",
+    "prestart": "cd ../fabric-engine && yarn build && cp ./build/untouched.wasm ../client/build",
+    "start": "REACT_APP_ENABLED_APP=pretenst node scripts/start.js",
+    "start:galapagotchi": "REACT_APP_ENABLED_APP=galapagotchi node scripts/start.js",
+    "build": "REACT_APP_ENABLED_APP=pretenst node scripts/build.js",
+    "build:galapagotchi": "REACT_APP_ENABLED_APP=galapagotchi node scripts/build.js",
     "test": "node scripts/test.js --env=jsdom",
     "lint": "npx eslint --ext .tsx,.ts src/ --fix",
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'",
