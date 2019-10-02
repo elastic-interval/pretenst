@@ -60,11 +60,11 @@ export class TensegrityFabric {
         this.growth = growth
     }
 
-    public intervalsByStress(low: number, high: number): IInterval[] {
+    public intervalsByDisplacement(lowDisplacement: number, highDisplacement: number): IInterval[] {
         return this.intervals.filter(interval => {
-            const stress = this.instance.getIntervalStress(interval.index)
-            // console.log(`I${interval.index}`, stress)
-            return stress > low && stress < high
+            const displacement = this.instance.getIntervalDisplacement(interval.index)
+            // console.log(`I${interval.index}`, displacement)
+            return displacement > lowDisplacement && displacement < highDisplacement
         })
     }
 

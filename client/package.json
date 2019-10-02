@@ -85,7 +85,7 @@
     "workbox-webpack-plugin": "4.3.1"
   },
   "scripts": {
-    "prestart": "cd ../fabric-engine && yarn build && cp ./build/untouched.wasm ../client/build",
+    "prestart": "cd ../fabric-engine && yarn build && cp ./build/fabric.wasm ../client/public",
     "start": "REACT_APP_ENABLED_APP=pretenst node scripts/start.js",
     "start:galapagotchi": "REACT_APP_ENABLED_APP=galapagotchi node scripts/start.js",
     "build": "REACT_APP_ENABLED_APP=pretenst node scripts/build.js",

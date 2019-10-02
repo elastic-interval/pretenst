@@ -48,7 +48,7 @@ export const TENSEGRITY_FACE = new MeshPhongMaterial({
     color: new Color("white"),
     side: DoubleSide,
     transparent: true,
-    opacity: 0.6,
+    opacity: 0.2,
 })
 
 export const TENSEGRITY_JOINT = new MeshPhongMaterial({

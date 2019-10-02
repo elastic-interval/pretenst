@@ -40,7 +40,7 @@ interface IOffsets {
     _faceLocations: number
     _jointLocations: number
     _intervalUnits: number
-    _intervalStresses: number
+    _intervalDisplacements: number
 }
 
 function createOffsets(jointCountMax: number, intervalCountMax: number, faceCountMax: number, baseOffset: number): IOffsets {
@@ -53,7 +53,7 @@ function createOffsets(jointCountMax: number, intervalCountMax: number, faceCoun
         _faceLocations: 0,
         _jointLocations: 0,
         _intervalUnits: 0,
-        _intervalStresses: 0,
+        _intervalDisplacements: 0,
     }
     // sizes
     const seedVectorFloats = 4 * FLOATS_IN_VECTOR
@@ -71,7 +71,7 @@ function createOffsets(jointCountMax: number, intervalCountMax: number, faceCoun
     offsets._faceLocations = offsets._faceNormals + faceJointFloats * Float32Array.BYTES_PER_ELEMENT
     offsets._jointLocations = offsets._faceLocations + faceLocationFloats * Float32Array.BYTES_PER_ELEMENT
     offsets._intervalUnits = offsets._jointLocations + jointLocationFloats * Float32Array.BYTES_PER_ELEMENT
-    offsets._intervalStresses = offsets._intervalUnits + intervalUnitFloats * Float32Array.BYTES_PER_ELEMENT
+    offsets._intervalDisplacements = offsets._intervalUnits + intervalUnitFloats * Float32Array.BYTES_PER_ELEMENT
     return offsets
 }
 
@@ -186,7 +186,7 @@ export class FabricInstance {
     private faceLocations: LazyFloatArray
     private jointLocations: LazyFloatArray
     private intervalUnits: LazyFloatArray
-    private intervalStresses: LazyFloatArray
+    private intervalDisplacements: LazyFloatArray
     private midpointVector = new Vector3()
     private seedVector = new Vector3()
     private forwardVector = new Vector3()
@@ -208,7 +208,7 @@ export class FabricInstance {
         this.faceLocations = new LazyFloatArray(this.buffer, this.offsets._faceLocations, () => this.engine.getFaceCount() * 3 * 3)
         this.jointLocations = new LazyFloatArray(this.buffer, this.offsets._jointLocations, () => this.engine.getJointCount() * 3)
         this.intervalUnits = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.engine.getIntervalCount() * 3)
-        this.intervalStresses = new LazyFloatArray(this.buffer, this.offsets._intervalStresses, () => this.engine.getIntervalCount())
+        this.intervalDisplacements = new LazyFloatArray(this.buffer, this.offsets._intervalDisplacements, () => this.engine.getIntervalCount())
     }
 
     public get index(): number {
@@ -228,7 +228,7 @@ export class FabricInstance {
         this.lineLocations.clear()
         this.lineColors.clear()
         this.intervalUnits.clear()
-        this.intervalStresses.clear()
+        this.intervalDisplacements.clear()
     }
 
     public getDimensions(): IFabricDimensions {
@@ -251,8 +251,8 @@ export class FabricInstance {
         return this.fabricEngine.getLimit(limit)
     }
 
-    public setSlackLimits(barSlack: number, cableSlack: number): void {
-        this.fabricEngine.setSlackLimits(barSlack, cableSlack)
+    public setSlackLimits(barLimit: number, cableLimit: number): void {
+        this.fabricEngine.setSlackLimits(barLimit, cableLimit)
     }
 
     public centralize(): void {
@@ -347,6 +347,10 @@ export class FabricInstance {
         this.fabricEngine.setIntervalStateLength(intervalIndex, state, length)
     }
 
+    public setElasticFactor(intervalIndex: number, elasticFactor: number): void {
+        this.fabricEngine.setElasticFactor(intervalIndex, elasticFactor)
+    }
+
     public changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {
         this.fabricEngine.changeRestIntervalRole(intervalIndex, intervalRole)
     }
@@ -367,8 +371,8 @@ export class FabricInstance {
         return vectorFromFloatArray(this.intervalUnits.floats, intervalIndex * 3)
     }
 
-    public getIntervalStress(intervalIndex: number): number {
-        return this.intervalStresses.floats[intervalIndex]
+    public getIntervalDisplacement(intervalIndex: number): number {
+        return this.intervalDisplacements.floats[intervalIndex]
     }
 
     public getFaceLocations(): Float32Array {
