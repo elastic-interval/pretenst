@@ -101,8 +101,8 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
         const onSelect = () => {
             const isBar = (interval: IInterval) => interval.intervalRole === IntervalRole.Bar
             const isNotBar = (interval: IInterval) => interval.intervalRole !== IntervalRole.Bar
-            const intervalFilter = adjustBars ? isBar : isNotBar
-            fabric.intervals.filter(intervalFilter).forEach(interval => {
+            fabric.intervals.filter(adjustBars ? isNotBar : isBar).forEach(interval => interval.selected = false)
+            fabric.intervals.filter(adjustBars ? isBar : isNotBar).forEach(interval => {
                 const intervalDisplacement = fabric.instance.getIntervalDisplacement(interval.index)
                 interval.selected = nuance < 0.5 ? intervalDisplacement < displacement : intervalDisplacement > displacement
             })
