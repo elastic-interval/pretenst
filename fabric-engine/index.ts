@@ -36,16 +36,19 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
-const PRETENST: f32 = 1.0
 const INTERVAL_ROLE_COUNT: u8 = 8
 const PHI: f32 = 1.618
-const BAR_LENGTH: f32 = 2 * PHI * PRETENST
+const BAR_LENGTH: f32 = 2 * PHI
 const CABLE_LENGTH: f32 = 2.123
 const RING_LENGTH: f32 = 1.775
 const CROSS_LENGTH: f32 = 1.583
 const BOW_MID_LENGTH: f32 = 0.8521
 const BOW_END_LOW_LENGTH: f32 = 1.380
 const BOW_END_HIGH_LENGTH: f32 = 1.571
+
+const PUSH_COLOR: f32[] = [1.0, 0.3, 0.2]
+const PULL_COLOR: f32[] = [0.4, 0.6, 1]
+const SLACK_COLOR: f32[] = [0.0, 1.0, 0.0]
 
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
@@ -1005,16 +1008,16 @@ function outputLinesGeometry(): void {
         if (intervalRole === IntervalRole.Bar) {
             let intensity = (displacement - minBarDisplacement) / (maxBarDisplacement - minBarDisplacement)
             if (barSlackLimit < 0.5 ? intensity < barSlackLimit : intensity > barSlackLimit) {
-                setLineColor(_lineColor, 0, 1, 0)
+                setLineColor(_lineColor, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
-                setLineColor(_lineColor, 1, 0, 0)
+                setLineColor(_lineColor, PUSH_COLOR[0], PUSH_COLOR[1], PUSH_COLOR[2])
             }
         } else { // a cable role
             let intensity = (displacement - minCableDisplacement) / (maxCableDisplacement - minCableDisplacement)
             if (cableSlackLimit < 0.5 ? intensity < cableSlackLimit : intensity > cableSlackLimit) {
-                setLineColor(_lineColor, 0, 1, 0)
+                setLineColor(_lineColor, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
-                setLineColor(_lineColor, 0, 0, 1)
+                setLineColor(_lineColor, PULL_COLOR[0], PULL_COLOR[1], PULL_COLOR[2])
             }
         }
     }

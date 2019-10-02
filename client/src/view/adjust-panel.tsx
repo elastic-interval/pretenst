@@ -12,10 +12,18 @@ import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-const BUTTON_CLASS = "my-3 btn-info"
+interface ICableElastic {
+    strands: number,
+    factor: number,
+}
+
+const BUTTON_CLASS = "my-1 btn-info"
+const BUTTON_GROUP_CLASS = "my-3 w-100"
 const DOMAIN = [0, 100]
 const VALUES = [0]
-const ELASTIC_FACTORS = [0.3, 0.9, 1.0, 1.1, 1.5]
+const CABLE_STRANDS = [6, 10, 12, 14, 16, 18]
+const MID_STRAND = CABLE_STRANDS [Math.ceil(CABLE_STRANDS.length / 2) - 1]
+const CABLE_ELASTICS: ICableElastic[] = CABLE_STRANDS.map(strands => ({strands, factor: strands / MID_STRAND}))
 
 export function AdjustPanel({fabric, setDisplacementSelection}: {
     fabric?: TensegrityFabric,
@@ -115,7 +123,7 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
                     </Slider>
                 </Col>
                 <Col xs={{size: 7}} className="my-auto">
-                    <ButtonGroup vertical={true} className="w-100">
+                    <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
                         <Button disabled={nuance < 0.5} className={BUTTON_CLASS} onClick={onSelect}>
                             <FaHandPointUp/> Select above
                             <br/>
@@ -126,17 +134,23 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
                             <br/>
                             {cableDisplacement.toFixed(4)}
                         </Button>
+                    </ButtonGroup>
+                    <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
                         <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(true)}>
                             <FaArrowUp/> Lengthen
                         </Button>
                         <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(false)}>
                             <FaArrowDown/> Shorten
                         </Button>
-                        {ELASTIC_FACTORS.map(factor => (
-                            <Button key={factor} disabled={!selectOn} className={BUTTON_CLASS} onClick={() => {
-                                fabric.intervals.forEach(interval => fabric.instance.setElasticFactor(interval.index, factor))
-                                switchSelection(false)
-                            }}>Elastic = {factor.toFixed(1)}</Button>
+                    </ButtonGroup>
+                    <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
+                        {CABLE_ELASTICS.map(cableElastic => (
+                            <Button key={cableElastic.strands} disabled={!selectOn} className={BUTTON_CLASS}
+                                    onClick={() => {
+                                        fabric.intervals.forEach(interval => fabric.instance.setElasticFactor(interval.index, cableElastic.factor))
+                                        switchSelection(false)
+                                    }}
+                            >Cable-{cableElastic.strands} ({cableElastic.factor.toFixed(3)})</Button>
                         ))}
                     </ButtonGroup>
                 </Col>

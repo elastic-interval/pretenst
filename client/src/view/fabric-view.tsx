@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -184,8 +185,8 @@ export function FabricView({fabric, selection, setSelection}: {
                 onClick={(event: DomEvent) => {
                     if (event.shiftKey && selectedFace.canGrow) {
                         createConnectedBrick(selectedFace.brick, selectedFace.triangle)
-                        setSelection({})
                     }
+                    setSelection({})
                 }}
                 onPointerDown={stopPropagation}
                 onPointerUp={stopPropagation}
