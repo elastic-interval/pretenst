@@ -10,7 +10,7 @@
     "@types/jest": "24.0.18",
     "@types/js-cookie": "^2.2.2",
     "@types/node": "12.7.5",
-    "@types/react": "16.9.2",
+    "@types/react": "^16.9.4",
     "@types/react-dom": "16.9.0",
     "@types/reactstrap": "^6.4.3",
     "@typescript-eslint/eslint-plugin": "^2.2.0",
@@ -85,7 +85,7 @@
     "workbox-webpack-plugin": "4.3.1"
   },
   "scripts": {
-    "prestart": "cd ../fabric-engine && yarn build && cp ./build/untouched.wasm /build",
+    "prestart": "cd ../fabric-engine && yarn build && cp ./build/untouched.wasm ../client/build",
     "start": "REACT_APP_ENABLED_APP=pretenst node scripts/start.js",
     "start:galapagotchi": "REACT_APP_ENABLED_APP=galapagotchi node scripts/start.js",
     "build": "REACT_APP_ENABLED_APP=pretenst node scripts/build.js",
