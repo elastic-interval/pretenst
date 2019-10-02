@@ -1188,13 +1188,12 @@ function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     setDisplacement(intervalIndex, displacement)
-    let force = displacement * elasticFactor * (
-        (intervalRole === IntervalRole.Bar) ? (
-            busy ? PUSH_ELASTIC_FACTOR : pushElasticFactor
-        ) : (
-            displacement < 0 ? 0 : (busy ? PULL_ELASTIC_FACTOR : pullElasticFactor)
-        )
+    let globalElasticFactor: f32 = (intervalRole === IntervalRole.Bar) ? (
+        busy ? PUSH_ELASTIC_FACTOR : pushElasticFactor
+    ) : (
+        displacement < 0 ? 0 : (busy ? PULL_ELASTIC_FACTOR : pullElasticFactor)
     )
+    let force = displacement * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
     let mass = currentLength * currentLength * currentLength

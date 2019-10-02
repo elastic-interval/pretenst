@@ -10,9 +10,10 @@ import { FaArrowDown, FaArrowUp, FaHandPointDown, FaHandPointUp } from "react-ic
 import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
+import { IInterval } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-interface ICableElastic {
+interface IElastic {
     strands: number,
     factor: number,
 }
@@ -21,9 +22,9 @@ const BUTTON_CLASS = "my-1 btn-info"
 const BUTTON_GROUP_CLASS = "my-3 w-100"
 const DOMAIN = [0, 100]
 const VALUES = [0]
-const CABLE_STRANDS = [6, 10, 12, 14, 16, 18]
-const MID_STRAND = CABLE_STRANDS [Math.ceil(CABLE_STRANDS.length / 2) - 1]
-const CABLE_ELASTICS: ICableElastic[] = CABLE_STRANDS.map(strands => ({strands, factor: strands / MID_STRAND}))
+const THICKNESSES = [6, 10, 12, 14, 16, 18]
+const MID_STRAND = THICKNESSES [Math.ceil(THICKNESSES.length / 2) - 1]
+const ELASTICS: IElastic[] = THICKNESSES.map(strands => ({strands, factor: strands / MID_STRAND}))
 
 export function AdjustPanel({fabric, setDisplacementSelection}: {
     fabric?: TensegrityFabric,
@@ -34,25 +35,34 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
         return <div/>
     }
 
-    const [cableDisplacement, setCableDisplacement] = useState(0)
+    const [adjustBars, setAdjustBarsState] = useState(false)
+    const [displacement, setDisplacement] = useState(0)
     const [nuance, setNuance] = useState(0)
     const [selectOn, setSelectOn] = useState(false)
 
+    const setSlackLimits = (bars: boolean, nuanceValue: number) => {
+        if (bars) {
+            fabric.instance.setSlackLimits(nuanceValue, 0)
+        } else {
+            fabric.instance.setSlackLimits(0, nuanceValue)
+        }
+    }
+
     const displacementFromNuance = (nuanceValue: number) => {
-        const min = fabric.instance.getLimit(Limit.MinCableDisplacement)
-        const max = fabric.instance.getLimit(Limit.MaxCableDisplacement)
+        const min = fabric.instance.getLimit(adjustBars ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
+        const max = fabric.instance.getLimit(adjustBars ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
         return (1 - nuanceValue) * min + nuanceValue * max
     }
 
     useEffect(() => {
-        const ticker = setInterval(() => setCableDisplacement(displacementFromNuance(nuance)), 1000)
+        const ticker = setInterval(() => setDisplacement(displacementFromNuance(nuance)), 1000)
         return () => clearInterval(ticker)
     }, [nuance])
 
     const changeNuanceTo = (nuanceValue: number) => {
         setNuance(nuanceValue)
-        setCableDisplacement(displacementFromNuance(nuanceValue))
-        fabric.instance.setSlackLimits(0, nuanceValue)
+        setDisplacement(displacementFromNuance(nuanceValue))
+        setSlackLimits(adjustBars, nuanceValue)
     }
 
     const onChange = (changedPercent: number[]) => {
@@ -65,94 +75,119 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
         setSelectOn(on)
     }
 
-    const onSelect = () => {
-        fabric.intervals.forEach(interval => {
-            if (interval.intervalRole === IntervalRole.Bar) {
-                return
-            }
-            const intervalStress = fabric.instance.getIntervalDisplacement(interval.index)
-            interval.selected = nuance < 0.5 ? intervalStress < cableDisplacement : intervalStress > cableDisplacement
-        })
-        switchSelection(true)
-    }
-
     function adjustment(up: boolean): number {
         const factor = 1.1
         return up ? factor : (1 / factor)
     }
 
-    const adjustValue = (up: boolean) => () => fabric.intervals.filter(interval => interval.selected).forEach(interval => {
-        fabric.instance.multiplyRestLength(interval.index, adjustment(up))
-        switchSelection(false)
-    })
+    const IntervalGroupToggle = () => {
+        const setAdjustBars = (bars: boolean) => {
+            setAdjustBarsState(bars)
+            setSlackLimits(bars, nuance)
+        }
+        return (
+            <ButtonGroup className={BUTTON_GROUP_CLASS}>
+                <Button disabled={!adjustBars} className={BUTTON_CLASS} onClick={() => setAdjustBars(false)}>
+                    Cables
+                </Button>
+                <Button disabled={adjustBars} className={BUTTON_CLASS} onClick={() => setAdjustBars(true)}>
+                    Bars
+                </Button>
+            </ButtonGroup>
+        )
+    }
 
+    const IntervalSelectButtons = () => {
+        const onSelect = () => {
+            const isBar = (interval: IInterval) => interval.intervalRole === IntervalRole.Bar
+            const isNotBar = (interval: IInterval) => interval.intervalRole !== IntervalRole.Bar
+            const intervalFilter = adjustBars ? isBar : isNotBar
+            fabric.intervals.filter(intervalFilter).forEach(interval => {
+                const intervalDisplacement = fabric.instance.getIntervalDisplacement(interval.index)
+                interval.selected = nuance < 0.5 ? intervalDisplacement < displacement : intervalDisplacement > displacement
+            })
+            switchSelection(true)
+        }
+        return (
+            <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
+                <Button disabled={nuance < 0.5} className={BUTTON_CLASS} onClick={onSelect}>
+                    <FaHandPointUp/> Select above
+                    <br/>
+                    {displacement.toFixed(4)}
+                </Button>
+                <Button disabled={nuance > 0.5} className={BUTTON_CLASS} onClick={onSelect}>
+                    <FaHandPointDown/> Select below
+                    <br/>
+                    {displacement.toFixed(4)}
+                </Button>
+            </ButtonGroup>
+        )
+    }
+
+    const LengthAdjustmentButtons = () => {
+        const adjustValue = (up: boolean) => () => fabric.intervals.filter(interval => interval.selected).forEach(interval => {
+            fabric.instance.multiplyRestLength(interval.index, adjustment(up))
+            switchSelection(false)
+        })
+        return (
+            <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
+                <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(true)}>
+                    <FaArrowUp/> Lengthen
+                </Button>
+                <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(false)}>
+                    <FaArrowDown/> Shorten
+                </Button>
+            </ButtonGroup>
+        )
+    }
+
+    const ElasticFactorButtons = () => {
+        const onClick = (elasticFactor: number) => {
+            fabric.intervals.forEach(interval => fabric.instance.setElasticFactor(interval.index, elasticFactor))
+            switchSelection(false)
+        }
+        return (
+            <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>{ELASTICS.map(elastic => (
+                <Button key={elastic.strands} disabled={!selectOn} className={BUTTON_CLASS}
+                        onClick={() => onClick(elastic.factor)}>
+                    {elastic.strands}-thick ({elastic.factor.toFixed(3)})
+                </Button>
+            ))}</ButtonGroup>
+        )
+    }
+
+    const sliderStyle: CSSProperties = {
+        position: "relative",
+        height: "90%",
+        marginTop: "30%",
+        marginBottom: "30%",
+        borderRadius: 12,
+    }
     return (
         <Container className="adjust-panel">
             <Row className="h-100">
                 <Col xs={{size: 5}}>
-                    <Slider
-                        reversed={true}
-                        vertical={true}
-                        step={-0.01}
-                        rootStyle={{
-                            position: "relative",
-                            height: "90%",
-                            marginTop: "30%",
-                            marginBottom: "30%",
-                            borderRadius: 12,
-                        }}
-                        domain={DOMAIN}
-                        values={VALUES}
-                        onChange={onChange}
-                    >
+                    <Slider rootStyle={sliderStyle} reversed={true} vertical={true}
+                            step={-0.01} domain={DOMAIN} values={VALUES}
+                            onChange={onChange}>
                         <Rail>{({getRailProps}) => <SliderRail getRailProps={getRailProps}/>}</Rail>
-                        <Handles>
-                            {({handles, getHandleProps}) => (
-                                <>
-                                    {handles.map(handle => (
-                                        <Handle
-                                            key={handle.id}
-                                            handle={handle}
+                        <Handles>{({handles, getHandleProps}) => (
+                            <>{
+                                handles.map(handle => (
+                                    <Handle key={handle.id} handle={handle}
                                             getHandleProps={getHandleProps}
-                                            cableDisplacement={cableDisplacement}
-                                        />
-                                    ))}
-                                </>
-                            )}
-                        </Handles>
+                                            cableDisplacement={displacement}
+                                    />
+                                ))
+                            }</>
+                        )}</Handles>
                     </Slider>
                 </Col>
                 <Col xs={{size: 7}} className="my-auto">
-                    <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
-                        <Button disabled={nuance < 0.5} className={BUTTON_CLASS} onClick={onSelect}>
-                            <FaHandPointUp/> Select above
-                            <br/>
-                            {cableDisplacement.toFixed(4)}
-                        </Button>
-                        <Button disabled={nuance > 0.5} className={BUTTON_CLASS} onClick={onSelect}>
-                            <FaHandPointDown/> Select below
-                            <br/>
-                            {cableDisplacement.toFixed(4)}
-                        </Button>
-                    </ButtonGroup>
-                    <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
-                        <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(true)}>
-                            <FaArrowUp/> Lengthen
-                        </Button>
-                        <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(false)}>
-                            <FaArrowDown/> Shorten
-                        </Button>
-                    </ButtonGroup>
-                    <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
-                        {CABLE_ELASTICS.map(cableElastic => (
-                            <Button key={cableElastic.strands} disabled={!selectOn} className={BUTTON_CLASS}
-                                    onClick={() => {
-                                        fabric.intervals.forEach(interval => fabric.instance.setElasticFactor(interval.index, cableElastic.factor))
-                                        switchSelection(false)
-                                    }}
-                            >Cable-{cableElastic.strands} ({cableElastic.factor.toFixed(3)})</Button>
-                        ))}
-                    </ButtonGroup>
+                    <IntervalGroupToggle/>
+                    <IntervalSelectButtons/>
+                    <LengthAdjustmentButtons/>
+                    <ElasticFactorButtons/>
                 </Col>
             </Row>
         </Container>

@@ -251,8 +251,8 @@ export class FabricInstance {
         return this.fabricEngine.getLimit(limit)
     }
 
-    public setSlackLimits(barSlack: number, cableSlack: number): void {
-        this.fabricEngine.setSlackLimits(barSlack, cableSlack)
+    public setSlackLimits(barLimit: number, cableLimit: number): void {
+        this.fabricEngine.setSlackLimits(barLimit, cableLimit)
     }
 
     public centralize(): void {

@@ -65,7 +65,7 @@ export interface IFabricEngine {
 
     getLimit(limit: Limit): number
 
-    setSlackLimits(barSlack: number, cableSlack: number): void
+    setSlackLimits(barLimit: number, cableLimit: number): void
 
     init(joints: number, intervals: number, faces: number, instances: number): number
 
