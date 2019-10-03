@@ -10,9 +10,9 @@ import * as ReactDOM from "react-dom"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { IFabricDimensions, IFabricEngine } from "./fabric/fabric-engine"
+import { IFabricDimensions, IFabricEngine, IntervalRole, PhysicsFeature } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { Physics } from "./fabric/physics"
+import { acquireRoleFeature, applyFeatureToEngine, enumToFeatureArray } from "./fabric/features"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
@@ -40,12 +40,12 @@ APP_EVENT.subscribe(appEvent => {
     }
 })
 
-function getPhysicsFeature(label: string, defaultValue: number): number {
+function getFeature(label: string, defaultValue: number): number {
     const value = localStorage.getItem(label)
     return value ? parseFloat(value) : defaultValue
 }
 
-function setPhysicsFeature(label: string, factor: number): void {
+function setFeature(label: string, factor: number): void {
     localStorage.setItem(label, factor.toFixed(10))
 }
 
@@ -53,9 +53,11 @@ async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const user = await storage.getUser()
     const root = document.getElementById("root") as HTMLElement
-    const physics = new Physics({getPhysicsFeature, setPhysicsFeature})
+    const featureStorage = {getFeature,setFeature}
+    const physicsFeatures = enumToFeatureArray(PhysicsFeature, true, featureStorage)
+    const roleFeatures = enumToFeatureArray(IntervalRole, false, featureStorage)
     const fabricCache: Record<string, TensegrityFabric> = {}
-    physics.applyGlobalFeatures(engine)
+    physicsFeatures.forEach(applyFeatureToEngine(engine))
     if (TENSEGRITY) {
         const dimensions: IFabricDimensions = {
             instanceMax: 30,
@@ -63,7 +65,7 @@ async function start(): Promise<void> {
             intervalCountMax: 15000,
             faceCountMax: 4000,
         }
-        const fabricKernel = new FabricKernel(engine, physics, dimensions)
+        const fabricKernel = new FabricKernel(engine, roleFeatures, dimensions)
         const getFabric = (name: string) => {
             const cached = fabricCache[name]
             if (cached) {
@@ -73,14 +75,15 @@ async function start(): Promise<void> {
             if (!newFabric) {
                 throw new Error()
             }
-            physics.acquireLocalFeatures(newFabric.instance)
+            roleFeatures.forEach(feature => acquireRoleFeature(newFabric.instance, feature, featureStorage))
             fabricCache[name] = newFabric
             return newFabric
         }
         ReactDOM.render(
             <TensegrityView
                 engine={engine}
-                physics={physics}
+                physicsFeatures={physicsFeatures}
+                roleFeatures={roleFeatures}
                 getFabric={getFabric}
             />,
             root,
@@ -89,7 +92,7 @@ async function start(): Promise<void> {
         ReactDOM.render(
             <App
                 engine={engine}
-                physics={physics}
+                roleFeatures={roleFeatures}
                 storage={storage}
                 user={user}
             />,

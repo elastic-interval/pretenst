@@ -7,7 +7,7 @@ import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { IntervalRole, Laterality } from "./fabric-engine"
 import { FabricInstance } from "./fabric-kernel"
-import { Physics } from "./physics"
+import { applyFeatureToInstance, IFeature } from "./features"
 import {
     connectClosestFacePair,
     createBrickOnOrigin,
@@ -46,34 +46,26 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(public readonly instance: FabricInstance, public readonly physics: Physics, public readonly name: string) {
+    constructor(public readonly instance: FabricInstance, public readonly roleFeatures: IFeature[], public readonly name: string) {
     }
 
-    public startConstruction(constructionCode: string, altitude: number): void {
+    public startConstruction(constructionCode: string): void {
         this.reset()
         const growth = parseConstructionCode(constructionCode)
         if (!growth.growing.length) {
-            this.createBrick(altitude)
+            this.createBrick()
             return
         }
-        growth.growing[0].brick = this.createBrick(altitude)
+        growth.growing[0].brick = this.createBrick()
         this.growth = growth
-    }
-
-    public intervalsByDisplacement(lowDisplacement: number, highDisplacement: number): IInterval[] {
-        return this.intervals.filter(interval => {
-            const displacement = this.instance.getIntervalDisplacement(interval.index)
-            // console.log(`I${interval.index}`, displacement)
-            return displacement > lowDisplacement && displacement < highDisplacement
-        })
     }
 
     public get growthFaces(): IFace[] {
         return this.faces.filter(f => f.canGrow)
     }
 
-    public createBrick(altitude: number): IBrick {
-        const brick = createBrickOnOrigin(this, altitude)
+    public createBrick(): IBrick {
+        const brick = createBrickOnOrigin(this)
         this.instance.clear()
         this.disposeOfGeometry()
         return brick
@@ -243,7 +235,7 @@ export class TensegrityFabric {
                             break
                     }
                 } else {
-                    this.physics.applyLocalFeatures(this.instance)
+                    this.roleFeatures.forEach(applyFeatureToInstance(this.instance))
                     this.growth = undefined
                 }
             }

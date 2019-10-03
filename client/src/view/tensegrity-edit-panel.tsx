@@ -11,7 +11,7 @@ import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import { facePartSelectable, IFace, IInterval, IJoint, ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-const BUTTON_CLASS = "text-left my-2 mx-1 btn-info"
+const BUTTON_CLASS = "text-left my-2 mx-1"
 const BUTTON_GROUP_CLASS = "w-75 align-self-center my-4"
 
 export function TensegrityEditPanel({fabric, selection, setSelection}: {

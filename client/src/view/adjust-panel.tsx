@@ -6,7 +6,7 @@
 import * as React from "react"
 import { CSSProperties, useEffect, useState } from "react"
 import { GetHandleProps, GetRailProps, Handles, Rail, Slider } from "react-compound-slider"
-import { FaArrowDown, FaArrowUp, FaHandPointDown, FaHandPointUp } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaHandPointDown, FaHandPointUp, FaTimes } from "react-icons/all"
 import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
@@ -18,11 +18,11 @@ interface IElastic {
     factor: number,
 }
 
-const BUTTON_CLASS = "my-1 btn-info"
+const BUTTON_CLASS = "my-1"
 const BUTTON_GROUP_CLASS = "my-3 w-100"
 const DOMAIN = [0, 100]
 const VALUES = [0]
-const THICKNESSES = [6, 10, 12, 14, 16, 18]
+const THICKNESSES = [3, 6, 12, 24, 48]
 const MID_STRAND = THICKNESSES [Math.ceil(THICKNESSES.length / 2) - 1]
 const ELASTICS: IElastic[] = THICKNESSES.map(strands => ({strands, factor: strands / MID_STRAND}))
 
@@ -35,12 +35,11 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
         return <div/>
     }
 
-    const [adjustBars, setAdjustBarsState] = useState(false)
-    const [displacement, setDisplacement] = useState(0)
-    const [nuance, setNuance] = useState(0)
+    const [barMode, setBarMode] = useState(false)
     const [selectOn, setSelectOn] = useState(false)
+    const [nuance, setNuance] = useState(0)
 
-    const setSlackLimits = (bars: boolean, nuanceValue: number) => {
+    const setFabricSlackLimits = (bars: boolean, nuanceValue: number) => {
         if (bars) {
             fabric.instance.setSlackLimits(nuanceValue, 0)
         } else {
@@ -49,25 +48,9 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     }
 
     const displacementFromNuance = (nuanceValue: number) => {
-        const min = fabric.instance.getLimit(adjustBars ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
-        const max = fabric.instance.getLimit(adjustBars ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
+        const min = fabric.instance.getLimit(barMode ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
+        const max = fabric.instance.getLimit(barMode ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
         return (1 - nuanceValue) * min + nuanceValue * max
-    }
-
-    useEffect(() => {
-        const ticker = setInterval(() => setDisplacement(displacementFromNuance(nuance)), 1000)
-        return () => clearInterval(ticker)
-    }, [nuance])
-
-    const changeNuanceTo = (nuanceValue: number) => {
-        setNuance(nuanceValue)
-        setDisplacement(displacementFromNuance(nuanceValue))
-        setSlackLimits(adjustBars, nuanceValue)
-    }
-
-    const onChange = (changedPercent: number[]) => {
-        const percent = changedPercent[0]
-        changeNuanceTo(percent / 100)
     }
 
     const switchSelection = (on: boolean) => {
@@ -81,16 +64,17 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     }
 
     const IntervalGroupToggle = () => {
-        const setAdjustBars = (bars: boolean) => {
-            setAdjustBarsState(bars)
-            setSlackLimits(bars, nuance)
+        const setAdjustBars = (barsMode: boolean) => {
+            setBarMode(barsMode)
+            setFabricSlackLimits(barsMode, nuance)
+            switchSelection(false)
         }
         return (
             <ButtonGroup className={BUTTON_GROUP_CLASS}>
-                <Button disabled={!adjustBars} className={BUTTON_CLASS} onClick={() => setAdjustBars(false)}>
+                <Button disabled={!barMode} className={BUTTON_CLASS} onClick={() => setAdjustBars(false)}>
                     Cables
                 </Button>
-                <Button disabled={adjustBars} className={BUTTON_CLASS} onClick={() => setAdjustBars(true)}>
+                <Button disabled={barMode} className={BUTTON_CLASS} onClick={() => setAdjustBars(true)}>
                     Bars
                 </Button>
             </ButtonGroup>
@@ -100,25 +84,29 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     const IntervalSelectButtons = () => {
         const onSelect = () => {
             const isBar = (interval: IInterval) => interval.intervalRole === IntervalRole.Bar
-            const isNotBar = (interval: IInterval) => interval.intervalRole !== IntervalRole.Bar
-            const intervalFilter = adjustBars ? isBar : isNotBar
-            fabric.intervals.filter(intervalFilter).forEach(interval => {
-                const intervalDisplacement = fabric.instance.getIntervalDisplacement(interval.index)
-                interval.selected = nuance < 0.5 ? intervalDisplacement < displacement : intervalDisplacement > displacement
+            const displacement = displacementFromNuance(nuance)
+            fabric.intervals.forEach(interval => {
+                const bar = isBar(interval)
+                if (barMode !== bar) {
+                    interval.selected = false
+                } else {
+                    const intervalDisplacement = fabric.instance.getIntervalDisplacement(interval.index) * (bar ? -1 : 1)
+                    interval.selected = nuance < 0.5 ? intervalDisplacement < displacement : intervalDisplacement > displacement
+                }
             })
             switchSelection(true)
         }
+
         return (
             <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
                 <Button disabled={nuance < 0.5} className={BUTTON_CLASS} onClick={onSelect}>
-                    <FaHandPointUp/> Select above
-                    <br/>
-                    {displacement.toFixed(4)}
+                    <FaHandPointUp/> Above
                 </Button>
                 <Button disabled={nuance > 0.5} className={BUTTON_CLASS} onClick={onSelect}>
-                    <FaHandPointDown/> Select below
-                    <br/>
-                    {displacement.toFixed(4)}
+                    <FaHandPointDown/> Below
+                </Button>
+                <Button className={BUTTON_CLASS} onClick={() => setSelectOn(false)}>
+                    <FaTimes/> Cancel
                 </Button>
             </ButtonGroup>
         )
@@ -156,32 +144,17 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
         )
     }
 
-    const sliderStyle: CSSProperties = {
-        position: "relative",
-        height: "90%",
-        marginTop: "30%",
-        marginBottom: "30%",
-        borderRadius: 12,
-    }
     return (
         <Container className="adjust-panel">
             <Row className="h-100">
                 <Col xs={{size: 5}}>
-                    <Slider rootStyle={sliderStyle} reversed={true} vertical={true}
-                            step={-0.01} domain={DOMAIN} values={VALUES}
-                            onChange={onChange}>
-                        <Rail>{({getRailProps}) => <SliderRail getRailProps={getRailProps}/>}</Rail>
-                        <Handles>{({handles, getHandleProps}) => (
-                            <>{
-                                handles.map(handle => (
-                                    <Handle key={handle.id} handle={handle}
-                                            getHandleProps={getHandleProps}
-                                            cableDisplacement={displacement}
-                                    />
-                                ))
-                            }</>
-                        )}</Handles>
-                    </Slider>
+                    <DisplacementSlider
+                        adjustBars={barMode}
+                        nuance={nuance}
+                        setNuance={setNuance}
+                        displacementFromNuance={displacementFromNuance}
+                        setFabricSlackLimits={setFabricSlackLimits}
+                    />
                 </Col>
                 <Col xs={{size: 7}} className="my-auto">
                     <IntervalGroupToggle/>
@@ -194,15 +167,69 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     )
 }
 
+function DisplacementSlider({adjustBars, displacementFromNuance, setFabricSlackLimits, nuance, setNuance}: {
+    adjustBars: boolean,
+    nuance: number,
+    setNuance: (nuance: number) => void,
+    displacementFromNuance: (nuance: number) => number,
+    setFabricSlackLimits: (bars: boolean, nuanceValue: number) => void,
+}): JSX.Element {
+
+    const [displacement, setDisplacement] = useState(0)
+
+    useEffect(() => {
+        const ticker = setInterval(() => setDisplacement(displacementFromNuance(nuance)), 1000)
+        return () => clearInterval(ticker)
+    }, [nuance])
+
+    const sliderStyle: CSSProperties = {
+        position: "relative",
+        height: "90%",
+        marginTop: "30%",
+        marginBottom: "30%",
+        borderRadius: 12,
+    }
+
+    const changeNuanceTo = (nuanceValue: number) => {
+        setNuance(nuanceValue)
+        setDisplacement(displacementFromNuance(nuanceValue))
+        setFabricSlackLimits(adjustBars, nuanceValue)
+    }
+
+    const onChange = (newSliderValues: number[]) => {
+        const percent = newSliderValues[0]
+        changeNuanceTo(percent / 100)
+    }
+
+    return (
+        <Slider rootStyle={sliderStyle} reversed={true} vertical={true}
+                step={-0.01} domain={DOMAIN} values={VALUES}
+                onChange={onChange}>
+            <Rail>{({getRailProps}) => <SliderRail getRailProps={getRailProps}/>}</Rail>
+            <Handles>{({handles, getHandleProps}) => (
+                <>{
+                    handles.map(handle => (
+                        <Handle key={handle.id} handle={handle}
+                                getHandleProps={getHandleProps}
+                                cableDisplacement={displacement}
+                        />
+                    ))
+                }</>
+            )}</Handles>
+        </Slider>
+    )
+}
+
 function SliderRail({getRailProps}: { getRailProps: GetRailProps }): JSX.Element {
     const railOuterStyle: CSSProperties = {
         position: "absolute",
         height: "100%",
-        width: "3em",
+        width: "6em",
         transform: "translate(1.2em, 0%)",
-        borderRadius: 7,
+        borderTopRightRadius: 10,
+        borderBottomRightRadius: 7,
         cursor: "pointer",
-        // border: "1px solid white",
+        border: "1px solid lightgreen",
     }
 
     const railInnerStyle: CSSProperties = {
@@ -210,7 +237,7 @@ function SliderRail({getRailProps}: { getRailProps: GetRailProps }): JSX.Element
         height: "100%",
         width: "1em",
         transform: "translate(1.2em, 0%)",
-        borderRadius: 7,
+        borderRadius: 0,
         pointerEvents: "none",
         backgroundColor: "rgb(155,155,155)",
     }

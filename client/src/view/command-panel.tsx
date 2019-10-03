@@ -41,7 +41,7 @@ function extractIntervalBlob(output: IFabricOutput): Blob {
     return new Blob([intervalsFile], {type: "application/csv"})
 }
 
-export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
+export function CommandPanel({constructFabric, fabric, cancelSelection}: {
     constructFabric: (fabricCode: string) => void,
     fabric?: TensegrityFabric,
     cancelSelection: () => void,
@@ -72,7 +72,7 @@ export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
         FileSaver.saveAs(extractIntervalBlob(output), `${dateString}-intervals.csv`)
     }
 
-    const buttonClass = "text-left my-2 mx-1 btn-info"
+    const BUTTON_CLASS = "text-left my-2 mx-1"
 
     return (
         <div className="text-center">
@@ -89,28 +89,28 @@ export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
                         ))}
                     </DropdownMenu>
                 </ButtonDropdown>
-                <Button className={buttonClass} onClick={() => withFabric(f => f.optimize(false))}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.optimize(false))}>
                     <FaBolt/> Short Optimize
                 </Button>
-                <Button className={buttonClass} onClick={() => withFabric(f => f.optimize(true))}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.optimize(true))}>
                     <FaBolt/> Long Optimize
                 </Button>
-                <Button className={buttonClass} onClick={() => withFabric(connectClosestFacePair)}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(connectClosestFacePair)}>
                     <FaStarOfDavid/> Connect
                 </Button>
-                <Button className={buttonClass} onClick={() => withFabric(f => f.instance.setAltitude(10))}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.instance.setAltitude(10))}>
                     <FaParachuteBox/> Jump
                 </Button>
-                <Button className={buttonClass} onClick={() => withFabric(f => f.autoRotate = !f.autoRotate)}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.autoRotate = !f.autoRotate)}>
                     <FaSyncAlt/> Rotate
                 </Button>
-                <Button className={buttonClass} onClick={() => withFabric(f => f.instance.centralize())}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.instance.centralize())}>
                     <FaCompressArrowsAlt/> Centralize
                 </Button>
-                <Button className={buttonClass} onClick={() => withFabric(saveFiles)}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(saveFiles)}>
                     <FaDownload/> Download
                 </Button>
-                <Button className={buttonClass} onClick={() => constructFabric(loadFabricCode()[storageIndex])}>
+                <Button className={BUTTON_CLASS} onClick={() => constructFabric(loadFabricCode()[storageIndex])}>
                     <FaRecycle/> Rebuild
                 </Button>
             </ButtonGroup>

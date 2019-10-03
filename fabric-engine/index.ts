@@ -9,7 +9,7 @@ declare function logFloat(idx: u32, f: f32): void
 
 declare function logInt(idx: u32, i: i32): void
 
-enum GlobalFeature {
+enum PhysicsFeature {
     GravityAbove = 0,
     GravityBelowLand = 1,
     GravityBelowWater = 2,
@@ -250,8 +250,8 @@ const DRAG_BELOW_LAND: f32 = 0.6
 const DRAG_BELOW_WATER: f32 = 0.001
 const GRAVITY_BELOW_LAND: f32 = -0.03
 const GRAVITY_BELOW_WATER: f32 = -0.00001
-const PUSH_ELASTIC_FACTOR: f32 = 25.0
-const PULL_ELASTIC_FACTOR: f32 = 5.0
+const PUSH_ELASTIC_FACTOR: f32 = 1.0
+const PULL_ELASTIC_FACTOR: f32 = 1.0
 const DEFAULT_ELASTIC_FACTOR: f32 = 1.0
 const INTERVAL_COUNTDOWN: f32 = 300.0
 
@@ -265,25 +265,25 @@ let pushElasticFactor: f32 = PUSH_ELASTIC_FACTOR
 let pullElasticFactor: f32 = PULL_ELASTIC_FACTOR
 let intervalCountdown: f32 = INTERVAL_COUNTDOWN
 
-export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32 {
+export function setPhysicsFeature(globalFeature: PhysicsFeature, factor: f32): f32 {
     switch (globalFeature) {
-        case GlobalFeature.GravityAbove:
+        case PhysicsFeature.GravityAbove:
             return physicsGravityAbove = GRAVITY_ABOVE * factor
-        case GlobalFeature.GravityBelowLand:
+        case PhysicsFeature.GravityBelowLand:
             return physicsGravityBelowLand = GRAVITY_BELOW_LAND * factor
-        case GlobalFeature.GravityBelowWater:
+        case PhysicsFeature.GravityBelowWater:
             return physicsGravityBelowWater = GRAVITY_BELOW_WATER * factor
-        case GlobalFeature.DragAbove:
+        case PhysicsFeature.DragAbove:
             return physicsDragAbove = DRAG_ABOVE * factor
-        case GlobalFeature.DragBelowLand:
+        case PhysicsFeature.DragBelowLand:
             return physicsDragBelowLand = DRAG_BELOW_LAND * factor
-        case GlobalFeature.DragBelowWater:
+        case PhysicsFeature.DragBelowWater:
             return physicsDragBelowWater = DRAG_BELOW_WATER * factor
-        case GlobalFeature.PushElastic:
+        case PhysicsFeature.PushElastic:
             return pushElasticFactor = PUSH_ELASTIC_FACTOR * factor
-        case GlobalFeature.PullElastic:
+        case PhysicsFeature.PullElastic:
             return pullElasticFactor = PULL_ELASTIC_FACTOR * factor
-        case GlobalFeature.IntervalCountdown:
+        case PhysicsFeature.IntervalCountdown:
             return intervalCountdown = INTERVAL_COUNTDOWN * factor
         default:
             return 0
@@ -708,6 +708,7 @@ export function centralize(): void {
 }
 
 export function setAltitude(altitude: f32): f32 {
+    altitude += JOINT_RADIUS
     let jointCount = getJointCount()
     let lowY: f32 = 10000
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
@@ -766,7 +767,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize 
 
 export function removeInterval(intervalIndex: u16): void {
     let intervalCount = getIntervalCount()
-    while (intervalIndex < intervalCount) {
+    while (intervalIndex < intervalCount - 1) {
         copyIntervalFromOffset(intervalIndex, 1)
         intervalIndex++
     }
@@ -983,6 +984,7 @@ function outputLinesGeometry(): void {
         let displacement = getDisplacement(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         if (intervalRole === IntervalRole.Bar) {
+            displacement = -displacement
             if (displacement < minBarDisplacement) {
                 minBarDisplacement = displacement
             }
@@ -1006,6 +1008,7 @@ function outputLinesGeometry(): void {
         let displacement = getDisplacement(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         if (intervalRole === IntervalRole.Bar) {
+            displacement = -displacement
             let intensity = (displacement - minBarDisplacement) / (maxBarDisplacement - minBarDisplacement)
             if (barSlackLimit < 0.5 ? intensity < barSlackLimit : intensity > barSlackLimit) {
                 setLineColor(_lineColor, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
@@ -1288,7 +1291,7 @@ export function iterate(ticks: u16): boolean {
         }
         let nextCountdown: u16 = busyCountdown - ticks
         if (nextCountdown > busyCountdown) { // rollover
-            setAltitude(0)
+            setAltitude(JOINT_RADIUS)
             nextCountdown = 0
         }
         setBusyCountdown(nextCountdown)
