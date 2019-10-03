@@ -151,7 +151,10 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
                     <DisplacementSlider
                         adjustBars={barMode}
                         nuance={nuance}
-                        setNuance={setNuance}
+                        setNuance={(nuanceValue: number) => {
+                            setNuance(nuanceValue)
+                            switchSelection(false)
+                        }}
                         displacementFromNuance={displacementFromNuance}
                         setFabricSlackLimits={setFabricSlackLimits}
                     />
@@ -191,8 +194,8 @@ function DisplacementSlider({adjustBars, displacementFromNuance, setFabricSlackL
     }
 
     const changeNuanceTo = (nuanceValue: number) => {
-        setNuance(nuanceValue)
         setDisplacement(displacementFromNuance(nuanceValue))
+        setNuance(nuanceValue)
         setFabricSlackLimits(adjustBars, nuanceValue)
     }
 
