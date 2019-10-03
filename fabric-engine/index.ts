@@ -250,8 +250,8 @@ const DRAG_BELOW_LAND: f32 = 0.6
 const DRAG_BELOW_WATER: f32 = 0.001
 const GRAVITY_BELOW_LAND: f32 = -0.03
 const GRAVITY_BELOW_WATER: f32 = -0.00001
-const PUSH_ELASTIC_FACTOR: f32 = 25.0
-const PULL_ELASTIC_FACTOR: f32 = 5.0
+const PUSH_ELASTIC_FACTOR: f32 = 1.0
+const PULL_ELASTIC_FACTOR: f32 = 1.0
 const DEFAULT_ELASTIC_FACTOR: f32 = 1.0
 const INTERVAL_COUNTDOWN: f32 = 300.0
 
@@ -708,6 +708,7 @@ export function centralize(): void {
 }
 
 export function setAltitude(altitude: f32): f32 {
+    altitude += JOINT_RADIUS
     let jointCount = getJointCount()
     let lowY: f32 = 10000
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
@@ -766,7 +767,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize 
 
 export function removeInterval(intervalIndex: u16): void {
     let intervalCount = getIntervalCount()
-    while (intervalIndex < intervalCount) {
+    while (intervalIndex < intervalCount - 1) {
         copyIntervalFromOffset(intervalIndex, 1)
         intervalIndex++
     }
@@ -983,6 +984,7 @@ function outputLinesGeometry(): void {
         let displacement = getDisplacement(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         if (intervalRole === IntervalRole.Bar) {
+            displacement = -displacement
             if (displacement < minBarDisplacement) {
                 minBarDisplacement = displacement
             }
@@ -1006,6 +1008,7 @@ function outputLinesGeometry(): void {
         let displacement = getDisplacement(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         if (intervalRole === IntervalRole.Bar) {
+            displacement = -displacement
             let intensity = (displacement - minBarDisplacement) / (maxBarDisplacement - minBarDisplacement)
             if (barSlackLimit < 0.5 ? intensity < barSlackLimit : intensity > barSlackLimit) {
                 setLineColor(_lineColor, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
@@ -1288,7 +1291,7 @@ export function iterate(ticks: u16): boolean {
         }
         let nextCountdown: u16 = busyCountdown - ticks
         if (nextCountdown > busyCountdown) { // rollover
-            setAltitude(0)
+            setAltitude(JOINT_RADIUS)
             nextCountdown = 0
         }
         setBusyCountdown(nextCountdown)

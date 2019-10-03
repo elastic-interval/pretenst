@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -33,15 +32,15 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 //     })
 //     return points
 // }
+const JOINT_RADIUS = 0.1
 
-function createBrickPointsOnOrigin(base: Triangle, altitude: number, scale: number): Vector3 [] {
+function createBrickPointsOnOrigin(base: Triangle): Vector3 [] {
     const barsToPoints = (vectors: Vector3[], bar: IBarDefinition): Vector3[] => {
         vectors.push(new Vector3().add(bar.alpha))
         vectors.push(new Vector3().add(bar.omega))
         return vectors
     }
     const points = BAR_ARRAY.reduce(barsToPoints, [])
-    points.forEach(point => point.multiplyScalar(scale))
     const newBase = TRIANGLE_DEFINITIONS[base].opposite
     const trianglePoints = TRIANGLE_DEFINITIONS[newBase].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
@@ -49,7 +48,7 @@ function createBrickPointsOnOrigin(base: Triangle, altitude: number, scale: numb
     const y = new Vector3().sub(midpoint).normalize()
     const z = new Vector3().crossVectors(y, x).normalize()
     const basis = new Matrix4().makeBasis(x, y, z)
-    const fromBasis = new Matrix4().getInverse(basis).setPosition(new Vector3(0, midpoint.length() * altitude, 0))
+    const fromBasis = new Matrix4().getInverse(basis).setPosition(new Vector3(0, midpoint.length() + JOINT_RADIUS, 0))
     return points.map(p => p.applyMatrix4(fromBasis))
 }
 
@@ -85,8 +84,8 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: 
     return brick
 }
 
-export function createBrickOnOrigin(fabric: TensegrityFabric, altitude: number): IBrick {
-    const points = createBrickPointsOnOrigin(Triangle.PPP, altitude, 1.0)
+export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
+    const points = createBrickPointsOnOrigin(Triangle.PPP)
     return createBrick(fabric, points, Triangle.NNN)
 }
 
@@ -104,7 +103,7 @@ export function createBrickOnFace(face: IFace): IBrick {
     const y = new Vector3().crossVectors(z, x).normalize()
     const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
     const base = negativeFace ? Triangle.NNN : Triangle.PPP
-    const points = createBrickPointsOnOrigin(base, 0.8, 1.0)
+    const points = createBrickPointsOnOrigin(base)
     const movedToFace = points.map(p => p.applyMatrix4(xform))
     const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
     return createBrick(brick.fabric, movedToFace, baseTriangle)

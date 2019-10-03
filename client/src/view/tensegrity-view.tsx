@@ -30,8 +30,6 @@ declare global {
     }
 }
 
-const ALTITUDE = 6
-
 export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures}: {
     engine: IFabricEngine,
     getFabric: (name: string) => TensegrityFabric,
@@ -48,7 +46,7 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
         if (!fabric) {
             const code = loadFabricCode()[loadStorageIndex()]
             const fetched = getFabric(code)
-            fetched.startConstruction(code, ALTITUDE)
+            fetched.startConstruction(code)
             setFabric(fetched)
         }
     })
@@ -56,10 +54,10 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
     function constructFabric(code: string): void {
         setSelection({})
         if (fabric) {
-            fabric.startConstruction(code, ALTITUDE)
+            fabric.startConstruction(code)
         } else {
             const fetched = getFabric(code)
-            fetched.startConstruction(code, ALTITUDE)
+            fetched.startConstruction(code)
             setFabric(fetched)
         }
     }
