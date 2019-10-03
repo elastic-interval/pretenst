@@ -64,9 +64,9 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     }
 
     const IntervalGroupToggle = () => {
-        const setAdjustBars = (bars: boolean) => {
-            setBarMode(bars)
-            setFabricSlackLimits(bars, nuance)
+        const setAdjustBars = (barsMode: boolean) => {
+            setBarMode(barsMode)
+            setFabricSlackLimits(barsMode, nuance)
             switchSelection(false)
         }
         return (
@@ -196,8 +196,8 @@ function DisplacementSlider({adjustBars, displacementFromNuance, setFabricSlackL
         setFabricSlackLimits(adjustBars, nuanceValue)
     }
 
-    const onChange = (changedPercent: number[]) => {
-        const percent = changedPercent[0]
+    const onChange = (newSliderValues: number[]) => {
+        const percent = newSliderValues[0]
         changeNuanceTo(percent / 100)
     }
 

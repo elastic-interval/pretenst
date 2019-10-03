@@ -32,11 +32,11 @@ export interface IFeature {
     defaultValue: number
 }
 
-export function applyFeatureToInstance(instance: FabricInstance):  (feature: IFeature) => void {
+export function applyFeatureToInstance(instance: FabricInstance): (feature: IFeature) => void {
     return feature => {
         const intervalRole = feature.name.intervalRole
         if (intervalRole === undefined) {
-            throw new Error()
+            throw new Error("Expected Role feature")
         }
         const factor = feature.factor$.getValue()
         instance.setRoleLength(intervalRole, factor)
@@ -45,12 +45,12 @@ export function applyFeatureToInstance(instance: FabricInstance):  (feature: IFe
 
 export function applyFeatureToEngine(engine: IFabricEngine): (feature: IFeature) => void {
     return feature => {
-        const globalFeature = feature.name.physicsFeature
-        if (globalFeature === undefined) {
-            throw new Error()
+        const physicsFeature = feature.name.physicsFeature
+        if (physicsFeature === undefined) {
+            throw new Error("Expected Physics feature")
         }
         const factor = feature.factor$.getValue()
-        engine.setPhysicsFeature(globalFeature, factor)
+        engine.setPhysicsFeature(physicsFeature, factor)
     }
 }
 
@@ -59,11 +59,11 @@ export interface IFeatureStorage {
     setFeature: (label: string, factor: number) => void
 }
 
-export function enumToFeatureArray(enumObject: object, physics: boolean, storage: IFeatureStorage): IFeature[] {
+export function enumToFeatureArray(enumObject: object, isPhysics: boolean, storage: IFeatureStorage): IFeature[] {
     return Object.keys(enumObject)
-        .filter(key => key.length > 1)
         .map(key => enumObject[key])
-        .map(feature => createFeature(physics ? {physicsFeature: feature} : {intervalRole: feature}, storage))
+        .filter(value => typeof value === "number")
+        .map(feature => createFeature(isPhysics ? {physicsFeature: feature} : {intervalRole: feature}, storage))
 }
 
 function createFeature(name: IFeatureName, storage: IFeatureStorage): IFeature {
