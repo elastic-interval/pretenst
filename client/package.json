@@ -85,7 +85,7 @@
     "workbox-webpack-plugin": "4.3.1"
   },
   "resolutions": {
-    "@types/react": "^15.0.16"
+    "@types/react": "^16.9.4"
   },
   "scripts": {
     "prestart": "cd ../fabric-engine && yarn build && cp ./build/fabric.wasm ../client/public",
