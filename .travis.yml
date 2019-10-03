@@ -14,7 +14,7 @@ install:
   - cd client && yarn install && cd ..
 script:
   - echo ">>> Skipping tests"
-  - cd ../client
+  - cd client
   - yarn run build
   - cd ../fabric-engine
   - yarn run build
