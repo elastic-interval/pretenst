@@ -18,7 +18,7 @@ interface IElastic {
     factor: number,
 }
 
-const BUTTON_CLASS = "my-1 btn-info"
+const BUTTON_CLASS = "my-1"
 const BUTTON_GROUP_CLASS = "my-3 w-100"
 const DOMAIN = [0, 100]
 const VALUES = [0]
@@ -224,11 +224,12 @@ function SliderRail({getRailProps}: { getRailProps: GetRailProps }): JSX.Element
     const railOuterStyle: CSSProperties = {
         position: "absolute",
         height: "100%",
-        width: "3em",
+        width: "6em",
         transform: "translate(1.2em, 0%)",
-        borderRadius: 7,
+        borderTopRightRadius: 10,
+        borderBottomRightRadius: 7,
         cursor: "pointer",
-        // border: "1px solid white",
+        border: "1px solid lightgreen",
     }
 
     const railInnerStyle: CSSProperties = {
@@ -236,7 +237,7 @@ function SliderRail({getRailProps}: { getRailProps: GetRailProps }): JSX.Element
         height: "100%",
         width: "1em",
         transform: "translate(1.2em, 0%)",
-        borderRadius: 7,
+        borderRadius: 0,
         pointerEvents: "none",
         backgroundColor: "rgb(155,155,155)",
     }
