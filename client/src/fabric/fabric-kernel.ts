@@ -11,8 +11,8 @@ import { Hexalot } from "../island/hexalot"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { FabricState, IFabricDimensions, IFabricEngine, IntervalRole, Limit } from "./fabric-engine"
+import { IFeature } from "./features"
 import { GotchiBody } from "./gotchi-body"
-import { Physics } from "./physics"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const FLOATS_IN_VECTOR = 3
@@ -82,7 +82,7 @@ export class FabricKernel implements IGotchiFactory {
     private spotCenters: Float32Array
     private hexalotBits: Int8Array
 
-    constructor(private engine: IFabricEngine, private physics: Physics, dimensions: IFabricDimensions) {
+    constructor(private engine: IFabricEngine, private roleFeatures: IFeature[], dimensions: IFabricDimensions) {
         const fabricBytes = engine.init(dimensions.jointCountMax, dimensions.intervalCountMax, dimensions.faceCountMax, dimensions.instanceMax)
         this.arrayBuffer = engine.memory.buffer
         this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
@@ -109,7 +109,7 @@ export class FabricKernel implements IGotchiFactory {
         if (!newInstance) {
             return undefined
         }
-        return new TensegrityFabric(newInstance, this.physics, name)
+        return new TensegrityFabric(newInstance, this.roleFeatures, name)
     }
 
     public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {

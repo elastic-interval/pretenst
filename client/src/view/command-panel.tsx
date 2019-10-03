@@ -41,7 +41,7 @@ function extractIntervalBlob(output: IFabricOutput): Blob {
     return new Blob([intervalsFile], {type: "application/csv"})
 }
 
-export function GlobalFabricPanel({constructFabric, fabric, cancelSelection}: {
+export function CommandPanel({constructFabric, fabric, cancelSelection}: {
     constructFabric: (fabricCode: string) => void,
     fabric?: TensegrityFabric,
     cancelSelection: () => void,

@@ -10,16 +10,17 @@ import { FaArrowDown, FaArrowUp } from "react-icons/all"
 import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
-import { IPhysicsFeature, Physics } from "../fabric/physics"
+import { applyFeatureToEngine, applyFeatureToInstance, IFeature } from "../fabric/features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function PhysicsPanel({engine, physics, fabric}: {
+export function FeaturePanel({engine, features, physics, fabric}: {
     engine: IFabricEngine,
-    physics: Physics,
+    features: IFeature[],
+    physics: boolean,
     fabric?: TensegrityFabric,
 }): JSX.Element {
 
-    function Factor({feature}: { feature: IPhysicsFeature }): JSX.Element {
+    function Factor({feature}: { feature: IFeature }): JSX.Element {
         const [factor, setFactor] = useState<string>(feature.factor$.getValue().toFixed(10))
         useEffect(() => {
             const subscription = feature.factor$.subscribe(newFactor => {
@@ -37,19 +38,20 @@ export function PhysicsPanel({engine, physics, fabric}: {
     return (
         <div className="physics-panel flex flex-column">
             {
-                physics.features.map(feature => {
+                features.map(feature => {
                     const setFactor = (factor?: number): void => {
                         if (factor === undefined) {
                             feature.setFactor(feature.defaultValue)
                         } else if (factor > 0) {
                             feature.setFactor(factor)
                         }
-                        physics.applyGlobalFeatures(engine)
-                        if (fabric) {
-                            feature.apply(fabric.instance)
+                        if (physics) {
+                            features.forEach(applyFeatureToEngine(engine))
+                        } else if (fabric) {
+                            features.forEach(applyFeatureToInstance(fabric.instance))
                         }
                     }
-                    const change = 1 + (feature.isGlobal ? 0.1 : 0.01)
+                    const change = 1 + (feature.isPhysics ? 0.1 : 0.01)
                     return (
                         <Container key={feature.label} className="physics-feature no-gutters my-1">
                             <Row noGutters={true}>

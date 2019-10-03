@@ -7,7 +7,7 @@ export interface IMemory {
     buffer: ArrayBuffer
 }
 
-export enum GlobalFeature {
+export enum PhysicsFeature {
     GravityAbove = 0,
     GravityBelowLand = 1,
     GravityBelowWater = 2,
@@ -61,7 +61,7 @@ export interface IFabricEngine {
 
     memory: IMemory
 
-    setGlobalFeature(globalFeature: GlobalFeature, factor: number): number
+    setPhysicsFeature(physicsFeature: PhysicsFeature, factor: number): number
 
     getLimit(limit: Limit): number
 

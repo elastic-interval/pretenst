@@ -9,7 +9,7 @@ declare function logFloat(idx: u32, f: f32): void
 
 declare function logInt(idx: u32, i: i32): void
 
-enum GlobalFeature {
+enum PhysicsFeature {
     GravityAbove = 0,
     GravityBelowLand = 1,
     GravityBelowWater = 2,
@@ -265,25 +265,25 @@ let pushElasticFactor: f32 = PUSH_ELASTIC_FACTOR
 let pullElasticFactor: f32 = PULL_ELASTIC_FACTOR
 let intervalCountdown: f32 = INTERVAL_COUNTDOWN
 
-export function setGlobalFeature(globalFeature: GlobalFeature, factor: f32): f32 {
+export function setPhysicsFeature(globalFeature: PhysicsFeature, factor: f32): f32 {
     switch (globalFeature) {
-        case GlobalFeature.GravityAbove:
+        case PhysicsFeature.GravityAbove:
             return physicsGravityAbove = GRAVITY_ABOVE * factor
-        case GlobalFeature.GravityBelowLand:
+        case PhysicsFeature.GravityBelowLand:
             return physicsGravityBelowLand = GRAVITY_BELOW_LAND * factor
-        case GlobalFeature.GravityBelowWater:
+        case PhysicsFeature.GravityBelowWater:
             return physicsGravityBelowWater = GRAVITY_BELOW_WATER * factor
-        case GlobalFeature.DragAbove:
+        case PhysicsFeature.DragAbove:
             return physicsDragAbove = DRAG_ABOVE * factor
-        case GlobalFeature.DragBelowLand:
+        case PhysicsFeature.DragBelowLand:
             return physicsDragBelowLand = DRAG_BELOW_LAND * factor
-        case GlobalFeature.DragBelowWater:
+        case PhysicsFeature.DragBelowWater:
             return physicsDragBelowWater = DRAG_BELOW_WATER * factor
-        case GlobalFeature.PushElastic:
+        case PhysicsFeature.PushElastic:
             return pushElasticFactor = PUSH_ELASTIC_FACTOR * factor
-        case GlobalFeature.PullElastic:
+        case PhysicsFeature.PullElastic:
             return pullElasticFactor = PULL_ELASTIC_FACTOR * factor
-        case GlobalFeature.IntervalCountdown:
+        case PhysicsFeature.IntervalCountdown:
             return intervalCountdown = INTERVAL_COUNTDOWN * factor
         default:
             return 0

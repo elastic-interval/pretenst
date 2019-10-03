@@ -9,7 +9,7 @@ import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
-import { Physics } from "../fabric/physics"
+import { IFeature } from "../fabric/features"
 import { ISelection } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { loadFabricCode, loadStorageIndex } from "../storage/local-storage"
@@ -32,10 +32,11 @@ declare global {
 
 const ALTITUDE = 6
 
-export function TensegrityView({engine, getFabric, physics}: {
+export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures}: {
     engine: IFabricEngine,
     getFabric: (name: string) => TensegrityFabric,
-    physics: Physics,
+    physicsFeatures: IFeature[],
+    roleFeatures: IFeature[],
 }): JSX.Element {
 
     // const [open, setOpen] = useState<boolean>(false) todo maybe
@@ -68,7 +69,8 @@ export function TensegrityView({engine, getFabric, physics}: {
             <div className="left-panel">
                 <TensegrityControl
                     engine={engine}
-                    physics={physics}
+                    physicsFeatures={physicsFeatures}
+                    roleFeatures={roleFeatures}
                     fabric={fabric}
                     constructFabric={constructFabric}
                     selection={selection}
