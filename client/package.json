@@ -84,6 +84,9 @@
     "webpack-manifest-plugin": "2.0.4",
     "workbox-webpack-plugin": "4.3.1"
   },
+  "resolutions": {
+    "@types/react": "^15.0.16"
+  },
   "scripts": {
     "prestart": "cd ../fabric-engine && yarn build && cp ./build/fabric.wasm ../client/public",
     "start": "REACT_APP_ENABLED_APP=pretenst node scripts/start.js",
