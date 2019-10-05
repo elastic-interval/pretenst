@@ -52,12 +52,21 @@ function extractIntervalBlob(output: IFabricOutput): Blob {
     return new Blob([intervalsFile], {type: "application/csv"})
 }
 
+function extractSubmergedJointBlob(fabric: TensegrityFabric): Blob {
+    const csvSubmerged: string[][] = []
+    csvSubmerged.push(["joints"])
+    csvSubmerged.push([`"=""${fabric.submergedJoints.map(joint => joint.index)}"""`])
+    const intervalsFile = csvSubmerged.map(a => a.join(";")).join("\n")
+    return new Blob([intervalsFile], {type: "application/csv"})
+}
+
 function saveCSVFiles(fabric: TensegrityFabric): void {
     // const dateString = new Date().toISOString()
     //     .replace(/[.].*/, "").replace(/[:T_]/g, "-")
     const output = fabric.output
     FileSaver.saveAs(extractJointBlob(output), "joints.csv")
     FileSaver.saveAs(extractIntervalBlob(output), "intervals.csv")
+    FileSaver.saveAs(extractSubmergedJointBlob(fabric), "submerged.csv")
 }
 
 function extractOBJBlob(fabric: TensegrityFabric, faces: boolean): Blob {
