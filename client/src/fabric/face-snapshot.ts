@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -6,7 +7,8 @@
 import { Vector3 } from "three"
 
 import { Laterality } from "./fabric-engine"
-import { FabricInstance, vectorFromFloatArray } from "./fabric-kernel"
+import { FabricInstance } from "./fabric-instance"
+import { vectorFromFloatArray } from "./fabric-kernel"
 import { GotchiBody } from "./gotchi-body"
 
 export interface IJointSnapshot {

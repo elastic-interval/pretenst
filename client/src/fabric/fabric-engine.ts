@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -9,10 +10,10 @@ export interface IMemory {
 
 export enum PhysicsFeature {
     GravityAbove = 0,
-    GravityBelowLand = 1,
-    GravityBelowWater = 2,
-    DragAbove = 3,
-    DragBelowLand = 4,
+    DragAbove = 1,
+    GravityBelow = 2,
+    DragBelow = 3,
+    GravityBelowWater = 4,
     DragBelowWater = 5,
     PushElastic = 6,
     PullElastic = 7,
@@ -93,10 +94,6 @@ export interface IFabricEngine {
 
     setAltitude(altitude: number): number
 
-    getRoleLength(intervalRole: IntervalRole): number
-
-    setRoleLength(intervalRole: IntervalRole, factor: number): void
-
     nextJointTag(): number
 
     getJointCount(): number
@@ -109,13 +106,13 @@ export interface IFabricEngine {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole): number
+    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number): number
 
     setElasticFactor(intervalIndex: number, elasticFactor: number): void
 
     getElasticFactor(intervalIndex: number): number
 
-    changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
+    setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
     changeRestLength(intervalIndex: number, length: number): void
 

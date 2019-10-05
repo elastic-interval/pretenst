@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -79,7 +80,7 @@ export function TensegrityControl({engine, physicsFeatures, roleFeatures, fabric
                     <FeaturePanel
                         engine={engine}
                         features={physicsFeatures}
-                        physics={true}
+                        isPhysics={true}
                         fabric={fabric}
                     />
                 </TabPane>
@@ -87,7 +88,7 @@ export function TensegrityControl({engine, physicsFeatures, roleFeatures, fabric
                     <FeaturePanel
                         engine={engine}
                         features={roleFeatures}
-                        physics={false}
+                        isPhysics={false}
                         fabric={fabric}
                     />
                 </TabPane>

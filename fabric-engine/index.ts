@@ -9,17 +9,18 @@ declare function logFloat(idx: u32, f: f32): void
 
 declare function logInt(idx: u32, i: i32): void
 
-enum PhysicsFeature {
+export enum PhysicsFeature {
     GravityAbove = 0,
-    GravityBelowLand = 1,
-    GravityBelowWater = 2,
-    DragAbove = 3,
-    DragBelowLand = 4,
+    DragAbove = 1,
+    GravityBelow = 2,
+    DragBelow = 3,
+    GravityBelowWater = 4,
     DragBelowWater = 5,
     PushElastic = 6,
     PullElastic = 7,
-    IntervalCountdown = 8
+    IntervalCountdown = 8,
 }
+
 
 enum IntervalRole {
     Bar = 1,
@@ -36,15 +37,8 @@ const U16 = sizeof<u16>()
 const U32 = sizeof<u32>()
 const F32 = sizeof<f32>()
 
-const INTERVAL_ROLE_COUNT: u8 = 8
-const PHI: f32 = 1.618
-const BAR_LENGTH: f32 = 2 * PHI
-const CABLE_LENGTH: f32 = 2.123
-const RING_LENGTH: f32 = 1.775
-const CROSS_LENGTH: f32 = 1.583
-const BOW_MID_LENGTH: f32 = 0.8521
-const BOW_END_LOW_LENGTH: f32 = 1.380
-const BOW_END_HIGH_LENGTH: f32 = 1.571
+const BAR_MASS_PER_LENGTH: f32 = 1
+const CABLE_MASS_PER_LENGTH: f32 = 0.01
 
 const PUSH_COLOR: f32[] = [1.0, 0.3, 0.2]
 const PULL_COLOR: f32[] = [0.4, 0.6, 1]
@@ -244,47 +238,36 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 
 // Physics =====================================================================================
 
-const DRAG_ABOVE: f32 = 0.0001
-const GRAVITY_ABOVE: f32 = 0.00001
-const DRAG_BELOW_LAND: f32 = 0.6
-const DRAG_BELOW_WATER: f32 = 0.001
-const GRAVITY_BELOW_LAND: f32 = -0.03
-const GRAVITY_BELOW_WATER: f32 = -0.00001
-const PUSH_ELASTIC_FACTOR: f32 = 1.0
-const PULL_ELASTIC_FACTOR: f32 = 1.0
-const DEFAULT_ELASTIC_FACTOR: f32 = 1.0
-const INTERVAL_COUNTDOWN: f32 = 300.0
+let physicsDragAbove: f32
+let physicsGravityAbove: f32
+let physicsDragBelowWater: f32
+let physicsGravityBelowWater: f32
+let physicsDragBelow: f32
+let physicsGravityBelow: f32
+let pushElasticFactor: f32
+let pullElasticFactor: f32
+let intervalCountdown: f32
 
-let physicsDragAbove: f32 = DRAG_ABOVE
-let physicsGravityAbove: f32 = GRAVITY_ABOVE
-let physicsDragBelowWater: f32 = DRAG_BELOW_WATER
-let physicsGravityBelowWater: f32 = GRAVITY_BELOW_WATER
-let physicsDragBelowLand: f32 = DRAG_BELOW_LAND
-let physicsGravityBelowLand: f32 = GRAVITY_BELOW_LAND
-let pushElasticFactor: f32 = PUSH_ELASTIC_FACTOR
-let pullElasticFactor: f32 = PULL_ELASTIC_FACTOR
-let intervalCountdown: f32 = INTERVAL_COUNTDOWN
-
-export function setPhysicsFeature(globalFeature: PhysicsFeature, factor: f32): f32 {
+export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f32 {
     switch (globalFeature) {
         case PhysicsFeature.GravityAbove:
-            return physicsGravityAbove = GRAVITY_ABOVE * factor
-        case PhysicsFeature.GravityBelowLand:
-            return physicsGravityBelowLand = GRAVITY_BELOW_LAND * factor
-        case PhysicsFeature.GravityBelowWater:
-            return physicsGravityBelowWater = GRAVITY_BELOW_WATER * factor
+            return physicsGravityAbove = value
         case PhysicsFeature.DragAbove:
-            return physicsDragAbove = DRAG_ABOVE * factor
-        case PhysicsFeature.DragBelowLand:
-            return physicsDragBelowLand = DRAG_BELOW_LAND * factor
+            return physicsDragAbove = value
+        case PhysicsFeature.GravityBelow:
+            return physicsGravityBelow = value
+        case PhysicsFeature.DragBelow:
+            return physicsDragBelow = value
+        case PhysicsFeature.GravityBelowWater:
+            return physicsGravityBelowWater = value
         case PhysicsFeature.DragBelowWater:
-            return physicsDragBelowWater = DRAG_BELOW_WATER * factor
+            return physicsDragBelowWater = value
         case PhysicsFeature.PushElastic:
-            return pushElasticFactor = PUSH_ELASTIC_FACTOR * factor
+            return pushElasticFactor = value
         case PhysicsFeature.PullElastic:
-            return pullElasticFactor = PULL_ELASTIC_FACTOR * factor
+            return pullElasticFactor = value
         case PhysicsFeature.IntervalCountdown:
-            return intervalCountdown = INTERVAL_COUNTDOWN * factor
+            return intervalCountdown = value
         default:
             return 0
     }
@@ -518,7 +501,7 @@ const PREVIOUS_STATE_OFFSET = BUSY_COUNTDOWN_OFFSET + U16
 const CURRENT_STATE_OFFSET = PREVIOUS_STATE_OFFSET + U8
 const NEXT_STATE_OFFSET = CURRENT_STATE_OFFSET + U8
 const ELASTIC_FACTOR_OFFSET = NEXT_STATE_OFFSET + U8 + U16 // last one is padding for multiple of 4 bytes
-const STATE_SIZE = ELASTIC_FACTOR_OFFSET * INTERVAL_ROLE_COUNT * F32
+const STATE_SIZE = ELASTIC_FACTOR_OFFSET
 
 function setAge(value: u32): void {
     setU32(_state, value)
@@ -607,21 +590,6 @@ export function setNextState(value: u8): void {
     setU8(_state + NEXT_STATE_OFFSET, value)
 }
 
-export function setRoleLength(intervalRole: u8, length: f32): void {
-    setF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32, length)
-    let intervalCount = getIntervalCount()
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        if (getIntervalRole(intervalIndex) !== intervalRole) {
-            continue
-        }
-        changeRestLength(intervalIndex, length)
-    }
-}
-
-export function getRoleLength(intervalRole: u8): f32 {
-    return getF32(_state + ELASTIC_FACTOR_OFFSET + intervalRole * F32)
-}
-
 export function reset(): void {
     setAge(0)
     setJointCount(0)
@@ -632,13 +600,6 @@ export function reset(): void {
     setPreviousState(REST_STATE)
     setCurrentState(REST_STATE)
     setNextState(REST_STATE)
-    setRoleLength(<u8>IntervalRole.Bar, BAR_LENGTH)
-    setRoleLength(<u8>IntervalRole.Triangle, CABLE_LENGTH)
-    setRoleLength(<u8>IntervalRole.Ring, RING_LENGTH)
-    setRoleLength(<u8>IntervalRole.Cross, CROSS_LENGTH)
-    setRoleLength(<u8>IntervalRole.BowMid, BOW_MID_LENGTH)
-    setRoleLength(<u8>IntervalRole.BowEndLow, BOW_END_LOW_LENGTH)
-    setRoleLength(<u8>IntervalRole.BowEndHigh, BOW_END_HIGH_LENGTH)
 }
 
 // Joints =====================================================================================
@@ -742,7 +703,7 @@ function calculateJointMidpoint(): void {
 
 // Intervals =====================================================================================
 
-export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize {
+export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLength: f32): usize {
     let intervalCount = getIntervalCount()
     if (intervalCount + 1 >= intervalCountMax) {
         return ERROR
@@ -752,12 +713,11 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8): usize 
     setAlphaIndex(intervalIndex, alpha)
     setOmegaIndex(intervalIndex, omega)
     zero(_unit(intervalIndex))
+    setIntervalRole(intervalIndex, intervalRole)
     initializeCurrentLength(intervalIndex, calculateLength(intervalIndex))
-    setElasticFactor(intervalIndex, DEFAULT_ELASTIC_FACTOR)
-    initializeIntervalRole(intervalIndex, intervalRole)
-    let idealLength = getRoleLength(intervalRole)
+    setElasticFactor(intervalIndex, 1.0)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
-        setIntervalStateLength(intervalIndex, state, idealLength)
+        setIntervalStateLength(intervalIndex, state, restLength)
     }
     let countdown: u16 = <u16>intervalCountdown
     setIntervalCountdown(intervalIndex, countdown)
@@ -776,7 +736,7 @@ export function removeInterval(intervalIndex: u16): void {
 
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset
-    initializeIntervalRole(intervalIndex, getIntervalRole(nextIndex))
+    setIntervalRole(intervalIndex, getIntervalRole(nextIndex))
     setU16(_intervalCountdown(intervalIndex), getIntervalCountdown(nextIndex))
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
@@ -824,21 +784,8 @@ function getIntervalRole(intervalIndex: u16): u8 {
     return getU8(_intervalRole(intervalIndex))
 }
 
-function initializeIntervalRole(intervalIndex: u16, intervalRole: u8): void {
+export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
     setU8(_intervalRole(intervalIndex), intervalRole)
-}
-
-export function changeRestIntervalRole(intervalIndex: u16, intervalRole: u8): void {
-    let existingRole = getIntervalRole(intervalIndex)
-    if (existingRole === intervalRole) {
-        return
-    }
-    initializeCurrentLength(intervalIndex, getRoleLength(existingRole))
-    setIntervalStateLength(intervalIndex, REST_STATE, getRoleLength(intervalRole))
-    setU8(_intervalRole(intervalIndex), intervalRole)
-    let countdown = <u16>intervalCountdown
-    setIntervalCountdown(intervalIndex, countdown)
-    setBusyCountdown(countdown)
 }
 
 export function changeRestLength(intervalIndex: u16, restLength: f32): void {
@@ -1191,15 +1138,12 @@ function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     setDisplacement(intervalIndex, displacement)
-    let globalElasticFactor: f32 = (intervalRole === IntervalRole.Bar) ? (
-        busy ? PUSH_ELASTIC_FACTOR : pushElasticFactor
-    ) : (
-        displacement < 0 ? 0 : (busy ? PULL_ELASTIC_FACTOR : pullElasticFactor)
-    )
+    let bar = intervalRole === IntervalRole.Bar
+    let globalElasticFactor: f32 = busy ? 1.0 : bar ? pushElasticFactor : (displacement < 0 ? 0 : pullElasticFactor)
     let force = displacement * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
-    let mass = currentLength * currentLength * currentLength
+    let mass = currentLength * currentLength * elasticFactor * (bar ? BAR_MASS_PER_LENGTH : CABLE_MASS_PER_LENGTH)
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = _intervalMass(omegaIndex(intervalIndex))
@@ -1215,25 +1159,25 @@ function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32): void 
         multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
     } else {
         let land = getTerrainUnder(jointIndex) === LAND
-        let physicsGravityBelow = land ? physicsGravityBelowLand : physicsGravityBelowWater
-        let physicsDragBelow = land ? physicsDragBelowLand : physicsDragBelowWater
+        let gravityBelow = land ? physicsGravityBelow : physicsGravityBelowWater
+        let dragBelow = land ? physicsDragBelow : physicsDragBelowWater
         if (altitude > -JOINT_RADIUS) { // close to the surface
             let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
             let degreeBelow: f32 = 1.0 - degreeAbove
             if (velocityY < 0 && land) {
                 multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
             }
-            let gravityValue: f32 = gravityAbove * degreeAbove + physicsGravityBelow * degreeBelow
+            let gravityValue: f32 = gravityAbove * degreeAbove + gravityBelow * degreeBelow
             setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
-            let drag = dragAbove * degreeAbove + physicsDragBelow * degreeBelow
+            let drag = dragAbove * degreeAbove + dragBelow * degreeBelow
             multiplyScalar(_velocity(jointIndex), 1 - drag)
         } else { // far under the surface
             if (velocityY < 0 && land) {
                 zero(velocityVectorPtr)
             } else {
-                setY(velocityVectorPtr, velocityY - physicsGravityBelow)
+                setY(velocityVectorPtr, velocityY - gravityBelow)
             }
-            multiplyScalar(_velocity(jointIndex), 1 - physicsDragBelow)
+            multiplyScalar(_velocity(jointIndex), 1 - dragBelow)
         }
     }
 }

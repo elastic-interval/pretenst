@@ -9,21 +9,33 @@ import { FaArrowDown, FaArrowUp } from "react-icons/all"
 import { Badge, Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
-import { applyFeatureToEngine, applyFeatureToInstance, IFeature } from "../fabric/features"
+import { applyPhysicsFeature, IFeature } from "../fabric/features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { featureMultiplier, multiplierSymbol, multiplierValue } from "../storage/local-storage"
 
-export function FeaturePanel({engine, features, physics, fabric}: {
+export function FeaturePanel({engine, features, isPhysics, fabric}: {
     engine: IFabricEngine,
     features: IFeature[],
-    physics: boolean,
+    isPhysics: boolean,
     fabric?: TensegrityFabric,
 }): JSX.Element {
 
     function Factor({feature}: { feature: IFeature }): JSX.Element {
-        const [factor, setFactor] = useState<string>(feature.factor$.getValue().toFixed(10))
+        function renderFactor(value: number): string {
+            const physicsFeature = feature.name.physicsFeature
+            if (physicsFeature !== undefined) {
+                const multiplier = featureMultiplier(physicsFeature)
+                const scaledValue = value * multiplierValue(multiplier)
+                return scaledValue.toFixed(1) + multiplierSymbol(multiplier)
+            } else {
+                return value.toFixed(3)
+            }
+        }
+
+        const [factor, setFactor] = useState<string>(renderFactor(feature.factor$.getValue()))
         useEffect(() => {
             const subscription = feature.factor$.subscribe(newFactor => {
-                setFactor(newFactor.toFixed(5))
+                setFactor(renderFactor(newFactor))
             })
             return () => {
                 subscription.unsubscribe()
@@ -44,18 +56,24 @@ export function FeaturePanel({engine, features, physics, fabric}: {
                         } else if (factor > 0) {
                             feature.setFactor(factor)
                         }
-                        if (physics) {
-                            features.forEach(applyFeatureToEngine(engine))
-                        } else if (fabric) {
-                            features.forEach(applyFeatureToInstance(fabric.instance))
+                        if (feature.name.physicsFeature !== undefined) {
+                            applyPhysicsFeature(engine, feature)
+                        }
+                        if (feature.name.intervalRole !== undefined) {
+                            if (fabric) {
+                                fabric.intervals
+                                    .filter(interval => interval.intervalRole === feature.name.intervalRole)
+                                    .forEach(interval => engine.changeRestLength(interval.index, feature.factor$.getValue()))
+                            }
                         }
                     }
-                    const change = 1 + (feature.isPhysics ? 0.1 : 0.01)
+                    const change = 1 + (isPhysics ? 0.1 : 0.01)
                     return (
                         <Container key={feature.label} className="feature-control my-3">
                             <Row noGutters={true}>
                                 <Col xs={{size: 9}}>
-                                    <Button onClick={() => setFactor(undefined)} className="w-100 border-info text-left">
+                                    <Button onClick={() => setFactor(undefined)}
+                                            className="w-100 border-info text-left">
                                         <Badge>{feature.label}</Badge> <Factor feature={feature}/>
                                     </Button>
                                 </Col>

@@ -5,20 +5,21 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricEngine, IntervalRole, PhysicsFeature } from "./fabric-engine"
-import { FabricInstance } from "./fabric-kernel"
+import { physicsValue, roleLength, setFeature } from "../storage/local-storage"
 
-export interface IFeatureName {
+import { IFabricEngine, IntervalRole, PhysicsFeature } from "./fabric-engine"
+
+interface IFeatureName {
     physicsFeature?: PhysicsFeature
     intervalRole?: IntervalRole
 }
 
-function nameLabel(feature: IFeatureName): string {
-    if (feature.physicsFeature !== undefined) {
-        return PhysicsFeature[feature.physicsFeature]
+export function nameLabel(name: IFeatureName): string {
+    if (name.physicsFeature !== undefined) {
+        return PhysicsFeature[name.physicsFeature]
     }
-    if (feature.intervalRole !== undefined) {
-        return IntervalRole[feature.intervalRole]
+    if (name.intervalRole !== undefined) {
+        return IntervalRole[name.intervalRole]
     }
     return "?"
 }
@@ -26,69 +27,46 @@ function nameLabel(feature: IFeatureName): string {
 export interface IFeature {
     label: string
     name: IFeatureName
-    isPhysics: boolean
     setFactor: (factor: number) => void
     factor$: BehaviorSubject<number>
     defaultValue: number
 }
 
-export function applyFeatureToInstance(instance: FabricInstance): (feature: IFeature) => void {
-    return feature => {
-        const intervalRole = feature.name.intervalRole
-        if (intervalRole === undefined) {
-            throw new Error("Expected Role feature")
-        }
-        const factor = feature.factor$.getValue()
-        instance.setRoleLength(intervalRole, factor)
+export function getFeatureValue(name: IFeatureName, defaultValue?: boolean): number {
+    if (name.intervalRole !== undefined) {
+        return roleLength(name.intervalRole, defaultValue)
     }
-}
-
-export function applyFeatureToEngine(engine: IFabricEngine): (feature: IFeature) => void {
-    return feature => {
-        const physicsFeature = feature.name.physicsFeature
-        if (physicsFeature === undefined) {
-            throw new Error("Expected Physics feature")
-        }
-        const factor = feature.factor$.getValue()
-        engine.setPhysicsFeature(physicsFeature, factor)
+    if (name.physicsFeature !== undefined) {
+        return physicsValue(name.physicsFeature, defaultValue)
     }
+    return 1
 }
 
-export interface IFeatureStorage {
-    getFeature: (label: string, defaultValue: number) => number
-    setFeature: (label: string, factor: number) => void
+export function applyPhysicsFeature(engine: IFabricEngine, feature: IFeature): void {
+    const physicsFeature = feature.name.physicsFeature
+    const factor = feature.factor$.getValue()
+    if (physicsFeature === undefined) {
+        return
+    }
+    engine.setPhysicsFeature(physicsFeature, factor)
 }
 
-export function enumToFeatureArray(enumObject: object, isPhysics: boolean, storage: IFeatureStorage): IFeature[] {
+export function enumToFeatureArray(enumObject: object, isPhysics: boolean): IFeature[] {
     return Object.keys(enumObject)
         .map(key => enumObject[key])
         .filter(value => typeof value === "number")
-        .map(feature => createFeature(isPhysics ? {physicsFeature: feature} : {intervalRole: feature}, storage))
+        .map(feature => createFeature(isPhysics ? {physicsFeature: feature} : {intervalRole: feature}))
 }
 
-function createFeature(name: IFeatureName, storage: IFeatureStorage): IFeature {
+function createFeature(name: IFeatureName): IFeature {
     const label = nameLabel(name)
-    const isPhysics = name.physicsFeature !== undefined
-    const factor = new BehaviorSubject<number>(storage.getFeature(label, 1.0))
+    const factor$ = new BehaviorSubject<number>(getFeatureValue(name))
+    const defaultValue = getFeatureValue(name, true)
     return {
-        label, name, isPhysics,
+        label, name, defaultValue, factor$,
         setFactor: (newFactor: number) => {
-            storage.setFeature(label, newFactor)
-            factor.next(newFactor)
+            setFeature(label, newFactor)
+            factor$.next(newFactor)
         },
-        factor$: factor,
-        defaultValue: isPhysics ? 1.0 : factor.getValue(),
-    }
-}
-
-export function acquireRoleFeature(instance: FabricInstance, feature: IFeature, storage: IFeatureStorage): void {
-    const intervalRole = feature.name.intervalRole
-    if (intervalRole === undefined) {
-        return
-    }
-    feature.defaultValue = instance.getRoleLength(intervalRole)
-    const defaultValue = storage.getFeature(feature.label, feature.defaultValue)
-    if (feature.factor$.getValue() !== defaultValue) {
-        feature.factor$.next(defaultValue)
     }
 }

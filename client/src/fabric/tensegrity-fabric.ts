@@ -6,8 +6,8 @@
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
 import { FabricState, IntervalRole, Laterality } from "./fabric-engine"
-import { FabricInstance } from "./fabric-kernel"
-import { applyFeatureToInstance, IFeature } from "./features"
+import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
+import { IFeature } from "./features"
 import {
     connectClosestFacePair,
     createBrickOnOrigin,
@@ -118,12 +118,16 @@ export class TensegrityFabric {
         return this.instance.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval {
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, restLength: number): IInterval {
+        const index = this.instance.engine.createInterval(
+            alpha.index, omega.index,
+            intervalRole, restLength,
+        )
         const interval = <IInterval>{
-            index: this.instance.createInterval(alpha.index, omega.index, intervalRole),
-            removed: false,
+            index,
             intervalRole,
             alpha, omega,
+            removed: false,
         }
         this.intervals.push(interval)
         return interval
@@ -190,6 +194,11 @@ export class TensegrityFabric {
         return this.instance.getFaceCount()
     }
 
+    public get submergedJoints(): IJoint[] {
+        return this.joints
+            .filter(joint => this.instance.getJointLocation(joint.index).y < JOINT_RADIUS)
+    }
+
     public get facesGeometry(): BufferGeometry {
         if (!this.facesGeometryStored) {
             this.instance.iterate(0)
@@ -248,7 +257,6 @@ export class TensegrityFabric {
                             break
                     }
                 } else {
-                    this.roleFeatures.forEach(applyFeatureToInstance(this.instance))
                     this.growth = undefined
                 }
             }

@@ -6,7 +6,7 @@
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
 import { FabricState, IntervalRole, Laterality } from "./fabric-engine"
-import { FabricInstance } from "./fabric-kernel"
+import { FabricInstance } from "./fabric-instance"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 const ARROW_LENGTH = 9
@@ -247,7 +247,7 @@ export class GotchiBody {
     }
 
     private muscle(alphaIndex: number, omegaIndex: number): number { // TODO: no more muscles
-        return this.instance.createInterval(alphaIndex, omegaIndex, IntervalRole.Bar)
+        return this.instance.engine.createInterval(alphaIndex, omegaIndex, IntervalRole.Bar, 1)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
