@@ -1233,9 +1233,9 @@ export function iterate(ticks: u16): boolean {
         if (busyCountdown === 0) {
             return false
         }
+        setAltitude(JOINT_RADIUS)
         let nextCountdown: u16 = busyCountdown - ticks
         if (nextCountdown > busyCountdown) { // rollover
-            setAltitude(JOINT_RADIUS)
             nextCountdown = 0
         }
         setBusyCountdown(nextCountdown)

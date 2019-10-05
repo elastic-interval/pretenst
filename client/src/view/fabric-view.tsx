@@ -41,7 +41,7 @@ declare global {
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 const JOINT_SCALE = new Vector3(0.6, 0.6, 0.6)
 
-const ITERATIONS_PER_FRAME = 30
+const ITERATIONS_PER_FRAME = 20
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
 const GIRTH = 1
