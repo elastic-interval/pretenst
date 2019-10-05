@@ -41,7 +41,8 @@ export function FeaturePanel({engine, features, isPhysics, fabric}: {
                 subscription.unsubscribe()
             }
         })
-        const atDefault = Math.abs(feature.factor$.getValue() - feature.defaultValue) < 0.00001
+        const difference = Math.abs(feature.factor$.getValue() - feature.defaultValue)
+        const atDefault = difference < 0.00001 * Math.abs(feature.defaultValue)
         const className = "float-right physics-factor" + (atDefault ? "" : " physics-factor-adjusted")
         return <strong className={className}>{factor}</strong>
     }
@@ -51,11 +52,7 @@ export function FeaturePanel({engine, features, isPhysics, fabric}: {
             {
                 features.map(feature => {
                     const setFactor = (factor?: number): void => {
-                        if (factor === undefined) {
-                            feature.setFactor(feature.defaultValue)
-                        } else if (factor > 0) {
-                            feature.setFactor(factor)
-                        }
+                        feature.setFactor(factor === undefined ? feature.defaultValue : factor)
                         if (feature.name.physicsFeature !== undefined) {
                             applyPhysicsFeature(engine, feature)
                         }
