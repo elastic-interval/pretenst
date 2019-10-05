@@ -85,9 +85,9 @@ function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
     switch (physicsFeature) {
         case PhysicsFeature.GravityAbove:
             return 0.00001
-        case PhysicsFeature.GravityBelow:
+        case PhysicsFeature.AntigravityBelow:
             return -0.03
-        case PhysicsFeature.GravityBelowWater:
+        case PhysicsFeature.AntigravityBelowWater:
             return -0.00001
         case PhysicsFeature.DragAbove:
             return 0.0001
@@ -150,9 +150,9 @@ export function featureMultiplier(physicsFeature: PhysicsFeature): PhysicsMultip
     switch (physicsFeature) {
         case PhysicsFeature.GravityAbove:
             return PhysicsMultiplier.Millionths
-        case PhysicsFeature.GravityBelow:
+        case PhysicsFeature.AntigravityBelow:
             return PhysicsMultiplier.NegativeMillionths
-        case PhysicsFeature.GravityBelowWater:
+        case PhysicsFeature.AntigravityBelowWater:
             return PhysicsMultiplier.NegativeMillionths
         case PhysicsFeature.DragAbove:
             return PhysicsMultiplier.Millionths

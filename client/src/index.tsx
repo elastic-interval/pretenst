@@ -10,7 +10,7 @@ import * as ReactDOM from "react-dom"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { IFabricDimensions, IFabricEngine, IntervalRole, PhysicsFeature } from "./fabric/fabric-engine"
+import { IFabricDimensions, IFabricEngine, IntervalRole, notWater, PhysicsFeature } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
@@ -45,6 +45,7 @@ async function start(): Promise<void> {
     const user = await storage.getUser()
     const root = document.getElementById("root") as HTMLElement
     const physicsFeatures = enumToFeatureArray(PhysicsFeature, true)
+        .filter(feature => notWater(feature.name.physicsFeature))
     const roleFeatures = enumToFeatureArray(IntervalRole, false)
     const fabricCache: Record<string, TensegrityFabric> = {}
     physicsFeatures.forEach(feature => applyPhysicsFeature(engine, feature))

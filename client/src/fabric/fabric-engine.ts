@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -11,13 +10,20 @@ export interface IMemory {
 export enum PhysicsFeature {
     GravityAbove = 0,
     DragAbove = 1,
-    GravityBelow = 2,
+    AntigravityBelow = 2,
     DragBelow = 3,
-    GravityBelowWater = 4,
+    AntigravityBelowWater = 4,
     DragBelowWater = 5,
     PushElastic = 6,
     PullElastic = 7,
     IntervalCountdown = 8,
+}
+
+export function notWater(feature?: PhysicsFeature): boolean {
+    if (feature === undefined) {
+        return false
+    }
+    return feature !== PhysicsFeature.AntigravityBelowWater && feature !== PhysicsFeature.DragBelowWater
 }
 
 export enum IntervalRole {

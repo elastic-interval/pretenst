@@ -12,9 +12,9 @@ declare function logInt(idx: u32, i: i32): void
 export enum PhysicsFeature {
     GravityAbove = 0,
     DragAbove = 1,
-    GravityBelow = 2,
+    AntigravityBelow = 2,
     DragBelow = 3,
-    GravityBelowWater = 4,
+    AntigravityBelowWater = 4,
     DragBelowWater = 5,
     PushElastic = 6,
     PullElastic = 7,
@@ -241,9 +241,9 @@ function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
 let physicsDragAbove: f32
 let physicsGravityAbove: f32
 let physicsDragBelowWater: f32
-let physicsGravityBelowWater: f32
+let physicsAntigravityBelowWater: f32
 let physicsDragBelow: f32
-let physicsGravityBelow: f32
+let physicsAntigravityBelow: f32
 let pushElasticFactor: f32
 let pullElasticFactor: f32
 let intervalCountdown: f32
@@ -254,12 +254,12 @@ export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f3
             return physicsGravityAbove = value
         case PhysicsFeature.DragAbove:
             return physicsDragAbove = value
-        case PhysicsFeature.GravityBelow:
-            return physicsGravityBelow = value
+        case PhysicsFeature.AntigravityBelow:
+            return physicsAntigravityBelow = value
         case PhysicsFeature.DragBelow:
             return physicsDragBelow = value
-        case PhysicsFeature.GravityBelowWater:
-            return physicsGravityBelowWater = value
+        case PhysicsFeature.AntigravityBelowWater:
+            return physicsAntigravityBelowWater = value
         case PhysicsFeature.DragBelowWater:
             return physicsDragBelowWater = value
         case PhysicsFeature.PushElastic:
@@ -1159,7 +1159,7 @@ function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32): void 
         multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
     } else {
         let land = getTerrainUnder(jointIndex) === LAND
-        let gravityBelow = land ? physicsGravityBelow : physicsGravityBelowWater
+        let gravityBelow = land ? physicsAntigravityBelow : physicsAntigravityBelowWater
         let dragBelow = land ? physicsDragBelow : physicsDragBelowWater
         if (altitude > -JOINT_RADIUS) { // close to the surface
             let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
