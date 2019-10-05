@@ -64,7 +64,7 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
                     : []
         const adjustValue = (up: boolean) => () => intervals.forEach(interval => {
             if (fabric) {
-                fabric.instance.multiplyRestLength(interval.index, adjustment(up))
+                fabric.instance.engine.multiplyRestLength(interval.index, adjustment(up))
             }
         })
 
@@ -90,9 +90,10 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
     function Joint({joint}: { joint: IJoint }): JSX.Element {
         const adjustValue = (up: boolean) => () => {
             if (fabric) {
+                const engine = fabric.instance.engine
                 fabric.intervals
                     .filter(i => i.alpha.index === joint.index || i.omega.index === joint.index)
-                    .forEach(interval => fabric.instance.multiplyRestLength(interval.index, adjustment(up)))
+                    .forEach(interval => engine.multiplyRestLength(interval.index, adjustment(up)))
             }
         }
         return (
@@ -110,7 +111,7 @@ export function TensegrityEditPanel({fabric, selection, setSelection}: {
     function Interval({interval}: { interval: IInterval }): JSX.Element {
         const adjustValue = (up: boolean) => () => {
             if (fabric) {
-                fabric.instance.multiplyRestLength(interval.index, adjustment(up))
+                fabric.instance.engine.multiplyRestLength(interval.index, adjustment(up))
             }
         }
         return (

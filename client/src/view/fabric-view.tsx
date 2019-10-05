@@ -74,7 +74,7 @@ export function FabricView({fabric, selection, setSelection}: {
         orbitControls.current.update()
         orbitControls.current.autoRotate = fabric.autoRotate
         fabric.iterate(ITERATIONS_PER_FRAME)
-        setAge(fabric.instance.getAge())
+        setAge(fabric.instance.engine.getAge())
     }, true, [fabric, selection, age])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement

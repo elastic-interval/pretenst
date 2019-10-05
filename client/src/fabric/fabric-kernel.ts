@@ -155,7 +155,7 @@ export class FabricKernel implements IGotchiFactory {
         }
         this.instanceUsed[freeIndex] = true
         this.instanceArray[freeIndex].clear()
-        this.instanceArray[freeIndex].reset()
+        this.instanceArray[freeIndex].engine.reset()
         return this.instanceArray[freeIndex]
     }
 }

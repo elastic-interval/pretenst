@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -6,7 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { Laterality } from "./fabric-engine"
+import { IFabricEngine, Laterality } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
 import { vectorFromFloatArray } from "./fabric-kernel"
 import { GotchiBody } from "./gotchi-body"
@@ -32,8 +31,9 @@ export class FaceSnapshot {
     ) {
         this.jointSnapshots = TRIANGLE
             .map(jointNumber => {
-                const jointIndex = instance.getFaceJointIndex(faceIndex, jointNumber)
-                const tag = instance.getJointTag(jointIndex)
+                const engine = this.engine
+                const jointIndex = engine.getFaceJointIndex(faceIndex, jointNumber)
+                const tag = engine.getJointTag(jointIndex)
                 const location = vectorFromFloatArray(this.instance.getFaceLocations(), (faceIndex * 3 + jointNumber) * 3)
                 return {jointNumber, jointIndex, tag, location} as IJointSnapshot
             })
@@ -41,13 +41,14 @@ export class FaceSnapshot {
 
     public get fresh(): FaceSnapshot {
         // potentially walk back the index, due to deletions since last time
+        const engine = this.engine
         let faceIndex = this.faceIndex
-        if (faceIndex >= this.instance.getFaceCount()) {
-            faceIndex = this.instance.getFaceCount() - 1
+        if (faceIndex >= engine.getFaceCount()) {
+            faceIndex = engine.getFaceCount() - 1
         }
         while (faceIndex >= 0) {
             const differentJoints = this.joints.filter(jointSnapshot => {
-                const currentJointIndex = this.instance.getFaceJointIndex(faceIndex, jointSnapshot.jointNumber)
+                const currentJointIndex = engine.getFaceJointIndex(faceIndex, jointSnapshot.jointNumber)
                 return currentJointIndex !== jointSnapshot.jointIndex
             })
             if (differentJoints.length === 0) {
@@ -89,8 +90,9 @@ export class FaceSnapshot {
     }
 
     public get laterality(): number {
+        const engine = this.engine
         for (let jointWalk = 0; jointWalk < 3; jointWalk++) { // face inherits laterality
-            const jointLaterality = this.instance.getJointLaterality(this.instance.getFaceJointIndex(this.faceIndex, jointWalk))
+            const jointLaterality = engine.getJointLaterality(engine.getFaceJointIndex(this.faceIndex, jointWalk))
             if (jointLaterality !== Laterality.Middle) {
                 return jointLaterality
             }
@@ -100,6 +102,10 @@ export class FaceSnapshot {
 
     public remove(): void {
         // maybe fresh first
-        this.instance.removeFace(this.faceIndex)
+        this.engine.removeFace(this.faceIndex)
+    }
+
+    private get engine(): IFabricEngine {
+        return this.instance.engine
     }
 }

@@ -5,7 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { FabricState, IFabricDimensions, IFabricEngine, Limit } from "./fabric-engine"
+import { IFabricDimensions, IFabricEngine } from "./fabric-engine"
 import { IOffsets, vectorFromFloatArray } from "./fabric-kernel"
 
 export const JOINT_RADIUS = 0.1
@@ -66,126 +66,6 @@ export class FabricInstance {
 
     public getDimensions(): IFabricDimensions {
         return this.dimensions
-    }
-
-    public extendBusyCountdown(factor: number): void {
-        this.engine.extendBusyCountdown(factor)
-    }
-
-    public reset(): void {
-        return this.engine.reset()
-    }
-
-    public getAge(): number {
-        return this.engine.getAge()
-    }
-
-    public getLimit(limit: Limit): number {
-        return this.engine.getLimit(limit)
-    }
-
-    public setSlackLimits(barLimit: number, cableLimit: number): void {
-        this.engine.setSlackLimits(barLimit, cableLimit)
-    }
-
-    public centralize(): void {
-        this.engine.centralize()
-    }
-
-    public createFace(joint0Index: number, joint1Index: number, joint2Index: number): number {
-        return this.engine.createFace(joint0Index, joint1Index, joint2Index)
-    }
-
-    public removeInterval(intervalIndex: number): void {
-        this.engine.removeInterval(intervalIndex)
-    }
-
-    public createJoint(jointTag: number, laterality: number, x: number, y: number, z: number): number {
-        return this.engine.createJoint(jointTag, laterality, x, y, z)
-    }
-
-    public getFaceCount(): number {
-        return this.engine.getFaceCount()
-    }
-
-    public findOppositeFaceIndex(faceIndex: number): number {
-        return this.engine.findOppositeFaceIndex(faceIndex)
-    }
-
-    public findOppositeIntervalIndex(intervalIndex: number): number {
-        return this.engine.findOppositeIntervalIndex(intervalIndex)
-    }
-
-    public getCurrentState(): FabricState {
-        return this.engine.getCurrentState()
-    }
-
-    public getFaceJointIndex(faceIndex: number, jointNumber: number): number {
-        return this.engine.getFaceJointIndex(faceIndex, jointNumber)
-    }
-
-    public getJointLaterality(jointIndex: number): number {
-        return this.engine.getJointLaterality(jointIndex)
-    }
-
-    public getJointTag(jointIndex: number): number {
-        return this.engine.getJointTag(jointIndex)
-    }
-
-    public getIntervalCount(): number {
-        return this.engine.getIntervalCount()
-    }
-
-    public iterate(ticks: number): boolean {
-        return this.engine.iterate(ticks)
-    }
-
-    public getJointCount(): number {
-        return this.engine.getJointCount()
-    }
-
-    public nextJointTag(): number {
-        return this.engine.nextJointTag()
-    }
-
-    public removeFace(faceIndex: number): void {
-        this.engine.removeFace(faceIndex)
-    }
-
-    public setAltitude(altitude: number): number {
-        return this.engine.setAltitude(altitude)
-    }
-
-    public getNextState(): FabricState {
-        return this.engine.getNextState()
-    }
-
-    public setNextState(state: FabricState): void {
-        this.engine.setNextState(state)
-    }
-
-    public getIntervalStateLength(intervalIndex: number, state: FabricState): number {
-        return this.engine.getIntervalStateLength(intervalIndex, state)
-    }
-
-    public setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void {
-        this.engine.setIntervalStateLength(intervalIndex, state, length)
-    }
-
-    public setElasticFactor(intervalIndex: number, elasticFactor: number): void {
-        this.engine.setElasticFactor(intervalIndex, elasticFactor)
-    }
-
-    public getElasticFactor(intervalIndex: number): number {
-        return this.engine.getElasticFactor(intervalIndex)
-    }
-
-    public changeRestLength(intervalIndex: number, length: number): void {
-        this.engine.changeRestLength(intervalIndex, length)
-    }
-
-    public multiplyRestLength(intervalIndex: number, factor: number): void {
-        this.engine.multiplyRestLength(intervalIndex, factor)
     }
 
     public getJointLocation(jointIndex: number): Vector3 {

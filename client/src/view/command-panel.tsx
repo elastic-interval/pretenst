@@ -149,13 +149,13 @@ export function CommandPanel({constructFabric, fabric, cancelSelection}: {
                 <Button className={BUTTON_CLASS} onClick={() => withFabric(connectClosestFacePair)}>
                     <FaStarOfDavid/> Connect
                 </Button>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.instance.setAltitude(10))}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.instance.engine.setAltitude(10))}>
                     <FaParachuteBox/> Jump
                 </Button>
                 <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.autoRotate = !f.autoRotate)}>
                     <FaSyncAlt/> Rotate
                 </Button>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.instance.centralize())}>
+                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.instance.engine.centralize())}>
                     <FaCompressArrowsAlt/> Centralize
                 </Button>
                 <Button className={BUTTON_CLASS} onClick={() => constructFabric(loadFabricCode()[storageIndex])}>

@@ -41,15 +41,16 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
 
     const setFabricSlackLimits = (bars: boolean, nuanceValue: number) => {
         if (bars) {
-            fabric.instance.setSlackLimits(nuanceValue, 0)
+            fabric.instance.engine.setSlackLimits(nuanceValue, 0)
         } else {
-            fabric.instance.setSlackLimits(0, nuanceValue)
+            fabric.instance.engine.setSlackLimits(0, nuanceValue)
         }
     }
 
     const displacementFromNuance = (nuanceValue: number) => {
-        const min = fabric.instance.getLimit(barMode ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
-        const max = fabric.instance.getLimit(barMode ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
+        const engine = fabric.instance.engine
+        const min = engine.getLimit(barMode ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
+        const max = engine.getLimit(barMode ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
         return (1 - nuanceValue) * min + nuanceValue * max
     }
 
@@ -114,10 +115,11 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
 
     const LengthAdjustmentButtons = () => {
         const adjustValue = (up: boolean) => () => {
+            const engine = fabric.instance.engine
             fabric.intervals
                 .filter(interval => interval.selected)
                 .forEach(interval => {
-                    fabric.instance.multiplyRestLength(interval.index, adjustment(up))
+                    engine.multiplyRestLength(interval.index, adjustment(up))
                 })
             switchSelection(false)
         }
@@ -135,9 +137,10 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
 
     const ElasticFactorButtons = () => {
         const onClick = (elasticFactor: number) => {
+            const engine = fabric.instance.engine
             fabric.intervals
                 .filter(interval => interval.selected)
-                .forEach(interval => fabric.instance.setElasticFactor(interval.index, elasticFactor))
+                .forEach(interval => engine.setElasticFactor(interval.index, elasticFactor))
             switchSelection(false)
         }
         return (

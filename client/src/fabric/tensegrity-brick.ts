@@ -196,10 +196,10 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
             brick.faces[t.name].canGrow = false
         })
         const triangleRing = TRIANGLE_DEFINITIONS[triangle].ring
+        const engine = fabric.instance.engine
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
-            const instance = fabric.instance
-            instance.engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
-            instance.engine.changeRestLength(interval.index, roleLength(interval.intervalRole))
+            engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
+            engine.changeRestLength(interval.index, roleLength(interval.intervalRole))
         })
         return face
     }
