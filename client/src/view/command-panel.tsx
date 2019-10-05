@@ -56,8 +56,8 @@ function extractSubmergedJointBlob(fabric: TensegrityFabric): Blob {
     const csvSubmerged: string[][] = []
     csvSubmerged.push(["joints"])
     csvSubmerged.push([`"=""${fabric.submergedJoints.map(joint => joint.index)}"""`])
-    const intervalsFile = csvSubmerged.map(a => a.join(";")).join("\n")
-    return new Blob([intervalsFile], {type: "application/csv"})
+    const submergedFile = csvSubmerged.map(a => a.join(";")).join("\n")
+    return new Blob([submergedFile], {type: "application/csv"})
 }
 
 function saveCSVFiles(fabric: TensegrityFabric): void {
