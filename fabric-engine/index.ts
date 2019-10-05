@@ -812,7 +812,7 @@ function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
     setF32(_currentLength(intervalIndex), idealLength)
 }
 
-function getElasticFactor(intervalIndex: u16): f32 {
+export function getElasticFactor(intervalIndex: u16): f32 {
     return getF32(_elasticFactor(intervalIndex))
 }
 
@@ -862,7 +862,7 @@ function setIntervalCountdown(intervalIndex: u16, countdown: u16): void {
     setU16(_intervalCountdown(intervalIndex), countdown)
 }
 
-function getIntervalStateLength(intervalIndex: u16, state: u8): f32 {
+export function getIntervalStateLength(intervalIndex: u16, state: u8): f32 {
     return getF32(_stateLengthArray(intervalIndex) + F32 * state)
 }
 

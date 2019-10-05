@@ -3,9 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { IntervalRole, Laterality } from "./fabric-engine"
+import { FabricState, IntervalRole, Laterality } from "./fabric-engine"
 import { FabricInstance } from "./fabric-kernel"
 import { applyFeatureToInstance, IFeature } from "./features"
 import {
@@ -28,9 +28,22 @@ import {
 
 export interface IFabricOutput {
     name: string
-    joints: { index: string, x: string, y: string, z: string }[]
-    intervals: { joints: string, type: string }[]
+    joints: {
+        index: string,
+        x: string,
+        y: string,
+        z: string,
+    }[]
+    intervals: {
+        joints: string,
+        type: string,
+        stress: number,
+        thickness: number,
+    }[]
 }
+
+export const SPHERE_RADIUS = 0.35
+export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 16, 16)
 
 export class TensegrityFabric {
     public joints: IJoint[] = []
@@ -250,6 +263,17 @@ export class TensegrityFabric {
         ))
     }
 
+    public orientInterval(interval: IInterval, girth: number): { scale: Vector3, rotation: Quaternion } {
+        const Y_AXIS = new Vector3(0, 1, 0)
+        const unit = this.instance.getIntervalUnit(interval.index)
+        const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
+        const alphaLocation = this.instance.getJointLocation(interval.alpha.index)
+        const omegaLocation = this.instance.getJointLocation(interval.omega.index)
+        const intervalLength = alphaLocation.distanceTo(omegaLocation)
+        const scale = new Vector3(SPHERE_RADIUS * girth, intervalLength / SPHERE_RADIUS / 2, SPHERE_RADIUS * girth)
+        return {scale, rotation}
+    }
+
     public get output(): IFabricOutput {
         const numberToString = (n: number) => n.toFixed(5).replace(".", ",")
         return {
@@ -263,10 +287,16 @@ export class TensegrityFabric {
                     z: numberToString(vector.y),
                 }
             }),
-            intervals: this.intervals.map(interval => ({
-                joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
-                type: IntervalRole[interval.intervalRole],
-            })),
+            intervals: this.intervals.map(interval => {
+                const deltaLength = this.instance.getIntervalDisplacement(interval.index)
+                const restLength = this.instance.getIntervalStateLength(interval.index, FabricState.Rest)
+                return {
+                    joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
+                    type: IntervalRole[interval.intervalRole],
+                    stress: deltaLength / restLength,
+                    thickness: this.instance.getElasticFactor(interval.index),
+                }
+            }),
         }
     }
 }

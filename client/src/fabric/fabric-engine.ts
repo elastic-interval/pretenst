@@ -113,6 +113,8 @@ export interface IFabricEngine {
 
     setElasticFactor(intervalIndex: number, elasticFactor: number): void
 
+    getElasticFactor(intervalIndex: number): number
+
     changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
     changeRestLength(intervalIndex: number, length: number): void
@@ -122,6 +124,8 @@ export interface IFabricEngine {
     removeInterval(intervalIndex: number): void
 
     findOppositeIntervalIndex(intervalIndex: number): number
+
+    getIntervalStateLength(intervalIndex: number, state: FabricState): number
 
     setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void
 

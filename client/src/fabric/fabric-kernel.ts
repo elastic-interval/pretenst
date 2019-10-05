@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -343,12 +344,20 @@ export class FabricInstance {
         this.fabricEngine.setRoleLength(intervalRole, factor)
     }
 
+    public getIntervalStateLength(intervalIndex: number, state: FabricState): number {
+        return this.fabricEngine.getIntervalStateLength(intervalIndex, state)
+    }
+
     public setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void {
         this.fabricEngine.setIntervalStateLength(intervalIndex, state, length)
     }
 
     public setElasticFactor(intervalIndex: number, elasticFactor: number): void {
         this.fabricEngine.setElasticFactor(intervalIndex, elasticFactor)
+    }
+
+    public getElasticFactor(intervalIndex: number): number {
+        return this.fabricEngine.getElasticFactor(intervalIndex)
     }
 
     public changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void {

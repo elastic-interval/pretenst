@@ -113,10 +113,14 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     }
 
     const LengthAdjustmentButtons = () => {
-        const adjustValue = (up: boolean) => () => fabric.intervals.filter(interval => interval.selected).forEach(interval => {
-            fabric.instance.multiplyRestLength(interval.index, adjustment(up))
+        const adjustValue = (up: boolean) => () => {
+            fabric.intervals
+                .filter(interval => interval.selected)
+                .forEach(interval => {
+                    fabric.instance.multiplyRestLength(interval.index, adjustment(up))
+                })
             switchSelection(false)
-        })
+        }
         return (
             <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
                 <Button disabled={!selectOn} className={BUTTON_CLASS} onClick={adjustValue(true)}>
@@ -131,7 +135,9 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
 
     const ElasticFactorButtons = () => {
         const onClick = (elasticFactor: number) => {
-            fabric.intervals.forEach(interval => fabric.instance.setElasticFactor(interval.index, elasticFactor))
+            fabric.intervals
+                .filter(interval => interval.selected)
+                .forEach(interval => fabric.instance.setElasticFactor(interval.index, elasticFactor))
             switchSelection(false)
         }
         return (
