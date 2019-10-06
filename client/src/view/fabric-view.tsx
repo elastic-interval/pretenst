@@ -272,6 +272,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                     {fabric.intervals.map((interval: IInterval) => {
                         const bar = interval.intervalRole === IntervalRole.Bar
                         const widening = interval.selected ? (bar ? 1.2 : 3) : 1
+                        const material = interval.selected ? TENSEGRITY_SELECTED : bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE
                         const {scale, rotation} = fabric.orientInterval(interval, girth(interval.intervalRole) * widening)
                         return (
                             <mesh
@@ -280,9 +281,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                                 position={fabric.instance.getIntervalMidpoint(interval.index)}
                                 rotation={new Euler().setFromQuaternion(rotation)}
                                 scale={scale}
-                                material={interval.selected ?
-                                    TENSEGRITY_SELECTED :
-                                    bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE}
+                                material={material}
                             />
                         )
                     })}
