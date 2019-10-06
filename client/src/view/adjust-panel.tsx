@@ -6,7 +6,7 @@
 import * as React from "react"
 import { CSSProperties, useEffect, useState } from "react"
 import { GetHandleProps, GetRailProps, Handles, Rail, Slider } from "react-compound-slider"
-import { FaArrowDown, FaArrowUp, FaHandPointDown, FaHandPointUp, FaTimes } from "react-icons/all"
+import { FaArrowDown, FaArrowUp } from "react-icons/all"
 import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
@@ -82,35 +82,19 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
         )
     }
 
-    const IntervalSelectButtons = () => {
-        const onSelect = () => {
-            const isBar = (interval: IInterval) => interval.intervalRole === IntervalRole.Bar
-            const displacement = displacementFromNuance(nuance)
-            fabric.intervals.forEach(interval => {
-                const bar = isBar(interval)
-                if (barMode !== bar) {
-                    interval.selected = false
-                } else {
-                    const intervalDisplacement = fabric.instance.getIntervalDisplacement(interval.index) * (bar ? -1 : 1)
-                    interval.selected = nuance < 0.5 ? intervalDisplacement < displacement : intervalDisplacement > displacement
-                }
-            })
-            switchSelection(true)
-        }
-
-        return (
-            <ButtonGroup vertical={true} className={BUTTON_GROUP_CLASS}>
-                <Button disabled={nuance < 0.5} className={BUTTON_CLASS} onClick={onSelect}>
-                    <FaHandPointUp/> Above
-                </Button>
-                <Button disabled={nuance > 0.5} className={BUTTON_CLASS} onClick={onSelect}>
-                    <FaHandPointDown/> Below
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={() => setSelectOn(false)}>
-                    <FaTimes/> Cancel
-                </Button>
-            </ButtonGroup>
-        )
+    const onSelect = (nuanceValue: number) => {
+        const isBar = (interval: IInterval) => interval.intervalRole === IntervalRole.Bar
+        const displacement = displacementFromNuance(nuanceValue)
+        fabric.intervals.forEach(interval => {
+            const bar = isBar(interval)
+            if (barMode !== bar) {
+                interval.selected = false
+            } else {
+                const intervalDisplacement = fabric.instance.getIntervalDisplacement(interval.index) * (bar ? -1 : 1)
+                interval.selected = nuance < 0.5 ? intervalDisplacement < displacement : intervalDisplacement > displacement
+            }
+        })
+        switchSelection(true)
     }
 
     const LengthAdjustmentButtons = () => {
@@ -162,7 +146,10 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
                         nuance={nuance}
                         setNuance={(nuanceValue: number) => {
                             setNuance(nuanceValue)
-                            switchSelection(false)
+                            if (nuanceValue === 0) {
+                                switchSelection(false)
+                            }
+                            onSelect(nuanceValue)
                         }}
                         displacementFromNuance={displacementFromNuance}
                         setFabricSlackLimits={setFabricSlackLimits}
@@ -170,7 +157,6 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
                 </Col>
                 <Col xs={{size: 7}} className="my-auto">
                     <IntervalGroupToggle/>
-                    <IntervalSelectButtons/>
                     <LengthAdjustmentButtons/>
                     <ElasticFactorButtons/>
                 </Col>

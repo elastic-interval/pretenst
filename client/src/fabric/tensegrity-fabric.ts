@@ -43,7 +43,7 @@ export interface IFabricOutput {
 }
 
 export const SPHERE_RADIUS = 0.35
-export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 16, 16)
+export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 
 export class TensegrityFabric {
     public joints: IJoint[] = []

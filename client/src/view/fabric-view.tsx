@@ -21,7 +21,7 @@ import {
     TENSEGRITY_JOINT,
     TENSEGRITY_JOINT_CAN_GROW,
     TENSEGRITY_JOINT_CANNOT_GROW,
-    TENSEGRITY_LINE,
+    TENSEGRITY_LINE, TENSEGRITY_SELECTED,
 } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
@@ -46,7 +46,7 @@ const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
 
 function girth(intervalRole: IntervalRole): number {
-    return intervalRole === IntervalRole.Bar ? 0.7 : 0.07
+    return intervalRole === IntervalRole.Bar ? 0.8 : 0.16
 }
 
 export function FabricView({fabric, selection, setSelection, autoRotate, fastMode}: {
@@ -270,8 +270,9 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                 <scene>
                     <Faces/>
                     {fabric.intervals.map((interval: IInterval) => {
-                        const {scale, rotation} = fabric.orientInterval(interval, girth(interval.intervalRole))
                         const bar = interval.intervalRole === IntervalRole.Bar
+                        const widening = interval.selected ? (bar ? 1.2 : 3) : 1
+                        const {scale, rotation} = fabric.orientInterval(interval, girth(interval.intervalRole) * widening)
                         return (
                             <mesh
                                 key={`I${interval.index}`}
@@ -279,7 +280,9 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                                 position={fabric.instance.getIntervalMidpoint(interval.index)}
                                 rotation={new Euler().setFromQuaternion(rotation)}
                                 scale={scale}
-                                material={bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE}
+                                material={interval.selected ?
+                                    TENSEGRITY_SELECTED :
+                                    bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE}
                             />
                         )
                     })}

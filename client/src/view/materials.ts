@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -53,6 +54,11 @@ export const TENSEGRITY_FACE = new MeshPhongMaterial({
 export const TENSEGRITY_JOINT = new MeshPhongMaterial({
     lights: true,
     color: new Color("rebeccapurple"),
+})
+
+export const TENSEGRITY_SELECTED = new MeshPhongMaterial({
+    lights: true,
+    color: new Color("green"),
 })
 
 export const TENSEGRITY_BAR = new MeshPhongMaterial({
