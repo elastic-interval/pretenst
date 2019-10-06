@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -6,7 +5,7 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { FaBullhorn, FaGlobe, FaHandPaper, FaList, FaSortAmountUp } from "react-icons/all"
+import { FaGlobe, FaHandPaper, FaList, FaSortAmountUp } from "react-icons/all"
 import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
@@ -15,12 +14,10 @@ import { ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { AdjustPanel } from "./adjust-panel"
-import { CommandPanel } from "./command-panel"
 import { FeaturePanel } from "./feature-panel"
 import { TensegrityEditPanel } from "./tensegrity-edit-panel"
 
 enum TabName {
-    Command = "Command",
     Physics = "Physics",
     Role = "Role",
     Adjust = "Adjust",
@@ -39,12 +36,10 @@ export function TensegrityControl({engine, physicsFeatures, roleFeatures, fabric
     setSelection: (s: ISelection) => void,
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState<TabName>(TabName.Command)
+    const [activeTab, setActiveTab] = useState<TabName>(TabName.Physics)
 
     function TabSymbol({tab}: { tab: TabName }): JSX.Element {
         switch (tab) {
-            case TabName.Command:
-                return <FaBullhorn/>
             case TabName.Physics:
                 return <FaGlobe/>
             case TabName.Role:
@@ -69,13 +64,6 @@ export function TensegrityControl({engine, physicsFeatures, roleFeatures, fabric
                 ))}
             </Nav>
             <TabContent className="h-100" activeTab={activeTab}>
-                <TabPane tabId={TabName.Command}>
-                    <CommandPanel
-                        constructFabric={constructFabric}
-                        fabric={fabric}
-                        cancelSelection={() => setSelection({})}
-                    />
-                </TabPane>
                 <TabPane tabId={TabName.Physics}>
                     <FeaturePanel
                         engine={engine}

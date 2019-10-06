@@ -41,15 +41,20 @@ declare global {
 const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 const JOINT_SCALE = new Vector3(0.6, 0.6, 0.6)
 
-const ITERATIONS_PER_FRAME = 20
+const ITERATIONS_PER_FRAME = 24
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const GIRTH = 1
 
-export function FabricView({fabric, selection, setSelection}: {
+function girth(intervalRole: IntervalRole): number {
+    return intervalRole === IntervalRole.Bar ? 0.7 : 0.07
+}
+
+export function FabricView({fabric, selection, setSelection, autoRotate, fastMode}: {
     fabric: TensegrityFabric,
     selection: ISelection,
     setSelection: (s: ISelection) => void,
+    autoRotate: boolean,
+    fastMode: boolean,
 }): JSX.Element {
 
     const [age, setAge] = useState<number>(0)
@@ -72,7 +77,7 @@ export function FabricView({fabric, selection, setSelection}: {
         const towardsTarget = new Vector3().subVectors(fabric.instance.midpoint, orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
-        orbitControls.current.autoRotate = fabric.autoRotate
+        orbitControls.current.autoRotate = autoRotate
         fabric.iterate(ITERATIONS_PER_FRAME)
         setAge(fabric.instance.engine.getAge())
     }, true, [fabric, selection, age])
@@ -86,7 +91,7 @@ export function FabricView({fabric, selection, setSelection}: {
                     {fabric.intervals.filter(interval => interval.selected)
                         .filter(interval => !interval.removed)
                         .map((interval: IInterval) => {
-                            const {scale, rotation} = fabric.orientInterval(interval, GIRTH)
+                            const {scale, rotation} = fabric.orientInterval(interval, girth(interval.intervalRole))
                             return (
                                 <mesh
                                     key={`I${interval.index}`}
@@ -115,7 +120,7 @@ export function FabricView({fabric, selection, setSelection}: {
                 {intervals
                     .filter(interval => !interval.removed)
                     .map((interval: IInterval) => {
-                        const {scale, rotation} = fabric.orientInterval(interval, GIRTH)
+                        const {scale, rotation} = fabric.orientInterval(interval, girth(interval.intervalRole))
                         return (
                             <mesh
                                 key={`I${interval.index}`}
@@ -185,7 +190,7 @@ export function FabricView({fabric, selection, setSelection}: {
         if (!selectedInterval) {
             return <group/>
         }
-        const {scale, rotation} = fabric.orientInterval(selectedInterval, GIRTH)
+        const {scale, rotation} = fabric.orientInterval(selectedInterval, girth(selectedInterval.intervalRole))
         const bar = selectedInterval.intervalRole === IntervalRole.Bar
         return (
             <mesh
@@ -250,16 +255,37 @@ export function FabricView({fabric, selection, setSelection}: {
     return (
         <group>
             <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
-            <scene>
-                <Faces/>
-                <Lines/>
-                <SurfaceComponent/>
-                <JointSelection/>
-                <IntervalSelection/>
-                <SelectedFace/>
-                <SelectedJoint/>
-                <SelectedInterval/>
-            </scene>
+            {fastMode ? (
+                <scene>
+                    <Faces/>
+                    <Lines/>
+                    <JointSelection/>
+                    <IntervalSelection/>
+                    <SelectedFace/>
+                    <SelectedJoint/>
+                    <SelectedInterval/>
+                    <SurfaceComponent/>
+                </scene>
+            ) : (
+                <scene>
+                    <Faces/>
+                    {fabric.intervals.map((interval: IInterval) => {
+                        const {scale, rotation} = fabric.orientInterval(interval, girth(interval.intervalRole))
+                        const bar = interval.intervalRole === IntervalRole.Bar
+                        return (
+                            <mesh
+                                key={`I${interval.index}`}
+                                geometry={SPHERE}
+                                position={fabric.instance.getIntervalMidpoint(interval.index)}
+                                rotation={new Euler().setFromQuaternion(rotation)}
+                                scale={scale}
+                                material={bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE}
+                            />
+                        )
+                    })}
+                    <SurfaceComponent/>
+                </scene>
+            )}
         </group>
     )
 }

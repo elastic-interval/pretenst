@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -43,8 +44,11 @@ export function FeaturePanel({engine, features, isPhysics, fabric}: {
         })
         const difference = Math.abs(feature.factor$.getValue() - feature.defaultValue)
         const atDefault = difference < 0.00001 * Math.abs(feature.defaultValue)
-        const className = "float-right physics-factor" + (atDefault ? "" : " physics-factor-adjusted")
-        return <strong className={className}>{factor}</strong>
+        return <strong style={{
+            float: "right",
+            fontFamily: "monospace",
+            color: atDefault? "white": "orange",
+        }}>{factor}</strong>
     }
 
     return (

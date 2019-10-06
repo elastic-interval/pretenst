@@ -49,7 +49,6 @@ export class TensegrityFabric {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public faces: IFace[] = []
-    public autoRotate = false
     public growth?: IGrowth
 
     private faceLocations = new Float32BufferAttribute([], 3)

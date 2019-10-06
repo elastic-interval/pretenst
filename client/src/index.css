@@ -217,11 +217,3 @@ a, a:hover {
 .feature-control {
     color: white;
 }
-
-.physics-factor {
-    font-family: monospace;
-}
-
-.physics-factor-adjusted {
-    color: orange;
-}
