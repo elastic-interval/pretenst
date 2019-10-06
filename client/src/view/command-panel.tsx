@@ -6,9 +6,7 @@
 import * as React from "react"
 import {
     FaAnchor,
-    FaBolt,
     FaCompressArrowsAlt,
-    FaDownload,
     FaParachuteBox,
     FaRecycle,
     FaRunning,
@@ -18,7 +16,6 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { saveCSVFiles, saveOBJFile } from "../storage/download"
 import { loadFabricCode } from "../storage/local-storage"
 
 export function CommandPanel({constructFabric, fabric, fastMode, setFastMode, autoRotate, setAutoRotate, storageIndex}: {
@@ -50,26 +47,6 @@ export function CommandPanel({constructFabric, fabric, fastMode, setFastMode, au
     const onFastMode = () => {
         setFastMode(!fastMode)
     }
-    const onDownloadCSV = () => {
-        if (fabric) {
-            saveCSVFiles(fabric)
-        }
-    }
-    const onDownloadOBJ = () => {
-        if (fabric) {
-            saveOBJFile(fabric)
-        }
-    }
-    const onOptimizeA = () => {
-        if (fabric) {
-            fabric.optimize(true)
-        }
-    }
-    const onOptimizeB = () => {
-        if (fabric) {
-            fabric.optimize(false)
-        }
-    }
 
     return (
         <ButtonGroup style={{
@@ -82,10 +59,6 @@ export function CommandPanel({constructFabric, fabric, fastMode, setFastMode, au
             <Button onClick={onCentralize}><FaCompressArrowsAlt/></Button>
             <Button onClick={onRotateToggle}>{autoRotate ? <FaAnchor/> : <FaSyncAlt/>}</Button>
             <Button onClick={onFastMode}>{fastMode ? <FaRunning/> : <FaWalking/>}</Button>
-            <Button onClick={onDownloadCSV}><FaDownload/>CSV</Button>
-            <Button onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
-            <Button onClick={onOptimizeA}><FaBolt/>A</Button>
-            <Button onClick={onOptimizeB}><FaBolt/>B</Button>
         </ButtonGroup>
     )
 }

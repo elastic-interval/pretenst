@@ -5,15 +5,16 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaCog } from "react-icons/all"
+import { FaCog, FaDownload } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
+import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
 import { ISelection } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { saveCSVFiles, saveOBJFile } from "../storage/download"
 import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
 
 import { CommandPanel } from "./command-panel"
@@ -79,13 +80,13 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
             <div style={{
                 position: "absolute",
                 top: "1em",
-                right: "1em",
+                left: "1em",
             }}>
                 <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
                     <DropdownToggle>
                         <FaCog/> {fabricCode[storageIndex]}
                     </DropdownToggle>
-                    <DropdownMenu right={true}>
+                    <DropdownMenu right={false}>
                         {fabricCode.map((code, index) => (
                             <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
                                 {code}
@@ -94,6 +95,29 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
                     </DropdownMenu>
                 </ButtonDropdown>
             </div>
+        )
+    }
+
+    const Download = (): JSX.Element => {
+        const onDownloadCSV = () => {
+            if (fabric) {
+                saveCSVFiles(fabric)
+            }
+        }
+        const onDownloadOBJ = () => {
+            if (fabric) {
+                saveOBJFile(fabric)
+            }
+        }
+        return (
+            <ButtonGroup style={{
+                position: "absolute",
+                bottom: "1em",
+                left: "1em",
+            }}>
+                <Button onClick={onDownloadCSV}><FaDownload/>CSV</Button>
+                <Button onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
+            </ButtonGroup>
         )
     }
 
@@ -122,17 +146,18 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
                         />
                     )}
                 </Canvas>
+                <CommandPanel
+                    constructFabric={constructFabric}
+                    fabric={fabric}
+                    autoRotate={autoRotate}
+                    setAutoRotate={setAutoRotate}
+                    fastMode={fastMode}
+                    setFastMode={setFastMode}
+                    storageIndex={storageIndex}
+                />
+                <FabricChoice/>
+                <Download/>
             </div>
-            <CommandPanel
-                constructFabric={constructFabric}
-                fabric={fabric}
-                autoRotate={autoRotate}
-                setAutoRotate={setAutoRotate}
-                fastMode={fastMode}
-                setFastMode={setFastMode}
-                storageIndex={storageIndex}
-            />
-            <FabricChoice/>
         </div>
     )
 }
