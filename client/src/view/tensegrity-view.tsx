@@ -19,6 +19,7 @@ import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/
 
 import { CommandPanel } from "./command-panel"
 import { FabricView } from "./fabric-view"
+import { FeaturePanel } from "./feature-panel"
 import { TensegrityControl } from "./tensegrity-control"
 
 extend({OrbitControls})
@@ -34,11 +35,10 @@ declare global {
     }
 }
 
-export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures}: {
+export function TensegrityView({engine, getFabric, features}: {
     engine: IFabricEngine,
     getFabric: (name: string) => TensegrityFabric,
-    physicsFeatures: IFeature[],
-    roleFeatures: IFeature[],
+    features: IFeature[],
 }): JSX.Element {
 
     const [autoRotate, setAutoRotate] = useState<boolean>(false)
@@ -77,11 +77,7 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
 
         const fabricCode = loadFabricCode()
         return (
-            <div style={{
-                position: "absolute",
-                top: "1em",
-                left: "1em",
-            }}>
+            <div style={{position: "absolute", top: "1em", left: "1em"}}>
                 <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
                     <DropdownToggle>
                         <FaCog/> {fabricCode[storageIndex]}
@@ -135,11 +131,7 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
         <div className="the-whole-page">
             <div style={leftPanel}>
                 <TensegrityControl
-                    engine={engine}
-                    physicsFeatures={physicsFeatures}
-                    roleFeatures={roleFeatures}
                     fabric={fabric}
-                    constructFabric={constructFabric}
                     selection={selection}
                     setSelection={setSelection}
                 />
@@ -157,6 +149,11 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
                     )}
                 </Canvas>
                 <FabricChoice/>
+                <FeaturePanel
+                    featureSet={features}
+                    engine={engine}
+                    fabric={fabric}
+                />
                 <CommandPanel
                     constructFabric={constructFabric}
                     fabric={fabric}

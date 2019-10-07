@@ -49,6 +49,7 @@ async function start(): Promise<void> {
     const roleFeatures = enumToFeatureArray(IntervalRole, false)
     const fabricCache: Record<string, TensegrityFabric> = {}
     physicsFeatures.forEach(feature => applyPhysicsFeature(engine, feature))
+    const features = [...roleFeatures, ...physicsFeatures]
     if (TENSEGRITY) {
         const dimensions: IFabricDimensions = {
             instanceMax: 30,
@@ -72,8 +73,7 @@ async function start(): Promise<void> {
         ReactDOM.render(
             <TensegrityView
                 engine={engine}
-                physicsFeatures={physicsFeatures}
-                roleFeatures={roleFeatures}
+                features={features}
                 getFabric={getFabric}
             />,
             root,
