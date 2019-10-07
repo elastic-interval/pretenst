@@ -85,7 +85,7 @@ export function FabricView({fabric, selectedFace, setSelectedFace, autoRotate, f
             case FaceSelection.Face:
                 return FaceSelection.Brick
             case FaceSelection.Brick:
-                return FaceSelection.None
+                return FaceSelection.Cables
         }
     }
     const activateFaceSelection = (face: ISelectedFace) => {
