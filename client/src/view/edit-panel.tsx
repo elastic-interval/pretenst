@@ -19,8 +19,10 @@ import {
 } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
+import { StressSelectionPanel } from "./stress-selection-panel"
+
 export function EditPanel({fabric, selection, setSelection}: {
-    fabric?: TensegrityFabric,
+    fabric: TensegrityFabric,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
 }): JSX.Element {
@@ -32,9 +34,7 @@ export function EditPanel({fabric, selection, setSelection}: {
 
     function CancelButton(): JSX.Element {
         const onCancel = () => {
-            if (fabric) {
-                fabric.selectNone()
-            }
+            fabric.selectNone()
             setSelection({})
         }
         return (
@@ -43,9 +43,6 @@ export function EditPanel({fabric, selection, setSelection}: {
     }
 
     const adjustValue = (up: boolean) => () => {
-        if (!fabric) {
-            return
-        }
         fabric.selectedIntervals.forEach(interval => {
             fabric.instance.engine.multiplyRestLength(interval.index, adjustment(up))
         })
@@ -57,9 +54,6 @@ export function EditPanel({fabric, selection, setSelection}: {
     }
 
     const selectLowestFace = () => {
-        if (!fabric) {
-            return
-        }
         const lowestFace = fabric.faces.reduce((faceA: IFace, faceB: IFace) => {
             const a = fabric.instance.getFaceMidpoint(faceA.index)
             const b = fabric.instance.getFaceMidpoint(faceB.index)
@@ -70,17 +64,12 @@ export function EditPanel({fabric, selection, setSelection}: {
 
     const faceNextAdjacent = (face: ISelectedFace) => {
         const nextAdjacentFace = nextAdjacent(face)
-        if (fabric) {
-            fabric.selectByFace(nextAdjacentFace)
-            setSelection({selectedFace: nextAdjacentFace})
-        }
+        fabric.selectByFace(nextAdjacentFace)
+        setSelection({selectedFace: nextAdjacentFace})
     }
 
-    const selectStressSelectMode = (mode: StressSelectMode) => {
-        if (!fabric) {
-            return
-        }
-        setSelection({selectedStress: {mode, stressValue: 0}})
+    const selectStressSelectMode = (stressSelectMode: StressSelectMode) => {
+        setSelection({selectedStress: {stressSelectMode, stressValue: 0}})
     }
 
     const middleBottom: CSSProperties = {
@@ -113,9 +102,13 @@ export function EditPanel({fabric, selection, setSelection}: {
                     <CancelButton/>
                 </ButtonGroup>
             ) : selectedStress ? (
-                <ButtonGroup>
-                    <Button onClick={() => setSelection({})}>{selectedStress.mode}</Button>
-                </ButtonGroup>
+                <div>
+                    <StressSelectionPanel
+                        fabric={fabric}
+                        stressSelectMode={selectedStress.stressSelectMode}
+                        cancelSelection={() => setSelection({})}
+                    />
+                </div>
             ) : (
                 <ButtonGroup>
                     <Button onClick={selectLowestFace}><FaHandPointer/> Select a face by clicking it</Button>

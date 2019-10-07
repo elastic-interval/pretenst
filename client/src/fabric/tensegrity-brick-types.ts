@@ -203,7 +203,7 @@ export enum StressSelectMode {
 }
 
 export interface ISelectedStress {
-    mode: StressSelectMode
+    stressSelectMode: StressSelectMode
     stressValue: number
 }
 
