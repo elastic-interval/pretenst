@@ -15,7 +15,7 @@ import {
     DropdownToggle,
     Input,
     InputGroup,
-    InputGroupAddon,
+    InputGroupAddon, InputGroupText,
 } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
@@ -55,7 +55,14 @@ export function FeaturePanel({engine, featureSet, fabric}: {
 
         const difference = Math.abs(feature.factor$.getValue() - feature.defaultValue)
         const atDefault = difference < 0.00001 * Math.abs(feature.defaultValue)
-        const inputStyle: CSSProperties = !atDefault ? {borderWidth: "2px", borderColor: "orange"} : {}
+        const basicStyle: CSSProperties = {
+            textAlign: "right",
+            width: "6em",
+        }
+        const inputStyle: CSSProperties = atDefault ? basicStyle : {
+            ...basicStyle,
+            color: "green",
+        }
         const physicsFeature = feature.name.physicsFeature
         const UpdateButtonGroup = (): JSX.Element => (
             <ButtonGroup>
@@ -77,7 +84,9 @@ export function FeaturePanel({engine, featureSet, fabric}: {
             return (
                 <InputGroup size="sm">
                     <strong><FaGlobe/>&nbsp;&nbsp;</strong>
-                    <InputGroupAddon addonType="prepend">{feature.label}</InputGroupAddon>
+                    <InputGroupAddon addonType="prepend">
+                        <InputGroupText>{feature.label}</InputGroupText>
+                    </InputGroupAddon>
                     <Input style={inputStyle} value={scaledValue.toFixed(1)} disabled={true}/>
                     {symbol.length === 0 ? undefined : <InputGroupAddon addonType="append">{symbol}</InputGroupAddon>}
                     {mutable ? <UpdateButtonGroup/> : undefined}
