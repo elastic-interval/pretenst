@@ -14,10 +14,9 @@ import { applyPhysicsFeature, IFeature } from "../fabric/features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { featureMultiplier, multiplierSymbol, multiplierValue } from "../storage/local-storage"
 
-export function FeaturePanel({engine, features, isPhysics, fabric}: {
+export function FeaturePanel({engine, features, fabric}: {
     engine: IFabricEngine,
     features: IFeature[],
-    isPhysics: boolean,
     fabric?: TensegrityFabric,
 }): JSX.Element {
 
@@ -52,7 +51,7 @@ export function FeaturePanel({engine, features, isPhysics, fabric}: {
     }
 
     return (
-        <div className="features-panel flex flex-column my-4">
+        <div className="flex flex-column my-4">
             {
                 features.map(feature => {
                     const setFactor = (factor?: number): void => {
@@ -68,9 +67,8 @@ export function FeaturePanel({engine, features, isPhysics, fabric}: {
                             }
                         }
                     }
-                    const change = 1 + (isPhysics ? 0.1 : 0.01)
                     return (
-                        <Container key={feature.label} className="feature-control my-3">
+                        <Container key={feature.label} className="my-3" style={{color: "white"}}>
                             <Row noGutters={true}>
                                 <Col xs={{size: 9}}>
                                     <Button onClick={() => setFactor(undefined)}
@@ -81,10 +79,10 @@ export function FeaturePanel({engine, features, isPhysics, fabric}: {
                                 <Col xs={{size: 3}}>
                                     <ButtonGroup className="h-100 mx-1">
                                         <Button className="border-info" size="sm" onClick={() => {
-                                            setFactor(feature.factor$.getValue() * change)
+                                            setFactor(feature.factor$.getValue() * feature.adjustmentFactor)
                                         }}><FaArrowUp/></Button>
                                         <Button className="border-info" size="sm" onClick={() => {
-                                            setFactor(feature.factor$.getValue() / change)
+                                            setFactor(feature.factor$.getValue() / feature.adjustmentFactor)
                                         }}> <FaArrowDown/></Button>
                                     </ButtonGroup>
                                 </Col>

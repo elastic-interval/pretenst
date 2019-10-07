@@ -53,7 +53,7 @@ export function TensegrityControl({engine, physicsFeatures, roleFeatures, fabric
     }
 
     return (
-        <div className="tensegrity-control">
+        <div style={{height: "95%"}}>
             <Nav tabs={true}>
                 {TABS.map((tab: TabName) => (
                     <NavItem key={tab}>
@@ -68,7 +68,6 @@ export function TensegrityControl({engine, physicsFeatures, roleFeatures, fabric
                     <FeaturePanel
                         engine={engine}
                         features={physicsFeatures}
-                        isPhysics={true}
                         fabric={fabric}
                     />
                 </TabPane>
@@ -76,7 +75,6 @@ export function TensegrityControl({engine, physicsFeatures, roleFeatures, fabric
                     <FeaturePanel
                         engine={engine}
                         features={roleFeatures}
-                        isPhysics={false}
                         fabric={fabric}
                     />
                 </TabPane>

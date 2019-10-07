@@ -123,7 +123,13 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
 
     return (
         <div className="the-whole-page">
-            <div className="left-panel">
+            <div style={{
+                display: "block",
+                color: "white",
+                backgroundColor: "#242628",
+                width: "20em",
+                height: "100%",
+            }}>
                 <TensegrityControl
                     engine={engine}
                     physicsFeatures={physicsFeatures}
@@ -134,7 +140,13 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
                     setSelection={setSelection}
                 />
             </div>
-            <div id="tensegrity-view" className="middle-panel">
+            <div style={{
+                position: "absolute",
+                top: 0,
+                left: "20em",
+                right: 0,
+                height: "100%",
+            }} id="tensegrity-view" className="middle-panel">
                 <Canvas>
                     {!fabric ? undefined : (
                         <FabricView

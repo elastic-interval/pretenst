@@ -43,7 +43,20 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
     public render(): JSX.Element | boolean {
         const island = this.props.appState.island
         return (
-            <div className="top-middle">
+            <div style={{
+                height: "auto",
+                width: "auto",
+                maxWidth: "70%",
+                display: "inline-flex",
+                textAlign: "left",
+                background: "black",
+                padding: "4px",
+                margin: "5px",
+                borderColor: "inherit",
+                borderWidth: "2px",
+                borderStyle: "solid",
+                borderRadius: "10px",
+            }}>
                 {this.props.appState.appMode === AppMode.Flying || !island ?
                     (
                         <Button

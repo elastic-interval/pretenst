@@ -138,7 +138,12 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     }
 
     return (
-        <Container className="adjust-panel">
+        <Container style={{
+            borderColor: "white",
+            borderStyle: "solid",
+            borderWidth: "1px",
+            height: "100%",
+        }}>
             <Row className="h-100">
                 <Col xs={{size: 5}}>
                     <DisplacementSlider

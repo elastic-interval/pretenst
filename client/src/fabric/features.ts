@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -14,7 +15,7 @@ interface IFeatureName {
     intervalRole?: IntervalRole
 }
 
-export function nameLabel(name: IFeatureName): string {
+function nameLabel(name: IFeatureName): string {
     if (name.physicsFeature !== undefined) {
         return PhysicsFeature[name.physicsFeature]
     }
@@ -24,12 +25,23 @@ export function nameLabel(name: IFeatureName): string {
     return "?"
 }
 
+function featureAdjustmentFactor(name: IFeatureName): number {
+    if (name.physicsFeature !== undefined) {
+        return 1.1
+    }
+    if (name.intervalRole !== undefined) {
+        return 1.01
+    }
+    return 1
+}
+
 export interface IFeature {
     label: string
     name: IFeatureName
     setFactor: (factor: number) => void
     factor$: BehaviorSubject<number>
     defaultValue: number
+    adjustmentFactor: number
 }
 
 export function getFeatureValue(name: IFeatureName, defaultValue?: boolean): number {
@@ -62,8 +74,9 @@ function createFeature(name: IFeatureName): IFeature {
     const label = nameLabel(name)
     const factor$ = new BehaviorSubject<number>(getFeatureValue(name))
     const defaultValue = getFeatureValue(name, true)
+    const adjustmentFactor = featureAdjustmentFactor(name)
     return {
-        label, name, defaultValue, factor$,
+        label, name, defaultValue, factor$, adjustmentFactor,
         setFactor: (newFactor: number) => {
             setFeature(label, newFactor)
             factor$.next(newFactor)
