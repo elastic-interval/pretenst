@@ -1,9 +1,11 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
 import * as React from "react"
+import { CSSProperties } from "react"
 import { Button } from "reactstrap"
 import { Vector3 } from "three"
 
@@ -32,6 +34,21 @@ interface IContainerProps {
     children: (JSX.Element | null)[] | JSX.Element | string
 }
 
+const style: CSSProperties = {
+    height: "auto",
+    width: "auto",
+    maxWidth: "70%",
+    display: "inline-flex",
+    textAlign: "left",
+    background: "black",
+    padding: "4px",
+    margin: "5px",
+    borderColor: "inherit",
+    borderWidth: "2px",
+    borderStyle: "solid",
+    borderRadius: "10px",
+}
+
 export class ControlPanel extends React.Component<IControlProps, IControlState> {
 
     constructor(props: IControlProps) {
@@ -43,20 +60,7 @@ export class ControlPanel extends React.Component<IControlProps, IControlState> 
     public render(): JSX.Element | boolean {
         const island = this.props.appState.island
         return (
-            <div style={{
-                height: "auto",
-                width: "auto",
-                maxWidth: "70%",
-                display: "inline-flex",
-                textAlign: "left",
-                background: "black",
-                padding: "4px",
-                margin: "5px",
-                borderColor: "inherit",
-                borderWidth: "2px",
-                borderStyle: "solid",
-                borderRadius: "10px",
-            }}>
+            <div style={style}>
                 {this.props.appState.appMode === AppMode.Flying || !island ?
                     (
                         <Button

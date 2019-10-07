@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { CSSProperties, useEffect, useState } from "react"
 import { FaCog, FaDownload } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
@@ -110,26 +110,30 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
             }
         }
         return (
-            <ButtonGroup style={{
-                position: "absolute",
-                bottom: "1em",
-                left: "1em",
-            }}>
+            <ButtonGroup style={{position: "absolute", bottom: "1em", left: "1em"}}>
                 <Button onClick={onDownloadCSV}><FaDownload/>CSV</Button>
                 <Button onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
             </ButtonGroup>
         )
     }
 
+    const leftPanel: CSSProperties = {
+        backgroundColor: "#242628",
+        color: "white",
+        display: "block",
+        height: "100%",
+        width: "20em",
+    }
+    const middlePanel: CSSProperties = {
+        height: "100%",
+        left: "20em",
+        position: "absolute",
+        right: 0,
+        top: 0,
+    }
     return (
         <div className="the-whole-page">
-            <div style={{
-                display: "block",
-                color: "white",
-                backgroundColor: "#242628",
-                width: "20em",
-                height: "100%",
-            }}>
+            <div style={leftPanel}>
                 <TensegrityControl
                     engine={engine}
                     physicsFeatures={physicsFeatures}
@@ -140,13 +144,7 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
                     setSelection={setSelection}
                 />
             </div>
-            <div style={{
-                position: "absolute",
-                top: 0,
-                left: "20em",
-                right: 0,
-                height: "100%",
-            }} id="tensegrity-view" className="middle-panel">
+            <div style={middlePanel} id="tensegrity-view">
                 <Canvas>
                     {!fabric ? undefined : (
                         <FabricView
@@ -158,6 +156,7 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
                         />
                     )}
                 </Canvas>
+                <FabricChoice/>
                 <CommandPanel
                     constructFabric={constructFabric}
                     fabric={fabric}
@@ -167,7 +166,6 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
                     setFastMode={setFastMode}
                     storageIndex={storageIndex}
                 />
-                <FabricChoice/>
                 <Download/>
             </div>
         </div>

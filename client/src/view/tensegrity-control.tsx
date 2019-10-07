@@ -65,18 +65,14 @@ export function TensegrityControl({engine, physicsFeatures, roleFeatures, fabric
             </Nav>
             <TabContent className="h-100" activeTab={activeTab}>
                 <TabPane tabId={TabName.Physics}>
-                    <FeaturePanel
-                        engine={engine}
-                        features={physicsFeatures}
-                        fabric={fabric}
-                    />
+                    {physicsFeatures.map(feature => (
+                        <FeaturePanel key={feature.label} engine={engine} feature={feature}/>
+                    ))}
                 </TabPane>
                 <TabPane tabId={TabName.Role}>
-                    <FeaturePanel
-                        engine={engine}
-                        features={roleFeatures}
-                        fabric={fabric}
-                    />
+                    {roleFeatures.map(feature => (
+                        <FeaturePanel key={feature.label} engine={engine} feature={feature} fabric={fabric}/>
+                    ))}
                 </TabPane>
                 <TabPane className="h-100" tabId={TabName.Adjust}>
                     <AdjustPanel
