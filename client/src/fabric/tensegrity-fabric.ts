@@ -72,8 +72,16 @@ export class TensegrityFabric {
         this.growth = growth
     }
 
+    public get selectedIntervals(): IInterval[] {
+        return this.intervals.filter(interval => interval.selected)
+    }
+
+    public selectNone(): void {
+        this.selectedIntervals.forEach(interval => interval.selected = false)
+    }
+
     public get growthFaces(): IFace[] {
-        return this.faces.filter(f => f.canGrow)
+        return this.faces.filter(face => face.canGrow)
     }
 
     public createBrick(): IBrick {

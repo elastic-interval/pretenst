@@ -39,11 +39,11 @@ export const SURFACE = new MeshPhongMaterial({
     transparent: true,
 })
 
-export const TENSEGRITY_LINE = new LineBasicMaterial({
+export const LINE = new LineBasicMaterial({
     vertexColors: VertexColors,
 })
 
-export const TENSEGRITY_FACE = new MeshPhongMaterial({
+export const FACE = new MeshPhongMaterial({
     lights: true,
     color: new Color("white"),
     side: DoubleSide,
@@ -51,32 +51,27 @@ export const TENSEGRITY_FACE = new MeshPhongMaterial({
     opacity: 0.2,
 })
 
-export const TENSEGRITY_JOINT = new MeshPhongMaterial({
-    lights: true,
-    color: new Color("rebeccapurple"),
-})
-
-export const TENSEGRITY_SELECTED = new MeshPhongMaterial({
+export const SELECTED_INTERVAL = new MeshPhongMaterial({
     lights: true,
     color: new Color("green"),
 })
 
-export const TENSEGRITY_BAR = new MeshPhongMaterial({
+export const BAR = new MeshPhongMaterial({
     lights: true,
     color: new Color("darkred"),
 })
 
-export const TENSEGRITY_CABLE = new MeshPhongMaterial({
+export const CABLE = new MeshPhongMaterial({
     lights: true,
     color: new Color("mediumblue"),
 })
 
-export const TENSEGRITY_JOINT_CANNOT_GROW = new MeshPhongMaterial({
+export const FACE_SPHERE = new MeshPhongMaterial({
     lights: true,
-    color: new Color("turquoise"),
+    color: new Color("cornflowerblue"),
 })
 
-export const TENSEGRITY_JOINT_CAN_GROW = new MeshPhongMaterial({
+export const FACE_SPHERE_GROW = new MeshPhongMaterial({
     lights: true,
-    color: new Color("forestgreen"),
+    color: new Color("seagreen"),
 })

@@ -4,162 +4,74 @@
  */
 
 import * as React from "react"
-import { FaArrowDown, FaArrowUp, FaRegHandPointer, FaTimes } from "react-icons/all"
-import { Alert, Button, ButtonGroup } from "reactstrap"
+import { CSSProperties } from "react"
+import { FaArrowDown, FaArrowUp, FaSun, FaTimes } from "react-icons/all"
+import { Badge, Button, ButtonGroup } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
-import { facePartSelectable, IFace, IInterval, IJoint, ISelection, Selectable } from "../fabric/tensegrity-brick-types"
+import { FaceSelection, IFace, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-const BUTTON_CLASS = "text-left my-2 mx-1"
-const BUTTON_GROUP_CLASS = "w-75 align-self-center my-4"
-
-export function TensegrityEditPanel({fabric, selection, setSelection}: {
+export function TensegrityEditPanel({fabric, selectedFace, setSelectedFace}: {
     fabric?: TensegrityFabric,
-    selection: ISelection,
-    setSelection: (s: ISelection) => void,
+    selectedFace?: ISelectedFace,
+    setSelectedFace: (face: ISelectedFace | undefined) => void,
 }): JSX.Element {
 
     function adjustment(up: boolean): number {
-        const factor = 1.1
+        const factor = 1.03
         return up ? factor : (1 / factor)
     }
 
-    function SelectableButton({selectable, disabled}: { selectable: Selectable, disabled?: boolean }): JSX.Element {
-        return (
-            <Button className={BUTTON_CLASS} disabled={disabled}
-                    onClick={() => setSelection({...selection, selectable})}>
-                <FaRegHandPointer/> Select {selectable}s
-            </Button>
-        )
-    }
-
-    function MaybeSelectable({selectable}: { selectable: Selectable }): JSX.Element {
-        return <SelectableButton disabled={selection.selectable === selectable} selectable={selectable}/>
-    }
-
-    function Selectables(): JSX.Element {
-        return (
-            <>
-                <MaybeSelectable selectable={Selectable.JOINT}/>
-                <MaybeSelectable selectable={Selectable.BAR}/>
-                <MaybeSelectable selectable={Selectable.CABLE}/>
-            </>
-        )
-    }
-
-    function Face({face}: { face: IFace }): JSX.Element {
-
-        const grow = () => {
-            createConnectedBrick(face.brick, face.triangle)
-            setSelection({})
-        }
-        const touchesFace = (interval: IInterval) => face.joints.some(joint => (
-            interval.alpha.index === joint.index || interval.omega.index === joint.index
-        ))
-        const intervals =
-            selection.selectable === Selectable.BAR ? face.bars
-                : selection.selectable === Selectable.CABLE ? face.cables
-                : (selection.selectable === Selectable.JOINT && fabric) ? fabric.intervals.filter(touchesFace)
-                    : []
-        const adjustValue = (up: boolean) => () => intervals.forEach(interval => {
-            if (fabric) {
-                fabric.instance.engine.multiplyRestLength(interval.index, adjustment(up))
-            }
-        })
-
-        return (
-            <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
-                {intervals.length === 0 ? undefined : (
-                    <>
-                        <Button className={BUTTON_CLASS} onClick={adjustValue(true)}>
-                            <FaArrowUp/> Lengthen
-                        </Button>
-                        <Button className={BUTTON_CLASS} onClick={adjustValue(false)}>
-                            <FaArrowDown/> Shorten
-                        </Button>
-                    </>
-                )}
-                {!face.canGrow || facePartSelectable(selection) ? undefined :
-                    <Button className={BUTTON_CLASS} onClick={grow}>Grow</Button>
-                }
-            </ButtonGroup>
-        )
-    }
-
-    function Joint({joint}: { joint: IJoint }): JSX.Element {
-        const adjustValue = (up: boolean) => () => {
-            if (fabric) {
-                const engine = fabric.instance.engine
-                fabric.intervals
-                    .filter(i => i.alpha.index === joint.index || i.omega.index === joint.index)
-                    .forEach(interval => engine.multiplyRestLength(interval.index, adjustment(up)))
-            }
-        }
-        return (
-            <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
-                <Button className={BUTTON_CLASS} onClick={adjustValue(true)}>
-                    <FaArrowUp/> Lengthen
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={adjustValue(false)}>
-                    <FaArrowDown/> Shorten
-                </Button>
-            </ButtonGroup>
-        )
-    }
-
-    function Interval({interval}: { interval: IInterval }): JSX.Element {
-        const adjustValue = (up: boolean) => () => {
-            if (fabric) {
-                fabric.instance.engine.multiplyRestLength(interval.index, adjustment(up))
-            }
-        }
-        return (
-            <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
-                <Button className={BUTTON_CLASS} onClick={adjustValue(true)}>
-                    <FaArrowUp/> Lengthen
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={adjustValue(false)}>
-                    <FaArrowDown/> Shorten
-                </Button>
-            </ButtonGroup>
-        )
-    }
-
     function CancelButton(): JSX.Element {
+        const onCancel = () => {
+            if (fabric) {
+                fabric.selectNone()
+            }
+            setSelectedFace(undefined)
+        }
         return (
-            <Button
-                className={BUTTON_CLASS}
-                onClick={() => setSelection({})}>
-                <FaTimes/> Cancel selection
-            </Button>
+            <Button onClick={onCancel}><FaTimes/> Cancel</Button>
         )
     }
 
-    const nothingSelected = !(selection.selectedJoint || selection.selectedInterval || selection.selectedFace)
+    const adjustValue = (up: boolean) => () => {
+        if (!fabric) {
+            return
+        }
+        fabric.selectedIntervals.forEach(interval => {
+            fabric.instance.engine.multiplyRestLength(interval.index, adjustment(up))
+        })
+    }
+    const grow = (face: IFace) => {
+        createConnectedBrick(face.brick, face.triangle)
+        setSelectedFace(undefined)
+    }
 
+    const middleBottom: CSSProperties = {
+        borderStyle: "solid",
+        position: "absolute",
+        bottom: "1em",
+        left: "50%",
+        transform: "translate(-50%)",
+    }
     return (
-        <div className="text-center">
-            {nothingSelected ? (
-                <Alert className="my-5">Select a face to start editing</Alert>
-            ) : (
-                <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
-                    <Selectables/>
-                </ButtonGroup>
-            )}
-            {
-                selection.selectedInterval ? (
-                    <Interval interval={selection.selectedInterval}/>
-                ) : selection.selectedJoint ? (
-                    <Joint joint={selection.selectedJoint}/>
-                ) : selection.selectedFace ? (
-                    <Face face={selection.selectedFace}/>
-                ) : undefined
-            }
-            {nothingSelected? undefined: (
-                <ButtonGroup className={BUTTON_GROUP_CLASS} vertical={true}>
+        <div style={middleBottom}>
+            {selectedFace ? (
+                <ButtonGroup>
+                    {!selectedFace.face.canGrow ? undefined : (
+                        <Button onClick={() => grow(selectedFace.face)}><FaSun/> Grow</Button>
+                    )}
+                    {selectedFace.faceSelection === FaceSelection.None ? undefined : (
+                        <>
+                            <Button onClick={adjustValue(true)}><FaArrowUp/> Longer</Button>
+                            <Button onClick={adjustValue(false)}><FaArrowDown/> Shorter</Button>
+                        </>
+                    )}
                     <CancelButton/>
                 </ButtonGroup>
+            ) : (
+                <Badge>Select a face to start editing</Badge>
             )}
         </div>
     )

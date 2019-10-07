@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
-import { ISelection } from "../fabric/tensegrity-brick-types"
+import { ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
@@ -21,6 +21,7 @@ import { CommandPanel } from "./command-panel"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
 import { TensegrityControl } from "./tensegrity-control"
+import { TensegrityEditPanel } from "./tensegrity-edit-panel"
 
 extend({OrbitControls})
 
@@ -45,7 +46,7 @@ export function TensegrityView({engine, getFabric, features}: {
     const [fastMode, setFastMode] = useState<boolean>(false)
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [selection, setSelection] = useState<ISelection>({})
+    const [selectedFace, setSelectedFace] = useState<ISelectedFace| undefined>()
 
     useEffect(() => {
         if (!fabric) {
@@ -57,7 +58,7 @@ export function TensegrityView({engine, getFabric, features}: {
     })
 
     function constructFabric(code: string): void {
-        setSelection({})
+        setSelectedFace(undefined)
         if (fabric) {
             fabric.startConstruction(code)
         } else {
@@ -130,19 +131,15 @@ export function TensegrityView({engine, getFabric, features}: {
     return (
         <div className="the-whole-page">
             <div style={leftPanel}>
-                <TensegrityControl
-                    fabric={fabric}
-                    selection={selection}
-                    setSelection={setSelection}
-                />
+                <TensegrityControl fabric={fabric}/>
             </div>
             <div style={middlePanel} id="tensegrity-view">
                 <Canvas>
                     {!fabric ? undefined : (
                         <FabricView
                             fabric={fabric}
-                            selection={selection}
-                            setSelection={setSelection}
+                            selectedFace={selectedFace}
+                            setSelectedFace={setSelectedFace}
                             autoRotate={autoRotate}
                             fastMode={fastMode}
                         />
@@ -154,6 +151,12 @@ export function TensegrityView({engine, getFabric, features}: {
                     engine={engine}
                     fabric={fabric}
                 />
+                <Download/>
+                <TensegrityEditPanel
+                    fabric={fabric}
+                    selectedFace={selectedFace}
+                    setSelectedFace={setSelectedFace}
+                />
                 <CommandPanel
                     constructFabric={constructFabric}
                     fabric={fabric}
@@ -163,7 +166,6 @@ export function TensegrityView({engine, getFabric, features}: {
                     setFastMode={setFastMode}
                     storageIndex={storageIndex}
                 />
-                <Download/>
             </div>
         </div>
     )

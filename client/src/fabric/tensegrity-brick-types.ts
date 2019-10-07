@@ -167,29 +167,15 @@ export interface IGrowth {
     optimizationStack: string[]
 }
 
-export enum Selectable {
-    FACE = "Face",
-    JOINT = "Joint",
-    BAR = "Bar",
-    CABLE = "Cable",
-    DISPLACEMENT = "Displacement",
+export enum FaceSelection {
+    None = "None",
+    Cables = "Cables",
+    Bars = "Bars",
+    Face = "Face",
+    Brick = "Brick",
 }
 
-export interface ISelection {
-    readonly selectable?: Selectable
-    readonly selectedFace?: IFace
-    readonly selectedJoint?: IJoint
-    readonly selectedInterval?: IInterval
-}
-
-export function facePartSelectable(selection: ISelection): boolean {
-    return (
-        selection.selectable === Selectable.BAR ||
-        selection.selectable === Selectable.CABLE ||
-        selection.selectable === Selectable.JOINT
-    )
-}
-
-export function selectionActive(selection: ISelection): boolean {
-    return !(!selection.selectable && !selection.selectedFace && !selection.selectedJoint && !selection.selectedInterval)
+export interface ISelectedFace {
+    readonly face: IFace
+    readonly faceSelection: FaceSelection
 }

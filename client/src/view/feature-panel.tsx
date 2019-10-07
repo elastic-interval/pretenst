@@ -97,18 +97,20 @@ export function FeaturePanel({engine, featureSet, fabric}: {
 
     const [open, setOpen] = useState<boolean>(false)
     const [selectedFeature, setSelectedFeature] = useState<IFeature>(featureSet[0])
+    const factorWrapper: CSSProperties = {
+        color: "white",
+        float: "left",
+        paddingLeft: "0.6em",
+        borderColor: "#6c757d",
+        borderStyle: "solid",
+        borderWidth: "3px",
+        borderRadius: "3px",
+        backgroundColor: "#6c757d",
+    }
     return (
         <div style={{position: "absolute", top: "1em", right: "1em", display: "flex"}}>
             <ButtonDropdown style={{display: "block"}} isOpen={open} toggle={() => setOpen(!open)}>
-                <div className="float-left mx-3 h-100" style={{
-                    color: "white",
-                    paddingLeft: "0.6em",
-                    borderColor: "#6c757d",
-                    borderStyle: "solid",
-                    borderWidth: "3px",
-                    borderRadius: "3px",
-                    backgroundColor: "#6c757d",
-                }}>
+                <div className="mx-3" style={factorWrapper}>
                     <Factor feature={selectedFeature} mutable={true}/>
                 </div>
                 <DropdownToggle className="float-right"><FaList/></DropdownToggle>

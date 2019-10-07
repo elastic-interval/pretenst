@@ -10,7 +10,7 @@ import { OBJExporter } from "three/examples/jsm/exporters/OBJExporter"
 import { IntervalRole } from "../fabric/fabric-engine"
 import { IInterval } from "../fabric/tensegrity-brick-types"
 import { IFabricOutput, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { TENSEGRITY_BAR, TENSEGRITY_CABLE, TENSEGRITY_FACE } from "../view/materials"
+import { BAR, CABLE, FACE } from "../view/materials"
 
 function extractJointBlob(output: IFabricOutput): Blob {
     const csvJoints: string[][] = []
@@ -55,11 +55,11 @@ export function saveCSVFiles(fabric: TensegrityFabric): void {
 function extractOBJBlob(fabric: TensegrityFabric, faces: boolean): Blob {
     const object3d = new Object3D()
     if (faces) {
-        object3d.add(new Mesh(fabric.facesGeometry, TENSEGRITY_FACE))
+        object3d.add(new Mesh(fabric.facesGeometry, FACE))
     } else {
         object3d.add(...fabric.intervals.map((interval: IInterval) => {
             const bar = interval.intervalRole === IntervalRole.Bar
-            const material = bar ? TENSEGRITY_BAR : TENSEGRITY_CABLE
+            const material = bar ? BAR : CABLE
             const {scale, rotation} = fabric.orientInterval(interval, bar ? 1 : 0.1)
             const mesh = new Mesh(SPHERE, material)
             mesh.position.copy(fabric.instance.getIntervalMidpoint(interval.index))

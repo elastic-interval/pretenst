@@ -5,27 +5,20 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { FaHandPaper, FaSortAmountUp } from "react-icons/all"
+import { FaSortAmountUp } from "react-icons/all"
 import { Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 
-import { ISelection, Selectable } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { AdjustPanel } from "./adjust-panel"
-import { TensegrityEditPanel } from "./tensegrity-edit-panel"
 
 enum TabName {
     Adjust = "Adjust",
-    Edit = "Edit",
 }
 
 const TABS = Object.keys(TabName).map(key => TabName[key])
 
-export function TensegrityControl({fabric, selection, setSelection}: {
-    fabric?: TensegrityFabric,
-    selection: ISelection,
-    setSelection: (s: ISelection) => void,
-}): JSX.Element {
+export function TensegrityControl({fabric}: { fabric?: TensegrityFabric }): JSX.Element {
 
     const [activeTab, setActiveTab] = useState<TabName>(TabName.Adjust)
 
@@ -33,8 +26,6 @@ export function TensegrityControl({fabric, selection, setSelection}: {
         switch (tab) {
             case TabName.Adjust:
                 return <FaSortAmountUp/>
-            case TabName.Edit:
-                return <FaHandPaper/>
         }
         return <strong>{tab}</strong>
     }
@@ -55,15 +46,8 @@ export function TensegrityControl({fabric, selection, setSelection}: {
                     <AdjustPanel
                         fabric={fabric}
                         setDisplacementSelection={(on: boolean) => {
-                            setSelection({selectable: on ? Selectable.DISPLACEMENT : undefined})
+                            // setSelectedFace({selectable: on ? Selectable.DISPLACEMENT : undefined})
                         }}
-                    />
-                </TabPane>
-                <TabPane tabId={TabName.Edit}>
-                    <TensegrityEditPanel
-                        fabric={fabric}
-                        selection={selection}
-                        setSelection={setSelection}
                     />
                 </TabPane>
             </TabContent>

@@ -100,11 +100,7 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     const LengthAdjustmentButtons = () => {
         const adjustValue = (up: boolean) => () => {
             const engine = fabric.instance.engine
-            fabric.intervals
-                .filter(interval => interval.selected)
-                .forEach(interval => {
-                    engine.multiplyRestLength(interval.index, adjustment(up))
-                })
+            fabric.selectedIntervals.forEach(interval => engine.multiplyRestLength(interval.index, adjustment(up)))
             switchSelection(false)
         }
         return (
@@ -122,9 +118,7 @@ export function AdjustPanel({fabric, setDisplacementSelection}: {
     const ElasticFactorButtons = () => {
         const onClick = (elasticFactor: number) => {
             const engine = fabric.instance.engine
-            fabric.intervals
-                .filter(interval => interval.selected)
-                .forEach(interval => engine.setElasticFactor(interval.index, elasticFactor))
+            fabric.selectedIntervals.forEach(interval => engine.setElasticFactor(interval.index, elasticFactor))
             switchSelection(false)
         }
         return (
