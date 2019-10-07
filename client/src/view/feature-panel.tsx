@@ -26,7 +26,7 @@ import { featureMultiplier, multiplierSymbol, multiplierValue } from "../storage
 export function FeaturePanel({engine, featureSet, fabric}: {
     engine: IFabricEngine,
     featureSet: IFeature[],
-    fabric?: TensegrityFabric,
+    fabric: TensegrityFabric,
 }): JSX.Element {
 
     function Factor({feature, mutable}: { feature: IFeature, mutable: boolean }): JSX.Element {
@@ -36,11 +36,9 @@ export function FeaturePanel({engine, featureSet, fabric}: {
                 applyPhysicsFeature(engine, feature)
             }
             if (feature.name.intervalRole !== undefined) {
-                if (fabric) {
-                    fabric.intervals
-                        .filter(interval => interval.intervalRole === feature.name.intervalRole)
-                        .forEach(interval => engine.changeRestLength(interval.index, feature.factor$.getValue()))
-                }
+                fabric.intervals
+                    .filter(interval => interval.intervalRole === feature.name.intervalRole)
+                    .forEach(interval => engine.changeRestLength(interval.index, feature.factor$.getValue()))
             }
         }
         const [factor, setFactor] = useState<number>(feature.factor$.getValue())

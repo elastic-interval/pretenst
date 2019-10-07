@@ -70,8 +70,3 @@ export const FACE_SPHERE = new MeshPhongMaterial({
     lights: true,
     color: new Color("cornflowerblue"),
 })
-
-export const FACE_SPHERE_GROW = new MeshPhongMaterial({
-    lights: true,
-    color: new Color("seagreen"),
-})

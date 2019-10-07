@@ -10,10 +10,16 @@ import { Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IntervalRole } from "../fabric/fabric-engine"
-import { FaceSelection, IBrick, IInterval, ISelectedFace } from "../fabric/tensegrity-brick-types"
+import {
+    AdjacentIntervals,
+    IInterval,
+    ISelectedFace,
+    ISelection,
+    nextAdjacent,
+} from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { BAR, CABLE, FACE, FACE_SPHERE, FACE_SPHERE_GROW, LINE, SELECTED_INTERVAL } from "./materials"
+import { BAR, CABLE, FACE, FACE_SPHERE, LINE, SELECTED_INTERVAL } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
 extend({OrbitControls})
@@ -39,10 +45,10 @@ function girth(intervalRole: IntervalRole): number {
     return intervalRole === IntervalRole.Bar ? 0.8 : 0.16
 }
 
-export function FabricView({fabric, selectedFace, setSelectedFace, autoRotate, fastMode}: {
+export function FabricView({fabric, selection, setSelection, autoRotate, fastMode}: {
     fabric: TensegrityFabric,
-    selectedFace: ISelectedFace | undefined,
-    setSelectedFace: (face: ISelectedFace | undefined) => void,
+    selection: ISelection,
+    setSelection: (selection: ISelection) => void,
     autoRotate: boolean,
     fastMode: boolean,
 }): JSX.Element {
@@ -70,57 +76,19 @@ export function FabricView({fabric, selectedFace, setSelectedFace, autoRotate, f
         orbitControls.current.autoRotate = autoRotate
         fabric.iterate(ITERATIONS_PER_FRAME)
         setAge(fabric.instance.engine.getAge())
-    }, true, [fabric, selectedFace, age])
+    }, true, [fabric, selection, age])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
 
-    const nextSelection = (faceSelection: FaceSelection): FaceSelection => {
-        switch (faceSelection) {
-            case FaceSelection.None:
-                return FaceSelection.Cables
-            case FaceSelection.Cables:
-                return FaceSelection.Bars
-            case FaceSelection.Bars:
-                return FaceSelection.Face
-            case FaceSelection.Face:
-                return FaceSelection.Brick
-            case FaceSelection.Brick:
-                return FaceSelection.Cables
+    const selectFace = (selectedFace: ISelectedFace) => {
+        if (fabric) {
+            fabric.selectByFace(selectedFace)
+            setSelection({selectedFace})
         }
-    }
-    const activateFaceSelection = (face: ISelectedFace) => {
-        if (!fabric) {
-            return
-        }
-        fabric.selectNone()
-        switch (face.faceSelection) {
-            case FaceSelection.None:
-                break
-            case FaceSelection.Bars:
-                face.face.bars.forEach(bar => bar.selected = true)
-                break
-            case FaceSelection.Cables:
-                face.face.cables.forEach(bar => bar.selected = true)
-                break
-            case FaceSelection.Face:
-                const touchesFace = (interval: IInterval) => face.face.joints.some(joint => (
-                    interval.alpha.index === joint.index || interval.omega.index === joint.index
-                ))
-                fabric.intervals.forEach(interval => interval.selected = touchesFace(interval))
-                break
-            case FaceSelection.Brick:
-                const brick: IBrick = face.face.brick
-                const brickIntervals: IInterval[] = [...brick.bars, ...brick.cables]
-                brickIntervals.forEach(bar => bar.selected = true)
-                break
-        }
-    }
-    const select = (newSelectedFace: ISelectedFace) => {
-        activateFaceSelection(newSelectedFace)
-        setSelectedFace(newSelectedFace)
     }
 
     function SelectedFace(): JSX.Element {
+        const selectedFace = selection.selectedFace
         if (!selectedFace) {
             return <group/>
         }
@@ -128,11 +96,9 @@ export function FabricView({fabric, selectedFace, setSelectedFace, autoRotate, f
             <mesh
                 geometry={SPHERE}
                 position={fabric.instance.getFaceMidpoint(selectedFace.face.index)}
-                material={selectedFace.face.canGrow ? FACE_SPHERE_GROW : FACE_SPHERE}
+                material={FACE_SPHERE}
                 onPointerDown={(event: React.MouseEvent<HTMLDivElement>) => {
-                    const faceSelection = nextSelection(selectedFace.faceSelection)
-                    const face = selectedFace.face
-                    select({face, faceSelection})
+                    selectFace(nextAdjacent(selectedFace))
                     event.stopPropagation()
                 }}
                 onPointerUp={stopPropagation}
@@ -159,8 +125,7 @@ export function FabricView({fabric, selectedFace, setSelectedFace, autoRotate, f
             if (!face) {
                 return
             }
-            const faceSelection = FaceSelection.None
-            select({face, faceSelection})
+            selectFace({face, adjacentIntervals: AdjacentIntervals.None})
         }
         return (
             <mesh
@@ -187,7 +152,7 @@ export function FabricView({fabric, selectedFace, setSelectedFace, autoRotate, f
                                 rotation={new Euler().setFromQuaternion(rotation)}
                                 scale={scale}
                                 material={CABLE}
-                                onPointerDown={() => setSelectedFace(undefined)}
+                                onPointerDown={() => setSelection({})}
                                 onPointerUp={stopPropagation}
                             />
                         )

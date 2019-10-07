@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -167,7 +166,7 @@ export interface IGrowth {
     optimizationStack: string[]
 }
 
-export enum FaceSelection {
+export enum AdjacentIntervals {
     None = "None",
     Cables = "Cables",
     Bars = "Bars",
@@ -175,7 +174,40 @@ export enum FaceSelection {
     Brick = "Brick",
 }
 
+export function nextAdjacent(selectedFace: ISelectedFace): ISelectedFace {
+    function nextIntervals(adjacentIntervals: AdjacentIntervals): AdjacentIntervals {
+        switch (adjacentIntervals) {
+            case AdjacentIntervals.None:
+                return AdjacentIntervals.Cables
+            case AdjacentIntervals.Cables:
+                return AdjacentIntervals.Bars
+            case AdjacentIntervals.Bars:
+                return AdjacentIntervals.Face
+            case AdjacentIntervals.Face:
+                return AdjacentIntervals.Brick
+            case AdjacentIntervals.Brick:
+                return AdjacentIntervals.Cables
+        }
+    }
+    return {...selectedFace, adjacentIntervals: nextIntervals(selectedFace.adjacentIntervals)}
+}
+
 export interface ISelectedFace {
     readonly face: IFace
-    readonly faceSelection: FaceSelection
+    readonly adjacentIntervals: AdjacentIntervals
+}
+
+export enum StressSelectMode {
+    Bars = "Bars",
+    Cables = "Cables",
+}
+
+export interface ISelectedStress {
+    mode: StressSelectMode
+    stressValue: number
+}
+
+export interface ISelection {
+    selectedFace?: ISelectedFace
+    selectedStress?: ISelectedStress
 }

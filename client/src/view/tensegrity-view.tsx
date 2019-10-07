@@ -12,15 +12,15 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
-import { ISelectedFace } from "../fabric/tensegrity-brick-types"
+import { ISelection } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
 
 import { CommandPanel } from "./command-panel"
+import { EditPanel } from "./edit-panel"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
-import { TensegrityEditPanel } from "./tensegrity-edit-panel"
 
 extend({OrbitControls})
 
@@ -45,7 +45,7 @@ export function TensegrityView({engine, getFabric, features}: {
     const [fastMode, setFastMode] = useState<boolean>(false)
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [selectedFace, setSelectedFace] = useState<ISelectedFace | undefined>()
+    const [selection, setSelection] = useState<ISelection>({})
 
     useEffect(() => {
         if (!fabric) {
@@ -57,7 +57,7 @@ export function TensegrityView({engine, getFabric, features}: {
     })
 
     function constructFabric(code: string): void {
-        setSelectedFace(undefined)
+        setSelection({})
         if (fabric) {
             fabric.startConstruction(code)
         } else {
@@ -79,9 +79,7 @@ export function TensegrityView({engine, getFabric, features}: {
         return (
             <div style={{position: "absolute", top: "1em", left: "1em"}}>
                 <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle>
-                        <FaCog/> {fabricCode[storageIndex]}
-                    </DropdownToggle>
+                    <DropdownToggle><FaCog/> {fabricCode[storageIndex]}</DropdownToggle>
                     <DropdownMenu right={false}>
                         {fabricCode.map((code, index) => (
                             <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
@@ -115,29 +113,33 @@ export function TensegrityView({engine, getFabric, features}: {
 
     return (
         <div id="tensegrity-view" className="the-whole-page">
-            <Canvas>
-                {!fabric ? undefined : (
-                    <FabricView
+            {!fabric ? (
+                <h1>No fabric</h1>
+            ) : (
+                <>
+                    <Canvas>
+                        <FabricView
+                            fabric={fabric}
+                            selection={selection}
+                            setSelection={setSelection}
+                            autoRotate={autoRotate}
+                            fastMode={fastMode}
+                        />
+                    </Canvas>
+                    <FabricChoice/>
+                    <FeaturePanel
+                        featureSet={features}
+                        engine={engine}
                         fabric={fabric}
-                        selectedFace={selectedFace}
-                        setSelectedFace={setSelectedFace}
-                        autoRotate={autoRotate}
-                        fastMode={fastMode}
                     />
-                )}
-            </Canvas>
-            <FabricChoice/>
-            <FeaturePanel
-                featureSet={features}
-                engine={engine}
-                fabric={fabric}
-            />
-            <Download/>
-            <TensegrityEditPanel
-                fabric={fabric}
-                selectedFace={selectedFace}
-                setSelectedFace={setSelectedFace}
-            />
+                    <Download/>
+                    <EditPanel
+                        fabric={fabric}
+                        selection={selection}
+                        setSelection={setSelection}
+                    />
+                </>
+            )}
             <CommandPanel
                 constructFabric={constructFabric}
                 fabric={fabric}

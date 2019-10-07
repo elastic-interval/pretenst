@@ -16,11 +16,13 @@ import {
     parseConstructionCode,
 } from "./tensegrity-brick"
 import {
+    AdjacentIntervals,
     IBrick,
     IFace,
     IGrowth,
     IInterval,
     IJoint,
+    ISelectedFace,
     JointTag,
     Triangle,
     TRIANGLE_DEFINITIONS,
@@ -78,6 +80,32 @@ export class TensegrityFabric {
 
     public selectNone(): void {
         this.selectedIntervals.forEach(interval => interval.selected = false)
+    }
+
+    public selectByFace(selectedFace: ISelectedFace): void {
+        this.selectNone()
+        switch (selectedFace.adjacentIntervals) {
+            case AdjacentIntervals.None:
+                break
+            case AdjacentIntervals.Bars:
+                selectedFace.face.bars.forEach(bar => bar.selected = true)
+                break
+            case AdjacentIntervals.Cables:
+                selectedFace.face.cables.forEach(bar => bar.selected = true)
+                break
+            case AdjacentIntervals.Face:
+                const touchesFace = (interval: IInterval) => selectedFace.face.joints.some(joint => (
+                    interval.alpha.index === joint.index || interval.omega.index === joint.index
+                ))
+                this.intervals.forEach(interval => interval.selected = touchesFace(interval))
+                break
+            case AdjacentIntervals.Brick:
+                const brick: IBrick = selectedFace.face.brick
+                const brickIntervals: IInterval[] = [...brick.bars, ...brick.cables]
+                brickIntervals.forEach(bar => bar.selected = true)
+                break
+        }
+
     }
 
     public get growthFaces(): IFace[] {
