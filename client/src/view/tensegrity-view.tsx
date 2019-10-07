@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { CSSProperties, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { FaCog, FaDownload } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
@@ -20,7 +20,6 @@ import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/
 import { CommandPanel } from "./command-panel"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
-import { TensegrityControl } from "./tensegrity-control"
 import { TensegrityEditPanel } from "./tensegrity-edit-panel"
 
 extend({OrbitControls})
@@ -46,7 +45,7 @@ export function TensegrityView({engine, getFabric, features}: {
     const [fastMode, setFastMode] = useState<boolean>(false)
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [selectedFace, setSelectedFace] = useState<ISelectedFace| undefined>()
+    const [selectedFace, setSelectedFace] = useState<ISelectedFace | undefined>()
 
     useEffect(() => {
         if (!fabric) {
@@ -114,59 +113,40 @@ export function TensegrityView({engine, getFabric, features}: {
         )
     }
 
-    const leftPanel: CSSProperties = {
-        backgroundColor: "#242628",
-        color: "white",
-        display: "block",
-        height: "100%",
-        width: "20em",
-    }
-    const middlePanel: CSSProperties = {
-        height: "100%",
-        left: "20em",
-        position: "absolute",
-        right: 0,
-        top: 0,
-    }
     return (
-        <div className="the-whole-page">
-            <div style={leftPanel}>
-                <TensegrityControl fabric={fabric}/>
-            </div>
-            <div style={middlePanel} id="tensegrity-view">
-                <Canvas>
-                    {!fabric ? undefined : (
-                        <FabricView
-                            fabric={fabric}
-                            selectedFace={selectedFace}
-                            setSelectedFace={setSelectedFace}
-                            autoRotate={autoRotate}
-                            fastMode={fastMode}
-                        />
-                    )}
-                </Canvas>
-                <FabricChoice/>
-                <FeaturePanel
-                    featureSet={features}
-                    engine={engine}
-                    fabric={fabric}
-                />
-                <Download/>
-                <TensegrityEditPanel
-                    fabric={fabric}
-                    selectedFace={selectedFace}
-                    setSelectedFace={setSelectedFace}
-                />
-                <CommandPanel
-                    constructFabric={constructFabric}
-                    fabric={fabric}
-                    autoRotate={autoRotate}
-                    setAutoRotate={setAutoRotate}
-                    fastMode={fastMode}
-                    setFastMode={setFastMode}
-                    storageIndex={storageIndex}
-                />
-            </div>
+        <div id="tensegrity-view" className="the-whole-page">
+            <Canvas>
+                {!fabric ? undefined : (
+                    <FabricView
+                        fabric={fabric}
+                        selectedFace={selectedFace}
+                        setSelectedFace={setSelectedFace}
+                        autoRotate={autoRotate}
+                        fastMode={fastMode}
+                    />
+                )}
+            </Canvas>
+            <FabricChoice/>
+            <FeaturePanel
+                featureSet={features}
+                engine={engine}
+                fabric={fabric}
+            />
+            <Download/>
+            <TensegrityEditPanel
+                fabric={fabric}
+                selectedFace={selectedFace}
+                setSelectedFace={setSelectedFace}
+            />
+            <CommandPanel
+                constructFabric={constructFabric}
+                fabric={fabric}
+                autoRotate={autoRotate}
+                setAutoRotate={setAutoRotate}
+                fastMode={fastMode}
+                setFastMode={setFastMode}
+                storageIndex={storageIndex}
+            />
         </div>
     )
 }

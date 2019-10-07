@@ -6,7 +6,7 @@
 import * as React from "react"
 import { CSSProperties } from "react"
 import { FaArrowDown, FaArrowUp, FaSun, FaTimes } from "react-icons/all"
-import { Badge, Button, ButtonGroup } from "reactstrap"
+import { Button, ButtonGroup } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import { FaceSelection, IFace, ISelectedFace } from "../fabric/tensegrity-brick-types"
@@ -47,6 +47,12 @@ export function TensegrityEditPanel({fabric, selectedFace, setSelectedFace}: {
         createConnectedBrick(face.brick, face.triangle)
         setSelectedFace(undefined)
     }
+    const selectAFace = () => {
+        if (!fabric) {
+            return
+        }
+        setSelectedFace({face: fabric.faces[0], faceSelection: FaceSelection.None})
+    }
 
     const middleBottom: CSSProperties = {
         borderStyle: "solid",
@@ -71,7 +77,11 @@ export function TensegrityEditPanel({fabric, selectedFace, setSelectedFace}: {
                     <CancelButton/>
                 </ButtonGroup>
             ) : (
-                <Badge>Select a face to start editing</Badge>
+                <ButtonGroup>
+                    <Button onClick={selectAFace}>Select a face to edit by hand</Button>
+                    <Button>Bars by stress</Button>
+                    <Button>Cables by stress</Button>
+                </ButtonGroup>
             )}
         </div>
     )
