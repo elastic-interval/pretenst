@@ -6,7 +6,7 @@
 import * as React from "react"
 import { useState } from "react"
 import { FaArrowDown, FaArrowUp, FaTimes } from "react-icons/all"
-import { Button, ButtonGroup } from "reactstrap"
+import { Button, ButtonGroup, Progress } from "reactstrap"
 
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
 import { StressSelectMode } from "../fabric/tensegrity-brick-types"
@@ -43,8 +43,8 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
     }
 
     const NuanceAdjustmentButtons = () => {
-        const adjustValue = (percent: number) => () => {
-            const unboundedNuance = nuance + percent / 100
+        const adjustValue = (percentChange: number) => () => {
+            const unboundedNuance = nuance + percentChange / 100
             const nuanceValue = unboundedNuance > 1 ? 1 : unboundedNuance < 0 ? 0 : unboundedNuance
             const threshold = displacementFromNuance(nuanceValue)
             fabric.intervals.forEach(interval => {
@@ -68,19 +68,10 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
         }
         return (
             <ButtonGroup>
-                <Button>{stressSelectMode} {(nuance * 100).toFixed(1)}%</Button>
-                <Button onClick={adjustValue(1)}>
-                    <FaArrowUp/>1%
-                </Button>
-                <Button onClick={adjustValue(-1)}>
-                    <FaArrowDown/>1%
-                </Button>
-                <Button onClick={adjustValue(5)}>
-                    <FaArrowUp/>5%
-                </Button>
-                <Button onClick={adjustValue(-5)}>
-                    <FaArrowDown/>5%
-                </Button>
+                <Button onClick={adjustValue(1)}><FaArrowUp/>1%</Button>
+                <Button onClick={adjustValue(-1)}><FaArrowDown/>1%</Button>
+                <Button onClick={adjustValue(5)}><FaArrowUp/>5%</Button>
+                <Button onClick={adjustValue(-5)}><FaArrowDown/>5%</Button>
             </ButtonGroup>
         )
     }
@@ -93,10 +84,10 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
         return (
             <ButtonGroup>
                 <Button onClick={adjustValue(true)}>
-                    <FaArrowUp/> Longer
+                    <FaArrowUp/>Longer
                 </Button>
                 <Button onClick={adjustValue(false)}>
-                    <FaArrowDown/> Shorter
+                    <FaArrowDown/>Shorter
                 </Button>
             </ButtonGroup>
         )
@@ -122,17 +113,29 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
             cancelSelection()
         }
         return (
-            <Button onClick={onCancel}><FaTimes/> Cancel</Button>
+            <Button onClick={onCancel}><FaTimes/>Cancel</Button>
         )
     }
 
-
+    const percent = nuance * 100
     return (
-        <div>
-            <NuanceAdjustmentButtons/>&nbsp;
-            <LengthAdjustmentButtons/>&nbsp;
-            <ElasticFactorButtons/>&nbsp;
-            <CancelButton/>
+        <div style={{display: "block"}}>
+            <div style={{display: "inline-flex"}}>
+                <NuanceAdjustmentButtons/>&nbsp;
+                <LengthAdjustmentButtons/>&nbsp;
+                <ElasticFactorButtons/>&nbsp;
+                <CancelButton/>
+            </div>
+            <div className="m-1">
+                <Progress
+                    value={percent}
+                    max={100}
+                    color="success"
+                    bar={true}
+                >
+                    {percent.toFixed(0)}
+                </Progress>
+            </div>
         </div>
     )
 }
