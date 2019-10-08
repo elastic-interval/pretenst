@@ -15,11 +15,10 @@ import {
     ISelectedFace,
     ISelection,
     nextAdjacent,
-    StressSelectMode,
 } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { StressSelectionPanel } from "./stress-selection-panel"
+import { DEFAULT_SELECTED_STRESS, StressSelectionPanel } from "./stress-selection-panel"
 
 export function EditPanel({fabric, selection, setSelection}: {
     fabric: TensegrityFabric,
@@ -61,21 +60,6 @@ export function EditPanel({fabric, selection, setSelection}: {
         setSelection({selectedFace: nextAdjacentFace})
     }
 
-    function StressModeButtonGroup(): JSX.Element {
-        const selectStressSelectMode = (stressSelectMode: StressSelectMode) => {
-            setSelection({selectedStress: {stressSelectMode, stressValue: 0}})
-        }
-
-        return (
-            <ButtonGroup>
-                {Object.keys(StressSelectMode).map(key => {
-                    const mode = StressSelectMode [key]
-                    return <Button onClick={() => selectStressSelectMode(mode)} key={key}>{mode}</Button>
-                })}
-            </ButtonGroup>
-        )
-    }
-
     function CancelButton(): JSX.Element {
         const onCancel = () => {
             fabric.selectNone()
@@ -109,8 +93,8 @@ export function EditPanel({fabric, selection, setSelection}: {
             ) : selectedStress ? (
                 <StressSelectionPanel
                     fabric={fabric}
-                    stressSelectMode={selectedStress.stressSelectMode}
-                    cancelSelection={() => setSelection({})}
+                    selectedStress={selectedStress}
+                    setSelection={setSelection}
                 />
             ) : (
                 <>
@@ -118,7 +102,10 @@ export function EditPanel({fabric, selection, setSelection}: {
                         <Button onClick={selectLowestFace}><FaHandPointer/> Select a face by clicking it</Button>
                     </ButtonGroup>
                     &nbsp;&nbsp;
-                    <StressModeButtonGroup/>
+                    <ButtonGroup>
+                        <Button onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}><FaHandPointer/> Select by stress</Button>
+                    </ButtonGroup>
+
                 </>
             )}
         </div>

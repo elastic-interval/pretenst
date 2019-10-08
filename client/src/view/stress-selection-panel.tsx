@@ -6,10 +6,30 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowDown, FaArrowUp, FaTimesCircle } from "react-icons/all"
-import { Button, ButtonGroup, Col, Container, Input, InputGroup, InputGroupAddon, Progress, Row } from "reactstrap"
+import {
+    Button,
+    ButtonDropdown,
+    ButtonGroup,
+    Col,
+    Container,
+    DropdownItem,
+    DropdownMenu,
+    DropdownToggle,
+    Input,
+    InputGroup,
+    InputGroupAddon,
+    Progress,
+    Row,
+} from "reactstrap"
 
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
-import { IInterval, selectModeBars, selectModeSlack, StressSelectMode } from "../fabric/tensegrity-brick-types"
+import {
+    IInterval, ISelectedStress,
+    ISelection,
+    selectModeBars,
+    selectModeSlack,
+    StressSelectMode,
+} from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 interface IElastic {
@@ -21,19 +41,26 @@ const THICKNESSES = [3, 6, 12, 24, 48]
 const MID_STRAND = THICKNESSES [Math.ceil(THICKNESSES.length / 2) - 1]
 const ELASTICS: IElastic[] = THICKNESSES.map(strands => ({strands, factor: strands / MID_STRAND}))
 
-export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}: {
+export const DEFAULT_SELECTED_STRESS: ISelection = {
+    selectedStress: {
+        stressSelectMode: StressSelectMode.SlackestCables,
+        stressValue: 0.5,
+    },
+}
+
+export function StressSelectionPanel({fabric, selectedStress, setSelection}: {
     fabric: TensegrityFabric,
-    stressSelectMode: StressSelectMode,
-    cancelSelection: () => void,
+    selectedStress: ISelectedStress,
+    setSelection: (selection: ISelection) => void,
 }): JSX.Element {
 
     const engine = fabric.instance.engine
-    const barMode = selectModeBars(stressSelectMode)
-    const slackMode = selectModeSlack(stressSelectMode)
     const currentMinDisplacement = () => engine.getLimit(barMode ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
     const currentMaxDisplacement = () => engine.getLimit(barMode ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
-
+    const [choiceOpen, setChoiceOpen] = useState(false)
     const [nuance, setNuance] = useState(0.5)
+    const barMode = selectModeBars(selectedStress.stressSelectMode)
+    const slackMode = selectModeSlack(selectedStress.stressSelectMode)
     const [minDisplacement, setMinDisplacement] = useState(currentMinDisplacement)
     const [maxDisplacement, setMaxDisplacement] = useState(currentMaxDisplacement)
     const [displacement, setDisplacement] = useState((currentMinDisplacement() + currentMaxDisplacement()) / 2)
@@ -65,7 +92,7 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
                 const intervalDisp = intervalIsBar ? -directionalDisp : directionalDisp
                 interval.selected = greaterThan ? intervalDisp > dispThreshold : intervalDisp < dispThreshold
             }
-            switch (stressSelectMode) {
+            switch (selectedStress.stressSelectMode) {
                 case StressSelectMode.SlackestBars:
                     selectIf(true, false)
                     break
@@ -111,21 +138,40 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
                 <Button onClick={adjustLength(true)}>L<FaArrowUp/></Button>
                 <Button onClick={adjustLength(false)}>L<FaArrowDown/></Button>
                 {ELASTICS.map(elastic => (
-                    <Button key={elastic.strands}
-                            onClick={() => adjustElasticFactor(elastic.factor)}>T{elastic.strands}</Button>
+                    <Button key={elastic.strands} onClick={() => adjustElasticFactor(elastic.factor)}>
+                        T{elastic.strands}
+                    </Button>
                 ))}
             </ButtonGroup>
         )
     }
 
-    const percent = nuance * 100
+    const percent = (slackMode ? nuance : 1 - nuance) * 100
     return (
         <Container style={{paddingRight: 0, paddingLeft: 0}}>
             <Row>
-                <Col md="1">
-                    <span className="text-white">{stressSelectMode}</span>
+                <Col md="2">
+                    <ButtonDropdown isOpen={choiceOpen} toggle={() => setChoiceOpen(!choiceOpen)}>
+                        <DropdownToggle>{selectedStress.stressSelectMode}</DropdownToggle>
+                        <DropdownMenu right={false}>
+                            {Object.keys(StressSelectMode).map(key => {
+                                const stressSelectMode: StressSelectMode = StressSelectMode[key]
+                                const stress = {stressSelectMode, stressValue: 0.5}
+                                const newSelection: ISelection = {selectedStress: stress}
+                                const onClick = () => {
+                                    setNuance(stress.stressValue)
+                                    setSelection(newSelection)
+                                }
+                                return (
+                                    <DropdownItem key={key} onClick={onClick}>
+                                        {stressSelectMode}
+                                    </DropdownItem>
+                                )
+                            })}
+                        </DropdownMenu>
+                    </ButtonDropdown>
                 </Col>
-                <Col md="5">
+                <Col md="4">
                     <Row>
                         <Col md={12}>
                             <NuanceAdjustmentButtons/>
@@ -134,13 +180,11 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
                     <Row>
                         <Col md={12}>
                             <div style={PROGRESS_BOX}>
-                                <Progress
-                                    className={slackMode ? "h-100" : "float-right h-100"}
-                                    value={slackMode ? percent : 100 - percent}
-                                    max={100}
-                                    color="success"
-                                    bar={true}
-                                >{percent.toFixed(0)}%</Progress>
+                                <Progress color="success" className={slackMode ? "h-100" : "float-right h-100"}
+                                          value={percent} max={100} bar={true}
+                                >
+                                    {percent.toFixed(0)}%
+                                </Progress>
                             </div>
                         </Col>
                     </Row>
@@ -177,7 +221,7 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
                     <ButtonGroup size="sm" styl={{height: "100%"}} vertical={false}>
                         <Button onClick={() => {
                             fabric.selectNone()
-                            cancelSelection()
+                            setSelection({})
                         }}><FaTimesCircle/></Button>
                     </ButtonGroup>
                 </Col>
