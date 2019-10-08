@@ -5,7 +5,15 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaTimesCircle } from "react-icons/all"
+import {
+    FaAngleDoubleLeft,
+    FaAngleDoubleRight,
+    FaAngleLeft,
+    FaAngleRight,
+    FaArrowDown,
+    FaArrowUp,
+    FaTimesCircle,
+} from "react-icons/all"
 import {
     Button,
     ButtonDropdown,
@@ -24,7 +32,8 @@ import {
 
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
 import {
-    IInterval, ISelectedStress,
+    IInterval,
+    ISelectedStress,
     ISelection,
     selectModeBars,
     selectModeSlack,
@@ -73,7 +82,7 @@ export function StressSelectionPanel({fabric, selectedStress, setSelection}: {
         const newDisplacement = (1 - nuance) * min + nuance * max
         setDisplacement(newDisplacement)
         fabric.intervals.forEach(intervalSelection(newDisplacement))
-    }, [nuance])
+    }, [nuance, selectedStress.stressSelectMode])
 
     function adjustment(up: boolean): number {
         const factor = 1.1
@@ -117,10 +126,10 @@ export function StressSelectionPanel({fabric, selectedStress, setSelection}: {
         }
         return (
             <ButtonGroup size="sm" className="w-100">
-                <Button onClick={adjustValue(1)}><FaArrowUp/>1%</Button>
-                <Button onClick={adjustValue(-1)}><FaArrowDown/>1%</Button>
-                <Button onClick={adjustValue(5)}><FaArrowUp/>5%</Button>
-                <Button onClick={adjustValue(-5)}><FaArrowDown/>5%</Button>
+                <Button onClick={adjustValue(-5)}><FaAngleDoubleLeft/>5%</Button>
+                <Button onClick={adjustValue(-1)}><FaAngleLeft/>1%</Button>
+                <Button onClick={adjustValue(1)}>1%<FaAngleRight/></Button>
+                <Button onClick={adjustValue(5)}>5%<FaAngleDoubleRight/></Button>
             </ButtonGroup>
         )
     }

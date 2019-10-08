@@ -199,10 +199,10 @@ export interface ISelectedFace {
 }
 
 export enum StressSelectMode {
-    SlackestBars = "Slackest Bars",
     SlackestCables = "Slackest Cables",
-    TightestBars = "Tightest Bars",
     TightestCables = "Tightest Cables",
+    SlackestBars = "Slackest Bars",
+    TightestBars = "Tightest Bars",
 }
 
 export function selectModeBars(mode: StressSelectMode): boolean {
