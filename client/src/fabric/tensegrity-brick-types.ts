@@ -189,6 +189,7 @@ export function nextAdjacent(selectedFace: ISelectedFace): ISelectedFace {
                 return AdjacentIntervals.Cables
         }
     }
+
     return {...selectedFace, adjacentIntervals: nextIntervals(selectedFace.adjacentIntervals)}
 }
 
@@ -198,8 +199,18 @@ export interface ISelectedFace {
 }
 
 export enum StressSelectMode {
-    Bars = "Bars",
-    Cables = "Cables",
+    SlackestBars = "Slackest Bars",
+    SlackestCables = "Slackest Cables",
+    TightestBars = "Tightest Bars",
+    TightestCables = "Tightest Cables",
+}
+
+export function selectModeBars(mode: StressSelectMode): boolean {
+    return mode === StressSelectMode.TightestBars || mode === StressSelectMode.SlackestBars
+}
+
+export function selectModeSlack(mode: StressSelectMode): boolean {
+    return mode === StressSelectMode.SlackestBars || mode === StressSelectMode.SlackestCables
 }
 
 export interface ISelectedStress {

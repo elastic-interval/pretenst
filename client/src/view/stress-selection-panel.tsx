@@ -4,12 +4,12 @@
  */
 
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FaArrowDown, FaArrowUp, FaTimes } from "react-icons/all"
 import { Button, ButtonGroup, Progress } from "reactstrap"
 
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
-import { StressSelectMode } from "../fabric/tensegrity-brick-types"
+import { IInterval, selectModeBars, selectModeSlack, StressSelectMode } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 interface IElastic {
@@ -27,13 +27,17 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
     cancelSelection: () => void,
 }): JSX.Element {
 
-    const [nuance, setNuance] = useState(0)
+    const barMode = selectModeBars(stressSelectMode)
+    const slackMode = selectModeSlack(stressSelectMode)
 
-    const displacementFromNuance = (nuanceValue: number) => {
+    const [nuance, setNuance] = useState(0.5)
+
+    useEffect(() => fabric.intervals.forEach(intervalSelection(nuanceToDisplacement(nuance))), [nuance])
+
+    const nuanceToDisplacement = (nuanceValue: number) => {
         const engine = fabric.instance.engine
-        const selectModeBars = stressSelectMode === StressSelectMode.Bars
-        const min = engine.getLimit(selectModeBars ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
-        const max = engine.getLimit(selectModeBars ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
+        const min = engine.getLimit(barMode ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
+        const max = engine.getLimit(barMode ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
         return (1 - nuanceValue) * min + nuanceValue * max
     }
 
@@ -42,29 +46,40 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
         return up ? factor : (1 / factor)
     }
 
+    function intervalSelection(displacementThreshold: number): (interval: IInterval) => void {
+        return interval => {
+            const directionalDisplacement = fabric.instance.getIntervalDisplacement(interval.index)
+            const selectIf = (selectBars: boolean, greaterThan: boolean) => {
+                const intervalIsBar = interval.intervalRole === IntervalRole.Bar
+                if (intervalIsBar !== selectBars) {
+                    interval.selected = false
+                    return
+                }
+                const displacement = intervalIsBar ? -directionalDisplacement : directionalDisplacement
+                interval.selected = greaterThan ? displacement > displacementThreshold : displacement < displacementThreshold
+            }
+            switch (stressSelectMode) {
+                case StressSelectMode.SlackestBars:
+                    selectIf(true, false)
+                    break
+                case StressSelectMode.SlackestCables:
+                    selectIf(false, false)
+                    break
+                case StressSelectMode.TightestBars:
+                    selectIf(true, true)
+                    break
+                case StressSelectMode.TightestCables:
+                    selectIf(false, true)
+                    break
+            }
+        }
+    }
+
     const NuanceAdjustmentButtons = () => {
         const adjustValue = (percentChange: number) => () => {
             const unboundedNuance = nuance + percentChange / 100
             const nuanceValue = unboundedNuance > 1 ? 1 : unboundedNuance < 0 ? 0 : unboundedNuance
-            const threshold = displacementFromNuance(nuanceValue)
-            fabric.intervals.forEach(interval => {
-                const selectModeBars = stressSelectMode === StressSelectMode.Bars
-                const isBar = interval.intervalRole === IntervalRole.Bar
-                if (selectModeBars !== isBar) {
-                    interval.selected = false
-                } else {
-                    const displacement = fabric.instance.getIntervalDisplacement(interval.index) * (isBar ? -1 : 1)
-                    interval.selected = nuanceValue < 0.5 ? displacement < threshold : displacement > threshold
-                }
-            })
             setNuance(nuanceValue)
-            switch (stressSelectMode) {
-                case StressSelectMode.Bars:
-                    fabric.instance.engine.setSlackLimits(nuanceValue, 0)
-                    break
-                case StressSelectMode.Cables:
-                    fabric.instance.engine.setSlackLimits(0, nuanceValue)
-            }
         }
         return (
             <ButtonGroup>
@@ -118,6 +133,7 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
     }
 
     const percent = nuance * 100
+    const disp = nuanceToDisplacement(nuance).toFixed(3)
     return (
         <div style={{display: "block"}}>
             <div style={{display: "inline-flex"}}>
@@ -128,12 +144,14 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
             </div>
             <div className="m-1">
                 <Progress
-                    value={percent}
+                    className={slackMode ? "" : "float-right"}
+                    style={{flexDirection: "unset"}}
+                    value={slackMode ? percent : 100 - percent}
                     max={100}
                     color="success"
                     bar={true}
                 >
-                    {percent.toFixed(0)}
+                    {percent.toFixed(0)}%={disp}
                 </Progress>
             </div>
         </div>

@@ -21,25 +21,26 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { StressSelectionPanel } from "./stress-selection-panel"
 
+const middleBottom: CSSProperties = {
+    borderStyle: "solid",
+    position: "absolute",
+    bottom: "1em",
+    left: "50%",
+    transform: "translate(-50%)",
+}
+
 export function EditPanel({fabric, selection, setSelection}: {
     fabric: TensegrityFabric,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
 }): JSX.Element {
 
+    const selectedFace = selection.selectedFace
+    const selectedStress = selection.selectedStress
+
     function adjustment(up: boolean): number {
         const factor = 1.03
         return up ? factor : (1 / factor)
-    }
-
-    function CancelButton(): JSX.Element {
-        const onCancel = () => {
-            fabric.selectNone()
-            setSelection({})
-        }
-        return (
-            <Button onClick={onCancel}><FaTimes/> Cancel</Button>
-        )
     }
 
     const adjustValue = (up: boolean) => () => {
@@ -68,19 +69,31 @@ export function EditPanel({fabric, selection, setSelection}: {
         setSelection({selectedFace: nextAdjacentFace})
     }
 
-    const selectStressSelectMode = (stressSelectMode: StressSelectMode) => {
-        setSelection({selectedStress: {stressSelectMode, stressValue: 0}})
+    function StressModeButtonGroup(): JSX.Element {
+        const selectStressSelectMode = (stressSelectMode: StressSelectMode) => {
+            setSelection({selectedStress: {stressSelectMode, stressValue: 0}})
+        }
+
+        return (
+            <ButtonGroup>
+                {Object.keys(StressSelectMode).map(key => {
+                    const mode = StressSelectMode [key]
+                    return <Button onClick={() => selectStressSelectMode(mode)} key={key}>{mode}</Button>
+                })}
+            </ButtonGroup>
+        )
     }
 
-    const middleBottom: CSSProperties = {
-        borderStyle: "solid",
-        position: "absolute",
-        bottom: "1em",
-        left: "50%",
-        transform: "translate(-50%)",
+    function CancelButton(): JSX.Element {
+        const onCancel = () => {
+            fabric.selectNone()
+            setSelection({})
+        }
+        return (
+            <Button onClick={onCancel}><FaTimes/> Cancel</Button>
+        )
     }
-    const selectedFace = selection.selectedFace
-    const selectedStress = selection.selectedStress
+
     return (
         <div style={middleBottom}>
             {selectedFace ? (
@@ -110,11 +123,13 @@ export function EditPanel({fabric, selection, setSelection}: {
                     />
                 </div>
             ) : (
-                <ButtonGroup>
-                    <Button onClick={selectLowestFace}><FaHandPointer/> Select a face by clicking it</Button>
-                    <Button onClick={() => selectStressSelectMode(StressSelectMode.Bars)}>Bars by stress</Button>
-                    <Button onClick={() => selectStressSelectMode(StressSelectMode.Cables)}>Cables by stress</Button>
-                </ButtonGroup>
+                <>
+                    <ButtonGroup>
+                        <Button onClick={selectLowestFace}><FaHandPointer/> Select a face by clicking it</Button>
+                    </ButtonGroup>
+                    &nbsp;&nbsp;
+                    <StressModeButtonGroup/>
+                </>
             )}
         </div>
     )
