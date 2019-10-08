@@ -21,14 +21,6 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { StressSelectionPanel } from "./stress-selection-panel"
 
-const middleBottom: CSSProperties = {
-    borderStyle: "solid",
-    position: "absolute",
-    bottom: "1em",
-    left: "50%",
-    transform: "translate(-50%)",
-}
-
 export function EditPanel({fabric, selection, setSelection}: {
     fabric: TensegrityFabric,
     selection: ISelection,
@@ -115,13 +107,11 @@ export function EditPanel({fabric, selection, setSelection}: {
                     <CancelButton/>
                 </ButtonGroup>
             ) : selectedStress ? (
-                <div>
-                    <StressSelectionPanel
-                        fabric={fabric}
-                        stressSelectMode={selectedStress.stressSelectMode}
-                        cancelSelection={() => setSelection({})}
-                    />
-                </div>
+                <StressSelectionPanel
+                    fabric={fabric}
+                    stressSelectMode={selectedStress.stressSelectMode}
+                    cancelSelection={() => setSelection({})}
+                />
             ) : (
                 <>
                     <ButtonGroup>
@@ -134,3 +124,13 @@ export function EditPanel({fabric, selection, setSelection}: {
         </div>
     )
 }
+
+const middleBottom: CSSProperties = {
+    position: "absolute",
+    paddingRight: "1em",
+    paddingLeft: "1em",
+    bottom: "1em",
+    left: "50%",
+    transform: "translate(-50%)",
+}
+

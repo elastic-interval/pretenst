@@ -30,7 +30,7 @@ a, a:hover {
 .the-whole-page {
     background-color: black;
     top: 0;
-    width: auto;
+    width: 100%;
     height: 100%;
 }
 

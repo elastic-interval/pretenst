@@ -5,8 +5,8 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaTimes } from "react-icons/all"
-import { Button, ButtonGroup, Progress } from "reactstrap"
+import { FaArrowDown, FaArrowUp, FaTimesCircle } from "react-icons/all"
+import { Button, ButtonGroup, Col, Container, Input, InputGroup, InputGroupAddon, Progress, Row } from "reactstrap"
 
 import { IntervalRole, Limit } from "../fabric/fabric-engine"
 import { IInterval, selectModeBars, selectModeSlack, StressSelectMode } from "../fabric/tensegrity-brick-types"
@@ -27,36 +27,43 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
     cancelSelection: () => void,
 }): JSX.Element {
 
+    const engine = fabric.instance.engine
     const barMode = selectModeBars(stressSelectMode)
     const slackMode = selectModeSlack(stressSelectMode)
+    const currentMinDisplacement = () => engine.getLimit(barMode ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
+    const currentMaxDisplacement = () => engine.getLimit(barMode ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
 
     const [nuance, setNuance] = useState(0.5)
+    const [minDisplacement, setMinDisplacement] = useState(currentMinDisplacement)
+    const [maxDisplacement, setMaxDisplacement] = useState(currentMaxDisplacement)
+    const [displacement, setDisplacement] = useState((currentMinDisplacement() + currentMaxDisplacement()) / 2)
 
-    useEffect(() => fabric.intervals.forEach(intervalSelection(nuanceToDisplacement(nuance))), [nuance])
-
-    const nuanceToDisplacement = (nuanceValue: number) => {
-        const engine = fabric.instance.engine
-        const min = engine.getLimit(barMode ? Limit.MinBarDisplacement : Limit.MinCableDisplacement)
-        const max = engine.getLimit(barMode ? Limit.MaxBarDisplacement : Limit.MaxCableDisplacement)
-        return (1 - nuanceValue) * min + nuanceValue * max
-    }
+    useEffect(() => {
+        const min = currentMinDisplacement()
+        const max = currentMaxDisplacement()
+        setMinDisplacement(min)
+        setMaxDisplacement(max)
+        const newDisplacement = (1 - nuance) * min + nuance * max
+        setDisplacement(newDisplacement)
+        fabric.intervals.forEach(intervalSelection(newDisplacement))
+    }, [nuance])
 
     function adjustment(up: boolean): number {
         const factor = 1.1
         return up ? factor : (1 / factor)
     }
 
-    function intervalSelection(displacementThreshold: number): (interval: IInterval) => void {
+    function intervalSelection(dispThreshold: number): (interval: IInterval) => void {
         return interval => {
-            const directionalDisplacement = fabric.instance.getIntervalDisplacement(interval.index)
+            const directionalDisp = fabric.instance.getIntervalDisplacement(interval.index)
             const selectIf = (selectBars: boolean, greaterThan: boolean) => {
                 const intervalIsBar = interval.intervalRole === IntervalRole.Bar
                 if (intervalIsBar !== selectBars) {
                     interval.selected = false
                     return
                 }
-                const displacement = intervalIsBar ? -directionalDisplacement : directionalDisplacement
-                interval.selected = greaterThan ? displacement > displacementThreshold : displacement < displacementThreshold
+                const intervalDisp = intervalIsBar ? -directionalDisp : directionalDisp
+                interval.selected = greaterThan ? intervalDisp > dispThreshold : intervalDisp < dispThreshold
             }
             switch (stressSelectMode) {
                 case StressSelectMode.SlackestBars:
@@ -82,7 +89,7 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
             setNuance(nuanceValue)
         }
         return (
-            <ButtonGroup>
+            <ButtonGroup size="sm" className="w-100">
                 <Button onClick={adjustValue(1)}><FaArrowUp/>1%</Button>
                 <Button onClick={adjustValue(-1)}><FaArrowDown/>1%</Button>
                 <Button onClick={adjustValue(5)}><FaArrowUp/>5%</Button>
@@ -91,70 +98,96 @@ export function StressSelectionPanel({fabric, stressSelectMode, cancelSelection}
         )
     }
 
-    const LengthAdjustmentButtons = () => {
-        const adjustValue = (up: boolean) => () => {
-            const engine = fabric.instance.engine
+    const AdjustmentButtons = () => {
+        const adjustLength = (up: boolean) => () => {
             fabric.selectedIntervals.forEach(interval => engine.multiplyRestLength(interval.index, adjustment(up)))
+            fabric.selectNone()
         }
-        return (
-            <ButtonGroup>
-                <Button onClick={adjustValue(true)}>
-                    <FaArrowUp/>Longer
-                </Button>
-                <Button onClick={adjustValue(false)}>
-                    <FaArrowDown/>Shorter
-                </Button>
-            </ButtonGroup>
-        )
-    }
-
-    const ElasticFactorButtons = () => {
-        const onClick = (elasticFactor: number) => {
-            const engine = fabric.instance.engine
+        const adjustElasticFactor = (elasticFactor: number) => {
             fabric.selectedIntervals.forEach(interval => engine.setElasticFactor(interval.index, elasticFactor))
         }
         return (
-            <ButtonGroup>
+            <ButtonGroup size="sm" style={{width: "100%"}}>
+                <Button onClick={adjustLength(true)}>L<FaArrowUp/></Button>
+                <Button onClick={adjustLength(false)}>L<FaArrowDown/></Button>
                 {ELASTICS.map(elastic => (
-                    <Button key={elastic.strands} onClick={() => onClick(elastic.factor)}>{elastic.strands}</Button>
+                    <Button key={elastic.strands}
+                            onClick={() => adjustElasticFactor(elastic.factor)}>T{elastic.strands}</Button>
                 ))}
             </ButtonGroup>
         )
     }
 
-    function CancelButton(): JSX.Element {
-        const onCancel = () => {
-            fabric.selectNone()
-            cancelSelection()
-        }
-        return (
-            <Button onClick={onCancel}><FaTimes/>Cancel</Button>
-        )
-    }
-
     const percent = nuance * 100
-    const disp = nuanceToDisplacement(nuance).toFixed(3)
     return (
-        <div style={{display: "block"}}>
-            <div style={{display: "inline-flex"}}>
-                <NuanceAdjustmentButtons/>&nbsp;
-                <LengthAdjustmentButtons/>&nbsp;
-                <ElasticFactorButtons/>&nbsp;
-                <CancelButton/>
-            </div>
-            <div className="m-1">
-                <Progress
-                    className={slackMode ? "" : "float-right"}
-                    style={{flexDirection: "unset"}}
-                    value={slackMode ? percent : 100 - percent}
-                    max={100}
-                    color="success"
-                    bar={true}
-                >
-                    {percent.toFixed(0)}%={disp}
-                </Progress>
-            </div>
-        </div>
+        <Container style={{paddingRight: 0, paddingLeft: 0}}>
+            <Row>
+                <Col md="1">
+                    <span className="text-white">{stressSelectMode}</span>
+                </Col>
+                <Col md="5">
+                    <Row>
+                        <Col md={12}>
+                            <NuanceAdjustmentButtons/>
+                        </Col>
+                    </Row>
+                    <Row>
+                        <Col md={12}>
+                            <div style={PROGRESS_BOX}>
+                                <Progress
+                                    className={slackMode ? "h-100" : "float-right h-100"}
+                                    value={slackMode ? percent : 100 - percent}
+                                    max={100}
+                                    color="success"
+                                    bar={true}
+                                >{percent.toFixed(0)}%</Progress>
+                            </div>
+                        </Col>
+                    </Row>
+                </Col>
+                <Col md="5">
+                    <Row>
+                        <Col md={12} className="flex-fill">
+                            <AdjustmentButtons/>
+                        </Col>
+                    </Row>
+                    <Row noGutters={true} className="my-1">
+                        <Col md={4}>
+                            <InputGroup size="sm">
+                                <InputGroupAddon addonType="prepend">Min</InputGroupAddon>
+                                <Input size={5} disabled={true} value={minDisplacement.toFixed(3)}/>
+                            </InputGroup>
+                        </Col>
+                        <Col md={4}>
+                            <InputGroup size="sm">
+                                <InputGroupAddon addonType="prepend">Max</InputGroupAddon>
+                                <Input size={5} disabled={true} value={maxDisplacement.toFixed(3)}/>
+                            </InputGroup>
+                        </Col>
+                        <Col md={4}>
+                            <InputGroup size="sm">
+                                <InputGroupAddon style={{color: "green"}} addonType="prepend">Now</InputGroupAddon>
+                                <Input style={{color: "green"}} disabled={true}
+                                       value={`${slackMode ? "<" : ">"}${displacement.toFixed(3)}`}/>
+                            </InputGroup>
+                        </Col>
+                    </Row>
+                </Col>
+                <Col md="1">
+                    <ButtonGroup size="sm" styl={{height: "100%"}} vertical={false}>
+                        <Button onClick={() => {
+                            fabric.selectNone()
+                            cancelSelection()
+                        }}><FaTimesCircle/></Button>
+                    </ButtonGroup>
+                </Col>
+            </Row>
+        </Container>
     )
 }
 
+const PROGRESS_BOX = {
+    borderColor: "white", borderStyle: "solid", borderWidth: "1px",
+    marginTop: "3px",
+    height: "100%", borderRadius: "3px",
+}
