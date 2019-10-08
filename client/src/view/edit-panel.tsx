@@ -5,17 +5,11 @@
 
 import * as React from "react"
 import { CSSProperties } from "react"
-import { FaArrowDown, FaArrowUp, FaHandPointer, FaSun, FaTimes } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaHandPointer, FaSun, FaTimesCircle } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
-import {
-    AdjacentIntervals,
-    IFace,
-    ISelectedFace,
-    ISelection,
-    nextAdjacent,
-} from "../fabric/tensegrity-brick-types"
+import { AdjacentIntervals, IFace, ISelectedFace, ISelection, nextAdjacent } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { DEFAULT_SELECTED_STRESS, StressSelectionPanel } from "./stress-selection-panel"
@@ -66,7 +60,7 @@ export function EditPanel({fabric, selection, setSelection}: {
             setSelection({})
         }
         return (
-            <Button onClick={onCancel}><FaTimes/> Cancel</Button>
+            <Button onClick={onCancel}><FaTimesCircle/></Button>
         )
     }
 
@@ -82,8 +76,8 @@ export function EditPanel({fabric, selection, setSelection}: {
                             bars/cables</Button>
                     ) : (
                         <>
-                            <Button onClick={adjustValue(true)}><FaArrowUp/> Longer</Button>
-                            <Button onClick={adjustValue(false)}><FaArrowDown/> Shorter</Button>
+                            <Button onClick={adjustValue(true)}>L<FaArrowUp/></Button>
+                            <Button onClick={adjustValue(false)}>L<FaArrowDown/></Button>
                             <Button onClick={() => faceNextAdjacent(selectedFace)}>Click sphere to select
                                 bars/cables</Button>
                         </>
