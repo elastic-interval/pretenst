@@ -9,13 +9,13 @@ const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
 
 const STORAGE_BOOTSTRAP: string[] = [
+    "1[2[3=2[2=2]],2[1=2[3=2]],2[2=2[1=2]]]",
     "0",
     "1",
     "2",
     "9",
     "1[1,1,1]",
     "2[2,2,2]",
-    "1[2[3=2[2=2]],2[1=2[3=2]],2[2=2[1=2]]]",
     "3[3,3,3[3,3,3]]L",
     "2[2,2,2[2,2,2]]H",
     "4[2=4]",
