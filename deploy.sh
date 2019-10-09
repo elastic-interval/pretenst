@@ -2,13 +2,24 @@
 
 set -x
 
-cd fabric-engine
-yarn
-yarn build:prod
+cd client
+yarn install
 
-cd ../client
-yarn
-yarn build:prod
+build_app() {
+  APP=$1
+  echo "Building $APP.."
+  yarn run build:"$APP"
+  rm -rf /home/galapagotchi/www/"$APP"
+  cp -r build /home/galapagotchi/www/"$APP"
+}
 
-# uncomment once the site is up again
-# docker-compose up --build -d
+# Build fabric engine, used by both apps
+yarn run build:fabric-engine
+
+# Build apps
+build_app pretenst
+build_app galapagotchi
+
+# Launch Galapagotchi backend server
+cd ..
+docker-compose up --build -d
