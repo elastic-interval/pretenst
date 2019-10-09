@@ -64,13 +64,16 @@ a, a:hover {
 }
 
 .btn-primary, .btn-danger {
+    color: yellow;
     margin: 3px;
 }
 
-.bar-color {
-    color: #610000;
+.bar {
+    color: white;
+    background-color: #b90000 !important;
 }
 
-.cable-color {
-    color: #3f5c80;
+.cable {
+    color: white;
+    background-color: #507cac !important;
 }

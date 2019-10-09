@@ -19,7 +19,7 @@ import {
 } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { DEFAULT_SELECTED_STRESS, StressSelectionPanel } from "./stress-selection-panel"
+import { DEFAULT_SELECTED_STRESS, DisplacementPanel } from "./displacement-panel"
 
 export function EditPanel({fabric, selection, setSelection}: {
     fabric: TensegrityFabric,
@@ -74,18 +74,18 @@ export function EditPanel({fabric, selection, setSelection}: {
     return (
         <div style={MIDDLE_BOTTOM}>
             {selectedFace ? (
-                <ButtonGroup>
+                <ButtonGroup size="sm">
                     {!selectedFace.face.canGrow ? undefined : (
-                        <Button color="success" onClick={() => grow(selectedFace.face)}><FaSun/> Grow</Button>
+                        <Button onClick={() => grow(selectedFace.face)}><FaSun/> Grow</Button>
                     )}
                     {selectedFace.adjacentIntervals === AdjacentIntervals.None ? (
                         <Button onClick={() => faceNextAdjacent(selectedFace)}>Click sphere to select
                             bars/cables</Button>
                     ) : (
                         <>
-                            <Button color="success" onClick={adjustValue(true)}>L<FaArrowUp/></Button>
-                            <Button color="success" onClick={adjustValue(false)}>L<FaArrowDown/></Button>
-                            <Button color="success" onClick={() => faceNextAdjacent(selectedFace)}>
+                            <Button onClick={adjustValue(true)}>L<FaArrowUp/></Button>
+                            <Button onClick={adjustValue(false)}>L<FaArrowDown/></Button>
+                            <Button onClick={() => faceNextAdjacent(selectedFace)}>
                                 Click sphere to make selections
                             </Button>
                         </>
@@ -93,21 +93,21 @@ export function EditPanel({fabric, selection, setSelection}: {
                     <CancelButton/>
                 </ButtonGroup>
             ) : selectedStress ? (
-                <StressSelectionPanel
+                <DisplacementPanel
                     fabric={fabric}
                     selectedStress={selectedStress}
                     setSelection={setSelection}
                 />
             ) : (
                 <>
-                    <ButtonGroup>
-                        <Button size="sm" color="secondary" onClick={selectLowestFace}>
+                    <ButtonGroup size="sm">
+                        <Button color="secondary" onClick={selectLowestFace}>
                             <FaHandPointer/> Select a face by clicking it
                         </Button>
                     </ButtonGroup>
                     &nbsp;&nbsp;
-                    <ButtonGroup>
-                        <Button size="sm" color="secondary" onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}>
+                    <ButtonGroup size="sm">
+                        <Button color="secondary" onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}>
                             <FaHandPointer/> Select by stress
                         </Button>
                     </ButtonGroup>

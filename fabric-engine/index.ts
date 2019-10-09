@@ -42,7 +42,7 @@ const CABLE_MASS_PER_LENGTH: f32 = 0.01
 
 const BAR_COLOR: f32[] = [1.0, 0.3, 0.2]
 const CABLE_COLOR: f32[] = [0.4, 0.6, 1]
-const ATTENUATED_COLOR: f32[] = [0.2, 0.2, 0.2]
+const ATTENUATED_COLOR: f32[] = [0.25, 0.25, 0.25]
 
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535

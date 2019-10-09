@@ -13,11 +13,14 @@ import { IFabricDimensions, IFabricEngine, IntervalRole, notWater, PhysicsFeatur
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
-import "./index.css"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
-import "./vendor/bootstrap-darkly.min.css"
 import { TensegrityView } from "./view/tensegrity-view"
+
+// eslint-disable-next-line @typescript-eslint/tslint/config
+import "./vendor/bootstrap.min.css"
+// eslint-disable-next-line @typescript-eslint/tslint/config
+import "./index.css"
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
