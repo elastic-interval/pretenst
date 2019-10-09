@@ -4,6 +4,7 @@
  */
 
 import * as React from "react"
+import { CSSProperties } from "react"
 import { useEffect, useState } from "react"
 import { FaCog, FaDownload } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
@@ -113,6 +114,9 @@ export function TensegrityView({engine, getFabric, features}: {
 
     return (
         <div id="tensegrity-view" className="the-whole-page">
+            <div style={MIDDLE_TOP}>
+                <h6>Pretenst Tensegrity Design</h6>
+            </div>
             {!fabric ? (
                 <h1>No fabric</h1>
             ) : (
@@ -154,3 +158,18 @@ export function TensegrityView({engine, getFabric, features}: {
     )
 }
 
+const MIDDLE_TOP: CSSProperties = {
+    position: "absolute",
+    paddingTop: "0.5em",
+    paddingRight: "1em",
+    paddingLeft: "1em",
+    top: "1em",
+    left: "50%",
+    transform: "translate(-50%)",
+    color: "white",
+    backgroundColor: "black",
+    borderRadius: "1em",
+    borderColor: "white",
+    borderStyle: "solid",
+    borderWidth: "1.8px",
+}
