@@ -275,7 +275,7 @@ const NumbersColumns = ({fabric, selectedStress, nuance, barMode, slackMode}: {
                 </InputGroup>
             </Col>
             <Col md={2}>
-                <Button size="sm" className="w-100" style={{color: pump ? intervalColor(barMode) : "gray"}}>
+                <Button size="sm" className="w-100" style={{color: pump ? intervalColor(barMode) : "white"}}>
                     <FaHeart/>
                 </Button>
             </Col>

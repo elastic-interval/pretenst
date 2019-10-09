@@ -101,13 +101,13 @@ export function EditPanel({fabric, selection, setSelection}: {
             ) : (
                 <>
                     <ButtonGroup>
-                        <Button size="sm" color="dark" onClick={selectLowestFace}>
+                        <Button size="sm" color="secondary" onClick={selectLowestFace}>
                             <FaHandPointer/> Select a face by clicking it
                         </Button>
                     </ButtonGroup>
                     &nbsp;&nbsp;
                     <ButtonGroup>
-                        <Button size="sm" color="dark" onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}>
+                        <Button size="sm" color="secondary" onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}>
                             <FaHandPointer/> Select by stress
                         </Button>
                     </ButtonGroup>

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -87,7 +86,9 @@ export function FeaturePanel({engine, featureSet, fabric}: {
                         <InputGroupText>{feature.label}</InputGroupText>
                     </InputGroupAddon>
                     <Input style={inputStyle} value={scaledValue.toFixed(1)} disabled={true}/>
-                    {symbol.length === 0 ? undefined : <InputGroupAddon addonType="append">{symbol}</InputGroupAddon>}
+                    {symbol.length === 0 ? undefined : <InputGroupAddon addonType="append">
+                        <InputGroupText>{symbol}</InputGroupText>
+                    </InputGroupAddon>}
                     {mutable ? <UpdateButtonGroup/> : undefined}
                 </InputGroup>
             )
@@ -105,24 +106,14 @@ export function FeaturePanel({engine, featureSet, fabric}: {
 
     const [open, setOpen] = useState<boolean>(false)
     const [selectedFeature, setSelectedFeature] = useState<IFeature>(featureSet[0])
-    const factorWrapper: CSSProperties = {
-        color: "white",
-        float: "left",
-        paddingLeft: "0.6em",
-        borderColor: "#6c757d",
-        borderStyle: "solid",
-        borderWidth: "3px",
-        borderRadius: "3px",
-        backgroundColor: "#6c757d",
-    }
     return (
         <div style={{position: "absolute", top: "1em", right: "1em", display: "flex"}}>
             <ButtonDropdown style={{display: "block"}} isOpen={open} toggle={() => setOpen(!open)}>
-                <div className="mx-3" style={factorWrapper}>
+                <div style={FACTOR_WRAPPER}>
                     <Factor feature={selectedFeature} mutable={true}/>
                 </div>
-                <DropdownToggle size="sm" color="success" className="float-right"><FaList/></DropdownToggle>
-                <DropdownMenu right={true} style={{backgroundColor: "#6c757d", marginLeft: "1em"}}>
+                <DropdownToggle color="success" className="float-right"><FaList/></DropdownToggle>
+                <DropdownMenu right={true} style={{backgroundColor: "#6c757d"}}>
                     {featureSet.map(f => (
                         <DropdownItem key={f.label} onClick={() => setSelectedFeature(f)}>
                             <Factor feature={f} mutable={false}/>
@@ -132,5 +123,16 @@ export function FeaturePanel({engine, featureSet, fabric}: {
             </ButtonDropdown>
         </div>
     )
+}
 
+const FACTOR_WRAPPER: CSSProperties = {
+    color: "white",
+    float: "left",
+    paddingLeft: "0.6em",
+    borderColor: "#6c757d",
+    borderStyle: "solid",
+    borderWidth: "3px",
+    borderRadius: "3px",
+    backgroundColor: "#6c757d",
+    marginRight: "1em",
 }
