@@ -61,7 +61,7 @@ export const DEFAULT_SELECTED_STRESS: ISelection = {
     },
 }
 
-export function StressSelectionPanel({fabric, selectedStress, setSelection}: {
+export function DisplacementPanel({fabric, selectedStress, setSelection}: {
     fabric: TensegrityFabric,
     selectedStress: ISelectedStress,
     setSelection: (selection: ISelection) => void,
@@ -119,11 +119,11 @@ export function StressSelectionPanel({fabric, selectedStress, setSelection}: {
 
     const percent = (slackMode ? nuance : 1 - nuance) * 100
     return (
-        <Container style={{paddingRight: 0, paddingLeft: 0}}>
+        <Container>
             <Row>
                 <Col md="2">
                     <ButtonDropdown isOpen={choiceOpen} toggle={() => setChoiceOpen(!choiceOpen)}>
-                        <DropdownToggle style={{borderRadius: "1em"}}>
+                        <DropdownToggle size="sm" style={{borderRadius: "0.4em", width: "9em"}} caret={true}>
                             {selectedStress.stressSelectMode}
                         </DropdownToggle>
                         <DropdownMenu right={false}>
@@ -154,8 +154,7 @@ export function StressSelectionPanel({fabric, selectedStress, setSelection}: {
                         <Col md={12}>
                             <div style={PROGRESS_BOX}>
                                 <Progress
-                                    barClassName={barMode ? "bar-color" : "cable-color"}
-                                    className={slackMode ? "h-100" : "float-right h-100"}
+                                    className={`${slackMode ? "h-100" : "float-right h-100"} ${barMode ? "bar" : "cable"}`}
                                     value={percent} max={100} bar={true}
                                 >
                                     {percent.toFixed(0)}%
@@ -194,9 +193,10 @@ export function StressSelectionPanel({fabric, selectedStress, setSelection}: {
 }
 
 const PROGRESS_BOX = {
-    borderColor: "white", borderStyle: "solid", borderWidth: "1px",
+    borderColor: "white", borderStyle: "solid", borderWidth: "1px", borderRadius: "3px",
     marginTop: "3px",
-    height: "100%", borderRadius: "3px",
+    height: "100%",
+    backgroundColor: "black",
 }
 
 const NumbersColumns = ({fabric, selectedStress, nuance, barMode, slackMode}: {

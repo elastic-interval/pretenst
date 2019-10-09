@@ -106,8 +106,8 @@ export function TensegrityView({engine, getFabric, features}: {
         }
         return (
             <ButtonGroup style={{position: "absolute", bottom: "1em", left: "1em"}}  size="sm" >
-                <Button color="success" onClick={onDownloadCSV}><FaDownload/>CSV</Button>
-                <Button color="success" onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
+                <Button color="info" onClick={onDownloadCSV}><FaDownload/>CSV</Button>
+                <Button color="info" onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
             </ButtonGroup>
         )
     }

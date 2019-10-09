@@ -31,7 +31,7 @@ export const GOTCHI_ARROW = new LineBasicMaterial({color: new Color("magenta")})
 export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow")})
 
 export const SURFACE = new MeshPhongMaterial({
-    color: new Color("#7a7628"),
+    color: new Color("#a59031"),
     lights: true,
     side: DoubleSide,
     opacity: 0.25,
@@ -59,7 +59,7 @@ export function intervalColor(bar: boolean): string {
 
 export const ATTENUATED = new MeshPhongMaterial({
     lights: true,
-    color: new Color("#0f0f0f"),
+    color: new Color("#212121"),
 })
 
 export const BAR = new MeshPhongMaterial({
@@ -74,5 +74,5 @@ export const CABLE = new MeshPhongMaterial({
 
 export const FACE_SPHERE = new MeshPhongMaterial({
     lights: true,
-    color: new Color("#bb1722"),
+    color: new Color("#a88d00"),
 })
