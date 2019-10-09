@@ -11,8 +11,8 @@ import { Button, ButtonGroup } from "reactstrap"
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
+    bySelectedFace,
     IFace,
-    intervalsBySelectedFace,
     ISelectedFace,
     ISelection,
     nextAdjacent,
@@ -57,7 +57,7 @@ export function EditPanel({fabric, selection, setSelection}: {
 
     const faceNextAdjacent = (face: ISelectedFace) => {
         const nextAdjacentFace = nextAdjacent(face)
-        fabric.selectIntervals(intervalsBySelectedFace(nextAdjacentFace))
+        fabric.selectIntervals(bySelectedFace(nextAdjacentFace))
         setSelection({selectedFace: nextAdjacentFace})
     }
 

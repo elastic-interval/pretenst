@@ -40,9 +40,9 @@ const F32 = sizeof<f32>()
 const BAR_MASS_PER_LENGTH: f32 = 1
 const CABLE_MASS_PER_LENGTH: f32 = 0.01
 
-const PUSH_COLOR: f32[] = [1.0, 0.3, 0.2]
-const PULL_COLOR: f32[] = [0.4, 0.6, 1]
-const SLACK_COLOR: f32[] = [0.0, 1.0, 0.0]
+const BAR_COLOR: f32[] = [1.0, 0.3, 0.2]
+const CABLE_COLOR: f32[] = [0.4, 0.6, 1]
+const ATTENUATED_COLOR: f32[] = [0.2, 0.2, 0.2]
 
 const FLOATS_IN_VECTOR = 3
 const ERROR: usize = 65535
@@ -913,12 +913,16 @@ export function getLimit(limit: Limit): f32 {
     }
 }
 
-let barSlackLimit: f32 = 0
-let cableSlackLimit: f32 = 0
+let _selectBars = false
+let _selectCables = false
+let _greaterThan = false
+let _displacementThreshold: f32 = 0
 
-export function setSlackLimits(barSlack: f32, cableSlack: f32): void {
-    barSlackLimit = barSlack
-    cableSlackLimit = cableSlack
+export function setDisplacementThreshold(selectBars: boolean, selectCables: boolean, greaterThan: boolean, threshold: f32): void {
+    _selectBars = selectBars
+    _selectCables = selectCables
+    _greaterThan = greaterThan
+    _displacementThreshold = threshold
 }
 
 function outputLinesGeometry(): void {
@@ -952,24 +956,16 @@ function outputLinesGeometry(): void {
         setVector(_linePoint, _location(alphaIndex(intervalIndex)))
         setVector(_linePoint + VECTOR_SIZE, _location(omegaIndex(intervalIndex)))
         let _lineColor = _lineColors + intervalIndex * VECTOR_SIZE * 2
-        let displacement = getDisplacement(intervalIndex)
+        let directionalDisplacement = getDisplacement(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
-        if (intervalRole === IntervalRole.Bar) {
-            displacement = -displacement
-            let intensity = (displacement - minBarDisplacement) / (maxBarDisplacement - minBarDisplacement)
-            if (barSlackLimit < 0.5 ? intensity < barSlackLimit : intensity > barSlackLimit) {
-                setLineColor(_lineColor, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
-            } else {
-                setLineColor(_lineColor, PUSH_COLOR[0], PUSH_COLOR[1], PUSH_COLOR[2])
-            }
-        } else { // a cable role
-            let intensity = (displacement - minCableDisplacement) / (maxCableDisplacement - minCableDisplacement)
-            if (cableSlackLimit < 0.5 ? intensity < cableSlackLimit : intensity > cableSlackLimit) {
-                setLineColor(_lineColor, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
-            } else {
-                setLineColor(_lineColor, PULL_COLOR[0], PULL_COLOR[1], PULL_COLOR[2])
-            }
-        }
+        let isBar = intervalRole === IntervalRole.Bar
+        let displacement = isBar ? -directionalDisplacement : directionalDisplacement
+        let displacedEnough = _greaterThan ? displacement > _displacementThreshold : displacement < _displacementThreshold
+        let selectNothing = !_selectBars && !_selectCables
+        let selectThisType = (_selectBars && isBar) || (_selectCables && !isBar)
+        let colored = selectNothing || selectThisType && displacedEnough
+        let color = colored ? isBar ? BAR_COLOR : CABLE_COLOR : ATTENUATED_COLOR
+        setLineColor(_lineColor, color[0], color[1], color[2])
     }
 }
 

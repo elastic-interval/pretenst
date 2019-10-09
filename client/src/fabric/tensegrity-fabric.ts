@@ -23,7 +23,7 @@ import {
     IInterval,
     IJoint,
     intervalSplitter,
-    JointTag,
+    JointTag, setFabricDisplacementThreshold, StressSelectMode,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
@@ -76,6 +76,9 @@ export class TensegrityFabric {
     }
 
     public selectIntervals(selectionFilter?: (interval: IInterval) => boolean): number {
+        if (this.growth) {
+            return 0
+        }
         const allIntervals = [...this.intervals, ...this.selectedIntervals]
         if (!selectionFilter) {
             if (this.selectedIntervals.length <= 0) {
@@ -91,6 +94,9 @@ export class TensegrityFabric {
         return selected.length
     }
 
+    public setDisplacementThreshold(threshold: number, mode: StressSelectMode): void {
+        setFabricDisplacementThreshold(this, threshold, mode)
+    }
 
     public get growthFaces(): IFace[] {
         return this.faces.filter(face => face.canGrow)
