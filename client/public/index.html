@@ -2,48 +2,63 @@
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-    <meta name="theme-color" content="#000000">
+    <meta content="width=device-width, initial-scale=1, shrink-to-fit=no" name="viewport">
+    <meta content="#000000" name="theme-color">
     <!--
       manifest.json provides metadata used when your web app is added to the
       homescreen on Android. See https://developers.google.com/web/fundamentals/engage-and-retain/web-app-manifest/
     -->
-    <link rel="manifest" href="%PUBLIC_URL%/manifest.json">
-    <link rel="shortcut icon" href="%PUBLIC_URL%/favicon.ico">
-    <title>Galapagotchi Run!</title>
+    <link href="%PUBLIC_URL%/manifest.json" rel="manifest">
+    <link href="%PUBLIC_URL%/favicon.ico" rel="shortcut icon">
+    <title>
+        Loading..
+    </title>
 </head>
 <body>
 <script>
-    function getFabricEngine() {
-        function log(msg) {
-            console.log(msg);
-        }
-
-        const importObject = {
-            env: {
-                abort: (a, b, c, d) => {
-                    alert('abort!', a, b, c, d);
-                }
-            },
-            index: {
-                logBoolean: (index, booleanValue) => {
-                    log(index + ': ' + (booleanValue ? 'true' : 'false'));
-                },
-                logFloat: (index, floatValue) => {
-                    log(index + ': ' + floatValue.toFixed(5));
-                },
-                logInt: (index, intValue) => {
-                    log(index + ': ' + intValue);
-                }
-            },
-            JSMath: Math
-        };
-        return fetch("/fabric.wasm")
-            .then(response => response.arrayBuffer())
-            .then(bytes => WebAssembly.compile(bytes))
-            .then(code => WebAssembly.instantiate(code, importObject))
-            .then(instance => instance.exports);
+  function getFabricEngine() {
+    function log(msg) {
+      console.log(msg)
     }
+
+    const importObject = {
+      env: {
+        abort: (a, b, c, d) => {
+          alert("abort!", a, b, c, d)
+        },
+      },
+      index: {
+        logBoolean: (index, booleanValue) => {
+          log(index + ": " + (booleanValue ? "true" : "false"))
+        },
+        logFloat: (index, floatValue) => {
+          log(index + ": " + floatValue.toFixed(5))
+        },
+        logInt: (index, intValue) => {
+          log(index + ": " + intValue)
+        },
+      },
+      JSMath: Math,
+    }
+    return fetch("/fabric.wasm")
+        .then(response => response.arrayBuffer())
+        .then(bytes => WebAssembly.compile(bytes))
+        .then(code => WebAssembly.instantiate(code, importObject))
+        .then(instance => instance.exports)
+  }
+</script>
+<script>
+  let enabledApp = "%REACT_APP_ENABLED_APP%"
+  switch (enabledApp) {
+    case "pretenst":
+      document.title = "Pretenst"
+      break
+    case "galapagotchi":
+      document.title = "Galapagotchi Run!"
+      break
+    default:
+      document.title = "Unknown app: " + enabledApp
+  }
 </script>
 <noscript>
     You need to enable JavaScript to run this app.
