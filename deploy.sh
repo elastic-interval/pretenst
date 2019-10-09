@@ -5,15 +5,19 @@ set -x
 cd client
 yarn install
 
-# Build Pretenst
-yarn run build:fabric-engine
-yarn run build:pretenst
-cp -R build/* /home/galapagotchi/www/pretenst
+build_app() {
+  APP=$1
+  echo "Building $APP.."
+  yarn run build:fabric-engine
+  yarn run build:"$APP"
+  rm -rf /home/galapagotchi/www/"$APP"
+  cp build /home/galapagotchi/www/"$APP"
+}
 
+# Build Pretenst
+build_app pretenst
 # Build Galapagotchi
-yarn run build:fabric-engine
-yarn run build:galapagotchi
-cp -R build/* /home/galapagotchi/www/galapagotchi
+build_app galapagotchi
 
 # Launch Galapagotchi backend server
 cd ..
