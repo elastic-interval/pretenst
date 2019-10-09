@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -111,11 +110,34 @@ export class App extends React.Component<IAppProps, IAppState> {
         return (
             <div>
                 <div>
-                    <div className="top-outer">
-                        <div className="top-left">
+                    <div style={{
+                        textAlign: "center",
+                        width: "100%",
+                        top: 0,
+                        height: "auto",
+                        position: "absolute",
+                        color: "#00d1d1",
+                        marginTop: 0,
+                    }}>
+                        <div style={{
+                            float: "left",
+                            height: "100%",
+                            width: "auto",
+                            display: "inline-flex",
+                            background: "black",
+                            margin: "5px",
+                            padding: "4px",
+                            borderColor: "inherit",
+                            borderWidth: "2px",
+                            borderStyle: "solid",
+                            borderRadius: "10px",
+                        }}>
                             {this.props.user ?
                                 (
-                                    <div className="user">
+                                    <div style={{
+                                        fontSize: "larger",
+                                        padding: "0 6px 6px 6px",
+                                    }}>
                                         <a href={`${API_URI}/auth/logout`}>
                                             <Badge color="info">@{this.props.user!.profile.username}</Badge>
                                         </a>
@@ -123,10 +145,10 @@ export class App extends React.Component<IAppProps, IAppState> {
                                 )
                                 :
                                 (
-                                    <div className="sign-in">
+                                    <div style={{padding: "6px"}}>
                                         <a href={`${API_URI}/auth/twitter`}>
                                             <img src="sign-in-with-twitter-gray.png"
-                                                alt="Sign in with Twitter"/>
+                                                 alt="Sign in with Twitter"/>
                                         </a>
                                     </div>
                                 )
@@ -137,7 +159,19 @@ export class App extends React.Component<IAppProps, IAppState> {
                             location={this.perspectiveCamera.position}
                             user={this.props.user}
                         />
-                        <div className="top-right">
+                        <div style={{
+                            float: "right",
+                            height: "100%",
+                            width: "auto",
+                            display: "inline-flex",
+                            background: "black",
+                            margin: "5px",
+                            padding: "4px",
+                            borderColor: "inherit",
+                            borderWidth: "2px",
+                            borderStyle: "solid",
+                            borderRadius: "10px",
+                        }}>
                             <a className="command-button btn btn-info" href={DOCS_ON_GITHUB} target="_blank">About</a>
                         </div>
                     </div>

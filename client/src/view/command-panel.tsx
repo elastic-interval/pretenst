@@ -3,117 +3,64 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import * as FileSaver from "file-saver"
 import * as React from "react"
-import { useState } from "react"
 import {
-    FaBolt,
+    FaAnchor,
     FaCompressArrowsAlt,
-    FaDownload,
     FaParachuteBox,
     FaRecycle,
-    FaRegFolder,
-    FaRegFolderOpen,
-    FaStarOfDavid,
+    FaRunning,
     FaSyncAlt,
+    FaWalking,
 } from "react-icons/all"
-import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
+import { Button, ButtonGroup } from "reactstrap"
 
-import { connectClosestFacePair } from "../fabric/tensegrity-brick"
-import { IFabricOutput, TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { loadFabricCode } from "../storage/local-storage"
 
-function extractJointBlob(output: IFabricOutput): Blob {
-    const csvJoints: string[][] = []
-    csvJoints.push(["index", "x", "y", "z"])
-    output.joints.forEach(joint => csvJoints.push([joint.index, joint.x, joint.y, joint.z]))
-    const jointsFile = csvJoints.map(a => a.join(";")).join("\n")
-    return new Blob([jointsFile], {type: "application/csv"})
-}
-
-function extractIntervalBlob(output: IFabricOutput): Blob {
-    const csvIntervals: string[][] = []
-    csvIntervals.push(["joints", "type"])
-    output.intervals.forEach(interval => {
-        csvIntervals.push([`"=""${interval.joints}"""`, interval.type])
-    })
-    const intervalsFile = csvIntervals.map(a => a.join(";")).join("\n")
-    return new Blob([intervalsFile], {type: "application/csv"})
-}
-
-export function CommandPanel({constructFabric, fabric, cancelSelection}: {
+export function CommandPanel({constructFabric, fabric, fastMode, setFastMode, autoRotate, setAutoRotate, storageIndex}: {
     constructFabric: (fabricCode: string) => void,
     fabric?: TensegrityFabric,
-    cancelSelection: () => void,
+    fastMode: boolean,
+    setFastMode: (fastMode: boolean) => void,
+    autoRotate: boolean,
+    setAutoRotate: (autoRotate: boolean) => void,
+    storageIndex: number,
 }): JSX.Element {
 
-    const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
-    const [open, setOpen] = useState<boolean>(false)
-
-    function select(code: string, index: number): void {
-        setStorageIndex(index)
-        storeStorageIndex(index)
-        constructFabric(code)
+    const onRotateToggle = () => {
+        setAutoRotate(!autoRotate)
     }
-
-    function withFabric(operation: (f: TensegrityFabric) => void): void {
-        if (!fabric) {
-            return
+    const onCentralize = () => {
+        if (fabric) {
+            fabric.instance.engine.centralize()
         }
-        cancelSelection()
-        operation(fabric)
     }
-
-    function saveFiles(f: TensegrityFabric): void {
-        const dateString = new Date().toISOString()
-            .replace(/[.].*/, "").replace(/[:T_]/g, "-")
-        const output = f.output
-        FileSaver.saveAs(extractJointBlob(output), `${dateString}-joints.csv`)
-        FileSaver.saveAs(extractIntervalBlob(output), `${dateString}-intervals.csv`)
+    const onRebuild = () => {
+        constructFabric(loadFabricCode()[storageIndex])
     }
-
-    const BUTTON_CLASS = "text-left my-2 mx-1"
+    const onJump = () => {
+        if (fabric) {
+            fabric.instance.engine.setAltitude(10)
+        }
+    }
+    const onFastMode = () => {
+        setFastMode(!fastMode)
+    }
 
     return (
-        <div className="text-center">
-            <ButtonGroup className="w-75 align-self-center my-4" vertical={true}>
-                <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle>
-                        {open ? <FaRegFolderOpen/> : <FaRegFolder/>} Choose a program
-                    </DropdownToggle>
-                    <DropdownMenu>
-                        {loadFabricCode().map((code, index) => (
-                            <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
-                                {code}
-                            </DropdownItem>
-                        ))}
-                    </DropdownMenu>
-                </ButtonDropdown>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.optimize(false))}>
-                    <FaBolt/> Short Optimize
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.optimize(true))}>
-                    <FaBolt/> Long Optimize
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(connectClosestFacePair)}>
-                    <FaStarOfDavid/> Connect
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.instance.setAltitude(10))}>
-                    <FaParachuteBox/> Jump
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.autoRotate = !f.autoRotate)}>
-                    <FaSyncAlt/> Rotate
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(f => f.instance.centralize())}>
-                    <FaCompressArrowsAlt/> Centralize
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={() => withFabric(saveFiles)}>
-                    <FaDownload/> Download
-                </Button>
-                <Button className={BUTTON_CLASS} onClick={() => constructFabric(loadFabricCode()[storageIndex])}>
-                    <FaRecycle/> Rebuild
-                </Button>
-            </ButtonGroup>
-        </div>
+        <ButtonGroup style={{
+            position: "absolute",
+            bottom: "1em",
+            right: "1em",
+        }} size="sm">
+            <Button color="success" onClick={onRebuild}><FaRecycle/></Button>
+            <Button color="info" onClick={onJump}><FaParachuteBox/></Button>
+            <Button color="info" onClick={onCentralize}><FaCompressArrowsAlt/></Button>
+            <Button color="info" onClick={onRotateToggle}>{autoRotate ? <FaAnchor/> : <FaSyncAlt/>}</Button>
+            <Button color={fastMode ? "warning" : "secondary"} onClick={onFastMode}>
+                {fastMode ? <FaRunning/> : <FaWalking/>}
+            </Button>
+        </ButtonGroup>
     )
 }

@@ -5,17 +5,22 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
+import { FaCog, FaDownload } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
+import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
 import { ISelection } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { loadFabricCode, loadStorageIndex } from "../storage/local-storage"
+import { saveCSVFiles, saveOBJFile } from "../storage/download"
+import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
 
+import { CommandPanel } from "./command-panel"
+import { EditPanel } from "./edit-panel"
 import { FabricView } from "./fabric-view"
-import { TensegrityControl } from "./tensegrity-control"
+import { FeaturePanel } from "./feature-panel"
 
 extend({OrbitControls})
 
@@ -30,15 +35,15 @@ declare global {
     }
 }
 
-export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures}: {
+export function TensegrityView({engine, getFabric, features}: {
     engine: IFabricEngine,
     getFabric: (name: string) => TensegrityFabric,
-    physicsFeatures: IFeature[],
-    roleFeatures: IFeature[],
+    features: IFeature[],
 }): JSX.Element {
 
-    // const [open, setOpen] = useState<boolean>(false) todo maybe
-
+    const [autoRotate, setAutoRotate] = useState<boolean>(false)
+    const [fastMode, setFastMode] = useState<boolean>(false)
+    const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selection, setSelection] = useState<ISelection>({})
 
@@ -62,25 +67,89 @@ export function TensegrityView({engine, getFabric, physicsFeatures, roleFeatures
         }
     }
 
+    const FabricChoice = (): JSX.Element => {
+        const [open, setOpen] = useState<boolean>(false)
+        const select = (code: string, index: number) => {
+            setStorageIndex(index)
+            storeStorageIndex(index)
+            constructFabric(code)
+        }
+
+        const fabricCode = loadFabricCode()
+        return (
+            <div style={{position: "absolute", top: "1em", left: "1em"}}>
+                <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
+                    <DropdownToggle size="sm" color="success"><FaCog/> {fabricCode[storageIndex]}</DropdownToggle>
+                    <DropdownMenu right={false}>
+                        {fabricCode.map((code, index) => (
+                            <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
+                                {code}
+                            </DropdownItem>
+                        ))}
+                    </DropdownMenu>
+                </ButtonDropdown>
+            </div>
+        )
+    }
+
+    const Download = (): JSX.Element => {
+        const onDownloadCSV = () => {
+            if (fabric) {
+                saveCSVFiles(fabric)
+            }
+        }
+        const onDownloadOBJ = () => {
+            if (fabric) {
+                saveOBJFile(fabric)
+            }
+        }
+        return (
+            <ButtonGroup style={{position: "absolute", bottom: "1em", left: "1em"}}  size="sm" >
+                <Button color="success" onClick={onDownloadCSV}><FaDownload/>CSV</Button>
+                <Button color="success" onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
+            </ButtonGroup>
+        )
+    }
+
     return (
-        <div className="the-whole-page">
-            <div className="left-panel">
-                <TensegrityControl
-                    engine={engine}
-                    physicsFeatures={physicsFeatures}
-                    roleFeatures={roleFeatures}
-                    fabric={fabric}
-                    constructFabric={constructFabric}
-                    selection={selection}
-                    setSelection={setSelection}
-                />
-            </div>
-            <div id="tensegrity-view" className="middle-panel">
-                <Canvas>
-                    {!fabric ? undefined :
-                        <FabricView fabric={fabric} selection={selection} setSelection={setSelection}/>}
-                </Canvas>
-            </div>
+        <div id="tensegrity-view" className="the-whole-page">
+            {!fabric ? (
+                <h1>No fabric</h1>
+            ) : (
+                <>
+                    <Canvas>
+                        <FabricView
+                            fabric={fabric}
+                            selection={selection}
+                            setSelection={setSelection}
+                            autoRotate={autoRotate}
+                            fastMode={fastMode}
+                            showFaces={!selection.selectedStress}
+                        />
+                    </Canvas>
+                    <FabricChoice/>
+                    <FeaturePanel
+                        featureSet={features}
+                        engine={engine}
+                        fabric={fabric}
+                    />
+                    <Download/>
+                    <EditPanel
+                        fabric={fabric}
+                        selection={selection}
+                        setSelection={setSelection}
+                    />
+                </>
+            )}
+            <CommandPanel
+                constructFabric={constructFabric}
+                fabric={fabric}
+                autoRotate={autoRotate}
+                setAutoRotate={setAutoRotate}
+                fastMode={fastMode}
+                setFastMode={setFastMode}
+                storageIndex={storageIndex}
+            />
         </div>
     )
 }

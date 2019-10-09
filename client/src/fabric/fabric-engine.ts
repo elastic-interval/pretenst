@@ -9,14 +9,21 @@ export interface IMemory {
 
 export enum PhysicsFeature {
     GravityAbove = 0,
-    GravityBelowLand = 1,
-    GravityBelowWater = 2,
-    DragAbove = 3,
-    DragBelowLand = 4,
+    DragAbove = 1,
+    AntigravityBelow = 2,
+    DragBelow = 3,
+    AntigravityBelowWater = 4,
     DragBelowWater = 5,
     PushElastic = 6,
     PullElastic = 7,
     IntervalCountdown = 8,
+}
+
+export function notWater(feature?: PhysicsFeature): boolean {
+    if (feature === undefined) {
+        return false
+    }
+    return feature !== PhysicsFeature.AntigravityBelowWater && feature !== PhysicsFeature.DragBelowWater
 }
 
 export enum IntervalRole {
@@ -93,10 +100,6 @@ export interface IFabricEngine {
 
     setAltitude(altitude: number): number
 
-    getRoleLength(intervalRole: IntervalRole): number
-
-    setRoleLength(intervalRole: IntervalRole, factor: number): void
-
     nextJointTag(): number
 
     getJointCount(): number
@@ -109,11 +112,13 @@ export interface IFabricEngine {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole): number
+    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number): number
 
     setElasticFactor(intervalIndex: number, elasticFactor: number): void
 
-    changeRestIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
+    getElasticFactor(intervalIndex: number): number
+
+    setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
     changeRestLength(intervalIndex: number, length: number): void
 
@@ -122,6 +127,8 @@ export interface IFabricEngine {
     removeInterval(intervalIndex: number): void
 
     findOppositeIntervalIndex(intervalIndex: number): number
+
+    getIntervalStateLength(intervalIndex: number, state: FabricState): number
 
     setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void
 

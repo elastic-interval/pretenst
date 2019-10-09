@@ -13,6 +13,7 @@ import { MeshKey } from "./selector"
 
 const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
+const AMBIENT_COLOR = new Color("#bababa")
 
 export class SurfaceComponent extends React.Component<object, object> {
     private spots: Geometry
@@ -32,6 +33,7 @@ export class SurfaceComponent extends React.Component<object, object> {
                 <mesh name="Spots" geometry={this.spots} material={SURFACE}/>
                 <pointLight key="Sun" distance={1000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+                <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
             </group>
         )
     }

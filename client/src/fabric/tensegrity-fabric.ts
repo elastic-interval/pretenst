@@ -3,11 +3,11 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { IntervalRole, Laterality } from "./fabric-engine"
-import { FabricInstance } from "./fabric-kernel"
-import { applyFeatureToInstance, IFeature } from "./features"
+import { FabricState, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
+import { IFeature } from "./features"
 import {
     connectClosestFacePair,
     createBrickOnOrigin,
@@ -16,11 +16,13 @@ import {
     parseConstructionCode,
 } from "./tensegrity-brick"
 import {
+    emptySplit,
     IBrick,
     IFace,
     IGrowth,
     IInterval,
     IJoint,
+    intervalSplitter,
     JointTag,
     Triangle,
     TRIANGLE_DEFINITIONS,
@@ -28,15 +30,28 @@ import {
 
 export interface IFabricOutput {
     name: string
-    joints: { index: string, x: string, y: string, z: string }[]
-    intervals: { joints: string, type: string }[]
+    joints: {
+        index: string,
+        x: string,
+        y: string,
+        z: string,
+    }[]
+    intervals: {
+        joints: string,
+        type: string,
+        stress: number,
+        thickness: number,
+    }[]
 }
+
+export const SPHERE_RADIUS = 0.35
+export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 
 export class TensegrityFabric {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
+    public selectedIntervals: IInterval[] = []
     public faces: IFace[] = []
-    public autoRotate = false
     public growth?: IGrowth
 
     private faceLocations = new Float32BufferAttribute([], 3)
@@ -60,8 +75,25 @@ export class TensegrityFabric {
         this.growth = growth
     }
 
+    public selectIntervals(selectionFilter?: (interval: IInterval) => boolean): number {
+        const allIntervals = [...this.intervals, ...this.selectedIntervals]
+        if (!selectionFilter) {
+            if (this.selectedIntervals.length <= 0) {
+                return 0
+            }
+            this.intervals = allIntervals
+            this.selectedIntervals = []
+            return 0
+        }
+        const {unselected, selected} = allIntervals.reduce(intervalSplitter(selectionFilter), emptySplit())
+        this.intervals = unselected
+        this.selectedIntervals = selected
+        return selected.length
+    }
+
+
     public get growthFaces(): IFace[] {
-        return this.faces.filter(f => f.canGrow)
+        return this.faces.filter(face => face.canGrow)
     }
 
     public createBrick(): IBrick {
@@ -72,7 +104,7 @@ export class TensegrityFabric {
     }
 
     public removeFace(face: IFace, removeIntervals: boolean): void {
-        this.instance.removeFace(face.index)
+        this.engine.removeFace(face.index)
         this.faces = this.faces.filter(existing => existing.index !== face.index)
         this.faces.forEach(existing => {
             if (existing.index > face.index) {
@@ -85,7 +117,7 @@ export class TensegrityFabric {
     }
 
     public removeInterval(interval: IInterval): void {
-        this.instance.removeInterval(interval.index)
+        this.engine.removeInterval(interval.index)
         interval.removed = true
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
         this.intervals.forEach(existing => {
@@ -102,15 +134,20 @@ export class TensegrityFabric {
     }
 
     public createJointIndex(jointTag: JointTag, location: Vector3): number {
-        return this.instance.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
+        return this.engine.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval {
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, restLength: number): IInterval {
+        const index = this.engine.createInterval(
+            alpha.index, omega.index,
+            intervalRole, restLength,
+        )
         const interval = <IInterval>{
-            index: this.instance.createInterval(alpha.index, omega.index, intervalRole),
-            removed: false,
+            index,
             intervalRole,
             alpha, omega,
+            removed: false,
+            isBar: intervalRole === IntervalRole.Bar,
         }
         this.intervals.push(interval)
         return interval
@@ -130,7 +167,7 @@ export class TensegrityFabric {
         })
         const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
         const face: IFace = {
-            index: this.instance.createFace(joints[0].index, joints[1].index, joints[2].index),
+            index: this.engine.createFace(joints[0].index, joints[1].index, joints[2].index),
             canGrow: true,
             brick,
             triangle,
@@ -151,7 +188,7 @@ export class TensegrityFabric {
         this.intervals = []
         this.faces = []
         this.disposeOfGeometry()
-        this.instance.reset()
+        this.engine.reset()
     }
 
     public disposeOfGeometry(): void {
@@ -165,21 +202,14 @@ export class TensegrityFabric {
         }
     }
 
-    public get jointCount(): number {
-        return this.instance.getJointCount()
-    }
-
-    public get intervalCount(): number {
-        return this.instance.getIntervalCount()
-    }
-
-    public get faceCount(): number {
-        return this.instance.getFaceCount()
+    public get submergedJoints(): IJoint[] {
+        return this.joints
+            .filter(joint => this.instance.getJointLocation(joint.index).y < JOINT_RADIUS)
     }
 
     public get facesGeometry(): BufferGeometry {
         if (!this.facesGeometryStored) {
-            this.instance.iterate(0)
+            this.engine.iterate(0)
             const geometry = new BufferGeometry()
             this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
             this.faceNormals = new Float32BufferAttribute(this.instance.getFaceNormals(), 3)
@@ -192,7 +222,7 @@ export class TensegrityFabric {
 
     public get linesGeometry(): BufferGeometry {
         if (!this.linesGeometryStored) {
-            this.instance.iterate(0)
+            this.engine.iterate(0)
             const geometry = new BufferGeometry()
             this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
             this.lineColors = new Float32BufferAttribute(this.instance.getLineColors(), 3)
@@ -204,7 +234,7 @@ export class TensegrityFabric {
     }
 
     public iterate(ticks: number): boolean {
-        const busy = this.instance.iterate(ticks)
+        const busy = this.engine.iterate(ticks)
         this.disposeOfGeometry()
         if (busy) {
             return busy
@@ -213,7 +243,7 @@ export class TensegrityFabric {
         if (growth) {
             if (growth.growing.length > 0) {
                 growth.growing = executeGrowthTrees(growth.growing)
-                this.instance.centralize()
+                this.engine.centralize()
             }
             if (growth.growing.length === 0) {
                 if (growth.optimizationStack.length > 0) {
@@ -221,11 +251,11 @@ export class TensegrityFabric {
                     switch (optimization) {
                         case "L":
                             optimizeFabric(this, false)
-                            this.instance.extendBusyCountdown(3)
+                            this.engine.extendBusyCountdown(3)
                             break
                         case "H":
                             optimizeFabric(this, true)
-                            this.instance.extendBusyCountdown(2)
+                            this.engine.extendBusyCountdown(2)
                             break
                         case "X":
                             growth.optimizationStack.push("Connect")
@@ -235,7 +265,6 @@ export class TensegrityFabric {
                             break
                     }
                 } else {
-                    this.roleFeatures.forEach(applyFeatureToInstance(this.instance))
                     this.growth = undefined
                 }
             }
@@ -248,6 +277,17 @@ export class TensegrityFabric {
             (interval.alpha.index === joint1.index && interval.omega.index === joint2.index) ||
             (interval.alpha.index === joint2.index && interval.omega.index === joint1.index)
         ))
+    }
+
+    public orientInterval(interval: IInterval, girth: number): { scale: Vector3, rotation: Quaternion } {
+        const Y_AXIS = new Vector3(0, 1, 0)
+        const unit = this.instance.getIntervalUnit(interval.index)
+        const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
+        const alphaLocation = this.instance.getJointLocation(interval.alpha.index)
+        const omegaLocation = this.instance.getJointLocation(interval.omega.index)
+        const intervalLength = alphaLocation.distanceTo(omegaLocation)
+        const scale = new Vector3(SPHERE_RADIUS * girth, intervalLength / SPHERE_RADIUS / 2, SPHERE_RADIUS * girth)
+        return {scale, rotation}
     }
 
     public get output(): IFabricOutput {
@@ -263,10 +303,20 @@ export class TensegrityFabric {
                     z: numberToString(vector.y),
                 }
             }),
-            intervals: this.intervals.map(interval => ({
-                joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
-                type: IntervalRole[interval.intervalRole],
-            })),
+            intervals: this.intervals.map(interval => {
+                const deltaLength = this.instance.getIntervalDisplacement(interval.index)
+                const restLength = this.engine.getIntervalStateLength(interval.index, FabricState.Rest)
+                return {
+                    joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
+                    type: IntervalRole[interval.intervalRole],
+                    stress: deltaLength / restLength,
+                    thickness: this.engine.getElasticFactor(interval.index),
+                }
+            }),
         }
+    }
+
+    private get engine(): IFabricEngine {
+        return this.instance.engine
     }
 }

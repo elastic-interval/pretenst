@@ -10,9 +10,9 @@ import * as ReactDOM from "react-dom"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { IFabricDimensions, IFabricEngine, IntervalRole, PhysicsFeature } from "./fabric/fabric-engine"
+import { IFabricDimensions, IFabricEngine, IntervalRole, notWater, PhysicsFeature } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { acquireRoleFeature, applyFeatureToEngine, enumToFeatureArray } from "./fabric/features"
+import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
@@ -40,24 +40,16 @@ APP_EVENT.subscribe(appEvent => {
     }
 })
 
-function getFeature(label: string, defaultValue: number): number {
-    const value = localStorage.getItem(label)
-    return value ? parseFloat(value) : defaultValue
-}
-
-function setFeature(label: string, factor: number): void {
-    localStorage.setItem(label, factor.toFixed(10))
-}
-
 async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const user = await storage.getUser()
     const root = document.getElementById("root") as HTMLElement
-    const featureStorage = {getFeature,setFeature}
-    const physicsFeatures = enumToFeatureArray(PhysicsFeature, true, featureStorage)
-    const roleFeatures = enumToFeatureArray(IntervalRole, false, featureStorage)
+    const physicsFeatures = enumToFeatureArray(PhysicsFeature, true)
+        .filter(feature => notWater(feature.name.physicsFeature))
+    const roleFeatures = enumToFeatureArray(IntervalRole, false)
     const fabricCache: Record<string, TensegrityFabric> = {}
-    physicsFeatures.forEach(applyFeatureToEngine(engine))
+    physicsFeatures.forEach(feature => applyPhysicsFeature(engine, feature))
+    const features = [...roleFeatures, ...physicsFeatures]
     if (TENSEGRITY) {
         const dimensions: IFabricDimensions = {
             instanceMax: 30,
@@ -75,15 +67,13 @@ async function start(): Promise<void> {
             if (!newFabric) {
                 throw new Error()
             }
-            roleFeatures.forEach(feature => acquireRoleFeature(newFabric.instance, feature, featureStorage))
             fabricCache[name] = newFabric
             return newFabric
         }
         ReactDOM.render(
             <TensegrityView
                 engine={engine}
-                physicsFeatures={physicsFeatures}
-                roleFeatures={roleFeatures}
+                features={features}
                 getFabric={getFabric}
             />,
             root,

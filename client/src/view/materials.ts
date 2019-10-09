@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -32,18 +31,18 @@ export const GOTCHI_ARROW = new LineBasicMaterial({color: new Color("magenta")})
 export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow")})
 
 export const SURFACE = new MeshPhongMaterial({
-    color: new Color("silver"),
+    color: new Color("#7a7628"),
     lights: true,
     side: DoubleSide,
     opacity: 0.25,
     transparent: true,
 })
 
-export const TENSEGRITY_LINE = new LineBasicMaterial({
+export const LINE = new LineBasicMaterial({
     vertexColors: VertexColors,
 })
 
-export const TENSEGRITY_FACE = new MeshPhongMaterial({
+export const FACE = new MeshPhongMaterial({
     lights: true,
     color: new Color("white"),
     side: DoubleSide,
@@ -51,27 +50,29 @@ export const TENSEGRITY_FACE = new MeshPhongMaterial({
     opacity: 0.2,
 })
 
-export const TENSEGRITY_JOINT = new MeshPhongMaterial({
+const BAR_COLOR = "#920000"
+const CABLE_COLOR = "#3b6ab8"
+
+export function intervalColor(bar: boolean): string {
+    return bar ? BAR_COLOR : CABLE_COLOR
+}
+
+export const ATTENUATED = new MeshPhongMaterial({
     lights: true,
-    color: new Color("rebeccapurple"),
+    color: new Color("#0f0f0f"),
 })
 
-export const TENSEGRITY_BAR = new MeshPhongMaterial({
+export const BAR = new MeshPhongMaterial({
     lights: true,
-    color: new Color("darkred"),
+    color: new Color(BAR_COLOR),
 })
 
-export const TENSEGRITY_CABLE = new MeshPhongMaterial({
+export const CABLE = new MeshPhongMaterial({
     lights: true,
-    color: new Color("mediumblue"),
+    color: new Color(CABLE_COLOR),
 })
 
-export const TENSEGRITY_JOINT_CANNOT_GROW = new MeshPhongMaterial({
+export const FACE_SPHERE = new MeshPhongMaterial({
     lights: true,
-    color: new Color("turquoise"),
-})
-
-export const TENSEGRITY_JOINT_CAN_GROW = new MeshPhongMaterial({
-    lights: true,
-    color: new Color("forestgreen"),
+    color: new Color("#bb1722"),
 })
