@@ -8,12 +8,12 @@ yarn install
 # Build Pretenst
 yarn run build:fabric-engine
 yarn run build:pretenst
-mv build/ /home/galapagotchi/www/pretenst
+mv -f build/ /home/galapagotchi/www/pretenst
 
 # Build Galapagotchi
 yarn run build:fabric-engine
 yarn run build:galapagotchi
-mv build/ /home/galapagotchi/www/galapagotchi
+mv -f build/ /home/galapagotchi/www/galapagotchi
 
 # Launch Galapagotchi backend server
 cd ..
