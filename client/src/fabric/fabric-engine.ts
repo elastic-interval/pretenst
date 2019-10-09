@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -72,7 +73,7 @@ export interface IFabricEngine {
 
     getLimit(limit: Limit): number
 
-    setSlackLimits(barLimit: number, cableLimit: number): void
+    setDisplacementThreshold(selectBars: boolean, selectCables: boolean, greaterThan: boolean, threshold: number): void
 
     init(joints: number, intervals: number, faces: number, instances: number): number
 
