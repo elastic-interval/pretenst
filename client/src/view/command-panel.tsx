@@ -53,12 +53,14 @@ export function CommandPanel({constructFabric, fabric, fastMode, setFastMode, au
             position: "absolute",
             bottom: "1em",
             right: "1em",
-        }}>
-            <Button onClick={onRebuild}><FaRecycle/></Button>
-            <Button onClick={onJump}><FaParachuteBox/></Button>
-            <Button onClick={onCentralize}><FaCompressArrowsAlt/></Button>
-            <Button onClick={onRotateToggle}>{autoRotate ? <FaAnchor/> : <FaSyncAlt/>}</Button>
-            <Button onClick={onFastMode}>{fastMode ? <FaRunning/> : <FaWalking/>}</Button>
+        }} size="sm">
+            <Button color="success" onClick={onRebuild}><FaRecycle/></Button>
+            <Button color="info" onClick={onJump}><FaParachuteBox/></Button>
+            <Button color="info" onClick={onCentralize}><FaCompressArrowsAlt/></Button>
+            <Button color="info" onClick={onRotateToggle}>{autoRotate ? <FaAnchor/> : <FaSyncAlt/>}</Button>
+            <Button color={fastMode ? "warning" : "secondary"} onClick={onFastMode}>
+                {fastMode ? <FaRunning/> : <FaWalking/>}
+            </Button>
         </ButtonGroup>
     )
 }

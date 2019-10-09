@@ -121,7 +121,7 @@ export function StressSelectionPanel({fabric, selectedStress, setSelection}: {
             <Row>
                 <Col md="2">
                     <ButtonDropdown isOpen={choiceOpen} toggle={() => setChoiceOpen(!choiceOpen)}>
-                        <DropdownToggle>
+                        <DropdownToggle style={{borderRadius: "1em"}}>
                             {selectedStress.stressSelectMode}
                         </DropdownToggle>
                         <DropdownMenu right={false}>
@@ -271,7 +271,7 @@ const NumbersColumns = ({fabric, selectedStress, nuance, barMode, slackMode}: {
                         </InputGroupText>
                     </InputGroupAddon>
                     <Input style={{color: intervalColor(barMode)}} disabled={true}
-                           value={`${barMode ? "bars" : "cables"} ${slackMode ? "<" : ">"} ${displacement.toFixed(3)}`}/>
+                           value={`${barMode ? "Bars" : "Cables"} ${slackMode ? "<" : ">"} ${displacement.toFixed(3)}`}/>
                 </InputGroup>
             </Col>
             <Col md={2}>

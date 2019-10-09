@@ -76,17 +76,18 @@ export function EditPanel({fabric, selection, setSelection}: {
             {selectedFace ? (
                 <ButtonGroup>
                     {!selectedFace.face.canGrow ? undefined : (
-                        <Button onClick={() => grow(selectedFace.face)}><FaSun/> Grow</Button>
+                        <Button color="success" onClick={() => grow(selectedFace.face)}><FaSun/> Grow</Button>
                     )}
                     {selectedFace.adjacentIntervals === AdjacentIntervals.None ? (
                         <Button onClick={() => faceNextAdjacent(selectedFace)}>Click sphere to select
                             bars/cables</Button>
                     ) : (
                         <>
-                            <Button onClick={adjustValue(true)}>L<FaArrowUp/></Button>
-                            <Button onClick={adjustValue(false)}>L<FaArrowDown/></Button>
-                            <Button onClick={() => faceNextAdjacent(selectedFace)}>Click sphere to select
-                                bars/cables</Button>
+                            <Button color="success" onClick={adjustValue(true)}>L<FaArrowUp/></Button>
+                            <Button color="success" onClick={adjustValue(false)}>L<FaArrowDown/></Button>
+                            <Button color="success" onClick={() => faceNextAdjacent(selectedFace)}>
+                                Click sphere to make selections
+                            </Button>
                         </>
                     )}
                     <CancelButton/>
@@ -100,13 +101,16 @@ export function EditPanel({fabric, selection, setSelection}: {
             ) : (
                 <>
                     <ButtonGroup>
-                        <Button onClick={selectLowestFace}><FaHandPointer/> Select a face by clicking it</Button>
+                        <Button size="sm" color="dark" onClick={selectLowestFace}>
+                            <FaHandPointer/> Select a face by clicking it
+                        </Button>
                     </ButtonGroup>
                     &nbsp;&nbsp;
                     <ButtonGroup>
-                        <Button onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}><FaHandPointer/> Select by stress</Button>
+                        <Button size="sm" color="dark" onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}>
+                            <FaHandPointer/> Select by stress
+                        </Button>
                     </ButtonGroup>
-
                 </>
             )}
         </div>

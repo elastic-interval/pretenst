@@ -40,15 +40,16 @@ const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopP
 const ITERATIONS_PER_FRAME = 24
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const BAR_GIRTH = 0.6
-const CABLE_GIRTH = 0.12
+const BAR_GIRTH = 0.7
+const CABLE_GIRTH = 0.2
 
-export function FabricView({fabric, selection, setSelection, autoRotate, fastMode}: {
+export function FabricView({fabric, selection, setSelection, autoRotate, fastMode, showFaces}: {
     fabric: TensegrityFabric,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
     autoRotate: boolean,
     fastMode: boolean,
+    showFaces: boolean,
 }): JSX.Element {
 
     const [age, setAge] = useState<number>(0)
@@ -160,7 +161,6 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
         <group>
             <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
             <scene>
-                <Faces/>
                 {fastMode ? (
                     <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
                 ) : (
@@ -179,6 +179,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                         )}
                     </group>
                 )}
+                {showFaces ? <Faces/> : undefined}
                 <SelectedFace/>
                 <SurfaceComponent/>
             </scene>

@@ -79,7 +79,7 @@ export function TensegrityView({engine, getFabric, features}: {
         return (
             <div style={{position: "absolute", top: "1em", left: "1em"}}>
                 <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle><FaCog/> {fabricCode[storageIndex]}</DropdownToggle>
+                    <DropdownToggle size="sm" color="success"><FaCog/> {fabricCode[storageIndex]}</DropdownToggle>
                     <DropdownMenu right={false}>
                         {fabricCode.map((code, index) => (
                             <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
@@ -104,9 +104,9 @@ export function TensegrityView({engine, getFabric, features}: {
             }
         }
         return (
-            <ButtonGroup style={{position: "absolute", bottom: "1em", left: "1em"}}>
-                <Button onClick={onDownloadCSV}><FaDownload/>CSV</Button>
-                <Button onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
+            <ButtonGroup style={{position: "absolute", bottom: "1em", left: "1em"}}  size="sm" >
+                <Button color="success" onClick={onDownloadCSV}><FaDownload/>CSV</Button>
+                <Button color="success" onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
             </ButtonGroup>
         )
     }
@@ -124,6 +124,7 @@ export function TensegrityView({engine, getFabric, features}: {
                             setSelection={setSelection}
                             autoRotate={autoRotate}
                             fastMode={fastMode}
+                            showFaces={!selection.selectedStress}
                         />
                     </Canvas>
                     <FabricChoice/>
