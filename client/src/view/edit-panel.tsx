@@ -72,7 +72,7 @@ export function EditPanel({fabric, selection, setSelection}: {
     }
 
     return (
-        <div style={middleBottom}>
+        <div style={MIDDLE_BOTTOM}>
             {selectedFace ? (
                 <ButtonGroup>
                     {!selectedFace.face.canGrow ? undefined : (
@@ -117,7 +117,7 @@ export function EditPanel({fabric, selection, setSelection}: {
     )
 }
 
-const middleBottom: CSSProperties = {
+const MIDDLE_BOTTOM: CSSProperties = {
     position: "absolute",
     paddingRight: "1em",
     paddingLeft: "1em",
