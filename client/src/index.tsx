@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import "bootstrap/dist/css/bootstrap.min.css"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 
@@ -17,6 +16,7 @@ import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import "./index.css"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
+import "./vendor/bootstrap-darkly.min.css"
 import { TensegrityView } from "./view/tensegrity-view"
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
