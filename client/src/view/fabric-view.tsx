@@ -11,8 +11,8 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import {
     AdjacentIntervals,
+    bySelectedFace,
     IInterval,
-    intervalsBySelectedFace,
     ISelectedFace,
     ISelection,
     nextAdjacent,
@@ -81,7 +81,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
 
     const selectFace = (selectedFace: ISelectedFace) => {
         if (fabric) {
-            fabric.selectIntervals(intervalsBySelectedFace(selectedFace))
+            fabric.selectIntervals(bySelectedFace(selectedFace))
             setSelection({selectedFace})
         }
     }

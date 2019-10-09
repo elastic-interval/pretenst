@@ -11,8 +11,8 @@ import { Button, ButtonGroup } from "reactstrap"
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
+    bySelectedFace,
     IFace,
-    intervalsBySelectedFace,
     ISelectedFace,
     ISelection,
     nextAdjacent,
@@ -57,7 +57,7 @@ export function EditPanel({fabric, selection, setSelection}: {
 
     const faceNextAdjacent = (face: ISelectedFace) => {
         const nextAdjacentFace = nextAdjacent(face)
-        fabric.selectIntervals(intervalsBySelectedFace(nextAdjacentFace))
+        fabric.selectIntervals(bySelectedFace(nextAdjacentFace))
         setSelection({selectedFace: nextAdjacentFace})
     }
 
@@ -72,7 +72,7 @@ export function EditPanel({fabric, selection, setSelection}: {
     }
 
     return (
-        <div style={middleBottom}>
+        <div style={MIDDLE_BOTTOM}>
             {selectedFace ? (
                 <ButtonGroup>
                     {!selectedFace.face.canGrow ? undefined : (
@@ -117,7 +117,7 @@ export function EditPanel({fabric, selection, setSelection}: {
     )
 }
 
-const middleBottom: CSSProperties = {
+const MIDDLE_BOTTOM: CSSProperties = {
     position: "absolute",
     paddingRight: "1em",
     paddingLeft: "1em",

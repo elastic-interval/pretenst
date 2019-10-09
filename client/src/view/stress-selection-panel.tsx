@@ -11,7 +11,8 @@ import {
     FaAngleLeft,
     FaAngleRight,
     FaArrowDown,
-    FaArrowUp, FaHeart,
+    FaArrowUp,
+    FaHeart,
     FaTimesCircle,
 } from "react-icons/all"
 import {
@@ -25,14 +26,15 @@ import {
     DropdownToggle,
     Input,
     InputGroup,
-    InputGroupAddon, InputGroupText,
+    InputGroupAddon,
+    InputGroupText,
     Progress,
     Row,
 } from "reactstrap"
 
 import { Limit } from "../fabric/fabric-engine"
 import {
-    IInterval,
+    byDisplacementTreshold,
     ISelectedStress,
     ISelection,
     selectModeBars,
@@ -212,31 +214,6 @@ const NumbersColumns = ({fabric, selectedStress, nuance, barMode, slackMode}: {
     const [displacement, setDisplacement] = useState((currentMinDisplacement() + currentMaxDisplacement()) / 2)
     const [pump, setPump] = useState(false)
 
-    function selectionFilter(dispThreshold: number): (interval: IInterval) => boolean {
-        return interval => {
-            const directionalDisp = fabric.instance.getIntervalDisplacement(interval.index)
-            const selectIf = (selectBars: boolean, greaterThan: boolean): boolean => {
-                if (interval.isBar !== selectBars) {
-                    return false
-                }
-                const intervalDisp = interval.isBar ? -directionalDisp : directionalDisp
-                return greaterThan ? intervalDisp > dispThreshold : intervalDisp < dispThreshold
-            }
-            switch (selectedStress.stressSelectMode) {
-                case StressSelectMode.SlackerBars:
-                    return selectIf(true, false)
-                case StressSelectMode.SlackerCables:
-                    return selectIf(false, false)
-                case StressSelectMode.TighterBars:
-                    return selectIf(true, true)
-                case StressSelectMode.TighterCables:
-                    return selectIf(false, true)
-                default:
-                    return false
-            }
-        }
-    }
-
     function refresh(): void {
         const min = currentMinDisplacement()
         const max = currentMaxDisplacement()
@@ -244,7 +221,8 @@ const NumbersColumns = ({fabric, selectedStress, nuance, barMode, slackMode}: {
         setMaxDisplacement(max)
         const newDisplacement = (1 - nuance) * min + nuance * max
         setDisplacement(newDisplacement)
-        fabric.selectIntervals(selectionFilter(newDisplacement))
+        fabric.selectIntervals(byDisplacementTreshold(fabric, newDisplacement, selectedStress.stressSelectMode))
+        fabric.setDisplacementThreshold(newDisplacement, selectedStress.stressSelectMode)
         setTimeout(() => setPump(false), 200)
         setPump(true)
     }
