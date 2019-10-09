@@ -1,7 +1,7 @@
 version: "3.7"
 services:
   app:
-    build: server
+    build: galapagotchi-server
     restart: on-failure
     environment:
       - POSTGRES_URI=db
@@ -15,7 +15,7 @@ services:
     command: "yarn start:prod"
 
   migrate-db:
-    build: server
+    build: galapagotchi-server
     environment:
       - POSTGRES_URI=db
       - DB_PASSWORD

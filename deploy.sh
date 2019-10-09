@@ -2,13 +2,18 @@
 
 set -x
 
-cd fabric-engine
-yarn
-yarn build:prod
+cd client
+yarn install
 
-cd ../client
-yarn
-yarn build:prod
+# Build Pretenst
+yarn run build:fabric-engine
+yarn run build:pretenst
+mv build/ /home/galapagotchi/www/pretenst
 
-# uncomment once the site is up again
-# docker-compose up --build -d
+# Build Galapagotchi
+yarn run build:fabric-engine
+yarn run build:galapagotchi
+mv build/ /home/galapagotchi/www/galapagotchi
+
+# Launch Galapagotchi backend server
+docker-compose up --build -d
