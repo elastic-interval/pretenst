@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -112,7 +113,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
                 <div style={FACTOR_WRAPPER}>
                     <Factor feature={selectedFeature} mutable={true}/>
                 </div>
-                <DropdownToggle color="success" className="float-right"><FaList/></DropdownToggle>
+                <DropdownToggle size="sm" color="success" className="float-right"><FaList/></DropdownToggle>
                 <DropdownMenu right={true} style={{backgroundColor: "#6c757d"}}>
                     {featureSet.map(f => (
                         <DropdownItem key={f.label} onClick={() => setSelectedFeature(f)}>
