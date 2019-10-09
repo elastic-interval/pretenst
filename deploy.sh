@@ -16,4 +16,5 @@ yarn run build:galapagotchi
 mv build/ /home/galapagotchi/www/galapagotchi
 
 # Launch Galapagotchi backend server
+cd ..
 docker-compose up --build -d
