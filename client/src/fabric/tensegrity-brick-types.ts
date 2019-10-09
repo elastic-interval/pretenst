@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -39,11 +40,11 @@ export type JointTag = number
 
 export interface IInterval {
     index: number
+    isBar: boolean
     removed: boolean
     intervalRole: IntervalRole
     alpha: IJoint
     omega: IJoint
-    selected?: boolean
 }
 
 export interface IFace {
@@ -199,18 +200,18 @@ export interface ISelectedFace {
 }
 
 export enum StressSelectMode {
-    SlackestCables = "Slackest Cables",
-    TightestCables = "Tightest Cables",
-    SlackestBars = "Slackest Bars",
-    TightestBars = "Tightest Bars",
+    SlackerCables = "Slacker Cables",
+    TighterCables = "Tighter Cables",
+    SlackerBars = "Slacker Bars",
+    TighterBars = "Tighter Bars",
 }
 
 export function selectModeBars(mode: StressSelectMode): boolean {
-    return mode === StressSelectMode.TightestBars || mode === StressSelectMode.SlackestBars
+    return mode === StressSelectMode.TighterBars || mode === StressSelectMode.SlackerBars
 }
 
 export function selectModeSlack(mode: StressSelectMode): boolean {
-    return mode === StressSelectMode.SlackestBars || mode === StressSelectMode.SlackestCables
+    return mode === StressSelectMode.SlackerBars || mode === StressSelectMode.SlackerCables
 }
 
 export interface ISelectedStress {
@@ -221,4 +222,50 @@ export interface ISelectedStress {
 export interface ISelection {
     selectedFace?: ISelectedFace
     selectedStress?: ISelectedStress
+}
+
+export function intervalsBySelectedFace(selectedFace: ISelectedFace): (interval: IInterval) => boolean {
+    return interval => {
+        const matchesInterval = (faceInterval: IInterval) => (
+            !faceInterval.removed && faceInterval.index === interval.index
+        )
+        const touchesInterval = (joint: IJoint) => (
+            interval.alpha.index === joint.index || interval.omega.index === joint.index
+        )
+        switch (selectedFace.adjacentIntervals) {
+            case AdjacentIntervals.Bars:
+                return selectedFace.face.bars.some(matchesInterval)
+            case AdjacentIntervals.Cables:
+                return selectedFace.face.cables.some(matchesInterval)
+            case AdjacentIntervals.Face:
+                return selectedFace.face.joints.some(touchesInterval)
+            case AdjacentIntervals.Brick:
+                const brick: IBrick = selectedFace.face.brick
+                return [...brick.bars, ...brick.cables].some(matchesInterval)
+            default:
+                return false
+        }
+    }
+}
+
+export interface IIntervalSplit {
+    selected: IInterval[]
+    unselected: IInterval[]
+}
+
+export function emptySplit(): IIntervalSplit {
+    return {selected: [], unselected: []}
+}
+
+type IntervalSplitter = (split: IIntervalSplit, interval: IInterval) => IIntervalSplit
+
+export function intervalSplitter(selectionFilter: (interval: IInterval) => boolean): IntervalSplitter {
+    return (split, interval) => {
+        if (selectionFilter(interval)) {
+            split.selected.push(interval)
+        } else {
+            split.unselected.push(interval)
+        }
+        return split
+    }
 }

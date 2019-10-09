@@ -7,7 +7,6 @@ import * as FileSaver from "file-saver"
 import { Mesh, Object3D } from "three"
 import { OBJExporter } from "three/examples/jsm/exporters/OBJExporter"
 
-import { IntervalRole } from "../fabric/fabric-engine"
 import { IInterval } from "../fabric/tensegrity-brick-types"
 import { IFabricOutput, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { BAR, CABLE, FACE } from "../view/materials"
@@ -58,9 +57,8 @@ function extractOBJBlob(fabric: TensegrityFabric, faces: boolean): Blob {
         object3d.add(new Mesh(fabric.facesGeometry, FACE))
     } else {
         object3d.add(...fabric.intervals.map((interval: IInterval) => {
-            const bar = interval.intervalRole === IntervalRole.Bar
-            const material = bar ? BAR : CABLE
-            const {scale, rotation} = fabric.orientInterval(interval, bar ? 1 : 0.1)
+            const material = interval.isBar ? BAR : CABLE
+            const {scale, rotation} = fabric.orientInterval(interval, interval.isBar ? 1 : 0.1)
             const mesh = new Mesh(SPHERE, material)
             mesh.position.copy(fabric.instance.getIntervalMidpoint(interval.index))
             mesh.scale.copy(scale)

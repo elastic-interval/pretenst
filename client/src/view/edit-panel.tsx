@@ -9,7 +9,14 @@ import { FaArrowDown, FaArrowUp, FaHandPointer, FaSun, FaTimesCircle } from "rea
 import { Button, ButtonGroup } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
-import { AdjacentIntervals, IFace, ISelectedFace, ISelection, nextAdjacent } from "../fabric/tensegrity-brick-types"
+import {
+    AdjacentIntervals,
+    IFace,
+    intervalsBySelectedFace,
+    ISelectedFace,
+    ISelection,
+    nextAdjacent,
+} from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { DEFAULT_SELECTED_STRESS, StressSelectionPanel } from "./stress-selection-panel"
@@ -50,13 +57,13 @@ export function EditPanel({fabric, selection, setSelection}: {
 
     const faceNextAdjacent = (face: ISelectedFace) => {
         const nextAdjacentFace = nextAdjacent(face)
-        fabric.selectByFace(nextAdjacentFace)
+        fabric.selectIntervals(intervalsBySelectedFace(nextAdjacentFace))
         setSelection({selectedFace: nextAdjacentFace})
     }
 
     function CancelButton(): JSX.Element {
         const onCancel = () => {
-            fabric.selectNone()
+            fabric.selectIntervals()
             setSelection({})
         }
         return (

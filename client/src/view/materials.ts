@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -32,7 +31,7 @@ export const GOTCHI_ARROW = new LineBasicMaterial({color: new Color("magenta")})
 export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow")})
 
 export const SURFACE = new MeshPhongMaterial({
-    color: new Color("silver"),
+    color: new Color("#49451a"),
     lights: true,
     side: DoubleSide,
     opacity: 0.25,
@@ -51,22 +50,29 @@ export const FACE = new MeshPhongMaterial({
     opacity: 0.2,
 })
 
-export const SELECTED_INTERVAL = new MeshPhongMaterial({
+const BAR_COLOR = "#610000"
+const CABLE_COLOR = "#3f5c80"
+
+export function intervalColor(bar: boolean): string {
+    return bar ? BAR_COLOR : CABLE_COLOR
+}
+
+export const ATTENUATED = new MeshPhongMaterial({
     lights: true,
-    color: new Color("green"),
+    color: new Color("#282828"),
 })
 
 export const BAR = new MeshPhongMaterial({
     lights: true,
-    color: new Color("darkred"),
+    color: new Color(BAR_COLOR),
 })
 
 export const CABLE = new MeshPhongMaterial({
     lights: true,
-    color: new Color("mediumblue"),
+    color: new Color(CABLE_COLOR),
 })
 
 export const FACE_SPHERE = new MeshPhongMaterial({
     lights: true,
-    color: new Color("cornflowerblue"),
+    color: new Color("#bb1722"),
 })

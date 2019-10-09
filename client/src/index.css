@@ -66,3 +66,11 @@ a, a:hover {
 .btn-primary, .btn-danger {
     margin: 3px;
 }
+
+.bar-color {
+    color: #610000;
+}
+
+.cable-color {
+    color: #3f5c80;
+}

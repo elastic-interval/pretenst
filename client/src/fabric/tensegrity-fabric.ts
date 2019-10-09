@@ -16,13 +16,13 @@ import {
     parseConstructionCode,
 } from "./tensegrity-brick"
 import {
-    AdjacentIntervals,
+    emptySplit,
     IBrick,
     IFace,
     IGrowth,
     IInterval,
     IJoint,
-    ISelectedFace,
+    intervalSplitter,
     JointTag,
     Triangle,
     TRIANGLE_DEFINITIONS,
@@ -50,6 +50,7 @@ export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 export class TensegrityFabric {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
+    public selectedIntervals: IInterval[] = []
     public faces: IFace[] = []
     public growth?: IGrowth
 
@@ -74,39 +75,22 @@ export class TensegrityFabric {
         this.growth = growth
     }
 
-    public get selectedIntervals(): IInterval[] {
-        return this.intervals.filter(interval => interval.selected)
-    }
-
-    public selectNone(): void {
-        this.selectedIntervals.forEach(interval => interval.selected = false)
-    }
-
-    public selectByFace(selectedFace: ISelectedFace): void {
-        this.selectNone()
-        switch (selectedFace.adjacentIntervals) {
-            case AdjacentIntervals.None:
-                break
-            case AdjacentIntervals.Bars:
-                selectedFace.face.bars.forEach(bar => bar.selected = true)
-                break
-            case AdjacentIntervals.Cables:
-                selectedFace.face.cables.forEach(bar => bar.selected = true)
-                break
-            case AdjacentIntervals.Face:
-                const touchesFace = (interval: IInterval) => selectedFace.face.joints.some(joint => (
-                    interval.alpha.index === joint.index || interval.omega.index === joint.index
-                ))
-                this.intervals.forEach(interval => interval.selected = touchesFace(interval))
-                break
-            case AdjacentIntervals.Brick:
-                const brick: IBrick = selectedFace.face.brick
-                const brickIntervals: IInterval[] = [...brick.bars, ...brick.cables]
-                brickIntervals.forEach(bar => bar.selected = true)
-                break
+    public selectIntervals(selectionFilter?: (interval: IInterval) => boolean): number {
+        const allIntervals = [...this.intervals, ...this.selectedIntervals]
+        if (!selectionFilter) {
+            if (this.selectedIntervals.length <= 0) {
+                return 0
+            }
+            this.intervals = allIntervals
+            this.selectedIntervals = []
+            return 0
         }
-
+        const {unselected, selected} = allIntervals.reduce(intervalSplitter(selectionFilter), emptySplit())
+        this.intervals = unselected
+        this.selectedIntervals = selected
+        return selected.length
     }
+
 
     public get growthFaces(): IFace[] {
         return this.faces.filter(face => face.canGrow)
@@ -163,6 +147,7 @@ export class TensegrityFabric {
             intervalRole,
             alpha, omega,
             removed: false,
+            isBar: intervalRole === IntervalRole.Bar,
         }
         this.intervals.push(interval)
         return interval
@@ -215,18 +200,6 @@ export class TensegrityFabric {
             this.linesGeometryStored.dispose()
             this.linesGeometryStored = undefined
         }
-    }
-
-    public get jointCount(): number {
-        return this.engine.getJointCount()
-    }
-
-    public get intervalCount(): number {
-        return this.engine.getIntervalCount()
-    }
-
-    public get faceCount(): number {
-        return this.engine.getFaceCount()
     }
 
     public get submergedJoints(): IJoint[] {

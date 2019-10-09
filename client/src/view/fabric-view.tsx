@@ -9,17 +9,17 @@ import { extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-t
 import { Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { IntervalRole } from "../fabric/fabric-engine"
 import {
     AdjacentIntervals,
     IInterval,
+    intervalsBySelectedFace,
     ISelectedFace,
     ISelection,
     nextAdjacent,
 } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { BAR, CABLE, FACE, FACE_SPHERE, LINE, SELECTED_INTERVAL } from "./materials"
+import { ATTENUATED, BAR, CABLE, FACE, FACE_SPHERE, LINE } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
 extend({OrbitControls})
@@ -40,10 +40,8 @@ const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopP
 const ITERATIONS_PER_FRAME = 24
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-
-function girth(intervalRole: IntervalRole): number {
-    return intervalRole === IntervalRole.Bar ? 0.8 : 0.16
-}
+const BAR_GIRTH = 0.6
+const CABLE_GIRTH = 0.12
 
 export function FabricView({fabric, selection, setSelection, autoRotate, fastMode}: {
     fabric: TensegrityFabric,
@@ -82,7 +80,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
 
     const selectFace = (selectedFace: ISelectedFace) => {
         if (fabric) {
-            fabric.selectByFace(selectedFace)
+            fabric.selectIntervals(intervalsBySelectedFace(selectedFace))
             setSelection({selectedFace})
         }
     }
@@ -120,7 +118,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                 }
                 return fabric.faces[faceIndex]
             })
-            fabric.selectNone()
+            fabric.selectIntervals()
             const face = faces.reverse().pop()
             if (!face) {
                 return
@@ -137,31 +135,27 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
         )
     }
 
-    function IntervalSelection(): JSX.Element {
+    function IntervalMesh({key, interval, attenuated}: {
+        key: string,
+        interval: IInterval,
+        attenuated: boolean,
+    }): JSX.Element {
+        const {scale, rotation} = fabric.orientInterval(interval, interval.isBar ? BAR_GIRTH : CABLE_GIRTH)
+        const material = attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
         return (
-            <group>
-                {fabric.selectedIntervals
-                    .filter(interval => !interval.removed)
-                    .map((interval: IInterval) => {
-                        const {scale, rotation} = fabric.orientInterval(interval, girth(interval.intervalRole))
-                        return (
-                            <mesh
-                                key={`I${interval.index}`}
-                                geometry={SPHERE}
-                                position={fabric.instance.getIntervalMidpoint(interval.index)}
-                                rotation={new Euler().setFromQuaternion(rotation)}
-                                scale={scale}
-                                material={CABLE}
-                                onPointerDown={() => setSelection({})}
-                                onPointerUp={stopPropagation}
-                            />
-                        )
-                    })
-                }
-            </group>
+            <mesh
+                key={key}
+                geometry={SPHERE}
+                position={fabric.instance.getIntervalMidpoint(interval.index)}
+                rotation={new Euler().setFromQuaternion(rotation)}
+                scale={scale}
+                material={material}
+                matrixWorldNeedsUpdate={true}
+            />
         )
     }
 
+    const anySelected = fabric.selectedIntervals.length > 0
     return (
         <group>
             <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
@@ -171,25 +165,20 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                     <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
                 ) : (
                     <group>
-                        {fabric.intervals.map((interval: IInterval) => {
-                            const bar = interval.intervalRole === IntervalRole.Bar
-                            const widening = interval.selected ? (bar ? 1.2 : 3) : 1
-                            const material = interval.selected ? SELECTED_INTERVAL : bar ? BAR : CABLE
-                            const {scale, rotation} = fabric.orientInterval(interval, girth(interval.intervalRole) * widening)
-                            return (
-                                <mesh
-                                    key={`I${interval.index}`}
-                                    geometry={SPHERE}
-                                    position={fabric.instance.getIntervalMidpoint(interval.index)}
-                                    rotation={new Euler().setFromQuaternion(rotation)}
-                                    scale={scale}
-                                    material={material}
-                                />
-                            )
-                        })}
+                        {anySelected ? ([
+                            ...fabric.intervals.map(interval => (
+                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
+                            )),
+                            ...fabric.selectedIntervals.map(interval => (
+                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                            )),
+                        ]) : (
+                            fabric.intervals.map(interval => (
+                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                            ))
+                        )}
                     </group>
                 )}
-                <IntervalSelection/>
                 <SelectedFace/>
                 <SurfaceComponent/>
             </scene>
