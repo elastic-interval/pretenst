@@ -4,32 +4,46 @@
  */
 
 import { IntervalRole, PhysicsFeature } from "../fabric/fabric-engine"
-import { ICodeTree, IPercent, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { codeTreeToString, ICodeTree, IPercent, percentToFactor } from "../fabric/tensegrity-brick-types"
 
 const PRETENST = 1.05
 const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
 
-export async function loadFabricCode(): Promise<ICodeTree[]> {
-
-    async function getBoostrap(): Promise<ICodeTree[]> {
-        const response = await fetch("/bootstrap.json")
-        const body = await response.json()
-        if (!body) {
-            return [{_: 0}, {_: 9}]
-        }
-        return body.pretenst
+async function getBootstrapCodeTrees(): Promise<ICodeTree[]> {
+    const response = await fetch("/bootstrap.json")
+    const body = await response.json()
+    if (!body) {
+        return [{_: 0}, {_: 9}]
     }
-
-    const item = localStorage.getItem(FABRIC_CODE_KEY)
-    if (!item) {
-        return await getBoostrap()
-    }
-    return JSON.parse(item)
+    return body.pretenst
 }
 
-export function storeFabricCode(fabricCode: object[]): void {
-    localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(fabricCode))
+function getLocalCodeTrees(): ICodeTree[] {
+    const localFabricCode = localStorage.getItem(FABRIC_CODE_KEY)
+    return localFabricCode ? JSON.parse(localFabricCode) : []
+}
+
+export async function loadCodeTrees(): Promise<ICodeTree[]> {
+    const bootstrapTrees = await getBootstrapCodeTrees()
+    const localTrees = getLocalCodeTrees()
+    return [...bootstrapTrees, ...localTrees]
+}
+
+export async function storeCodeTree(codeTree: ICodeTree): Promise<ICodeTree[]> {
+    const code = codeTreeToString(codeTree)
+    const fabricCode = await loadCodeTrees()
+    const exists = fabricCode.map(codeTreeToString).some(localCode => localCode === code)
+    if (exists) {
+        return fabricCode
+    }
+    const localTrees = getLocalCodeTrees()
+    const index = fabricCode.length
+    localTrees.push(codeTree)
+    localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(localTrees))
+    fabricCode.push(codeTree)
+    storeStorageIndex(index)
+    return fabricCode
 }
 
 export function loadStorageIndex(): number {

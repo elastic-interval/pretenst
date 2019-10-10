@@ -15,7 +15,7 @@ import { IFeature } from "../fabric/features"
 import { codeTreeToString, ICodeTree, ISelection, stringToCodeTree } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
-import { loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
+import { loadStorageIndex, storeCodeTree, storeStorageIndex } from "../storage/local-storage"
 
 import { CommandPanel } from "./command-panel"
 import { EditPanel } from "./edit-panel"
@@ -35,9 +35,9 @@ declare global {
     }
 }
 
-export function TensegrityView({engine, codeTrees, getFabric, features}: {
+export function TensegrityView({engine, initialCodeTrees, getFabric, features}: {
     engine: IFabricEngine,
-    codeTrees: ICodeTree[],
+    initialCodeTrees: ICodeTree[],
     getFabric: (name: string, codeTree: ICodeTree) => TensegrityFabric,
     features: IFeature[],
 }): JSX.Element {
@@ -45,6 +45,7 @@ export function TensegrityView({engine, codeTrees, getFabric, features}: {
     const [autoRotate, setAutoRotate] = useState<boolean>(false)
     const [fastMode, setFastMode] = useState<boolean>(true)
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
+    const [codeTrees, setCodeTrees] = useState<ICodeTree[]>(initialCodeTrees)
     const [code, setCode] = useState<string|undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selection, setSelection] = useState<ISelection>({})
@@ -52,12 +53,17 @@ export function TensegrityView({engine, codeTrees, getFabric, features}: {
     useEffect(() => {
         if (!fabric) {
             const getCodeFromLocation = () => {
+                if (!location.hash) {
+                    return undefined
+                }
                 const locationCode = location.hash.substring(1)
-                const treesCode = codeTrees.map(codeTreeToString)
-                const exists = treesCode.some(treeCode => treeCode === locationCode)
+                const exists = codeTrees.map(codeTreeToString).some(treeCode => treeCode === locationCode)
                 return exists ? undefined : stringToCodeTree(locationCode)
             }
             const codeFromLocation = getCodeFromLocation()
+            if (codeFromLocation) {
+                storeCodeTree(codeFromLocation).then(newTrees => setCodeTrees(newTrees))
+            }
             const constructionCode = codeFromLocation ? codeFromLocation : codeTrees[storageIndex]
             setCode(codeTreeToString(constructionCode))
             const fetched = getFabric(codeTrees.length.toString(), constructionCode)
@@ -82,7 +88,9 @@ export function TensegrityView({engine, codeTrees, getFabric, features}: {
         const select = (codeTree: ICodeTree, index: number) => {
             setStorageIndex(index)
             storeStorageIndex(index)
-            setCode(codeTreeToString(codeTree))
+            const codeString = codeTreeToString(codeTree)
+            location.hash = codeString
+            setCode(codeString)
             constructFabric(codeTree)
         }
         return (
