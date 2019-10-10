@@ -238,13 +238,17 @@ export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
 
     before.forEach(beforeCode => {
         const {brick, codeTree} = beforeCode
-        const decremented = Math.abs(codeTree._) - 1
+        if (codeTree._ < 0) {
+            throw new Error("Negative in code tree")
+        }
         if (codeTree._ > 0) {
-            after.push(grow(beforeCode.brick, {...codeTree, _: decremented}, Triangle.PPP))
-        } else if (codeTree._ < 0) {
-            if (decremented > 0) {
-                after.push(grow(beforeCode.brick, {_: decremented}, Triangle.PPP))
-            }
+            const decremented = codeTree._ - 1
+            const nextCodeTree = {...codeTree, _: decremented}
+            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP))
+        } else if (codeTree._tree) {
+            const decremented = codeTree._tree._ - 1
+            const nextCodeTree = {...codeTree._tree, _: decremented}
+            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP))
             maybeGrow(brick, Triangle.PNN, codeTree.a)
             maybeGrow(brick, Triangle.NPN, codeTree.b)
             maybeGrow(brick, Triangle.NNP, codeTree.c)
