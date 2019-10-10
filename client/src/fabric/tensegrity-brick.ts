@@ -229,26 +229,30 @@ export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
         return {codeTree, brick}
     }
 
-    before.forEach(beforeCode => {
-        const {brick, codeTree} = beforeCode
-        if (codeTree._ > 0) {
-            after.push(grow(beforeCode.brick, {...codeTree, _: codeTree._ - 1}, Triangle.PPP))
+    function maybeGrow(previousBrick: IBrick, triangle: Triangle, tree?: ICodeTree): void {
+        if (!tree) {
             return
         }
+        after.push(grow(previousBrick, {...tree, _: tree._ - 1}, triangle))
+    }
 
-        function maybeGrow(previousBrick: IBrick, triangle: Triangle, tree?: ICodeTree): void {
-            if (!tree) {
-                return
+    before.forEach(beforeCode => {
+        const {brick, codeTree} = beforeCode
+        const decremented = Math.abs(codeTree._) - 1
+        if (codeTree._ > 0) {
+            after.push(grow(beforeCode.brick, {...codeTree, _: decremented}, Triangle.PPP))
+        } else if (codeTree._ < 0) {
+            if (decremented > 0) {
+                after.push(grow(beforeCode.brick, {_: decremented}, Triangle.PPP))
             }
-            after.push(grow(previousBrick, {...tree, _: tree._ - 1}, triangle))
+            maybeGrow(brick, Triangle.PNN, codeTree.a)
+            maybeGrow(brick, Triangle.NPN, codeTree.b)
+            maybeGrow(brick, Triangle.NNP, codeTree.c)
+        } else {
+            maybeGrow(brick, Triangle.NPP, codeTree.a)
+            maybeGrow(brick, Triangle.PNP, codeTree.b)
+            maybeGrow(brick, Triangle.PPN, codeTree.c)
         }
-
-        maybeGrow(brick, Triangle.NPP, codeTree.a)
-        maybeGrow(brick, Triangle.PNP, codeTree.b)
-        maybeGrow(brick, Triangle.PPN, codeTree.c)
-        maybeGrow(brick, Triangle.PNN, codeTree.d)
-        maybeGrow(brick, Triangle.NPN, codeTree.e)
-        maybeGrow(brick, Triangle.NNP, codeTree.f)
     })
     return after
 }

@@ -302,9 +302,6 @@ export interface ICodeTree {
     a?: ICodeTree,
     b?: ICodeTree,
     c?: ICodeTree,
-    d?: ICodeTree,
-    e?: ICodeTree,
-    f?: ICodeTree,
 }
 
 export function codeTreeToString(codeTree: ICodeTree): string {
