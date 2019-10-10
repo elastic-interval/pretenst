@@ -138,8 +138,26 @@ export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
     },
 ]
 
+export interface IPercent {
+    _: number
+}
+
+export function percentOrHundred(percent?: IPercent): IPercent {
+    return percent ? percent : {_: 100.0}
+}
+
+export function percentToFactor({_: percent}: IPercent): number {
+    return percent / 100.0
+}
+
+export function factorToPercent(factor: number): IPercent {
+    const _ = factor * 100.0
+    return {_}
+}
+
 export interface IBrick {
     base: Triangle
+    scale: IPercent
     fabric: TensegrityFabric
     joints: IJoint[]
     bars: IInterval[]
@@ -299,6 +317,7 @@ export function intervalSplitter(selectionFilter: (interval: IInterval) => boole
 
 export interface ICodeTree {
     _: number,
+    S?: IPercent,
     _X?: ICodeTree,
     A?: ICodeTree,
     B?: ICodeTree,

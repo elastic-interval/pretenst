@@ -19,8 +19,8 @@ import {
     IInterval,
     IIntervalSplit,
     IJoint,
-    intervalSplitter,
-    JointTag,
+    intervalSplitter, IPercent,
+    JointTag, percentOrHundred,
     setFabricDisplacementThreshold,
     StressSelectMode,
     Triangle,
@@ -99,8 +99,8 @@ export class TensegrityFabric {
         return this.faces.filter(face => face.canGrow)
     }
 
-    public createBrick(): IBrick {
-        const brick = createBrickOnOrigin(this)
+    public createBrick(scale? : IPercent): IBrick {
+        const brick = createBrickOnOrigin(this, percentOrHundred(scale))
         this.instance.clear()
         this.disposeOfGeometry()
         return brick

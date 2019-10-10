@@ -12,6 +12,7 @@ import { JOINT_RADIUS } from "./fabric-instance"
 import {
     BAR_ARRAY,
     BarEnd,
+    factorToPercent,
     IActiveCode,
     IBarDefinition,
     IBrick,
@@ -20,6 +21,9 @@ import {
     IFace,
     IInterval,
     IJoint,
+    IPercent,
+    percentOrHundred,
+    percentToFactor,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
@@ -36,7 +40,7 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 //     return points
 // }
 
-function createBrickPointsOnOrigin(base: Triangle): Vector3 [] {
+function createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] {
     const barsToPoints = (vectors: Vector3[], bar: IBarDefinition): Vector3[] => {
         vectors.push(new Vector3().add(bar.alpha))
         vectors.push(new Vector3().add(bar.omega))
@@ -50,11 +54,15 @@ function createBrickPointsOnOrigin(base: Triangle): Vector3 [] {
     const y = new Vector3().sub(midpoint).normalize()
     const z = new Vector3().crossVectors(y, x).normalize()
     const basis = new Matrix4().makeBasis(x, y, z)
-    const fromBasis = new Matrix4().getInverse(basis).setPosition(new Vector3(0, midpoint.length() + JOINT_RADIUS, 0))
+    const scaleFactor = percentToFactor(scale)
+    const fromBasis = new Matrix4()
+        .getInverse(basis)
+        .setPosition(new Vector3(0, midpoint.length() + JOINT_RADIUS, 0))
+        .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
     return points.map(p => p.applyMatrix4(fromBasis))
 }
 
-function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: Triangle): IBrick {
+function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle, scale: IPercent): IBrick {
     const jointIndexes = points.map((p, index) => fabric.createJointIndex(index, p))
     const bars = BAR_ARRAY.map(({}: IBarDefinition, index: number) => {
         const role = IntervalRole.Bar
@@ -62,19 +70,19 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: 
         const omegaIndex = jointIndexes[index * 2 + 1]
         const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
         const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
-        return fabric.createInterval(alpha, omega, role, roleLength(role))
+        return fabric.createInterval(alpha, omega, role, roleLength(role, scale))
     })
     const joints = bars.reduce((arr: IJoint[], bar) => {
         arr.push(bar.alpha, bar.omega)
         return arr
     }, [])
     fabric.joints.push(...joints)
-    const brick: IBrick = {base: baseTriangle, fabric, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
+    const brick: IBrick = {base, scale, fabric, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
     TRIANGLE_DEFINITIONS.forEach(triangle => {
-        const triangleJoints = triangle.barEnds.map(barEnd => joints[barEnd])
+        const tJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
             const role = IntervalRole.Triangle
-            const interval = fabric.createInterval(triangleJoints[walk], triangleJoints[(walk + 1) % 3], role, roleLength(role))
+            const interval = fabric.createInterval(tJoints[walk], tJoints[(walk + 1) % 3], role, roleLength(role, scale))
             brick.cables.push(interval)
             brick.rings[triangle.ringMember[walk]].push(interval)
         }
@@ -87,12 +95,12 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], baseTriangle: 
     return brick
 }
 
-export function createBrickOnOrigin(fabric: TensegrityFabric): IBrick {
-    const points = createBrickPointsOnOrigin(Triangle.PPP)
-    return createBrick(fabric, points, Triangle.NNN)
+export function createBrickOnOrigin(fabric: TensegrityFabric, scale: IPercent): IBrick {
+    const points = createBrickPointsOnOrigin(Triangle.PPP, scale)
+    return createBrick(fabric, points, Triangle.NNN, scale)
 }
 
-export function createBrickOnFace(face: IFace): IBrick {
+function createBrickOnFace(face: IFace, scale: IPercent): IBrick {
     const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
     const brick = face.brick
     const triangle = face.triangle
@@ -106,10 +114,10 @@ export function createBrickOnFace(face: IFace): IBrick {
     const y = new Vector3().crossVectors(z, x).normalize()
     const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
     const base = negativeFace ? Triangle.NNN : Triangle.PPP
-    const points = createBrickPointsOnOrigin(base)
+    const points = createBrickPointsOnOrigin(base, scale)
     const movedToFace = points.map(p => p.applyMatrix4(xform))
     const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
-    return createBrick(brick.fabric, movedToFace, baseTriangle)
+    return createBrick(brick.fabric, movedToFace, baseTriangle, scale)
 }
 
 interface IJointPair {
@@ -159,7 +167,7 @@ function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoi
     return ring
 }
 
-export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
+export function connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): IConnector {
     const fabric = faceA.brick.fabric
     const ring = facesToRing(fabric, faceA, faceB)
     const cables: IInterval[] = []
@@ -167,7 +175,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         const role = IntervalRole.Ring
         const joint = ring[index]
         const nextJoint = ring[(index + 1) % ring.length]
-        const ringCable = fabric.createInterval(joint, nextJoint, role, roleLength(role))
+        const ringCable = fabric.createInterval(joint, nextJoint, role, roleLength(role, scale))
         cables.push(ringCable)
     }
     const createCrossCable = (index: number) => {
@@ -181,7 +189,7 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-        const crossCable = fabric.createInterval(joint, partnerJoint, role, roleLength(role))
+        const crossCable = fabric.createInterval(joint, partnerJoint, role, roleLength(role, scale))
         cables.push(crossCable)
     }
     for (let walk = 0; walk < ring.length; walk++) {
@@ -199,7 +207,8 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
         const engine = fabric.instance.engine
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
             engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
-            engine.changeRestLength(interval.index, roleLength(interval.intervalRole))
+            const length = roleLength(interval.intervalRole, scale)
+            engine.changeRestLength(interval.index, length)
         })
         return face
     }
@@ -212,10 +221,13 @@ export function connectBricks(faceA: IFace, faceB: IFace): IConnector {
     }
 }
 
-export function createConnectedBrick(brick: IBrick, triangle: Triangle): IBrick {
+export function createConnectedBrick(brick: IBrick, triangle: Triangle, scale: IPercent): IBrick {
     const face = brick.faces[triangle]
-    const next = createBrickOnFace(face)
-    const connector = connectBricks(face, next.faces[next.base])
+    const scaleFactor = percentToFactor(scale)
+    const existingScale = percentToFactor(brick.scale)
+    const brickScale = factorToPercent(scaleFactor * existingScale)
+    const next = createBrickOnFace(face, brickScale)
+    const connector = connectBricks(face, next.faces[next.base], brickScale)
     connector.facesToRemove.forEach(faceToRemove => brick.fabric.removeFace(faceToRemove, true))
     return next
 }
@@ -223,17 +235,18 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle): IBrick 
 export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
     const after: IActiveCode[] = []
 
-    function grow(previousBrick: IBrick, codeTree: ICodeTree, triangle: Triangle): IActiveCode {
+    function grow(previousBrick: IBrick, codeTree: ICodeTree, triangle: Triangle, scale: IPercent): IActiveCode {
         const connectTriangle = previousBrick.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
-        const brick = createConnectedBrick(previousBrick, connectTriangle)
+        const brick = createConnectedBrick(previousBrick, connectTriangle, scale)
         return {codeTree, brick}
     }
 
-    function maybeGrow(previousBrick: IBrick, triangle: Triangle, tree?: ICodeTree): void {
-        if (!tree) {
+    function maybeGrow(previousBrick: IBrick, triangle: Triangle, codeTree?: ICodeTree): void {
+        if (!codeTree) {
             return
         }
-        after.push(grow(previousBrick, {...tree, _: tree._ - 1}, triangle))
+        const scale = percentOrHundred(codeTree.S)
+        after.push(grow(previousBrick, {...codeTree, _: codeTree._ - 1}, triangle, scale))
     }
 
     before.forEach(beforeCode => {
@@ -242,14 +255,15 @@ export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
             throw new Error("Negative in code tree")
         }
         const oppositeCodeTree = codeTree._X
+        const scale = percentOrHundred(codeTree.S)
         if (codeTree._ > 0) {
             const decremented = codeTree._ - 1
             const nextCodeTree = {...codeTree, _: decremented}
-            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP))
+            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP, scale))
         } else if (oppositeCodeTree) {
             const decremented = oppositeCodeTree._ - 1
             const nextCodeTree = {...oppositeCodeTree, _: decremented}
-            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP))
+            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP, scale))
             maybeGrow(brick, Triangle.PNN, codeTree.A)
             maybeGrow(brick, Triangle.NPN, codeTree.B)
             maybeGrow(brick, Triangle.NNP, codeTree.C)
@@ -263,6 +277,7 @@ export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {
+    const scale = percentOrHundred() // TODO: figure this out
     const instance = fabric.instance
     const engine = instance.engine
     const crossCables = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Cross)
@@ -271,9 +286,9 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
         fabric.removeInterval(removeA)
         fabric.removeInterval(removeB)
         engine.setIntervalRole(adjustA.index, adjustA.intervalRole = role)
-        engine.changeRestLength(adjustA.index, roleLength(role))
+        engine.changeRestLength(adjustA.index, roleLength(role, scale))
         engine.setIntervalRole(adjustB.index, adjustB.intervalRole = role)
-        engine.changeRestLength(adjustB.index, roleLength(role))
+        engine.changeRestLength(adjustB.index, roleLength(role, scale))
     }
     crossCables.forEach(ab => {
         const a = ab.alpha
@@ -296,7 +311,7 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
             return
         }
         const role = IntervalRole.BowMid
-        fabric.createInterval(c, a, role, roleLength(role))
+        fabric.createInterval(c, a, role, roleLength(role, scale))
         if (highCross) {
             finish(ab, cd, bc, ad, IntervalRole.BowEndHigh)
         } else {
@@ -346,6 +361,7 @@ export function closestFacePairs(fabric: TensegrityFabric, maxDistance: number):
 export function connectClosestFacePair(fabric: TensegrityFabric): void {
     const closestPairs = closestFacePairs(fabric, 5)
     const facePair = closestPairs[0]
-    const connector = connectBricks(facePair.faceA, facePair.faceB)
+    const scale = percentOrHundred() // TODO: figure this out
+    const connector = connectBricks(facePair.faceA, facePair.faceB, scale)
     connector.facesToRemove.forEach(faceToRemove => fabric.removeFace(faceToRemove, true))
 }

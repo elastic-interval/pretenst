@@ -12,10 +12,11 @@ import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
     bySelectedFace,
-    IFace,
+    IFace, IPercent,
     ISelectedFace,
     ISelection,
     nextAdjacent,
+    percentOrHundred,
 } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -41,8 +42,8 @@ export function EditPanel({fabric, selection, setSelection}: {
         })
     }
 
-    const grow = (face: IFace) => {
-        createConnectedBrick(face.brick, face.triangle)
+    const grow = (face: IFace, scale?: IPercent) => {
+        createConnectedBrick(face.brick, face.triangle, percentOrHundred(scale))
         setSelection({})
     }
 
