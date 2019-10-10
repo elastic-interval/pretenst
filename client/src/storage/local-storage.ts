@@ -14,7 +14,6 @@ export async function loadFabricCode(): Promise<ICodeTree[]> {
     async function getBoostrap(): Promise<ICodeTree[]> {
         const response = await fetch("/bootstrap.json")
         const body = await response.json()
-        console.log("response", body)
         if (!body) {
             return [{_: 0}, {_: 9}]
         }
