@@ -299,10 +299,10 @@ export function intervalSplitter(selectionFilter: (interval: IInterval) => boole
 
 export interface ICodeTree {
     _: number,
-    _tree?: ICodeTree,
-    a?: ICodeTree,
-    b?: ICodeTree,
-    c?: ICodeTree,
+    _X?: ICodeTree,
+    A?: ICodeTree,
+    B?: ICodeTree,
+    C?: ICodeTree,
 }
 
 export function codeTreeToString(codeTree: ICodeTree): string {

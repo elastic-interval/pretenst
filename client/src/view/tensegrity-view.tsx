@@ -43,7 +43,7 @@ export function TensegrityView({engine, codeTrees, getFabric, features}: {
 }): JSX.Element {
 
     const [autoRotate, setAutoRotate] = useState<boolean>(false)
-    const [fastMode, setFastMode] = useState<boolean>(false)
+    const [fastMode, setFastMode] = useState<boolean>(true)
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selection, setSelection] = useState<ISelection>({})
@@ -78,14 +78,14 @@ export function TensegrityView({engine, codeTrees, getFabric, features}: {
 
         return (
             <div style={{position: "absolute", top: "1em", left: "1em"}}>
-                <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle size="sm" color="success">
-                        <FaCog/> {storageIndex}={codeTreeToString(codeTrees[storageIndex])}
+                <ButtonDropdown className="w-100 my-2" isOpen={open} toggle={() => setOpen(!open)}>
+                    <DropdownToggle size="sm" color="primary">
+                        <FaCog/> {codeTreeToString(codeTrees[storageIndex])}
                     </DropdownToggle>
                     <DropdownMenu right={false}>
                         {codeTrees.map((code, index) => (
                             <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
-                                {index}={codeTreeToString(code)}
+                                {codeTreeToString(code)}
                             </DropdownItem>
                         ))}
                     </DropdownMenu>
@@ -116,7 +116,7 @@ export function TensegrityView({engine, codeTrees, getFabric, features}: {
     return (
         <div id="tensegrity-view" className="the-whole-page">
             <div style={MIDDLE_TOP}>
-                <h6>Pretenst Tensegrity Design</h6>
+                <h6>pretenst.com</h6>
             </div>
             {!fabric ? (
                 <h1>No fabric</h1>
@@ -168,9 +168,4 @@ const MIDDLE_TOP: CSSProperties = {
     left: "50%",
     transform: "translate(-50%)",
     color: "white",
-    backgroundColor: "black",
-    borderRadius: "1em",
-    borderColor: "white",
-    borderStyle: "solid",
-    borderWidth: "1.8px",
 }

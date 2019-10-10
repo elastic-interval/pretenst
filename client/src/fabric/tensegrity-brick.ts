@@ -241,21 +241,22 @@ export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
         if (codeTree._ < 0) {
             throw new Error("Negative in code tree")
         }
+        const oppositeCodeTree = codeTree._X
         if (codeTree._ > 0) {
             const decremented = codeTree._ - 1
             const nextCodeTree = {...codeTree, _: decremented}
             after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP))
-        } else if (codeTree._tree) {
-            const decremented = codeTree._tree._ - 1
-            const nextCodeTree = {...codeTree._tree, _: decremented}
+        } else if (oppositeCodeTree) {
+            const decremented = oppositeCodeTree._ - 1
+            const nextCodeTree = {...oppositeCodeTree, _: decremented}
             after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP))
-            maybeGrow(brick, Triangle.PNN, codeTree.a)
-            maybeGrow(brick, Triangle.NPN, codeTree.b)
-            maybeGrow(brick, Triangle.NNP, codeTree.c)
+            maybeGrow(brick, Triangle.PNN, codeTree.A)
+            maybeGrow(brick, Triangle.NPN, codeTree.B)
+            maybeGrow(brick, Triangle.NNP, codeTree.C)
         } else {
-            maybeGrow(brick, Triangle.NPP, codeTree.a)
-            maybeGrow(brick, Triangle.PNP, codeTree.b)
-            maybeGrow(brick, Triangle.PPN, codeTree.c)
+            maybeGrow(brick, Triangle.NPP, codeTree.A)
+            maybeGrow(brick, Triangle.PNP, codeTree.B)
+            maybeGrow(brick, Triangle.PPN, codeTree.C)
         }
     })
     return after

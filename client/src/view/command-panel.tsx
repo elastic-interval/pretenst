@@ -54,7 +54,7 @@ export function CommandPanel({rebuild, fabric, fastMode, setFastMode, autoRotate
             <Button color="info" onClick={onJump}><FaParachuteBox/></Button>
             <Button color="info" onClick={onCentralize}><FaCompressArrowsAlt/></Button>
             <Button color="info" onClick={onRotateToggle}>{autoRotate ? <FaAnchor/> : <FaSyncAlt/>}</Button>
-            <Button color={fastMode ? "warning" : "secondary"} onClick={onFastMode}>
+            <Button color={fastMode ? "secondary" : "warning"} onClick={onFastMode}>
                 {fastMode ? <FaRunning/> : <FaWalking/>}
             </Button>
         </ButtonGroup>
