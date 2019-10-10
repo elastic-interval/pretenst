@@ -36,7 +36,7 @@ export function EditPanel({fabric, selection, setSelection}: {
     }
 
     const adjustValue = (up: boolean) => () => {
-        fabric.selectedIntervals.forEach(interval => {
+        fabric.forEachSelected(interval => {
             fabric.instance.engine.multiplyRestLength(interval.index, adjustment(up))
         })
     }

@@ -35,6 +35,7 @@ import {
 import { Limit } from "../fabric/fabric-engine"
 import {
     byDisplacementTreshold,
+    IInterval,
     ISelectedStress,
     ISelection,
     selectModeBars,
@@ -96,14 +97,16 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
     }
 
     const AdjustmentButtons = () => {
-        const adjustLength = (up: boolean) => () => {
-            fabric.selectedIntervals.forEach(interval => engine.multiplyRestLength(interval.index, adjustment(up)))
+        const adjust = (adjuster: (interval: IInterval) => void) => {
+            fabric.forEachSelected(adjuster)
             fabric.selectIntervals()
         }
-        const adjustElasticFactor = (elasticFactor: number) => {
-            fabric.selectedIntervals.forEach(interval => engine.setElasticFactor(interval.index, elasticFactor))
-            fabric.selectIntervals()
-        }
+        const adjustLength = (up: boolean) => () => adjust(interval => {
+            engine.multiplyRestLength(interval.index, adjustment(up))
+        })
+        const adjustElasticFactor = (elasticFactor: number) => adjust(interval => {
+            engine.setElasticFactor(interval.index, elasticFactor)
+        })
         return (
             <ButtonGroup size="sm" style={{width: "100%"}}>
                 <Button onClick={adjustLength(true)}>L<FaArrowUp/></Button>

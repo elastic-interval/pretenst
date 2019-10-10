@@ -17,6 +17,7 @@ import {
     IFace,
     IGrowth,
     IInterval,
+    IIntervalSplit,
     IJoint,
     intervalSplitter,
     JointTag,
@@ -48,7 +49,7 @@ export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 export class TensegrityFabric {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
-    public selectedIntervals: IInterval[] = []
+    public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
     public growth?: IGrowth
 
@@ -70,22 +71,24 @@ export class TensegrityFabric {
     }
 
     public selectIntervals(selectionFilter?: (interval: IInterval) => boolean): number {
+        if (!selectionFilter) {
+            this.splitIntervals = undefined
+            return 0
+        }
         if (this.growth) {
             return 0
         }
-        const allIntervals = [...this.intervals, ...this.selectedIntervals]
-        if (!selectionFilter) {
-            if (this.selectedIntervals.length <= 0) {
-                return 0
-            }
-            this.intervals = allIntervals
-            this.selectedIntervals = []
+        this.splitIntervals = this.intervals.reduce(intervalSplitter(selectionFilter), emptySplit())
+        return this.splitIntervals.selected.length
+    }
+
+    public forEachSelected(operation: (interval: IInterval) => void): number {
+        const splitIntervals = this.splitIntervals
+        if (!splitIntervals) {
             return 0
         }
-        const {unselected, selected} = allIntervals.reduce(intervalSplitter(selectionFilter), emptySplit())
-        this.intervals = unselected
-        this.selectedIntervals = selected
-        return selected.length
+        splitIntervals.selected.forEach(operation)
+        return splitIntervals.selected.length
     }
 
     public setDisplacementThreshold(threshold: number, mode: StressSelectMode): void {
