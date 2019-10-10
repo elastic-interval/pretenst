@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
-import { codeTreeToString, ICodeTree, ISelection } from "../fabric/tensegrity-brick-types"
+import { codeTreeToString, ICodeTree, ISelection, stringToCodeTree } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 import { loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
@@ -45,14 +45,23 @@ export function TensegrityView({engine, codeTrees, getFabric, features}: {
     const [autoRotate, setAutoRotate] = useState<boolean>(false)
     const [fastMode, setFastMode] = useState<boolean>(true)
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
+    const [code, setCode] = useState<string|undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selection, setSelection] = useState<ISelection>({})
 
     useEffect(() => {
         if (!fabric) {
-            const code = codeTrees[storageIndex]
-            const fetched = getFabric(storageIndex.toString(), code)
-            fetched.startConstruction(code)
+            const getCodeFromLocation = () => {
+                const locationCode = location.hash.substring(1)
+                const treesCode = codeTrees.map(codeTreeToString)
+                const exists = treesCode.some(treeCode => treeCode === locationCode)
+                return exists ? undefined : stringToCodeTree(locationCode)
+            }
+            const codeFromLocation = getCodeFromLocation()
+            const constructionCode = codeFromLocation ? codeFromLocation : codeTrees[storageIndex]
+            setCode(codeTreeToString(constructionCode))
+            const fetched = getFabric(codeTrees.length.toString(), constructionCode)
+            fetched.startConstruction(constructionCode)
             setFabric(fetched)
         }
     })
@@ -70,22 +79,22 @@ export function TensegrityView({engine, codeTrees, getFabric, features}: {
 
     const FabricChoice = (): JSX.Element => {
         const [open, setOpen] = useState<boolean>(false)
-        const select = (code: ICodeTree, index: number) => {
+        const select = (codeTree: ICodeTree, index: number) => {
             setStorageIndex(index)
             storeStorageIndex(index)
-            constructFabric(code)
+            setCode(codeTreeToString(codeTree))
+            constructFabric(codeTree)
         }
-
         return (
             <div style={{position: "absolute", top: "1em", left: "1em"}}>
                 <ButtonDropdown className="w-100 my-2" isOpen={open} toggle={() => setOpen(!open)}>
                     <DropdownToggle size="sm" color="primary">
-                        <FaCog/> {codeTreeToString(codeTrees[storageIndex])}
+                        <FaCog/> {code}
                     </DropdownToggle>
                     <DropdownMenu right={false}>
-                        {codeTrees.map((code, index) => (
-                            <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
-                                {codeTreeToString(code)}
+                        {codeTrees.map((codeTree, index) => (
+                            <DropdownItem key={`Buffer${index}`} onClick={() => select(codeTree, index)}>
+                                {codeTreeToString(codeTree)}
                             </DropdownItem>
                         ))}
                     </DropdownMenu>

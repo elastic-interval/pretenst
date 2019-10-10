@@ -331,6 +331,69 @@ export function codeTreeToString(codeTree: ICodeTree): string {
         .replace(/[}]/g, "]")
 }
 
+export function stringToCodeTree(code: string): ICodeTree {
+
+    function matchBracket(s: string, openBracket: number): number {
+        if (s.charAt(openBracket) !== "[") {
+            throw new Error(`Code must start with [: ${s.charAt(openBracket)}`)
+        }
+        let depth = 0
+        for (let index = openBracket; index < s.length; index++) {
+            const char = s.charAt(index)
+            if (char === "[") {
+                depth++
+            } else if (char === "]") {
+                depth--
+                if (depth === 0) {
+                    return index
+                }
+            }
+        }
+        throw new Error(`No matching end bracket: |${s}|`)
+    }
+
+    function codeToTree(c: string): ICodeTree {
+        const finalBracket = matchBracket(c, 0)
+        if (finalBracket !== c.length - 1) {
+            throw new Error(`Code must end with ]: ${finalBracket} != ${c.length - 1}`)
+        }
+        const between = c.substring(1, finalBracket)
+        const comma = between.indexOf(",")
+        const countEnd = comma < 0 ? finalBracket : comma
+        const _ = parseInt(between.substring(0, countEnd), 10)
+        const tree: ICodeTree = {_}
+        if (comma < 0) {
+            return tree
+        }
+        const afterCount = between.substring(comma + 1)
+        for (let index = 0; index < afterCount.length; index++) {
+            const endBracket = matchBracket(afterCount, index + 1)
+            const bracketed = afterCount.substring(index + 1, endBracket + 1)
+            switch (afterCount.charAt(index)) {
+                case "X":
+                    tree._X = codeToTree(bracketed)
+                    break
+                case "A":
+                    tree.A = codeToTree(bracketed)
+                    break
+                case "B":
+                    tree.B = codeToTree(bracketed)
+                    break
+                case "C":
+                    tree.C = codeToTree(bracketed)
+                    break
+                case "S":
+                    tree.S = {_: parseInt(bracketed.substring(1, bracketed.length-1), 10)}
+                    break
+            }
+            index += bracketed.length + 1
+        }
+        return tree
+    }
+
+    return codeToTree(code)
+}
+
 export interface IActiveCode {
     codeTree: ICodeTree
     brick: IBrick
