@@ -4,39 +4,31 @@
  */
 
 import { IntervalRole, PhysicsFeature } from "../fabric/fabric-engine"
+import { ICodeTree } from "../fabric/tensegrity-brick-types"
 
 const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
 
-const STORAGE_BOOTSTRAP: string[] = [
-    "1[2[3=2[2=2]],2[1=2[3=2]],2[2=2[1=2]]]",
-    "0",
-    "1",
-    "2",
-    "9",
-    "1[1,1,1]",
-    "2[2,2,2]",
-    "3[3,3,3[3,3,3]]L",
-    "2[2,2,2[2,2,2]]H",
-    "4[2=4]",
-    "6[0,1,1]",
-    "1[1,3[1,1,1],4]",
-    "3[3[3,3,3],3[3,3,3],3[3,3,3]]",
-    "3[3[3,3,3],3[3,3,3],3[3,3,3]]L",
-    "9[9,9,9]",
-    "2[1=2[3=2[2=2[3=2[1=2[3=2[2=2]]]]]]]X",
-    "2[1=4[3=4[2=4[3=4[1=4[3=4[2=4[3=1]]]]]]]]",
-]
+export async function loadFabricCode(): Promise<ICodeTree[]> {
 
-export function loadFabricCode(): string[] {
+    async function getBoostrap(): Promise<ICodeTree[]> {
+        const response = await fetch("/bootstrap.json")
+        const body = await response.json()
+        console.log("response", body)
+        if (!body) {
+            return [{_: 0}, {_: 9}]
+        }
+        return body.pretenst
+    }
+
     const item = localStorage.getItem(FABRIC_CODE_KEY)
     if (!item) {
-        return STORAGE_BOOTSTRAP
+        return await getBoostrap()
     }
     return JSON.parse(item)
 }
 
-export function storeFabricCode(fabricCode: string[]): void {
+export function storeFabricCode(fabricCode: object[]): void {
     localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(fabricCode))
 }
 
@@ -131,7 +123,7 @@ export function multiplierValue(multiplier: PhysicsMultiplier): number {
     }
 }
 
-export function multiplierSymbol(multiplier: PhysicsMultiplier): string{
+export function multiplierSymbol(multiplier: PhysicsMultiplier): string {
     switch (multiplier) {
         case PhysicsMultiplier.One:
             return ""

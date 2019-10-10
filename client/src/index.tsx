@@ -21,6 +21,7 @@ import { TensegrityView } from "./view/tensegrity-view"
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./index.css"
+import { loadFabricCode } from "./storage/local-storage"
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
@@ -70,10 +71,12 @@ async function start(): Promise<void> {
             .filter(feature => notWater(feature.name.physicsFeature))
         physicsFeatures.forEach(feature => applyPhysicsFeature(engine, feature))
         const features = [...roleFeatures, ...physicsFeatures]
+        const fabricCode = await loadFabricCode()
         ReactDOM.render(
             <TensegrityView
                 engine={engine}
                 features={features}
+                codeTrees={fabricCode}
                 getFabric={getFabric}
             />,
             root,

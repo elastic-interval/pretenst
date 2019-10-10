@@ -4,8 +4,7 @@
  */
 
 import * as React from "react"
-import { CSSProperties } from "react"
-import { useEffect, useState } from "react"
+import { CSSProperties, useEffect, useState } from "react"
 import { FaCog, FaDownload } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
@@ -13,10 +12,10 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
-import { ISelection } from "../fabric/tensegrity-brick-types"
+import { codeTreeToString, ICodeTree, ISelection } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
-import { loadFabricCode, loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
+import { loadStorageIndex, storeStorageIndex } from "../storage/local-storage"
 
 import { CommandPanel } from "./command-panel"
 import { EditPanel } from "./edit-panel"
@@ -36,9 +35,10 @@ declare global {
     }
 }
 
-export function TensegrityView({engine, getFabric, features}: {
+export function TensegrityView({engine, codeTrees, getFabric, features}: {
     engine: IFabricEngine,
-    getFabric: (name: string) => TensegrityFabric,
+    codeTrees: ICodeTree[],
+    getFabric: (name: string, codeTree: ICodeTree) => TensegrityFabric,
     features: IFeature[],
 }): JSX.Element {
 
@@ -50,41 +50,42 @@ export function TensegrityView({engine, getFabric, features}: {
 
     useEffect(() => {
         if (!fabric) {
-            const code = loadFabricCode()[loadStorageIndex()]
-            const fetched = getFabric(code)
+            const code = codeTrees[storageIndex]
+            const fetched = getFabric(storageIndex.toString(), code)
             fetched.startConstruction(code)
             setFabric(fetched)
         }
     })
 
-    function constructFabric(code: string): void {
+    function constructFabric(codeTree: ICodeTree): void {
         setSelection({})
         if (fabric) {
-            fabric.startConstruction(code)
+            fabric.startConstruction(codeTree)
         } else {
-            const fetched = getFabric(code)
-            fetched.startConstruction(code)
+            const fetched = getFabric(storageIndex.toString(), codeTree)
+            fetched.startConstruction(codeTree)
             setFabric(fetched)
         }
     }
 
     const FabricChoice = (): JSX.Element => {
         const [open, setOpen] = useState<boolean>(false)
-        const select = (code: string, index: number) => {
+        const select = (code: ICodeTree, index: number) => {
             setStorageIndex(index)
             storeStorageIndex(index)
             constructFabric(code)
         }
 
-        const fabricCode = loadFabricCode()
         return (
             <div style={{position: "absolute", top: "1em", left: "1em"}}>
                 <ButtonDropdown className="w-100 my-2 btn-info" isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle size="sm" color="success"><FaCog/> {fabricCode[storageIndex]}</DropdownToggle>
+                    <DropdownToggle size="sm" color="success">
+                        <FaCog/> {storageIndex}={codeTreeToString(codeTrees[storageIndex])}
+                    </DropdownToggle>
                     <DropdownMenu right={false}>
-                        {fabricCode.map((code, index) => (
+                        {codeTrees.map((code, index) => (
                             <DropdownItem key={`Buffer${index}`} onClick={() => select(code, index)}>
-                                {code}
+                                {index}={codeTreeToString(code)}
                             </DropdownItem>
                         ))}
                     </DropdownMenu>
@@ -105,7 +106,7 @@ export function TensegrityView({engine, getFabric, features}: {
             }
         }
         return (
-            <ButtonGroup style={{position: "absolute", bottom: "1em", left: "1em"}}  size="sm" >
+            <ButtonGroup style={{position: "absolute", bottom: "1em", left: "1em"}} size="sm">
                 <Button color="info" onClick={onDownloadCSV}><FaDownload/>CSV</Button>
                 <Button color="info" onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
             </ButtonGroup>
@@ -146,7 +147,7 @@ export function TensegrityView({engine, getFabric, features}: {
                 </>
             )}
             <CommandPanel
-                constructFabric={constructFabric}
+                rebuild={() => constructFabric(codeTrees[storageIndex])}
                 fabric={fabric}
                 autoRotate={autoRotate}
                 setAutoRotate={setAutoRotate}

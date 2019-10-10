@@ -12,12 +12,12 @@ import { JOINT_RADIUS } from "./fabric-instance"
 import {
     BAR_ARRAY,
     BarEnd,
+    IActiveCode,
     IBarDefinition,
     IBrick,
+    ICodeTree,
     IConnector,
     IFace,
-    IGrowth,
-    IGrowthTree,
     IInterval,
     IJoint,
     Triangle,
@@ -220,118 +220,37 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle): IBrick 
     return next
 }
 
-export function executeGrowthTrees(before: IGrowthTree[]): IGrowthTree[] {
-    const after: IGrowthTree[] = []
-    before.forEach(tree => {
-        const brick = tree.brick
-        if (!brick) {
-            throw new Error()
+export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
+    const after: IActiveCode[] = []
+
+    function grow(previousBrick: IBrick, codeTree: ICodeTree, triangle: Triangle): IActiveCode {
+        const connectTriangle = previousBrick.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
+        const brick = createConnectedBrick(previousBrick, connectTriangle)
+        return {codeTree, brick}
+    }
+
+    before.forEach(beforeCode => {
+        const {brick, codeTree} = beforeCode
+        if (codeTree._ > 0) {
+            after.push(grow(beforeCode.brick, {...codeTree, _: codeTree._ - 1}, Triangle.PPP))
+            return
         }
-        const grow = (next: IGrowthTree | undefined, triangle: Triangle) => {
-            if (!next) {
+
+        function maybeGrow(previousBrick: IBrick, triangle: Triangle, tree?: ICodeTree): void {
+            if (!tree) {
                 return
             }
-            if (brick.base === Triangle.PPP) {
-                triangle = TRIANGLE_DEFINITIONS[triangle].opposite
-            }
-            next.brick = createConnectedBrick(brick, triangle)
-            after.push(next)
+            after.push(grow(previousBrick, {...tree, _: tree._ - 1}, triangle))
         }
-        grow(tree.forward, Triangle.PPP)
-        grow(tree.turnA, Triangle.NPP)
-        grow(tree.turnB, Triangle.PNP)
-        grow(tree.turnC, Triangle.PPN)
+
+        maybeGrow(brick, Triangle.NPP, codeTree.a)
+        maybeGrow(brick, Triangle.PNP, codeTree.b)
+        maybeGrow(brick, Triangle.PPN, codeTree.c)
+        maybeGrow(brick, Triangle.PNN, codeTree.d)
+        maybeGrow(brick, Triangle.NPN, codeTree.e)
+        maybeGrow(brick, Triangle.NNP, codeTree.f)
     })
     return after
-}
-
-export function parseConstructionCode(constructionCode: string): IGrowth {
-    function parseBetween(between: string): { turnA?: string, turnB?: string, turnC?: string } {
-        if (between.length === 0) {
-            return {}
-        }
-        const equalsIndex = between.indexOf("=")
-        if (equalsIndex === 1) {
-            const afterEquals = between.substring(2)
-            switch (between.charAt(0)) {
-                case "1":
-                    return {turnA: afterEquals}
-                case "2":
-                    return {turnB: afterEquals}
-                case "3":
-                    return {turnC: afterEquals}
-                default:
-                    throw new Error("Syntax")
-            }
-        } else {
-            const commaIndexes: number[] = []
-            let level = 0
-            for (let walk = 0; walk < between.length; walk++) {
-                const ch = between.charAt(walk)
-                if (ch === "[") {
-                    level++
-                }
-                if (ch === "]") {
-                    level--
-                }
-                if (ch === "," && level === 0) {
-                    commaIndexes.push(walk)
-                }
-            }
-            if (commaIndexes.length !== 2) {
-                throw new Error(`Commas: [${between}]`)
-            }
-            const turnA = between.substring(0, commaIndexes[0])
-            const turnB = between.substring(commaIndexes[0] + 1, commaIndexes[1])
-            const turnC = between.substring(commaIndexes[1] + 1)
-            return {turnA, turnB, turnC}
-        }
-    }
-
-    function parseCommands(reduce: boolean, commands?: string): IGrowthTree | undefined {
-        if (!commands) {
-            return undefined
-        }
-        const command = commands.charAt(0)
-        if (reduce && command <= "9") {
-            const forwardCount = parseInt(command, 10)
-            const nextCount = forwardCount - 1
-            if (nextCount < 0) {
-                return undefined
-            }
-            return parseCommands(false, nextCount.toString() + commands.substr(1))
-        }
-        if (command === "0") {
-            if (commands.length > 1 && commands.charAt(1) !== "[") {
-                throw new Error("Open")
-            }
-            const lastClose = commands.lastIndexOf("]")
-            if (lastClose >= 0 && lastClose !== commands.length - 1) {
-                throw new Error("Close")
-            }
-            const between = commands.substring(2, lastClose >= 0 ? lastClose : undefined)
-            const {turnA, turnB, turnC} = parseBetween(between)
-            return {
-                turnA: parseCommands(true, turnA),
-                turnB: parseCommands(true, turnB),
-                turnC: parseCommands(true, turnC),
-            }
-        }
-        if (command >= "1" && command <= "9") {
-            const nextTree = parseCommands(true, commands)
-            const forward = nextTree ? nextTree : {}
-            return {forward}
-        }
-        throw new Error("Syntax error: " + command)
-    }
-
-    const endOfCommands = constructionCode.lastIndexOf("]")
-    const commandEndIndex = endOfCommands < 0 ? constructionCode.length : endOfCommands
-    const commandString = constructionCode.substring(0, commandEndIndex + 1)
-    const growthTree = parseCommands(false, commandString)
-    const growing: IGrowthTree[] = growthTree ? [growthTree] : [{}]
-    const optimizationStack = constructionCode.substring(commandEndIndex + 1).split("").reverse()
-    return {growing, optimizationStack}
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {

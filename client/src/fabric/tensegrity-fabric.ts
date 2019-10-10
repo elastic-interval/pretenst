@@ -8,22 +8,20 @@ import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vec
 import { FabricState, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
 import { IFeature } from "./features"
-import {
-    connectClosestFacePair,
-    createBrickOnOrigin,
-    executeGrowthTrees,
-    optimizeFabric,
-    parseConstructionCode,
-} from "./tensegrity-brick"
+import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,
+    IActiveCode,
     IBrick,
+    ICodeTree,
     IFace,
     IGrowth,
     IInterval,
     IJoint,
     intervalSplitter,
-    JointTag, setFabricDisplacementThreshold, StressSelectMode,
+    JointTag,
+    setFabricDisplacementThreshold,
+    StressSelectMode,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
@@ -64,15 +62,11 @@ export class TensegrityFabric {
     constructor(public readonly instance: FabricInstance, public readonly roleFeatures: IFeature[], public readonly name: string) {
     }
 
-    public startConstruction(constructionCode: string): void {
+    public startConstruction(codeTree: ICodeTree): void {
         this.reset()
-        const growth = parseConstructionCode(constructionCode)
-        if (!growth.growing.length) {
-            this.createBrick()
-            return
-        }
-        growth.growing[0].brick = this.createBrick()
-        this.growth = growth
+        const brick = this.createBrick()
+        const executing: IActiveCode = {codeTree, brick}
+        this.growth = {growing: [executing], optimizationStack: []}
     }
 
     public selectIntervals(selectionFilter?: (interval: IInterval) => boolean): number {
@@ -248,7 +242,7 @@ export class TensegrityFabric {
         const growth = this.growth
         if (growth) {
             if (growth.growing.length > 0) {
-                growth.growing = executeGrowthTrees(growth.growing)
+                growth.growing = executeActiveCode(growth.growing)
                 this.engine.centralize()
             }
             if (growth.growing.length === 0) {

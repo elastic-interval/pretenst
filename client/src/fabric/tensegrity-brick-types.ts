@@ -153,19 +153,6 @@ export interface IConnector {
     facesToRemove: IFace[]
 }
 
-export interface IGrowthTree {
-    forward?: IGrowthTree
-    turnA?: IGrowthTree
-    turnB?: IGrowthTree
-    turnC?: IGrowthTree
-    brick?: IBrick
-}
-
-export interface IGrowth {
-    growing: IGrowthTree []
-    optimizationStack: string[]
-}
-
 export enum AdjacentIntervals {
     None = "None",
     Cables = "Cables",
@@ -309,3 +296,31 @@ export function intervalSplitter(selectionFilter: (interval: IInterval) => boole
         return split
     }
 }
+
+export interface ICodeTree {
+    _: number,
+    a?: ICodeTree,
+    b?: ICodeTree,
+    c?: ICodeTree,
+    d?: ICodeTree,
+    e?: ICodeTree,
+    f?: ICodeTree,
+}
+
+export function codeTreeToString(codeTree: ICodeTree): string {
+    return JSON.stringify(codeTree)
+        .replace(/[_.:"]/g, "")
+        .replace(/[{]/g, "[")
+        .replace(/[}]/g, "]")
+}
+
+export interface IActiveCode {
+    codeTree: ICodeTree
+    brick: IBrick
+}
+
+export interface IGrowth {
+    growing: IActiveCode []
+    optimizationStack: string[]
+}
+

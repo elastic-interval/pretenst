@@ -16,10 +16,9 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { loadFabricCode } from "../storage/local-storage"
 
-export function CommandPanel({constructFabric, fabric, fastMode, setFastMode, autoRotate, setAutoRotate, storageIndex}: {
-    constructFabric: (fabricCode: string) => void,
+export function CommandPanel({rebuild, fabric, fastMode, setFastMode, autoRotate, setAutoRotate, storageIndex}: {
+    rebuild: () => void,
     fabric?: TensegrityFabric,
     fastMode: boolean,
     setFastMode: (fastMode: boolean) => void,
@@ -36,9 +35,6 @@ export function CommandPanel({constructFabric, fabric, fastMode, setFastMode, au
             fabric.instance.engine.centralize()
         }
     }
-    const onRebuild = () => {
-        constructFabric(loadFabricCode()[storageIndex])
-    }
     const onJump = () => {
         if (fabric) {
             fabric.instance.engine.setAltitude(10)
@@ -54,7 +50,7 @@ export function CommandPanel({constructFabric, fabric, fastMode, setFastMode, au
             bottom: "1em",
             right: "1em",
         }} size="sm">
-            <Button color="success" onClick={onRebuild}><FaRecycle/></Button>
+            <Button color="success" onClick={rebuild}><FaRecycle/></Button>
             <Button color="info" onClick={onJump}><FaParachuteBox/></Button>
             <Button color="info" onClick={onCentralize}><FaCompressArrowsAlt/></Button>
             <Button color="info" onClick={onRotateToggle}>{autoRotate ? <FaAnchor/> : <FaSyncAlt/>}</Button>
