@@ -129,7 +129,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
         return (
             <mesh
                 ref={meshRef}
-                onClick={onClick}
+                onPointerDown={onClick}
                 geometry={fabric.facesGeometry}
                 material={FACE}
             />
