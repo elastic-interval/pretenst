@@ -204,10 +204,10 @@ export interface ISelectedFace {
 }
 
 export enum StressSelectMode {
-    SlackerCables = "Slacker Cables",
     TighterCables = "Tighter Cables",
-    SlackerBars = "Slacker Bars",
+    SlackerCables = "Slacker Cables",
     TighterBars = "Tighter Bars",
+    SlackerBars = "Slacker Bars",
 }
 
 export function selectModeBars(mode: StressSelectMode): boolean {

@@ -164,7 +164,13 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                 </>
             )}
             <CommandPanel
-                rebuild={() => constructFabric(codeTrees[storageIndex])}
+                rebuild={() => {
+                    setSelection({})
+                    if (fabric) {
+                        fabric.clearSelection()
+                    }
+                    constructFabric(codeTrees[storageIndex])
+                }}
                 fabric={fabric}
                 autoRotate={autoRotate}
                 setAutoRotate={setAutoRotate}

@@ -98,15 +98,15 @@ function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
         case PhysicsFeature.AntigravityBelowWater:
             return -0.00001
         case PhysicsFeature.DragAbove:
-            return 0.0001
+            return 0.001
         case PhysicsFeature.DragBelow:
             return 0.6
         case PhysicsFeature.DragBelowWater:
             return 0.001
         case PhysicsFeature.PushElastic:
-            return 1.0
+            return 1.2
         case PhysicsFeature.PullElastic:
-            return 1.0
+            return 0.3
         case PhysicsFeature.IntervalCountdown:
             return 300.0
         default:

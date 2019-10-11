@@ -119,7 +119,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                 }
                 return fabric.faces[faceIndex]
             })
-            fabric.selectIntervals()
+            fabric.clearSelection()
             const face = faces.reverse().pop()
             if (!face) {
                 return
@@ -161,7 +161,14 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
             <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
             <scene>
                 {fastMode ? (
-                    <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
+                    <group>
+                        <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
+                        {!fabric.splitIntervals ? undefined : (
+                            fabric.splitIntervals.selected.map(interval => (
+                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                            ))
+                        )}
+                    </group>
                 ) : (
                     <group>
                         {fabric.splitIntervals ? ([

@@ -12,7 +12,8 @@ import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
     bySelectedFace,
-    IFace, IPercent,
+    IFace,
+    IPercent,
     ISelectedFace,
     ISelection,
     nextAdjacent,
@@ -64,7 +65,7 @@ export function EditPanel({fabric, selection, setSelection}: {
 
     function CancelButton(): JSX.Element {
         const onCancel = () => {
-            fabric.selectIntervals()
+            fabric.clearSelection()
             setSelection({})
         }
         return (

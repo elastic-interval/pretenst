@@ -12,6 +12,7 @@ import {
     FaAngleRight,
     FaArrowDown,
     FaArrowUp,
+    FaEye,
     FaHeart,
     FaTimesCircle,
 } from "react-icons/all"
@@ -35,7 +36,6 @@ import {
 import { Limit } from "../fabric/fabric-engine"
 import {
     byDisplacementTreshold,
-    IInterval,
     ISelectedStress,
     ISelection,
     selectModeBars,
@@ -46,18 +46,11 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { intervalColor } from "./materials"
 
-interface IElastic {
-    strands: number,
-    factor: number,
-}
-
-const THICKNESSES = [3, 6, 12, 24, 48]
-const MID_STRAND = THICKNESSES [Math.ceil(THICKNESSES.length / 2) - 1]
-const ELASTICS: IElastic[] = THICKNESSES.map(strands => ({strands, factor: strands / MID_STRAND}))
+const ELASTICS = [1, 2, 3, 5, 10]
 
 export const DEFAULT_SELECTED_STRESS: ISelection = {
     selectedStress: {
-        stressSelectMode: StressSelectMode.SlackerCables,
+        stressSelectMode: StressSelectMode.TighterCables,
         stressValue: 0.5,
     },
 }
@@ -74,6 +67,7 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
 
     const [choiceOpen, setChoiceOpen] = useState(false)
     const [nuance, setNuance] = useState(0.5)
+    const [showElasticFactor, setShowElasticFactor] = useState(0)
 
     function adjustment(up: boolean): number {
         const factor = 1.1
@@ -96,25 +90,57 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
         )
     }
 
-    const AdjustmentButtons = () => {
-        const adjust = (adjuster: (interval: IInterval) => void) => {
-            fabric.forEachSelected(adjuster)
-            fabric.selectIntervals()
+    const LengthAdjustmentButtons = () => {
+        const adjustLength = (up: boolean) => () => {
+            fabric.forEachSelected(interval => engine.multiplyRestLength(interval.index, adjustment(up)))
         }
-        const adjustLength = (up: boolean) => () => adjust(interval => {
-            engine.multiplyRestLength(interval.index, adjustment(up))
-        })
-        const adjustElasticFactor = (elasticFactor: number) => adjust(interval => {
-            engine.setElasticFactor(interval.index, elasticFactor)
-        })
+        return (
+            <ButtonGroup vertical={true} size="sm" style={{width: "100%"}}>
+                <Button onClick={adjustLength(true)}><FaArrowUp/> Lengthen</Button>
+                <Button onClick={adjustLength(false)} className="my-1"><FaArrowDown/> Shorten</Button>
+            </ButtonGroup>
+        )
+    }
+
+    const ElasticFactorAdjustmentButtons = () => {
+        const adjustElasticFactor = (elasticFactor: number) => {
+            fabric.forEachSelected(interval => engine.setElasticFactor(interval.index, elasticFactor))
+        }
         return (
             <ButtonGroup size="sm" style={{width: "100%"}}>
-                <Button onClick={adjustLength(true)}>L<FaArrowUp/></Button>
-                <Button onClick={adjustLength(false)}>L<FaArrowDown/></Button>
                 {ELASTICS.map(elastic => (
-                    <Button key={elastic.strands} onClick={() => adjustElasticFactor(elastic.factor)}>
-                        T{elastic.strands}
+                    <Button key={elastic} onClick={() => adjustElasticFactor(elastic)}>
+                        {elastic}X
                     </Button>
+                ))}
+            </ButtonGroup>
+        )
+    }
+
+    const ElasticFactorViewButtons = () => {
+        const viewElasticFactor = (elasticFactor: number) => {
+            if (elasticFactor === showElasticFactor) {
+                setShowElasticFactor(0)
+                return
+            }
+            fabric.selectIntervals(interval => {
+                if (barMode !== interval.isBar) {
+                    return false
+                }
+                const elastic = fabric.instance.engine.getElasticFactor(interval.index)
+                return elasticFactor === elastic
+            })
+            setShowElasticFactor(elasticFactor)
+            fabric.forEachSelected(interval => engine.setElasticFactor(interval.index, elasticFactor))
+        }
+        return (
+            <ButtonGroup radioGroup="elastic" size="sm" style={{width: "100%"}}>
+                {ELASTICS.map(elastic => (
+                    <Button
+                        color={(elastic === showElasticFactor) ? "success" : "secondary"}
+                        radioGroup="elastic" key={elastic}
+                        onClick={() => viewElasticFactor(elastic)}
+                    ><FaEye/>{elastic}X</Button>
                 ))}
             </ButtonGroup>
         )
@@ -122,70 +148,82 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
 
     const percent = (slackMode ? nuance : 1 - nuance) * 100
     return (
-        <Container>
+        <Container style={{width: "100em"}}>
             <Row>
-                <Col md="2">
-                    <ButtonDropdown isOpen={choiceOpen} toggle={() => setChoiceOpen(!choiceOpen)}>
-                        <DropdownToggle size="sm" style={{borderRadius: "0.4em", width: "9em"}} caret={true}>
-                            {selectedStress.stressSelectMode}
-                        </DropdownToggle>
-                        <DropdownMenu right={false}>
-                            {Object.keys(StressSelectMode).map(key => {
-                                const stressSelectMode: StressSelectMode = StressSelectMode[key]
-                                const stress = {stressSelectMode, stressValue: 0.5}
-                                const newSelection: ISelection = {selectedStress: stress}
-                                const onClick = () => {
-                                    setNuance(stress.stressValue)
-                                    setSelection(newSelection)
-                                }
-                                return (
-                                    <DropdownItem key={key} onClick={onClick}>
-                                        {stressSelectMode}
-                                    </DropdownItem>
-                                )
-                            })}
-                        </DropdownMenu>
-                    </ButtonDropdown>
-                </Col>
-                <Col md="4">
+                <Col md="5">
                     <Row>
-                        <Col md={12}>
+                        <Col md={4}>
+                            <ButtonDropdown isOpen={choiceOpen} toggle={() => setChoiceOpen(!choiceOpen)}
+                                            style={{width: "10em"}}>
+                                <DropdownToggle size="sm" caret={true}>
+                                    {selectedStress.stressSelectMode}
+                                </DropdownToggle>
+                                <DropdownMenu right={false}>
+                                    {Object.keys(StressSelectMode).map(key => {
+                                        const stressSelectMode: StressSelectMode = StressSelectMode[key]
+                                        const stress = {stressSelectMode, stressValue: 0.5}
+                                        const newSelection: ISelection = {selectedStress: stress}
+                                        const onClick = () => {
+                                            setNuance(stress.stressValue)
+                                            setSelection(newSelection)
+                                        }
+                                        return (
+                                            <DropdownItem key={key} onClick={onClick}>
+                                                {stressSelectMode}
+                                            </DropdownItem>
+                                        )
+                                    })}
+                                </DropdownMenu>
+                            </ButtonDropdown>
+                        </Col>
+                        <Col md={8}>
                             <NuanceAdjustmentButtons/>
                         </Col>
                     </Row>
-                    <Row>
-                        <Col md={12}>
+                    <Row noGutters={true}>
+                        <Col md={5}>
                             <div style={PROGRESS_BOX}>
                                 <Progress
                                     className={`${slackMode ? "h-100" : "float-right h-100"} ${barMode ? "bar" : "cable"}`}
                                     value={percent} max={100} bar={true}
-                                >
-                                    {percent.toFixed(0)}%
-                                </Progress>
+                                >{percent.toFixed(0)}%</Progress>
                             </div>
+                        </Col>
+                        <Col md={7} className="my-1">
+                            <NumbersPanel
+                                fabric={fabric}
+                                selectedStress={selectedStress}
+                                showElasticFactor={showElasticFactor}
+                                nuance={nuance}
+                                barMode={barMode}
+                                slackMode={slackMode}
+                            />
                         </Col>
                     </Row>
                 </Col>
-                <Col md="5">
+                <Col md="2">
                     <Row>
                         <Col md={12} className="flex-fill">
-                            <AdjustmentButtons/>
+                            <LengthAdjustmentButtons/>
+                        </Col>
+                    </Row>
+                </Col>
+                <Col md="4">
+                    <Row>
+                        <Col md={12} className="flex-fill">
+                            <ElasticFactorAdjustmentButtons/>
                         </Col>
                     </Row>
                     <Row noGutters={true} className="my-1">
-                        <NumbersColumns
-                            fabric={fabric}
-                            selectedStress={selectedStress}
-                            nuance={nuance}
-                            barMode={barMode}
-                            slackMode={slackMode}
-                        />
+                        <Col md={12} className="flex-fill">
+                            <ElasticFactorViewButtons/>
+                        </Col>
                     </Row>
                 </Col>
                 <Col md="1">
                     <ButtonGroup size="sm" styl={{height: "100%"}} vertical={false}>
                         <Button onClick={() => {
-                            fabric.selectIntervals()
+                            fabric.clearSelection()
                             setSelection({})
                         }}><FaTimesCircle/></Button>
                     </ButtonGroup>
@@ -197,14 +235,15 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
 
 const PROGRESS_BOX = {
     borderColor: "white", borderStyle: "solid", borderWidth: "1px", borderRadius: "3px",
-    marginTop: "3px",
-    height: "100%",
+    marginTop: "4px",
+    height: "2em",
     backgroundColor: "black",
 }
 
-const NumbersColumns = ({fabric, selectedStress, nuance, barMode, slackMode}: {
+const NumbersPanel = ({fabric, selectedStress, showElasticFactor, nuance, barMode, slackMode}: {
     fabric: TensegrityFabric,
     selectedStress: ISelectedStress,
+    showElasticFactor: number,
     nuance: number,
     barMode: boolean,
     slackMode: boolean,
@@ -218,6 +257,10 @@ const NumbersColumns = ({fabric, selectedStress, nuance, barMode, slackMode}: {
     const [pump, setPump] = useState(false)
 
     function refresh(): void {
+        if (showElasticFactor > 0) {
+            fabric.setDisplacementThreshold(1000, barMode ? StressSelectMode.TighterBars : StressSelectMode.TighterCables)
+            return
+        }
         const min = currentMinDisplacement()
         const max = currentMaxDisplacement()
         setMinDisplacement(min)
@@ -233,33 +276,25 @@ const NumbersColumns = ({fabric, selectedStress, nuance, barMode, slackMode}: {
     useEffect(() => {
         const timer = setInterval(refresh, 1000)
         return () => clearTimeout(timer)
-    }, [nuance, selectedStress.stressSelectMode])
+    }, [nuance, showElasticFactor, selectedStress.stressSelectMode])
 
-    const rangeString = `${minDisplacement.toFixed(3)}-${maxDisplacement.toFixed(3)}`
-    const percent = (slackMode ? nuance : 1 - nuance) * 100
     return (
-        <>
-            <Col md={4}>
-                <InputGroup size="sm">
-                    <Input style={{textAlign: "center"}} disabled={true} value={rangeString}/>
-                </InputGroup>
-            </Col>
-            <Col md={6}>
-                <InputGroup size="sm">
-                    <InputGroupAddon addonType="prepend">
-                        <InputGroupText style={{width: "4em", textAlign: "right"}}>
-                            {percent.toFixed(0)}%=
-                        </InputGroupText>
-                    </InputGroupAddon>
-                    <Input style={{color: intervalColor(barMode)}} disabled={true}
-                           value={`${barMode ? "Bars" : "Cables"} ${slackMode ? "<" : ">"} ${displacement.toFixed(3)}`}/>
-                </InputGroup>
-            </Col>
-            <Col md={2}>
-                <Button size="sm" className="w-100" style={{color: pump ? intervalColor(barMode) : "white"}}>
+        <InputGroup size="sm">
+            <InputGroupAddon addonType="prepend">
+                <InputGroupText style={{width: "4em", textAlign: "right"}}>
+                    {minDisplacement.toFixed(3)}
+                </InputGroupText>
+            </InputGroupAddon>
+            <Input style={{color: intervalColor(barMode), textAlign: "center"}} disabled={true}
+                   value={`${barMode ? "Bars" : "Cables"} ${slackMode ? "<" : ">"} ${displacement.toFixed(3)}`}/>
+            <InputGroupAddon addonType="append">
+                <InputGroupText style={{width: "4em", textAlign: "right"}}>
+                    {maxDisplacement.toFixed(3)}
+                </InputGroupText>
+                <InputGroupText style={{color: pump ? intervalColor(barMode) : "white"}}>
                     <FaHeart/>
-                </Button>
-            </Col>
-        </>
+                </InputGroupText>
+            </InputGroupAddon>
+        </InputGroup>
     )
 }

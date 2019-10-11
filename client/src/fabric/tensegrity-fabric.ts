@@ -70,16 +70,21 @@ export class TensegrityFabric {
         this.growth = {growing: [executing], optimizationStack: []}
     }
 
-    public selectIntervals(selectionFilter?: (interval: IInterval) => boolean): number {
-        if (!selectionFilter) {
-            this.splitIntervals = undefined
-            return 0
-        }
+    public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
         if (this.growth) {
             return 0
         }
         this.splitIntervals = this.intervals.reduce(intervalSplitter(selectionFilter), emptySplit())
         return this.splitIntervals.selected.length
+    }
+
+    public setDisplacementThreshold(threshold: number, mode?: StressSelectMode): void {
+        setFabricDisplacementThreshold(this, threshold, mode)
+    }
+
+    public clearSelection(): void {
+        this.splitIntervals = undefined
+        this.setDisplacementThreshold(0)
     }
 
     public forEachSelected(operation: (interval: IInterval) => void): number {
@@ -91,15 +96,11 @@ export class TensegrityFabric {
         return splitIntervals.selected.length
     }
 
-    public setDisplacementThreshold(threshold: number, mode: StressSelectMode): void {
-        setFabricDisplacementThreshold(this, threshold, mode)
-    }
-
     public get growthFaces(): IFace[] {
         return this.faces.filter(face => face.canGrow)
     }
 
-    public createBrick(scale? : IPercent): IBrick {
+    public createBrick(scale?: IPercent): IBrick {
         const brick = createBrickOnOrigin(this, percentOrHundred(scale))
         this.instance.clear()
         this.disposeOfGeometry()
