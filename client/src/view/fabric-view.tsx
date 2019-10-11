@@ -163,7 +163,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                 {fastMode ? (
                     <group>
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
-                        {!fabric.splitIntervals ? undefined : (
+                        {!fabric.splitIntervals || selection.selectedStress ? undefined : (
                             fabric.splitIntervals.selected.map(interval => (
                                 <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
                             ))
