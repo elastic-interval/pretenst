@@ -40,8 +40,8 @@ const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopP
 const ITERATIONS_PER_FRAME = 24
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const BAR_GIRTH = 0.7
-const CABLE_GIRTH = 0.2
+const BAR_GIRTH = 0.3
+const CABLE_GIRTH = 0.1
 
 export function FabricView({fabric, selection, setSelection, autoRotate, fastMode, showFaces}: {
     fabric: TensegrityFabric,
@@ -141,7 +141,8 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
         interval: IInterval,
         attenuated: boolean,
     }): JSX.Element {
-        const {scale, rotation} = fabric.orientInterval(interval, interval.isBar ? BAR_GIRTH : CABLE_GIRTH)
+        const elasticFactor = fabric.instance.engine.getElasticFactor(interval.index)
+        const {scale, rotation} = fabric.orientInterval(interval, Math.sqrt(elasticFactor) * (interval.isBar ? BAR_GIRTH : CABLE_GIRTH))
         const material = attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
         return (
             <mesh

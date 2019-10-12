@@ -38,8 +38,8 @@ export interface IFabricOutput {
     intervals: {
         joints: string,
         type: string,
-        stress: number,
-        thickness: number,
+        strain: number,
+        elastic: number,
     }[]
 }
 
@@ -313,8 +313,8 @@ export class TensegrityFabric {
                 return {
                     joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
                     type: IntervalRole[interval.intervalRole],
-                    stress: deltaLength / restLength,
-                    thickness: this.engine.getElasticFactor(interval.index),
+                    strain: deltaLength / restLength,
+                    elastic: this.engine.getElasticFactor(interval.index),
                 }
             }),
         }
