@@ -27,7 +27,7 @@ export enum PhysicsFeature {
     DragBelowWater = 5,
     PushElastic = 6,
     PullElastic = 7,
-    IntervalCountdown = 8,
+    BusyCountdown = 8,
 }
 
 
@@ -214,14 +214,14 @@ function _intervalRole(intervalIndex: u16): usize {
     return _INTERVAL_ROLE + _16(intervalIndex)
 }
 
-const _INTERVAL_COUNTDOWN = _INTERVAL_ROLE + _16_INTERVALS
+const _INTERVAL_BUSY_COUNTDOWN = _INTERVAL_ROLE + _16_INTERVALS
 
 @inline()
-function _intervalCountdown(intervalIndex: u16): usize {
-    return _INTERVAL_COUNTDOWN + _16(intervalIndex)
+function _intervalBusyCountdown(intervalIndex: u16): usize {
+    return _INTERVAL_BUSY_COUNTDOWN + _16(intervalIndex)
 }
 
-const _STATE_LENGTH = _INTERVAL_COUNTDOWN + _16_INTERVALS
+const _STATE_LENGTH = _INTERVAL_BUSY_COUNTDOWN + _16_INTERVALS
 
 @inline()
 function _stateLength(intervalIndex: u16, state: u8): usize {
@@ -333,7 +333,7 @@ let physicsDragBelow: f32
 let physicsAntigravityBelow: f32
 let pushElasticFactor: f32
 let pullElasticFactor: f32
-let intervalCountdown: f32
+let busyCountdown: f32
 
 export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f32 {
     switch (globalFeature) {
@@ -353,8 +353,8 @@ export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f3
             return pushElasticFactor = value
         case PhysicsFeature.PullElastic:
             return pullElasticFactor = value
-        case PhysicsFeature.IntervalCountdown:
-            return intervalCountdown = value
+        case PhysicsFeature.BusyCountdown:
+            return busyCountdown = value
         default:
             return 0
     }
@@ -579,7 +579,7 @@ export function isBusy(): boolean {
 }
 
 export function extendBusyCountdown(factor: f32): void {
-    let countdown = <u16>(intervalCountdown * factor)
+    let countdown = <u16>(busyCountdown * factor)
     setBusyCountdown(countdown)
 }
 
@@ -621,7 +621,7 @@ export function initInstance(pretenst: f32): void {
 
 export function setPretenst(pretenst: f32): void {
     setF32(_PRETENST, pretenst)
-    setBusyCountdown(<u16>intervalCountdown)
+    setBusyCountdown(<u16>busyCountdown)
 }
 
 // Joints =====================================================================================
@@ -721,8 +721,8 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLen
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, restLength)
     }
-    let countdown: u16 = <u16>intervalCountdown
-    setIntervalCountdown(intervalIndex, countdown)
+    let countdown: u16 = <u16>busyCountdown
+    setIntervalBusyCountdown(intervalIndex, countdown)
     setBusyCountdown(countdown)
     return intervalIndex
 }
@@ -739,7 +739,7 @@ export function removeInterval(intervalIndex: u16): void {
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset
     setIntervalRole(intervalIndex, getIntervalRole(nextIndex))
-    setU16(_intervalCountdown(intervalIndex), getIntervalCountdown(nextIndex))
+    setU16(_intervalBusyCountdown(intervalIndex), getIntervalBusyCountdown(nextIndex))
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
@@ -793,8 +793,8 @@ export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
 export function changeRestLength(intervalIndex: u16, restLength: f32): void {
     initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
     setIntervalStateLength(intervalIndex, REST_STATE, restLength)
-    let countdown = <u16>intervalCountdown
-    setIntervalCountdown(intervalIndex, countdown)
+    let countdown = <u16>busyCountdown
+    setIntervalBusyCountdown(intervalIndex, countdown)
     setBusyCountdown(countdown)
 }
 
@@ -803,12 +803,12 @@ export function multiplyRestLength(intervalIndex: u16, factor: f32): void {
     changeRestLength(intervalIndex, restLength * factor)
 }
 
-function getIntervalCountdown(intervalIndex: u16): u16 {
-    return getU16(_intervalCountdown(intervalIndex))
+function getIntervalBusyCountdown(intervalIndex: u16): u16 {
+    return getU16(_intervalBusyCountdown(intervalIndex))
 }
 
-function setIntervalCountdown(intervalIndex: u16, countdown: u16): void {
-    setU16(_intervalCountdown(intervalIndex), countdown)
+function setIntervalBusyCountdown(intervalIndex: u16, countdown: u16): void {
+    setU16(_intervalBusyCountdown(intervalIndex), countdown)
 }
 
 export function getIntervalStateLength(intervalIndex: u16, state: u8): f32 {
@@ -837,11 +837,11 @@ function calculateLength(intervalIndex: u16): f32 {
 
 function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
     let currentLength = getCurrentLength(intervalIndex)
-    let countdown = getIntervalCountdown(intervalIndex)
+    let countdown = getIntervalBusyCountdown(intervalIndex)
     if (countdown === 0) {
         return currentLength
     }
-    let progress = (intervalCountdown - <f32>countdown) / intervalCountdown
+    let progress = (busyCountdown - <f32>countdown) / busyCountdown
     let stateLength = getIntervalStateLength(intervalIndex, state)
     return currentLength * (1 - progress) + stateLength * progress
 }
@@ -1066,19 +1066,19 @@ function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32): void 
     }
 }
 
-function tick(maxIntervalCountdown: u16, state: u8, busy: boolean): u16 {
+function tick(maxIntervalBusyCountdown: u16, state: u8, busy: boolean): u16 {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         intervalPhysics(intervalIndex, busy, state)
-        let countdown = getIntervalCountdown(intervalIndex)
+        let countdown = getIntervalBusyCountdown(intervalIndex)
         if (countdown === 0) {
             continue
         }
-        if (countdown > maxIntervalCountdown) {
-            maxIntervalCountdown = countdown
+        if (countdown > maxIntervalBusyCountdown) {
+            maxIntervalBusyCountdown = countdown
         }
         countdown--
-        setIntervalCountdown(intervalIndex, countdown)
+        setIntervalBusyCountdown(intervalIndex, countdown)
         if (countdown === 0) { // reached the end just now
             initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
         }
@@ -1095,15 +1095,15 @@ function tick(maxIntervalCountdown: u16, state: u8, busy: boolean): u16 {
         add(_location(jointIndex), _velocity(jointIndex))
         setF32(_intervalMass(jointIndex), AMBIENT_JOINT_MASS)
     }
-    return maxIntervalCountdown
+    return maxIntervalBusyCountdown
 }
 
 export function iterate(ticks: u16): boolean {
     let currentState = getCurrentState()
-    let maxIntervalCountdown: u16 = 0
+    let maxIntervalBusyCountdown: u16 = 0
     let busy = isBusy()
     for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-        maxIntervalCountdown = tick(maxIntervalCountdown, currentState, busy)
+        maxIntervalBusyCountdown = tick(maxIntervalBusyCountdown, currentState, busy)
     }
     setAge(getAge() + <u32>ticks)
     outputLinesGeometry()
@@ -1112,7 +1112,7 @@ export function iterate(ticks: u16): boolean {
         outputFaceGeometry(faceIndex)
     }
     calculateJointMidpoint()
-    if (maxIntervalCountdown === 0) {
+    if (maxIntervalBusyCountdown === 0) {
         let busyCountdown = getBusyCountdown()
         if (busyCountdown === 0) {
             return false

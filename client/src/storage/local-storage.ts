@@ -107,7 +107,7 @@ function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
             return 1.2
         case PhysicsFeature.PullElastic:
             return 0.3
-        case PhysicsFeature.IntervalCountdown:
+        case PhysicsFeature.BusyCountdown:
             return 300.0
         default:
             throw new Error("Bad physics feature")
@@ -172,7 +172,7 @@ export function featureMultiplier(physicsFeature: PhysicsFeature): PhysicsMultip
             return PhysicsMultiplier.Thousandths
         case PhysicsFeature.PullElastic:
             return PhysicsMultiplier.Thousandths
-        case PhysicsFeature.IntervalCountdown:
+        case PhysicsFeature.BusyCountdown:
             return PhysicsMultiplier.One
         default:
             throw new Error("Bad physics feature")

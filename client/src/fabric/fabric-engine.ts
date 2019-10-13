@@ -18,7 +18,7 @@ export enum PhysicsFeature {
     DragBelowWater = 5,
     PushElastic = 6,
     PullElastic = 7,
-    IntervalCountdown = 8,
+    BusyCountdown = 8,
 }
 
 export function notWater(feature?: PhysicsFeature): boolean {
