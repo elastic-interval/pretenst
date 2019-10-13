@@ -107,7 +107,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
     const [open, setOpen] = useState<boolean>(false)
     const [selectedFeature, setSelectedFeature] = useState<IFeature>(featureSet[0])
     return (
-        <div style={{position: "absolute", top: "1em", right: "1em", display: "flex"}}>
+        <div id="top-right">
             <ButtonDropdown style={{display: "block"}} isOpen={open} toggle={() => setOpen(!open)}>
                 <DropdownToggle size="sm" color="success" className="float-right"><FaList/></DropdownToggle>
                 <div style={FACTOR_WRAPPER}>

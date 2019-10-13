@@ -45,11 +45,7 @@ export function CommandPanel({rebuild, fabric, fastMode, setFastMode, autoRotate
     }
 
     return (
-        <ButtonGroup style={{
-            position: "absolute",
-            bottom: "1em",
-            right: "1em",
-        }} size="sm">
+        <ButtonGroup id="bottom-right" size="sm">
             <Button color="success" onClick={rebuild}><FaRecycle/></Button>
             <Button color="info" onClick={onJump}><FaParachuteBox/></Button>
             <Button color="info" onClick={onCentralize}><FaCompressArrowsAlt/></Button>

@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { CSSProperties, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { FaCog, FaDownload } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
@@ -96,7 +96,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
             constructFabric(codeTree)
         }
         return (
-            <div style={{position: "absolute", top: "1em", left: "1em"}}>
+            <div id="top-left">
                 <ButtonDropdown className="w-100 my-2" isOpen={open} toggle={() => setOpen(!open)}>
                     <DropdownToggle size="sm" color="primary">
                         <FaCog/> {code}
@@ -125,7 +125,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
             }
         }
         return (
-            <ButtonGroup style={{position: "absolute", bottom: "1em", left: "1em"}} size="sm">
+            <ButtonGroup id="bottom-left" size="sm">
                 <Button color="info" onClick={onDownloadCSV}><FaDownload/>CSV</Button>
                 <Button color="info" onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
             </ButtonGroup>
@@ -134,7 +134,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
 
     return (
         <div id="tensegrity-view" className="the-whole-page">
-            <div style={MIDDLE_TOP}>
+            <div id="top-middle">
                 <h6>pretenst.com</h6>
             </div>
             {!fabric ? (
@@ -182,15 +182,4 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
             />
         </div>
     )
-}
-
-const MIDDLE_TOP: CSSProperties = {
-    position: "absolute",
-    paddingTop: "0.5em",
-    paddingRight: "1em",
-    paddingLeft: "1em",
-    top: "1em",
-    left: "50%",
-    transform: "translate(-50%)",
-    color: "white",
 }

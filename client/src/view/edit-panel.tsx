@@ -4,7 +4,6 @@
  */
 
 import * as React from "react"
-import { CSSProperties } from "react"
 import { FaArrowDown, FaArrowUp, FaHandPointer, FaSun, FaTimesCircle } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
@@ -74,7 +73,7 @@ export function EditPanel({fabric, selection, setSelection}: {
     }
 
     return (
-        <div style={MIDDLE_BOTTOM}>
+        <div id="bottom-middle">
             {selectedFace ? (
                 <ButtonGroup size="sm">
                     {!selectedFace.face.canGrow ? undefined : (
@@ -117,14 +116,5 @@ export function EditPanel({fabric, selection, setSelection}: {
             )}
         </div>
     )
-}
-
-const MIDDLE_BOTTOM: CSSProperties = {
-    position: "absolute",
-    paddingRight: "1em",
-    paddingLeft: "1em",
-    bottom: "1em",
-    left: "50%",
-    transform: "translate(-50%)",
 }
 

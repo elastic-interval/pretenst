@@ -77,3 +77,53 @@ a, a:hover {
     color: white;
     background-color: #507cac !important;
 }
+
+#top-left {
+    position: absolute;
+    top: 1em;
+    left: 1em;
+    z-index: 100;
+}
+
+#top-right {
+    position: absolute;
+    top: 1em;
+    right: 1em;
+    z-index: 100;
+}
+
+#bottom-left {
+    position: absolute;
+    bottom: 1em;
+    left: 1em;
+    z-index: 100;
+}
+
+#bottom-right {
+    position: absolute;
+    bottom: 1em;
+    right: 1em;
+    z-index: 100;
+}
+
+#bottom-middle {
+    position: absolute;
+    padding-right: 1em;
+    padding-left: 1em;
+    bottom: 1em;
+    left: 50%;
+    transform: translate(-50%);
+    z-index: 100;
+}
+
+#top-middle {
+    position: absolute;
+    padding-top: 0.5em;
+    padding-right: 1em;
+    padding-left: 1em;
+    top: 1em;
+    left: 50%;
+    transform: translate(-50%);
+    color: white;
+    z-index: 100;
+}
