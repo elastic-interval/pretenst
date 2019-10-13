@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -9,6 +10,9 @@ import { PerspectiveCamera } from "three"
 
 import { API_URI, DOCS_ON_GITHUB, SINGLE_ISLAND } from "./constants"
 import { FabricKernel } from "./fabric/fabric-kernel"
+import { Genome } from "./genetics/genome"
+import { Gotchi, IGotchiFactory } from "./gotchi/gotchi"
+import { Hexalot } from "./island/hexalot"
 import { Island } from "./island/island"
 import { Surface } from "./island/island-logic"
 import { AppMode, AppTransition, IAppProps, IAppState, updateDimensions } from "./state/app-state"
@@ -17,9 +21,6 @@ import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE } from "./view/flight"
 import { HexalotTarget, InitialFlightState, IslandTarget } from "./view/flight-state"
 import { WorldView } from "./view/world-view"
-import { Gotchi, IGotchiFactory } from "./gotchi/gotchi"
-import { Hexalot } from "./island/hexalot"
-import { Genome } from "./genetics/genome"
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera

@@ -6,7 +6,6 @@
 import { IntervalRole, PhysicsFeature } from "../fabric/fabric-engine"
 import { codeTreeToString, ICodeTree, IPercent, percentToFactor } from "../fabric/tensegrity-brick-types"
 
-const PRETENST = 1.05
 const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
 
@@ -85,8 +84,7 @@ export function roleLength(intervalRole: IntervalRole, scale: IPercent, defaultV
         return scaleFactor * defaultRoleLength(intervalRole)
     }
     const value = localStorage.getItem(IntervalRole[intervalRole])
-    const pretenst = intervalRole === IntervalRole.Bar ? PRETENST : 1
-    return scaleFactor * (value ? parseFloat(value) : pretenst * defaultRoleLength(intervalRole))
+    return scaleFactor * (value ? parseFloat(value) : defaultRoleLength(intervalRole))
 }
 
 function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
