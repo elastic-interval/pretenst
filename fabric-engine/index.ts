@@ -9,6 +9,15 @@ declare function logFloat(idx: u32, f: f32): void
 
 declare function logInt(idx: u32, i: i32): void
 
+// DECLARATION
+
+const JOINT_RADIUS: f32 = 0.1
+const AMBIENT_JOINT_MASS: f32 = 0.1
+
+const BUSY_DRAG_FACTOR: f32 = 60
+const BAR_MASS_PER_LENGTH: f32 = 1
+const CABLE_MASS_PER_LENGTH: f32 = 0.01
+
 export enum PhysicsFeature {
     GravityAbove = 0,
     DragAbove = 1,
@@ -32,208 +41,285 @@ enum IntervalRole {
     BowEndHigh = 7,
 }
 
-const U8 = sizeof<u8>()
-const U16 = sizeof<u16>()
-const U32 = sizeof<u32>()
-const F32 = sizeof<f32>()
+const LAND: u8 = 1
+const ERROR: u16 = 65535
 
-const BAR_MASS_PER_LENGTH: f32 = 1
-const CABLE_MASS_PER_LENGTH: f32 = 0.01
+const MAX_INSTANCES: u16 = 128
+const MAX_INTERVALS: u16 = 1024
+const MAX_JOINTS: u16 = MAX_INTERVALS / 2
+const MAX_FACES: u16 = MAX_INTERVALS / 3
 
-const BAR_COLOR: f32[] = [1.0, 0.3, 0.2]
-const CABLE_COLOR: f32[] = [0.4, 0.6, 1]
-const ATTENUATED_COLOR: f32[] = [0.25, 0.25, 0.25]
-
-const FLOATS_IN_VECTOR = 3
-const ERROR: usize = 65535
-const LATERALITY_SIZE: usize = U8
-const JOINT_NAME_SIZE: usize = U16
-const INDEX_SIZE: usize = U16
-const INTERVAL_ROLE_SIZE: usize = U8
-const INTERVAL_COUNTDOWN_SIZE: usize = U16
-const VECTOR_SIZE: usize = F32 * 3
-const JOINT_RADIUS: f32 = 0.1
-const AMBIENT_JOINT_MASS: f32 = 0.1
 const REST_STATE: u8 = 0
 const STATE_COUNT: u8 = 5
-const LAND: u8 = 1
-const BUSY_DRAG_FACTOR: f32 = 60
+const ATTENUATED_COLOR: f32[] = [0.25, 0.25, 0.25]
+const BAR_COLOR: f32[] = [1.0, 0.3, 0.2]
+const CABLE_COLOR: f32[] = [0.4, 0.6, 1]
 
-const JOINT_SIZE: usize = VECTOR_SIZE * 2 + LATERALITY_SIZE + JOINT_NAME_SIZE + F32 * 2
-const INTERVAL_SIZE: usize = INDEX_SIZE + INDEX_SIZE + F32 + F32 + INTERVAL_ROLE_SIZE + INTERVAL_COUNTDOWN_SIZE + F32 * STATE_COUNT
+@inline()
+function _8(index: u16): usize {
+    return index * sizeof<u8>()
+}
 
-// Dimensioning ================================================================================
+@inline()
+function _16(index: u16): usize {
+    return index * sizeof<u16>()
+}
 
-let jointCountMax: u16 = 0
-let intervalCountMax: u16 = 0
-let faceCountMax: u16 = 0
-let instanceCountMax: u16 = 0
+@inline()
+function _32(index: u16): usize {
+    return index * sizeof<u32>()
+}
+
+@inline()
+function _32x3(index: u16): usize {
+    return _32(index) * 3
+}
+
+const _32x3_JOINTS = MAX_JOINTS * sizeof<f32>() * 3
+const _32x3_INTERVALS = MAX_INTERVALS * sizeof<f32>() * 3
+const _32x3_FACES = MAX_FACES * sizeof<f32>() * 3
+const _32_JOINTS = MAX_JOINTS * sizeof<f32>()
+const _32_INTERVALS = MAX_INTERVALS * sizeof<f32>()
+const _32_FACES = MAX_FACES * sizeof<f32>()
+const _16_JOINTS = MAX_JOINTS * sizeof<u16>()
+const _16_INTERVALS = MAX_INTERVALS * sizeof<u16>() * 3
+const _16_FACES = MAX_FACES * sizeof<u16>() * 3
+const _8_JOINTS = MAX_JOINTS * sizeof<u8>()
+const _8_INTERVALS = MAX_INTERVALS * sizeof<u8>() * 3
+const _8_FACES = MAX_FACES * sizeof<u8>() * 3
+
+// SURFACE
+
+const SURFACE_BITS: u8 = 128
+const SURFACE_SIZE =
+    SURFACE_BITS * sizeof<f32>() * 2 + // location of the spots
+    SURFACE_BITS * sizeof<u8>() // bit values
+
+function getSpotLocationX(bitNumber: u8): f32 {
+    return load<f32>(bitNumber * sizeof<f32>())
+}
+
+function getSpotLocationZ(bitNumber: u8): f32 {
+    return load<f32>(SURFACE_BITS * sizeof<f32>() + bitNumber * sizeof<f32>())
+}
+
+function getHexalotBit(bitNumber: u8): u8 {
+    return load<u8>(SURFACE_BITS * sizeof<f32>() * 2 + bitNumber * sizeof<u8>())
+}
+
+function getNearestSpotIndex(jointIndex: u16): u8 {
+    let locPtr = _location(jointIndex)
+    let x = getX(locPtr)
+    let z = getZ(locPtr)
+    let minimumQuadrance: f32 = 10000
+    let nearestSpotIndex: u8 = SURFACE_BITS
+    for (let bit: u8 = 0; bit < SURFACE_BITS - 1; bit++) {
+        let xx = getSpotLocationX(bit)
+        let dx = xx - x
+        let zz = getSpotLocationZ(bit)
+        let dz = zz - z
+        let q = dx * dx + dz * dz
+        if (q < minimumQuadrance) {
+            minimumQuadrance = q
+            nearestSpotIndex = bit
+        }
+    }
+    return nearestSpotIndex
+}
+
 let useHexalot: boolean = false;
 
-let fabricBytes: usize = 0
-
-let _joints: usize = 0
-let _jointLocations: usize = 0
-let _faceMidpoints: usize = 0
-let _faceNormals: usize = 0
-let _faceLocations: usize = 0
-let _intervals: usize = 0
-let _intervalUnits: usize = 0
-let _intervalDisplacements: usize = 0
-let _faces: usize = 0
-let _lineLocations: usize = 0
-let _lineColors: usize = 0
-
-let _state: usize = 0
-let _vA: usize = 0
-let _vB: usize = 0
-let _vX: usize = 0
-let _midpoint: usize = 0
-let _seed: usize = 0
-let _forward: usize = 0
-let _right: usize = 0
-
-export function init(jointsPerFabric: u16, intervalsPerFabric: u16, facesPerFabric: u16, instances: u16): usize {
-    jointCountMax = jointsPerFabric
-    intervalCountMax = intervalsPerFabric
-    faceCountMax = facesPerFabric
-    instanceCountMax = instances
-    _seed = _midpoint + VECTOR_SIZE
-    _forward = _seed + VECTOR_SIZE
-    _right = _forward + VECTOR_SIZE
-    _lineColors = _right + VECTOR_SIZE
-    _lineLocations = _lineColors + intervalCountMax * VECTOR_SIZE * 2
-    _faceMidpoints = _lineLocations + intervalCountMax * VECTOR_SIZE * 2
-    _faceNormals = _faceMidpoints + faceCountMax * VECTOR_SIZE
-    _faceLocations = _faceNormals + faceCountMax * VECTOR_SIZE * 3
-    _jointLocations = _faceLocations + faceCountMax * VECTOR_SIZE * 3
-    _intervalUnits = _jointLocations + jointCountMax * VECTOR_SIZE
-    _intervalDisplacements = _intervalUnits + intervalCountMax * VECTOR_SIZE
-    _joints = _intervalDisplacements + intervalCountMax * F32
-    _intervals = _joints + jointCountMax * JOINT_SIZE
-    _faces = _intervals + intervalCountMax * INTERVAL_SIZE
-    _vX = _faces + faceCountMax * FACE_SIZE
-    _vA = _vX + VECTOR_SIZE
-    _vB = _vA + VECTOR_SIZE
-    _state = _vB + VECTOR_SIZE
-    fabricBytes = _state + STATE_SIZE
-    let blocks = (HEXALOT_SIZE + fabricBytes * instanceCountMax) >> 16
-    memory.grow(blocks + 1)
-    return fabricBytes
+function getTerrainUnder(jointIndex: u16): u8 {
+    if (!useHexalot) {
+        return LAND
+    }
+    // TODO: save the three most recent spotIndexes at the joint and check mostly only those
+    // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
+    let spotIndex = getNearestSpotIndex(jointIndex)
+    if (spotIndex === SURFACE_BITS - 1) {
+        return SURFACE_BITS
+    }
+    return getHexalotBit(spotIndex)
 }
 
-// Joint Pointers =========================================================================
+// INSTANCE
 
-// @ts-ignore
+const _LOCATION = 0
+
 @inline()
 function _location(jointIndex: u16): usize {
-    return _jointLocations + jointIndex * VECTOR_SIZE
+    return _LOCATION + _32x3(jointIndex)
 }
 
-// @ts-ignore
+const _VELOCITY = _LOCATION + _32x3_JOINTS
+
 @inline()
 function _velocity(jointIndex: u16): usize {
-    return _joints + jointIndex * VECTOR_SIZE
+    return _VELOCITY + _32x3(jointIndex)
 }
 
-// @ts-ignore
+const _FORCE = _VELOCITY + _32x3_JOINTS
+
 @inline()
 function _force(jointIndex: u16): usize {
-    return _velocity(jointCountMax) + jointIndex * VECTOR_SIZE
+    return _FORCE + _32x3(jointIndex)
 }
 
-// @ts-ignore
+const _INTERVAL_MASS = _FORCE + _32x3_JOINTS
+
 @inline()
 function _intervalMass(jointIndex: u16): usize {
-    return _force(jointCountMax) + jointIndex * F32
+    return _INTERVAL_MASS + _32(jointIndex)
 }
 
-// @ts-ignore
-@inline()
-function _laterality(jointIndex: u16): usize {
-    return _force(jointCountMax) + jointIndex * U8
-}
+const _ALPHA = _INTERVAL_MASS + _32_JOINTS
 
-// @ts-ignore
-@inline()
-function _jointTag(jointIndex: u16): usize {
-    return _laterality(jointCountMax) + jointIndex * U16
-}
-
-// Interval Pointers =========================================================================
-
-// @ts-ignore
 @inline()
 function _alpha(intervalIndex: u16): usize {
-    return _intervals + intervalIndex * INDEX_SIZE
+    return _ALPHA + _16(intervalIndex)
 }
 
-// @ts-ignore
+const _OMEGA = _ALPHA + _16_INTERVALS
+
 @inline()
 function _omega(intervalIndex: u16): usize {
-    return _alpha(intervalCountMax) + intervalIndex * INDEX_SIZE
+    return _OMEGA + _16(intervalIndex)
 }
 
-// @ts-ignore
+const _CURRENT_LENGTH = _OMEGA + _16_INTERVALS
+
 @inline()
 function _currentLength(intervalIndex: u16): usize {
-    return _omega(intervalCountMax) + intervalIndex * F32
+    return _CURRENT_LENGTH + _32(intervalIndex)
 }
 
-// @ts-ignore
+const _DISPLACEMENT = _CURRENT_LENGTH + _32_INTERVALS
+
+@inline()
+function _displacement(intervalIndex: u16): usize {
+    return _DISPLACEMENT + _32(intervalIndex)
+}
+
+const _ELASTIC_FACTOR = _DISPLACEMENT + _32_INTERVALS
+
 @inline()
 function _elasticFactor(intervalIndex: u16): usize {
-    return _currentLength(intervalCountMax) + intervalIndex * F32
+    return _ELASTIC_FACTOR + _32(intervalIndex)
 }
 
-// @ts-ignore
+const _INTERVAL_ROLE = _ELASTIC_FACTOR + _32_INTERVALS
+
 @inline()
 function _intervalRole(intervalIndex: u16): usize {
-    return _elasticFactor(intervalCountMax) + intervalIndex * INTERVAL_ROLE_SIZE
+    return _INTERVAL_ROLE + _16(intervalIndex)
 }
 
-// @ts-ignore
+const _INTERVAL_COUNTDOWN = _INTERVAL_ROLE + _16_INTERVALS
+
 @inline()
 function _intervalCountdown(intervalIndex: u16): usize {
-    return _intervalRole(intervalCountMax) + intervalIndex * INTERVAL_COUNTDOWN_SIZE
+    return _INTERVAL_COUNTDOWN + _16(intervalIndex)
 }
 
-// @ts-ignore
+const _STATE_LENGTH = _INTERVAL_COUNTDOWN + _16_INTERVALS
+
 @inline()
-function _stateLengthArray(intervalIndex: u16): usize {
-    return _intervalCountdown(intervalCountMax) + intervalIndex * F32 * STATE_COUNT
+function _stateLength(intervalIndex: u16, state: u8): usize {
+    return _STATE_LENGTH + _32(intervalIndex) * STATE_COUNT + _32(state)
 }
 
-// @ts-ignore
+const _UNIT = _STATE_LENGTH + _32_INTERVALS * STATE_COUNT
+
 @inline()
 function _unit(intervalIndex: u16): usize {
-    return _intervalUnits + intervalIndex * VECTOR_SIZE
+    return _UNIT + _32x3(intervalIndex)
 }
 
-// Face Pointers =========================================================================
+const _FACE_JOINTS = _UNIT + _32x3_INTERVALS
 
-// @ts-ignore
 @inline()
-function _face(faceIndex: u16): usize {
-    return _faces + faceIndex * FACE_SIZE
+function _faceJointIndex(faceIndex: u16, jointNumber: u16): usize {
+    return _UNIT + _FACE_JOINTS + _16(faceIndex) * 3 + _16(jointNumber)
 }
 
-// @ts-ignore
+const _FACE_MIDPOINTS = _FACE_JOINTS + _16_FACES * 3
+
 @inline()
 function _faceMidpoint(faceIndex: u16): usize {
-    return _faceMidpoints + faceIndex * VECTOR_SIZE
+    return _FACE_MIDPOINTS + _32x3(faceIndex)
 }
 
-// @ts-ignore
+const _FACE_NORMALS = _FACE_MIDPOINTS + _32x3_FACES
+
 @inline()
 function _faceNormal(faceIndex: u16, jointNumber: u16): usize {
-    return _faceNormals + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
+    return _FACE_NORMALS + _32x3(faceIndex * 3) + _32x3(jointNumber)
 }
 
-// @ts-ignore
+const _FACE_LOCATIONS = _FACE_NORMALS + _32x3_FACES * 3
+
 @inline()
 function _faceLocation(faceIndex: u16, jointNumber: u16): usize {
-    return _faceLocations + (faceIndex * 3 + jointNumber) * VECTOR_SIZE
+    return _FACE_LOCATIONS + _32x3(faceIndex * 3) + _32x3(jointNumber)
+}
+
+const _LINE_LOCATIONS = _FACE_LOCATIONS + _32x3_FACES * 3
+
+@inline()
+function _lineLocation(intervalIndex: u16, omega: boolean): usize {
+    return _LINE_LOCATIONS + _32x3(intervalIndex) * 2 + _32x3(omega ? 1 : 0)
+}
+
+const _LINE_COLORS = _LINE_LOCATIONS + _32x3_INTERVALS * 2
+
+@inline()
+function _lineColor(intervalIndex: u16, omega: boolean): usize {
+    return _LINE_COLORS + _32x3(intervalIndex) * 2 + _32x3(omega ? 1 : 0)
+}
+
+// STATE
+
+const _AGE = _LINE_COLORS + _32x3_INTERVALS * 2
+const _MIDPOINT = _AGE + sizeof<u32>()
+const _A = _MIDPOINT + sizeof<f32>() * 3
+const _B = _A + sizeof<f32>() * 3
+const _X = _B + sizeof<f32>() * 3
+const _JOINT_COUNT = _X + sizeof<f32>() * 3
+const _INTERVAL_COUNT = _JOINT_COUNT + sizeof<u16>()
+const _FACE_COUNT = _INTERVAL_COUNT + sizeof<u16>()
+const _BUSY_COUNTDOWN = _FACE_COUNT + sizeof<u16>()
+const _PREVIOUS_STATE = _BUSY_COUNTDOWN + sizeof<u16>()
+const _CURRENT_STATE = _PREVIOUS_STATE + sizeof<u16>()
+const _NEXT_STATE = _CURRENT_STATE + sizeof<u16>()
+const _FABRIC_END = _NEXT_STATE  + sizeof<u16>()
+
+// INSTANCES
+
+const FABRIC_SIZE: usize = _FABRIC_END
+
+let instance: u16 = 0
+let _instance: usize = 0
+
+export function setInstance(index: u16): void {
+    instance = index
+    _instance = SURFACE_SIZE + instance * FABRIC_SIZE
+}
+
+export function cloneInstance(fromIndex: u16, toIndex: u16): void {
+    let fromAddress = SURFACE_SIZE + fromIndex * FABRIC_SIZE
+    let toAddress = SURFACE_SIZE + toIndex * FABRIC_SIZE
+    for (let walk: usize = 0; walk < FABRIC_SIZE; walk += sizeof<u32>()) {
+        store<u32>(toAddress + walk, load<u32>(fromAddress + walk))
+    }
+}
+
+// ?????
+
+export function init(): usize {
+    const bytes = SURFACE_SIZE + FABRIC_SIZE * MAX_INSTANCES
+    let blocks = (bytes) >> 16
+    memory.grow(blocks + 1)
+    return bytes
 }
 
 // Physics =====================================================================================
@@ -273,123 +359,78 @@ export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f3
     }
 }
 
-// Instances ====================================================================================
-
-let instance: u16 = 0
-let instancePtr: usize = 0
-
-export function setInstance(index: u16): void {
-    instance = index
-    instancePtr = HEXALOT_SIZE + instance * fabricBytes
-}
-
-export function cloneInstance(fromIndex: u16, toIndex: u16): void {
-    let fromAddress = HEXALOT_SIZE + fromIndex * fabricBytes
-    let toAddress = HEXALOT_SIZE + toIndex * fabricBytes
-    for (let walk: usize = 0; walk < fabricBytes; walk += U32) {
-        store<u32>(toAddress + walk, load<u32>(fromAddress + walk))
-    }
-}
-
 // Peek and Poke ================================================================================
 
-// @ts-ignore
 @inline()
 function getU8(vPtr: usize): u8 {
-    return load<u8>(instancePtr + vPtr)
+    return load<u8>(_instance + vPtr)
 }
 
-// @ts-ignore
 @inline()
 function setU8(vPtr: usize, value: u8): void {
-    store<u8>(instancePtr + vPtr, value)
+    store<u8>(_instance + vPtr, value)
 }
 
-// @ts-ignore
 @inline()
 function getU16(vPtr: usize): u16 {
-    return load<u16>(instancePtr + vPtr)
+    return load<u16>(_instance + vPtr)
 }
 
-// @ts-ignore
 @inline()
 function setU16(vPtr: usize, value: u16): void {
-    store<u16>(instancePtr + vPtr, value)
+    store<u16>(_instance + vPtr, value)
 }
 
-// @ts-ignore
 @inline()
 function getU32(vPtr: usize): u32 {
-    return load<u32>(instancePtr + vPtr)
+    return load<u32>(_instance + vPtr)
 }
 
-// @ts-ignore
 @inline()
 function setU32(vPtr: usize, value: u32): void {
-    store<u32>(instancePtr + vPtr, value)
+    store<u32>(_instance + vPtr, value)
 }
 
-// @ts-ignore
 @inline()
 function getF32(vPtr: usize): f32 {
-    return load<f32>(instancePtr + vPtr)
+    return load<f32>(_instance + vPtr)
 }
 
-// @ts-ignore
 @inline()
 function setF32(vPtr: usize, value: f32): void {
-    store<f32>(instancePtr + vPtr, value)
+    store<f32>(_instance + vPtr, value)
 }
 
-// @ts-ignore
 @inline()
 function getX(vPtr: usize): f32 {
-    return load<f32>(instancePtr + vPtr)
+    return load<f32>(_instance + vPtr)
 }
 
-// @ts-ignore
 @inline()
 function setX(vPtr: usize, value: f32): void {
-    store<f32>(instancePtr + vPtr, value)
+    store<f32>(_instance + vPtr, value)
 }
 
-// @ts-ignore
 @inline()
 function getY(vPtr: usize): f32 {
-    return load<f32>(instancePtr + vPtr + F32)
+    return load<f32>(_instance + vPtr + sizeof<f32>())
 }
 
-// @ts-ignore
 @inline()
 function setY(vPtr: usize, value: f32): void {
-    store<f32>(instancePtr + vPtr + F32, value)
+    store<f32>(_instance + vPtr + sizeof<f32>(), value)
 }
 
-// @ts-ignore
 @inline()
 function getZ(vPtr: usize): f32 {
-    return load<f32>(instancePtr + vPtr + F32 * 2)
+    return load<f32>(_instance + vPtr + sizeof<f32>() * 2)
 }
 
-// @ts-ignore
 @inline()
 function setZ(vPtr: usize, value: f32): void {
-    store<f32>(instancePtr + vPtr + F32 * 2, value)
+    store<f32>(_instance + vPtr + sizeof<f32>() * 2, value)
 }
 
-// @ts-ignore
-@inline()
-function getU8Global(vPtr: usize): u8 {
-    return load<u8>(vPtr)
-}
-
-// @ts-ignore
-@inline()
-function getF32Global(vPtr: usize): f32 {
-    return load<f32>(vPtr)
-}
-
-// @ts-ignore
 @inline
 function abs(value: f32): f32 {
     return value < 0 ? -value : value
@@ -492,69 +533,44 @@ function crossVectors(vPtr: usize, a: usize, b: usize): void {
 
 // Fabric state ===============================================================================
 
-const JOINT_COUNT_OFFSET = U32
-const JOINT_TAG_COUNT_OFFSET = JOINT_COUNT_OFFSET + U16
-const INTERVAL_COUNT_OFFSET = JOINT_TAG_COUNT_OFFSET + U16
-const FACE_COUNT_OFFSET = INTERVAL_COUNT_OFFSET + U16
-const BUSY_COUNTDOWN_OFFSET = FACE_COUNT_OFFSET + U16
-const PREVIOUS_STATE_OFFSET = BUSY_COUNTDOWN_OFFSET + U16
-const CURRENT_STATE_OFFSET = PREVIOUS_STATE_OFFSET + U8
-const NEXT_STATE_OFFSET = CURRENT_STATE_OFFSET + U8
-const ELASTIC_FACTOR_OFFSET = NEXT_STATE_OFFSET + U8 + U16 // last one is padding for multiple of 4 bytes
-const STATE_SIZE = ELASTIC_FACTOR_OFFSET
-
 function setAge(value: u32): void {
-    setU32(_state, value)
+    setU32(_AGE, value)
 }
 
 export function getAge(): u32 {
-    return getU32(_state)
+    return getU32(_AGE)
 }
 
 export function getJointCount(): u16 {
-    return getU16(_state + JOINT_COUNT_OFFSET)
+    return getU16(_JOINT_COUNT)
 }
 
 function setJointCount(value: u16): void {
-    setU16(_state + JOINT_COUNT_OFFSET, value)
-}
-
-function getJointTagCount(): u16 {
-    return getU16(_state + JOINT_TAG_COUNT_OFFSET)
-}
-
-function setJointTagCount(value: u16): void {
-    setU16(_state + JOINT_TAG_COUNT_OFFSET, value)
-}
-
-export function nextJointTag(): u16 {
-    let count = getJointTagCount()
-    setJointTagCount(count + 1)
-    return count
+    setU16(_JOINT_COUNT, value)
 }
 
 export function getIntervalCount(): u16 {
-    return getU16(_state + INTERVAL_COUNT_OFFSET)
+    return getU16(_INTERVAL_COUNT)
 }
 
 function setIntervalCount(value: u16): void {
-    setU16(_state + INTERVAL_COUNT_OFFSET, value)
+    setU16(_INTERVAL_COUNT, value)
 }
 
 export function getFaceCount(): u16 {
-    return getU16(_state + FACE_COUNT_OFFSET)
+    return getU16(_FACE_COUNT)
 }
 
 function setFaceCount(value: u16): void {
-    setU16(_state + FACE_COUNT_OFFSET, value)
+    setU16(_FACE_COUNT, value)
 }
 
 function getBusyCountdown(): u16 {
-    return getU16(_state + BUSY_COUNTDOWN_OFFSET)
+    return getU16(_BUSY_COUNTDOWN)
 }
 
 export function setBusyCountdown(countdown: u16): void {
-    setU16(_state + BUSY_COUNTDOWN_OFFSET, countdown)
+    setU16(_BUSY_COUNTDOWN, countdown)
 }
 
 export function isBusy(): boolean {
@@ -567,33 +583,32 @@ export function extendBusyCountdown(factor: f32): void {
 }
 
 function getPreviousState(): u8 {
-    return getU8(_state + PREVIOUS_STATE_OFFSET)
+    return getU8(_PREVIOUS_STATE)
 }
 
 function setPreviousState(value: u8): void {
-    setU8(_state + PREVIOUS_STATE_OFFSET, value)
+    setU8(_PREVIOUS_STATE, value)
 }
 
 export function getCurrentState(): u8 {
-    return getU8(_state + CURRENT_STATE_OFFSET)
+    return getU8(_CURRENT_STATE)
 }
 
 function setCurrentState(value: u8): void {
-    setU8(_state + CURRENT_STATE_OFFSET, value)
+    setU8(_CURRENT_STATE, value)
 }
 
 export function getNextState(): u8 {
-    return getU8(_state + NEXT_STATE_OFFSET)
+    return getU8(_NEXT_STATE)
 }
 
 export function setNextState(value: u8): void {
-    setU8(_state + NEXT_STATE_OFFSET, value)
+    setU8(_NEXT_STATE, value)
 }
 
 export function reset(): void {
     setAge(0)
     setJointCount(0)
-    setJointTagCount(0)
     setIntervalCount(0)
     setFaceCount(0)
     setBusyCountdown(0)
@@ -606,7 +621,7 @@ export function reset(): void {
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
     let jointCount = getJointCount()
-    if (jointCount + 1 >= jointCountMax) {
+    if (jointCount + 1 >= MAX_JOINTS) {
         return ERROR
     }
     setJointCount(jointCount + 1)
@@ -615,8 +630,6 @@ export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f3
     zero(_force(jointIndex))
     zero(_velocity(jointIndex))
     setF32(_intervalMass(jointIndex), AMBIENT_JOINT_MASS)
-    setJointLaterality(jointIndex, laterality)
-    setJointTag(jointIndex, jointTag)
     return jointIndex
 }
 
@@ -626,24 +639,6 @@ function copyJointFromNext(jointIndex: u16): void {
     setVector(_force(jointIndex), _force(nextIndex))
     setVector(_velocity(jointIndex), _velocity(nextIndex))
     setF32(_intervalMass(jointIndex), getF32(_intervalMass(nextIndex)))
-    setJointLaterality(jointIndex, getJointLaterality(nextIndex))
-    setJointTag(jointIndex, getJointTag(nextIndex))
-}
-
-function setJointLaterality(jointIndex: u16, laterality: u8): void {
-    setU8(_laterality(jointIndex), laterality)
-}
-
-export function getJointLaterality(jointIndex: u16): u8 {
-    return getU8(_laterality(jointIndex))
-}
-
-function setJointTag(jointIndex: u16, tag: u16): void {
-    setU16(_jointTag(jointIndex), tag)
-}
-
-export function getJointTag(jointIndex: u16): u16 {
-    return getU16(_jointTag(jointIndex))
 }
 
 export function centralize(): void {
@@ -690,22 +685,22 @@ export function setAltitude(altitude: f32): f32 {
 }
 
 function calculateJointMidpoint(): void {
-    zero(_midpoint)
+    zero(_MIDPOINT)
     let jointCount = getJointCount()
     if (jointCount <= 0) {
         return
     }
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        add(_midpoint, _location(jointIndex))
+        add(_MIDPOINT, _location(jointIndex))
     }
-    multiplyScalar(_midpoint, 1.0 / <f32>jointCount)
+    multiplyScalar(_MIDPOINT, 1.0 / <f32>jointCount)
 }
 
 // Intervals =====================================================================================
 
 export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLength: f32): usize {
     let intervalCount = getIntervalCount()
-    if (intervalCount + 1 >= intervalCountMax) {
+    if (intervalCount + 1 >= MAX_INTERVALS) {
         return ERROR
     }
     let intervalIndex = intervalCount
@@ -810,19 +805,19 @@ function setIntervalCountdown(intervalIndex: u16, countdown: u16): void {
 }
 
 export function getIntervalStateLength(intervalIndex: u16, state: u8): f32 {
-    return getF32(_stateLengthArray(intervalIndex) + F32 * state)
+    return getF32(_stateLength(intervalIndex, state))
 }
 
 export function setIntervalStateLength(intervalIndex: u16, state: u8, stateLength: f32): void {
-    setF32(_stateLengthArray(intervalIndex) + F32 * state, stateLength)
+    setF32(_stateLength(intervalIndex, state), stateLength)
 }
 
 function getDisplacement(intervalIndex: u16): f32 {
-    return getF32(_intervalDisplacements + F32 * intervalIndex)
+    return getF32(_displacement(intervalIndex))
 }
 
 function setDisplacement(intervalIndex: u16, displacement: f32): void {
-    setF32(_intervalDisplacements + F32 * intervalIndex, displacement)
+    setF32(_displacement(intervalIndex), displacement)
 }
 
 function calculateLength(intervalIndex: u16): f32 {
@@ -831,37 +826,6 @@ function calculateLength(intervalIndex: u16): f32 {
     let length = magnitude(unit)
     multiplyScalar(unit, 1 / length)
     return length
-}
-
-function findIntervalIndex(joint0: u16, joint1: u16): u16 {
-    let intervalCount = getIntervalCount()
-    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        let alpha = alphaIndex(thisInterval)
-        let omega = omegaIndex(thisInterval)
-        if (alpha === joint0 && omega === joint1 || alpha === joint1 && omega === joint0) {
-            return thisInterval
-        }
-    }
-    return intervalCountMax
-}
-
-export function findOppositeIntervalIndex(intervalIndex: u16): u16 {
-    let tagAlpha = getJointTag(alphaIndex(intervalIndex))
-    let tagOmega = getJointTag(omegaIndex(intervalIndex))
-    let intervalCount = getIntervalCount()
-    for (let thisInterval: u16 = 0; thisInterval < intervalCount; thisInterval++) {
-        if (thisInterval === intervalIndex) {
-            continue
-        }
-        let thisTagAlpha = getJointTag(alphaIndex(thisInterval))
-        let thisTagOmega = getJointTag(omegaIndex(thisInterval))
-        let matchAlpha = tagAlpha === thisTagAlpha || tagAlpha === thisTagOmega
-        let matchOmega = tagOmega === thisTagOmega || tagOmega === thisTagAlpha
-        if (matchAlpha && matchOmega) {
-            return thisInterval
-        }
-    }
-    return intervalCountMax
 }
 
 function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
@@ -875,13 +839,15 @@ function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
     return currentLength * (1 - progress) + stateLength * progress
 }
 
-function setLineColor(_color: usize, red: f32, green: f32, blue: f32): void {
+function setLineColor(intervalIndex: u16, red: f32, green: f32, blue: f32): void {
+    let _color = _lineColor(intervalIndex, false)
     setX(_color, red)
     setY(_color, green)
     setZ(_color, blue)
-    setX(_color + VECTOR_SIZE, red)
-    setY(_color + VECTOR_SIZE, green)
-    setZ(_color + VECTOR_SIZE, blue)
+    _color = _lineColor(intervalIndex, true)
+    setX(_color, red)
+    setY(_color, green)
+    setZ(_color, blue)
 }
 
 enum Limit {
@@ -952,10 +918,8 @@ function outputLinesGeometry(): void {
         }
     }
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        let _linePoint = _lineLocations + intervalIndex * VECTOR_SIZE * 2
-        setVector(_linePoint, _location(alphaIndex(intervalIndex)))
-        setVector(_linePoint + VECTOR_SIZE, _location(omegaIndex(intervalIndex)))
-        let _lineColor = _lineColors + intervalIndex * VECTOR_SIZE * 2
+        setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
+        setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
         let directionalDisplacement = getDisplacement(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         let isBar = intervalRole === IntervalRole.Bar
@@ -965,34 +929,26 @@ function outputLinesGeometry(): void {
         let selectThisType = (_selectBars && isBar) || (_selectCables && !isBar)
         let colored = selectNothing || selectThisType && displacedEnough
         let color = colored ? isBar ? BAR_COLOR : CABLE_COLOR : ATTENUATED_COLOR
-        setLineColor(_lineColor, color[0], color[1], color[2])
+        setLineColor(intervalIndex, color[0], color[1], color[2])
     }
 }
 
-// Faces =====================================================================================
+// Triangles and normals depicting the faces =================================================
 
-const FACE_SIZE: usize = INDEX_SIZE * 3
-
-export function getFaceJointIndex(faceIndex: u16, jointNumber: usize): u16 {
-    return getU16(_face(faceIndex) + jointNumber * INDEX_SIZE)
+export function getFaceJointIndex(faceIndex: u16, jointNumber: u16): u16 {
+    return getU16(_faceJointIndex(faceIndex, jointNumber))
 }
 
 function setFaceJointIndex(faceIndex: u16, jointNumber: u16, v: u16): void {
-    setU16(_face(faceIndex) + jointNumber * INDEX_SIZE, v)
-}
-
-function getFaceTag(faceIndex: u16, jointNumber: u16): u16 {
-    return getJointTag(getFaceJointIndex(faceIndex, jointNumber))
+    setU16(_faceJointIndex(faceIndex, jointNumber), v)
 }
 
 function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
-    subVectors(_vX, location, midpoint)
-    multiplyScalar(_vX, 1 / magnitude(_vX))
-    addScaledVector(normal, _vX, 0.7)
+    subVectors(_X, location, midpoint)
+    multiplyScalar(_X, 1 / magnitude(_X))
+    addScaledVector(normal, _X, 0.7)
     multiplyScalar(normal, 1 / magnitude(normal))
 }
-
-// Triangles and normals depicting the faces =================================================
 
 function outputFaceGeometry(faceIndex: u16): void {
     let loc0 = _location(getFaceJointIndex(faceIndex, 0))
@@ -1013,9 +969,9 @@ function outputFaceGeometry(faceIndex: u16): void {
     let normal0 = _faceNormal(faceIndex, 0)
     let normal1 = _faceNormal(faceIndex, 1)
     let normal2 = _faceNormal(faceIndex, 2)
-    subVectors(_vA, loc1, loc0)
-    subVectors(_vB, loc2, loc0)
-    crossVectors(normal0, _vA, _vB)
+    subVectors(_A, loc1, loc0)
+    subVectors(_B, loc2, loc0)
+    crossVectors(normal0, _A, _B)
     multiplyScalar(normal0, 1 / magnitude(normal0))
     setVector(normal1, normal0)
     setVector(normal2, normal0)
@@ -1025,31 +981,9 @@ function outputFaceGeometry(faceIndex: u16): void {
     pushNormalTowardsJoint(normal2, loc2, midpoint)
 }
 
-export function findOppositeFaceIndex(faceIndex: u16): u16 {
-    let tag0 = getFaceTag(faceIndex, 0)
-    let tag1 = getFaceTag(faceIndex, 1)
-    let tag2 = getFaceTag(faceIndex, 2)
-    let faceCount = getFaceCount()
-    for (let thisFace: u16 = 0; thisFace < faceCount; thisFace++) {
-        if (thisFace === faceIndex) {
-            continue
-        }
-        let thisTag0 = getFaceTag(thisFace, 0)
-        let thisTag1 = getFaceTag(thisFace, 1)
-        let thisTag2 = getFaceTag(thisFace, 2)
-        let match0 = tag0 === thisTag0 || tag0 === thisTag1 || tag0 === thisTag2
-        let match1 = tag1 === thisTag0 || tag1 === thisTag1 || tag1 === thisTag2
-        let match2 = tag2 === thisTag0 || tag2 === thisTag1 || tag2 === thisTag2
-        if (match0 && match1 && match2) {
-            return thisFace
-        }
-    }
-    return faceCount + 1
-}
-
 export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): usize {
     let faceCount = getFaceCount()
-    if (faceCount + 1 >= faceCountMax) {
+    if (faceCount + 1 >= MAX_FACES) {
         return ERROR
     }
     let faceIndex = faceCount
@@ -1071,59 +1005,6 @@ export function removeFace(deadFaceIndex: u16): void {
         outputFaceGeometry(faceIndex)
     }
     setFaceCount(faceCount)
-}
-
-// Hexalot ====================================================================================
-
-const HEXALOT_BITS_ALIGNED: u8 = 128
-const HEXALOT_BITS: u8 = 127
-const SPOT_CENTERS_SIZE = HEXALOT_BITS_ALIGNED * FLOATS_IN_VECTOR * F32
-const SURFACE_SIZE = HEXALOT_BITS_ALIGNED * U8
-const HEXALOT_SIZE = SPOT_CENTERS_SIZE + SURFACE_SIZE
-
-function getSpotLocationX(bitNumber: u8): f32 {
-    return getF32Global(bitNumber * FLOATS_IN_VECTOR * F32)
-}
-
-function getSpotLocationZ(bitNumber: u8): f32 {
-    return getF32Global((bitNumber * FLOATS_IN_VECTOR + 2) * F32)
-}
-
-function getHexalotBit(bitNumber: u8): u8 {
-    return getU8Global(SPOT_CENTERS_SIZE + bitNumber)
-}
-
-function getNearestSpotIndex(jointIndex: u16): u8 {
-    let locPtr = _location(jointIndex)
-    let x = getX(locPtr)
-    let z = getZ(locPtr)
-    let minimumQuadrance: f32 = 10000
-    let nearestSpotIndex: u8 = HEXALOT_BITS
-    for (let bit: u8 = 0; bit < HEXALOT_BITS; bit++) {
-        let xx = getSpotLocationX(bit)
-        let dx = xx - x
-        let zz = getSpotLocationZ(bit)
-        let dz = zz - z
-        let q = dx * dx + dz * dz
-        if (q < minimumQuadrance) {
-            minimumQuadrance = q
-            nearestSpotIndex = bit
-        }
-    }
-    return nearestSpotIndex
-}
-
-function getTerrainUnder(jointIndex: u16): u8 {
-    if (!useHexalot) {
-        return LAND
-    }
-    // TODO: save the three most recent spotIndexes at the joint and check mostly only those
-    // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
-    let spotIndex = getNearestSpotIndex(jointIndex)
-    if (spotIndex === HEXALOT_BITS) {
-        return HEXALOT_BITS
-    }
-    return getHexalotBit(spotIndex)
 }
 
 // Physics =====================================================================================
