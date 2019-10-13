@@ -136,8 +136,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
         )
     }
 
-    function IntervalMesh({key, interval, attenuated}: {
-        key: string,
+    function IntervalMesh({interval, attenuated}: {
         interval: IInterval,
         attenuated: boolean,
     }): JSX.Element {
@@ -146,7 +145,6 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
         const material = attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
         return (
             <mesh
-                key={key}
                 geometry={SPHERE}
                 position={fabric.instance.getIntervalMidpoint(interval.index)}
                 rotation={new Euler().setFromQuaternion(rotation)}
