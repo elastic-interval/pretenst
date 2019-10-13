@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useRef, useState } from "react"
-import { extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
+import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
@@ -53,6 +53,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
 }): JSX.Element {
 
     const [age, setAge] = useState<number>(0)
+    const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
     const {camera, raycaster} = useThree()
 
     const orbitControls = useUpdate<OrbitControls>(controls => {
@@ -107,9 +108,18 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
 
     function Faces(): JSX.Element {
         const meshRef = useRef<Object3D>()
-        const onClick = () => {
+        const onPointerDown = (event: DomEvent) => {
+            setDownEvent(event)
+        }
+        const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (!mesh) {
+            if (!downEvent || !mesh) {
+                return
+            }
+            const dx = downEvent.clientX - event.clientX
+            const dy = downEvent.clientY - event.clientY
+            const distanceSq = dx * dx + dy * dy
+            if (distanceSq > 100) {
                 return
             }
             const intersections = raycaster.intersectObjects([mesh], true)
@@ -121,6 +131,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
             })
             fabric.clearSelection()
             const face = faces.reverse().pop()
+            setDownEvent(undefined)
             if (!face) {
                 return
             }
@@ -129,7 +140,8 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
         return (
             <mesh
                 ref={meshRef}
-                onPointerDown={onClick}
+                onPointerDown={onPointerDown}
+                onPointerUp={onPointerUp}
                 geometry={fabric.facesGeometry}
                 material={FACE}
             />
