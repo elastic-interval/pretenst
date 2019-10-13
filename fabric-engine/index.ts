@@ -281,7 +281,8 @@ function _lineColor(intervalIndex: u16, omega: boolean): usize {
 
 const _AGE = _LINE_COLORS + _32x3_INTERVALS * 2
 const _MIDPOINT = _AGE + sizeof<u32>()
-const _A = _MIDPOINT + sizeof<f32>() * 3
+const _PRETENST = _MIDPOINT + sizeof<f32>() * 3
+const _A = _PRETENST + sizeof<f32>()
 const _B = _A + sizeof<f32>() * 3
 const _X = _B + sizeof<f32>() * 3
 const _JOINT_COUNT = _X + sizeof<f32>() * 3
@@ -606,7 +607,8 @@ export function setNextState(value: u8): void {
     setU8(_NEXT_STATE, value)
 }
 
-export function reset(): void {
+export function initInstance(pretenst: f32): void {
+    setF32(_PRETENST, pretenst)
     setAge(0)
     setJointCount(0)
     setIntervalCount(0)
@@ -615,6 +617,11 @@ export function reset(): void {
     setPreviousState(REST_STATE)
     setCurrentState(REST_STATE)
     setNextState(REST_STATE)
+}
+
+export function setPretenst(pretenst: f32): void {
+    setF32(_PRETENST, pretenst)
+    setBusyCountdown(<u16>intervalCountdown)
 }
 
 // Joints =====================================================================================
@@ -1011,11 +1018,11 @@ export function removeFace(deadFaceIndex: u16): void {
 
 function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
-    let currentLength = interpolateCurrentLength(intervalIndex, state)
+    let bar = intervalRole === IntervalRole.Bar
+    let currentLength = interpolateCurrentLength(intervalIndex, state) * (bar ? getF32(_PRETENST) : 1.0)
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     setDisplacement(intervalIndex, displacement)
-    let bar = intervalRole === IntervalRole.Bar
     let globalElasticFactor: f32 = busy ? 1.0 : bar ? pushElasticFactor : (displacement < 0 ? 0 : pullElasticFactor)
     let force = displacement * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)

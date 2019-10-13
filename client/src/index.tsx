@@ -54,7 +54,7 @@ async function start(): Promise<void> {
             if (cached) {
                 return cached
             }
-            const newFabric = fabricKernel.createTensegrityFabric(name)
+            const newFabric = fabricKernel.createTensegrityFabric(name, 1.2)
             if (!newFabric) {
                 throw new Error()
             }

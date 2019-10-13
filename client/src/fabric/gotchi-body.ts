@@ -150,7 +150,6 @@ export class GotchiBody {
         const SEED_CORNERS = 5 // TODO: get rid of the seed
         const SEED_RADIUS = 2 // TODO: get rid of it
         const engine = this.engine
-        engine.reset()
         // prepare
         const locations: Vector3[] = []
         for (let walk = 0; walk < SEED_CORNERS; walk++) {

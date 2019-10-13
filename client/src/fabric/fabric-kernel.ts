@@ -5,15 +5,11 @@
 
 import { Vector3 } from "three"
 
-import { Genome } from "../genetics/genome"
-import { Gotchi, IGotchiFactory } from "../gotchi/gotchi"
-import { Hexalot } from "../island/hexalot"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { IFabricEngine, MAX_INSTANCES } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
 import { IFeature } from "./features"
-import { GotchiBody } from "./gotchi-body"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const FLOATS_IN_VECTOR = 3
@@ -30,14 +26,14 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
     }
 }
 
-export class FabricKernel implements IGotchiFactory {
+export class FabricKernel {
     private instanceArray: FabricInstance[] = []
     private instanceUsed: boolean[] = []
     private arrayBuffer: ArrayBuffer
     private spotCenters: Float32Array
     private hexalotBits: Int8Array
 
-    constructor(private engine: IFabricEngine, private roleFeatures: IFeature[]) {
+    constructor(engine: IFabricEngine, private roleFeatures: IFeature[]) {
         const fabricBytes = engine.init()
         this.arrayBuffer = engine.memory.buffer
         this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
@@ -57,31 +53,12 @@ export class FabricKernel implements IGotchiFactory {
         }
     }
 
-    public createTensegrityFabric(name: string): TensegrityFabric | undefined {
-        const newInstance = this.allocateInstance()
+    public createTensegrityFabric(name: string, pretenst: number): TensegrityFabric | undefined {
+        const newInstance = this.allocateInstance(pretenst)
         if (!newInstance) {
             return undefined
         }
         return new TensegrityFabric(newInstance, this.roleFeatures, name)
-    }
-
-    public createGotchiSeed(home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined {
-        const newInstance = this.allocateInstance()
-        if (!newInstance) {
-            return undefined
-        }
-        const fabric = new GotchiBody(newInstance).createSeed(home.center.x, home.center.z, rotation)
-        return new Gotchi(home, fabric, genome, this)
-    }
-
-    public copyLiveGotchi(gotchi: Gotchi, genome: Genome): Gotchi | undefined {
-        const newInstance = this.allocateInstance()
-        if (!newInstance) {
-            return undefined
-        }
-        this.engine.cloneInstance(gotchi.body.index, newInstance.index)
-        const fabric = new GotchiBody(newInstance)
-        return new Gotchi(gotchi.home, fabric, genome, this)
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
@@ -100,14 +77,14 @@ export class FabricKernel implements IGotchiFactory {
 
     // ==============================================================
 
-    private allocateInstance(): FabricInstance | undefined {
+    private allocateInstance(pretenst: number): FabricInstance | undefined {
         const freeIndex = this.instanceUsed.indexOf(false)
         if (freeIndex < 0) {
             return undefined
         }
         this.instanceUsed[freeIndex] = true
         this.instanceArray[freeIndex].clear()
-        this.instanceArray[freeIndex].engine.reset()
+        this.instanceArray[freeIndex].engine.initInstance(pretenst)
         return this.instanceArray[freeIndex]
     }
 }

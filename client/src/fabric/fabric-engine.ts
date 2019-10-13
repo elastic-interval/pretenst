@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -64,13 +63,13 @@ export interface IFabricEngine {
 
     memory: IMemory
 
+    init(): number
+
     setPhysicsFeature(physicsFeature: PhysicsFeature, factor: number): number
 
     getLimit(limit: Limit): number
 
     setDisplacementThreshold(selectBars: boolean, selectCables: boolean, greaterThan: boolean, threshold: number): void
-
-    init(): number
 
     setInstance(index: number): void
 
@@ -78,11 +77,13 @@ export interface IFabricEngine {
 
     // below methods use instance index
 
-    extendBusyCountdown(factor: number): void
+    initInstance(pretenst: number): void
 
-    reset(): void
+    setPretenst(pretenst: number): void
 
     getAge(): number
+
+    extendBusyCountdown(factor: number): void
 
     getCurrentState(): FabricState
 
@@ -137,6 +138,8 @@ export interface IFabricEngine {
     findOppositeFaceIndex(faceIndex: number): number
 
     getFaceJointIndex(faceIndex: number, jointNumber: number): number
+
+    // these methods give addresses for buffer access
 
     _fabricOffset(instance: number): number
 

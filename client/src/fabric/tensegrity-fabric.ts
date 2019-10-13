@@ -63,8 +63,8 @@ export class TensegrityFabric {
     constructor(public readonly instance: FabricInstance, public readonly roleFeatures: IFeature[], public readonly name: string) {
     }
 
-    public startConstruction(codeTree: ICodeTree): void {
-        this.reset()
+    public startConstruction(codeTree: ICodeTree, pretenst: number): void {
+        this.reset(pretenst)
         const brick = this.createBrick()
         const executing: IActiveCode = {codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
@@ -187,12 +187,12 @@ export class TensegrityFabric {
         this.instance.release()
     }
 
-    public reset(): void {
+    public reset(pretenst: number): void {
         this.joints = []
         this.intervals = []
         this.faces = []
         this.disposeOfGeometry()
-        this.engine.reset()
+        this.engine.initInstance(pretenst)
     }
 
     public disposeOfGeometry(): void {

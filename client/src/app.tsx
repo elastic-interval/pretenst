@@ -17,6 +17,9 @@ import { ControlPanel } from "./view/control-panel"
 import { INITIAL_DISTANCE } from "./view/flight"
 import { HexalotTarget, InitialFlightState, IslandTarget } from "./view/flight-state"
 import { WorldView } from "./view/world-view"
+import { Gotchi, IGotchiFactory } from "./gotchi/gotchi"
+import { Hexalot } from "./island/hexalot"
+import { Genome } from "./genetics/genome"
 
 export class App extends React.Component<IAppProps, IAppState> {
     private perspectiveCamera: PerspectiveCamera
@@ -177,7 +180,11 @@ export class App extends React.Component<IAppProps, IAppState> {
         if (!islandData) {
             return
         }
-        const island = new Island(islandData, this.fabricKernel, this.props.storage, 0)
+        const gotchiFactory: IGotchiFactory = { // TODO
+            createGotchiSeed: (home: Hexalot, rotation: number, genome: Genome): Gotchi | undefined => undefined,
+            copyLiveGotchi: (gotchi: Gotchi, genome: Genome): Gotchi | undefined => undefined,
+        }
+        const island = new Island(islandData, gotchiFactory, this.props.storage, 0)
         const homeHexalot = homeHexalotId ? island.findHexalot(homeHexalotId) : undefined
         const flightState = homeHexalot ? HexalotTarget(homeHexalot, AppMode.Exploring) : IslandTarget(island, AppMode.Exploring)
         const appState = (await new Transition(this.state).withIsland(island, islandData)).withFlightState(flightState).withRestructure.appState

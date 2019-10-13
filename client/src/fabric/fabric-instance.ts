@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -30,6 +31,7 @@ export class FabricInstance {
         const b = this.buffer
         const e = this.fabricEngine
         const offset = e._fabricOffset(fabricIndex)
+        e.initInstance(1.3)
         this.midpoint = new LazyFloatArray(b, offset + e._midpoint(), () => 3)
         this.lineColors = new LazyFloatArray(b, offset + e._lineColors(), () => e.getIntervalCount() * 3 * 2)
         this.lineLocations = new LazyFloatArray(b, offset + e._lineLocations(), () => e.getIntervalCount() * 3 * 2)
@@ -47,7 +49,6 @@ export class FabricInstance {
 
     public release(): void {
         this.releaseInstance(this.fabricIndex)
-        this.engine.reset()
     }
 
     public clear(): void {
