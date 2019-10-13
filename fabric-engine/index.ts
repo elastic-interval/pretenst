@@ -44,10 +44,10 @@ enum IntervalRole {
 const LAND: u8 = 1
 const ERROR: u16 = 65535
 
-const MAX_INSTANCES: u16 = 128
+const MAX_INSTANCES: u16 = 32
 const MAX_INTERVALS: u16 = 1024
-const MAX_JOINTS: u16 = MAX_INTERVALS / 2
-const MAX_FACES: u16 = MAX_INTERVALS / 3
+const MAX_JOINTS: u16 = 512
+const MAX_FACES: u16 = 256
 
 const REST_STATE: u8 = 0
 const STATE_COUNT: u8 = 5
@@ -144,14 +144,14 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 // INSTANCE
 
-const _LOCATION = 0
+const _JOINT_LOCATIONS = 0
 
 @inline()
 function _location(jointIndex: u16): usize {
-    return _LOCATION + _32x3(jointIndex)
+    return _JOINT_LOCATIONS + _32x3(jointIndex)
 }
 
-const _VELOCITY = _LOCATION + _32x3_JOINTS
+const _VELOCITY = _JOINT_LOCATIONS + _32x3_JOINTS
 
 @inline()
 function _velocity(jointIndex: u16): usize {
@@ -193,14 +193,14 @@ function _currentLength(intervalIndex: u16): usize {
     return _CURRENT_LENGTH + _32(intervalIndex)
 }
 
-const _DISPLACEMENT = _CURRENT_LENGTH + _32_INTERVALS
+const _INTERVAL_DISPLACEMENTS = _CURRENT_LENGTH + _32_INTERVALS
 
 @inline()
 function _displacement(intervalIndex: u16): usize {
-    return _DISPLACEMENT + _32(intervalIndex)
+    return _INTERVAL_DISPLACEMENTS + _32(intervalIndex)
 }
 
-const _ELASTIC_FACTOR = _DISPLACEMENT + _32_INTERVALS
+const _ELASTIC_FACTOR = _INTERVAL_DISPLACEMENTS + _32_INTERVALS
 
 @inline()
 function _elasticFactor(intervalIndex: u16): usize {
@@ -228,18 +228,18 @@ function _stateLength(intervalIndex: u16, state: u8): usize {
     return _STATE_LENGTH + _32(intervalIndex) * STATE_COUNT + _32(state)
 }
 
-const _UNIT = _STATE_LENGTH + _32_INTERVALS * STATE_COUNT
+const _INTERVAL_UNITS = _STATE_LENGTH + _32_INTERVALS * STATE_COUNT
 
 @inline()
 function _unit(intervalIndex: u16): usize {
-    return _UNIT + _32x3(intervalIndex)
+    return _INTERVAL_UNITS + _32x3(intervalIndex)
 }
 
-const _FACE_JOINTS = _UNIT + _32x3_INTERVALS
+const _FACE_JOINTS = _INTERVAL_UNITS + _32x3_INTERVALS
 
 @inline()
 function _faceJointIndex(faceIndex: u16, jointNumber: u16): usize {
-    return _UNIT + _FACE_JOINTS + _16(faceIndex) * 3 + _16(jointNumber)
+    return _INTERVAL_UNITS + _FACE_JOINTS + _16(faceIndex) * 3 + _16(jointNumber)
 }
 
 const _FACE_MIDPOINTS = _FACE_JOINTS + _16_FACES * 3
@@ -291,7 +291,7 @@ const _BUSY_COUNTDOWN = _FACE_COUNT + sizeof<u16>()
 const _PREVIOUS_STATE = _BUSY_COUNTDOWN + sizeof<u16>()
 const _CURRENT_STATE = _PREVIOUS_STATE + sizeof<u16>()
 const _NEXT_STATE = _CURRENT_STATE + sizeof<u16>()
-const _FABRIC_END = _NEXT_STATE  + sizeof<u16>()
+const _FABRIC_END = _NEXT_STATE + sizeof<u16>()
 
 // INSTANCES
 
@@ -1121,4 +1121,44 @@ export function iterate(ticks: u16): boolean {
         }
     }
     return true
+}
+
+export function _midpoint(): usize {
+    return _MIDPOINT
+}
+
+export function _lineLocations(): usize {
+    return _LINE_LOCATIONS
+}
+
+export function _lineColors(): usize {
+    return _LINE_COLORS
+}
+
+export function _faceMidpoints(): usize {
+    return _FACE_MIDPOINTS
+}
+
+export function _faceNormals(): usize {
+    return _FACE_NORMALS
+}
+
+export function _faceLocations(): usize {
+    return _FACE_LOCATIONS
+}
+
+export function _jointLocations(): usize {
+    return _JOINT_LOCATIONS
+}
+
+export function _intervalUnits(): usize {
+    return _INTERVAL_UNITS
+}
+
+export function _intervalDisplacements(): usize {
+    return _INTERVAL_DISPLACEMENTS
+}
+
+export function _fabricOffset(instance: u16): usize {
+    return SURFACE_SIZE + FABRIC_SIZE * instance
 }

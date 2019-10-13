@@ -9,7 +9,7 @@ import * as ReactDOM from "react-dom"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { IFabricDimensions, IFabricEngine, IntervalRole, notWater, PhysicsFeature } from "./fabric/fabric-engine"
+import { IFabricEngine, IntervalRole, notWater, PhysicsFeature } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
 import { TensegrityFabric } from "./fabric/tensegrity-fabric"
@@ -47,13 +47,7 @@ async function start(): Promise<void> {
     const roleFeatures = enumToFeatureArray(IntervalRole, false)
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
-        const dimensions: IFabricDimensions = {
-            instanceMax: 30,
-            jointCountMax: 6000,
-            intervalCountMax: 15000,
-            faceCountMax: 4000,
-        }
-        const fabricKernel = new FabricKernel(engine, roleFeatures, dimensions)
+        const fabricKernel = new FabricKernel(engine, roleFeatures)
         const fabricCache: Record<string, TensegrityFabric> = {}
         const getFabric = (name: string) => {
             const cached = fabricCache[name]

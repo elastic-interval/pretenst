@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -67,9 +68,10 @@ export class Gotchi {
     }
 
     public getDistanceFrom(location: Vector3): number {
-        const xx = this.body.vectors[0] - location.x
-        const zz = this.body.vectors[2] - location.z
-        return Math.sqrt(xx * xx + zz * zz)
+        // const xx = this.body.vectors[0] - location.x
+        // const zz = this.body.vectors[2] - location.z
+        // return Math.sqrt(xx * xx + zz * zz)
+        return 0 // TODO
     }
 
     public get genomeData(): IGenomeData {

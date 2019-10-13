@@ -5,13 +5,13 @@
 
 import { Vector3 } from "three"
 
-import { IFabricDimensions, IFabricEngine } from "./fabric-engine"
-import { IOffsets, vectorFromFloatArray } from "./fabric-kernel"
+import { IFabricEngine } from "./fabric-engine"
+import { vectorFromFloatArray } from "./fabric-kernel"
 
 export const JOINT_RADIUS = 0.1
 
 export class FabricInstance {
-    private vectors: LazyFloatArray
+    private midpoint: LazyFloatArray
     private lineColors: LazyFloatArray
     private lineLocations: LazyFloatArray
     private faceMidpoints: LazyFloatArray
@@ -20,28 +20,25 @@ export class FabricInstance {
     private jointLocations: LazyFloatArray
     private intervalUnits: LazyFloatArray
     private intervalDisplacements: LazyFloatArray
-    private midpointVector = new Vector3()
-    private seedVector = new Vector3()
-    private forwardVector = new Vector3()
-    private rightVector = new Vector3()
 
     constructor(
         private buffer: ArrayBuffer,
-        private offsets: IOffsets,
-        private dimensions: IFabricDimensions,
         private fabricIndex: number,
         private releaseInstance: (index: number) => void,
         private fabricEngine: IFabricEngine,
     ) {
-        this.vectors = new LazyFloatArray(this.buffer, this.offsets._vectors, () => 3 * 4)
-        this.lineColors = new LazyFloatArray(this.buffer, this.offsets._lineColors, () => this.fabricEngine.getIntervalCount() * 3 * 2)
-        this.lineLocations = new LazyFloatArray(this.buffer, this.offsets._lineLocations, () => this.fabricEngine.getIntervalCount() * 3 * 2)
-        this.faceMidpoints = new LazyFloatArray(this.buffer, this.offsets._faceMidpoints, () => this.fabricEngine.getFaceCount() * 3)
-        this.faceNormals = new LazyFloatArray(this.buffer, this.offsets._faceNormals, () => this.fabricEngine.getFaceCount() * 3 * 3)
-        this.faceLocations = new LazyFloatArray(this.buffer, this.offsets._faceLocations, () => this.fabricEngine.getFaceCount() * 3 * 3)
-        this.jointLocations = new LazyFloatArray(this.buffer, this.offsets._jointLocations, () => this.fabricEngine.getJointCount() * 3)
-        this.intervalUnits = new LazyFloatArray(this.buffer, this.offsets._intervalUnits, () => this.fabricEngine.getIntervalCount() * 3)
-        this.intervalDisplacements = new LazyFloatArray(this.buffer, this.offsets._intervalDisplacements, () => this.fabricEngine.getIntervalCount())
+        const b = this.buffer
+        const e = this.fabricEngine
+        const offset = e._fabricOffset(fabricIndex)
+        this.midpoint = new LazyFloatArray(b, offset + e._midpoint(), () => 3)
+        this.lineColors = new LazyFloatArray(b, offset + e._lineColors(), () => e.getIntervalCount() * 3 * 2)
+        this.lineLocations = new LazyFloatArray(b, offset + e._lineLocations(), () => e.getIntervalCount() * 3 * 2)
+        this.faceMidpoints = new LazyFloatArray(b, offset + e._faceMidpoints(), () => e.getFaceCount() * 3)
+        this.faceNormals = new LazyFloatArray(b, offset + e._faceNormals(), () => e.getFaceCount() * 3 * 3)
+        this.faceLocations = new LazyFloatArray(b, offset + e._faceLocations(), () => e.getFaceCount() * 3 * 3)
+        this.jointLocations = new LazyFloatArray(b, offset + e._jointLocations(), () => e.getJointCount() * 3)
+        this.intervalUnits = new LazyFloatArray(b, offset + e._intervalUnits(), () => e.getIntervalCount() * 3)
+        this.intervalDisplacements = new LazyFloatArray(b, offset + e._intervalDisplacements(), () => e.getIntervalCount())
     }
 
     public get index(): number {
@@ -62,10 +59,6 @@ export class FabricInstance {
         this.lineColors.clear()
         this.intervalUnits.clear()
         this.intervalDisplacements.clear()
-    }
-
-    public getDimensions(): IFabricDimensions {
-        return this.dimensions
     }
 
     public getJointLocation(jointIndex: number): Vector3 {
@@ -124,40 +117,8 @@ export class FabricInstance {
         return new Vector3().add(a).add(b).multiplyScalar(0.5)
     }
 
-    public getForward(): Vector3 {
-        return this.forward
-    }
-
-    public getMidpoint(): Vector3 {
-        return this.midpoint
-    }
-
-    public getRight(): Vector3 {
-        return this.right
-    }
-
-    public getSeed(): Vector3 {
-        return this.seed
-    }
-
-    public getVectors(): Float32Array {
-        return this.vectors.floats
-    }
-
-    public get midpoint(): Vector3 {
-        return vectorFromFloatArray(this.vectors.floats, 0, this.midpointVector)
-    }
-
-    public get seed(): Vector3 {
-        return vectorFromFloatArray(this.vectors.floats, 3, this.seedVector)
-    }
-
-    public get forward(): Vector3 {
-        return vectorFromFloatArray(this.vectors.floats, 6, this.forwardVector)
-    }
-
-    public get right(): Vector3 {
-        return vectorFromFloatArray(this.vectors.floats, 9, this.rightVector)
+    public getMidpoint(midpoint?: Vector3): Vector3 {
+        return vectorFromFloatArray(this.midpoint.floats, 0, midpoint)
     }
 
     public get engine(): IFabricEngine {

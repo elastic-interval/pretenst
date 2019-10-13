@@ -69,7 +69,7 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
     }, [fabric])
 
     useRender(() => {
-        const towardsTarget = new Vector3().subVectors(fabric.instance.midpoint, orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
+        const towardsTarget = new Vector3().subVectors(fabric.instance.getMidpoint(), orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = autoRotate

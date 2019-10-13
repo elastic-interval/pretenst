@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -6,6 +7,8 @@
 export interface IMemory {
     buffer: ArrayBuffer
 }
+
+export const MAX_INSTANCES = 32
 
 export enum PhysicsFeature {
     GravityAbove = 0,
@@ -57,13 +60,6 @@ export enum Limit {
     MaxCableDisplacement = 3,
 }
 
-export interface IFabricDimensions {
-    instanceMax: number,
-    jointCountMax: number,
-    intervalCountMax: number,
-    faceCountMax: number,
-}
-
 export interface IFabricEngine {
 
     memory: IMemory
@@ -74,7 +70,7 @@ export interface IFabricEngine {
 
     setDisplacementThreshold(selectBars: boolean, selectCables: boolean, greaterThan: boolean, threshold: number): void
 
-    init(joints: number, intervals: number, faces: number, instances: number): number
+    init(): number
 
     setInstance(index: number): void
 
@@ -141,5 +137,25 @@ export interface IFabricEngine {
     findOppositeFaceIndex(faceIndex: number): number
 
     getFaceJointIndex(faceIndex: number, jointNumber: number): number
+
+    _fabricOffset(instance: number): number
+
+    _midpoint(): number
+
+    _lineLocations(): number
+
+    _lineColors(): number
+
+    _faceMidpoints(): number
+
+    _faceNormals(): number
+
+    _faceLocations(): number
+
+    _jointLocations(): number
+
+    _intervalUnits(): number
+
+    _intervalDisplacements(): number
 
 }

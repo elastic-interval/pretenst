@@ -51,24 +51,20 @@ export class GotchiBody {
         }
     }
 
-    public get vectors(): Float32Array {
-        return this.instance.getVectors()
-    }
-
     public get midpoint(): Vector3 {
         return this.instance.getMidpoint()
     }
 
     public get seed(): Vector3 {
-        return this.instance.getSeed()
+        return new Vector3() // TODO
     }
 
     public get forward(): Vector3 {
-        return this.instance.getForward()
+        return new Vector3() // TODO
     }
 
     public get right(): Vector3 {
-        return this.instance.getRight()
+        return new Vector3() // TODO
     }
 
     public get jointCount(): number {
@@ -219,14 +215,10 @@ export class GotchiBody {
     }
 
     public unfold(faceIndex: number, jointNumber: number): FaceSnapshot [] {
-        const newJointCount = this.jointCount + 2
-        if (newJointCount >= this.instance.getDimensions().jointCountMax) {
-            return []
-        }
         const apexTag = this.engine.nextJointTag()
         let oppositeFaceIndex = this.engine.findOppositeFaceIndex(faceIndex)
         const freshFaces = this.unfoldFace(this.getFaceSnapshot(faceIndex), jointNumber, apexTag)
-        if (oppositeFaceIndex < this.instance.getDimensions().faceCountMax) {
+        if (oppositeFaceIndex < 1000) { // TODO
             if (oppositeFaceIndex > faceIndex) {
                 oppositeFaceIndex-- // since faceIndex was deleted
             }
@@ -258,9 +250,6 @@ export class GotchiBody {
         const faceToReplaceAverageLength = 1 // TODO
         const apexLocation = new Vector3().add(chosenJoint.location).addScaledVector(faceToReplace.normal, faceToReplaceAverageLength * 0.1)
         const apexIndex = this.engine.createJoint(apexTag, faceToReplace.laterality, apexLocation.x, apexLocation.y, apexLocation.z)
-        if (apexIndex >= this.instance.getDimensions().jointCountMax) {
-            return []
-        }
         sortedJoints.forEach(faceJoint => {
             if (faceJoint.jointNumber !== chosenJoint.jointNumber) {
                 this.muscle(faceJoint.jointIndex, apexIndex)

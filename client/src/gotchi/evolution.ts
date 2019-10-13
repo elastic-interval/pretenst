@@ -15,8 +15,6 @@ import { Leg } from "../island/journey"
 
 import { IEvaluatedJockey, Jockey } from "./jockey"
 
-export const INITIAL_JOINT_COUNT = 47
-export const MAX_POPULATION = 24
 const MUTATION_COUNT = 5
 const SURVIVAL_RATE = 0.66
 const MIN_LIFELENGTH = 15000
@@ -61,15 +59,10 @@ export class Evolution {
         if (jockeys.length === 0) {
             return this.midpointVector
         }
-        const vectors = jockeys.map(jockey => jockey.vectors)
-        const sumFromArray = (prev: Vector3, [x, y, z]: Float32Array) => {
-            prev.x += x
-            prev.y += y
-            prev.z += z
-            return prev
-        }
-        this.midpointVector.set(0, 0, 0)
-        return vectors.reduce(sumFromArray, this.midpointVector).multiplyScalar(1 / jockeys.length)
+        const sum = new Vector3()
+        jockeys.map(jockey => jockey.fabric.midpoint).forEach(midpoint => sum.add(midpoint))
+        this.midpointVector.copy(sum.multiplyScalar(1 / jockeys.length))
+        return this.midpointVector
     }
 
     public iterate(): void {

@@ -94,10 +94,6 @@ export class Jockey {
         return this.gotchi.body
     }
 
-    public get vectors(): Float32Array {
-        return this.gotchi.body.vectors
-    }
-
     public get offspringGenome(): IGenomeData {
         if (!this.mutatingGenome) {
             throw new Error("Not evolving")
