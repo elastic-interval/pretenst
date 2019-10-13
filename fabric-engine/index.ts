@@ -13,8 +13,6 @@ declare function logInt(idx: u32, i: i32): void
 
 const JOINT_RADIUS: f32 = 0.1
 const AMBIENT_JOINT_MASS: f32 = 0.1
-
-const BUSY_DRAG_FACTOR: f32 = 60
 const BAR_MASS_PER_LENGTH: f32 = 1
 const CABLE_MASS_PER_LENGTH: f32 = 0.01
 
@@ -1016,14 +1014,14 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Physics =====================================================================================
 
-function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
+function intervalPhysics(intervalIndex: u16, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let bar = intervalRole === IntervalRole.Bar
     let currentLength = interpolateCurrentLength(intervalIndex, state) * (bar ? getF32(_PRETENST) : 1.0)
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     setDisplacement(intervalIndex, displacement)
-    let globalElasticFactor: f32 = busy ? 1.0 : bar ? pushElasticFactor : (displacement < 0 ? 0 : pullElasticFactor)
+    let globalElasticFactor: f32 = bar ? pushElasticFactor : (displacement < 0 ? 0 : pullElasticFactor)
     let force = displacement * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
@@ -1034,13 +1032,13 @@ function intervalPhysics(intervalIndex: u16, busy: boolean, state: u8): void {
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32): void {
+function jointPhysics(jointIndex: u16): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
     if (altitude > JOINT_RADIUS) { // far above
-        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityAbove)
-        multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
+        setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
+        multiplyScalar(_velocity(jointIndex), 1 - physicsDragAbove)
     } else {
         let land = getTerrainUnder(jointIndex) === LAND
         let gravityBelow = land ? physicsAntigravityBelow : physicsAntigravityBelowWater
@@ -1051,9 +1049,9 @@ function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32): void 
             if (velocityY < 0 && land) {
                 multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
             }
-            let gravityValue: f32 = gravityAbove * degreeAbove + gravityBelow * degreeBelow
+            let gravityValue: f32 = physicsGravityAbove * degreeAbove + gravityBelow * degreeBelow
             setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
-            let drag = dragAbove * degreeAbove + dragBelow * degreeBelow
+            let drag = physicsDragAbove * degreeAbove + dragBelow * degreeBelow
             multiplyScalar(_velocity(jointIndex), 1 - drag)
         } else { // far under the surface
             if (velocityY < 0 && land) {
@@ -1069,7 +1067,7 @@ function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32): void 
 function tick(maxIntervalBusyCountdown: u16, state: u8, busy: boolean): u16 {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        intervalPhysics(intervalIndex, busy, state)
+        intervalPhysics(intervalIndex, state)
         let countdown = getIntervalBusyCountdown(intervalIndex)
         if (countdown === 0) {
             continue
@@ -1084,11 +1082,13 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, busy: boolean): u16 {
         }
     }
     let jointCount = getJointCount()
-    let dragAbove = physicsDragAbove * (busy ? BUSY_DRAG_FACTOR : 1)
-    let gravityAbove = busy ? <f32>0 : physicsGravityAbove
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        jointPhysics(jointIndex, gravityAbove, dragAbove)
-        addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
+        jointPhysics(jointIndex)
+        if (busy) {
+            setVector(_velocity(jointIndex), _force(jointIndex))
+        } else {
+            addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
+        }
         zero(_force(jointIndex))
     }
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
