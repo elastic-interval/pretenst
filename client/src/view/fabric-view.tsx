@@ -153,9 +153,9 @@ export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, aut
         attenuated: boolean,
     }): JSX.Element {
         const elasticFactor = fabric.instance.engine.getElasticFactor(interval.index)
-        const displacement = fabric.instance.getIntervalStrain(interval.index) * (interval.isBar ? -1 : 1)
+        const strain = fabric.instance.getIntervalStrain(interval.index) * (interval.isBar ? -1 : 1)
         const {scale, rotation} = fabric.orientInterval(interval, Math.sqrt(elasticFactor) * (interval.isBar ? BAR_GIRTH : CABLE_GIRTH))
-        const material = displacement < SLACK_THRESHOLD ? SLACK : attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
+        const material = strain < SLACK_THRESHOLD ? SLACK : attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
         return (
             <mesh
                 geometry={SPHERE}
