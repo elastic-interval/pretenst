@@ -10,7 +10,7 @@ import { Col, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactst
 import { Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function DisplacementPanel({fabric}: {
+export function StrainPanel({fabric}: {
     fabric: TensegrityFabric,
 }): JSX.Element {
     const engine = fabric.instance.engine

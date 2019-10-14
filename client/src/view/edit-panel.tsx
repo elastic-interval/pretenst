@@ -20,7 +20,7 @@ import {
 } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { DisplacementPanel } from "./displacement-panel"
+import { StrainPanel } from "./strain-panel"
 
 export function EditPanel({fabric, pretenst, setPretenst, selectedFace, setSelectedFace}: {
     fabric: TensegrityFabric,
@@ -147,7 +147,7 @@ export function EditPanel({fabric, pretenst, setPretenst, selectedFace, setSelec
                                 </Button>
                             </ButtonGroup>
                         </Col>
-                        <DisplacementPanel fabric={fabric}/>
+                        <StrainPanel fabric={fabric}/>
                     </Row>
                 </Container>
             )}
