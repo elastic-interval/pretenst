@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -56,6 +57,11 @@ const CABLE_COLOR = "#3b6ab8"
 export function intervalColor(bar: boolean): string {
     return bar ? BAR_COLOR : CABLE_COLOR
 }
+
+export const SLACK = new MeshPhongMaterial({
+    lights: true,
+    color: new Color("#00f500"),
+})
 
 export const ATTENUATED = new MeshPhongMaterial({
     lights: true,

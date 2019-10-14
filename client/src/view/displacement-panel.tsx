@@ -81,7 +81,7 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
             setNuance(nuanceValue)
         }
         return (
-            <ButtonGroup size="sm" className="w-100">
+            <ButtonGroup className="w-100">
                 <Button onClick={adjustValue(-5)}><FaAngleDoubleLeft/>5%</Button>
                 <Button onClick={adjustValue(-1)}><FaAngleLeft/>1%</Button>
                 <Button onClick={adjustValue(1)}>1%<FaAngleRight/></Button>
@@ -95,7 +95,7 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
             fabric.forEachSelected(interval => engine.multiplyRestLength(interval.index, adjustment(up)))
         }
         return (
-            <ButtonGroup vertical={true} size="sm" style={{width: "100%"}}>
+            <ButtonGroup vertical={true} style={{width: "100%"}}>
                 <Button onClick={adjustLength(true)}><FaArrowUp/> Lengthen</Button>
                 <Button onClick={adjustLength(false)} className="my-1"><FaArrowDown/> Shorten</Button>
             </ButtonGroup>
@@ -107,7 +107,7 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
             fabric.forEachSelected(interval => engine.setElasticFactor(interval.index, elasticFactor))
         }
         return (
-            <ButtonGroup size="sm" style={{width: "100%"}}>
+            <ButtonGroup style={{width: "100%"}}>
                 {ELASTICS.map(elastic => (
                     <Button key={elastic} onClick={() => adjustElasticFactor(elastic)}>
                         {elastic}X
@@ -134,7 +134,7 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
             fabric.forEachSelected(interval => engine.setElasticFactor(interval.index, elasticFactor))
         }
         return (
-            <ButtonGroup radioGroup="elastic" size="sm" style={{width: "100%"}}>
+            <ButtonGroup radioGroup="elastic" style={{width: "100%"}}>
                 {ELASTICS.map(elastic => (
                     <Button
                         color={(elastic === showElasticFactor) ? "success" : "secondary"}
@@ -155,7 +155,7 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
                         <Col md={4}>
                             <ButtonDropdown isOpen={choiceOpen} toggle={() => setChoiceOpen(!choiceOpen)}
                                             style={{width: "10em"}}>
-                                <DropdownToggle size="sm" caret={true}>
+                                <DropdownToggle caret={true}>
                                     {selectedStress.stressSelectMode}
                                 </DropdownToggle>
                                 <DropdownMenu right={false}>
@@ -221,7 +221,7 @@ export function DisplacementPanel({fabric, selectedStress, setSelection}: {
                     </Row>
                 </Col>
                 <Col md="1">
-                    <ButtonGroup size="sm" styl={{height: "100%"}} vertical={false}>
+                    <ButtonGroup styl={{height: "100%"}} vertical={false}>
                         <Button onClick={() => {
                             fabric.clearSelection()
                             setSelection({})
@@ -279,7 +279,7 @@ const NumbersPanel = ({fabric, selectedStress, showElasticFactor, nuance, barMod
     }, [nuance, showElasticFactor, selectedStress.stressSelectMode])
 
     return (
-        <InputGroup size="sm">
+        <InputGroup>
             <InputGroupAddon addonType="prepend">
                 <InputGroupText style={{width: "4em", textAlign: "right"}}>
                     {minDisplacement.toFixed(3)}

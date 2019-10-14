@@ -75,7 +75,7 @@ export function EditPanel({fabric, selection, setSelection}: {
     return (
         <div id="bottom-middle">
             {selectedFace ? (
-                <ButtonGroup size="sm">
+                <ButtonGroup>
                     {!selectedFace.face.canGrow ? undefined : (
                         <Button onClick={() => grow(selectedFace.face)}><FaSun/> Grow</Button>
                     )}
@@ -101,13 +101,13 @@ export function EditPanel({fabric, selection, setSelection}: {
                 />
             ) : (
                 <>
-                    <ButtonGroup size="sm">
+                    <ButtonGroup>
                         <Button color="secondary" onClick={selectLowestFace}>
                             <FaHandPointer/> Select a face by clicking it
                         </Button>
                     </ButtonGroup>
                     &nbsp;&nbsp;
-                    <ButtonGroup size="sm">
+                    <ButtonGroup>
                         <Button color="secondary" onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}>
                             <FaHandPointer/> Select by stress
                         </Button>

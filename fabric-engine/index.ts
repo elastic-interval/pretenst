@@ -15,6 +15,7 @@ const JOINT_RADIUS: f32 = 0.1
 const AMBIENT_JOINT_MASS: f32 = 0.1
 const BAR_MASS_PER_LENGTH: f32 = 1
 const CABLE_MASS_PER_LENGTH: f32 = 0.01
+const SLACK_THRESHOLD: f32 = 0.0001
 
 export enum PhysicsFeature {
     GravityAbove = 0,
@@ -27,7 +28,6 @@ export enum PhysicsFeature {
     PullElastic = 7,
     BusyCountdown = 8,
 }
-
 
 enum IntervalRole {
     Bar = 1,
@@ -52,6 +52,7 @@ const STATE_COUNT: u8 = 5
 const ATTENUATED_COLOR: f32[] = [0.25, 0.25, 0.25]
 const BAR_COLOR: f32[] = [1.0, 0.3, 0.2]
 const CABLE_COLOR: f32[] = [0.4, 0.6, 1]
+const SLACK_COLOR: f32[] = [0, 1, 0]
 
 @inline()
 function _8(index: u16): usize {
@@ -618,8 +619,18 @@ export function initInstance(pretenst: f32): void {
 }
 
 export function setPretenst(pretenst: f32): void {
+    if (pretenst === 0) {
+        let intervalCount = getIntervalCount()
+        for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+            changeRestLength(intervalIndex, calculateLength(intervalIndex))
+        }
+    }
     setF32(_PRETENST, pretenst)
     setBusyCountdown(<u16>busyCountdown)
+}
+
+function getPretenst(): f32 {
+    return getF32(_PRETENST)
 }
 
 // Joints =====================================================================================
@@ -933,7 +944,8 @@ function outputLinesGeometry(): void {
         let selectNothing = !_selectBars && !_selectCables
         let selectThisType = (_selectBars && isBar) || (_selectCables && !isBar)
         let colored = selectNothing || selectThisType && displacedEnough
-        let color = colored ? isBar ? BAR_COLOR : CABLE_COLOR : ATTENUATED_COLOR
+        let slack = displacement < SLACK_THRESHOLD
+        let color = slack ? SLACK_COLOR : colored ? isBar ? BAR_COLOR : CABLE_COLOR : ATTENUATED_COLOR
         setLineColor(intervalIndex, color[0], color[1], color[2])
     }
 }
@@ -1017,7 +1029,7 @@ export function removeFace(deadFaceIndex: u16): void {
 function intervalPhysics(intervalIndex: u16, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let bar = intervalRole === IntervalRole.Bar
-    let currentLength = interpolateCurrentLength(intervalIndex, state) * (bar ? getF32(_PRETENST) : 1.0)
+    let currentLength = interpolateCurrentLength(intervalIndex, state) * (1.0 + (bar ? getPretenst() : 0))
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     setDisplacement(intervalIndex, displacement)
@@ -1036,7 +1048,9 @@ function jointPhysics(jointIndex: u16): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
-    if (altitude > JOINT_RADIUS) { // far above
+    if (getPretenst() === 0) {
+        multiplyScalar(_velocity(jointIndex), 1 - physicsDragAbove)
+    } else if (altitude > JOINT_RADIUS) { // far above
         setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
         multiplyScalar(_velocity(jointIndex), 1 - physicsDragAbove)
     } else {

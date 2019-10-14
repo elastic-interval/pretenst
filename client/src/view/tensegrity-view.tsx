@@ -24,8 +24,6 @@ import { FeaturePanel } from "./feature-panel"
 
 extend({OrbitControls})
 
-const PRETENST = 1.1
-
 declare global {
     namespace JSX {
         /* eslint-disable @typescript-eslint/interface-name-prefix */
@@ -40,15 +38,16 @@ declare global {
 export function TensegrityView({engine, initialCodeTrees, getFabric, features}: {
     engine: IFabricEngine,
     initialCodeTrees: ICodeTree[],
-    getFabric: (name: string, codeTree: ICodeTree) => TensegrityFabric,
+    getFabric: (name: string, pretenst: number) => TensegrityFabric,
     features: IFeature[],
 }): JSX.Element {
 
+    const [pretenst, setPretenst] = useState<number>(0)
     const [autoRotate, setAutoRotate] = useState<boolean>(false)
     const [fastMode, setFastMode] = useState<boolean>(true)
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
     const [codeTrees, setCodeTrees] = useState<ICodeTree[]>(initialCodeTrees)
-    const [code, setCode] = useState<string|undefined>()
+    const [code, setCode] = useState<string | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selection, setSelection] = useState<ISelection>({})
 
@@ -68,8 +67,8 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
             }
             const constructionCode = codeFromLocation ? codeFromLocation : codeTrees[storageIndex]
             setCode(codeTreeToString(constructionCode))
-            const fetched = getFabric(codeTrees.length.toString(), constructionCode)
-            fetched.startConstruction(constructionCode, PRETENST)
+            const fetched = getFabric(codeTrees.length.toString(), pretenst)
+            fetched.startConstruction(constructionCode, pretenst)
             setFabric(fetched)
         }
     })
@@ -77,10 +76,10 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
     function constructFabric(codeTree: ICodeTree): void {
         setSelection({})
         if (fabric) {
-            fabric.startConstruction(codeTree, PRETENST)
+            fabric.startConstruction(codeTree, pretenst)
         } else {
-            const fetched = getFabric(storageIndex.toString(), codeTree)
-            fetched.startConstruction(codeTree, PRETENST)
+            const fetched = getFabric(storageIndex.toString(), pretenst)
+            fetched.startConstruction(codeTree, pretenst)
             setFabric(fetched)
         }
     }
@@ -98,8 +97,8 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
         return (
             <div id="top-left">
                 <ButtonDropdown className="w-100 my-2" isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle size="sm" color="primary">
-                        <FaCog/> {code}
+                    <DropdownToggle color="primary">
+                        <h6>pretenst.com <FaCog/> {code}</h6>
                     </DropdownToggle>
                     <DropdownMenu right={false}>
                         {codeTrees.map((codeTree, index) => (
@@ -125,7 +124,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
             }
         }
         return (
-            <ButtonGroup id="bottom-left" size="sm">
+            <ButtonGroup id="bottom-left">
                 <Button color="info" onClick={onDownloadCSV}><FaDownload/>CSV</Button>
                 <Button color="info" onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
             </ButtonGroup>
@@ -134,9 +133,6 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
 
     return (
         <div id="tensegrity-view" className="the-whole-page">
-            <div id="top-middle">
-                <h6>pretenst.com</h6>
-            </div>
             {!fabric ? (
                 <h1>No fabric</h1>
             ) : (
@@ -144,6 +140,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                     <Canvas>
                         <FabricView
                             fabric={fabric}
+                            pretenst={pretenst}
                             selection={selection}
                             setSelection={setSelection}
                             autoRotate={autoRotate}
@@ -156,6 +153,11 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                         featureSet={features}
                         engine={engine}
                         fabric={fabric}
+                        pretenst={pretenst}
+                        setPretenst={pretenstValue => {
+                            fabric.instance.engine.setPretenst(pretenstValue)
+                            setPretenst(pretenstValue)
+                        }}
                     />
                     <Download/>
                     <EditPanel

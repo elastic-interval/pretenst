@@ -59,7 +59,6 @@ export class HelpPanel extends React.Component<IHelpProps, IHelpState> {
             <ButtonToolbar>
                 <a className="btn btn-info command-button" href={DOCS_ON_GITHUB} target="_blank">Background information</a>
                 <Button
-                    size="sm"
                     className="float-right"
                     color="info"
                     onClick={() => this.props.cancelHelp()}

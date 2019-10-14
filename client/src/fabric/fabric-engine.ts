@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -8,6 +9,7 @@ export interface IMemory {
 }
 
 export const MAX_INSTANCES = 32
+export const SLACK_THRESHOLD = 0.0001
 
 export enum PhysicsFeature {
     GravityAbove = 0,

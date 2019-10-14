@@ -9,6 +9,7 @@ import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } fro
 import { Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
+import { SLACK_THRESHOLD } from "../fabric/fabric-engine"
 import {
     AdjacentIntervals,
     bySelectedFace,
@@ -19,7 +20,7 @@ import {
 } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { ATTENUATED, BAR, CABLE, FACE, FACE_SPHERE, LINE } from "./materials"
+import { ATTENUATED, BAR, CABLE, FACE, FACE_SPHERE, LINE, SLACK } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
 extend({OrbitControls})
@@ -43,8 +44,9 @@ const ALTITUDE = 4
 const BAR_GIRTH = 0.3
 const CABLE_GIRTH = 0.1
 
-export function FabricView({fabric, selection, setSelection, autoRotate, fastMode, showFaces}: {
+export function FabricView({fabric, pretenst, selection, setSelection, autoRotate, fastMode, showFaces}: {
     fabric: TensegrityFabric,
+    pretenst: number,
     selection: ISelection,
     setSelection: (selection: ISelection) => void,
     autoRotate: boolean,
@@ -153,8 +155,9 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
         attenuated: boolean,
     }): JSX.Element {
         const elasticFactor = fabric.instance.engine.getElasticFactor(interval.index)
+        const displacement = fabric.instance.getIntervalDisplacement(interval.index) * (interval.isBar ? -1 : 1)
         const {scale, rotation} = fabric.orientInterval(interval, Math.sqrt(elasticFactor) * (interval.isBar ? BAR_GIRTH : CABLE_GIRTH))
-        const material = attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
+        const material = displacement < SLACK_THRESHOLD ? SLACK : attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
         return (
             <mesh
                 geometry={SPHERE}
@@ -176,24 +179,28 @@ export function FabricView({fabric, selection, setSelection, autoRotate, fastMod
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
                         {!fabric.splitIntervals || selection.selectedStress ? undefined : (
                             fabric.splitIntervals.selected.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
                             ))
                         )}
                     </group>
                 ) : (
                     <group>
-                        {fabric.splitIntervals ? ([
-                            ...fabric.splitIntervals.unselected.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
-                            )),
-                            ...fabric.splitIntervals.selected.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
-                            )),
-                        ]) : (
-                            fabric.intervals.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
-                            ))
+                        {pretenst === 0 ? (fabric.intervals.map(interval => (
+                            <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
+                        ))) : (fabric.splitIntervals ? ([
+                                ...fabric.splitIntervals.unselected.map(interval => (
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
+                                )),
+                                ...fabric.splitIntervals.selected.map(interval => (
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                                )),
+                            ]) : (
+                                fabric.intervals.map(interval => (
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                                ))
+                            )
                         )}
+                        {}
                     </group>
                 )}
                 {showFaces ? <Faces/> : undefined}

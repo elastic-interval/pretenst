@@ -16,7 +16,6 @@ import { TensegrityFabric } from "./fabric/tensegrity-fabric"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
-
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config
@@ -49,12 +48,12 @@ async function start(): Promise<void> {
         console.log("Starting Pretenst..")
         const fabricKernel = new FabricKernel(engine, roleFeatures)
         const fabricCache: Record<string, TensegrityFabric> = {}
-        const getFabric = (name: string) => {
+        const getFabric = (name: string, pretenst: number) => {
             const cached = fabricCache[name]
             if (cached) {
                 return cached
             }
-            const newFabric = fabricKernel.createTensegrityFabric(name, 1.2)
+            const newFabric = fabricKernel.createTensegrityFabric(name, pretenst)
             if (!newFabric) {
                 throw new Error()
             }
