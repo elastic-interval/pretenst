@@ -15,7 +15,6 @@ import {
     bySelectedFace,
     IInterval,
     ISelectedFace,
-    ISelection,
     nextAdjacent,
 } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -44,11 +43,11 @@ const ALTITUDE = 4
 const BAR_GIRTH = 0.3
 const CABLE_GIRTH = 0.1
 
-export function FabricView({fabric, pretenst, selection, setSelection, autoRotate, fastMode, showFaces}: {
+export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, autoRotate, fastMode, showFaces}: {
     fabric: TensegrityFabric,
     pretenst: number,
-    selection: ISelection,
-    setSelection: (selection: ISelection) => void,
+    selectedFace?: ISelectedFace,
+    setSelectedFace: (selection?: ISelectedFace) => void,
     autoRotate: boolean,
     fastMode: boolean,
     showFaces: boolean,
@@ -78,19 +77,18 @@ export function FabricView({fabric, pretenst, selection, setSelection, autoRotat
         orbitControls.current.autoRotate = autoRotate
         fabric.iterate(ITERATIONS_PER_FRAME)
         setAge(fabric.instance.engine.getAge())
-    }, true, [fabric, selection, age])
+    }, true, [fabric, selectedFace, age])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
 
-    const selectFace = (selectedFace: ISelectedFace) => {
+    const selectFace = (newSelectedFace: ISelectedFace) => {
         if (fabric) {
-            fabric.selectIntervals(bySelectedFace(selectedFace))
-            setSelection({selectedFace})
+            fabric.selectIntervals(bySelectedFace(newSelectedFace))
+            setSelectedFace(newSelectedFace)
         }
     }
 
     function SelectedFace(): JSX.Element {
-        const selectedFace = selection.selectedFace
         if (!selectedFace) {
             return <group/>
         }
@@ -155,7 +153,7 @@ export function FabricView({fabric, pretenst, selection, setSelection, autoRotat
         attenuated: boolean,
     }): JSX.Element {
         const elasticFactor = fabric.instance.engine.getElasticFactor(interval.index)
-        const displacement = fabric.instance.getIntervalDisplacement(interval.index) * (interval.isBar ? -1 : 1)
+        const displacement = fabric.instance.getIntervalStrain(interval.index) * (interval.isBar ? -1 : 1)
         const {scale, rotation} = fabric.orientInterval(interval, Math.sqrt(elasticFactor) * (interval.isBar ? BAR_GIRTH : CABLE_GIRTH))
         const material = displacement < SLACK_THRESHOLD ? SLACK : attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
         return (
@@ -177,7 +175,7 @@ export function FabricView({fabric, pretenst, selection, setSelection, autoRotat
                 {fastMode ? (
                     <group>
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
-                        {!fabric.splitIntervals || selection.selectedStress ? undefined : (
+                        {!fabric.splitIntervals || selectedFace ? undefined : (
                             fabric.splitIntervals.selected.map(interval => (
                                 <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
                             ))

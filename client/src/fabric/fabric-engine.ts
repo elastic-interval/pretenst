@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -55,10 +54,10 @@ export enum Laterality {
 }
 
 export enum Limit {
-    MinBarDisplacement = 0,
-    MaxBarDisplacement = 1,
-    MinCableDisplacement = 2,
-    MaxCableDisplacement = 3,
+    MinBarStrain = 0,
+    MaxBarStrain = 1,
+    MinCableStrain = 2,
+    MaxCableStrain = 3,
 }
 
 export interface IFabricEngine {
@@ -71,7 +70,7 @@ export interface IFabricEngine {
 
     getLimit(limit: Limit): number
 
-    setDisplacementThreshold(selectBars: boolean, selectCables: boolean, greaterThan: boolean, threshold: number): void
+    setColoring(bars: boolean, cables: boolean): void
 
     setInstance(index: number): void
 
@@ -161,6 +160,6 @@ export interface IFabricEngine {
 
     _intervalUnits(): number
 
-    _intervalDisplacements(): number
+    _intervalStrains(): number
 
 }

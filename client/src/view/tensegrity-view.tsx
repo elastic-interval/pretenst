@@ -12,7 +12,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
-import { codeTreeToString, ICodeTree, ISelection, stringToCodeTree } from "../fabric/tensegrity-brick-types"
+import { codeTreeToString, ICodeTree, ISelectedFace, stringToCodeTree } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 import { loadStorageIndex, storeCodeTree, storeStorageIndex } from "../storage/local-storage"
@@ -51,7 +51,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
     const [codeTrees, setCodeTrees] = useState<ICodeTree[]>(initialCodeTrees)
     const [code, setCode] = useState<string | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [selection, setSelection] = useState<ISelection>({})
+    const [selectedFace, setSelectedFace] = useState<ISelectedFace | undefined>()
 
     useEffect(() => {
         if (!fabric) {
@@ -76,7 +76,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
     })
 
     function constructFabric(codeTree: ICodeTree): void {
-        setSelection({})
+        setSelectedFace(undefined)
         setPretenst(PRETENST_AFTER_CONSTRUCTION)
         if (fabric) {
             fabric.startConstruction(codeTree, PRETENST_AFTER_CONSTRUCTION)
@@ -144,11 +144,11 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                         <FabricView
                             fabric={fabric}
                             pretenst={pretenst}
-                            selection={selection}
-                            setSelection={setSelection}
+                            selectedFace={selectedFace}
+                            setSelectedFace={setSelectedFace}
                             autoRotate={autoRotate}
                             fastMode={fastMode}
-                            showFaces={!selection.selectedStress}
+                            showFaces={true}
                         />
                     </Canvas>
                     <FabricChoice/>
@@ -156,23 +156,23 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                         featureSet={features}
                         engine={engine}
                         fabric={fabric}
+                    />
+                    <Download/>
+                    <EditPanel
+                        fabric={fabric}
                         pretenst={pretenst}
                         setPretenst={pretenstValue => {
                             fabric.instance.engine.setPretenst(pretenstValue)
                             setPretenst(pretenstValue)
                         }}
-                    />
-                    <Download/>
-                    <EditPanel
-                        fabric={fabric}
-                        selection={selection}
-                        setSelection={setSelection}
+                        selectedFace={selectedFace}
+                        setSelectedFace={setSelectedFace}
                     />
                 </>
             )}
             <CommandPanel
                 rebuild={() => {
-                    setSelection({})
+                    setSelectedFace(undefined)
                     if (fabric) {
                         fabric.clearSelection()
                     }

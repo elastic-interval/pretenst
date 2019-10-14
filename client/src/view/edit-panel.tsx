@@ -4,8 +4,9 @@
  */
 
 import * as React from "react"
-import { FaArrowDown, FaArrowUp, FaHandPointer, FaSun, FaTimesCircle } from "react-icons/all"
-import { Button, ButtonGroup } from "reactstrap"
+import { useEffect, useState } from "react"
+import { FaArrowDown, FaArrowUp, FaBolt, FaSun, FaTimesCircle, FaYinYang } from "react-icons/all"
+import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import {
@@ -14,22 +15,32 @@ import {
     IFace,
     IPercent,
     ISelectedFace,
-    ISelection,
     nextAdjacent,
     percentOrHundred,
 } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { DEFAULT_SELECTED_STRESS, DisplacementPanel } from "./displacement-panel"
+import { DisplacementPanel } from "./displacement-panel"
 
-export function EditPanel({fabric, selection, setSelection}: {
+export function EditPanel({fabric, pretenst, setPretenst, selectedFace, setSelectedFace}: {
     fabric: TensegrityFabric,
-    selection: ISelection,
-    setSelection: (selection: ISelection) => void,
+    pretenst: number,
+    setPretenst: (pretenst: number) => void,
+    selectedFace?: ISelectedFace,
+    setSelectedFace: (selectedFace?: ISelectedFace) => void,
 }): JSX.Element {
 
-    const selectedFace = selection.selectedFace
-    const selectedStress = selection.selectedStress
+    const [colorBars, setColorBars] = useState(true)
+    const [colorCables, setColorCables] = useState(true)
+
+    useEffect(() => fabric.instance.engine.setColoring(colorBars, colorCables), [colorBars, colorCables])
+
+    useEffect(() => {
+        if (pretenst === 0) {
+            setColorBars(true)
+            setColorCables(true)
+        }
+    }, [pretenst])
 
     function adjustment(up: boolean): number {
         const factor = 1.03
@@ -44,28 +55,19 @@ export function EditPanel({fabric, selection, setSelection}: {
 
     const grow = (face: IFace, scale?: IPercent) => {
         createConnectedBrick(face.brick, face.triangle, percentOrHundred(scale))
-        setSelection({})
-    }
-
-    const selectLowestFace = () => {
-        const lowestFace = fabric.faces.reduce((faceA: IFace, faceB: IFace) => {
-            const a = fabric.instance.getFaceMidpoint(faceA.index)
-            const b = fabric.instance.getFaceMidpoint(faceB.index)
-            return (a.y < b.y) ? faceA : faceB
-        })
-        setSelection({selectedFace: {face: lowestFace, adjacentIntervals: AdjacentIntervals.None}})
+        setSelectedFace(undefined)
     }
 
     const faceNextAdjacent = (face: ISelectedFace) => {
         const nextAdjacentFace = nextAdjacent(face)
         fabric.selectIntervals(bySelectedFace(nextAdjacentFace))
-        setSelection({selectedFace: nextAdjacentFace})
+        setSelectedFace(nextAdjacentFace)
     }
 
     function CancelButton(): JSX.Element {
         const onCancel = () => {
             fabric.clearSelection()
-            setSelection({})
+            setSelectedFace(undefined)
         }
         return (
             <Button onClick={onCancel}><FaTimesCircle/></Button>
@@ -93,26 +95,61 @@ export function EditPanel({fabric, selection, setSelection}: {
                     )}
                     <CancelButton/>
                 </ButtonGroup>
-            ) : selectedStress ? (
-                <DisplacementPanel
-                    fabric={fabric}
-                    selectedStress={selectedStress}
-                    setSelection={setSelection}
-                />
             ) : (
-                <>
-                    <ButtonGroup>
-                        <Button color="secondary" onClick={selectLowestFace}>
-                            <FaHandPointer/> Select a face by clicking it
-                        </Button>
-                    </ButtonGroup>
-                    &nbsp;&nbsp;
-                    <ButtonGroup>
-                        <Button color="secondary" onClick={() => setSelection(DEFAULT_SELECTED_STRESS)}>
-                            <FaHandPointer/> Select by stress
-                        </Button>
-                    </ButtonGroup>
-                </>
+                <Container>
+                    <Row>
+                        <Col xs="3">
+                            <ButtonGroup>
+                                <Button
+                                    color={pretenst === 0.1 ? "success" : "secondary"}
+                                    onClick={() => setPretenst(0.1)}>
+                                    <FaBolt/>&nbsp;Pretenst
+                                </Button>
+                                <Button
+                                    color={pretenst === 0.0 ? "success" : "secondary"}
+                                    onClick={() => setPretenst(0.0)}>
+                                    <FaYinYang/>&nbsp;Slack
+                                </Button>
+                            </ButtonGroup>
+                        </Col>
+                        <Col xs="3">
+                            <ButtonGroup>
+                                <Button
+                                    color={colorBars && colorCables ? "success" : "secondary"}
+                                    onClick={() => {
+                                        if (pretenst === 0) {
+                                            return
+                                        }
+                                        setColorBars(true)
+                                        setColorCables(true)
+                                    }}>Both</Button>
+                                <Button
+                                    color={colorBars && !colorCables ? "success" : "secondary"}
+                                    onClick={() => {
+                                        if (pretenst === 0) {
+                                            return
+                                        }
+                                        setColorBars(true)
+                                        setColorCables(false)
+                                    }}>
+                                    Bars
+                                </Button>
+                                <Button
+                                    color={colorCables && !colorBars ? "success" : "secondary"}
+                                    onClick={() => {
+                                        if (pretenst === 0) {
+                                            return
+                                        }
+                                        setColorBars(false)
+                                        setColorCables(true)
+                                    }}>
+                                    Cables
+                                </Button>
+                            </ButtonGroup>
+                        </Col>
+                        <DisplacementPanel fabric={fabric}/>
+                    </Row>
+                </Container>
             )}
         </div>
     )

@@ -21,8 +21,6 @@ import {
     IJoint,
     intervalSplitter, IPercent,
     JointTag, percentOrHundred,
-    setFabricDisplacementThreshold,
-    StressSelectMode,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
@@ -81,13 +79,8 @@ export class TensegrityFabric {
         return this.splitIntervals.selected.length
     }
 
-    public setDisplacementThreshold(threshold: number, mode?: StressSelectMode): void {
-        setFabricDisplacementThreshold(this, threshold, mode)
-    }
-
     public clearSelection(): void {
         this.splitIntervals = undefined
-        this.setDisplacementThreshold(0)
     }
 
     public forEachSelected(operation: (interval: IInterval) => void): number {
@@ -312,7 +305,7 @@ export class TensegrityFabric {
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const deltaLength = this.instance.getIntervalDisplacement(interval.index)
+                const deltaLength = this.instance.getIntervalStrain(interval.index)
                 const restLength = this.engine.getIntervalStateLength(interval.index, FabricState.Rest)
                 return {
                     joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,

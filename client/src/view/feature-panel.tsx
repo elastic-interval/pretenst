@@ -23,12 +23,10 @@ import { applyPhysicsFeature, IFeature } from "../fabric/features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { featureMultiplier, multiplierSymbol, multiplierValue } from "../storage/local-storage"
 
-export function FeaturePanel({engine, featureSet, fabric, pretenst, setPretenst}: {
+export function FeaturePanel({engine, featureSet, fabric}: {
     engine: IFabricEngine,
     featureSet: IFeature[],
     fabric: TensegrityFabric,
-    pretenst: number,
-    setPretenst: (pretenst: number) => void,
 }): JSX.Element {
 
     function Factor({feature, mutable}: { feature: IFeature, mutable: boolean }): JSX.Element {
@@ -117,10 +115,6 @@ export function FeaturePanel({engine, featureSet, fabric, pretenst, setPretenst}
                         <Factor feature={selectedFeature} mutable={true}/>
                     </div>
                 )}
-                <Button color={pretenst === 0.1 ? "success" : "secondary"}
-                        onClick={() => setPretenst(0.1)}>Pretenst</Button>
-                <Button color={pretenst === 0.0 ? "success" : "secondary"}
-                        onClick={() => setPretenst(0.0)}>Resting</Button>
                 <DropdownMenu right={true} style={{backgroundColor: "#6c757d"}}>
                     {featureSet.map(f => (
                         <DropdownItem key={f.label} onClick={() => setSelectedFeature(f)}>

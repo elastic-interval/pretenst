@@ -20,7 +20,7 @@ export class FabricInstance {
     private faceLocations: LazyFloatArray
     private jointLocations: LazyFloatArray
     private intervalUnits: LazyFloatArray
-    private intervalDisplacements: LazyFloatArray
+    private intervalStrains: LazyFloatArray
 
     constructor(
         private buffer: ArrayBuffer,
@@ -40,7 +40,7 @@ export class FabricInstance {
         this.faceLocations = new LazyFloatArray(b, offset + e._faceLocations(), () => e.getFaceCount() * 3 * 3)
         this.jointLocations = new LazyFloatArray(b, offset + e._jointLocations(), () => e.getJointCount() * 3)
         this.intervalUnits = new LazyFloatArray(b, offset + e._intervalUnits(), () => e.getIntervalCount() * 3)
-        this.intervalDisplacements = new LazyFloatArray(b, offset + e._intervalDisplacements(), () => e.getIntervalCount())
+        this.intervalStrains = new LazyFloatArray(b, offset + e._intervalStrains(), () => e.getIntervalCount())
     }
 
     public get index(): number {
@@ -59,7 +59,7 @@ export class FabricInstance {
         this.lineLocations.clear()
         this.lineColors.clear()
         this.intervalUnits.clear()
-        this.intervalDisplacements.clear()
+        this.intervalStrains.clear()
     }
 
     public getJointLocation(jointIndex: number): Vector3 {
@@ -70,8 +70,8 @@ export class FabricInstance {
         return vectorFromFloatArray(this.intervalUnits.floats, intervalIndex * 3)
     }
 
-    public getIntervalDisplacement(intervalIndex: number): number {
-        return this.intervalDisplacements.floats[intervalIndex]
+    public getIntervalStrain(intervalIndex: number): number {
+        return this.intervalStrains.floats[intervalIndex]
     }
 
     public getFaceLocations(): Float32Array {

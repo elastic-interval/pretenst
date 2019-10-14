@@ -203,31 +203,6 @@ export interface ISelectedFace {
     readonly adjacentIntervals: AdjacentIntervals
 }
 
-export enum StressSelectMode {
-    TighterCables = "Tighter Cables",
-    SlackerCables = "Slacker Cables",
-    TighterBars = "Tighter Bars",
-    SlackerBars = "Slacker Bars",
-}
-
-export function selectModeBars(mode: StressSelectMode): boolean {
-    return mode === StressSelectMode.TighterBars || mode === StressSelectMode.SlackerBars
-}
-
-export function selectModeSlack(mode: StressSelectMode): boolean {
-    return mode === StressSelectMode.SlackerBars || mode === StressSelectMode.SlackerCables
-}
-
-export interface ISelectedStress {
-    stressSelectMode: StressSelectMode
-    stressValue: number
-}
-
-export interface ISelection {
-    selectedFace?: ISelectedFace
-    selectedStress?: ISelectedStress
-}
-
 export function bySelectedFace(selectedFace: ISelectedFace): (interval: IInterval) => boolean {
     return interval => {
         const matchesInterval = (faceInterval: IInterval) => (
@@ -246,47 +221,6 @@ export function bySelectedFace(selectedFace: ISelectedFace): (interval: IInterva
             case AdjacentIntervals.Brick:
                 const brick: IBrick = selectedFace.face.brick
                 return [...brick.bars, ...brick.cables].some(matchesInterval)
-            default:
-                return false
-        }
-    }
-}
-
-export function setFabricDisplacementThreshold(fabric: TensegrityFabric, threshold: number, mode?: StressSelectMode): void {
-    const engine = fabric.instance.engine
-    switch (mode) {
-        case StressSelectMode.SlackerBars:
-            return engine.setDisplacementThreshold(true, false, false, threshold)
-        case StressSelectMode.SlackerCables:
-            return engine.setDisplacementThreshold(false, true, false, threshold)
-        case StressSelectMode.TighterBars:
-            return engine.setDisplacementThreshold(true, false, true, threshold)
-        case StressSelectMode.TighterCables:
-            return engine.setDisplacementThreshold(false, true, true, threshold)
-        default:
-            return engine.setDisplacementThreshold(false, false, false, threshold)
-    }
-}
-
-export function byDisplacementTreshold(fabric: TensegrityFabric, threshold: number, mode: StressSelectMode): (interval: IInterval) => boolean {
-    return interval => {
-        const directionalDisp = fabric.instance.getIntervalDisplacement(interval.index)
-        const selectIf = (selectBars: boolean, greaterThan: boolean): boolean => {
-            if (interval.isBar !== selectBars) {
-                return false
-            }
-            const intervalDisp = interval.isBar ? -directionalDisp : directionalDisp
-            return greaterThan ? intervalDisp > threshold : intervalDisp < threshold
-        }
-        switch (mode) {
-            case StressSelectMode.SlackerBars:
-                return selectIf(true, false)
-            case StressSelectMode.SlackerCables:
-                return selectIf(false, false)
-            case StressSelectMode.TighterBars:
-                return selectIf(true, true)
-            case StressSelectMode.TighterCables:
-                return selectIf(false, true)
             default:
                 return false
         }

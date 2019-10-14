@@ -52,8 +52,8 @@ const MAX_FACES: u16 = 256
 const REST_STATE: u8 = 0
 const STATE_COUNT: u8 = 5
 const ATTENUATED_COLOR: f32[] = [0.25, 0.25, 0.25]
-const BAR_COLOR: f32[] = [1.0, 0.3, 0.2]
-const CABLE_COLOR: f32[] = [0.4, 0.6, 1]
+const HOT_COLOR: f32[] = [1.0, 0.3, 0.2]
+const COLD_COLOR: f32[] = [0.4, 0.6, 1]
 const SLACK_COLOR: f32[] = [0, 1, 0]
 
 @inline()
@@ -194,14 +194,14 @@ function _currentLength(intervalIndex: u16): usize {
     return _CURRENT_LENGTH + _32(intervalIndex)
 }
 
-const _INTERVAL_DISPLACEMENTS = _CURRENT_LENGTH + _32_INTERVALS
+const _INTERVAL_STRAINS = _CURRENT_LENGTH + _32_INTERVALS
 
 @inline()
-function _displacement(intervalIndex: u16): usize {
-    return _INTERVAL_DISPLACEMENTS + _32(intervalIndex)
+function _intervalStrain(intervalIndex: u16): usize {
+    return _INTERVAL_STRAINS + _32(intervalIndex)
 }
 
-const _ELASTIC_FACTOR = _INTERVAL_DISPLACEMENTS + _32_INTERVALS
+const _ELASTIC_FACTOR = _INTERVAL_STRAINS + _32_INTERVALS
 
 @inline()
 function _elasticFactor(intervalIndex: u16): usize {
@@ -492,16 +492,16 @@ function multiplyScalar(vPtr: usize, s: f32): void {
     setZ(vPtr, getZ(vPtr) * s)
 }
 
-// function dot(vPtr: usize, v: usize): f32 {
-//     return getX(vPtr) * getX(v) + getY(vPtr) * getY(v) + getZ(vPtr) * getZ(v)
-// }
+function dot(vPtr: usize, v: usize): f32 {
+    return getX(vPtr) * getX(v) + getY(vPtr) * getY(v) + getZ(vPtr) * getZ(v)
+}
 
-// function lerp(vPtr: usize, v: usize, interpolation: f32): void {
-//     let antiInterpolation = <f32>1.0 - interpolation
-//     setX(vPtr, getX(vPtr) * antiInterpolation + getX(v) * interpolation)
-//     setY(vPtr, getY(vPtr) * antiInterpolation + getY(v) * interpolation)
-//     setX(vPtr, getZ(vPtr) * antiInterpolation + getZ(v) * interpolation)
-// }
+function lerp(vPtr: usize, v: usize, interpolation: f32): void {
+    let antiInterpolation = <f32>1.0 - interpolation
+    setX(vPtr, getX(vPtr) * antiInterpolation + getX(v) * interpolation)
+    setY(vPtr, getY(vPtr) * antiInterpolation + getY(v) * interpolation)
+    setX(vPtr, getZ(vPtr) * antiInterpolation + getZ(v) * interpolation)
+}
 
 function quadrance(vPtr: usize): f32 {
     let x = getX(vPtr)
@@ -830,12 +830,12 @@ export function setIntervalStateLength(intervalIndex: u16, state: u8, stateLengt
     setF32(_stateLength(intervalIndex, state), stateLength)
 }
 
-function getDisplacement(intervalIndex: u16): f32 {
-    return getF32(_displacement(intervalIndex))
+function getStrain(intervalIndex: u16): f32 {
+    return getF32(_intervalStrain(intervalIndex))
 }
 
-function setDisplacement(intervalIndex: u16, displacement: f32): void {
-    setF32(_displacement(intervalIndex), displacement)
+function setStrain(intervalIndex: u16, strain: f32): void {
+    setF32(_intervalStrain(intervalIndex), strain)
 }
 
 function calculateLength(intervalIndex: u16): f32 {
@@ -869,86 +869,92 @@ function setLineColor(intervalIndex: u16, red: f32, green: f32, blue: f32): void
 }
 
 enum Limit {
-    MinBarDisplacement = 0,
-    MaxBarDisplacement = 1,
-    MinCableDisplacement = 2,
-    MaxCableDisplacement = 3,
+    MinBarStrain = 0,
+    MaxBarStrain = 1,
+    MinCableStrain = 2,
+    MaxCableStrain = 3,
 }
 
-const BIG_DISPLACEMENT: f32 = 1000
+const BIG_STRAIN: f32 = 1
 
-let minBarDisplacement: f32 = BIG_DISPLACEMENT
-let maxBarDisplacement: f32 = -BIG_DISPLACEMENT
-let minCableDisplacement: f32 = BIG_DISPLACEMENT
-let maxCableDisplacement: f32 = -BIG_DISPLACEMENT
+let minBarStrain: f32 = BIG_STRAIN
+let maxBarStrain: f32 = -BIG_STRAIN
+let minCableStrain: f32 = BIG_STRAIN
+let maxCableStrain: f32 = -BIG_STRAIN
 
 export function getLimit(limit: Limit): f32 {
     switch (limit) {
-        case Limit.MinBarDisplacement:
-            return minBarDisplacement
-        case Limit.MaxBarDisplacement:
-            return maxBarDisplacement
-        case Limit.MinCableDisplacement:
-            return minCableDisplacement
-        case Limit.MaxCableDisplacement:
-            return maxCableDisplacement
+        case Limit.MinBarStrain:
+            return minBarStrain
+        case Limit.MaxBarStrain:
+            return maxBarStrain
+        case Limit.MinCableStrain:
+            return minCableStrain
+        case Limit.MaxCableStrain:
+            return maxCableStrain
         default:
             return 666
     }
 }
 
-let _selectBars = false
-let _selectCables = false
-let _greaterThan = false
-let _displacementThreshold: f32 = 0
+let colorBars = true
+let colorCables = true
 
-export function setDisplacementThreshold(selectBars: boolean, selectCables: boolean, greaterThan: boolean, threshold: f32): void {
-    _selectBars = selectBars
-    _selectCables = selectCables
-    _greaterThan = greaterThan
-    _displacementThreshold = threshold
+export function setColoring(bars: boolean, cables: boolean): void {
+    colorBars = bars
+    colorCables = cables
 }
 
 function outputLinesGeometry(): void {
-    minBarDisplacement = BIG_DISPLACEMENT
-    maxBarDisplacement = -BIG_DISPLACEMENT
-    minCableDisplacement = BIG_DISPLACEMENT
-    maxCableDisplacement = -BIG_DISPLACEMENT
+    minBarStrain = BIG_STRAIN
+    maxBarStrain = -BIG_STRAIN
+    minCableStrain = BIG_STRAIN
+    maxCableStrain = -BIG_STRAIN
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        let displacement = getDisplacement(intervalIndex)
+        let strain = getStrain(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         if (intervalRole === IntervalRole.Bar) {
-            displacement = -displacement
-            if (displacement < minBarDisplacement) {
-                minBarDisplacement = displacement
+            strain = -strain
+            if (strain < minBarStrain) {
+                minBarStrain = strain
             }
-            if (displacement > maxBarDisplacement) {
-                maxBarDisplacement = displacement
+            if (strain > maxBarStrain) {
+                maxBarStrain = strain
             }
         } else { // cable role
-            if (displacement < minCableDisplacement) {
-                minCableDisplacement = displacement
+            if (strain < minCableStrain) {
+                minCableStrain = strain
             }
-            if (displacement > maxCableDisplacement) {
-                maxCableDisplacement = displacement
+            if (strain > maxCableStrain) {
+                maxCableStrain = strain
             }
         }
     }
+    let pretenst = getPretenst()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
-        let directionalDisplacement = getDisplacement(intervalIndex)
+        let directionalStrain = getStrain(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
-        let isBar = intervalRole === IntervalRole.Bar
-        let displacement = isBar ? -directionalDisplacement : directionalDisplacement
-        let displacedEnough = _greaterThan ? displacement > _displacementThreshold : displacement < _displacementThreshold
-        let selectNothing = !_selectBars && !_selectCables
-        let selectThisType = (_selectBars && isBar) || (_selectCables && !isBar)
-        let colored = selectNothing || selectThisType && displacedEnough
-        let slack = displacement < SLACK_THRESHOLD
-        let color = slack ? SLACK_COLOR : colored ? isBar ? BAR_COLOR : CABLE_COLOR : ATTENUATED_COLOR
-        setLineColor(intervalIndex, color[0], color[1], color[2])
+        let isBar: boolean = intervalRole === IntervalRole.Bar
+        let strain = isBar ? -directionalStrain : directionalStrain
+        if (pretenst === 0 || colorBars && colorCables) {
+            let slack = strain < SLACK_THRESHOLD
+            let color = slack ? SLACK_COLOR : isBar ? HOT_COLOR : COLD_COLOR
+            setLineColor(intervalIndex, color[0], color[1], color[2])
+        } else if (colorBars || colorCables) {
+            if (isBar && colorCables || !isBar && colorBars) {
+                setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
+            } else {
+                let temperature = (strain - minBarStrain) / (maxBarStrain - minBarStrain)
+                setLineColor(intervalIndex,
+                    HOT_COLOR[0] * temperature + COLD_COLOR[0] * (1 - temperature),
+                    HOT_COLOR[1] * temperature + COLD_COLOR[1] * (1 - temperature),
+                    HOT_COLOR[2] * temperature + COLD_COLOR[2] * (1 - temperature)
+                )
+            }
+        }
     }
 }
 
@@ -1035,11 +1041,12 @@ function intervalPhysics(intervalIndex: u16, state: u8): void {
     let currentLength = interpolateCurrentLength(intervalIndex, state) * (1.0 + (bar ? pretenst : 0))
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
-    setDisplacement(intervalIndex, displacement)
+    let strain = displacement / currentLength
+    setStrain(intervalIndex, strain)
     let globalElasticFactor: f32 = pretenst ?
         bar ? PRETENST_BAR_ELASTIC : PRETENST_CABLE_ELASTIC :
-        bar ? pushElasticFactor : (displacement < 0 ? 0 : pullElasticFactor)
-    let force = displacement * elasticFactor * globalElasticFactor
+        bar ? pushElasticFactor : pullElasticFactor
+    let force = strain * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
     let mass = currentLength * currentLength * elasticFactor * (bar ? BAR_MASS_PER_LENGTH : CABLE_MASS_PER_LENGTH)
@@ -1181,8 +1188,8 @@ export function _intervalUnits(): usize {
     return _INTERVAL_UNITS
 }
 
-export function _intervalDisplacements(): usize {
-    return _INTERVAL_DISPLACEMENTS
+export function _intervalStrains(): usize {
+    return _INTERVAL_STRAINS
 }
 
 export function _fabricOffset(instance: u16): usize {
