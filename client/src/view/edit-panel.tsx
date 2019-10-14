@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -22,10 +23,11 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { StrainPanel } from "./strain-panel"
 
-export function EditPanel({fabric, pretenst, setPretenst, selectedFace, setSelectedFace}: {
+export function EditPanel({fabric, pretenst, setPretenst, setShowFaces, selectedFace, setSelectedFace}: {
     fabric: TensegrityFabric,
     pretenst: number,
     setPretenst: (pretenst: number) => void,
+    setShowFaces: (showFaces: boolean) => void
     selectedFace?: ISelectedFace,
     setSelectedFace: (selectedFace?: ISelectedFace) => void,
 }): JSX.Element {
@@ -37,6 +39,7 @@ export function EditPanel({fabric, pretenst, setPretenst, selectedFace, setSelec
 
     useEffect(() => {
         if (pretenst === 0) {
+            setShowFaces(true)
             setColorBars(true)
             setColorCables(true)
         }
@@ -122,13 +125,15 @@ export function EditPanel({fabric, pretenst, setPretenst, selectedFace, setSelec
                                         }
                                         setColorBars(true)
                                         setColorCables(true)
-                                    }}>Both</Button>
+                                        setShowFaces(true)
+                                    }}>Faces</Button>
                                 <Button
                                     color={colorBars && !colorCables ? "success" : "secondary"}
                                     onClick={() => {
                                         if (pretenst === 0) {
                                             return
                                         }
+                                        setShowFaces(false)
                                         setColorBars(true)
                                         setColorCables(false)
                                     }}>
@@ -140,6 +145,7 @@ export function EditPanel({fabric, pretenst, setPretenst, selectedFace, setSelec
                                         if (pretenst === 0) {
                                             return
                                         }
+                                        setShowFaces(false)
                                         setColorBars(false)
                                         setColorCables(true)
                                     }}>

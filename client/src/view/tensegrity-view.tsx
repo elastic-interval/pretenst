@@ -45,6 +45,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
 }): JSX.Element {
 
     const [pretenst, setPretenst] = useState<number>(0)
+    const [showFaces, setShowFaces] = useState<boolean>(true)
     const [autoRotate, setAutoRotate] = useState<boolean>(false)
     const [fastMode, setFastMode] = useState<boolean>(true)
     const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
@@ -148,7 +149,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                             setSelectedFace={setSelectedFace}
                             autoRotate={autoRotate}
                             fastMode={fastMode}
-                            showFaces={true}
+                            showFaces={showFaces}
                         />
                     </Canvas>
                     <FabricChoice/>
@@ -161,6 +162,7 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                     <EditPanel
                         fabric={fabric}
                         pretenst={pretenst}
+                        setShowFaces={setShowFaces}
                         setPretenst={pretenstValue => {
                             fabric.instance.engine.setPretenst(pretenstValue)
                             setPretenst(pretenstValue)

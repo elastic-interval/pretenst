@@ -148,13 +148,17 @@ export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, aut
         )
     }
 
-    function IntervalMesh({interval, attenuated}: {
+    function IntervalMesh({interval, attenuated, larger}: {
         interval: IInterval,
         attenuated: boolean,
+        larger: boolean,
     }): JSX.Element {
         const elasticFactor = fabric.instance.engine.getElasticFactor(interval.index)
         const strain = fabric.instance.getIntervalStrain(interval.index) * (interval.isBar ? -1 : 1)
-        const {scale, rotation} = fabric.orientInterval(interval, Math.sqrt(elasticFactor) * (interval.isBar ? BAR_GIRTH : CABLE_GIRTH))
+        const girth = Math.sqrt(elasticFactor) * (interval.isBar ?
+            BAR_GIRTH * (larger ? 3 : 1) :
+            CABLE_GIRTH * (larger ? 5 : 1))
+        const {scale, rotation} = fabric.orientInterval(interval, girth)
         const material = strain < SLACK_THRESHOLD ? SLACK : attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
         return (
             <mesh
@@ -175,26 +179,31 @@ export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, aut
                 {fastMode ? (
                     <group>
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
-                        {!fabric.splitIntervals || selectedFace ? undefined : (
+                        {!fabric.splitIntervals || !selectedFace ? undefined : (
                             fabric.splitIntervals.selected.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
+                                <IntervalMesh key={`I${interval.index}`} interval={interval}
+                                              larger={true} attenuated={false}/>
                             ))
                         )}
                     </group>
                 ) : (
                     <group>
                         {pretenst === 0 ? (fabric.intervals.map(interval => (
-                            <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
+                            <IntervalMesh key={`I${interval.index}`} interval={interval}
+                                          larger={false} attenuated={true}/>
                         ))) : (fabric.splitIntervals ? ([
                                 ...fabric.splitIntervals.unselected.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval}
+                                                  larger={false} attenuated={true}/>
                                 )),
                                 ...fabric.splitIntervals.selected.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval}
+                                                  larger={true} attenuated={false}/>
                                 )),
                             ]) : (
                                 fabric.intervals.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval}
+                                                  larger={false} attenuated={false}/>
                                 ))
                             )
                         )}

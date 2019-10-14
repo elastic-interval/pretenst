@@ -40,6 +40,8 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 //     return points
 // }
 
+const SNUGGLE_BRICKS = 0.8
+
 function createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] {
     const barsToPoints = (vectors: Vector3[], bar: IBarDefinition): Vector3[] => {
         vectors.push(new Vector3().add(bar.alpha))
@@ -57,7 +59,7 @@ function createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] 
     const scaleFactor = percentToFactor(scale)
     const fromBasis = new Matrix4()
         .getInverse(basis)
-        .setPosition(new Vector3(0, midpoint.length() + JOINT_RADIUS, 0))
+        .setPosition(new Vector3(0, midpoint.length() * scaleFactor * SNUGGLE_BRICKS + JOINT_RADIUS, 0))
         .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
     return points.map(p => p.applyMatrix4(fromBasis))
 }

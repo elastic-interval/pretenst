@@ -51,10 +51,18 @@ const MAX_FACES: u16 = 256
 
 const REST_STATE: u8 = 0
 const STATE_COUNT: u8 = 5
-const ATTENUATED_COLOR: f32[] = [0.25, 0.25, 0.25]
-const HOT_COLOR: f32[] = [1.0, 0.3, 0.2]
-const COLD_COLOR: f32[] = [0.4, 0.6, 1]
-const SLACK_COLOR: f32[] = [0, 1, 0]
+const ATTENUATED_COLOR: f32[] = [
+    0.1, 0.1, 0.1
+]
+const HOT_COLOR: f32[] = [
+    1.0, 0.2, 0.0
+]
+const COLD_COLOR: f32[] = [
+    0.0, 0.5, 1.0
+]
+const SLACK_COLOR: f32[] = [
+    0.0, 1.0, 0.0
+]
 
 @inline()
 function _8(index: u16): usize {
@@ -947,7 +955,9 @@ function outputLinesGeometry(): void {
             if (isBar && colorCables || !isBar && colorBars) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
             } else {
-                let temperature = (strain - minBarStrain) / (maxBarStrain - minBarStrain)
+                let min = isBar ? minBarStrain : minCableStrain
+                let max = isBar ? maxBarStrain : maxCableStrain
+                let temperature = (strain - min) / (max - min)
                 setLineColor(intervalIndex,
                     HOT_COLOR[0] * temperature + COLD_COLOR[0] * (1 - temperature),
                     HOT_COLOR[1] * temperature + COLD_COLOR[1] * (1 - temperature),
@@ -1043,10 +1053,11 @@ function intervalPhysics(intervalIndex: u16, state: u8): void {
     let displacement = calculateLength(intervalIndex) - currentLength
     let strain = displacement / currentLength
     setStrain(intervalIndex, strain)
-    let globalElasticFactor: f32 = pretenst ?
+    let globalElasticFactor: f32 = pretenst > 0 ?
         bar ? PRETENST_BAR_ELASTIC : PRETENST_CABLE_ELASTIC :
         bar ? pushElasticFactor : pullElasticFactor
-    let force = strain * elasticFactor * globalElasticFactor
+    // TODO: force should be based on strain, not displacement
+    let force = displacement * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
     let mass = currentLength * currentLength * elasticFactor * (bar ? BAR_MASS_PER_LENGTH : CABLE_MASS_PER_LENGTH)
