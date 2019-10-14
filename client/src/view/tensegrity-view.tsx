@@ -24,6 +24,8 @@ import { FeaturePanel } from "./feature-panel"
 
 extend({OrbitControls})
 
+const PRETENST_AFTER_CONSTRUCTION = 0
+
 declare global {
     namespace JSX {
         /* eslint-disable @typescript-eslint/interface-name-prefix */
@@ -75,11 +77,12 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
 
     function constructFabric(codeTree: ICodeTree): void {
         setSelection({})
+        setPretenst(PRETENST_AFTER_CONSTRUCTION)
         if (fabric) {
-            fabric.startConstruction(codeTree, pretenst)
+            fabric.startConstruction(codeTree, PRETENST_AFTER_CONSTRUCTION)
         } else {
             const fetched = getFabric(storageIndex.toString(), pretenst)
-            fetched.startConstruction(codeTree, pretenst)
+            fetched.startConstruction(codeTree, PRETENST_AFTER_CONSTRUCTION)
             setFabric(fetched)
         }
     }

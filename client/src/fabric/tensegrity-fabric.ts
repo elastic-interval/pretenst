@@ -43,6 +43,7 @@ export interface IFabricOutput {
     }[]
 }
 
+export const CONSTRUCTION_PRETENST = 0.2
 export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 
@@ -53,6 +54,7 @@ export class TensegrityFabric {
     public faces: IFace[] = []
     public growth?: IGrowth
 
+    private pretenst: number
     private faceLocations = new Float32BufferAttribute([], 3)
     private faceNormals = new Float32BufferAttribute([], 3)
     private lineLocations = new Float32BufferAttribute([], 3)
@@ -64,7 +66,8 @@ export class TensegrityFabric {
     }
 
     public startConstruction(codeTree: ICodeTree, pretenst: number): void {
-        this.reset(pretenst)
+        this.pretenst = pretenst
+        this.reset(CONSTRUCTION_PRETENST)
         const brick = this.createBrick()
         const executing: IActiveCode = {codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
@@ -270,6 +273,7 @@ export class TensegrityFabric {
                     }
                 } else {
                     this.growth = undefined
+                    this.engine.setPretenst(this.pretenst)
                 }
             }
         }

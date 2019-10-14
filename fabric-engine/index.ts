@@ -16,6 +16,8 @@ const AMBIENT_JOINT_MASS: f32 = 0.1
 const BAR_MASS_PER_LENGTH: f32 = 1
 const CABLE_MASS_PER_LENGTH: f32 = 0.01
 const SLACK_THRESHOLD: f32 = 0.0001
+const PRETENST_BAR_ELASTIC: f32 = 1.2
+const PRETENST_CABLE_ELASTIC: f32 = 0.4
 
 export enum PhysicsFeature {
     GravityAbove = 0,
@@ -1029,11 +1031,14 @@ export function removeFace(deadFaceIndex: u16): void {
 function intervalPhysics(intervalIndex: u16, state: u8): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let bar = intervalRole === IntervalRole.Bar
-    let currentLength = interpolateCurrentLength(intervalIndex, state) * (1.0 + (bar ? getPretenst() : 0))
+    let pretenst = getPretenst()
+    let currentLength = interpolateCurrentLength(intervalIndex, state) * (1.0 + (bar ? pretenst : 0))
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     setDisplacement(intervalIndex, displacement)
-    let globalElasticFactor: f32 = bar ? pushElasticFactor : (displacement < 0 ? 0 : pullElasticFactor)
+    let globalElasticFactor: f32 = pretenst ?
+        bar ? PRETENST_BAR_ELASTIC : PRETENST_CABLE_ELASTIC :
+        bar ? pushElasticFactor : (displacement < 0 ? 0 : pullElasticFactor)
     let force = displacement * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
