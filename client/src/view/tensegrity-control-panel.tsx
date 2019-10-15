@@ -12,6 +12,10 @@ import {
     FaCircle,
     FaCompressArrowsAlt,
     FaCubes,
+    FaDiceFour,
+    FaDiceOne,
+    FaDiceThree,
+    FaDiceTwo,
     FaDotCircle,
     FaFileCsv,
     FaHandPointUp,
@@ -33,7 +37,6 @@ import {
     IFace,
     IPercent,
     ISelectedFace,
-    nextAdjacent,
     percentOrHundred,
 } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -100,29 +103,22 @@ export function TensegrityControlPanel(
         setSelectedFace(undefined)
     }
 
-    const faceNextAdjacent = (face: ISelectedFace) => {
-        const nextAdjacentFace = nextAdjacent(face)
-        fabric.selectIntervals(bySelectedFace(nextAdjacentFace))
-        setSelectedFace(nextAdjacentFace)
-    }
-
-    const onCancel = () => {
-        fabric.clearSelection()
-        setSelectedFace(undefined)
-    }
-
     function ViewButton({bars, cables, children}: {
         bars: boolean,
         cables: boolean,
         children: JSX.Element | JSX.Element[],
     }): JSX.Element {
+        const faces = bars && cables
         const onClick = () => {
             setColorBars(bars)
             setColorCables(cables)
-            setShowFaces(bars && cables)
+            setShowFaces(faces)
+            if (selectedFace) {
+                setSelectedFace()
+            }
         }
         const color = bars === colorBars && cables === colorCables ? "success" : "secondary"
-        const iconColor = bars && cables ? "white" : bars ? HOT_COLOR : COLD_COLOR
+        const iconColor = faces ? "white" : bars ? HOT_COLOR : COLD_COLOR
         const style = {
             color: iconColor,
         }
@@ -140,48 +136,90 @@ export function TensegrityControlPanel(
         return <Button color={color} disabled={chosen} onClick={onClick}>{children}</Button>
     }
 
+    function FaceAdjacentButton({selected, adjacentIntervals}: {
+        selected: ISelectedFace,
+        adjacentIntervals: AdjacentIntervals,
+    }): JSX.Element {
+        let icon = <FaCircle/>
+        switch (adjacentIntervals) {
+            case AdjacentIntervals.Cables:
+                icon = <FaDiceOne/>
+                break
+            case AdjacentIntervals.Bars:
+                icon = <FaDiceTwo/>
+                break
+            case AdjacentIntervals.Face:
+                icon = <FaDiceThree/>
+                break
+            case AdjacentIntervals.Brick:
+                icon = <FaDiceFour/>
+                break
+            case AdjacentIntervals.None:
+                icon = <FaTimesCircle/>
+                break
+        }
+        const onClick = () => {
+            if (adjacentIntervals === AdjacentIntervals.None) {
+                fabric.clearSelection()
+                setSelectedFace(undefined)
+                return
+            }
+            const newSelected: ISelectedFace = {...selected, adjacentIntervals}
+            fabric.selectIntervals(bySelectedFace(newSelected))
+            setSelectedFace(newSelected)
+        }
+        const none = adjacentIntervals === AdjacentIntervals.None
+        const chosen = selected.adjacentIntervals === adjacentIntervals
+        const color = none ? "warning" : chosen ? "success" : "secondary"
+        return (
+            <Button color={color} disabled={chosen && !none} onClick={onClick}>
+                {icon}
+            </Button>
+        )
+    }
+
     return (
         <Navbar style={{borderStyle: "none"}}>
-            {selectedFace ? (
-                <ButtonGroup>
-                    {!selectedFace.face.canGrow ? undefined : (
-                        <Button onClick={() => grow(selectedFace.face)}><FaSun/> Grow</Button>
-                    )}
-                    {selectedFace.adjacentIntervals === AdjacentIntervals.None ? (
-                        <Button onClick={() => faceNextAdjacent(selectedFace)}>Click sphere to select
-                            bars/cables</Button>
-                    ) : (
-                        <>
-                            <Button onClick={adjustValue(true)}>L<FaArrowUp/></Button>
-                            <Button onClick={adjustValue(false)}>L<FaArrowDown/></Button>
-                            <Button onClick={() => faceNextAdjacent(selectedFace)}>
-                                Click sphere to make selections
-                            </Button>
-                        </>
-                    )}
-                    <Button onClick={onCancel}><FaTimesCircle/></Button>
-                </ButtonGroup>
-            ) : (
-                <>
-                    <ButtonGroup>
-                        <Button onClick={clearFabric}><FaListAlt/></Button>
-                        <Button onClick={onRecycle}><FaRecycle/></Button>
+            <ButtonGroup>
+                <Button onClick={clearFabric}><FaListAlt/></Button>
+                <Button onClick={onRecycle}><FaRecycle/></Button>
+            </ButtonGroup>
+            <ButtonGroup style={{paddingLeft: "1em"}}>
+                <PretenstButton pretenstValue={0.0}>
+                    <FaYinYang/>
+                    <span> Slack</span>
+                </PretenstButton>
+                <PretenstButton pretenstValue={0.1}>
+                    <FaBolt/>
+                    <span> Pretenst</span>
+                </PretenstButton>
+            </ButtonGroup>
+            <div style={{display: "flex", paddingLeft: "2em"}}>
+                <ViewButton bars={true} cables={true}>
+                    <FaHandPointUp/>
+                    <span> Faces</span>
+                </ViewButton>
+                {selectedFace ? (
+                    <ButtonGroup style={{paddingLeft: "0.6em", width: "30em"}}>
+                        <Button disabled={!selectedFace.face.canGrow} onClick={() => grow(selectedFace.face)}>
+                            <FaSun/>
+                        </Button>
+                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
+                            <FaArrowUp/>
+                        </Button>
+                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
+                            <FaArrowDown/>
+                        </Button>
+                        {Object.keys(AdjacentIntervals).map(key => (
+                            <FaceAdjacentButton
+                                key={key}
+                                selected={selectedFace}
+                                adjacentIntervals={AdjacentIntervals[key]}
+                            />
+                        ))}
                     </ButtonGroup>
-                    <ButtonGroup style={{paddingLeft: "1em"}}>
-                        <PretenstButton pretenstValue={0.0}>
-                            <FaYinYang/>
-                            <span> Slack</span>
-                        </PretenstButton>
-                        <PretenstButton pretenstValue={0.1}>
-                            <FaBolt/>
-                            <span> Pretenst</span>
-                        </PretenstButton>
-                    </ButtonGroup>
-                    <div style={{display: "flex", paddingLeft: "2em"}}>
-                        <ViewButton bars={true} cables={true}>
-                            <FaHandPointUp/>
-                            <span> Faces</span>
-                        </ViewButton>
+                ) : (
+                    <div style={{display: "flex", width: "30em"}}>
                         <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
                             <ViewButton bars={true} cables={false}>
                                 <FaCircle/>
@@ -199,21 +237,21 @@ export function TensegrityControlPanel(
                                          colorBars={colorBars} colorCables={colorCables}/>
                         </ButtonGroup>
                     </div>
-                    <ButtonGroup style={{paddingLeft: "1em"}}>
-                        <Button disabled={pretenst === 0}
-                                onClick={() => fabric.instance.engine.setAltitude(10)}><FaParachuteBox/></Button>
-                        <Button onClick={() => fabric.instance.engine.centralize()}><FaCompressArrowsAlt/></Button>
-                        <Button onClick={() => setAutoRotate(!autoRotate)}><FaSyncAlt/></Button>
-                        <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
-                            <FaRunning/>
-                        </Button>
-                    </ButtonGroup>
-                    <ButtonGroup style={{paddingLeft: "1em"}}>
-                        <Button onClick={() => saveCSVFiles(fabric)}><FaFileCsv/></Button>
-                        <Button onClick={() => saveOBJFile(fabric)}><FaCubes/></Button>
-                    </ButtonGroup>
-                </>
-            )}
+                )}
+            </div>
+            <ButtonGroup style={{paddingLeft: "1em"}}>
+                <Button disabled={pretenst === 0}
+                        onClick={() => fabric.instance.engine.setAltitude(10)}><FaParachuteBox/></Button>
+                <Button onClick={() => fabric.instance.engine.centralize()}><FaCompressArrowsAlt/></Button>
+                <Button onClick={() => setAutoRotate(!autoRotate)}><FaSyncAlt/></Button>
+                <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
+                    <FaRunning/>
+                </Button>
+            </ButtonGroup>
+            <ButtonGroup style={{paddingLeft: "1em"}}>
+                <Button onClick={() => saveCSVFiles(fabric)}><FaFileCsv/></Button>
+                <Button onClick={() => saveOBJFile(fabric)}><FaCubes/></Button>
+            </ButtonGroup>
         </Navbar>
     )
 }

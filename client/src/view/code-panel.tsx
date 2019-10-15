@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { Button } from "reactstrap"
 
 import { codeTreeToString, ICodeTree, stringToCodeTree } from "../fabric/tensegrity-brick-types"
-import { getLocalCodeTrees, loadCodeTrees, storeCodeTree } from "../storage/local-storage"
+import { getLocalCodeTrees, loadCodeTrees, loadStorageIndex, storeCodeTree } from "../storage/local-storage"
 
 export interface ICode {
     storageIndex: number
@@ -42,13 +42,13 @@ export function CodePanel({code, setCode}: {
                 if (locationBarCode && locationBarCode.storageIndex < 0) {
                     storeCodeTree(locationBarCode.codeTree).then(({trees, index}) => {
                         setCodeTrees(trees)
-                        // setCode({...locationBarCode, storageIndex: index})
+                        setCode({...locationBarCode, storageIndex: index})
                     })
                 } else {
-                    // const storageIndex = loadStorageIndex()
-                    // const codeTree = loadedCodeTrees[storageIndex]
-                    // const codeString = codeTreeToString(codeTree)
-                    // setCode({storageIndex, codeString, codeTree})
+                    const storageIndex = loadStorageIndex()
+                    const codeTree = loadedCodeTrees[storageIndex]
+                    const codeString = codeTreeToString(codeTree)
+                    setCode({storageIndex, codeString, codeTree})
                 }
             }
         })

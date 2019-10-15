@@ -15,7 +15,6 @@ import {
     bySelectedFace,
     IInterval,
     ISelectedFace,
-    nextAdjacent,
 } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -34,8 +33,6 @@ declare global {
         /* eslint-enable @typescript-eslint/interface-name-prefix */
     }
 }
-
-const stopPropagation = (event: React.MouseEvent<HTMLDivElement>) => event.stopPropagation()
 
 const ITERATIONS_PER_FRAME = 24
 const TOWARDS_TARGET = 0.01
@@ -102,11 +99,6 @@ export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, bus
                 geometry={SPHERE}
                 position={fabric.instance.getFaceMidpoint(selectedFace.face.index)}
                 material={FACE_SPHERE}
-                onPointerDown={(event: React.MouseEvent<HTMLDivElement>) => {
-                    selectFace(nextAdjacent(selectedFace))
-                    event.stopPropagation()
-                }}
-                onPointerUp={stopPropagation}
             />
         )
     }
@@ -118,7 +110,7 @@ export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, bus
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (!downEvent || !mesh) {
+            if (busy || pretenst === 0 || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX

@@ -172,30 +172,11 @@ export interface IConnector {
 }
 
 export enum AdjacentIntervals {
-    None = "None",
     Cables = "Cables",
     Bars = "Bars",
     Face = "Face",
     Brick = "Brick",
-}
-
-export function nextAdjacent(selectedFace: ISelectedFace): ISelectedFace {
-    function nextIntervals(adjacentIntervals: AdjacentIntervals): AdjacentIntervals {
-        switch (adjacentIntervals) {
-            case AdjacentIntervals.None:
-                return AdjacentIntervals.Cables
-            case AdjacentIntervals.Cables:
-                return AdjacentIntervals.Bars
-            case AdjacentIntervals.Bars:
-                return AdjacentIntervals.Face
-            case AdjacentIntervals.Face:
-                return AdjacentIntervals.Brick
-            case AdjacentIntervals.Brick:
-                return AdjacentIntervals.Cables
-        }
-    }
-
-    return {...selectedFace, adjacentIntervals: nextIntervals(selectedFace.adjacentIntervals)}
+    None = "None",
 }
 
 export interface ISelectedFace {

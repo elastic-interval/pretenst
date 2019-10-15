@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowsAltH, FaYinYang } from "react-icons/all"
+import { FaSortAmountUp, FaYinYang } from "react-icons/all"
 
 import { Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -75,7 +75,7 @@ export function StrainPanel({fabric, busy, bars, colorBars, colorCables}: {
                     marginRight: "1em",
                 }}>
                     <span style={{color: minColor}}>{minString}</span>
-                    &nbsp;<FaArrowsAltH/>&nbsp;
+                    &nbsp;<FaSortAmountUp/>&nbsp;
                     <span style={{color: maxColor}}>{maxString}</span>
                 </div>
             )}
