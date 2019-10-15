@@ -50,7 +50,7 @@ const MAX_JOINTS: u16 = 512
 const MAX_FACES: u16 = 256
 
 const REST_STATE: u8 = 0
-const STATE_COUNT: u8 = 5
+const STATE_COUNT: u8 = 16
 const ATTENUATED_COLOR: f32[] = [
     0.1, 0.1, 0.1
 ]
@@ -220,10 +220,10 @@ const _INTERVAL_ROLE = _ELASTIC_FACTOR + _32_INTERVALS
 
 @inline()
 function _intervalRole(intervalIndex: u16): usize {
-    return _INTERVAL_ROLE + _16(intervalIndex)
+    return _INTERVAL_ROLE + _8(intervalIndex)
 }
 
-const _INTERVAL_BUSY_COUNTDOWN = _INTERVAL_ROLE + _16_INTERVALS
+const _INTERVAL_BUSY_COUNTDOWN = _INTERVAL_ROLE + _8_INTERVALS
 
 @inline()
 function _intervalBusyCountdown(intervalIndex: u16): usize {
@@ -305,7 +305,7 @@ const _FABRIC_END = _NEXT_STATE + sizeof<u16>()
 
 // INSTANCES
 
-const FABRIC_SIZE: usize = _FABRIC_END
+const FABRIC_SIZE: usize = _FABRIC_END + sizeof<u16>() // for alignmnent
 
 let instance: u16 = 0
 let _instance: usize = 0
@@ -329,6 +329,8 @@ export function init(): usize {
     const bytes = SURFACE_SIZE + FABRIC_SIZE * MAX_INSTANCES
     let blocks = (bytes) >> 16
     memory.grow(blocks + 1)
+    logInt(666, FABRIC_SIZE)
+    logInt(667, bytes)
     return bytes
 }
 

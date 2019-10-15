@@ -43,17 +43,19 @@ const ALTITUDE = 4
 const BAR_GIRTH = 0.3
 const CABLE_GIRTH = 0.1
 
-export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, autoRotate, fastMode, showFaces}: {
+export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, busy, setBusy, autoRotate, fastMode, showFaces}: {
     fabric: TensegrityFabric,
     pretenst: number,
     selectedFace?: ISelectedFace,
     setSelectedFace: (selection?: ISelectedFace) => void,
+    busy: boolean,
+    setBusy: (busy: boolean) => void
     autoRotate: boolean,
     fastMode: boolean,
     showFaces: boolean,
 }): JSX.Element {
 
-    const [age, setAge] = useState<number>(0)
+    const [age, setAge] = useState(0)
     const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
     const {camera, raycaster} = useThree()
 
@@ -75,7 +77,10 @@ export function FabricView({fabric, pretenst, selectedFace, setSelectedFace, aut
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = autoRotate
-        fabric.iterate(ITERATIONS_PER_FRAME)
+        const nowBusy = fabric.iterate(ITERATIONS_PER_FRAME)
+        if (nowBusy !== busy) {
+            setBusy(nowBusy)
+        }
         setAge(fabric.instance.engine.getAge())
     }, true, [fabric, selectedFace, age])
 

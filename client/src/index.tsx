@@ -20,7 +20,6 @@ import { TensegrityView } from "./view/tensegrity-view"
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./index.css"
-import { loadCodeTrees } from "./storage/local-storage"
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
@@ -48,11 +47,14 @@ async function start(): Promise<void> {
         console.log("Starting Pretenst..")
         const fabricKernel = new FabricKernel(engine, roleFeatures)
         const fabricCache: Record<string, TensegrityFabric> = {}
-        const getFabric = (name: string, pretenst: number) => {
+        const getFreshFabric = (name: string, pretenst: number) => {
             const cached = fabricCache[name]
             if (cached) {
+                console.log("cached fabric reset", name, pretenst)
+                cached.reset(pretenst)
                 return cached
             }
+            console.log("create fabric", name, pretenst)
             const newFabric = fabricKernel.createTensegrityFabric(name, pretenst)
             if (!newFabric) {
                 throw new Error()
@@ -64,13 +66,11 @@ async function start(): Promise<void> {
             .filter(feature => notWater(feature.name.physicsFeature))
         physicsFeatures.forEach(feature => applyPhysicsFeature(engine, feature))
         const features = [...roleFeatures, ...physicsFeatures]
-        const fabricCode = await loadCodeTrees()
         ReactDOM.render(
             <TensegrityView
                 engine={engine}
                 features={features}
-                initialCodeTrees={fabricCode}
-                getFabric={getFabric}
+                getFreshFabric={getFreshFabric}
             />,
             root,
         )

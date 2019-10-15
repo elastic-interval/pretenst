@@ -265,7 +265,7 @@ export function codeTreeToString(codeTree: ICodeTree): string {
         .replace(/[}]/g, "]")
 }
 
-export function stringToCodeTree(code: string): ICodeTree {
+export function stringToCodeTree(error: (message: string) => void, code?: string): ICodeTree | undefined {
 
     function matchBracket(s: string, openBracket: number): number {
         if (s.charAt(openBracket) !== "[") {
@@ -317,7 +317,7 @@ export function stringToCodeTree(code: string): ICodeTree {
                     tree.C = codeToTree(bracketed)
                     break
                 case "S":
-                    tree.S = {_: parseInt(bracketed.substring(1, bracketed.length-1), 10)}
+                    tree.S = {_: parseInt(bracketed.substring(1, bracketed.length - 1), 10)}
                     break
             }
             index += bracketed.length + 1
@@ -325,7 +325,16 @@ export function stringToCodeTree(code: string): ICodeTree {
         return tree
     }
 
-    return codeToTree(code)
+    try {
+        if (!code || code.length === 0) {
+            error("No code to parse")
+            return undefined
+        }
+        return codeToTree(code)
+    } catch (e) {
+        error(e.message)
+        return undefined
+    }
 }
 
 export interface IActiveCode {

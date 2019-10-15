@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -5,25 +6,21 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaCog } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
-import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
-import { codeTreeToString, ICodeTree, ISelectedFace, stringToCodeTree } from "../fabric/tensegrity-brick-types"
+import { ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { loadStorageIndex, showFeatures, storeCodeTree, storeStorageIndex } from "../storage/local-storage"
+import { showFeatures } from "../storage/local-storage"
 
-import { CommandPanel } from "./command-panel"
-import { EditPanel } from "./edit-panel"
+import { CodePanel, ICode } from "./code-panel"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
+import { TensegrityControlPanel } from "./tensegrity-control-panel"
 
 extend({OrbitControls})
-
-const PRETENST_AFTER_CONSTRUCTION = 0
 
 declare global {
     namespace JSX {
@@ -36,10 +33,11 @@ declare global {
     }
 }
 
-export function TensegrityView({engine, initialCodeTrees, getFabric, features}: {
+const PRETENST_AFTER_CONSTRUCTION = 0
+
+export function TensegrityView({engine, getFreshFabric, features}: {
     engine: IFabricEngine,
-    initialCodeTrees: ICodeTree[],
-    getFabric: (name: string, pretenst: number) => TensegrityFabric,
+    getFreshFabric: (name: string, pretenst: number) => TensegrityFabric,
     features: IFeature[],
 }): JSX.Element {
 
@@ -47,84 +45,39 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
     const [showFaces, setShowFaces] = useState<boolean>(true)
     const [autoRotate, setAutoRotate] = useState<boolean>(false)
     const [fastMode, setFastMode] = useState<boolean>(true)
-    const [storageIndex, setStorageIndex] = useState<number>(loadStorageIndex)
-    const [codeTrees, setCodeTrees] = useState<ICodeTree[]>(initialCodeTrees)
-    const [code, setCode] = useState<string | undefined>()
+
+    const [code, setCode] = useState<ICode | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
+    const [busy, setBusy] = useState(false)
     const [selectedFace, setSelectedFace] = useState<ISelectedFace | undefined>()
 
-    useEffect(() => {
-        if (!fabric) {
-            const getCodeFromLocation = () => {
-                if (!location.hash) {
-                    return undefined
-                }
-                const locationCode = location.hash.substring(1)
-                const exists = codeTrees.map(codeTreeToString).some(treeCode => treeCode === locationCode)
-                return exists ? undefined : stringToCodeTree(locationCode)
-            }
-            const codeFromLocation = getCodeFromLocation()
-            if (codeFromLocation) {
-                storeCodeTree(codeFromLocation).then(newTrees => setCodeTrees(newTrees))
-            }
-            const constructionCode = codeFromLocation ? codeFromLocation : codeTrees[storageIndex]
-            setCode(codeTreeToString(constructionCode))
-            const fetched = getFabric(codeTrees.length.toString(), pretenst)
-            fetched.startConstruction(constructionCode, pretenst)
-            setFabric(fetched)
+    function buildFromCode(): void {
+        if (!code) {
+            return
         }
-    })
-
-    function constructFabric(codeTree: ICodeTree): void {
+        const {storageIndex, codeString, codeTree} = code
         setSelectedFace(undefined)
         setPretenst(PRETENST_AFTER_CONSTRUCTION)
-        if (fabric) {
-            fabric.startConstruction(codeTree, PRETENST_AFTER_CONSTRUCTION)
-        } else {
-            const fetched = getFabric(storageIndex.toString(), pretenst)
-            fetched.startConstruction(codeTree, PRETENST_AFTER_CONSTRUCTION)
-            setFabric(fetched)
-        }
+        const fetched = getFreshFabric(storageIndex.toString(), pretenst)
+        fetched.startConstruction(codeTree, PRETENST_AFTER_CONSTRUCTION)
+        setFabric(fetched)
+        location.hash = codeString
     }
 
-    const FabricChoice = (): JSX.Element => {
-        const [open, setOpen] = useState<boolean>(false)
-        const select = (codeTree: ICodeTree, index: number) => {
-            setStorageIndex(index)
-            storeStorageIndex(index)
-            const codeString = codeTreeToString(codeTree)
-            location.hash = codeString
-            setCode(codeString)
-            constructFabric(codeTree)
-        }
-        return (
-            <div id="top-left">
-                <ButtonDropdown className="w-100 my-2" isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle color="primary">
-                        <h6>pretenst.com <FaCog/> {code}</h6>
-                    </DropdownToggle>
-                    <DropdownMenu right={false}>
-                        {codeTrees.map((codeTree, index) => (
-                            <DropdownItem key={`Buffer${index}`} onClick={() => select(codeTree, index)}>
-                                {codeTreeToString(codeTree)}
-                            </DropdownItem>
-                        ))}
-                    </DropdownMenu>
-                </ButtonDropdown>
-            </div>
-        )
-    }
+    useEffect(buildFromCode, [code])
 
     return (
         <div id="tensegrity-view" className="the-whole-page">
             {!fabric ? (
-                <h1>No fabric</h1>
+                <CodePanel code={code} setCode={setCode}/>
             ) : (
                 <>
                     <Canvas>
                         <FabricView
                             fabric={fabric}
                             pretenst={pretenst}
+                            busy={busy}
+                            setBusy={setBusy}
                             selectedFace={selectedFace}
                             setSelectedFace={setSelectedFace}
                             autoRotate={autoRotate}
@@ -132,7 +85,6 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                             showFaces={showFaces}
                         />
                     </Canvas>
-                    <FabricChoice/>
                     {!showFeatures() ? undefined : (
                         <FeaturePanel
                             featureSet={features}
@@ -140,34 +92,28 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                             fabric={fabric}
                         />
                     )}
-                    <EditPanel
-                        fabric={fabric}
-                        pretenst={pretenst}
-                        setShowFaces={setShowFaces}
-                        setPretenst={pretenstValue => {
-                            fabric.instance.engine.setPretenst(pretenstValue)
-                            setPretenst(pretenstValue)
-                        }}
-                        selectedFace={selectedFace}
-                        setSelectedFace={setSelectedFace}
-                    />
+                    <div id="bottom-middle">
+                        <TensegrityControlPanel
+                            fabric={fabric}
+                            clearFabric={() => setFabric(undefined)}
+                            rebuildFabric={buildFromCode}
+                            pretenst={pretenst}
+                            setShowFaces={setShowFaces}
+                            setPretenst={pretenstValue => {
+                                fabric.instance.engine.setPretenst(pretenstValue)
+                                setPretenst(pretenstValue)
+                            }}
+                            selectedFace={selectedFace}
+                            setSelectedFace={setSelectedFace}
+                            autoRotate={autoRotate}
+                            setAutoRotate={setAutoRotate}
+                            fastMode={fastMode}
+                            setFastMode={setFastMode}
+                            busy={busy}
+                        />
+                    </div>
                 </>
             )}
-            <CommandPanel
-                rebuild={() => {
-                    setSelectedFace(undefined)
-                    if (fabric) {
-                        fabric.clearSelection()
-                    }
-                    constructFabric(codeTrees[storageIndex])
-                }}
-                fabric={fabric}
-                autoRotate={autoRotate}
-                setAutoRotate={setAutoRotate}
-                fastMode={fastMode}
-                setFastMode={setFastMode}
-                storageIndex={storageIndex}
-            />
         </div>
     )
 }

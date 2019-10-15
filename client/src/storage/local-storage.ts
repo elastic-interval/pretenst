@@ -23,7 +23,7 @@ async function getBootstrapCodeTrees(): Promise<ICodeTree[]> {
     return body.pretenst
 }
 
-function getLocalCodeTrees(): ICodeTree[] {
+export function getLocalCodeTrees(): ICodeTree[] {
     const localFabricCode = localStorage.getItem(FABRIC_CODE_KEY)
     return localFabricCode ? JSON.parse(localFabricCode) : []
 }
@@ -34,20 +34,18 @@ export async function loadCodeTrees(): Promise<ICodeTree[]> {
     return [...bootstrapTrees, ...localTrees]
 }
 
-export async function storeCodeTree(codeTree: ICodeTree): Promise<ICodeTree[]> {
+export async function storeCodeTree(codeTree: ICodeTree): Promise<{ trees: ICodeTree[], index: number }> {
     const code = codeTreeToString(codeTree)
-    const fabricCode = await loadCodeTrees()
-    const exists = fabricCode.map(codeTreeToString).some(localCode => localCode === code)
-    if (exists) {
-        return fabricCode
+    const trees = await loadCodeTrees()
+    const index = trees.map(codeTreeToString).findIndex(localCode => localCode === code)
+    if (index >= 0) {
+        storeStorageIndex(index)
+        return {trees, index}
     }
-    const localTrees = getLocalCodeTrees()
-    const index = fabricCode.length
-    localTrees.push(codeTree)
-    localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(localTrees))
-    fabricCode.push(codeTree)
-    storeStorageIndex(index)
-    return fabricCode
+    trees.push(codeTree)
+    localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(trees))
+    storeStorageIndex(trees.length + 1)
+    return {trees, index: trees.length - 1}
 }
 
 export function loadStorageIndex(): number {

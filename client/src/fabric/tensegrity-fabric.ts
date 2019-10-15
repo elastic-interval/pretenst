@@ -234,43 +234,45 @@ export class TensegrityFabric {
     }
 
     public iterate(ticks: number): boolean {
-        const busy = this.engine.iterate(ticks)
+        const engine = this.engine
+        const busy = engine.iterate(ticks)
         this.disposeOfGeometry()
         if (busy) {
             return busy
         }
         const growth = this.growth
-        if (growth) {
-            if (growth.growing.length > 0) {
-                growth.growing = executeActiveCode(growth.growing)
-                this.engine.centralize()
-            }
-            if (growth.growing.length === 0) {
-                if (growth.optimizationStack.length > 0) {
-                    const optimization = growth.optimizationStack.pop()
-                    switch (optimization) {
-                        case "L":
-                            optimizeFabric(this, false)
-                            this.engine.extendBusyCountdown(3)
-                            break
-                        case "H":
-                            optimizeFabric(this, true)
-                            this.engine.extendBusyCountdown(2)
-                            break
-                        case "X":
-                            growth.optimizationStack.push("Connect")
-                            break
-                        case "Connect":
-                            connectClosestFacePair(this)
-                            break
-                    }
-                } else {
-                    this.growth = undefined
-                    this.engine.setPretenst(this.pretenst)
+        if (!growth) {
+            return false
+        }
+        if (growth.growing.length > 0) {
+            growth.growing = executeActiveCode(growth.growing)
+            engine.centralize()
+        }
+        if (growth.growing.length === 0) {
+            if (growth.optimizationStack.length > 0) {
+                const optimization = growth.optimizationStack.pop()
+                switch (optimization) {
+                    case "L":
+                        optimizeFabric(this, false)
+                        engine.extendBusyCountdown(3)
+                        break
+                    case "H":
+                        optimizeFabric(this, true)
+                        engine.extendBusyCountdown(2)
+                        break
+                    case "X":
+                        growth.optimizationStack.push("Connect")
+                        break
+                    case "Connect":
+                        connectClosestFacePair(this)
+                        break
                 }
+            } else {
+                this.growth = undefined
+                engine.setPretenst(this.pretenst)
             }
         }
-        return busy
+        return true
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {

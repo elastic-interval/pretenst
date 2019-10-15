@@ -106,11 +106,22 @@ a, a:hover {
     z-index: 100;
 }
 
+#top-middle {
+    position: absolute;
+    padding-right: 1em;
+    padding-left: 1em;
+    top: 1em;
+    left: 50%;
+    transform: translate(-50%);
+    z-index: 100;
+}
+
 #bottom-middle {
     position: absolute;
     padding-right: 1em;
     padding-left: 1em;
     bottom: 1em;
+    width: 80em;
     left: 50%;
     transform: translate(-50%);
     z-index: 100;

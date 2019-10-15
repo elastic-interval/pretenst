@@ -5,18 +5,19 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaYinYang } from "react-icons/all"
+import { FaArrowsAltH, FaYinYang } from "react-icons/all"
 
 import { Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./materials"
 
-const DIGITS_VISIBLE = 3
-const VISIBLE_LIMIT = 0.001
+const STRAIN_MULTIPLY = 10000
+const VISIBLE_LIMIT = 0.0002
 
-export function StrainPanel({fabric, bars, colorBars, colorCables}: {
+export function StrainPanel({fabric, busy, bars, colorBars, colorCables}: {
     fabric: TensegrityFabric,
+    busy: boolean,
     bars: boolean,
     colorBars: boolean,
     colorCables: boolean,
@@ -39,38 +40,43 @@ export function StrainPanel({fabric, bars, colorBars, colorCables}: {
         return () => clearTimeout(timer)
     }, [])
 
-    const zen = Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
+    const min = Math.floor(minStrain * STRAIN_MULTIPLY)
+    const max = Math.floor(maxStrain * STRAIN_MULTIPLY)
+    const zen = busy || Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
     const both = colorBars && colorCables
     const nativeColor = bars ? HOT_COLOR : COLD_COLOR
     const attenuated = bars !== colorBars
-    const topColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : HOT_COLOR
-    const bottomColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : COLD_COLOR
+    const maxColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : HOT_COLOR
+    const minColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : COLD_COLOR
+    const minString = min.toFixed()
+    const maxString = max.toFixed()
     return (
         <div style={{
             textAlign: "center",
-            width: "5em",
+            width: "8em",
             backgroundColor: "#cccccc",
-            marginTop: "1px",
-            marginBottom: "1px",
-            borderRadius: "0.2em",
+            borderTopRightRadius: "1em",
+            borderBottomRightRadius: "1em",
             borderColor: "#575757",
         }}>
             {zen ? (
                 <div style={{
-                    fontSize: "x-large",
+                    fontSize: "large",
                     color: SLACK_COLOR,
                     margin: 0,
+                    paddingTop: "0.2em",
                     height: "100%",
                 }}><FaYinYang/></div>
             ) : (
                 <div style={{
                     display: "block",
-                    textAlign: "right",
-                    fontWeight: "bold",
+                    textAlign: "center",
+                    paddingTop: "0.6em",
                     marginRight: "1em",
                 }}>
-                    <div style={{color: topColor}}>{maxStrain.toFixed(DIGITS_VISIBLE)}</div>
-                    <div style={{color: bottomColor}}>{minStrain.toFixed(DIGITS_VISIBLE)}</div>
+                    <span style={{color: minColor}}>{minString}</span>
+                    &nbsp;<FaArrowsAltH/>&nbsp;
+                    <span style={{color: maxColor}}>{maxString}</span>
                 </div>
             )}
         </div>
