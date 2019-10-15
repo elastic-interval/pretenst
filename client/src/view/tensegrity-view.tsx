@@ -15,7 +15,7 @@ import { IFeature } from "../fabric/features"
 import { codeTreeToString, ICodeTree, ISelectedFace, stringToCodeTree } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
-import { loadStorageIndex, storeCodeTree, storeStorageIndex } from "../storage/local-storage"
+import { loadStorageIndex, showFeatures, storeCodeTree, storeStorageIndex } from "../storage/local-storage"
 
 import { CommandPanel } from "./command-panel"
 import { EditPanel } from "./edit-panel"
@@ -153,11 +153,13 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                         />
                     </Canvas>
                     <FabricChoice/>
-                    <FeaturePanel
-                        featureSet={features}
-                        engine={engine}
-                        fabric={fabric}
-                    />
+                    {!showFeatures() ? undefined : (
+                        <FeaturePanel
+                            featureSet={features}
+                            engine={engine}
+                            fabric={fabric}
+                        />
+                    )}
                     <Download/>
                     <EditPanel
                         fabric={fabric}
