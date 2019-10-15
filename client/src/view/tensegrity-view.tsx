@@ -5,16 +5,15 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaCog, FaDownload } from "react-icons/all"
+import { FaCog } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
-import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
+import { ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
 import { codeTreeToString, ICodeTree, ISelectedFace, stringToCodeTree } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { saveCSVFiles, saveOBJFile } from "../storage/download"
 import { loadStorageIndex, showFeatures, storeCodeTree, storeStorageIndex } from "../storage/local-storage"
 
 import { CommandPanel } from "./command-panel"
@@ -116,25 +115,6 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
         )
     }
 
-    const Download = (): JSX.Element => {
-        const onDownloadCSV = () => {
-            if (fabric) {
-                saveCSVFiles(fabric)
-            }
-        }
-        const onDownloadOBJ = () => {
-            if (fabric) {
-                saveOBJFile(fabric)
-            }
-        }
-        return (
-            <ButtonGroup id="bottom-left">
-                <Button color="info" onClick={onDownloadCSV}><FaDownload/>CSV</Button>
-                <Button color="info" onClick={onDownloadOBJ}><FaDownload/>OBJ</Button>
-            </ButtonGroup>
-        )
-    }
-
     return (
         <div id="tensegrity-view" className="the-whole-page">
             {!fabric ? (
@@ -160,7 +140,6 @@ export function TensegrityView({engine, initialCodeTrees, getFabric, features}: 
                             fabric={fabric}
                         />
                     )}
-                    <Download/>
                     <EditPanel
                         fabric={fabric}
                         pretenst={pretenst}

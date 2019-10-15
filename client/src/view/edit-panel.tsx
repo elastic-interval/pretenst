@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -6,8 +5,18 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaBolt, FaSun, FaTimesCircle, FaYinYang } from "react-icons/all"
-import { Button, ButtonGroup, Col, Container, Row } from "reactstrap"
+import {
+    FaArrowDown,
+    FaArrowUp,
+    FaBolt,
+    FaCircle,
+    FaDotCircle,
+    FaHandPointUp,
+    FaSun,
+    FaTimesCircle,
+    FaYinYang,
+} from "react-icons/all"
+import { Button, ButtonGroup, Navbar } from "reactstrap"
 
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import {
@@ -77,6 +86,29 @@ export function EditPanel({fabric, pretenst, setPretenst, setShowFaces, selected
         )
     }
 
+    function ViewButton({bars, cables, children}: {
+        bars: boolean,
+        cables: boolean,
+        children: JSX.Element | JSX.Element[],
+    }): JSX.Element {
+        const onClick = () => {
+            setColorBars(bars)
+            setColorCables(cables)
+            setShowFaces(bars && cables)
+        }
+        const color = bars === colorBars && cables === colorCables ? "success" : "secondary"
+        return <Button disabled={pretenst === 0} color={color} onClick={onClick}>{children}</Button>
+    }
+
+    function PretenstButton({pretenstValue, children}: {
+        pretenstValue: number,
+        children: JSX.Element | JSX.Element[],
+    }): JSX.Element {
+        const onClick = () => setPretenst(pretenstValue)
+        const color = pretenst === pretenstValue ? "success" : "secondary"
+        return <Button color={color} onClick={onClick}>{children}</Button>
+    }
+
     return (
         <div id="bottom-middle">
             {selectedFace ? (
@@ -99,63 +131,23 @@ export function EditPanel({fabric, pretenst, setPretenst, setShowFaces, selected
                     <CancelButton/>
                 </ButtonGroup>
             ) : (
-                <Container>
-                    <Row>
-                        <Col xs="3">
-                            <ButtonGroup>
-                                <Button
-                                    color={pretenst === 0.1 ? "success" : "secondary"}
-                                    onClick={() => setPretenst(0.1)}>
-                                    <FaBolt/>&nbsp;Pretenst
-                                </Button>
-                                <Button
-                                    color={pretenst === 0.0 ? "success" : "secondary"}
-                                    onClick={() => setPretenst(0.0)}>
-                                    <FaYinYang/>&nbsp;Slack
-                                </Button>
-                            </ButtonGroup>
-                        </Col>
-                        <Col xs="3">
-                            <ButtonGroup>
-                                <Button
-                                    color={colorBars && colorCables ? "success" : "secondary"}
-                                    onClick={() => {
-                                        if (pretenst === 0) {
-                                            return
-                                        }
-                                        setColorBars(true)
-                                        setColorCables(true)
-                                        setShowFaces(true)
-                                    }}>Faces</Button>
-                                <Button
-                                    color={colorBars && !colorCables ? "success" : "secondary"}
-                                    onClick={() => {
-                                        if (pretenst === 0) {
-                                            return
-                                        }
-                                        setShowFaces(false)
-                                        setColorBars(true)
-                                        setColorCables(false)
-                                    }}>
-                                    Bars
-                                </Button>
-                                <Button
-                                    color={colorCables && !colorBars ? "success" : "secondary"}
-                                    onClick={() => {
-                                        if (pretenst === 0) {
-                                            return
-                                        }
-                                        setShowFaces(false)
-                                        setColorBars(false)
-                                        setColorCables(true)
-                                    }}>
-                                    Cables
-                                </Button>
-                            </ButtonGroup>
-                        </Col>
-                        <StrainPanel fabric={fabric}/>
-                    </Row>
-                </Container>
+                <Navbar style={{borderStyle: "none"}}>
+                    <ButtonGroup>
+                        <PretenstButton pretenstValue={0.0}><FaYinYang/></PretenstButton>
+                        <PretenstButton pretenstValue={0.1}><FaBolt/></PretenstButton>
+                    </ButtonGroup>
+                    <ButtonGroup style={{paddingLeft: "1em"}}>
+                        <ViewButton bars={true} cables={true}><FaHandPointUp/></ViewButton>
+                    </ButtonGroup>
+                    <div style={{paddingLeft: "1em", display: "flex"}}>
+                        <ViewButton bars={true} cables={false}><FaCircle/></ViewButton>
+                        <StrainPanel fabric={fabric} bars={true} colorBars={colorBars} colorCables={colorCables}/>
+                    </div>
+                    <div style={{paddingLeft: "1em", display: "inline-flex"}}>
+                        <ViewButton bars={false} cables={true}><FaDotCircle/></ViewButton>
+                        <StrainPanel fabric={fabric} bars={false} colorBars={colorBars} colorCables={colorCables}/>
+                    </div>
+                </Navbar>
             )}
         </div>
     )

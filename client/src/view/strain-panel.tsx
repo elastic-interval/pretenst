@@ -5,25 +5,33 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { Col, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactstrap"
+import { FaYinYang } from "react-icons/all"
 
 import { Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function StrainPanel({fabric}: {
+import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./materials"
+
+const DIGITS_VISIBLE = 3
+const VISIBLE_LIMIT = 0.001
+
+export function StrainPanel({fabric, bars, colorBars, colorCables}: {
     fabric: TensegrityFabric,
+    bars: boolean,
+    colorBars: boolean,
+    colorCables: boolean,
 }): JSX.Element {
+
     const engine = fabric.instance.engine
-    const [minBarStrain, setMinBarStrain] = useState(engine.getLimit(Limit.MinBarStrain))
-    const [minCableStrain, setMinCableStrain] = useState(engine.getLimit(Limit.MinCableStrain))
-    const [maxBarStrain, setMaxBarStrain] = useState(engine.getLimit(Limit.MaxBarStrain))
-    const [maxCableStrain, setMaxCableStrain] = useState(engine.getLimit(Limit.MaxCableStrain))
+    const getMinLimit = () => engine.getLimit(bars ? Limit.MinBarStrain : Limit.MinCableStrain)
+    const getMaxLimit = () => engine.getLimit(bars ? Limit.MaxBarStrain : Limit.MaxCableStrain)
+
+    const [minStrain, setMinStrain] = useState(getMinLimit)
+    const [maxStrain, setMaxStrain] = useState(getMaxLimit)
 
     function refresh(): void {
-        setMinBarStrain(engine.getLimit(Limit.MinBarStrain))
-        setMinCableStrain(engine.getLimit(Limit.MinCableStrain))
-        setMaxBarStrain(engine.getLimit(Limit.MaxBarStrain))
-        setMaxCableStrain(engine.getLimit(Limit.MaxCableStrain))
+        setMinStrain(getMinLimit)
+        setMaxStrain(getMaxLimit)
     }
 
     useEffect(() => {
@@ -31,26 +39,40 @@ export function StrainPanel({fabric}: {
         return () => clearTimeout(timer)
     }, [])
 
-    const barRange = `${minBarStrain.toFixed(3)} - ${maxBarStrain.toFixed(3)}`
-    const cableRange = `${minCableStrain.toFixed(3)} - ${maxCableStrain.toFixed(3)}`
+    const zen = Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
+    const both = colorBars && colorCables
+    const nativeColor = bars ? HOT_COLOR : COLD_COLOR
+    const attenuated = bars !== colorBars
+    const topColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : HOT_COLOR
+    const bottomColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : COLD_COLOR
     return (
-        <>
-            <Col xs="3">
-                <InputGroup style={{width: "15em"}}>
-                    <InputGroupAddon addonType="prepend">
-                        <InputGroupText>Bars</InputGroupText>
-                    </InputGroupAddon>
-                    <Input style={{textAlign: "center"}} disabled={true} value={barRange}/>
-                </InputGroup>
-            </Col>
-            <Col xs="3">
-                <InputGroup style={{width: "15em"}}>
-                    <InputGroupAddon addonType="prepend">
-                        <InputGroupText>Cables</InputGroupText>
-                    </InputGroupAddon>
-                    <Input style={{textAlign: "center"}} disabled={true} value={cableRange}/>
-                </InputGroup>
-            </Col>
-        </>
+        <div style={{
+            textAlign: "center",
+            width: "5em",
+            backgroundColor: "#cccccc",
+            marginTop: "1px",
+            marginBottom: "1px",
+            borderRadius: "0.2em",
+            borderColor: "#575757",
+        }}>
+            {zen ? (
+                <div style={{
+                    fontSize: "x-large",
+                    color: SLACK_COLOR,
+                    margin: 0,
+                    height: "100%",
+                }}><FaYinYang/></div>
+            ) : (
+                <div style={{
+                    display: "block",
+                    textAlign: "right",
+                    fontWeight: "bold",
+                    marginRight: "1em",
+                }}>
+                    <div style={{color: topColor}}>{maxStrain.toFixed(DIGITS_VISIBLE)}</div>
+                    <div style={{color: bottomColor}}>{minStrain.toFixed(DIGITS_VISIBLE)}</div>
+                </div>
+            )}
+        </div>
     )
 }

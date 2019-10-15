@@ -7,6 +7,8 @@ import * as React from "react"
 import {
     FaAnchor,
     FaCompressArrowsAlt,
+    FaCubes,
+    FaFileCsv,
     FaParachuteBox,
     FaRecycle,
     FaRunning,
@@ -16,6 +18,7 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
 export function CommandPanel({rebuild, fabric, fastMode, setFastMode, autoRotate, setAutoRotate, storageIndex}: {
     rebuild: () => void,
@@ -43,7 +46,16 @@ export function CommandPanel({rebuild, fabric, fastMode, setFastMode, autoRotate
     const onFastMode = () => {
         setFastMode(!fastMode)
     }
-
+    const onDownloadCSV = () => {
+        if (fabric) {
+            saveCSVFiles(fabric)
+        }
+    }
+    const onDownloadOBJ = () => {
+        if (fabric) {
+            saveOBJFile(fabric)
+        }
+    }
     return (
         <ButtonGroup id="bottom-right">
             <Button color="success" onClick={rebuild}><FaRecycle/></Button>
@@ -53,6 +65,8 @@ export function CommandPanel({rebuild, fabric, fastMode, setFastMode, autoRotate
             <Button color={fastMode ? "secondary" : "warning"} onClick={onFastMode}>
                 {fastMode ? <FaRunning/> : <FaWalking/>}
             </Button>
+            <Button color="secondary" onClick={onDownloadCSV}><FaFileCsv/></Button>
+            <Button color="secondary" onClick={onDownloadOBJ}><FaCubes/></Button>
         </ButtonGroup>
     )
 }

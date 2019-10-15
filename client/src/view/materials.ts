@@ -51,31 +51,29 @@ export const FACE = new MeshPhongMaterial({
     opacity: 0.2,
 })
 
-const BAR_COLOR = "#920000"
-const CABLE_COLOR = "#3b6ab8"
-
-export function intervalColor(bar: boolean): string {
-    return bar ? BAR_COLOR : CABLE_COLOR
-}
+export const HOT_COLOR = "#920000"
+export const COLD_COLOR = "#3b6ab8"
+export const SLACK_COLOR = "#00a700"
+export const ATTENUATED_COLOR = "#212121"
 
 export const SLACK = new MeshPhongMaterial({
     lights: true,
-    color: new Color("#00f500"),
+    color: new Color(SLACK_COLOR),
 })
 
 export const ATTENUATED = new MeshPhongMaterial({
     lights: true,
-    color: new Color("#212121"),
+    color: new Color(ATTENUATED_COLOR),
 })
 
 export const BAR = new MeshPhongMaterial({
     lights: true,
-    color: new Color(BAR_COLOR),
+    color: new Color(HOT_COLOR),
 })
 
 export const CABLE = new MeshPhongMaterial({
     lights: true,
-    color: new Color(CABLE_COLOR),
+    color: new Color(COLD_COLOR),
 })
 
 export const FACE_SPHERE = new MeshPhongMaterial({
