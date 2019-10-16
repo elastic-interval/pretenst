@@ -16,8 +16,8 @@ const AMBIENT_JOINT_MASS: f32 = 0.1
 const BAR_MASS_PER_LENGTH: f32 = 1
 const CABLE_MASS_PER_LENGTH: f32 = 0.01
 const SLACK_THRESHOLD: f32 = 0.0001
-const PRETENST_BAR_ELASTIC: f32 = 1.2
-const PRETENST_CABLE_ELASTIC: f32 = 0.4
+const EMBRYO_BAR_ELASTIC: f32 = 1.2
+const EMBRYO_CABLE_ELASTIC: f32 = 0.4
 
 export enum PhysicsFeature {
     GravityAbove = 0,
@@ -39,6 +39,12 @@ enum IntervalRole {
     BowMid = 5,
     BowEndLow = 6,
     BowEndHigh = 7,
+}
+
+export enum LifePhase {
+    Genesis = 0,
+    Embryo = 1,
+    Mature = 2,
 }
 
 const LAND: u8 = 1
@@ -291,7 +297,8 @@ function _lineColor(intervalIndex: u16, omega: boolean): usize {
 const _AGE = _LINE_COLORS + _32x3_INTERVALS * 2
 const _MIDPOINT = _AGE + sizeof<u32>()
 const _PRETENST = _MIDPOINT + sizeof<f32>() * 3
-const _A = _PRETENST + sizeof<f32>()
+const _LIFE_PHASE = _PRETENST + sizeof<f32>()
+const _A = _LIFE_PHASE + sizeof<u16>()
 const _B = _A + sizeof<f32>() * 3
 const _X = _B + sizeof<f32>() * 3
 const _JOINT_COUNT = _X + sizeof<f32>() * 3
@@ -305,7 +312,7 @@ const _FABRIC_END = _NEXT_STATE + sizeof<u16>()
 
 // INSTANCES
 
-const FABRIC_SIZE: usize = _FABRIC_END + sizeof<u16>() // for alignmnent
+const FABRIC_SIZE: usize = _FABRIC_END // may need alignment
 
 let instance: u16 = 0
 let _instance: usize = 0
@@ -616,27 +623,36 @@ export function setNextState(value: u8): void {
     setU8(_NEXT_STATE, value)
 }
 
-export function initInstance(pretenst: f32): void {
+export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
+    setU8(_LIFE_PHASE, <u8>lifePhase)
     setF32(_PRETENST, pretenst)
-    setAge(0)
-    setJointCount(0)
-    setIntervalCount(0)
-    setFaceCount(0)
-    setBusyCountdown(0)
-    setPreviousState(REST_STATE)
-    setCurrentState(REST_STATE)
-    setNextState(REST_STATE)
+    switch (lifePhase) {
+        case LifePhase.Genesis:
+            setAge(0)
+            setJointCount(0)
+            setIntervalCount(0)
+            setFaceCount(0)
+            setBusyCountdown(0)
+            setPreviousState(REST_STATE)
+            setCurrentState(REST_STATE)
+            setNextState(REST_STATE)
+            break
+        case LifePhase.Embryo:
+            let intervalCount = getIntervalCount()
+            for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+                changeRestLength(intervalIndex, calculateLength(intervalIndex))
+            }
+            setBusyCountdown(<u16>busyCountdown)
+            break
+        case LifePhase.Mature:
+            setBusyCountdown(<u16>busyCountdown)
+            break
+    }
+    return lifePhase
 }
 
-export function setPretenst(pretenst: f32): void {
-    if (pretenst === 0) {
-        let intervalCount = getIntervalCount()
-        for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-            changeRestLength(intervalIndex, calculateLength(intervalIndex))
-        }
-    }
-    setF32(_PRETENST, pretenst)
-    setBusyCountdown(<u16>busyCountdown)
+function getLifePhase(): LifePhase {
+    return getU8(_LIFE_PHASE)
 }
 
 function getPretenst(): f32 {
@@ -1044,7 +1060,7 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Physics =====================================================================================
 
-function intervalPhysics(intervalIndex: u16, state: u8): void {
+function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let bar = intervalRole === IntervalRole.Bar
     let pretenst = getPretenst()
@@ -1053,9 +1069,21 @@ function intervalPhysics(intervalIndex: u16, state: u8): void {
     let displacement = calculateLength(intervalIndex) - currentLength
     let strain = displacement / currentLength
     setStrain(intervalIndex, strain)
-    let globalElasticFactor: f32 = pretenst > 0 ?
-        bar ? PRETENST_BAR_ELASTIC : PRETENST_CABLE_ELASTIC :
-        bar ? pushElasticFactor : pullElasticFactor
+    let globalElasticFactor: f32 = 0
+    switch (lifePhase) {
+        case LifePhase.Genesis:
+            globalElasticFactor = bar ? EMBRYO_BAR_ELASTIC : EMBRYO_CABLE_ELASTIC
+            break
+        case LifePhase.Embryo:
+            globalElasticFactor = bar ? EMBRYO_BAR_ELASTIC : EMBRYO_CABLE_ELASTIC
+            break
+        case LifePhase.Mature:
+            if (strain < 0 && !bar) {
+                logInt(666, 1)
+            }
+            globalElasticFactor = bar ? pushElasticFactor : (strain < 0) ? 0 : pullElasticFactor
+            break
+    }
     // TODO: force should be based on strain, not displacement
     let force = displacement * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
@@ -1103,8 +1131,9 @@ function jointPhysics(jointIndex: u16): void {
 
 function tick(maxIntervalBusyCountdown: u16, state: u8, busy: boolean): u16 {
     let intervalCount = getIntervalCount()
+    let lifePhase = getLifePhase()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        intervalPhysics(intervalIndex, state)
+        intervalPhysics(intervalIndex, state, lifePhase)
         let countdown = getIntervalBusyCountdown(intervalIndex)
         if (countdown === 0) {
             continue
@@ -1203,6 +1232,6 @@ export function _intervalStrains(): usize {
     return _INTERVAL_STRAINS
 }
 
-export function _fabricOffset(instance: u16): usize {
+export function _fabricOffset(): usize {
     return SURFACE_SIZE + FABRIC_SIZE * instance
 }

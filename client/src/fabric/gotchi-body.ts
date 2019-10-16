@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -270,7 +271,7 @@ export class GotchiBody {
             }
         })
         faceToReplace.remove()
-        this.instance.clear()
+        this.instance.forgetDimensions()
         return createdFaceIndexes
             .map(index => index - 1) // after removal, since we're above
             .map(index => new FaceSnapshot(this, this.instance, index))

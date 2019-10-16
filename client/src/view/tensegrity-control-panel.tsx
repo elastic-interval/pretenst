@@ -26,10 +26,10 @@ import {
     FaSun,
     FaSyncAlt,
     FaTimesCircle,
-    FaYinYang,
 } from "react-icons/all"
 import { Button, ButtonGroup, Navbar } from "reactstrap"
 
+import { LifePhase } from "../fabric/fabric-engine"
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
@@ -50,8 +50,8 @@ interface IControlPanel {
     busy: boolean,
     clearFabric: () => void,
     rebuildFabric: () => void,
-    pretenst: number,
-    setPretenst: (pretenst: number) => void,
+    lifePhase: LifePhase,
+    setMature: () => void,
     setShowFaces: (showFaces: boolean) => void
     selectedFace?: ISelectedFace,
     setSelectedFace: (selectedFace?: ISelectedFace) => void,
@@ -64,22 +64,23 @@ interface IControlPanel {
 
 export function TensegrityControlPanel(
     {
-        fabric, busy, clearFabric, rebuildFabric, pretenst, setPretenst, setShowFaces, selectedFace, setSelectedFace,
+        fabric, busy, clearFabric, rebuildFabric, lifePhase, setMature, setShowFaces, selectedFace, setSelectedFace,
         autoRotate, setAutoRotate, fastMode, setFastMode,
     }: IControlPanel): JSX.Element {
 
     const [colorBars, setColorBars] = useState(true)
     const [colorCables, setColorCables] = useState(true)
+    const [lengthAdjustable, setLengthAdjustable] = useState(false)
 
     useEffect(() => fabric.instance.engine.setColoring(colorBars, colorCables), [colorBars, colorCables])
 
     useEffect(() => {
-        if (pretenst === 0) {
+        if (lifePhase === LifePhase.Mature) {
             setShowFaces(true)
             setColorBars(true)
             setColorCables(true)
         }
-    }, [pretenst])
+    }, [lifePhase])
 
     function adjustment(up: boolean): number {
         const factor = 1.03
@@ -122,18 +123,8 @@ export function TensegrityControlPanel(
         const style = {
             color: iconColor,
         }
-        return <Button style={style} disabled={pretenst === 0} color={color}
+        return <Button style={style} disabled={lifePhase !== LifePhase.Mature} color={color}
                        onClick={onClick}>{children}</Button>
-    }
-
-    function PretenstButton({pretenstValue, children}: {
-        pretenstValue: number,
-        children: JSX.Element | JSX.Element[],
-    }): JSX.Element {
-        const onClick = () => setPretenst(pretenstValue)
-        const chosen = pretenst === pretenstValue
-        const color = chosen ? "success" : "secondary"
-        return <Button color={color} disabled={chosen} onClick={onClick}>{children}</Button>
     }
 
     function FaceAdjacentButton({selected, adjacentIntervals}: {
@@ -162,10 +153,11 @@ export function TensegrityControlPanel(
             if (adjacentIntervals === AdjacentIntervals.None) {
                 fabric.clearSelection()
                 setSelectedFace(undefined)
+                setLengthAdjustable(false)
                 return
             }
             const newSelected: ISelectedFace = {...selected, adjacentIntervals}
-            fabric.selectIntervals(bySelectedFace(newSelected))
+            setLengthAdjustable(fabric.selectIntervals(bySelectedFace(newSelected)) > 0)
             setSelectedFace(newSelected)
         }
         const none = adjacentIntervals === AdjacentIntervals.None
@@ -185,14 +177,12 @@ export function TensegrityControlPanel(
                 <Button onClick={onRecycle}><FaRecycle/></Button>
             </ButtonGroup>
             <ButtonGroup style={{paddingLeft: "1em"}}>
-                <PretenstButton pretenstValue={0.0}>
-                    <FaYinYang/>
-                    <span> Slack</span>
-                </PretenstButton>
-                <PretenstButton pretenstValue={0.1}>
+                <Button
+                    color={lifePhase !== LifePhase.Mature ? "success" : "secondary"}
+                    disabled={lifePhase === LifePhase.Mature} onClick={setMature}>
                     <FaBolt/>
                     <span> Pretenst</span>
-                </PretenstButton>
+                </Button>
             </ButtonGroup>
             <div style={{display: "flex", paddingLeft: "2em"}}>
                 <ViewButton bars={true} cables={true}>
@@ -204,10 +194,10 @@ export function TensegrityControlPanel(
                         <Button disabled={!selectedFace.face.canGrow} onClick={() => grow(selectedFace.face)}>
                             <FaSun/>
                         </Button>
-                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
+                        <Button disabled={!lengthAdjustable} onClick={adjustValue(true)}>
                             <FaArrowUp/>
                         </Button>
-                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
+                        <Button disabled={!lengthAdjustable} onClick={adjustValue(false)}>
                             <FaArrowDown/>
                         </Button>
                         {Object.keys(AdjacentIntervals).map(key => (
@@ -240,7 +230,7 @@ export function TensegrityControlPanel(
                 )}
             </div>
             <ButtonGroup style={{paddingLeft: "1em"}}>
-                <Button disabled={pretenst === 0}
+                <Button disabled={lifePhase !== LifePhase.Mature}
                         onClick={() => fabric.instance.engine.setAltitude(10)}><FaParachuteBox/></Button>
                 <Button onClick={() => fabric.instance.engine.centralize()}><FaCompressArrowsAlt/></Button>
                 <Button onClick={() => setAutoRotate(!autoRotate)}><FaSyncAlt/></Button>

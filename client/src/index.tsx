@@ -12,7 +12,7 @@ import { API_URI } from "./constants"
 import { IFabricEngine, IntervalRole, notWater, PhysicsFeature } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
-import { TensegrityFabric } from "./fabric/tensegrity-fabric"
+import { ICodeTree } from "./fabric/tensegrity-brick-types"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
@@ -45,19 +45,12 @@ async function start(): Promise<void> {
     const roleFeatures = enumToFeatureArray(IntervalRole, false)
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
-        const fabricKernel = new FabricKernel(engine, roleFeatures)
-        const fabricCache: Record<string, TensegrityFabric> = {}
-        const getFreshFabric = (name: string, pretenst: number) => {
-            const cached = fabricCache[name]
-            if (cached) {
-                cached.reset(pretenst)
-                return cached
-            }
-            const newFabric = fabricKernel.createTensegrityFabric(name, pretenst)
+        const fabricKernel = new FabricKernel(engine)
+        const buildFabric = (name: string, codeTree: ICodeTree) => {
+            const newFabric = fabricKernel.createTensegrityFabric(name, codeTree)
             if (!newFabric) {
                 throw new Error()
             }
-            fabricCache[name] = newFabric
             return newFabric
         }
         const physicsFeatures = enumToFeatureArray(PhysicsFeature, true)
@@ -68,7 +61,7 @@ async function start(): Promise<void> {
             <TensegrityView
                 engine={engine}
                 features={features}
-                getFreshFabric={getFreshFabric}
+                buildFabric={buildFabric}
             />,
             root,
         )

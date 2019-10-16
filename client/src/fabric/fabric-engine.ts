@@ -29,6 +29,12 @@ export function notWater(feature?: PhysicsFeature): boolean {
     return feature !== PhysicsFeature.AntigravityBelowWater && feature !== PhysicsFeature.DragBelowWater
 }
 
+export enum LifePhase {
+    Genesis = 0,
+    Embryo = 1,
+    Mature = 2,
+}
+
 export enum IntervalRole {
     Bar = 1,
     Triangle = 2,
@@ -78,11 +84,9 @@ export interface IFabricEngine {
 
     // below methods use instance index
 
-    initInstance(pretenst: number): void
-
-    setPretenst(pretenst: number): void
-
     getAge(): number
+
+    setLifePhase(lifePhase: LifePhase, pretenst: number): LifePhase
 
     extendBusyCountdown(factor: number): void
 
@@ -142,7 +146,7 @@ export interface IFabricEngine {
 
     // these methods give addresses for buffer access
 
-    _fabricOffset(instance: number): number
+    _fabricOffset(): number
 
     _midpoint(): number
 

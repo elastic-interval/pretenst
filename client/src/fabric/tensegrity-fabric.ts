@@ -5,9 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { FabricState, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { FabricState, IFabricEngine, IntervalRole, Laterality, LifePhase } from "./fabric-engine"
 import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
-import { IFeature } from "./features"
 import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,
@@ -19,8 +18,9 @@ import {
     IInterval,
     IIntervalSplit,
     IJoint,
-    intervalSplitter, IPercent,
-    JointTag, percentOrHundred,
+    intervalSplitter,
+    JointTag,
+    percentOrHundred,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
@@ -41,18 +41,17 @@ export interface IFabricOutput {
     }[]
 }
 
-export const CONSTRUCTION_PRETENST = 0.2
 export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 
 export class TensegrityFabric {
+    public lifePhase: LifePhase
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
     public growth?: IGrowth
 
-    private pretenst: number
     private faceLocations = new Float32BufferAttribute([], 3)
     private faceNormals = new Float32BufferAttribute([], 3)
     private lineLocations = new Float32BufferAttribute([], 3)
@@ -60,13 +59,9 @@ export class TensegrityFabric {
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
 
-    constructor(public readonly instance: FabricInstance, public readonly roleFeatures: IFeature[], public readonly name: string) {
-    }
-
-    public startConstruction(codeTree: ICodeTree, pretenst: number): void {
-        this.pretenst = pretenst
-        this.reset(CONSTRUCTION_PRETENST)
-        const brick = this.createBrick()
+    constructor(public readonly instance: FabricInstance, public readonly name: string, codeTree: ICodeTree) {
+        this.lifePhase = this.instance.genesis()
+        const brick = createBrickOnOrigin(this, percentOrHundred())
         const executing: IActiveCode = {codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
     }
@@ -96,13 +91,6 @@ export class TensegrityFabric {
         return this.faces.filter(face => face.canGrow)
     }
 
-    public createBrick(scale?: IPercent): IBrick {
-        const brick = createBrickOnOrigin(this, percentOrHundred(scale))
-        this.instance.clear()
-        this.disposeOfGeometry()
-        return brick
-    }
-
     public removeFace(face: IFace, removeIntervals: boolean): void {
         this.engine.removeFace(face.index)
         this.faces = this.faces.filter(existing => existing.index !== face.index)
@@ -125,8 +113,7 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
-        this.instance.clear()
-        this.disposeOfGeometry()
+        this.instance.forgetDimensions()
     }
 
     public optimize(highCross: boolean): void {
@@ -183,15 +170,7 @@ export class TensegrityFabric {
         this.instance.release()
     }
 
-    public reset(pretenst: number): void {
-        this.joints = []
-        this.intervals = []
-        this.faces = []
-        this.disposeOfGeometry()
-        this.engine.initInstance(pretenst)
-    }
-
-    public disposeOfGeometry(): void {
+    public forgetGeometry(): void {
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose()
             this.facesGeometryStored = undefined
@@ -236,7 +215,7 @@ export class TensegrityFabric {
     public iterate(ticks: number): boolean {
         const engine = this.engine
         const busy = engine.iterate(ticks)
-        this.disposeOfGeometry()
+        this.forgetGeometry()
         if (busy) {
             return busy
         }
@@ -269,7 +248,7 @@ export class TensegrityFabric {
                 }
             } else {
                 this.growth = undefined
-                engine.setPretenst(this.pretenst)
+                this.lifePhase = this.instance.embryo()
             }
         }
         return true

@@ -9,8 +9,11 @@ import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { IFabricEngine, MAX_INSTANCES } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
-import { IFeature } from "./features"
+import { ICodeTree } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
+
+const PRETENST_FOR_CONSTRUCTION = 0.3
+const PRETENST_AFTER_ANNEALING = 0.1
 
 const FLOATS_IN_VECTOR = 3
 const HEXALOT_BITS = 128
@@ -33,7 +36,7 @@ export class FabricKernel {
     private spotCenters: Float32Array
     private hexalotBits: Int8Array
 
-    constructor(engine: IFabricEngine, private roleFeatures: IFeature[]) {
+    constructor(engine: IFabricEngine) {
         const fabricBytes = engine.init()
         this.arrayBuffer = engine.memory.buffer
         this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
@@ -44,21 +47,23 @@ export class FabricKernel {
         }
         for (let index = 0; index < MAX_INSTANCES; index++) {
             this.instanceArray.push(new FabricInstance(
-                this.arrayBuffer,
                 index,
+                this.arrayBuffer,
                 toFree => this.instanceUsed[toFree] = false,
                 engine,
+                PRETENST_FOR_CONSTRUCTION,
+                PRETENST_AFTER_ANNEALING,
             ))
             this.instanceUsed.push(false)
         }
     }
 
-    public createTensegrityFabric(name: string, pretenst: number): TensegrityFabric | undefined {
-        const newInstance = this.allocateInstance(pretenst)
+    public createTensegrityFabric(name: string, codeTree: ICodeTree): TensegrityFabric | undefined {
+        const newInstance = this.allocateInstance()
         if (!newInstance) {
             return undefined
         }
-        return new TensegrityFabric(newInstance, this.roleFeatures, name)
+        return new TensegrityFabric(newInstance, name, codeTree)
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
@@ -77,14 +82,12 @@ export class FabricKernel {
 
     // ==============================================================
 
-    private allocateInstance(pretenst: number): FabricInstance | undefined {
+    private allocateInstance(): FabricInstance | undefined {
         const freeIndex = this.instanceUsed.indexOf(false)
         if (freeIndex < 0) {
             return undefined
         }
         this.instanceUsed[freeIndex] = true
-        this.instanceArray[freeIndex].clear()
-        this.instanceArray[freeIndex].engine.initInstance(pretenst)
         return this.instanceArray[freeIndex]
     }
 }

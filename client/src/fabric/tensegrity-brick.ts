@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -93,7 +94,7 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
         const face = fabric.createFace(brick, triangle.name)
         brick.faces.push(face)
     })
-    fabric.instance.clear()
+    fabric.instance.forgetDimensions()
     return brick
 }
 
@@ -214,6 +215,7 @@ export function connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): ICon
         })
         return face
     }
+    fabric.instance.forgetDimensions()
     return {
         cables,
         facesToRemove: [

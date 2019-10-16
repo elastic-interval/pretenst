@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -9,9 +8,9 @@ import { useEffect, useState } from "react"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { IFabricEngine } from "../fabric/fabric-engine"
+import { IFabricEngine, LifePhase } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
-import { ISelectedFace } from "../fabric/tensegrity-brick-types"
+import { ICodeTree, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { showFeatures } from "../storage/local-storage"
 
@@ -33,36 +32,37 @@ declare global {
     }
 }
 
-const PRETENST_AFTER_CONSTRUCTION = 0
-
-export function TensegrityView({engine, getFreshFabric, features}: {
+export function TensegrityView({engine, buildFabric, features}: {
     engine: IFabricEngine,
-    getFreshFabric: (name: string, pretenst: number) => TensegrityFabric,
+    buildFabric: (name: string, codeTree: ICodeTree) => TensegrityFabric,
     features: IFeature[],
 }): JSX.Element {
 
-    const [pretenst, setPretenst] = useState<number>(0)
-    const [showFaces, setShowFaces] = useState<boolean>(true)
-    const [autoRotate, setAutoRotate] = useState<boolean>(false)
-    const [fastMode, setFastMode] = useState<boolean>(true)
+    const [lifePhase, setLifePhase] = useState(LifePhase.Genesis)
+    const [showFaces, setShowFaces] = useState(true)
+    const [autoRotate, setAutoRotate] = useState(false)
+    const [fastMode, setFastMode] = useState(true)
 
     const [code, setCode] = useState<ICode | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [busy, setBusy] = useState(false)
     const [selectedFace, setSelectedFace] = useState<ISelectedFace | undefined>()
+    const [busy, setBusy] = useState(false)
 
     function buildFromCode(): void {
+        console.log("Build from code", code)
         if (!code) {
             return
         }
         const {storageIndex, codeString, codeTree} = code
         setSelectedFace(undefined)
-        setPretenst(PRETENST_AFTER_CONSTRUCTION)
-        const fetched = getFreshFabric(storageIndex.toString(), pretenst)
-        fetched.startConstruction(codeTree, PRETENST_AFTER_CONSTRUCTION)
+        if (fabric) {
+            fabric.instance.release()
+        }
+        const fetched = buildFabric(storageIndex.toString(), codeTree)
         setFabric(fetched)
+        setLifePhase(fetched.lifePhase)
         location.hash = codeString
-        console.log("\n",JSON.stringify(codeTree))
+        console.log("\n", JSON.stringify(codeTree))
     }
 
     useEffect(buildFromCode, [code])
@@ -76,7 +76,7 @@ export function TensegrityView({engine, getFreshFabric, features}: {
                     <Canvas>
                         <FabricView
                             fabric={fabric}
-                            pretenst={pretenst}
+                            lifePhase={lifePhase}
                             busy={busy}
                             setBusy={setBusy}
                             selectedFace={selectedFace}
@@ -97,13 +97,10 @@ export function TensegrityView({engine, getFreshFabric, features}: {
                         <TensegrityControlPanel
                             fabric={fabric}
                             clearFabric={() => setFabric(undefined)}
-                            rebuildFabric={buildFromCode}
-                            pretenst={pretenst}
+                            rebuildFabric={buildFromCode} // TODO
+                            lifePhase={lifePhase}
+                            setMature={() => setLifePhase(fabric.instance.mature())}
                             setShowFaces={setShowFaces}
-                            setPretenst={pretenstValue => {
-                                fabric.instance.engine.setPretenst(pretenstValue)
-                                setPretenst(pretenstValue)
-                            }}
                             selectedFace={selectedFace}
                             setSelectedFace={setSelectedFace}
                             autoRotate={autoRotate}

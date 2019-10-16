@@ -29,7 +29,7 @@ export class App extends React.Component<IAppProps, IAppState> {
 
     constructor(props: IAppProps) {
         super(props)
-        this.fabricKernel = new FabricKernel(props.engine, props.roleFeatures)
+        this.fabricKernel = new FabricKernel(props.engine)
         const width = window.innerWidth
         const height = window.innerHeight
         this.perspectiveCamera = new PerspectiveCamera(50, width / height, 1, INITIAL_DISTANCE * 1.05)
