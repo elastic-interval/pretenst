@@ -30,9 +30,9 @@ export function notWater(feature?: PhysicsFeature): boolean {
 }
 
 export enum LifePhase {
-    Genesis = 0,
-    Embryo = 1,
-    Mature = 2,
+    Growing = 0,
+    Slack = 1,
+    Pretenst = 2,
 }
 
 export enum IntervalRole {

@@ -35,9 +35,10 @@ const ALTITUDE = 4
 const BAR_GIRTH = 0.3
 const CABLE_GIRTH = 0.1
 
-export function FabricView({fabric, lifePhase, selectedFace, setSelectedFace, busy, setBusy, autoRotate, fastMode, showFaces}: {
+export function FabricView({fabric, lifePhase, setLifePhase, selectedFace, setSelectedFace, busy, setBusy, autoRotate, fastMode, showFaces}: {
     fabric: TensegrityFabric,
     lifePhase: LifePhase,
+    setLifePhase: (lifePhase: LifePhase) => void,
     selectedFace?: ISelectedFace,
     setSelectedFace: (selection?: ISelectedFace) => void,
     busy: boolean,
@@ -73,8 +74,11 @@ export function FabricView({fabric, lifePhase, selectedFace, setSelectedFace, bu
         if (nowBusy !== busy) {
             setBusy(nowBusy)
         }
+        if (lifePhase !== fabric.lifePhase) {
+            setLifePhase(fabric.lifePhase)
+        }
         setAge(fabric.instance.engine.getAge())
-    }, true, [fabric, selectedFace, age])
+    }, true, [fabric, selectedFace, age, lifePhase, fabric.lifePhase])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
 
@@ -105,7 +109,7 @@ export function FabricView({fabric, lifePhase, selectedFace, setSelectedFace, bu
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (busy || lifePhase !== LifePhase.Mature || !downEvent || !mesh) {
+            if (busy || lifePhase !== LifePhase.Pretenst || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -180,7 +184,7 @@ export function FabricView({fabric, lifePhase, selectedFace, setSelectedFace, bu
                     </group>
                 ) : (
                     <group>
-                        {lifePhase === LifePhase.Mature ? (
+                        {lifePhase === LifePhase.Pretenst ? (
                             fabric.splitIntervals ? (
                                 [
                                     ...fabric.splitIntervals.unselected.map(interval => (

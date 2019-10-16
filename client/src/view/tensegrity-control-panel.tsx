@@ -51,7 +51,7 @@ interface IControlPanel {
     clearFabric: () => void,
     rebuildFabric: () => void,
     lifePhase: LifePhase,
-    setMature: () => void,
+    setLifePhase: (lifePhase: LifePhase) => void,
     setShowFaces: (showFaces: boolean) => void
     selectedFace?: ISelectedFace,
     setSelectedFace: (selectedFace?: ISelectedFace) => void,
@@ -64,7 +64,7 @@ interface IControlPanel {
 
 export function TensegrityControlPanel(
     {
-        fabric, busy, clearFabric, rebuildFabric, lifePhase, setMature, setShowFaces, selectedFace, setSelectedFace,
+        fabric, busy, clearFabric, rebuildFabric, lifePhase, setLifePhase, setShowFaces, selectedFace, setSelectedFace,
         autoRotate, setAutoRotate, fastMode, setFastMode,
     }: IControlPanel): JSX.Element {
 
@@ -75,7 +75,7 @@ export function TensegrityControlPanel(
     useEffect(() => fabric.instance.engine.setColoring(colorBars, colorCables), [colorBars, colorCables])
 
     useEffect(() => {
-        if (lifePhase === LifePhase.Mature) {
+        if (lifePhase === LifePhase.Pretenst) {
             setShowFaces(true)
             setColorBars(true)
             setColorCables(true)
@@ -123,7 +123,7 @@ export function TensegrityControlPanel(
         const style = {
             color: iconColor,
         }
-        return <Button style={style} disabled={lifePhase !== LifePhase.Mature} color={color}
+        return <Button style={style} disabled={lifePhase !== LifePhase.Pretenst} color={color}
                        onClick={onClick}>{children}</Button>
     }
 
@@ -178,8 +178,8 @@ export function TensegrityControlPanel(
             </ButtonGroup>
             <ButtonGroup style={{paddingLeft: "1em"}}>
                 <Button
-                    color={lifePhase !== LifePhase.Mature ? "success" : "secondary"}
-                    disabled={lifePhase === LifePhase.Mature} onClick={setMature}>
+                    color={lifePhase === LifePhase.Slack ? "success" : "secondary"}
+                    disabled={lifePhase !== LifePhase.Slack} onClick={() => setLifePhase(fabric.mature())}>
                     <FaBolt/>
                     <span> Pretenst</span>
                 </Button>
@@ -230,7 +230,7 @@ export function TensegrityControlPanel(
                 )}
             </div>
             <ButtonGroup style={{paddingLeft: "1em"}}>
-                <Button disabled={lifePhase !== LifePhase.Mature}
+                <Button disabled={lifePhase !== LifePhase.Pretenst}
                         onClick={() => fabric.instance.engine.setAltitude(10)}><FaParachuteBox/></Button>
                 <Button onClick={() => fabric.instance.engine.centralize()}><FaCompressArrowsAlt/></Button>
                 <Button onClick={() => setAutoRotate(!autoRotate)}><FaSyncAlt/></Button>

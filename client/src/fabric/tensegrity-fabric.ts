@@ -60,10 +60,14 @@ export class TensegrityFabric {
     private linesGeometryStored: BufferGeometry | undefined
 
     constructor(public readonly instance: FabricInstance, public readonly name: string, codeTree: ICodeTree) {
-        this.lifePhase = this.instance.genesis()
+        this.lifePhase = this.instance.growing()
         const brick = createBrickOnOrigin(this, percentOrHundred())
         const executing: IActiveCode = {codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
+    }
+
+    public mature(): LifePhase {
+        return this.lifePhase = this.instance.mature()
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
@@ -248,7 +252,7 @@ export class TensegrityFabric {
                 }
             } else {
                 this.growth = undefined
-                this.lifePhase = this.instance.embryo()
+                this.lifePhase = this.instance.slack()
             }
         }
         return true

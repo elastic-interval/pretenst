@@ -38,7 +38,7 @@ export function TensegrityView({engine, buildFabric, features}: {
     features: IFeature[],
 }): JSX.Element {
 
-    const [lifePhase, setLifePhase] = useState(LifePhase.Genesis)
+    const [lifePhase, setLifePhase] = useState(LifePhase.Growing)
     const [showFaces, setShowFaces] = useState(true)
     const [autoRotate, setAutoRotate] = useState(false)
     const [fastMode, setFastMode] = useState(true)
@@ -49,7 +49,6 @@ export function TensegrityView({engine, buildFabric, features}: {
     const [busy, setBusy] = useState(false)
 
     function buildFromCode(): void {
-        console.log("Build from code", code)
         if (!code) {
             return
         }
@@ -77,6 +76,7 @@ export function TensegrityView({engine, buildFabric, features}: {
                         <FabricView
                             fabric={fabric}
                             lifePhase={lifePhase}
+                            setLifePhase={setLifePhase}
                             busy={busy}
                             setBusy={setBusy}
                             selectedFace={selectedFace}
@@ -99,7 +99,7 @@ export function TensegrityView({engine, buildFabric, features}: {
                             clearFabric={() => setFabric(undefined)}
                             rebuildFabric={buildFromCode} // TODO
                             lifePhase={lifePhase}
-                            setMature={() => setLifePhase(fabric.instance.mature())}
+                            setLifePhase={setLifePhase}
                             setShowFaces={setShowFaces}
                             selectedFace={selectedFace}
                             setSelectedFace={setSelectedFace}

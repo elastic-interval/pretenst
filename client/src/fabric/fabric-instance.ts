@@ -43,17 +43,17 @@ export class FabricInstance {
         this.intervalStrains = new LazyFloatArray(b, offset + e._intervalStrains(), () => e.getIntervalCount())
     }
 
-    public genesis(): LifePhase {
+    public growing(): LifePhase {
         this.forgetDimensions()
-        return this.engine.setLifePhase(LifePhase.Genesis, this.initialPretenst)
+        return this.engine.setLifePhase(LifePhase.Growing, this.initialPretenst)
     }
 
-    public embryo(): LifePhase {
-        return this.engine.setLifePhase(LifePhase.Embryo, 0)
+    public slack(): LifePhase {
+        return this.engine.setLifePhase(LifePhase.Slack, 0)
     }
 
     public mature(): LifePhase {
-        return this.engine.setLifePhase(LifePhase.Mature, this.maturePretenst)
+        return this.engine.setLifePhase(LifePhase.Pretenst, this.maturePretenst)
     }
 
     public release(): void {

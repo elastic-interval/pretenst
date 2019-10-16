@@ -42,9 +42,9 @@ enum IntervalRole {
 }
 
 export enum LifePhase {
-    Genesis = 0,
-    Embryo = 1,
-    Mature = 2,
+    Growing = 0,
+    Slack = 1,
+    Pretenst = 2,
 }
 
 const LAND: u8 = 1
@@ -627,7 +627,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
     setU8(_LIFE_PHASE, <u8>lifePhase)
     setF32(_PRETENST, pretenst)
     switch (lifePhase) {
-        case LifePhase.Genesis:
+        case LifePhase.Growing:
             setAge(0)
             setJointCount(0)
             setIntervalCount(0)
@@ -637,15 +637,17 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             setCurrentState(REST_STATE)
             setNextState(REST_STATE)
             break
-        case LifePhase.Embryo:
+        case LifePhase.Slack:
             let intervalCount = getIntervalCount()
             for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-                changeRestLength(intervalIndex, calculateLength(intervalIndex))
+                let lengthNow: f32 = calculateLength(intervalIndex)
+                initializeCurrentLength(intervalIndex, lengthNow)
+                setIntervalStateLength(intervalIndex, REST_STATE, lengthNow)
             }
-            setBusyCountdown(<u16>busyCountdown)
+            extendBusyCountdown(10)
             break
-        case LifePhase.Mature:
-            setBusyCountdown(<u16>busyCountdown)
+        case LifePhase.Pretenst:
+            extendBusyCountdown(3)
             break
     }
     return lifePhase
@@ -1071,16 +1073,11 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     setStrain(intervalIndex, strain)
     let globalElasticFactor: f32 = 0
     switch (lifePhase) {
-        case LifePhase.Genesis:
+        case LifePhase.Growing:
+        case LifePhase.Slack:
             globalElasticFactor = bar ? EMBRYO_BAR_ELASTIC : EMBRYO_CABLE_ELASTIC
             break
-        case LifePhase.Embryo:
-            globalElasticFactor = bar ? EMBRYO_BAR_ELASTIC : EMBRYO_CABLE_ELASTIC
-            break
-        case LifePhase.Mature:
-            if (strain < 0 && !bar) {
-                logInt(666, 1)
-            }
+        case LifePhase.Pretenst:
             globalElasticFactor = bar ? pushElasticFactor : (strain < 0) ? 0 : pullElasticFactor
             break
     }
