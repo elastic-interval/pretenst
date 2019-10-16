@@ -50,11 +50,9 @@ async function start(): Promise<void> {
         const getFreshFabric = (name: string, pretenst: number) => {
             const cached = fabricCache[name]
             if (cached) {
-                console.log("cached fabric reset", name, pretenst)
                 cached.reset(pretenst)
                 return cached
             }
-            console.log("create fabric", name, pretenst)
             const newFabric = fabricKernel.createTensegrityFabric(name, pretenst)
             if (!newFabric) {
                 throw new Error()

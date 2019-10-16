@@ -329,8 +329,6 @@ export function init(): usize {
     const bytes = SURFACE_SIZE + FABRIC_SIZE * MAX_INSTANCES
     let blocks = (bytes) >> 16
     memory.grow(blocks + 1)
-    logInt(666, FABRIC_SIZE)
-    logInt(667, bytes)
     return bytes
 }
 

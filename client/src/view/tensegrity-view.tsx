@@ -62,6 +62,7 @@ export function TensegrityView({engine, getFreshFabric, features}: {
         fetched.startConstruction(codeTree, PRETENST_AFTER_CONSTRUCTION)
         setFabric(fetched)
         location.hash = codeString
+        console.log("\n",JSON.stringify(codeTree))
     }
 
     useEffect(buildFromCode, [code])
