@@ -66,8 +66,12 @@ export class TensegrityFabric {
         this.growth = {growing: [executing], optimizationStack: []}
     }
 
-    public mature(): LifePhase {
-        return this.lifePhase = this.instance.mature()
+    public anneal(): LifePhase {
+        return this.lifePhase = this.instance.anneal()
+    }
+
+    public pretenst(): LifePhase {
+        return this.lifePhase = this.instance.pretenst()
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
@@ -128,10 +132,10 @@ export class TensegrityFabric {
         return this.engine.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, restLength: number): IInterval {
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, restLength: number, elasticFactor: number): IInterval {
         const index = this.engine.createInterval(
             alpha.index, omega.index,
-            intervalRole, restLength,
+            intervalRole, restLength, elasticFactor,
         )
         const interval = <IInterval>{
             index,

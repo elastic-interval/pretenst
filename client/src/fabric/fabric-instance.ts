@@ -52,7 +52,11 @@ export class FabricInstance {
         return this.engine.setLifePhase(LifePhase.Slack, 0)
     }
 
-    public mature(): LifePhase {
+    public anneal(): LifePhase {
+        return this.engine.setLifePhase(LifePhase.Annealing, this.maturePretenst)
+    }
+
+    public pretenst(): LifePhase {
         return this.engine.setLifePhase(LifePhase.Pretenst, this.maturePretenst)
     }
 

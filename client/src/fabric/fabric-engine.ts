@@ -32,7 +32,8 @@ export function notWater(feature?: PhysicsFeature): boolean {
 export enum LifePhase {
     Growing = 0,
     Slack = 1,
-    Pretenst = 2,
+    Annealing = 2,
+    Pretenst = 3,
 }
 
 export enum IntervalRole {
@@ -114,7 +115,7 @@ export interface IFabricEngine {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number): number
+    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number, elasticFactor: number): number
 
     setElasticFactor(intervalIndex: number, elasticFactor: number): void
 

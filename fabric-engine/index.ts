@@ -44,7 +44,8 @@ enum IntervalRole {
 export enum LifePhase {
     Growing = 0,
     Slack = 1,
-    Pretenst = 2,
+    Annealing = 2,
+    Pretenst = 3,
 }
 
 const LAND: u8 = 1
@@ -646,6 +647,8 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             }
             extendBusyCountdown(10)
             break
+        case LifePhase.Annealing:
+            break
         case LifePhase.Pretenst:
             extendBusyCountdown(3)
             break
@@ -742,7 +745,7 @@ function calculateJointMidpoint(): void {
 
 // Intervals =====================================================================================
 
-export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLength: f32): usize {
+export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLength: f32, elasticFactor: f32): usize {
     let intervalCount = getIntervalCount()
     if (intervalCount + 1 >= MAX_INTERVALS) {
         return ERROR
@@ -754,7 +757,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLen
     zero(_unit(intervalIndex))
     setIntervalRole(intervalIndex, intervalRole)
     initializeCurrentLength(intervalIndex, calculateLength(intervalIndex))
-    setElasticFactor(intervalIndex, 1.0)
+    setElasticFactor(intervalIndex, elasticFactor)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, restLength)
     }
@@ -958,6 +961,7 @@ function outputLinesGeometry(): void {
         }
     }
     let pretenst = getPretenst()
+    let lifePhase = getLifePhase()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
@@ -965,7 +969,7 @@ function outputLinesGeometry(): void {
         let intervalRole = getIntervalRole(intervalIndex)
         let isBar: boolean = intervalRole === IntervalRole.Bar
         let strain = isBar ? -directionalStrain : directionalStrain
-        if (pretenst === 0 || colorBars && colorCables) {
+        if (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack || colorBars && colorCables) {
             let slack = strain < SLACK_THRESHOLD
             let color = slack ? SLACK_COLOR : isBar ? HOT_COLOR : COLD_COLOR
             setLineColor(intervalIndex, color[0], color[1], color[2])
@@ -1077,12 +1081,14 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         case LifePhase.Slack:
             globalElasticFactor = bar ? EMBRYO_BAR_ELASTIC : EMBRYO_CABLE_ELASTIC
             break
+        case LifePhase.Annealing:
+            globalElasticFactor = bar ? pushElasticFactor : (strain < 0) ? 0 : pullElasticFactor
+            break
         case LifePhase.Pretenst:
             globalElasticFactor = bar ? pushElasticFactor : (strain < 0) ? 0 : pullElasticFactor
             break
     }
-    // TODO: force should be based on strain, not displacement
-    let force = displacement * elasticFactor * globalElasticFactor
+    let force = strain * elasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
     let mass = currentLength * currentLength * elasticFactor * (bar ? BAR_MASS_PER_LENGTH : CABLE_MASS_PER_LENGTH)
@@ -1092,37 +1098,47 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(jointIndex: u16): void {
+function jointPhysics(jointIndex: u16, lifePhase: LifePhase): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
-    if (getPretenst() === 0) {
+    let gravityAbove = physicsGravityAbove
+    switch (lifePhase) {
+        case LifePhase.Growing:
+        case LifePhase.Slack:
+            gravityAbove = 0
+            altitude = JOINT_RADIUS * 2 // far above
+            break
+        case LifePhase.Annealing:
+            break
+        case LifePhase.Pretenst:
+            break
+    }
+    if (altitude > JOINT_RADIUS) { // far above
+        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityAbove)
         multiplyScalar(_velocity(jointIndex), 1 - physicsDragAbove)
-    } else if (altitude > JOINT_RADIUS) { // far above
-        setY(velocityVectorPtr, getY(velocityVectorPtr) - physicsGravityAbove)
-        multiplyScalar(_velocity(jointIndex), 1 - physicsDragAbove)
-    } else {
-        let land = getTerrainUnder(jointIndex) === LAND
-        let gravityBelow = land ? physicsAntigravityBelow : physicsAntigravityBelowWater
-        let dragBelow = land ? physicsDragBelow : physicsDragBelowWater
-        if (altitude > -JOINT_RADIUS) { // close to the surface
-            let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
-            let degreeBelow: f32 = 1.0 - degreeAbove
-            if (velocityY < 0 && land) {
-                multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
-            }
-            let gravityValue: f32 = physicsGravityAbove * degreeAbove + gravityBelow * degreeBelow
-            setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
-            let drag = physicsDragAbove * degreeAbove + dragBelow * degreeBelow
-            multiplyScalar(_velocity(jointIndex), 1 - drag)
-        } else { // far under the surface
-            if (velocityY < 0 && land) {
-                zero(velocityVectorPtr)
-            } else {
-                setY(velocityVectorPtr, velocityY - gravityBelow)
-            }
-            multiplyScalar(_velocity(jointIndex), 1 - dragBelow)
+        return
+    }
+    let land = getTerrainUnder(jointIndex) === LAND
+    let gravityBelow = land ? physicsAntigravityBelow : physicsAntigravityBelowWater
+    let dragBelow = land ? physicsDragBelow : physicsDragBelowWater
+    if (altitude > -JOINT_RADIUS) { // close to the surface
+        let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
+        let degreeBelow: f32 = 1.0 - degreeAbove
+        if (velocityY < 0 && land) {
+            multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
         }
+        let gravityValue: f32 = gravityAbove * degreeAbove + gravityBelow * degreeBelow
+        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
+        let drag = physicsDragAbove * degreeAbove + dragBelow * degreeBelow
+        multiplyScalar(_velocity(jointIndex), 1 - drag)
+    } else { // far under the surface
+        if (velocityY < 0 && land) {
+            zero(velocityVectorPtr)
+        } else {
+            setY(velocityVectorPtr, velocityY - gravityBelow)
+        }
+        multiplyScalar(_velocity(jointIndex), 1 - dragBelow)
     }
 }
 
@@ -1146,7 +1162,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, busy: boolean): u16 {
     }
     let jointCount = getJointCount()
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        jointPhysics(jointIndex)
+        jointPhysics(jointIndex, lifePhase)
         if (busy) {
             setVector(_velocity(jointIndex), _force(jointIndex))
         } else {

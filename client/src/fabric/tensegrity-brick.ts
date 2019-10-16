@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -67,13 +66,14 @@ function createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] 
 
 function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle, scale: IPercent): IBrick {
     const jointIndexes = points.map((p, index) => fabric.createJointIndex(index, p))
+    const elasticFactor = percentToFactor(scale)
     const bars = BAR_ARRAY.map(({}: IBarDefinition, index: number) => {
         const role = IntervalRole.Bar
         const alphaIndex = jointIndexes[index * 2]
         const omegaIndex = jointIndexes[index * 2 + 1]
         const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
         const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
-        return fabric.createInterval(alpha, omega, role, roleLength(role, scale))
+        return fabric.createInterval(alpha, omega, role, roleLength(role, scale), elasticFactor)
     })
     const joints = bars.reduce((arr: IJoint[], bar) => {
         arr.push(bar.alpha, bar.omega)
@@ -85,7 +85,9 @@ function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle
         const tJoints = triangle.barEnds.map(barEnd => joints[barEnd])
         for (let walk = 0; walk < 3; walk++) {
             const role = IntervalRole.Triangle
-            const interval = fabric.createInterval(tJoints[walk], tJoints[(walk + 1) % 3], role, roleLength(role, scale))
+            const alpha = tJoints[walk]
+            const omega = tJoints[(walk + 1) % 3]
+            const interval = fabric.createInterval(alpha, omega, role, roleLength(role, scale), elasticFactor)
             brick.cables.push(interval)
             brick.rings[triangle.ringMember[walk]].push(interval)
         }
@@ -173,12 +175,13 @@ function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoi
 export function connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): IConnector {
     const fabric = faceA.brick.fabric
     const ring = facesToRing(fabric, faceA, faceB)
+    const elasticFactor = percentToFactor(scale)
     const cables: IInterval[] = []
     const createRingCable = (index: number) => {
         const role = IntervalRole.Ring
         const joint = ring[index]
         const nextJoint = ring[(index + 1) % ring.length]
-        const ringCable = fabric.createInterval(joint, nextJoint, role, roleLength(role, scale))
+        const ringCable = fabric.createInterval(joint, nextJoint, role, roleLength(role, scale), elasticFactor)
         cables.push(ringCable)
     }
     const createCrossCable = (index: number) => {
@@ -192,7 +195,7 @@ export function connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): ICon
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-        const crossCable = fabric.createInterval(joint, partnerJoint, role, roleLength(role, scale))
+        const crossCable = fabric.createInterval(joint, partnerJoint, role, roleLength(role, scale), elasticFactor)
         cables.push(crossCable)
     }
     for (let walk = 0; walk < ring.length; walk++) {
@@ -315,7 +318,7 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
             return
         }
         const role = IntervalRole.BowMid
-        fabric.createInterval(c, a, role, roleLength(role, scale))
+        fabric.createInterval(c, a, role, roleLength(role, scale), 1)
         if (highCross) {
             finish(ab, cd, bc, ad, IntervalRole.BowEndHigh)
         } else {

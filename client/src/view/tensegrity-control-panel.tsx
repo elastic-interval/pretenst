@@ -26,6 +26,7 @@ import {
     FaSun,
     FaSyncAlt,
     FaTimesCircle,
+    FaYinYang,
 } from "react-icons/all"
 import { Button, ButtonGroup, Navbar } from "reactstrap"
 
@@ -179,7 +180,13 @@ export function TensegrityControlPanel(
             <ButtonGroup style={{paddingLeft: "1em"}}>
                 <Button
                     color={lifePhase === LifePhase.Slack ? "success" : "secondary"}
-                    disabled={lifePhase !== LifePhase.Slack} onClick={() => setLifePhase(fabric.mature())}>
+                    disabled={lifePhase !== LifePhase.Slack} onClick={() => setLifePhase(fabric.pretenst())}>
+                    <FaYinYang/>
+                    <span> Anneal</span>
+                </Button>
+                <Button
+                    color={lifePhase === LifePhase.Slack ? "success" : "secondary"}
+                    disabled={lifePhase !== LifePhase.Slack} onClick={() => setLifePhase(fabric.pretenst())}>
                     <FaBolt/>
                     <span> Pretenst</span>
                 </Button>
