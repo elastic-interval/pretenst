@@ -5,18 +5,8 @@
 
 import * as React from "react"
 import { CSSProperties, useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaBalanceScale, FaGlobe, FaList, FaRuler } from "react-icons/all"
-import {
-    Button,
-    ButtonDropdown,
-    ButtonGroup,
-    DropdownItem,
-    DropdownMenu,
-    DropdownToggle,
-    Input,
-    InputGroup,
-    InputGroupAddon, InputGroupText,
-} from "reactstrap"
+import { FaArrowDown, FaArrowUp, FaEquals, FaGlobe, FaRuler } from "react-icons/all"
+import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactstrap"
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { applyPhysicsFeature, IFeature } from "../fabric/features"
@@ -63,7 +53,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
         }
         const physicsFeature = feature.name.physicsFeature
         const UpdateButtonGroup = (): JSX.Element => (
-            <ButtonGroup>
+            <ButtonGroup className="mx-1">
                 <Button size="sm" onClick={() => {
                     updateFactor(feature.factor$.getValue() * feature.adjustmentFactor)
                 }}><FaArrowUp/></Button>
@@ -72,7 +62,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
                 }}><FaArrowDown/></Button>
                 <Button size="sm" onClick={() => {
                     updateFactor(undefined)
-                }}><FaBalanceScale/></Button>
+                }}><FaEquals/></Button>
             </ButtonGroup>
         )
         if (physicsFeature !== undefined) {
@@ -81,7 +71,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
             const symbol = multiplierSymbol(multiplier)
             return (
                 <InputGroup size="sm">
-                    <strong><FaGlobe/>&nbsp;&nbsp;</strong>
+                    <strong>&nbsp;&nbsp;<FaGlobe/>&nbsp;&nbsp;</strong>
                     <InputGroupAddon addonType="prepend">
                         <InputGroupText>{feature.label}</InputGroupText>
                     </InputGroupAddon>
@@ -95,7 +85,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
         } else {
             return (
                 <InputGroup size="sm">
-                    <strong><FaRuler/>&nbsp;&nbsp;</strong>
+                    <strong>&nbsp;&nbsp;<FaRuler/>&nbsp;&nbsp;</strong>
                     <InputGroupAddon addonType="prepend">{feature.label}</InputGroupAddon>
                     <Input style={inputStyle} value={factor.toFixed(3)} disabled={true}/>
                     {mutable ? <UpdateButtonGroup/> : undefined}
@@ -104,37 +94,22 @@ export function FeaturePanel({engine, featureSet, fabric}: {
         }
     }
 
-    const [open, setOpen] = useState<boolean>(false)
-    const [selectedFeature, setSelectedFeature] = useState<IFeature | undefined>()
     return (
         <div id="top-right">
-            <ButtonDropdown style={{display: "block", width: "20em", right: "1em"}} isOpen={open} toggle={() => setOpen(!open)}>
-                <DropdownToggle color="success" className="float-right"><FaList/></DropdownToggle>
-                {!selectedFeature ? undefined : (
-                    <div style={FACTOR_WRAPPER}>
-                        <Factor feature={selectedFeature} mutable={true}/>
-                    </div>
-                )}
-                <DropdownMenu right={true} style={{backgroundColor: "#6c757d"}}>
-                    {featureSet.map(f => (
-                        <DropdownItem key={f.label} onClick={() => setSelectedFeature(f)}>
-                            <Factor feature={f} mutable={false}/>
-                        </DropdownItem>
-                    ))}
-                </DropdownMenu>
-            </ButtonDropdown>
+            {featureSet.map(f => (
+                <div key={f.label} style={{
+                    borderStyle: "solid",
+                    borderColor: "white",
+                    borderWidth: "0.1em",
+                    borderRadius: "0.7em",
+                    padding: "0.2em",
+                    marginTop: "0.3em",
+                    color: "white",
+                    backgroundColor: "#545454",
+                }}>
+                    <Factor feature={f} mutable={true}/>
+                </div>
+            ))}
         </div>
     )
-}
-
-const FACTOR_WRAPPER: CSSProperties = {
-    color: "white",
-    float: "left",
-    paddingLeft: "0.6em",
-    borderColor: "#6c757d",
-    borderStyle: "solid",
-    borderWidth: "3px",
-    borderRadius: "3px",
-    backgroundColor: "#6c757d",
-    marginRight: "1em",
 }
