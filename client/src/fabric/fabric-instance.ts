@@ -20,6 +20,7 @@ export class FabricInstance {
     private jointLocations: LazyFloatArray
     private intervalUnits: LazyFloatArray
     private intervalStrains: LazyFloatArray
+    private elasticFactors: LazyFloatArray
 
     constructor(
         public readonly index: number,
@@ -41,6 +42,7 @@ export class FabricInstance {
         this.jointLocations = new LazyFloatArray(b, offset + e._jointLocations(), () => e.getJointCount() * 3)
         this.intervalUnits = new LazyFloatArray(b, offset + e._intervalUnits(), () => e.getIntervalCount() * 3)
         this.intervalStrains = new LazyFloatArray(b, offset + e._intervalStrains(), () => e.getIntervalCount())
+        this.elasticFactors = new LazyFloatArray(b, offset + e._elasticFactors(), () => e.getIntervalCount())
     }
 
     public growing(): LifePhase {
@@ -87,8 +89,12 @@ export class FabricInstance {
         return vectorFromFloatArray(this.intervalUnits.floats, intervalIndex * 3)
     }
 
-    public getIntervalStrain(intervalIndex: number): number {
-        return this.intervalStrains.floats[intervalIndex]
+    public get strains(): Float32Array {
+        return this.intervalStrains.floats
+    }
+
+    public get elastics(): Float32Array {
+        return this.elasticFactors.floats
     }
 
     public getFaceLocations(): Float32Array {

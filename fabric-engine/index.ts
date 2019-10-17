@@ -17,7 +17,7 @@ const BAR_MASS_PER_LENGTH: f32 = 1
 const CABLE_MASS_PER_LENGTH: f32 = 0.01
 const SLACK_THRESHOLD: f32 = 0.0001
 const INITIAL_BAR_ELASTIC: f32 = 1.2
-const INITIAL_CABLE_ELASTIC: f32 = 0.4
+const INITIAL_CABLE_ELASTIC: f32 = 0.3
 
 export enum PhysicsFeature {
     GravityAbove = 0,
@@ -161,91 +161,91 @@ function getTerrainUnder(jointIndex: u16): u8 {
 
 // INSTANCE
 
-const _JOINT_LOCATIONS = 0
+const _LOCATIONS = 0
 
 @inline()
 function _location(jointIndex: u16): usize {
-    return _JOINT_LOCATIONS + _32x3(jointIndex)
+    return _LOCATIONS + _32x3(jointIndex)
 }
 
-const _VELOCITY = _JOINT_LOCATIONS + _32x3_JOINTS
+const _VELOCITIES = _LOCATIONS + _32x3_JOINTS
 
 @inline()
 function _velocity(jointIndex: u16): usize {
-    return _VELOCITY + _32x3(jointIndex)
+    return _VELOCITIES + _32x3(jointIndex)
 }
 
-const _FORCE = _VELOCITY + _32x3_JOINTS
+const _FORCES = _VELOCITIES + _32x3_JOINTS
 
 @inline()
 function _force(jointIndex: u16): usize {
-    return _FORCE + _32x3(jointIndex)
+    return _FORCES + _32x3(jointIndex)
 }
 
-const _INTERVAL_MASS = _FORCE + _32x3_JOINTS
+const _INTERVAL_MASSES = _FORCES + _32x3_JOINTS
 
 @inline()
 function _intervalMass(jointIndex: u16): usize {
-    return _INTERVAL_MASS + _32(jointIndex)
+    return _INTERVAL_MASSES + _32(jointIndex)
 }
 
-const _ALPHA = _INTERVAL_MASS + _32_JOINTS
+const _ALPHAS = _INTERVAL_MASSES + _32_JOINTS
 
 @inline()
 function _alpha(intervalIndex: u16): usize {
-    return _ALPHA + _16(intervalIndex)
+    return _ALPHAS + _16(intervalIndex)
 }
 
-const _OMEGA = _ALPHA + _16_INTERVALS
+const _OMEGAS = _ALPHAS + _16_INTERVALS
 
 @inline()
 function _omega(intervalIndex: u16): usize {
-    return _OMEGA + _16(intervalIndex)
+    return _OMEGAS + _16(intervalIndex)
 }
 
-const _CURRENT_LENGTH = _OMEGA + _16_INTERVALS
+const _CURRENT_LENGTHS = _OMEGAS + _16_INTERVALS
 
 @inline()
 function _currentLength(intervalIndex: u16): usize {
-    return _CURRENT_LENGTH + _32(intervalIndex)
+    return _CURRENT_LENGTHS + _32(intervalIndex)
 }
 
-const _INTERVAL_STRAINS = _CURRENT_LENGTH + _32_INTERVALS
+const _INTERVAL_STRAINS = _CURRENT_LENGTHS + _32_INTERVALS
 
 @inline()
 function _intervalStrain(intervalIndex: u16): usize {
     return _INTERVAL_STRAINS + _32(intervalIndex)
 }
 
-const _ELASTIC_FACTOR = _INTERVAL_STRAINS + _32_INTERVALS
+const _ELASTIC_FACTORS = _INTERVAL_STRAINS + _32_INTERVALS
 
 @inline()
 function _elasticFactor(intervalIndex: u16): usize {
-    return _ELASTIC_FACTOR + _32(intervalIndex)
+    return _ELASTIC_FACTORS + _32(intervalIndex)
 }
 
-const _INTERVAL_ROLE = _ELASTIC_FACTOR + _32_INTERVALS
+const _INTERVAL_ROLES = _ELASTIC_FACTORS + _32_INTERVALS
 
 @inline()
 function _intervalRole(intervalIndex: u16): usize {
-    return _INTERVAL_ROLE + _8(intervalIndex)
+    return _INTERVAL_ROLES + _8(intervalIndex)
 }
 
-const _INTERVAL_BUSY_COUNTDOWN = _INTERVAL_ROLE + _8_INTERVALS
+const _INTERVAL_BUSY_COUNTDOWNS = _INTERVAL_ROLES + _8_INTERVALS
 
 @inline()
 function _intervalBusyCountdown(intervalIndex: u16): usize {
-    return _INTERVAL_BUSY_COUNTDOWN + _16(intervalIndex)
+    return _INTERVAL_BUSY_COUNTDOWNS + _16(intervalIndex)
 }
 
-const _STATE_LENGTH = _INTERVAL_BUSY_COUNTDOWN + _16_INTERVALS
+const _STATE_LENGTHS = _INTERVAL_BUSY_COUNTDOWNS + _16_INTERVALS
 
 @inline()
 function _stateLength(intervalIndex: u16, state: u8): usize {
-    return _STATE_LENGTH + _32(intervalIndex) * STATE_COUNT + _32(state)
+    return _STATE_LENGTHS + _32(intervalIndex) * STATE_COUNT + _32(state)
 }
 
-const _INTERVAL_UNITS = _STATE_LENGTH + _32_INTERVALS * STATE_COUNT
+const _INTERVAL_UNITS = _STATE_LENGTHS + _32_INTERVALS * STATE_COUNT
 
 @inline()
 function _unit(intervalIndex: u16): usize {
@@ -813,11 +813,11 @@ function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
     setF32(_currentLength(intervalIndex), idealLength)
 }
 
-export function getElasticFactor(intervalIndex: u16): f32 {
+function getElasticFactor(intervalIndex: u16): f32 {
     return getF32(_elasticFactor(intervalIndex))
 }
 
-export function setElasticFactor(intervalIndex: u16, elasticFactor: f32): void {
+function setElasticFactor(intervalIndex: u16, elasticFactor: f32): void {
     setF32(_elasticFactor(intervalIndex), elasticFactor)
 }
 
@@ -1111,7 +1111,7 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase): void {
         case LifePhase.Annealing:
             let annealingFactor = getAnnealingFactor()
             gravityAbove = globalGravityAbove * annealingFactor
-            dragAbove = globalDragAbove * annealingFactor
+            dragAbove = globalDragAbove
             break
         case LifePhase.Pretenst:
             gravityAbove = globalGravityAbove
@@ -1244,7 +1244,7 @@ export function _faceLocations(): usize {
 }
 
 export function _jointLocations(): usize {
-    return _JOINT_LOCATIONS
+    return _LOCATIONS
 }
 
 export function _intervalUnits(): usize {
@@ -1253,6 +1253,10 @@ export function _intervalUnits(): usize {
 
 export function _intervalStrains(): usize {
     return _INTERVAL_STRAINS
+}
+
+export function _elasticFactors(): usize {
+    return _ELASTIC_FACTORS
 }
 
 export function _fabricOffset(): usize {

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -7,7 +8,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaSortAmountUp, FaYinYang } from "react-icons/all"
 
-import { Limit } from "../fabric/fabric-engine"
+import { immature, Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./materials"
@@ -15,9 +16,8 @@ import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./material
 const STRAIN_MULTIPLY = 10000
 const VISIBLE_LIMIT = 0.0002
 
-export function StrainPanel({fabric, busy, bars, colorBars, colorCables}: {
+export function StrainPanel({fabric, bars, colorBars, colorCables}: {
     fabric: TensegrityFabric,
-    busy: boolean,
     bars: boolean,
     colorBars: boolean,
     colorCables: boolean,
@@ -42,7 +42,7 @@ export function StrainPanel({fabric, busy, bars, colorBars, colorCables}: {
 
     const min = Math.floor(minStrain * STRAIN_MULTIPLY)
     const max = Math.floor(maxStrain * STRAIN_MULTIPLY)
-    const zen = busy || Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
+    const zen = immature(fabric.lifePhase) || Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
     const both = colorBars && colorCables
     const nativeColor = bars ? HOT_COLOR : COLD_COLOR
     const attenuated = bars !== colorBars

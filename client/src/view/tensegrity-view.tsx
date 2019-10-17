@@ -5,7 +5,10 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
+import { FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
+import { Button } from "reactstrap"
+import { BehaviorSubject } from "rxjs"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFabricEngine, LifePhase } from "../fabric/fabric-engine"
@@ -32,10 +35,11 @@ declare global {
     }
 }
 
-export function TensegrityView({engine, buildFabric, features}: {
+export function TensegrityView({engine, buildFabric, features, annealStep$}: {
     engine: IFabricEngine,
     buildFabric: (name: string, codeTree: ICodeTree) => TensegrityFabric,
     features: IFeature[],
+    annealStep$: BehaviorSubject<number>,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(LifePhase.Growing)
@@ -46,7 +50,6 @@ export function TensegrityView({engine, buildFabric, features}: {
     const [code, setCode] = useState<ICode | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedFace, setSelectedFace] = useState<ISelectedFace | undefined>()
-    const [busy, setBusy] = useState(false)
 
     function buildFromCode(): void {
         if (!code) {
@@ -66,6 +69,78 @@ export function TensegrityView({engine, buildFabric, features}: {
 
     useEffect(buildFromCode, [code])
 
+    function PretenstButton(): JSX.Element {
+
+        const [annealStep, setAnnealStep] = useState(annealStep$.getValue())
+
+        useEffect(() => {
+            const subscription = annealStep$.subscribe(setAnnealStep)
+            return () => subscription.unsubscribe()
+        })
+
+        function character(): {
+            text: string,
+            color: string,
+            disabled: boolean,
+            symbol: JSX.Element,
+            onClick: () => void,
+        } {
+            switch (lifePhase) {
+                case LifePhase.Growing:
+                    return {
+                        text: "Growing...",
+                        symbol: <FaSeedling/>,
+                        color: "secondary",
+                        disabled: true,
+                        onClick: () => {
+                        },
+                    }
+                case LifePhase.Slack:
+                    return {
+                        text: "Slack",
+                        symbol: <FaYinYang/>,
+                        color: "warning",
+                        disabled: false,
+                        onClick: () => {
+                            if (fabric) {
+                                setLifePhase(fabric.anneal())
+                            }
+                        },
+                    }
+                case LifePhase.Annealing:
+                    return {
+                        text: `Annealing ${annealStep}%`,
+                        symbol: <FaHammer/>,
+                        color: "secondary",
+                        disabled: true,
+                        onClick: () => {
+                        },
+                    }
+                case LifePhase.Pretenst:
+                    return {
+                        symbol: <FaHandSpock/>,
+                        color: "success",
+                        text: "Pretenst!",
+                        disabled: false,
+                        onClick: () => {
+                            setSelectedFace(undefined)
+                            if (fabric) {
+                                fabric.clearSelection()
+                            }
+                            buildFromCode()
+                        },
+                    }
+            }
+        }
+
+        const {text, symbol, color, disabled, onClick} = character()
+        return (
+            <Button style={{width: "12em"}} color={color} disabled={disabled} onClick={onClick}>
+                {symbol} <span> {text}</span>
+            </Button>
+        )
+    }
+
     return (
         <div id="tensegrity-view" className="the-whole-page">
             {!fabric ? (
@@ -77,8 +152,7 @@ export function TensegrityView({engine, buildFabric, features}: {
                             fabric={fabric}
                             lifePhase={lifePhase}
                             setLifePhase={setLifePhase}
-                            busy={busy}
-                            setBusy={setBusy}
+                            annealStep$={annealStep$}
                             selectedFace={selectedFace}
                             setSelectedFace={setSelectedFace}
                             autoRotate={autoRotate}
@@ -102,18 +176,15 @@ export function TensegrityView({engine, buildFabric, features}: {
                         <TensegrityControlPanel
                             fabric={fabric}
                             clearFabric={() => setFabric(undefined)}
-                            rebuildFabric={buildFromCode} // TODO
-                            lifePhase={lifePhase}
-                            setLifePhase={setLifePhase}
                             setShowFaces={setShowFaces}
                             selectedFace={selectedFace}
                             setSelectedFace={setSelectedFace}
                             autoRotate={autoRotate}
                             setAutoRotate={setAutoRotate}
                             fastMode={fastMode}
-                            setFastMode={setFastMode}
-                            busy={busy}
-                        />
+                            setFastMode={setFastMode}>
+                            <PretenstButton/>
+                        </TensegrityControlPanel>
                     </div>
                 </>
             )}

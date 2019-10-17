@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -5,7 +6,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { FabricState, IFabricEngine, IntervalRole, Laterality, LifePhase } from "./fabric-engine"
+import { IFabricEngine, IntervalRole, Laterality, LifePhase } from "./fabric-engine"
 import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
 import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
 import {
@@ -43,6 +44,7 @@ export interface IFabricOutput {
 
 export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
+const ANNEAL_STEPS = 100
 
 export class TensegrityFabric {
     public lifePhase: LifePhase
@@ -51,6 +53,7 @@ export class TensegrityFabric {
     public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
     public growth?: IGrowth
+    public annealStep = 0
 
     private faceLocations = new Float32BufferAttribute([], 3)
     private faceNormals = new Float32BufferAttribute([], 3)
@@ -58,8 +61,14 @@ export class TensegrityFabric {
     private lineColors = new Float32BufferAttribute([], 3)
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
+    private annealStartAge = 0
 
-    constructor(public readonly instance: FabricInstance, public readonly name: string, codeTree: ICodeTree) {
+    constructor(
+        codeTree: ICodeTree,
+        public readonly instance: FabricInstance,
+        public readonly name: string,
+        private annealingCountdownMax: number,
+    ) {
         this.lifePhase = this.instance.growing()
         const brick = createBrickOnOrigin(this, percentOrHundred())
         const executing: IActiveCode = {codeTree, brick}
@@ -67,6 +76,7 @@ export class TensegrityFabric {
     }
 
     public anneal(): LifePhase {
+        this.annealStartAge = this.instance.engine.getAge()
         return this.lifePhase = this.instance.anneal()
     }
 
@@ -225,6 +235,9 @@ export class TensegrityFabric {
         const busy = engine.iterate(ticks)
         this.forgetGeometry()
         if (busy) {
+            if (this.timeForAnnealStep()) {
+                this.executeAnnealStep()
+            }
             return busy
         }
         const growth = this.growth
@@ -294,17 +307,38 @@ export class TensegrityFabric {
                     z: numberToString(vector.y),
                 }
             }),
-            intervals: this.intervals.map(interval => {
-                const deltaLength = this.instance.getIntervalStrain(interval.index)
-                const restLength = this.engine.getIntervalStateLength(interval.index, FabricState.Rest)
-                return {
-                    joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
-                    type: IntervalRole[interval.intervalRole],
-                    strain: deltaLength / restLength,
-                    elastic: this.engine.getElasticFactor(interval.index),
-                }
-            }),
+            intervals: this.intervals.map(interval => ({
+                joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
+                type: IntervalRole[interval.intervalRole],
+                strain: this.instance.strains[interval.index],
+                elastic: this.instance.elastics[interval.index],
+            })),
         }
+    }
+
+    private timeForAnnealStep(): boolean {
+        if (this.lifePhase !== LifePhase.Annealing) {
+            return false
+        }
+        const engine = this.instance.engine
+        const annealCycles = engine.getAge() - this.annealStartAge
+        const complete = annealCycles / this.annealingCountdownMax
+        const currentStep = Math.floor(complete * ANNEAL_STEPS)
+        if (currentStep === this.annealStep) {
+            return false
+        }
+        this.annealStep = currentStep
+        return true
+    }
+
+    private executeAnnealStep(): void {
+        const strains = this.instance.strains
+        const elastics = this.instance.elastics
+        this.intervals.forEach(interval => {
+            const strainFactor = interval.isBar ? -1 : 1
+            const adjustment = 1 + strains[interval.index] * strainFactor
+            elastics[interval.index] *= adjustment
+        })
     }
 
     private get engine(): IFabricEngine {

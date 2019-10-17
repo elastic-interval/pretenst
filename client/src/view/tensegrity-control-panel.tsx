@@ -17,17 +17,13 @@ import {
     FaDiceTwo,
     FaDotCircle,
     FaFileCsv,
-    FaHammer,
     FaHandPointUp,
-    FaHandSpock,
     FaListAlt,
     FaParachuteBox,
     FaRunning,
-    FaSeedling,
     FaSun,
     FaSyncAlt,
     FaTimesCircle,
-    FaYinYang,
 } from "react-icons/all"
 import { Button, ButtonGroup, Navbar } from "reactstrap"
 
@@ -49,11 +45,7 @@ import { StrainPanel } from "./strain-panel"
 
 interface IControlPanel {
     fabric: TensegrityFabric,
-    busy: boolean,
     clearFabric: () => void,
-    rebuildFabric: () => void,
-    lifePhase: LifePhase,
-    setLifePhase: (lifePhase: LifePhase) => void,
     setShowFaces: (showFaces: boolean) => void
     selectedFace?: ISelectedFace,
     setSelectedFace: (selectedFace?: ISelectedFace) => void,
@@ -61,28 +53,22 @@ interface IControlPanel {
     setAutoRotate: (autoRotate: boolean) => void,
     fastMode: boolean,
     setFastMode: (fastMode: boolean) => void,
+    children: (JSX.Element | undefined)[] | JSX.Element | string,
 }
-
 
 export function TensegrityControlPanel(
     {
-        fabric, busy, clearFabric, rebuildFabric, lifePhase, setLifePhase, setShowFaces, selectedFace, setSelectedFace,
-        autoRotate, setAutoRotate, fastMode, setFastMode,
+        fabric, clearFabric, setShowFaces, selectedFace, setSelectedFace,
+        autoRotate, setAutoRotate, fastMode, setFastMode, children,
     }: IControlPanel): JSX.Element {
+
+    const lifePhase = fabric.lifePhase
 
     const [colorBars, setColorBars] = useState(true)
     const [colorCables, setColorCables] = useState(true)
     const [lengthAdjustable, setLengthAdjustable] = useState(false)
 
     useEffect(() => fabric.instance.engine.setColoring(colorBars, colorCables), [colorBars, colorCables])
-
-    useEffect(() => {
-        if (lifePhase === LifePhase.Pretenst) {
-            setShowFaces(true)
-            setColorBars(true)
-            setColorCables(true)
-        }
-    }, [lifePhase])
 
     function adjustment(up: boolean): number {
         const factor = 1.03
@@ -100,11 +86,7 @@ export function TensegrityControlPanel(
         setSelectedFace(undefined)
     }
 
-    function ViewButton({bars, cables, children}: {
-        bars: boolean,
-        cables: boolean,
-        children: JSX.Element | JSX.Element[],
-    }): JSX.Element {
+    function ViewButton({bars, cables}: { bars: boolean, cables: boolean }): JSX.Element {
         const faces = bars && cables
         const onClick = () => {
             setColorBars(bars)
@@ -119,8 +101,12 @@ export function TensegrityControlPanel(
         const style = {
             color: iconColor,
         }
-        return <Button style={style} disabled={lifePhase !== LifePhase.Pretenst} color={color}
-                       onClick={onClick}>{children}</Button>
+        const disabled = lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
+        return <Button style={style} disabled={disabled} color={color}
+                       onClick={onClick}>
+            {bars && cables ? (<><FaHandPointUp/><span> Faces</span></>) :
+                bars ? (<><FaCircle/><span> Bars</span></>) : (<><FaDotCircle/><span> Cables</span></>)}
+        </Button>
     }
 
     function FaceAdjacentButton({selected, adjacentIntervals}: {
@@ -166,78 +152,16 @@ export function TensegrityControlPanel(
         )
     }
 
-    function PretenstButton(): JSX.Element {
-        function character(): {
-            text: string,
-            color: string,
-            disabled: boolean,
-            symbol: JSX.Element,
-            onClick: () => void,
-        } {
-            switch (lifePhase) {
-                case LifePhase.Growing:
-                    return {
-                        text: "Growing...",
-                        symbol: <FaSeedling/>,
-                        color: "secondary",
-                        disabled: true,
-                        onClick: () => {
-                        },
-                    }
-                case LifePhase.Slack:
-                    return {
-                        text: "Slack",
-                        symbol: <FaYinYang/>,
-                        color: "warning",
-                        disabled: false,
-                        onClick: () => setLifePhase(fabric.anneal()),
-                    }
-                case LifePhase.Annealing:
-                    return {
-                        text: "Annealing",
-                        symbol: <FaHammer/>,
-                        color: "secondary",
-                        disabled: true,
-                        onClick: () => {
-                        },
-                    }
-                case LifePhase.Pretenst:
-                default:
-                    return {
-                        symbol: <FaHandSpock/>,
-                        color: "success",
-                        text: "Pretenst!",
-                        disabled: false,
-                        onClick: () => {
-                            setSelectedFace(undefined)
-                            fabric.clearSelection()
-                            rebuildFabric()
-                        },
-                    }
-            }
-        }
-
-        const {text, symbol, color, disabled, onClick} = character()
-        return (
-            <Button style={{width: "12em"}} color={color} disabled={disabled} onClick={onClick}>
-                {symbol} <span> {text}</span>
-            </Button>
-        )
-    }
-
     return (
         <Navbar style={{borderStyle: "none"}}>
             <ButtonGroup>
-                <PretenstButton/>
+                {children}
             </ButtonGroup>
             <ButtonGroup style={{paddingLeft: "1em"}}>
                 <Button onClick={clearFabric}><FaListAlt/> Choose</Button>
             </ButtonGroup>
             <div style={{display: "flex", paddingLeft: "2em"}}>
-                <ViewButton bars={true} cables={true}>
-                    <FaHandPointUp/>
-                    <span> Faces</span>
-                </ViewButton>
+                <ViewButton bars={true} cables={true}/>
                 {selectedFace ? (
                     <ButtonGroup style={{paddingLeft: "0.6em", width: "30em"}}>
                         <Button disabled={!selectedFace.face.canGrow} onClick={() => grow(selectedFace.face)}>
@@ -260,20 +184,12 @@ export function TensegrityControlPanel(
                 ) : (
                     <div style={{display: "flex", width: "30em"}}>
                         <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
-                            <ViewButton bars={true} cables={false}>
-                                <FaCircle/>
-                                <span> Bars</span>
-                            </ViewButton>
-                            <StrainPanel fabric={fabric} busy={busy} bars={true}
-                                         colorBars={colorBars} colorCables={colorCables}/>
+                            <ViewButton bars={true} cables={false}/>
+                            <StrainPanel fabric={fabric} bars={true} colorBars={colorBars} colorCables={colorCables}/>
                         </ButtonGroup>
                         <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
-                            <ViewButton bars={false} cables={true}>
-                                <FaDotCircle/>
-                                <span> Cables</span>
-                            </ViewButton>
-                            <StrainPanel fabric={fabric} busy={busy} bars={false}
-                                         colorBars={colorBars} colorCables={colorCables}/>
+                            <ViewButton bars={false} cables={true}/>
+                            <StrainPanel fabric={fabric} bars={false} colorBars={colorBars} colorCables={colorCables}/>
                         </ButtonGroup>
                     </div>
                 )}

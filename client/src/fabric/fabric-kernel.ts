@@ -7,10 +7,11 @@ import { Vector3 } from "three"
 
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { IFabricEngine, MAX_INSTANCES } from "./fabric-engine"
+import { IFabricEngine, MAX_INSTANCES, PhysicsFeature } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
 import { ICodeTree } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
+import { physicsValue } from "../storage/local-storage"
 
 const PRETENST_FOR_CONSTRUCTION = 0.3
 const PRETENST_AFTER_ANNEALING = 0.1
@@ -63,7 +64,7 @@ export class FabricKernel {
         if (!newInstance) {
             return undefined
         }
-        return new TensegrityFabric(newInstance, name, codeTree)
+        return new TensegrityFabric(codeTree, newInstance, name, physicsValue(PhysicsFeature.AnnealingCountdown))
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {

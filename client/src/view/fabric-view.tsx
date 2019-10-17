@@ -4,12 +4,13 @@
  */
 
 import * as React from "react"
-import { useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
+import { BehaviorSubject } from "rxjs"
 import { Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { LifePhase, SLACK_THRESHOLD } from "../fabric/fabric-engine"
+import { immature, LifePhase, SLACK_THRESHOLD } from "../fabric/fabric-engine"
 import { AdjacentIntervals, bySelectedFace, IInterval, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -35,14 +36,16 @@ const ALTITUDE = 4
 const BAR_GIRTH = 0.3
 const CABLE_GIRTH = 0.1
 
-export function FabricView({fabric, lifePhase, setLifePhase, selectedFace, setSelectedFace, busy, setBusy, autoRotate, fastMode, showFaces}: {
+export function FabricView({
+                               fabric, lifePhase, setLifePhase, annealStep$, selectedFace,
+                               setSelectedFace, autoRotate, fastMode, showFaces,
+                           }: {
     fabric: TensegrityFabric,
     lifePhase: LifePhase,
     setLifePhase: (lifePhase: LifePhase) => void,
+    annealStep$: BehaviorSubject<number>,
     selectedFace?: ISelectedFace,
     setSelectedFace: (selection?: ISelectedFace) => void,
-    busy: boolean,
-    setBusy: (busy: boolean) => void
     autoRotate: boolean,
     fastMode: boolean,
     showFaces: boolean,
@@ -51,6 +54,8 @@ export function FabricView({fabric, lifePhase, setLifePhase, selectedFace, setSe
     const [age, setAge] = useState(0)
     const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
     const {camera, raycaster} = useThree()
+
+    useEffect(() => annealStep$.next(fabric.annealStep), [fabric.annealStep])
 
     const orbitControls = useUpdate<OrbitControls>(controls => {
         controls.minPolarAngle = -0.98 * Math.PI / 2
@@ -70,10 +75,7 @@ export function FabricView({fabric, lifePhase, setLifePhase, selectedFace, setSe
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = autoRotate
-        const nowBusy = fabric.iterate(ITERATIONS_PER_FRAME)
-        if (nowBusy !== busy) {
-            setBusy(nowBusy)
-        }
+        fabric.iterate(ITERATIONS_PER_FRAME)
         if (lifePhase !== fabric.lifePhase) {
             setLifePhase(fabric.lifePhase)
         }
@@ -109,7 +111,7 @@ export function FabricView({fabric, lifePhase, setLifePhase, selectedFace, setSe
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (busy || lifePhase !== LifePhase.Pretenst || !downEvent || !mesh) {
+            if (!(immature(lifePhase) && downEvent && mesh)) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -149,11 +151,10 @@ export function FabricView({fabric, lifePhase, setLifePhase, selectedFace, setSe
         attenuated: boolean,
         larger: boolean,
     }): JSX.Element {
-        const elasticFactor = fabric.instance.engine.getElasticFactor(interval.index)
-        const strain = fabric.instance.getIntervalStrain(interval.index) * (interval.isBar ? -1 : 1)
-        const girth = Math.sqrt(elasticFactor) * (interval.isBar ?
-            BAR_GIRTH * (larger ? 3 : 1) :
-            CABLE_GIRTH * (larger ? 5 : 1))
+        const elastic = fabric.instance.elastics[interval.index]
+        const strain = fabric.instance.strains[interval.index] * (interval.isBar ? -1 : 1)
+        const girth = Math.sqrt(elastic) *
+            (interval.isBar ? BAR_GIRTH * (larger ? 3 : 1) : CABLE_GIRTH * (larger ? 5 : 1))
         const {scale, rotation} = fabric.orientInterval(interval, girth)
         const material = strain < SLACK_THRESHOLD ? SLACK : attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
         return (

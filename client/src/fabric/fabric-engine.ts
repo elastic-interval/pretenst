@@ -37,6 +37,10 @@ export enum LifePhase {
     Pretenst = 3,
 }
 
+export function immature(lifePhase: LifePhase): boolean {
+    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
+}
+
 export enum IntervalRole {
     Bar = 1,
     Triangle = 2,
@@ -116,10 +120,6 @@ export interface IFabricEngine {
 
     createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number, elasticFactor: number): number
 
-    setElasticFactor(intervalIndex: number, elasticFactor: number): void
-
-    getElasticFactor(intervalIndex: number): number
-
     setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
     changeRestLength(intervalIndex: number, length: number): void
@@ -165,5 +165,7 @@ export interface IFabricEngine {
     _intervalUnits(): number
 
     _intervalStrains(): number
+
+    _elasticFactors(): number
 
 }
