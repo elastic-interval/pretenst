@@ -5,6 +5,7 @@
 
 import * as React from "react"
 import * as ReactDOM from "react-dom"
+import { BehaviorSubject } from "rxjs"
 
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
@@ -20,7 +21,6 @@ import { TensegrityView } from "./view/tensegrity-view"
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./index.css"
-import { BehaviorSubject } from "rxjs"
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
