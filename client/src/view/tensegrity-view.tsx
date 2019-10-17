@@ -93,6 +93,11 @@ export function TensegrityView({engine, buildFabric, features}: {
                             fabric={fabric}
                         />
                     )}
+                    {!code ? undefined : (
+                        <div id="top-middle">
+                            {code.codeString}
+                        </div>
+                    )}
                     <div id="bottom-middle">
                         <TensegrityControlPanel
                             fabric={fabric}

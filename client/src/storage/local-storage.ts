@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -110,6 +111,8 @@ function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
             return 0.3
         case PhysicsFeature.BusyCountdown:
             return 300.0
+        case PhysicsFeature.AnnealingCountdown:
+            return 15000.0
         default:
             throw new Error("Bad physics feature")
     }
@@ -174,6 +177,8 @@ export function featureMultiplier(physicsFeature: PhysicsFeature): PhysicsMultip
         case PhysicsFeature.PullElastic:
             return PhysicsMultiplier.Thousandths
         case PhysicsFeature.BusyCountdown:
+            return PhysicsMultiplier.One
+        case PhysicsFeature.AnnealingCountdown:
             return PhysicsMultiplier.One
         default:
             throw new Error("Bad physics feature")

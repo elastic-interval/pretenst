@@ -110,6 +110,7 @@ a, a:hover {
     position: absolute;
     padding-right: 1em;
     padding-left: 1em;
+    color: rgba(255, 255, 178, 0.51);
     top: 1em;
     left: 50%;
     transform: translate(-50%);
@@ -124,17 +125,5 @@ a, a:hover {
     width: 80em;
     left: 50%;
     transform: translate(-50%);
-    z-index: 100;
-}
-
-#top-middle {
-    position: absolute;
-    padding-top: 0.5em;
-    padding-right: 1em;
-    padding-left: 1em;
-    top: 1em;
-    left: 50%;
-    transform: translate(-50%);
-    color: white;
     z-index: 100;
 }

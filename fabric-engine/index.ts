@@ -16,10 +16,8 @@ const AMBIENT_JOINT_MASS: f32 = 0.1
 const BAR_MASS_PER_LENGTH: f32 = 1
 const CABLE_MASS_PER_LENGTH: f32 = 0.01
 const SLACK_THRESHOLD: f32 = 0.0001
-const EMBRYO_BAR_ELASTIC: f32 = 1.2
-const EMBRYO_CABLE_ELASTIC: f32 = 0.4
-const ANNEALING_COUNTDOWN: u16 = 10000
-const ANNEALING_COUNTDOWN_F32: f32 = <f32>ANNEALING_COUNTDOWN
+const INITIAL_BAR_ELASTIC: f32 = 1.2
+const INITIAL_CABLE_ELASTIC: f32 = 0.4
 
 export enum PhysicsFeature {
     GravityAbove = 0,
@@ -31,6 +29,7 @@ export enum PhysicsFeature {
     PushElastic = 6,
     PullElastic = 7,
     BusyCountdown = 8,
+    AnnealingCountdown = 9,
 }
 
 enum IntervalRole {
@@ -353,6 +352,7 @@ let globalAntigravityBelow: f32
 let globalPushElasticFactor: f32
 let globalPullElasticFactor: f32
 let globalBusyCountdownMax: f32
+let globalAnnealingCountdownMax: f32
 
 export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f32 {
     switch (globalFeature) {
@@ -374,6 +374,8 @@ export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f3
             return globalPullElasticFactor = value
         case PhysicsFeature.BusyCountdown:
             return globalBusyCountdownMax = value
+        case PhysicsFeature.AnnealingCountdown:
+            return globalAnnealingCountdownMax = value
         default:
             return 0
     }
@@ -595,7 +597,7 @@ function setFabricBusyCountdown(countdown: u16): void {
 
 function getAnnealingFactor(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
-    return (ANNEALING_COUNTDOWN_F32 - <f32>fabricBusyCountdown) / ANNEALING_COUNTDOWN_F32
+    return (globalAnnealingCountdownMax - <f32>fabricBusyCountdown) / globalAnnealingCountdownMax
 }
 
 function getPreviousState(): u8 {
@@ -645,7 +647,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             }
             break
         case LifePhase.Annealing:
-            setFabricBusyCountdown(ANNEALING_COUNTDOWN)
+            setFabricBusyCountdown(<u16>globalAnnealingCountdownMax)
             break
         case LifePhase.Pretenst:
             break
@@ -1076,7 +1078,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     switch (lifePhase) {
         case LifePhase.Growing:
         case LifePhase.Slack:
-            globalElasticFactor = bar ? EMBRYO_BAR_ELASTIC : EMBRYO_CABLE_ELASTIC
+            globalElasticFactor = bar ? INITIAL_BAR_ELASTIC : INITIAL_CABLE_ELASTIC
             break
         case LifePhase.Annealing:
         case LifePhase.Pretenst:

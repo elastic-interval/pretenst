@@ -8,7 +8,6 @@ import { useEffect, useState } from "react"
 import {
     FaArrowDown,
     FaArrowUp,
-    FaBolt,
     FaCircle,
     FaCompressArrowsAlt,
     FaCubes,
@@ -18,11 +17,13 @@ import {
     FaDiceTwo,
     FaDotCircle,
     FaFileCsv,
+    FaHammer,
     FaHandPointUp,
+    FaHandSpock,
     FaListAlt,
     FaParachuteBox,
-    FaRecycle,
     FaRunning,
+    FaSeedling,
     FaSun,
     FaSyncAlt,
     FaTimesCircle,
@@ -92,12 +93,6 @@ export function TensegrityControlPanel(
         fabric.forEachSelected(interval => {
             fabric.instance.engine.multiplyRestLength(interval.index, adjustment(up))
         })
-    }
-
-    const onRecycle = () => {
-        setSelectedFace(undefined)
-        fabric.clearSelection()
-        rebuildFabric()
     }
 
     const grow = (face: IFace, scale?: IPercent) => {
@@ -171,25 +166,72 @@ export function TensegrityControlPanel(
         )
     }
 
+    function PretenstButton(): JSX.Element {
+        function character(): {
+            text: string,
+            color: string,
+            disabled: boolean,
+            symbol: JSX.Element,
+            onClick: () => void,
+        } {
+            switch (lifePhase) {
+                case LifePhase.Growing:
+                    return {
+                        text: "Growing...",
+                        symbol: <FaSeedling/>,
+                        color: "secondary",
+                        disabled: true,
+                        onClick: () => {
+                        },
+                    }
+                case LifePhase.Slack:
+                    return {
+                        text: "Slack",
+                        symbol: <FaYinYang/>,
+                        color: "warning",
+                        disabled: false,
+                        onClick: () => setLifePhase(fabric.anneal()),
+                    }
+                case LifePhase.Annealing:
+                    return {
+                        text: "Annealing",
+                        symbol: <FaHammer/>,
+                        color: "secondary",
+                        disabled: true,
+                        onClick: () => {
+                        },
+                    }
+                case LifePhase.Pretenst:
+                default:
+                    return {
+                        symbol: <FaHandSpock/>,
+                        color: "success",
+                        text: "Pretenst!",
+                        disabled: false,
+                        onClick: () => {
+                            setSelectedFace(undefined)
+                            fabric.clearSelection()
+                            rebuildFabric()
+                        },
+                    }
+            }
+        }
+
+        const {text, symbol, color, disabled, onClick} = character()
+        return (
+            <Button style={{width: "12em"}} color={color} disabled={disabled} onClick={onClick}>
+                {symbol} <span> {text}</span>
+            </Button>
+        )
+    }
+
     return (
         <Navbar style={{borderStyle: "none"}}>
             <ButtonGroup>
-                <Button onClick={clearFabric}><FaListAlt/></Button>
-                <Button onClick={onRecycle}><FaRecycle/></Button>
+                <PretenstButton/>
             </ButtonGroup>
             <ButtonGroup style={{paddingLeft: "1em"}}>
-                <Button
-                    color={lifePhase === LifePhase.Slack ? "success" : "secondary"}
-                    disabled={lifePhase !== LifePhase.Slack} onClick={() => setLifePhase(fabric.anneal())}>
-                    <FaYinYang/>
-                    <span> Anneal</span>
-                </Button>
-                <Button
-                    color={lifePhase === LifePhase.Slack ? "success" : "secondary"}
-                    disabled={lifePhase !== LifePhase.Slack} onClick={() => setLifePhase(fabric.pretenst())}>
-                    <FaBolt/>
-                    <span> Pretenst</span>
-                </Button>
+                <Button onClick={clearFabric}><FaListAlt/> Choose</Button>
             </ButtonGroup>
             <div style={{display: "flex", paddingLeft: "2em"}}>
                 <ViewButton bars={true} cables={true}>
