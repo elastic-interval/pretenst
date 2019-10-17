@@ -37,13 +37,13 @@ const BAR_GIRTH = 0.3
 const CABLE_GIRTH = 0.1
 
 export function FabricView({
-                               fabric, lifePhase, setLifePhase, annealStep$, selectedFace,
+                               fabric, lifePhase, setLifePhase, pretensingStep$, selectedFace,
                                setSelectedFace, autoRotate, fastMode, showFaces,
                            }: {
     fabric: TensegrityFabric,
     lifePhase: LifePhase,
     setLifePhase: (lifePhase: LifePhase) => void,
-    annealStep$: BehaviorSubject<number>,
+    pretensingStep$: BehaviorSubject<number>,
     selectedFace?: ISelectedFace,
     setSelectedFace: (selection?: ISelectedFace) => void,
     autoRotate: boolean,
@@ -55,7 +55,7 @@ export function FabricView({
     const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
     const {camera, raycaster} = useThree()
 
-    useEffect(() => annealStep$.next(fabric.annealStep), [fabric.annealStep])
+    useEffect(() => pretensingStep$.next(fabric.pretensingStep), [fabric.pretensingStep])
 
     const orbitControls = useUpdate<OrbitControls>(controls => {
         controls.minPolarAngle = -0.98 * Math.PI / 2
@@ -111,7 +111,7 @@ export function FabricView({
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (!(immature(lifePhase) && downEvent && mesh)) {
+            if (immature(lifePhase) || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -213,7 +213,7 @@ export function FabricView({
                 )}
                 {showFaces ? <Faces/> : undefined}
                 <SelectedFace/>
-                <SurfaceComponent/>
+                {immature(lifePhase) ? undefined : <SurfaceComponent/>}
             </scene>
         </group>
     )

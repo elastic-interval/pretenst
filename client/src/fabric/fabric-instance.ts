@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -56,9 +57,9 @@ export class FabricInstance {
         return this.engine.setLifePhase(LifePhase.Slack, 0)
     }
 
-    public anneal(): LifePhase {
-        console.log("Anneal")
-        return this.engine.setLifePhase(LifePhase.Annealing, this.maturePretenst)
+    public pretensing(): LifePhase {
+        console.log("Pretensing")
+        return this.engine.setLifePhase(LifePhase.Pretensing, this.maturePretenst)
     }
 
     public pretenst(): LifePhase {

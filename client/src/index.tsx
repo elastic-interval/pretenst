@@ -44,7 +44,7 @@ async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const root = document.getElementById("root") as HTMLElement
     const roleFeatures = enumToFeatureArray(IntervalRole, false)
-    const annealStep$ = new BehaviorSubject(0)
+    const pretensingStep = new BehaviorSubject(0)
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         const fabricKernel = new FabricKernel(engine)
@@ -64,7 +64,7 @@ async function start(): Promise<void> {
                 engine={engine}
                 features={features}
                 buildFabric={buildFabric}
-                annealStep$={annealStep$}
+                pretensingStep$={pretensingStep}
             />,
             root,
         )

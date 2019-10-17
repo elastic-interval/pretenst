@@ -13,8 +13,8 @@ import { FabricInstance } from "./fabric-instance"
 import { ICodeTree } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
-const PRETENST_FOR_CONSTRUCTION = 0.3
-const PRETENST_AFTER_ANNEALING = 0.1
+const INITIAL_PRETENST = 0.3
+const FINAL_PRETENST = 0.1
 
 const FLOATS_IN_VECTOR = 3
 const HEXALOT_BITS = 128
@@ -52,8 +52,8 @@ export class FabricKernel {
                 this.arrayBuffer,
                 toFree => this.instanceUsed[toFree] = false,
                 engine,
-                PRETENST_FOR_CONSTRUCTION,
-                PRETENST_AFTER_ANNEALING,
+                INITIAL_PRETENST,
+                FINAL_PRETENST,
             ))
             this.instanceUsed.push(false)
         }
@@ -64,9 +64,9 @@ export class FabricKernel {
         if (!newInstance) {
             return undefined
         }
-        const annealingCountdownMax = physicsValue(PhysicsFeature.AnnealingCountdown)
-        const annealingIntensity = physicsValue(PhysicsFeature.AnnealingIntensity)
-        return new TensegrityFabric(codeTree, newInstance, name, annealingCountdownMax, annealingIntensity)
+        const coundownMax = physicsValue(PhysicsFeature.PretensingCountdown)
+        const intensity = physicsValue(PhysicsFeature.PretensingIntensity)
+        return new TensegrityFabric(codeTree, newInstance, name, coundownMax, intensity)
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {

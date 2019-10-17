@@ -43,7 +43,7 @@ export interface IFabricOutput {
 
 export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
-const ANNEAL_STEPS = 100
+const PRETENSING_STEPS = 100
 
 export class TensegrityFabric {
     public lifePhase: LifePhase
@@ -52,7 +52,7 @@ export class TensegrityFabric {
     public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
     public growth?: IGrowth
-    public annealStep = 0
+    public pretensingStep = 0
 
     private faceLocations = new Float32BufferAttribute([], 3)
     private faceNormals = new Float32BufferAttribute([], 3)
@@ -60,14 +60,14 @@ export class TensegrityFabric {
     private lineColors = new Float32BufferAttribute([], 3)
     private facesGeometryStored: BufferGeometry | undefined
     private linesGeometryStored: BufferGeometry | undefined
-    private annealStartAge = 0
+    private pretensingStartAge = 0
 
     constructor(
         codeTree: ICodeTree,
         public readonly instance: FabricInstance,
         public readonly name: string,
-        private annealingCountdownMax: number,
-        private annealingIntensity: number,
+        private pretensingCountdownMax: number,
+        private pretensingIntensity: number,
     ) {
         this.lifePhase = this.instance.growing()
         const brick = createBrickOnOrigin(this, percentOrHundred())
@@ -75,9 +75,9 @@ export class TensegrityFabric {
         this.growth = {growing: [executing], optimizationStack: []}
     }
 
-    public anneal(): LifePhase {
-        this.annealStartAge = this.instance.engine.getAge()
-        return this.lifePhase = this.instance.anneal()
+    public pretensing(): LifePhase {
+        this.pretensingStartAge = this.instance.engine.getAge()
+        return this.lifePhase = this.instance.pretensing()
     }
 
     public pretenst(): LifePhase {
@@ -235,14 +235,14 @@ export class TensegrityFabric {
         const busy = engine.iterate(ticks)
         this.forgetGeometry()
         if (busy) {
-            if (this.timeForAnnealStep()) {
-                this.executeAnnealStep()
+            if (this.timeForPretensing()) {
+                this.takePretensingStep()
             }
             return busy
         }
         const growth = this.growth
         if (!growth) {
-            if (this.lifePhase === LifePhase.Annealing) {
+            if (this.lifePhase === LifePhase.Pretensing) {
                 this.lifePhase = this.instance.pretenst()
             }
             return false
@@ -316,25 +316,25 @@ export class TensegrityFabric {
         }
     }
 
-    private timeForAnnealStep(): boolean {
-        if (this.lifePhase !== LifePhase.Annealing) {
+    private timeForPretensing(): boolean {
+        if (this.lifePhase !== LifePhase.Pretensing) {
             return false
         }
         const engine = this.instance.engine
-        const annealCycles = engine.getAge() - this.annealStartAge
-        const complete = annealCycles / this.annealingCountdownMax
-        const currentStep = Math.floor(complete * ANNEAL_STEPS)
-        if (currentStep === this.annealStep) {
+        const pretensingCycles = engine.getAge() - this.pretensingStartAge
+        const complete = pretensingCycles / this.pretensingCountdownMax
+        const currentStep = Math.floor(complete * PRETENSING_STEPS)
+        if (currentStep === this.pretensingStep) {
             return false
         }
-        this.annealStep = currentStep
+        this.pretensingStep = currentStep
         return true
     }
 
-    private executeAnnealStep(): void {
+    private takePretensingStep(): void {
         const strains = this.instance.strains
         const elastics = this.instance.elastics
-        const intensity = this.annealingIntensity
+        const intensity = this.pretensingIntensity
         const adjustments = this.intervals.map(interval => intensity * strains[interval.index] * (interval.isBar ? -1 : 1))
         const average = adjustments.reduce((accum, adjustment) => accum + adjustment, 0)/adjustments.length
         const normalized = adjustments.map(adj => adj - average)

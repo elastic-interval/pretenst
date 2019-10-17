@@ -35,11 +35,11 @@ declare global {
     }
 }
 
-export function TensegrityView({engine, buildFabric, features, annealStep$}: {
+export function TensegrityView({engine, buildFabric, features, pretensingStep$}: {
     engine: IFabricEngine,
     buildFabric: (name: string, codeTree: ICodeTree) => TensegrityFabric,
     features: IFeature[],
-    annealStep$: BehaviorSubject<number>,
+    pretensingStep$: BehaviorSubject<number>,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(LifePhase.Growing)
@@ -71,10 +71,10 @@ export function TensegrityView({engine, buildFabric, features, annealStep$}: {
 
     function PretenstButton(): JSX.Element {
 
-        const [annealStep, setAnnealStep] = useState(annealStep$.getValue())
+        const [pretensingStep, setPretensingStep] = useState(pretensingStep$.getValue())
 
         useEffect(() => {
-            const subscription = annealStep$.subscribe(setAnnealStep)
+            const subscription = pretensingStep$.subscribe(setPretensingStep)
             return () => subscription.unsubscribe()
         })
 
@@ -103,13 +103,13 @@ export function TensegrityView({engine, buildFabric, features, annealStep$}: {
                         disabled: false,
                         onClick: () => {
                             if (fabric) {
-                                setLifePhase(fabric.anneal())
+                                setLifePhase(fabric.pretensing())
                             }
                         },
                     }
-                case LifePhase.Annealing:
+                case LifePhase.Pretensing:
                     return {
-                        text: `Annealing ${annealStep}%`,
+                        text: `Pretensing ${pretensingStep}%`,
                         symbol: <FaHammer/>,
                         color: "secondary",
                         disabled: true,
@@ -152,7 +152,7 @@ export function TensegrityView({engine, buildFabric, features, annealStep$}: {
                             fabric={fabric}
                             lifePhase={lifePhase}
                             setLifePhase={setLifePhase}
-                            annealStep$={annealStep$}
+                            pretensingStep$={pretensingStep$}
                             selectedFace={selectedFace}
                             setSelectedFace={setSelectedFace}
                             autoRotate={autoRotate}

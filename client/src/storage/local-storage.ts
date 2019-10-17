@@ -111,9 +111,9 @@ function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
             return 0.3
         case PhysicsFeature.BusyCountdown:
             return 300.0
-        case PhysicsFeature.AnnealingCountdown:
+        case PhysicsFeature.PretensingCountdown:
             return 15000.0
-        case PhysicsFeature.AnnealingIntensity:
+        case PhysicsFeature.PretensingIntensity:
             return 5.0
         default:
             throw new Error("Bad physics feature")
@@ -185,9 +185,9 @@ export function featureMultiplier(physicsFeature: PhysicsFeature): PhysicsMultip
             return PhysicsMultiplier.Thousandths
         case PhysicsFeature.BusyCountdown:
             return PhysicsMultiplier.One
-        case PhysicsFeature.AnnealingCountdown:
+        case PhysicsFeature.PretensingCountdown:
             return PhysicsMultiplier.One
-        case PhysicsFeature.AnnealingIntensity:
+        case PhysicsFeature.PretensingIntensity:
             return PhysicsMultiplier.Thousandths
         default:
             throw new Error("Bad physics feature")

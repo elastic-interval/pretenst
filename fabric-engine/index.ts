@@ -29,8 +29,8 @@ export enum PhysicsFeature {
     PushElastic = 6,
     PullElastic = 7,
     BusyCountdown = 8,
-    AnnealingCountdown = 9,
-    AnnealingIntensity = 10,
+    PretensingCountdown = 9,
+    PretensingIntensity = 10,
 }
 
 enum IntervalRole {
@@ -46,7 +46,7 @@ enum IntervalRole {
 export enum LifePhase {
     Growing = 0,
     Slack = 1,
-    Annealing = 2,
+    Pretensing = 2,
     Pretenst = 3,
 }
 
@@ -353,8 +353,8 @@ let globalAntigravityBelow: f32
 let globalPushElasticFactor: f32
 let globalPullElasticFactor: f32
 let globalBusyCountdownMax: f32
-let globalAnnealingCountdownMax: f32
-let globalAnnealingIntensity: f32
+let globalPretensingCountdownMax: f32
+let globalPretensingIntensity: f32
 
 export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f32 {
     switch (globalFeature) {
@@ -376,10 +376,10 @@ export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f3
             return globalPullElasticFactor = value
         case PhysicsFeature.BusyCountdown:
             return globalBusyCountdownMax = value
-        case PhysicsFeature.AnnealingCountdown:
-            return globalAnnealingCountdownMax = value
-        case PhysicsFeature.AnnealingIntensity:
-            return globalAnnealingIntensity = value
+        case PhysicsFeature.PretensingCountdown:
+            return globalPretensingCountdownMax = value
+        case PhysicsFeature.PretensingIntensity:
+            return globalPretensingIntensity = value
         default:
             return 0
     }
@@ -599,9 +599,9 @@ function setFabricBusyCountdown(countdown: u16): void {
     setU16(_FABRIC_BUSY_COUNTDOWN, countdown)
 }
 
-function getAnnealingFactor(): f32 {
+function getPretensingFactor(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
-    return (globalAnnealingCountdownMax - <f32>fabricBusyCountdown) / globalAnnealingCountdownMax
+    return (globalPretensingCountdownMax - <f32>fabricBusyCountdown) / globalPretensingCountdownMax
 }
 
 function getPreviousState(): u8 {
@@ -650,8 +650,8 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
                 setIntervalStateLength(intervalIndex, REST_STATE, lengthNow)
             }
             break
-        case LifePhase.Annealing:
-            setFabricBusyCountdown(<u16>globalAnnealingCountdownMax)
+        case LifePhase.Pretensing:
+            setFabricBusyCountdown(<u16>globalPretensingCountdownMax)
             break
         case LifePhase.Pretenst:
             break
@@ -1072,7 +1072,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     let intervalRole = getIntervalRole(intervalIndex)
     let bar = intervalRole === IntervalRole.Bar
     let pretenst = getPretenst()
-    let pretenstFactor = <f32>1.0 + (bar ? (lifePhase === LifePhase.Annealing) ? pretenst * getAnnealingFactor() : pretenst : 0)
+    let pretenstFactor = <f32>1.0 + (bar ? (lifePhase === LifePhase.Pretensing) ? pretenst * getPretensingFactor() : pretenst : 0)
     let currentLength = interpolateCurrentLength(intervalIndex, state) * pretenstFactor
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
@@ -1084,7 +1084,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         case LifePhase.Slack:
             globalElasticFactor = bar ? INITIAL_BAR_ELASTIC : INITIAL_CABLE_ELASTIC
             break
-        case LifePhase.Annealing:
+        case LifePhase.Pretensing:
         case LifePhase.Pretenst:
             globalElasticFactor = bar ? globalPushElasticFactor : (strain < 0) ? 0 : globalPullElasticFactor
             break
@@ -1112,9 +1112,9 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase): void {
             altitude = JOINT_RADIUS * 2 // simulate far above
             dragAbove = 0.001
             break
-        case LifePhase.Annealing:
-            let annealingFactor = getAnnealingFactor()
-            gravityAbove = globalGravityAbove * annealingFactor * annealingFactor
+        case LifePhase.Pretensing:
+            let factor = getPretensingFactor()
+            gravityAbove = globalGravityAbove * factor * factor
             dragAbove = globalDragAbove
             break
         case LifePhase.Pretenst:
@@ -1175,7 +1175,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
             case LifePhase.Slack:
                 setVector(_velocity(jointIndex), _force(jointIndex))
                 break
-            case LifePhase.Annealing:
+            case LifePhase.Pretensing:
             case LifePhase.Pretenst:
                 addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
                 break
