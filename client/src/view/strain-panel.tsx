@@ -8,7 +8,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaSortAmountUp, FaYinYang } from "react-icons/all"
 
-import { immature, Limit } from "../fabric/fabric-engine"
+import { doNotTouch, Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./materials"
@@ -42,7 +42,7 @@ export function StrainPanel({fabric, bars, colorBars, colorCables}: {
 
     const min = Math.floor(minStrain * STRAIN_MULTIPLY)
     const max = Math.floor(maxStrain * STRAIN_MULTIPLY)
-    const zen = immature(fabric.lifePhase) || Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
+    const zen = doNotTouch(fabric.lifePhase) || Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
     const both = colorBars && colorCables
     const nativeColor = bars ? HOT_COLOR : COLD_COLOR
     const attenuated = bars !== colorBars

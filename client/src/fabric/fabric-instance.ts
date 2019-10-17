@@ -52,6 +52,11 @@ export class FabricInstance {
         return this.engine.setLifePhase(LifePhase.Growing, this.initialPretenst)
     }
 
+    public shaping(): LifePhase {
+        console.log("Shaping")
+        return this.engine.setLifePhase(LifePhase.Shaping, this.initialPretenst)
+    }
+
     public slack(): LifePhase {
         console.log("Slack")
         return this.engine.setLifePhase(LifePhase.Slack, 0)

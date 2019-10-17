@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -73,6 +74,10 @@ export class TensegrityFabric {
         const brick = createBrickOnOrigin(this, percentOrHundred())
         const executing: IActiveCode = {codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
+    }
+
+    public slack(): LifePhase {
+        return this.lifePhase = this.instance.slack()
     }
 
     public pretensing(): LifePhase {
@@ -270,7 +275,7 @@ export class TensegrityFabric {
                 }
             } else {
                 this.growth = undefined
-                this.lifePhase = this.instance.slack()
+                this.lifePhase = this.instance.shaping()
             }
         }
         return true
@@ -310,7 +315,7 @@ export class TensegrityFabric {
             intervals: this.intervals.map(interval => ({
                 joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
                 type: IntervalRole[interval.intervalRole],
-                strain: this.instance.strains[interval.index],
+                strain: this.instance.strains[interval.index] * (interval.isBar ? -1 : 1),
                 elastic: this.instance.elastics[interval.index],
             })),
         }
@@ -336,7 +341,7 @@ export class TensegrityFabric {
         const elastics = this.instance.elastics
         const intensity = this.pretensingIntensity
         const adjustments = this.intervals.map(interval => intensity * strains[interval.index] * (interval.isBar ? -1 : 1))
-        const average = adjustments.reduce((accum, adjustment) => accum + adjustment, 0)/adjustments.length
+        const average = adjustments.reduce((accum, adjustment) => accum + adjustment, 0) / adjustments.length
         const normalized = adjustments.map(adj => adj - average)
         this.intervals.forEach(interval => elastics[interval.index] *= 1 + normalized[interval.index])
     }

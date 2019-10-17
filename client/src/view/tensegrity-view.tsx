@@ -35,6 +35,14 @@ declare global {
     }
 }
 
+interface IButtonCharacter {
+    text: string,
+    color: string,
+    disabled: boolean,
+    symbol: JSX.Element,
+    onClick: () => void,
+}
+
 export function TensegrityView({engine, buildFabric, features, pretensingStep$}: {
     engine: IFabricEngine,
     buildFabric: (name: string, codeTree: ICodeTree) => TensegrityFabric,
@@ -78,26 +86,32 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
             return () => subscription.unsubscribe()
         })
 
-        function character(): {
-            text: string,
-            color: string,
-            disabled: boolean,
-            symbol: JSX.Element,
-            onClick: () => void,
-        } {
+        function character(): IButtonCharacter {
             switch (lifePhase) {
                 case LifePhase.Growing:
                     return {
                         text: "Growing...",
                         symbol: <FaSeedling/>,
-                        color: "secondary",
+                        color: "warning",
                         disabled: true,
                         onClick: () => {
                         },
                     }
+                case LifePhase.Shaping:
+                    return {
+                        text: "Shaping->Slack",
+                        symbol: <FaHammer/>,
+                        color: "success",
+                        disabled: false,
+                        onClick: () => {
+                            if (fabric) {
+                                setLifePhase(fabric.slack())
+                            }
+                        },
+                    }
                 case LifePhase.Slack:
                     return {
-                        text: "Slack",
+                        text: "Slack->Pretensing",
                         symbol: <FaYinYang/>,
                         color: "warning",
                         disabled: false,
@@ -111,7 +125,7 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
                     return {
                         text: `Pretensing ${pretensingStep}%`,
                         symbol: <FaHammer/>,
-                        color: "secondary",
+                        color: "warning",
                         disabled: true,
                         onClick: () => {
                         },
@@ -130,12 +144,14 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
                             buildFromCode()
                         },
                     }
+                default:
+                    throw new Error()
             }
         }
 
         const {text, symbol, color, disabled, onClick} = character()
         return (
-            <Button style={{width: "12em"}} color={color} disabled={disabled} onClick={onClick}>
+            <Button style={{width: "14em"}} color={color} disabled={disabled} onClick={onClick}>
                 {symbol} <span> {text}</span>
             </Button>
         )

@@ -27,7 +27,7 @@ import {
 } from "react-icons/all"
 import { Button, ButtonGroup, Navbar } from "reactstrap"
 
-import { LifePhase } from "../fabric/fabric-engine"
+import { doNotTouch, LifePhase } from "../fabric/fabric-engine"
 import { createConnectedBrick } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
@@ -101,8 +101,7 @@ export function TensegrityControlPanel(
         const style = {
             color: iconColor,
         }
-        const disabled = lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
-        return <Button style={style} disabled={disabled} color={color}
+        return <Button style={style} disabled={doNotTouch(lifePhase)} color={color}
                        onClick={onClick}>
             {bars && cables ? (<><FaHandPointUp/><span> Faces</span></>) :
                 bars ? (<><FaCircle/><span> Bars</span></>) : (<><FaDotCircle/><span> Cables</span></>)}

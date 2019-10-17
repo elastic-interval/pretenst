@@ -45,9 +45,10 @@ enum IntervalRole {
 
 export enum LifePhase {
     Growing = 0,
-    Slack = 1,
-    Pretensing = 2,
-    Pretenst = 3,
+    Shaping = 1,
+    Slack = 2,
+    Pretensing = 3,
+    Pretenst = 4,
 }
 
 const LAND: u8 = 1
@@ -642,6 +643,8 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             setCurrentState(REST_STATE)
             setNextState(REST_STATE)
             break
+        case LifePhase.Shaping:
+            break
         case LifePhase.Slack:
             let intervalCount = getIntervalCount()
             for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
@@ -971,7 +974,7 @@ function outputLinesGeometry(): void {
         let intervalRole = getIntervalRole(intervalIndex)
         let isBar: boolean = intervalRole === IntervalRole.Bar
         let strain = isBar ? -directionalStrain : directionalStrain
-        if (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack || colorBars && colorCables) {
+        if (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack || colorBars && colorCables) {
             let slack = strain < SLACK_THRESHOLD
             let color = slack ? SLACK_COLOR : isBar ? HOT_COLOR : COLD_COLOR
             setLineColor(intervalIndex, color[0], color[1], color[2])
@@ -1081,6 +1084,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     let globalElasticFactor: f32 = 0
     switch (lifePhase) {
         case LifePhase.Growing:
+        case LifePhase.Shaping:
         case LifePhase.Slack:
             globalElasticFactor = bar ? INITIAL_BAR_ELASTIC : INITIAL_CABLE_ELASTIC
             break
@@ -1107,6 +1111,7 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase): void {
     let dragAbove: f32 = 0
     switch (lifePhase) {
         case LifePhase.Growing:
+        case LifePhase.Shaping:
         case LifePhase.Slack:
             gravityAbove = 0
             altitude = JOINT_RADIUS * 2 // simulate far above
@@ -1172,6 +1177,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
         jointPhysics(jointIndex, lifePhase)
         switch (lifePhase) {
             case LifePhase.Growing:
+            case LifePhase.Shaping:
             case LifePhase.Slack:
                 setVector(_velocity(jointIndex), _force(jointIndex))
                 break
@@ -1217,7 +1223,7 @@ export function iterate(ticks: u16): boolean {
             return false
         }
     }
-    if (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack) {
+    if (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack) {
         setAltitude(JOINT_RADIUS)
     }
     return true

@@ -7,10 +7,10 @@ import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
-import { Euler, Object3D, Vector3 } from "three"
+import { Color, Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { immature, LifePhase, SLACK_THRESHOLD } from "../fabric/fabric-engine"
+import { doNotTouch, hideSurface, LifePhase, SLACK_THRESHOLD } from "../fabric/fabric-engine"
 import { AdjacentIntervals, bySelectedFace, IInterval, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -29,6 +29,10 @@ declare global {
         /* eslint-enable @typescript-eslint/interface-name-prefix */
     }
 }
+
+const SUN_POSITION = new Vector3(0, 600, 0)
+const HEMISPHERE_COLOR = new Color("white")
+const AMBIENT_COLOR = new Color("#bababa")
 
 const ITERATIONS_PER_FRAME = 24
 const TOWARDS_TARGET = 0.01
@@ -50,7 +54,6 @@ export function FabricView({
     fastMode: boolean,
     showFaces: boolean,
 }): JSX.Element {
-
     const [age, setAge] = useState(0)
     const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
     const {camera, raycaster} = useThree()
@@ -111,7 +114,7 @@ export function FabricView({
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (immature(lifePhase) || !downEvent || !mesh) {
+            if (doNotTouch(lifePhase) || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -213,7 +216,10 @@ export function FabricView({
                 )}
                 {showFaces ? <Faces/> : undefined}
                 <SelectedFace/>
-                {immature(lifePhase) ? undefined : <SurfaceComponent/>}
+                {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
+                <pointLight key="Sun" distance={1000} decay={0.01} position={SUN_POSITION}/>
+                <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+                <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
             </scene>
         </group>
     )
