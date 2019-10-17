@@ -270,7 +270,7 @@ export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
         } else if (oppositeCodeTree) {
             const decremented = oppositeCodeTree._ - 1
             const nextCodeTree = {...oppositeCodeTree, _: decremented}
-            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP, scale))
+            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.NNN, scale))
             maybeGrow(brick, Triangle.PNN, codeTree.A)
             maybeGrow(brick, Triangle.NPN, codeTree.B)
             maybeGrow(brick, Triangle.NNP, codeTree.C)
