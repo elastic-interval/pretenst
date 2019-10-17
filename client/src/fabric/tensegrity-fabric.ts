@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -68,6 +67,7 @@ export class TensegrityFabric {
         public readonly instance: FabricInstance,
         public readonly name: string,
         private annealingCountdownMax: number,
+        private annealingIntensity: number,
     ) {
         this.lifePhase = this.instance.growing()
         const brick = createBrickOnOrigin(this, percentOrHundred())
@@ -334,11 +334,11 @@ export class TensegrityFabric {
     private executeAnnealStep(): void {
         const strains = this.instance.strains
         const elastics = this.instance.elastics
-        this.intervals.forEach(interval => {
-            const strainFactor = interval.isBar ? -1 : 1
-            const adjustment = 1 + strains[interval.index] * strainFactor
-            elastics[interval.index] *= adjustment
-        })
+        const intensity = this.annealingIntensity
+        const adjustments = this.intervals.map(interval => intensity * strains[interval.index] * (interval.isBar ? -1 : 1))
+        const average = adjustments.reduce((accum, adjustment) => accum + adjustment, 0)/adjustments.length
+        const normalized = adjustments.map(adj => adj - average)
+        this.intervals.forEach(interval => elastics[interval.index] *= 1 + normalized[interval.index])
     }
 
     private get engine(): IFabricEngine {

@@ -94,7 +94,7 @@ export function roleLength(intervalRole: IntervalRole, scale: IPercent, defaultV
 function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
     switch (physicsFeature) {
         case PhysicsFeature.GravityAbove:
-            return 0.00001
+            return 0.000005
         case PhysicsFeature.AntigravityBelow:
             return -0.03
         case PhysicsFeature.AntigravityBelowWater:
@@ -113,6 +113,8 @@ function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
             return 300.0
         case PhysicsFeature.AnnealingCountdown:
             return 15000.0
+        case PhysicsFeature.AnnealingIntensity:
+            return 5.0
         default:
             throw new Error("Bad physics feature")
     }
@@ -124,6 +126,7 @@ export enum PhysicsMultiplier {
     NegativeThousandths,
     Millionths,
     NegativeMillionths,
+    Billionths,
 }
 
 export function multiplierValue(multiplier: PhysicsMultiplier): number {
@@ -138,6 +141,8 @@ export function multiplierValue(multiplier: PhysicsMultiplier): number {
             return 1000000
         case PhysicsMultiplier.NegativeMillionths:
             return -1000000
+        case PhysicsMultiplier.Billionths:
+            return 1000000000
         default:
             throw new Error("Bad multiplier")
     }
@@ -153,6 +158,8 @@ export function multiplierSymbol(multiplier: PhysicsMultiplier): string {
         case PhysicsMultiplier.Millionths:
         case PhysicsMultiplier.NegativeMillionths:
             return "\u03BC"
+        case PhysicsMultiplier.Billionths:
+            return "n"
         default:
             throw new Error("Bad multiplier")
     }
@@ -161,7 +168,7 @@ export function multiplierSymbol(multiplier: PhysicsMultiplier): string {
 export function featureMultiplier(physicsFeature: PhysicsFeature): PhysicsMultiplier {
     switch (physicsFeature) {
         case PhysicsFeature.GravityAbove:
-            return PhysicsMultiplier.Millionths
+            return PhysicsMultiplier.Billionths
         case PhysicsFeature.AntigravityBelow:
             return PhysicsMultiplier.NegativeMillionths
         case PhysicsFeature.AntigravityBelowWater:
@@ -180,6 +187,8 @@ export function featureMultiplier(physicsFeature: PhysicsFeature): PhysicsMultip
             return PhysicsMultiplier.One
         case PhysicsFeature.AnnealingCountdown:
             return PhysicsMultiplier.One
+        case PhysicsFeature.AnnealingIntensity:
+            return PhysicsMultiplier.Thousandths
         default:
             throw new Error("Bad physics feature")
     }

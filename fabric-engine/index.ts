@@ -30,6 +30,7 @@ export enum PhysicsFeature {
     PullElastic = 7,
     BusyCountdown = 8,
     AnnealingCountdown = 9,
+    AnnealingIntensity = 10,
 }
 
 enum IntervalRole {
@@ -353,6 +354,7 @@ let globalPushElasticFactor: f32
 let globalPullElasticFactor: f32
 let globalBusyCountdownMax: f32
 let globalAnnealingCountdownMax: f32
+let globalAnnealingIntensity: f32
 
 export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f32 {
     switch (globalFeature) {
@@ -376,6 +378,8 @@ export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f3
             return globalBusyCountdownMax = value
         case PhysicsFeature.AnnealingCountdown:
             return globalAnnealingCountdownMax = value
+        case PhysicsFeature.AnnealingIntensity:
+            return globalAnnealingIntensity = value
         default:
             return 0
     }
@@ -1110,7 +1114,7 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase): void {
             break
         case LifePhase.Annealing:
             let annealingFactor = getAnnealingFactor()
-            gravityAbove = globalGravityAbove * annealingFactor
+            gravityAbove = globalGravityAbove * annealingFactor * annealingFactor
             dragAbove = globalDragAbove
             break
         case LifePhase.Pretenst:
