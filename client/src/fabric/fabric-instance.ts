@@ -44,19 +44,23 @@ export class FabricInstance {
     }
 
     public growing(): LifePhase {
+        console.log("Growing")
         this.forgetDimensions()
         return this.engine.setLifePhase(LifePhase.Growing, this.initialPretenst)
     }
 
     public slack(): LifePhase {
+        console.log("Slack")
         return this.engine.setLifePhase(LifePhase.Slack, 0)
     }
 
     public anneal(): LifePhase {
+        console.log("Anneal")
         return this.engine.setLifePhase(LifePhase.Annealing, this.maturePretenst)
     }
 
     public pretenst(): LifePhase {
+        console.log("Pretenst")
         return this.engine.setLifePhase(LifePhase.Pretenst, this.maturePretenst)
     }
 

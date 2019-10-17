@@ -229,6 +229,9 @@ export class TensegrityFabric {
         }
         const growth = this.growth
         if (!growth) {
+            if (this.lifePhase === LifePhase.Annealing) {
+                this.lifePhase = this.instance.pretenst()
+            }
             return false
         }
         if (growth.growing.length > 0) {
@@ -241,11 +244,9 @@ export class TensegrityFabric {
                 switch (optimization) {
                     case "L":
                         optimizeFabric(this, false)
-                        engine.extendBusyCountdown(3)
                         break
                     case "H":
                         optimizeFabric(this, true)
-                        engine.extendBusyCountdown(2)
                         break
                     case "X":
                         growth.optimizationStack.push("Connect")

@@ -180,7 +180,7 @@ export function TensegrityControlPanel(
             <ButtonGroup style={{paddingLeft: "1em"}}>
                 <Button
                     color={lifePhase === LifePhase.Slack ? "success" : "secondary"}
-                    disabled={lifePhase !== LifePhase.Slack} onClick={() => setLifePhase(fabric.pretenst())}>
+                    disabled={lifePhase !== LifePhase.Slack} onClick={() => setLifePhase(fabric.anneal())}>
                     <FaYinYang/>
                     <span> Anneal</span>
                 </Button>

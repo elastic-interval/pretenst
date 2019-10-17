@@ -89,8 +89,6 @@ export interface IFabricEngine {
 
     setLifePhase(lifePhase: LifePhase, pretenst: number): LifePhase
 
-    extendBusyCountdown(factor: number): void
-
     getCurrentState(): FabricState
 
     getNextState(): FabricState
