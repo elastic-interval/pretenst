@@ -7,7 +7,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import {
     FaArrowDown,
-    FaArrowUp, FaBars,
+    FaArrowUp, FaBars, FaBiohazard,
     FaCircle,
     FaCompressArrowsAlt,
     FaCubes,
@@ -19,7 +19,7 @@ import {
     FaFileCsv,
     FaHandPointUp,
     FaListAlt,
-    FaParachuteBox,
+    FaParachuteBox, FaRadiationAlt,
     FaRunning,
     FaSun,
     FaSyncAlt,
@@ -28,7 +28,7 @@ import {
 import { Button, ButtonGroup, Navbar } from "reactstrap"
 
 import { doNotTouch, LifePhase } from "../fabric/fabric-engine"
-import { createConnectedBrick } from "../fabric/tensegrity-brick"
+import { createConnectedBrick, optimizeFabric } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
     bySelectedFace,
@@ -153,6 +153,7 @@ export function TensegrityControlPanel(
         )
     }
 
+    const engine = fabric.instance.engine
     return (
         <Navbar style={{borderStyle: "none"}}>
             <ButtonGroup>
@@ -195,17 +196,34 @@ export function TensegrityControlPanel(
                     </div>
                 )}
             </div>
-            <ButtonGroup style={{paddingLeft: "1em"}}>
-                <Button disabled={lifePhase !== LifePhase.Pretenst}
-                        onClick={() => fabric.instance.engine.setAltitude(10)}><FaParachuteBox/></Button>
-                <Button onClick={() => fabric.instance.engine.centralize()}><FaCompressArrowsAlt/></Button>
-                <Button onClick={() => setAutoRotate(!autoRotate)}><FaSyncAlt/></Button>
-                <Button onClick={() => setShowFeatures(!showFeatures)}><FaBars/></Button>
+            <ButtonGroup size="sm" style={{paddingLeft: "1em"}}>
+                <Button disabled={lifePhase !== LifePhase.Shaping} onClick={() => optimizeFabric(fabric, true)}>
+                    <FaBiohazard/>
+                </Button>
+                <Button disabled={lifePhase !== LifePhase.Shaping} onClick={() => optimizeFabric(fabric, false)}>
+                    <FaRadiationAlt/>
+                </Button>
+                <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => engine.setAltitude(10)}>
+                    <FaParachuteBox/>
+                </Button>
+                <Button onClick={() => fabric.instance.engine.centralize()}>
+                    <FaCompressArrowsAlt/>
+                </Button>
+                <Button onClick={() => setAutoRotate(!autoRotate)}>
+                    <FaSyncAlt/>
+                </Button>
+                <Button onClick={() => setShowFeatures(!showFeatures)}>
+                    <FaBars/>
+                </Button>
                 <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
                     <FaRunning/>
                 </Button>
-                <Button onClick={() => saveCSVFiles(fabric)}><FaFileCsv/></Button>
-                <Button onClick={() => saveOBJFile(fabric)}><FaCubes/></Button>
+                <Button onClick={() => saveCSVFiles(fabric)}>
+                    <FaFileCsv/>
+                </Button>
+                <Button onClick={() => saveOBJFile(fabric)}>
+                    <FaCubes/>
+                </Button>
             </ButtonGroup>
         </Navbar>
     )

@@ -9,7 +9,6 @@ import { BehaviorSubject } from "rxjs"
 import { physicsValue, roleLength, setFeature } from "../storage/local-storage"
 
 import { IFabricEngine, IntervalRole, PhysicsFeature } from "./fabric-engine"
-import { percentOrHundred } from "./tensegrity-brick-types"
 
 interface IFeatureName {
     physicsFeature?: PhysicsFeature
@@ -47,7 +46,7 @@ export interface IFeature {
 
 export function getFeatureValue(name: IFeatureName, defaultValue?: boolean): number {
     if (name.intervalRole !== undefined) {
-        return roleLength(name.intervalRole, percentOrHundred(), defaultValue)
+        return roleLength(name.intervalRole, defaultValue)
     }
     if (name.physicsFeature !== undefined) {
         return physicsValue(name.physicsFeature, defaultValue)

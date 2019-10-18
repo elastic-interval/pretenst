@@ -34,7 +34,7 @@ const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
 
-const ITERATIONS_PER_FRAME = 24
+const ITERATIONS_PER_FRAME = 100
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
 const BAR_GIRTH = 0.3
@@ -104,6 +104,23 @@ export function FabricView({
                 position={fabric.instance.getFaceMidpoint(selectedFace.face.index)}
                 material={FACE_SPHERE}
             />
+        )
+    }
+
+    function SubmergedJoints(): JSX.Element {
+        const submerged = fabric.submergedJoints
+        return (
+            <group>
+                {submerged.map(joint => (
+                    <mesh
+                        key={`SJ${joint.index}`}
+                        geometry={SPHERE}
+                        position={fabric.instance.getJointLocation(joint.index)}
+                        material={FACE_SPHERE}
+                        scale={new Vector3(0.1, 0.1, 0.1)}
+                    />
+                ))}
+            </group>
         )
     }
 
@@ -216,6 +233,7 @@ export function FabricView({
                 )}
                 {showFaces ? <Faces/> : undefined}
                 <SelectedFace/>
+                <SubmergedJoints/>
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={1000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>

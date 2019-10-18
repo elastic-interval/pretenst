@@ -42,6 +42,7 @@ export interface IInterval {
     isBar: boolean
     removed: boolean
     intervalRole: IntervalRole
+    scale: IPercent
     alpha: IJoint
     omega: IJoint
 }

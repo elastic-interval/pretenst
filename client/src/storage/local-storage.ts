@@ -4,7 +4,7 @@
  */
 
 import { IntervalRole, PhysicsFeature } from "../fabric/fabric-engine"
-import { codeTreeToString, ICodeTree, IPercent, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { codeTreeToString, ICodeTree } from "../fabric/tensegrity-brick-types"
 
 const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
@@ -76,13 +76,12 @@ function defaultRoleLength(intervalRole: IntervalRole): number {
     }
 }
 
-export function roleLength(intervalRole: IntervalRole, scale: IPercent, defaultValue?: boolean): number {
-    const scaleFactor = percentToFactor(scale)
+export function roleLength(intervalRole: IntervalRole, defaultValue?: boolean): number {
     if (defaultValue) {
-        return scaleFactor * defaultRoleLength(intervalRole)
+        return defaultRoleLength(intervalRole)
     }
-    const value =localStorage.getItem(IntervalRole[intervalRole])
-    return scaleFactor * (value ? parseFloat(value) : defaultRoleLength(intervalRole))
+    const value = localStorage.getItem(IntervalRole[intervalRole])
+    return (value ? parseFloat(value) : defaultRoleLength(intervalRole))
 }
 
 function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {

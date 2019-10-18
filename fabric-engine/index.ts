@@ -1090,7 +1090,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             break
         case LifePhase.Pretensing:
         case LifePhase.Pretenst:
-            globalElasticFactor = bar ? globalPushElasticFactor : (strain < 0) ? 0 : globalPullElasticFactor
+            globalElasticFactor = bar ? 1 : (strain < 0) ? 0 : 1
             break
     }
     let force = strain * elasticFactor * globalElasticFactor

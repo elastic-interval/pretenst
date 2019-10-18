@@ -1,10 +1,11 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
+
+import { roleLength } from "../storage/local-storage"
 
 import { IFabricEngine, IntervalRole, Laterality, LifePhase } from "./fabric-engine"
 import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
@@ -20,11 +21,23 @@ import {
     IIntervalSplit,
     IJoint,
     intervalSplitter,
+    IPercent,
     JointTag,
     percentOrHundred,
+    percentToFactor,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
+
+interface IOutputInterval {
+    joints: string,
+    type: string,
+    strainString: string,
+    elastic: number,
+    elasticString: string,
+    isBar: boolean,
+    role: string,
+}
 
 export interface IFabricOutput {
     name: string
@@ -34,12 +47,7 @@ export interface IFabricOutput {
         y: string,
         z: string,
     }[]
-    intervals: {
-        joints: string,
-        type: string,
-        strain: number,
-        elastic: number,
-    }[]
+    intervals: IOutputInterval[]
 }
 
 export const SPHERE_RADIUS = 0.35
@@ -147,17 +155,20 @@ export class TensegrityFabric {
         return this.engine.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
-    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, restLength: number, elasticFactor: number): IInterval {
-        const index = this.engine.createInterval(
-            alpha.index, omega.index,
-            intervalRole, restLength, elasticFactor,
-        )
-        const interval = <IInterval>{
+    public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent): IInterval {
+        const scaleFactor = percentToFactor(scale)
+        const restLength = scaleFactor * roleLength(intervalRole)
+        const isBar = intervalRole === IntervalRole.Bar
+        const globalElasticFactor = isBar ? 1.2 : 0.3 // must match the WASM
+        const elasticFactor = scaleFactor * globalElasticFactor
+        const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticFactor)
+        const interval: IInterval = {
             index,
             intervalRole,
+            scale,
             alpha, omega,
             removed: false,
-            isBar: intervalRole === IntervalRole.Bar,
+            isBar,
         }
         this.intervals.push(interval)
         return interval
@@ -300,7 +311,9 @@ export class TensegrityFabric {
     }
 
     public get output(): IFabricOutput {
-        const numberToString = (n: number) => n.toFixed(5).replace(".", ",")
+        const numberToString = (n: number) => n.toFixed(5)
+        const strains = this.instance.strains
+        const elastics = this.instance.elastics
         return {
             name: this.name,
             joints: this.joints.map(joint => {
@@ -312,12 +325,33 @@ export class TensegrityFabric {
                     z: numberToString(vector.y),
                 }
             }),
-            intervals: this.intervals.map(interval => ({
-                joints: `${interval.alpha.index + 1},${interval.omega.index + 1}`,
-                type: IntervalRole[interval.intervalRole],
-                strain: this.instance.strains[interval.index] * (interval.isBar ? -1 : 1),
-                elastic: this.instance.elastics[interval.index],
-            })),
+            intervals: this.intervals.map(interval => {
+                const joints = `${interval.alpha.index + 1},${interval.omega.index + 1}`
+                const strainString = numberToString(strains[interval.index])
+                const type = interval.isBar ? "Bar" : "Cable"
+                const elastic = elastics[interval.index]
+                const elasticString = numberToString(elastic)
+                const role = IntervalRole[interval.intervalRole]
+                const isBar = interval.isBar
+                const outputInterval: IOutputInterval = {
+                    joints,
+                    type,
+                    strainString,
+                    elastic,
+                    elasticString,
+                    isBar,
+                    role,
+                }
+                return outputInterval
+            }).sort((a, b) => {
+                if (a.isBar && !b.isBar) {
+                    return -1
+                }
+                if (!a.isBar && b.isBar) {
+                    return 1
+                }
+                return a.elastic - b.elastic
+            }),
         }
     }
 
@@ -340,10 +374,35 @@ export class TensegrityFabric {
         const strains = this.instance.strains
         const elastics = this.instance.elastics
         const intensity = this.pretensingIntensity
-        const adjustments = this.intervals.map(interval => intensity * strains[interval.index] * (interval.isBar ? -1 : 1))
-        const average = adjustments.reduce((accum, adjustment) => accum + adjustment, 0) / adjustments.length
-        const normalized = adjustments.map(adj => adj - average)
-        this.intervals.forEach(interval => elastics[interval.index] *= 1 + normalized[interval.index])
+        let barCount = 0
+        let cableCount = 0
+        let totalBarAdjustment = 0
+        let totalCableAdjustment = 0
+        this.intervals.forEach(interval => {
+            const strain = strains[interval.index]
+            const adjustment = strain
+            if (interval.isBar) {
+                totalBarAdjustment += adjustment
+                barCount++
+            } else {
+                totalCableAdjustment += adjustment
+                cableCount++
+            }
+        })
+        const averageBarAdjustment = totalBarAdjustment / barCount
+        const averageCableAdjustment = totalCableAdjustment / cableCount
+        this.intervals.forEach(interval => {
+            const strain = strains[interval.index]
+            const adjustment = strain * intensity
+            if (interval.isBar) {
+                elastics[interval.index] *= 1 - (adjustment - averageCableAdjustment)
+            } else {
+                elastics[interval.index] *= 1 - (adjustment - averageBarAdjustment)
+            }
+            if (interval.index % 151 === 0) {
+                console.log("elastic", elastics[interval.index].toFixed(5))
+            }
+        })
     }
 
     private get engine(): IFabricEngine {

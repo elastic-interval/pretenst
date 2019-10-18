@@ -21,13 +21,14 @@ function extractJointBlob(output: IFabricOutput): Blob {
 
 function extractIntervalBlob(output: IFabricOutput): Blob {
     const csvIntervals: string[][] = []
-    csvIntervals.push(["joints", "type", "strain", "elastic"])
+    csvIntervals.push(["joints", "type", "strain", "elastic", "role"])
     output.intervals.forEach(interval => {
         csvIntervals.push([
             `"=""${interval.joints}"""`,
             interval.type,
-            interval.strain.toFixed(5),
-            interval.elastic.toFixed(3),
+            interval.strainString,
+            interval.elasticString,
+            interval.role,
         ])
     })
     const intervalsFile = csvIntervals.map(a => a.join(";")).join("\n")
@@ -37,7 +38,7 @@ function extractIntervalBlob(output: IFabricOutput): Blob {
 function extractSubmergedJointBlob(fabric: TensegrityFabric): Blob {
     const csvSubmerged: string[][] = []
     csvSubmerged.push(["joints"])
-    csvSubmerged.push([`"=""${fabric.submergedJoints.map(joint => joint.index)}"""`])
+    csvSubmerged.push([`"=""${fabric.submergedJoints.map(joint => joint.index + 1)}"""`])
     const submergedFile = csvSubmerged.map(a => a.join(";")).join("\n")
     return new Blob([submergedFile], {type: "application/csv"})
 }
