@@ -15,7 +15,6 @@ import { IFabricEngine, LifePhase } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
 import { ICodeTree, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { showFeatures } from "../storage/local-storage"
 
 import { CodePanel, ICode } from "./code-panel"
 import { FabricView } from "./fabric-view"
@@ -51,6 +50,7 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(LifePhase.Growing)
+    const [showFeatures, setShowFeatures] = useState(false)
     const [showFaces, setShowFaces] = useState(true)
     const [autoRotate, setAutoRotate] = useState(false)
     const [fastMode, setFastMode] = useState(true)
@@ -176,7 +176,7 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
                             showFaces={showFaces}
                         />
                     </Canvas>
-                    {!showFeatures() ? undefined : (
+                    {!showFeatures ? undefined : (
                         <FeaturePanel
                             featureSet={features}
                             engine={engine}
@@ -198,7 +198,10 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
                             autoRotate={autoRotate}
                             setAutoRotate={setAutoRotate}
                             fastMode={fastMode}
-                            setFastMode={setFastMode}>
+                            setFastMode={setFastMode}
+                            showFeatures={showFeatures}
+                            setShowFeatures={setShowFeatures}
+                        >
                             <PretenstButton/>
                         </TensegrityControlPanel>
                     </div>

@@ -7,7 +7,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import {
     FaArrowDown,
-    FaArrowUp,
+    FaArrowUp, FaBars,
     FaCircle,
     FaCompressArrowsAlt,
     FaCubes,
@@ -53,13 +53,15 @@ interface IControlPanel {
     setAutoRotate: (autoRotate: boolean) => void,
     fastMode: boolean,
     setFastMode: (fastMode: boolean) => void,
+    showFeatures: boolean,
+    setShowFeatures: (showFeatures: boolean) => void
     children: (JSX.Element | undefined)[] | JSX.Element | string,
 }
 
 export function TensegrityControlPanel(
     {
         fabric, clearFabric, setShowFaces, selectedFace, setSelectedFace,
-        autoRotate, setAutoRotate, fastMode, setFastMode, children,
+        autoRotate, setAutoRotate, fastMode, setFastMode, showFeatures, setShowFeatures, children,
     }: IControlPanel): JSX.Element {
 
     const lifePhase = fabric.lifePhase
@@ -198,11 +200,10 @@ export function TensegrityControlPanel(
                         onClick={() => fabric.instance.engine.setAltitude(10)}><FaParachuteBox/></Button>
                 <Button onClick={() => fabric.instance.engine.centralize()}><FaCompressArrowsAlt/></Button>
                 <Button onClick={() => setAutoRotate(!autoRotate)}><FaSyncAlt/></Button>
+                <Button onClick={() => setShowFeatures(!showFeatures)}><FaBars/></Button>
                 <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
                     <FaRunning/>
                 </Button>
-            </ButtonGroup>
-            <ButtonGroup style={{paddingLeft: "1em"}}>
                 <Button onClick={() => saveCSVFiles(fabric)}><FaFileCsv/></Button>
                 <Button onClick={() => saveOBJFile(fabric)}><FaCubes/></Button>
             </ButtonGroup>

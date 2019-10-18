@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -9,11 +8,6 @@ import { codeTreeToString, ICodeTree, IPercent, percentToFactor } from "../fabri
 
 const FABRIC_CODE_KEY = "FabricCode"
 const STORAGE_INDEX_KEY = "StorageIndex"
-const SHOW_FEATURES_KEY = "ShowFeatures"
-
-export function showFeatures(): boolean {
-    return localStorage.getItem(SHOW_FEATURES_KEY) === true.toString()
-}
 
 async function getBootstrapCodeTrees(): Promise<ICodeTree[]> {
     const response = await fetch("/bootstrap.json")
@@ -87,7 +81,7 @@ export function roleLength(intervalRole: IntervalRole, scale: IPercent, defaultV
     if (defaultValue) {
         return scaleFactor * defaultRoleLength(intervalRole)
     }
-    const value = showFeatures() ? localStorage.getItem(IntervalRole[intervalRole]) : undefined
+    const value =localStorage.getItem(IntervalRole[intervalRole])
     return scaleFactor * (value ? parseFloat(value) : defaultRoleLength(intervalRole))
 }
 
@@ -198,7 +192,7 @@ export function physicsValue(physicsFeature: PhysicsFeature, defaultValue?: bool
     if (defaultValue) {
         return defaultPhysicsValue(physicsFeature)
     }
-    const value = showFeatures() ? localStorage.getItem(PhysicsFeature[physicsFeature]) : undefined
+    const value = localStorage.getItem(PhysicsFeature[physicsFeature])
     return value ? parseFloat(value) : defaultPhysicsValue(physicsFeature)
 }
 
