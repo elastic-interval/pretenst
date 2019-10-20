@@ -311,7 +311,7 @@ export class TensegrityFabric {
     }
 
     public get output(): IFabricOutput {
-        const numberToString = (n: number) => n.toFixed(5)
+        const numberToString = (n: number) => n.toFixed(5).replace(/[.]/, ",")
         const strains = this.instance.strains
         const elastics = this.instance.elastics
         return {
@@ -380,7 +380,7 @@ export class TensegrityFabric {
         let totalCableAdjustment = 0
         this.intervals.forEach(interval => {
             const strain = strains[interval.index]
-            const adjustment = strain
+            const adjustment = strain * intensity
             if (interval.isBar) {
                 totalBarAdjustment += adjustment
                 barCount++
@@ -389,18 +389,16 @@ export class TensegrityFabric {
                 cableCount++
             }
         })
+        // todo: maybe use median instead of average
         const averageBarAdjustment = totalBarAdjustment / barCount
         const averageCableAdjustment = totalCableAdjustment / cableCount
         this.intervals.forEach(interval => {
             const strain = strains[interval.index]
-            const adjustment = strain * intensity
+            const adjustment = strain * intensity - (interval.isBar ? averageBarAdjustment : averageCableAdjustment)
             if (interval.isBar) {
-                elastics[interval.index] *= 1 - (adjustment - averageCableAdjustment)
+                elastics[interval.index] *= 1 - adjustment
             } else {
-                elastics[interval.index] *= 1 - (adjustment - averageBarAdjustment)
-            }
-            if (interval.index % 151 === 0) {
-                console.log("elastic", elastics[interval.index].toFixed(5))
+                elastics[interval.index] *= 1 + adjustment
             }
         })
     }

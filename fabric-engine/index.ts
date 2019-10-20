@@ -309,14 +309,14 @@ const _JOINT_COUNT = _X + sizeof<f32>() * 3
 const _INTERVAL_COUNT = _JOINT_COUNT + sizeof<u16>()
 const _FACE_COUNT = _INTERVAL_COUNT + sizeof<u16>()
 const _FABRIC_BUSY_COUNTDOWN = _FACE_COUNT + sizeof<u16>()
-const _PREVIOUS_STATE = _FABRIC_BUSY_COUNTDOWN + sizeof<u16>()
+const _PREVIOUS_STATE = _FABRIC_BUSY_COUNTDOWN + sizeof<u32>()
 const _CURRENT_STATE = _PREVIOUS_STATE + sizeof<u16>()
 const _NEXT_STATE = _CURRENT_STATE + sizeof<u16>()
 const _FABRIC_END = _NEXT_STATE + sizeof<u16>()
 
 // INSTANCES
 
-const FABRIC_SIZE: usize = _FABRIC_END // may need alignment
+const FABRIC_SIZE: usize = _FABRIC_END + sizeof<u16>() // may need alignment
 
 let instance: u16 = 0
 let _instance: usize = 0
@@ -592,15 +592,15 @@ function setFaceCount(value: u16): void {
     setU16(_FACE_COUNT, value)
 }
 
-function getFabricBusyCountdown(): u16 {
-    return getU16(_FABRIC_BUSY_COUNTDOWN)
+function getFabricBusyCountdown(): u32 {
+    return getU32(_FABRIC_BUSY_COUNTDOWN)
 }
 
-function setFabricBusyCountdown(countdown: u16): void {
-    setU16(_FABRIC_BUSY_COUNTDOWN, countdown)
+function setFabricBusyCountdown(countdown: u32): void {
+    setU32(_FABRIC_BUSY_COUNTDOWN, countdown)
 }
 
-function getPretensingFactor(): f32 {
+function getPretensingNuance(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
     return (globalPretensingCountdownMax - <f32>fabricBusyCountdown) / globalPretensingCountdownMax
 }
@@ -654,7 +654,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             }
             break
         case LifePhase.Pretensing:
-            setFabricBusyCountdown(<u16>globalPretensingCountdownMax)
+            setFabricBusyCountdown(<u32>globalPretensingCountdownMax)
             break
         case LifePhase.Pretenst:
             break
@@ -716,7 +716,8 @@ export function centralize(): void {
     }
 }
 
-export function setAltitude(altitude: f32): f32 {
+export function setAltitude(altitude: f32, countdown: u32): f32 {
+    setFabricBusyCountdown(countdown)
     altitude += JOINT_RADIUS
     let jointCount = getJointCount()
     let lowY: f32 = 10000
@@ -1074,9 +1075,11 @@ export function removeFace(deadFaceIndex: u16): void {
 function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let bar = intervalRole === IntervalRole.Bar
-    let pretenst = getPretenst()
-    let pretenstFactor = <f32>1.0 + (bar ? (lifePhase === LifePhase.Pretensing) ? pretenst * getPretensingFactor() : pretenst : 0)
-    let currentLength = interpolateCurrentLength(intervalIndex, state) * pretenstFactor
+    let pretenst: f32 = bar ? getPretenst(): 0
+    if (lifePhase === LifePhase.Pretensing) {
+        pretenst *= getPretensingNuance()
+    }
+    let currentLength = interpolateCurrentLength(intervalIndex, state) * (1 + pretenst)
     let elasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     let strain = displacement / currentLength
@@ -1090,7 +1093,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             break
         case LifePhase.Pretensing:
         case LifePhase.Pretenst:
-            globalElasticFactor = bar ? 1 : (strain < 0) ? 0 : 1
+            globalElasticFactor = bar ? globalPushElasticFactor : (strain < 0) ? 0 : globalPullElasticFactor
             break
     }
     let force = strain * elasticFactor * globalElasticFactor
@@ -1118,12 +1121,14 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase): void {
             dragAbove = 0.001
             break
         case LifePhase.Pretensing:
-            let factor = getPretensingFactor()
+            let factor = getPretensingNuance()
             gravityAbove = globalGravityAbove * factor * factor
             dragAbove = globalDragAbove
             break
         case LifePhase.Pretenst:
-            gravityAbove = globalGravityAbove
+            if (getFabricBusyCountdown() === 0) {
+                gravityAbove = globalGravityAbove
+            }
             dragAbove = globalDragAbove
             break
     }
@@ -1209,12 +1214,12 @@ export function iterate(ticks: u16): boolean {
         outputFaceGeometry(faceIndex)
     }
     calculateJointMidpoint()
-    if (maxIntervalBusyCountdown === 0) {
-        let fabricBusyCountdown = getFabricBusyCountdown()
+    let fabricBusyCountdown = getFabricBusyCountdown()
+    if (maxIntervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
         if (fabricBusyCountdown === 0) {
             return false
         }
-        let nextCountdown: u16 = fabricBusyCountdown - ticks
+        let nextCountdown: u32 = fabricBusyCountdown - ticks
         if (nextCountdown > fabricBusyCountdown) { // rollover
             nextCountdown = 0
         }
@@ -1224,7 +1229,7 @@ export function iterate(ticks: u16): boolean {
         }
     }
     if (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack) {
-        setAltitude(JOINT_RADIUS)
+        setAltitude(JOINT_RADIUS, 0)
     }
     return true
 }

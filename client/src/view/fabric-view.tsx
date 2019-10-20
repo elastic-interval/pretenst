@@ -34,7 +34,7 @@ const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
 
-const ITERATIONS_PER_FRAME = 100
+const ITERATIONS_PER_FRAME = 50
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
 const BAR_GIRTH = 0.3

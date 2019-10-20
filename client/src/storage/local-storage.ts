@@ -62,7 +62,7 @@ function defaultRoleLength(intervalRole: IntervalRole): number {
         case IntervalRole.Triangle:
             return 2.123
         case IntervalRole.Ring:
-            return 1.775
+            return 1.440
         case IntervalRole.Cross:
             return 1.583
         case IntervalRole.BowMid:
@@ -99,13 +99,13 @@ function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
         case PhysicsFeature.DragBelowWater:
             return 0.001
         case PhysicsFeature.PushElastic:
-            return 1.2
+            return 1
         case PhysicsFeature.PullElastic:
-            return 0.3
+            return 1
         case PhysicsFeature.BusyCountdown:
             return 300.0
         case PhysicsFeature.PretensingCountdown:
-            return 15000.0
+            return 50000.0
         case PhysicsFeature.PretensingIntensity:
             return 5.0
         default:
@@ -114,6 +114,7 @@ function defaultPhysicsValue(physicsFeature: PhysicsFeature): number {
 }
 
 export enum PhysicsMultiplier {
+    OneThousand,
     One,
     Thousandths,
     NegativeThousandths,
@@ -124,6 +125,8 @@ export enum PhysicsMultiplier {
 
 export function multiplierValue(multiplier: PhysicsMultiplier): number {
     switch (multiplier) {
+        case PhysicsMultiplier.OneThousand:
+            return 1/1000.0
         case PhysicsMultiplier.One:
             return 1
         case PhysicsMultiplier.Thousandths:
@@ -143,6 +146,8 @@ export function multiplierValue(multiplier: PhysicsMultiplier): number {
 
 export function multiplierSymbol(multiplier: PhysicsMultiplier): string {
     switch (multiplier) {
+        case PhysicsMultiplier.OneThousand:
+            return "k"
         case PhysicsMultiplier.One:
             return ""
         case PhysicsMultiplier.NegativeThousandths:
@@ -179,9 +184,9 @@ export function featureMultiplier(physicsFeature: PhysicsFeature): PhysicsMultip
         case PhysicsFeature.BusyCountdown:
             return PhysicsMultiplier.One
         case PhysicsFeature.PretensingCountdown:
-            return PhysicsMultiplier.One
+            return PhysicsMultiplier.OneThousand
         case PhysicsFeature.PretensingIntensity:
-            return PhysicsMultiplier.Thousandths
+            return PhysicsMultiplier.One
         default:
             throw new Error("Bad physics feature")
     }

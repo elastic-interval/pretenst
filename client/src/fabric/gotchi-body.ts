@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -211,7 +210,7 @@ export class GotchiBody {
     }
 
     public setAltitude(altitude: number): number {
-        return this.engine.setAltitude(altitude)
+        return this.engine.setAltitude(altitude, 0)
     }
 
     public unfold(faceIndex: number, jointNumber: number): FaceSnapshot [] {
