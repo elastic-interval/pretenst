@@ -11,7 +11,7 @@ export enum LifePhase {
     Pretenst = 4,
 }
 
-export function doNotTouch(lifePhase: LifePhase): boolean {
+export function doNotClick(lifePhase: LifePhase): boolean {
     return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
 }
 

@@ -30,7 +30,7 @@ import {
 } from "react-icons/all"
 import { Button, ButtonGroup, Navbar } from "reactstrap"
 
-import { doNotTouch, LifePhase } from "../fabric/life-phase"
+import { LifePhase } from "../fabric/life-phase"
 import { createConnectedBrick, optimizeFabric } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
@@ -100,9 +100,9 @@ export function TensegrityControlPanel(
             }
         }
         const color = bars === colorBars && cables === colorCables ? "success" : "secondary"
-        return <Button style={{color: "white"}} disabled={doNotTouch(lifePhase)} color={color} onClick={onClick}>
-            {bars && cables ? (<><FaHandPointUp/><span> Faces</span></>) :
-                bars ? (<><FaCircle/><span> Bars</span></>) : (<><FaDotCircle/><span> Cables</span></>)}
+        return <Button style={{color: "white"}} color={color} onClick={onClick}>
+            {bars && cables ? (<><FaHandPointUp/><span> Edit</span></>) :
+                bars ? (<><FaCircle/><span> Pushes </span></>) : (<><span> Pulls </span><FaDotCircle/></>)}
         </Button>
     }
 
@@ -156,9 +156,9 @@ export function TensegrityControlPanel(
                 {children}
             </ButtonGroup>
             <ButtonGroup style={{paddingLeft: "1em"}}>
-                <Button onClick={clearFabric}><FaListAlt/> Choose</Button>
+                <Button onClick={clearFabric}><FaListAlt/> Programs</Button>
             </ButtonGroup>
-            <div style={{display: "flex", paddingLeft: "2em"}}>
+            <div style={{display: "inline-flex", alignContent: "center"}}>
                 {selectedFace ? (
                     <ButtonGroup style={{paddingLeft: "0.6em", width: "40em"}}>
                         <Button disabled={!selectedFace.face.canGrow} onClick={() => grow(selectedFace.face)}>
@@ -179,17 +179,22 @@ export function TensegrityControlPanel(
                         ))}
                     </ButtonGroup>
                 ) : (
-                    <div style={{display: "flex", width: "40em"}}>
-                        <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
-                            <ViewButton bars={true} cables={false}/>
-                            <StrainPanel fabric={fabric} bars={true} colorBars={colorBars} colorCables={colorCables}/>
+                    <div style={{
+                        display: "flex",
+                        backgroundColor: "#5f5f5f",
+                        padding: "0.5em",
+                        borderRadius: "1.5em",
+                    }}>
+                        <ButtonGroup style={{display: "flex"}}>
+                            <StrainPanel fabric={fabric} bars={false} colorBars={colorBars} colorCables={colorCables}/>
+                            <ViewButton bars={false} cables={true}/>
                         </ButtonGroup>
-                        <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
+                        <ButtonGroup style={{paddingLeft: "0.4em", display: "flex"}}>
                             <ViewButton bars={true} cables={true}/>
                         </ButtonGroup>
-                        <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
-                            <ViewButton bars={false} cables={true}/>
-                            <StrainPanel fabric={fabric} bars={false} colorBars={colorBars} colorCables={colorCables}/>
+                        <ButtonGroup style={{paddingLeft: "0.4em", display: "flex"}}>
+                            <ViewButton bars={true} cables={false}/>
+                            <StrainPanel fabric={fabric} bars={true} colorBars={colorBars} colorCables={colorCables}/>
                         </ButtonGroup>
                     </div>
                 )}

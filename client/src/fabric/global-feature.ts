@@ -1,6 +1,8 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
+ * something extra so it can compile
  */
 
 import { GlobalFeature } from "./fabric-engine"
@@ -78,7 +80,7 @@ export const GLOBAL_FEATURE: IGlobalFeature[] = [
     {
         feature: GlobalFeature.DragAbove,
         name: "DragAbove",
-        defaultValue: 0.001,
+        defaultValue: 0.0001,
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 1,
     },
@@ -137,5 +139,12 @@ export const GLOBAL_FEATURE: IGlobalFeature[] = [
         defaultValue: 5.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 2,
+    },
+    {
+        feature: GlobalFeature.TicksPerFrame,
+        name: "TicksPerFrame",
+        defaultValue: 50.0,
+        multiplier: FeatureMultiplier.One,
+        fixedDigits: 0,
     },
 ]

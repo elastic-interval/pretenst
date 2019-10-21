@@ -15,9 +15,10 @@ const JOINT_RADIUS: f32 = 0.1
 const AMBIENT_JOINT_MASS: f32 = 0.1
 const BAR_MASS_PER_LENGTH: f32 = 1
 const CABLE_MASS_PER_LENGTH: f32 = 0.01
-const SLACK_THRESHOLD: f32 = 0.0001
+const SLACK_THRESHOLD: f32 = 0.01
 const INITIAL_BAR_ELASTIC: f32 = 1.2
 const INITIAL_CABLE_ELASTIC: f32 = 0.3
+const DRAG_ABOVE: f32 = 0.0001
 
 export enum GlobalFeature {
     GravityAbove = 0,
@@ -30,6 +31,7 @@ export enum GlobalFeature {
     IntervalBusyTicks = 7,
     PretensingTicks = 8,
     PretensingIntensity = 9,
+    TicksPerFrame = 10,
 }
 
 enum IntervalRole {
@@ -314,7 +316,8 @@ const _PUSH_OVER_PULL = _DRAG_BELOW_WATER + sizeof<f32>()
 const _INTERVAL_BUSY_TICKS = _PUSH_OVER_PULL + sizeof<f32>()
 const _PRETENSING_TICKS = _INTERVAL_BUSY_TICKS + sizeof<f32>()
 const _PRETENSING_INTENSITY = _PRETENSING_TICKS + sizeof<f32>()
-const _LIFE_PHASE = _PRETENSING_INTENSITY + sizeof<f32>()
+const _TICKS_PER_FRAME = _PRETENSING_INTENSITY + sizeof<f32>()
+const _LIFE_PHASE = _TICKS_PER_FRAME + sizeof<f32>()
 const _A = _LIFE_PHASE + sizeof<u16>()
 const _B = _A + sizeof<f32>() * 3
 const _X = _B + sizeof<f32>() * 3
@@ -885,7 +888,7 @@ enum Limit {
     MaxCableStrain = 3,
 }
 
-const BIG_STRAIN: f32 = 1
+const BIG_STRAIN: f32 = 0.999
 
 let minBarStrain: f32 = BIG_STRAIN
 let maxBarStrain: f32 = -BIG_STRAIN
@@ -1101,12 +1104,12 @@ function jointPhysics(
         case LifePhase.Slack:
             gravityAbove = 0
             altitude = JOINT_RADIUS * 2 // simulate far above
-            dragAbove = 0.001
+            dragAbove = DRAG_ABOVE
             break
         case LifePhase.Pretensing:
             let factor = getPretensingNuance()
             gravityAbove = globalGravityAbove * factor * factor
-            dragAbove = globalDragAbove
+            dragAbove = DRAG_ABOVE
             break
         case LifePhase.Pretenst:
             if (getFabricBusyCountdown() === 0) {

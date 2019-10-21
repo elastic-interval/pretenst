@@ -10,7 +10,9 @@ import { BehaviorSubject } from "rxjs"
 import { Color, Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { doNotTouch, hideSurface, LifePhase } from "../fabric/life-phase"
+import { GlobalFeature } from "../fabric/fabric-engine"
+import { globalFeatureValue } from "../fabric/global-feature"
+import { doNotClick, hideSurface, LifePhase } from "../fabric/life-phase"
 import { AdjacentIntervals, bySelectedFace, IInterval, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -35,7 +37,6 @@ const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
 const SLACK_THRESHOLD = 0.0001
 
-const ITERATIONS_PER_FRAME = 50
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
 const BAR_GIRTH = 1
@@ -79,7 +80,7 @@ export function FabricView({
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = autoRotate
-        fabric.iterate(ITERATIONS_PER_FRAME)
+        fabric.iterate(globalFeatureValue(GlobalFeature.TicksPerFrame))
         if (lifePhase !== fabric.lifePhase) {
             setLifePhase(fabric.lifePhase)
         }
@@ -110,24 +111,6 @@ export function FabricView({
         )
     }
 
-    function SubmergedJoints(): JSX.Element {
-        const submerged = fabric.submergedJoints
-        const scale = 0.1
-        return (
-            <group>
-                {submerged.map(joint => (
-                    <mesh
-                        key={`SJ${joint.index}`}
-                        geometry={SPHERE}
-                        position={fabric.instance.getJointLocation(joint.index)}
-                        material={FACE_SPHERE}
-                        scale={new Vector3(scale, scale, scale)}
-                    />
-                ))}
-            </group>
-        )
-    }
-
     function Faces(): JSX.Element {
         const meshRef = useRef<Object3D>()
         const onPointerDown = (event: DomEvent) => {
@@ -135,7 +118,7 @@ export function FabricView({
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (doNotTouch(lifePhase) || !downEvent || !mesh) {
+            if (doNotClick(lifePhase) || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -237,7 +220,6 @@ export function FabricView({
                 )}
                 {showFaces ? <Faces/> : undefined}
                 <SelectedFace/>
-                <SubmergedJoints/>
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={1000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>

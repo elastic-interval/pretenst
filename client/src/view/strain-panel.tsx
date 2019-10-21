@@ -4,11 +4,10 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { CSSProperties, useEffect, useState } from "react"
 import { FaSortAmountUp, FaYinYang } from "react-icons/all"
 
 import { Limit } from "../fabric/fabric-engine"
-import { doNotTouch } from "../fabric/life-phase"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./materials"
@@ -42,7 +41,7 @@ export function StrainPanel({fabric, bars, colorBars, colorCables}: {
 
     const min = Math.floor(minStrain * STRAIN_MULTIPLY)
     const max = Math.floor(maxStrain * STRAIN_MULTIPLY)
-    const zen = doNotTouch(fabric.lifePhase) || Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
+    const zen = Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
     const both = colorBars && colorCables
     const nativeColor = bars ? HOT_COLOR : COLD_COLOR
     const attenuated = bars !== colorBars
@@ -50,15 +49,18 @@ export function StrainPanel({fabric, bars, colorBars, colorCables}: {
     const minColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : COLD_COLOR
     const minString = min.toFixed()
     const maxString = max.toFixed()
+    const style: CSSProperties = {
+        textAlign: "center",
+        width: "8em",
+        backgroundColor: "#cccccc",
+        borderColor: "#575757",
+        borderTopRightRadius: bars ? "1em" : 0,
+        borderBottomRightRadius: bars ? "1em" : 0,
+        borderTopLeftRadius: !bars ? "1em" : 0,
+        borderBottomLeftRadius: !bars ? "1em" : 0,
+    }
     return (
-        <div style={{
-            textAlign: "center",
-            width: "8em",
-            backgroundColor: "#cccccc",
-            borderTopRightRadius: "1em",
-            borderBottomRightRadius: "1em",
-            borderColor: "#575757",
-        }}>
+        <div style={style}>
             {zen ? (
                 <div style={{
                     fontSize: "large",
@@ -73,6 +75,7 @@ export function StrainPanel({fabric, bars, colorBars, colorCables}: {
                     textAlign: "center",
                     paddingTop: "0.6em",
                     marginRight: "1em",
+                    marginLeft: "1em",
                 }}>
                     <span style={{color: minColor}}>{minString}</span>
                     &nbsp;<FaSortAmountUp/>&nbsp;

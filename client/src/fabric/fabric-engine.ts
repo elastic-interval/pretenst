@@ -21,6 +21,7 @@ export enum GlobalFeature {
     IntervalBusyTicks = 7,
     PretensingTicks = 8,
     PretensingIntensity = 9,
+    TicksPerFrame = 10,
 }
 
 export enum FabricState {

@@ -48,7 +48,7 @@ export function CodePanel({setCode}: {
     return (
         <div style={{padding: "2em", backgroundColor: "rgba(0,0,0,1)", height: "100%", color: "#69aaea"}}>
             <div style={{width: "100%", textAlign: "center"}}>
-                <h1>Pretenst Construction Code</h1>
+                <h1>Pretenst Programs</h1>
             </div>
             <CodeCollection title="Link" codeCollection={locationBarPrograms} runCode={runCode}/>
             <CodeCollection title="Recent" codeCollection={recentPrograms} runCode={runCode}/>
