@@ -19,18 +19,17 @@ const SLACK_THRESHOLD: f32 = 0.0001
 const INITIAL_BAR_ELASTIC: f32 = 1.2
 const INITIAL_CABLE_ELASTIC: f32 = 0.3
 
-export enum PhysicsFeature {
+export enum GlobalFeature {
     GravityAbove = 0,
     DragAbove = 1,
     AntigravityBelow = 2,
     DragBelow = 3,
     AntigravityBelowWater = 4,
     DragBelowWater = 5,
-    PushElastic = 6,
-    PullElastic = 7,
-    BusyCountdown = 8,
-    PretensingCountdown = 9,
-    PretensingIntensity = 10,
+    PushOverPull = 6,
+    BusyCountdown = 7,
+    PretensingCountdown = 8,
+    PretensingIntensity = 9,
 }
 
 enum IntervalRole {
@@ -355,35 +354,32 @@ let globalDragBelowWater: f32
 let globalAntigravityBelowWater: f32
 let globalDragBelow: f32
 let globalAntigravityBelow: f32
-let globalPushElasticFactor: f32
-let globalPullElasticFactor: f32
+let globalPushOverPullFactor: f32
 let globalBusyCountdownMax: f32
 let globalPretensingCountdownMax: f32
 let globalPretensingIntensity: f32
 
-export function setPhysicsFeature(globalFeature: PhysicsFeature, value: f32): f32 {
+export function setGlobalFeature(globalFeature: GlobalFeature, value: f32): f32 {
     switch (globalFeature) {
-        case PhysicsFeature.GravityAbove:
+        case GlobalFeature.GravityAbove:
             return globalGravityAbove = value
-        case PhysicsFeature.DragAbove:
+        case GlobalFeature.DragAbove:
             return globalDragAbove = value
-        case PhysicsFeature.AntigravityBelow:
+        case GlobalFeature.AntigravityBelow:
             return globalAntigravityBelow = value
-        case PhysicsFeature.DragBelow:
+        case GlobalFeature.DragBelow:
             return globalDragBelow = value
-        case PhysicsFeature.AntigravityBelowWater:
+        case GlobalFeature.AntigravityBelowWater:
             return globalAntigravityBelowWater = value
-        case PhysicsFeature.DragBelowWater:
+        case GlobalFeature.DragBelowWater:
             return globalDragBelowWater = value
-        case PhysicsFeature.PushElastic:
-            return globalPushElasticFactor = value
-        case PhysicsFeature.PullElastic:
-            return globalPullElasticFactor = value
-        case PhysicsFeature.BusyCountdown:
+        case GlobalFeature.PushOverPull:
+            return globalPushOverPullFactor = value
+        case GlobalFeature.BusyCountdown:
             return globalBusyCountdownMax = value
-        case PhysicsFeature.PretensingCountdown:
+        case GlobalFeature.PretensingCountdown:
             return globalPretensingCountdownMax = value
-        case PhysicsFeature.PretensingIntensity:
+        case GlobalFeature.PretensingIntensity:
             return globalPretensingIntensity = value
         default:
             return 0
@@ -1084,7 +1080,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         pretenst *= getPretensingNuance()
     }
     let currentLength = interpolateCurrentLength(intervalIndex, state) * (1 + pretenst)
-    let elasticFactor = getElasticFactor(intervalIndex)
+    let intervalElasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     let strain = displacement / currentLength
     setStrain(intervalIndex, strain)
@@ -1097,13 +1093,13 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             break
         case LifePhase.Pretensing:
         case LifePhase.Pretenst:
-            globalElasticFactor = bar ? globalPushElasticFactor : (strain < 0) ? 0 : globalPullElasticFactor
+            globalElasticFactor = bar ? globalPushOverPullFactor : (strain < 0) ? 0 : 1
             break
     }
-    let force = strain * elasticFactor * globalElasticFactor
+    let force = strain * intervalElasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
-    let mass = currentLength * currentLength * elasticFactor * (bar ? BAR_MASS_PER_LENGTH : CABLE_MASS_PER_LENGTH)
+    let mass = currentLength * currentLength * intervalElasticFactor * (bar ? BAR_MASS_PER_LENGTH : CABLE_MASS_PER_LENGTH)
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = _intervalMass(omegaIndex(intervalIndex))

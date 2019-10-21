@@ -43,10 +43,11 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-export function TensegrityView({engine, buildFabric, features, pretensingStep$}: {
+export function TensegrityView({engine, buildFabric, globalFeatures, roleFeatures, pretensingStep$}: {
     engine: IFabricEngine,
     buildFabric: (code: ICode) => TensegrityFabric,
-    features: IFeature[],
+    globalFeatures: IFeature[],
+    roleFeatures: IFeature[],
     pretensingStep$: BehaviorSubject<number>,
 }): JSX.Element {
 
@@ -177,11 +178,23 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
                         />
                     </Canvas>
                     {!showFeatures ? undefined : (
-                        <FeaturePanel
-                            featureSet={features}
-                            engine={engine}
-                            fabric={fabric}
-                        />
+                        <div id="top-right">
+                            {lifePhase === LifePhase.Pretenst ?
+                                <FeaturePanel
+                                    featureSet={globalFeatures}
+                                    engine={engine}
+                                    fabric={fabric}
+                                /> :
+                                lifePhase === LifePhase.Shaping ?
+                                    <FeaturePanel
+                                        featureSet={roleFeatures}
+                                        engine={engine}
+                                        fabric={fabric}
+                                    /> :
+                                    undefined
+                            }
+                        </div>
+
                     )}
                     {!code ? undefined : (
                         <div id="top-middle">

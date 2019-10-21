@@ -10,7 +10,7 @@ import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { applyPhysicsFeature, IFeature } from "../fabric/features"
-import { featureMultiplier, multiplierSymbol, multiplierValue } from "../fabric/physics-feature"
+import { GLOBAL_FEATURE, multiplierSymbol, multiplierValue } from "../fabric/global-feature"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 export function FeaturePanel({engine, featureSet, fabric}: {
@@ -22,7 +22,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
     function Factor({feature, mutable}: { feature: IFeature, mutable: boolean }): JSX.Element {
         const updateFactor = (newFactor?: number): void => {
             feature.setFactor(newFactor === undefined ? feature.defaultValue : newFactor)
-            if (feature.name.physicsFeature !== undefined) {
+            if (feature.name.globalFeature !== undefined) {
                 applyPhysicsFeature(engine, feature)
             }
             if (feature.name.intervalRole !== undefined) {
@@ -51,7 +51,6 @@ export function FeaturePanel({engine, featureSet, fabric}: {
             ...basicStyle,
             color: "green",
         }
-        const physicsFeature = feature.name.physicsFeature
         const UpdateButtonGroup = (): JSX.Element => (
             <ButtonGroup className="mx-1">
                 <Button size="sm" onClick={() => {
@@ -65,20 +64,21 @@ export function FeaturePanel({engine, featureSet, fabric}: {
                 }}><FaEquals/></Button>
             </ButtonGroup>
         )
-        if (physicsFeature !== undefined) {
-            const multiplier = featureMultiplier(physicsFeature)
-            const scaledValue = factor * multiplierValue(multiplier)
-            const symbol = multiplierSymbol(multiplier)
+        const globalFeature = feature.name.globalFeature
+        if (globalFeature !== undefined) {
+            const globalFeatureInfo = GLOBAL_FEATURE[globalFeature]
+            const scaledValue = factor * multiplierValue(globalFeatureInfo.multiplier)
+            const symbol = multiplierSymbol(globalFeatureInfo.multiplier)
             return (
                 <InputGroup size="sm">
                     <strong>&nbsp;&nbsp;<FaGlobe/>&nbsp;&nbsp;</strong>
                     <InputGroupAddon addonType="prepend">
                         <InputGroupText>{feature.label}</InputGroupText>
                     </InputGroupAddon>
-                    <Input style={inputStyle} value={scaledValue.toFixed(1)} disabled={true}/>
-                    {symbol.length === 0 ? undefined : <InputGroupAddon addonType="append">
+                    {symbol.length === 0 ? undefined : <InputGroupAddon addonType="prepend">
                         <InputGroupText>{symbol}</InputGroupText>
                     </InputGroupAddon>}
+                    <Input style={inputStyle} value={scaledValue.toFixed(globalFeatureInfo.fixedDigits)} disabled={true}/>
                     {mutable ? <UpdateButtonGroup/> : undefined}
                 </InputGroup>
             )
@@ -95,7 +95,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
     }
 
     return (
-        <div id="top-right">
+        <div>
             {featureSet.map(f => (
                 <div key={f.label} style={{
                     borderStyle: "solid",

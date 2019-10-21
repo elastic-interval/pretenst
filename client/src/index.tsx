@@ -10,11 +10,10 @@ import { BehaviorSubject } from "rxjs"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { IFabricEngine } from "./fabric/fabric-engine"
+import { GlobalFeature, IFabricEngine } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
 import { IntervalRole } from "./fabric/interval-role"
-import { notWater, PhysicsFeature } from "./fabric/physics-feature"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { ICode } from "./view/code-panel"
@@ -59,14 +58,13 @@ async function start(): Promise<void> {
             }
             return newFabric
         }
-        const physicsFeatures = enumToFeatureArray(PhysicsFeature, true)
-            .filter(feature => notWater(feature.name.physicsFeature))
-        physicsFeatures.forEach(feature => applyPhysicsFeature(engine, feature))
-        const features = [...roleFeatures, ...physicsFeatures]
+        const globalFeatures = enumToFeatureArray(GlobalFeature, true)
+        globalFeatures.forEach(feature => applyPhysicsFeature(engine, feature))
         ReactDOM.render(
             <TensegrityView
                 engine={engine}
-                features={features}
+                globalFeatures={globalFeatures}
+                roleFeatures={roleFeatures}
                 buildFabric={buildFabric}
                 pretensingStep$={pretensingStep}
             />,

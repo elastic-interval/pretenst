@@ -7,9 +7,9 @@ import { Vector3 } from "three"
 
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { IFabricEngine } from "./fabric-engine"
+import { GlobalFeature, IFabricEngine } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
-import { PhysicsFeature, physicsValue } from "./physics-feature"
+import { globalFeatureValue } from "./global-feature"
 import { ICodeTree } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
@@ -64,8 +64,8 @@ export class FabricKernel {
         if (!newInstance) {
             return undefined
         }
-        const coundownMax = physicsValue(PhysicsFeature.PretensingCountdown)
-        const intensity = physicsValue(PhysicsFeature.PretensingIntensity)
+        const coundownMax = globalFeatureValue(GlobalFeature.PretensingCountdown)
+        const intensity = globalFeatureValue(GlobalFeature.PretensingIntensity)
         return new TensegrityFabric(codeTree, newInstance, name, coundownMax, intensity)
     }
 

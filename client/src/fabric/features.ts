@@ -6,18 +6,18 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricEngine} from "./fabric-engine"
+import { GlobalFeature, IFabricEngine} from "./fabric-engine"
+import { GLOBAL_FEATURE, globalFeatureValue } from "./global-feature"
 import { IntervalRole, roleLength } from "./interval-role"
-import { PhysicsFeature, physicsValue } from "./physics-feature"
 
 interface IFeatureName {
-    physicsFeature?: PhysicsFeature
+    globalFeature?: GlobalFeature
     intervalRole?: IntervalRole
 }
 
 function nameLabel(name: IFeatureName): string {
-    if (name.physicsFeature !== undefined) {
-        return PhysicsFeature[name.physicsFeature]
+    if (name.globalFeature !== undefined) {
+        return GLOBAL_FEATURE[name.globalFeature].name
     }
     if (name.intervalRole !== undefined) {
         return IntervalRole[name.intervalRole]
@@ -26,7 +26,7 @@ function nameLabel(name: IFeatureName): string {
 }
 
 function featureAdjustmentFactor(name: IFeatureName): number {
-    if (name.physicsFeature !== undefined) {
+    if (name.globalFeature !== undefined) {
         return 1.1
     }
     if (name.intervalRole !== undefined) {
@@ -48,26 +48,26 @@ export function getFeatureValue(name: IFeatureName, defaultValue?: boolean): num
     if (name.intervalRole !== undefined) {
         return roleLength(name.intervalRole, defaultValue)
     }
-    if (name.physicsFeature !== undefined) {
-        return physicsValue(name.physicsFeature, defaultValue)
+    if (name.globalFeature !== undefined) {
+        return globalFeatureValue(name.globalFeature, defaultValue)
     }
     return 1
 }
 
 export function applyPhysicsFeature(engine: IFabricEngine, feature: IFeature): void {
-    const physicsFeature = feature.name.physicsFeature
+    const physicsFeature = feature.name.globalFeature
     const factor = feature.factor$.getValue()
     if (physicsFeature === undefined) {
         return
     }
-    engine.setPhysicsFeature(physicsFeature, factor)
+    engine.setGlobalFeature(physicsFeature, factor)
 }
 
 export function enumToFeatureArray(enumObject: object, isPhysics: boolean): IFeature[] {
     return Object.keys(enumObject)
         .map(key => enumObject[key])
         .filter(value => typeof value === "number")
-        .map(feature => createFeature(isPhysics ? {physicsFeature: feature} : {intervalRole: feature}))
+        .map(feature => createFeature(isPhysics ? {globalFeature: feature} : {intervalRole: feature}))
 }
 
 function createFeature(name: IFeatureName): IFeature {

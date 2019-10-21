@@ -5,10 +5,22 @@
 
 import { IntervalRole } from "./interval-role"
 import { LifePhase } from "./life-phase"
-import { PhysicsFeature } from "./physics-feature"
 
 export interface IMemory {
     buffer: ArrayBuffer
+}
+
+export enum GlobalFeature {
+    GravityAbove = 0,
+    DragAbove = 1,
+    AntigravityBelow = 2,
+    DragBelow = 3,
+    AntigravityBelowWater = 4,
+    DragBelowWater = 5,
+    PushOverPull = 6,
+    BusyCountdown = 7,
+    PretensingCountdown = 8,
+    PretensingIntensity = 9,
 }
 
 export enum FabricState {
@@ -38,7 +50,7 @@ export interface IFabricEngine {
 
     init(): number
 
-    setPhysicsFeature(physicsFeature: PhysicsFeature, factor: number): number
+    setGlobalFeature(physicsFeature: GlobalFeature, factor: number): number
 
     getLimit(limit: Limit): number
 
