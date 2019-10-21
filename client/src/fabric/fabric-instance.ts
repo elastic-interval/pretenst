@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -6,8 +5,9 @@
 
 import { Vector3 } from "three"
 
-import { IFabricEngine, LifePhase } from "./fabric-engine"
+import { IFabricEngine } from "./fabric-engine"
 import { vectorFromFloatArray } from "./fabric-kernel"
+import { LifePhase } from "./life-phase"
 
 export const JOINT_RADIUS = 0.1
 

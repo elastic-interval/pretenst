@@ -4,29 +4,11 @@
  */
 
 import { IntervalRole } from "./interval-role"
+import { LifePhase } from "./life-phase"
 import { PhysicsFeature } from "./physics-feature"
 
 export interface IMemory {
     buffer: ArrayBuffer
-}
-
-export const MAX_INSTANCES = 32
-export const SLACK_THRESHOLD = 0.0001
-
-export enum LifePhase {
-    Growing = 0,
-    Shaping = 1,
-    Slack = 2,
-    Pretensing = 3,
-    Pretenst = 4,
-}
-
-export function doNotTouch(lifePhase: LifePhase): boolean {
-    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
-}
-
-export function hideSurface(lifePhase: LifePhase): boolean {
-    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping
 }
 
 export enum FabricState {
@@ -65,6 +47,8 @@ export interface IFabricEngine {
     setInstance(index: number): void
 
     cloneInstance(fromIndex: number, index: number): void
+
+    getInstanceCount(): number
 
     // below methods use instance index
 

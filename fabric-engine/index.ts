@@ -74,6 +74,10 @@ const SLACK_COLOR: f32[] = [
     0.0, 1.0, 0.0
 ]
 
+export function getInstanceCount(): u16 {
+    return MAX_INSTANCES
+}
+
 @inline()
 function _8(index: u16): usize {
     return index * sizeof<u8>()
@@ -1075,7 +1079,7 @@ export function removeFace(deadFaceIndex: u16): void {
 function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let bar = intervalRole === IntervalRole.Bar
-    let pretenst: f32 = bar ? getPretenst(): 0
+    let pretenst: f32 = bar ? getPretenst() : 0
     if (lifePhase === LifePhase.Pretensing) {
         pretenst *= getPretensingNuance()
     }

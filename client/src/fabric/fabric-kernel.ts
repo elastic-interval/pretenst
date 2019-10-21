@@ -7,7 +7,7 @@ import { Vector3 } from "three"
 
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { IFabricEngine, MAX_INSTANCES } from "./fabric-engine"
+import { IFabricEngine } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
 import { PhysicsFeature, physicsValue } from "./physics-feature"
 import { ICodeTree } from "./tensegrity-brick-types"
@@ -46,7 +46,7 @@ export class FabricKernel {
         if (byteLength === 0) {
             throw new Error(`Zero byte length! ${fabricBytes}`)
         }
-        for (let index = 0; index < MAX_INSTANCES; index++) {
+        for (let index = 0; index < engine.getInstanceCount(); index++) {
             this.instanceArray.push(new FabricInstance(
                 index,
                 this.arrayBuffer,

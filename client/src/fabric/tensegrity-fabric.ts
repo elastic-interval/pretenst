@@ -5,9 +5,10 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { IFabricEngine, Laterality, LifePhase } from "./fabric-engine"
+import { IFabricEngine, Laterality } from "./fabric-engine"
 import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
 import { IntervalRole, roleLength } from "./interval-role"
+import { LifePhase } from "./life-phase"
 import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,

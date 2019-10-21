@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -8,7 +7,8 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaSortAmountUp, FaYinYang } from "react-icons/all"
 
-import { doNotTouch, Limit } from "../fabric/fabric-engine"
+import { Limit } from "../fabric/fabric-engine"
+import { doNotTouch } from "../fabric/life-phase"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./materials"

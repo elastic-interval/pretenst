@@ -10,7 +10,7 @@ import { BehaviorSubject } from "rxjs"
 import { Color, Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { doNotTouch, hideSurface, LifePhase, SLACK_THRESHOLD } from "../fabric/fabric-engine"
+import { doNotTouch, hideSurface, LifePhase } from "../fabric/life-phase"
 import { AdjacentIntervals, bySelectedFace, IInterval, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -33,6 +33,7 @@ declare global {
 const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
+const SLACK_THRESHOLD = 0.0001
 
 const ITERATIONS_PER_FRAME = 50
 const TOWARDS_TARGET = 0.01

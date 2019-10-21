@@ -27,7 +27,7 @@ import {
 } from "react-icons/all"
 import { Button, ButtonGroup, Navbar } from "reactstrap"
 
-import { doNotTouch, LifePhase } from "../fabric/fabric-engine"
+import { doNotTouch, LifePhase } from "../fabric/life-phase"
 import { createConnectedBrick, optimizeFabric } from "../fabric/tensegrity-brick"
 import {
     AdjacentIntervals,
