@@ -38,8 +38,8 @@ const SLACK_THRESHOLD = 0.0001
 const ITERATIONS_PER_FRAME = 50
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const BAR_GIRTH = 3
-const CABLE_GIRTH = 1
+const BAR_GIRTH = 1
+const CABLE_GIRTH = 0.3
 
 export function FabricView({
                                fabric, lifePhase, setLifePhase, pretensingStep$, selectedFace,
@@ -99,17 +99,20 @@ export function FabricView({
         if (!selectedFace) {
             return <group/>
         }
+        const scale = 0.3
         return (
             <mesh
                 geometry={SPHERE}
                 position={fabric.instance.getFaceMidpoint(selectedFace.face.index)}
                 material={FACE_SPHERE}
+                scale={new Vector3(scale, scale, scale)}
             />
         )
     }
 
     function SubmergedJoints(): JSX.Element {
         const submerged = fabric.submergedJoints
+        const scale = 0.1
         return (
             <group>
                 {submerged.map(joint => (
@@ -118,7 +121,7 @@ export function FabricView({
                         geometry={SPHERE}
                         position={fabric.instance.getJointLocation(joint.index)}
                         material={FACE_SPHERE}
-                        scale={new Vector3(0.1, 0.1, 0.1)}
+                        scale={new Vector3(scale, scale, scale)}
                     />
                 ))}
             </group>

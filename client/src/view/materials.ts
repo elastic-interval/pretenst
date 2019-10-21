@@ -51,7 +51,7 @@ export const FACE = new MeshPhongMaterial({
     opacity: 0.2,
 })
 
-export const HOT_COLOR = "#ca0000"
+export const HOT_COLOR = "#910000"
 export const COLD_COLOR = "#3b6ab8"
 export const SLACK_COLOR = "#00a700"
 export const ATTENUATED_COLOR = "#212121"

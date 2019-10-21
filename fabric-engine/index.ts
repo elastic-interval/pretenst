@@ -949,7 +949,7 @@ function outputLinesGeometry(): void {
         let intervalRole = getIntervalRole(intervalIndex)
         let isBar: boolean = intervalRole === IntervalRole.Bar
         let strain = isBar ? -directionalStrain : directionalStrain
-        if (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack || colorBars && colorCables) {
+        if (colorBars && colorCables) {
             let slack = strain < SLACK_THRESHOLD
             let color = slack ? SLACK_COLOR : isBar ? HOT_COLOR : COLD_COLOR
             setLineColor(intervalIndex, color[0], color[1], color[2])

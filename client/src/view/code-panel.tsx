@@ -27,7 +27,12 @@ export function CodePanel({setCode}: {
 
     useEffect(() => {
         getBootstrapCode().then(setBoostrapPrograms)
-        setLocationBarPrograms(getCodeFromLocationBar)
+        const urlCode = getCodeFromLocationBar()
+        setLocationBarPrograms(urlCode)
+        const code = urlCode.pop()
+        if (code && code.codeString === recentPrograms[0].codeString) {
+            setTimeout(() => setCode(code), 300)
+        }
     }, [])
 
     function runCode(code: ICode): void {

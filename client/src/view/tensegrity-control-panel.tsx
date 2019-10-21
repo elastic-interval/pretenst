@@ -7,7 +7,9 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import {
     FaArrowDown,
-    FaArrowUp, FaBars, FaBiohazard,
+    FaArrowUp,
+    FaBars,
+    FaBiohazard,
     FaCircle,
     FaCompressArrowsAlt,
     FaCubes,
@@ -19,7 +21,8 @@ import {
     FaFileCsv,
     FaHandPointUp,
     FaListAlt,
-    FaParachuteBox, FaRadiationAlt,
+    FaParachuteBox,
+    FaRadiationAlt,
     FaRunning,
     FaSun,
     FaSyncAlt,
@@ -40,7 +43,6 @@ import {
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
-import { COLD_COLOR, HOT_COLOR } from "./materials"
 import { StrainPanel } from "./strain-panel"
 
 interface IControlPanel {
@@ -89,22 +91,16 @@ export function TensegrityControlPanel(
     }
 
     function ViewButton({bars, cables}: { bars: boolean, cables: boolean }): JSX.Element {
-        const faces = bars && cables
         const onClick = () => {
             setColorBars(bars)
             setColorCables(cables)
-            setShowFaces(faces)
+            setShowFaces(bars && cables)
             if (selectedFace) {
                 setSelectedFace()
             }
         }
         const color = bars === colorBars && cables === colorCables ? "success" : "secondary"
-        const iconColor = faces ? "white" : bars ? HOT_COLOR : COLD_COLOR
-        const style = {
-            color: iconColor,
-        }
-        return <Button style={style} disabled={doNotTouch(lifePhase)} color={color}
-                       onClick={onClick}>
+        return <Button style={{color: "white"}} disabled={doNotTouch(lifePhase)} color={color} onClick={onClick}>
             {bars && cables ? (<><FaHandPointUp/><span> Faces</span></>) :
                 bars ? (<><FaCircle/><span> Bars</span></>) : (<><FaDotCircle/><span> Cables</span></>)}
         </Button>
@@ -163,9 +159,8 @@ export function TensegrityControlPanel(
                 <Button onClick={clearFabric}><FaListAlt/> Choose</Button>
             </ButtonGroup>
             <div style={{display: "flex", paddingLeft: "2em"}}>
-                <ViewButton bars={true} cables={true}/>
                 {selectedFace ? (
-                    <ButtonGroup style={{paddingLeft: "0.6em", width: "30em"}}>
+                    <ButtonGroup style={{paddingLeft: "0.6em", width: "40em"}}>
                         <Button disabled={!selectedFace.face.canGrow} onClick={() => grow(selectedFace.face)}>
                             <FaSun/>
                         </Button>
@@ -184,10 +179,13 @@ export function TensegrityControlPanel(
                         ))}
                     </ButtonGroup>
                 ) : (
-                    <div style={{display: "flex", width: "30em"}}>
+                    <div style={{display: "flex", width: "40em"}}>
                         <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
                             <ViewButton bars={true} cables={false}/>
                             <StrainPanel fabric={fabric} bars={true} colorBars={colorBars} colorCables={colorCables}/>
+                        </ButtonGroup>
+                        <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
+                            <ViewButton bars={true} cables={true}/>
                         </ButtonGroup>
                         <ButtonGroup style={{paddingLeft: "0.6em", display: "flex"}}>
                             <ViewButton bars={false} cables={true}/>
