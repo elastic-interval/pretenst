@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -22,6 +23,9 @@ export enum GlobalFeature {
     PretensingTicks = 8,
     PretensingIntensity = 9,
     TicksPerFrame = 10,
+    SlackThreshold = 11,
+    BarMass = 12,
+    CableMass = 13,
 }
 
 export enum FabricState {

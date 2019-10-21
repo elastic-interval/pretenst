@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -78,7 +79,11 @@ function createFeature(name: IFeatureName): IFeature {
     return {
         label, name, defaultValue, factor$, adjustmentFactor,
         setFactor: (newFactor: number) => {
-            localStorage.setItem(label, newFactor.toFixed(10))
+            if (newFactor/defaultValue - 1 < 0.0001) {
+                localStorage.removeItem(label)
+            } else {
+                localStorage.setItem(label, newFactor.toFixed(10))
+            }
             factor$.next(newFactor)
         },
     }

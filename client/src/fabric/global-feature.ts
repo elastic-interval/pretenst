@@ -147,4 +147,25 @@ export const GLOBAL_FEATURE: IGlobalFeature[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 0,
     },
+    {
+        feature: GlobalFeature.SlackThreshold,
+        name: "SlackThreshold",
+        defaultValue: 0.01,
+        multiplier: FeatureMultiplier.Thousandths,
+        fixedDigits: 1,
+    },
+    {
+        feature: GlobalFeature.BarMass,
+        name: "BarMass",
+        defaultValue: 1,
+        multiplier: FeatureMultiplier.Thousandths,
+        fixedDigits: 1,
+    },
+    {
+        feature: GlobalFeature.CableMass,
+        name: "CableMass",
+        defaultValue: 0.01,
+        multiplier: FeatureMultiplier.Thousandths,
+        fixedDigits: 1,
+    },
 ]

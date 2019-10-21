@@ -13,9 +13,6 @@ declare function logInt(idx: u32, i: i32): void
 
 const JOINT_RADIUS: f32 = 0.1
 const AMBIENT_JOINT_MASS: f32 = 0.1
-const BAR_MASS_PER_LENGTH: f32 = 1
-const CABLE_MASS_PER_LENGTH: f32 = 0.01
-const SLACK_THRESHOLD: f32 = 0.01
 const INITIAL_BAR_ELASTIC: f32 = 1.2
 const INITIAL_CABLE_ELASTIC: f32 = 0.3
 const DRAG_ABOVE: f32 = 0.0001
@@ -32,6 +29,9 @@ export enum GlobalFeature {
     PretensingTicks = 8,
     PretensingIntensity = 9,
     TicksPerFrame = 10,
+    SlackThreshold = 11,
+    BarMass = 12,
+    CableMass = 13,
 }
 
 enum IntervalRole {
@@ -317,7 +317,10 @@ const _INTERVAL_BUSY_TICKS = _PUSH_OVER_PULL + sizeof<f32>()
 const _PRETENSING_TICKS = _INTERVAL_BUSY_TICKS + sizeof<f32>()
 const _PRETENSING_INTENSITY = _PRETENSING_TICKS + sizeof<f32>()
 const _TICKS_PER_FRAME = _PRETENSING_INTENSITY + sizeof<f32>()
-const _LIFE_PHASE = _TICKS_PER_FRAME + sizeof<f32>()
+const _SLACK_THRESHOLD = _TICKS_PER_FRAME + sizeof<f32>()
+const _BAR_MASS = _SLACK_THRESHOLD + sizeof<f32>()
+const _CABLE_MASS = _BAR_MASS + sizeof<f32>()
+const _LIFE_PHASE = _CABLE_MASS + sizeof<f32>()
 const _A = _LIFE_PHASE + sizeof<u16>()
 const _B = _A + sizeof<f32>() * 3
 const _X = _B + sizeof<f32>() * 3
@@ -944,7 +947,7 @@ function outputLinesGeometry(): void {
             }
         }
     }
-    let lifePhase = getLifePhase()
+    let slackThreshold = getGlobalFeature(GlobalFeature.SlackThreshold)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
@@ -952,9 +955,10 @@ function outputLinesGeometry(): void {
         let intervalRole = getIntervalRole(intervalIndex)
         let isBar: boolean = intervalRole === IntervalRole.Bar
         let strain = isBar ? -directionalStrain : directionalStrain
-        if (colorBars && colorCables) {
-            let slack = strain < SLACK_THRESHOLD
-            let color = slack ? SLACK_COLOR : isBar ? HOT_COLOR : COLD_COLOR
+        if (strain < slackThreshold) {
+            setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
+        } else if (colorBars && colorCables) {
+            let color = isBar ? HOT_COLOR : COLD_COLOR
             setLineColor(intervalIndex, color[0], color[1], color[2])
         } else if (colorBars || colorCables) {
             if (isBar && colorCables || !isBar && colorBars) {
@@ -1076,7 +1080,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     let force = strain * intervalElasticFactor * globalElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
-    let mass = currentLength * currentLength * intervalElasticFactor * (bar ? BAR_MASS_PER_LENGTH : CABLE_MASS_PER_LENGTH)
+    let mass = currentLength * currentLength * intervalElasticFactor * getGlobalFeature(bar ? GlobalFeature.BarMass : GlobalFeature.CableMass)
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = _intervalMass(omegaIndex(intervalIndex))
