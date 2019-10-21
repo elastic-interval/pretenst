@@ -23,7 +23,7 @@ export function FeaturePanel({engine, featureSet, fabric}: {
         const updateFactor = (newFactor?: number): void => {
             feature.setFactor(newFactor === undefined ? feature.defaultValue : newFactor)
             if (feature.name.globalFeature !== undefined) {
-                applyPhysicsFeature(engine, feature)
+                applyPhysicsFeature(fabric.instance, feature)
             }
             if (feature.name.intervalRole !== undefined) {
                 fabric.intervals

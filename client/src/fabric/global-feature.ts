@@ -83,7 +83,7 @@ export const GLOBAL_FEATURE: IGlobalFeature[] = [
         fixedDigits: 1,
     },
     {
-        feature: GlobalFeature.AntigravityBelow,
+        feature: GlobalFeature.GravityBelow,
         name: "AntigravityBelow",
         defaultValue: -0.03,
         multiplier: FeatureMultiplier.NegativeMillionths,
@@ -97,7 +97,7 @@ export const GLOBAL_FEATURE: IGlobalFeature[] = [
         fixedDigits: 1,
     },
     {
-        feature: GlobalFeature.AntigravityBelowWater,
+        feature: GlobalFeature.GravityBelowWater,
         name: "AntigravityBelowWater",
         defaultValue: -0.00001,
         multiplier: FeatureMultiplier.NegativeMillionths,
@@ -118,14 +118,14 @@ export const GLOBAL_FEATURE: IGlobalFeature[] = [
         fixedDigits: 3,
     },
     {
-        feature: GlobalFeature.BusyCountdown,
+        feature: GlobalFeature.IntervalBusyTicks,
         name: "BusyCountdown",
         defaultValue: 300.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 1,
     },
     {
-        feature: GlobalFeature.PretensingCountdown,
+        feature: GlobalFeature.PretensingTicks,
         name: "PretensingCountdown",
         defaultValue: 50000.0,
         multiplier: FeatureMultiplier.OneThousand,

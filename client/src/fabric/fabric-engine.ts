@@ -13,13 +13,13 @@ export interface IMemory {
 export enum GlobalFeature {
     GravityAbove = 0,
     DragAbove = 1,
-    AntigravityBelow = 2,
+    GravityBelow = 2,
     DragBelow = 3,
-    AntigravityBelowWater = 4,
+    GravityBelowWater = 4,
     DragBelowWater = 5,
     PushOverPull = 6,
-    BusyCountdown = 7,
-    PretensingCountdown = 8,
+    IntervalBusyTicks = 7,
+    PretensingTicks = 8,
     PretensingIntensity = 9,
 }
 
@@ -49,8 +49,6 @@ export interface IFabricEngine {
     memory: IMemory
 
     init(): number
-
-    setGlobalFeature(physicsFeature: GlobalFeature, factor: number): number
 
     getLimit(limit: Limit): number
 
@@ -141,5 +139,7 @@ export interface IFabricEngine {
     _intervalStrains(): number
 
     _elasticFactors(): number
+
+    _globalFeatures(): number
 
 }

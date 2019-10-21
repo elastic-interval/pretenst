@@ -5,13 +5,14 @@
 
 import { Vector3 } from "three"
 
-import { IFabricEngine } from "./fabric-engine"
+import { GlobalFeature, IFabricEngine } from "./fabric-engine"
 import { vectorFromFloatArray } from "./fabric-kernel"
 import { LifePhase } from "./life-phase"
 
 export const JOINT_RADIUS = 0.1
 
 export class FabricInstance {
+    private globalFeatures: LazyFloatArray
     private midpoint: LazyFloatArray
     private lineColors: LazyFloatArray
     private lineLocations: LazyFloatArray
@@ -34,6 +35,7 @@ export class FabricInstance {
         const e = this.engine
         const offset = e._fabricOffset()
         const b = this.buffer
+        this.globalFeatures = new LazyFloatArray(b, offset + e._globalFeatures(), () => Object.keys(GlobalFeature).length)
         this.midpoint = new LazyFloatArray(b, offset + e._midpoint(), () => 3)
         this.lineColors = new LazyFloatArray(b, offset + e._lineColors(), () => e.getIntervalCount() * 3 * 2)
         this.lineLocations = new LazyFloatArray(b, offset + e._lineLocations(), () => e.getIntervalCount() * 3 * 2)
@@ -44,6 +46,14 @@ export class FabricInstance {
         this.intervalUnits = new LazyFloatArray(b, offset + e._intervalUnits(), () => e.getIntervalCount() * 3)
         this.intervalStrains = new LazyFloatArray(b, offset + e._intervalStrains(), () => e.getIntervalCount())
         this.elasticFactors = new LazyFloatArray(b, offset + e._elasticFactors(), () => e.getIntervalCount())
+    }
+
+    public setGlobalFeature(globalFeature: GlobalFeature, value: number): void {
+        this.globalFeatures.floats[globalFeature] = value
+    }
+
+    public getGlobalFeature(globalFeature: GlobalFeature): number {
+        return this.globalFeatures.floats[globalFeature]
     }
 
     public growing(): LifePhase {

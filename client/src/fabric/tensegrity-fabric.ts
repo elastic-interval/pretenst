@@ -5,8 +5,9 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { IFabricEngine, Laterality } from "./fabric-engine"
+import { GlobalFeature, IFabricEngine, Laterality } from "./fabric-engine"
 import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
+import { applyPhysicsFeature, IFeature } from "./features"
 import { IntervalRole, roleLength } from "./interval-role"
 import { LifePhase } from "./life-phase"
 import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
@@ -75,10 +76,10 @@ export class TensegrityFabric {
         codeTree: ICodeTree,
         public readonly instance: FabricInstance,
         public readonly name: string,
-        private pretensingCountdownMax: number,
-        private pretensingIntensity: number,
+        public readonly globalFeatures: IFeature[],
     ) {
         this.lifePhase = this.instance.growing()
+        globalFeatures.forEach(feature => applyPhysicsFeature(this.instance, feature))
         const brick = createBrickOnOrigin(this, percentOrHundred())
         const executing: IActiveCode = {codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
@@ -361,7 +362,8 @@ export class TensegrityFabric {
         }
         const engine = this.instance.engine
         const pretensingCycles = engine.getAge() - this.pretensingStartAge
-        const complete = pretensingCycles / this.pretensingCountdownMax
+        const countdownMax = this.instance.getGlobalFeature(GlobalFeature.PretensingTicks)
+        const complete = pretensingCycles / countdownMax
         const currentStep = Math.floor(complete * PRETENSING_STEPS)
         if (currentStep === this.pretensingStep) {
             return false
@@ -373,7 +375,7 @@ export class TensegrityFabric {
     private takePretensingStep(): void {
         const strains = this.instance.strains
         const elastics = this.instance.elastics
-        const intensity = this.pretensingIntensity
+        const intensity = this.instance.getGlobalFeature(GlobalFeature.PretensingIntensity)
         let barCount = 0
         let cableCount = 0
         let totalBarAdjustment = 0

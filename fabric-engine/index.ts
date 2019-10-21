@@ -22,13 +22,13 @@ const INITIAL_CABLE_ELASTIC: f32 = 0.3
 export enum GlobalFeature {
     GravityAbove = 0,
     DragAbove = 1,
-    AntigravityBelow = 2,
+    GravityBelow = 2,
     DragBelow = 3,
-    AntigravityBelowWater = 4,
+    GravityBelowWater = 4,
     DragBelowWater = 5,
     PushOverPull = 6,
-    BusyCountdown = 7,
-    PretensingCountdown = 8,
+    IntervalBusyTicks = 7,
+    PretensingTicks = 8,
     PretensingIntensity = 9,
 }
 
@@ -239,7 +239,7 @@ function _intervalRole(intervalIndex: u16): usize {
 const _INTERVAL_BUSY_COUNTDOWNS = _INTERVAL_ROLES + _8_INTERVALS
 
 @inline()
-function _intervalBusyCountdown(intervalIndex: u16): usize {
+function _intervalBusyTicks(intervalIndex: u16): usize {
     return _INTERVAL_BUSY_COUNTDOWNS + _16(intervalIndex)
 }
 
@@ -304,7 +304,17 @@ function _lineColor(intervalIndex: u16, omega: boolean): usize {
 const _AGE = _LINE_COLORS + _32x3_INTERVALS * 2
 const _MIDPOINT = _AGE + sizeof<u32>()
 const _PRETENST = _MIDPOINT + sizeof<f32>() * 3
-const _LIFE_PHASE = _PRETENST + sizeof<f32>()
+const _GRAVITY_ABOVE = _PRETENST + sizeof<f32>()
+const _DRAG_ABOVE = _GRAVITY_ABOVE + sizeof<f32>()
+const _GRAVITY_BELOW = _DRAG_ABOVE + sizeof<f32>()
+const _DRAG_BELOW = _GRAVITY_BELOW + sizeof<f32>()
+const _GRAVITY_BELOW_WATER = _DRAG_BELOW + sizeof<f32>()
+const _DRAG_BELOW_WATER = _GRAVITY_BELOW_WATER + sizeof<f32>()
+const _PUSH_OVER_PULL = _DRAG_BELOW_WATER + sizeof<f32>()
+const _INTERVAL_BUSY_TICKS = _PUSH_OVER_PULL + sizeof<f32>()
+const _PRETENSING_TICKS = _INTERVAL_BUSY_TICKS + sizeof<f32>()
+const _PRETENSING_INTENSITY = _PRETENSING_TICKS + sizeof<f32>()
+const _LIFE_PHASE = _PRETENSING_INTENSITY + sizeof<f32>()
 const _A = _LIFE_PHASE + sizeof<u16>()
 const _B = _A + sizeof<f32>() * 3
 const _X = _B + sizeof<f32>() * 3
@@ -319,7 +329,7 @@ const _FABRIC_END = _NEXT_STATE + sizeof<u16>()
 
 // INSTANCES
 
-const FABRIC_SIZE: usize = _FABRIC_END + sizeof<u16>() // may need alignment
+const FABRIC_SIZE: usize = _FABRIC_END // may need alignment to 4 bytes
 
 let instance: u16 = 0
 let _instance: usize = 0
@@ -344,46 +354,6 @@ export function init(): usize {
     let blocks = (bytes) >> 16
     memory.grow(blocks + 1)
     return bytes
-}
-
-// Physics =====================================================================================
-
-let globalGravityAbove: f32
-let globalDragAbove: f32
-let globalDragBelowWater: f32
-let globalAntigravityBelowWater: f32
-let globalDragBelow: f32
-let globalAntigravityBelow: f32
-let globalPushOverPullFactor: f32
-let globalBusyCountdownMax: f32
-let globalPretensingCountdownMax: f32
-let globalPretensingIntensity: f32
-
-export function setGlobalFeature(globalFeature: GlobalFeature, value: f32): f32 {
-    switch (globalFeature) {
-        case GlobalFeature.GravityAbove:
-            return globalGravityAbove = value
-        case GlobalFeature.DragAbove:
-            return globalDragAbove = value
-        case GlobalFeature.AntigravityBelow:
-            return globalAntigravityBelow = value
-        case GlobalFeature.DragBelow:
-            return globalDragBelow = value
-        case GlobalFeature.AntigravityBelowWater:
-            return globalAntigravityBelowWater = value
-        case GlobalFeature.DragBelowWater:
-            return globalDragBelowWater = value
-        case GlobalFeature.PushOverPull:
-            return globalPushOverPullFactor = value
-        case GlobalFeature.BusyCountdown:
-            return globalBusyCountdownMax = value
-        case GlobalFeature.PretensingCountdown:
-            return globalPretensingCountdownMax = value
-        case GlobalFeature.PretensingIntensity:
-            return globalPretensingIntensity = value
-        default:
-            return 0
-    }
 }
 
 // Peek and Poke ================================================================================
@@ -592,16 +562,21 @@ function setFaceCount(value: u16): void {
     setU16(_FACE_COUNT, value)
 }
 
+function getGlobalFeature(globalFeature: GlobalFeature): f32 {
+    return getF32(_GRAVITY_ABOVE + globalFeature * sizeof<f32>())
+}
+
 function getFabricBusyCountdown(): u32 {
     return getU32(_FABRIC_BUSY_COUNTDOWN)
 }
 
-function setFabricBusyCountdown(countdown: u32): void {
+function setFabricBusyTicks(countdown: u32): void {
     setU32(_FABRIC_BUSY_COUNTDOWN, countdown)
 }
 
 function getPretensingNuance(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
+    let globalPretensingCountdownMax = getGlobalFeature(GlobalFeature.PretensingTicks)
     return (globalPretensingCountdownMax - <f32>fabricBusyCountdown) / globalPretensingCountdownMax
 }
 
@@ -638,7 +613,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             setJointCount(0)
             setIntervalCount(0)
             setFaceCount(0)
-            setFabricBusyCountdown(0)
+            setFabricBusyTicks(0)
             setPreviousState(REST_STATE)
             setCurrentState(REST_STATE)
             setNextState(REST_STATE)
@@ -654,7 +629,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             }
             break
         case LifePhase.Pretensing:
-            setFabricBusyCountdown(<u32>globalPretensingCountdownMax)
+            setFabricBusyTicks(<u32>getGlobalFeature(GlobalFeature.PretensingTicks))
             break
         case LifePhase.Pretenst:
             break
@@ -717,7 +692,7 @@ export function centralize(): void {
 }
 
 export function setAltitude(altitude: f32, countdown: u32): f32 {
-    setFabricBusyCountdown(countdown)
+    setFabricBusyTicks(countdown)
     altitude += JOINT_RADIUS
     let jointCount = getJointCount()
     let lowY: f32 = 10000
@@ -768,9 +743,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLen
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, restLength)
     }
-    let intervalBusyCountdown: u16 = <u16>globalBusyCountdownMax
-    setIntervalBusyCountdown(intervalIndex, intervalBusyCountdown)
-    setFabricBusyCountdown(intervalBusyCountdown)
+    setIntervalBusyTicks(intervalIndex, <u16>getGlobalFeature(GlobalFeature.IntervalBusyTicks))
     return intervalIndex
 }
 
@@ -786,7 +759,7 @@ export function removeInterval(intervalIndex: u16): void {
 function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     let nextIndex = intervalIndex + offset
     setIntervalRole(intervalIndex, getIntervalRole(nextIndex))
-    setU16(_intervalBusyCountdown(intervalIndex), getIntervalBusyCountdown(nextIndex))
+    setU16(_intervalBusyTicks(intervalIndex), getIntervalBusyTicks(nextIndex))
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
@@ -840,9 +813,9 @@ export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
 export function changeRestLength(intervalIndex: u16, restLength: f32): void {
     initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
     setIntervalStateLength(intervalIndex, REST_STATE, restLength)
-    let countdown = <u16>globalBusyCountdownMax
-    setIntervalBusyCountdown(intervalIndex, countdown)
-    setFabricBusyCountdown(countdown)
+    let countdown = <u16>getGlobalFeature(GlobalFeature.IntervalBusyTicks)
+    setIntervalBusyTicks(intervalIndex, countdown)
+    setFabricBusyTicks(countdown)
 }
 
 export function multiplyRestLength(intervalIndex: u16, factor: f32): void {
@@ -850,12 +823,12 @@ export function multiplyRestLength(intervalIndex: u16, factor: f32): void {
     changeRestLength(intervalIndex, restLength * factor)
 }
 
-function getIntervalBusyCountdown(intervalIndex: u16): u16 {
-    return getU16(_intervalBusyCountdown(intervalIndex))
+function getIntervalBusyTicks(intervalIndex: u16): u16 {
+    return getU16(_intervalBusyTicks(intervalIndex))
 }
 
-function setIntervalBusyCountdown(intervalIndex: u16, countdown: u16): void {
-    setU16(_intervalBusyCountdown(intervalIndex), countdown)
+function setIntervalBusyTicks(intervalIndex: u16, countdown: u16): void {
+    setU16(_intervalBusyTicks(intervalIndex), countdown)
 }
 
 export function getIntervalStateLength(intervalIndex: u16, state: u8): f32 {
@@ -884,11 +857,12 @@ function calculateLength(intervalIndex: u16): f32 {
 
 function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
     let currentLength = getCurrentLength(intervalIndex)
-    let intervalBusyCountdown = getIntervalBusyCountdown(intervalIndex)
+    let intervalBusyCountdown = getIntervalBusyTicks(intervalIndex)
     if (intervalBusyCountdown === 0) {
         return currentLength
     }
-    let progress = (globalBusyCountdownMax - <f32>intervalBusyCountdown) / globalBusyCountdownMax
+    let ticksMax = getGlobalFeature(GlobalFeature.IntervalBusyTicks)
+    let progress = (ticksMax - <f32>intervalBusyCountdown) / ticksMax
     let stateLength = getIntervalStateLength(intervalIndex, state)
     return currentLength * (1 - progress) + stateLength * progress
 }
@@ -1093,7 +1067,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             break
         case LifePhase.Pretensing:
         case LifePhase.Pretenst:
-            globalElasticFactor = bar ? globalPushOverPullFactor : (strain < 0) ? 0 : 1
+            globalElasticFactor = bar ? getGlobalFeature(GlobalFeature.PushOverPull) : (strain < 0) ? 0 : 1
             break
     }
     let force = strain * intervalElasticFactor * globalElasticFactor
@@ -1106,7 +1080,16 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(jointIndex: u16, lifePhase: LifePhase): void {
+function jointPhysics(
+    jointIndex: u16,
+    lifePhase: LifePhase,
+    globalGravityAbove: f32,
+    globalDragAbove: f32,
+    globalGravityBelow: f32,
+    globalDragBelow: f32,
+    globalGravityBelowWater: f32,
+    globalDragBelowWater: f32,
+): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
     let altitude = getY(_location(jointIndex))
@@ -1138,7 +1121,7 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase): void {
         return
     }
     let land = getTerrainUnder(jointIndex) === LAND
-    let gravityBelow = land ? globalAntigravityBelow : globalAntigravityBelowWater
+    let gravityBelow = land ? globalGravityBelow : globalGravityBelowWater
     let dragBelow = land ? globalDragBelow : globalDragBelowWater
     if (altitude > -JOINT_RADIUS) { // close to the surface
         let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
@@ -1164,7 +1147,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         intervalPhysics(intervalIndex, state, lifePhase)
-        let countdown = getIntervalBusyCountdown(intervalIndex)
+        let countdown = getIntervalBusyTicks(intervalIndex)
         if (countdown === 0) {
             continue
         }
@@ -1172,14 +1155,24 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
             maxIntervalBusyCountdown = countdown
         }
         countdown--
-        setIntervalBusyCountdown(intervalIndex, countdown)
+        setIntervalBusyTicks(intervalIndex, countdown)
         if (countdown === 0) { // reached the end just now
             initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
         }
     }
     let jointCount = getJointCount()
+    let gravityAbove = getGlobalFeature(GlobalFeature.GravityAbove)
+    let dragAbove = getGlobalFeature(GlobalFeature.DragAbove)
+    let gravityBelow = getGlobalFeature(GlobalFeature.GravityBelow)
+    let dragBelow = getGlobalFeature(GlobalFeature.DragBelow)
+    let gravityBelowWater = getGlobalFeature(GlobalFeature.GravityBelowWater)
+    let dragBelowWater = getGlobalFeature(GlobalFeature.DragBelowWater)
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        jointPhysics(jointIndex, lifePhase)
+        jointPhysics(
+            jointIndex, lifePhase,
+            gravityAbove, dragAbove, gravityBelow, dragBelow,
+            gravityBelowWater, dragBelowWater
+        )
         switch (lifePhase) {
             case LifePhase.Growing:
             case LifePhase.Shaping:
@@ -1223,7 +1216,7 @@ export function iterate(ticks: u16): boolean {
         if (nextCountdown > fabricBusyCountdown) { // rollover
             nextCountdown = 0
         }
-        setFabricBusyCountdown(nextCountdown)
+        setFabricBusyTicks(nextCountdown)
         if (nextCountdown === 0) {
             return false
         }
@@ -1232,6 +1225,10 @@ export function iterate(ticks: u16): boolean {
         setAltitude(JOINT_RADIUS, 0)
     }
     return true
+}
+
+export function _fabricOffset(): usize {
+    return SURFACE_SIZE + FABRIC_SIZE * instance
 }
 
 export function _midpoint(): usize {
@@ -1274,6 +1271,7 @@ export function _elasticFactors(): usize {
     return _ELASTIC_FACTORS
 }
 
-export function _fabricOffset(): usize {
-    return SURFACE_SIZE + FABRIC_SIZE * instance
+export function _globalFeatures(): usize {
+    return _GRAVITY_ABOVE
 }
+

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -6,7 +5,8 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { GlobalFeature, IFabricEngine} from "./fabric-engine"
+import { GlobalFeature } from "./fabric-engine"
+import { FabricInstance } from "./fabric-instance"
 import { GLOBAL_FEATURE, globalFeatureValue } from "./global-feature"
 import { IntervalRole, roleLength } from "./interval-role"
 
@@ -54,13 +54,13 @@ export function getFeatureValue(name: IFeatureName, defaultValue?: boolean): num
     return 1
 }
 
-export function applyPhysicsFeature(engine: IFabricEngine, feature: IFeature): void {
-    const physicsFeature = feature.name.globalFeature
-    const factor = feature.factor$.getValue()
-    if (physicsFeature === undefined) {
+export function applyPhysicsFeature(instance: FabricInstance, feature: IFeature): void {
+    const globalFeature = feature.name.globalFeature
+    if (globalFeature === undefined) {
         return
     }
-    engine.setGlobalFeature(physicsFeature, factor)
+    const factor = feature.factor$.getValue()
+    instance.setGlobalFeature(globalFeature, factor)
 }
 
 export function enumToFeatureArray(enumObject: object, isPhysics: boolean): IFeature[] {

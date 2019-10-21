@@ -7,9 +7,9 @@ import { Vector3 } from "three"
 
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
-import { GlobalFeature, IFabricEngine } from "./fabric-engine"
+import { IFabricEngine } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
-import { globalFeatureValue } from "./global-feature"
+import { IFeature } from "./features"
 import { ICodeTree } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
@@ -59,14 +59,12 @@ export class FabricKernel {
         }
     }
 
-    public createTensegrityFabric(name: string, codeTree: ICodeTree): TensegrityFabric | undefined {
+    public createTensegrityFabric(name: string, codeTree: ICodeTree, globalFeatures: IFeature[]): TensegrityFabric | undefined {
         const newInstance = this.allocateInstance()
         if (!newInstance) {
             return undefined
         }
-        const coundownMax = globalFeatureValue(GlobalFeature.PretensingCountdown)
-        const intensity = globalFeatureValue(GlobalFeature.PretensingIntensity)
-        return new TensegrityFabric(codeTree, newInstance, name, coundownMax, intensity)
+        return new TensegrityFabric(codeTree, newInstance, name, globalFeatures)
     }
 
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {

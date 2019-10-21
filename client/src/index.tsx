@@ -12,7 +12,7 @@ import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
 import { GlobalFeature, IFabricEngine } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
+import { enumToFeatureArray } from "./fabric/features"
 import { IntervalRole } from "./fabric/interval-role"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
@@ -23,7 +23,6 @@ import { TensegrityView } from "./view/tensegrity-view"
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./index.css"
-
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
@@ -47,19 +46,18 @@ async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const root = document.getElementById("root") as HTMLElement
     const roleFeatures = enumToFeatureArray(IntervalRole, false)
+    const globalFeatures = enumToFeatureArray(GlobalFeature, true)
     const pretensingStep = new BehaviorSubject(0)
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         const fabricKernel = new FabricKernel(engine)
         const buildFabric = (code: ICode) => {
-            const newFabric = fabricKernel.createTensegrityFabric(name, code.codeTree)
+            const newFabric = fabricKernel.createTensegrityFabric(name, code.codeTree, globalFeatures)
             if (!newFabric) {
                 throw new Error()
             }
             return newFabric
         }
-        const globalFeatures = enumToFeatureArray(GlobalFeature, true)
-        globalFeatures.forEach(feature => applyPhysicsFeature(engine, feature))
         ReactDOM.render(
             <TensegrityView
                 engine={engine}
