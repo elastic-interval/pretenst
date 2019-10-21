@@ -3,33 +3,15 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { IntervalRole } from "./interval-role"
+import { PhysicsFeature } from "./physics-feature"
+
 export interface IMemory {
     buffer: ArrayBuffer
 }
 
 export const MAX_INSTANCES = 32
 export const SLACK_THRESHOLD = 0.0001
-
-export enum PhysicsFeature {
-    GravityAbove = 0,
-    DragAbove = 1,
-    AntigravityBelow = 2,
-    DragBelow = 3,
-    AntigravityBelowWater = 4,
-    DragBelowWater = 5,
-    PushElastic = 6,
-    PullElastic = 7,
-    BusyCountdown = 8,
-    PretensingCountdown = 9,
-    PretensingIntensity = 10,
-}
-
-export function notWater(feature?: PhysicsFeature): boolean {
-    if (feature === undefined) {
-        return false
-    }
-    return feature !== PhysicsFeature.AntigravityBelowWater && feature !== PhysicsFeature.DragBelowWater
-}
 
 export enum LifePhase {
     Growing = 0,
@@ -45,16 +27,6 @@ export function doNotTouch(lifePhase: LifePhase): boolean {
 
 export function hideSurface(lifePhase: LifePhase): boolean {
     return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping
-}
-
-export enum IntervalRole {
-    Bar = 1,
-    Triangle = 2,
-    Ring = 3,
-    Cross = 4,
-    BowMid = 5,
-    BowEndLow = 6,
-    BowEndHigh = 7,
 }
 
 export enum FabricState {

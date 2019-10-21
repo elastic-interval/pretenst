@@ -8,7 +8,9 @@ import { useEffect, useState } from "react"
 import { Button } from "reactstrap"
 
 import { codeTreeToString, ICodeTree, stringToCodeTree } from "../fabric/tensegrity-brick-types"
-import { getLocalCodeTrees, loadCodeTrees, loadStorageIndex, storeCodeTree } from "../storage/local-storage"
+
+const FABRIC_CODE_KEY = "FabricCode"
+const STORAGE_INDEX_KEY = "StorageIndex"
 
 export interface ICode {
     storageIndex: number
@@ -76,3 +78,50 @@ export function CodePanel({code, setCode}: {
         </div>
     )
 }
+
+async function getBootstrapCodeTrees(): Promise<ICodeTree[]> {
+    const response = await fetch("/bootstrap.json")
+    const body = await response.json()
+    if (!body) {
+        return [{_: 0}, {_: 9}]
+    }
+    return body.pretenst
+}
+
+function getLocalCodeTrees(): ICodeTree[] {
+    const localFabricCode = localStorage.getItem(FABRIC_CODE_KEY)
+    return localFabricCode ? JSON.parse(localFabricCode) : []
+}
+
+async function loadCodeTrees(): Promise<ICodeTree[]> {
+    const bootstrapTrees = await getBootstrapCodeTrees()
+    const localTrees = getLocalCodeTrees()
+    return [...bootstrapTrees, ...localTrees]
+}
+
+async function storeCodeTree(codeTree: ICodeTree): Promise<{ trees: ICodeTree[], index: number }> {
+    const code = codeTreeToString(codeTree)
+    const trees = await loadCodeTrees()
+    const index = trees.map(codeTreeToString).findIndex(localCode => localCode === code)
+    if (index >= 0) {
+        storeStorageIndex(index)
+        return {trees, index}
+    }
+    trees.push(codeTree)
+    localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(trees))
+    storeStorageIndex(trees.length + 1)
+    return {trees, index: trees.length - 1}
+}
+
+function loadStorageIndex(): number {
+    const item = localStorage.getItem(STORAGE_INDEX_KEY)
+    if (!item) {
+        return 0
+    }
+    return parseInt(item, 10)
+}
+
+function storeStorageIndex(index: number): void {
+    localStorage.setItem(STORAGE_INDEX_KEY, index.toString(10))
+}
+

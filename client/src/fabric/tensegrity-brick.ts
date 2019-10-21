@@ -5,10 +5,8 @@
 
 import { Matrix4, Vector3 } from "three"
 
-import { roleLength } from "../storage/local-storage"
-
-import { IntervalRole } from "./fabric-engine"
 import { JOINT_RADIUS } from "./fabric-instance"
+import { IntervalRole, roleLength } from "./interval-role"
 import {
     BAR_ARRAY,
     BarEnd,

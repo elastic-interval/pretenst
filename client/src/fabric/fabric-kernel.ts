@@ -6,10 +6,10 @@
 import { Vector3 } from "three"
 
 import { HEXALOT_SHAPE } from "../island/island-logic"
-import { physicsValue } from "../storage/local-storage"
 
-import { IFabricEngine, MAX_INSTANCES, PhysicsFeature } from "./fabric-engine"
+import { IFabricEngine, MAX_INSTANCES } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
+import { PhysicsFeature, physicsValue } from "./physics-feature"
 import { ICodeTree } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 

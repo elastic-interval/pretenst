@@ -37,8 +37,8 @@ const AMBIENT_COLOR = new Color("#bababa")
 const ITERATIONS_PER_FRAME = 50
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const BAR_GIRTH = 0.3
-const CABLE_GIRTH = 0.1
+const BAR_GIRTH = 3
+const CABLE_GIRTH = 1
 
 export function FabricView({
                                fabric, lifePhase, setLifePhase, pretensingStep$, selectedFace,

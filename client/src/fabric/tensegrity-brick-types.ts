@@ -5,7 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { IntervalRole } from "./fabric-engine"
+import { IntervalRole } from "./interval-role"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 export const PHI = 1.61803398875

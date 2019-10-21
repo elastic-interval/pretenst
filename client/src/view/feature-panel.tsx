@@ -10,8 +10,8 @@ import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { applyPhysicsFeature, IFeature } from "../fabric/features"
+import { featureMultiplier, multiplierSymbol, multiplierValue } from "../fabric/physics-feature"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { featureMultiplier, multiplierSymbol, multiplierValue } from "../storage/local-storage"
 
 export function FeaturePanel({engine, featureSet, fabric}: {
     engine: IFabricEngine,

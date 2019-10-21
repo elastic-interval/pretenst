@@ -10,13 +10,16 @@ import { BehaviorSubject } from "rxjs"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { IFabricEngine, IntervalRole, notWater, PhysicsFeature } from "./fabric/fabric-engine"
+import { IFabricEngine } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
+import { IntervalRole } from "./fabric/interval-role"
+import { notWater, PhysicsFeature } from "./fabric/physics-feature"
 import { ICodeTree } from "./fabric/tensegrity-brick-types"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
+
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config

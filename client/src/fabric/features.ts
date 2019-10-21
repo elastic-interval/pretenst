@@ -6,9 +6,9 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { physicsValue, roleLength, setFeature } from "../storage/local-storage"
-
-import { IFabricEngine, IntervalRole, PhysicsFeature } from "./fabric-engine"
+import { IFabricEngine} from "./fabric-engine"
+import { IntervalRole, roleLength } from "./interval-role"
+import { PhysicsFeature, physicsValue } from "./physics-feature"
 
 interface IFeatureName {
     physicsFeature?: PhysicsFeature
@@ -78,7 +78,7 @@ function createFeature(name: IFeatureName): IFeature {
     return {
         label, name, defaultValue, factor$, adjustmentFactor,
         setFactor: (newFactor: number) => {
-            setFeature(label, newFactor)
+            localStorage.setItem(label, newFactor.toFixed(10))
             factor$.next(newFactor)
         },
     }
