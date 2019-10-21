@@ -15,15 +15,16 @@ import { FabricKernel } from "./fabric/fabric-kernel"
 import { applyPhysicsFeature, enumToFeatureArray } from "./fabric/features"
 import { IntervalRole } from "./fabric/interval-role"
 import { notWater, PhysicsFeature } from "./fabric/physics-feature"
-import { ICodeTree } from "./fabric/tensegrity-brick-types"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
+import { ICode } from "./view/code-panel"
 import { TensegrityView } from "./view/tensegrity-view"
 
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./index.css"
+
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
@@ -51,8 +52,8 @@ async function start(): Promise<void> {
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         const fabricKernel = new FabricKernel(engine)
-        const buildFabric = (name: string, codeTree: ICodeTree) => {
-            const newFabric = fabricKernel.createTensegrityFabric(name, codeTree)
+        const buildFabric = (code: ICode) => {
+            const newFabric = fabricKernel.createTensegrityFabric(name, code.codeTree)
             if (!newFabric) {
                 throw new Error()
             }

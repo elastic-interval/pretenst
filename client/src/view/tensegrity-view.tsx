@@ -14,7 +14,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { IFeature } from "../fabric/features"
 import { LifePhase } from "../fabric/life-phase"
-import { ICodeTree, ISelectedFace } from "../fabric/tensegrity-brick-types"
+import { ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { CodePanel, ICode } from "./code-panel"
@@ -45,7 +45,7 @@ interface IButtonCharacter {
 
 export function TensegrityView({engine, buildFabric, features, pretensingStep$}: {
     engine: IFabricEngine,
-    buildFabric: (name: string, codeTree: ICodeTree) => TensegrityFabric,
+    buildFabric: (code: ICode) => TensegrityFabric,
     features: IFeature[],
     pretensingStep$: BehaviorSubject<number>,
 }): JSX.Element {
@@ -64,16 +64,15 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
         if (!code) {
             return
         }
-        const {storageIndex, codeString, codeTree} = code
         setSelectedFace(undefined)
         if (fabric) {
             fabric.instance.release()
         }
-        const fetched = buildFabric(storageIndex.toString(), codeTree)
-        setFabric(fetched)
-        setLifePhase(fetched.lifePhase)
-        location.hash = codeString
-        console.log("\n", JSON.stringify(codeTree))
+        const builtFabric = buildFabric(code)
+        setFabric(builtFabric)
+        setLifePhase(builtFabric.lifePhase)
+        location.hash = code.codeString
+        console.log("\n", JSON.stringify(code.codeTree))
     }
 
     useEffect(buildFromCode, [code])
@@ -161,7 +160,7 @@ export function TensegrityView({engine, buildFabric, features, pretensingStep$}:
     return (
         <div id="tensegrity-view" className="the-whole-page">
             {!fabric ? (
-                <CodePanel code={code} setCode={setCode}/>
+                <CodePanel setCode={setCode}/>
             ) : (
                 <>
                     <Canvas>
