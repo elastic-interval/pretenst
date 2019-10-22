@@ -17,6 +17,7 @@ import {
     FaDotCircle,
     FaFileCsv,
     FaHandPointUp,
+    FaHandRock,
     FaListAlt,
     FaParachuteBox,
     FaRadiationAlt,
@@ -141,6 +142,9 @@ export function TensegrityControlPanel(
                     <FaRadiationAlt/>
                 </Button>
                 <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => engine.setAltitude(1)}>
+                    <FaHandRock/>
+                </Button>
+                <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => engine.setAltitude(10)}>
                     <FaParachuteBox/>
                 </Button>
                 <Button onClick={() => fabric.instance.engine.centralize()}>
