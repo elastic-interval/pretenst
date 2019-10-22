@@ -90,7 +90,7 @@ export function FabricView({
             setLifePhase(fabric.lifePhase)
         }
         setAge(instance.engine.getAge())
-    }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase, fastMode])
+    }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase, fastMode, autoRotate])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
 
