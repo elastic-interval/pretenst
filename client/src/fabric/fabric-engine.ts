@@ -98,7 +98,7 @@ export interface IFabricEngine {
 
     centralize(): void
 
-    setAltitude(altitude: number, countdown: number): number
+    setAltitude(altitude: number): number
 
     nextJointTag(): number
 

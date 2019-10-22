@@ -128,7 +128,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PushOverPull,
         name: "PushOverPull",
-        defaultValue: 1.0,
+        defaultValue: 4.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byTenPercent,
@@ -137,7 +137,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.SlackThreshold,
         name: "SlackThreshold",
-        defaultValue: 0.01,
+        defaultValue: 0.008,
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
         adjustment: byTenPercent,
@@ -164,7 +164,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.IntervalBusyTicks,
         name: "BusyCountdown",
-        defaultValue: 300.0,
+        defaultValue: 500.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 1,
         adjustment: byTenPercent,
@@ -258,7 +258,8 @@ export function fabricFeatureValue(fabricFeature: FabricFeature, defaultValue?: 
     if (defaultValue) {
         return config.defaultValue
     }
-    const value = localStorage.getItem(config.name)
+    const key = FabricFeature[fabricFeature]
+    const value = localStorage.getItem(key)
     return value ? parseFloat(value) : config.defaultValue
 }
 

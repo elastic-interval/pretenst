@@ -167,9 +167,9 @@ export class TensegrityFabric {
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const isBar = intervalRole === IntervalRole.Bar
-        // todo: was const fabricElasticFactor = isBar ? 1.2 : 0.3 // must match the WASM
-        const fabricElasticFactor = isBar ? fabricFeatureValue(FabricFeature.PushOverPull) : 1
-        const elasticFactor = scaleFactor * fabricElasticFactor
+        const pushOverPull = fabricFeatureValue(FabricFeature.PushOverPull)
+        const fabricElasticFactor = isBar ? pushOverPull / 2 : 2 / pushOverPull
+        const elasticFactor = scaleFactor * fabricElasticFactor / 5
         const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticFactor)
         const interval: IInterval = {
             index,

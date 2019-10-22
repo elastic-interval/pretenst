@@ -140,7 +140,7 @@ export function TensegrityControlPanel(
                 <Button disabled={lifePhase !== LifePhase.Shaping} onClick={() => optimizeFabric(fabric, false)}>
                     <FaRadiationAlt/>
                 </Button>
-                <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => engine.setAltitude(60, 10000)}>
+                <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => engine.setAltitude(1)}>
                     <FaParachuteBox/>
                 </Button>
                 <Button onClick={() => fabric.instance.engine.centralize()}>

@@ -210,7 +210,7 @@ export class GotchiBody {
     }
 
     public setAltitude(altitude: number): number {
-        return this.engine.setAltitude(altitude, 0)
+        return this.engine.setAltitude(altitude)
     }
 
     public unfold(faceIndex: number, jointNumber: number): FaceSnapshot [] {

@@ -627,6 +627,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             }
             break
         case LifePhase.Pretensing:
+            setAltitude(0)
             setFabricBusyTicks(<u32>getFeature(FabricFeature.PretensingTicks))
             break
         case LifePhase.Pretenst:
@@ -689,8 +690,7 @@ export function centralize(): void {
     }
 }
 
-export function setAltitude(altitude: f32, countdown: u32): f32 {
-    setFabricBusyTicks(countdown)
+export function setAltitude(altitude: f32): f32 {
     altitude += JOINT_RADIUS
     let jointCount = getJointCount()
     let lowY: f32 = 10000
@@ -947,14 +947,14 @@ function outputLinesGeometry(): void {
         let intervalRole = getIntervalRole(intervalIndex)
         let isBar: boolean = intervalRole === IntervalRole.Bar
         let strain = isBar ? -directionalStrain : directionalStrain
-        if (strain < slackThreshold) {
-            setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
-        } else if (colorBars && colorCables) {
+        if (colorBars && colorCables) {
             let color = isBar ? HOT_COLOR : COLD_COLOR
             setLineColor(intervalIndex, color[0], color[1], color[2])
         } else if (colorBars || colorCables) {
             if (isBar && colorCables || !isBar && colorBars) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
+            } else if (strain < slackThreshold) {
+                setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
                 let min = isBar ? minBarStrain : minCableStrain
                 let max = isBar ? maxBarStrain : maxCableStrain
@@ -1066,7 +1066,8 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             break
         case LifePhase.Pretensing:
         case LifePhase.Pretenst:
-            fabricElasticFactor = bar ? getFeature(FabricFeature.PushOverPull) : (strain < 0) ? 0 : 1
+            let pushOverPull = getFeature(FabricFeature.PushOverPull)
+            fabricElasticFactor = bar ? pushOverPull / 2 : strain < 0 ? 0 : 2 / pushOverPull
             break
     }
     let force = strain * intervalElasticFactor * fabricElasticFactor
@@ -1221,7 +1222,7 @@ export function iterate(ticks: u16): boolean {
         }
     }
     if (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack) {
-        setAltitude(JOINT_RADIUS, 0)
+        setAltitude(0)
     }
     return true
 }
