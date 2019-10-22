@@ -146,7 +146,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.BarMass,
         name: "BarMass",
-        defaultValue: 1,
+        defaultValue: 0.1,
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
         adjustment: byTenPercent,
