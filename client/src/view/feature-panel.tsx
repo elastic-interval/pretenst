@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -35,9 +34,12 @@ export function FeaturePanel({featureSet, lifePhase, instance}: {
             textAlign: "right",
             width: "6em",
         }
-        const inputStyle: CSSProperties = feature.atDefault ? basicStyle : {
+        const inputStyle: CSSProperties = feature.isAtDefault ? basicStyle : {
             ...basicStyle,
-            color: "green",
+            color: "red",
+            borderStyle: "solid",
+            borderWidth: "1px",
+            borderColor: "red",
         }
         const UpdateButtonGroup = (): JSX.Element => (
             <ButtonGroup className="mx-1">

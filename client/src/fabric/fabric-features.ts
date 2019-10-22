@@ -68,7 +68,7 @@ function multiplierSymbol(multiplier: FeatureMultiplier): string {
 
 const byTenPercent: FeatureAdjustment = (factor: number, up: boolean) => factor * (up ? 1.1 : 1 / 1.1)
 const byOnePercent: FeatureAdjustment = (factor: number, up: boolean) => factor * (up ? 1.01 : 1 / 1.01)
-const plusFive: FeatureAdjustment = (factor: number, up: boolean) => factor + (up ? 5 : -5)
+const plusOne: FeatureAdjustment = (factor: number, up: boolean) => up || factor > 1 ? factor + (up ? 1 : -1) : 1
 
 const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
@@ -194,7 +194,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 50.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 0,
-        adjustment: plusFive,
+        adjustment: plusOne,
         lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
     },
     {
@@ -270,10 +270,10 @@ export class FloatFeature {
     private factor$: BehaviorSubject<number>
 
     constructor(public readonly config: IFeatureConfig) {
-        this.factor$ = new BehaviorSubject<number>(fabricFeatureValue(config.feature, true))
+        this.factor$ = new BehaviorSubject<number>(fabricFeatureValue(config.feature))
         this.factor$.subscribe(newFactor => {
             const key = FabricFeature[this.config.feature]
-            if (newFactor / this.config.defaultValue - 1 < 0.0001) {
+            if (this.isAtDefault) {
                 localStorage.removeItem(key)
             } else {
                 localStorage.setItem(key, newFactor.toFixed(18))
@@ -322,10 +322,11 @@ export class FloatFeature {
         this.factor$.next(this.config.defaultValue)
     }
 
-    public atDefault(): boolean {
+    public get isAtDefault(): boolean {
         const defaultValue = this.config.defaultValue
-        const difference = Math.abs(this.factor - defaultValue)
-        return difference < 0.00001 * Math.abs(defaultValue)
+        const overDefault = Math.abs(this.factor / defaultValue)
+        const difference = Math.abs(overDefault - 1)
+        return difference < 0.00001
     }
 
     public showDuring(lifePhase: LifePhase): boolean {

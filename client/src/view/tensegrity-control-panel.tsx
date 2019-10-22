@@ -82,7 +82,7 @@ export function TensegrityControlPanel(
         }
         const color = bars === colorBars && cables === colorCables ? "success" : "secondary"
         return <Button style={{color: "white"}} color={color} onClick={onClick}>
-            {bars && cables ? (<><FaHandPointUp/><span> Edit</span></>) :
+            {bars && cables ? (<><FaHandPointUp/><span> Faces</span></>) :
                 bars ? (<><FaCircle/><span> Pushes </span></>) : (<><span> Pulls </span><FaDotCircle/></>)}
         </Button>
     }
@@ -100,10 +100,10 @@ export function TensegrityControlPanel(
                 {selectedBrick ? (
                     <ButtonGroup style={{paddingLeft: "0.6em", width: "40em"}}>
                         <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
-                            <FaArrowUp/>
+                            <FaArrowUp/><span> Bigger</span>
                         </Button>
                         <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
-                            <FaArrowDown/>
+                            <FaArrowDown/><span> Smaller</span>
                         </Button>
                         <Button onClick={() => {
                             setSelectedBrick()

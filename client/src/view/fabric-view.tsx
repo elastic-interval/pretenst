@@ -83,12 +83,14 @@ export function FabricView({
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = autoRotate
-        fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
+        if (fastMode) {
+            fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
+        }
         if (lifePhase !== fabric.lifePhase) {
             setLifePhase(fabric.lifePhase)
         }
         setAge(instance.engine.getAge())
-    }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase])
+    }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase, fastMode])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
 

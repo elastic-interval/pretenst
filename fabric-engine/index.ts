@@ -61,9 +61,9 @@ const LAND: u8 = 1
 const ERROR: u16 = 65535
 
 const MAX_INSTANCES: u16 = 32
-const MAX_INTERVALS: u16 = 1024
-const MAX_JOINTS: u16 = 512
-const MAX_FACES: u16 = 256
+const MAX_INTERVALS: u16 = 8192
+const MAX_JOINTS: u16 = 2048
+const MAX_FACES: u16 = 1024
 
 const REST_STATE: u8 = 0
 const STATE_COUNT: u8 = 16
