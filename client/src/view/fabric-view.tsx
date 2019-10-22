@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -11,7 +12,7 @@ import { Color, Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { GlobalFeature } from "../fabric/fabric-engine"
-import { globalFeatureValue } from "../fabric/global-feature"
+import { getFeatureValue } from "../fabric/global-feature"
 import { doNotClick, hideSurface, LifePhase } from "../fabric/life-phase"
 import { AdjacentIntervals, bySelectedFace, IInterval, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -80,7 +81,7 @@ export function FabricView({
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = autoRotate
-        fabric.iterate(globalFeatureValue(GlobalFeature.TicksPerFrame))
+        fabric.iterate(getFeatureValue(GlobalFeature.TicksPerFrame))
         if (lifePhase !== fabric.lifePhase) {
             setLifePhase(fabric.lifePhase)
         }

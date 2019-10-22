@@ -25,23 +25,28 @@ export enum GlobalFeature {
     GravityBelowWater = 4,
     DragBelowWater = 5,
     PushOverPull = 6,
-    IntervalBusyTicks = 7,
-    PretensingTicks = 8,
-    PretensingIntensity = 9,
-    TicksPerFrame = 10,
-    SlackThreshold = 11,
-    BarMass = 12,
-    CableMass = 13,
+    SlackThreshold = 7,
+    BarMass = 8,
+    CableMass = 9,
+    IntervalBusyTicks = 10,
+    PretensingTicks = 11,
+    PretensingIntensity = 12,
+    TicksPerFrame = 13,
+    BarLength = 14,
+    TriangleCableLength = 15,
+    RingLength = 16,
+    CrossLength = 17,
+    BowMidLength = 18,
+    BowEndLength = 19,
 }
 
 enum IntervalRole {
-    Bar = 1,
-    Triangle = 2,
-    Ring = 3,
-    Cross = 4,
-    BowMid = 5,
-    BowEndLow = 6,
-    BowEndHigh = 7,
+    Bar = 0,
+    Triangle = 1,
+    Ring = 2,
+    Cross = 3,
+    BowMid = 4,
+    BowEnd = 5,
 }
 
 export enum LifePhase {
@@ -306,21 +311,8 @@ function _lineColor(intervalIndex: u16, omega: boolean): usize {
 const _AGE = _LINE_COLORS + _32x3_INTERVALS * 2
 const _MIDPOINT = _AGE + sizeof<u32>()
 const _PRETENST = _MIDPOINT + sizeof<f32>() * 3
-const _GRAVITY_ABOVE = _PRETENST + sizeof<f32>()
-const _DRAG_ABOVE = _GRAVITY_ABOVE + sizeof<f32>()
-const _GRAVITY_BELOW = _DRAG_ABOVE + sizeof<f32>()
-const _DRAG_BELOW = _GRAVITY_BELOW + sizeof<f32>()
-const _GRAVITY_BELOW_WATER = _DRAG_BELOW + sizeof<f32>()
-const _DRAG_BELOW_WATER = _GRAVITY_BELOW_WATER + sizeof<f32>()
-const _PUSH_OVER_PULL = _DRAG_BELOW_WATER + sizeof<f32>()
-const _INTERVAL_BUSY_TICKS = _PUSH_OVER_PULL + sizeof<f32>()
-const _PRETENSING_TICKS = _INTERVAL_BUSY_TICKS + sizeof<f32>()
-const _PRETENSING_INTENSITY = _PRETENSING_TICKS + sizeof<f32>()
-const _TICKS_PER_FRAME = _PRETENSING_INTENSITY + sizeof<f32>()
-const _SLACK_THRESHOLD = _TICKS_PER_FRAME + sizeof<f32>()
-const _BAR_MASS = _SLACK_THRESHOLD + sizeof<f32>()
-const _CABLE_MASS = _BAR_MASS + sizeof<f32>()
-const _LIFE_PHASE = _CABLE_MASS + sizeof<f32>()
+const _GLOBAL_FEATURES = _PRETENST + sizeof<f32>()
+const _LIFE_PHASE = _GLOBAL_FEATURES + 30 * sizeof<f32>() // lots
 const _A = _LIFE_PHASE + sizeof<u16>()
 const _B = _A + sizeof<f32>() * 3
 const _X = _B + sizeof<f32>() * 3
@@ -335,7 +327,7 @@ const _FABRIC_END = _NEXT_STATE + sizeof<u16>()
 
 // INSTANCES
 
-const FABRIC_SIZE: usize = _FABRIC_END // may need alignment to 4 bytes
+const FABRIC_SIZE: usize = _FABRIC_END + sizeof<u16>() // may need alignment to 4 bytes
 
 let instance: u16 = 0
 let _instance: usize = 0
@@ -569,7 +561,7 @@ function setFaceCount(value: u16): void {
 }
 
 function getGlobalFeature(globalFeature: GlobalFeature): f32 {
-    return getF32(_GRAVITY_ABOVE + globalFeature * sizeof<f32>())
+    return getF32(_GLOBAL_FEATURES + globalFeature * sizeof<f32>())
 }
 
 function getFabricBusyCountdown(): u32 {
@@ -1279,6 +1271,6 @@ export function _elasticFactors(): usize {
 }
 
 export function _globalFeatures(): usize {
-    return _GRAVITY_ABOVE
+    return _GLOBAL_FEATURES
 }
 

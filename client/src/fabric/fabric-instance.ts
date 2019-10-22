@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -7,6 +8,7 @@ import { Vector3 } from "three"
 
 import { GlobalFeature, IFabricEngine } from "./fabric-engine"
 import { vectorFromFloatArray } from "./fabric-kernel"
+import { FloatFeature } from "./global-feature"
 import { LifePhase } from "./life-phase"
 
 export const JOINT_RADIUS = 0.1
@@ -48,8 +50,8 @@ export class FabricInstance {
         this.elasticFactors = new LazyFloatArray(b, offset + e._elasticFactors(), () => e.getIntervalCount())
     }
 
-    public setGlobalFeature(globalFeature: GlobalFeature, value: number): void {
-        this.globalFeatures.floats[globalFeature] = value
+    public applyFeature(feature: FloatFeature): void {
+        this.globalFeatures.floats[feature.globalFeature] = feature.factor
     }
 
     public getGlobalFeature(globalFeature: GlobalFeature): number {

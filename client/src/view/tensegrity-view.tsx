@@ -11,8 +11,7 @@ import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { IFabricEngine } from "../fabric/fabric-engine"
-import { IFeature } from "../fabric/features"
+import { FloatFeature } from "../fabric/global-feature"
 import { LifePhase } from "../fabric/life-phase"
 import { ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -43,11 +42,9 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-export function TensegrityView({engine, buildFabric, globalFeatures, roleFeatures, pretensingStep$}: {
-    engine: IFabricEngine,
+export function TensegrityView({buildFabric, features, pretensingStep$}: {
     buildFabric: (code: ICode) => TensegrityFabric,
-    globalFeatures: IFeature[],
-    roleFeatures: IFeature[],
+    features: FloatFeature[],
     pretensingStep$: BehaviorSubject<number>,
 }): JSX.Element {
 
@@ -179,22 +176,12 @@ export function TensegrityView({engine, buildFabric, globalFeatures, roleFeature
                     </Canvas>
                     {!showFeatures ? undefined : (
                         <div id="top-right">
-                            {lifePhase === LifePhase.Pretenst ?
-                                <FeaturePanel
-                                    featureSet={globalFeatures}
-                                    engine={engine}
-                                    fabric={fabric}
-                                /> :
-                                lifePhase === LifePhase.Shaping ?
-                                    <FeaturePanel
-                                        featureSet={roleFeatures}
-                                        engine={engine}
-                                        fabric={fabric}
-                                    /> :
-                                    undefined
-                            }
+                            <FeaturePanel
+                                featureSet={features}
+                                lifePhase={lifePhase}
+                                instance={fabric.instance}
+                            />
                         </div>
-
                     )}
                     {!code ? undefined : (
                         <div id="top-middle">

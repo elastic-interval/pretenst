@@ -10,15 +10,13 @@ import { BehaviorSubject } from "rxjs"
 import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
-import { GlobalFeature, IFabricEngine } from "./fabric/fabric-engine"
+import { IFabricEngine } from "./fabric/fabric-engine"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { enumToFeatureArray } from "./fabric/features"
-import { IntervalRole } from "./fabric/interval-role"
+import { createFeatures } from "./fabric/global-feature"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { ICode } from "./view/code-panel"
 import { TensegrityView } from "./view/tensegrity-view"
-
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config
@@ -45,8 +43,7 @@ APP_EVENT.subscribe(appEvent => {
 async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const root = document.getElementById("root") as HTMLElement
-    const roleFeatures = enumToFeatureArray(IntervalRole, false)
-    const globalFeatures = enumToFeatureArray(GlobalFeature, true)
+    const globalFeatures = createFeatures()
     const pretensingStep = new BehaviorSubject(0)
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
@@ -60,9 +57,7 @@ async function start(): Promise<void> {
         }
         ReactDOM.render(
             <TensegrityView
-                engine={engine}
-                globalFeatures={globalFeatures}
-                roleFeatures={roleFeatures}
+                features={globalFeatures}
                 buildFabric={buildFabric}
                 pretensingStep$={pretensingStep}
             />,
@@ -76,7 +71,7 @@ async function start(): Promise<void> {
         ReactDOM.render(
             <App
                 engine={engine}
-                roleFeatures={roleFeatures}
+                roleFeatures={globalFeatures} // todo
                 storage={storage}
                 user={user}
             />,

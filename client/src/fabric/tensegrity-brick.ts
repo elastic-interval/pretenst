@@ -5,8 +5,9 @@
 
 import { Matrix4, Vector3 } from "three"
 
+import { IntervalRole } from "./fabric-engine"
 import { JOINT_RADIUS } from "./fabric-instance"
-import { IntervalRole, roleLength } from "./interval-role"
+import { roleDefaultLength } from "./global-feature"
 import {
     BAR_ARRAY,
     BarEnd,
@@ -210,7 +211,7 @@ export function connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): ICon
         const scaleFactor = percentToFactor(scale)
         brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
             engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
-            const length = scaleFactor * roleLength(interval.intervalRole)
+            const length = scaleFactor * roleDefaultLength(interval.intervalRole)
             engine.changeRestLength(interval.index, length)
         })
         return face
@@ -289,9 +290,9 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
         fabric.removeInterval(removeA)
         fabric.removeInterval(removeB)
         engine.setIntervalRole(adjustA.index, adjustA.intervalRole = role)
-        engine.changeRestLength(adjustA.index, percentToFactor(adjustA.scale) * roleLength(role))
+        engine.changeRestLength(adjustA.index, percentToFactor(adjustA.scale) * roleDefaultLength(role))
         engine.setIntervalRole(adjustB.index, adjustB.intervalRole = role)
-        engine.changeRestLength(adjustB.index, percentToFactor(adjustB.scale) * roleLength(role))
+        engine.changeRestLength(adjustB.index, percentToFactor(adjustB.scale) * roleDefaultLength(role))
     }
     crossCables.forEach(ab => {
         const a = ab.alpha
@@ -313,12 +314,11 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
         if (!cd || !ad) {
             return
         }
-        const role = IntervalRole.BowMid
-        fabric.createInterval(c, a, role, ab.scale)
+        fabric.createInterval(c, a, IntervalRole.BowMid, ab.scale)
         if (highCross) {
-            finish(ab, cd, bc, ad, IntervalRole.BowEndHigh)
+            finish(ab, cd, bc, ad, IntervalRole.BowEnd)
         } else {
-            finish(bc, ad, ab, cd, IntervalRole.BowEndLow)
+            finish(bc, ad, ab, cd, IntervalRole.BowEnd)
         }
     })
 }

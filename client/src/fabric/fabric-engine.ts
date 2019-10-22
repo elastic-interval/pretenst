@@ -1,10 +1,8 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IntervalRole } from "./interval-role"
 import { LifePhase } from "./life-phase"
 
 export interface IMemory {
@@ -19,13 +17,32 @@ export enum GlobalFeature {
     GravityBelowWater = 4,
     DragBelowWater = 5,
     PushOverPull = 6,
-    IntervalBusyTicks = 7,
-    PretensingTicks = 8,
-    PretensingIntensity = 9,
-    TicksPerFrame = 10,
-    SlackThreshold = 11,
-    BarMass = 12,
-    CableMass = 13,
+    SlackThreshold = 7,
+    BarMass = 8,
+    CableMass = 9,
+    IntervalBusyTicks = 10,
+    PretensingTicks = 11,
+    PretensingIntensity = 12,
+    TicksPerFrame = 13,
+    BarLength = 14,
+    TriangleCableLength = 15,
+    RingCableLength = 16,
+    CrossCableLength = 17,
+    BowMidLength = 18,
+    BowEndLength = 19,
+}
+
+export enum IntervalRole {
+    Bar = 0,
+    Triangle = 1,
+    Ring = 2,
+    Cross = 3,
+    BowMid = 4,
+    BowEnd = 5,
+}
+
+export function roleToLengthFeature(intervalRole: IntervalRole): GlobalFeature {
+    return GlobalFeature[GlobalFeature[intervalRole + GlobalFeature.BarLength]]
 }
 
 export enum FabricState {

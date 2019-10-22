@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -29,10 +30,10 @@ export function CodePanel({setCode}: {
         getBootstrapCode().then(setBoostrapPrograms)
         const urlCode = getCodeFromLocationBar()
         setLocationBarPrograms(urlCode)
-        const code = urlCode.pop()
-        if (code && code.codeString === recentPrograms[0].codeString) {
-            setTimeout(() => setCode(code), 300)
-        }
+        // const code = urlCode.pop()
+        // if (code && code.codeString === recentPrograms[0].codeString) {
+        //     setTimeout(() => setCode(code), 300)
+        // }
     }, [])
 
     function runCode(code: ICode): void {

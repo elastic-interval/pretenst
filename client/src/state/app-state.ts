@@ -4,7 +4,7 @@
  */
 
 import { IFabricEngine } from "../fabric/fabric-engine"
-import { IFeature } from "../fabric/features"
+import { FloatFeature } from "../fabric/global-feature"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
@@ -17,7 +17,7 @@ import { IFlightState } from "../view/flight-state"
 
 export interface IAppProps {
     engine: IFabricEngine
-    roleFeatures: IFeature[]
+    roleFeatures: FloatFeature[]
     storage: RemoteStorage
     user?: IUser
 }

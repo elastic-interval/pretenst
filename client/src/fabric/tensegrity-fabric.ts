@@ -5,10 +5,9 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { GlobalFeature, IFabricEngine, Laterality } from "./fabric-engine"
+import { GlobalFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
-import { applyPhysicsFeature, IFeature } from "./features"
-import { IntervalRole, roleLength } from "./interval-role"
+import { FloatFeature, roleDefaultLength } from "./global-feature"
 import { LifePhase } from "./life-phase"
 import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
 import {
@@ -76,10 +75,10 @@ export class TensegrityFabric {
         codeTree: ICodeTree,
         public readonly instance: FabricInstance,
         public readonly name: string,
-        public readonly globalFeatures: IFeature[],
+        public readonly features: FloatFeature[],
     ) {
         this.lifePhase = this.instance.growing()
-        globalFeatures.forEach(feature => applyPhysicsFeature(this.instance, feature))
+        features.forEach(feature => this.instance.applyFeature(feature))
         const brick = createBrickOnOrigin(this, percentOrHundred())
         const executing: IActiveCode = {codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
@@ -158,7 +157,8 @@ export class TensegrityFabric {
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent): IInterval {
         const scaleFactor = percentToFactor(scale)
-        const restLength = scaleFactor * roleLength(intervalRole)
+        const defaultLength = roleDefaultLength(intervalRole)
+        const restLength = scaleFactor * defaultLength
         const isBar = intervalRole === IntervalRole.Bar
         const globalElasticFactor = isBar ? 1.2 : 0.3 // must match the WASM
         const elasticFactor = scaleFactor * globalElasticFactor
