@@ -17,7 +17,7 @@ const INITIAL_BAR_ELASTIC: f32 = 1.2
 const INITIAL_CABLE_ELASTIC: f32 = 0.3
 const DRAG_ABOVE: f32 = 0.0001
 
-export enum GlobalFeature {
+export enum FabricFeature {
     GravityAbove = 0,
     DragAbove = 1,
     GravityBelow = 2,
@@ -311,8 +311,8 @@ function _lineColor(intervalIndex: u16, omega: boolean): usize {
 const _AGE = _LINE_COLORS + _32x3_INTERVALS * 2
 const _MIDPOINT = _AGE + sizeof<u32>()
 const _PRETENST = _MIDPOINT + sizeof<f32>() * 3
-const _GLOBAL_FEATURES = _PRETENST + sizeof<f32>()
-const _LIFE_PHASE = _GLOBAL_FEATURES + 30 * sizeof<f32>() // lots
+const _FABRIC_FEATURES = _PRETENST + sizeof<f32>()
+const _LIFE_PHASE = _FABRIC_FEATURES + 30 * sizeof<f32>() // lots
 const _A = _LIFE_PHASE + sizeof<u16>()
 const _B = _A + sizeof<f32>() * 3
 const _X = _B + sizeof<f32>() * 3
@@ -560,8 +560,8 @@ function setFaceCount(value: u16): void {
     setU16(_FACE_COUNT, value)
 }
 
-function getGlobalFeature(globalFeature: GlobalFeature): f32 {
-    return getF32(_GLOBAL_FEATURES + globalFeature * sizeof<f32>())
+function getFeature(feature: FabricFeature): f32 {
+    return getF32(_FABRIC_FEATURES + feature * sizeof<f32>())
 }
 
 function getFabricBusyCountdown(): u32 {
@@ -574,8 +574,8 @@ function setFabricBusyTicks(countdown: u32): void {
 
 function getPretensingNuance(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
-    let globalPretensingCountdownMax = getGlobalFeature(GlobalFeature.PretensingTicks)
-    return (globalPretensingCountdownMax - <f32>fabricBusyCountdown) / globalPretensingCountdownMax
+    let pretensingCountdownMax = getFeature(FabricFeature.PretensingTicks)
+    return (pretensingCountdownMax - <f32>fabricBusyCountdown) / pretensingCountdownMax
 }
 
 function getPreviousState(): u8 {
@@ -627,7 +627,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             }
             break
         case LifePhase.Pretensing:
-            setFabricBusyTicks(<u32>getGlobalFeature(GlobalFeature.PretensingTicks))
+            setFabricBusyTicks(<u32>getFeature(FabricFeature.PretensingTicks))
             break
         case LifePhase.Pretenst:
             break
@@ -741,7 +741,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLen
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, restLength)
     }
-    setIntervalBusyTicks(intervalIndex, <u16>getGlobalFeature(GlobalFeature.IntervalBusyTicks))
+    setIntervalBusyTicks(intervalIndex, <u16>getFeature(FabricFeature.IntervalBusyTicks))
     return intervalIndex
 }
 
@@ -811,7 +811,7 @@ export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
 export function changeRestLength(intervalIndex: u16, restLength: f32): void {
     initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
     setIntervalStateLength(intervalIndex, REST_STATE, restLength)
-    let countdown = <u16>getGlobalFeature(GlobalFeature.IntervalBusyTicks)
+    let countdown = <u16>getFeature(FabricFeature.IntervalBusyTicks)
     setIntervalBusyTicks(intervalIndex, countdown)
     setFabricBusyTicks(countdown)
 }
@@ -859,7 +859,7 @@ function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
     if (intervalBusyCountdown === 0) {
         return currentLength
     }
-    let ticksMax = getGlobalFeature(GlobalFeature.IntervalBusyTicks)
+    let ticksMax = getFeature(FabricFeature.IntervalBusyTicks)
     let progress = (ticksMax - <f32>intervalBusyCountdown) / ticksMax
     let stateLength = getIntervalStateLength(intervalIndex, state)
     return currentLength * (1 - progress) + stateLength * progress
@@ -939,7 +939,7 @@ function outputLinesGeometry(): void {
             }
         }
     }
-    let slackThreshold = getGlobalFeature(GlobalFeature.SlackThreshold)
+    let slackThreshold = getFeature(FabricFeature.SlackThreshold)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
@@ -1057,22 +1057,22 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     let displacement = calculateLength(intervalIndex) - currentLength
     let strain = displacement / currentLength
     setStrain(intervalIndex, strain)
-    let globalElasticFactor: f32 = 0
+    let fabricElasticFactor: f32 = 0
     switch (lifePhase) {
         case LifePhase.Growing:
         case LifePhase.Shaping:
         case LifePhase.Slack:
-            globalElasticFactor = bar ? INITIAL_BAR_ELASTIC : INITIAL_CABLE_ELASTIC
+            fabricElasticFactor = bar ? INITIAL_BAR_ELASTIC : INITIAL_CABLE_ELASTIC
             break
         case LifePhase.Pretensing:
         case LifePhase.Pretenst:
-            globalElasticFactor = bar ? getGlobalFeature(GlobalFeature.PushOverPull) : (strain < 0) ? 0 : 1
+            fabricElasticFactor = bar ? getFeature(FabricFeature.PushOverPull) : (strain < 0) ? 0 : 1
             break
     }
-    let force = strain * intervalElasticFactor * globalElasticFactor
+    let force = strain * intervalElasticFactor * fabricElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
-    let mass = currentLength * currentLength * intervalElasticFactor * getGlobalFeature(bar ? GlobalFeature.BarMass : GlobalFeature.CableMass)
+    let mass = currentLength * currentLength * intervalElasticFactor * getFeature(bar ? FabricFeature.BarMass : FabricFeature.CableMass)
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = _intervalMass(omegaIndex(intervalIndex))
@@ -1082,12 +1082,12 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
 function jointPhysics(
     jointIndex: u16,
     lifePhase: LifePhase,
-    globalGravityAbove: f32,
-    globalDragAbove: f32,
-    globalGravityBelow: f32,
-    globalDragBelow: f32,
-    globalGravityBelowWater: f32,
-    globalDragBelowWater: f32,
+    fabricGravityAbove: f32,
+    fabricDragAbove: f32,
+    fabricGravityBelow: f32,
+    fabricDragBelow: f32,
+    fabricGravityBelowWater: f32,
+    fabricDragBelowWater: f32,
 ): void {
     let velocityVectorPtr = _velocity(jointIndex)
     let velocityY = getY(velocityVectorPtr)
@@ -1104,14 +1104,14 @@ function jointPhysics(
             break
         case LifePhase.Pretensing:
             let factor = getPretensingNuance()
-            gravityAbove = globalGravityAbove * factor * factor
+            gravityAbove = fabricGravityAbove * factor * factor
             dragAbove = DRAG_ABOVE
             break
         case LifePhase.Pretenst:
             if (getFabricBusyCountdown() === 0) {
-                gravityAbove = globalGravityAbove
+                gravityAbove = fabricGravityAbove
             }
-            dragAbove = globalDragAbove
+            dragAbove = fabricDragAbove
             break
     }
     if (altitude > JOINT_RADIUS) { // far above
@@ -1120,8 +1120,8 @@ function jointPhysics(
         return
     }
     let land = getTerrainUnder(jointIndex) === LAND
-    let gravityBelow = land ? globalGravityBelow : globalGravityBelowWater
-    let dragBelow = land ? globalDragBelow : globalDragBelowWater
+    let gravityBelow = land ? fabricGravityBelow : fabricGravityBelowWater
+    let dragBelow = land ? fabricDragBelow : fabricDragBelowWater
     if (altitude > -JOINT_RADIUS) { // close to the surface
         let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
         let degreeBelow: f32 = 1.0 - degreeAbove
@@ -1160,12 +1160,12 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
         }
     }
     let jointCount = getJointCount()
-    let gravityAbove = getGlobalFeature(GlobalFeature.GravityAbove)
-    let dragAbove = getGlobalFeature(GlobalFeature.DragAbove)
-    let gravityBelow = getGlobalFeature(GlobalFeature.GravityBelow)
-    let dragBelow = getGlobalFeature(GlobalFeature.DragBelow)
-    let gravityBelowWater = getGlobalFeature(GlobalFeature.GravityBelowWater)
-    let dragBelowWater = getGlobalFeature(GlobalFeature.DragBelowWater)
+    let gravityAbove = getFeature(FabricFeature.GravityAbove)
+    let dragAbove = getFeature(FabricFeature.DragAbove)
+    let gravityBelow = getFeature(FabricFeature.GravityBelow)
+    let dragBelow = getFeature(FabricFeature.DragBelow)
+    let gravityBelowWater = getFeature(FabricFeature.GravityBelowWater)
+    let dragBelowWater = getFeature(FabricFeature.DragBelowWater)
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         jointPhysics(
             jointIndex, lifePhase,
@@ -1270,7 +1270,7 @@ export function _elasticFactors(): usize {
     return _ELASTIC_FACTORS
 }
 
-export function _globalFeatures(): usize {
-    return _GLOBAL_FEATURES
+export function _fabricFeatures(): usize {
+    return _FABRIC_FEATURES
 }
 

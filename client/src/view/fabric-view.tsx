@@ -11,8 +11,8 @@ import { BehaviorSubject } from "rxjs"
 import { Color, Euler, Object3D, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { GlobalFeature } from "../fabric/fabric-engine"
-import { getFeatureValue } from "../fabric/global-feature"
+import { FabricFeature } from "../fabric/fabric-engine"
+import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, hideSurface, LifePhase } from "../fabric/life-phase"
 import { AdjacentIntervals, bySelectedFace, IInterval, ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -81,7 +81,7 @@ export function FabricView({
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = autoRotate
-        fabric.iterate(getFeatureValue(GlobalFeature.TicksPerFrame))
+        fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
         if (lifePhase !== fabric.lifePhase) {
             setLifePhase(fabric.lifePhase)
         }

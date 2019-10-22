@@ -9,7 +9,7 @@ export interface IMemory {
     buffer: ArrayBuffer
 }
 
-export enum GlobalFeature {
+export enum FabricFeature {
     GravityAbove = 0,
     DragAbove = 1,
     GravityBelow = 2,
@@ -41,8 +41,8 @@ export enum IntervalRole {
     BowEnd = 5,
 }
 
-export function roleToLengthFeature(intervalRole: IntervalRole): GlobalFeature {
-    return GlobalFeature[GlobalFeature[intervalRole + GlobalFeature.BarLength]]
+export function roleToLengthFeature(intervalRole: IntervalRole): FabricFeature {
+    return FabricFeature[FabricFeature[intervalRole + FabricFeature.BarLength]]
 }
 
 export enum FabricState {
@@ -162,6 +162,6 @@ export interface IFabricEngine {
 
     _elasticFactors(): number
 
-    _globalFeatures(): number
+    _fabricFeatures(): number
 
 }

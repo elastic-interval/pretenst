@@ -11,8 +11,8 @@ import { App } from "./app"
 import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
 import { IFabricEngine } from "./fabric/fabric-engine"
+import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { createFeatures } from "./fabric/global-feature"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { ICode } from "./view/code-panel"
@@ -43,13 +43,13 @@ APP_EVENT.subscribe(appEvent => {
 async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const root = document.getElementById("root") as HTMLElement
-    const globalFeatures = createFeatures()
+    const fabricFeatures = createFabricFeatures()
     const pretensingStep = new BehaviorSubject(0)
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         const fabricKernel = new FabricKernel(engine)
         const buildFabric = (code: ICode) => {
-            const newFabric = fabricKernel.createTensegrityFabric(name, code.codeTree, globalFeatures)
+            const newFabric = fabricKernel.createTensegrityFabric(name, code.codeTree, fabricFeatures)
             if (!newFabric) {
                 throw new Error()
             }
@@ -57,7 +57,7 @@ async function start(): Promise<void> {
         }
         ReactDOM.render(
             <TensegrityView
-                features={globalFeatures}
+                features={fabricFeatures}
                 buildFabric={buildFabric}
                 pretensingStep$={pretensingStep}
             />,
@@ -71,7 +71,7 @@ async function start(): Promise<void> {
         ReactDOM.render(
             <App
                 engine={engine}
-                roleFeatures={globalFeatures} // todo
+                roleFeatures={fabricFeatures} // todo
                 storage={storage}
                 user={user}
             />,

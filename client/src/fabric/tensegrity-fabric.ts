@@ -5,9 +5,9 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { GlobalFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
-import { FloatFeature, roleDefaultLength } from "./global-feature"
 import { LifePhase } from "./life-phase"
 import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
 import {
@@ -160,8 +160,8 @@ export class TensegrityFabric {
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const isBar = intervalRole === IntervalRole.Bar
-        const globalElasticFactor = isBar ? 1.2 : 0.3 // must match the WASM
-        const elasticFactor = scaleFactor * globalElasticFactor
+        const fabricElasticFactor = isBar ? fabricFeatureValue(FabricFeature.PushOverPull) : 1
+        const elasticFactor = scaleFactor * fabricElasticFactor
         const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticFactor)
         const interval: IInterval = {
             index,
@@ -362,7 +362,7 @@ export class TensegrityFabric {
         }
         const engine = this.instance.engine
         const pretensingCycles = engine.getAge() - this.pretensingStartAge
-        const countdownMax = this.instance.getGlobalFeature(GlobalFeature.PretensingTicks)
+        const countdownMax = this.instance.getFeatureValue(FabricFeature.PretensingTicks)
         const complete = pretensingCycles / countdownMax
         const currentStep = Math.floor(complete * PRETENSING_STEPS)
         if (currentStep === this.pretensingStep) {
@@ -375,7 +375,7 @@ export class TensegrityFabric {
     private takePretensingStep(): void {
         const strains = this.instance.strains
         const elastics = this.instance.elastics
-        const intensity = this.instance.getGlobalFeature(GlobalFeature.PretensingIntensity)
+        const intensity = this.instance.getFeatureValue(FabricFeature.PretensingIntensity)
         let barCount = 0
         let cableCount = 0
         let totalBarAdjustment = 0

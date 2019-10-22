@@ -4,7 +4,7 @@
  */
 
 import { IFabricEngine } from "../fabric/fabric-engine"
-import { FloatFeature } from "../fabric/global-feature"
+import { FloatFeature } from "../fabric/fabric-features"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"

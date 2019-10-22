@@ -6,7 +6,7 @@
 
 import { BehaviorSubject, Subject, Subscription } from "rxjs"
 
-import { GlobalFeature, IntervalRole, roleToLengthFeature } from "./fabric-engine"
+import { FabricFeature, IntervalRole, roleToLengthFeature } from "./fabric-engine"
 import { LifePhase } from "./life-phase"
 
 enum FeatureMultiplier {
@@ -21,7 +21,7 @@ enum FeatureMultiplier {
 type FeatureAdjustment = (factor: number, up: boolean) => number
 
 interface IFeatureConfig {
-    feature: GlobalFeature
+    feature: FabricFeature
     name: string
     defaultValue: number
     multiplier: FeatureMultiplier
@@ -70,9 +70,9 @@ const byTenPercent: FeatureAdjustment = (factor: number, up: boolean) => factor 
 const byOnePercent: FeatureAdjustment = (factor: number, up: boolean) => factor * (up ? 1.01 : 1 / 1.01)
 const plusFive: FeatureAdjustment = (factor: number, up: boolean) => factor + (up ? 5 : -5)
 
-const GLOBAL_FEATURE: IFeatureConfig[] = [
+const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
-        feature: GlobalFeature.GravityAbove,
+        feature: FabricFeature.GravityAbove,
         name: "GravityAbove",
         defaultValue: 0.000005,
         multiplier: FeatureMultiplier.Millionths,
@@ -81,7 +81,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Pretenst, LifePhase.Pretensing],
     },
     {
-        feature: GlobalFeature.DragAbove,
+        feature: FabricFeature.DragAbove,
         name: "DragAbove",
         defaultValue: 0.0001,
         multiplier: FeatureMultiplier.Millionths,
@@ -90,7 +90,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Pretenst, LifePhase.Pretensing],
     },
     {
-        feature: GlobalFeature.GravityBelow,
+        feature: FabricFeature.GravityBelow,
         name: "AntigravityBelow",
         defaultValue: -0.03,
         multiplier: FeatureMultiplier.NegativeMillionths,
@@ -99,7 +99,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Pretenst],
     },
     {
-        feature: GlobalFeature.DragBelow,
+        feature: FabricFeature.DragBelow,
         name: "DragBelow",
         defaultValue: 0.6,
         multiplier: FeatureMultiplier.Millionths,
@@ -108,7 +108,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Pretenst],
     },
     {
-        feature: GlobalFeature.GravityBelowWater,
+        feature: FabricFeature.GravityBelowWater,
         name: "AntigravityBelowWater",
         defaultValue: -0.00001,
         multiplier: FeatureMultiplier.NegativeMillionths,
@@ -117,7 +117,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [],
     },
     {
-        feature: GlobalFeature.DragBelowWater,
+        feature: FabricFeature.DragBelowWater,
         name: "DragBelowWater",
         defaultValue: 0.001,
         multiplier: FeatureMultiplier.Millionths,
@@ -126,7 +126,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [],
     },
     {
-        feature: GlobalFeature.PushOverPull,
+        feature: FabricFeature.PushOverPull,
         name: "PushOverPull",
         defaultValue: 1.0,
         multiplier: FeatureMultiplier.One,
@@ -135,7 +135,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
     },
     {
-        feature: GlobalFeature.SlackThreshold,
+        feature: FabricFeature.SlackThreshold,
         name: "SlackThreshold",
         defaultValue: 0.01,
         multiplier: FeatureMultiplier.Thousandths,
@@ -144,7 +144,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
     },
     {
-        feature: GlobalFeature.BarMass,
+        feature: FabricFeature.BarMass,
         name: "BarMass",
         defaultValue: 1,
         multiplier: FeatureMultiplier.Thousandths,
@@ -153,7 +153,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
     },
     {
-        feature: GlobalFeature.CableMass,
+        feature: FabricFeature.CableMass,
         name: "CableMass",
         defaultValue: 0.01,
         multiplier: FeatureMultiplier.Thousandths,
@@ -162,7 +162,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
     },
     {
-        feature: GlobalFeature.IntervalBusyTicks,
+        feature: FabricFeature.IntervalBusyTicks,
         name: "BusyCountdown",
         defaultValue: 300.0,
         multiplier: FeatureMultiplier.One,
@@ -171,7 +171,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Growing, LifePhase.Shaping],
     },
     {
-        feature: GlobalFeature.PretensingTicks,
+        feature: FabricFeature.PretensingTicks,
         name: "PretensingCountdown",
         defaultValue: 50000.0,
         multiplier: FeatureMultiplier.OneThousand,
@@ -180,7 +180,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Slack],
     },
     {
-        feature: GlobalFeature.PretensingIntensity,
+        feature: FabricFeature.PretensingIntensity,
         name: "PretensingIntensity",
         defaultValue: 5.0,
         multiplier: FeatureMultiplier.One,
@@ -189,7 +189,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Slack],
     },
     {
-        feature: GlobalFeature.TicksPerFrame,
+        feature: FabricFeature.TicksPerFrame,
         name: "TicksPerFrame",
         defaultValue: 50.0,
         multiplier: FeatureMultiplier.One,
@@ -198,7 +198,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
     },
     {
-        feature: GlobalFeature.BarLength,
+        feature: FabricFeature.BarLength,
         name: "BarLength",
         defaultValue: 2 * 1.618,
         multiplier: FeatureMultiplier.One,
@@ -207,7 +207,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping],
     },
     {
-        feature: GlobalFeature.TriangleCableLength,
+        feature: FabricFeature.TriangleCableLength,
         name: "TriangleCableLength",
         defaultValue: 2.123,
         multiplier: FeatureMultiplier.One,
@@ -216,7 +216,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping],
     },
     {
-        feature: GlobalFeature.RingCableLength,
+        feature: FabricFeature.RingCableLength,
         name: "RingLength",
         defaultValue: 1.440,
         multiplier: FeatureMultiplier.One,
@@ -225,7 +225,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping],
     },
     {
-        feature: GlobalFeature.CrossCableLength,
+        feature: FabricFeature.CrossCableLength,
         name: "CrossLength",
         defaultValue: 1.583,
         multiplier: FeatureMultiplier.One,
@@ -234,7 +234,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping],
     },
     {
-        feature: GlobalFeature.BowMidLength,
+        feature: FabricFeature.BowMidLength,
         name: "BowMidLength",
         defaultValue: 0.8521,
         multiplier: FeatureMultiplier.One,
@@ -243,7 +243,7 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping],
     },
     {
-        feature: GlobalFeature.BowEndLength,
+        feature: FabricFeature.BowEndLength,
         name: "BowEndLength",
         defaultValue: (1.380 + 1.571) / 2, // todo: was high and low
         multiplier: FeatureMultiplier.One,
@@ -253,26 +253,26 @@ const GLOBAL_FEATURE: IFeatureConfig[] = [
     },
 ]
 
-export function getFeatureValue(feature: GlobalFeature, defaultValue?: boolean): number {
-    const globalFeature = GLOBAL_FEATURE[feature]
+export function fabricFeatureValue(fabricFeature: FabricFeature, defaultValue?: boolean): number {
+    const config = FEATURE_CONFIGS[fabricFeature]
     if (defaultValue) {
-        return globalFeature.defaultValue
+        return config.defaultValue
     }
-    const value = localStorage.getItem(globalFeature.name)
-    return value ? parseFloat(value) : globalFeature.defaultValue
+    const value = localStorage.getItem(config.name)
+    return value ? parseFloat(value) : config.defaultValue
 }
 
 export function roleDefaultLength(intervalRole: IntervalRole): number {
-    return getFeatureValue(roleToLengthFeature(intervalRole))
+    return fabricFeatureValue(roleToLengthFeature(intervalRole))
 }
 
 export class FloatFeature {
     private factor$: BehaviorSubject<number>
 
     constructor(public readonly config: IFeatureConfig) {
-        this.factor$ = new BehaviorSubject<number>(getFeatureValue(config.feature, true))
+        this.factor$ = new BehaviorSubject<number>(fabricFeatureValue(config.feature, true))
         this.factor$.subscribe(newFactor => {
-            const key = GlobalFeature[this.config.feature]
+            const key = FabricFeature[this.config.feature]
             if (newFactor / this.config.defaultValue - 1 < 0.0001) {
                 localStorage.removeItem(key)
             } else {
@@ -302,7 +302,7 @@ export class FloatFeature {
         return this.factor$
     }
 
-    public get globalFeature(): GlobalFeature {
+    public get fabricFeature(): FabricFeature {
         return this.config.feature
     }
 
@@ -333,6 +333,6 @@ export class FloatFeature {
     }
 }
 
-export function createFeatures(): FloatFeature[] {
-    return GLOBAL_FEATURE.map(config => new FloatFeature(config))
+export function createFabricFeatures(): FloatFeature[] {
+    return FEATURE_CONFIGS.map(config => new FloatFeature(config))
 }

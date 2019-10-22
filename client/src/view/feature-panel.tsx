@@ -9,8 +9,8 @@ import { CSSProperties, useEffect, useState } from "react"
 import { FaArrowDown, FaArrowUp, FaEquals, FaGlobe } from "react-icons/all"
 import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactstrap"
 
+import { FloatFeature } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { FloatFeature } from "../fabric/global-feature"
 import { LifePhase } from "../fabric/life-phase"
 
 export function FeaturePanel({featureSet, lifePhase, instance}: {

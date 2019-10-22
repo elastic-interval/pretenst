@@ -8,8 +8,8 @@ import { Vector3 } from "three"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { IFabricEngine } from "./fabric-engine"
+import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
-import { FloatFeature } from "./global-feature"
 import { ICodeTree } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 

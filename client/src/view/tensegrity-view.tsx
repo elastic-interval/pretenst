@@ -11,7 +11,7 @@ import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
-import { FloatFeature } from "../fabric/global-feature"
+import { FloatFeature } from "../fabric/fabric-features"
 import { LifePhase } from "../fabric/life-phase"
 import { ISelectedFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
