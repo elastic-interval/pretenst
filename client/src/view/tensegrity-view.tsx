@@ -13,7 +13,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { FloatFeature } from "../fabric/fabric-features"
 import { LifePhase } from "../fabric/life-phase"
-import { ISelectedFace } from "../fabric/tensegrity-brick-types"
+import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { CodePanel, ICode } from "./code-panel"
@@ -42,6 +42,8 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
+const SHOW_FEATURES_KEY = "ShowFeatures"
+
 export function TensegrityView({buildFabric, features, pretensingStep$}: {
     buildFabric: (code: ICode) => TensegrityFabric,
     features: FloatFeature[],
@@ -49,20 +51,22 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(LifePhase.Growing)
-    const [showFeatures, setShowFeatures] = useState(false)
+    const [showFeatures, setShowFeatures] = useState(localStorage.getItem(SHOW_FEATURES_KEY) === "true")
     const [showFaces, setShowFaces] = useState(true)
     const [autoRotate, setAutoRotate] = useState(false)
     const [fastMode, setFastMode] = useState(true)
 
     const [code, setCode] = useState<ICode | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [selectedFace, setSelectedFace] = useState<ISelectedFace | undefined>()
+    const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
+
+    useEffect(() => localStorage.setItem(SHOW_FEATURES_KEY, showFeatures.toString()), [showFeatures])
 
     function buildFromCode(): void {
         if (!code) {
             return
         }
-        setSelectedFace(undefined)
+        setSelectedBrick(undefined)
         if (fabric) {
             fabric.instance.release()
         }
@@ -135,7 +139,7 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                         text: "Pretenst!",
                         disabled: false,
                         onClick: () => {
-                            setSelectedFace(undefined)
+                            setSelectedBrick(undefined)
                             if (fabric) {
                                 fabric.clearSelection()
                             }
@@ -167,8 +171,8 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                             lifePhase={lifePhase}
                             setLifePhase={setLifePhase}
                             pretensingStep$={pretensingStep$}
-                            selectedFace={selectedFace}
-                            setSelectedFace={setSelectedFace}
+                            selectedBrick={selectedBrick}
+                            setSelectedBrick={setSelectedBrick}
                             autoRotate={autoRotate}
                             fastMode={fastMode}
                             showFaces={showFaces}
@@ -193,8 +197,8 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                             fabric={fabric}
                             clearFabric={() => setFabric(undefined)}
                             setShowFaces={setShowFaces}
-                            selectedFace={selectedFace}
-                            setSelectedFace={setSelectedFace}
+                            selectedBrick={selectedBrick}
+                            setSelectedBrick={setSelectedBrick}
                             autoRotate={autoRotate}
                             setAutoRotate={setAutoRotate}
                             fastMode={fastMode}

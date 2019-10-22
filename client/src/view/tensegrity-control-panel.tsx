@@ -10,36 +10,23 @@ import {
     FaArrowUp,
     FaBars,
     FaBiohazard,
+    FaCamera,
     FaCircle,
     FaCompressArrowsAlt,
     FaCubes,
-    FaDiceFour,
-    FaDiceOne,
-    FaDiceThree,
-    FaDiceTwo,
     FaDotCircle,
     FaFileCsv,
     FaHandPointUp,
     FaListAlt,
     FaParachuteBox,
     FaRadiationAlt,
-    FaRunning,
-    FaSun,
-    FaSyncAlt,
-    FaTimesCircle,
+    FaSyncAlt, FaTimesCircle,
 } from "react-icons/all"
 import { Button, ButtonGroup, Navbar } from "reactstrap"
 
 import { LifePhase } from "../fabric/life-phase"
-import { createConnectedBrick, optimizeFabric } from "../fabric/tensegrity-brick"
-import {
-    AdjacentIntervals,
-    bySelectedFace,
-    IFace,
-    IPercent,
-    ISelectedFace,
-    percentOrHundred,
-} from "../fabric/tensegrity-brick-types"
+import { optimizeFabric } from "../fabric/tensegrity-brick"
+import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
@@ -49,8 +36,8 @@ interface IControlPanel {
     fabric: TensegrityFabric,
     clearFabric: () => void,
     setShowFaces: (showFaces: boolean) => void
-    selectedFace?: ISelectedFace,
-    setSelectedFace: (selectedFace?: ISelectedFace) => void,
+    selectedBrick?: IBrick,
+    setSelectedBrick: (selectedFace?: IBrick) => void,
     autoRotate: boolean,
     setAutoRotate: (autoRotate: boolean) => void,
     fastMode: boolean,
@@ -62,7 +49,7 @@ interface IControlPanel {
 
 export function TensegrityControlPanel(
     {
-        fabric, clearFabric, setShowFaces, selectedFace, setSelectedFace,
+        fabric, clearFabric, setShowFaces, selectedBrick, setSelectedBrick,
         autoRotate, setAutoRotate, fastMode, setFastMode, showFeatures, setShowFeatures, children,
     }: IControlPanel): JSX.Element {
 
@@ -70,7 +57,6 @@ export function TensegrityControlPanel(
 
     const [colorBars, setColorBars] = useState(true)
     const [colorCables, setColorCables] = useState(true)
-    const [lengthAdjustable, setLengthAdjustable] = useState(false)
 
     useEffect(() => fabric.instance.engine.setColoring(colorBars, colorCables), [colorBars, colorCables])
 
@@ -85,18 +71,13 @@ export function TensegrityControlPanel(
         })
     }
 
-    const grow = (face: IFace, scale?: IPercent) => {
-        createConnectedBrick(face.brick, face.triangle, percentOrHundred(scale))
-        setSelectedFace(undefined)
-    }
-
     function ViewButton({bars, cables}: { bars: boolean, cables: boolean }): JSX.Element {
         const onClick = () => {
             setColorBars(bars)
             setColorCables(cables)
             setShowFaces(bars && cables)
-            if (selectedFace) {
-                setSelectedFace()
+            if (selectedBrick) {
+                setSelectedBrick()
             }
         }
         const color = bars === colorBars && cables === colorCables ? "success" : "secondary"
@@ -104,49 +85,6 @@ export function TensegrityControlPanel(
             {bars && cables ? (<><FaHandPointUp/><span> Edit</span></>) :
                 bars ? (<><FaCircle/><span> Pushes </span></>) : (<><span> Pulls </span><FaDotCircle/></>)}
         </Button>
-    }
-
-    function FaceAdjacentButton({selected, adjacentIntervals}: {
-        selected: ISelectedFace,
-        adjacentIntervals: AdjacentIntervals,
-    }): JSX.Element {
-        let icon = <FaCircle/>
-        switch (adjacentIntervals) {
-            case AdjacentIntervals.Cables:
-                icon = <FaDiceOne/>
-                break
-            case AdjacentIntervals.Bars:
-                icon = <FaDiceTwo/>
-                break
-            case AdjacentIntervals.Face:
-                icon = <FaDiceThree/>
-                break
-            case AdjacentIntervals.Brick:
-                icon = <FaDiceFour/>
-                break
-            case AdjacentIntervals.None:
-                icon = <FaTimesCircle/>
-                break
-        }
-        const onClick = () => {
-            if (adjacentIntervals === AdjacentIntervals.None) {
-                fabric.clearSelection()
-                setSelectedFace(undefined)
-                setLengthAdjustable(false)
-                return
-            }
-            const newSelected: ISelectedFace = {...selected, adjacentIntervals}
-            setLengthAdjustable(fabric.selectIntervals(bySelectedFace(newSelected)) > 0)
-            setSelectedFace(newSelected)
-        }
-        const none = adjacentIntervals === AdjacentIntervals.None
-        const chosen = selected.adjacentIntervals === adjacentIntervals
-        const color = none ? "warning" : chosen ? "success" : "secondary"
-        return (
-            <Button color={color} disabled={chosen && !none} onClick={onClick}>
-                {icon}
-            </Button>
-        )
     }
 
     const engine = fabric.instance.engine
@@ -159,24 +97,20 @@ export function TensegrityControlPanel(
                 <Button onClick={clearFabric}><FaListAlt/> Programs</Button>
             </ButtonGroup>
             <div style={{display: "inline-flex", alignContent: "center"}}>
-                {selectedFace ? (
+                {selectedBrick ? (
                     <ButtonGroup style={{paddingLeft: "0.6em", width: "40em"}}>
-                        <Button disabled={!selectedFace.face.canGrow} onClick={() => grow(selectedFace.face)}>
-                            <FaSun/>
-                        </Button>
-                        <Button disabled={!lengthAdjustable} onClick={adjustValue(true)}>
+                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
                             <FaArrowUp/>
                         </Button>
-                        <Button disabled={!lengthAdjustable} onClick={adjustValue(false)}>
+                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
                             <FaArrowDown/>
                         </Button>
-                        {Object.keys(AdjacentIntervals).map(key => (
-                            <FaceAdjacentButton
-                                key={key}
-                                selected={selectedFace}
-                                adjacentIntervals={AdjacentIntervals[key]}
-                            />
-                        ))}
+                        <Button onClick={() => {
+                            setSelectedBrick()
+                            fabric.clearSelection()
+                        }}>
+                            <FaTimesCircle/>
+                        </Button>
                     </ButtonGroup>
                 ) : (
                     <div style={{
@@ -199,7 +133,7 @@ export function TensegrityControlPanel(
                     </div>
                 )}
             </div>
-            <ButtonGroup size="sm" style={{paddingLeft: "1em"}}>
+            <ButtonGroup style={{paddingLeft: "1em"}}>
                 <Button disabled={lifePhase !== LifePhase.Shaping} onClick={() => optimizeFabric(fabric, true)}>
                     <FaBiohazard/>
                 </Button>
@@ -215,17 +149,21 @@ export function TensegrityControlPanel(
                 <Button onClick={() => setAutoRotate(!autoRotate)}>
                     <FaSyncAlt/>
                 </Button>
-                <Button onClick={() => setShowFeatures(!showFeatures)}>
-                    <FaBars/>
-                </Button>
-                <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
-                    <FaRunning/>
-                </Button>
+            </ButtonGroup>
+            <ButtonGroup style={{paddingLeft: "1em"}}>
                 <Button onClick={() => saveCSVFiles(fabric)}>
                     <FaFileCsv/>
                 </Button>
                 <Button onClick={() => saveOBJFile(fabric)}>
                     <FaCubes/>
+                </Button>
+            </ButtonGroup>
+            <ButtonGroup style={{paddingLeft: "1em"}}>
+                <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
+                    <FaCamera/>
+                </Button>
+                <Button color={showFeatures ? "warning" : "secondary"} onClick={() => setShowFeatures(!showFeatures)}>
+                    <FaBars/>
                 </Button>
             </ButtonGroup>
         </Navbar>

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -14,7 +13,7 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, hideSurface, LifePhase } from "../fabric/life-phase"
-import { AdjacentIntervals, bySelectedFace, IInterval, ISelectedFace } from "../fabric/tensegrity-brick-types"
+import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ATTENUATED, BAR, CABLE, FACE, FACE_SPHERE, LINE, SLACK } from "./materials"
@@ -36,7 +35,6 @@ declare global {
 const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
-const SLACK_THRESHOLD = 0.0001
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
@@ -44,21 +42,23 @@ const BAR_GIRTH = 1
 const CABLE_GIRTH = 0.3
 
 export function FabricView({
-                               fabric, lifePhase, setLifePhase, pretensingStep$, selectedFace,
-                               setSelectedFace, autoRotate, fastMode, showFaces,
+                               fabric, lifePhase, setLifePhase, pretensingStep$, selectedBrick,
+                               setSelectedBrick, autoRotate, fastMode, showFaces,
                            }: {
     fabric: TensegrityFabric,
     lifePhase: LifePhase,
     setLifePhase: (lifePhase: LifePhase) => void,
     pretensingStep$: BehaviorSubject<number>,
-    selectedFace?: ISelectedFace,
-    setSelectedFace: (selection?: ISelectedFace) => void,
+    selectedBrick?: IBrick,
+    setSelectedBrick: (selection?: IBrick) => void,
     autoRotate: boolean,
     fastMode: boolean,
     showFaces: boolean,
 }): JSX.Element {
+
     const [age, setAge] = useState(0)
     const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
+    const [targetBrick, setTargetBrick] = useState(false)
     const {camera, raycaster} = useThree()
 
     useEffect(() => pretensingStep$.next(fabric.pretensingStep), [fabric.pretensingStep])
@@ -77,7 +77,9 @@ export function FabricView({
     }, [fabric])
 
     useRender(() => {
-        const towardsTarget = new Vector3().subVectors(fabric.instance.getMidpoint(), orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
+        const instance = fabric.instance
+        const target = targetBrick && selectedBrick ? fabric.brickMidpoint(selectedBrick) : instance.getMidpoint()
+        const towardsTarget = new Vector3().subVectors(target, orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
         orbitControls.current.target.add(towardsTarget)
         orbitControls.current.update()
         orbitControls.current.autoRotate = autoRotate
@@ -85,27 +87,28 @@ export function FabricView({
         if (lifePhase !== fabric.lifePhase) {
             setLifePhase(fabric.lifePhase)
         }
-        setAge(fabric.instance.engine.getAge())
-    }, true, [fabric, selectedFace, age, lifePhase, fabric.lifePhase])
+        setAge(instance.engine.getAge())
+    }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
 
-    const selectFace = (newSelectedFace: ISelectedFace) => {
+    const selectBrick = (newSelectedBrick: IBrick) => {
         if (fabric) {
-            fabric.selectIntervals(bySelectedFace(newSelectedFace))
-            setSelectedFace(newSelectedFace)
+            fabric.selectIntervals(byBrick(newSelectedBrick))
+            setSelectedBrick(newSelectedBrick)
+            setTargetBrick(true)
         }
     }
 
     function SelectedFace(): JSX.Element {
-        if (!selectedFace) {
+        if (!selectedBrick) {
             return <group/>
         }
-        const scale = 0.3
+        const scale = 0.6
         return (
             <mesh
                 geometry={SPHERE}
-                position={fabric.instance.getFaceMidpoint(selectedFace.face.index)}
+                position={fabric.brickMidpoint(selectedBrick)}
                 material={FACE_SPHERE}
                 scale={new Vector3(scale, scale, scale)}
             />
@@ -141,7 +144,7 @@ export function FabricView({
             if (!face) {
                 return
             }
-            selectFace({face, adjacentIntervals: AdjacentIntervals.None})
+            selectBrick(face.brick)
         }
         return (
             <mesh
@@ -160,11 +163,12 @@ export function FabricView({
         larger: boolean,
     }): JSX.Element {
         const elastic = fabric.instance.elastics[interval.index]
-        const strain = fabric.instance.strains[interval.index] * (interval.isBar ? -1 : 1)
-        const girth = Math.sqrt(elastic) *
-            (interval.isBar ? BAR_GIRTH * (larger ? 3 : 1) : CABLE_GIRTH * (larger ? 5 : 1))
+        const bar = interval.isBar
+        const strain = fabric.instance.strains[interval.index] * (bar ? -1 : 1)
+        const girth = Math.sqrt(elastic) * (bar ? BAR_GIRTH : CABLE_GIRTH)
         const {scale, rotation} = fabric.orientInterval(interval, girth)
-        const material = strain < SLACK_THRESHOLD ? SLACK : attenuated ? ATTENUATED : interval.isBar ? BAR : CABLE
+        const slackThreshold = fabricFeatureValue(FabricFeature.SlackThreshold)
+        const material = strain < slackThreshold ? SLACK : attenuated ? ATTENUATED : bar ? BAR : CABLE
         return (
             <mesh
                 geometry={SPHERE}
@@ -184,7 +188,7 @@ export function FabricView({
                 {fastMode ? (
                     <group>
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
-                        {!fabric.splitIntervals || !selectedFace ? undefined : (
+                        {!fabric.splitIntervals || !selectedBrick ? undefined : (
                             fabric.splitIntervals.selected.map(interval => (
                                 <IntervalMesh key={`I${interval.index}`} interval={interval}
                                               larger={true} attenuated={false}/>
@@ -214,7 +218,7 @@ export function FabricView({
                         ) : (
                             fabric.intervals.map(interval => (
                                 <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                              larger={false} attenuated={true}/>
+                                              larger={false} attenuated={!!fabric.splitIntervals}/>
                             ))
                         )}
                     </group>

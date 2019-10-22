@@ -88,6 +88,13 @@ export class TensegrityFabric {
         return this.lifePhase = this.instance.slack()
     }
 
+    public brickMidpoint({joints}: IBrick, midpoint?: Vector3): Vector3 {
+        const accumulator = midpoint ? midpoint : new Vector3()
+        return joints
+            .reduce((sum, joint) => sum.add(this.instance.getJointLocation(joint.index)), accumulator)
+            .multiplyScalar(1.0 / joints.length)
+    }
+
     public pretensing(): LifePhase {
         this.pretensingStartAge = this.instance.engine.getAge()
         return this.lifePhase = this.instance.pretensing()

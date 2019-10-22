@@ -172,40 +172,12 @@ export interface IConnector {
     facesToRemove: IFace[]
 }
 
-export enum AdjacentIntervals {
-    Cables = "Cables",
-    Bars = "Bars",
-    Face = "Face",
-    Brick = "Brick",
-    None = "None",
-}
-
-export interface ISelectedFace {
-    readonly face: IFace
-    readonly adjacentIntervals: AdjacentIntervals
-}
-
-export function bySelectedFace(selectedFace: ISelectedFace): (interval: IInterval) => boolean {
+export function byBrick(brick: IBrick): (interval: IInterval) => boolean {
     return interval => {
         const matchesInterval = (faceInterval: IInterval) => (
             !faceInterval.removed && faceInterval.index === interval.index
         )
-        const touchesInterval = (joint: IJoint) => (
-            interval.alpha.index === joint.index || interval.omega.index === joint.index
-        )
-        switch (selectedFace.adjacentIntervals) {
-            case AdjacentIntervals.Bars:
-                return selectedFace.face.bars.some(matchesInterval)
-            case AdjacentIntervals.Cables:
-                return selectedFace.face.cables.some(matchesInterval)
-            case AdjacentIntervals.Face:
-                return selectedFace.face.joints.some(touchesInterval)
-            case AdjacentIntervals.Brick:
-                const brick: IBrick = selectedFace.face.brick
-                return [...brick.bars, ...brick.cables].some(matchesInterval)
-            default:
-                return false
-        }
+        return brick.bars.some(matchesInterval) || brick.cables.some(matchesInterval)
     }
 }
 
