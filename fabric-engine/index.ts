@@ -948,8 +948,12 @@ function outputLinesGeometry(): void {
         let isBar: boolean = intervalRole === IntervalRole.Bar
         let strain = isBar ? -directionalStrain : directionalStrain
         if (colorBars && colorCables) {
-            let color = isBar ? HOT_COLOR : COLD_COLOR
-            setLineColor(intervalIndex, color[0], color[1], color[2])
+            if (strain < slackThreshold) {
+                setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
+            } else {
+                let color = isBar ? HOT_COLOR : COLD_COLOR
+                setLineColor(intervalIndex, color[0], color[1], color[2])
+            }
         } else if (colorBars || colorCables) {
             if (isBar && colorCables || !isBar && colorBars) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])

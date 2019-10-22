@@ -182,7 +182,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PretensingIntensity,
         name: "PretensingIntensity",
-        defaultValue: 5.0,
+        defaultValue: 1.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 2,
         adjustment: byTenPercent,
