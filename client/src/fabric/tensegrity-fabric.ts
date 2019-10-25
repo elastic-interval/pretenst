@@ -54,6 +54,10 @@ export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 const PRETENSING_STEPS = 100
 
+function scaleToElasticFactor(scale: IPercent): number {
+    return percentToFactor(scale) / 100000
+}
+
 export class TensegrityFabric {
     public lifePhase: LifePhase
     public joints: IJoint[] = []
@@ -169,7 +173,7 @@ export class TensegrityFabric {
         const isBar = intervalRole === IntervalRole.Bar
         const pushOverPull = fabricFeatureValue(FabricFeature.PushOverPull)
         const fabricElasticFactor = isBar ? pushOverPull / 2 : 2 / pushOverPull
-        const elasticFactor = scaleFactor * fabricElasticFactor / 5
+        const elasticFactor = scaleToElasticFactor(scale) * fabricElasticFactor
         const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticFactor)
         const interval: IInterval = {
             index,

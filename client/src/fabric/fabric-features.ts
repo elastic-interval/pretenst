@@ -9,13 +9,15 @@ import { BehaviorSubject, Subject, Subscription } from "rxjs"
 import { FabricFeature, IntervalRole, roleToLengthFeature } from "./fabric-engine"
 import { LifePhase } from "./life-phase"
 
-enum FeatureMultiplier {
+export enum FeatureMultiplier {
     OneThousand,
     One,
     Thousandths,
     NegativeThousandths,
     Millionths,
     NegativeMillionths,
+    Billionths,
+    NegativeBillionths,
 }
 
 type FeatureAdjustment = (factor: number, up: boolean) => number
@@ -44,23 +46,10 @@ function multiplierValue(multiplier: FeatureMultiplier): number {
             return 1000000
         case FeatureMultiplier.NegativeMillionths:
             return -1000000
-        default:
-            throw new Error("Bad multiplier")
-    }
-}
-
-function multiplierSymbol(multiplier: FeatureMultiplier): string {
-    switch (multiplier) {
-        case FeatureMultiplier.OneThousand:
-            return "k"
-        case FeatureMultiplier.One:
-            return ""
-        case FeatureMultiplier.NegativeThousandths:
-        case FeatureMultiplier.Thousandths:
-            return "m"
-        case FeatureMultiplier.Millionths:
-        case FeatureMultiplier.NegativeMillionths:
-            return "\u03BC"
+        case FeatureMultiplier.Billionths:
+            return 1000000000
+        case FeatureMultiplier.NegativeBillionths:
+            return -1000000000
         default:
             throw new Error("Bad multiplier")
     }
@@ -74,17 +63,17 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.GravityAbove,
         name: "GravityAbove",
-        defaultValue: 0.000005,
-        multiplier: FeatureMultiplier.Millionths,
-        fixedDigits: 3,
+        defaultValue: 0.0000005,
+        multiplier: FeatureMultiplier.Billionths,
+        fixedDigits: 1,
         adjustment: byTenPercent,
         lifePhases: [LifePhase.Pretenst, LifePhase.Pretensing],
     },
     {
         feature: FabricFeature.DragAbove,
         name: "DragAbove",
-        defaultValue: 0.0001,
-        multiplier: FeatureMultiplier.Millionths,
+        defaultValue: 0.000001,
+        multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
         adjustment: byTenPercent,
         lifePhases: [LifePhase.Pretenst, LifePhase.Pretensing],
@@ -138,7 +127,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         feature: FabricFeature.SlackThreshold,
         name: "SlackThreshold",
         defaultValue: 0.008,
-        multiplier: FeatureMultiplier.Thousandths,
+        multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 1,
         adjustment: byTenPercent,
         lifePhases: [LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
@@ -146,7 +135,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.BarMass,
         name: "BarMass",
-        defaultValue: 0.1,
+        defaultValue: 10,
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
         adjustment: byTenPercent,
@@ -155,7 +144,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.CableMass,
         name: "CableMass",
-        defaultValue: 0.01,
+        defaultValue: 1,
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
         adjustment: byTenPercent,
@@ -309,10 +298,6 @@ export class FloatFeature {
 
     public get multiplierValue(): number {
         return multiplierValue(this.config.multiplier)
-    }
-
-    public get multiplierSymbol(): string {
-        return multiplierSymbol(this.config.multiplier)
     }
 
     public adjustValue(up: boolean): void {

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -8,9 +9,30 @@ import { CSSProperties, useEffect, useState } from "react"
 import { FaArrowDown, FaArrowUp, FaEquals, FaGlobe } from "react-icons/all"
 import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactstrap"
 
-import { FloatFeature } from "../fabric/fabric-features"
+import { FeatureMultiplier, FloatFeature } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { LifePhase } from "../fabric/life-phase"
+
+function multiplierSymbol(multiplier: FeatureMultiplier): JSX.Element {
+    switch (multiplier) {
+        case FeatureMultiplier.OneThousand:
+            return <span className="small">10<sup>3</sup></span>
+        case FeatureMultiplier.One:
+            return <span>1</span>
+        case FeatureMultiplier.NegativeThousandths:
+        case FeatureMultiplier.Thousandths:
+            return <span className="small">10<sup>-3</sup></span>
+        case FeatureMultiplier.Millionths:
+        case FeatureMultiplier.NegativeMillionths:
+            return <span className="small">10<sup>-6</sup></span>
+        case FeatureMultiplier.Billionths:
+        case FeatureMultiplier.NegativeBillionths:
+            return <span className="small">10<sup>-9</sup></span>
+        default:
+            throw new Error("Bad multiplier")
+    }
+}
+
 
 export function FeaturePanel({featureSet, lifePhase, instance}: {
     featureSet: FloatFeature[],
@@ -54,11 +76,9 @@ export function FeaturePanel({featureSet, lifePhase, instance}: {
                 <InputGroupAddon addonType="prepend">
                     <InputGroupText>{feature.title}</InputGroupText>
                 </InputGroupAddon>
-                {feature.multiplierSymbol.length === 0 ? undefined :
                     <InputGroupAddon addonType="prepend">
-                        <InputGroupText>{feature.multiplierSymbol}</InputGroupText>
+                        <InputGroupText>{multiplierSymbol(feature.config.multiplier)}</InputGroupText>
                     </InputGroupAddon>
-                }
                 <Input style={inputStyle} value={factorString} disabled={true}/>
                 {mutable ? <UpdateButtonGroup/> : undefined}
             </InputGroup>

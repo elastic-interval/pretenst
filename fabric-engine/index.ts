@@ -12,10 +12,9 @@ declare function logInt(idx: u32, i: i32): void
 // DECLARATION
 
 const JOINT_RADIUS: f32 = 0.1
-const AMBIENT_JOINT_MASS: f32 = 0.1
-const INITIAL_BAR_ELASTIC: f32 = 1.2
-const INITIAL_CABLE_ELASTIC: f32 = 0.3
-const DRAG_ABOVE: f32 = 0.0001
+
+const IN_UTERO_JOINT_MASS: f32 = 0.00001
+const IN_UTERO_ELASTIC: f32 = 15000
 
 export enum FabricFeature {
     GravityAbove = 0,
@@ -656,7 +655,7 @@ export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f3
     setAll(_location(jointIndex), x, y, z)
     zero(_force(jointIndex))
     zero(_velocity(jointIndex))
-    setF32(_intervalMass(jointIndex), AMBIENT_JOINT_MASS)
+    setF32(_intervalMass(jointIndex), IN_UTERO_JOINT_MASS)
     return jointIndex
 }
 
@@ -1066,7 +1065,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         case LifePhase.Growing:
         case LifePhase.Shaping:
         case LifePhase.Slack:
-            fabricElasticFactor = bar ? INITIAL_BAR_ELASTIC : INITIAL_CABLE_ELASTIC
+            fabricElasticFactor = IN_UTERO_ELASTIC
             break
         case LifePhase.Pretensing:
         case LifePhase.Pretenst:
@@ -1103,19 +1102,15 @@ function jointPhysics(
         case LifePhase.Growing:
         case LifePhase.Shaping:
         case LifePhase.Slack:
-            gravityAbove = 0
             altitude = JOINT_RADIUS * 2 // simulate far above
-            dragAbove = DRAG_ABOVE
             break
         case LifePhase.Pretensing:
             let factor = getPretensingNuance()
             gravityAbove = fabricGravityAbove * factor * factor
-            dragAbove = DRAG_ABOVE
+            dragAbove = fabricDragAbove * factor
             break
         case LifePhase.Pretenst:
-            if (getFabricBusyCountdown() === 0) {
-                gravityAbove = fabricGravityAbove
-            }
+            gravityAbove = fabricGravityAbove
             dragAbove = fabricDragAbove
             break
     }
@@ -1171,6 +1166,19 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
     let dragBelow = getFeature(FabricFeature.DragBelow)
     let gravityBelowWater = getFeature(FabricFeature.GravityBelowWater)
     let dragBelowWater = getFeature(FabricFeature.DragBelowWater)
+    let ambientJointMass: f32 = 0
+    switch (lifePhase) {
+        case LifePhase.Growing:
+        case LifePhase.Shaping:
+        case LifePhase.Slack:
+            ambientJointMass = IN_UTERO_JOINT_MASS
+            break
+        case LifePhase.Pretensing:
+            ambientJointMass = IN_UTERO_JOINT_MASS * (1 - getPretensingNuance())
+            break
+        case LifePhase.Pretenst:
+            break
+    }
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         jointPhysics(
             jointIndex, lifePhase,
@@ -1192,7 +1200,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
     }
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         add(_location(jointIndex), _velocity(jointIndex))
-        setF32(_intervalMass(jointIndex), AMBIENT_JOINT_MASS)
+        setF32(_intervalMass(jointIndex), ambientJointMass)
     }
     return maxIntervalBusyCountdown
 }
