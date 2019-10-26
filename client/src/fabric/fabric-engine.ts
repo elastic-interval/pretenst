@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -10,8 +11,8 @@ export interface IMemory {
 }
 
 export enum FabricFeature {
-    GravityAbove = 0,
-    DragAbove = 1,
+    Gravity = 0,
+    Drag = 1,
     GravityBelow = 2,
     DragBelow = 3,
     GravityBelowWater = 4,
@@ -25,9 +26,9 @@ export enum FabricFeature {
     PretensingIntensity = 12,
     TicksPerFrame = 13,
     BarLength = 14,
-    TriangleCableLength = 15,
-    RingCableLength = 16,
-    CrossCableLength = 17,
+    TriangleLength = 15,
+    RingLength = 16,
+    CrossLength = 17,
     BowMidLength = 18,
     BowEndLength = 19,
 }

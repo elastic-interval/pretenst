@@ -61,8 +61,8 @@ const plusOne: FeatureAdjustment = (factor: number, up: boolean) => up || factor
 
 const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
-        feature: FabricFeature.GravityAbove,
-        name: "GravityAbove",
+        feature: FabricFeature.Gravity,
+        name: "Gravity",
         defaultValue: 0.0000005,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
@@ -70,8 +70,8 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         lifePhases: [LifePhase.Pretenst, LifePhase.Pretensing],
     },
     {
-        feature: FabricFeature.DragAbove,
-        name: "DragAbove",
+        feature: FabricFeature.Drag,
+        name: "Drag",
         defaultValue: 0.000001,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
@@ -162,7 +162,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PretensingTicks,
         name: "PretensingCountdown",
-        defaultValue: 50000.0,
+        defaultValue: 200000.0,
         multiplier: FeatureMultiplier.OneThousand,
         fixedDigits: 1,
         adjustment: byTenPercent,
@@ -180,7 +180,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.TicksPerFrame,
         name: "TicksPerFrame",
-        defaultValue: 50.0,
+        defaultValue: 250.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 0,
         adjustment: plusOne,
@@ -196,7 +196,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping],
     },
     {
-        feature: FabricFeature.TriangleCableLength,
+        feature: FabricFeature.TriangleLength,
         name: "TriangleCableLength",
         defaultValue: 2.123,
         multiplier: FeatureMultiplier.One,
@@ -205,7 +205,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping],
     },
     {
-        feature: FabricFeature.RingCableLength,
+        feature: FabricFeature.RingLength,
         name: "RingLength",
         defaultValue: 1.440,
         multiplier: FeatureMultiplier.One,
@@ -214,7 +214,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         lifePhases: [LifePhase.Shaping],
     },
     {
-        feature: FabricFeature.CrossCableLength,
+        feature: FabricFeature.CrossLength,
         name: "CrossLength",
         defaultValue: 1.583,
         multiplier: FeatureMultiplier.One,

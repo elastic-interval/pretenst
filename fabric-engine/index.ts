@@ -11,14 +11,14 @@ declare function logInt(idx: u32, i: i32): void
 
 // DECLARATION
 
-const JOINT_RADIUS: f32 = 0.1
-
+const RESURFACE: f32 = 0.001
+const ANTIGRAVITY: f32 = -0.03
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const IN_UTERO_ELASTIC: f32 = 15000
 
 export enum FabricFeature {
-    GravityAbove = 0,
-    DragAbove = 1,
+    Gravity = 0,
+    Drag = 1,
     GravityBelow = 2,
     DragBelow = 3,
     GravityBelowWater = 4,
@@ -32,12 +32,21 @@ export enum FabricFeature {
     PretensingIntensity = 12,
     TicksPerFrame = 13,
     BarLength = 14,
-    TriangleCableLength = 15,
+    TriangleLength = 15,
     RingLength = 16,
     CrossLength = 17,
     BowMidLength = 18,
     BowEndLength = 19,
 }
+
+enum SurfaceCharacter {
+    Bouncy = 0,
+    Slippery = 1,
+    Sticky = 2,
+    Frozen = 4,
+}
+
+const SURFACE: SurfaceCharacter = SurfaceCharacter.Frozen
 
 enum IntervalRole {
     Bar = 0,
@@ -690,7 +699,6 @@ export function centralize(): void {
 }
 
 export function setAltitude(altitude: f32): f32 {
-    altitude += JOINT_RADIUS
     let jointCount = getJointCount()
     let lowY: f32 = 10000
     for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
@@ -1083,62 +1091,53 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(
-    jointIndex: u16,
-    lifePhase: LifePhase,
-    fabricGravityAbove: f32,
-    fabricDragAbove: f32,
-    fabricGravityBelow: f32,
-    fabricDragBelow: f32,
-    fabricGravityBelowWater: f32,
-    fabricDragBelowWater: f32,
-): void {
-    let velocityVectorPtr = _velocity(jointIndex)
-    let velocityY = getY(velocityVectorPtr)
+function jointPhysics(jointIndex: u16, lifePhase: LifePhase, gravity: f32, drag: f32): void {
     let altitude = getY(_location(jointIndex))
-    let gravityAbove: f32 = 0
-    let dragAbove: f32 = 0
+    let currentGravity: f32 = gravity
+    let currentDrag: f32 = drag
     switch (lifePhase) {
         case LifePhase.Growing:
         case LifePhase.Shaping:
         case LifePhase.Slack:
-            altitude = JOINT_RADIUS * 2 // simulate far above
+            altitude = 1 // simulate far above
+            currentGravity = 0
+            currentDrag = 0
             break
         case LifePhase.Pretensing:
             let factor = getPretensingNuance()
-            gravityAbove = fabricGravityAbove * factor * factor
-            dragAbove = fabricDragAbove * factor
+            currentGravity *= factor * factor
+            currentDrag *= factor
             break
         case LifePhase.Pretenst:
-            gravityAbove = fabricGravityAbove
-            dragAbove = fabricDragAbove
             break
     }
-    if (altitude > JOINT_RADIUS) { // far above
-        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityAbove)
-        multiplyScalar(_velocity(jointIndex), 1 - dragAbove)
+    let _velocityVector = _velocity(jointIndex)
+    if (altitude > 0) { // far above
+        setY(_velocityVector, getY(_velocityVector) - currentGravity)
+        multiplyScalar(_velocity(jointIndex), 1 - currentDrag)
         return
     }
-    let land = getTerrainUnder(jointIndex) === LAND
-    let gravityBelow = land ? fabricGravityBelow : fabricGravityBelowWater
-    let dragBelow = land ? fabricDragBelow : fabricDragBelowWater
-    if (altitude > -JOINT_RADIUS) { // close to the surface
-        let degreeAbove: f32 = (altitude + JOINT_RADIUS) / (JOINT_RADIUS * 2)
-        let degreeBelow: f32 = 1.0 - degreeAbove
-        if (velocityY < 0 && land) {
-            multiplyScalar(velocityVectorPtr, degreeAbove) // zero at the bottom
+    if (getTerrainUnder(jointIndex) === LAND) {
+        let degreeSubmerged: f32 = -altitude < 1 ? -altitude : 0
+        let degreeCushioned: f32 = 1 - degreeSubmerged
+        switch (SURFACE) {
+            case SurfaceCharacter.Bouncy:
+                multiplyScalar(_velocityVector, degreeCushioned)
+                setY(_velocityVector, getY(_velocityVector) - ANTIGRAVITY * degreeSubmerged)
+                break
+            case SurfaceCharacter.Slippery:
+                setY(_velocityVector, getY(_velocityVector) - ANTIGRAVITY * degreeSubmerged)
+                setY(_velocityVector, degreeSubmerged * RESURFACE)
+                break
+            case SurfaceCharacter.Sticky:
+                multiplyScalar(_velocityVector, degreeCushioned)
+                setY(_velocityVector, degreeSubmerged * RESURFACE)
+                break
+            case SurfaceCharacter.Frozen:
+                zero(_velocityVector)
+                setY(_velocityVector, degreeSubmerged * RESURFACE)
+                break
         }
-        let gravityValue: f32 = gravityAbove * degreeAbove + gravityBelow * degreeBelow
-        setY(velocityVectorPtr, getY(velocityVectorPtr) - gravityValue)
-        let drag = dragAbove * degreeAbove + dragBelow * degreeBelow
-        multiplyScalar(_velocity(jointIndex), 1 - drag)
-    } else { // far under the surface
-        if (velocityY < 0 && land) {
-            zero(velocityVectorPtr)
-        } else {
-            setY(velocityVectorPtr, velocityY - gravityBelow)
-        }
-        multiplyScalar(_velocity(jointIndex), 1 - dragBelow)
     }
 }
 
@@ -1160,12 +1159,6 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
         }
     }
     let jointCount = getJointCount()
-    let gravityAbove = getFeature(FabricFeature.GravityAbove)
-    let dragAbove = getFeature(FabricFeature.DragAbove)
-    let gravityBelow = getFeature(FabricFeature.GravityBelow)
-    let dragBelow = getFeature(FabricFeature.DragBelow)
-    let gravityBelowWater = getFeature(FabricFeature.GravityBelowWater)
-    let dragBelowWater = getFeature(FabricFeature.DragBelowWater)
     let ambientJointMass: f32 = 0
     switch (lifePhase) {
         case LifePhase.Growing:
@@ -1179,12 +1172,10 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
         case LifePhase.Pretenst:
             break
     }
+    let gravity = getFeature(FabricFeature.Gravity)
+    let drag = getFeature(FabricFeature.Drag)
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        jointPhysics(
-            jointIndex, lifePhase,
-            gravityAbove, dragAbove, gravityBelow, dragBelow,
-            gravityBelowWater, dragBelowWater
-        )
+        jointPhysics(jointIndex, lifePhase, gravity, drag)
         switch (lifePhase) {
             case LifePhase.Growing:
             case LifePhase.Shaping:
