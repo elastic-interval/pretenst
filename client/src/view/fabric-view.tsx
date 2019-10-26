@@ -38,8 +38,8 @@ const AMBIENT_COLOR = new Color("#bababa")
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const BAR_GIRTH = 1
-const CABLE_GIRTH = 0.3
+const BAR_GIRTH = 100
+const CABLE_GIRTH = 30
 
 export function FabricView({
                                fabric, lifePhase, setLifePhase, pretensingStep$, selectedBrick,
@@ -68,6 +68,7 @@ export function FabricView({
         controls.maxPolarAngle = 0.8 * Math.PI
         controls.maxDistance = 1000
         controls.minDistance = 3
+        controls.zoomSpeed = 0.3
         controls.enableKeys = false
         const midpoint = new Vector3(0, ALTITUDE, 0)
         orbitControls.current.target.set(midpoint.x, midpoint.y, midpoint.z)
@@ -199,30 +200,23 @@ export function FabricView({
                     </group>
                 ) : (
                     <group>
-                        {lifePhase === LifePhase.Pretenst ? (
-                            fabric.splitIntervals ? (
-                                [
-                                    ...fabric.splitIntervals.unselected.map(interval => (
-                                        <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                                      larger={false} attenuated={true}/>
-                                    )),
-                                    ...fabric.splitIntervals.selected.map(interval => (
-                                        <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                                      larger={true} attenuated={false}/>
-                                    )),
-                                ]
-                            ) : (
-                                fabric.intervals.map(interval => (
+                        {fabric.splitIntervals ? (
+                            [
+                                ...fabric.splitIntervals.unselected.map(interval => (
                                     <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                                  larger={false} attenuated={false}/>
-                                ))
-                            )
+                                                  larger={false} attenuated={true}/>
+                                )),
+                                ...fabric.splitIntervals.selected.map(interval => (
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval}
+                                                  larger={true} attenuated={false}/>
+                                )),
+                            ]
                         ) : (
                             fabric.intervals.map(interval => (
                                 <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                              larger={false} attenuated={!!fabric.splitIntervals}/>
+                                              larger={false} attenuated={false}/>
                             ))
-                        )}
+                        )}}
                     </group>
                 )}
                 {showFaces ? <Faces/> : undefined}
