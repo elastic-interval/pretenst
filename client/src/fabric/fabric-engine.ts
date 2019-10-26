@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -63,11 +62,20 @@ export enum Limit {
     MaxCableStrain = 3,
 }
 
+export enum SurfaceCharacter {
+    Bouncy = 0,
+    Slippery = 1,
+    Sticky = 2,
+    Frozen = 4,
+}
+
 export interface IFabricEngine {
 
     memory: IMemory
 
     init(): number
+
+    setSurfaceCharacter(character: SurfaceCharacter): void
 
     getLimit(limit: Limit): number
 

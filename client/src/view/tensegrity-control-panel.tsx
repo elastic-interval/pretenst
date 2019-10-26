@@ -21,10 +21,12 @@ import {
     FaListAlt,
     FaParachuteBox,
     FaRadiationAlt,
-    FaSyncAlt, FaTimesCircle,
+    FaSyncAlt,
+    FaTimesCircle,
 } from "react-icons/all"
-import { Button, ButtonGroup, Navbar } from "reactstrap"
+import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Navbar } from "reactstrap"
 
+import { SurfaceCharacter } from "../fabric/fabric-engine"
 import { LifePhase } from "../fabric/life-phase"
 import { optimizeFabric } from "../fabric/tensegrity-brick"
 import { IBrick } from "../fabric/tensegrity-brick-types"
@@ -56,10 +58,12 @@ export function TensegrityControlPanel(
 
     const lifePhase = fabric.lifePhase
 
+    const [surfaceCharacter, setSurfaceCharacter] = useState(SurfaceCharacter.Bouncy)
     const [colorBars, setColorBars] = useState(true)
     const [colorCables, setColorCables] = useState(true)
 
     useEffect(() => fabric.instance.engine.setColoring(colorBars, colorCables), [colorBars, colorCables])
+    useEffect(() => fabric.instance.engine.setSurfaceCharacter(surfaceCharacter), [surfaceCharacter])
 
     function adjustment(up: boolean): number {
         const factor = 1.03
@@ -88,6 +92,21 @@ export function TensegrityControlPanel(
         </Button>
     }
 
+    const SurfaceCharacterChoice = (): JSX.Element => {
+        const [open, setOpen] = useState<boolean>(false)
+        return (
+            <ButtonDropdown isOpen={open} toggle={() => setOpen(!open)}>
+                <DropdownToggle>{SurfaceCharacter[surfaceCharacter]}</DropdownToggle>
+                <DropdownMenu right={false}>
+                    {Object.keys(SurfaceCharacter).filter(k => k.length > 1).map(key => (
+                        <DropdownItem key={`Surface${key}`} onClick={() => setSurfaceCharacter(SurfaceCharacter[key])}>
+                            {key}
+                        </DropdownItem>
+                    ))}
+                </DropdownMenu>
+            </ButtonDropdown>
+        )
+    }
     const engine = fabric.instance.engine
     return (
         <Navbar style={{borderStyle: "none"}}>
@@ -163,6 +182,7 @@ export function TensegrityControlPanel(
                 </Button>
             </ButtonGroup>
             <ButtonGroup style={{paddingLeft: "1em"}}>
+                <SurfaceCharacterChoice/>
                 <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
                     <FaCamera/>
                 </Button>

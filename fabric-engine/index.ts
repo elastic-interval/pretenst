@@ -42,7 +42,11 @@ enum SurfaceCharacter {
     Frozen = 4,
 }
 
-const SURFACE: SurfaceCharacter = SurfaceCharacter.Frozen
+export function setSurfaceCharacter(character: SurfaceCharacter): void {
+    surfaceCharacter = character
+}
+
+let surfaceCharacter: SurfaceCharacter = SurfaceCharacter.Bouncy
 
 enum IntervalRole {
     Bar = 0,
@@ -1116,7 +1120,7 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase, gravity: f32, drag:
     if (getTerrainUnder(jointIndex) === LAND) {
         let degreeSubmerged: f32 = -altitude < 1 ? -altitude : 0
         let degreeCushioned: f32 = 1 - degreeSubmerged
-        switch (SURFACE) {
+        switch (surfaceCharacter) {
             case SurfaceCharacter.Bouncy:
                 multiplyScalar(_velocityVector, degreeCushioned)
                 setY(_velocityVector, getY(_velocityVector) - ANTIGRAVITY * degreeSubmerged)
