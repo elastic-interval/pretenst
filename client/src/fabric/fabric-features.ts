@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -90,7 +91,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.SlackThreshold,
         name: "SlackThreshold",
-        defaultValue: 0.008,
+        defaultValue: 0.004,
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 1,
         adjustment: byTenPercent,
@@ -203,6 +204,42 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         fixedDigits: 3,
         adjustment: byOnePercent,
         lifePhases: [LifePhase.Shaping],
+    },
+    {
+        feature: FabricFeature.BarMinElastic,
+        name: "BarMin",
+        defaultValue: 0.000018,
+        multiplier: FeatureMultiplier.Billionths,
+        fixedDigits: 0,
+        adjustment: byTenPercent,
+        lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
+    },
+    {
+        feature: FabricFeature.BarMaxElastic,
+        name: "BarMax",
+        defaultValue: 0.00003,
+        multiplier: FeatureMultiplier.Billionths,
+        fixedDigits: 0,
+        adjustment: byTenPercent,
+        lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
+    },
+    {
+        feature: FabricFeature.CableMinElastic,
+        name: "CableMin",
+        defaultValue: 0.0000018,
+        multiplier: FeatureMultiplier.Billionths,
+        fixedDigits: 0,
+        adjustment: byTenPercent,
+        lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
+    },
+    {
+        feature: FabricFeature.CableMaxElastic,
+        name: "CableMax",
+        defaultValue: 0.000011,
+        multiplier: FeatureMultiplier.Billionths,
+        fixedDigits: 0,
+        adjustment: byTenPercent,
+        lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Pretenst],
     },
 ]
 

@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -41,6 +40,12 @@ export const SURFACE = new MeshPhongMaterial({
 
 export const LINE = new LineBasicMaterial({
     vertexColors: VertexColors,
+})
+
+export const SCALE_LINE_COLOR = "#cace02"
+
+export const SCALE_LINE = new LineBasicMaterial({
+    color: new Color(SCALE_LINE_COLOR),
 })
 
 export const FACE = new MeshPhongMaterial({

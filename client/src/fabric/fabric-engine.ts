@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -26,6 +27,10 @@ export enum FabricFeature {
     CrossLength = 13,
     BowMidLength = 14,
     BowEndLength = 15,
+    BarMinElastic = 16,
+    BarMaxElastic = 17,
+    CableMinElastic = 18,
+    CableMaxElastic = 19,
 }
 
 export enum IntervalRole {

@@ -33,6 +33,10 @@ export enum FabricFeature {
     CrossLength = 13,
     BowMidLength = 14,
     BowEndLength = 15,
+    BarMinElastic = 16,
+    BarMaxElastic = 17,
+    CableMinElastic = 18,
+    CableMaxElastic = 19,
 }
 
 enum SurfaceCharacter {
@@ -1105,7 +1109,7 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase, gravity: f32, drag:
             break
         case LifePhase.Pretensing:
             let factor = getPretensingNuance()
-            currentGravity *= factor * factor
+            currentGravity *= factor
             currentDrag *= factor
             break
         case LifePhase.Pretenst:

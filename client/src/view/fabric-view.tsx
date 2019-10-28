@@ -7,16 +7,26 @@ import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
-import { BufferGeometry, Color, Euler, Float32BufferAttribute, Object3D, PerspectiveCamera, Vector3 } from "three"
+import {
+    BufferGeometry,
+    Color,
+    Euler,
+    Float32BufferAttribute,
+    Geometry,
+    Object3D,
+    PerspectiveCamera,
+    Vector3,
+} from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
+import { FabricInstance } from "../fabric/fabric-instance"
 import { doNotClick, hideSurface, LifePhase } from "../fabric/life-phase"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { ATTENUATED, BAR, CABLE, FACE, FACE_SPHERE, LINE, SLACK } from "./materials"
+import { ATTENUATED, BAR, CABLE, FACE, FACE_SPHERE, LINE, SCALE_LINE, SLACK } from "./materials"
 import { SurfaceComponent } from "./surface-component"
 
 extend({OrbitControls})
@@ -40,6 +50,9 @@ const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
 const BAR_GIRTH = 100
 const CABLE_GIRTH = 30
+const SCALE_WIDTH = 0.01
+const NEEDLE_WIDTH = 3
+const SCALE_MAX = 0.5
 
 export function FabricView({
                                fabric, lifePhase, setLifePhase, pretensingStep$, selectedBrick,
@@ -95,9 +108,6 @@ export function FabricView({
     }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase, fastMode, autoRotate])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
-
-    // const getMinLimit = () => fabric.instance.engine.getLimit(showBars ? Limit.MinBarStrain : Limit.MinCableStrain)
-    // const getMaxLimit = () => fabric.instance.engine.getLimit(showBars ? Limit.MaxBarStrain : Limit.MaxCableStrain)
 
     const selectBrick = (newSelectedBrick: IBrick) => {
         if (fabric) {
@@ -188,40 +198,44 @@ export function FabricView({
         )
     }
 
-    function StrainBars(): JSX.Element {
+    function ElasticScale(): JSX.Element {
         const current = orbitControls.current
         if (lifePhase === LifePhase.Slack || !current) {
             return <group/>
         }
-        const geometry = new BufferGeometry()
-        const vertices = new Float32Array(fabric.instance.engine.getIntervalCount() * 2 * 3)
-        const width = 0.03
-        fabric.instance.elastics.forEach((elastic, index) => {
-            const height = elastic * 50000 - 0.5
-            let offset = index * 6
-            vertices[offset++] = -width
-            vertices[offset++] = height
-            vertices[offset++] = 0
-            vertices[offset++] = width
-            vertices[offset++] = height
-            vertices[offset++] = 0
-        })
-        geometry.addAttribute("position", new Float32BufferAttribute(vertices, 3))
-        geometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
+        const needleGeometry = new BufferGeometry()
+        const lines = strainBarLines(fabric.instance, showBars, showCables)
+        needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
+        needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
         const perspective = camera as PerspectiveCamera
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
-        const leftDistance = perspective.fov * perspective.aspect / 100
+        const leftDistance = perspective.fov * perspective.aspect / 125
         const toDaLeft = new Vector3().crossVectors(camera.up, toTarget).normalize().multiplyScalar(leftDistance)
-        const position = new Vector3().copy(camera.position).add(toTarget).add(toDaLeft)
-        return <lineSegments geometry={geometry} material={LINE}
-                             position={position} rotation={camera.rotation}/>
+        const scaleGeometry = new Geometry()
+        const v = (x: number, y: number) => new Vector3(x, y, 0)
+        scaleGeometry.vertices = [
+            v(0, -SCALE_MAX), v(0, SCALE_MAX),
+            v(-SCALE_WIDTH, SCALE_MAX), v(SCALE_WIDTH, SCALE_MAX),
+            v(-SCALE_WIDTH, 0), v(SCALE_WIDTH, 0),
+            v(-SCALE_WIDTH, -SCALE_MAX), v(SCALE_WIDTH, -SCALE_MAX),
+        ]
+        const needlePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, 0.8).add(toDaLeft)
+        const scalePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, 0.8001).add(toDaLeft)
+        return (
+            <group>
+                <lineSegments geometry={needleGeometry} material={LINE}
+                              position={needlePosition} rotation={camera.rotation}/>
+                <lineSegments geometry={scaleGeometry} material={SCALE_LINE}
+                              position={scalePosition} rotation={camera.rotation}/>
+            </group>
+        )
     }
 
     return (
         <group>
             <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
             <scene>
-                <StrainBars/>
+                <ElasticScale/>
                 {fastMode ? (
                     <group>
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
@@ -262,4 +276,39 @@ export function FabricView({
             </scene>
         </group>
     )
+}
+
+function strainBarLines(instance: FabricInstance, showBars: boolean, showCables: boolean): Float32Array {
+
+    const minBar = fabricFeatureValue(FabricFeature.BarMinElastic)
+    const maxBar = fabricFeatureValue(FabricFeature.BarMaxElastic)
+    const minCable = fabricFeatureValue(FabricFeature.CableMinElastic)
+    const maxCable = fabricFeatureValue(FabricFeature.CableMaxElastic)
+
+    function elasticToHeight(elastic: number): number {
+        if (showBars && showCables) {
+            const min = Math.min(minBar, minCable)
+            const max = Math.max(maxBar, maxCable)
+            return (elastic - min) / (max - min) - 0.5
+        } else if (showBars) {
+            return (elastic - minBar) / (maxBar - minBar) - 0.5
+        } else if (showCables) {
+            return (elastic - minCable) / (maxCable - minCable) - 0.5
+        } else {
+            return 0
+        }
+    }
+
+    const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
+    instance.elastics.forEach((elastic, index) => {
+        const height = elasticToHeight(elastic)
+        let offset = index * 6
+        vertices[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
+        vertices[offset++] = height
+        vertices[offset++] = 0
+        vertices[offset++] = SCALE_WIDTH * NEEDLE_WIDTH
+        vertices[offset++] = height
+        vertices[offset++] = 0
+    })
+    return vertices
 }
