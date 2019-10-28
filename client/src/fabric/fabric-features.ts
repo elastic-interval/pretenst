@@ -72,7 +72,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.Drag,
         name: "Drag",
-        defaultValue: 0.000001,
+        defaultValue: 0.0001,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
         adjustment: byTenPercent,

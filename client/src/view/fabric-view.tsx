@@ -7,7 +7,7 @@ import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
-import { Color, Euler, Object3D, Vector3 } from "three"
+import { BufferGeometry, Color, Euler, Float32BufferAttribute, Object3D, PerspectiveCamera, Vector3 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { FabricFeature } from "../fabric/fabric-engine"
@@ -43,7 +43,7 @@ const CABLE_GIRTH = 30
 
 export function FabricView({
                                fabric, lifePhase, setLifePhase, pretensingStep$, selectedBrick,
-                               setSelectedBrick, autoRotate, fastMode, showFaces,
+                               setSelectedBrick, autoRotate, fastMode, showBars, showCables,
                            }: {
     fabric: TensegrityFabric,
     lifePhase: LifePhase,
@@ -53,7 +53,8 @@ export function FabricView({
     setSelectedBrick: (selection?: IBrick) => void,
     autoRotate: boolean,
     fastMode: boolean,
-    showFaces: boolean,
+    showBars: boolean,
+    showCables: boolean,
 }): JSX.Element {
 
     const [age, setAge] = useState(0)
@@ -94,6 +95,9 @@ export function FabricView({
     }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase, fastMode, autoRotate])
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
+
+    // const getMinLimit = () => fabric.instance.engine.getLimit(showBars ? Limit.MinBarStrain : Limit.MinCableStrain)
+    // const getMaxLimit = () => fabric.instance.engine.getLimit(showBars ? Limit.MaxBarStrain : Limit.MaxCableStrain)
 
     const selectBrick = (newSelectedBrick: IBrick) => {
         if (fabric) {
@@ -184,10 +188,40 @@ export function FabricView({
         )
     }
 
+    function StrainBars(): JSX.Element {
+        const current = orbitControls.current
+        if (lifePhase === LifePhase.Slack || !current) {
+            return <group/>
+        }
+        const geometry = new BufferGeometry()
+        const vertices = new Float32Array(fabric.instance.engine.getIntervalCount() * 2 * 3)
+        const width = 0.03
+        fabric.instance.elastics.forEach((elastic, index) => {
+            const height = elastic * 50000 - 0.5
+            let offset = index * 6
+            vertices[offset++] = -width
+            vertices[offset++] = height
+            vertices[offset++] = 0
+            vertices[offset++] = width
+            vertices[offset++] = height
+            vertices[offset++] = 0
+        })
+        geometry.addAttribute("position", new Float32BufferAttribute(vertices, 3))
+        geometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
+        const perspective = camera as PerspectiveCamera
+        const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
+        const leftDistance = perspective.fov * perspective.aspect / 100
+        const toDaLeft = new Vector3().crossVectors(camera.up, toTarget).normalize().multiplyScalar(leftDistance)
+        const position = new Vector3().copy(camera.position).add(toTarget).add(toDaLeft)
+        return <lineSegments geometry={geometry} material={LINE}
+                             position={position} rotation={camera.rotation}/>
+    }
+
     return (
         <group>
             <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
             <scene>
+                <StrainBars/>
                 {fastMode ? (
                     <group>
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
@@ -219,7 +253,7 @@ export function FabricView({
                         )}}
                     </group>
                 )}
-                {showFaces ? <Faces/> : undefined}
+                {(showBars && showCables) ? <Faces/> : undefined}
                 <SelectedFace/>
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={1000} decay={0.01} position={SUN_POSITION}/>
