@@ -235,7 +235,7 @@ export function FabricView({
         <group>
             <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
             <scene>
-                <ElasticScale/>
+                {autoRotate ? undefined : <ElasticScale/>}
                 {fastMode ? (
                     <group>
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
