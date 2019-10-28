@@ -8,7 +8,8 @@ export enum LifePhase {
     Shaping = 1,
     Slack = 2,
     Pretensing = 3,
-    Pretenst = 4,
+    Gravitizing = 4,
+    Pretenst = 5,
 }
 
 export function doNotClick(lifePhase: LifePhase): boolean {
@@ -16,6 +17,6 @@ export function doNotClick(lifePhase: LifePhase): boolean {
 }
 
 export function hideSurface(lifePhase: LifePhase): boolean {
-    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping
+    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack || lifePhase === LifePhase.Pretensing
 }
 

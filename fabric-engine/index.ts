@@ -33,10 +33,8 @@ export enum FabricFeature {
     CrossLength = 13,
     BowMidLength = 14,
     BowEndLength = 15,
-    BarMinElastic = 16,
-    BarMaxElastic = 17,
-    CableMinElastic = 18,
-    CableMaxElastic = 19,
+    BarMaxElastic = 16,
+    CableMaxElastic = 17,
 }
 
 enum SurfaceCharacter {
@@ -66,7 +64,8 @@ export enum LifePhase {
     Shaping = 1,
     Slack = 2,
     Pretensing = 3,
-    Pretenst = 4,
+    Gravitizing = 4,
+    Pretenst = 5,
 }
 
 const LAND: u8 = 1
@@ -639,6 +638,9 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             }
             break
         case LifePhase.Pretensing:
+            setFabricBusyTicks(<u32>getFeature(FabricFeature.PretensingTicks))
+            break
+        case LifePhase.Gravitizing:
             setAltitude(0)
             setFabricBusyTicks(<u32>getFeature(FabricFeature.PretensingTicks))
             break
@@ -925,6 +927,7 @@ export function setColoring(bars: boolean, cables: boolean): void {
 }
 
 function outputLinesGeometry(): void {
+    let slackThreshold = getFeature(FabricFeature.SlackThreshold)
     minBarStrain = BIG_STRAIN
     maxBarStrain = -BIG_STRAIN
     minCableStrain = BIG_STRAIN
@@ -950,7 +953,6 @@ function outputLinesGeometry(): void {
             }
         }
     }
-    let slackThreshold = getFeature(FabricFeature.SlackThreshold)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
@@ -1063,14 +1065,25 @@ export function removeFace(deadFaceIndex: u16): void {
 function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
     let intervalRole = getIntervalRole(intervalIndex)
     let bar = intervalRole === IntervalRole.Bar
-    let pretenst: f32 = bar ? getPretenst() : 0
-    if (lifePhase === LifePhase.Pretensing) {
-        pretenst *= getPretensingNuance()
+    let currentLength = interpolateCurrentLength(intervalIndex, state)
+    let pretenst: f32 = 0
+    if (bar) {
+        switch (lifePhase) {
+            case LifePhase.Pretensing:
+                currentLength *= 1 + getPretenst() * getPretensingNuance()
+                break
+            case LifePhase.Gravitizing:
+            case LifePhase.Pretenst:
+                currentLength *= 1 + getPretenst()
+                break
+        }
     }
-    let currentLength = interpolateCurrentLength(intervalIndex, state) * (1 + pretenst)
     let intervalElasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     let strain = displacement / currentLength
+    if (!bar && strain < 0) {
+        strain = 0
+    }
     setStrain(intervalIndex, strain)
     let fabricElasticFactor: f32 = 0
     switch (lifePhase) {
@@ -1080,9 +1093,10 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             fabricElasticFactor = IN_UTERO_ELASTIC
             break
         case LifePhase.Pretensing:
+        case LifePhase.Gravitizing:
         case LifePhase.Pretenst:
             let pushOverPull = getFeature(FabricFeature.PushOverPull)
-            fabricElasticFactor = bar ? pushOverPull / 2 : strain < 0 ? 0 : 2 / pushOverPull
+            fabricElasticFactor = bar ? pushOverPull / 2 : 2 / pushOverPull
             break
     }
     let force = strain * intervalElasticFactor * fabricElasticFactor
@@ -1108,9 +1122,11 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase, gravity: f32, drag:
             currentDrag = 0
             break
         case LifePhase.Pretensing:
-            let factor = getPretensingNuance()
-            currentGravity *= factor
-            currentDrag *= factor
+            altitude = 1 // simulate far above
+            currentGravity = 0
+            break
+        case LifePhase.Gravitizing:
+            currentGravity *= getPretensingNuance()
             break
         case LifePhase.Pretenst:
             break
@@ -1173,6 +1189,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
         case LifePhase.Pretensing:
             ambientJointMass = IN_UTERO_JOINT_MASS * (1 - getPretensingNuance())
             break
+        case LifePhase.Gravitizing:
         case LifePhase.Pretenst:
             break
     }
@@ -1187,6 +1204,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
                 setVector(_velocity(jointIndex), _force(jointIndex))
                 break
             case LifePhase.Pretensing:
+            case LifePhase.Gravitizing:
             case LifePhase.Pretenst:
                 addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
                 break

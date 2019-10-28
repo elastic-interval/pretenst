@@ -27,10 +27,8 @@ export enum FabricFeature {
     CrossLength = 13,
     BowMidLength = 14,
     BowEndLength = 15,
-    BarMinElastic = 16,
-    BarMaxElastic = 17,
-    CableMinElastic = 18,
-    CableMaxElastic = 19,
+    BarMaxElastic = 16,
+    CableMaxElastic = 17,
 }
 
 export enum IntervalRole {

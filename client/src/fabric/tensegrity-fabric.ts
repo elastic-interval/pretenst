@@ -7,7 +7,7 @@ import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vec
 
 import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
-import { FabricInstance, JOINT_RADIUS } from "./fabric-instance"
+import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./life-phase"
 import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
 import {
@@ -100,8 +100,15 @@ export class TensegrityFabric {
     }
 
     public pretensing(): LifePhase {
+        this.pretensingStep = 0
         this.pretensingStartAge = this.instance.engine.getAge()
         return this.lifePhase = this.instance.pretensing()
+    }
+
+    public gravitizing(): LifePhase {
+        this.pretensingStep = 0
+        this.pretensingStartAge = this.instance.engine.getAge()
+        return this.lifePhase = this.instance.gravitizing()
     }
 
     public pretenst(): LifePhase {
@@ -230,7 +237,7 @@ export class TensegrityFabric {
 
     public get submergedJoints(): IJoint[] {
         return this.joints
-            .filter(joint => this.instance.getJointLocation(joint.index).y < JOINT_RADIUS)
+            .filter(joint => this.instance.getJointLocation(joint.index).y < 0)
     }
 
     public get facesGeometry(): BufferGeometry {
@@ -272,7 +279,9 @@ export class TensegrityFabric {
         const growth = this.growth
         if (!growth) {
             if (this.lifePhase === LifePhase.Pretensing) {
-                this.lifePhase = this.instance.pretenst()
+                this.lifePhase = this.gravitizing()
+            } else if (this.lifePhase === LifePhase.Gravitizing) {
+                this.lifePhase = this.pretenst()
             }
             return false
         }
@@ -369,7 +378,7 @@ export class TensegrityFabric {
     }
 
     private timeForPretensing(): boolean {
-        if (this.lifePhase !== LifePhase.Pretensing) {
+        if (this.lifePhase !== LifePhase.Pretensing && this.lifePhase !== LifePhase.Gravitizing) {
             return false
         }
         const engine = this.instance.engine

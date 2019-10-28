@@ -162,7 +162,16 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                     }
                 case LifePhase.Pretensing:
                     return {
-                        text: `Pretensing ${pretensingStep}%`,
+                        text: `Pretensing A ${pretensingStep}%`,
+                        symbol: <FaHammer/>,
+                        color: "warning",
+                        disabled: true,
+                        onClick: () => {
+                        },
+                    }
+                case LifePhase.Gravitizing:
+                    return {
+                        text: `Pretensing B ${pretensingStep}%`,
                         symbol: <FaHammer/>,
                         color: "warning",
                         disabled: true,

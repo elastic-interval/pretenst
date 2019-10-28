@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -10,8 +9,6 @@ import { FabricFeature, IFabricEngine } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
 import { vectorFromFloatArray } from "./fabric-kernel"
 import { LifePhase } from "./life-phase"
-
-export const JOINT_RADIUS = 0.1
 
 export class FabricInstance {
     private fabricFeatures: LazyFloatArray
@@ -79,7 +76,12 @@ export class FabricInstance {
         return this.engine.setLifePhase(LifePhase.Pretensing, this.maturePretenst)
     }
 
-    public pretenst(): LifePhase {
+    public gravitizing(): LifePhase {
+        console.log("Gravitizing")
+        return this.engine.setLifePhase(LifePhase.Gravitizing, this.maturePretenst)
+    }
+
+    public  pretenst(): LifePhase {
         console.log("Pretenst")
         return this.engine.setLifePhase(LifePhase.Pretenst, this.maturePretenst)
     }
@@ -97,6 +99,7 @@ export class FabricInstance {
         this.lineColors.clear()
         this.intervalUnits.clear()
         this.intervalStrains.clear()
+        this.elasticFactors.clear()
     }
 
     public getJointLocation(jointIndex: number): Vector3 {

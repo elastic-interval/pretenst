@@ -200,7 +200,7 @@ export function FabricView({
 
     function ElasticScale(): JSX.Element {
         const current = orbitControls.current
-        if (lifePhase === LifePhase.Slack || !current) {
+        if (!current) {
             return <group/>
         }
         const needleGeometry = new BufferGeometry()
@@ -280,20 +280,16 @@ export function FabricView({
 
 function strainBarLines(instance: FabricInstance, showBars: boolean, showCables: boolean): Float32Array {
 
-    const minBar = fabricFeatureValue(FabricFeature.BarMinElastic)
     const maxBar = fabricFeatureValue(FabricFeature.BarMaxElastic)
-    const minCable = fabricFeatureValue(FabricFeature.CableMinElastic)
     const maxCable = fabricFeatureValue(FabricFeature.CableMaxElastic)
 
     function elasticToHeight(elastic: number): number {
         if (showBars && showCables) {
-            const min = Math.min(minBar, minCable)
-            const max = Math.max(maxBar, maxCable)
-            return (elastic - min) / (max - min) - 0.5
+            return elastic / Math.max(maxBar, maxCable) - 0.5
         } else if (showBars) {
-            return (elastic - minBar) / (maxBar - minBar) - 0.5
+            return elastic / maxBar - 0.5
         } else if (showCables) {
-            return (elastic - minCable) / (maxCable - minCable) - 0.5
+            return elastic / maxCable - 0.5
         } else {
             return 0
         }

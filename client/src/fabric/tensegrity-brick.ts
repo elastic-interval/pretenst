@@ -7,7 +7,6 @@ import { Matrix4, Vector3 } from "three"
 
 import { IntervalRole } from "./fabric-engine"
 import { roleDefaultLength } from "./fabric-features"
-import { JOINT_RADIUS } from "./fabric-instance"
 import {
     BAR_ARRAY,
     BarEnd,
@@ -39,7 +38,7 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 //     return points
 // }
 
-const SNUGGLE_BRICKS = 0.8
+const SNUGGLE_BRICKS = 0.9
 
 function createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] {
     const barsToPoints = (vectors: Vector3[], bar: IBarDefinition): Vector3[] => {
@@ -58,7 +57,7 @@ function createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] 
     const scaleFactor = percentToFactor(scale)
     const fromBasis = new Matrix4()
         .getInverse(basis)
-        .setPosition(new Vector3(0, midpoint.length() * scaleFactor * SNUGGLE_BRICKS + JOINT_RADIUS, 0))
+        .setPosition(new Vector3(0, midpoint.length() * scaleFactor * SNUGGLE_BRICKS, 0))
         .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
     return points.map(p => p.applyMatrix4(fromBasis))
 }
