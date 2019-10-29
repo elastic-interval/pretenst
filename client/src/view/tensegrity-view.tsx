@@ -348,7 +348,7 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
     return (
         <div id="tensegrity-view" className="the-whole-page">
             {!fabric ? (
-                <CodePanel setCode={setCode}/>
+                <CodePanel runCode={setCode}/>
             ) : (
                 <>
                     <Canvas>
