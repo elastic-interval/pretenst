@@ -212,14 +212,14 @@ export interface ICodeTree {
     C?: ICodeTree,
 }
 
-export function codeTreeToString(codeTree: ICodeTree): string {
+export function treeToCode(codeTree: ICodeTree): string {
     return JSON.stringify(codeTree)
         .replace(/[_.:"]/g, "")
         .replace(/[{]/g, "[")
         .replace(/[}]/g, "]")
 }
 
-export function stringToCodeTree(error: (message: string) => void, code?: string): ICodeTree | undefined {
+export function codeToTree(error: (message: string) => void, code?: string): ICodeTree | undefined {
 
     function matchBracket(s: string, openBracket: number): number {
         if (s.charAt(openBracket) !== "[") {
@@ -240,7 +240,7 @@ export function stringToCodeTree(error: (message: string) => void, code?: string
         throw new Error(`No matching end bracket: |${s}|`)
     }
 
-    function codeToTree(c: string): ICodeTree {
+    function _codeToTree(c: string): ICodeTree {
         const finalBracket = matchBracket(c, 0)
         if (finalBracket !== c.length - 1) {
             throw new Error(`Code must end with ]: ${finalBracket} != ${c.length - 1}`)
@@ -259,16 +259,16 @@ export function stringToCodeTree(error: (message: string) => void, code?: string
             const bracketed = afterCount.substring(index + 1, endBracket + 1)
             switch (afterCount.charAt(index)) {
                 case "X":
-                    tree._X = codeToTree(bracketed)
+                    tree._X = _codeToTree(bracketed)
                     break
                 case "A":
-                    tree.A = codeToTree(bracketed)
+                    tree.A = _codeToTree(bracketed)
                     break
                 case "B":
-                    tree.B = codeToTree(bracketed)
+                    tree.B = _codeToTree(bracketed)
                     break
                 case "C":
-                    tree.C = codeToTree(bracketed)
+                    tree.C = _codeToTree(bracketed)
                     break
                 case "S":
                     tree.S = {_: parseInt(bracketed.substring(1, bracketed.length - 1), 10)}
@@ -284,7 +284,7 @@ export function stringToCodeTree(error: (message: string) => void, code?: string
             error("No code to parse")
             return undefined
         }
-        return codeToTree(code)
+        return _codeToTree(code)
     } catch (e) {
         error(e.message)
         return undefined

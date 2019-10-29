@@ -127,3 +127,17 @@ a, a:hover {
     transform: translate(-50%);
     z-index: 100;
 }
+
+.rst__rowWrapper {
+    padding: 0.2em;
+}
+
+.rst__rowContents {
+    border-top-right-radius: 1em;
+    border-bottom-right-radius: 1em;
+}
+
+.rst__moveHandle {
+    border-top-left-radius: 1em;
+    border-bottom-left-radius: 1em;
+}

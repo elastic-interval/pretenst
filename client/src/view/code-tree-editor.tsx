@@ -6,10 +6,62 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import SortableTree, { TreeItem } from "react-sortable-tree"
+import { Button } from "reactstrap"
 
-import { ICodeTree } from "../fabric/tensegrity-brick-types"
+import { codeToTree, ICodeTree } from "../fabric/tensegrity-brick-types"
 
 import { ICode } from "./code-panel"
+
+export function CodeTreeEditor({code, runCode}: {
+    code: ICode,
+    runCode: (code: ICode) => void,
+}): JSX.Element {
+
+    const [treeData, setTreeData] = useState<TreeItem[]>([])
+    useEffect(() => setTreeData(codeTreeToTreeData("", code.codeTree)), [code])
+    const [codeString, setCodeString] = useState(code.codeString)
+    useEffect(() => setCodeString(treeDataToCodeString(treeData)), [treeData])
+
+    function onClick(): void {
+        const codeTree = codeToTree(error => console.error(error), codeString)
+        if (!codeTree) {
+            return
+        }
+        runCode({codeString, codeTree})
+    }
+
+    return (
+        <div style={{fontSize: "small"}}>
+            <div style={{
+                backgroundColor: "#7d7d7d",
+                borderRadius: "1.078em",
+                overflowY: "scroll",
+                position: "fixed",
+                padding: "1em",
+                top: "1em",
+                left: "1em",
+                bottom: "5em",
+                width: "40%",
+            }}>
+                <SortableTree
+                    style={{}}
+                    rowHeight={() => 30}
+                    treeData={treeData}
+                    onChange={setTreeData}
+                    isVirtualized={false}
+                />
+            </div>
+            <div style={{
+                position: "fixed",
+                bottom: 0,
+                height: "5em",
+                width: "100%",
+            }}>
+                <Button color="success" className="my-3" onClick={onClick}>Run {codeString}</Button>
+            </div>
+        </div>
+    )
+}
 
 function codeTreeToTitle(prefix: string, codeTree: ICodeTree): JSX.Element {
     const scaleStatement = codeTree.S ? ` scaled ${codeTree.S._}%` : ""
@@ -66,31 +118,4 @@ function treeDataToCodeString(treeItems: TreeItem[]): string {
     childrenCode.unshift(node.steps)
     const childrenString = childrenCode.length > 0 ? `[${childrenCode.join(",")}]` : ""
     return `${node.prefix}${childrenString}`
-}
-
-export function CodeTreeEditor({code, setCode}: {
-    code: ICode,
-    setCode: (code: ICode) => void,
-}): JSX.Element {
-
-    const [treeData, setTreeData] = useState<TreeItem[]>([])
-    useEffect(() => setTreeData(codeTreeToTreeData("", code.codeTree)), [code])
-    const [codeString, setCodeString] = useState(code.codeString)
-    useEffect(() => setCodeString(treeDataToCodeString(treeData)), [treeData])
-
-    return (
-        <div>
-            <pre style={{color: "white", height: "10%"}}>
-{code.codeString}
-                <br/>
-                {codeString}
-            </pre>
-            <SortableTree
-                style={{height: "90%", backgroundColor: "#7d7d7d"}}
-                treeData={treeData}
-                onChange={setTreeData}
-                isVirtualized={false}
-            />
-        </div>
-    )
 }

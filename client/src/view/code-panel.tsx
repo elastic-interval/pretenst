@@ -7,13 +7,13 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { Button } from "reactstrap"
 
-import { codeTreeToString, ICodeTree, stringToCodeTree } from "../fabric/tensegrity-brick-types"
+import { codeToTree, ICodeTree, treeToCode } from "../fabric/tensegrity-brick-types"
 
 import { CodeTreeEditor } from "./code-tree-editor"
 
 const FABRIC_CODE_KEY = "FabricCode"
 
-// const MAX_LOCAL_CODE_LENGTH = 3000
+const MAX_LOCAL_CODE_LENGTH = 3000
 
 export interface ICode {
     codeString: string
@@ -21,7 +21,7 @@ export interface ICode {
 }
 
 const FORNOW = "[1,A[2,S[90],C[2,B[2]]],B[2,A[2,S[90],C[2]]],C[2,S[90],B[2,A[2]]]]"
-const FORNOW_TREE = stringToCodeTree(error => console.error(error), FORNOW)
+const FORNOW_TREE = codeToTree(error => console.error(error), FORNOW)
 
 export function CodePanel({runCode}: {
     runCode: (code?: ICode) => void,
@@ -29,7 +29,7 @@ export function CodePanel({runCode}: {
 
     const [code, setCode] = useState<ICode | undefined>()
     const [locationBarPrograms, setLocationBarPrograms] = useState<ICode[]>([])
-    const [recentPrograms] = useState<ICode[]>(getRecentCode())
+    const [recentPrograms, setRecentPrograms] = useState<ICode[]>(getRecentCode())
     const [bootstrapPrograms, setBoostrapPrograms] = useState<ICode[]>([])
 
     useEffect(() => {
@@ -46,20 +46,29 @@ export function CodePanel({runCode}: {
         // }
     }, [])
 
-    // function runCode(codeToRun: ICode): void {
-    //     const recent = [codeToRun, ...recentPrograms.filter(program => codeToRun.codeString !== program.codeString)]
-    //     while (totalCodeLength(recent) > MAX_LOCAL_CODE_LENGTH) {
-    //         recent.pop()
-    //     }
-    //     storeRecentCode(recent)
-    //     setRecentPrograms(recent)
-    //     setCode(codeToRun)
-    // }
+    useEffect(() => {
+    }, [])
+
+    function runTheCode(codeToRun: ICode): void {
+        const recent = [codeToRun, ...recentPrograms.filter(program => codeToRun.codeString !== program.codeString)]
+        while (totalCodeLength(recent) > MAX_LOCAL_CODE_LENGTH) {
+            recent.pop()
+        }
+        storeRecentCode(recent)
+        setRecentPrograms(recent)
+        setCode(codeToRun)
+        runCode(codeToRun)
+    }
 
     return (
-        <div style={{padding: "2em", backgroundColor: "rgba(0,0,0,1)", height: "100%", color: "#69aaea"}}>
+        <div style={{
+            padding: "2em",
+            backgroundColor: "rgba(0,0,0,1)",
+            height: "100%",
+            color: "#69aaea",
+        }}>
             {code ? (
-                <CodeTreeEditor code={code} setCode={setCode}/>
+                <CodeTreeEditor code={code} runCode={runTheCode}/>
             ) : (
                 <div>
                     <div style={{width: "100%", textAlign: "center"}}>
@@ -100,14 +109,14 @@ function CodeButton({code, setCode}: { code: ICode, setCode: (code: ICode) => vo
     )
 }
 
-// function totalCodeLength(programs: ICode[]): number {
-//     return programs.reduce((count, program) => count + program.codeString.length, 0)
-// }
+function totalCodeLength(programs: ICode[]): number {
+    return programs.reduce((count, program) => count + program.codeString.length, 0)
+}
 
 function getCodeFromLocationBar(): ICode[] {
     const codeString = location.hash.substring(1)
     try {
-        const codeTree = stringToCodeTree(message => console.error(message), codeString)
+        const codeTree = codeToTree(message => console.error(message), codeString)
         if (codeTree) {
             return [{codeString, codeTree}]
         }
@@ -124,15 +133,15 @@ async function getBootstrapCode(): Promise<ICode[]> {
         return [{codeString: "0", codeTree: {_: 0}}]
     }
     const pretenst: ICodeTree[] = body.pretenst
-    return pretenst.map(codeTree => ({codeTree, codeString: codeTreeToString(codeTree)}))
+    return pretenst.map(codeTree => ({codeTree, codeString: treeToCode(codeTree)}))
 }
 
-// function storeRecentCode(recent: ICode[]): void {
-//     localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(recent.map(program => program.codeTree)))
-// }
+function storeRecentCode(recent: ICode[]): void {
+    localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(recent.map(program => program.codeTree)))
+}
 
 function getRecentCode(): ICode[] {
     const recentCode = localStorage.getItem(FABRIC_CODE_KEY)
     const codeTrees: ICodeTree[] = recentCode ? JSON.parse(recentCode) : []
-    return codeTrees.map(codeTree => ({codeString: codeTreeToString(codeTree), codeTree}))
+    return codeTrees.map(codeTree => ({codeString: treeToCode(codeTree), codeTree}))
 }
