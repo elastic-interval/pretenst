@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { Button } from "reactstrap"
+import { Badge, Button, ButtonGroup } from "reactstrap"
 
 import { codeToTree, ICodeTree, treeToCode } from "../fabric/tensegrity-brick-types"
 
@@ -13,7 +13,7 @@ import { CodeTreeEditor } from "./code-tree-editor"
 
 const FABRIC_CODE_KEY = "FabricCode"
 
-const MAX_LOCAL_CODE_LENGTH = 3000
+const MAX_RECENT = 12
 
 export interface ICode {
     codeString: string
@@ -23,41 +23,39 @@ export interface ICode {
 const FORNOW = "[1,A[2,S[90],C[2,B[2]]],B[2,A[2,S[90],C[2]]],C[2,S[90],B[2,A[2]]]]"
 const FORNOW_TREE = codeToTree(error => console.error(error), FORNOW)
 
-export function CodePanel({runCode}: {
-    runCode: (code?: ICode) => void,
+export function CodePanel({code, setCode, runCode}: {
+    code?: ICode,
+    setCode: (code?: ICode) => void,
+    runCode: () => void,
 }): JSX.Element {
 
-    const [code, setCode] = useState<ICode | undefined>()
     const [locationBarPrograms, setLocationBarPrograms] = useState<ICode[]>([])
     const [recentPrograms, setRecentPrograms] = useState<ICode[]>(getRecentCode())
-    const [bootstrapPrograms, setBoostrapPrograms] = useState<ICode[]>([])
+    const [bootstrapPrograms, setBootstrapPrograms] = useState<ICode[]>([])
 
     useEffect(() => {
-        getBootstrapCode().then(setBoostrapPrograms)
+        getBootstrapCode().then(setBootstrapPrograms)
         const urlCode = getCodeFromLocationBar()
         setLocationBarPrograms(urlCode)
         if (!FORNOW_TREE) {
             throw new Error()
         }
-        setCode({codeString: FORNOW, codeTree: FORNOW_TREE})
+        // setCode({codeString: FORNOW, codeTree: FORNOW_TREE})
         // const codeItem = urlCode[0]
         // if (codeItem && codeItem.codeString === recentPrograms[0].codeString) {
         //     setTimeout(() => setCode(codeItem), 300)
         // }
     }, [])
 
-    useEffect(() => {
-    }, [])
-
     function runTheCode(codeToRun: ICode): void {
         const recent = [codeToRun, ...recentPrograms.filter(program => codeToRun.codeString !== program.codeString)]
-        while (totalCodeLength(recent) > MAX_LOCAL_CODE_LENGTH) {
+        while (recent.length > MAX_RECENT) {
             recent.pop()
         }
         storeRecentCode(recent)
         setRecentPrograms(recent)
         setCode(codeToRun)
-        runCode(codeToRun)
+        runCode()
     }
 
     return (
@@ -68,23 +66,22 @@ export function CodePanel({runCode}: {
             color: "#69aaea",
         }}>
             {code ? (
-                <CodeTreeEditor code={code} runCode={runTheCode}/>
+                <CodeTreeEditor code={code} setCode={setCode} runCode={runTheCode}/>
             ) : (
                 <div>
-                    <div style={{width: "100%", textAlign: "center"}}>
-                        <h1>Pretenst Programs</h1>
-                    </div>
-                    <CodeCollection title="Link" codeCollection={locationBarPrograms} setCode={setCode}/>
-                    <CodeCollection title="Recent" codeCollection={recentPrograms} setCode={setCode}/>
-                    <CodeCollection title="Suggestions" codeCollection={bootstrapPrograms} setCode={setCode}/>
+                    <CodeCollection title="From URL Link" codeCollection={locationBarPrograms} setCode={setCode}/>
+                    <CodeCollection title="Recent" numbered={true} codeCollection={recentPrograms} setCode={setCode}/>
+                    <CodeCollection title="Suggestions" small={true} codeCollection={bootstrapPrograms} setCode={setCode}/>
                 </div>
             )}
         </div>
     )
 }
 
-function CodeCollection({title, codeCollection, setCode}: {
+function CodeCollection({title, numbered, small, codeCollection, setCode}: {
     title: string,
+    numbered?: boolean,
+    small?: boolean,
     codeCollection: ICode[],
     setCode: (code: ICode) => void,
 }): JSX.Element {
@@ -93,24 +90,33 @@ function CodeCollection({title, codeCollection, setCode}: {
     }
     return (
         <div>
-            <h3>{title}</h3>
-            <div>
-                {codeCollection.map(code => <CodeButton key={code.codeString} code={code} setCode={setCode}/>)}
-            </div>
+            <h6>{title}</h6>
+            {numbered ? (
+                <ButtonGroup vertical={true} style={{
+                    width: "100%",
+                }}>
+                    {codeCollection.map((code, index) => (
+                        <Button key={index} color="dark" style={{
+                            margin: "0.1em",
+                            fontSize: "small",
+                            textAlign: "left",
+                        }} onClick={() => setCode(code)}>
+                            {index === undefined ? undefined : <Badge size="sm">{index}</Badge>} {code.codeString}
+                        </Button>
+                    ))}
+                </ButtonGroup>
+            ) : (
+                codeCollection.map((code, index) => (
+                    <Button key={index} color="dark" style={{
+                        margin: "0.3em",
+                        fontSize: small ? "xx-small" : "normal",
+                    }} onClick={() => setCode(code)}>
+                        {code.codeString}
+                    </Button>
+                ))
+            )}
         </div>
     )
-}
-
-function CodeButton({code, setCode}: { code: ICode, setCode: (code: ICode) => void }): JSX.Element {
-    return (
-        <Button color="dark" style={{margin: "0.4em"}} onClick={() => setCode(code)}>
-            {code.codeString}
-        </Button>
-    )
-}
-
-function totalCodeLength(programs: ICode[]): number {
-    return programs.reduce((count, program) => count + program.codeString.length, 0)
 }
 
 function getCodeFromLocationBar(): ICode[] {

@@ -8,7 +8,6 @@ import { useEffect, useState } from "react"
 import {
     FaArrowDown,
     FaArrowUp,
-    FaBars,
     FaBiohazard,
     FaCamera,
     FaCircle,
@@ -29,13 +28,26 @@ import {
     FaYinYang,
 } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
-import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Navbar } from "reactstrap"
+import {
+    Button,
+    ButtonDropdown,
+    ButtonGroup,
+    DropdownItem,
+    DropdownMenu,
+    DropdownToggle,
+    Nav,
+    Navbar,
+    NavItem,
+    NavLink,
+    TabContent,
+    TabPane,
+} from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { LifePhase } from "../fabric/life-phase"
+import { hideSurface, LifePhase } from "../fabric/life-phase"
 import { optimizeFabric } from "../fabric/tensegrity-brick"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -67,8 +79,6 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-const SHOW_FEATURES_KEY = "ShowFeatures"
-
 export function TensegrityView({buildFabric, features, pretensingStep$}: {
     buildFabric: (code: ICode) => TensegrityFabric,
     features: FloatFeature[],
@@ -76,7 +86,6 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(LifePhase.Growing)
-    const [showFeatures, setShowFeatures] = useState(localStorage.getItem(SHOW_FEATURES_KEY) === "true")
     const [surfaceCharacter, setSurfaceCharacter] = useState(SurfaceCharacter.Sticky)
     const [showBars, setShowBars] = useState(true)
     const [showCables, setShowCables] = useState(true)
@@ -87,7 +96,6 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
 
-    useEffect(() => localStorage.setItem(SHOW_FEATURES_KEY, showFeatures.toString()), [showFeatures])
     useEffect(() => {
         if (fabric) {
             fabric.instance.engine.setColoring(showBars, showCables)
@@ -336,54 +344,110 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                     <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
                         <FaCamera/>
                     </Button>
-                    <Button color={showFeatures ? "warning" : "secondary"}
-                            onClick={() => setShowFeatures(!showFeatures)}>
-                        <FaBars/>
-                    </Button>
                 </ButtonGroup>
             </Navbar>
         )
     }
 
-    return (
-        <div id="tensegrity-view" className="the-whole-page">
-            {!fabric ? (
-                <CodePanel runCode={setCode}/>
-            ) : (
-                <>
-                    <Canvas>
-                        <FabricView
-                            fabric={fabric}
-                            lifePhase={lifePhase}
-                            setLifePhase={setLifePhase}
-                            pretensingStep$={pretensingStep$}
-                            selectedBrick={selectedBrick}
-                            setSelectedBrick={setSelectedBrick}
-                            autoRotate={autoRotate}
-                            fastMode={fastMode}
-                            showBars={showBars}
-                            showCables={showCables}
+    function ControlTabs(): JSX.Element {
+        const [activeTab, setActiveTab] = useState("1")
+        return (
+            <div className="h-100">
+                <Nav tabs={true}>
+                    <NavItem>
+                        <NavLink
+                            active={activeTab === "1"}
+                            onClick={() => setActiveTab("1")}
+                        >
+                            Code
+                        </NavLink>
+                    </NavItem>
+                    <NavItem>
+                        <NavLink
+                            active={activeTab === "2"}
+                            onClick={() => setActiveTab("2")}
+                        >
+                            Features
+                        </NavLink>
+                    </NavItem>
+                </Nav>
+                <TabContent activeTab={activeTab}>
+                    <TabPane tabId="1">
+                        <CodePanel
+                            code={code}
+                            setCode={setCode}
+                            runCode={() => {
+                            }}
                         />
-                    </Canvas>
-                    {!showFeatures ? undefined : (
-                        <div id="top-right">
+                    </TabPane>
+                    <TabPane tabId="2">
+                        {!fabric ? <div/> : (
                             <FeaturePanel
                                 featureSet={features}
                                 lifePhase={lifePhase}
                                 instance={fabric.instance}
                             />
+                        )}
+                    </TabPane>
+                </TabContent>
+            </div>
+        )
+    }
+
+    return (
+        <div className="the-whole-page">
+            <div style={{
+                position: "absolute",
+                left: 0,
+                width: "40em",
+                height: "100%",
+                borderStyle: "solid",
+                borderColor: "white",
+                borderLeftWidth: 0,
+                borderTopWidth: 0,
+                borderBottomWidth: 0,
+                borderRightWidth: "1px",
+            }}>
+                <ControlTabs/>
+            </div>
+            <div style={{
+                position: "absolute",
+                left: "40em",
+                right: 0,
+                height: "100%",
+            }}>
+                {!fabric ? (
+                    <h1>Canvas</h1>
+                ) : (
+                    <div id="tensegrity-view" className="h-100">
+                        <Canvas style={{
+                            backgroundImage: hideSurface(lifePhase) ? "url('space.jpg')" : "",
+                            backgroundColor: hideSurface(lifePhase) ? "" : "#22566a",
+                        }}>
+                            <FabricView
+                                fabric={fabric}
+                                lifePhase={lifePhase}
+                                setLifePhase={setLifePhase}
+                                pretensingStep$={pretensingStep$}
+                                selectedBrick={selectedBrick}
+                                setSelectedBrick={setSelectedBrick}
+                                autoRotate={autoRotate}
+                                fastMode={fastMode}
+                                showBars={showBars}
+                                showCables={showCables}
+                            />
+                        </Canvas>
+                        {!code ? undefined : (
+                            <div id="top-middle">
+                                {code.codeString}
+                            </div>
+                        )}
+                        <div id="bottom-middle">
+                            <ControlPanel/>
                         </div>
-                    )}
-                    {!code ? undefined : (
-                        <div id="top-middle">
-                            {code.codeString}
-                        </div>
-                    )}
-                    <div id="bottom-middle">
-                        <ControlPanel/>
                     </div>
-                </>
-            )}
+                )}
+            </div>
         </div>
     )
 }

@@ -51,7 +51,7 @@ const ALTITUDE = 4
 const BAR_GIRTH = 100
 const CABLE_GIRTH = 30
 const SCALE_WIDTH = 0.01
-const NEEDLE_WIDTH = 3
+const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.5
 
 export function FabricView({
@@ -209,7 +209,7 @@ export function FabricView({
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
         const perspective = camera as PerspectiveCamera
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
-        const leftDistance = perspective.fov * perspective.aspect / 125
+        const leftDistance = perspective.fov * perspective.aspect / 130
         const toDaLeft = new Vector3().crossVectors(camera.up, toTarget).normalize().multiplyScalar(leftDistance)
         const scaleGeometry = new Geometry()
         const v = (x: number, y: number) => new Vector3(x, y, 0)

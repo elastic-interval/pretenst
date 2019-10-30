@@ -12,8 +12,9 @@ import { codeToTree, ICodeTree } from "../fabric/tensegrity-brick-types"
 
 import { ICode } from "./code-panel"
 
-export function CodeTreeEditor({code, runCode}: {
+export function CodeTreeEditor({code, setCode, runCode}: {
     code: ICode,
+    setCode: (code?: ICode) => void,
     runCode: (code: ICode) => void,
 }): JSX.Element {
 
@@ -22,7 +23,7 @@ export function CodeTreeEditor({code, runCode}: {
     const [codeString, setCodeString] = useState(code.codeString)
     useEffect(() => setCodeString(treeDataToCodeString(treeData)), [treeData])
 
-    function onClick(): void {
+    function onRun(): void {
         const codeTree = codeToTree(error => console.error(error), codeString)
         if (!codeTree) {
             return
@@ -30,21 +31,23 @@ export function CodeTreeEditor({code, runCode}: {
         runCode({codeString, codeTree})
     }
 
+    function onEscape(): void {
+        setCode()
+    }
+
     return (
-        <div style={{fontSize: "small"}}>
+        <div style={{
+            fontSize: "small",
+            width: "100%",
+        }}>
             <div style={{
                 backgroundColor: "#7d7d7d",
                 borderRadius: "1.078em",
                 overflowY: "scroll",
-                position: "fixed",
                 padding: "1em",
-                top: "1em",
-                left: "1em",
-                bottom: "5em",
-                width: "40%",
+                width: "100%",
             }}>
                 <SortableTree
-                    style={{}}
                     rowHeight={() => 30}
                     treeData={treeData}
                     onChange={setTreeData}
@@ -55,9 +58,11 @@ export function CodeTreeEditor({code, runCode}: {
                 position: "fixed",
                 bottom: 0,
                 height: "5em",
-                width: "100%",
+                textAlign: "center",
+                width: "40em",
             }}>
-                <Button color="success" className="my-3" onClick={onClick}>Run {codeString}</Button>
+                <Button color="success" className="my-3" onClick={onRun}>Run {codeString}</Button>
+                <Button color="warning" className="my-3" onClick={onEscape}>Another</Button>
             </div>
         </div>
     )
