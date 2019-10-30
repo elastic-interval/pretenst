@@ -6,6 +6,8 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaAngleDoubleLeft,
+    FaAngleDoubleRight,
     FaArrowDown,
     FaArrowUp,
     FaBiohazard,
@@ -70,7 +72,8 @@ declare global {
     }
 }
 
-const SPLIT = "35em"
+const SPLIT_LEFT = "34em"
+const SPLIT_RIGHT = "35em"
 
 interface IButtonCharacter {
     text: string,
@@ -93,6 +96,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, pretensing
     const [showCables, setShowCables] = useState(true)
     const [autoRotate, setAutoRotate] = useState(false)
     const [fastMode, setFastMode] = useState(true)
+    const [fullScreen, setFullScreen] = useState(false)
 
     const [code, setCode] = useState<ICode | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
@@ -421,31 +425,64 @@ export function TensegrityView({buildFabric, features, bootstrapCode, pretensing
                 <TabContent activeTab={activeTab}>
                     {Object.keys(Tab).map(tab => <Pane key={tab} tab={Tab[tab]}/>)}
                 </TabContent>
+                <div style={{
+                    position: "absolute",
+                    top: 0,
+                    height: "100%",
+                    left: SPLIT_LEFT,
+                    zIndex: 10,
+                    width: "1em",
+                }}>
+                    <Button style={{
+                        padding: 0,
+                        margin: 0,
+                        borderRadius: 0,
+                        width: "1em",
+                    }} className="w-100 h-100" color="dark"
+                            onClick={() => setFullScreen(true)}>
+                        <FaAngleDoubleLeft/>
+                    </Button>
+                </div>
             </div>
         )
     }
 
     return (
         <div className="the-whole-page">
+            {fullScreen ? (
+                <Button color="dark" style={{
+                    position: "absolute",
+                    padding: 0,
+                    margin: 0,
+                    top: 0,
+                    left: 0,
+                    height: "100%",
+                    zIndex: 1,
+                }} onClick={() => setFullScreen(false)}>
+                    <FaAngleDoubleRight/>
+                </Button>
+            ) : (
+                <div style={{
+                    position: "absolute",
+                    visibility: fullScreen ? "collapse" : "visible",
+                    left: 0,
+                    width: SPLIT_LEFT,
+                    height: "100%",
+                    borderStyle: "solid",
+                    borderColor: "#5c5c5c",
+                    borderLeftWidth: 0,
+                    borderTopWidth: 0,
+                    borderBottomWidth: 0,
+                    borderRightWidth: "1px",
+                    color: "#136412",
+                    backgroundColor: "#000000",
+                }}>
+                    <ControlTabs/>
+                </div>
+            )}
             <div style={{
                 position: "absolute",
-                left: 0,
-                width: SPLIT,
-                height: "100%",
-                borderStyle: "solid",
-                borderColor: "#5c5c5c",
-                borderLeftWidth: 0,
-                borderTopWidth: 0,
-                borderBottomWidth: 0,
-                borderRightWidth: "1px",
-                color: "#136412",
-                backgroundColor: "#000000",
-            }}>
-                <ControlTabs/>
-            </div>
-            <div style={{
-                position: "absolute",
-                left: SPLIT,
+                left: fullScreen ? 0 : SPLIT_RIGHT,
                 right: 0,
                 height: "100%",
             }}>
