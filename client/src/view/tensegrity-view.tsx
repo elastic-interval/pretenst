@@ -19,7 +19,6 @@ import {
     FaHandPointUp,
     FaHandRock,
     FaHandSpock,
-    FaListAlt,
     FaParachuteBox,
     FaRadiationAlt,
     FaSeedling,
@@ -36,7 +35,6 @@ import {
     DropdownMenu,
     DropdownToggle,
     Nav,
-    Navbar,
     NavItem,
     NavLink,
     TabContent,
@@ -47,13 +45,13 @@ import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { hideSurface, LifePhase } from "../fabric/life-phase"
+import { LifePhase } from "../fabric/life-phase"
 import { optimizeFabric } from "../fabric/tensegrity-brick"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
-import { CodePanel, ICode } from "./code-panel"
+import { CodePanel, getCodeFromLocationBar, getRecentCode, ICode } from "./code-panel"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
 import { StrainPanel } from "./strain-panel"
@@ -96,6 +94,13 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
 
+    useEffect(() => {
+        const urlCode = getCodeFromLocationBar().pop()
+        const recentCode = getRecentCode().pop()
+        if (urlCode && recentCode && urlCode.codeString !== recentCode.codeString) {
+            setTimeout(() => setCode(urlCode), 300)
+        }
+    }, [])
     useEffect(() => {
         if (fabric) {
             fabric.instance.engine.setColoring(showBars, showCables)
@@ -263,17 +268,9 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
         }
         const engine = fabric.instance.engine
         return (
-            <Navbar style={{borderStyle: "none"}}>
-                <ButtonGroup>
-                    <PretenstButton/>
-                </ButtonGroup>
-                <ButtonGroup style={{paddingLeft: "1em"}}>
-                    <Button onClick={() => {
-                        location.hash = ""
-                        setFabric(undefined)
-                    }}><FaListAlt/> Programs</Button>
-                </ButtonGroup>
-                <div style={{display: "inline-flex", alignContent: "center"}}>
+            <div>
+                <PretenstButton/>
+                <div style={{display: "block"}}>
                     {selectedBrick ? (
                         <ButtonGroup style={{paddingLeft: "0.6em", width: "40em"}}>
                             <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
@@ -345,7 +342,7 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                         <FaCamera/>
                     </Button>
                 </ButtonGroup>
-            </Navbar>
+            </div>
         )
     }
 
@@ -353,7 +350,9 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
         const [activeTab, setActiveTab] = useState("1")
         return (
             <div className="h-100">
-                <Nav tabs={true}>
+                <Nav tabs={true} style={{
+                    backgroundColor: "#b2b2b2",
+                }}>
                     <NavItem>
                         <NavLink
                             active={activeTab === "1"}
@@ -364,10 +363,20 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                     </NavItem>
                     <NavItem>
                         <NavLink
+                            disabled={!fabric}
                             active={activeTab === "2"}
                             onClick={() => setActiveTab("2")}
                         >
                             Features
+                        </NavLink>
+                    </NavItem>
+                    <NavItem>
+                        <NavLink
+                            disabled={!fabric}
+                            active={activeTab === "3"}
+                            onClick={() => setActiveTab("3")}
+                        >
+                            Commands
                         </NavLink>
                     </NavItem>
                 </Nav>
@@ -389,6 +398,9 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                             />
                         )}
                     </TabPane>
+                    <TabPane tabId="3">
+                        <ControlPanel/>
+                    </TabPane>
                 </TabContent>
             </div>
         )
@@ -402,11 +414,13 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                 width: "40em",
                 height: "100%",
                 borderStyle: "solid",
-                borderColor: "white",
+                borderColor: "#5c5c5c",
                 borderLeftWidth: 0,
                 borderTopWidth: 0,
                 borderBottomWidth: 0,
                 borderRightWidth: "1px",
+                color: "#ffffff",
+                backgroundColor: "#000000",
             }}>
                 <ControlTabs/>
             </div>
@@ -421,8 +435,8 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                 ) : (
                     <div id="tensegrity-view" className="h-100">
                         <Canvas style={{
-                            backgroundImage: hideSurface(lifePhase) ? "url('space.jpg')" : "",
-                            backgroundColor: hideSurface(lifePhase) ? "" : "#22566a",
+                            backgroundImage: "url('space.jpg')",
+                            backgroundColor: "black",
                         }}>
                             <FabricView
                                 fabric={fabric}
@@ -442,9 +456,6 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                                 {code.codeString}
                             </div>
                         )}
-                        <div id="bottom-middle">
-                            <ControlPanel/>
-                        </div>
                     </div>
                 )}
             </div>

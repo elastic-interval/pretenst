@@ -20,9 +20,6 @@ export interface ICode {
     codeTree: ICodeTree
 }
 
-const FORNOW = "[1,A[2,S[90],C[2,B[2]]],B[2,A[2,S[90],C[2]]],C[2,S[90],B[2,A[2]]]]"
-const FORNOW_TREE = codeToTree(error => console.error(error), FORNOW)
-
 export function CodePanel({code, setCode, runCode}: {
     code?: ICode,
     setCode: (code?: ICode) => void,
@@ -37,14 +34,6 @@ export function CodePanel({code, setCode, runCode}: {
         getBootstrapCode().then(setBootstrapPrograms)
         const urlCode = getCodeFromLocationBar()
         setLocationBarPrograms(urlCode)
-        if (!FORNOW_TREE) {
-            throw new Error()
-        }
-        // setCode({codeString: FORNOW, codeTree: FORNOW_TREE})
-        // const codeItem = urlCode[0]
-        // if (codeItem && codeItem.codeString === recentPrograms[0].codeString) {
-        //     setTimeout(() => setCode(codeItem), 300)
-        // }
     }, [])
 
     function runTheCode(codeToRun: ICode): void {
@@ -119,7 +108,7 @@ function CodeCollection({title, numbered, small, codeCollection, setCode}: {
     )
 }
 
-function getCodeFromLocationBar(): ICode[] {
+export function getCodeFromLocationBar(): ICode[] {
     const codeString = location.hash.substring(1)
     try {
         const codeTree = codeToTree(message => console.error(message), codeString)
@@ -146,7 +135,7 @@ function storeRecentCode(recent: ICode[]): void {
     localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(recent.map(program => program.codeTree)))
 }
 
-function getRecentCode(): ICode[] {
+export function getRecentCode(): ICode[] {
     const recentCode = localStorage.getItem(FABRIC_CODE_KEY)
     const codeTrees: ICodeTree[] = recentCode ? JSON.parse(recentCode) : []
     return codeTrees.map(codeTree => ({codeString: treeToCode(codeTree), codeTree}))

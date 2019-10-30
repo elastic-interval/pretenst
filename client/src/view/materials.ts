@@ -31,11 +31,9 @@ export const GOTCHI_ARROW = new LineBasicMaterial({color: new Color("magenta")})
 export const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow")})
 
 export const SURFACE = new MeshPhongMaterial({
-    color: new Color("#5b4f1b"),
-    lights: true,
+    color: new Color("#1c1608"),
+    // lights: true,
     side: DoubleSide,
-    opacity: 0.25,
-    transparent: true,
 })
 
 export const LINE = new LineBasicMaterial({

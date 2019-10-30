@@ -27,6 +27,15 @@ a, a:hover {
     color: white;
 }
 
+.nav-tabs {
+    font-size: large;
+    color: #e3002b;
+}
+
+.nav-link {
+    background-color: #aaa2a9;
+}
+
 .the-whole-page {
     top: 0;
     width: 100%;

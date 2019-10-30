@@ -61,8 +61,8 @@ export function CodeTreeEditor({code, setCode, runCode}: {
                 textAlign: "center",
                 width: "40em",
             }}>
-                <Button color="success" className="my-3" onClick={onRun}>Run {codeString}</Button>
-                <Button color="warning" className="my-3" onClick={onEscape}>Another</Button>
+                <Button color="success" className="m-3" onClick={onRun}>Run</Button>
+                <Button color="warning" className="m-3" onClick={onEscape}>Cancel</Button>
             </div>
         </div>
     )
