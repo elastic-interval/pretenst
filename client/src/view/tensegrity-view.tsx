@@ -433,13 +433,16 @@ export function TensegrityView({buildFabric, features, bootstrapCode, pretensing
                     zIndex: 10,
                     width: "1em",
                 }}>
-                    <Button style={{
-                        padding: 0,
-                        margin: 0,
-                        borderRadius: 0,
-                        width: "1em",
-                    }} className="w-100 h-100" color="dark"
-                            onClick={() => setFullScreen(true)}>
+                    <Button
+                        style={{
+                            padding: 0,
+                            margin: 0,
+                            borderRadius: 0,
+                            width: "1em",
+                        }}
+                        className="w-100 h-100" color="dark"
+                        onClick={() => setFullScreen(true)}
+                    >
                         <FaAngleDoubleLeft/>
                     </Button>
                 </div>
