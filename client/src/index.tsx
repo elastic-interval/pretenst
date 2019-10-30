@@ -14,6 +14,7 @@ import { API_URI } from "./constants"
 import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
+import { ICodeTree, treeToCode } from "./fabric/tensegrity-brick-types"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { ICode } from "./view/code-panel"
@@ -22,7 +23,6 @@ import { TensegrityView } from "./view/tensegrity-view"
 import "./vendor/bootstrap.min.css"
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./index.css"
-
 
 declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: index.html
 
@@ -42,11 +42,22 @@ APP_EVENT.subscribe(appEvent => {
     }
 })
 
+async function getBootstrapCode(): Promise<ICode[]> {
+    const response = await fetch("/bootstrap.json")
+    const body = await response.json()
+    if (!body) {
+        return [{codeString: "0", codeTree: {_: 0}}]
+    }
+    const pretenst: ICodeTree[] = body.pretenst
+    return pretenst.map(codeTree => ({codeTree, codeString: treeToCode(codeTree)}))
+}
+
 async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const root = document.getElementById("root") as HTMLElement
     const fabricFeatures = createFabricFeatures()
     const pretensingStep = new BehaviorSubject(0)
+    const bootstrapCode = await getBootstrapCode()
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         const fabricKernel = new FabricKernel(engine)
@@ -61,6 +72,7 @@ async function start(): Promise<void> {
             <TensegrityView
                 features={fabricFeatures}
                 buildFabric={buildFabric}
+                bootstrapCode={bootstrapCode}
                 pretensingStep$={pretensingStep}
             />,
             root,

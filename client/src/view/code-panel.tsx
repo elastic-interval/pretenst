@@ -9,8 +9,6 @@ import { Badge, Button, ButtonGroup } from "reactstrap"
 
 import { codeToTree, ICodeTree, treeToCode } from "../fabric/tensegrity-brick-types"
 
-import { CodeTreeEditor } from "./code-tree-editor"
-
 const FABRIC_CODE_KEY = "FabricCode"
 
 const MAX_RECENT = 12
@@ -20,18 +18,15 @@ export interface ICode {
     codeTree: ICodeTree
 }
 
-export function CodePanel({code, setCode, runCode}: {
-    code?: ICode,
+export function CodePanel({setCode, bootstrapCode}: {
+    bootstrapCode: ICode[],
     setCode: (code?: ICode) => void,
-    runCode: () => void,
 }): JSX.Element {
 
     const [locationBarPrograms, setLocationBarPrograms] = useState<ICode[]>([])
     const [recentPrograms, setRecentPrograms] = useState<ICode[]>(getRecentCode())
-    const [bootstrapPrograms, setBootstrapPrograms] = useState<ICode[]>([])
 
     useEffect(() => {
-        getBootstrapCode().then(setBootstrapPrograms)
         const urlCode = getCodeFromLocationBar()
         setLocationBarPrograms(urlCode)
     }, [])
@@ -44,7 +39,6 @@ export function CodePanel({code, setCode, runCode}: {
         storeRecentCode(recent)
         setRecentPrograms(recent)
         setCode(codeToRun)
-        runCode()
     }
 
     return (
@@ -54,15 +48,14 @@ export function CodePanel({code, setCode, runCode}: {
             height: "100%",
             color: "#69aaea",
         }}>
-            {code ? (
-                <CodeTreeEditor code={code} setCode={setCode} runCode={runTheCode}/>
-            ) : (
-                <div>
-                    <CodeCollection title="From URL Link" codeCollection={locationBarPrograms} setCode={setCode}/>
-                    <CodeCollection title="Recent" numbered={true} codeCollection={recentPrograms} setCode={setCode}/>
-                    <CodeCollection title="Suggestions" small={true} codeCollection={bootstrapPrograms} setCode={setCode}/>
-                </div>
-            )}
+            <div>
+                <CodeCollection title="From URL Link" codeCollection={locationBarPrograms}
+                                setCode={runTheCode}/>
+                <CodeCollection title="Recent" numbered={true} codeCollection={recentPrograms}
+                                setCode={runTheCode}/>
+                <CodeCollection title="Suggestions" small={true} codeCollection={bootstrapCode}
+                                setCode={runTheCode}/>
+            </div>
         </div>
     )
 }
@@ -90,7 +83,8 @@ function CodeCollection({title, numbered, small, codeCollection, setCode}: {
                             fontSize: "small",
                             textAlign: "left",
                         }} onClick={() => setCode(code)}>
-                            {index === undefined ? undefined : <Badge size="sm">{index}</Badge>} {code.codeString}
+                            {index === undefined ? undefined :
+                                <Badge color="info" size="sm">{index}</Badge>} {code.codeString}
                         </Button>
                     ))}
                 </ButtonGroup>
@@ -119,16 +113,6 @@ export function getCodeFromLocationBar(): ICode[] {
         console.error("Code error", e)
     }
     return []
-}
-
-async function getBootstrapCode(): Promise<ICode[]> {
-    const response = await fetch("/bootstrap.json")
-    const body = await response.json()
-    if (!body) {
-        return [{codeString: "0", codeTree: {_: 0}}]
-    }
-    const pretenst: ICodeTree[] = body.pretenst
-    return pretenst.map(codeTree => ({codeTree, codeString: treeToCode(codeTree)}))
 }
 
 function storeRecentCode(recent: ICode[]): void {

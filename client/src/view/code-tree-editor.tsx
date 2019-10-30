@@ -12,10 +12,9 @@ import { codeToTree, ICodeTree } from "../fabric/tensegrity-brick-types"
 
 import { ICode } from "./code-panel"
 
-export function CodeTreeEditor({code, setCode, runCode}: {
+export function CodeTreeEditor({code, setCode}: {
     code: ICode,
     setCode: (code?: ICode) => void,
-    runCode: (code: ICode) => void,
 }): JSX.Element {
 
     const [treeData, setTreeData] = useState<TreeItem[]>([])
@@ -28,7 +27,7 @@ export function CodeTreeEditor({code, setCode, runCode}: {
         if (!codeTree) {
             return
         }
-        runCode({codeString, codeTree})
+        setCode({codeString, codeTree})
     }
 
     function onEscape(): void {

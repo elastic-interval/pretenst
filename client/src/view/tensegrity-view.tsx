@@ -52,6 +52,7 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
 import { CodePanel, getCodeFromLocationBar, getRecentCode, ICode } from "./code-panel"
+import { CodeTreeEditor } from "./code-tree-editor"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
 import { StrainPanel } from "./strain-panel"
@@ -69,6 +70,8 @@ declare global {
     }
 }
 
+const SPLIT = "35em"
+
 interface IButtonCharacter {
     text: string,
     color: string,
@@ -77,9 +80,10 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-export function TensegrityView({buildFabric, features, pretensingStep$}: {
+export function TensegrityView({buildFabric, features, bootstrapCode, pretensingStep$}: {
     buildFabric: (code: ICode) => TensegrityFabric,
     features: FloatFeature[],
+    bootstrapCode: ICode [],
     pretensingStep$: BehaviorSubject<number>,
 }): JSX.Element {
 
@@ -98,7 +102,7 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
         const urlCode = getCodeFromLocationBar().pop()
         const recentCode = getRecentCode().pop()
         if (urlCode && recentCode && urlCode.codeString !== recentCode.codeString) {
-            setTimeout(() => setCode(urlCode), 300)
+            setCode(urlCode)
         }
     }, [])
     useEffect(() => {
@@ -346,61 +350,76 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
         )
     }
 
+    enum Tab {
+        Structures = "Structures",
+        Commands = "Commands",
+        Features = "Features",
+        Editor = "Editor",
+    }
+
     function ControlTabs(): JSX.Element {
-        const [activeTab, setActiveTab] = useState("1")
-        return (
-            <div className="h-100">
-                <Nav tabs={true} style={{
-                    backgroundColor: "#b2b2b2",
-                }}>
-                    <NavItem>
-                        <NavLink
-                            active={activeTab === "1"}
-                            onClick={() => setActiveTab("1")}
-                        >
-                            Code
-                        </NavLink>
-                    </NavItem>
-                    <NavItem>
-                        <NavLink
-                            disabled={!fabric}
-                            active={activeTab === "2"}
-                            onClick={() => setActiveTab("2")}
-                        >
-                            Features
-                        </NavLink>
-                    </NavItem>
-                    <NavItem>
-                        <NavLink
-                            disabled={!fabric}
-                            active={activeTab === "3"}
-                            onClick={() => setActiveTab("3")}
-                        >
-                            Commands
-                        </NavLink>
-                    </NavItem>
-                </Nav>
-                <TabContent activeTab={activeTab}>
-                    <TabPane tabId="1">
-                        <CodePanel
-                            code={code}
-                            setCode={setCode}
-                            runCode={() => {
-                            }}
-                        />
-                    </TabPane>
-                    <TabPane tabId="2">
-                        {!fabric ? <div/> : (
+        const [activeTab, setActiveTab] = useState(Tab.Structures)
+
+        function Link({tab}: { tab: Tab }): JSX.Element {
+            return (
+                <NavItem>
+                    <NavLink
+                        active={activeTab === tab}
+                        onClick={() => setActiveTab(tab)}
+                    >
+                        {tab}
+                    </NavLink>
+                </NavItem>
+            )
+        }
+
+        function Pane({tab}: { tab: Tab }): JSX.Element {
+
+            function Content(): JSX.Element {
+                switch (tab) {
+                    case Tab.Structures:
+                        return (
+                            <CodePanel
+                                bootstrapCode={bootstrapCode}
+                                setCode={setCode}
+                            />
+                        )
+                    case Tab.Commands:
+                        return (
+                            <ControlPanel/>
+                        )
+                    case Tab.Features:
+                        return !fabric ? <div/> : (
                             <FeaturePanel
                                 featureSet={features}
                                 lifePhase={lifePhase}
                                 instance={fabric.instance}
                             />
-                        )}
-                    </TabPane>
-                    <TabPane tabId="3">
-                        <ControlPanel/>
-                    </TabPane>
+                        )
+                    case Tab.Editor:
+                        return !code ? <div/> : (
+                            <CodeTreeEditor
+                                code={code}
+                                setCode={setCode}
+                            />
+                        )
+                }
+            }
+
+            return (
+                <TabPane tabId={tab}><Content/></TabPane>
+            )
+        }
+
+        return (
+            <div className="h-100">
+                <Nav tabs={true} style={{
+                    backgroundColor: "#b2b2b2",
+                }}>
+                    {Object.keys(Tab).map(tab => <Link key={`T${tab}`} tab={Tab[tab]}/>)}
+                </Nav>
+                <TabContent activeTab={activeTab}>
+                    {Object.keys(Tab).map(tab => <Pane key={tab} tab={Tab[tab]}/>)}
                 </TabContent>
             </div>
         )
@@ -411,7 +430,7 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
             <div style={{
                 position: "absolute",
                 left: 0,
-                width: "40em",
+                width: SPLIT,
                 height: "100%",
                 borderStyle: "solid",
                 borderColor: "#5c5c5c",
@@ -419,14 +438,14 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                 borderTopWidth: 0,
                 borderBottomWidth: 0,
                 borderRightWidth: "1px",
-                color: "#ffffff",
+                color: "#136412",
                 backgroundColor: "#000000",
             }}>
                 <ControlTabs/>
             </div>
             <div style={{
                 position: "absolute",
-                left: "40em",
+                left: SPLIT,
                 right: 0,
                 height: "100%",
             }}>
@@ -435,7 +454,6 @@ export function TensegrityView({buildFabric, features, pretensingStep$}: {
                 ) : (
                     <div id="tensegrity-view" className="h-100">
                         <Canvas style={{
-                            backgroundImage: "url('space.jpg')",
                             backgroundColor: "black",
                         }}>
                             <FabricView

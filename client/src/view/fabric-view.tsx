@@ -8,13 +8,17 @@ import { useEffect, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
+    BackSide,
     BufferGeometry,
     Color,
     Euler,
     Float32BufferAttribute,
     Geometry,
+    MeshPhongMaterial,
     Object3D,
     PerspectiveCamera,
+    SphereGeometry,
+    TextureLoader,
     Vector3,
 } from "three"
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
@@ -45,6 +49,9 @@ declare global {
 const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
+const SPACE_GEOMETRY = new SphereGeometry(600, 25, 25)
+const SPACE_TEXTURE = new TextureLoader().load("space.jpg")
+const SPACE_MATERIAL = new MeshPhongMaterial({map: SPACE_TEXTURE, side: BackSide})
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
@@ -270,8 +277,9 @@ export function FabricView({
                 {(showBars && showCables) ? <Faces/> : undefined}
                 <SelectedFace/>
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
-                <pointLight key="Sun" distance={1000} decay={0.01} position={SUN_POSITION}/>
+                <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+                <mesh geometry={SPACE_GEOMETRY} material={SPACE_MATERIAL}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
             </scene>
         </group>
