@@ -107,7 +107,6 @@ export function TensegrityView({buildFabric, features, bootstrapCode, pretensing
         setFabric(builtFabric)
         setLifePhase(builtFabric.lifePhase)
         location.hash = code.codeString
-        console.log("\n", JSON.stringify(code.codeTree))
     }
 
     useEffect(buildFromCode, [code])
@@ -384,6 +383,11 @@ export function TensegrityView({buildFabric, features, bootstrapCode, pretensing
                     <h1>Canvas</h1>
                 ) : (
                     <div id="tensegrity-view" className="h-100">
+                        {!code ? undefined : (
+                            <div id="top-middle">
+                                {code.codeString}
+                            </div>
+                        )}
                         <Canvas style={{
                             backgroundColor: "black",
                         }}>
@@ -400,11 +404,6 @@ export function TensegrityView({buildFabric, features, bootstrapCode, pretensing
                                 showCables={showCables}
                             />
                         </Canvas>
-                        {!code ? undefined : (
-                            <div id="top-middle">
-                                {code.codeString}
-                            </div>
-                        )}
                     </div>
                 )}
             </div>

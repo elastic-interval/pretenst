@@ -33,7 +33,6 @@ export class Flight {
         orbit.maxPolarAngle = MAX_POLAR_ANGLE
         orbit.maxDistance = INITIAL_DISTANCE
         orbit.minDistance = MINIMUM_DISTANCE
-        orbit.enableKeys = false
         orbit.zoomSpeed = 0.5
         orbit.autoRotateSpeed = 0.5
         orbit.target = this.target

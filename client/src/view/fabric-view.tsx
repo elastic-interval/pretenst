@@ -99,7 +99,6 @@ export function FabricView({
         orb.maxDistance = 1000
         orb.minDistance = 15
         orb.zoomSpeed = 0.3
-        orb.enableKeys = false
         orb.enableZoom = true
         orb.target.set(midpoint.x, midpoint.y, midpoint.z)
         orb.update()
@@ -114,6 +113,7 @@ export function FabricView({
         orbit.current.autoRotate = autoRotate
         if (fastMode) {
             fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
+            fabric.needsUpdate()
         }
         if (lifePhase !== fabric.lifePhase) {
             setLifePhase(fabric.lifePhase)
@@ -220,7 +220,7 @@ export function FabricView({
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
-        const leftDistance = perspective.fov * perspective.aspect / 130
+        const leftDistance = perspective.fov * perspective.aspect / 132
         const toDaLeft = new Vector3().crossVectors(camera.up, toTarget).normalize().multiplyScalar(leftDistance)
         const scaleGeometry = new Geometry()
         const v = (x: number, y: number) => new Vector3(x, y, 0)

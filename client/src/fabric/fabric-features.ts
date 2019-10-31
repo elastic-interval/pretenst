@@ -145,7 +145,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.TicksPerFrame,
         name: "TicksPerFrame",
-        defaultValue: 250.0,
+        defaultValue: 100.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 0,
         adjustment: plusOne,

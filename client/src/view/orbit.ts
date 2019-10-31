@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -60,53 +61,50 @@ export class Orbit extends THREE.EventDispatcher {
     public maxPolarAngle: number
     public minAzimuthAngle: number
     public maxAzimuthAngle: number
-    public enableKeys: boolean
     public keys: { LEFT: number; UP: number; RIGHT: number; BOTTOM: number; }
     public mouseButtons: { ORBIT: THREE.MOUSE; ZOOM: THREE.MOUSE; PAN: THREE.MOUSE; }
     public enableDamping: boolean
     public dampingFactor: number
 
-    private spherical: THREE.Spherical
+    private readonly spherical: THREE.Spherical
     private sphericalDelta: THREE.Spherical
     private scale: number
-    private target0: THREE.Vector3
-    private position0: THREE.Vector3
-    private zoom0: number
+    private readonly target0: THREE.Vector3
+    private readonly position0: THREE.Vector3
+    private readonly zoom0: number
     private state: number
-    private panOffset: THREE.Vector3
+    private readonly panOffset: THREE.Vector3
     private zoomChanged: boolean
 
-    private rotateStart: THREE.Vector2
-    private rotateEnd: THREE.Vector2
+    private readonly rotateStart: THREE.Vector2
+    private readonly rotateEnd: THREE.Vector2
     private rotateDelta: THREE.Vector2
 
-    private panStart: THREE.Vector2
-    private panEnd: THREE.Vector2
+    private readonly panStart: THREE.Vector2
+    private readonly panEnd: THREE.Vector2
     private panDelta: THREE.Vector2
 
-    private dollyStart: THREE.Vector2
-    private dollyEnd: THREE.Vector2
+    private readonly dollyStart: THREE.Vector2
+    private readonly dollyEnd: THREE.Vector2
     private dollyDelta: THREE.Vector2
 
     private updateLastPosition: THREE.Vector3
-    private updateOffset: THREE.Vector3
-    private updateQuat: THREE.Quaternion
+    private readonly updateOffset: THREE.Vector3
+    private readonly updateQuat: THREE.Quaternion
     private updateLastQuaternion: THREE.Quaternion
-    private updateQuatInverse: THREE.Quaternion
+    private readonly updateQuatInverse: THREE.Quaternion
 
-    private panLeftV: THREE.Vector3
-    private panUpV: THREE.Vector3
+    private readonly panLeftV: THREE.Vector3
+    private readonly panUpV: THREE.Vector3
     private panInternalOffset: THREE.Vector3
 
-    private onContextMenu: EventListener
-    private onMouseUp: EventListener
-    private onMouseDown: EventListener
-    private onMouseMove: EventListener
-    private onMouseWheel: EventListener
-    private onTouchStart: EventListener
-    private onTouchEnd: EventListener
-    private onTouchMove: EventListener
-    private onKeyDown: EventListener
+    private readonly onMouseUp: EventListener
+    private readonly onMouseDown: EventListener
+    private readonly onMouseMove: EventListener
+    private readonly onMouseWheel: EventListener
+    private readonly onTouchStart: EventListener
+    private readonly onTouchEnd: EventListener
+    private readonly onTouchMove: EventListener
 
     constructor(camera: THREE.PerspectiveCamera, element: HTMLElement) {
         super()
@@ -161,9 +159,6 @@ export class Orbit extends THREE.EventDispatcher {
         this.autoRotate = false
         this.autoRotateSpeed = 2.0 // 30 seconds per round when fps is 60
 
-        // Set to false to disable use of the keys
-        this.enableKeys = true
-
         // The four arrow keys
         this.keys = {LEFT: 37, UP: 38, RIGHT: 39, BOTTOM: 40}
 
@@ -212,10 +207,10 @@ export class Orbit extends THREE.EventDispatcher {
         // event handlers - FSM: listen for events and reset state
 
         this.onMouseDown = (event: IThreeEvent) => {
+            event.preventDefault()
             if (!this.enabled) {
                 return
             }
-            event.preventDefault()
             if (event.button === this.mouseButtons.ORBIT) {
                 if (!this.enableRotate) {
                     return
@@ -235,7 +230,6 @@ export class Orbit extends THREE.EventDispatcher {
                 this.panStart.set(event.clientX, event.clientY)
                 this.state = STATE.PAN
             }
-
             if (this.state !== STATE.NONE) {
                 document.addEventListener("mousemove", this.onMouseMove, false)
                 document.addEventListener("mouseup", this.onMouseUp, false)
@@ -244,13 +238,10 @@ export class Orbit extends THREE.EventDispatcher {
         }
 
         this.onMouseMove = (event: IThreeEvent) => {
-
+            event.preventDefault()
             if (!this.enabled) {
                 return
             }
-
-            event.preventDefault()
-
             if (this.state === STATE.ROTATE) {
                 if (!this.enableRotate) {
                     return
@@ -296,6 +287,7 @@ export class Orbit extends THREE.EventDispatcher {
         }
 
         this.onMouseUp = (event: IThreeEvent) => {
+            event.preventDefault()
             if (!this.enabled) {
                 return
             }
@@ -307,76 +299,39 @@ export class Orbit extends THREE.EventDispatcher {
         }
 
         this.onMouseWheel = (event: IThreeEvent) => {
-
+            event.preventDefault()
             if (!this.enabled || !this.enableZoom || (this.state !== STATE.NONE && this.state !== STATE.ROTATE)) {
                 return
             }
-
-            event.preventDefault()
             event.stopPropagation()
-
             if (event.deltaY < 0) {
                 this.dollyOut(this.getZoomScale())
             } else if (event.deltaY > 0) {
                 this.dollyIn(this.getZoomScale())
             }
-
             this.update()
-
             this.dispatchEvent(START_EVENT) // not sure why these are here...
             this.dispatchEvent(END_EVENT)
         }
 
-        this.onKeyDown = (event: IThreeEvent) => {
-
-            if (!this.enabled || !this.enableKeys || !this.enablePan) {
-                return
-            }
-
-            switch (event.keyCode) {
-                case this.keys.UP: {
-                    this.pan(0, this.keyPanSpeed)
-                    this.update()
-                }
-                    break
-                case this.keys.BOTTOM: {
-                    this.pan(0, -this.keyPanSpeed)
-                    this.update()
-                }
-                    break
-                case this.keys.LEFT: {
-                    this.pan(this.keyPanSpeed, 0)
-                    this.update()
-                }
-                    break
-                case this.keys.RIGHT: {
-                    this.pan(-this.keyPanSpeed, 0)
-                    this.update()
-                }
-                    break
-            }
-        }
-
         this.onTouchStart = (event: IThreeEvent) => {
-
-            if (this.enabled === false) {
+            event.preventDefault()
+            if (!this.enabled) {
                 return
             }
-
             switch (event.touches.length) {
                 // one-fingered touch: rotate
                 case 1: {
-                    if (this.enableRotate === false) {
+                    if (!this.enableRotate) {
                         return
                     }
-
                     this.rotateStart.set(event.touches[0].pageX, event.touches[0].pageY)
                     this.state = STATE.TOUCH_ROTATE
                 }
                     break
                 // two-fingered touch: dolly
                 case 2: {
-                    if (this.enableZoom === false) {
+                    if (!this.enableZoom) {
                         return
                     }
 
@@ -390,7 +345,7 @@ export class Orbit extends THREE.EventDispatcher {
                     break
                 // three-fingered touch: pan
                 case 3: {
-                    if (this.enablePan === false) {
+                    if (!this.enablePan) {
                         return
                     }
 
@@ -409,13 +364,10 @@ export class Orbit extends THREE.EventDispatcher {
         }
 
         this.onTouchMove = (event: IThreeEvent) => {
-
+            event.preventDefault()
             if (!this.enabled) {
                 return
             }
-            event.preventDefault()
-            event.stopPropagation()
-
             switch (event.touches.length) {
                 // one-fingered touch: rotate
                 case 1: {
@@ -489,8 +441,8 @@ export class Orbit extends THREE.EventDispatcher {
             }
         }
 
-        this.onTouchEnd = (event: Event) => {
-
+        this.onTouchEnd = (event: IThreeEvent) => {
+            event.preventDefault()
             if (!this.enabled) {
                 return
             }
@@ -498,17 +450,11 @@ export class Orbit extends THREE.EventDispatcher {
             this.state = STATE.NONE
         }
 
-        this.onContextMenu = (event) => {
-            event.preventDefault()
-        }
-
-        this.element.addEventListener("contextmenu", this.onContextMenu, false)
-        this.element.addEventListener("mousedown", this.onMouseDown, false)
-        this.element.addEventListener("wheel", this.onMouseWheel, {passive: true})
-        this.element.addEventListener("touchstart", this.onTouchStart, {passive: true})
-        this.element.addEventListener("touchend", this.onTouchEnd, {passive: true})
-        this.element.addEventListener("touchmove", this.onTouchMove, {passive: true})
-        this.window.addEventListener("keydown", this.onKeyDown, false)
+        this.element.addEventListener("mousedown", this.onMouseDown, {capture: true})
+        this.element.addEventListener("wheel", this.onMouseWheel, {capture: true})
+        this.element.addEventListener("touchstart", this.onTouchStart, {capture: true})
+        this.element.addEventListener("touchend", this.onTouchEnd, {capture: true})
+        this.element.addEventListener("touchmove", this.onTouchMove, {capture: true})
 
         // force an update at start
         this.update()
@@ -648,18 +594,13 @@ export class Orbit extends THREE.EventDispatcher {
     }
 
     public dispose(): void {
-        this.element.removeEventListener("contextmenu", this.onContextMenu, false)
         this.element.removeEventListener("mousedown", this.onMouseDown, false)
         this.element.removeEventListener("wheel", this.onMouseWheel, false)
-
         this.element.removeEventListener("touchstart", this.onTouchStart, false)
         this.element.removeEventListener("touchend", this.onTouchEnd, false)
         this.element.removeEventListener("touchmove", this.onTouchMove, false)
-
         document.removeEventListener("mousemove", this.onMouseMove, false)
         document.removeEventListener("mouseup", this.onMouseUp, false)
-
-        this.window.removeEventListener("keydown", this.onKeyDown, false)
     }
 
     public reset(): void {
@@ -670,22 +611,6 @@ export class Orbit extends THREE.EventDispatcher {
         this.dispatchEvent(CHANGE_EVENT)
         this.update()
         this.state = STATE.NONE
-    }
-
-    // backward compatibility
-    public get center(): THREE.Vector3 {
-        console.warn("THREE.OrbitControls: .center has been renamed to .target")
-        return this.target
-    }
-
-    public get noZoom(): boolean {
-        console.warn("THREE.OrbitControls: .noZoom has been deprecated. Use .enableZoom instead.")
-        return !this.enableZoom
-    }
-
-    public set noZoom(value: boolean) {
-        console.warn("THREE.OrbitControls: .noZoom has been deprecated. Use .enableZoom instead.")
-        this.enableZoom = !value
     }
 }
 
