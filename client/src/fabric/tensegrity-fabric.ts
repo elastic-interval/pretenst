@@ -67,14 +67,16 @@ export class TensegrityFabric {
     public growth?: IGrowth
     public pretensingStep = 0
 
+    private faceCount: number
     private faceLocations: Float32BufferAttribute
     private faceNormals: Float32BufferAttribute
+    private _facesGeometry = new BufferGeometry()
+
+    private intervalCount: number
     private lineLocations: Float32BufferAttribute
     private lineColors: Float32BufferAttribute
-    private facesGeometryStored: BufferGeometry | undefined
-    private facesLength = 0
-    private linesGeometryStored: BufferGeometry | undefined
-    private linesLength = 0
+    private _linesGeometry = new BufferGeometry()
+
     private pretensingStartAge = 0
 
     constructor(
@@ -88,10 +90,8 @@ export class TensegrityFabric {
         const brick = createBrickOnOrigin(this, percentOrHundred())
         const executing: IActiveCode = {codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
-        this.faceLocations = new Float32BufferAttribute([], 3)
-        this.faceNormals = new Float32BufferAttribute([], 3)
-        this.lineLocations = new Float32BufferAttribute([], 3)
-        this.lineColors = new Float32BufferAttribute([], 3)
+        this.refreshFaceGeometry()
+        this.refreshLineGeometry()
     }
 
     public slack(): LifePhase {
@@ -231,18 +231,15 @@ export class TensegrityFabric {
     }
 
     public needsUpdate(): void {
-        if (this.facesGeometryStored) {
-            this.faceLocations.array = this.instance.getFaceLocations()
-            this.faceLocations.needsUpdate = true
-            this.faceNormals.array = this.instance.getFaceNormals()
-            this.faceNormals.needsUpdate = true
-        }
-        if (this.linesGeometryStored) {
-            this.lineLocations.array = this.instance.getLineLocations()
-            this.lineLocations.needsUpdate = true
-            this.lineColors.array = this.instance.getLineColors()
-            this.lineColors.needsUpdate = true
-        }
+        const instance = this.instance
+        this.faceLocations.array = instance.getFaceLocations()
+        this.faceLocations.needsUpdate = true
+        this.faceNormals.array = instance.getFaceNormals()
+        this.faceNormals.needsUpdate = true
+        this.lineLocations.array = instance.getLineLocations()
+        this.lineLocations.needsUpdate = true
+        this.lineColors.array = instance.getLineColors()
+        this.lineColors.needsUpdate = true
     }
 
     public get submergedJoints(): IJoint[] {
@@ -250,37 +247,17 @@ export class TensegrityFabric {
     }
 
     public get facesGeometry(): BufferGeometry {
-        if (this.facesLength !== this.instance.getFaceLocations().length && this.facesGeometryStored) {
-            this.facesGeometryStored.dispose()
-            this.facesGeometryStored = undefined
+        if (this.faceCount !== this.instance.engine.getFaceCount()) {
+            this.refreshFaceGeometry()
         }
-        if (!this.facesGeometryStored) {
-            const geometry = new BufferGeometry()
-            this.facesLength = this.instance.getFaceLocations().length
-            this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
-            this.faceNormals = new Float32BufferAttribute(this.instance.getFaceNormals(), 3)
-            geometry.addAttribute("position", this.faceLocations)
-            geometry.addAttribute("normal", this.faceNormals)
-            this.facesGeometryStored = geometry
-        }
-        return this.facesGeometryStored
+        return this._facesGeometry
     }
 
     public get linesGeometry(): BufferGeometry {
-        if (this.linesLength !== this.instance.getLineLocations().length && this.linesGeometryStored) {
-            this.linesGeometryStored.dispose()
-            this.linesGeometryStored = undefined
+        if (this.intervalCount !== this.instance.engine.getIntervalCount()) {
+            this.refreshLineGeometry()
         }
-        if (!this.linesGeometryStored) {
-            const geometry = new BufferGeometry()
-            this.linesLength = this.instance.getLineLocations().length
-            this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
-            this.lineColors = new Float32BufferAttribute(this.instance.getLineColors(), 3)
-            geometry.addAttribute("position", this.lineLocations)
-            geometry.addAttribute("color", this.lineColors)
-            this.linesGeometryStored = geometry
-        }
-        return this.linesGeometryStored
+        return this._linesGeometry
     }
 
     public iterate(ticks: number): boolean {
@@ -440,6 +417,24 @@ export class TensegrityFabric {
                 elastics[interval.index] *= 1 + adjustment
             }
         })
+    }
+
+    private refreshLineGeometry(): void {
+        this.iterate(0)
+        this.intervalCount = this.instance.engine.getIntervalCount()
+        this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
+        this.lineColors = new Float32BufferAttribute(this.instance.getLineColors(), 3)
+        this._linesGeometry.addAttribute("position", this.lineLocations)
+        this._linesGeometry.addAttribute("color", this.lineColors)
+    }
+
+    private refreshFaceGeometry(): void {
+        this.iterate(0)
+        this.faceCount = this.instance.engine.getFaceCount()
+        this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
+        this.faceNormals = new Float32BufferAttribute(this.instance.getFaceNormals(), 3)
+        this._facesGeometry.addAttribute("position", this.faceLocations)
+        this._facesGeometry.addAttribute("normal", this.faceNormals)
     }
 
     private get engine(): IFabricEngine {
