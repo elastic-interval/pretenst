@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
@@ -21,7 +21,6 @@ import {
     TextureLoader,
     Vector3,
 } from "three"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
@@ -31,15 +30,16 @@ import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ATTENUATED, BAR, CABLE, FACE, FACE_SPHERE, LINE, SCALE_LINE, SLACK } from "./materials"
+import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
-extend({OrbitControls})
+extend({Orbit})
 
 declare global {
     namespace JSX {
         /* eslint-disable @typescript-eslint/interface-name-prefix */
         interface IntrinsicElements {
-            orbitControls: ReactThreeFiber.Object3DNode<OrbitControls, typeof OrbitControls>
+            orbit: ReactThreeFiber.Object3DNode<Orbit, typeof Orbit>
         }
 
         /* eslint-enable @typescript-eslint/interface-name-prefix */
@@ -50,8 +50,6 @@ const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
 const SPACE_GEOMETRY = new SphereGeometry(600, 25, 25)
-const SPACE_TEXTURE = new TextureLoader().load("space.jpg")
-const SPACE_MATERIAL = new MeshPhongMaterial({map: SPACE_TEXTURE, side: BackSide})
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
@@ -77,36 +75,43 @@ export function FabricView({
     showCables: boolean,
 }): JSX.Element {
 
+    const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
     const [age, setAge] = useState(0)
     const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
     const [targetBrick, setTargetBrick] = useState(false)
     const {camera, raycaster} = useThree()
+    const perspective = camera as PerspectiveCamera
+    const spaceMaterial = useMemo(() => {
+        const spaceTexture = new TextureLoader().load("space.jpg")
+        return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
+    }, [])
 
     useEffect(() => pretensingStep$.next(fabric.pretensingStep), [fabric.pretensingStep])
 
-    const orbitControls = useUpdate<OrbitControls>(controls => {
-        controls.minPolarAngle = -0.98 * Math.PI / 2
-        controls.maxPolarAngle = 0.8 * Math.PI
-        controls.maxDistance = 1000
-        controls.minDistance = 15
-        controls.zoomSpeed = 0.3
-        controls.enableKeys = false
+    const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
-        orbitControls.current.target.set(midpoint.x, midpoint.y, midpoint.z)
-        const perspective = camera as PerspectiveCamera
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
-        perspective.lookAt(orbitControls.current.target)
+        perspective.lookAt(orbit.current.target)
         perspective.fov = 65
-        controls.update()
+        orb.object = perspective
+        orb.minPolarAngle = -0.98 * Math.PI / 2
+        orb.maxPolarAngle = 0.8 * Math.PI
+        orb.maxDistance = 1000
+        orb.minDistance = 15
+        orb.zoomSpeed = 0.3
+        orb.enableKeys = false
+        orb.enableZoom = true
+        orb.target.set(midpoint.x, midpoint.y, midpoint.z)
+        orb.update()
     }, [fabric])
 
     useRender(() => {
         const instance = fabric.instance
         const target = targetBrick && selectedBrick ? fabric.brickMidpoint(selectedBrick) : instance.getMidpoint()
-        const towardsTarget = new Vector3().subVectors(target, orbitControls.current.target).multiplyScalar(TOWARDS_TARGET)
-        orbitControls.current.target.add(towardsTarget)
-        orbitControls.current.update()
-        orbitControls.current.autoRotate = autoRotate
+        const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
+        orbit.current.target.add(towardsTarget)
+        orbit.current.update()
+        orbit.current.autoRotate = autoRotate
         if (fastMode) {
             fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
         }
@@ -116,7 +121,6 @@ export function FabricView({
         setAge(instance.engine.getAge())
     }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase, fastMode, autoRotate])
 
-    const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
 
     const selectBrick = (newSelectedBrick: IBrick) => {
         if (fabric) {
@@ -183,10 +187,9 @@ export function FabricView({
         )
     }
 
-    function IntervalMesh({interval, attenuated, larger}: {
+    function IntervalMesh({interval, attenuated}: {
         interval: IInterval,
         attenuated: boolean,
-        larger: boolean,
     }): JSX.Element {
         const elastic = fabric.instance.elastics[interval.index]
         const bar = interval.isBar
@@ -208,7 +211,7 @@ export function FabricView({
     }
 
     function ElasticScale(): JSX.Element {
-        const current = orbitControls.current
+        const current = orbit.current
         if (!current) {
             return <group/>
         }
@@ -216,7 +219,6 @@ export function FabricView({
         const lines = strainBarLines(fabric.instance, showBars, showCables)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
-        const perspective = camera as PerspectiveCamera
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
         const leftDistance = perspective.fov * perspective.aspect / 130
         const toDaLeft = new Vector3().crossVectors(camera.up, toTarget).normalize().multiplyScalar(leftDistance)
@@ -242,7 +244,7 @@ export function FabricView({
 
     return (
         <group>
-            <orbitControls ref={orbitControls} args={[camera, tensegrityView]}/>
+            <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
                 {autoRotate ? undefined : <ElasticScale/>}
                 {fastMode ? (
@@ -250,8 +252,7 @@ export function FabricView({
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
                         {!fabric.splitIntervals || !selectedBrick ? undefined : (
                             fabric.splitIntervals.selected.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                              larger={true} attenuated={false}/>
+                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
                             ))
                         )}
                     </group>
@@ -260,18 +261,16 @@ export function FabricView({
                         {fabric.splitIntervals ? (
                             [
                                 ...fabric.splitIntervals.unselected.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                                  larger={false} attenuated={true}/>
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
                                 )),
                                 ...fabric.splitIntervals.selected.map(interval => (
                                     <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                                  larger={true} attenuated={false}/>
+                                                  attenuated={false}/>
                                 )),
                             ]
                         ) : (
                             fabric.intervals.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                              larger={false} attenuated={false}/>
+                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
                             ))
                         )}}
                     </group>
@@ -281,7 +280,7 @@ export function FabricView({
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
-                <mesh geometry={SPACE_GEOMETRY} material={SPACE_MATERIAL}/>
+                <mesh geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
             </scene>
         </group>

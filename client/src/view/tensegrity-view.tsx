@@ -24,7 +24,7 @@ import {
     FaSyncAlt,
     FaTimesCircle,
 } from "react-icons/all"
-import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
+import { Canvas } from "react-three-fiber"
 import {
     Button,
     ButtonDropdown,
@@ -39,7 +39,6 @@ import {
     TabPane,
 } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
@@ -55,19 +54,6 @@ import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
-
-extend({OrbitControls})
-
-declare global {
-    namespace JSX {
-        /* eslint-disable @typescript-eslint/interface-name-prefix */
-        interface IntrinsicElements {
-            orbitControls: ReactThreeFiber.Object3DNode<OrbitControls, typeof OrbitControls>
-        }
-
-        /* eslint-enable @typescript-eslint/interface-name-prefix */
-    }
-}
 
 const SPLIT_LEFT = "34em"
 const SPLIT_RIGHT = "35em"

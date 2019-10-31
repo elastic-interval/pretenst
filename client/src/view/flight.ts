@@ -4,9 +4,9 @@
  */
 
 import { PerspectiveCamera, Vector3 } from "three"
-import { OrbitControls } from "three/examples/jsm/controls/OrbitControls"
 
 import { IFlightState } from "./flight-state"
+import { Orbit } from "./orbit"
 
 export const INITIAL_DISTANCE = 15000
 export const MINIMUM_DISTANCE = 3
@@ -26,7 +26,7 @@ export class Flight {
     private targetToCamera = new Vector3()
     private targetToMovingTarget = new Vector3()
 
-    constructor(flightState: IFlightState, public readonly orbitGiven?: OrbitControls) {
+    constructor(flightState: IFlightState, public readonly orbitGiven?: Orbit) {
         const orbit = this.orbit
         orbit.enabled = true
         orbit.minPolarAngle = MIN_POLAR_ANGLE
@@ -108,10 +108,10 @@ export class Flight {
     }
 
     private get camera(): PerspectiveCamera {
-        return <PerspectiveCamera>this.orbit.object
+        return this.orbit.object
     }
 
-    private get orbit(): OrbitControls {
+    private get orbit(): Orbit {
         if (!this.orbitGiven) {
             throw new Error()
         }
