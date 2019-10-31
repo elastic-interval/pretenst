@@ -17,16 +17,12 @@ import {
     FaCubes,
     FaDotCircle,
     FaFileCsv,
-    FaHammer,
     FaHandPointUp,
     FaHandRock,
-    FaHandSpock,
     FaParachuteBox,
     FaRadiationAlt,
-    FaSeedling,
     FaSyncAlt,
     FaTimesCircle,
-    FaYinYang,
 } from "react-icons/all"
 import { Canvas, extend, ReactThreeFiber } from "react-three-fiber"
 import {
@@ -57,6 +53,7 @@ import { CodePanel, getCodeFromLocationBar, getRecentCode, ICode } from "./code-
 import { CodeTreeEditor } from "./code-tree-editor"
 import { FabricView } from "./fabric-view"
 import { FeaturePanel } from "./feature-panel"
+import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
 extend({OrbitControls})
@@ -74,14 +71,6 @@ declare global {
 
 const SPLIT_LEFT = "34em"
 const SPLIT_RIGHT = "35em"
-
-interface IButtonCharacter {
-    text: string,
-    color: string,
-    disabled: boolean,
-    symbol: JSX.Element,
-    onClick: () => void,
-}
 
 export function TensegrityView({buildFabric, features, bootstrapCode, pretensingStep$}: {
     buildFabric: (code: ICode) => TensegrityFabric,
@@ -137,95 +126,6 @@ export function TensegrityView({buildFabric, features, bootstrapCode, pretensing
 
     useEffect(buildFromCode, [code])
 
-    function PretenstButton(): JSX.Element {
-
-        const [pretensingStep, setPretensingStep] = useState(pretensingStep$.getValue())
-
-        useEffect(() => {
-            const subscription = pretensingStep$.subscribe(setPretensingStep)
-            return () => subscription.unsubscribe()
-        })
-
-        function character(): IButtonCharacter {
-            switch (lifePhase) {
-                case LifePhase.Growing:
-                    return {
-                        text: "Growing...",
-                        symbol: <FaSeedling/>,
-                        color: "warning",
-                        disabled: true,
-                        onClick: () => {
-                        },
-                    }
-                case LifePhase.Shaping:
-                    return {
-                        text: "Shaping->Slack",
-                        symbol: <FaHammer/>,
-                        color: "success",
-                        disabled: false,
-                        onClick: () => {
-                            if (fabric) {
-                                setLifePhase(fabric.slack())
-                            }
-                        },
-                    }
-                case LifePhase.Slack:
-                    return {
-                        text: "Slack->Pretensing",
-                        symbol: <FaYinYang/>,
-                        color: "warning",
-                        disabled: false,
-                        onClick: () => {
-                            if (fabric) {
-                                setLifePhase(fabric.pretensing())
-                            }
-                        },
-                    }
-                case LifePhase.Pretensing:
-                    return {
-                        text: `Pretensing ${pretensingStep}%`,
-                        symbol: <FaHammer/>,
-                        color: "warning",
-                        disabled: true,
-                        onClick: () => {
-                        },
-                    }
-                case LifePhase.Gravitizing:
-                    return {
-                        text: `Gravitizing ${pretensingStep}%`,
-                        symbol: <FaHammer/>,
-                        color: "warning",
-                        disabled: true,
-                        onClick: () => {
-                        },
-                    }
-                case LifePhase.Pretenst:
-                    return {
-                        symbol: <FaHandSpock/>,
-                        color: "success",
-                        text: "Pretenst!",
-                        disabled: false,
-                        onClick: () => {
-                            setSelectedBrick(undefined)
-                            if (fabric) {
-                                fabric.clearSelection()
-                            }
-                            buildFromCode()
-                        },
-                    }
-                default:
-                    throw new Error()
-            }
-        }
-
-        const {text, symbol, color, disabled, onClick} = character()
-        return (
-            <Button style={{width: "14em"}} color={color} disabled={disabled} onClick={onClick}>
-                {symbol} <span> {text}</span>
-            </Button>
-        )
-    }
-
     function adjustment(up: boolean): number {
         const factor = 1.03
         return up ? factor : (1 / factor)
@@ -277,7 +177,12 @@ export function TensegrityView({buildFabric, features, bootstrapCode, pretensing
         const engine = fabric.instance.engine
         return (
             <div>
-                <PretenstButton/>
+                <LifePhasePanel
+                    lifePhase={lifePhase}
+                    setLifePhase={setLifePhase}
+                    fabric={fabric}
+                    pretensingStep$={pretensingStep$}
+                />
                 <div style={{display: "block"}}>
                     {selectedBrick ? (
                         <ButtonGroup style={{paddingLeft: "0.6em", width: "40em"}}>

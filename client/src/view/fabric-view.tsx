@@ -88,13 +88,15 @@ export function FabricView({
         controls.minPolarAngle = -0.98 * Math.PI / 2
         controls.maxPolarAngle = 0.8 * Math.PI
         controls.maxDistance = 1000
-        controls.minDistance = 3
+        controls.minDistance = 15
         controls.zoomSpeed = 0.3
         controls.enableKeys = false
         const midpoint = new Vector3(0, ALTITUDE, 0)
         orbitControls.current.target.set(midpoint.x, midpoint.y, midpoint.z)
-        camera.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
-        camera.lookAt(orbitControls.current.target)
+        const perspective = camera as PerspectiveCamera
+        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
+        perspective.lookAt(orbitControls.current.target)
+        perspective.fov = 65
         controls.update()
     }, [fabric])
 
