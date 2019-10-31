@@ -251,12 +251,10 @@ export class TensegrityFabric {
 
     public get facesGeometry(): BufferGeometry {
         if (this.facesLength !== this.instance.getFaceLocations().length && this.facesGeometryStored) {
-            this.needsUpdate()
-            // this.facesGeometryStored.dispose()
-            // this.facesGeometryStored = undefined
+            this.facesGeometryStored.dispose()
+            this.facesGeometryStored = undefined
         }
         if (!this.facesGeometryStored) {
-            this.engine.iterate(0)
             const geometry = new BufferGeometry()
             this.facesLength = this.instance.getFaceLocations().length
             this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
@@ -270,12 +268,10 @@ export class TensegrityFabric {
 
     public get linesGeometry(): BufferGeometry {
         if (this.linesLength !== this.instance.getLineLocations().length && this.linesGeometryStored) {
-            // this.linesGeometryStored.dispose()
-            // this.linesGeometryStored = undefined
-            this.needsUpdate()
+            this.linesGeometryStored.dispose()
+            this.linesGeometryStored = undefined
         }
         if (!this.linesGeometryStored) {
-            this.engine.iterate(0)
             const geometry = new BufferGeometry()
             this.linesLength = this.instance.getLineLocations().length
             this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
