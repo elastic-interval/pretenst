@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -11,7 +10,6 @@ import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText
 
 import { FeatureMultiplier, FloatFeature } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { LifePhase } from "../fabric/life-phase"
 
 function multiplierSymbol(multiplier: FeatureMultiplier): JSX.Element {
     switch (multiplier) {
@@ -34,9 +32,8 @@ function multiplierSymbol(multiplier: FeatureMultiplier): JSX.Element {
 }
 
 
-export function FeaturePanel({featureSet, lifePhase, instance}: {
+export function FeaturePanel({featureSet, instance}: {
     featureSet: FloatFeature[],
-    lifePhase: LifePhase,
     instance: FabricInstance,
 }): JSX.Element {
 
@@ -76,9 +73,9 @@ export function FeaturePanel({featureSet, lifePhase, instance}: {
                 <InputGroupAddon addonType="prepend">
                     <InputGroupText>{feature.title}</InputGroupText>
                 </InputGroupAddon>
-                    <InputGroupAddon addonType="prepend">
-                        <InputGroupText>{multiplierSymbol(feature.config.multiplier)}</InputGroupText>
-                    </InputGroupAddon>
+                <InputGroupAddon addonType="prepend">
+                    <InputGroupText>{multiplierSymbol(feature.config.multiplier)}</InputGroupText>
+                </InputGroupAddon>
                 <Input style={inputStyle} value={factorString} disabled={true}/>
                 {mutable ? <UpdateButtonGroup/> : undefined}
             </InputGroup>
@@ -87,22 +84,20 @@ export function FeaturePanel({featureSet, lifePhase, instance}: {
 
     return (
         <div>
-            {featureSet
-                .filter(feature => feature.showDuring(lifePhase))
-                .map(feature => (
-                    <div key={feature.title} style={{
-                        borderStyle: "solid",
-                        borderColor: "white",
-                        borderWidth: "0.1em",
-                        borderRadius: "0.7em",
-                        padding: "0.2em",
-                        marginTop: "0.3em",
-                        color: "white",
-                        backgroundColor: "#545454",
-                    }}>
-                        <Factor feature={feature} mutable={true}/>
-                    </div>
-                ))}
+            {featureSet.map(feature => (
+                <div key={feature.title} style={{
+                    borderStyle: "solid",
+                    borderColor: "white",
+                    borderWidth: "0.1em",
+                    borderRadius: "0.7em",
+                    padding: "0.2em",
+                    marginTop: "0.3em",
+                    color: "white",
+                    backgroundColor: "#545454",
+                }}>
+                    <Factor feature={feature} mutable={true}/>
+                </div>
+            ))}
         </div>
     )
 }

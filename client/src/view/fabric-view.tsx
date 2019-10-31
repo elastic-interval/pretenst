@@ -60,12 +60,11 @@ const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.5
 
 export function FabricView({
-                               fabric, lifePhase, setLifePhase, pretensingStep$, selectedBrick,
+                               fabric, lifePhase$, pretensingStep$, selectedBrick,
                                setSelectedBrick, autoRotate, fastMode, showBars, showCables,
                            }: {
     fabric: TensegrityFabric,
-    lifePhase: LifePhase,
-    setLifePhase: (lifePhase: LifePhase) => void,
+    lifePhase$: BehaviorSubject<LifePhase>,
     pretensingStep$: BehaviorSubject<number>,
     selectedBrick?: IBrick,
     setSelectedBrick: (selection?: IBrick) => void,
@@ -115,11 +114,11 @@ export function FabricView({
             fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
             fabric.needsUpdate()
         }
-        if (lifePhase !== fabric.lifePhase) {
-            setLifePhase(fabric.lifePhase)
+        if (lifePhase$.getValue() !== fabric.lifePhase) {
+            lifePhase$.next(fabric.lifePhase)
         }
         setAge(instance.engine.getAge())
-    }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, fabric.lifePhase, fastMode, autoRotate])
+    }, true, [fabric, targetBrick, selectedBrick, age, fabric.lifePhase, fastMode, autoRotate])
 
 
     const selectBrick = (newSelectedBrick: IBrick) => {
@@ -152,7 +151,7 @@ export function FabricView({
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (doNotClick(lifePhase) || !downEvent || !mesh) {
+            if (doNotClick(lifePhase$.getValue()) || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -277,7 +276,7 @@ export function FabricView({
                 )}
                 {(showBars && showCables) ? <Faces/> : undefined}
                 <SelectedFace/>
-                {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
+                {hideSurface(lifePhase$.getValue()) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                 <mesh geometry={SPACE_GEOMETRY} material={spaceMaterial}/>

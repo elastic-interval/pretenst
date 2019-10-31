@@ -20,17 +20,21 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-export function LifePhasePanel({fabric, pretensingStep$, lifePhase, setLifePhase}: {
+export function LifePhasePanel({fabric, lifePhase$, pretensingStep$}: {
     fabric: TensegrityFabric,
-    lifePhase: LifePhase,
-    setLifePhase: (lifePhase: LifePhase) => void,
+    lifePhase$: BehaviorSubject<LifePhase>,
     pretensingStep$: BehaviorSubject<number>,
 }): JSX.Element {
 
+    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
     const [pretensingStep, setPretensingStep] = useState(pretensingStep$.getValue())
 
     useEffect(() => {
         const subscription = pretensingStep$.subscribe(setPretensingStep)
+        return () => subscription.unsubscribe()
+    })
+    useEffect(() => {
+        const subscription = lifePhase$.subscribe(setLifePhase)
         return () => subscription.unsubscribe()
     })
 
@@ -51,7 +55,7 @@ export function LifePhasePanel({fabric, pretensingStep$, lifePhase, setLifePhase
                     symbol: <FaHammer/>,
                     color: "success",
                     disabled: false,
-                    onClick: () => setLifePhase(fabric.slack()),
+                    onClick: () => lifePhase$.next(fabric.slack()),
                 }
             case LifePhase.Slack:
                 return {
@@ -59,7 +63,7 @@ export function LifePhasePanel({fabric, pretensingStep$, lifePhase, setLifePhase
                     symbol: <FaYinYang/>,
                     color: "warning",
                     disabled: false,
-                    onClick: () => setLifePhase(fabric.pretensing()),
+                    onClick: () => lifePhase$.next(fabric.pretensing()),
                 }
             case LifePhase.Pretensing:
                 return {

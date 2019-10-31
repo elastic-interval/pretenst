@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -8,7 +7,6 @@
 import { BehaviorSubject, Subject, Subscription } from "rxjs"
 
 import { FabricFeature, IntervalRole, roleToLengthFeature } from "./fabric-engine"
-import { LifePhase } from "./life-phase"
 
 export enum FeatureMultiplier {
     OneThousand,
@@ -30,7 +28,6 @@ interface IFeatureConfig {
     multiplier: FeatureMultiplier
     fixedDigits: number
     adjustment: FeatureAdjustment
-    lifePhases: LifePhase[]
 }
 
 function multiplierValue(multiplier: FeatureMultiplier): number {
@@ -68,7 +65,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Pretenst, LifePhase.Pretensing, LifePhase.Gravitizing],
     },
     {
         feature: FabricFeature.Drag,
@@ -77,7 +73,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Pretenst, LifePhase.Pretensing, LifePhase.Gravitizing],
     },
     {
         feature: FabricFeature.PushOverPull,
@@ -86,7 +81,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Slack, LifePhase.Pretensing, LifePhase.Gravitizing, LifePhase.Pretenst],
     },
     {
         feature: FabricFeature.SlackThreshold,
@@ -95,7 +89,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 1,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Gravitizing, LifePhase.Pretenst],
     },
     {
         feature: FabricFeature.BarMass,
@@ -104,7 +97,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Slack, LifePhase.Pretensing, LifePhase.Gravitizing, LifePhase.Pretenst],
     },
     {
         feature: FabricFeature.CableMass,
@@ -113,7 +105,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Slack, LifePhase.Pretensing, LifePhase.Gravitizing, LifePhase.Pretenst],
     },
     {
         feature: FabricFeature.IntervalBusyTicks,
@@ -122,7 +113,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 1,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Growing, LifePhase.Shaping],
     },
     {
         feature: FabricFeature.PretensingTicks,
@@ -131,7 +121,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.OneThousand,
         fixedDigits: 1,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Slack, LifePhase.Pretenst],
     },
     {
         feature: FabricFeature.PretensingIntensity,
@@ -140,7 +129,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 2,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Slack, LifePhase.Pretenst],
     },
     {
         feature: FabricFeature.TicksPerFrame,
@@ -149,7 +137,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 0,
         adjustment: plusOne,
-        lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Gravitizing, LifePhase.Pretenst],
     },
     {
         feature: FabricFeature.BarLength,
@@ -158,7 +145,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
-        lifePhases: [LifePhase.Shaping],
     },
     {
         feature: FabricFeature.TriangleLength,
@@ -167,7 +153,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
-        lifePhases: [LifePhase.Shaping],
     },
     {
         feature: FabricFeature.RingLength,
@@ -176,7 +161,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
-        lifePhases: [LifePhase.Shaping],
     },
     {
         feature: FabricFeature.CrossLength,
@@ -185,7 +169,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
-        lifePhases: [LifePhase.Shaping],
     },
     {
         feature: FabricFeature.BowMidLength,
@@ -194,7 +177,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
-        lifePhases: [LifePhase.Shaping],
     },
     {
         feature: FabricFeature.BowEndLength,
@@ -203,7 +185,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
-        lifePhases: [LifePhase.Shaping],
     },
     {
         feature: FabricFeature.BarMaxElastic,
@@ -212,16 +193,14 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 0,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Gravitizing, LifePhase.Pretenst],
     },
     {
         feature: FabricFeature.CableMaxElastic,
         name: "CableMax",
-        defaultValue: 0.000011,
+        defaultValue: 0.00005,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 0,
         adjustment: byTenPercent,
-        lifePhases: [LifePhase.Growing, LifePhase.Shaping, LifePhase.Slack, LifePhase.Pretensing, LifePhase.Gravitizing, LifePhase.Pretenst],
     },
 ]
 
@@ -296,10 +275,6 @@ export class FloatFeature {
         const overDefault = Math.abs(this.factor / defaultValue)
         const difference = Math.abs(overDefault - 1)
         return difference < 0.00001
-    }
-
-    public showDuring(lifePhase: LifePhase): boolean {
-        return this.config.lifePhases.some(p => p === lifePhase)
     }
 }
 
