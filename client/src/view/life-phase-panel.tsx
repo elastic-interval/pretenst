@@ -99,7 +99,7 @@ export function LifePhasePanel({fabric, lifePhase$, pretensingStep$}: {
 
     const {text, symbol, color, disabled, onClick} = character()
     return (
-        <Button style={{width: "14em"}} color={color} disabled={disabled} onClick={onClick}>
+        <Button className="m-4 w-75" color={color} disabled={disabled} onClick={onClick}>
             {symbol} <span> {text}</span>
         </Button>
     )

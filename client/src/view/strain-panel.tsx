@@ -54,10 +54,10 @@ export function StrainPanel({fabric, bars, colorBars, colorCables}: {
         width: "8em",
         backgroundColor: "#cccccc",
         borderColor: "#575757",
-        borderTopRightRadius: bars ? "1em" : 0,
-        borderBottomRightRadius: bars ? "1em" : 0,
-        borderTopLeftRadius: !bars ? "1em" : 0,
-        borderBottomLeftRadius: !bars ? "1em" : 0,
+        borderTopRightRadius: "1em",
+        borderBottomRightRadius: "1em",
+        borderTopLeftRadius: 0,
+        borderBottomLeftRadius: 0,
     }
     return (
         <div style={style}>

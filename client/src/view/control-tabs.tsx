@@ -54,9 +54,9 @@ import { StrainPanel } from "./strain-panel"
 const SPLIT_LEFT = "34em"
 
 export enum Tab {
-    Structures = "Structures",
     Commands = "Commands",
     Features = "Features",
+    Structures = "Structures",
     Editor = "Editor",
 }
 
@@ -83,7 +83,7 @@ export function ControlTabs({
     setFullScreen: (fullScreen: boolean) => void,
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState(Tab.Structures)
+    const [activeTab, setActiveTab] = useState(Tab.Commands)
     const [surfaceCharacter, setSurfaceCharacter] = useState(SurfaceCharacter.Sticky)
 
     useEffect(() => {
@@ -100,7 +100,7 @@ export function ControlTabs({
             const [open, setOpen] = useState<boolean>(false)
             return (
                 <ButtonDropdown isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle>{SurfaceCharacter[surfaceCharacter]}</DropdownToggle>
+                    <DropdownToggle style={{borderTopRightRadius: "1em"}}>Surface: {SurfaceCharacter[surfaceCharacter]}</DropdownToggle>
                     <DropdownMenu right={false}>
                         {Object.keys(SurfaceCharacter).filter(k => k.length > 1).map(key => (
                             <DropdownItem key={`Surface${key}`}
@@ -124,7 +124,7 @@ export function ControlTabs({
             const color = bars === showBars && cables === showCables ? "success" : "secondary"
             return <Button style={{color: "white"}} color={color} onClick={onClick}>
                 {bars && cables ? (<><FaHandPointUp/><span> Faces</span></>) :
-                    bars ? (<><FaCircle/><span> Pushes </span></>) : (<><span> Pulls </span><FaDotCircle/></>)}
+                    bars ? (<><FaCircle/><span> Pushes </span></>) : (<><FaDotCircle/><span> Pulls </span></>)}
             </Button>
         }
 
@@ -140,86 +140,80 @@ export function ControlTabs({
         }
         const engine = fabric.instance.engine
         return (
-            <div>
+            <div className="p-4" style={{display: "block"}}>
                 <LifePhasePanel
                     lifePhase$={lifePhase$}
                     fabric={fabric}
                     pretensingStep$={pretensingStep$}
                 />
-                <div style={{display: "block"}}>
-                    {selectedBrick ? (
-                        <ButtonGroup style={{paddingLeft: "0.6em", width: "40em"}}>
-                            <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
-                                <FaArrowUp/><span> Bigger</span>
-                            </Button>
-                            <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
-                                <FaArrowDown/><span> Smaller</span>
-                            </Button>
-                            <Button onClick={() => {
-                                setSelectedBrick(undefined)
-                                fabric.clearSelection()
-                            }}>
-                                <FaTimesCircle/>
-                            </Button>
-                        </ButtonGroup>
-                    ) : (
-                        <div style={{
-                            display: "flex",
-                            backgroundColor: "#5f5f5f",
-                            padding: "0.5em",
-                            borderRadius: "1.5em",
+                {selectedBrick ? (
+                    <ButtonGroup className="m-4 w-75">
+                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
+                            <FaArrowUp/><span> Bigger</span>
+                        </Button>
+                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
+                            <FaArrowDown/><span> Smaller</span>
+                        </Button>
+                        <Button onClick={() => {
+                            setSelectedBrick(undefined)
+                            fabric.clearSelection()
                         }}>
-                            <ButtonGroup style={{display: "flex"}}>
-                                <StrainPanel fabric={fabric} bars={false} colorBars={showBars}
-                                             colorCables={showCables}/>
-                                <ViewButton bars={false} cables={true}/>
-                            </ButtonGroup>
-                            <ButtonGroup style={{paddingLeft: "0.4em", display: "flex"}}>
-                                <ViewButton bars={true} cables={true}/>
-                            </ButtonGroup>
-                            <ButtonGroup style={{paddingLeft: "0.4em", display: "flex"}}>
-                                <ViewButton bars={true} cables={false}/>
-                                <StrainPanel fabric={fabric} bars={true} colorBars={showBars} colorCables={showCables}/>
-                            </ButtonGroup>
-                        </div>
-                    )}
-                </div>
-                <ButtonGroup style={{paddingLeft: "1em"}}>
+                            <FaTimesCircle/>
+                        </Button>
+                    </ButtonGroup>
+                ) : (
+                    <div className="m-4 w-75">
+                        <ButtonGroup style={{display: "flex"}} className="my-2">
+                            <ViewButton bars={false} cables={true}/>
+                            <StrainPanel fabric={fabric} bars={false} colorBars={showBars}
+                                         colorCables={showCables}/>
+                        </ButtonGroup>
+                        <ButtonGroup style={{display: "flex"}} className="my-2">
+                            <ViewButton bars={true} cables={true}/>
+                        </ButtonGroup>
+                        <ButtonGroup style={{display: "flex"}} className="my-2">
+                            <ViewButton bars={true} cables={false}/>
+                            <StrainPanel fabric={fabric} bars={true} colorBars={showBars}
+                                         colorCables={showCables}/>
+                        </ButtonGroup>
+                    </div>
+                )}
+                <ButtonGroup vertical={true} className="m-4 w-75">
                     <Button disabled={lifePhase$.getValue() !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric, true)}>
-                        <FaBiohazard/>
+                        <FaBiohazard/> Long optimize
                     </Button>
                     <Button disabled={lifePhase$.getValue() !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric, false)}>
-                        <FaRadiationAlt/>
+                        <FaRadiationAlt/> Short optimize
                     </Button>
                     <Button disabled={lifePhase$.getValue() !== LifePhase.Pretenst}
                             onClick={() => engine.setAltitude(1)}>
-                        <FaHandRock/>
+                        <FaHandRock/> Nudge
                     </Button>
                     <Button disabled={lifePhase$.getValue() !== LifePhase.Pretenst}
                             onClick={() => engine.setAltitude(10)}>
-                        <FaParachuteBox/>
+                        <FaParachuteBox/> Drop
                     </Button>
                     <Button onClick={() => fabric.instance.engine.centralize()}>
-                        <FaCompressArrowsAlt/>
+                        <FaCompressArrowsAlt/> Centralize
                     </Button>
                     {/*<Button onClick={() => setAutoRotate(!autoRotate)}>*/}
                     {/*    <FaSyncAlt/>*/}
                     {/*</Button>*/}
                 </ButtonGroup>
-                <ButtonGroup style={{paddingLeft: "1em"}}>
+                <ButtonGroup vertical={true} className="m-4 w-75">
                     <Button onClick={() => saveCSVFiles(fabric)}>
-                        <FaFileCsv/>
+                        <FaFileCsv/> Download CSV
                     </Button>
                     <Button onClick={() => saveOBJFile(fabric)}>
-                        <FaCubes/>
+                        <FaCubes/> Download OBJ
                     </Button>
                 </ButtonGroup>
-                <ButtonGroup style={{paddingLeft: "1em"}}>
+                <ButtonGroup vertical={true} className="m-4 w-75">
                     <SurfaceCharacterChoice/>
                     <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
-                        <FaCamera/>
+                        <FaCamera/> Slow mode
                     </Button>
                 </ButtonGroup>
             </div>
