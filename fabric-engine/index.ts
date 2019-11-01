@@ -1095,8 +1095,9 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         case LifePhase.Pretensing:
         case LifePhase.Gravitizing:
         case LifePhase.Pretenst:
-            let pushOverPull = getFeature(FabricFeature.PushOverPull)
-            fabricElasticFactor = bar ? pushOverPull / 2 : 2 / pushOverPull
+            // let pushOverPull = getFeature(FabricFeature.PushOverPull)
+            // fabricElasticFactor = bar ? pushOverPull : 1 / pushOverPull
+            fabricElasticFactor = 1
             break
     }
     let force = strain * intervalElasticFactor * fabricElasticFactor

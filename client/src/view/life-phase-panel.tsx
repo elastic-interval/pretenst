@@ -20,10 +20,11 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-export function LifePhasePanel({fabric, lifePhase$, pretensingStep$}: {
+export function LifePhasePanel({fabric, lifePhase$, pretensingStep$, rebuild}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
     pretensingStep$: BehaviorSubject<number>,
+    rebuild: () => void,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
@@ -89,8 +90,7 @@ export function LifePhasePanel({fabric, lifePhase$, pretensingStep$}: {
                     color: "success",
                     text: "Pretenst!",
                     disabled: false,
-                    onClick: () => {
-                    },
+                    onClick: rebuild,
                 }
             default:
                 throw new Error()

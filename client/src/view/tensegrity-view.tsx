@@ -115,6 +115,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
                         setSelectedBrick={setSelectedBrick}
                         code={code}
                         setCode={setCode}
+                        rebuild={buildFromCode}
                         setFullScreen={setFullScreen}
                     />
                 </div>

@@ -63,7 +63,8 @@ export enum Tab {
 export function ControlTabs({
                                 fabric, lifePhase$, pretensingStep$, bootstrapCode, features,
                                 showBars, setShowBars, showCables, setShowCables, fastMode, setFastMode,
-                                selectedBrick, setSelectedBrick, code, setCode, setFullScreen,
+                                selectedBrick, setSelectedBrick, code, setCode, rebuild,
+                                setFullScreen,
                             }: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
@@ -80,11 +81,17 @@ export function ControlTabs({
     setSelectedBrick: (brick?: IBrick) => void,
     code?: ICode,
     setCode: (brick?: ICode) => void,
+    rebuild: () => void,
     setFullScreen: (fullScreen: boolean) => void,
 }): JSX.Element {
 
     const [activeTab, setActiveTab] = useState(Tab.Commands)
     const [surfaceCharacter, setSurfaceCharacter] = useState(SurfaceCharacter.Sticky)
+    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+    useEffect(() => {
+        const subscription = lifePhase$.subscribe(setLifePhase)
+        return () => subscription.unsubscribe()
+    })
 
     useEffect(() => {
         if (fabric) {
@@ -145,6 +152,7 @@ export function ControlTabs({
                     lifePhase$={lifePhase$}
                     fabric={fabric}
                     pretensingStep$={pretensingStep$}
+                    rebuild={rebuild}
                 />
                 {selectedBrick ? (
                     <ButtonGroup className="m-4 w-75">
@@ -179,19 +187,19 @@ export function ControlTabs({
                     </div>
                 )}
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button disabled={lifePhase$.getValue() !== LifePhase.Shaping}
+                    <Button disabled={lifePhase !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric, true)}>
                         <FaBiohazard/> Long optimize
                     </Button>
-                    <Button disabled={lifePhase$.getValue() !== LifePhase.Shaping}
+                    <Button disabled={lifePhase !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric, false)}>
                         <FaRadiationAlt/> Short optimize
                     </Button>
-                    <Button disabled={lifePhase$.getValue() !== LifePhase.Pretenst}
+                    <Button disabled={lifePhase !== LifePhase.Pretenst}
                             onClick={() => engine.setAltitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
-                    <Button disabled={lifePhase$.getValue() !== LifePhase.Pretenst}
+                    <Button disabled={lifePhase !== LifePhase.Pretenst}
                             onClick={() => engine.setAltitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>
@@ -253,7 +261,7 @@ export function ControlTabs({
                     return !fabric ? <div/> : (
                         <FeaturePanel
                             featureSet={features}
-                            instance={fabric.instance}
+                            fabric={fabric}
                         />
                     )
                 case Tab.Editor:

@@ -44,6 +44,14 @@ export function roleToLengthFeature(intervalRole: IntervalRole): FabricFeature {
     return FabricFeature[FabricFeature[intervalRole + FabricFeature.BarLength]]
 }
 
+export function lengthFeatureToRole(fabricFeature: FabricFeature): IntervalRole | undefined {
+    const roleIndex: number = fabricFeature - FabricFeature.BarLength
+    if (roleIndex < 0 || roleIndex > IntervalRole.BowEnd) {
+        return undefined
+    }
+    return IntervalRole[IntervalRole[roleIndex]]
+}
+
 export enum FabricState {
     Rest,
     Forward,
