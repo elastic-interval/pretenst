@@ -75,6 +75,11 @@ function codeTreeToTitle(prefix: string, codeTree: ICodeTree): JSX.Element {
         case "A":
         case "B":
         case "C":
+        case "D":
+        case "a":
+        case "b":
+        case "c":
+        case "d":
             return (
                 <div>{prefix} {stepStatement} {scaleStatement}</div>
             )
@@ -100,6 +105,11 @@ function codeTreeToTreeData(prefix: string, codeTree?: ICodeTree): TreeItem[] {
             ...codeTreeToTreeData("A", codeTree.A),
             ...codeTreeToTreeData("B", codeTree.B),
             ...codeTreeToTreeData("C", codeTree.C),
+            ...codeTreeToTreeData("D", codeTree.D),
+            ...codeTreeToTreeData("b", codeTree.b),
+            ...codeTreeToTreeData("c", codeTree.c),
+            ...codeTreeToTreeData("d", codeTree.d),
+            ...codeTreeToTreeData("a", codeTree.a),
         ],
         prefix,
         steps: codeTree._,
@@ -120,6 +130,6 @@ function treeDataToCodeString(treeItems: TreeItem[]): string {
         childrenCode.unshift(`S${scale._}`)
     }
     childrenCode.unshift(node.steps)
-    const childrenString = childrenCode.length > 0 ? `(${childrenCode.join(",")})` : ""
+    const childrenString = childrenCode.length > 0 ? `(${childrenCode.filter(code => !!code && code.length > 0).join(",")})` : ""
     return `${node.prefix}${childrenString}`
 }
