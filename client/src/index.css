@@ -75,16 +75,6 @@ a, a:hover {
     margin: 3px;
 }
 
-.bar {
-    color: white;
-    background-color: #b90000 !important;
-}
-
-.cable {
-    color: white;
-    background-color: #507cac !important;
-}
-
 #top-left {
     position: absolute;
     top: 1em;

@@ -14,7 +14,7 @@ export enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
 }
 
-export enum BarEnd {
+export enum PushEnd {
     XPA = 0, XPO, XNA, XNO, YPA, YPO,
     YNA, YNO, ZPA, ZPO, ZNA, ZNO,
 }
@@ -24,10 +24,10 @@ export enum Triangle {
 }
 
 export enum Ring {
-    NN = 0, // [BarEnd.ZNO, BarEnd.XPA, BarEnd.YNO, BarEnd.ZPA, BarEnd.XNO, BarEnd.YPA],
-    PN = 1, // [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNO, BarEnd.YPO, BarEnd.XPO, BarEnd.ZPA],
-    NP = 2, // [BarEnd.XNA, BarEnd.YPA, BarEnd.ZPO, BarEnd.XPO, BarEnd.YNO, BarEnd.ZNA],
-    PP = 3, // [BarEnd.YNA, BarEnd.ZNA, BarEnd.XPA, BarEnd.YPO, BarEnd.ZPO, BarEnd.XNO],
+    NN = 0, // [PushEnd.ZNO, PushEnd.XPA, PushEnd.YNO, PushEnd.ZPA, PushEnd.XNO, PushEnd.YPA],
+    PN = 1, // [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNO, PushEnd.YPO, PushEnd.XPO, PushEnd.ZPA],
+    NP = 2, // [PushEnd.XNA, PushEnd.YPA, PushEnd.ZPO, PushEnd.XPO, PushEnd.YNO, PushEnd.ZNA],
+    PP = 3, // [PushEnd.YNA, PushEnd.ZNA, PushEnd.XPA, PushEnd.YPO, PushEnd.ZPO, PushEnd.XNO],
 }
 
 export interface IJoint {
@@ -39,7 +39,7 @@ export type JointTag = number
 
 export interface IInterval {
     index: number
-    isBar: boolean
+    isPush: boolean
     removed: boolean
     intervalRole: IntervalRole
     scale: IPercent
@@ -53,11 +53,11 @@ export interface IFace {
     brick: IBrick
     triangle: Triangle
     joints: IJoint[]
-    bars: IInterval[]
+    pushes: IInterval[]
     cables: IInterval[]
 }
 
-export interface IBarDefinition {
+export interface IPushDefinition {
     alpha: Vector3
     omega: Vector3
 }
@@ -86,7 +86,7 @@ function brickPoint(primaryRay: Ray, secondaryRay: Ray): Vector3 {
     return rayVector(primaryRay).multiplyScalar(PHI).add(rayVector(secondaryRay))
 }
 
-export const BAR_ARRAY: IBarDefinition[] = [
+export const PUSH_ARRAY: IPushDefinition[] = [
     {alpha: brickPoint(Ray.ZN, Ray.XP), omega: brickPoint(Ray.ZP, Ray.XP)},
     {alpha: brickPoint(Ray.ZN, Ray.XN), omega: brickPoint(Ray.ZP, Ray.XN)},
     {alpha: brickPoint(Ray.XN, Ray.YP), omega: brickPoint(Ray.XP, Ray.YP)},
@@ -99,7 +99,7 @@ export interface ITriangleDefinition {
     name: Triangle
     opposite: Triangle
     negative: boolean
-    barEnds: BarEnd[]
+    pushEnds: PushEnd[]
     ringMember: Ring[]
     ring: Ring
 }
@@ -107,35 +107,35 @@ export interface ITriangleDefinition {
 export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
     {
         name: Triangle.NNN, opposite: Triangle.PPP, negative: true, ring: Ring.NN,
-        barEnds: [BarEnd.YNA, BarEnd.XNA, BarEnd.ZNA], ringMember: [Ring.NP, Ring.PN, Ring.PP],
+        pushEnds: [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNA], ringMember: [Ring.NP, Ring.PN, Ring.PP],
     },
     {
         name: Triangle.PNN, opposite: Triangle.NPP, negative: false, ring: Ring.PP,
-        barEnds: [BarEnd.XNA, BarEnd.YPA, BarEnd.ZNO], ringMember: [Ring.PN, Ring.NN, Ring.NP],
+        pushEnds: [PushEnd.XNA, PushEnd.YPA, PushEnd.ZNO], ringMember: [Ring.PN, Ring.NN, Ring.NP],
     },
     {
         name: Triangle.NPN, opposite: Triangle.PNP, negative: false, ring: Ring.PN,
-        barEnds: [BarEnd.XNO, BarEnd.YNA, BarEnd.ZPA], ringMember: [Ring.PP, Ring.NP, Ring.NN],
+        pushEnds: [PushEnd.XNO, PushEnd.YNA, PushEnd.ZPA], ringMember: [Ring.PP, Ring.NP, Ring.NN],
     },
     {
         name: Triangle.NNP, opposite: Triangle.PPN, negative: false, ring: Ring.NP,
-        barEnds: [BarEnd.XPA, BarEnd.YNO, BarEnd.ZNA], ringMember: [Ring.NN, Ring.PN, Ring.PP],
+        pushEnds: [PushEnd.XPA, PushEnd.YNO, PushEnd.ZNA], ringMember: [Ring.NN, Ring.PN, Ring.PP],
     },
     {
         name: Triangle.NPP, opposite: Triangle.PNN, negative: true, ring: Ring.PP,
-        barEnds: [BarEnd.YNO, BarEnd.XPO, BarEnd.ZPA], ringMember: [Ring.PN, Ring.NP, Ring.NN],
+        pushEnds: [PushEnd.YNO, PushEnd.XPO, PushEnd.ZPA], ringMember: [Ring.PN, Ring.NP, Ring.NN],
     },
     {
         name: Triangle.PNP, opposite: Triangle.NPN, negative: true, ring: Ring.PN,
-        barEnds: [BarEnd.YPO, BarEnd.XPA, BarEnd.ZNO], ringMember: [Ring.PP, Ring.NN, Ring.NP],
+        pushEnds: [PushEnd.YPO, PushEnd.XPA, PushEnd.ZNO], ringMember: [Ring.PP, Ring.NN, Ring.NP],
     },
     {
         name: Triangle.PPN, opposite: Triangle.NNP, negative: true, ring: Ring.NP,
-        barEnds: [BarEnd.YPA, BarEnd.XNO, BarEnd.ZPO], ringMember: [Ring.NN, Ring.PP, Ring.PN],
+        pushEnds: [PushEnd.YPA, PushEnd.XNO, PushEnd.ZPO], ringMember: [Ring.NN, Ring.PP, Ring.PN],
     },
     {
         name: Triangle.PPP, opposite: Triangle.NNN, negative: false, ring: Ring.NN,
-        barEnds: [BarEnd.XPO, BarEnd.YPO, BarEnd.ZPO], ringMember: [Ring.NP, Ring.PP, Ring.PN],
+        pushEnds: [PushEnd.XPO, PushEnd.YPO, PushEnd.ZPO], ringMember: [Ring.NP, Ring.PP, Ring.PN],
     },
 ]
 
@@ -161,7 +161,7 @@ export interface IBrick {
     scale: IPercent
     fabric: TensegrityFabric
     joints: IJoint[]
-    bars: IInterval[]
+    pushes: IInterval[]
     cables: IInterval[]
     rings: IInterval[][]
     faces: IFace[]
@@ -177,7 +177,7 @@ export function byBrick(brick: IBrick): (interval: IInterval) => boolean {
         const matchesInterval = (faceInterval: IInterval) => (
             !faceInterval.removed && faceInterval.index === interval.index
         )
-        return brick.bars.some(matchesInterval) || brick.cables.some(matchesInterval)
+        return brick.pushes.some(matchesInterval) || brick.cables.some(matchesInterval)
     }
 }
 

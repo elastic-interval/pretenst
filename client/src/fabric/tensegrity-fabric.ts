@@ -35,7 +35,7 @@ interface IOutputInterval {
     strainString: string,
     elastic: number,
     elasticString: string,
-    isBar: boolean,
+    isPush: boolean,
     role: string,
 }
 
@@ -183,9 +183,9 @@ export class TensegrityFabric {
         const scaleFactor = percentToFactor(scale)
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
-        const isBar = intervalRole === IntervalRole.Bar
+        const isPush = intervalRole === IntervalRole.Push
         const pushOverPull = fabricFeatureValue(FabricFeature.PushOverPull)
-        const fabricElasticFactor = isBar ? pushOverPull / 2 : 2 / pushOverPull
+        const fabricElasticFactor = isPush ? pushOverPull / 2 : 2 / pushOverPull
         const elasticFactor = scaleToElasticFactor(scale) * fabricElasticFactor
         const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticFactor)
         const interval: IInterval = {
@@ -194,33 +194,29 @@ export class TensegrityFabric {
             scale,
             alpha, omega,
             removed: false,
-            isBar,
+            isPush,
         }
         this.intervals.push(interval)
         return interval
     }
 
     public createFace(brick: IBrick, triangle: Triangle): IFace {
-        const joints = TRIANGLE_DEFINITIONS[triangle].barEnds.map(barEnd => brick.joints[barEnd])
-        const bars = TRIANGLE_DEFINITIONS[triangle].barEnds.map(barEnd => {
-            const foundBar = brick.bars.find(bar => {
-                const endJoint = brick.joints[barEnd]
-                return endJoint.index === bar.alpha.index || endJoint.index === bar.omega.index
+        const joints = TRIANGLE_DEFINITIONS[triangle].pushEnds.map(end => brick.joints[end])
+        const pushes = TRIANGLE_DEFINITIONS[triangle].pushEnds.map(end => {
+            const foundPush = brick.pushes.find(push => {
+                const endJoint = brick.joints[end]
+                return endJoint.index === push.alpha.index || endJoint.index === push.omega.index
             })
-            if (foundBar === undefined) {
+            if (foundPush === undefined) {
                 throw new Error()
             }
-            return foundBar
+            return foundPush
         })
         const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
         const face: IFace = {
             index: this.engine.createFace(joints[0].index, joints[1].index, joints[2].index),
             canGrow: true,
-            brick,
-            triangle,
-            joints,
-            bars,
-            cables,
+            brick, triangle, joints, pushes, cables,
         }
         this.faces.push(face)
         return face
@@ -343,26 +339,26 @@ export class TensegrityFabric {
             intervals: this.intervals.map(interval => {
                 const joints = `${interval.alpha.index + 1},${interval.omega.index + 1}`
                 const strainString = numberToString(strains[interval.index])
-                const type = interval.isBar ? "Bar" : "Cable"
+                const type = interval.isPush ? "Push" : "Cable"
                 const elastic = elastics[interval.index]
                 const elasticString = numberToString(elastic)
                 const role = IntervalRole[interval.intervalRole]
-                const isBar = interval.isBar
+                const isPush = interval.isPush
                 const outputInterval: IOutputInterval = {
                     joints,
                     type,
                     strainString,
                     elastic,
                     elasticString,
-                    isBar,
+                    isPush,
                     role,
                 }
                 return outputInterval
             }).sort((a, b) => {
-                if (a.isBar && !b.isBar) {
+                if (a.isPush && !b.isPush) {
                     return -1
                 }
-                if (!a.isBar && b.isBar) {
+                if (!a.isPush && b.isPush) {
                     return 1
                 }
                 return a.elastic - b.elastic
@@ -390,28 +386,28 @@ export class TensegrityFabric {
         const strains = this.instance.strains
         const elastics = this.instance.elastics
         const intensity = this.instance.getFeatureValue(FabricFeature.PretensingIntensity)
-        let barCount = 0
+        let pushCount = 0
         let cableCount = 0
-        let totalBarAdjustment = 0
+        let totalPushAdjustment = 0
         let totalCableAdjustment = 0
         this.intervals.forEach(interval => {
             const strain = strains[interval.index]
             const adjustment = strain * intensity
-            if (interval.isBar) {
-                totalBarAdjustment += adjustment
-                barCount++
+            if (interval.isPush) {
+                totalPushAdjustment += adjustment
+                pushCount++
             } else {
                 totalCableAdjustment += adjustment
                 cableCount++
             }
         })
         // todo: maybe use median instead of average
-        const averageBarAdjustment = totalBarAdjustment / barCount
+        const averagePushAdjustment = totalPushAdjustment / pushCount
         const averageCableAdjustment = totalCableAdjustment / cableCount
         this.intervals.forEach(interval => {
             const strain = strains[interval.index]
-            const adjustment = strain * intensity - (interval.isBar ? averageBarAdjustment : averageCableAdjustment)
-            if (interval.isBar) {
+            const adjustment = strain * intensity - (interval.isPush ? averagePushAdjustment : averageCableAdjustment)
+            if (interval.isPush) {
                 elastics[interval.index] *= 1 - adjustment
             } else {
                 elastics[interval.index] *= 1 + adjustment

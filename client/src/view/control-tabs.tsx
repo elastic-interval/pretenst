@@ -62,7 +62,7 @@ export enum Tab {
 
 export function ControlTabs({
                                 fabric, lifePhase$, pretensingStep$, bootstrapCode, features,
-                                showBars, setShowBars, showCables, setShowCables, fastMode, setFastMode,
+                                showPushes, setShowPushes, showCables, setShowCables, fastMode, setFastMode,
                                 selectedBrick, setSelectedBrick, code, setCode, rebuild,
                                 setFullScreen,
                             }: {
@@ -71,8 +71,8 @@ export function ControlTabs({
     pretensingStep$: BehaviorSubject<number>
     bootstrapCode: ICode [],
     features: FloatFeature[],
-    showBars: boolean,
-    setShowBars: (value: boolean) => void,
+    showPushes: boolean,
+    setShowPushes: (value: boolean) => void,
     showCables: boolean,
     setShowCables: (value: boolean) => void,
     fastMode: boolean,
@@ -120,18 +120,18 @@ export function ControlTabs({
             )
         }
 
-        function ViewButton({bars, cables}: { bars: boolean, cables: boolean }): JSX.Element {
+        function ViewButton({pushes, cables}: { pushes: boolean, cables: boolean }): JSX.Element {
             const onClick = () => {
-                setShowBars(bars)
+                setShowPushes(pushes)
                 setShowCables(cables)
                 if (selectedBrick) {
                     setSelectedBrick(undefined)
                 }
             }
-            const color = bars === showBars && cables === showCables ? "success" : "secondary"
+            const color = pushes === showPushes && cables === showCables ? "success" : "secondary"
             return <Button style={{color: "white"}} color={color} onClick={onClick}>
-                {bars && cables ? (<><FaHandPointUp/><span> Faces</span></>) :
-                    bars ? (<><FaCircle/><span> Pushes </span></>) : (<><FaDotCircle/><span> Pulls </span></>)}
+                {pushes && cables ? (<><FaHandPointUp/><span> Faces</span></>) :
+                    pushes ? (<><FaCircle/><span> Pushes </span></>) : (<><FaDotCircle/><span> Pulls </span></>)}
             </Button>
         }
 
@@ -172,17 +172,17 @@ export function ControlTabs({
                 ) : (
                     <div className="m-4 w-75">
                         <ButtonGroup style={{display: "flex"}} className="my-2">
-                            <ViewButton bars={false} cables={true}/>
-                            <StrainPanel fabric={fabric} bars={false} colorBars={showBars}
-                                         colorCables={showCables}/>
+                            <ViewButton pushes={false} cables={true}/>
+                            <StrainPanel fabric={fabric} pushes={false}
+                                         showPushes={showPushes} colorCables={showCables}/>
                         </ButtonGroup>
                         <ButtonGroup style={{display: "flex"}} className="my-2">
-                            <ViewButton bars={true} cables={true}/>
+                            <ViewButton pushes={true} cables={true}/>
                         </ButtonGroup>
                         <ButtonGroup style={{display: "flex"}} className="my-2">
-                            <ViewButton bars={true} cables={false}/>
-                            <StrainPanel fabric={fabric} bars={true} colorBars={showBars}
-                                         colorCables={showCables}/>
+                            <ViewButton pushes={true} cables={false}/>
+                            <StrainPanel fabric={fabric} pushes={true}
+                                         showPushes={showPushes} colorCables={showCables}/>
                         </ButtonGroup>
                     </div>
                 )}

@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -91,8 +92,8 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byTenPercent,
     },
     {
-        feature: FabricFeature.BarMass,
-        name: "BarMass",
+        feature: FabricFeature.PushMass,
+        name: "Push Mass",
         defaultValue: 10,
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
@@ -139,8 +140,8 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: plusOne,
     },
     {
-        feature: FabricFeature.BarLength,
-        name: "BarLength",
+        feature: FabricFeature.PushLength,
+        name: "Push Length",
         defaultValue: 2 * 1.618,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -187,8 +188,8 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byOnePercent,
     },
     {
-        feature: FabricFeature.BarMaxElastic,
-        name: "BarMax",
+        feature: FabricFeature.PushMaxElastic,
+        name: "Push Max Elastic",
         defaultValue: 0.00003,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 0,

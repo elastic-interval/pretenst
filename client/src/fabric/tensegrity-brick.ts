@@ -8,11 +8,8 @@ import { Matrix4, Vector3 } from "three"
 import { IntervalRole } from "./fabric-engine"
 import { roleDefaultLength } from "./fabric-features"
 import {
-    BAR_ARRAY,
-    BarEnd,
     factorToPercent,
     IActiveCode,
-    IBarDefinition,
     IBrick,
     ICodeTree,
     IConnector,
@@ -20,15 +17,18 @@ import {
     IInterval,
     IJoint,
     IPercent,
+    IPushDefinition,
     percentOrHundred,
     percentToFactor,
+    PUSH_ARRAY,
+    PushEnd,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 // function createBrickPointsUpright(): Vector3[] {
-//     const points = BAR_ARRAY.reduce(barsToPoints, [])
+//     const points = PUSH_ARRAY.reduce(pushesToPoints, [])
 //     points.forEach(p => {
 //         const xx = p.x
 //         p.x = p.z
@@ -41,14 +41,14 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 const SNUGGLE_BRICKS = 0.9
 
 function createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] {
-    const barsToPoints = (vectors: Vector3[], bar: IBarDefinition): Vector3[] => {
-        vectors.push(new Vector3().add(bar.alpha))
-        vectors.push(new Vector3().add(bar.omega))
+    const pushesToPoints = (vectors: Vector3[], push: IPushDefinition): Vector3[] => {
+        vectors.push(new Vector3().add(push.alpha))
+        vectors.push(new Vector3().add(push.omega))
         return vectors
     }
-    const points = BAR_ARRAY.reduce(barsToPoints, [])
+    const points = PUSH_ARRAY.reduce(pushesToPoints, [])
     const newBase = TRIANGLE_DEFINITIONS[base].opposite
-    const trianglePoints = TRIANGLE_DEFINITIONS[newBase].barEnds.map((barEnd: BarEnd) => points[barEnd]).reverse()
+    const trianglePoints = TRIANGLE_DEFINITIONS[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
     const y = new Vector3().sub(midpoint).normalize()
@@ -64,22 +64,22 @@ function createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] 
 
 function createBrick(fabric: TensegrityFabric, points: Vector3[], base: Triangle, scale: IPercent): IBrick {
     const jointIndexes = points.map((p, index) => fabric.createJointIndex(index, p))
-    const bars = BAR_ARRAY.map(({}: IBarDefinition, index: number) => {
-        const role = IntervalRole.Bar
+    const pushes = PUSH_ARRAY.map(({}: IPushDefinition, index: number) => {
+        const role = IntervalRole.Push
         const alphaIndex = jointIndexes[index * 2]
         const omegaIndex = jointIndexes[index * 2 + 1]
         const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
         const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
         return fabric.createInterval(alpha, omega, role, scale)
     })
-    const joints = bars.reduce((arr: IJoint[], bar) => {
-        arr.push(bar.alpha, bar.omega)
+    const joints = pushes.reduce((arr: IJoint[], push) => {
+        arr.push(push.alpha, push.omega)
         return arr
     }, [])
     fabric.joints.push(...joints)
-    const brick: IBrick = {base, scale, fabric, joints, bars, cables: [], rings: [[], [], [], []], faces: []}
+    const brick: IBrick = {base, scale, fabric, joints, pushes, cables: [], rings: [[], [], [], []], faces: []}
     TRIANGLE_DEFINITIONS.forEach(triangle => {
-        const tJoints = triangle.barEnds.map(barEnd => joints[barEnd])
+        const tJoints = triangle.pushEnds.map(end => joints[end])
         for (let walk = 0; walk < 3; walk++) {
             const role = IntervalRole.Triangle
             const alpha = tJoints[walk]
@@ -131,8 +131,8 @@ interface IJointPair {
 }
 
 function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoint[] {
-    const jointsA: IJoint[] = TRIANGLE_DEFINITIONS[faceA.triangle].barEnds.map(barEnd => faceA.brick.joints[barEnd])
-    const jointsB: IJoint[] = TRIANGLE_DEFINITIONS[faceB.triangle].barEnds.map(barEnd => faceB.brick.joints[barEnd])
+    const jointsA: IJoint[] = TRIANGLE_DEFINITIONS[faceA.triangle].pushEnds.map(end => faceA.brick.joints[end])
+    const jointsB: IJoint[] = TRIANGLE_DEFINITIONS[faceB.triangle].pushEnds.map(end => faceB.brick.joints[end])
     const jointPairs: IJointPair[] = []
     jointsA.forEach(jointA => {
         jointsB.forEach(jointB => {
@@ -298,7 +298,7 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
         const aLoc = instance.getJointLocation(a.index)
         const b = ab.omega
         const cablesB = fabric.intervals.filter(interval => (
-            interval.intervalRole !== IntervalRole.Cross && interval.intervalRole !== IntervalRole.Bar &&
+            interval.intervalRole !== IntervalRole.Cross && interval.intervalRole !== IntervalRole.Push &&
             (interval.alpha.index === b.index || interval.omega.index === b.index)
         ))
         const bc = cablesB.reduce((cableA, cableB) => {

@@ -25,7 +25,7 @@ import { doNotClick, hideSurface, LifePhase } from "../fabric/life-phase"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { ATTENUATED, BAR, CABLE, FACE, FACE_SPHERE, LINE, SCALE_LINE, SLACK } from "./materials"
+import { ATTENUATED, CABLE, FACE, FACE_SPHERE, LINE, PUSH_MATERIAL, SCALE_LINE, SLACK } from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
@@ -48,7 +48,7 @@ const AMBIENT_COLOR = new Color("#bababa")
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const BAR_GIRTH = 100
+const PUSH_GIRTH = 100
 const CABLE_GIRTH = 30
 const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
@@ -56,7 +56,7 @@ const SCALE_MAX = 0.5
 
 export function FabricView({
                                fabric, lifePhase$, pretensingStep$, selectedBrick,
-                               setSelectedBrick, autoRotate, fastMode, showBars, showCables,
+                               setSelectedBrick, autoRotate, fastMode, showPushes, showCables,
                            }: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
@@ -65,7 +65,7 @@ export function FabricView({
     setSelectedBrick: (selection?: IBrick) => void,
     autoRotate: boolean,
     fastMode: boolean,
-    showBars: boolean,
+    showPushes: boolean,
     showCables: boolean,
 }): JSX.Element {
 
@@ -182,12 +182,12 @@ export function FabricView({
         attenuated: boolean,
     }): JSX.Element {
         const elastic = fabric.instance.elastics[interval.index]
-        const bar = interval.isBar
-        const strain = fabric.instance.strains[interval.index] * (bar ? -1 : 1)
-        const girth = Math.sqrt(elastic) * (bar ? BAR_GIRTH : CABLE_GIRTH)
+        const isPush = interval.isPush
+        const strain = fabric.instance.strains[interval.index] * (isPush ? -1 : 1)
+        const girth = Math.sqrt(elastic) * (isPush ? PUSH_GIRTH : CABLE_GIRTH)
         const {scale, rotation} = fabric.orientInterval(interval, girth)
         const slackThreshold = fabricFeatureValue(FabricFeature.SlackThreshold)
-        const material = strain < slackThreshold ? SLACK : attenuated ? ATTENUATED : bar ? BAR : CABLE
+        const material = strain < slackThreshold ? SLACK : attenuated ? ATTENUATED : isPush ? PUSH_MATERIAL : CABLE
         return (
             <mesh
                 geometry={SPHERE}
@@ -206,7 +206,7 @@ export function FabricView({
             return <group/>
         }
         const needleGeometry = new BufferGeometry()
-        const lines = strainBarLines(fabric.instance, showBars, showCables)
+        const lines = strainPushLines(fabric.instance, showPushes, showCables)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
@@ -265,7 +265,7 @@ export function FabricView({
                         )}}
                     </group>
                 )}
-                {(showBars && showCables) ? <Faces/> : undefined}
+                {(showPushes && showCables) ? <Faces/> : undefined}
                 <SelectedFace/>
                 {hideSurface(lifePhase$.getValue()) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
@@ -276,16 +276,16 @@ export function FabricView({
     )
 }
 
-function strainBarLines(instance: FabricInstance, showBars: boolean, showCables: boolean): Float32Array {
+function strainPushLines(instance: FabricInstance, showPushes: boolean, showCables: boolean): Float32Array {
 
-    const maxBar = fabricFeatureValue(FabricFeature.BarMaxElastic)
+    const maxPush = fabricFeatureValue(FabricFeature.PushMaxElastic)
     const maxCable = fabricFeatureValue(FabricFeature.CableMaxElastic)
 
     function elasticToHeight(elastic: number): number {
-        if (showBars && showCables) {
-            return elastic / Math.max(maxBar, maxCable) - 0.5
-        } else if (showBars) {
-            return elastic / maxBar - 0.5
+        if (showPushes && showCables) {
+            return elastic / Math.max(maxPush, maxCable) - 0.5
+        } else if (showPushes) {
+            return elastic / maxPush - 0.5
         } else if (showCables) {
             return elastic / maxCable - 0.5
         } else {

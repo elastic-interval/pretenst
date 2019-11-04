@@ -21,19 +21,19 @@ export enum FabricFeature {
     Drag = 1,
     PushOverPull = 2,
     SlackThreshold = 3,
-    BarMass = 4,
+    PushMass = 4,
     CableMass = 5,
     IntervalBusyTicks = 6,
     PretensingTicks = 7,
     PretensingIntensity = 8,
     TicksPerFrame = 9,
-    BarLength = 10,
+    PushLength = 10,
     TriangleLength = 11,
     RingLength = 12,
     CrossLength = 13,
     BowMidLength = 14,
     BowEndLength = 15,
-    BarMaxElastic = 16,
+    PushMaxElastic = 16,
     CableMaxElastic = 17,
 }
 
@@ -51,7 +51,7 @@ export function setSurfaceCharacter(character: SurfaceCharacter): void {
 let surfaceCharacter: SurfaceCharacter = SurfaceCharacter.Bouncy
 
 enum IntervalRole {
-    Bar = 0,
+    Push = 0,
     Triangle = 1,
     Ring = 2,
     Cross = 3,
@@ -890,25 +890,25 @@ function setLineColor(intervalIndex: u16, red: f32, green: f32, blue: f32): void
 }
 
 enum Limit {
-    MinBarStrain = 0,
-    MaxBarStrain = 1,
+    MinPushStrain = 0,
+    MaxPushStrain = 1,
     MinCableStrain = 2,
     MaxCableStrain = 3,
 }
 
 const BIG_STRAIN: f32 = 0.999
 
-let minBarStrain: f32 = BIG_STRAIN
-let maxBarStrain: f32 = -BIG_STRAIN
+let minPushStrain: f32 = BIG_STRAIN
+let maxPushStrain: f32 = -BIG_STRAIN
 let minCableStrain: f32 = BIG_STRAIN
 let maxCableStrain: f32 = -BIG_STRAIN
 
 export function getLimit(limit: Limit): f32 {
     switch (limit) {
-        case Limit.MinBarStrain:
-            return minBarStrain
-        case Limit.MaxBarStrain:
-            return maxBarStrain
+        case Limit.MinPushStrain:
+            return minPushStrain
+        case Limit.MaxPushStrain:
+            return maxPushStrain
         case Limit.MinCableStrain:
             return minCableStrain
         case Limit.MaxCableStrain:
@@ -918,31 +918,31 @@ export function getLimit(limit: Limit): f32 {
     }
 }
 
-let colorBars = true
+let colorPushes = true
 let colorCables = true
 
-export function setColoring(bars: boolean, cables: boolean): void {
-    colorBars = bars
+export function setColoring(pushes: boolean, cables: boolean): void {
+    colorPushes = pushes
     colorCables = cables
 }
 
 function outputLinesGeometry(): void {
     let slackThreshold = getFeature(FabricFeature.SlackThreshold)
-    minBarStrain = BIG_STRAIN
-    maxBarStrain = -BIG_STRAIN
+    minPushStrain = BIG_STRAIN
+    maxPushStrain = -BIG_STRAIN
     minCableStrain = BIG_STRAIN
     maxCableStrain = -BIG_STRAIN
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let strain = getStrain(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
-        if (intervalRole === IntervalRole.Bar) {
+        if (intervalRole === IntervalRole.Push) {
             strain = -strain
-            if (strain < minBarStrain) {
-                minBarStrain = strain
+            if (strain < minPushStrain) {
+                minPushStrain = strain
             }
-            if (strain > maxBarStrain) {
-                maxBarStrain = strain
+            if (strain > maxPushStrain) {
+                maxPushStrain = strain
             }
         } else { // cable role
             if (strain < minCableStrain) {
@@ -958,23 +958,23 @@ function outputLinesGeometry(): void {
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
         let directionalStrain = getStrain(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
-        let isBar: boolean = intervalRole === IntervalRole.Bar
-        let strain = isBar ? -directionalStrain : directionalStrain
-        if (colorBars && colorCables) {
+        let isPush: boolean = intervalRole === IntervalRole.Push
+        let strain = isPush ? -directionalStrain : directionalStrain
+        if (colorPushes && colorCables) {
             if (strain < slackThreshold) {
                 setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
-                let color = isBar ? HOT_COLOR : COLD_COLOR
+                let color = isPush ? HOT_COLOR : COLD_COLOR
                 setLineColor(intervalIndex, color[0], color[1], color[2])
             }
-        } else if (colorBars || colorCables) {
-            if (isBar && colorCables || !isBar && colorBars) {
+        } else if (colorPushes || colorCables) {
+            if (isPush && colorCables || !isPush && colorPushes) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
             } else if (strain < slackThreshold) {
                 setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
-                let min = isBar ? minBarStrain : minCableStrain
-                let max = isBar ? maxBarStrain : maxCableStrain
+                let min = isPush ? minPushStrain : minCableStrain
+                let max = isPush ? maxPushStrain : maxCableStrain
                 let temperature = (strain - min) / (max - min)
                 setLineColor(intervalIndex,
                     HOT_COLOR[0] * temperature + COLD_COLOR[0] * (1 - temperature),
@@ -1064,10 +1064,10 @@ export function removeFace(deadFaceIndex: u16): void {
 
 function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
     let intervalRole = getIntervalRole(intervalIndex)
-    let bar = intervalRole === IntervalRole.Bar
+    let isPush = intervalRole === IntervalRole.Push
     let currentLength = interpolateCurrentLength(intervalIndex, state)
     let pretenst: f32 = 0
-    if (bar) {
+    if (isPush) {
         switch (lifePhase) {
             case LifePhase.Pretensing:
                 currentLength *= 1 + getPretenst() * getPretensingNuance()
@@ -1081,7 +1081,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     let intervalElasticFactor = getElasticFactor(intervalIndex)
     let displacement = calculateLength(intervalIndex) - currentLength
     let strain = displacement / currentLength
-    if (!bar && strain < 0) {
+    if (!isPush && strain < 0) {
         strain = 0
     }
     setStrain(intervalIndex, strain)
@@ -1095,15 +1095,13 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         case LifePhase.Pretensing:
         case LifePhase.Gravitizing:
         case LifePhase.Pretenst:
-            // let pushOverPull = getFeature(FabricFeature.PushOverPull)
-            // fabricElasticFactor = bar ? pushOverPull : 1 / pushOverPull
             fabricElasticFactor = 1
             break
     }
     let force = strain * intervalElasticFactor * fabricElasticFactor
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
-    let mass = currentLength * currentLength * intervalElasticFactor * getFeature(bar ? FabricFeature.BarMass : FabricFeature.CableMass)
+    let mass = currentLength * currentLength * intervalElasticFactor * getFeature(isPush ? FabricFeature.PushMass : FabricFeature.CableMass)
     let alphaMass = _intervalMass(alphaIndex(intervalIndex))
     setF32(alphaMass, getF32(alphaMass) + mass / 2)
     let omegaMass = _intervalMass(omegaIndex(intervalIndex))

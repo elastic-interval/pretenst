@@ -30,7 +30,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
 }): JSX.Element {
 
 
-    const [showBars, setShowBars] = useState(true)
+    const [showPushes, setShowPushes] = useState(true)
     const [showCables, setShowCables] = useState(true)
     const [fastMode, setFastMode] = useState(true)
     const [fullScreen, setFullScreen] = useState(false)
@@ -48,9 +48,9 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
     }, [])
     useEffect(() => {
         if (fabric) {
-            fabric.instance.engine.setColoring(showBars, showCables)
+            fabric.instance.engine.setColoring(showPushes, showCables)
         }
-    }, [showBars, showCables])
+    }, [showPushes, showCables])
 
     function buildFromCode(): void {
         if (!code) {
@@ -103,8 +103,8 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
                         pretensingStep$={pretensingStep$}
                         bootstrapCode={bootstrapCode}
                         features={features}
-                        showBars={showBars}
-                        setShowBars={setShowBars}
+                        showPushes={showPushes}
+                        setShowPushes={setShowPushes}
                         showCables={showCables}
                         setShowCables={setShowCables}
                         fastMode={fastMode}
@@ -144,7 +144,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
                                 setSelectedBrick={setSelectedBrick}
                                 autoRotate={false}
                                 fastMode={fastMode}
-                                showBars={showBars}
+                                showPushes={showPushes}
                                 showCables={showCables}
                             />
                         </Canvas>

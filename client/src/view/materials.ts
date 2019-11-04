@@ -1,3 +1,4 @@
+
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -69,7 +70,7 @@ export const ATTENUATED = new MeshPhongMaterial({
     color: new Color(ATTENUATED_COLOR),
 })
 
-export const BAR = new MeshPhongMaterial({
+export const PUSH_MATERIAL = new MeshPhongMaterial({
     lights: true,
     color: new Color(HOT_COLOR),
 })

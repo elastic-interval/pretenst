@@ -15,24 +15,24 @@ export enum FabricFeature {
     Drag = 1,
     PushOverPull = 2,
     SlackThreshold = 3,
-    BarMass = 4,
+    PushMass = 4,
     CableMass = 5,
     IntervalBusyTicks = 6,
     PretensingTicks = 7,
     PretensingIntensity = 8,
     TicksPerFrame = 9,
-    BarLength = 10,
+    PushLength = 10,
     TriangleLength = 11,
     RingLength = 12,
     CrossLength = 13,
     BowMidLength = 14,
     BowEndLength = 15,
-    BarMaxElastic = 16,
+    PushMaxElastic = 16,
     CableMaxElastic = 17,
 }
 
 export enum IntervalRole {
-    Bar = 0,
+    Push = 0,
     Triangle = 1,
     Ring = 2,
     Cross = 3,
@@ -41,11 +41,11 @@ export enum IntervalRole {
 }
 
 export function roleToLengthFeature(intervalRole: IntervalRole): FabricFeature {
-    return FabricFeature[FabricFeature[intervalRole + FabricFeature.BarLength]]
+    return FabricFeature[FabricFeature[intervalRole + FabricFeature.PushLength]]
 }
 
 export function lengthFeatureToRole(fabricFeature: FabricFeature): IntervalRole | undefined {
-    const roleIndex: number = fabricFeature - FabricFeature.BarLength
+    const roleIndex: number = fabricFeature - FabricFeature.PushLength
     if (roleIndex < 0 || roleIndex > IntervalRole.BowEnd) {
         return undefined
     }
@@ -67,8 +67,8 @@ export enum Laterality {
 }
 
 export enum Limit {
-    MinBarStrain = 0,
-    MaxBarStrain = 1,
+    MinPushStrain = 0,
+    MaxPushStrain = 1,
     MinCableStrain = 2,
     MaxCableStrain = 3,
 }
@@ -90,7 +90,7 @@ export interface IFabricEngine {
 
     getLimit(limit: Limit): number
 
-    setColoring(bars: boolean, cables: boolean): void
+    setColoring(pushes: boolean, cables: boolean): void
 
     setInstance(index: number): void
 
