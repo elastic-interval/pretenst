@@ -46,8 +46,8 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
 import { CodePanel, ICode } from "./code-panel"
-import { FeaturePanel } from "./feature-panel"
 import { LifePhasePanel } from "./life-phase-panel"
+import { PretensePanel } from "./pretense-panel"
 import { StrainPanel } from "./strain-panel"
 
 const SPLIT_LEFT = "34em"
@@ -248,11 +248,8 @@ export function ControlTabs({
                         />
                     )
                 case Tab.Pretense:
-                    return !fabric ? <div/> : (
-                        <FeaturePanel
-                            featureSet={features}
-                            fabric={fabric}
-                        />
+                    return (
+                        <PretensePanel/>
                     )
                 case Tab.Test:
                     return (
