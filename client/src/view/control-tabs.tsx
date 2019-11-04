@@ -11,33 +11,17 @@ import {
     FaArrowUp,
     FaBiohazard,
     FaCamera,
-    FaCircle,
     FaCompressArrowsAlt,
     FaCubes,
-    FaDotCircle,
     FaFileCsv,
-    FaHandPointUp,
     FaHandRock,
     FaParachuteBox,
     FaRadiationAlt,
     FaTimesCircle,
 } from "react-icons/all"
-import {
-    Button,
-    ButtonDropdown,
-    ButtonGroup,
-    DropdownItem,
-    DropdownMenu,
-    DropdownToggle,
-    Nav,
-    NavItem,
-    NavLink,
-    TabContent,
-    TabPane,
-} from "reactstrap"
+import { Button, ButtonGroup, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { LifePhase } from "../fabric/life-phase"
 import { optimizeFabric } from "../fabric/tensegrity-brick"
@@ -46,9 +30,7 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
 import { CodePanel, ICode } from "./code-panel"
-import { LifePhasePanel } from "./life-phase-panel"
 import { PretensePanel } from "./pretense-panel"
-import { StrainPanel } from "./strain-panel"
 
 const SPLIT_LEFT = "34em"
 
@@ -84,54 +66,15 @@ export function ControlTabs({
 }): JSX.Element {
 
     const [activeTab, setActiveTab] = useState(Tab.Generate)
-    const [surfaceCharacter, setSurfaceCharacter] = useState(SurfaceCharacter.Sticky)
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
     useEffect(() => {
         const subscription = lifePhase$.subscribe(setLifePhase)
         return () => subscription.unsubscribe()
     })
 
-    useEffect(() => {
-        if (fabric) {
-            fabric.instance.engine.setSurfaceCharacter(surfaceCharacter)
-        }
-    }, [surfaceCharacter])
-
     function Controls(): JSX.Element {
         if (!fabric) {
             return <div/>
-        }
-        const SurfaceCharacterChoice = (): JSX.Element => {
-            const [open, setOpen] = useState<boolean>(false)
-            return (
-                <ButtonDropdown isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle
-                        style={{borderTopRightRadius: "1em"}}>Surface: {SurfaceCharacter[surfaceCharacter]}</DropdownToggle>
-                    <DropdownMenu right={false}>
-                        {Object.keys(SurfaceCharacter).filter(k => k.length > 1).map(key => (
-                            <DropdownItem key={`Surface${key}`}
-                                          onClick={() => setSurfaceCharacter(SurfaceCharacter[key])}>
-                                {key}
-                            </DropdownItem>
-                        ))}
-                    </DropdownMenu>
-                </ButtonDropdown>
-            )
-        }
-
-        function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
-            const onClick = () => {
-                setShowPushes(pushes)
-                setShowPulls(pulls)
-                if (selectedBrick) {
-                    setSelectedBrick(undefined)
-                }
-            }
-            const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
-            return <Button style={{color: "white"}} color={color} onClick={onClick}>
-                {pushes && pulls ? (<><FaHandPointUp/><span> Faces</span></>) :
-                    pushes ? (<><FaCircle/><span> Pushes </span></>) : (<><FaDotCircle/><span> Pulls </span></>)}
-            </Button>
         }
 
         const adjustValue = (up: boolean) => () => {
@@ -147,12 +90,6 @@ export function ControlTabs({
         const engine = fabric.instance.engine
         return (
             <div className="p-4" style={{display: "block"}}>
-                <LifePhasePanel
-                    lifePhase$={lifePhase$}
-                    fabric={fabric}
-                    pretensingStep$={pretensingStep$}
-                    rebuild={rebuild}
-                />
                 {selectedBrick ? (
                     <ButtonGroup className="m-4 w-75">
                         <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
@@ -168,23 +105,7 @@ export function ControlTabs({
                             <FaTimesCircle/>
                         </Button>
                     </ButtonGroup>
-                ) : (
-                    <div className="m-4 w-75">
-                        <ButtonGroup style={{display: "flex"}} className="my-2">
-                            <ViewButton pushes={false} pulls={true}/>
-                            <StrainPanel fabric={fabric} pushes={false}
-                                         showPushes={showPushes} showPulls={showPulls}/>
-                        </ButtonGroup>
-                        <ButtonGroup style={{display: "flex"}} className="my-2">
-                            <ViewButton pushes={true} pulls={true}/>
-                        </ButtonGroup>
-                        <ButtonGroup style={{display: "flex"}} className="my-2">
-                            <ViewButton pushes={true} pulls={false}/>
-                            <StrainPanel fabric={fabric} pushes={true}
-                                         showPushes={showPushes} showPulls={showPulls}/>
-                        </ButtonGroup>
-                    </div>
-                )}
+                ) : (<h3>Notting</h3>)}
                 <ButtonGroup vertical={true} className="m-4 w-75">
                     <Button disabled={lifePhase !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric, true)}>
@@ -218,7 +139,6 @@ export function ControlTabs({
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <SurfaceCharacterChoice/>
                     <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
                         <FaCamera/> Slow mode
                     </Button>
@@ -248,8 +168,17 @@ export function ControlTabs({
                         />
                     )
                 case Tab.Pretense:
-                    return (
-                        <PretensePanel/>
+                    return !fabric ? (<div/>) : (
+                        <PretensePanel
+                            fabric={fabric}
+                            lifePhase$={lifePhase$}
+                            pretensingStep$={pretensingStep$}
+                            showPushes={showPushes}
+                            setShowPushes={setShowPushes}
+                            showPulls={showPulls}
+                            setShowPulls={setShowPulls}
+                            rebuild={rebuild}
+                        />
                     )
                 case Tab.Test:
                     return (
