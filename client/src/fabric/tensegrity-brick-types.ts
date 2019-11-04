@@ -54,7 +54,7 @@ export interface IFace {
     triangle: Triangle
     joints: IJoint[]
     pushes: IInterval[]
-    cables: IInterval[]
+    pulls: IInterval[]
 }
 
 export interface IPushDefinition {
@@ -162,13 +162,13 @@ export interface IBrick {
     fabric: TensegrityFabric
     joints: IJoint[]
     pushes: IInterval[]
-    cables: IInterval[]
+    pulls: IInterval[]
     rings: IInterval[][]
     faces: IFace[]
 }
 
 export interface IConnector {
-    cables: IInterval[]
+    pulls: IInterval[]
     facesToRemove: IFace[]
 }
 
@@ -177,7 +177,7 @@ export function byBrick(brick: IBrick): (interval: IInterval) => boolean {
         const matchesInterval = (faceInterval: IInterval) => (
             !faceInterval.removed && faceInterval.index === interval.index
         )
-        return brick.pushes.some(matchesInterval) || brick.cables.some(matchesInterval)
+        return brick.pushes.some(matchesInterval) || brick.pulls.some(matchesInterval)
     }
 }
 

@@ -16,7 +16,7 @@ export enum FabricFeature {
     PushOverPull = 2,
     SlackThreshold = 3,
     PushMass = 4,
-    CableMass = 5,
+    PullMass = 5,
     IntervalBusyTicks = 6,
     PretensingTicks = 7,
     PretensingIntensity = 8,
@@ -28,7 +28,7 @@ export enum FabricFeature {
     BowMidLength = 14,
     BowEndLength = 15,
     PushMaxElastic = 16,
-    CableMaxElastic = 17,
+    PullMaxElastic = 17,
 }
 
 export enum IntervalRole {
@@ -69,8 +69,8 @@ export enum Laterality {
 export enum Limit {
     MinPushStrain = 0,
     MaxPushStrain = 1,
-    MinCableStrain = 2,
-    MaxCableStrain = 3,
+    MinPullStrain = 2,
+    MaxPullStrain = 3,
 }
 
 export enum SurfaceCharacter {
@@ -90,7 +90,7 @@ export interface IFabricEngine {
 
     getLimit(limit: Limit): number
 
-    setColoring(pushes: boolean, cables: boolean): void
+    setColoring(pushes: boolean, pulls: boolean): void
 
     setInstance(index: number): void
 

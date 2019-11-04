@@ -100,8 +100,8 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byTenPercent,
     },
     {
-        feature: FabricFeature.CableMass,
-        name: "CableMass",
+        feature: FabricFeature.PullMass,
+        name: "Pull Mass",
         defaultValue: 1,
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
@@ -149,7 +149,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.TriangleLength,
-        name: "TriangleCableLength",
+        name: "Triangle Length",
         defaultValue: 2.123,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -196,8 +196,8 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byTenPercent,
     },
     {
-        feature: FabricFeature.CableMaxElastic,
-        name: "CableMax",
+        feature: FabricFeature.PullMaxElastic,
+        name: "Pull Max Elastic",
         defaultValue: 0.00005,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 0,

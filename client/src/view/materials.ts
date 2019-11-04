@@ -75,7 +75,7 @@ export const PUSH_MATERIAL = new MeshPhongMaterial({
     color: new Color(HOT_COLOR),
 })
 
-export const CABLE = new MeshPhongMaterial({
+export const PULL_MATERIAL = new MeshPhongMaterial({
     lights: true,
     color: new Color(COLD_COLOR),
 })

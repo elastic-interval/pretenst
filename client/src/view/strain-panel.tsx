@@ -15,16 +15,16 @@ import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./material
 const STRAIN_MULTIPLY = 10000
 const VISIBLE_LIMIT = 0.0002
 
-export function StrainPanel({fabric, pushes, showPushes, colorCables}: {
+export function StrainPanel({fabric, pushes, showPushes, showPulls}: {
     fabric: TensegrityFabric,
     pushes: boolean,
     showPushes: boolean,
-    colorCables: boolean,
+    showPulls: boolean,
 }): JSX.Element {
 
     const engine = fabric.instance.engine
-    const getMinLimit = () => engine.getLimit(pushes ? Limit.MinPushStrain : Limit.MinCableStrain)
-    const getMaxLimit = () => engine.getLimit(pushes ? Limit.MaxPushStrain : Limit.MaxCableStrain)
+    const getMinLimit = () => engine.getLimit(pushes ? Limit.MinPushStrain : Limit.MinPullStrain)
+    const getMaxLimit = () => engine.getLimit(pushes ? Limit.MaxPushStrain : Limit.MaxPullStrain)
 
     const [minStrain, setMinStrain] = useState(getMinLimit)
     const [maxStrain, setMaxStrain] = useState(getMaxLimit)
@@ -42,7 +42,7 @@ export function StrainPanel({fabric, pushes, showPushes, colorCables}: {
     const min = Math.floor(minStrain * STRAIN_MULTIPLY)
     const max = Math.floor(maxStrain * STRAIN_MULTIPLY)
     const zen = Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
-    const both = showPushes && colorCables
+    const both = showPushes && showPulls
     const nativeColor = pushes ? HOT_COLOR : COLD_COLOR
     const attenuated = pushes !== showPushes
     const maxColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : HOT_COLOR

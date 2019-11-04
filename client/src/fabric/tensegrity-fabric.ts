@@ -155,7 +155,7 @@ export class TensegrityFabric {
             }
         })
         if (removeIntervals) {
-            face.cables.forEach(interval => this.removeInterval(interval))
+            face.pulls.forEach(interval => this.removeInterval(interval))
         }
     }
 
@@ -212,11 +212,11 @@ export class TensegrityFabric {
             }
             return foundPush
         })
-        const cables = [0, 1, 2].map(offset => brick.cables[triangle * 3 + offset])
+        const pulls = [0, 1, 2].map(offset => brick.pulls[triangle * 3 + offset])
         const face: IFace = {
             index: this.engine.createFace(joints[0].index, joints[1].index, joints[2].index),
             canGrow: true,
-            brick, triangle, joints, pushes, cables,
+            brick, triangle, joints, pushes, pulls,
         }
         this.faces.push(face)
         return face
@@ -339,7 +339,7 @@ export class TensegrityFabric {
             intervals: this.intervals.map(interval => {
                 const joints = `${interval.alpha.index + 1},${interval.omega.index + 1}`
                 const strainString = numberToString(strains[interval.index])
-                const type = interval.isPush ? "Push" : "Cable"
+                const type = interval.isPush ? "Push" : "Pull"
                 const elastic = elastics[interval.index]
                 const elasticString = numberToString(elastic)
                 const role = IntervalRole[interval.intervalRole]
@@ -387,9 +387,9 @@ export class TensegrityFabric {
         const elastics = this.instance.elastics
         const intensity = this.instance.getFeatureValue(FabricFeature.PretensingIntensity)
         let pushCount = 0
-        let cableCount = 0
+        let pullCount = 0
         let totalPushAdjustment = 0
-        let totalCableAdjustment = 0
+        let totalPullAdjustment = 0
         this.intervals.forEach(interval => {
             const strain = strains[interval.index]
             const adjustment = strain * intensity
@@ -397,16 +397,16 @@ export class TensegrityFabric {
                 totalPushAdjustment += adjustment
                 pushCount++
             } else {
-                totalCableAdjustment += adjustment
-                cableCount++
+                totalPullAdjustment += adjustment
+                pullCount++
             }
         })
         // todo: maybe use median instead of average
         const averagePushAdjustment = totalPushAdjustment / pushCount
-        const averageCableAdjustment = totalCableAdjustment / cableCount
+        const averagePullAdjustment = totalPullAdjustment / pullCount
         this.intervals.forEach(interval => {
             const strain = strains[interval.index]
-            const adjustment = strain * intensity - (interval.isPush ? averagePushAdjustment : averageCableAdjustment)
+            const adjustment = strain * intensity - (interval.isPush ? averagePushAdjustment : averagePullAdjustment)
             if (interval.isPush) {
                 elastics[interval.index] *= 1 - adjustment
             } else {
