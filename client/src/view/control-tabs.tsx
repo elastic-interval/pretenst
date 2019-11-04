@@ -107,14 +107,6 @@ export function ControlTabs({
                     </ButtonGroup>
                 ) : (<h3>Notting</h3>)}
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button disabled={lifePhase !== LifePhase.Shaping}
-                            onClick={() => optimizeFabric(fabric, true)}>
-                        <FaBiohazard/> Long optimize
-                    </Button>
-                    <Button disabled={lifePhase !== LifePhase.Shaping}
-                            onClick={() => optimizeFabric(fabric, false)}>
-                        <FaRadiationAlt/> Short optimize
-                    </Button>
                     <Button disabled={lifePhase !== LifePhase.Pretenst}
                             onClick={() => engine.setAltitude(1)}>
                         <FaHandRock/> Nudge
@@ -125,6 +117,14 @@ export function ControlTabs({
                     </Button>
                     <Button onClick={() => fabric.instance.engine.centralize()}>
                         <FaCompressArrowsAlt/> Centralize
+                    </Button>
+                    <Button disabled={lifePhase !== LifePhase.Shaping}
+                            onClick={() => optimizeFabric(fabric, true)}>
+                        <FaBiohazard/> Long optimize
+                    </Button>
+                    <Button disabled={lifePhase !== LifePhase.Shaping}
+                            onClick={() => optimizeFabric(fabric, false)}>
+                        <FaRadiationAlt/> Short optimize
                     </Button>
                     {/*<Button onClick={() => setAutoRotate(!autoRotate)}>*/}
                     {/*    <FaSyncAlt/>*/}

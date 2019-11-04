@@ -111,12 +111,6 @@ export class TensegrityFabric {
         return this.lifePhase = this.instance.pretensing()
     }
 
-    public gravitizing(): LifePhase {
-        this.pretensingStep = 0
-        this.pretensingStartAge = this.instance.engine.getAge()
-        return this.lifePhase = this.instance.gravitizing()
-    }
-
     public pretenst(): LifePhase {
         return this.lifePhase = this.instance.pretenst()
     }
@@ -268,8 +262,6 @@ export class TensegrityFabric {
         const growth = this.growth
         if (!growth) {
             if (this.lifePhase === LifePhase.Pretensing) {
-                this.lifePhase = this.gravitizing()
-            } else if (this.lifePhase === LifePhase.Gravitizing) {
                 this.lifePhase = this.pretenst()
             }
             return false
@@ -367,7 +359,7 @@ export class TensegrityFabric {
     }
 
     private timeForPretensing(): boolean {
-        if (this.lifePhase !== LifePhase.Pretensing && this.lifePhase !== LifePhase.Gravitizing) {
+        if (this.lifePhase !== LifePhase.Pretensing) {
             return false
         }
         const engine = this.instance.engine

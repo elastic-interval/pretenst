@@ -76,11 +76,6 @@ export class FabricInstance {
         return this.engine.setLifePhase(LifePhase.Pretensing, this.maturePretenst)
     }
 
-    public gravitizing(): LifePhase {
-        console.log("Gravitizing")
-        return this.engine.setLifePhase(LifePhase.Gravitizing, this.maturePretenst)
-    }
-
     public  pretenst(): LifePhase {
         console.log("Pretenst")
         return this.engine.setLifePhase(LifePhase.Pretenst, this.maturePretenst)

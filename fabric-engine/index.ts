@@ -64,8 +64,7 @@ export enum LifePhase {
     Shaping = 1,
     Slack = 2,
     Pretensing = 3,
-    Gravitizing = 4,
-    Pretenst = 5,
+    Pretenst = 4,
 }
 
 const LAND: u8 = 1
@@ -638,9 +637,6 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             }
             break
         case LifePhase.Pretensing:
-            setFabricBusyTicks(<u32>getFeature(FabricFeature.PretensingTicks))
-            break
-        case LifePhase.Gravitizing:
             setAltitude(0)
             setFabricBusyTicks(<u32>getFeature(FabricFeature.PretensingTicks))
             break
@@ -1072,7 +1068,6 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             case LifePhase.Pretensing:
                 currentLength *= 1 + getPretenst() * getPretensingNuance()
                 break
-            case LifePhase.Gravitizing:
             case LifePhase.Pretenst:
                 currentLength *= 1 + getPretenst()
                 break
@@ -1093,7 +1088,6 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             fabricElasticFactor = IN_UTERO_ELASTIC
             break
         case LifePhase.Pretensing:
-        case LifePhase.Gravitizing:
         case LifePhase.Pretenst:
             fabricElasticFactor = 1
             break
@@ -1121,10 +1115,6 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase, gravity: f32, drag:
             currentDrag = 0
             break
         case LifePhase.Pretensing:
-            altitude = 1 // simulate far above
-            currentGravity = 0
-            break
-        case LifePhase.Gravitizing:
             currentGravity *= getPretensingNuance()
             break
         case LifePhase.Pretenst:
@@ -1188,7 +1178,6 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
         case LifePhase.Pretensing:
             ambientJointMass = IN_UTERO_JOINT_MASS * (1 - getPretensingNuance())
             break
-        case LifePhase.Gravitizing:
         case LifePhase.Pretenst:
             break
     }
@@ -1203,7 +1192,6 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
                 setVector(_velocity(jointIndex), _force(jointIndex))
                 break
             case LifePhase.Pretensing:
-            case LifePhase.Gravitizing:
             case LifePhase.Pretenst:
                 addScaledVector(_velocity(jointIndex), _force(jointIndex), 1.0 / getF32(_intervalMass(jointIndex)))
                 break

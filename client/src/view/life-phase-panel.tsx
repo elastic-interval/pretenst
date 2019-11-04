@@ -75,15 +75,6 @@ export function LifePhasePanel({fabric, lifePhase$, pretensingStep$, rebuild}: {
                     onClick: () => {
                     },
                 }
-            case LifePhase.Gravitizing:
-                return {
-                    text: `Gravitizing ${pretensingStep}%`,
-                    symbol: <FaHammer/>,
-                    color: "warning",
-                    disabled: true,
-                    onClick: () => {
-                    },
-                }
             case LifePhase.Pretenst:
                 return {
                     symbol: <FaHandSpock/>,
