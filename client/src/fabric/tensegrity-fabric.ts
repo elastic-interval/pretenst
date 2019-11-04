@@ -9,14 +9,12 @@ import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric
 import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./life-phase"
-import { connectClosestFacePair, createBrickOnOrigin, executeActiveCode, optimizeFabric } from "./tensegrity-brick"
+import { executeActiveCode, IActiveCode, ICodeTree, IGrowth } from "./tenscript"
+import { connectClosestFacePair, createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,
-    IActiveCode,
     IBrick,
-    ICodeTree,
     IFace,
-    IGrowth,
     IInterval,
     IIntervalSplit,
     IJoint,

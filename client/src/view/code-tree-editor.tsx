@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import SortableTree, { TreeItem } from "react-sortable-tree"
 import { Button } from "reactstrap"
 
-import { codeToTree, ICodeTree } from "../fabric/tensegrity-brick-types"
+import { ICodeTree, tenscriptToCodeTree } from "../fabric/tenscript"
 
 import { ICode } from "./code-panel"
 
@@ -23,7 +23,7 @@ export function CodeTreeEditor({code, setCode}: {
     useEffect(() => setCodeString(treeDataToCodeString(treeData)), [treeData])
 
     function onRun(): void {
-        const codeTree = codeToTree(error => console.error(error), codeString)
+        const codeTree = tenscriptToCodeTree(error => console.error(error), codeString)
         if (!codeTree) {
             return
         }
@@ -84,7 +84,7 @@ function codeTreeToTitle(prefix: string, codeTree: ICodeTree): JSX.Element {
             )
         default:
             return (
-                <div>?{prefix}{codeTree._.toString()}?</div>
+                <div>?{prefix}{codeTree._ ? codeTree._.toString() : 0}?</div>
             )
     }
 }
@@ -117,9 +117,9 @@ function treeDataToCodeString(treeItems: TreeItem[]): string {
     const childrenCode = children.map(treeItem => treeDataToCodeString([treeItem]))
     const scale = node.scale
     if (scale) {
-        childrenCode.unshift(`S[${scale._}]`)
+        childrenCode.unshift(`S${scale._}`)
     }
     childrenCode.unshift(node.steps)
-    const childrenString = childrenCode.length > 0 ? `[${childrenCode.join(",")}]` : ""
+    const childrenString = childrenCode.length > 0 ? `(${childrenCode.join(",")})` : ""
     return `${node.prefix}${childrenString}`
 }

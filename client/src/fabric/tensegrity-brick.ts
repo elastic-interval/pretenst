@@ -9,9 +9,7 @@ import { IntervalRole } from "./fabric-engine"
 import { roleDefaultLength } from "./fabric-features"
 import {
     factorToPercent,
-    IActiveCode,
     IBrick,
-    ICodeTree,
     IConnector,
     IFace,
     IInterval,
@@ -234,50 +232,6 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle, scale: I
     const connector = connectBricks(face, next.faces[next.base], brickScale)
     connector.facesToRemove.forEach(faceToRemove => brick.fabric.removeFace(faceToRemove, true))
     return next
-}
-
-export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
-    const after: IActiveCode[] = []
-
-    function grow(previousBrick: IBrick, codeTree: ICodeTree, triangle: Triangle, scale: IPercent): IActiveCode {
-        const connectTriangle = previousBrick.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
-        const brick = createConnectedBrick(previousBrick, connectTriangle, scale)
-        return {codeTree, brick}
-    }
-
-    function maybeGrow(previousBrick: IBrick, triangle: Triangle, codeTree?: ICodeTree): void {
-        if (!codeTree) {
-            return
-        }
-        const scale = percentOrHundred(codeTree.S)
-        after.push(grow(previousBrick, {...codeTree, _: codeTree._ - 1}, triangle, scale))
-    }
-
-    before.forEach(beforeCode => {
-        const {brick, codeTree} = beforeCode
-        if (codeTree._ < 0) {
-            throw new Error("Negative in code tree")
-        }
-        const oppositeCodeTree = codeTree._X
-        const scale = percentOrHundred(codeTree.S)
-        if (codeTree._ > 0) {
-            const decremented = codeTree._ - 1
-            const nextCodeTree = {...codeTree, _: decremented}
-            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.PPP, scale))
-        } else if (oppositeCodeTree) {
-            const decremented = oppositeCodeTree._ - 1
-            const nextCodeTree = {...oppositeCodeTree, _: decremented}
-            after.push(grow(beforeCode.brick, nextCodeTree, Triangle.NNN, scale))
-            maybeGrow(brick, Triangle.PNN, codeTree.A)
-            maybeGrow(brick, Triangle.NPN, codeTree.B)
-            maybeGrow(brick, Triangle.NNP, codeTree.C)
-        } else {
-            maybeGrow(brick, Triangle.NPP, codeTree.A)
-            maybeGrow(brick, Triangle.PNP, codeTree.B)
-            maybeGrow(brick, Triangle.PPN, codeTree.C)
-        }
-    })
-    return after
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {

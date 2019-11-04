@@ -15,7 +15,7 @@ import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { LifePhase } from "./fabric/life-phase"
-import { ICodeTree, treeToCode } from "./fabric/tensegrity-brick-types"
+import { codeTreeToTenscript, ICodeTree } from "./fabric/tenscript"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { ICode } from "./view/code-panel"
@@ -50,7 +50,7 @@ async function getBootstrapCode(): Promise<ICode[]> {
         return [{codeString: "0", codeTree: {_: 0}}]
     }
     const pretenst: ICodeTree[] = body.pretenst
-    return pretenst.map(codeTree => ({codeTree, codeString: treeToCode(codeTree)}))
+    return pretenst.map(codeTree => ({codeTree, codeString: codeTreeToTenscript(codeTree)}))
 }
 
 async function start(): Promise<void> {

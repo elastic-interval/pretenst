@@ -10,7 +10,7 @@ import { HEXALOT_SHAPE } from "../island/island-logic"
 import { IFabricEngine } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
-import { ICodeTree } from "./tensegrity-brick-types"
+import { ICodeTree } from "./tenscript"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const INITIAL_PRETENST = 0.3

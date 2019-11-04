@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { FaEdit } from "react-icons/all"
 import { Badge, Button, ButtonGroup } from "reactstrap"
 
-import { codeToTree, ICodeTree, treeToCode } from "../fabric/tensegrity-brick-types"
+import { codeTreeToTenscript, ICodeTree, tenscriptToCodeTree } from "../fabric/tenscript"
 
 import { CodeTreeEditor } from "./code-tree-editor"
 
@@ -45,27 +45,29 @@ export function CodePanel({setCode, bootstrapCode}: {
     function ExistingCode(): JSX.Element {
         return (
             <div>
-                <div>
-                    <h6>Recent</h6>
-                    <ButtonGroup vertical={true} style={{width: "100%"}}>
-                        {recentPrograms.map((code, index) => (
-                            <Button key={index} color="dark" style={{
-                                margin: "0.1em",
-                                fontSize: "small",
-                                textAlign: "left",
-                            }} onClick={() => runTheCode(code)}>
-                                {index === undefined ? undefined :
-                                    <Badge color="info" size="sm">{index}</Badge>} {code.codeString}
-                            </Button>
-                        ))}
-                    </ButtonGroup>
-                </div>
-                <div>
+                {recentPrograms.length === 0 ? undefined : (
+                    <div className="m-4">
+                        <h6>Recent</h6>
+                        <ButtonGroup vertical={true} style={{width: "100%"}}>
+                            {recentPrograms.map((code, index) => (
+                                <Button key={index} color="dark" style={{
+                                    margin: "0.1em",
+                                    fontSize: "small",
+                                    textAlign: "left",
+                                }} onClick={() => runTheCode(code)}>
+                                    {index === undefined ? undefined :
+                                        <Badge color="info" size="sm">{index}</Badge>} {code.codeString}
+                                </Button>
+                            ))}
+                        </ButtonGroup>
+                    </div>
+                )}
+                <div className="m-4">
                     <h6>Suggestions</h6>
                     {bootstrapCode.map((code, index) => (
                         <Button key={index} color="dark" style={{
                             margin: "0.3em",
-                            fontSize: "xx-small",
+                            fontSize: "small",
                         }} onClick={() => runTheCode(code)}>
                             {code.codeString}
                         </Button>
@@ -99,7 +101,7 @@ export function CodePanel({setCode, bootstrapCode}: {
                                 padding: "1em",
                                 overflowX: "scroll",
                             }}>
-                                {urlProgram.codeString}
+                                {urlProgram.codeString.replace(/[,]/g,", ")}
                             </div>
                         </div>
                         {editMode ? <CodeTreeEditor code={urlProgram} setCode={runTheCode}/> : <ExistingCode/>}
@@ -115,7 +117,7 @@ export function CodePanel({setCode, bootstrapCode}: {
 export function getCodeFromUrl(): ICode | undefined {
     const codeString = location.hash.substring(1)
     try {
-        const codeTree = codeToTree(message => console.error(message), codeString)
+        const codeTree = tenscriptToCodeTree(message => console.error(message), codeString)
         if (codeTree) {
             return {codeString, codeTree}
         }
@@ -132,5 +134,5 @@ function storeRecentCode(recent: ICode[]): void {
 export function getRecentCode(): ICode[] {
     const recentCode = localStorage.getItem(FABRIC_CODE_KEY)
     const codeTrees: ICodeTree[] = recentCode ? JSON.parse(recentCode) : []
-    return codeTrees.map(codeTree => ({codeString: treeToCode(codeTree), codeTree}))
+    return codeTrees.map(codeTree => ({codeString: codeTreeToTenscript(codeTree), codeTree}))
 }
