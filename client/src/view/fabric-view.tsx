@@ -4,17 +4,19 @@
  */
 
 import * as React from "react"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
+    BackSide,
     BufferGeometry,
     Color,
     Euler,
     Float32BufferAttribute,
-    Geometry,
+    Geometry, MeshPhongMaterial,
     Object3D,
     PerspectiveCamera,
+    SphereGeometry, TextureLoader,
     Vector3,
 } from "three"
 
@@ -45,6 +47,8 @@ declare global {
 const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
+const SPACE_RADIUS = 100
+const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
@@ -75,6 +79,10 @@ export function FabricView({
     const [targetBrick, setTargetBrick] = useState(false)
     const {camera, raycaster} = useThree()
     const perspective = camera as PerspectiveCamera
+    const spaceMaterial = useMemo(() => {
+        const spaceTexture = new TextureLoader().load("space.jpg")
+        return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
+    }, [])
 
     useEffect(() => pretensingStep$.next(fabric.pretensingStep), [fabric.pretensingStep])
 
@@ -82,13 +90,13 @@ export function FabricView({
         const midpoint = new Vector3(0, ALTITUDE, 0)
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
         perspective.lookAt(orbit.current.target)
-        perspective.fov = 65
+        perspective.fov = 60
+        perspective.far = SPACE_RADIUS * 2
         orb.object = perspective
         orb.minPolarAngle = -0.98 * Math.PI / 2
         orb.maxPolarAngle = 0.8 * Math.PI
-        orb.maxDistance = 1000
-        orb.minDistance = 5
-        orb.zoomSpeed = 2
+        orb.maxDistance = SPACE_RADIUS * 0.9
+        orb.zoomSpeed = 0.5
         orb.enableZoom = true
         orb.target.set(midpoint.x, midpoint.y, midpoint.z)
         orb.update()
@@ -270,6 +278,7 @@ export function FabricView({
                 {hideSurface(lifePhase$.getValue()) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+                <mesh geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
             </scene>
         </group>
