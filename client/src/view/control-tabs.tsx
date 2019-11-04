@@ -66,7 +66,7 @@ export function ControlTabs({
                                 selectedBrick, setSelectedBrick, code, setCode, rebuild,
                                 setFullScreen,
                             }: {
-    fabric: TensegrityFabric,
+    fabric?: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
     pretensingStep$: BehaviorSubject<number>
     bootstrapCode: ICode [],

@@ -8,9 +8,7 @@ import { CSSProperties, useEffect, useState } from "react"
 import { FaArrowDown, FaArrowUp, FaEquals, FaGlobe } from "react-icons/all"
 import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactstrap"
 
-import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FeatureMultiplier, FloatFeature } from "../fabric/fabric-features"
-import { percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 function multiplierSymbol(multiplier: FeatureMultiplier): JSX.Element {
@@ -46,13 +44,13 @@ export function FeaturePanel({featureSet, fabric}: {
             const subscription = feature.onChange(() => {
                 fabric.instance.applyFeature(feature)
                 setFactorString(feature.formatted)
-                const intervalRole = lengthFeatureToRole(feature.config.feature)
-                if (intervalRole !== undefined) {
-                    const engine = fabric.instance.engine
-                    fabric.intervals
-                        .filter(interval => interval.intervalRole === intervalRole)
-                        .forEach(interval => engine.changeRestLength(interval.index, feature.factor * percentToFactor(interval.scale)))
-                }
+                // const intervalRole = lengthFeatureToRole(feature.config.feature)
+                // if (intervalRole !== undefined) {
+                //     const engine = fabric.instance.engine
+                //     fabric.intervals
+                //         .filter(interval => interval.intervalRole === intervalRole)
+                //         .forEach(interval => engine.changeRestLength(interval.index, feature.factor * percentToFactor(interval.scale)))
+                // }
             })
             return () => subscription.unsubscribe()
         })

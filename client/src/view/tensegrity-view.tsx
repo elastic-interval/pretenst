@@ -39,8 +39,6 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
 
-    console.log("TV")
-
     useEffect(() => {
         const urlCode = getCodeFromLocationBar().pop()
         const recentCode = getRecentCode().pop()
@@ -71,7 +69,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
 
     return (
         <div className="the-whole-page">
-            {fullScreen || !fabric ? (
+            {fullScreen ? (
                 <Button color="dark" style={{
                     position: "absolute",
                     padding: 0,
