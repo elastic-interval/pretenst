@@ -14,7 +14,7 @@ import { FloatFeature } from "../fabric/fabric-features"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { getCodeFromLocationBar, getRecentCode, ICode } from "./code-panel"
+import { getCodeFromUrl, getRecentCode, ICode } from "./code-panel"
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 
@@ -40,7 +40,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
 
     useEffect(() => {
-        const urlCode = getCodeFromLocationBar().pop()
+        const urlCode = getCodeFromUrl()
         const recentCode = getRecentCode().pop()
         if (urlCode && recentCode && urlCode.codeString !== recentCode.codeString) {
             setCode(urlCode)

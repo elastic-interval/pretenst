@@ -46,7 +46,6 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
 import { CodePanel, ICode } from "./code-panel"
-import { CodeTreeEditor } from "./code-tree-editor"
 import { FeaturePanel } from "./feature-panel"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
@@ -54,10 +53,9 @@ import { StrainPanel } from "./strain-panel"
 const SPLIT_LEFT = "34em"
 
 export enum Tab {
-    Commands = "Commands",
-    Features = "Features",
-    Structures = "Structures",
-    Editor = "Editor",
+    Generate = "Generate",
+    Pretense = "Pretense",
+    Test = "Test",
 }
 
 export function ControlTabs({
@@ -85,7 +83,7 @@ export function ControlTabs({
     setFullScreen: (fullScreen: boolean) => void,
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState(Tab.Commands)
+    const [activeTab, setActiveTab] = useState(Tab.Generate)
     const [surfaceCharacter, setSurfaceCharacter] = useState(SurfaceCharacter.Sticky)
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
     useEffect(() => {
@@ -107,7 +105,8 @@ export function ControlTabs({
             const [open, setOpen] = useState<boolean>(false)
             return (
                 <ButtonDropdown isOpen={open} toggle={() => setOpen(!open)}>
-                    <DropdownToggle style={{borderTopRightRadius: "1em"}}>Surface: {SurfaceCharacter[surfaceCharacter]}</DropdownToggle>
+                    <DropdownToggle
+                        style={{borderTopRightRadius: "1em"}}>Surface: {SurfaceCharacter[surfaceCharacter]}</DropdownToggle>
                     <DropdownMenu right={false}>
                         {Object.keys(SurfaceCharacter).filter(k => k.length > 1).map(key => (
                             <DropdownItem key={`Surface${key}`}
@@ -232,12 +231,7 @@ export function ControlTabs({
     function Link({tab}: { tab: Tab }): JSX.Element {
         return (
             <NavItem>
-                <NavLink
-                    active={activeTab === tab}
-                    onClick={() => setActiveTab(tab)}
-                >
-                    {tab}
-                </NavLink>
+                <NavLink active={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab}</NavLink>
             </NavItem>
         )
     }
@@ -246,30 +240,23 @@ export function ControlTabs({
 
         function Content(): JSX.Element {
             switch (tab) {
-                case Tab.Structures:
+                case Tab.Generate:
                     return (
                         <CodePanel
                             bootstrapCode={bootstrapCode}
                             setCode={setCode}
                         />
                     )
-                case Tab.Commands:
-                    return (
-                        <Controls/>
-                    )
-                case Tab.Features:
+                case Tab.Pretense:
                     return !fabric ? <div/> : (
                         <FeaturePanel
                             featureSet={features}
                             fabric={fabric}
                         />
                     )
-                case Tab.Editor:
-                    return !code ? <div/> : (
-                        <CodeTreeEditor
-                            code={code}
-                            setCode={setCode}
-                        />
+                case Tab.Test:
+                    return (
+                        <Controls/>
                     )
             }
         }
@@ -281,9 +268,7 @@ export function ControlTabs({
 
     return (
         <div className="h-100">
-            <Nav tabs={true} style={{
-                backgroundColor: "#b2b2b2",
-            }}>
+            <Nav tabs={true} style={{backgroundColor: "#b2b2b2"}}>
                 {Object.keys(Tab).map(tab => <Link key={`T${tab}`} tab={Tab[tab]}/>)}
             </Nav>
             <TabContent activeTab={activeTab}>
