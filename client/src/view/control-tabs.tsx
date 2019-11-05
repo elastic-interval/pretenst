@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import {
     FaAngleDoubleLeft,
     FaArrowDown,
@@ -20,7 +20,6 @@ import {
     FaTimesCircle,
 } from "react-icons/all"
 import { Button, ButtonGroup, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState, LifePhase } from "../fabric/fabric-state"
@@ -43,12 +42,13 @@ export enum Tab {
 }
 
 export function ControlTabs({
-                                fabric, fabricState$, bootstrapCode, features,
+                                fabric, fabricState, setFabricState, bootstrapCode, features,
                                 selectedBrick, setSelectedBrick, setCode, rebuild,
                                 setFullScreen,
                             }: {
     fabric?: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    fabricState: IFabricState,
+    setFabricState: (fabricState: IFabricState) => void,
     bootstrapCode: ICode [],
     features: FloatFeature[],
     selectedBrick?: IBrick,
@@ -59,11 +59,6 @@ export function ControlTabs({
 }): JSX.Element {
 
     const [activeTab, setActiveTab] = useState(Tab.Generate)
-    const [fabricState, setFabricState] = useState(fabricState$.getValue())
-    useEffect(() => {
-        const subscription = fabricState$.subscribe(setFabricState)
-        return () => subscription.unsubscribe()
-    })
 
     function Controls(): JSX.Element {
         if (!fabric) {
@@ -127,13 +122,13 @@ export function ControlTabs({
                 <ButtonGroup vertical={true} className="m-4 w-75">
                     <Button
                         color={fabricState.rotating ? "warning" : "secondary"}
-                        onClick={() => fabricState$.next({...fabricState, rotating: !fabricState.rotating})}
+                        onClick={() => setFabricState({...fabricState, rotating: !fabricState.rotating})}
                     >
                         <FaSyncAlt/> Auto-rotate
                     </Button>
                     <Button
                         color={fabricState.frozen ? "warning" : "secondary"}
-                        onClick={() => fabricState$.next({...fabricState, frozen: !fabricState.frozen})}
+                        onClick={() => setFabricState({...fabricState, frozen: !fabricState.frozen})}
                     >
                         <FaCamera/> Frozen Snapshot
                     </Button>
@@ -166,7 +161,8 @@ export function ControlTabs({
                     return !fabric ? (<div/>) : (
                         <PretensePanel
                             fabric={fabric}
-                            fabricState$={fabricState$}
+                            fabricState={fabricState}
+                            setFabricState={setFabricState}
                             rebuild={rebuild}
                         />
                     )

@@ -7,7 +7,6 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaCircle, FaDotCircle, FaHandPointUp } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
 
 import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
 import {
@@ -25,9 +24,10 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function PretensePanel({fabric, fabricState$, rebuild}: {
+export function PretensePanel({fabric, fabricState, setFabricState, rebuild}: {
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    fabricState: IFabricState,
+    setFabricState: (fabricState: IFabricState) => void,
     rebuild: () => void,
 }): JSX.Element {
 
@@ -42,15 +42,10 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
         fabric.instance.setFeatureValue(FabricFeature.PullMass, DENSITY[densityCharacter].pull)
         fabric.instance.setFeatureValue(FabricFeature.PushMass, DENSITY[densityCharacter].push)
     }, [densityCharacter])
-    const [fabricState, setFabricState] = useState(fabricState$.getValue())
-    useEffect(() => {
-        const subscription = fabricState$.subscribe(setFabricState)
-        return () => subscription.unsubscribe()
-    })
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
         const onClick = () => {
-            fabricState$.next({...fabricState, showPulls: pulls, showPushes: pushes})
+            setFabricState({...fabricState, showPulls: pulls, showPushes: pushes})
         }
         const color = pushes === fabricState.showPushes && pulls === fabricState.showPulls ? "success" : "secondary"
         return <Button style={{color: "white"}} color={color} onClick={onClick}>
@@ -112,7 +107,8 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
             <div className="my-4">
                 <LifePhasePanel
                     fabric={fabric}
-                    fabricState$={fabricState$}
+                    fabricState={fabricState}
+                    setFabricState={setFabricState}
                     rebuild={rebuild}
                 />
             </div>

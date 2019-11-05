@@ -4,10 +4,8 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
 import { FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
 import { Button } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -20,17 +18,12 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-export function LifePhasePanel({fabric, fabricState$, rebuild}: {
+export function LifePhasePanel({fabric, fabricState, setFabricState, rebuild}: {
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    fabricState: IFabricState,
+    setFabricState: (fabricState: IFabricState) => void,
     rebuild: () => void,
 }): JSX.Element {
-
-    const [fabricState, setFabricState] = useState(fabricState$.getValue())
-    useEffect(() => {
-        const subscription = fabricState$.subscribe(setFabricState)
-        return () => subscription.unsubscribe()
-    })
 
     function character(): IButtonCharacter {
         switch (fabricState.lifePhase) {
@@ -49,7 +42,7 @@ export function LifePhasePanel({fabric, fabricState$, rebuild}: {
                     symbol: <FaHammer/>,
                     color: "success",
                     disabled: false,
-                    onClick: () => fabricState$.next({...fabricState, lifePhase: fabric.slack()}),
+                    onClick: () => setFabricState({...fabricState, lifePhase: fabric.slack()}),
                 }
             case LifePhase.Slack:
                 return {
@@ -57,7 +50,7 @@ export function LifePhasePanel({fabric, fabricState$, rebuild}: {
                     symbol: <FaYinYang/>,
                     color: "warning",
                     disabled: false,
-                    onClick: () => fabricState$.next({...fabricState, lifePhase: fabric.pretensing()}),
+                    onClick: () => setFabricState({...fabricState, lifePhase: fabric.pretensing()}),
                 }
             case LifePhase.Pretensing:
                 return {

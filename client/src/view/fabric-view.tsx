@@ -6,7 +6,6 @@
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
-import { BehaviorSubject } from "rxjs"
 import {
     BackSide,
     BufferGeometry,
@@ -60,9 +59,10 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.5
 
-export function FabricView({fabric, fabricState$, selectedBrick, setSelectedBrick}: {
+export function FabricView({fabric, fabricState, setFabricState, selectedBrick, setSelectedBrick}: {
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    fabricState: IFabricState,
+    setFabricState: (fabricState: IFabricState) => void,
     selectedBrick?: IBrick,
     setSelectedBrick: (selection?: IBrick) => void,
 }): JSX.Element {
@@ -77,11 +77,6 @@ export function FabricView({fabric, fabricState$, selectedBrick, setSelectedBric
         const spaceTexture = new TextureLoader().load("space.jpg")
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
-    const [fabricState, setFabricState] = useState(fabricState$.getValue())
-    useEffect(() => {
-        const subscription = fabricState$.subscribe(setFabricState)
-        return () => subscription.unsubscribe()
-    })
 
     const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
@@ -110,18 +105,14 @@ export function FabricView({fabric, fabricState$, selectedBrick, setSelectedBric
             fabric.needsUpdate()
         }
         if (fabricState.lifePhase !== fabric.lifePhase) {
-            fabricState$.next({...fabricState, lifePhase: fabric.lifePhase})
+            setFabricState({...fabricState, lifePhase: fabric.lifePhase})
         }
         setAge(instance.engine.getAge())
     }, true, [fabric, targetBrick, selectedBrick, age, fabric.lifePhase])
 
-
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
-            orbit.current.autoRotate = newState.rotating
-        })
-        return () => subscription.unsubscribe()
-    })
+        orbit.current.autoRotate = fabricState.rotating
+    }, [fabricState])
 
     const selectBrick = (newSelectedBrick: IBrick) => {
         if (fabric) {
@@ -247,7 +238,7 @@ export function FabricView({fabric, fabricState$, selectedBrick, setSelectedBric
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {fabricState.rotating ? undefined : <ElasticScale/>}
+                {fabricState.rotating || fabricState.frozen ? undefined : <ElasticScale/>}
                 {fabricState.frozen ? (
                     <group>
                         {fabric.splitIntervals ? (

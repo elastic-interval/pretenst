@@ -25,20 +25,24 @@ const SPLIT_RIGHT = "35em"
 export function TensegrityView({buildFabric, features, bootstrapCode, fabricState$}: {
     buildFabric: (code: ICode) => TensegrityFabric,
     features: FloatFeature[],
-    bootstrapCode: ICode [],
+    bootstrapCode: ICode[],
     fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
     const [fullScreen, setFullScreen] = useState(false)
-
     const [code, setCode] = useState<ICode | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
-    const [fabricState, setFabricState] = useState(fabricState$.getValue())
+    const [fabricState, updateFabricState] = useState(fabricState$.getValue())
+
     useEffect(() => {
-        const subscription = fabricState$.subscribe(setFabricState)
+        const subscription = fabricState$.subscribe(updateFabricState)
         return () => subscription.unsubscribe()
     })
+
+    const setFabricState = (newState: IFabricState) => {
+        fabricState$.next(newState)
+    }
 
     useEffect(() => {
         const urlCode = getCodeFromUrl()
@@ -47,6 +51,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
             setCode(urlCode)
         }
     }, [])
+
     useEffect(() => {
         if (fabric) {
             fabric.instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
@@ -100,7 +105,8 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
                 }}>
                     <ControlTabs
                         fabric={fabric}
-                        fabricState$={fabricState$}
+                        fabricState={fabricState}
+                        setFabricState={setFabricState}
                         bootstrapCode={bootstrapCode}
                         features={features}
                         selectedBrick={selectedBrick}
@@ -131,7 +137,8 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
                         }}>
                             <FabricView
                                 fabric={fabric}
-                                fabricState$={fabricState$}
+                                fabricState={fabricState}
+                                setFabricState={setFabricState}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
                             />
