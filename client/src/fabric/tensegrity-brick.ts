@@ -273,11 +273,7 @@ export function optimizeFabric(fabric: TensegrityFabric): void {
         crossPulls.forEach((intervalB, indexB) => {
             const bAlpha = intervalB.alpha.index
             const bOmega = intervalB.omega.index
-            if (
-                indexA >= indexB ||
-                aAlpha === bAlpha || aAlpha === bOmega ||
-                aOmega === bAlpha || aOmega === bOmega
-            ) {
+            if (indexA >= indexB || aAlpha === bAlpha || aAlpha === bOmega || aOmega === bAlpha || aOmega === bOmega) {
                 return
             }
             const bAlphaPush = findPush(bAlpha)
@@ -343,7 +339,6 @@ export function optimizeFabric(fabric: TensegrityFabric): void {
     const engine = instance.engine
     const role = IntervalRole.BowEnd
     pairs.forEach(({scale, a, x, b, y}: IPair) => {
-        console.log(`${a.index}-${x.index} ${b.index}-${y.index}`)
         fabric.createInterval(x, y, IntervalRole.BowMid, scale)
         const ax = fabric.findInterval(a, x)
         const ay = fabric.findInterval(a, y)

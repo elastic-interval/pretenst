@@ -190,7 +190,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.BowEndLength,
         name: "BowEndLength",
-        defaultValue: (1.380 + 1.571) / 2, // todo: was high and low
+        defaultValue: 1.2,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
