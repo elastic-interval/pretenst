@@ -23,7 +23,7 @@ import { Button, ButtonGroup, Nav, NavItem, NavLink, TabContent, TabPane } from 
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
-import { LifePhase } from "../fabric/life-phase"
+import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { optimizeFabric } from "../fabric/tensegrity-brick"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -41,14 +41,13 @@ export enum Tab {
 }
 
 export function ControlTabs({
-                                fabric, lifePhase$, pretensingStep$, bootstrapCode, features,
+                                fabric, fabricState$, bootstrapCode, features,
                                 showPushes, setShowPushes, showPulls, setShowPulls, fastMode, setFastMode,
                                 selectedBrick, setSelectedBrick, code, setCode, rebuild,
                                 setFullScreen,
                             }: {
     fabric?: TensegrityFabric,
-    lifePhase$: BehaviorSubject<LifePhase>,
-    pretensingStep$: BehaviorSubject<number>
+     fabricState$: BehaviorSubject<IFabricState>,
     bootstrapCode: ICode [],
     features: FloatFeature[],
     showPushes: boolean,
@@ -66,9 +65,9 @@ export function ControlTabs({
 }): JSX.Element {
 
     const [activeTab, setActiveTab] = useState(Tab.Generate)
-    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+    const [fabricState, setFabricState] = useState(fabricState$.getValue())
     useEffect(() => {
-        const subscription = lifePhase$.subscribe(setLifePhase)
+        const subscription = fabricState$.subscribe(setFabricState)
         return () => subscription.unsubscribe()
     })
 
@@ -107,22 +106,22 @@ export function ControlTabs({
                     </ButtonGroup>
                 ) : (<h3>Notting</h3>)}
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button disabled={lifePhase !== LifePhase.Pretenst}
+                    <Button disabled={fabricState.lifePhase !== LifePhase.Pretenst}
                             onClick={() => engine.setAltitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
-                    <Button disabled={lifePhase !== LifePhase.Pretenst}
+                    <Button disabled={fabricState.lifePhase !== LifePhase.Pretenst}
                             onClick={() => engine.setAltitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>
                     <Button onClick={() => fabric.instance.engine.centralize()}>
                         <FaCompressArrowsAlt/> Centralize
                     </Button>
-                    <Button disabled={lifePhase !== LifePhase.Shaping}
+                    <Button disabled={fabricState.lifePhase !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric, true)}>
                         <FaBiohazard/> Long optimize
                     </Button>
-                    <Button disabled={lifePhase !== LifePhase.Shaping}
+                    <Button disabled={fabricState.lifePhase !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric, false)}>
                         <FaRadiationAlt/> Short optimize
                     </Button>
@@ -171,8 +170,7 @@ export function ControlTabs({
                     return !fabric ? (<div/>) : (
                         <PretensePanel
                             fabric={fabric}
-                            lifePhase$={lifePhase$}
-                            pretensingStep$={pretensingStep$}
+                            fabricState$={fabricState$}
                             showPushes={showPushes}
                             setShowPushes={setShowPushes}
                             showPulls={showPulls}

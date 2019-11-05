@@ -7,7 +7,7 @@
 import { Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { FabricState } from "../fabric/fabric-engine"
+import { FabricDirection } from "../fabric/fabric-engine"
 import { GotchiBody } from "../fabric/gotchi-body"
 import { Behavior } from "../genetics/behavior"
 import { Genome, IGenomeData } from "../genetics/genome"
@@ -34,9 +34,9 @@ export class Gotchi {
     ) {
         const bodyIsBusy = true
         if (bodyIsBusy) {
-            this.growth = new Growth(body, genome.createReader(FabricState.Rest))
+            this.growth = new Growth(body, genome.createReader(FabricDirection.Rest))
         } else {
-            if (body.nextState !== FabricState.Rest) {
+            if (body.nextState !== FabricDirection.Rest) {
                 throw new Error("Cannot create gotchi from fabric that is not at rest")
             }
             this.applyBehaviorGenes()
@@ -78,11 +78,11 @@ export class Gotchi {
         return this.genome.genomeData
     }
 
-    public get currentState(): FabricState {
+    public get currentState(): FabricDirection {
         return this.body.currentState
     }
 
-    public set nextState(state: FabricState) {
+    public set nextState(state: FabricDirection) {
         this.body.nextState = state
     }
 
@@ -93,10 +93,10 @@ export class Gotchi {
             .sub(location)
             .length()
         const distances = [
-            {state: FabricState.Forward, distance: distance(this.body.forward, 1)},
-            {state: FabricState.TurnLeft, distance: distance(this.body.right, -1)},
-            {state: FabricState.TurnRight, distance: distance(this.body.right, 1)},
-            {state: FabricState.Reverse, distance: distance(this.body.forward, -1)},
+            {state: FabricDirection.Forward, distance: distance(this.body.forward, 1)},
+            {state: FabricDirection.TurnLeft, distance: distance(this.body.right, -1)},
+            {state: FabricDirection.TurnRight, distance: distance(this.body.right, 1)},
+            {state: FabricDirection.Reverse, distance: distance(this.body.forward, -1)},
         ].sort((a, b) => a.distance < b.distance ? -1 : b.distance > a.distance ? 1 : 0)
         this.nextState = towards ? distances[0].state : distances[3].state
     }
@@ -120,7 +120,7 @@ export class Gotchi {
             }
             return AppEvent.GrowthStep
         } else {
-            if (this.currentState === FabricState.Rest) {
+            if (this.currentState === FabricDirection.Rest) {
                 return undefined
             }
             return AppEvent.Cycle
@@ -128,7 +128,7 @@ export class Gotchi {
     }
 
     private applyBehaviorGenes(): void {
-        for (let state = FabricState.Forward; state <= FabricState.Reverse; state++) {
+        for (let state = FabricDirection.Forward; state <= FabricDirection.Reverse; state++) {
             new Behavior(this.body, state, this.genome.createReader(state)).apply()
         }
     }

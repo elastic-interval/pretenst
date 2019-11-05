@@ -6,7 +6,7 @@
 import { BufferGeometry, Geometry, Vector3 } from "three"
 
 import { AppEvent } from "../app-event"
-import { FabricState } from "../fabric/fabric-engine"
+import { FabricDirection } from "../fabric/fabric-engine"
 import { GotchiBody } from "../fabric/gotchi-body"
 import { Genome, IGenomeData } from "../genetics/genome"
 import { HEXAPOD_RADIUS } from "../island/constants"
@@ -22,7 +22,7 @@ export interface IEvaluatedJockey {
 }
 
 export class Jockey {
-    private votes: FabricState[] = []
+    private votes: FabricDirection[] = []
     private currentLeg: Leg
 
     constructor(public readonly gotchi: Gotchi, leg: Leg, private mutatingGenome?: Genome) {
@@ -53,14 +53,14 @@ export class Jockey {
             if (nextLeg) {
                 this.leg = nextLeg
             } else {
-                this.gotchi.nextState = FabricState.Rest
+                this.gotchi.nextState = FabricDirection.Rest
             }
         }
-        if (this.fabric.nextState !== FabricState.Rest) {
+        if (this.fabric.nextState !== FabricDirection.Rest) {
             const state = this.voteState()
             // todo: fix all this
             if (this.nextState !== state) {
-                console.log(`${this.index} turned ${FabricState[this.nextState]} to ${FabricState[state]}`)
+                console.log(`${this.index} turned ${FabricDirection[this.nextState]} to ${FabricDirection[state]}`)
                 this.gotchi.nextState = state
             }
         }
@@ -79,7 +79,7 @@ export class Jockey {
     }
 
     public stopMoving(): void {
-        this.gotchi.nextState = FabricState.Rest
+        this.gotchi.nextState = FabricDirection.Rest
     }
 
     public get index(): number {
@@ -109,7 +109,7 @@ export class Jockey {
         this.mutatingGenome = this.mutatingGenome.withMutatedBehavior(this.nextState, mutationCount)
     }
 
-    public get nextState(): FabricState {
+    public get nextState(): FabricDirection {
         return this.fabric.nextState
     }
 
@@ -140,7 +140,7 @@ export class Jockey {
         return this.gotchi.getDistanceFrom(this.target) < HEXAPOD_RADIUS
     }
 
-    private voteState(): FabricState {
+    private voteState(): FabricDirection {
         const votes = this.votes
         const latestVote = this.directionToTarget
         votes.push(latestVote)
@@ -151,7 +151,7 @@ export class Jockey {
             c[vote]++
             return c
         }, [0, 0, 0, 0, 0])
-        for (let state = FabricState.Forward; state <= FabricState.Reverse; state++) {
+        for (let state = FabricDirection.Forward; state <= FabricDirection.Reverse; state++) {
             if (voteCounts[state] === MAX_VOTES && this.nextState !== state) {
                 return state
             }
@@ -159,21 +159,21 @@ export class Jockey {
         return latestVote
     }
 
-    private get directionToTarget(): FabricState {
+    private get directionToTarget(): FabricDirection {
         const toTarget = this.toTarget
         const degreeForward = toTarget.dot(this.gotchi.body.forward)
         const degreeRight = toTarget.dot(this.gotchi.body.right)
         if (degreeForward > 0) {
             if (degreeRight > 0) {
-                return degreeForward > degreeRight ? FabricState.Forward : FabricState.TurnRight
+                return degreeForward > degreeRight ? FabricDirection.Forward : FabricDirection.TurnRight
             } else {
-                return degreeForward > -degreeRight ? FabricState.Forward : FabricState.TurnLeft
+                return degreeForward > -degreeRight ? FabricDirection.Forward : FabricDirection.TurnLeft
             }
         } else {
             if (degreeRight > 0) {
-                return -degreeForward > degreeRight ? FabricState.Reverse : FabricState.TurnRight
+                return -degreeForward > degreeRight ? FabricDirection.Reverse : FabricDirection.TurnRight
             } else {
-                return -degreeForward > -degreeRight ? FabricState.Reverse : FabricState.TurnLeft
+                return -degreeForward > -degreeRight ? FabricDirection.Reverse : FabricDirection.TurnLeft
             }
         }
     }

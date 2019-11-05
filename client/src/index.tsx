@@ -14,7 +14,7 @@ import { API_URI } from "./constants"
 import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { LifePhase } from "./fabric/life-phase"
+import { DensityCharacter, DragCharacter, GravityCharacter, IFabricState, LifePhase } from "./fabric/fabric-state"
 import { codeTreeToTenscript, ICodeTree } from "./fabric/tenscript"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
@@ -57,8 +57,12 @@ async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const root = document.getElementById("root") as HTMLElement
     const fabricFeatures = createFabricFeatures()
-    const lifePhase$ = new BehaviorSubject(LifePhase.Growing)
-    const pretensingStep$ = new BehaviorSubject(0)
+    const fabricState$ = new BehaviorSubject<IFabricState>({
+        lifePhase: LifePhase.Growing,
+        gravityCharacter: GravityCharacter.Light,
+        dragCharacter: DragCharacter.Heavy,
+        densityCharacter: DensityCharacter.Push5Pull1,
+    })
     const bootstrapCode = await getBootstrapCode()
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
@@ -75,8 +79,7 @@ async function start(): Promise<void> {
                 features={fabricFeatures}
                 buildFabric={buildFabric}
                 bootstrapCode={bootstrapCode}
-                lifePhase$={lifePhase$}
-                pretensingStep$={pretensingStep$}
+                fabricState$={fabricState$}
             />,
             root,
         )

@@ -3,14 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricState } from "../fabric/fabric-engine"
+import { FabricDirection } from "../fabric/fabric-engine"
 
 import { deserializeGene, DICE, IDie, serializeGene } from "./dice"
 import { GeneReader } from "./gene-reader"
 import { IGeneData } from "./genome"
 
 export interface IGeneData {
-    state: FabricState
+    state: FabricDirection
     mutationCount: number
     geneString: string,
 }
@@ -47,7 +47,7 @@ export function fromOptionalGenomeData(genomeData?: IGenomeData): Genome | undef
 }
 
 export interface IGene {
-    state: FabricState
+    state: FabricDirection
     mutationCount: number
     dice: IDie[]
 }
@@ -57,7 +57,7 @@ export class Genome {
     constructor(private genes: IGene[], private roll: () => IDie) {
     }
 
-    public createReader(state: FabricState): GeneReader {
+    public createReader(state: FabricDirection): GeneReader {
         const existingGene = this.genes.find(g => state === g.state)
         if (existingGene) {
             return new GeneReader(existingGene, this.roll)
@@ -68,7 +68,7 @@ export class Genome {
         }
     }
 
-    public withMutatedBehavior(direction: FabricState, mutations: number): Genome {
+    public withMutatedBehavior(direction: FabricDirection, mutations: number): Genome {
         const genesCopy: IGene[] = this.genes.map(g => ({
             state: g.state,
             mutationCount: g.mutationCount,

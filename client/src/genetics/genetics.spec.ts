@@ -1,4 +1,4 @@
-import { FabricState } from "../fabric/fabric-engine"
+import { FabricDirection } from "../fabric/fabric-engine"
 
 import { DICE, diceToNuance } from "./dice"
 import { GeneReader } from "./gene-reader"
@@ -20,7 +20,7 @@ describe("Genetics", () => {
     describe("Gene reader", () => {
 
         const reader = (dots: number) => new GeneReader({
-            state: FabricState.Forward,
+            state: FabricDirection.Forward,
             mutationCount: 0,
             dice: [],
         }, () => DICE[dots - 1])
@@ -83,7 +83,7 @@ describe("Genetics", () => {
 
         it("should hold state genes", () => {
             const genome = new Genome([], () => DICE[0])
-            expect(genome.createReader(FabricState.Rest).chooseFrom(2)).toBe(0)
+            expect(genome.createReader(FabricDirection.Rest).chooseFrom(2)).toBe(0)
         })
 
     })

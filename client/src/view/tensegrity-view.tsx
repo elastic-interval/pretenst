@@ -11,6 +11,7 @@ import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
+import { IFabricState } from "../fabric/fabric-state"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -21,14 +22,12 @@ import { FabricView } from "./fabric-view"
 const SPLIT_LEFT = "34em"
 const SPLIT_RIGHT = "35em"
 
-export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$, pretensingStep$}: {
+export function TensegrityView({buildFabric, features, bootstrapCode, fabricState$}: {
     buildFabric: (code: ICode) => TensegrityFabric,
     features: FloatFeature[],
     bootstrapCode: ICode [],
-    lifePhase$: BehaviorSubject<number>,
-    pretensingStep$: BehaviorSubject<number>,
+    fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
-
 
     const [showPushes, setShowPushes] = useState(true)
     const [showPulls, setShowPulls] = useState(true)
@@ -99,8 +98,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
                 }}>
                     <ControlTabs
                         fabric={fabric}
-                        lifePhase$={lifePhase$}
-                        pretensingStep$={pretensingStep$}
+                        fabricState$={fabricState$}
                         bootstrapCode={bootstrapCode}
                         features={features}
                         showPushes={showPushes}
@@ -138,8 +136,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, lifePhase$
                         }}>
                             <FabricView
                                 fabric={fabric}
-                                lifePhase$={lifePhase$}
-                                pretensingStep$={pretensingStep$}
+                                fabricState$={fabricState$}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
                                 autoRotate={false}

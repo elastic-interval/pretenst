@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { FabricState, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { FabricDirection, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
@@ -28,7 +28,7 @@ export class GotchiBody {
     }
 
     public get isResting(): boolean {
-        return this.currentState === FabricState.Rest && this.nextState === FabricState.Rest
+        return this.currentState === FabricDirection.Rest && this.nextState === FabricDirection.Rest
     }
 
     public recycle(): void {
@@ -86,7 +86,7 @@ export class GotchiBody {
         return geometry
     }
 
-    public pointerGeometryFor(state: FabricState): Geometry {
+    public pointerGeometryFor(state: FabricDirection): Geometry {
         const geometry = new Geometry()
         const v = () => new Vector3().add(this.seed)
         const arrowFromL = v()
@@ -97,7 +97,7 @@ export class GotchiBody {
         const arrowToRx = v()
         const arrowTip = v()
         switch (state) {
-            case FabricState.Forward:
+            case FabricDirection.Forward:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.right, -ARROW_WIDTH)
@@ -106,7 +106,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.right, ARROW_WIDTH)
                 arrowTip.addScaledVector(this.forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case FabricState.TurnLeft:
+            case FabricDirection.TurnLeft:
                 arrowToL.addScaledVector(this.forward, -ARROW_WIDTH).addScaledVector(this.right, -ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.forward, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, -ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.forward, -ARROW_WIDTH)
@@ -115,7 +115,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.forward, ARROW_WIDTH)
                 arrowTip.addScaledVector(this.right, -ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case FabricState.TurnRight:
+            case FabricDirection.TurnRight:
                 arrowToL.addScaledVector(this.forward, ARROW_WIDTH).addScaledVector(this.right, ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.forward, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.right, ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.forward, ARROW_WIDTH)
@@ -124,7 +124,7 @@ export class GotchiBody {
                 arrowFromR.addScaledVector(this.forward, -ARROW_WIDTH)
                 arrowTip.addScaledVector(this.right, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
                 break
-            case FabricState.Reverse:
+            case FabricDirection.Reverse:
                 arrowToL.addScaledVector(this.right, -ARROW_WIDTH).addScaledVector(this.forward, -ARROW_LENGTH)
                 arrowToLx.addScaledVector(this.right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(this.forward, -ARROW_LENGTH)
                 arrowFromL.addScaledVector(this.right, -ARROW_WIDTH)
@@ -189,15 +189,15 @@ export class GotchiBody {
         return this
     }
 
-    public get currentState(): FabricState {
+    public get currentState(): FabricDirection {
         return this.engine.getCurrentState()
     }
 
-    public get nextState(): FabricState {
+    public get nextState(): FabricDirection {
         return this.engine.getNextState()
     }
 
-    public set nextState(state: FabricState) {
+    public set nextState(state: FabricDirection) {
         this.engine.setNextState(state)
     }
 

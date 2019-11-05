@@ -8,7 +8,7 @@ import { Vector3 } from "three"
 import { FabricFeature, IFabricEngine } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
 import { vectorFromFloatArray } from "./fabric-kernel"
-import { LifePhase } from "./life-phase"
+import { LifePhase } from "./fabric-state"
 
 export class FabricInstance {
     private fabricFeatures: LazyFloatArray

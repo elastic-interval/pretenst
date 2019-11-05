@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
@@ -13,17 +13,19 @@ import {
     Color,
     Euler,
     Float32BufferAttribute,
-    Geometry, MeshPhongMaterial,
+    Geometry,
+    MeshPhongMaterial,
     Object3D,
     PerspectiveCamera,
-    SphereGeometry, TextureLoader,
+    SphereGeometry,
+    TextureLoader,
     Vector3,
 } from "three"
 
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { doNotClick, hideSurface, LifePhase } from "../fabric/life-phase"
+import { doNotClick, hideSurface, IFabricState } from "../fabric/fabric-state"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -59,12 +61,11 @@ const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.5
 
 export function FabricView({
-                               fabric, lifePhase$, pretensingStep$, selectedBrick,
+                               fabric, fabricState$, selectedBrick,
                                setSelectedBrick, autoRotate, fastMode, showPushes, showPulls,
                            }: {
     fabric: TensegrityFabric,
-    lifePhase$: BehaviorSubject<LifePhase>,
-    pretensingStep$: BehaviorSubject<number>,
+    fabricState$: BehaviorSubject<IFabricState>,
     selectedBrick?: IBrick,
     setSelectedBrick: (selection?: IBrick) => void,
     autoRotate: boolean,
@@ -83,8 +84,6 @@ export function FabricView({
         const spaceTexture = new TextureLoader().load("space.jpg")
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
-
-    useEffect(() => pretensingStep$.next(fabric.pretensingStep), [fabric.pretensingStep])
 
     const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
@@ -113,8 +112,9 @@ export function FabricView({
             fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
             fabric.needsUpdate()
         }
-        if (lifePhase$.getValue() !== fabric.lifePhase) {
-            lifePhase$.next(fabric.lifePhase)
+        const fabricState = fabricState$.getValue()
+        if (fabricState.lifePhase !== fabric.lifePhase) {
+            fabricState$.next({...fabricState, lifePhase: fabric.lifePhase})
         }
         setAge(instance.engine.getAge())
     }, true, [fabric, targetBrick, selectedBrick, age, fabric.lifePhase, fastMode, autoRotate])
@@ -150,7 +150,7 @@ export function FabricView({
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (doNotClick(lifePhase$.getValue()) || !downEvent || !mesh) {
+            if (doNotClick(fabricState$.getValue().lifePhase) || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -275,7 +275,7 @@ export function FabricView({
                 )}
                 {(showPushes && showPulls) ? <Faces/> : undefined}
                 <SelectedFace/>
-                {hideSurface(lifePhase$.getValue()) ? undefined : <SurfaceComponent/>}
+                {hideSurface(fabricState$.getValue().lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                 <mesh geometry={SPACE_GEOMETRY} material={spaceMaterial}/>

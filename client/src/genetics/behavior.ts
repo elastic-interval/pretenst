@@ -3,13 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricState } from "../fabric/fabric-engine"
+import { FabricDirection } from "../fabric/fabric-engine"
 import { GotchiBody, INTERVALS_RESERVED } from "../fabric/gotchi-body"
 
 import { GeneReader } from "./gene-reader"
 
 export class Behavior {
-    constructor(private fabric: GotchiBody, private state: FabricState, private behaviorGene: GeneReader) {
+    constructor(private fabric: GotchiBody, private state: FabricDirection, private behaviorGene: GeneReader) {
     }
 
     public apply(): void {

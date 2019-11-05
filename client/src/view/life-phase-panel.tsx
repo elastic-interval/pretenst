@@ -9,7 +9,7 @@ import { FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { LifePhase } from "../fabric/life-phase"
+import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 interface IButtonCharacter {
@@ -20,27 +20,20 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-export function LifePhasePanel({fabric, lifePhase$, pretensingStep$, rebuild}: {
+export function LifePhasePanel({fabric, fabricState$, rebuild}: {
     fabric: TensegrityFabric,
-    lifePhase$: BehaviorSubject<LifePhase>,
-    pretensingStep$: BehaviorSubject<number>,
+    fabricState$: BehaviorSubject<IFabricState>,
     rebuild: () => void,
 }): JSX.Element {
 
-    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
-    const [pretensingStep, setPretensingStep] = useState(pretensingStep$.getValue())
-
+    const [fabricState, setFabricState] = useState(fabricState$.getValue())
     useEffect(() => {
-        const subscription = pretensingStep$.subscribe(setPretensingStep)
-        return () => subscription.unsubscribe()
-    })
-    useEffect(() => {
-        const subscription = lifePhase$.subscribe(setLifePhase)
+        const subscription = fabricState$.subscribe(setFabricState)
         return () => subscription.unsubscribe()
     })
 
     function character(): IButtonCharacter {
-        switch (lifePhase) {
+        switch (fabricState.lifePhase) {
             case LifePhase.Growing:
                 return {
                     text: "Growing...",
@@ -56,7 +49,7 @@ export function LifePhasePanel({fabric, lifePhase$, pretensingStep$, rebuild}: {
                     symbol: <FaHammer/>,
                     color: "success",
                     disabled: false,
-                    onClick: () => lifePhase$.next(fabric.slack()),
+                    onClick: () => fabricState$.next({...fabricState, lifePhase: fabric.slack()}),
                 }
             case LifePhase.Slack:
                 return {
@@ -64,11 +57,11 @@ export function LifePhasePanel({fabric, lifePhase$, pretensingStep$, rebuild}: {
                     symbol: <FaYinYang/>,
                     color: "warning",
                     disabled: false,
-                    onClick: () => lifePhase$.next(fabric.pretensing()),
+                    onClick: () => fabricState$.next({...fabricState, lifePhase: fabric.pretensing()}),
                 }
             case LifePhase.Pretensing:
                 return {
-                    text: `Pretensing ${pretensingStep}%`,
+                    text: `Pretensing`,
                     symbol: <FaHammer/>,
                     color: "warning",
                     disabled: true,

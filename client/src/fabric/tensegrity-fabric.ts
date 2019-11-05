@@ -8,7 +8,7 @@ import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vec
 import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
-import { LifePhase } from "./life-phase"
+import { LifePhase } from "./fabric-state"
 import { executeActiveCode, IActiveCode, ICodeTree, IGrowth } from "./tenscript"
 import { connectClosestFacePair, createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
 import {

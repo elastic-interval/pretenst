@@ -4,7 +4,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { LifePhase } from "./life-phase"
+import { LifePhase } from "./fabric-state"
 
 export interface IMemory {
     buffer: ArrayBuffer
@@ -52,7 +52,7 @@ export function lengthFeatureToRole(fabricFeature: FabricFeature): IntervalRole 
     return IntervalRole[IntervalRole[roleIndex]]
 }
 
-export enum FabricState {
+export enum FabricDirection {
     Rest,
     Forward,
     TurnLeft,
@@ -104,11 +104,11 @@ export interface IFabricEngine {
 
     setLifePhase(lifePhase: LifePhase, pretenst: number): LifePhase
 
-    getCurrentState(): FabricState
+    getCurrentState(): FabricDirection
 
-    getNextState(): FabricState
+    getNextState(): FabricDirection
 
-    setNextState(state: FabricState): void
+    setNextState(state: FabricDirection): void
 
     iterate(ticks: number): boolean
 
@@ -140,9 +140,9 @@ export interface IFabricEngine {
 
     findOppositeIntervalIndex(intervalIndex: number): number
 
-    getIntervalStateLength(intervalIndex: number, state: FabricState): number
+    getIntervalStateLength(intervalIndex: number, state: FabricDirection): number
 
-    setIntervalStateLength(intervalIndex: number, state: FabricState, length: number): void
+    setIntervalStateLength(intervalIndex: number, state: FabricDirection, length: number): void
 
     getFaceCount(): number
 

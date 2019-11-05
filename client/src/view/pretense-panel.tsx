@@ -10,56 +10,24 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
-import { LifePhase } from "../fabric/life-phase"
+import {
+    DENSITY,
+    DensityCharacter,
+    DRAG,
+    DragCharacter,
+    enumValues,
+    GRAVITY,
+    GravityCharacter,
+    IFabricState,
+} from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-enum GravityCharacter {
-    Light,
-    Heavy,
-    Space,
-}
-
-const GRAVITY = [
-    0.00000005,
-    0.0000005,
-    0.0,
-]
-
-enum DragCharacter {
-    Light,
-    Heavy,
-    Free,
-}
-
-const DRAG = [
-    0.00001,
-    0.0001,
-    0.0,
-]
-
-enum DensityCharacter {
-    Push5Pull1,
-    Push2Pull1,
-    Push1Pull1,
-}
-
-const DENSITY = [
-    {push: 5, pull: 1},
-    {push: 3, pull: 1},
-    {push: 1, pull: 1},
-]
-
-function enumValues(e: object): number[] {
-    return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
-}
-
-export function PretensePanel({fabric, lifePhase$, pretensingStep$, showPushes, setShowPushes, showPulls, setShowPulls, rebuild}: {
+export function PretensePanel({fabric, fabricState$, showPushes, setShowPushes, showPulls, setShowPulls, rebuild}: {
     fabric: TensegrityFabric,
-    lifePhase$: BehaviorSubject<LifePhase>,
-    pretensingStep$: BehaviorSubject<number>,
+    fabricState$: BehaviorSubject<IFabricState>,
     showPushes: boolean,
     setShowPushes: (value: boolean) => void,
     showPulls: boolean,
@@ -144,8 +112,7 @@ export function PretensePanel({fabric, lifePhase$, pretensingStep$, showPushes, 
             <div className="my-4">
                 <LifePhasePanel
                     fabric={fabric}
-                    lifePhase$={lifePhase$}
-                    pretensingStep$={pretensingStep$}
+                    fabricState$={fabricState$}
                     rebuild={rebuild}
                 />
             </div>
