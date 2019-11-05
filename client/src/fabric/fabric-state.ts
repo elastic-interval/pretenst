@@ -64,4 +64,8 @@ export interface IFabricState {
     gravityCharacter: GravityCharacter
     dragCharacter: DragCharacter
     densityCharacter: DensityCharacter
+    rotating: boolean
+    frozen: boolean
+    showPushes: boolean
+    showPulls: boolean
 }

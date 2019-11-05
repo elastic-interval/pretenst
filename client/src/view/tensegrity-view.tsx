@@ -29,14 +29,16 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
     fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
-    const [showPushes, setShowPushes] = useState(true)
-    const [showPulls, setShowPulls] = useState(true)
-    const [fastMode, setFastMode] = useState(true)
     const [fullScreen, setFullScreen] = useState(false)
 
     const [code, setCode] = useState<ICode | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
+    const [fabricState, setFabricState] = useState(fabricState$.getValue())
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(setFabricState)
+        return () => subscription.unsubscribe()
+    })
 
     useEffect(() => {
         const urlCode = getCodeFromUrl()
@@ -47,9 +49,9 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
     }, [])
     useEffect(() => {
         if (fabric) {
-            fabric.instance.engine.setColoring(showPushes, showPulls)
+            fabric.instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
         }
-    }, [showPushes, showPulls])
+    }, [fabricState])
 
     function buildFromCode(): void {
         if (!code) {
@@ -101,15 +103,8 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
                         fabricState$={fabricState$}
                         bootstrapCode={bootstrapCode}
                         features={features}
-                        showPushes={showPushes}
-                        setShowPushes={setShowPushes}
-                        showPulls={showPulls}
-                        setShowPulls={setShowPulls}
-                        fastMode={fastMode}
-                        setFastMode={setFastMode}
                         selectedBrick={selectedBrick}
                         setSelectedBrick={setSelectedBrick}
-                        code={code}
                         setCode={setCode}
                         rebuild={buildFromCode}
                         setFullScreen={setFullScreen}
@@ -139,10 +134,6 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
                                 fabricState$={fabricState$}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
-                                autoRotate={false}
-                                fastMode={fastMode}
-                                showPushes={showPushes}
-                                showPulls={showPulls}
                             />
                         </Canvas>
                     </div>

@@ -234,47 +234,47 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle, scale: I
     return next
 }
 
-export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {
-    // TODO: THIS USED TO COLLECT CROSS PULLS BUT CANNOT, IT'S BROKEN!
-    const instance = fabric.instance
-    const engine = instance.engine
-    const crossPulls = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Triangle)
-    const opposite = (joint: IJoint, pull: IInterval) => pull.alpha.index === joint.index ? pull.omega : pull.alpha
-    const finish = (removeA: IInterval, removeB: IInterval, adjustA: IInterval, adjustB: IInterval, role: IntervalRole) => {
-        fabric.removeInterval(removeA)
-        fabric.removeInterval(removeB)
-        engine.setIntervalRole(adjustA.index, adjustA.intervalRole = role)
-        engine.changeRestLength(adjustA.index, percentToFactor(adjustA.scale) * roleDefaultLength(role))
-        engine.setIntervalRole(adjustB.index, adjustB.intervalRole = role)
-        engine.changeRestLength(adjustB.index, percentToFactor(adjustB.scale) * roleDefaultLength(role))
-    }
-    crossPulls.forEach(ab => {
-        const a = ab.alpha
-        const aLoc = instance.getJointLocation(a.index)
-        const b = ab.omega
-        const pullsB = fabric.intervals.filter(interval => (
-            interval.intervalRole !== IntervalRole.Push &&
-            (interval.alpha.index === b.index || interval.omega.index === b.index)
-        ))
-        const bc = pullsB.reduce((pullA, pullB) => {
-            const oppositeA = instance.getJointLocation(opposite(b, pullA).index)
-            const oppositeB = instance.getJointLocation(opposite(b, pullB).index)
-            return aLoc.distanceToSquared(oppositeA) < aLoc.distanceToSquared(oppositeB) ? pullA : pullB
-        })
-        const c = opposite(b, bc)
-        const d = fabric.joints[b.oppositeIndex]
-        const cd = fabric.findInterval(c, d)
-        const ad = fabric.findInterval(a, d)
-        if (!cd || !ad) {
-            return
-        }
-        fabric.createInterval(c, a, IntervalRole.BowMid, ab.scale)
-        if (highCross) {
-            finish(ab, cd, bc, ad, IntervalRole.BowEnd)
-        } else {
-            finish(bc, ad, ab, cd, IntervalRole.BowEnd)
-        }
-    })
+export function optimizeFabric(fabric: TensegrityFabric): void {
+    // // TODO: THIS USED TO COLLECT CROSS PULLS BUT CANNOT, IT'S BROKEN!
+    // const instance = fabric.instance
+    // const engine = instance.engine
+    // const crossPulls = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Triangle)
+    // const opposite = (joint: IJoint, pull: IInterval) => pull.alpha.index === joint.index ? pull.omega : pull.alpha
+    // const finish = (removeA: IInterval, removeB: IInterval, adjustA: IInterval, adjustB: IInterval, role: IntervalRole) => {
+    //     fabric.removeInterval(removeA)
+    //     fabric.removeInterval(removeB)
+    //     engine.setIntervalRole(adjustA.index, adjustA.intervalRole = role)
+    //     engine.changeRestLength(adjustA.index, percentToFactor(adjustA.scale) * roleDefaultLength(role))
+    //     engine.setIntervalRole(adjustB.index, adjustB.intervalRole = role)
+    //     engine.changeRestLength(adjustB.index, percentToFactor(adjustB.scale) * roleDefaultLength(role))
+    // }
+    // crossPulls.forEach(ab => {
+    //     const a = ab.alpha
+    //     const aLoc = instance.getJointLocation(a.index)
+    //     const b = ab.omega
+    //     const pullsB = fabric.intervals.filter(interval => (
+    //         interval.intervalRole !== IntervalRole.Push &&
+    //         (interval.alpha.index === b.index || interval.omega.index === b.index)
+    //     ))
+    //     const bc = pullsB.reduce((pullA, pullB) => {
+    //         const oppositeA = instance.getJointLocation(opposite(b, pullA).index)
+    //         const oppositeB = instance.getJointLocation(opposite(b, pullB).index)
+    //         return aLoc.distanceToSquared(oppositeA) < aLoc.distanceToSquared(oppositeB) ? pullA : pullB
+    //     })
+    //     const c = opposite(b, bc)
+    //     const d = fabric.joints[b.oppositeIndex]
+    //     const cd = fabric.findInterval(c, d)
+    //     const ad = fabric.findInterval(a, d)
+    //     if (!cd || !ad) {
+    //         return
+    //     }
+    //     fabric.createInterval(c, a, IntervalRole.BowMid, ab.scale)
+    //     if (highCross) {
+    //         finish(ab, cd, bc, ad, IntervalRole.BowEnd)
+    //     } else {
+    //         finish(bc, ad, ab, cd, IntervalRole.BowEnd)
+    //     }
+    // })
 }
 
 export interface IFacePair {

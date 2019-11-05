@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
@@ -60,18 +60,11 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.5
 
-export function FabricView({
-                               fabric, fabricState$, selectedBrick,
-                               setSelectedBrick, autoRotate, fastMode, showPushes, showPulls,
-                           }: {
+export function FabricView({fabric, fabricState$, selectedBrick, setSelectedBrick}: {
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
     selectedBrick?: IBrick,
     setSelectedBrick: (selection?: IBrick) => void,
-    autoRotate: boolean,
-    fastMode: boolean,
-    showPushes: boolean,
-    showPulls: boolean,
 }): JSX.Element {
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
@@ -84,6 +77,11 @@ export function FabricView({
         const spaceTexture = new TextureLoader().load("space.jpg")
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
+    const [fabricState, setFabricState] = useState(fabricState$.getValue())
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(setFabricState)
+        return () => subscription.unsubscribe()
+    })
 
     const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
@@ -107,18 +105,23 @@ export function FabricView({
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        orbit.current.autoRotate = autoRotate
-        if (fastMode) {
+        if (!fabricState.frozen) {
             fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
             fabric.needsUpdate()
         }
-        const fabricState = fabricState$.getValue()
         if (fabricState.lifePhase !== fabric.lifePhase) {
             fabricState$.next({...fabricState, lifePhase: fabric.lifePhase})
         }
         setAge(instance.engine.getAge())
-    }, true, [fabric, targetBrick, selectedBrick, age, fabric.lifePhase, fastMode, autoRotate])
+    }, true, [fabric, targetBrick, selectedBrick, age, fabric.lifePhase])
 
+
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(newState => {
+            orbit.current.autoRotate = newState.rotating
+        })
+        return () => subscription.unsubscribe()
+    })
 
     const selectBrick = (newSelectedBrick: IBrick) => {
         if (fabric) {
@@ -150,7 +153,7 @@ export function FabricView({
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (doNotClick(fabricState$.getValue().lifePhase) || !downEvent || !mesh) {
+            if (doNotClick(fabricState.lifePhase) || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -214,7 +217,7 @@ export function FabricView({
             return <group/>
         }
         const needleGeometry = new BufferGeometry()
-        const lines = strainPushLines(fabric.instance, showPushes, showPulls)
+        const lines = strainPushLines(fabric.instance, fabricState)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
@@ -244,17 +247,8 @@ export function FabricView({
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {autoRotate ? undefined : <ElasticScale/>}
-                {fastMode ? (
-                    <group>
-                        <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
-                        {!fabric.splitIntervals || !selectedBrick ? undefined : (
-                            fabric.splitIntervals.selected.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
-                            ))
-                        )}
-                    </group>
-                ) : (
+                {fabricState.rotating ? undefined : <ElasticScale/>}
+                {fabricState.frozen ? (
                     <group>
                         {fabric.splitIntervals ? (
                             [
@@ -272,10 +266,19 @@ export function FabricView({
                             ))
                         )}}
                     </group>
+                ) : (
+                    <group>
+                        <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
+                        {!fabric.splitIntervals || !selectedBrick ? undefined : (
+                            fabric.splitIntervals.selected.map(interval => (
+                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                            ))
+                        )}
+                    </group>
                 )}
-                {(showPushes && showPulls) ? <Faces/> : undefined}
+                {(fabricState.showPushes && fabricState.showPulls) ? <Faces/> : undefined}
                 <SelectedFace/>
-                {hideSurface(fabricState$.getValue().lifePhase) ? undefined : <SurfaceComponent/>}
+                {hideSurface(fabricState.lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                 <mesh geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
@@ -285,17 +288,17 @@ export function FabricView({
     )
 }
 
-function strainPushLines(instance: FabricInstance, showPushes: boolean, showPulls: boolean): Float32Array {
+function strainPushLines(instance: FabricInstance, fabricState: IFabricState): Float32Array {
 
     const maxPush = fabricFeatureValue(FabricFeature.PushMaxElastic)
     const maxPull = fabricFeatureValue(FabricFeature.PullMaxElastic)
 
     function elasticToHeight(elastic: number): number {
-        if (showPushes && showPulls) {
+        if (fabricState.showPushes && fabricState.showPulls) {
             return elastic / Math.max(maxPush, maxPull) - 0.5
-        } else if (showPushes) {
+        } else if (fabricState.showPushes) {
             return elastic / maxPush - 0.5
-        } else if (showPulls) {
+        } else if (fabricState.showPulls) {
             return elastic / maxPull - 0.5
         } else {
             return 0

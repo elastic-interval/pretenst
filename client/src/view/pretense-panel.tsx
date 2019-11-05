@@ -25,13 +25,9 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function PretensePanel({fabric, fabricState$, showPushes, setShowPushes, showPulls, setShowPulls, rebuild}: {
+export function PretensePanel({fabric, fabricState$, rebuild}: {
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
-    showPushes: boolean,
-    setShowPushes: (value: boolean) => void,
-    showPulls: boolean,
-    setShowPulls: (value: boolean) => void,
     rebuild: () => void,
 }): JSX.Element {
 
@@ -46,13 +42,17 @@ export function PretensePanel({fabric, fabricState$, showPushes, setShowPushes, 
         fabric.instance.setFeatureValue(FabricFeature.PullMass, DENSITY[densityCharacter].pull)
         fabric.instance.setFeatureValue(FabricFeature.PushMass, DENSITY[densityCharacter].push)
     }, [densityCharacter])
+    const [fabricState, setFabricState] = useState(fabricState$.getValue())
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(setFabricState)
+        return () => subscription.unsubscribe()
+    })
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
         const onClick = () => {
-            setShowPushes(pushes)
-            setShowPulls(pulls)
+            fabricState$.next({...fabricState, showPulls: pulls, showPushes: pushes})
         }
-        const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
+        const color = pushes === fabricState.showPushes && pulls === fabricState.showPulls ? "success" : "secondary"
         return <Button style={{color: "white"}} color={color} onClick={onClick}>
             {pushes && pulls ? (<><FaHandPointUp/><span> Faces</span></>) :
                 pushes ? (<><FaCircle/><span> Pushes </span></>) : (<><FaDotCircle/><span> Pulls </span></>)}
@@ -120,7 +120,7 @@ export function PretensePanel({fabric, fabricState$, showPushes, setShowPushes, 
                 <ButtonGroup style={{display: "flex"}} className="my-2">
                     <ViewButton pushes={false} pulls={true}/>
                     <StrainPanel fabric={fabric} pushes={false}
-                                 showPushes={showPushes} showPulls={showPulls}/>
+                                 showPushes={fabricState.showPushes} showPulls={fabricState.showPulls}/>
                 </ButtonGroup>
                 <ButtonGroup style={{display: "flex"}} className="my-2">
                     <ViewButton pushes={true} pulls={true}/>
@@ -128,7 +128,7 @@ export function PretensePanel({fabric, fabricState$, showPushes, setShowPushes, 
                 <ButtonGroup style={{display: "flex"}} className="my-2">
                     <ViewButton pushes={true} pulls={false}/>
                     <StrainPanel fabric={fabric} pushes={true}
-                                 showPushes={showPushes} showPulls={showPulls}/>
+                                 showPushes={fabricState.showPushes} showPulls={fabricState.showPulls}/>
                 </ButtonGroup>
             </div>
         </div>

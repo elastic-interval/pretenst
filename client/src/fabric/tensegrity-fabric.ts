@@ -163,8 +163,8 @@ export class TensegrityFabric {
         this.instance.forgetDimensions()
     }
 
-    public optimize(highCross: boolean): void {
-        optimizeFabric(this, highCross)
+    public optimize(): void {
+        optimizeFabric(this)
     }
 
     public createJointIndex(jointTag: JointTag, location: Vector3): number {
@@ -271,10 +271,7 @@ export class TensegrityFabric {
                 const optimization = growth.optimizationStack.pop()
                 switch (optimization) {
                     case "L":
-                        optimizeFabric(this, false)
-                        break
-                    case "H":
-                        optimizeFabric(this, true)
+                        optimizeFabric(this)
                         break
                     case "X":
                         growth.optimizationStack.push("Connect")

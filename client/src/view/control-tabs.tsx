@@ -16,7 +16,7 @@ import {
     FaFileCsv,
     FaHandRock,
     FaParachuteBox,
-    FaRadiationAlt,
+    FaSyncAlt,
     FaTimesCircle,
 } from "react-icons/all"
 import { Button, ButtonGroup, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
@@ -44,23 +44,15 @@ export enum Tab {
 
 export function ControlTabs({
                                 fabric, fabricState$, bootstrapCode, features,
-                                showPushes, setShowPushes, showPulls, setShowPulls, fastMode, setFastMode,
-                                selectedBrick, setSelectedBrick, code, setCode, rebuild,
+                                selectedBrick, setSelectedBrick, setCode, rebuild,
                                 setFullScreen,
                             }: {
     fabric?: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
     bootstrapCode: ICode [],
     features: FloatFeature[],
-    showPushes: boolean,
-    setShowPushes: (value: boolean) => void,
-    showPulls: boolean,
-    setShowPulls: (value: boolean) => void,
-    fastMode: boolean,
-    setFastMode: (value: boolean) => void,
     selectedBrick?: IBrick,
     setSelectedBrick: (brick?: IBrick) => void,
-    code?: ICode,
     setCode: (brick?: ICode) => void,
     rebuild: () => void,
     setFullScreen: (fullScreen: boolean) => void,
@@ -120,16 +112,9 @@ export function ControlTabs({
                         <FaCompressArrowsAlt/> Centralize
                     </Button>
                     <Button disabled={fabricState.lifePhase !== LifePhase.Shaping}
-                            onClick={() => optimizeFabric(fabric, true)}>
-                        <FaBiohazard/> Long optimize
+                            onClick={() => optimizeFabric(fabric)}>
+                        <FaBiohazard/> Optimize
                     </Button>
-                    <Button disabled={fabricState.lifePhase !== LifePhase.Shaping}
-                            onClick={() => optimizeFabric(fabric, false)}>
-                        <FaRadiationAlt/> Short optimize
-                    </Button>
-                    {/*<Button onClick={() => setAutoRotate(!autoRotate)}>*/}
-                    {/*    <FaSyncAlt/>*/}
-                    {/*</Button>*/}
                 </ButtonGroup>
                 <ButtonGroup vertical={true} className="m-4 w-75">
                     <Button onClick={() => saveCSVFiles(fabric)}>
@@ -140,8 +125,17 @@ export function ControlTabs({
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button color={fastMode ? "secondary" : "warning"} onClick={() => setFastMode(!fastMode)}>
-                        <FaCamera/> Slow mode
+                    <Button
+                        color={fabricState.rotating ? "warning" : "secondary"}
+                        onClick={() => fabricState$.next({...fabricState, rotating: !fabricState.rotating})}
+                    >
+                        <FaSyncAlt/> Auto-rotate
+                    </Button>
+                    <Button
+                        color={fabricState.frozen ? "warning" : "secondary"}
+                        onClick={() => fabricState$.next({...fabricState, frozen: !fabricState.frozen})}
+                    >
+                        <FaCamera/> Frozen Snapshot
                     </Button>
                 </ButtonGroup>
             </div>
@@ -173,10 +167,6 @@ export function ControlTabs({
                         <PretensePanel
                             fabric={fabric}
                             fabricState$={fabricState$}
-                            showPushes={showPushes}
-                            setShowPushes={setShowPushes}
-                            showPulls={showPulls}
-                            setShowPulls={setShowPulls}
                             rebuild={rebuild}
                         />
                     )

@@ -62,6 +62,10 @@ async function start(): Promise<void> {
         gravityCharacter: GravityCharacter.Light,
         dragCharacter: DragCharacter.Heavy,
         densityCharacter: DensityCharacter.Push5Pull1,
+        rotating: false,
+        frozen: false,
+        showPushes: true,
+        showPulls: true,
     })
     const bootstrapCode = await getBootstrapCode()
     if (TENSEGRITY) {
