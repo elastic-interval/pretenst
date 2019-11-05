@@ -179,7 +179,7 @@ export function connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): ICon
         pulls.push(ringPull)
     }
     const createCrossPull = (index: number) => {
-        const role = IntervalRole.Triangle
+        const role = IntervalRole.Cross
         const joint = ring[index]
         const nextJoint = ring[(index + 1) % ring.length]
         const prevJoint = ring[(index + ring.length - 1) % ring.length]
@@ -234,47 +234,132 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle, scale: I
     return next
 }
 
+interface IPair {
+    scale: IPercent
+    a: IJoint
+    x: IJoint
+    b: IJoint
+    y: IJoint
+}
+
+interface IPush {
+    interval: IInterval
+    joint: IJoint
+}
+
 export function optimizeFabric(fabric: TensegrityFabric): void {
-    // // TODO: THIS USED TO COLLECT CROSS PULLS BUT CANNOT, IT'S BROKEN!
-    // const instance = fabric.instance
-    // const engine = instance.engine
-    // const crossPulls = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Triangle)
-    // const opposite = (joint: IJoint, pull: IInterval) => pull.alpha.index === joint.index ? pull.omega : pull.alpha
-    // const finish = (removeA: IInterval, removeB: IInterval, adjustA: IInterval, adjustB: IInterval, role: IntervalRole) => {
-    //     fabric.removeInterval(removeA)
-    //     fabric.removeInterval(removeB)
-    //     engine.setIntervalRole(adjustA.index, adjustA.intervalRole = role)
-    //     engine.changeRestLength(adjustA.index, percentToFactor(adjustA.scale) * roleDefaultLength(role))
-    //     engine.setIntervalRole(adjustB.index, adjustB.intervalRole = role)
-    //     engine.changeRestLength(adjustB.index, percentToFactor(adjustB.scale) * roleDefaultLength(role))
-    // }
-    // crossPulls.forEach(ab => {
-    //     const a = ab.alpha
-    //     const aLoc = instance.getJointLocation(a.index)
-    //     const b = ab.omega
-    //     const pullsB = fabric.intervals.filter(interval => (
-    //         interval.intervalRole !== IntervalRole.Push &&
-    //         (interval.alpha.index === b.index || interval.omega.index === b.index)
-    //     ))
-    //     const bc = pullsB.reduce((pullA, pullB) => {
-    //         const oppositeA = instance.getJointLocation(opposite(b, pullA).index)
-    //         const oppositeB = instance.getJointLocation(opposite(b, pullB).index)
-    //         return aLoc.distanceToSquared(oppositeA) < aLoc.distanceToSquared(oppositeB) ? pullA : pullB
-    //     })
-    //     const c = opposite(b, bc)
-    //     const d = fabric.joints[b.oppositeIndex]
-    //     const cd = fabric.findInterval(c, d)
-    //     const ad = fabric.findInterval(a, d)
-    //     if (!cd || !ad) {
-    //         return
-    //     }
-    //     fabric.createInterval(c, a, IntervalRole.BowMid, ab.scale)
-    //     if (highCross) {
-    //         finish(ab, cd, bc, ad, IntervalRole.BowEnd)
-    //     } else {
-    //         finish(bc, ad, ab, cd, IntervalRole.BowEnd)
-    //     }
-    // })
+    const instance = fabric.instance
+    const pairs: IPair[] = []
+    const findPush = (jointIndex: number): IPush => {
+        const interval = fabric.intervals
+            .filter(i => i.isPush)
+            .find(i => i.alpha.index === jointIndex || i.omega.index === jointIndex)
+        if (!interval) {
+            throw new Error(`Cannot find ${jointIndex}`)
+        }
+        const joint: IJoint = interval.alpha.index === jointIndex ? interval.alpha : interval.omega
+        return {interval, joint}
+    }
+    const crossPulls = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Cross)
+    crossPulls.forEach((intervalA, indexA) => {
+        const aAlpha = intervalA.alpha.index
+        const aOmega = intervalA.omega.index
+        const aAlphaPush = findPush(aAlpha)
+        const aOmegaPush = findPush(aOmega)
+        const aAlphaLoc = instance.getJointLocation(aAlpha)
+        const aOmegaLoc = instance.getJointLocation(aOmega)
+        const aLength = aAlphaLoc.distanceTo(aOmegaLoc)
+        const aMid = new Vector3().addVectors(aAlphaLoc, aOmegaLoc).multiplyScalar(0.5)
+        crossPulls.forEach((intervalB, indexB) => {
+            const bAlpha = intervalB.alpha.index
+            const bOmega = intervalB.omega.index
+            if (
+                indexA >= indexB ||
+                aAlpha === bAlpha || aAlpha === bOmega ||
+                aOmega === bAlpha || aOmega === bOmega
+            ) {
+                return
+            }
+            const bAlphaPush = findPush(bAlpha)
+            const bOmegaPush = findPush(bOmega)
+            let push: IInterval | undefined
+            let a: IJoint | undefined
+            let x: IJoint | undefined
+            let b: IJoint | undefined
+            let y: IJoint | undefined
+            const samePush = (pushA: IPush, pushB: IPush) => pushA.interval.index === pushB.interval.index
+            if (samePush(aAlphaPush, bAlphaPush)) {
+                push = aAlphaPush.interval
+                a = intervalA.alpha
+                x = intervalA.omega
+                b = intervalB.alpha
+                y = intervalB.omega
+            } else if (samePush(aAlphaPush, bOmegaPush)) {
+                push = aAlphaPush.interval
+                a = intervalA.alpha
+                x = intervalA.omega
+                b = intervalB.omega
+                y = intervalB.alpha
+            } else if (samePush(aOmegaPush, bAlphaPush)) {
+                push = aOmegaPush.interval
+                a = intervalA.omega
+                x = intervalA.alpha
+                b = intervalB.alpha
+                y = intervalB.omega
+            } else if (samePush(aOmegaPush, bOmegaPush)) {
+                push = aOmegaPush.interval
+                a = intervalA.omega
+                x = intervalA.alpha
+                b = intervalB.omega
+                y = intervalB.alpha
+            } else {
+                return
+            }
+            const bAlphaLoc = instance.getJointLocation(bAlpha)
+            const bOmegaLoc = instance.getJointLocation(bOmega)
+            const bLength = bAlphaLoc.distanceTo(bOmegaLoc)
+            const bMid = new Vector3().addVectors(bAlphaLoc, bOmegaLoc).multiplyScalar(0.5)
+            const aAlphaMidB = aAlphaLoc.distanceTo(bMid) / bLength
+            const aOmegaMidB = aOmegaLoc.distanceTo(bMid) / bLength
+            const bAlphaMidA = bAlphaLoc.distanceTo(aMid) / aLength
+            const bOmegaMidA = bOmegaLoc.distanceTo(aMid) / aLength
+            let closeCount = 0
+            const close = (dist: number) => {
+                if (dist < 0.5) {
+                    closeCount++
+                }
+            }
+            close(aAlphaMidB)
+            close(aOmegaMidB)
+            close(bAlphaMidA)
+            close(bOmegaMidA)
+            if (closeCount < 2) {
+                return
+            }
+            const scale = push.scale
+            pairs.push({scale, a, x, b, y})
+        })
+    })
+    const engine = instance.engine
+    const role = IntervalRole.BowEnd
+    pairs.forEach(({scale, a, x, b, y}: IPair) => {
+        console.log(`${a.index}-${x.index} ${b.index}-${y.index}`)
+        fabric.createInterval(x, y, IntervalRole.BowMid, scale)
+        const ax = fabric.findInterval(a, x)
+        const ay = fabric.findInterval(a, y)
+        const bx = fabric.findInterval(b, x)
+        const by = fabric.findInterval(b, y)
+        if (!(ax && bx && ay && by)) {
+            throw new Error("Cannot find intervals during optimize")
+        }
+        fabric.removeInterval(ax)
+        fabric.removeInterval(by)
+        engine.setIntervalRole(ay.index, ay.intervalRole = role)
+        engine.changeRestLength(ay.index, percentToFactor(ay.scale) * roleDefaultLength(role))
+        engine.setIntervalRole(bx.index, bx.intervalRole = role)
+        engine.changeRestLength(bx.index, percentToFactor(bx.scale) * roleDefaultLength(role))
+    })
+    instance.forgetDimensions()
 }
 
 export interface IFacePair {

@@ -172,6 +172,14 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byOnePercent,
     },
     {
+        feature: FabricFeature.CrossLength,
+        name: "Cross Length",
+        defaultValue: 2.123,
+        multiplier: FeatureMultiplier.One,
+        fixedDigits: 3,
+        adjustment: byOnePercent,
+    },
+    {
         feature: FabricFeature.BowMidLength,
         name: "BowMidLength",
         defaultValue: 0.8521,

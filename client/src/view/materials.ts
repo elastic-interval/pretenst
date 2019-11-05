@@ -58,11 +58,17 @@ export const FACE = new MeshPhongMaterial({
 export const HOT_COLOR = "#910000"
 export const COLD_COLOR = "#3b6ab8"
 export const SLACK_COLOR = "#00a700"
+export const CROSS_COLOR = "#fff600"
 export const ATTENUATED_COLOR = "#212121"
 
 export const SLACK = new MeshPhongMaterial({
     lights: true,
     color: new Color(SLACK_COLOR),
+})
+
+export const CROSS_MATERIAL = new MeshPhongMaterial({
+    lights: true,
+    color: new Color(CROSS_COLOR),
 })
 
 export const ATTENUATED = new MeshPhongMaterial({

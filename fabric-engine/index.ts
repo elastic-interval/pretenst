@@ -31,8 +31,9 @@ export enum FabricFeature {
     PushLength = 11,
     TriangleLength = 12,
     RingLength = 13,
-    BowMidLength = 14,
-    BowEndLength = 15,
+    CrossLength = 14,
+    BowMidLength = 15,
+    BowEndLength = 16,
 }
 
 enum SurfaceCharacter {
@@ -52,8 +53,9 @@ enum IntervalRole {
     Push = 0,
     Triangle = 1,
     Ring = 2,
-    BowMid = 3,
-    BowEnd = 4,
+    Cross = 3,
+    BowMid = 4,
+    BowEnd = 5,
 }
 
 export enum LifePhase {
@@ -86,7 +88,7 @@ const COLD_COLOR: f32[] = [
 const SLACK_COLOR: f32[] = [
     0.0, 1.0, 0.0
 ]
-const RING_COLOR: f32[] = [
+const CROSS_COLOR: f32[] = [
     1.0, 1.0, 0.0
 ]
 
@@ -957,12 +959,8 @@ function outputLinesGeometry(): void {
         let isPush: boolean = intervalRole === IntervalRole.Push
         let strain = isPush ? -directionalStrain : directionalStrain
         if (colorPushes && colorPulls) {
-            if (strain < slackThreshold) {
-                setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
-            } else {
-                let color = isPush ? HOT_COLOR : intervalRole === IntervalRole.Ring ? RING_COLOR : COLD_COLOR
-                setLineColor(intervalIndex, color[0], color[1], color[2])
-            }
+            let color = isPush ? HOT_COLOR : intervalRole === IntervalRole.Cross ? CROSS_COLOR : COLD_COLOR
+            setLineColor(intervalIndex, color[0], color[1], color[2])
         } else if (colorPushes || colorPulls) {
             if (isPush && colorPulls || !isPush && colorPushes) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])

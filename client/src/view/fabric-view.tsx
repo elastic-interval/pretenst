@@ -22,14 +22,24 @@ import {
     Vector3,
 } from "three"
 
-import { FabricFeature } from "../fabric/fabric-engine"
+import { FabricFeature, IntervalRole } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { ATTENUATED, FACE, FACE_SPHERE, LINE, PULL_MATERIAL, PUSH_MATERIAL, SCALE_LINE, SLACK } from "./materials"
+import {
+    ATTENUATED,
+    CROSS_MATERIAL,
+    FACE,
+    FACE_SPHERE,
+    LINE,
+    PULL_MATERIAL,
+    PUSH_MATERIAL,
+    SCALE_LINE,
+    SLACK,
+} from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
@@ -55,7 +65,7 @@ const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
 const PUSH_GIRTH = 100
-const PULL_GIRTH = 30
+const PULL_GIRTH = 60
 const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.5
@@ -213,20 +223,28 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         if (!fabric) {
             return <group/>
         }
+        const material = () => {
+            if (attenuated) {
+                return ATTENUATED
+            }
+            if (showPulls && showPushes) {
+                return interval.intervalRole === IntervalRole.Cross ? CROSS_MATERIAL : isPush ? PUSH_MATERIAL : PULL_MATERIAL
+            }
+            const slack = strain < fabricFeatureValue(FabricFeature.SlackThreshold)
+            return slack ? SLACK : isPush ? PUSH_MATERIAL : PULL_MATERIAL
+        }
         const elastic = fabric.instance.elastics[interval.index]
         const isPush = interval.isPush
         const strain = fabric.instance.strains[interval.index] * (isPush ? -1 : 1)
         const girth = Math.sqrt(elastic) * (isPush ? PUSH_GIRTH : PULL_GIRTH)
         const {scale, rotation} = fabric.orientInterval(interval, girth)
-        const slackThreshold = fabricFeatureValue(FabricFeature.SlackThreshold)
-        const material = strain < slackThreshold ? SLACK : attenuated ? ATTENUATED : isPush ? PUSH_MATERIAL : PULL_MATERIAL
         return (
             <mesh
                 geometry={SPHERE}
                 position={fabric.instance.getIntervalMidpoint(interval.index)}
                 rotation={new Euler().setFromQuaternion(rotation)}
                 scale={scale}
-                material={material}
+                material={material()}
                 matrixWorldNeedsUpdate={true}
             />
         )
@@ -290,7 +308,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
                 ) : (
                     <group>
                         <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
-                        {!fabric.splitIntervals || !selectedBrick ? undefined : (
+                        {!fabric.splitIntervals ? undefined : (
                             fabric.splitIntervals.selected.map(interval => (
                                 <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
                             ))

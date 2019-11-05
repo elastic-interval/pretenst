@@ -25,16 +25,18 @@ export enum FabricFeature {
     PushLength = 11,
     TriangleLength = 12,
     RingLength = 13,
-    BowMidLength = 14,
-    BowEndLength = 15,
+    CrossLength = 14,
+    BowMidLength = 15,
+    BowEndLength = 16,
 }
 
 export enum IntervalRole {
     Push = 0,
     Triangle = 1,
     Ring = 2,
-    BowMid = 3,
-    BowEnd = 4,
+    Cross = 3,
+    BowMid = 4,
+    BowEnd = 5,
 }
 
 export function roleToLengthFeature(intervalRole: IntervalRole): FabricFeature {
