@@ -14,7 +14,14 @@ import { API_URI } from "./constants"
 import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { DensityCharacter, DragCharacter, GravityCharacter, IFabricState, LifePhase } from "./fabric/fabric-state"
+import {
+    ControlTab,
+    DensityCharacter,
+    DragCharacter,
+    GravityCharacter,
+    IFabricState,
+    LifePhase,
+} from "./fabric/fabric-state"
 import { codeTreeToTenscript, ICodeTree } from "./fabric/tenscript"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
@@ -62,10 +69,12 @@ async function start(): Promise<void> {
         gravityCharacter: GravityCharacter.Light,
         dragCharacter: DragCharacter.Heavy,
         densityCharacter: DensityCharacter.Push5Pull1,
+        controlTab: ControlTab.Generate,
         rotating: false,
         frozen: false,
         showPushes: true,
         showPulls: true,
+        fullScreen: false,
     })
     const bootstrapCode = await getBootstrapCode()
     if (TENSEGRITY) {

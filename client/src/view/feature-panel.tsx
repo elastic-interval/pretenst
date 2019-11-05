@@ -52,7 +52,8 @@ export function FeaturePanel({featureSet, fabric}: {
                     fabric.intervals
                         .filter(interval => interval.intervalRole === intervalRole)
                         .forEach(interval => {
-                            engine.changeRestLength(interval.index, feature.factor * percentToFactor(interval.scale))
+                            const scaledLength = feature.factor * percentToFactor(interval.scale)
+                            engine.changeRestLength(interval.index, scaledLength)
                         })
                 }
             })

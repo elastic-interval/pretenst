@@ -4,8 +4,10 @@
  */
 
 import * as React from "react"
+import { useEffect, useState } from "react"
 import { FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
 import { Button } from "reactstrap"
+import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -18,15 +20,21 @@ interface IButtonCharacter {
     onClick: () => void,
 }
 
-export function LifePhasePanel({fabric, fabricState, setFabricState, rebuild}: {
+export function LifePhasePanel({fabric, fabricState$, rebuild}: {
     fabric: TensegrityFabric,
-    fabricState: IFabricState,
-    setFabricState: (fabricState: IFabricState) => void,
+    fabricState$: BehaviorSubject <IFabricState>,
     rebuild: () => void,
 }): JSX.Element {
+    const [lifePhase, setLifePhase] = useState(fabric.lifePhase)
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(newState => {
+            setLifePhase(newState.lifePhase)
+        })
+        return () => subscription.unsubscribe()
+    })
 
     function character(): IButtonCharacter {
-        switch (fabricState.lifePhase) {
+        switch (lifePhase) {
             case LifePhase.Growing:
                 return {
                     text: "Growing...",
@@ -42,7 +50,7 @@ export function LifePhasePanel({fabric, fabricState, setFabricState, rebuild}: {
                     symbol: <FaHammer/>,
                     color: "success",
                     disabled: false,
-                    onClick: () => setFabricState({...fabricState, lifePhase: fabric.slack()}),
+                    onClick: () => fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.slack()}),
                 }
             case LifePhase.Slack:
                 return {
@@ -50,7 +58,7 @@ export function LifePhasePanel({fabric, fabricState, setFabricState, rebuild}: {
                     symbol: <FaYinYang/>,
                     color: "warning",
                     disabled: false,
-                    onClick: () => setFabricState({...fabricState, lifePhase: fabric.pretensing()}),
+                    onClick: () => fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.pretensing()}),
                 }
             case LifePhase.Pretensing:
                 return {

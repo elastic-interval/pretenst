@@ -55,6 +55,13 @@ export const DENSITY = [
     {push: 1, pull: 1},
 ]
 
+export enum ControlTab {
+    Generate = "Generate",
+    Pretense = "Pretense",
+    Test = "Test",
+    Features = "Features",
+}
+
 export function enumValues(e: object): number[] {
     return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
@@ -64,8 +71,10 @@ export interface IFabricState {
     gravityCharacter: GravityCharacter
     dragCharacter: DragCharacter
     densityCharacter: DensityCharacter
+    controlTab: ControlTab
     rotating: boolean
     frozen: boolean
     showPushes: boolean
     showPulls: boolean
+    fullScreen: boolean
 }

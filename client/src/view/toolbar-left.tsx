@@ -4,29 +4,45 @@
  */
 
 import * as React from "react"
+import { useEffect, useState } from "react"
 import { FaAnchor, FaCamera, FaClock, FaSyncAlt } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
+import { BehaviorSubject } from "rxjs"
 
 import { IFabricState } from "../fabric/fabric-state"
 
-export function ToolbarLeft({fabricState, setFabricState}: {
-    fabricState: IFabricState,
-    setFabricState: (fabricState: IFabricState) => void,
+export function ToolbarLeft({fabricState$}: {
+    fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
+    const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
+    const [frozen, updateFrozen] = useState(fabricState$.getValue().frozen)
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(newState => {
+            updateRotating(newState.rotating)
+            updateFrozen(newState.frozen)
+        })
+        return () => subscription.unsubscribe()
+    })
     return (
         <div id="bottom-left">
             <ButtonGroup>
                 <Button
-                    color={fabricState.rotating ? "warning" : "secondary"}
-                    onClick={() => setFabricState({...fabricState, rotating: !fabricState.rotating})}
+                    color={fabricState$.getValue().rotating ? "warning" : "secondary"}
+                    onClick={() => fabricState$.next({
+                        ...fabricState$.getValue(),
+                        rotating: !rotating,
+                    })}
                 >
-                    {fabricState.rotating ? <FaAnchor/> : <FaSyncAlt/>}
+                    {rotating ? <FaAnchor/> : <FaSyncAlt/>}
                 </Button>
                 <Button
-                    color={fabricState.frozen ? "warning" : "secondary"}
-                    onClick={() => setFabricState({...fabricState, frozen: !fabricState.frozen})}
+                    color={fabricState$.getValue().frozen ? "warning" : "secondary"}
+                    onClick={() => fabricState$.next({
+                        ...fabricState$.getValue(),
+                        frozen: !frozen,
+                    })}
                 >
-                    {fabricState.frozen ? <FaClock/> : <FaCamera/>}
+                    {frozen ? <FaClock/> : <FaCamera/>}
                 </Button>
             </ButtonGroup>
         </div>

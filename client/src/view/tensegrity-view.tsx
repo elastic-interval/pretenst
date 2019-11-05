@@ -31,19 +31,22 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
     fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
-    const [fullScreen, setFullScreen] = useState(false)
     const [code, setCode] = useState<ICode | undefined>()
-    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
-    const [fabricState, updateFabricState] = useState(fabricState$.getValue())
-
+    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
+    const [fullScreen, setFullScreen] = useState(fabricState$.getValue().fullScreen)
     useEffect(() => {
-        const subscription = fabricState$.subscribe(updateFabricState)
+        const subscription = fabricState$.subscribe(newState => {
+            setFullScreen(newState.fullScreen)
+            if (fabric) {
+                fabric.instance.engine.setColoring(newState.showPushes, newState.showPulls)
+            }
+        })
         return () => subscription.unsubscribe()
     })
 
-    const setFabricState = (newState: IFabricState) => {
-        fabricState$.next(newState)
+    const stateChange = (modifier: (currentState: IFabricState) => IFabricState) => {
+        fabricState$.next(modifier(fabricState$.getValue()))
     }
 
     useEffect(() => {
@@ -51,25 +54,18 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
         const recentCode = getRecentCode().pop()
         if (urlCode && recentCode && urlCode.codeString !== recentCode.codeString) {
             setCode(urlCode)
+            stateChange(currentState => ({...currentState, code: urlCode}))
         }
     }, [])
-
-    useEffect(() => {
-        if (fabric) {
-            fabric.instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
-        }
-    }, [fabricState])
 
     function buildFromCode(): void {
         if (!code) {
             return
         }
-        setSelectedBrick(undefined)
         if (fabric) {
             fabric.instance.release()
         }
-        const builtFabric = buildFabric(code)
-        setFabric(builtFabric)
+        setFabric(buildFabric(code))
         location.hash = code.codeString
     }
 
@@ -86,7 +82,7 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
                     left: 0,
                     height: "100%",
                     zIndex: 1,
-                }} onClick={() => setFullScreen(false)}>
+                }} onClick={() => stateChange(currentState => ({...currentState, fullScreen: false}))}>
                     <FaAngleDoubleRight/>
                 </Button>
             ) : (
@@ -107,15 +103,12 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
                 }}>
                     <ControlTabs
                         fabric={fabric}
-                        fabricState={fabricState}
-                        setFabricState={setFabricState}
+                        selectedBrick={selectedBrick}
+                        setCode={setCode}
+                        fabricState$={fabricState$}
                         bootstrapCode={bootstrapCode}
                         features={features}
-                        selectedBrick={selectedBrick}
-                        setSelectedBrick={setSelectedBrick}
-                        setCode={setCode}
                         rebuild={buildFromCode}
-                        setFullScreen={setFullScreen}
                     />
                 </div>
             )}
@@ -135,22 +128,20 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
                             </div>
                         )}
                         <ToolbarLeft
-                            fabricState={fabricState}
-                            setFabricState={setFabricState}
+                            fabricState$={fabricState$}
                         />
                         <ToolbarRight
                             fabric={fabric}
-                            fabricState={fabricState}
+                            fabricState$={fabricState$}
                         />
                         <Canvas style={{
                             backgroundColor: "black",
                         }}>
                             <FabricView
                                 fabric={fabric}
-                                fabricState={fabricState}
-                                setFabricState={setFabricState}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
+                                fabricState$={fabricState$}
                             />
                         </Canvas>
                     </div>

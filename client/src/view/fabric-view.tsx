@@ -6,6 +6,7 @@
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
+import { BehaviorSubject } from "rxjs"
 import {
     BackSide,
     BufferGeometry,
@@ -59,12 +60,11 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.5
 
-export function FabricView({fabric, fabricState, setFabricState, selectedBrick, setSelectedBrick}: {
+export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState$}: {
     fabric: TensegrityFabric,
-    fabricState: IFabricState,
-    setFabricState: (fabricState: IFabricState) => void,
     selectedBrick?: IBrick,
-    setSelectedBrick: (selection?: IBrick) => void,
+    setSelectedBrick: (selectedBrick: IBrick) => void,
+    fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
@@ -77,6 +77,30 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
         const spaceTexture = new TextureLoader().load("space.jpg")
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
+
+    const [lifePhase, setLifePhase] = useState(fabric.lifePhase)
+    useEffect(() => {
+        orbit.current.autoRotate = fabricState$.getValue().rotating
+        if (fabricState$.getValue().lifePhase !== fabric.lifePhase) {
+            setLifePhase(lifePhase)
+        }
+    }, [fabric])
+    const [frozen, updateFrozen] = useState(fabricState$.getValue().frozen)
+    const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
+    const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
+    const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(newState => {
+            updateFrozen(newState.frozen)
+            updateShowPushes(newState.showPushes)
+            updateShowPulls(newState.showPulls)
+            updateRotating(newState.rotating)
+        })
+        return () => subscription.unsubscribe()
+    })
+    useEffect(() => {
+        orbit.current.autoRotate = rotating
+    }, [rotating])
 
     const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
@@ -95,24 +119,24 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
     }, [fabric])
 
     useRender(() => {
+        if (!fabric) {
+            return
+        }
         const instance = fabric.instance
         const target = targetBrick && selectedBrick ? fabric.brickMidpoint(selectedBrick) : instance.getMidpoint()
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        if (!fabricState.frozen) {
+        if (!frozen) {
             fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
             fabric.needsUpdate()
         }
-        if (fabricState.lifePhase !== fabric.lifePhase) {
-            setFabricState({...fabricState, lifePhase: fabric.lifePhase})
+        if (lifePhase !== fabric.lifePhase) {
+            setLifePhase(fabric.lifePhase)
+            fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.lifePhase})
         }
         setAge(instance.engine.getAge())
-    }, true, [fabric, targetBrick, selectedBrick, age, fabric.lifePhase])
-
-    useEffect(() => {
-        orbit.current.autoRotate = fabricState.rotating
-    }, [fabricState])
+    }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, frozen])
 
     const selectBrick = (newSelectedBrick: IBrick) => {
         if (fabric) {
@@ -123,7 +147,7 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
     }
 
     function SelectedFace(): JSX.Element {
-        if (!selectedBrick) {
+        if (!fabric || !selectedBrick) {
             return <group/>
         }
         const scale = 0.6
@@ -138,13 +162,16 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
     }
 
     function Faces(): JSX.Element {
+        if (!fabric) {
+            return <group/>
+        }
         const meshRef = useRef<Object3D>()
         const onPointerDown = (event: DomEvent) => {
             setDownEvent(event)
         }
         const onPointerUp = (event: DomEvent) => {
             const mesh = meshRef.current
-            if (doNotClick(fabricState.lifePhase) || !downEvent || !mesh) {
+            if (doNotClick(lifePhase) || !downEvent || !mesh) {
                 return
             }
             const dx = downEvent.clientX - event.clientX
@@ -183,6 +210,9 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
         interval: IInterval,
         attenuated: boolean,
     }): JSX.Element {
+        if (!fabric) {
+            return <group/>
+        }
         const elastic = fabric.instance.elastics[interval.index]
         const isPush = interval.isPush
         const strain = fabric.instance.strains[interval.index] * (isPush ? -1 : 1)
@@ -204,11 +234,11 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
 
     function ElasticScale(): JSX.Element {
         const current = orbit.current
-        if (!current) {
+        if (!current || !fabric) {
             return <group/>
         }
         const needleGeometry = new BufferGeometry()
-        const lines = strainPushLines(fabric.instance, fabricState)
+        const lines = strainPushLines(fabric.instance, showPushes, showPulls)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
@@ -238,8 +268,8 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {fabricState.rotating || fabricState.lifePhase !== LifePhase.Pretensing ? undefined : <ElasticScale/>}
-                {fabricState.frozen ? (
+                {rotating || lifePhase !== LifePhase.Pretensing ? undefined : <ElasticScale/>}
+                {!fabric ? undefined : frozen ? (
                     <group>
                         {fabric.splitIntervals ? (
                             [
@@ -267,9 +297,9 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
                         )}
                     </group>
                 )}
-                {(fabricState.showPushes && fabricState.showPulls) ? <Faces/> : undefined}
+                {(showPushes && showPulls) ? <Faces/> : undefined}
                 <SelectedFace/>
-                {hideSurface(fabricState.lifePhase) ? undefined : <SurfaceComponent/>}
+                {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
                 <mesh geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
@@ -279,17 +309,17 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
     )
 }
 
-function strainPushLines(instance: FabricInstance, fabricState: IFabricState): Float32Array {
+function strainPushLines(instance: FabricInstance, showPushes: boolean, showPulls: boolean): Float32Array {
 
     const maxPush = fabricFeatureValue(FabricFeature.PushMaxElastic)
     const maxPull = fabricFeatureValue(FabricFeature.PullMaxElastic)
 
     function elasticToHeight(elastic: number): number {
-        if (fabricState.showPushes && fabricState.showPulls) {
+        if (showPushes && showPulls) {
             return elastic / Math.max(maxPush, maxPull) - 0.5
-        } else if (fabricState.showPushes) {
+        } else if (showPushes) {
             return elastic / maxPush - 0.5
-        } else if (fabricState.showPulls) {
+        } else if (showPulls) {
             return elastic / maxPull - 0.5
         } else {
             return 0

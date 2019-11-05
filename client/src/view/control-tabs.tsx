@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import {
     FaAngleDoubleLeft,
     FaArrowDown,
@@ -15,9 +15,10 @@ import {
     FaTimesCircle,
 } from "react-icons/all"
 import { Button, ButtonGroup, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
+import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
-import { IFabricState, LifePhase } from "../fabric/fabric-state"
+import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { optimizeFabric } from "../fabric/tensegrity-brick"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -29,31 +30,21 @@ import { PretensePanel } from "./pretense-panel"
 
 const SPLIT_LEFT = "34em"
 
-export enum Tab {
-    Generate = "Generate",
-    Pretense = "Pretense",
-    Test = "Test",
-    Features = "Features",
-}
-
-export function ControlTabs({
-                                fabric, fabricState, setFabricState, bootstrapCode, features,
-                                selectedBrick, setSelectedBrick, setCode, rebuild,
-                                setFullScreen,
-                            }: {
+export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, bootstrapCode, features, rebuild}: {
     fabric?: TensegrityFabric,
-    fabricState: IFabricState,
-    setFabricState: (fabricState: IFabricState) => void,
+    selectedBrick?: IBrick,
+    setCode: (code: ICode) => void,
+    fabricState$: BehaviorSubject<IFabricState>,
     bootstrapCode: ICode [],
     features: FloatFeature[],
-    selectedBrick?: IBrick,
-    setSelectedBrick: (brick?: IBrick) => void,
-    setCode: (brick?: ICode) => void,
     rebuild: () => void,
-    setFullScreen: (fullScreen: boolean) => void,
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState(Tab.Generate)
+    const [activeTab, updateActiveTab] = useState(fabricState$.getValue().controlTab)
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(newState => updateActiveTab(newState.controlTab))
+        return () => subscription.unsubscribe()
+    })
 
     function Controls(): JSX.Element {
         if (!fabric) {
@@ -80,16 +71,13 @@ export function ControlTabs({
                         <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
                             <FaArrowDown/><span> Smaller</span>
                         </Button>
-                        <Button onClick={() => {
-                            setSelectedBrick(undefined)
-                            fabric.clearSelection()
-                        }}>
+                        <Button onClick={() => fabric.clearSelection()}>
                             <FaTimesCircle/>
                         </Button>
                     </ButtonGroup>
                 ) : (<h3>Notting</h3>)}
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button disabled={fabricState.lifePhase !== LifePhase.Shaping}
+                    <Button disabled={fabricState$.getValue().lifePhase !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric)}>
                         <FaBiohazard/> Optimize
                     </Button>
@@ -107,39 +95,41 @@ export function ControlTabs({
     }
 
 
-    function Link({tab}: { tab: Tab }): JSX.Element {
+    function Link({controlTab}: { controlTab: ControlTab }): JSX.Element {
         return (
             <NavItem>
-                <NavLink active={activeTab === tab} onClick={() => setActiveTab(tab)}>{tab}</NavLink>
+                <NavLink
+                    active={activeTab === controlTab}
+                    onClick={() => fabricState$.next({...fabricState$.getValue(), controlTab})}
+                >{controlTab}</NavLink>
             </NavItem>
         )
     }
 
-    function Pane({tab}: { tab: Tab }): JSX.Element {
+    function Pane({tab}: { tab: ControlTab }): JSX.Element {
 
         function Content(): JSX.Element {
             switch (tab) {
-                case Tab.Generate:
+                case ControlTab.Generate:
                     return (
                         <CodePanel
                             bootstrapCode={bootstrapCode}
                             setCode={setCode}
                         />
                     )
-                case Tab.Pretense:
+                case ControlTab.Pretense:
                     return !fabric ? (<div/>) : (
                         <PretensePanel
                             fabric={fabric}
-                            fabricState={fabricState}
-                            setFabricState={setFabricState}
+                            fabricState$={fabricState$}
                             rebuild={rebuild}
                         />
                     )
-                case Tab.Test:
+                case ControlTab.Test:
                     return (
                         <Controls/>
                     )
-                case Tab.Features:
+                case ControlTab.Features:
                     return !fabric ? (<div/>) : (
                         <FeaturePanel
                             featureSet={features}
@@ -157,10 +147,10 @@ export function ControlTabs({
     return (
         <div className="h-100">
             <Nav tabs={true} style={{backgroundColor: "#b2b2b2"}}>
-                {Object.keys(Tab).map(tab => <Link key={`T${tab}`} tab={Tab[tab]}/>)}
+                {Object.keys(ControlTab).map(tab => <Link key={`T${tab}`} controlTab={ControlTab[tab]}/>)}
             </Nav>
             <TabContent activeTab={activeTab}>
-                {Object.keys(Tab).map(tab => <Pane key={tab} tab={Tab[tab]}/>)}
+                {Object.keys(ControlTab).map(tab => <Pane key={tab} tab={ControlTab[tab]}/>)}
             </TabContent>
             <div style={{
                 position: "absolute",
@@ -178,7 +168,7 @@ export function ControlTabs({
                         width: "1em",
                     }}
                     className="w-100 h-100" color="dark"
-                    onClick={() => setFullScreen(true)}
+                    onClick={() => fabricState$.next({...fabricState$.getValue(), fullScreen: true})}
                 >
                     <FaAngleDoubleLeft/>
                 </Button>
