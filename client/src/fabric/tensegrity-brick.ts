@@ -179,7 +179,7 @@ export function connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): ICon
         pulls.push(ringPull)
     }
     const createCrossPull = (index: number) => {
-        const role = IntervalRole.Cross
+        const role = IntervalRole.Triangle
         const joint = ring[index]
         const nextJoint = ring[(index + 1) % ring.length]
         const prevJoint = ring[(index + ring.length - 1) % ring.length]
@@ -235,9 +235,10 @@ export function createConnectedBrick(brick: IBrick, triangle: Triangle, scale: I
 }
 
 export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): void {
+    // TODO: THIS USED TO COLLECT CROSS PULLS BUT CANNOT, IT'S BROKEN!
     const instance = fabric.instance
     const engine = instance.engine
-    const crossPulls = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Cross)
+    const crossPulls = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Triangle)
     const opposite = (joint: IJoint, pull: IInterval) => pull.alpha.index === joint.index ? pull.omega : pull.alpha
     const finish = (removeA: IInterval, removeB: IInterval, adjustA: IInterval, adjustB: IInterval, role: IntervalRole) => {
         fabric.removeInterval(removeA)
@@ -252,7 +253,7 @@ export function optimizeFabric(fabric: TensegrityFabric, highCross: boolean): vo
         const aLoc = instance.getJointLocation(a.index)
         const b = ab.omega
         const pullsB = fabric.intervals.filter(interval => (
-            interval.intervalRole !== IntervalRole.Cross && interval.intervalRole !== IntervalRole.Push &&
+            interval.intervalRole !== IntervalRole.Push &&
             (interval.alpha.index === b.index || interval.omega.index === b.index)
         ))
         const bc = pullsB.reduce((pullA, pullB) => {

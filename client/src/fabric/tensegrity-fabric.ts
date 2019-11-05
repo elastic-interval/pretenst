@@ -6,7 +6,7 @@
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
 import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
-import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
+import { FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
 import { executeActiveCode, IActiveCode, ICodeTree, IGrowth } from "./tenscript"
@@ -176,9 +176,7 @@ export class TensegrityFabric {
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const isPush = intervalRole === IntervalRole.Push
-        const pushOverPull = fabricFeatureValue(FabricFeature.PushOverPull)
-        const fabricElasticFactor = isPush ? pushOverPull / 2 : 2 / pushOverPull
-        const elasticFactor = scaleToElasticFactor(scale) * fabricElasticFactor
+        const elasticFactor = scaleToElasticFactor(scale)
         const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticFactor)
         const interval: IInterval = {
             index,
@@ -362,7 +360,7 @@ export class TensegrityFabric {
         }
         const engine = this.instance.engine
         const pretensingCycles = engine.getAge() - this.pretensingStartAge
-        const countdownMax = this.instance.getFeatureValue(FabricFeature.PretensingTicks)
+        const countdownMax = this.instance.getFeatureValue(FabricFeature.PretenseTicks)
         const complete = pretensingCycles / countdownMax
         const currentStep = Math.floor(complete * PRETENSING_STEPS)
         if (currentStep === this.pretensingStep) {
@@ -375,7 +373,7 @@ export class TensegrityFabric {
     private takePretensingStep(): void {
         const strains = this.instance.strains
         const elastics = this.instance.elastics
-        const intensity = this.instance.getFeatureValue(FabricFeature.PretensingIntensity)
+        const intensity = this.instance.getFeatureValue(FabricFeature.PretenseIntensity)
         let pushCount = 0
         let pullCount = 0
         let totalPushAdjustment = 0

@@ -30,6 +30,7 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
 import { CodePanel, ICode } from "./code-panel"
+import { FeaturePanel } from "./feature-panel"
 import { PretensePanel } from "./pretense-panel"
 
 const SPLIT_LEFT = "34em"
@@ -38,6 +39,7 @@ export enum Tab {
     Generate = "Generate",
     Pretense = "Pretense",
     Test = "Test",
+    Features = "Features",
 }
 
 export function ControlTabs({
@@ -47,7 +49,7 @@ export function ControlTabs({
                                 setFullScreen,
                             }: {
     fabric?: TensegrityFabric,
-     fabricState$: BehaviorSubject<IFabricState>,
+    fabricState$: BehaviorSubject<IFabricState>,
     bootstrapCode: ICode [],
     features: FloatFeature[],
     showPushes: boolean,
@@ -181,6 +183,13 @@ export function ControlTabs({
                 case Tab.Test:
                     return (
                         <Controls/>
+                    )
+                case Tab.Features:
+                    return !fabric ? (<div/>) : (
+                        <FeaturePanel
+                            featureSet={features}
+                            fabric={fabric}
+                        />
                     )
             }
         }

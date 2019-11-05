@@ -17,24 +17,22 @@ const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const IN_UTERO_ELASTIC: f32 = 15000
 
 export enum FabricFeature {
-    Gravity = 0,
-    Drag = 1,
-    PushOverPull = 2,
-    SlackThreshold = 3,
-    PushMass = 4,
-    PullMass = 5,
-    IntervalBusyTicks = 6,
-    PretensingTicks = 7,
-    PretensingIntensity = 8,
-    TicksPerFrame = 9,
-    PushLength = 10,
-    TriangleLength = 11,
-    RingLength = 12,
-    CrossLength = 13,
+    TicksPerFrame = 0,
+    Gravity = 1,
+    PushMass = 2,
+    PullMass = 3,
+    Drag = 4,
+    SlackThreshold = 5,
+    PushMaxElastic = 6,
+    PullMaxElastic = 7,
+    IntervalBusyTicks = 8,
+    PretenseTicks = 9,
+    PretenseIntensity = 10,
+    PushLength = 11,
+    TriangleLength = 12,
+    RingLength = 13,
     BowMidLength = 14,
     BowEndLength = 15,
-    PushMaxElastic = 16,
-    PullMaxElastic = 17,
 }
 
 enum SurfaceCharacter {
@@ -54,9 +52,8 @@ enum IntervalRole {
     Push = 0,
     Triangle = 1,
     Ring = 2,
-    Cross = 3,
-    BowMid = 4,
-    BowEnd = 5,
+    BowMid = 3,
+    BowEnd = 4,
 }
 
 export enum LifePhase {
@@ -88,6 +85,9 @@ const COLD_COLOR: f32[] = [
 ]
 const SLACK_COLOR: f32[] = [
     0.0, 1.0, 0.0
+]
+const RING_COLOR: f32[] = [
+    1.0, 1.0, 0.0
 ]
 
 export function getInstanceCount(): u16 {
@@ -584,7 +584,7 @@ function setFabricBusyTicks(countdown: u32): void {
 
 function getPretensingNuance(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
-    let pretensingCountdownMax = getFeature(FabricFeature.PretensingTicks)
+    let pretensingCountdownMax = getFeature(FabricFeature.PretenseTicks)
     return (pretensingCountdownMax - <f32>fabricBusyCountdown) / pretensingCountdownMax
 }
 
@@ -638,7 +638,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
             break
         case LifePhase.Pretensing:
             setAltitude(0)
-            setFabricBusyTicks(<u32>getFeature(FabricFeature.PretensingTicks))
+            setFabricBusyTicks(<u32>getFeature(FabricFeature.PretenseTicks))
             break
         case LifePhase.Pretenst:
             break
@@ -960,7 +960,7 @@ function outputLinesGeometry(): void {
             if (strain < slackThreshold) {
                 setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
-                let color = isPush ? HOT_COLOR : COLD_COLOR
+                let color = isPush ? HOT_COLOR : intervalRole === IntervalRole.Ring ? RING_COLOR : COLD_COLOR
                 setLineColor(intervalIndex, color[0], color[1], color[2])
             }
         } else if (colorPushes || colorPulls) {
