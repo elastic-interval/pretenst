@@ -51,6 +51,10 @@ export class FabricInstance {
         this.fabricFeatures.floats[feature.fabricFeature] = feature.factor
     }
 
+    public setFeatureValue(fabricFeature: FabricFeature, value: number): void {
+        this.fabricFeatures.floats[fabricFeature] = value
+    }
+
     public getFeatureValue(fabricFeature: FabricFeature): number {
         return this.fabricFeatures.floats[fabricFeature]
     }

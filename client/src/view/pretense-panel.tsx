@@ -9,7 +9,7 @@ import { FaCircle, FaDotCircle, FaHandPointUp } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { SurfaceCharacter } from "../fabric/fabric-engine"
+import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
 import { LifePhase } from "../fabric/life-phase"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -17,21 +17,43 @@ import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
 enum GravityCharacter {
-    Light = "Light",
-    Heavy = "Heavy",
-    Space = "Space",
+    Light,
+    Heavy,
+    Space,
 }
+
+const GRAVITY = [
+    0.00000005,
+    0.0000005,
+    0.0,
+]
 
 enum DragCharacter {
-    Light = "Light",
-    Heavy = "Heavy",
-    Free = "Free",
+    Light,
+    Heavy,
+    Free,
 }
 
+const DRAG = [
+    0.00001,
+    0.0001,
+    0.0,
+]
+
 enum DensityCharacter {
-    Push5Pull1 = "Push5Pull1",
-    Push2Pull1 = "Push2Pull1",
-    Push1Pull1 = "Push1Pull1",
+    Push5Pull1,
+    Push2Pull1,
+    Push1Pull1,
+}
+
+const DENSITY = [
+    {push: 5, pull: 1},
+    {push: 3, pull: 1},
+    {push: 1, pull: 1},
+]
+
+function enumValues(e: object): number[] {
+    return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
 
 export function PretensePanel({fabric, lifePhase$, pretensingStep$, showPushes, setShowPushes, showPulls, setShowPulls, rebuild}: {
@@ -49,8 +71,13 @@ export function PretensePanel({fabric, lifePhase$, pretensingStep$, showPushes, 
     const [surfaceCharacter, setSurfaceCharacter] = useState(SurfaceCharacter.Sticky)
     const [dragCharacter, setDragCharacter] = useState(DragCharacter.Light)
     const [densityCharacter, setDensityCharacter] = useState(DensityCharacter.Push5Pull1)
-
+    useEffect(() => fabric.instance.setFeatureValue(FabricFeature.Gravity, GRAVITY[gravityCharacter]), [gravityCharacter])
     useEffect(() => fabric.instance.engine.setSurfaceCharacter(surfaceCharacter), [surfaceCharacter])
+    useEffect(() => fabric.instance.setFeatureValue(FabricFeature.Drag, DRAG[dragCharacter]), [dragCharacter])
+    useEffect(() => {
+        fabric.instance.setFeatureValue(FabricFeature.PullMass, DENSITY[densityCharacter].pull)
+        fabric.instance.setFeatureValue(FabricFeature.PushMass, DENSITY[densityCharacter].push)
+    }, [densityCharacter])
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
         const onClick = () => {
@@ -69,48 +96,48 @@ export function PretensePanel({fabric, lifePhase$, pretensingStep$, showPushes, 
             <div className="my-2">
                 <h6>Gravity</h6>
                 <ButtonGroup>
-                    {Object.keys(GravityCharacter).map(key => (
+                    {enumValues(GravityCharacter).map(value => (
                         <Button
-                            key={key}
-                            active={gravityCharacter === GravityCharacter[key]}
-                            onClick={() => setGravityCharacter(GravityCharacter[key])}
-                        >{key}</Button>
+                            key={GravityCharacter[value]}
+                            active={gravityCharacter === value}
+                            onClick={() => setGravityCharacter(value)}
+                        >{GravityCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>
             <div className="my-2">
                 <h6>Surface</h6>
                 <ButtonGroup>
-                    {Object.keys(SurfaceCharacter).filter(k => k.length > 1).map(key => (
+                    {enumValues(SurfaceCharacter).map(value => (
                         <Button
-                            key={key}
-                            active={surfaceCharacter === SurfaceCharacter[key]}
-                            onClick={() => setSurfaceCharacter(SurfaceCharacter[key])}
-                        >{key}</Button>
+                            key={SurfaceCharacter[value]}
+                            active={surfaceCharacter === value}
+                            onClick={() => setSurfaceCharacter(value)}
+                        >{SurfaceCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>
             <div className="my-2">
                 <h6>Drag</h6>
                 <ButtonGroup>
-                    {Object.keys(DragCharacter).map(key => (
+                    {enumValues(DragCharacter).map(value => (
                         <Button
-                            key={key}
-                            active={dragCharacter === DragCharacter[key]}
-                            onClick={() => setDragCharacter(DragCharacter[key])}
-                        >{key}</Button>
+                            key={DragCharacter[value]}
+                            active={dragCharacter === value}
+                            onClick={() => setDragCharacter(value)}
+                        >{DragCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>
             <div className="my-2">
                 <h6>Density</h6>
                 <ButtonGroup>
-                    {Object.keys(DensityCharacter).map(key => (
+                    {enumValues(DensityCharacter).map(value => (
                         <Button
-                            key={key}
-                            active={densityCharacter === DensityCharacter[key]}
-                            onClick={() => setDensityCharacter(DensityCharacter[key])}
-                        >{key}</Button>
+                            key={DensityCharacter[value]}
+                            active={densityCharacter === value}
+                            onClick={() => setDensityCharacter(value)}
+                        >{DensityCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>
