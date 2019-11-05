@@ -22,24 +22,14 @@ import {
     Vector3,
 } from "three"
 
-import { FabricFeature, IntervalRole } from "../fabric/fabric-engine"
+import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import {
-    ATTENUATED,
-    CROSS_MATERIAL,
-    FACE,
-    FACE_SPHERE,
-    LINE,
-    PULL_MATERIAL,
-    PUSH_MATERIAL,
-    SCALE_LINE,
-    SLACK,
-} from "./materials"
+import { ATTENUATED, FACE, FACE_SPHERE, LINE, PULL_MATERIAL, PUSH_MATERIAL, SCALE_LINE, SLACK} from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
@@ -226,9 +216,6 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         const material = () => {
             if (attenuated) {
                 return ATTENUATED
-            }
-            if (showPulls && showPushes) {
-                return interval.intervalRole === IntervalRole.Cross ? CROSS_MATERIAL : isPush ? PUSH_MATERIAL : PULL_MATERIAL
             }
             const slack = strain < fabricFeatureValue(FabricFeature.SlackThreshold)
             return slack ? SLACK : isPush ? PUSH_MATERIAL : PULL_MATERIAL

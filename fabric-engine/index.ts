@@ -959,8 +959,12 @@ function outputLinesGeometry(): void {
         let isPush: boolean = intervalRole === IntervalRole.Push
         let strain = isPush ? -directionalStrain : directionalStrain
         if (colorPushes && colorPulls) {
-            let color = isPush ? HOT_COLOR : intervalRole === IntervalRole.Cross ? CROSS_COLOR : COLD_COLOR
-            setLineColor(intervalIndex, color[0], color[1], color[2])
+            if (strain < slackThreshold) {
+                setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
+            } else {
+                let color = isPush ? HOT_COLOR : COLD_COLOR
+                setLineColor(intervalIndex, color[0], color[1], color[2])
+            }
         } else if (colorPushes || colorPulls) {
             if (isPush && colorPulls || !isPush && colorPushes) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
