@@ -10,13 +10,8 @@ import {
     FaArrowDown,
     FaArrowUp,
     FaBiohazard,
-    FaCamera,
-    FaCompressArrowsAlt,
     FaCubes,
     FaFileCsv,
-    FaHandRock,
-    FaParachuteBox,
-    FaSyncAlt,
     FaTimesCircle,
 } from "react-icons/all"
 import { Button, ButtonGroup, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
@@ -75,7 +70,6 @@ export function ControlTabs({
                 fabric.instance.engine.multiplyRestLength(interval.index, adjustment())
             })
         }
-        const engine = fabric.instance.engine
         return (
             <div className="p-4" style={{display: "block"}}>
                 {selectedBrick ? (
@@ -95,17 +89,6 @@ export function ControlTabs({
                     </ButtonGroup>
                 ) : (<h3>Notting</h3>)}
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button disabled={fabricState.lifePhase !== LifePhase.Pretenst}
-                            onClick={() => engine.setAltitude(1)}>
-                        <FaHandRock/> Nudge
-                    </Button>
-                    <Button disabled={fabricState.lifePhase !== LifePhase.Pretenst}
-                            onClick={() => engine.setAltitude(10)}>
-                        <FaParachuteBox/> Drop
-                    </Button>
-                    <Button onClick={() => fabric.instance.engine.centralize()}>
-                        <FaCompressArrowsAlt/> Centralize
-                    </Button>
                     <Button disabled={fabricState.lifePhase !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric)}>
                         <FaBiohazard/> Optimize
@@ -117,20 +100,6 @@ export function ControlTabs({
                     </Button>
                     <Button onClick={() => saveOBJFile(fabric)}>
                         <FaCubes/> Download OBJ
-                    </Button>
-                </ButtonGroup>
-                <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button
-                        color={fabricState.rotating ? "warning" : "secondary"}
-                        onClick={() => setFabricState({...fabricState, rotating: !fabricState.rotating})}
-                    >
-                        <FaSyncAlt/> Auto-rotate
-                    </Button>
-                    <Button
-                        color={fabricState.frozen ? "warning" : "secondary"}
-                        onClick={() => setFabricState({...fabricState, frozen: !fabricState.frozen})}
-                    >
-                        <FaCamera/> Frozen Snapshot
                     </Button>
                 </ButtonGroup>
             </div>

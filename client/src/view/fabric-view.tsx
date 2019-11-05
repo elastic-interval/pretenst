@@ -24,7 +24,7 @@ import {
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { doNotClick, hideSurface, IFabricState } from "../fabric/fabric-state"
+import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -238,7 +238,7 @@ export function FabricView({fabric, fabricState, setFabricState, selectedBrick, 
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {fabricState.rotating || fabricState.frozen ? undefined : <ElasticScale/>}
+                {fabricState.rotating || fabricState.lifePhase !== LifePhase.Pretensing ? undefined : <ElasticScale/>}
                 {fabricState.frozen ? (
                     <group>
                         {fabric.splitIntervals ? (

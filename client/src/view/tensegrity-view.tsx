@@ -18,6 +18,8 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { getCodeFromUrl, getRecentCode, ICode } from "./code-panel"
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
+import { ToolbarLeft } from "./toolbar-left"
+import { ToolbarRight } from "./toolbar-right"
 
 const SPLIT_LEFT = "34em"
 const SPLIT_RIGHT = "35em"
@@ -132,6 +134,14 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
                                 {code.codeString}
                             </div>
                         )}
+                        <ToolbarLeft
+                            fabricState={fabricState}
+                            setFabricState={setFabricState}
+                        />
+                        <ToolbarRight
+                            fabric={fabric}
+                            fabricState={fabricState}
+                        />
                         <Canvas style={{
                             backgroundColor: "black",
                         }}>
