@@ -5,17 +5,17 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaClock, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
+import { FaClock, FaDraftingCompass, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function LifePhasePanel({fabric, lifePhase$, rebuild}: {
+export function LifePhasePanel({fabric, lifePhase$, pretense}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject <LifePhase>,
-    rebuild: () => void,
+    pretense: () => void,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
@@ -59,9 +59,9 @@ export function LifePhasePanel({fabric, lifePhase$, rebuild}: {
                 </Button>
                 <Button
                     disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={rebuild}
+                    onClick={pretense}
                 >
-                    <span>Grow <FaSeedling/> Again</span>
+                    <span>Pretense <FaDraftingCompass/> Slack</span>
                 </Button>
             </ButtonGroup>
         </div>

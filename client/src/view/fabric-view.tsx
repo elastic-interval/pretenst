@@ -58,7 +58,7 @@ const PUSH_GIRTH = 100
 const PULL_GIRTH = 60
 const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
-const SCALE_MAX = 0.5
+const SCALE_MAX = 0.45
 
 export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
@@ -270,7 +270,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {rotating || lifePhase !== LifePhase.Pretensing ? undefined : <ElasticScale/>}
+                {rotating || lifePhase < LifePhase.Slack ? undefined : <ElasticScale/>}
                 {!fabric ? undefined : frozen ? (
                     <group>
                         {fabric.splitIntervals ? (

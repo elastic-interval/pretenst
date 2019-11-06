@@ -11,11 +11,11 @@ import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FabricFeature, lengthFeatureToRole } from "../fabric/fabric-engine"
-import { FloatFeature } from "../fabric/fabric-features"
+import { fabricFeatureValue, FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { DRAG, GRAVITY, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { ICode } from "../fabric/tenscript"
-import { IBrick, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { IBrick, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { getCodeFromUrl, getRecentCode } from "./code-panel"
@@ -100,6 +100,29 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
         location.hash = code.codeString
     }
 
+    function pretense(): void {
+        if (!fabric) {
+            return
+        }
+
+        const strains = fabric.instance.strains
+        const getMedian = (intervals: IInterval[]) => {
+            const sorted = intervals.map(interval => strains[interval.index]).sort((a, b) => a - b)
+            return sorted[Math.floor(sorted.length / 2)]
+        }
+        const pushMedian = getMedian(fabric.intervals.filter(interval => interval.isPush))
+        const pullMedian = getMedian(fabric.intervals.filter(interval => !interval.isPush))
+        const intensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
+        const elasticities = fabric.instance.elasticities
+        const changes = fabric.intervals.map(interval => {
+            const median = interval.isPush ? pushMedian : pullMedian
+            const strain = strains[interval.index] - median
+            return 1 + (interval.isPush ? -strain : strain) * intensity
+        })
+        fabric.toSlack(elasticities.map((value, index) => value * changes[index]))
+        setTimeout(() => fabric.toPretensing(), 200)
+    }
+
     useEffect(buildFromCode, [code])
 
     return (
@@ -140,7 +163,7 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                         lifePhase$={lifePhase$}
                         bootstrapCode={bootstrapCode}
                         features={features}
-                        rebuild={buildFromCode}
+                        pretense={pretense}
                     />
                 </div>
             )}

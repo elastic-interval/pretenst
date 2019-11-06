@@ -55,11 +55,11 @@ export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 
 function scaleToElasticity(scale: IPercent): number {
-    return percentToFactor(scale) / 100000
+    return percentToFactor(scale) / 10000
 }
 
 function scaleToLinearDensity(scale: IPercent): number {
-    return percentToFactor(scale) / 1000
+    return percentToFactor(scale) / 100
 }
 
 export class TensegrityFabric {
@@ -96,9 +96,13 @@ export class TensegrityFabric {
         this.refreshFaceGeometry()
     }
 
-    public toSlack(): void {
+    public toSlack(elasticities?: Float32Array): void {
         if (this.slackCloned) {
             this.instance.cloneFrom(this.slackInstance)
+            if (elasticities) {
+                const destination = this.instance.elasticities
+                elasticities.forEach((value, index) => destination[index] = value)
+            }
         } else {
             this.slackCloned = true
             this.instance.cloneTo(this.slackInstance)

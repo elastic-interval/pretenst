@@ -31,7 +31,7 @@ import { PretensePanel } from "./pretense-panel"
 
 const SPLIT_LEFT = "34em"
 
-export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, lifePhase$, bootstrapCode, features, rebuild}: {
+export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, lifePhase$, bootstrapCode, features, pretense}: {
     fabric?: TensegrityFabric,
     selectedBrick?: IBrick,
     setCode: (code: ICode) => void,
@@ -39,7 +39,7 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, lifeP
     lifePhase$: BehaviorSubject<LifePhase>,
     bootstrapCode: ICode [],
     features: FloatFeature[],
-    rebuild: () => void,
+    pretense: () => void,
 }): JSX.Element {
 
     const [activeTab, setActiveTab] = useState(loadControlTab)
@@ -135,7 +135,7 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, lifeP
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
-                            rebuild={rebuild}
+                            pretense={pretense}
                         />
                     )
                 case ControlTab.Test:

@@ -16,11 +16,11 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
+export function PretensePanel({fabric, fabricState$, lifePhase$, pretense}: {
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    rebuild: () => void,
+    pretense: () => void,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
@@ -115,7 +115,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                 <LifePhasePanel
                     fabric={fabric}
                     lifePhase$={lifePhase$}
-                    rebuild={rebuild}
+                    pretense={pretense}
                 />
             </div>
             <div className="my-5 w-100">

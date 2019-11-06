@@ -93,7 +93,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PushMaxElastic,
         name: "Push Max Elastic",
-        defaultValue: 0.00003,
+        defaultValue: 0.0003,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 0,
         adjustment: byTenPercent,
@@ -101,7 +101,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PullMaxElastic,
         name: "Pull Max Elastic",
-        defaultValue: 0.00005,
+        defaultValue: 0.0005,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 0,
         adjustment: byTenPercent,
