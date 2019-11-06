@@ -8,9 +8,7 @@ import { useEffect, useState } from "react"
 import SortableTree, { TreeItem } from "react-sortable-tree"
 import { Button } from "reactstrap"
 
-import { ICodeTree, tenscriptToCodeTree } from "../fabric/tenscript"
-
-import { ICode } from "./code-panel"
+import { ICode, ICodeTree, tenscriptToCodeTree } from "../fabric/tenscript"
 
 export function CodeTreeEditor({code, setCode}: {
     code: ICode,

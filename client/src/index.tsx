@@ -14,11 +14,10 @@ import { API_URI } from "./constants"
 import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { DragCharacter, GravityCharacter, IFabricState, LifePhase } from "./fabric/fabric-state"
-import { codeTreeToTenscript, ICodeTree } from "./fabric/tenscript"
+import { LifePhase, loadFabricState, saveFabricState } from "./fabric/fabric-state"
+import { codeTreeToTenscript, ICode, ICodeTree } from "./fabric/tenscript"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
-import { ICode } from "./view/code-panel"
 import { TensegrityView } from "./view/tensegrity-view"
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./vendor/bootstrap.min.css"
@@ -58,16 +57,9 @@ async function start(): Promise<void> {
     const fabricKernel = new FabricKernel(engine)
     const root = document.getElementById("root") as HTMLElement
     const fabricFeatures = createFabricFeatures()
-    const fabricState$ = new BehaviorSubject<IFabricState>({
-        lifePhase: LifePhase.Growing,
-        gravityCharacter: GravityCharacter.Light,
-        dragCharacter: DragCharacter.Heavy,
-        rotating: false,
-        frozen: false,
-        showPushes: true,
-        showPulls: true,
-        fullScreen: false,
-    })
+    const fabricState$ = new BehaviorSubject(loadFabricState())
+    const lifePhase$ = new BehaviorSubject(LifePhase.Growing)
+    fabricState$.subscribe(newState => saveFabricState(newState))
     const bootstrapCode = await getBootstrapCode()
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
@@ -77,6 +69,7 @@ async function start(): Promise<void> {
                 features={fabricFeatures}
                 bootstrapCode={bootstrapCode}
                 fabricState$={fabricState$}
+                lifePhase$={lifePhase$}
             />,
             root,
         )

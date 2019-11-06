@@ -51,7 +51,7 @@ export function StrainPanel({fabric, pushes, showPushes, showPulls}: {
     const maxString = max.toFixed()
     const style: CSSProperties = {
         textAlign: "center",
-        width: "8em",
+        width: "12em",
         backgroundColor: "#cccccc",
         borderColor: "#575757",
         borderTopRightRadius: "1em",

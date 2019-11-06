@@ -8,18 +8,13 @@ import { useEffect, useState } from "react"
 import { FaEdit } from "react-icons/all"
 import { Badge, Button, ButtonGroup } from "reactstrap"
 
-import { codeTreeToTenscript, ICodeTree, tenscriptToCodeTree } from "../fabric/tenscript"
+import { codeTreeToTenscript, ICode, ICodeTree, tenscriptToCodeTree } from "../fabric/tenscript"
 
 import { CodeTreeEditor } from "./code-tree-editor"
 
 const FABRIC_CODE_KEY = "FabricCode"
 
 const MAX_RECENT = 12
-
-export interface ICode {
-    codeString: string
-    codeTree: ICodeTree
-}
 
 export function CodePanel({setCode, bootstrapCode}: {
     bootstrapCode: ICode[],

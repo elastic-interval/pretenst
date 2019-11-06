@@ -28,19 +28,19 @@ export function ToolbarLeft({fabricState$}: {
             <ButtonGroup>
                 <Button
                     color={fabricState$.getValue().rotating ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next({
-                        ...fabricState$.getValue(),
-                        rotating: !rotating,
-                    })}
+                    onClick={() => {
+                        const nonce = fabricState$.getValue().nonce + 1
+                        fabricState$.next({...fabricState$.getValue(), nonce, rotating: !rotating})
+                    }}
                 >
                     {rotating ? <FaAnchor/> : <FaSyncAlt/>}
                 </Button>
                 <Button
                     color={fabricState$.getValue().frozen ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next({
-                        ...fabricState$.getValue(),
-                        frozen: !frozen,
-                    })}
+                    onClick={() => {
+                        const nonce = fabricState$.getValue().nonce + 1
+                        fabricState$.next({...fabricState$.getValue(), nonce, frozen: !frozen})
+                    }}
                 >
                     {frozen ? <FaClock/> : <FaCamera/>}
                 </Button>

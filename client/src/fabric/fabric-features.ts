@@ -1,11 +1,10 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  * something extra so it can compile
  */
 
-import { BehaviorSubject, Subject, Subscription } from "rxjs"
+import { BehaviorSubject, Subscription } from "rxjs"
 
 import { FabricFeature, IntervalRole, roleToLengthFeature } from "./fabric-engine"
 
@@ -118,7 +117,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PretenseTicks,
         name: "PretensingCountdown",
-        defaultValue: 300000,
+        defaultValue: 30000,
         multiplier: FeatureMultiplier.OneThousand,
         fixedDigits: 1,
         adjustment: byTenPercent,
@@ -199,7 +198,8 @@ export class FloatFeature {
     private factor$: BehaviorSubject<number>
 
     constructor(public readonly config: IFeatureConfig) {
-        this.factor$ = new BehaviorSubject<number>(fabricFeatureValue(config.feature))
+        const initialValue = fabricFeatureValue(config.feature)
+        this.factor$ = new BehaviorSubject<number>(initialValue)
         this.factor$.subscribe(newFactor => {
             const key = FabricFeature[this.config.feature]
             if (this.isAtDefault) {
@@ -227,16 +227,12 @@ export class FloatFeature {
         return this.factor$.subscribe(() => change())
     }
 
-    public get subject(): Subject<number> {
-        return this.factor$
-    }
-
     public get fabricFeature(): FabricFeature {
         return this.config.feature
     }
 
-    public get multiplierValue(): number {
-        return multiplierValue(this.config.multiplier)
+    public setValue(value: number): void {
+        this.factor$.next(value)
     }
 
     public adjustValue(up: boolean): void {

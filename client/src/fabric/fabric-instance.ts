@@ -57,33 +57,24 @@ export class FabricInstance {
         this._fabricFeatures.floats[fabricFeature] = value
     }
 
-    public getFeatureValue(fabricFeature: FabricFeature): number {
-        return this._fabricFeatures.floats[fabricFeature]
-    }
-
     public growing(): LifePhase {
-        console.log("Growing")
         this.forgetDimensions()
         return this.engine.setLifePhase(LifePhase.Growing, this.initialPretenst)
     }
 
     public shaping(): LifePhase {
-        console.log("Shaping")
         return this.engine.setLifePhase(LifePhase.Shaping, this.initialPretenst)
     }
 
     public slack(): LifePhase {
-        console.log("Slack")
         return this.engine.setLifePhase(LifePhase.Slack, 0)
     }
 
     public pretensing(): LifePhase {
-        console.log("Pretensing")
         return this.engine.setLifePhase(LifePhase.Pretensing, this.maturePretenst)
     }
 
     public pretenst(): LifePhase {
-        console.log("Pretenst")
         return this.engine.setLifePhase(LifePhase.Pretenst, this.maturePretenst)
     }
 

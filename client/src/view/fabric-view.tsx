@@ -29,7 +29,7 @@ import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabr
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { ATTENUATED, FACE, FACE_SPHERE, LINE, PULL_MATERIAL, PUSH_MATERIAL, SCALE_LINE, SLACK} from "./materials"
+import { ATTENUATED, FACE, FACE_SPHERE, LINE, PULL_MATERIAL, PUSH_MATERIAL, SCALE_LINE, SLACK } from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
@@ -60,11 +60,12 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.5
 
-export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState$}: {
+export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
     selectedBrick?: IBrick,
     setSelectedBrick: (selectedBrick: IBrick) => void,
     fabricState$: BehaviorSubject<IFabricState>,
+    lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
@@ -77,13 +78,13 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         const spaceTexture = new TextureLoader().load("space.jpg")
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
-
-    const [lifePhase, setLifePhase] = useState(fabric.lifePhase)
+    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+    useEffect(() => {
+        const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
+        return () => subscription.unsubscribe()
+    })
     useEffect(() => {
         orbit.current.autoRotate = fabricState$.getValue().rotating
-        if (fabricState$.getValue().lifePhase !== fabric.lifePhase) {
-            setLifePhase(lifePhase)
-        }
     }, [fabric])
     const [frozen, updateFrozen] = useState(fabricState$.getValue().frozen)
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
@@ -130,10 +131,6 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         if (!frozen) {
             fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
             fabric.needsUpdate()
-        }
-        if (lifePhase !== fabric.lifePhase) {
-            setLifePhase(fabric.lifePhase)
-            fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.lifePhase})
         }
         setAge(instance.engine.getAge())
     }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, frozen])

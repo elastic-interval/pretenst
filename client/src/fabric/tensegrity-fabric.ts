@@ -3,13 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
 import { IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
-import { executeActiveCode, IActiveCode, ICodeTree, IGrowth } from "./tenscript"
+import { executeActiveCode, IActiveCode, ICode, IGrowth } from "./tenscript"
 import { connectClosestFacePair, createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,
@@ -58,11 +59,10 @@ function scaleToElasticity(scale: IPercent): number {
 }
 
 function scaleToLinearDensity(scale: IPercent): number {
-    return percentToFactor(scale) / 100000
+    return percentToFactor(scale) / 1000
 }
 
 export class TensegrityFabric {
-    public lifePhase: LifePhase
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public splitIntervals?: IIntervalSplit
@@ -85,34 +85,30 @@ export class TensegrityFabric {
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
         public readonly features: FloatFeature[],
-        public readonly name: string,
-        codeTree: ICodeTree,
+        public readonly code: ICode,
+        private lifePhase$: BehaviorSubject<LifePhase>,
     ) {
-        this.lifePhase = this.instance.growing()
+        this.lifePhase$.next(instance.growing())
         features.forEach(feature => this.instance.applyFeature(feature))
         const brick = createBrickOnOrigin(this, percentOrHundred())
-        const executing: IActiveCode = {codeTree, brick}
+        const executing: IActiveCode = {codeTree: this.code.codeTree, brick}
         this.growth = {growing: [executing], optimizationStack: []}
-        this.refreshFaceGeometry()
         this.refreshLineGeometry()
+        this.refreshFaceGeometry()
     }
 
-    public slack(): LifePhase {
+    public toSlack(): void {
         if (this.slackCloned) {
             this.instance.cloneFrom(this.slackInstance)
         } else {
             this.slackCloned = true
             this.instance.cloneTo(this.slackInstance)
         }
-        return this.lifePhase = this.instance.slack()
+        this.lifePhase$.next(this.instance.slack())
     }
 
-    public pretensing(): LifePhase {
-        return this.lifePhase = this.instance.pretensing()
-    }
-
-    public pretenst(): LifePhase {
-        return this.lifePhase = this.instance.pretenst()
+    public toPretensing(): void {
+        this.lifePhase$.next(this.instance.pretensing())
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
@@ -260,8 +256,8 @@ export class TensegrityFabric {
         }
         const growth = this.growth
         if (!growth) {
-            if (this.lifePhase === LifePhase.Pretensing) {
-                this.lifePhase = this.pretenst()
+            if (this.lifePhase$.getValue() === LifePhase.Pretensing) {
+                this.lifePhase$.next(this.instance.pretenst())
             }
             return false
         }
@@ -285,7 +281,7 @@ export class TensegrityFabric {
                 }
             } else {
                 this.growth = undefined
-                this.lifePhase = this.instance.shaping()
+                this.lifePhase$.next(this.instance.shaping())
             }
         }
         return true
@@ -315,7 +311,7 @@ export class TensegrityFabric {
         const elasticities = this.instance.elasticities
         const linearDensities = this.instance.linearDensities
         return {
-            name: this.name,
+            name: this.code.codeString,
             joints: this.joints.map(joint => {
                 const vector = this.instance.location(joint.index)
                 return {

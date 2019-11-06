@@ -9,20 +9,18 @@ import { FaClock, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-ico
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricState, LifePhase } from "../fabric/fabric-state"
+import { LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function LifePhasePanel({fabric, fabricState$, rebuild}: {
+export function LifePhasePanel({fabric, lifePhase$, rebuild}: {
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    lifePhase$: BehaviorSubject <LifePhase>,
     rebuild: () => void,
 }): JSX.Element {
 
-    const [lifePhase, setLifePhase] = useState(fabric.lifePhase)
+    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
-            setLifePhase(newState.lifePhase)
-        })
+        const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
     })
 
@@ -49,13 +47,13 @@ export function LifePhasePanel({fabric, fabricState$, rebuild}: {
             <ButtonGroup vertical={true} className="w-100">
                 <Button
                     disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.slack()})}
+                    onClick={() => fabric.toSlack()}
                 >
                     <span>Enter <FaYinYang/> Slack</span>
                 </Button>
                 <Button
                     disabled={lifePhase !== LifePhase.Slack}
-                    onClick={() => fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.pretensing()})}
+                    onClick={() => fabric.toPretensing()}
                 >
                     <span>Start <FaHandSpock/> Pretensing</span>
                 </Button>

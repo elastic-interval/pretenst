@@ -19,22 +19,24 @@ import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
+import { ICode } from "../fabric/tenscript"
 import { optimizeFabric } from "../fabric/tensegrity-brick"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
-import { CodePanel, ICode } from "./code-panel"
+import { CodePanel } from "./code-panel"
 import { FeaturePanel } from "./feature-panel"
 import { PretensePanel } from "./pretense-panel"
 
 const SPLIT_LEFT = "34em"
 
-export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, bootstrapCode, features, rebuild}: {
+export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, lifePhase$, bootstrapCode, features, rebuild}: {
     fabric?: TensegrityFabric,
     selectedBrick?: IBrick,
     setCode: (code: ICode) => void,
     fabricState$: BehaviorSubject<IFabricState>,
+    lifePhase$: BehaviorSubject<LifePhase>,
     bootstrapCode: ICode [],
     features: FloatFeature[],
     rebuild: () => void,
@@ -46,9 +48,9 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, boots
         if (!fabric) {
             return <div/>
         }
-        const [lifePhase, setLifePhase] = useState(fabric.lifePhase)
+        const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
         useEffect(() => {
-            const subscription = fabricState$.subscribe(newState => setLifePhase(newState.lifePhase))
+            const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
             return () => subscription.unsubscribe()
         })
 
@@ -132,6 +134,7 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, boots
                         <PretensePanel
                             fabric={fabric}
                             fabricState$={fabricState$}
+                            lifePhase$={lifePhase$}
                             rebuild={rebuild}
                         />
                     )
@@ -140,12 +143,7 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, boots
                         <Controls/>
                     )
                 case ControlTab.Features:
-                    return !fabric ? (<div/>) : (
-                        <FeaturePanel
-                            featureSet={features}
-                            fabric={fabric}
-                        />
-                    )
+                    return !fabric ? <div/> : <FeaturePanel featureSet={features}/>
             }
         }
 
@@ -178,7 +176,10 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, boots
                         width: "1em",
                     }}
                     className="w-100 h-100" color="dark"
-                    onClick={() => fabricState$.next({...fabricState$.getValue(), fullScreen: true})}
+                    onClick={() => {
+                        const nonce = fabricState$.getValue().nonce + 1
+                        fabricState$.next({...fabricState$.getValue(), nonce, fullScreen: true})
+                    }}
                 >
                     <FaAngleDoubleLeft/>
                 </Button>

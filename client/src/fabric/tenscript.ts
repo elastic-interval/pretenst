@@ -6,6 +6,11 @@
 import { createConnectedBrick } from "./tensegrity-brick"
 import { IBrick, IPercent, percentOrHundred, Triangle, TRIANGLE_DEFINITIONS } from "./tensegrity-brick-types"
 
+export interface ICode {
+    codeString: string
+    codeTree: ICodeTree
+}
+
 export interface ICodeTree {
     _?: number, // forward steps
     S?: IPercent, // scale

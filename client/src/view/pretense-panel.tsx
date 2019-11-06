@@ -9,36 +9,36 @@ import { FaCircle, FaDotCircle, FaEye, FaGlobe, FaHandPointUp } from "react-icon
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
-import {
-    DRAG,
-    DragCharacter,
-    enumValues,
-    GRAVITY,
-    GravityCharacter,
-    IFabricState,
-} from "../fabric/fabric-state"
+import { SurfaceCharacter } from "../fabric/fabric-engine"
+import { DragCharacter, enumValues, GravityCharacter, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function PretensePanel({fabric, fabricState$, rebuild}: {
+export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
+    lifePhase$: BehaviorSubject<LifePhase>,
     rebuild: () => void,
 }): JSX.Element {
 
-    const [gravityCharacter, setGravityCharacter] = useState(GravityCharacter.Light)
-    useEffect(() => fabric.instance.setFeatureValue(FabricFeature.Gravity, GRAVITY[gravityCharacter]), [gravityCharacter])
-    const [surfaceCharacter, setSurfaceCharacter] = useState(SurfaceCharacter.Sticky)
-    useEffect(() => fabric.instance.engine.setSurfaceCharacter(surfaceCharacter), [surfaceCharacter])
-    const [dragCharacter, setDragCharacter] = useState(DragCharacter.Light)
-    useEffect(() => fabric.instance.setFeatureValue(FabricFeature.Drag, DRAG[dragCharacter]), [dragCharacter])
+    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+    useEffect(() => {
+        const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
+        return () => subscription.unsubscribe()
+    })
+
+    const [gravityCharacter, updateGravityCharacter] = useState(fabricState$.getValue().gravityCharacter)
+    const [surfaceCharacter, updateSurfaceCharacter] = useState(fabricState$.getValue().surfaceCharacter)
+    const [dragCharacter, updateDragCharacter] = useState(fabricState$.getValue().dragCharacter)
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
     const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
+            updateGravityCharacter(newState.gravityCharacter)
+            updateSurfaceCharacter(newState.surfaceCharacter)
+            updateDragCharacter(newState.dragCharacter)
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
         })
@@ -47,7 +47,8 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
         const onClick = () => {
-            fabricState$.next({...fabricState$.getValue(), showPulls: pulls, showPushes: pushes})
+            const nonce = fabricState$.getValue().nonce + 1
+            fabricState$.next({...fabricState$.getValue(), nonce, showPulls: pulls, showPushes: pushes})
         }
         const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
         return <Button style={{color: "white"}} color={color} onClick={onClick}>
@@ -56,6 +57,7 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
         </Button>
     }
 
+    const environmentDisabled = (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping)
     return (
         <div className="m-5">
             <div className="text-center">
@@ -66,9 +68,13 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
                 <ButtonGroup className="w-100">
                     {enumValues(GravityCharacter).map(value => (
                         <Button
+                            disabled={environmentDisabled}
                             key={GravityCharacter[value]}
                             active={gravityCharacter === value}
-                            onClick={() => setGravityCharacter(value)}
+                            onClick={() => {
+                                const nonce = fabricState$.getValue().nonce + 1
+                                fabricState$.next({...fabricState$.getValue(), nonce, gravityCharacter: value})
+                            }}
                         >{GravityCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
@@ -78,9 +84,13 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
                 <ButtonGroup className="w-100">
                     {enumValues(SurfaceCharacter).map(value => (
                         <Button
+                            disabled={environmentDisabled}
                             key={SurfaceCharacter[value]}
                             active={surfaceCharacter === value}
-                            onClick={() => setSurfaceCharacter(value)}
+                            onClick={() => {
+                                const nonce = fabricState$.getValue().nonce + 1
+                                fabricState$.next({...fabricState$.getValue(), nonce, surfaceCharacter: value})
+                            }}
                         >{SurfaceCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
@@ -90,9 +100,13 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
                 <ButtonGroup className="w-100">
                     {enumValues(DragCharacter).map(value => (
                         <Button
+                            disabled={environmentDisabled}
                             key={DragCharacter[value]}
                             active={dragCharacter === value}
-                            onClick={() => setDragCharacter(value)}
+                            onClick={() => {
+                                const nonce = fabricState$.getValue().nonce + 1
+                                fabricState$.next({...fabricState$.getValue(), nonce, dragCharacter: value})
+                            }}
                         >{DragCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
@@ -100,7 +114,7 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
             <div className="my-5 w-100">
                 <LifePhasePanel
                     fabric={fabric}
-                    fabricState$={fabricState$}
+                    lifePhase$={lifePhase$}
                     rebuild={rebuild}
                 />
             </div>

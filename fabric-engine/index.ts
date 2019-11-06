@@ -37,10 +37,10 @@ export enum FabricFeature {
 }
 
 enum SurfaceCharacter {
-    Bouncy = 0,
-    Slippery = 1,
-    Sticky = 2,
-    Frozen = 4,
+    Sticky = 0,
+    Bouncy = 1,
+    Slippery = 2,
+    Frozen = 3,
 }
 
 export function setSurfaceCharacter(character: SurfaceCharacter): void {

@@ -3,6 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { SurfaceCharacter } from "./fabric-engine"
+
 export enum LifePhase {
     Growing = 0,
     Shaping = 1,
@@ -27,7 +29,7 @@ export enum GravityCharacter {
 
 export const GRAVITY = [
     0.00000005,
-    0.0000005,
+    0.0000001,
     0.0,
 ]
 
@@ -55,12 +57,39 @@ export function enumValues(e: object): number[] {
 }
 
 export interface IFabricState {
-    lifePhase: LifePhase
+    nonce: number
     gravityCharacter: GravityCharacter
     dragCharacter: DragCharacter
+    surfaceCharacter: SurfaceCharacter
     rotating: boolean
     frozen: boolean
     showPushes: boolean
     showPulls: boolean
     fullScreen: boolean
+}
+
+const INITIAL_FABRIC_STATE: IFabricState = {
+    nonce: 0,
+    gravityCharacter: GravityCharacter.Light,
+    dragCharacter: DragCharacter.Light,
+    surfaceCharacter: SurfaceCharacter.Sticky,
+    rotating: false,
+    frozen: false,
+    showPushes: true,
+    showPulls: true,
+    fullScreen: false,
+}
+
+const FABRIC_STATE_KEY = "FabricState"
+
+export function saveFabricState(fabricState: IFabricState): void {
+    localStorage.setItem(FABRIC_STATE_KEY, JSON.stringify(fabricState))
+}
+
+export function loadFabricState(): IFabricState {
+    const item = localStorage.getItem(FABRIC_STATE_KEY)
+    if (item) {
+        return JSON.parse(item) as IFabricState
+    }
+    return INITIAL_FABRIC_STATE
 }
