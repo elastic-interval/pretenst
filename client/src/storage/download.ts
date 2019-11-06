@@ -21,13 +21,14 @@ function extractJointBlob(output: IFabricOutput): Blob {
 
 function extractIntervalBlob(output: IFabricOutput): Blob {
     const csvIntervals: string[][] = []
-    csvIntervals.push(["joints", "type", "strain", "elastic", "role"])
+    csvIntervals.push(["joints", "type", "strain", "elasticity", "linear density", "role"])
     output.intervals.forEach(interval => {
         csvIntervals.push([
             `"=""${interval.joints}"""`,
             interval.type,
             interval.strainString,
-            interval.elasticString,
+            interval.elasticityString,
+            interval.linearDensityString,
             interval.role,
         ])
     })

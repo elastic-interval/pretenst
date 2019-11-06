@@ -34,7 +34,7 @@ export class FaceSnapshot {
                 const engine = this.engine
                 const jointIndex = engine.getFaceJointIndex(faceIndex, jointNumber)
                 const tag = engine.getJointTag(jointIndex)
-                const location = vectorFromFloatArray(this.instance.getFaceLocations(), (faceIndex * 3 + jointNumber) * 3)
+                const location = vectorFromFloatArray(this.instance.faceLocations, (faceIndex * 3 + jointNumber) * 3)
                 return {jointNumber, jointIndex, tag, location} as IJointSnapshot
             })
     }
@@ -82,7 +82,7 @@ export class FaceSnapshot {
     public get normal(): Vector3 {
         return TRIANGLE
             .map(jointNumber => vectorFromFloatArray(
-                this.instance.getFaceNormals(),
+                this.instance.faceNormals,
                 (this.faceIndex * 3 + jointNumber) * 3,
             ))
             .reduce((prev, current) => prev.add(current), new Vector3())

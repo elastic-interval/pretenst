@@ -16,7 +16,6 @@ import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import {
     ControlTab,
-    DensityCharacter,
     DragCharacter,
     GravityCharacter,
     IFabricState,
@@ -68,7 +67,6 @@ async function start(): Promise<void> {
         lifePhase: LifePhase.Growing,
         gravityCharacter: GravityCharacter.Light,
         dragCharacter: DragCharacter.Heavy,
-        densityCharacter: DensityCharacter.Push5Pull1,
         controlTab: ControlTab.Generate,
         rotating: false,
         frozen: false,

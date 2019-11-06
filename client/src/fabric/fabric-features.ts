@@ -76,22 +76,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byTenPercent,
     },
     {
-        feature: FabricFeature.PushMass,
-        name: "Push Mass",
-        defaultValue: 10,
-        multiplier: FeatureMultiplier.Thousandths,
-        fixedDigits: 1,
-        adjustment: byTenPercent,
-    },
-    {
-        feature: FabricFeature.PullMass,
-        name: "Pull Mass",
-        defaultValue: 1,
-        multiplier: FeatureMultiplier.Thousandths,
-        fixedDigits: 1,
-        adjustment: byTenPercent,
-    },
-    {
         feature: FabricFeature.Drag,
         name: "Drag",
         defaultValue: 0.0001,
@@ -102,7 +86,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.SlackThreshold,
         name: "SlackThreshold",
-        defaultValue: 0.003,
+        defaultValue: 0.0001,
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 1,
         adjustment: byTenPercent,

@@ -31,8 +31,10 @@ interface IOutputInterval {
     joints: string,
     type: string,
     strainString: string,
-    elastic: number,
-    elasticString: string,
+    elasticity: number,
+    elasticityString: string,
+    linearDensity: number,
+    linearDensityString: string,
     isPush: boolean,
     role: string,
 }
@@ -52,7 +54,11 @@ export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 const PRETENSING_STEPS = 100
 
-function scaleToElasticFactor(scale: IPercent): number {
+function scaleToElasticity(scale: IPercent): number {
+    return percentToFactor(scale) / 100000
+}
+
+function scaleToLinearDensity(scale: IPercent): number {
     return percentToFactor(scale) / 100000
 }
 
@@ -99,7 +105,7 @@ export class TensegrityFabric {
     public brickMidpoint({joints}: IBrick, midpoint?: Vector3): Vector3 {
         const accumulator = midpoint ? midpoint : new Vector3()
         return joints
-            .reduce((sum, joint) => sum.add(this.instance.getJointLocation(joint.index)), accumulator)
+            .reduce((sum, joint) => sum.add(this.instance.location(joint.index)), accumulator)
             .multiplyScalar(1.0 / joints.length)
     }
 
@@ -176,8 +182,9 @@ export class TensegrityFabric {
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const isPush = intervalRole === IntervalRole.Push
-        const elasticFactor = scaleToElasticFactor(scale)
-        const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticFactor)
+        const elasticity = scaleToElasticity(scale)
+        const linearDensity = scaleToLinearDensity(scale)
+        const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticity, linearDensity)
         const interval: IInterval = {
             index,
             intervalRole,
@@ -218,18 +225,18 @@ export class TensegrityFabric {
 
     public needsUpdate(): void {
         const instance = this.instance
-        this.faceLocations.array = instance.getFaceLocations()
+        this.faceLocations.array = instance.faceLocations
         this.faceLocations.needsUpdate = true
-        this.faceNormals.array = instance.getFaceNormals()
+        this.faceNormals.array = instance.faceNormals
         this.faceNormals.needsUpdate = true
-        this.lineLocations.array = instance.getLineLocations()
+        this.lineLocations.array = instance.lineLocations
         this.lineLocations.needsUpdate = true
-        this.lineColors.array = instance.getLineColors()
+        this.lineColors.array = instance.lineColors
         this.lineColors.needsUpdate = true
     }
 
     public get submergedJoints(): IJoint[] {
-        return this.joints.filter(joint => this.instance.getJointLocation(joint.index).y < 0)
+        return this.joints.filter(joint => this.instance.location(joint.index).y < 0)
     }
 
     public get facesGeometry(): BufferGeometry {
@@ -297,10 +304,10 @@ export class TensegrityFabric {
 
     public orientInterval(interval: IInterval, girth: number): { scale: Vector3, rotation: Quaternion } {
         const Y_AXIS = new Vector3(0, 1, 0)
-        const unit = this.instance.getIntervalUnit(interval.index)
+        const unit = this.instance.unitVector(interval.index)
         const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
-        const alphaLocation = this.instance.getJointLocation(interval.alpha.index)
-        const omegaLocation = this.instance.getJointLocation(interval.omega.index)
+        const alphaLocation = this.instance.location(interval.alpha.index)
+        const omegaLocation = this.instance.location(interval.omega.index)
         const intervalLength = alphaLocation.distanceTo(omegaLocation)
         const scale = new Vector3(SPHERE_RADIUS * girth, intervalLength / SPHERE_RADIUS / 2, SPHERE_RADIUS * girth)
         return {scale, rotation}
@@ -309,11 +316,12 @@ export class TensegrityFabric {
     public get output(): IFabricOutput {
         const numberToString = (n: number) => n.toFixed(5).replace(/[.]/, ",")
         const strains = this.instance.strains
-        const elastics = this.instance.elastics
+        const elasticities = this.instance.elasticities
+        const linearDensities = this.instance.linearDensities
         return {
             name: this.name,
             joints: this.joints.map(joint => {
-                const vector = this.instance.getJointLocation(joint.index)
+                const vector = this.instance.location(joint.index)
                 return {
                     index: (joint.index + 1).toString(),
                     x: numberToString(vector.x),
@@ -325,20 +333,23 @@ export class TensegrityFabric {
                 const joints = `${interval.alpha.index + 1},${interval.omega.index + 1}`
                 const strainString = numberToString(strains[interval.index])
                 const type = interval.isPush ? "Push" : "Pull"
-                const elastic = elastics[interval.index]
-                const elasticString = numberToString(elastic)
+                const elasticity = elasticities[interval.index]
+                const elasticityString = numberToString(elasticity)
+                const linearDensity = linearDensities[interval.index]
+                const linearDensityString = numberToString(linearDensity)
                 const role = IntervalRole[interval.intervalRole]
                 const isPush = interval.isPush
-                const outputInterval: IOutputInterval = {
+                return <IOutputInterval>{
                     joints,
                     type,
                     strainString,
-                    elastic,
-                    elasticString,
+                    elasticity,
+                    elasticityString,
+                    linearDensity,
+                    linearDensityString,
                     isPush,
                     role,
                 }
-                return outputInterval
             }).sort((a, b) => {
                 if (a.isPush && !b.isPush) {
                     return -1
@@ -346,7 +357,7 @@ export class TensegrityFabric {
                 if (!a.isPush && b.isPush) {
                     return 1
                 }
-                return a.elastic - b.elastic
+                return a.elasticity - b.elasticity
             }),
         }
     }
@@ -369,7 +380,7 @@ export class TensegrityFabric {
 
     private takePretensingStep(): void {
         const strains = this.instance.strains
-        const elastics = this.instance.elastics
+        const elastics = this.instance.elasticities
         const intensity = this.instance.getFeatureValue(FabricFeature.PretenseIntensity)
         let pushCount = 0
         let pullCount = 0
@@ -403,8 +414,8 @@ export class TensegrityFabric {
     private refreshLineGeometry(): void {
         this.iterate(0)
         this.intervalCount = this.instance.engine.getIntervalCount()
-        this.lineLocations = new Float32BufferAttribute(this.instance.getLineLocations(), 3)
-        this.lineColors = new Float32BufferAttribute(this.instance.getLineColors(), 3)
+        this.lineLocations = new Float32BufferAttribute(this.instance.lineLocations, 3)
+        this.lineColors = new Float32BufferAttribute(this.instance.lineColors, 3)
         this._linesGeometry.addAttribute("position", this.lineLocations)
         this._linesGeometry.addAttribute("color", this.lineColors)
     }
@@ -412,8 +423,8 @@ export class TensegrityFabric {
     private refreshFaceGeometry(): void {
         this.iterate(0)
         this.faceCount = this.instance.engine.getFaceCount()
-        this.faceLocations = new Float32BufferAttribute(this.instance.getFaceLocations(), 3)
-        this.faceNormals = new Float32BufferAttribute(this.instance.getFaceNormals(), 3)
+        this.faceLocations = new Float32BufferAttribute(this.instance.faceLocations, 3)
+        this.faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)
         this._facesGeometry.addAttribute("position", this.faceLocations)
         this._facesGeometry.addAttribute("normal", this.faceNormals)
     }

@@ -39,20 +39,8 @@ export enum DragCharacter {
 
 export const DRAG = [
     0.00001,
-    0.0001,
+    0.001,
     0.0,
-]
-
-export enum DensityCharacter {
-    Push5Pull1,
-    Push2Pull1,
-    Push1Pull1,
-}
-
-export const DENSITY = [
-    {push: 5, pull: 1},
-    {push: 3, pull: 1},
-    {push: 1, pull: 1},
 ]
 
 export enum ControlTab {
@@ -70,7 +58,6 @@ export interface IFabricState {
     lifePhase: LifePhase
     gravityCharacter: GravityCharacter
     dragCharacter: DragCharacter
-    densityCharacter: DensityCharacter
     controlTab: ControlTab
     rotating: boolean
     frozen: boolean

@@ -13,21 +13,19 @@ export interface IMemory {
 export enum FabricFeature {
     TicksPerFrame = 0,
     Gravity = 1,
-    PushMass = 2,
-    PullMass = 3,
-    Drag = 4,
-    SlackThreshold = 5,
-    PushMaxElastic = 6,
-    PullMaxElastic = 7,
-    IntervalBusyTicks = 8,
-    PretenseTicks = 9,
-    PretenseIntensity = 10,
-    PushLength = 11,
-    TriangleLength = 12,
-    RingLength = 13,
-    CrossLength = 14,
-    BowMidLength = 15,
-    BowEndLength = 16,
+    Drag = 2,
+    SlackThreshold = 3,
+    PushMaxElastic = 4,
+    PullMaxElastic = 5,
+    IntervalBusyTicks = 6,
+    PretenseTicks = 7,
+    PretenseIntensity = 8,
+    PushLength = 9,
+    TriangleLength = 10,
+    RingLength = 11,
+    CrossLength = 12,
+    BowMidLength = 13,
+    BowEndLength = 14,
 }
 
 export enum IntervalRole {
@@ -127,7 +125,7 @@ export interface IFabricEngine {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number, elasticFactor: number): number
+    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number, elasticity: number, linearDensity: number): number
 
     setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
@@ -175,7 +173,9 @@ export interface IFabricEngine {
 
     _intervalStrains(): number
 
-    _elasticFactors(): number
+    _elasticities(): number
+
+    _linearDensities(): number
 
     _fabricFeatures(): number
 

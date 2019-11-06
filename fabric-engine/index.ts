@@ -12,28 +12,27 @@ declare function logInt(idx: u32, i: i32): void
 // DECLARATION
 
 const RESURFACE: f32 = 0.001
-const ANTIGRAVITY: f32 = -0.03
+const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
-const IN_UTERO_ELASTIC: f32 = 15000
+const IN_UTERO_ELASTICITY: f32 = 0.9
+const IN_UTERO_DRAG: f32 = 0.0000001
 
 export enum FabricFeature {
     TicksPerFrame = 0,
     Gravity = 1,
-    PushMass = 2,
-    PullMass = 3,
-    Drag = 4,
-    SlackThreshold = 5,
-    PushMaxElastic = 6,
-    PullMaxElastic = 7,
-    IntervalBusyTicks = 8,
-    PretenseTicks = 9,
-    PretenseIntensity = 10,
-    PushLength = 11,
-    TriangleLength = 12,
-    RingLength = 13,
-    CrossLength = 14,
-    BowMidLength = 15,
-    BowEndLength = 16,
+    Drag = 2,
+    SlackThreshold = 3,
+    PushMaxElastic = 4,
+    PullMaxElastic = 5,
+    IntervalBusyTicks = 6,
+    PretenseTicks = 7,
+    PretenseIntensity = 8,
+    PushLength = 9,
+    TriangleLength = 10,
+    RingLength = 11,
+    CrossLength = 12,
+    BowMidLength = 13,
+    BowEndLength = 14,
 }
 
 enum SurfaceCharacter {
@@ -241,14 +240,21 @@ function _intervalStrain(intervalIndex: u16): usize {
     return _INTERVAL_STRAINS + _32(intervalIndex)
 }
 
-const _ELASTIC_FACTORS = _INTERVAL_STRAINS + _32_INTERVALS
+const _ELASTICITIES = _INTERVAL_STRAINS + _32_INTERVALS
 
 @inline()
-function _elasticFactor(intervalIndex: u16): usize {
-    return _ELASTIC_FACTORS + _32(intervalIndex)
+function _elasticity(intervalIndex: u16): usize {
+    return _ELASTICITIES + _32(intervalIndex)
 }
 
-const _INTERVAL_ROLES = _ELASTIC_FACTORS + _32_INTERVALS
+const _LINEAR_DENSITIES = _ELASTICITIES + _32_INTERVALS
+
+@inline()
+function _linearDensity(intervalIndex: u16): usize {
+    return _LINEAR_DENSITIES + _32(intervalIndex)
+}
+
+const _INTERVAL_ROLES = _LINEAR_DENSITIES + _32_INTERVALS
 
 @inline()
 function _intervalRole(intervalIndex: u16): usize {
@@ -633,7 +639,7 @@ export function setLifePhase(lifePhase: LifePhase, pretenst: f32): LifePhase {
         case LifePhase.Slack:
             let intervalCount = getIntervalCount()
             for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-                let lengthNow: f32 = calculateLength(intervalIndex)
+                let lengthNow: f32 = calculateRealLength(intervalIndex)
                 initializeCurrentLength(intervalIndex, lengthNow)
                 setIntervalStateLength(intervalIndex, REST_STATE, lengthNow)
             }
@@ -736,7 +742,7 @@ function calculateJointMidpoint(): void {
 
 // Intervals =====================================================================================
 
-export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLength: f32, elasticFactor: f32): usize {
+export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLength: f32, elasticity: f32, linearDensity: f32): usize {
     let intervalCount = getIntervalCount()
     if (intervalCount + 1 >= MAX_INTERVALS) {
         return ERROR
@@ -747,8 +753,9 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLen
     setOmegaIndex(intervalIndex, omega)
     zero(_unit(intervalIndex))
     setIntervalRole(intervalIndex, intervalRole)
-    initializeCurrentLength(intervalIndex, calculateLength(intervalIndex))
-    setElasticFactor(intervalIndex, elasticFactor)
+    initializeCurrentLength(intervalIndex, calculateRealLength(intervalIndex))
+    setElasticity(intervalIndex, elasticity)
+    setLinearDensity(intervalIndex, linearDensity)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, restLength)
     }
@@ -773,7 +780,8 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
     initializeCurrentLength(intervalIndex, getCurrentLength(nextIndex))
-    setElasticFactor(intervalIndex, getElasticFactor(nextIndex))
+    setElasticity(intervalIndex, getElasticity(nextIndex))
+    setLinearDensity(intervalIndex, getLinearDensity(nextIndex))
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, getIntervalStateLength(nextIndex, state))
     }
@@ -803,12 +811,20 @@ function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
     setF32(_currentLength(intervalIndex), idealLength)
 }
 
-function getElasticFactor(intervalIndex: u16): f32 {
-    return getF32(_elasticFactor(intervalIndex))
+function getElasticity(intervalIndex: u16): f32 {
+    return getF32(_elasticity(intervalIndex))
 }
 
-function setElasticFactor(intervalIndex: u16, elasticFactor: f32): void {
-    setF32(_elasticFactor(intervalIndex), elasticFactor)
+function setElasticity(intervalIndex: u16, elasticity: f32): void {
+    setF32(_elasticity(intervalIndex), elasticity)
+}
+
+function getLinearDensity(intervalIndex: u16): f32 {
+    return getF32(_linearDensity(intervalIndex))
+}
+
+function setLinearDensity(intervalIndex: u16, linearDensity: f32): void {
+    setF32(_linearDensity(intervalIndex), linearDensity)
 }
 
 function getIntervalRole(intervalIndex: u16): u8 {
@@ -856,7 +872,7 @@ function setStrain(intervalIndex: u16, strain: f32): void {
     setF32(_intervalStrain(intervalIndex), strain)
 }
 
-function calculateLength(intervalIndex: u16): f32 {
+function calculateRealLength(intervalIndex: u16): f32 {
     let unit = _unit(intervalIndex)
     subVectors(unit, _location(omegaIndex(intervalIndex)), _location(alphaIndex(intervalIndex)))
     let length = magnitude(unit)
@@ -1060,11 +1076,16 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Physics =====================================================================================
 
+function addIntervalMassToJoints(intervalIndex: u16, mass: f32): void {
+    let _alphaMass = _intervalMass(alphaIndex(intervalIndex))
+    setF32(_alphaMass, getF32(_alphaMass) + mass / 2)
+    let _omegaMass = _intervalMass(omegaIndex(intervalIndex))
+    setF32(_omegaMass, getF32(_omegaMass) + mass / 2)
+}
+
 function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
-    let intervalRole = getIntervalRole(intervalIndex)
-    let isPush = intervalRole === IntervalRole.Push
     let currentLength = interpolateCurrentLength(intervalIndex, state)
-    let pretenst: f32 = 0
+    let isPush = getIntervalRole(intervalIndex) === IntervalRole.Push
     if (isPush) {
         switch (lifePhase) {
             case LifePhase.Pretensing:
@@ -1075,57 +1096,32 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
                 break
         }
     }
-    let intervalElasticFactor = getElasticFactor(intervalIndex)
-    let displacement = calculateLength(intervalIndex) - currentLength
-    let strain = displacement / currentLength
+    addIntervalMassToJoints(intervalIndex, currentLength * getLinearDensity(intervalIndex))
+    let strain = (calculateRealLength(intervalIndex) - currentLength) / currentLength
     if (!isPush && strain < 0) {
         strain = 0
     }
     setStrain(intervalIndex, strain)
-    let fabricElasticFactor: f32 = 0
-    switch (lifePhase) {
-        case LifePhase.Growing:
-        case LifePhase.Shaping:
-        case LifePhase.Slack:
-            fabricElasticFactor = IN_UTERO_ELASTIC
-            break
-        case LifePhase.Pretensing:
-        case LifePhase.Pretenst:
-            fabricElasticFactor = 1
-            break
-    }
-    let force = strain * intervalElasticFactor * fabricElasticFactor
+    let force = strain * (lifePhase <= LifePhase.Slack ? IN_UTERO_ELASTICITY : getElasticity(intervalIndex))
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
-    let mass = currentLength * currentLength * intervalElasticFactor * getFeature(isPush ? FabricFeature.PushMass : FabricFeature.PullMass)
-    let alphaMass = _intervalMass(alphaIndex(intervalIndex))
-    setF32(alphaMass, getF32(alphaMass) + mass / 2)
-    let omegaMass = _intervalMass(omegaIndex(intervalIndex))
-    setF32(omegaMass, getF32(omegaMass) + mass / 2)
 }
 
-function jointPhysics(jointIndex: u16, lifePhase: LifePhase, gravity: f32, drag: f32): void {
+function jointPhysics(jointIndex: u16, lifePhase: LifePhase, baseGravity: f32, baseDrag: f32): void {
     let altitude = getY(_location(jointIndex))
-    let currentGravity: f32 = gravity
-    let currentDrag: f32 = drag
-    switch (lifePhase) {
-        case LifePhase.Growing:
-        case LifePhase.Shaping:
-        case LifePhase.Slack:
-            altitude = 1 // simulate far above
-            currentGravity = 0
-            currentDrag = 0
-            break
-        case LifePhase.Pretensing:
-            currentGravity *= getPretensingNuance()
-            break
-        case LifePhase.Pretenst:
-            break
+    let gravity: f32 = baseGravity
+    let drag: f32 = baseDrag
+    if (lifePhase <= LifePhase.Slack) {
+        altitude = 1 // avoid surface effect
+        gravity = 0
+        drag = IN_UTERO_DRAG
+    } else if (lifePhase === LifePhase.Pretensing) {
+        gravity *= getPretensingNuance()
     }
     let _velocityVector = _velocity(jointIndex)
-    if (altitude > 0) { // far above
-        setY(_velocityVector, getY(_velocityVector) - currentGravity)
-        multiplyScalar(_velocity(jointIndex), 1 - currentDrag)
+    if (altitude > 0) {
+        setY(_velocityVector, getY(_velocityVector) - gravity)
+        multiplyScalar(_velocity(jointIndex), 1 - drag)
         return
     }
     if (getTerrainUnder(jointIndex) === LAND) {
@@ -1137,8 +1133,8 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase, gravity: f32, drag:
                 setY(_velocityVector, getY(_velocityVector) - ANTIGRAVITY * degreeSubmerged)
                 break
             case SurfaceCharacter.Slippery:
-                setY(_velocityVector, getY(_velocityVector) - ANTIGRAVITY * degreeSubmerged)
-                setY(_velocityVector, degreeSubmerged * RESURFACE)
+                setY(_location(jointIndex), 0)
+                setY(_velocityVector, 0)
                 break
             case SurfaceCharacter.Sticky:
                 multiplyScalar(_velocityVector, degreeCushioned)
@@ -1281,8 +1277,12 @@ export function _intervalStrains(): usize {
     return _INTERVAL_STRAINS
 }
 
-export function _elasticFactors(): usize {
-    return _ELASTIC_FACTORS
+export function _elasticities(): usize {
+    return _ELASTICITIES
+}
+
+export function _linearDensities(): usize {
+    return _LINEAR_DENSITIES
 }
 
 export function _fabricFeatures(): usize {

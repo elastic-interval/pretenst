@@ -220,7 +220,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
             const slack = strain < fabricFeatureValue(FabricFeature.SlackThreshold)
             return slack ? SLACK : isPush ? PUSH_MATERIAL : PULL_MATERIAL
         }
-        const elastic = fabric.instance.elastics[interval.index]
+        const elastic = fabric.instance.elasticities[interval.index]
         const isPush = interval.isPush
         const strain = fabric.instance.strains[interval.index] * (isPush ? -1 : 1)
         const girth = Math.sqrt(elastic) * (isPush ? PUSH_GIRTH : PULL_GIRTH)
@@ -245,7 +245,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         const needleGeometry = new BufferGeometry()
         const lines = strainPushLines(fabric.instance, showPushes, showPulls)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
-        needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.getLineColors(), 3))
+        needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.lineColors, 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
         const leftDistance = perspective.fov * perspective.aspect / 132
         const toDaLeft = new Vector3().crossVectors(camera.up, toTarget).normalize().multiplyScalar(leftDistance)
@@ -332,7 +332,7 @@ function strainPushLines(instance: FabricInstance, showPushes: boolean, showPull
     }
 
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
-    instance.elastics.forEach((elastic, index) => {
+    instance.elasticities.forEach((elastic, index) => {
         const height = elasticToHeight(elastic)
         let offset = index * 6
         vertices[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH

@@ -11,8 +11,6 @@ import { BehaviorSubject } from "rxjs"
 
 import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
 import {
-    DENSITY,
-    DensityCharacter,
     DRAG,
     DragCharacter,
     enumValues,
@@ -37,11 +35,6 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
     useEffect(() => fabric.instance.engine.setSurfaceCharacter(surfaceCharacter), [surfaceCharacter])
     const [dragCharacter, setDragCharacter] = useState(DragCharacter.Light)
     useEffect(() => fabric.instance.setFeatureValue(FabricFeature.Drag, DRAG[dragCharacter]), [dragCharacter])
-    const [densityCharacter, setDensityCharacter] = useState(DensityCharacter.Push5Pull1)
-    useEffect(() => {
-        fabric.instance.setFeatureValue(FabricFeature.PullMass, DENSITY[densityCharacter].pull)
-        fabric.instance.setFeatureValue(FabricFeature.PushMass, DENSITY[densityCharacter].push)
-    }, [densityCharacter])
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
     const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
     useEffect(() => {
@@ -98,18 +91,6 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
                             active={dragCharacter === value}
                             onClick={() => setDragCharacter(value)}
                         >{DragCharacter[value]}</Button>
-                    ))}
-                </ButtonGroup>
-            </div>
-            <div className="my-2">
-                <h6>Density</h6>
-                <ButtonGroup>
-                    {enumValues(DensityCharacter).map(value => (
-                        <Button
-                            key={DensityCharacter[value]}
-                            active={densityCharacter === value}
-                            onClick={() => setDensityCharacter(value)}
-                        >{DensityCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>

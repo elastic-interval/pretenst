@@ -104,7 +104,7 @@ function createBrickOnFace(face: IFace, scale: IPercent): IBrick {
     const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
     const brick = face.brick
     const triangle = face.triangle
-    const trianglePoints = brick.faces[triangle].joints.map(joint => brick.fabric.instance.getJointLocation(joint.index))
+    const trianglePoints = brick.faces[triangle].joints.map(joint => brick.fabric.instance.location(joint.index))
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
     const x = new Vector3().subVectors(midSide, midpoint).normalize()
@@ -134,8 +134,8 @@ function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoi
     const jointPairs: IJointPair[] = []
     jointsA.forEach(jointA => {
         jointsB.forEach(jointB => {
-            const locationA = fabric.instance.getJointLocation(jointA.index)
-            const locationB = fabric.instance.getJointLocation(jointB.index)
+            const locationA = fabric.instance.location(jointA.index)
+            const locationB = fabric.instance.location(jointB.index)
             const distance = locationA.distanceTo(locationB)
             jointPairs.push({jointA, locationA, jointB, locationB, distance})
         })
@@ -183,9 +183,9 @@ export function connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): ICon
         const joint = ring[index]
         const nextJoint = ring[(index + 1) % ring.length]
         const prevJoint = ring[(index + ring.length - 1) % ring.length]
-        const prevJointOppositeLocation = fabric.instance.getJointLocation(prevJoint.oppositeIndex)
-        const jointLocation = fabric.instance.getJointLocation(joint.index)
-        const nextJointOppositeLocation = fabric.instance.getJointLocation(nextJoint.oppositeIndex)
+        const prevJointOppositeLocation = fabric.instance.location(prevJoint.oppositeIndex)
+        const jointLocation = fabric.instance.location(joint.index)
+        const nextJointOppositeLocation = fabric.instance.location(nextJoint.oppositeIndex)
         const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
         const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
         const partnerJoint = fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
@@ -266,8 +266,8 @@ export function optimizeFabric(fabric: TensegrityFabric): void {
         const aOmega = intervalA.omega.index
         const aAlphaPush = findPush(aAlpha)
         const aOmegaPush = findPush(aOmega)
-        const aAlphaLoc = instance.getJointLocation(aAlpha)
-        const aOmegaLoc = instance.getJointLocation(aOmega)
+        const aAlphaLoc = instance.location(aAlpha)
+        const aOmegaLoc = instance.location(aOmega)
         const aLength = aAlphaLoc.distanceTo(aOmegaLoc)
         const aMid = new Vector3().addVectors(aAlphaLoc, aOmegaLoc).multiplyScalar(0.5)
         crossPulls.forEach((intervalB, indexB) => {
@@ -311,8 +311,8 @@ export function optimizeFabric(fabric: TensegrityFabric): void {
             } else {
                 return
             }
-            const bAlphaLoc = instance.getJointLocation(bAlpha)
-            const bOmegaLoc = instance.getJointLocation(bOmega)
+            const bAlphaLoc = instance.location(bAlpha)
+            const bOmegaLoc = instance.location(bOmega)
             const bLength = bAlphaLoc.distanceTo(bOmegaLoc)
             const bMid = new Vector3().addVectors(bAlphaLoc, bOmegaLoc).multiplyScalar(0.5)
             const aAlphaMidB = aAlphaLoc.distanceTo(bMid) / bLength
@@ -376,14 +376,14 @@ export function closestFacePairs(fabric: TensegrityFabric, maxDistance: number):
             if (indexB >= indexA) {
                 return
             }
-            const locationA = fabric.instance.getFaceMidpoint(faceA.index)
-            const locationB = fabric.instance.getFaceMidpoint(faceB.index)
+            const locationA = fabric.instance.faceMidpoint(faceA.index)
+            const locationB = fabric.instance.faceMidpoint(faceB.index)
             const distance = locationA.distanceTo(locationB)
             if (distance >= maxDistance) {
                 return
             }
-            const normalA = fabric.instance.getFaceNormal(faceA.index)
-            const normalB = fabric.instance.getFaceNormal(faceB.index)
+            const normalA = fabric.instance.faceNormal(faceA.index)
+            const normalB = fabric.instance.faceNormal(faceB.index)
             const dot = normalA.dot(normalB)
             if (dot > -0.2) {
                 return

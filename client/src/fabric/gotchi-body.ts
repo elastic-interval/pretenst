@@ -77,8 +77,8 @@ export class GotchiBody {
 
     public get facesGeometry(): BufferGeometry {
         const geometry = new BufferGeometry()
-        geometry.addAttribute("position", new Float32BufferAttribute(this.instance.getFaceLocations(), 3))
-        geometry.addAttribute("normal", new Float32BufferAttribute(this.instance.getFaceNormals(), 3))
+        geometry.addAttribute("position", new Float32BufferAttribute(this.instance.faceLocations, 3))
+        geometry.addAttribute("normal", new Float32BufferAttribute(this.instance.faceNormals, 3))
         if (this.facesGeometryStored) {
             this.facesGeometryStored.dispose()
         }
@@ -239,7 +239,7 @@ export class GotchiBody {
     }
 
     private muscle(alphaIndex: number, omegaIndex: number): number { // TODO: no more muscles
-        return this.engine.createInterval(alphaIndex, omegaIndex, IntervalRole.Push, 1, 1)
+        return this.engine.createInterval(alphaIndex, omegaIndex, IntervalRole.Push, 1, 1, 1)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {
