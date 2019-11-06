@@ -10,7 +10,7 @@ import { IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
-import { executeActiveCode, IActiveCode, ICode, IGrowth } from "./tenscript"
+import { executeActiveCode, IActiveCode, ICode } from "./tenscript"
 import { createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,
@@ -67,7 +67,7 @@ export class TensegrityFabric {
     public intervals: IInterval[] = []
     public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
-    public growth?: IGrowth
+    public activeCode?: IActiveCode[]
 
     private faceCount: number
     private faceLocations: Float32BufferAttribute
@@ -91,8 +91,7 @@ export class TensegrityFabric {
         this.lifePhase$.next(instance.growing())
         features.forEach(feature => this.instance.applyFeature(feature))
         const brick = createBrickOnOrigin(this, percentOrHundred())
-        const executing: IActiveCode = {codeTree: this.code.codeTree, brick}
-        this.growth = {growing: [executing]}
+        this.activeCode = [{codeTree: this.code.codeTree, brick}]
         this.refreshLineGeometry()
         this.refreshFaceGeometry()
     }
@@ -112,7 +111,7 @@ export class TensegrityFabric {
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
-        if (this.growth) {
+        if (this.activeCode) {
             return 0
         }
         this.splitIntervals = this.intervals.reduce(intervalSplitter(selectionFilter), emptySplit())
@@ -254,20 +253,20 @@ export class TensegrityFabric {
         if (busy) {
             return busy
         }
-        const growth = this.growth
-        if (!growth) {
+        const activeCode = this.activeCode
+        if (!activeCode) {
             if (this.lifePhase$.getValue() === LifePhase.Pretensing) {
                 this.lifePhase$.next(this.instance.pretenst())
             }
             return false
         }
-        if (growth.growing.length > 0) {
-            growth.growing = executeActiveCode(growth.growing)
+        if (activeCode.length > 0) {
+            this.activeCode = executeActiveCode(activeCode)
             engine.centralize()
         }
-        if (growth.growing.length === 0) {
+        if (activeCode.length === 0) {
             optimizeFabric(this)
-            this.growth = undefined
+            this.activeCode = undefined
             this.lifePhase$.next(this.instance.shaping())
         }
         return true

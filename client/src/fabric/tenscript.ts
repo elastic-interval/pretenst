@@ -173,10 +173,6 @@ export interface IActiveCode {
     brick: IBrick
 }
 
-export interface IGrowth {
-    growing: IActiveCode []
-}
-
 export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
     const active: IActiveCode[] = []
 
