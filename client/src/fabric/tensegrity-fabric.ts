@@ -6,8 +6,8 @@
 import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
-import { FloatFeature, roleDefaultLength } from "./fabric-features"
+import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
 import { executeActiveCode, IActiveCode, ICode } from "./tenscript"
@@ -112,6 +112,25 @@ export class TensegrityFabric {
 
     public toPretensing(): void {
         this.lifePhase$.next(this.instance.pretensing())
+    }
+
+    public pretense(): void {
+        const strains = this.instance.strains
+        const getMedian = (intervals: IInterval[]) => {
+            const sorted = intervals.map(interval => strains[interval.index]).sort((a, b) => a - b)
+            return sorted[Math.floor(sorted.length / 2)]
+        }
+        const pushMedian = getMedian(this.intervals.filter(interval => interval.isPush))
+        const pullMedian = getMedian(this.intervals.filter(interval => !interval.isPush))
+        const intensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
+        const elasticities = this.instance.elasticities
+        const changes = this.intervals.map(interval => {
+            const median = interval.isPush ? pushMedian : pullMedian
+            const strain = strains[interval.index] - median
+            return 1 + (interval.isPush ? -strain : strain) * intensity
+        })
+        this.toSlack(elasticities.map((value, index) => value * changes[index]))
+        setTimeout(() => this.toPretensing(), 200)
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
