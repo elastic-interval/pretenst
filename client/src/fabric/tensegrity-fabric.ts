@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
@@ -52,7 +52,6 @@ export interface IFabricOutput {
 
 export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
-const PRETENSING_STEPS = 100
 
 function scaleToElasticity(scale: IPercent): number {
     return percentToFactor(scale) / 100000
@@ -69,7 +68,6 @@ export class TensegrityFabric {
     public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
     public growth?: IGrowth
-    public pretensingStep = 0
 
     private faceCount: number
     private faceLocations: Float32BufferAttribute
@@ -81,13 +79,14 @@ export class TensegrityFabric {
     private lineColors: Float32BufferAttribute
     private _linesGeometry = new BufferGeometry()
 
-    private pretensingStartAge = 0
+    private slackCloned = false
 
     constructor(
-        codeTree: ICodeTree,
         public readonly instance: FabricInstance,
-        public readonly name: string,
+        public readonly slackInstance: FabricInstance,
         public readonly features: FloatFeature[],
+        public readonly name: string,
+        codeTree: ICodeTree,
     ) {
         this.lifePhase = this.instance.growing()
         features.forEach(feature => this.instance.applyFeature(feature))
@@ -99,19 +98,16 @@ export class TensegrityFabric {
     }
 
     public slack(): LifePhase {
+        if (this.slackCloned) {
+            this.instance.cloneFrom(this.slackInstance)
+        } else {
+            this.slackCloned = true
+            this.instance.cloneTo(this.slackInstance)
+        }
         return this.lifePhase = this.instance.slack()
     }
 
-    public brickMidpoint({joints}: IBrick, midpoint?: Vector3): Vector3 {
-        const accumulator = midpoint ? midpoint : new Vector3()
-        return joints
-            .reduce((sum, joint) => sum.add(this.instance.location(joint.index)), accumulator)
-            .multiplyScalar(1.0 / joints.length)
-    }
-
     public pretensing(): LifePhase {
-        this.pretensingStep = 0
-        this.pretensingStartAge = this.instance.engine.getAge()
         return this.lifePhase = this.instance.pretensing()
     }
 
@@ -169,8 +165,11 @@ export class TensegrityFabric {
         this.instance.forgetDimensions()
     }
 
-    public optimize(): void {
-        optimizeFabric(this)
+    public brickMidpoint({joints}: IBrick, midpoint?: Vector3): Vector3 {
+        const accumulator = midpoint ? midpoint : new Vector3()
+        return joints
+            .reduce((sum, joint) => sum.add(this.instance.location(joint.index)), accumulator)
+            .multiplyScalar(1.0 / joints.length)
     }
 
     public createJointIndex(jointTag: JointTag, location: Vector3): number {
@@ -257,9 +256,6 @@ export class TensegrityFabric {
         const engine = this.engine
         const busy = engine.iterate(ticks)
         if (busy) {
-            if (this.timeForPretensing()) {
-                this.takePretensingStep()
-            }
             return busy
         }
         const growth = this.growth
@@ -360,55 +356,6 @@ export class TensegrityFabric {
                 return a.elasticity - b.elasticity
             }),
         }
-    }
-
-    private timeForPretensing(): boolean {
-        if (this.lifePhase !== LifePhase.Pretensing) {
-            return false
-        }
-        const engine = this.instance.engine
-        const pretensingCycles = engine.getAge() - this.pretensingStartAge
-        const countdownMax = this.instance.getFeatureValue(FabricFeature.PretenseTicks)
-        const complete = pretensingCycles / countdownMax
-        const currentStep = Math.floor(complete * PRETENSING_STEPS)
-        if (currentStep === this.pretensingStep) {
-            return false
-        }
-        this.pretensingStep = currentStep
-        return true
-    }
-
-    private takePretensingStep(): void {
-        const strains = this.instance.strains
-        const elastics = this.instance.elasticities
-        const intensity = this.instance.getFeatureValue(FabricFeature.PretenseIntensity)
-        let pushCount = 0
-        let pullCount = 0
-        let totalPushAdjustment = 0
-        let totalPullAdjustment = 0
-        this.intervals.forEach(interval => {
-            const strain = strains[interval.index]
-            const adjustment = strain * intensity
-            if (interval.isPush) {
-                totalPushAdjustment += adjustment
-                pushCount++
-            } else {
-                totalPullAdjustment += adjustment
-                pullCount++
-            }
-        })
-        // todo: maybe use median instead of average
-        const averagePushAdjustment = totalPushAdjustment / pushCount
-        const averagePullAdjustment = totalPullAdjustment / pullCount
-        this.intervals.forEach(interval => {
-            const strain = strains[interval.index]
-            const adjustment = strain * intensity - (interval.isPush ? averagePushAdjustment : averagePullAdjustment)
-            if (interval.isPush) {
-                elastics[interval.index] *= 1 - adjustment
-            } else {
-                elastics[interval.index] *= 1 + adjustment
-            }
-        })
     }
 
     private refreshLineGeometry(): void {

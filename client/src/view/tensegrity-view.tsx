@@ -4,13 +4,14 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { FaAngleDoubleRight } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
+import { FabricKernel } from "../fabric/fabric-kernel"
 import { IFabricState } from "../fabric/fabric-state"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -24,8 +25,8 @@ import { ToolbarRight } from "./toolbar-right"
 const SPLIT_LEFT = "34em"
 const SPLIT_RIGHT = "35em"
 
-export function TensegrityView({buildFabric, features, bootstrapCode, fabricState$}: {
-    buildFabric: (code: ICode) => TensegrityFabric,
+export function TensegrityView({fabricKernel, features, bootstrapCode, fabricState$}: {
+    fabricKernel: FabricKernel,
     features: FloatFeature[],
     bootstrapCode: ICode[],
     fabricState$: BehaviorSubject<IFabricState>,
@@ -44,6 +45,8 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
         })
         return () => subscription.unsubscribe()
     })
+    const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
+    const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
 
     const stateChange = (modifier: (currentState: IFabricState) => IFabricState) => {
         fabricState$.next(modifier(fabricState$.getValue()))
@@ -59,13 +62,10 @@ export function TensegrityView({buildFabric, features, bootstrapCode, fabricStat
     }, [])
 
     function buildFromCode(): void {
-        if (!code) {
+        if (!code || !mainInstance || !slackInstance) {
             return
         }
-        if (fabric) {
-            fabric.instance.release()
-        }
-        setFabric(buildFabric(code))
+        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, code.codeString, code.codeTree))
         location.hash = code.codeString
     }
 

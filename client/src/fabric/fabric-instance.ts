@@ -82,7 +82,7 @@ export class FabricInstance {
         return this.engine.setLifePhase(LifePhase.Pretensing, this.maturePretenst)
     }
 
-    public  pretenst(): LifePhase {
+    public pretenst(): LifePhase {
         console.log("Pretenst")
         return this.engine.setLifePhase(LifePhase.Pretenst, this.maturePretenst)
     }
@@ -165,6 +165,14 @@ export class FabricInstance {
     public get engine(): IFabricEngine {
         this.fabricEngine.setInstance(this.index)
         return this.fabricEngine
+    }
+
+    public cloneTo(instance: FabricInstance): void {
+        this.fabricEngine.cloneInstance(this.index, instance.index)
+    }
+
+    public cloneFrom(instance: FabricInstance): void {
+        this.fabricEngine.cloneInstance(instance.index, this.index)
     }
 
     private faceVector(faceIndex: number, array: Float32Array): Vector3 {

@@ -8,10 +8,7 @@ import { Vector3 } from "three"
 import { HEXALOT_SHAPE } from "../island/island-logic"
 
 import { IFabricEngine } from "./fabric-engine"
-import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
-import { ICodeTree } from "./tenscript"
-import { TensegrityFabric } from "./tensegrity-fabric"
 
 const INITIAL_PRETENST = 0.3
 const FINAL_PRETENST = 0.1
@@ -59,14 +56,6 @@ export class FabricKernel {
         }
     }
 
-    public createTensegrityFabric(name: string, codeTree: ICodeTree, features: FloatFeature[]): TensegrityFabric | undefined {
-        const newInstance = this.allocateInstance()
-        if (!newInstance) {
-            return undefined
-        }
-        return new TensegrityFabric(codeTree, newInstance, name, features)
-    }
-
     public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
         if (spotCenters.length !== HEXALOT_SHAPE.length || surface.length !== HEXALOT_SHAPE.length) {
             throw new Error("Size problem")
@@ -81,9 +70,7 @@ export class FabricKernel {
         })
     }
 
-    // ==============================================================
-
-    private allocateInstance(): FabricInstance | undefined {
+    public allocateInstance(): FabricInstance | undefined {
         const freeIndex = this.instanceUsed.indexOf(false)
         if (freeIndex < 0) {
             return undefined

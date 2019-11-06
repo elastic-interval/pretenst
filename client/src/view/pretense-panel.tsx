@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaCircle, FaDotCircle, FaHandPointUp } from "react-icons/all"
+import { FaCircle, FaDotCircle, FaEye, FaGlobe, FaHandPointUp } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -58,9 +58,12 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
 
     return (
         <div className="m-5">
+            <div className="text-center">
+                <h1><FaGlobe/> Environment <FaGlobe/></h1>
+            </div>
             <div className="my-2">
                 <h6>Gravity</h6>
-                <ButtonGroup>
+                <ButtonGroup className="w-100">
                     {enumValues(GravityCharacter).map(value => (
                         <Button
                             key={GravityCharacter[value]}
@@ -72,7 +75,7 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
             </div>
             <div className="my-2">
                 <h6>Surface</h6>
-                <ButtonGroup>
+                <ButtonGroup className="w-100">
                     {enumValues(SurfaceCharacter).map(value => (
                         <Button
                             key={SurfaceCharacter[value]}
@@ -84,7 +87,7 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
             </div>
             <div className="my-2">
                 <h6>Drag</h6>
-                <ButtonGroup>
+                <ButtonGroup className="w-100">
                     {enumValues(DragCharacter).map(value => (
                         <Button
                             key={DragCharacter[value]}
@@ -94,14 +97,17 @@ export function PretensePanel({fabric, fabricState$, rebuild}: {
                     ))}
                 </ButtonGroup>
             </div>
-            <div className="my-4">
+            <div className="my-5 w-100">
                 <LifePhasePanel
                     fabric={fabric}
                     fabricState$={fabricState$}
                     rebuild={rebuild}
                 />
             </div>
-            <div className="m-4 w-75">
+            <div className="my-5 w-100">
+                <div className="text-center">
+                    <h1><FaEye/> Aspect <FaEye/></h1>
+                </div>
                 <ButtonGroup style={{display: "flex"}} className="my-2">
                     <ViewButton pushes={false} pulls={true}/>
                     <StrainPanel fabric={fabric} pushes={false}

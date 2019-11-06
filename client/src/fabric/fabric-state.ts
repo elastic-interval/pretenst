@@ -58,7 +58,6 @@ export interface IFabricState {
     lifePhase: LifePhase
     gravityCharacter: GravityCharacter
     dragCharacter: DragCharacter
-    controlTab: ControlTab
     rotating: boolean
     frozen: boolean
     showPushes: boolean

@@ -5,26 +5,19 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
-import { Button } from "reactstrap"
+import { FaClock, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
+import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-interface IButtonCharacter {
-    text: string,
-    color: string,
-    disabled: boolean,
-    symbol: JSX.Element,
-    onClick: () => void,
-}
-
 export function LifePhasePanel({fabric, fabricState$, rebuild}: {
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject <IFabricState>,
+    fabricState$: BehaviorSubject<IFabricState>,
     rebuild: () => void,
 }): JSX.Element {
+
     const [lifePhase, setLifePhase] = useState(fabric.lifePhase)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
@@ -33,59 +26,46 @@ export function LifePhasePanel({fabric, fabricState$, rebuild}: {
         return () => subscription.unsubscribe()
     })
 
-    function character(): IButtonCharacter {
+    function LifePhaseIcon(): JSX.Element {
         switch (lifePhase) {
             case LifePhase.Growing:
-                return {
-                    text: "Growing...",
-                    symbol: <FaSeedling/>,
-                    color: "warning",
-                    disabled: true,
-                    onClick: () => {
-                    },
-                }
+                return <h1><FaSeedling/> Growing <FaSeedling/></h1>
             case LifePhase.Shaping:
-                return {
-                    text: "Shaping->Slack",
-                    symbol: <FaHammer/>,
-                    color: "success",
-                    disabled: false,
-                    onClick: () => fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.slack()}),
-                }
+                return <h1><FaHammer/> Shaping <FaHammer/></h1>
             case LifePhase.Slack:
-                return {
-                    text: "Slack->Pretensing",
-                    symbol: <FaYinYang/>,
-                    color: "warning",
-                    disabled: false,
-                    onClick: () => fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.pretensing()}),
-                }
+                return <h1><FaYinYang/> Slack <FaYinYang/></h1>
             case LifePhase.Pretensing:
-                return {
-                    text: `Pretensing`,
-                    symbol: <FaHammer/>,
-                    color: "warning",
-                    disabled: true,
-                    onClick: () => {
-                    },
-                }
+                return <h1><FaClock/> Pretensing <FaClock/></h1>
             case LifePhase.Pretenst:
-                return {
-                    symbol: <FaHandSpock/>,
-                    color: "success",
-                    text: "Pretenst!",
-                    disabled: false,
-                    onClick: rebuild,
-                }
-            default:
-                throw new Error()
+                return <h1><FaHandSpock/> Pretenst <FaHandSpock/></h1>
         }
     }
 
-    const {text, symbol, color, disabled, onClick} = character()
     return (
-        <Button className="m-4 w-75" color={color} disabled={disabled} onClick={onClick}>
-            {symbol} <span> {text}</span>
-        </Button>
+        <div className="my-4 w-100">
+            <div className="text-center">
+                <LifePhaseIcon/>
+            </div>
+            <ButtonGroup vertical={true} className="w-100">
+                <Button
+                    disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}
+                    onClick={() => fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.slack()})}
+                >
+                    <span>Enter <FaYinYang/> Slack</span>
+                </Button>
+                <Button
+                    disabled={lifePhase !== LifePhase.Slack}
+                    onClick={() => fabricState$.next({...fabricState$.getValue(), lifePhase: fabric.pretensing()})}
+                >
+                    <span>Start <FaHandSpock/> Pretensing</span>
+                </Button>
+                <Button
+                    disabled={lifePhase !== LifePhase.Pretenst}
+                    onClick={rebuild}
+                >
+                    <span>Grow <FaSeedling/> Again</span>
+                </Button>
+            </ButtonGroup>
+        </div>
     )
 }

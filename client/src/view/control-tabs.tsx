@@ -40,16 +40,17 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, boots
     rebuild: () => void,
 }): JSX.Element {
 
-    const [activeTab, updateActiveTab] = useState(fabricState$.getValue().controlTab)
-    useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => updateActiveTab(newState.controlTab))
-        return () => subscription.unsubscribe()
-    })
+    const [activeTab, setActiveTab] = useState(loadControlTab)
 
     function Controls(): JSX.Element {
         if (!fabric) {
             return <div/>
         }
+        const [lifePhase, setLifePhase] = useState(fabric.lifePhase)
+        useEffect(() => {
+            const subscription = fabricState$.subscribe(newState => setLifePhase(newState.lifePhase))
+            return () => subscription.unsubscribe()
+        })
 
         const adjustValue = (up: boolean) => () => {
             function adjustment(): number {
@@ -77,16 +78,22 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, boots
                     </ButtonGroup>
                 ) : (<h3>Notting</h3>)}
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button disabled={fabricState$.getValue().lifePhase !== LifePhase.Shaping}
+                    <Button disabled={lifePhase !== LifePhase.Shaping}
                             onClick={() => optimizeFabric(fabric)}>
                         <FaBiohazard/> Optimize
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button onClick={() => saveCSVFiles(fabric)}>
+                    <Button
+                        disabled={lifePhase !== LifePhase.Pretenst}
+                        onClick={() => saveCSVFiles(fabric)}
+                    >
                         <FaFileCsv/> Download CSV
                     </Button>
-                    <Button onClick={() => saveOBJFile(fabric)}>
+                    <Button
+                        disabled={lifePhase !== LifePhase.Pretenst}
+                        onClick={() => saveOBJFile(fabric)}
+                    >
                         <FaCubes/> Download OBJ
                     </Button>
                 </ButtonGroup>
@@ -100,7 +107,10 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, boots
             <NavItem>
                 <NavLink
                     active={activeTab === controlTab}
-                    onClick={() => fabricState$.next({...fabricState$.getValue(), controlTab})}
+                    onClick={() => {
+                        saveControlTab(controlTab)
+                        setActiveTab(controlTab)
+                    }}
                 >{controlTab}</NavLink>
             </NavItem>
         )
@@ -175,4 +185,18 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, boots
             </div>
         </div>
     )
+}
+
+const CONTROL_TAB_KEY = "ControlTab"
+
+function saveControlTab(controlTab: ControlTab): void {
+    localStorage.setItem(CONTROL_TAB_KEY, controlTab)
+}
+
+function loadControlTab(): ControlTab {
+    const item = localStorage.getItem(CONTROL_TAB_KEY)
+    if (item) {
+        return ControlTab[item]
+    }
+    return ControlTab.Generate
 }

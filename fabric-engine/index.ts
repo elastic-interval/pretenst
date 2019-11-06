@@ -16,6 +16,7 @@ const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const IN_UTERO_ELASTICITY: f32 = 0.9
 const IN_UTERO_DRAG: f32 = 0.0000001
+const IN_UTERO_PRETENST: f32 = 0.5
 
 export enum FabricFeature {
     TicksPerFrame = 0,
@@ -1088,6 +1089,9 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     let isPush = getIntervalRole(intervalIndex) === IntervalRole.Push
     if (isPush) {
         switch (lifePhase) {
+            case LifePhase.Shaping:
+                currentLength *= 1 + IN_UTERO_PRETENST
+                break
             case LifePhase.Pretensing:
                 currentLength *= 1 + getPretenst() * getPretensingNuance()
                 break
