@@ -11,7 +11,7 @@ import { FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
 import { executeActiveCode, IActiveCode, ICode, IGrowth } from "./tenscript"
-import { connectClosestFacePair, createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
+import { createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,
     IBrick,
@@ -92,7 +92,7 @@ export class TensegrityFabric {
         features.forEach(feature => this.instance.applyFeature(feature))
         const brick = createBrickOnOrigin(this, percentOrHundred())
         const executing: IActiveCode = {codeTree: this.code.codeTree, brick}
-        this.growth = {growing: [executing], optimizationStack: []}
+        this.growth = {growing: [executing]}
         this.refreshLineGeometry()
         this.refreshFaceGeometry()
     }
@@ -266,23 +266,9 @@ export class TensegrityFabric {
             engine.centralize()
         }
         if (growth.growing.length === 0) {
-            if (growth.optimizationStack.length > 0) {
-                const optimization = growth.optimizationStack.pop()
-                switch (optimization) {
-                    case "L":
-                        optimizeFabric(this)
-                        break
-                    case "X":
-                        growth.optimizationStack.push("Connect")
-                        break
-                    case "Connect":
-                        connectClosestFacePair(this)
-                        break
-                }
-            } else {
-                this.growth = undefined
-                this.lifePhase$.next(this.instance.shaping())
-            }
+            optimizeFabric(this)
+            this.growth = undefined
+            this.lifePhase$.next(this.instance.shaping())
         }
         return true
     }

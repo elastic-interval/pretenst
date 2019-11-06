@@ -175,7 +175,6 @@ export interface IActiveCode {
 
 export interface IGrowth {
     growing: IActiveCode []
-    optimizationStack: string[]
 }
 
 export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
