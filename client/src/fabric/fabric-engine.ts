@@ -14,8 +14,8 @@ export enum FabricFeature {
     Gravity = 1,
     Drag = 2,
     SlackThreshold = 3,
-    PushMaxElastic = 4,
-    PullMaxElastic = 5,
+    MaxElastic = 4,
+    PretenseFactor = 5,
     IntervalBusyTicks = 6,
     PretenseTicks = 7,
     PretenseIntensity = 8,
@@ -25,6 +25,7 @@ export enum FabricFeature {
     CrossLength = 12,
     BowMidLength = 13,
     BowEndLength = 14,
+    Girth = 15,
 }
 
 export enum IntervalRole {

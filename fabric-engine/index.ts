@@ -18,15 +18,13 @@ const IN_UTERO_ELASTICITY: f32 = 0.9
 const IN_UTERO_DRAG: f32 = 0.0000001
 const IN_UTERO_PRETENST: f32 = 0.5
 
-const FEATURE_PRETENST: f32 = 0.1
-
 export enum FabricFeature {
     TicksPerFrame = 0,
     Gravity = 1,
     Drag = 2,
     SlackThreshold = 3,
-    PushMaxElastic = 4,
-    PullMaxElastic = 5,
+    MaxElastic = 4,
+    PretenseFactor = 5,
     IntervalBusyTicks = 6,
     PretenseTicks = 7,
     PretenseIntensity = 8,
@@ -36,6 +34,7 @@ export enum FabricFeature {
     CrossLength = 12,
     BowMidLength = 13,
     BowEndLength = 14,
+    Girth = 15,
 }
 
 enum SurfaceCharacter {
@@ -633,10 +632,6 @@ function setLifePhase(lifePhase: LifePhase): LifePhase {
     return lifePhase
 }
 
-function getPretenst(): f32 {
-    return getF32(_PRETENST)
-}
-
 // Joints =====================================================================================
 
 export function createJoint(jointTag: u16, laterality: u8, x: f32, y: f32, z: f32): usize {
@@ -1069,10 +1064,10 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
                 currentLength *= 1 + IN_UTERO_PRETENST
                 break
             case LifePhase.Pretensing:
-                currentLength *= 1 + getPretenst() * getPretensingNuance()
+                currentLength *= 1 + getFeature(FabricFeature.PretenseFactor) * getPretensingNuance()
                 break
             case LifePhase.Pretenst:
-                currentLength *= 1 + getPretenst()
+                currentLength *= 1 + getFeature(FabricFeature.PretenseFactor)
                 break
         }
     }
@@ -1192,7 +1187,7 @@ export function initInstance(): LifePhase {
     setPreviousState(REST_STATE)
     setCurrentState(REST_STATE)
     setNextState(REST_STATE)
-    setF32(_PRETENST, FEATURE_PRETENST)
+    setF32(_PRETENST, 0)
     return setLifePhase(LifePhase.Growing)
 }
 

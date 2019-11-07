@@ -60,12 +60,30 @@ export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstra
                     return !fabric ? (<div/>) : (
                         <PretensePanel
                             fabric={fabric}
+                            features={features}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
                         />
                     )
                 case ControlTab.Features:
-                    return !fabric ? <div/> : <FeaturePanel featureSet={features}/>
+                    return !fabric ? <div/> : (
+                        <div>
+                            {features.map(feature => (
+                                <div key={feature.title} style={{
+                                    borderStyle: "solid",
+                                    borderColor: "white",
+                                    borderWidth: "0.1em",
+                                    borderRadius: "0.7em",
+                                    padding: "0.2em",
+                                    marginTop: "0.3em",
+                                    color: "white",
+                                    backgroundColor: "#545454",
+                                }}>
+                                    <FeaturePanel feature={feature} mutable={true}/>
+                                </div>
+                            ))}
+                        </div>
+                    )
             }
         }
 

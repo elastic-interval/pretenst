@@ -358,6 +358,7 @@ export class TensegrityFabric {
         this.instance.cloneFrom(this.slackInstance)
         this.elasticities = elasticities
         this.linearDensities = linearDensities
+        this.features.forEach(feature => this.instance.applyFeature(feature))
     }
 
     private refreshLineGeometry(): void {

@@ -30,68 +30,46 @@ function multiplierSymbol(multiplier: FeatureMultiplier): JSX.Element {
     }
 }
 
-export function FeaturePanel({featureSet}: {featureSet: FloatFeature[]}): JSX.Element {
+export function FeaturePanel({feature, mutable}: { feature: FloatFeature, mutable: boolean }): JSX.Element {
 
-    function Factor({feature, mutable}: { feature: FloatFeature, mutable: boolean }): JSX.Element {
+    const [factorString, setFactorString] = useState<string>(feature.toString)
 
-        const [factorString, setFactorString] = useState<string>(feature.toString)
-
-        useEffect(() => {
-            const subscription = feature.onChange(() => {
-                setFactorString(feature.formatted)
-            })
-            return () => subscription.unsubscribe()
+    useEffect(() => {
+        const subscription = feature.onChange(() => {
+            setFactorString(feature.formatted)
         })
+        return () => subscription.unsubscribe()
+    })
 
-        const basicStyle: CSSProperties = {
-            textAlign: "right",
-            width: "6em",
-        }
-        const inputStyle: CSSProperties = feature.isAtDefault ? basicStyle : {
-            ...basicStyle,
-            color: "red",
-            borderStyle: "solid",
-            borderWidth: "1px",
-            borderColor: "red",
-        }
-        const UpdateButtonGroup = (): JSX.Element => (
-            <ButtonGroup className="mx-1">
-                <Button size="sm" onClick={() => feature.adjustValue(true)}><FaArrowUp/></Button>
-                <Button size="sm" onClick={() => feature.adjustValue(false)}><FaArrowDown/></Button>
-                <Button size="sm" onClick={() => feature.reset()}><FaEquals/></Button>
-            </ButtonGroup>
-        )
-        return (
-            <InputGroup size="sm">
-                <strong>&nbsp;&nbsp;<FaGlobe/>&nbsp;&nbsp;</strong>
-                <InputGroupAddon addonType="prepend">
-                    <InputGroupText>{feature.title}</InputGroupText>
-                </InputGroupAddon>
-                <InputGroupAddon addonType="prepend">
-                    <InputGroupText>{multiplierSymbol(feature.config.multiplier)}</InputGroupText>
-                </InputGroupAddon>
-                <Input style={inputStyle} value={factorString} disabled={true}/>
-                {mutable ? <UpdateButtonGroup/> : undefined}
-            </InputGroup>
-        )
+    const basicStyle: CSSProperties = {
+        textAlign: "right",
+        width: "6em",
     }
-
+    const inputStyle: CSSProperties = feature.isAtDefault ? basicStyle : {
+        ...basicStyle,
+        color: "red",
+        borderStyle: "solid",
+        borderWidth: "1px",
+        borderColor: "red",
+    }
+    const UpdateButtonGroup = (): JSX.Element => (
+        <ButtonGroup className="mx-1">
+            <Button size="sm" onClick={() => feature.adjustValue(true)}><FaArrowUp/></Button>
+            <Button size="sm" onClick={() => feature.adjustValue(false)}><FaArrowDown/></Button>
+            <Button size="sm" onClick={() => feature.reset()}><FaEquals/></Button>
+        </ButtonGroup>
+    )
     return (
-        <div>
-            {featureSet.map(feature => (
-                <div key={feature.title} style={{
-                    borderStyle: "solid",
-                    borderColor: "white",
-                    borderWidth: "0.1em",
-                    borderRadius: "0.7em",
-                    padding: "0.2em",
-                    marginTop: "0.3em",
-                    color: "white",
-                    backgroundColor: "#545454",
-                }}>
-                    <Factor feature={feature} mutable={true}/>
-                </div>
-            ))}
-        </div>
+        <InputGroup size="sm">
+            <strong>&nbsp;&nbsp;<FaGlobe/>&nbsp;&nbsp;</strong>
+            <InputGroupAddon addonType="prepend">
+                <InputGroupText>{feature.title}</InputGroupText>
+            </InputGroupAddon>
+            <InputGroupAddon addonType="prepend">
+                <InputGroupText>{multiplierSymbol(feature.config.multiplier)}</InputGroupText>
+            </InputGroupAddon>
+            <Input style={inputStyle} value={factorString} disabled={true}/>
+            {mutable ? <UpdateButtonGroup/> : undefined}
+        </InputGroup>
     )
 }

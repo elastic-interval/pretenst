@@ -91,19 +91,19 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byTenPercent,
     },
     {
-        feature: FabricFeature.PushMaxElastic,
-        name: "Push Max Elastic",
-        defaultValue: 0.0003,
-        multiplier: FeatureMultiplier.Billionths,
+        feature: FabricFeature.MaxElastic,
+        name: "Max Elastic",
+        defaultValue: 0.001,
+        multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 0,
         adjustment: byTenPercent,
     },
     {
-        feature: FabricFeature.PullMaxElastic,
-        name: "Pull Max Elastic",
-        defaultValue: 0.0005,
-        multiplier: FeatureMultiplier.Billionths,
-        fixedDigits: 0,
+        feature: FabricFeature.PretenseFactor,
+        name: "Pretense Factor",
+        defaultValue: 0.1,
+        multiplier: FeatureMultiplier.Thousandths,
+        fixedDigits: 1,
         adjustment: byTenPercent,
     },
     {
@@ -177,6 +177,14 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
+    },
+    {
+        feature: FabricFeature.Girth,
+        name: "Girth",
+        defaultValue: 20,
+        multiplier: FeatureMultiplier.One,
+        fixedDigits: 1,
+        adjustment: byTenPercent,
     },
 ]
 

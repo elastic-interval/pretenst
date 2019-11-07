@@ -18,17 +18,20 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { SurfaceCharacter } from "../fabric/fabric-engine"
+import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
+import { FloatFeature } from "../fabric/fabric-features"
 import { DragCharacter, enumValues, GravityCharacter, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
+import { FeaturePanel } from "./feature-panel"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function PretensePanel({fabric, selectedBrick, fabricState$, lifePhase$}: {
+export function PretensePanel({fabric, selectedBrick, features, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
     selectedBrick?: IBrick,
+    features: FloatFeature[],
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
@@ -75,7 +78,7 @@ export function PretensePanel({fabric, selectedBrick, fabricState$, lifePhase$}:
     return (
         <div className="m-5">
             <div className="text-center">
-                <h1><FaGlobe/> Environment <FaGlobe/></h1>
+                <h2><FaGlobe/> Environment <FaGlobe/></h2>
             </div>
             <div className="my-2">
                 <h6>Gravity</h6>
@@ -127,12 +130,17 @@ export function PretensePanel({fabric, selectedBrick, fabricState$, lifePhase$}:
                     fabric={fabric}
                     lifePhase$={lifePhase$}
                 />
+                <div style={{backgroundColor: "white", borderRadius: "1em"}} className="my-2 p-1">
+                    <FeaturePanel feature={features[FabricFeature.PretenseFactor]} mutable={true}/>
+                    <FeaturePanel feature={features[FabricFeature.PretenseIntensity]} mutable={true}/>
+                    <FeaturePanel feature={features[FabricFeature.PretenseTicks]} mutable={true}/>
+                </div>
             </div>
             <div className="my-5 w-100">
                 {selectedBrick ? (
                     <>
                         <div className="text-center">
-                            <h1><FaEye/> Editing <FaHammer/></h1>
+                            <h2><FaEye/> Editing <FaHammer/></h2>
                         </div>
                         <ButtonGroup className="m-4 w-75">
                             <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
@@ -164,9 +172,11 @@ export function PretensePanel({fabric, selectedBrick, fabricState$, lifePhase$}:
                             <StrainPanel fabric={fabric} pushes={true}
                                          showPushes={showPushes} showPulls={showPulls}/>
                         </ButtonGroup>
+                        <div style={{backgroundColor: "white", borderRadius: "1em"}} className="my-2 p-1">
+                            <FeaturePanel feature={features[FabricFeature.MaxElastic]} mutable={true}/>
+                        </div>
                     </>
-                )
-                }
+                )}
             </div>
         </div>
     )

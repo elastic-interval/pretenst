@@ -24,7 +24,6 @@ import {
 
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
-import { FabricInstance } from "../fabric/fabric-instance"
 import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -54,8 +53,6 @@ const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const PUSH_GIRTH = 20
-const PULL_GIRTH = 8
 const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
@@ -147,7 +144,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
     }
 
     function SelectedFace(): JSX.Element {
-        if (!fabric || !selectedBrick) {
+        if (!selectedBrick) {
             return <group/>
         }
         const scale = 0.6
@@ -162,9 +159,6 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
     }
 
     function Faces(): JSX.Element {
-        if (!fabric) {
-            return <group/>
-        }
         const meshRef = useRef<Object3D>()
         const onPointerDown = (event: DomEvent) => {
             setDownEvent(event)
@@ -206,25 +200,22 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         )
     }
 
+    const girth = fabricFeatureValue(FabricFeature.Girth)
+
     function IntervalMesh({interval, attenuated}: {
         interval: IInterval,
         attenuated: boolean,
     }): JSX.Element {
-        if (!fabric) {
-            return <group/>
-        }
         const material = () => {
             if (attenuated) {
                 return ATTENUATED
             }
+            const strain = fabric.instance.strains[interval.index]
             const slack = strain < fabricFeatureValue(FabricFeature.SlackThreshold)
-            return slack ? SLACK : isPush ? PUSH_MATERIAL : PULL_MATERIAL
+            return slack ? SLACK : interval.isPush ? PUSH_MATERIAL : PULL_MATERIAL
         }
-        const elastic = fabric.instance.elasticities[interval.index]
-        const isPush = interval.isPush
-        const strain = fabric.instance.strains[interval.index] * (isPush ? -1 : 1)
-        const girth = Math.sqrt(elastic) * (isPush ? PUSH_GIRTH : PULL_GIRTH)
-        const {scale, rotation} = fabric.orientInterval(interval, girth)
+        const linearDensity = fabric.instance.linearDensities[interval.index]
+        const {scale, rotation} = fabric.orientInterval(interval, girth * linearDensity)
         return (
             <mesh
                 geometry={SPHERE}
@@ -239,11 +230,11 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
 
     function ElasticScale(): JSX.Element {
         const current = orbit.current
-        if (!current || !fabric) {
+        if (!current) {
             return <group/>
         }
         const needleGeometry = new BufferGeometry()
-        const lines = strainPushLines(fabric.instance, showPushes, showPulls)
+        const lines = strainPushLines(fabric)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.lineColors, 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
@@ -257,8 +248,9 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
             v(-SCALE_WIDTH, 0), v(SCALE_WIDTH, 0),
             v(-SCALE_WIDTH, -SCALE_MAX), v(SCALE_WIDTH, -SCALE_MAX),
         ]
-        const needlePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, 0.8).add(toDaLeft)
-        const scalePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, 0.8001).add(toDaLeft)
+        const targetPull = 0.85
+        const needlePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, targetPull).add(toDaLeft)
+        const scalePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, targetPull + 0.001).add(toDaLeft)
         return (
             <group>
                 <lineSegments geometry={needleGeometry} material={LINE}
@@ -279,7 +271,8 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
                         {fabric.splitIntervals ? (
                             [
                                 ...fabric.splitIntervals.unselected.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={true}/>
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval}
+                                                  attenuated={true}/>
                                 )),
                                 ...fabric.splitIntervals.selected.map(interval => (
                                     <IntervalMesh key={`I${interval.index}`} interval={interval}
@@ -314,27 +307,17 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
     )
 }
 
-function strainPushLines(instance: FabricInstance, showPushes: boolean, showPulls: boolean): Float32Array {
+function strainPushLines(fabric: TensegrityFabric): Float32Array {
 
-    const maxPush = fabricFeatureValue(FabricFeature.PushMaxElastic)
-    const maxPull = fabricFeatureValue(FabricFeature.PullMaxElastic)
+    const maxElastic = fabricFeatureValue(FabricFeature.MaxElastic)
 
-    function elasticToHeight(elastic: number): number {
-        if (showPushes && showPulls) {
-            return elastic / Math.max(maxPush, maxPull) - 0.5
-        } else if (showPushes) {
-            return elastic / maxPush - 0.5
-        } else if (showPulls) {
-            return elastic / maxPull - 0.5
-        } else {
-            return 0
-        }
-    }
-
+    const instance = fabric.instance
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
+    const elasticities = instance.elasticities
     let offset = 0
-    instance.elasticities.forEach((elastic, index) => {
-        const height = elasticToHeight(elastic)
+    fabric.intervals.forEach(interval => {
+        const elastic = elasticities[interval.index]
+        const height = elastic / maxElastic * (interval.isPush ? SCALE_MAX : -SCALE_MAX)
         vertices[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
         vertices[offset++] = height
         vertices[offset++] = 0
