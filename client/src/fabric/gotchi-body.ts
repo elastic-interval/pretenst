@@ -202,7 +202,7 @@ export class GotchiBody {
     }
 
     public iterate(ticks: number): boolean {
-        return this.engine.iterate(ticks)
+        return !this.engine.iterate(ticks, false) // todo
     }
 
     public get age(): number {

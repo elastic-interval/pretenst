@@ -7,8 +7,7 @@ import { Vector3 } from "three"
 
 import { FabricFeature, IFabricEngine } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
-import { vectorFromFloatArray } from "./fabric-kernel"
-import { LifePhase } from "./fabric-state"
+import { faceVector, vectorFromFloatArray } from "./fabric-kernel"
 
 export class FabricInstance {
     private _fabricFeatures: LazyFloatArray
@@ -29,8 +28,6 @@ export class FabricInstance {
         private buffer: ArrayBuffer,
         private releaseInstance: (index: number) => void,
         private fabricEngine: IFabricEngine,
-        private initialPretenst: number,
-        private maturePretenst: number,
     ) {
         const e = this.engine
         const offset = e._fabricOffset()
@@ -55,27 +52,6 @@ export class FabricInstance {
 
     public setFeatureValue(fabricFeature: FabricFeature, value: number): void {
         this._fabricFeatures.floats[fabricFeature] = value
-    }
-
-    public growing(): LifePhase {
-        this.forgetDimensions()
-        return this.engine.setLifePhase(LifePhase.Growing, this.initialPretenst)
-    }
-
-    public shaping(): LifePhase {
-        return this.engine.setLifePhase(LifePhase.Shaping, this.initialPretenst)
-    }
-
-    public slack(): LifePhase {
-        return this.engine.setLifePhase(LifePhase.Slack, 0)
-    }
-
-    public pretensing(): LifePhase {
-        return this.engine.setLifePhase(LifePhase.Pretensing, this.maturePretenst)
-    }
-
-    public pretenst(): LifePhase {
-        return this.engine.setLifePhase(LifePhase.Pretenst, this.maturePretenst)
     }
 
     public release(): void {
@@ -120,11 +96,11 @@ export class FabricInstance {
     }
 
     public faceMidpoint(faceIndex: number): Vector3 {
-        return this.faceVector(faceIndex, this._faceLocations.floats)
+        return faceVector(faceIndex, this._faceLocations.floats)
     }
 
     public faceNormal(faceIndex: number): Vector3 {
-        return this.faceVector(faceIndex, this._faceNormals.floats)
+        return faceVector(faceIndex, this._faceNormals.floats)
     }
 
     public intervalLocation(intervalIndex: number): Vector3 {
@@ -164,14 +140,6 @@ export class FabricInstance {
 
     public cloneFrom(instance: FabricInstance): void {
         this.fabricEngine.cloneInstance(instance.index, this.index)
-    }
-
-    private faceVector(faceIndex: number, array: Float32Array): Vector3 {
-        const index = faceIndex * 3
-        const a = vectorFromFloatArray(array, 3 * index)
-        const b = vectorFromFloatArray(array, 3 * (index + 1))
-        const c = vectorFromFloatArray(array, 3 * (index + 2))
-        return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
     }
 }
 

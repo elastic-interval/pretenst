@@ -6,11 +6,12 @@
 import { SurfaceCharacter } from "./fabric-engine"
 
 export enum LifePhase {
-    Growing = 0,
-    Shaping = 1,
-    Slack = 2,
-    Pretensing = 3,
-    Pretenst = 4,
+    Busy = 0,
+    Growing = 1,
+    Shaping = 2,
+    Slack = 3,
+    Pretensing = 4,
+    Pretenst = 5,
 }
 
 export function doNotClick(lifePhase: LifePhase): boolean {

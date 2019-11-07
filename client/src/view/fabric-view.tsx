@@ -129,8 +129,11 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
         if (!frozen) {
-            fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
+            const newLifePhase = fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
             fabric.needsUpdate()
+            if (lifePhase !== newLifePhase && newLifePhase !== LifePhase.Busy) {
+                lifePhase$.next(newLifePhase)
+            }
         }
         setAge(instance.engine.getAge())
     }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, frozen])
@@ -270,7 +273,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {rotating || lifePhase < LifePhase.Slack ? undefined : <ElasticScale/>}
+                {rotating || lifePhase <= LifePhase.Shaping ? undefined : <ElasticScale/>}
                 {!fabric ? undefined : frozen ? (
                     <group>
                         {fabric.splitIntervals ? (
@@ -329,9 +332,9 @@ function strainPushLines(instance: FabricInstance, showPushes: boolean, showPull
     }
 
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
+    let offset = 0
     instance.elasticities.forEach((elastic, index) => {
         const height = elasticToHeight(elastic)
-        let offset = index * 6
         vertices[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
         vertices[offset++] = height
         vertices[offset++] = 0

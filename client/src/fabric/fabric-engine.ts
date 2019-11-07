@@ -1,4 +1,3 @@
-
 /*
  * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
@@ -97,9 +96,11 @@ export interface IFabricEngine {
 
     // below methods use instance index
 
-    getAge(): number
+    initInstance(): LifePhase
 
-    setLifePhase(lifePhase: LifePhase, pretenst: number): LifePhase
+    finishGrowing(): LifePhase
+
+    getAge(): number
 
     getCurrentState(): FabricDirection
 
@@ -107,7 +108,7 @@ export interface IFabricEngine {
 
     setNextState(state: FabricDirection): void
 
-    iterate(ticks: number): boolean
+    iterate(ticks: number, mature: boolean): LifePhase
 
     centralize(): void
 

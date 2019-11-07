@@ -96,7 +96,10 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
         if (!code || !mainInstance || !slackInstance) {
             return
         }
-        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, code, lifePhase$))
+        mainInstance.forgetDimensions()
+        mainInstance.engine.initInstance()
+        lifePhase$.next(LifePhase.Growing)
+        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, code))
         location.hash = code.codeString
     }
 
@@ -140,11 +143,6 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                         lifePhase$={lifePhase$}
                         bootstrapCode={bootstrapCode}
                         features={features}
-                        pretense={() => {
-                            if (fabric) {
-                                fabric.pretense()
-                            }
-                        }}
                     />
                 </div>
             )}

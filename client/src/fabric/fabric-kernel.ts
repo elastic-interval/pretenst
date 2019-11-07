@@ -10,9 +10,6 @@ import { HEXALOT_SHAPE } from "../island/island-logic"
 import { IFabricEngine } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
 
-const INITIAL_PRETENST = 0.3
-const FINAL_PRETENST = 0.1
-
 const FLOATS_IN_VECTOR = 3
 const HEXALOT_BITS = 128
 const SPOT_CENTERS_FLOATS = HEXALOT_BITS * FLOATS_IN_VECTOR
@@ -25,6 +22,14 @@ export const vectorFromFloatArray = (array: Float32Array, index: number, vector?
     } else {
         return new Vector3(array[index], array[index + 1], array[index + 2])
     }
+}
+
+export function faceVector(faceIndex: number, array: Float32Array): Vector3 {
+    const index = faceIndex * 3
+    const a = vectorFromFloatArray(array, 3 * index)
+    const b = vectorFromFloatArray(array, 3 * (index + 1))
+    const c = vectorFromFloatArray(array, 3 * (index + 2))
+    return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
 }
 
 export class FabricKernel {
@@ -49,8 +54,6 @@ export class FabricKernel {
                 this.arrayBuffer,
                 toFree => this.instanceUsed[toFree] = false,
                 engine,
-                INITIAL_PRETENST,
-                FINAL_PRETENST,
             ))
             this.instanceUsed.push(false)
         }

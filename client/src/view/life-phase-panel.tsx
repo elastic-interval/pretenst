@@ -5,17 +5,16 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaClock, FaDraftingCompass, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
+import { FaClock, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function LifePhasePanel({fabric, lifePhase$, pretense}: {
+export function LifePhasePanel({fabric, lifePhase$}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject <LifePhase>,
-    pretense: () => void,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
@@ -33,9 +32,11 @@ export function LifePhasePanel({fabric, lifePhase$, pretense}: {
             case LifePhase.Slack:
                 return <h1><FaYinYang/> Slack <FaYinYang/></h1>
             case LifePhase.Pretensing:
-                return <h1><FaClock/> Pretensing <FaClock/></h1>
+                return <h1><FaYinYang/> Pretensing <FaYinYang/></h1>
             case LifePhase.Pretenst:
                 return <h1><FaHandSpock/> Pretenst <FaHandSpock/></h1>
+            case LifePhase.Busy:
+                return <h1><FaClock/> Pretenst <FaHandSpock/></h1>
         }
     }
 
@@ -46,22 +47,28 @@ export function LifePhasePanel({fabric, lifePhase$, pretense}: {
             </div>
             <ButtonGroup vertical={true} className="w-100">
                 <Button
-                    disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabric.toSlack()}
+                    disabled={lifePhase !== LifePhase.Shaping}
+                    onClick={() => fabric.toMature()}
                 >
-                    <span>Enter <FaYinYang/> Slack</span>
-                </Button>
-                <Button
-                    disabled={lifePhase !== LifePhase.Slack}
-                    onClick={() => fabric.toPretensing()}
-                >
-                    <span>Start <FaHandSpock/> Pretensing</span>
+                    <span>Prepare to <FaYinYang/> pretense</span>
                 </Button>
                 <Button
                     disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={pretense}
+                    onClick={() => fabric.toMature(1)}
                 >
-                    <span>Pretense <FaDraftingCompass/> Slack</span>
+                    <span>Pretense <FaHandSpock/> 3 times</span>
+                </Button>
+                <Button
+                    disabled={lifePhase !== LifePhase.Pretenst}
+                    onClick={() => fabric.toMature(10)}
+                >
+                    <span>Pretense <FaHandSpock/><FaHandSpock/> 10 times</span>
+                </Button>
+                <Button
+                    disabled={lifePhase !== LifePhase.Pretenst}
+                    onClick={() => fabric.toMature(100)}
+                >
+                    <span>Pretense <FaHandSpock/><FaHandSpock/><FaHandSpock/> 100 times</span>
                 </Button>
             </ButtonGroup>
         </div>

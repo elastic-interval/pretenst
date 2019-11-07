@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
 import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
@@ -79,16 +78,15 @@ export class TensegrityFabric {
     private lineColors: Float32BufferAttribute
     private _linesGeometry = new BufferGeometry()
 
-    private slackCloned = false
+    private mature = false
+    private pretensingCountdown = 0
 
     constructor(
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
         public readonly features: FloatFeature[],
         public readonly code: ICode,
-        private lifePhase$: BehaviorSubject<LifePhase>,
     ) {
-        this.lifePhase$.next(instance.growing())
         features.forEach(feature => this.instance.applyFeature(feature))
         const brick = createBrickOnOrigin(this, percentOrHundred())
         this.activeCode = [{codeTree: this.code.codeTree, brick}]
@@ -96,41 +94,15 @@ export class TensegrityFabric {
         this.refreshFaceGeometry()
     }
 
-    public toSlack(elasticities?: Float32Array): void {
-        if (this.slackCloned) {
-            this.instance.cloneFrom(this.slackInstance)
-            if (elasticities) {
-                const destination = this.instance.elasticities
-                elasticities.forEach((value, index) => destination[index] = value)
-            }
-        } else {
-            this.slackCloned = true
+    public toMature(pretensingCountdown?: number): void {
+        this.mature = true
+        if (pretensingCountdown === undefined) {
             this.instance.cloneTo(this.slackInstance)
+            this.pretensingCountdown = 0
+        } else {
+            this.cloneWithNewElasticities()
+            this.pretensingCountdown = pretensingCountdown
         }
-        this.lifePhase$.next(this.instance.slack())
-    }
-
-    public toPretensing(): void {
-        this.lifePhase$.next(this.instance.pretensing())
-    }
-
-    public pretense(): void {
-        const strains = this.instance.strains
-        const getMedian = (intervals: IInterval[]) => {
-            const sorted = intervals.map(interval => strains[interval.index]).sort((a, b) => a - b)
-            return sorted[Math.floor(sorted.length / 2)]
-        }
-        const pushMedian = getMedian(this.intervals.filter(interval => interval.isPush))
-        const pullMedian = getMedian(this.intervals.filter(interval => !interval.isPush))
-        const intensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
-        const elasticities = this.instance.elasticities
-        const changes = this.intervals.map(interval => {
-            const median = interval.isPush ? pushMedian : pullMedian
-            const strain = strains[interval.index] - median
-            return 1 + (interval.isPush ? -strain : strain) * intensity
-        })
-        this.toSlack(elasticities.map((value, index) => value * changes[index]))
-        setTimeout(() => this.toPretensing(), 200)
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
@@ -270,29 +242,35 @@ export class TensegrityFabric {
         return this._linesGeometry
     }
 
-    public iterate(ticks: number): boolean {
+    public iterate(ticks: number): LifePhase {
         const engine = this.engine
-        const busy = engine.iterate(ticks)
-        if (busy) {
-            return busy
+        const lifePhase = engine.iterate(ticks, this.mature)
+        if (lifePhase === LifePhase.Busy) {
+            return lifePhase
         }
         const activeCode = this.activeCode
-        if (!activeCode) {
-            if (this.lifePhase$.getValue() === LifePhase.Pretensing) {
-                this.lifePhase$.next(this.instance.pretenst())
+        if (activeCode) {
+            if (activeCode.length > 0) {
+                this.activeCode = executeActiveCode(activeCode)
+                engine.centralize()
             }
-            return false
+            if (activeCode.length === 0) {
+                optimizeFabric(this)
+                this.activeCode = undefined
+                if (lifePhase === LifePhase.Growing) {
+                    return engine.finishGrowing()
+                }
+            }
+        } else if (lifePhase === LifePhase.Pretenst) {
+            if (this.pretensingCountdown === 0) {
+                return LifePhase.Pretenst
+            }
+            this.pretensingCountdown--
+            this.cloneWithNewElasticities()
+            this.instance.engine.iterate(0, false)
+            return LifePhase.Pretensing
         }
-        if (activeCode.length > 0) {
-            this.activeCode = executeActiveCode(activeCode)
-            engine.centralize()
-        }
-        if (activeCode.length === 0) {
-            optimizeFabric(this)
-            this.activeCode = undefined
-            this.lifePhase$.next(this.instance.shaping())
-        }
-        return true
+        return lifePhase
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
@@ -362,6 +340,35 @@ export class TensegrityFabric {
         }
     }
 
+    private cloneWithNewElasticities(): void {
+        // const log = (name: string, array: Float32Array) => console.log(name, array.slice(20, 40))
+        // log("strains", this.instance.strains)
+        // log("old elasticities", this.instance.elasticities)
+        const elasticities = this.elasticitiesFromStrains()
+        // log("new elasticities", elasticities)
+        this.instance.cloneFrom(this.slackInstance)
+        this.elasticities = elasticities
+        // log("elasticities after", this.instance.elasticities)
+    }
+
+    private elasticitiesFromStrains(): Float32Array {
+        const strains = this.instance.strains
+        const getMedian = (intervals: IInterval[]) => {
+            const sorted = intervals.map(interval => strains[interval.index]).sort((a, b) => a - b)
+            return sorted[Math.floor(sorted.length / 2)]
+        }
+        const pushMedian = getMedian(this.intervals.filter(interval => interval.isPush))
+        const pullMedian = getMedian(this.intervals.filter(interval => !interval.isPush))
+        const intensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
+        const elasticities = this.instance.elasticities
+        const changes = this.intervals.map(interval => {
+            const median = interval.isPush ? pushMedian : pullMedian
+            const strain = strains[interval.index] - median
+            return 1 + (interval.isPush ? -strain : strain) * intensity
+        })
+        return elasticities.map((value, index) => value * changes[index])
+    }
+
     private refreshLineGeometry(): void {
         this.iterate(0)
         this.intervalCount = this.instance.engine.getIntervalCount()
@@ -378,6 +385,11 @@ export class TensegrityFabric {
         this.faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)
         this._facesGeometry.addAttribute("position", this.faceLocations)
         this._facesGeometry.addAttribute("normal", this.faceNormals)
+    }
+
+    private set elasticities(elasticities: Float32Array) {
+        const destination = this.instance.elasticities
+        elasticities.forEach((value, index) => destination[index] = value)
     }
 
     private get engine(): IFabricEngine {

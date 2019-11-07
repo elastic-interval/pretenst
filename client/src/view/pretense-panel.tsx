@@ -16,18 +16,11 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function PretensePanel({fabric, fabricState$, lifePhase$, pretense}: {
+export function PretensePanel({fabric, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    pretense: () => void,
 }): JSX.Element {
-
-    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
-    useEffect(() => {
-        const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
-        return () => subscription.unsubscribe()
-    })
 
     const [gravityCharacter, updateGravityCharacter] = useState(fabricState$.getValue().gravityCharacter)
     const [surfaceCharacter, updateSurfaceCharacter] = useState(fabricState$.getValue().surfaceCharacter)
@@ -57,7 +50,6 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, pretense}: {
         </Button>
     }
 
-    const environmentDisabled = (lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping)
     return (
         <div className="m-5">
             <div className="text-center">
@@ -68,7 +60,6 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, pretense}: {
                 <ButtonGroup className="w-100">
                     {enumValues(GravityCharacter).map(value => (
                         <Button
-                            disabled={environmentDisabled}
                             key={GravityCharacter[value]}
                             active={gravityCharacter === value}
                             onClick={() => {
@@ -84,7 +75,6 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, pretense}: {
                 <ButtonGroup className="w-100">
                     {enumValues(SurfaceCharacter).map(value => (
                         <Button
-                            disabled={environmentDisabled}
                             key={SurfaceCharacter[value]}
                             active={surfaceCharacter === value}
                             onClick={() => {
@@ -100,7 +90,6 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, pretense}: {
                 <ButtonGroup className="w-100">
                     {enumValues(DragCharacter).map(value => (
                         <Button
-                            disabled={environmentDisabled}
                             key={DragCharacter[value]}
                             active={dragCharacter === value}
                             onClick={() => {
@@ -115,7 +104,6 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, pretense}: {
                 <LifePhasePanel
                     fabric={fabric}
                     lifePhase$={lifePhase$}
-                    pretense={pretense}
                 />
             </div>
             <div className="my-5 w-100">
