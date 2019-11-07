@@ -114,12 +114,12 @@ export class TensegrityFabric {
     }
 
     public toMature(firstTime: boolean): void {
-        this.mature = true
         if (firstTime) {
             this.instance.cloneTo(this.slackInstance)
         } else {
             this.cloneWithNewElasticities()
         }
+        this.mature = true
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {

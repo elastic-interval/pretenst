@@ -1192,6 +1192,7 @@ export function initInstance(): LifePhase {
 }
 
 export function finishGrowing(): LifePhase {
+    setAltitude(0.0)
     return setLifePhase(LifePhase.Shaping)
 }
 
@@ -1207,6 +1208,7 @@ function slacken(): LifePhase {
         zero(_force(jointIndex))
         zero(_velocity(jointIndex))
     }
+    setAltitude(0.0)
     return setLifePhase(LifePhase.Slack)
 }
 
@@ -1220,6 +1222,9 @@ export function iterate(ticks: u16, mature: boolean): LifePhase {
     let age = getAge()
     let lifePhase = getLifePhase()
     switch (lifePhase) {
+        case LifePhase.Growing:
+            setAltitude(0.0)
+            break
         case LifePhase.Shaping:
             if (mature) {
                 return slacken()
@@ -1245,8 +1250,8 @@ export function iterate(ticks: u16, mature: boolean): LifePhase {
             maxIntervalBusyCountdown = tick(maxIntervalBusyCountdown, currentState, lifePhase)
         }
         setAge(age + <u32>ticks)
-        calculateJointMidpoint()
     }
+    calculateJointMidpoint()
     outputLinesGeometry()
     let faceCount = getFaceCount()
     for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {

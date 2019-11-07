@@ -67,9 +67,8 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
     const [age, setAge] = useState(0)
-    const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
     const [targetBrick, setTargetBrick] = useState(false)
-    const {camera, raycaster} = useThree()
+    const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const spaceMaterial = useMemo(() => {
         const spaceTexture = new TextureLoader().load("space.jpg")
@@ -158,47 +157,6 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         )
     }
 
-    function Faces(): JSX.Element {
-        const meshRef = useRef<Object3D>()
-        const onPointerDown = (event: DomEvent) => {
-            setDownEvent(event)
-        }
-        const onPointerUp = (event: DomEvent) => {
-            const mesh = meshRef.current
-            if (doNotClick(lifePhase) || !downEvent || !mesh) {
-                return
-            }
-            const dx = downEvent.clientX - event.clientX
-            const dy = downEvent.clientY - event.clientY
-            const distanceSq = dx * dx + dy * dy
-            if (distanceSq > 100) {
-                return
-            }
-            const intersections = raycaster.intersectObjects([mesh], true)
-            const faces = intersections.map(intersection => intersection.faceIndex).map(faceIndex => {
-                if (faceIndex === undefined) {
-                    return undefined
-                }
-                return fabric.faces[faceIndex]
-            })
-            fabric.clearSelection()
-            const face = faces.reverse().pop()
-            setDownEvent(undefined)
-            if (!face) {
-                return
-            }
-            selectBrick(face.brick)
-        }
-        return (
-            <mesh
-                ref={meshRef}
-                onPointerDown={onPointerDown}
-                onPointerUp={onPointerUp}
-                geometry={fabric.facesGeometry}
-                material={FACE}
-            />
-        )
-    }
 
     const girth = fabricFeatureValue(FabricFeature.Girth)
 
@@ -295,7 +253,13 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
                         )}
                     </group>
                 )}
-                {(showPushes && showPulls) ? <Faces/> : undefined}
+                {!(showPushes && showPulls) ? undefined : (
+                    <Faces
+                        fabric={fabric}
+                        lifePhase={lifePhase}
+                        selectBrick={selectBrick}
+                    />
+                )}
                 <SelectedFace/>
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
@@ -304,6 +268,55 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
                 <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
             </scene>
         </group>
+    )
+}
+
+function Faces({fabric, lifePhase, selectBrick}: {
+    fabric: TensegrityFabric,
+    lifePhase: LifePhase,
+    selectBrick: (brick: IBrick) => void,
+}): JSX.Element {
+    const {raycaster} = useThree()
+    const meshRef = useRef<Object3D>()
+    const [downEvent, setDownEvent] = useState<DomEvent | undefined>()
+    const onPointerDown = (event: DomEvent) => {
+        setDownEvent(event)
+    }
+    const onPointerUp = (event: DomEvent) => {
+        const mesh = meshRef.current
+        if (doNotClick(lifePhase) || !downEvent || !mesh) {
+            return
+        }
+        const dx = downEvent.clientX - event.clientX
+        const dy = downEvent.clientY - event.clientY
+        const distanceSq = dx * dx + dy * dy
+        if (distanceSq > 100) {
+            return
+        }
+        const intersections = raycaster.intersectObjects([mesh], true)
+        const faces = intersections.map(intersection => intersection.faceIndex).map(faceIndex => {
+            if (faceIndex === undefined) {
+                return undefined
+            }
+            return fabric.faces[faceIndex]
+        })
+        fabric.clearSelection()
+        const face = faces.reverse().pop()
+        setDownEvent(undefined)
+        if (!face) {
+            return
+        }
+        selectBrick(face.brick)
+    }
+    return (
+        <mesh
+            key="faces"
+            ref={meshRef}
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+            geometry={fabric.facesGeometry}
+            material={FACE}
+        />
     )
 }
 
