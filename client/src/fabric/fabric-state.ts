@@ -24,32 +24,35 @@ export function hideSurface(lifePhase: LifePhase): boolean {
 
 export enum GravityCharacter {
     Light,
+    Medium,
     Heavy,
     Space,
 }
 
 export const GRAVITY = [
     0.00000005,
-    0.0000001,
+    0.0000002,
+    0.0000004,
     0.0,
 ]
 
 export enum DragCharacter {
     Light,
+    Medium,
     Heavy,
     Free,
 }
 
 export const DRAG = [
-    0.00001,
+    0.0001,
     0.001,
+    0.01,
     0.0,
 ]
 
 export enum ControlTab {
     Generate = "Generate",
     Pretense = "Pretense",
-    Test = "Test",
     Features = "Features",
 }
 

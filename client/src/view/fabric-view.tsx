@@ -54,8 +54,8 @@ const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const PUSH_GIRTH = 100
-const PULL_GIRTH = 60
+const PUSH_GIRTH = 20
+const PULL_GIRTH = 8
 const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45

@@ -4,26 +4,15 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
-import {
-    FaAngleDoubleLeft,
-    FaArrowDown,
-    FaArrowUp,
-    FaBiohazard,
-    FaCubes,
-    FaFileCsv,
-    FaTimesCircle,
-} from "react-icons/all"
-import { Button, ButtonGroup, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
+import { useState } from "react"
+import { FaAngleDoubleLeft } from "react-icons/all"
+import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { ICode } from "../fabric/tenscript"
-import { optimizeFabric } from "../fabric/tensegrity-brick"
-import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
 import { CodePanel } from "./code-panel"
 import { FeaturePanel } from "./feature-panel"
@@ -31,9 +20,8 @@ import { PretensePanel } from "./pretense-panel"
 
 const SPLIT_LEFT = "34em"
 
-export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, lifePhase$, bootstrapCode, features}: {
+export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstrapCode, features}: {
     fabric?: TensegrityFabric,
-    selectedBrick?: IBrick,
     setCode: (code: ICode) => void,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
@@ -42,66 +30,6 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, lifeP
 }): JSX.Element {
 
     const [activeTab, setActiveTab] = useState(loadControlTab)
-
-    function Controls(): JSX.Element {
-        if (!fabric) {
-            return <div/>
-        }
-        const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
-        useEffect(() => {
-            const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
-            return () => subscription.unsubscribe()
-        })
-
-        const adjustValue = (up: boolean) => () => {
-            function adjustment(): number {
-                const factor = 1.03
-                return up ? factor : (1 / factor)
-            }
-
-            fabric.forEachSelected(interval => {
-                fabric.instance.engine.multiplyRestLength(interval.index, adjustment())
-            })
-        }
-        return (
-            <div className="p-4" style={{display: "block"}}>
-                {selectedBrick ? (
-                    <ButtonGroup className="m-4 w-75">
-                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
-                            <FaArrowUp/><span> Bigger</span>
-                        </Button>
-                        <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
-                            <FaArrowDown/><span> Smaller</span>
-                        </Button>
-                        <Button onClick={() => fabric.clearSelection()}>
-                            <FaTimesCircle/>
-                        </Button>
-                    </ButtonGroup>
-                ) : (<h3>Notting</h3>)}
-                <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button disabled={lifePhase !== LifePhase.Shaping}
-                            onClick={() => optimizeFabric(fabric)}>
-                        <FaBiohazard/> Optimize
-                    </Button>
-                </ButtonGroup>
-                <ButtonGroup vertical={true} className="m-4 w-75">
-                    <Button
-                        disabled={lifePhase !== LifePhase.Pretenst}
-                        onClick={() => saveCSVFiles(fabric)}
-                    >
-                        <FaFileCsv/> Download CSV
-                    </Button>
-                    <Button
-                        disabled={lifePhase !== LifePhase.Pretenst}
-                        onClick={() => saveOBJFile(fabric)}
-                    >
-                        <FaCubes/> Download OBJ
-                    </Button>
-                </ButtonGroup>
-            </div>
-        )
-    }
-
 
     function Link({controlTab}: { controlTab: ControlTab }): JSX.Element {
         return (
@@ -135,10 +63,6 @@ export function ControlTabs({fabric, selectedBrick, setCode, fabricState$, lifeP
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
                         />
-                    )
-                case ControlTab.Test:
-                    return (
-                        <Controls/>
                     )
                 case ControlTab.Features:
                     return !fabric ? <div/> : <FeaturePanel featureSet={features}/>

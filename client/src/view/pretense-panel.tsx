@@ -5,19 +5,30 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaCircle, FaDotCircle, FaEye, FaGlobe, FaHandPointUp } from "react-icons/all"
+import {
+    FaArrowDown,
+    FaArrowUp,
+    FaCircle,
+    FaDotCircle,
+    FaEye,
+    FaGlobe, FaHammer,
+    FaHandPointUp,
+    FaTimesCircle,
+} from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { SurfaceCharacter } from "../fabric/fabric-engine"
 import { DragCharacter, enumValues, GravityCharacter, IFabricState, LifePhase } from "../fabric/fabric-state"
+import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function PretensePanel({fabric, fabricState$, lifePhase$}: {
+export function PretensePanel({fabric, selectedBrick, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
+    selectedBrick?: IBrick,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
@@ -50,6 +61,17 @@ export function PretensePanel({fabric, fabricState$, lifePhase$}: {
         </Button>
     }
 
+    const adjustValue = (up: boolean) => () => {
+        function adjustment(): number {
+            const factor = 1.03
+            return up ? factor : (1 / factor)
+        }
+
+        fabric.forEachSelected(interval => {
+            fabric.instance.engine.multiplyRestLength(interval.index, adjustment())
+        })
+    }
+
     return (
         <div className="m-5">
             <div className="text-center">
@@ -71,21 +93,6 @@ export function PretensePanel({fabric, fabricState$, lifePhase$}: {
                 </ButtonGroup>
             </div>
             <div className="my-2">
-                <h6>Surface</h6>
-                <ButtonGroup className="w-100">
-                    {enumValues(SurfaceCharacter).map(value => (
-                        <Button
-                            key={SurfaceCharacter[value]}
-                            active={surfaceCharacter === value}
-                            onClick={() => {
-                                const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, surfaceCharacter: value})
-                            }}
-                        >{SurfaceCharacter[value]}</Button>
-                    ))}
-                </ButtonGroup>
-            </div>
-            <div className="my-2">
                 <h6>Drag</h6>
                 <ButtonGroup className="w-100">
                     {enumValues(DragCharacter).map(value => (
@@ -100,6 +107,21 @@ export function PretensePanel({fabric, fabricState$, lifePhase$}: {
                     ))}
                 </ButtonGroup>
             </div>
+            <div className="my-2">
+                <h6>Surface</h6>
+                <ButtonGroup className="w-100">
+                    {enumValues(SurfaceCharacter).map(value => (
+                        <Button
+                            key={SurfaceCharacter[value]}
+                            active={surfaceCharacter === value}
+                            onClick={() => {
+                                const nonce = fabricState$.getValue().nonce + 1
+                                fabricState$.next({...fabricState$.getValue(), nonce, surfaceCharacter: value})
+                            }}
+                        >{SurfaceCharacter[value]}</Button>
+                    ))}
+                </ButtonGroup>
+            </div>
             <div className="my-5 w-100">
                 <LifePhasePanel
                     fabric={fabric}
@@ -107,22 +129,44 @@ export function PretensePanel({fabric, fabricState$, lifePhase$}: {
                 />
             </div>
             <div className="my-5 w-100">
-                <div className="text-center">
-                    <h1><FaEye/> Aspect <FaEye/></h1>
-                </div>
-                <ButtonGroup style={{display: "flex"}} className="my-2">
-                    <ViewButton pushes={false} pulls={true}/>
-                    <StrainPanel fabric={fabric} pushes={false}
-                                 showPushes={showPushes} showPulls={showPulls}/>
-                </ButtonGroup>
-                <ButtonGroup style={{display: "flex"}} className="my-2">
-                    <ViewButton pushes={true} pulls={true}/>
-                </ButtonGroup>
-                <ButtonGroup style={{display: "flex"}} className="my-2">
-                    <ViewButton pushes={true} pulls={false}/>
-                    <StrainPanel fabric={fabric} pushes={true}
-                                 showPushes={showPushes} showPulls={showPulls}/>
-                </ButtonGroup>
+                {selectedBrick ? (
+                    <>
+                        <div className="text-center">
+                            <h1><FaEye/> Editing <FaHammer/></h1>
+                        </div>
+                        <ButtonGroup className="m-4 w-75">
+                            <Button disabled={!fabric.splitIntervals} onClick={adjustValue(true)}>
+                                <FaArrowUp/><span> Bigger</span>
+                            </Button>
+                            <Button disabled={!fabric.splitIntervals} onClick={adjustValue(false)}>
+                                <FaArrowDown/><span> Smaller</span>
+                            </Button>
+                            <Button onClick={() => fabric.clearSelection()}>
+                                <FaTimesCircle/>
+                            </Button>
+                        </ButtonGroup>
+                    </>
+                ) : (
+                    <>
+                        <div className="text-center">
+                            <h1><FaEye/> Aspect <FaEye/></h1>
+                        </div>
+                        <ButtonGroup style={{display: "flex"}} className="my-2">
+                            <ViewButton pushes={false} pulls={true}/>
+                            <StrainPanel fabric={fabric} pushes={false}
+                                         showPushes={showPushes} showPulls={showPulls}/>
+                        </ButtonGroup>
+                        <ButtonGroup style={{display: "flex"}} className="my-2">
+                            <ViewButton pushes={true} pulls={true}/>
+                        </ButtonGroup>
+                        <ButtonGroup style={{display: "flex"}} className="my-2">
+                            <ViewButton pushes={true} pulls={false}/>
+                            <StrainPanel fabric={fabric} pushes={true}
+                                         showPushes={showPushes} showPulls={showPulls}/>
+                        </ButtonGroup>
+                    </>
+                )
+                }
             </div>
         </div>
     )

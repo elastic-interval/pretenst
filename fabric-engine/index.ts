@@ -1122,7 +1122,7 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase, baseGravity: f32, b
                 break
             case SurfaceCharacter.Frozen:
                 zero(_velocityVector)
-                setY(_velocityVector, degreeSubmerged * RESURFACE)
+                setY(_location(jointIndex), -RESURFACE)
                 break
         }
     }
@@ -1216,7 +1216,7 @@ function slacken(): LifePhase {
 }
 
 function startPretensing(): LifePhase {
-    setAltitude(0.05)
+    setAltitude(0.0)
     setFabricBusyTicks(<u32>getFeature(FabricFeature.PretenseTicks))
     return setLifePhase(LifePhase.Pretensing)
 }

@@ -14,7 +14,7 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 export function LifePhasePanel({fabric, lifePhase$}: {
     fabric: TensegrityFabric,
-    lifePhase$: BehaviorSubject <LifePhase>,
+    lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
@@ -48,27 +48,15 @@ export function LifePhasePanel({fabric, lifePhase$}: {
             <ButtonGroup vertical={true} className="w-100">
                 <Button
                     disabled={lifePhase !== LifePhase.Shaping}
-                    onClick={() => fabric.toMature()}
+                    onClick={() => fabric.toMature(true)}
                 >
                     <span>Prepare to <FaYinYang/> pretense</span>
                 </Button>
                 <Button
                     disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabric.toMature(1)}
+                    onClick={() => fabric.toMature(false)}
                 >
-                    <span>Pretense <FaHandSpock/> 3 times</span>
-                </Button>
-                <Button
-                    disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabric.toMature(10)}
-                >
-                    <span>Pretense <FaHandSpock/><FaHandSpock/> 10 times</span>
-                </Button>
-                <Button
-                    disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabric.toMature(100)}
-                >
-                    <span>Pretense <FaHandSpock/><FaHandSpock/><FaHandSpock/> 100 times</span>
+                    <span>Pretense <FaHandSpock/> again</span>
                 </Button>
             </ButtonGroup>
         </div>

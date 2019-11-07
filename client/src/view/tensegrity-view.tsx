@@ -137,7 +137,6 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                 }}>
                     <ControlTabs
                         fabric={fabric}
-                        selectedBrick={selectedBrick}
                         setCode={setCode}
                         fabricState$={fabricState$}
                         lifePhase$={lifePhase$}
@@ -162,7 +161,9 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                             </div>
                         )}
                         <ToolbarLeft
+                            fabric={fabric}
                             fabricState$={fabricState$}
+                            lifePhase$={lifePhase$}
                         />
                         <ToolbarRight
                             fabric={fabric}
