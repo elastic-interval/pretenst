@@ -69,32 +69,17 @@ function pretensingAdjustments(strains: Float32Array, existingStiffnesses: Float
         const totalStrain = toAverage.reduce((sum, interval) => sum + strains[interval.index], 0)
         return totalStrain / toAverage.length
     }
-    const getMinMax = (floatArray: number[]) => floatArray.reduce((minMax, value) => {
-        const min = Math.min(value, minMax[0])
-        const max = Math.max(value, minMax[1])
-        return [min, max]
-    }, [100000, -100000])
     const pushes = intervals.filter(interval => interval.isPush)
     const averagePushStrain = getAverageStrain(pushes)
     const pulls = intervals.filter(interval => !interval.isPush)
     const averagePullStrain = getAverageStrain(pulls)
-    // const intensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
-    console.log(`Average push: ${averagePushStrain}`)
-    console.log(`Average pull: ${averagePullStrain}`)
-    const normalizedStrains = intervals.map(interval => {
-        const averageStrain = interval.isPush ? averagePushStrain : averagePullStrain
-        return strains[interval.index] - averageStrain
-    })
-    const minMaxPush = getMinMax(pushes.map(interval => normalizedStrains[interval.index]))
-    const minMaxPull = getMinMax(pulls.map(interval => normalizedStrains[interval.index]))
-    console.log(`Push norm strain: ${minMaxPush[0]}:${minMaxPush[1]}`)
-    console.log(`Pull norm strain: ${minMaxPull[0]}:${minMaxPull[1]}`)
-    const averageStiffness = getAverageStrain(intervals)
-    console.log(`Average siffness: ${averageStiffness}`)
+    const middle = averagePullStrain + averagePushStrain
+    console.log(`Push vs Pull: ${(middle * 1000).toFixed(8)}`)
+    const averageAbsoluteStrain = (-averagePushStrain + averagePullStrain) / 2
     const changes = intervals.map(interval => {
-        const averageStrain = interval.isPush ? averagePushStrain : averagePullStrain
-        const normalizedStrain = strains[interval.index] - averageStrain
-        const strainFactor = normalizedStrain / averageStrain
+        const absoluteStrain = strains[interval.index] * (interval.isPush ? -1 : 1)
+        const normalizedStrain = absoluteStrain - averageAbsoluteStrain
+        const strainFactor = normalizedStrain / averageAbsoluteStrain
         return 1 + strainFactor
     })
     const stiffness = existingStiffnesses.map((value, index) => value * changes[index])
