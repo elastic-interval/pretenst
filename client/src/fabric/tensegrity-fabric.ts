@@ -5,8 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
-import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
+import { IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
 import { executeActiveCode, IActiveCode, ICode } from "./tenscript"
@@ -69,12 +69,31 @@ function pretensingAdjustments(strains: Float32Array, existingElasticities: Floa
         const totalStrain = toAverage.reduce((sum, interval) => sum + strains[interval.index], 0)
         return totalStrain / toAverage.length
     }
-    const averageStrain = getAverageStrain(intervals)
-    const intensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
+    const getMinMax = (floatArray: number[]) => floatArray.reduce((minMax, value) => {
+        const min = Math.min(value, minMax[0])
+        const max = Math.max(value, minMax[1])
+        return [min, max]
+    }, [100000, -100000])
+    const pushes = intervals.filter(interval => interval.isPush)
+    const averagePushStrain = getAverageStrain(pushes)
+    const pulls = intervals.filter(interval => !interval.isPush)
+    const averagePullStrain = getAverageStrain(pulls)
+    // const intensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
+    console.log(`Average push: ${averagePushStrain}`)
+    console.log(`Average pull: ${averagePullStrain}`)
+    const normalizedStrains = intervals.map(interval => {
+        const averageStrain = interval.isPush ? averagePushStrain : averagePullStrain
+        return strains[interval.index] - averageStrain
+    })
+    const minMaxPush = getMinMax(pushes.map(interval => normalizedStrains[interval.index]))
+    const minMaxPull = getMinMax(pulls.map(interval => normalizedStrains[interval.index]))
+    console.log(`Push: ${minMaxPush[0]}:${minMaxPush[0]}`)
+    console.log(`Pull: ${minMaxPull[0]}:${minMaxPull[0]}`)
     const changes = intervals.map(interval => {
-        const strain = strains[interval.index]
-        const absStrain = interval.isPush ? -strain : strain
-        return 1 + (absStrain - averageStrain) * intensity
+        const averageStrain = interval.isPush ? averagePushStrain : averagePullStrain
+        const normalizedStrain = strains[interval.index] - averageStrain
+        const strainFactor = normalizedStrain / averageStrain
+        return 1 + strainFactor
     })
     const elasticities = existingElasticities.map((value, index) => value * changes[index])
     const linearDensities = elasticities.map(elasticityToLinearDensity)

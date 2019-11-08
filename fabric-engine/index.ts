@@ -691,10 +691,6 @@ export function setAltitude(altitude: f32): f32 {
         let jPtr = _location(thisJoint)
         setY(jPtr, getY(jPtr) + altitude - lowY)
     }
-    let faceCount = getFaceCount()
-    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
-        outputFaceGeometry(faceIndex)
-    }
     return altitude - lowY
 }
 
