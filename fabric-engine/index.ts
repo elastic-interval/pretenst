@@ -1073,6 +1073,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         strain = 0
     }
     setStrain(intervalIndex, strain)
+    // TODO: different stiffness for bar and cable
     let force = strain * (lifePhase <= LifePhase.Slack ? IN_UTERO_STIFFNESS : getStiffness(intervalIndex))
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
