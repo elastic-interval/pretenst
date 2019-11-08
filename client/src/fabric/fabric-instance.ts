@@ -20,7 +20,7 @@ export class FabricInstance {
     private _jointLocations: LazyFloatArray
     private _unitVectors: LazyFloatArray
     private _strains: LazyFloatArray
-    private _elasticities: LazyFloatArray
+    private _stiffnesses: LazyFloatArray
     private _linearDensities: LazyFloatArray
 
     constructor(
@@ -42,7 +42,7 @@ export class FabricInstance {
         this._jointLocations = new LazyFloatArray(b, offset + e._jointLocations(), () => e.getJointCount() * 3)
         this._unitVectors = new LazyFloatArray(b, offset + e._intervalUnits(), () => e.getIntervalCount() * 3)
         this._strains = new LazyFloatArray(b, offset + e._intervalStrains(), () => e.getIntervalCount())
-        this._elasticities = new LazyFloatArray(b, offset + e._elasticities(), () => e.getIntervalCount())
+        this._stiffnesses = new LazyFloatArray(b, offset + e._stiffnesses(), () => e.getIntervalCount())
         this._linearDensities = new LazyFloatArray(b, offset + e._linearDensities(), () => e.getIntervalCount())
     }
 
@@ -67,7 +67,7 @@ export class FabricInstance {
         this._lineColors.clear()
         this._unitVectors.clear()
         this._strains.clear()
-        this._elasticities.clear()
+        this._stiffnesses.clear()
         this._linearDensities.clear()
     }
 
@@ -83,8 +83,8 @@ export class FabricInstance {
         return this._strains.floats
     }
 
-    public get elasticities(): Float32Array {
-        return this._elasticities.floats
+    public get stiffnesses(): Float32Array {
+        return this._stiffnesses.floats
     }
 
     public get linearDensities(): Float32Array {

@@ -91,8 +91,8 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byTenPercent,
     },
     {
-        feature: FabricFeature.MaxElastic,
-        name: "Max Elastic",
+        feature: FabricFeature.MaxStiffness,
+        name: "Max Stiffness",
         defaultValue: 0.001,
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 0,

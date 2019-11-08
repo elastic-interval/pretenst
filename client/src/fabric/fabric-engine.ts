@@ -14,7 +14,7 @@ export enum FabricFeature {
     Gravity = 1,
     Drag = 2,
     SlackThreshold = 3,
-    MaxElastic = 4,
+    MaxStiffness = 4,
     PretenseFactor = 5,
     IntervalBusyTicks = 6,
     PretenseTicks = 7,
@@ -127,7 +127,7 @@ export interface IFabricEngine {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number, elasticity: number, linearDensity: number): number
+    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number, stiffness: number, linearDensity: number): number
 
     setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
@@ -175,7 +175,7 @@ export interface IFabricEngine {
 
     _intervalStrains(): number
 
-    _elasticities(): number
+    _stiffnesses(): number
 
     _linearDensities(): number
 

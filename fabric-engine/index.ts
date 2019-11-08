@@ -14,7 +14,7 @@ declare function logInt(idx: u32, i: i32): void
 const RESURFACE: f32 = 0.001
 const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
-const IN_UTERO_ELASTICITY: f32 = 0.9
+const IN_UTERO_STIFFNESS: f32 = 0.9
 const IN_UTERO_DRAG: f32 = 0.0000001
 const IN_UTERO_PRETENST: f32 = 0.5
 
@@ -23,7 +23,7 @@ export enum FabricFeature {
     Gravity = 1,
     Drag = 2,
     SlackThreshold = 3,
-    MaxElastic = 4,
+    MaxStiffness = 4,
     PretenseFactor = 5,
     IntervalBusyTicks = 6,
     PretenseTicks = 7,
@@ -243,14 +243,14 @@ function _intervalStrain(intervalIndex: u16): usize {
     return _INTERVAL_STRAINS + _32(intervalIndex)
 }
 
-const _ELASTICITIES = _INTERVAL_STRAINS + _32_INTERVALS
+const _STIFFNESSES = _INTERVAL_STRAINS + _32_INTERVALS
 
 @inline()
-function _elasticity(intervalIndex: u16): usize {
-    return _ELASTICITIES + _32(intervalIndex)
+function _stiffness(intervalIndex: u16): usize {
+    return _STIFFNESSES + _32(intervalIndex)
 }
 
-const _LINEAR_DENSITIES = _ELASTICITIES + _32_INTERVALS
+const _LINEAR_DENSITIES = _STIFFNESSES + _32_INTERVALS
 
 @inline()
 function _linearDensity(intervalIndex: u16): usize {
@@ -708,7 +708,7 @@ function calculateJointMidpoint(): void {
 
 // Intervals =====================================================================================
 
-export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLength: f32, elasticity: f32, linearDensity: f32): usize {
+export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLength: f32, stiffness: f32, linearDensity: f32): usize {
     let intervalCount = getIntervalCount()
     if (intervalCount + 1 >= MAX_INTERVALS) {
         return ERROR
@@ -720,7 +720,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLen
     zero(_unit(intervalIndex))
     setIntervalRole(intervalIndex, intervalRole)
     initializeCurrentLength(intervalIndex, calculateRealLength(intervalIndex))
-    setElasticity(intervalIndex, elasticity)
+    setStiffness(intervalIndex, stiffness)
     setLinearDensity(intervalIndex, linearDensity)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, restLength)
@@ -746,7 +746,7 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
     initializeCurrentLength(intervalIndex, getCurrentLength(nextIndex))
-    setElasticity(intervalIndex, getElasticity(nextIndex))
+    setStiffness(intervalIndex, getStiffness(nextIndex))
     setLinearDensity(intervalIndex, getLinearDensity(nextIndex))
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
         setIntervalStateLength(intervalIndex, state, getIntervalStateLength(nextIndex, state))
@@ -777,12 +777,12 @@ function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
     setF32(_currentLength(intervalIndex), idealLength)
 }
 
-function getElasticity(intervalIndex: u16): f32 {
-    return getF32(_elasticity(intervalIndex))
+function getStiffness(intervalIndex: u16): f32 {
+    return getF32(_stiffness(intervalIndex))
 }
 
-function setElasticity(intervalIndex: u16, elasticity: f32): void {
-    setF32(_elasticity(intervalIndex), elasticity)
+function setStiffness(intervalIndex: u16, stiffness: f32): void {
+    setF32(_stiffness(intervalIndex), stiffness)
 }
 
 function getLinearDensity(intervalIndex: u16): f32 {
@@ -1073,7 +1073,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         strain = 0
     }
     setStrain(intervalIndex, strain)
-    let force = strain * (lifePhase <= LifePhase.Slack ? IN_UTERO_ELASTICITY : getElasticity(intervalIndex))
+    let force = strain * (lifePhase <= LifePhase.Slack ? IN_UTERO_STIFFNESS : getStiffness(intervalIndex))
     addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force / 2)
     addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force / 2)
 }
@@ -1313,8 +1313,8 @@ export function _intervalStrains(): usize {
     return _INTERVAL_STRAINS
 }
 
-export function _elasticities(): usize {
-    return _ELASTICITIES
+export function _stiffnesses(): usize {
+    return _STIFFNESSES
 }
 
 export function _linearDensities(): usize {

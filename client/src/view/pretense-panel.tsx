@@ -173,7 +173,7 @@ export function PretensePanel({fabric, selectedBrick, features, fabricState$, li
                                          showPushes={showPushes} showPulls={showPulls}/>
                         </ButtonGroup>
                         <div style={{backgroundColor: "white", borderRadius: "1em"}} className="my-2 p-1">
-                            <FeaturePanel feature={features[FabricFeature.MaxElastic]} mutable={true}/>
+                            <FeaturePanel feature={features[FabricFeature.MaxStiffness]} mutable={true}/>
                         </div>
                     </>
                 )}

@@ -31,8 +31,8 @@ interface IOutputInterval {
     joints: string,
     type: string,
     strainString: string,
-    elasticity: number,
-    elasticityString: string,
+    stiffness: number,
+    stiffnessString: string,
     linearDensity: number,
     linearDensityString: string,
     isPush: boolean,
@@ -53,16 +53,16 @@ export interface IFabricOutput {
 export const SPHERE_RADIUS = 0.35
 export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
 
-function scaleToElasticity(scale: IPercent): number {
+function scaleToStiffness(scale: IPercent): number {
     return percentToFactor(scale) / 10000
 }
 
-function elasticityToLinearDensity(elasticity: number): number {
-    return Math.sqrt(elasticity)
+function stiffnessToLinearDensity(stiffness: number): number {
+    return Math.sqrt(stiffness)
 }
 
-function pretensingAdjustments(strains: Float32Array, existingElasticities: Float32Array, intervals: IInterval[]): {
-    elasticities: Float32Array,
+function pretensingAdjustments(strains: Float32Array, existingStiffnesses: Float32Array, intervals: IInterval[]): {
+    stiffnesses: Float32Array,
     linearDensities: Float32Array,
 } {
     const getAverageStrain = (toAverage: IInterval[]) => {
@@ -87,17 +87,19 @@ function pretensingAdjustments(strains: Float32Array, existingElasticities: Floa
     })
     const minMaxPush = getMinMax(pushes.map(interval => normalizedStrains[interval.index]))
     const minMaxPull = getMinMax(pulls.map(interval => normalizedStrains[interval.index]))
-    console.log(`Push: ${minMaxPush[0]}:${minMaxPush[0]}`)
-    console.log(`Pull: ${minMaxPull[0]}:${minMaxPull[0]}`)
+    console.log(`Push norm strain: ${minMaxPush[0]}:${minMaxPush[1]}`)
+    console.log(`Pull norm strain: ${minMaxPull[0]}:${minMaxPull[1]}`)
+    const averageStiffness = getAverageStrain(intervals)
+    console.log(`Average siffness: ${averageStiffness}`)
     const changes = intervals.map(interval => {
         const averageStrain = interval.isPush ? averagePushStrain : averagePullStrain
         const normalizedStrain = strains[interval.index] - averageStrain
         const strainFactor = normalizedStrain / averageStrain
         return 1 + strainFactor
     })
-    const elasticities = existingElasticities.map((value, index) => value * changes[index])
-    const linearDensities = elasticities.map(elasticityToLinearDensity)
-    return {elasticities, linearDensities}
+    const stiffness = existingStiffnesses.map((value, index) => value * changes[index])
+    const linearDensities = stiffness.map(stiffnessToLinearDensity)
+    return {stiffnesses: stiffness, linearDensities}
 }
 
 export class TensegrityFabric {
@@ -136,7 +138,7 @@ export class TensegrityFabric {
         if (firstTime) {
             this.instance.cloneTo(this.slackInstance)
         } else {
-            this.cloneWithNewElasticities()
+            this.cloneWithNewStiffnesses()
         }
         this.mature = true
     }
@@ -207,9 +209,9 @@ export class TensegrityFabric {
         const defaultLength = roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const isPush = intervalRole === IntervalRole.Push
-        const elasticity = scaleToElasticity(scale)
-        const linearDensity = elasticityToLinearDensity(elasticity)
-        const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, elasticity, linearDensity)
+        const stiffness = scaleToStiffness(scale)
+        const linearDensity = stiffnessToLinearDensity(stiffness)
+        const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, stiffness, linearDensity)
         const interval: IInterval = {
             index,
             intervalRole,
@@ -322,7 +324,7 @@ export class TensegrityFabric {
     public get output(): IFabricOutput {
         const numberToString = (n: number) => n.toFixed(5).replace(/[.]/, ",")
         const strains = this.instance.strains
-        const elasticities = this.instance.elasticities
+        const stiffnesses = this.instance.stiffnesses
         const linearDensities = this.instance.linearDensities
         return {
             name: this.code.codeString,
@@ -339,8 +341,8 @@ export class TensegrityFabric {
                 const joints = `${interval.alpha.index + 1},${interval.omega.index + 1}`
                 const strainString = numberToString(strains[interval.index])
                 const type = interval.isPush ? "Push" : "Pull"
-                const elasticity = elasticities[interval.index]
-                const elasticityString = numberToString(elasticity)
+                const stiffness = stiffnesses[interval.index]
+                const stiffnessString = numberToString(stiffness)
                 const linearDensity = linearDensities[interval.index]
                 const linearDensityString = numberToString(linearDensity)
                 const role = IntervalRole[interval.intervalRole]
@@ -349,8 +351,8 @@ export class TensegrityFabric {
                     joints,
                     type,
                     strainString,
-                    elasticity,
-                    elasticityString,
+                    stiffness,
+                    stiffnessString,
                     linearDensity,
                     linearDensityString,
                     isPush,
@@ -363,19 +365,19 @@ export class TensegrityFabric {
                 if (!a.isPush && b.isPush) {
                     return 1
                 }
-                return a.elasticity - b.elasticity
+                return a.stiffness - b.stiffness
             }),
         }
     }
 
-    private cloneWithNewElasticities(): void {
-        const {elasticities, linearDensities} = pretensingAdjustments(
+    private cloneWithNewStiffnesses(): void {
+        const {stiffnesses, linearDensities} = pretensingAdjustments(
             this.instance.strains,
-            this.instance.elasticities,
+            this.instance.stiffnesses,
             this.intervals,
         )
         this.instance.cloneFrom(this.slackInstance)
-        this.elasticities = elasticities
+        this.stiffnesses = stiffnesses
         this.linearDensities = linearDensities
         this.features.forEach(feature => this.instance.applyFeature(feature))
     }
@@ -398,9 +400,9 @@ export class TensegrityFabric {
         this._facesGeometry.addAttribute("normal", this.faceNormals)
     }
 
-    private set elasticities(elasticities: Float32Array) {
-        const destination = this.instance.elasticities
-        elasticities.forEach((value, index) => destination[index] = value)
+    private set stiffnesses(stiffnesses: Float32Array) {
+        const destination = this.instance.stiffnesses
+        stiffnesses.forEach((value, index) => destination[index] = value)
     }
 
     private set linearDensities(linearDensities: Float32Array) {

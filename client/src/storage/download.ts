@@ -27,7 +27,7 @@ function extractIntervalBlob(output: IFabricOutput): Blob {
             `"=""${interval.joints}"""`,
             interval.type,
             interval.strainString,
-            interval.elasticityString,
+            interval.stiffnessString,
             interval.linearDensityString,
             interval.role,
         ])

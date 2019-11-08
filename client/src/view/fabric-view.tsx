@@ -186,7 +186,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         )
     }
 
-    function ElasticScale(): JSX.Element {
+    function StiffnessScale(): JSX.Element {
         const current = orbit.current
         if (!current) {
             return <group/>
@@ -223,7 +223,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {rotating || lifePhase <= LifePhase.Shaping ? undefined : <ElasticScale/>}
+                {rotating || lifePhase <= LifePhase.Shaping ? undefined : <StiffnessScale/>}
                 {!fabric ? undefined : frozen ? (
                     <group>
                         {fabric.splitIntervals ? (
@@ -322,15 +322,14 @@ function Faces({fabric, lifePhase, selectBrick}: {
 
 function strainPushLines(fabric: TensegrityFabric): Float32Array {
 
-    const maxElastic = fabricFeatureValue(FabricFeature.MaxElastic)
-
+    const maxStiffness = fabricFeatureValue(FabricFeature.MaxStiffness)
     const instance = fabric.instance
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
-    const elasticities = instance.elasticities
+    const stiffnesses = instance.stiffnesses
     let offset = 0
     fabric.intervals.forEach(interval => {
-        const elastic = elasticities[interval.index]
-        const height = elastic / maxElastic * (interval.isPush ? SCALE_MAX : -SCALE_MAX)
+        const stiffness = stiffnesses[interval.index]
+        const height = stiffness / maxStiffness * (interval.isPush ? SCALE_MAX : -SCALE_MAX)
         vertices[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
         vertices[offset++] = height
         vertices[offset++] = 0
