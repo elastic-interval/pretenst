@@ -225,7 +225,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {rotating || lifePhase <= LifePhase.Shaping ? undefined : <StiffnessScale/>}
+                {rotating || frozen || lifePhase <= LifePhase.Slack ? undefined : <StiffnessScale/>}
                 {!fabric ? undefined : frozen ? (
                     <group>
                         {fabric.splitIntervals ? (
