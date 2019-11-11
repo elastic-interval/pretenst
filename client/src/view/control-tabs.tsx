@@ -5,24 +5,46 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaCamera } from "react-icons/all"
+import { FaArrowLeft, FaCamera, FaEye, FaHammer, FaHandSpock, FaLeaf, FaList } from "react-icons/all"
 import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
+import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { ICode } from "../fabric/tenscript"
+import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { CodePanel } from "./code-panel"
+import { ExplorePanel } from "./explore-panel"
 import { FeaturePanel } from "./feature-panel"
 import { PretensePanel } from "./pretense-panel"
+import { ShapePanel } from "./shape-panel"
 
-const SPLIT_LEFT = "34em"
+const SPLIT_LEFT = "29em"
 
-export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstrapCode, features}: {
+function Icon(controlTab: ControlTab): JSX.Element {
+    switch (controlTab) {
+        case ControlTab.Grow:
+            return <FaLeaf key="leaf"/>
+        case ControlTab.Shape:
+            return <FaHammer key="hammer"/>
+        case ControlTab.Optimize:
+            return <FaHandSpock key="spock"/>
+        case ControlTab.Explore:
+            return <FaEye key="eye"/>
+        case ControlTab.X:
+            return <FaList key="list"/>
+    }
+}
+
+export function ControlTabs({fabric, selectedBrick, setSelectedBrick, setCode, setFrozen, fabricState$, lifePhase$, bootstrapCode, features}: {
     fabric?: TensegrityFabric,
+    selectedBrick?: IBrick,
+    setSelectedBrick: (brick?: IBrick) => void,
     setCode: (code: ICode) => void,
+    setFrozen: (frozen: boolean) => void,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
     bootstrapCode: ICode [],
@@ -40,7 +62,7 @@ export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstra
                         saveControlTab(controlTab)
                         setActiveTab(controlTab)
                     }}
-                >{controlTab}</NavLink>
+                >{Icon(controlTab)} {controlTab}</NavLink>
             </NavItem>
         )
     }
@@ -49,26 +71,42 @@ export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstra
 
         function Content(): JSX.Element {
             switch (tab) {
-                case ControlTab.Generate:
+                case ControlTab.Grow:
                     return (
                         <CodePanel
                             bootstrapCode={bootstrapCode}
                             setCode={setCode}
                         />
                     )
-                case ControlTab.Pretense:
+                case ControlTab.Shape:
+                    return !fabric ? (<div/>) : (
+                        <ShapePanel
+                            fabric={fabric}
+                            selectedBrick={selectedBrick}
+                            setSelectedBrick={setSelectedBrick}
+                            features={features}
+                        />
+                    )
+                case ControlTab.Optimize:
                     return !fabric ? (<div/>) : (
                         <PretensePanel
                             fabric={fabric}
-                            features={features}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
                         />
                     )
-                case ControlTab.Features:
+                case ControlTab.Explore:
+                    return !fabric ? (<div/>) : (
+                        <ExplorePanel
+                            fabric={fabric}
+                            features={features}
+                            fabricState$={fabricState$}
+                        />
+                    )
+                case ControlTab.X:
                     return !fabric ? <div/> : (
                         <div>
-                            {features.map(feature => (
+                            {features.filter(feature => !lengthFeatureToRole(feature.fabricFeature)).map(feature => (
                                 <div key={feature.title} style={{
                                     borderStyle: "solid",
                                     borderColor: "white",
@@ -95,10 +133,7 @@ export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstra
     function FullScreenButton(): JSX.Element {
         const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
         useEffect(() => {
-            const subscription = lifePhase$.subscribe(newPhase => {
-                console.log(LifePhase [newPhase])
-                setLifePhase(newPhase)
-            })
+            const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
             return () => subscription.unsubscribe()
         })
         return (
@@ -111,15 +146,7 @@ export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstra
                     width: "1em",
                 }}
                 className="w-100 h-100" color="dark"
-                onClick={() => {
-                    const nonce = fabricState$.getValue().nonce + 1
-                    fabricState$.next({
-                        ...fabricState$.getValue(),
-                        nonce,
-                        fullScreen: true,
-                        frozen: true,
-                    })
-                }}
+                onClick={() => setFrozen(true)}
             >
                 <FaCamera/>
                 <br/>
@@ -161,5 +188,5 @@ function loadControlTab(): ControlTab {
     if (item) {
         return ControlTab[item]
     }
-    return ControlTab.Generate
+    return ControlTab.Grow
 }

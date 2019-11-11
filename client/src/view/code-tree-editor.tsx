@@ -33,10 +33,7 @@ export function CodeTreeEditor({code, setCode}: {
     }
 
     return (
-        <div style={{
-            fontSize: "small",
-            width: "100%",
-        }}>
+        <div className="w-100 my-4">
             <div style={{
                 backgroundColor: "#7d7d7d",
                 borderRadius: "1.078em",

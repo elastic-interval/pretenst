@@ -32,8 +32,8 @@ import { FabricView } from "./fabric-view"
 import { ToolbarLeft } from "./toolbar-left"
 import { ToolbarRight } from "./toolbar-right"
 
-const SPLIT_LEFT = "34em"
-const SPLIT_RIGHT = "35em"
+const SPLIT_LEFT = "29em"
+const SPLIT_RIGHT = "30em"
 
 export function TensegrityView({fabricKernel, features, bootstrapCode, fabricState$, lifePhase$}: {
     fabricKernel: FabricKernel,
@@ -45,10 +45,9 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
     const [code, setCode] = useState<ICode | undefined>()
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [fullScreen, setFullScreen] = useState(fabricState$.getValue().fullScreen)
+    const [frozen, setFrozen] = useState(false)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
-            setFullScreen(newState.fullScreen)
             if (fabric) {
                 const instance = fabric.instance
                 instance.engine.setColoring(newState.showPushes, newState.showPulls)
@@ -121,20 +120,20 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
 
     return (
         <div className="the-whole-page">
-            {fullScreen ? (
-                <Button color="dark" style={{
-                    position: "absolute",
-                    padding: 0,
-                    margin: 0,
-                    top: 0,
-                    left: 0,
-                    height: "100%",
-                    zIndex: 1,
-                }} onClick={() => stateChange(currentState => ({
-                    ...currentState,
-                    fullScreen: false,
-                    frozen: false,
-                }))}>
+            {frozen ? (
+                <Button
+                    color="dark"
+                    style={{
+                        position: "absolute",
+                        padding: 0,
+                        margin: 0,
+                        top: 0,
+                        left: 0,
+                        height: "100%",
+                        zIndex: 1,
+                    }}
+                    onClick={() => setFrozen(false)}
+                >
                     <FaClock/>
                     <br/>
                     <FaArrowRight/>
@@ -142,7 +141,7 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
             ) : (
                 <div style={{
                     position: "absolute",
-                    visibility: fullScreen ? "collapse" : "visible",
+                    visibility: frozen ? "collapse" : "visible",
                     left: 0,
                     width: SPLIT_LEFT,
                     height: "100%",
@@ -157,7 +156,10 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                 }}>
                     <ControlTabs
                         fabric={fabric}
+                        selectedBrick={selectedBrick}
+                        setSelectedBrick={setSelectedBrick}
                         setCode={setCode}
+                        setFrozen={setFrozen}
                         fabricState$={fabricState$}
                         lifePhase$={lifePhase$}
                         bootstrapCode={bootstrapCode}
@@ -167,7 +169,7 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
             )}
             <div style={{
                 position: "absolute",
-                left: fullScreen ? 0 : SPLIT_RIGHT,
+                left: frozen ? 0 : SPLIT_RIGHT,
                 right: 0,
                 height: "100%",
             }}>
@@ -184,6 +186,7 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
+                            fullScreen={frozen}
                         />
                         <ToolbarRight
                             fabric={fabric}
@@ -196,6 +199,7 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                                 fabric={fabric}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
+                                frozen={frozen}
                                 fabricState$={fabricState$}
                                 lifePhase$={lifePhase$}
                             />

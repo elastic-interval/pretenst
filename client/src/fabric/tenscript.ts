@@ -25,11 +25,16 @@ export interface ICodeTree {
 }
 
 export function codeTreeToTenscript(codeTree: ICodeTree): string {
-    return JSON.stringify(codeTree)
+    const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
+    return  JSON.stringify(codeTree)
         .replace(/[_.:"]/g, "")
         .replace(/[{]/g, "(")
         .replace(/[}]/g, ")")
-        .replace(/([ABCDabcdS])\((\d*)\)/g, (s: string, ...args: object[]) => `${args[0]}${args[1]}`)
+        .replace(/([ABCDabcdS])\((\d*)\)/g, replacer)
+}
+
+export function spaceAfterComma(tenscript: string): string {
+    return tenscript.replace(/[,]/g, ", ")
 }
 
 function assignSubtree(tree: ICodeTree, directionChar: string, child: ICodeTree): void {

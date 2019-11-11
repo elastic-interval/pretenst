@@ -57,10 +57,11 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState$, lifePhase$}: {
+export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
     selectedBrick?: IBrick,
     setSelectedBrick: (selectedBrick: IBrick) => void,
+    frozen: boolean,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
@@ -82,13 +83,11 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
     useEffect(() => {
         orbit.current.autoRotate = fabricState$.getValue().rotating
     }, [fabric])
-    const [frozen, updateFrozen] = useState(fabricState$.getValue().frozen)
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
     const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
     const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
-            updateFrozen(newState.frozen)
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
             updateRotating(newState.rotating)
@@ -125,15 +124,16 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        if (!frozen) {
-            const newLifePhase = fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
-            fabric.needsUpdate()
-            if (lifePhase !== newLifePhase) {
-                if (newLifePhase === LifePhase.Pretensing) {
-                    lifePhase$.next(newLifePhase)
-                } else if (newLifePhase !== LifePhase.Busy) {
-                    lifePhase$.next(newLifePhase)
-                }
+        if (frozen) {
+            return
+        }
+        const newLifePhase = fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
+        fabric.needsUpdate()
+        if (lifePhase !== newLifePhase) {
+            if (newLifePhase === LifePhase.Pretensing) {
+                lifePhase$.next(newLifePhase)
+            } else if (newLifePhase !== LifePhase.Busy) {
+                lifePhase$.next(newLifePhase)
             }
         }
         setAge(instance.engine.getAge())
@@ -162,7 +162,6 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         )
     }
 
-
     function IntervalMesh({interval, attenuated}: {
         interval: IInterval,
         attenuated: boolean,
@@ -171,7 +170,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
             if (attenuated) {
                 return ATTENUATED
             }
-            const strain = fabric.instance.strains[interval.index]
+            const strain = fabric.instance.strains[interval.index] * (interval.isPush ? -1 : 1)
             const slack = strain < fabricFeatureValue(FabricFeature.SlackThreshold)
             return slack ? SLACK : interval.isPush ? PUSH_MATERIAL : PULL_MATERIAL
         }

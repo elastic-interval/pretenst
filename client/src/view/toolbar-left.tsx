@@ -13,17 +13,16 @@ import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
-export function ToolbarLeft({fabric, fabricState$, lifePhase$}: {
+export function ToolbarLeft({fabric, fabricState$, lifePhase$, fullScreen}: {
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
+    fullScreen: boolean,
 }): JSX.Element {
     const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
-    const [fullScreen, updateFullScreen] = useState(fabricState$.getValue().fullScreen)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
             updateRotating(newState.rotating)
-            updateFullScreen(newState.fullScreen)
         })
         return () => subscription.unsubscribe()
     })

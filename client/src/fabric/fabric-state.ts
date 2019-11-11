@@ -89,9 +89,11 @@ export const PUSH_STRAIN_FACTOR = [
 ]
 
 export enum ControlTab {
-    Generate = "Generate",
-    Pretense = "Pretense",
-    Features = "Features",
+    Grow = "Grow",
+    Shape = "Shape",
+    Optimize = "Optimize",
+    Explore = "Explore",
+    X = "X",
 }
 
 export function enumValues(e: object): number[] {
@@ -107,10 +109,8 @@ export interface IFabricState {
     pretenseSpeed: PretenseSpeed
     pushStrainFactor: PushStrainFactor
     rotating: boolean
-    frozen: boolean
     showPushes: boolean
     showPulls: boolean
-    fullScreen: boolean
 }
 
 const INITIAL_FABRIC_STATE: IFabricState = {
@@ -122,10 +122,8 @@ const INITIAL_FABRIC_STATE: IFabricState = {
     pretenseSpeed: PretenseSpeed.Slow,
     pushStrainFactor: PushStrainFactor.Equal,
     rotating: false,
-    frozen: false,
     showPushes: true,
     showPulls: true,
-    fullScreen: false,
 }
 
 const FABRIC_STATE_KEY = "FabricState"

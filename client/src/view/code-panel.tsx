@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { FaEdit } from "react-icons/all"
 import { Badge, Button, ButtonGroup } from "reactstrap"
 
-import { codeTreeToTenscript, ICode, ICodeTree, tenscriptToCodeTree } from "../fabric/tenscript"
+import { codeTreeToTenscript, ICode, ICodeTree, spaceAfterComma, tenscriptToCodeTree } from "../fabric/tenscript"
 
 import { CodeTreeEditor } from "./code-tree-editor"
 
@@ -50,8 +50,8 @@ export function CodePanel({setCode, bootstrapCode}: {
                                     fontSize: "small",
                                     textAlign: "left",
                                 }} onClick={() => runTheCode(code)}>
-                                    {index === undefined ? undefined :
-                                        <Badge color="info" size="sm">{index}</Badge>} {code.codeString}
+                                    {index === undefined ? undefined : <Badge color="info" size="sm">{index}</Badge>}
+                                    {spaceAfterComma(code.codeString)}
                                 </Button>
                             ))}
                         </ButtonGroup>
@@ -64,7 +64,7 @@ export function CodePanel({setCode, bootstrapCode}: {
                             margin: "0.3em",
                             fontSize: "small",
                         }} onClick={() => runTheCode(code)}>
-                            {code.codeString}
+                            {spaceAfterComma(code.codeString)}
                         </Button>
                     ))}
                 </div>
@@ -96,7 +96,7 @@ export function CodePanel({setCode, bootstrapCode}: {
                                 padding: "1em",
                                 overflowX: "scroll",
                             }}>
-                                {urlProgram.codeString.replace(/[,]/g,", ")}
+                                {spaceAfterComma(urlProgram.codeString)}
                             </div>
                         </div>
                         {editMode ? <CodeTreeEditor code={urlProgram} setCode={runTheCode}/> : <ExistingCode/>}
