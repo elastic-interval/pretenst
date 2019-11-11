@@ -22,32 +22,70 @@ export function hideSurface(lifePhase: LifePhase): boolean {
     return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack
 }
 
-export enum GravityCharacter {
+export enum GravityLevel {
     Light,
     Medium,
     Heavy,
     Space,
 }
 
-export const GRAVITY = [
+export const GRAVITY_LEVEL = [
     0.00000005,
     0.0000002,
-    0.0000004,
+    0.0000008,
     0.0,
 ]
 
-export enum DragCharacter {
+export enum DragLevel {
     Light,
     Medium,
     Heavy,
     Free,
 }
 
-export const DRAG = [
+export const DRAG_LEVEL = [
     0.0001,
     0.001,
     0.01,
     0.0,
+]
+
+export enum PretenseFactor {
+    Tiny,
+    Small,
+    Medium,
+    Large,
+}
+
+export const PRETENSE_FACTOR = [
+    0.001,
+    0.005,
+    0.01,
+    0.05,
+]
+
+export enum PretenseSpeed {
+    Slow,
+    Medium,
+    Fast,
+}
+
+export const PRETENSE_SPEED = [
+    30000,
+    3000,
+    300,
+]
+
+export enum PushStrainFactor {
+    PushDominant,
+    Equal,
+    PullDominant,
+}
+
+export const PUSH_STRAIN_FACTOR = [
+    3,
+    1,
+    1/3,
 ]
 
 export enum ControlTab {
@@ -62,9 +100,12 @@ export function enumValues(e: object): number[] {
 
 export interface IFabricState {
     nonce: number
-    gravityCharacter: GravityCharacter
-    dragCharacter: DragCharacter
+    gravityLevel: GravityLevel
+    dragLevel: DragLevel
     surfaceCharacter: SurfaceCharacter
+    pretenseFactor: PretenseFactor
+    pretenseSpeed: PretenseSpeed
+    pushStrainFactor: PushStrainFactor
     rotating: boolean
     frozen: boolean
     showPushes: boolean
@@ -74,9 +115,12 @@ export interface IFabricState {
 
 const INITIAL_FABRIC_STATE: IFabricState = {
     nonce: 0,
-    gravityCharacter: GravityCharacter.Light,
-    dragCharacter: DragCharacter.Light,
+    gravityLevel: GravityLevel.Light,
+    dragLevel: DragLevel.Light,
     surfaceCharacter: SurfaceCharacter.Sticky,
+    pretenseFactor: PretenseFactor.Tiny,
+    pretenseSpeed: PretenseSpeed.Slow,
+    pushStrainFactor: PushStrainFactor.Equal,
     rotating: false,
     frozen: false,
     showPushes: true,

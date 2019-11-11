@@ -11,12 +11,10 @@ import { FabricFeature, IntervalRole, roleToLengthFeature } from "./fabric-engin
 export enum FeatureMultiplier {
     OneThousand,
     One,
+    Hundredths,
     Thousandths,
-    NegativeThousandths,
     Millionths,
-    NegativeMillionths,
     Billionths,
-    NegativeBillionths,
 }
 
 type FeatureAdjustment = (factor: number, up: boolean) => number
@@ -36,18 +34,14 @@ function multiplierValue(multiplier: FeatureMultiplier): number {
             return 1 / 1000.0
         case FeatureMultiplier.One:
             return 1
+        case FeatureMultiplier.Hundredths:
+            return 100
         case FeatureMultiplier.Thousandths:
             return 1000
-        case FeatureMultiplier.NegativeThousandths:
-            return -1000
         case FeatureMultiplier.Millionths:
             return 1000000
-        case FeatureMultiplier.NegativeMillionths:
-            return -1000000
         case FeatureMultiplier.Billionths:
             return 1000000000
-        case FeatureMultiplier.NegativeBillionths:
-            return -1000000000
         default:
             throw new Error("Bad multiplier")
     }
@@ -77,14 +71,14 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PretenseFactor,
         name: "Pretense Factor",
-        defaultValue: 0.1,
-        multiplier: FeatureMultiplier.Thousandths,
-        fixedDigits: 1,
+        defaultValue: 0.01,
+        multiplier: FeatureMultiplier.Hundredths,
+        fixedDigits: 2,
         adjustment: byTenPercent,
     },
     {
         feature: FabricFeature.PushStrainFactor,
-        name: "Push strain factor",
+        name: "Push Strain Factor",
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -92,7 +86,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.PushPullDifferential,
-        name: "Push/Pull differential",
+        name: "Push/Pull Differential",
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -100,7 +94,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.TicksPerFrame,
-        name: "TicksPerFrame",
+        name: "Ticks per Frame",
         defaultValue: 100.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 0,
@@ -108,7 +102,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.IntervalBusyTicks,
-        name: "BusyCountdown",
+        name: "Busy Countdown",
         defaultValue: 500.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 1,
@@ -116,7 +110,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.PretenseTicks,
-        name: "PretensingCountdown",
+        name: "Pretensing Countdown",
         defaultValue: 30000,
         multiplier: FeatureMultiplier.OneThousand,
         fixedDigits: 1,
@@ -124,7 +118,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.PretenseIntensity,
-        name: "PretensingIntensity",
+        name: "Pretensing Intensity",
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 2,
@@ -132,7 +126,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.SlackThreshold,
-        name: "SlackThreshold",
+        name: "Slack Threshold",
         defaultValue: 0.0001,
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 1,
@@ -140,7 +134,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.RadiusFactor,
-        name: "Girth",
+        name: "Radius Factor",
         defaultValue: 20,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 1,
@@ -172,7 +166,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.RingLength,
-        name: "RingLength",
+        name: "Ring Length",
         defaultValue: 1.440,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -188,7 +182,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.BowMidLength,
-        name: "BowMidLength",
+        name: "BowMid Length",
         defaultValue: 0.8521,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -196,7 +190,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.BowEndLength,
-        name: "BowEndLength",
+        name: "BowEnd Length",
         defaultValue: 1.2,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,

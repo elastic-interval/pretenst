@@ -11,7 +11,8 @@ import {
     FaCircle,
     FaDotCircle,
     FaEye,
-    FaGlobe, FaHammer,
+    FaGlobe,
+    FaHammer,
     FaHandPointUp,
     FaTimesCircle,
 } from "react-icons/all"
@@ -20,7 +21,16 @@ import { BehaviorSubject } from "rxjs"
 
 import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { DragCharacter, enumValues, GravityCharacter, IFabricState, LifePhase } from "../fabric/fabric-state"
+import {
+    DragLevel,
+    enumValues,
+    GravityLevel,
+    IFabricState,
+    LifePhase,
+    PretenseFactor,
+    PretenseSpeed,
+    PushStrainFactor,
+} from "../fabric/fabric-state"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -36,16 +46,22 @@ export function PretensePanel({fabric, selectedBrick, features, fabricState$, li
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
-    const [gravityCharacter, updateGravityCharacter] = useState(fabricState$.getValue().gravityCharacter)
     const [surfaceCharacter, updateSurfaceCharacter] = useState(fabricState$.getValue().surfaceCharacter)
-    const [dragCharacter, updateDragCharacter] = useState(fabricState$.getValue().dragCharacter)
+    const [gravityLevel, updateGravityLevel] = useState(fabricState$.getValue().gravityLevel)
+    const [dragLevel, updateDragLevel] = useState(fabricState$.getValue().dragLevel)
+    const [pretenseSize, updatePretenseSize] = useState(fabricState$.getValue().pretenseFactor)
+    const [pretenseSpeed, updatePretenseSpeed] = useState(fabricState$.getValue().pretenseSpeed)
+    const [pushStrainFactor, updatePushStrainFactor] = useState(fabricState$.getValue().pushStrainFactor)
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
     const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
-            updateGravityCharacter(newState.gravityCharacter)
+            updateGravityLevel(newState.gravityLevel)
+            updateDragLevel(newState.dragLevel)
             updateSurfaceCharacter(newState.surfaceCharacter)
-            updateDragCharacter(newState.dragCharacter)
+            updatePretenseSize(newState.pretenseFactor)
+            updatePretenseSpeed(newState.pretenseSpeed)
+            updatePushStrainFactor(newState.pushStrainFactor)
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
         })
@@ -76,41 +92,41 @@ export function PretensePanel({fabric, selectedBrick, features, fabricState$, li
     }
 
     return (
-        <div className="m-5">
+        <div className="m-2">
             <div className="text-center">
                 <h2><FaGlobe/> Environment <FaGlobe/></h2>
             </div>
-            <div className="my-2">
+            <div className="my-1">
                 <h6>Gravity</h6>
                 <ButtonGroup className="w-100">
-                    {enumValues(GravityCharacter).map(value => (
+                    {enumValues(GravityLevel).map(value => (
                         <Button
-                            key={GravityCharacter[value]}
-                            active={gravityCharacter === value}
+                            key={GravityLevel[value]}
+                            active={gravityLevel === value}
                             onClick={() => {
                                 const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, gravityCharacter: value})
+                                fabricState$.next({...fabricState$.getValue(), nonce, gravityLevel: value})
                             }}
-                        >{GravityCharacter[value]}</Button>
+                        >{GravityLevel[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>
-            <div className="my-2">
+            <div className="my-1">
                 <h6>Drag</h6>
                 <ButtonGroup className="w-100">
-                    {enumValues(DragCharacter).map(value => (
+                    {enumValues(DragLevel).map(value => (
                         <Button
-                            key={DragCharacter[value]}
-                            active={dragCharacter === value}
+                            key={DragLevel[value]}
+                            active={dragLevel === value}
                             onClick={() => {
                                 const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, dragCharacter: value})
+                                fabricState$.next({...fabricState$.getValue(), nonce, dragLevel: value})
                             }}
-                        >{DragCharacter[value]}</Button>
+                        >{DragLevel[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>
-            <div className="my-2">
+            <div className="my-1">
                 <h6>Surface</h6>
                 <ButtonGroup className="w-100">
                     {enumValues(SurfaceCharacter).map(value => (
@@ -125,17 +141,58 @@ export function PretensePanel({fabric, selectedBrick, features, fabricState$, li
                     ))}
                 </ButtonGroup>
             </div>
-            <div className="my-5 w-100">
+            <div className="my-1">
+                <h6>Pretense Size</h6>
+                <ButtonGroup className="w-100">
+                    {enumValues(PretenseFactor).map(value => (
+                        <Button
+                            key={PretenseFactor[value]}
+                            active={pretenseSize === value}
+                            onClick={() => {
+                                const nonce = fabricState$.getValue().nonce + 1
+                                fabricState$.next({...fabricState$.getValue(), nonce, pretenseFactor: value})
+                            }}
+                        >{PretenseFactor[value]}</Button>
+                    ))}
+                </ButtonGroup>
+            </div>
+            <div className="my-1">
+                <h6>Pretense Speed</h6>
+                <ButtonGroup className="w-100">
+                    {enumValues(PretenseSpeed).map(value => (
+                        <Button
+                            key={PretenseSpeed[value]}
+                            active={pretenseSpeed === value}
+                            onClick={() => {
+                                const nonce = fabricState$.getValue().nonce + 1
+                                fabricState$.next({...fabricState$.getValue(), nonce, pretenseSpeed: value})
+                            }}
+                        >{PretenseSpeed[value]}</Button>
+                    ))}
+                </ButtonGroup>
+            </div>
+            <div className="my-1">
+                <h6>Push Strain Factor</h6>
+                <ButtonGroup className="w-100">
+                    {enumValues(PushStrainFactor ).map(value => (
+                        <Button
+                            key={PushStrainFactor[value]}
+                            active={pushStrainFactor === value}
+                            onClick={() => {
+                                const nonce = fabricState$.getValue().nonce + 1
+                                fabricState$.next({...fabricState$.getValue(), nonce, pushStrainFactor: value})
+                            }}
+                        >{PushStrainFactor[value]}</Button>
+                    ))}
+                </ButtonGroup>
+            </div>
+            <div className="my-2 w-100">
                 <LifePhasePanel
                     fabric={fabric}
                     lifePhase$={lifePhase$}
                 />
-                <div style={{backgroundColor: "white", borderRadius: "1em"}} className="my-2 p-1">
-                    <FeaturePanel feature={features[FabricFeature.PretenseFactor]} mutable={true}/>
-                    <FeaturePanel feature={features[FabricFeature.PretenseTicks]} mutable={true}/>
-                </div>
             </div>
-            <div className="my-5 w-100">
+            <div className="my-2 w-100">
                 {selectedBrick ? (
                     <>
                         <div className="text-center">
@@ -156,7 +213,7 @@ export function PretensePanel({fabric, selectedBrick, features, fabricState$, li
                 ) : (
                     <>
                         <div className="text-center">
-                            <h1><FaEye/> Aspect <FaEye/></h1>
+                            <h2><FaEye/> Aspect <FaEye/></h2>
                         </div>
                         <ButtonGroup style={{display: "flex"}} className="my-2">
                             <ViewButton pushes={false} pulls={true}/>

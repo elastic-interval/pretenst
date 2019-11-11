@@ -16,14 +16,13 @@ function multiplierSymbol(multiplier: FeatureMultiplier): JSX.Element {
             return <span className="small">10<sup>3</sup></span>
         case FeatureMultiplier.One:
             return <span>1</span>
-        case FeatureMultiplier.NegativeThousandths:
+        case FeatureMultiplier.Hundredths:
+            return <span className="small">10<sup>-2</sup></span>
         case FeatureMultiplier.Thousandths:
             return <span className="small">10<sup>-3</sup></span>
         case FeatureMultiplier.Millionths:
-        case FeatureMultiplier.NegativeMillionths:
             return <span className="small">10<sup>-6</sup></span>
         case FeatureMultiplier.Billionths:
-        case FeatureMultiplier.NegativeBillionths:
             return <span className="small">10<sup>-9</sup></span>
         default:
             throw new Error("Bad multiplier")

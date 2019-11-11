@@ -13,7 +13,15 @@ import { BehaviorSubject } from "rxjs"
 import { FabricFeature, lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
-import { DRAG, GRAVITY, IFabricState, LifePhase } from "../fabric/fabric-state"
+import {
+    DRAG_LEVEL,
+    GRAVITY_LEVEL,
+    IFabricState,
+    LifePhase,
+    PRETENSE_FACTOR,
+    PRETENSE_SPEED,
+    PUSH_STRAIN_FACTOR,
+} from "../fabric/fabric-state"
 import { ICode } from "../fabric/tenscript"
 import { IBrick, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -45,12 +53,16 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                 const instance = fabric.instance
                 instance.engine.setColoring(newState.showPushes, newState.showPulls)
                 instance.engine.setSurfaceCharacter(newState.surfaceCharacter)
-                const gravity = GRAVITY[newState.gravityCharacter]
-                features[FabricFeature.Gravity].setValue(gravity)
-                instance.setFeatureValue(FabricFeature.Gravity, gravity)
-                const drag = DRAG[newState.dragCharacter]
-                features[FabricFeature.Drag].setValue(drag)
-                instance.setFeatureValue(FabricFeature.Drag, drag)
+                const adjust = (feature: FabricFeature, array: number[], choice: number) => {
+                    const value = array[choice]
+                    features[feature].setValue(value)
+                    instance.setFeatureValue(feature, value)
+                }
+                adjust(FabricFeature.Gravity, GRAVITY_LEVEL, newState.gravityLevel)
+                adjust(FabricFeature.Drag, DRAG_LEVEL, newState.dragLevel)
+                adjust(FabricFeature.PretenseFactor , PRETENSE_FACTOR, newState.pretenseFactor)
+                adjust(FabricFeature.PretenseTicks , PRETENSE_SPEED , newState.pretenseSpeed)
+                adjust(FabricFeature.PushStrainFactor , PUSH_STRAIN_FACTOR , newState.pushStrainFactor)
             }
         })
         return () => subscription.unsubscribe()
