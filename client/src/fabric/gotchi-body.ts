@@ -7,6 +7,7 @@ import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } fr
 
 import { FabricDirection, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
+import { LifePhase } from "./fabric-state"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 const ARROW_LENGTH = 9
@@ -202,7 +203,7 @@ export class GotchiBody {
     }
 
     public iterate(ticks: number): boolean {
-        return !this.engine.iterate(ticks, false) // todo
+        return !this.engine.iterate(ticks, LifePhase.Busy) // todo
     }
 
     public get age(): number {

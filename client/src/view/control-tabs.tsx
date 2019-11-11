@@ -4,8 +4,8 @@
  */
 
 import * as React from "react"
-import { useState } from "react"
-import { FaAngleDoubleLeft } from "react-icons/all"
+import { useEffect, useState } from "react"
+import { FaArrowLeft, FaCamera } from "react-icons/all"
 import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -92,6 +92,42 @@ export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstra
         )
     }
 
+    function FullScreenButton(): JSX.Element {
+        const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+        useEffect(() => {
+            const subscription = lifePhase$.subscribe(newPhase => {
+                console.log(LifePhase [newPhase])
+                setLifePhase(newPhase)
+            })
+            return () => subscription.unsubscribe()
+        })
+        return (
+            <Button
+                disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}
+                style={{
+                    padding: 0,
+                    margin: 0,
+                    borderRadius: 0,
+                    width: "1em",
+                }}
+                className="w-100 h-100" color="dark"
+                onClick={() => {
+                    const nonce = fabricState$.getValue().nonce + 1
+                    fabricState$.next({
+                        ...fabricState$.getValue(),
+                        nonce,
+                        fullScreen: true,
+                        frozen: true,
+                    })
+                }}
+            >
+                <FaCamera/>
+                <br/>
+                <FaArrowLeft/>
+            </Button>
+        )
+    }
+
     return (
         <div className="h-100">
             <Nav tabs={true} style={{backgroundColor: "#b2b2b2"}}>
@@ -108,21 +144,7 @@ export function ControlTabs({fabric, setCode, fabricState$, lifePhase$, bootstra
                 zIndex: 10,
                 width: "1em",
             }}>
-                <Button
-                    style={{
-                        padding: 0,
-                        margin: 0,
-                        borderRadius: 0,
-                        width: "1em",
-                    }}
-                    className="w-100 h-100" color="dark"
-                    onClick={() => {
-                        const nonce = fabricState$.getValue().nonce + 1
-                        fabricState$.next({...fabricState$.getValue(), nonce, fullScreen: true})
-                    }}
-                >
-                    <FaAngleDoubleLeft/>
-                </Button>
+                <FullScreenButton/>
             </div>
         </div>
     )

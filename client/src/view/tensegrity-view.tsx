@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaAngleDoubleRight } from "react-icons/all"
+import { FaArrowRight, FaClock } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -60,9 +60,9 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                 }
                 adjust(FabricFeature.Gravity, GRAVITY_LEVEL, newState.gravityLevel)
                 adjust(FabricFeature.Drag, DRAG_LEVEL, newState.dragLevel)
-                adjust(FabricFeature.PretenseFactor , PRETENSE_FACTOR, newState.pretenseFactor)
-                adjust(FabricFeature.PretenseTicks , PRETENSE_SPEED , newState.pretenseSpeed)
-                adjust(FabricFeature.PushStrainFactor , PUSH_STRAIN_FACTOR , newState.pushStrainFactor)
+                adjust(FabricFeature.PretenseFactor, PRETENSE_FACTOR, newState.pretenseFactor)
+                adjust(FabricFeature.PretenseTicks, PRETENSE_SPEED, newState.pretenseSpeed)
+                adjust(FabricFeature.PushStrainFactor, PUSH_STRAIN_FACTOR, newState.pushStrainFactor)
             }
         })
         return () => subscription.unsubscribe()
@@ -130,8 +130,14 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                     left: 0,
                     height: "100%",
                     zIndex: 1,
-                }} onClick={() => stateChange(currentState => ({...currentState, fullScreen: false}))}>
-                    <FaAngleDoubleRight/>
+                }} onClick={() => stateChange(currentState => ({
+                    ...currentState,
+                    fullScreen: false,
+                    frozen: false,
+                }))}>
+                    <FaClock/>
+                    <br/>
+                    <FaArrowRight/>
                 </Button>
             ) : (
                 <div style={{

@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaAnchor, FaCamera, FaClock, FaCubes, FaFileCsv, FaSyncAlt } from "react-icons/all"
+import { FaAnchor, FaCubes, FaFileCsv, FaSyncAlt } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -19,11 +19,11 @@ export function ToolbarLeft({fabric, fabricState$, lifePhase$}: {
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
     const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
-    const [frozen, updateFrozen] = useState(fabricState$.getValue().frozen)
+    const [fullScreen, updateFullScreen] = useState(fabricState$.getValue().fullScreen)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
             updateRotating(newState.rotating)
-            updateFrozen(newState.frozen)
+            updateFullScreen(newState.fullScreen)
         })
         return () => subscription.unsubscribe()
     })
@@ -33,7 +33,9 @@ export function ToolbarLeft({fabric, fabricState$, lifePhase$}: {
         return () => subscription.unsubscribe()
     })
     return (
-        <div id="bottom-left">
+        <div style={{
+            left: fullScreen ? "2em" : "1em",
+        }} id="bottom-left">
             <ButtonGroup>
                 <Button
                     color={fabricState$.getValue().rotating ? "warning" : "secondary"}
@@ -43,15 +45,6 @@ export function ToolbarLeft({fabric, fabricState$, lifePhase$}: {
                     }}
                 >
                     {rotating ? <FaAnchor/> : <FaSyncAlt/>}
-                </Button>
-                <Button
-                    color={fabricState$.getValue().frozen ? "warning" : "secondary"}
-                    onClick={() => {
-                        const nonce = fabricState$.getValue().nonce + 1
-                        fabricState$.next({...fabricState$.getValue(), nonce, frozen: !frozen})
-                    }}
-                >
-                    {frozen ? <FaClock/> : <FaCamera/>}
                 </Button>
             </ButtonGroup>
             <ButtonGroup className="mx-1">

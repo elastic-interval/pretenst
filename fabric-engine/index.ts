@@ -1060,8 +1060,9 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         switch (lifePhase) {
             case LifePhase.Growing:
             case LifePhase.Shaping:
-            case LifePhase.Slack:
                 currentLength *= 2
+                break
+            case LifePhase.Slack:
                 break
             case LifePhase.Pretensing:
                 currentLength *= 1 + getFeature(FabricFeature.PretenseFactor) * getPretensingNuance()
@@ -1189,7 +1190,7 @@ export function initInstance(): LifePhase {
     setCurrentState(REST_STATE)
     setNextState(REST_STATE)
     setF32(_PRETENST, 0)
-    return setLifePhase(LifePhase.Growing)
+    return setLifePhase(LifePhase.Busy)
 }
 
 export function finishGrowing(): LifePhase {
@@ -1219,36 +1220,41 @@ function startPretensing(): LifePhase {
     return setLifePhase(LifePhase.Pretensing)
 }
 
-export function iterate(ticks: u16, mature: boolean): LifePhase {
+export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
     let age = getAge()
     let lifePhase = getLifePhase()
     switch (lifePhase) {
+        case LifePhase.Busy:
+            if (nextLifePhase === LifePhase.Growing) {
+                setAltitude(0.0)
+                setLifePhase(nextLifePhase)
+            }
+            break
         case LifePhase.Growing:
-            setAltitude(0.0)
             break
         case LifePhase.Shaping:
-            if (mature) {
+            if (nextLifePhase === LifePhase.Slack) {
                 return slacken()
             }
             break
         case LifePhase.Slack:
-            if (mature) {
+            if (nextLifePhase === LifePhase.Pretensing) {
                 return startPretensing()
             }
             break
         case LifePhase.Pretensing:
             break
         case LifePhase.Pretenst:
-            if (!mature) {
+            if (nextLifePhase === LifePhase.Slack) {
                 return slacken()
             }
             break
     }
-    let maxIntervalBusyCountdown: u16 = 0
+    let intervalBusyCountdown: u16 = 0
     if (ticks > 0) {
         let currentState = getCurrentState()
         for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-            maxIntervalBusyCountdown = tick(maxIntervalBusyCountdown, currentState, lifePhase)
+            intervalBusyCountdown = tick(intervalBusyCountdown, currentState, lifePhase)
         }
         setAge(age + <u32>ticks)
     }
@@ -1259,7 +1265,7 @@ export function iterate(ticks: u16, mature: boolean): LifePhase {
         outputFaceGeometry(faceIndex)
     }
     let fabricBusyCountdown = getFabricBusyCountdown()
-    if (maxIntervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
+    if (intervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
         if (fabricBusyCountdown === 0) {
             if (lifePhase === LifePhase.Pretensing) {
                 return setLifePhase(LifePhase.Pretenst)

@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaClock, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
+import { FaArrowDown, FaArrowRight, FaClock, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -47,16 +47,28 @@ export function LifePhasePanel({fabric, lifePhase$}: {
             </div>
             <ButtonGroup vertical={true} className="w-100">
                 <Button
-                    disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabric.toMature(true)}
+                    disabled={lifePhase !== LifePhase.Shaping}
+                    onClick={() => fabric.toSlack()}
                 >
-                    <span>Slack and <FaYinYang/> Pretense</span>
+                    <span>Shaping <FaHammer/> <FaArrowRight/> Slack <FaYinYang/></span>
+                </Button>
+                <Button
+                    disabled={lifePhase !== LifePhase.Slack}
+                    onClick={() => fabric.fromSlackToPretensing()}
+                >
+                    <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/> Gravity <FaArrowDown/></span>
                 </Button>
                 <Button
                     disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabric.toMature(false)}
+                    onClick={() => fabric.fromPretenstStrainsToSlackStiffnesses()}
                 >
-                    <span>Pretense <FaHandSpock/> again</span>
+                    <span>Pretenst <FaHandSpock/> Strain <FaArrowRight/> Slack <FaYinYang/> Stiffness</span>
+                </Button>
+                <Button
+                    disabled={lifePhase !== LifePhase.Pretenst}
+                    onClick={() => fabric.toSlack()}
+                >
+                    <span>Pretenst <FaHandSpock/> <FaArrowRight/> Slack <FaYinYang/></span>
                 </Button>
             </ButtonGroup>
         </div>

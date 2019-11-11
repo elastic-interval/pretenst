@@ -108,7 +108,7 @@ export class TensegrityFabric {
     private lineColors: Float32BufferAttribute
     private _linesGeometry = new BufferGeometry()
 
-    private mature = false
+    private nextLifePhase: LifePhase = LifePhase.Growing
 
     constructor(
         public readonly instance: FabricInstance,
@@ -123,15 +123,27 @@ export class TensegrityFabric {
         this.refreshFaceGeometry()
     }
 
-    public toMature(firstTime: boolean): void {
-        if (firstTime) {
-            this.instance.cloneTo(this.slackInstance)
-            this.mature = false
-            this.iterate(0)
-        } else {
-            this.cloneWithNewStiffnesses()
-        }
-        this.mature = true
+    public toSlack(): void {
+        this.nextLifePhase = this.instance.engine.iterate(0, LifePhase.Slack)
+        this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
+    }
+
+    public fromSlackToPretensing(): void {
+        this.nextLifePhase = LifePhase.Pretensing
+    }
+
+    public fromPretenstStrainsToSlackStiffnesses(): void {
+        const instance = this.instance
+        const {stiffnesses, linearDensities} = pretensingAdjustments(
+            instance.strains,
+            instance.stiffnesses,
+            this.intervals,
+        )
+        instance.engine.cloneInstance(this.slackInstance.index, instance.index)
+        this.nextLifePhase = LifePhase.Slack
+        stiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
+        linearDensities.forEach((value, index) => instance.linearDensities[index] = value)
+        this.features.forEach(feature => instance.applyFeature(feature))
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
@@ -273,7 +285,7 @@ export class TensegrityFabric {
 
     public iterate(ticks: number): LifePhase {
         const engine = this.engine
-        const lifePhase = engine.iterate(ticks, this.mature)
+        const lifePhase = engine.iterate(ticks, this.nextLifePhase)
         if (lifePhase === LifePhase.Busy) {
             return lifePhase
         }
@@ -361,18 +373,6 @@ export class TensegrityFabric {
         }
     }
 
-    private cloneWithNewStiffnesses(): void {
-        const {stiffnesses, linearDensities} = pretensingAdjustments(
-            this.instance.strains,
-            this.instance.stiffnesses,
-            this.intervals,
-        )
-        this.instance.cloneFrom(this.slackInstance)
-        this.stiffnesses = stiffnesses
-        this.linearDensities = linearDensities
-        this.features.forEach(feature => this.instance.applyFeature(feature))
-    }
-
     private refreshLineGeometry(): void {
         this.iterate(0)
         this.intervalCount = this.instance.engine.getIntervalCount()
@@ -389,16 +389,6 @@ export class TensegrityFabric {
         this.faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)
         this._facesGeometry.addAttribute("position", this.faceLocations)
         this._facesGeometry.addAttribute("normal", this.faceNormals)
-    }
-
-    private set stiffnesses(stiffnesses: Float32Array) {
-        const destination = this.instance.stiffnesses
-        stiffnesses.forEach((value, index) => destination[index] = value)
-    }
-
-    private set linearDensities(linearDensities: Float32Array) {
-        const destination = this.instance.linearDensities
-        linearDensities.forEach((value, index) => destination[index] = value)
     }
 
     private get engine(): IFabricEngine {

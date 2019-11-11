@@ -93,6 +93,12 @@ export function PretensePanel({fabric, selectedBrick, features, fabricState$, li
 
     return (
         <div className="m-2">
+            <div className="my-2 w-100">
+                <LifePhasePanel
+                    fabric={fabric}
+                    lifePhase$={lifePhase$}
+                />
+            </div>
             <div className="text-center">
                 <h2><FaGlobe/> Environment <FaGlobe/></h2>
             </div>
@@ -185,12 +191,6 @@ export function PretensePanel({fabric, selectedBrick, features, fabricState$, li
                         >{PushStrainFactor[value]}</Button>
                     ))}
                 </ButtonGroup>
-            </div>
-            <div className="my-2 w-100">
-                <LifePhasePanel
-                    fabric={fabric}
-                    lifePhase$={lifePhase$}
-                />
             </div>
             <div className="my-2 w-100">
                 {selectedBrick ? (

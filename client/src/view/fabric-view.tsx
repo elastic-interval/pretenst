@@ -128,8 +128,12 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
         if (!frozen) {
             const newLifePhase = fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
             fabric.needsUpdate()
-            if (lifePhase !== newLifePhase && newLifePhase !== LifePhase.Busy) {
-                lifePhase$.next(newLifePhase)
+            if (lifePhase !== newLifePhase) {
+                if (newLifePhase === LifePhase.Pretensing) {
+                    lifePhase$.next(newLifePhase)
+                } else if (newLifePhase !== LifePhase.Busy) {
+                    lifePhase$.next(newLifePhase)
+                }
             }
         }
         setAge(instance.engine.getAge())

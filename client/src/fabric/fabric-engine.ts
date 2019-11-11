@@ -114,7 +114,7 @@ export interface IFabricEngine {
 
     setNextState(state: FabricDirection): void
 
-    iterate(ticks: number, mature: boolean): LifePhase
+    iterate(ticks: number, nextLifePhase: LifePhase): LifePhase
 
     centralize(): void
 

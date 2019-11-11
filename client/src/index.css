@@ -92,7 +92,6 @@ a, a:hover {
 #bottom-left {
     position: absolute;
     bottom: 1em;
-    left: 1em;
     z-index: 100;
 }
 

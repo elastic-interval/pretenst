@@ -133,14 +133,6 @@ export class FabricInstance {
         this.fabricEngine.setInstance(this.index)
         return this.fabricEngine
     }
-
-    public cloneTo(instance: FabricInstance): void {
-        this.fabricEngine.cloneInstance(this.index, instance.index)
-    }
-
-    public cloneFrom(instance: FabricInstance): void {
-        this.fabricEngine.cloneInstance(instance.index, this.index)
-    }
 }
 
 class LazyFloatArray {

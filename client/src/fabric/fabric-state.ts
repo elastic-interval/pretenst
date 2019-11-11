@@ -31,8 +31,8 @@ export enum GravityLevel {
 
 export const GRAVITY_LEVEL = [
     0.00000005,
-    0.0000002,
-    0.0000008,
+    0.0000001,
+    0.0000003,
     0.0,
 ]
 
@@ -59,9 +59,9 @@ export enum PretenseFactor {
 
 export const PRETENSE_FACTOR = [
     0.001,
-    0.005,
     0.01,
     0.05,
+    0.10,
 ]
 
 export enum PretenseSpeed {
