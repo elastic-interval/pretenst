@@ -85,10 +85,12 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
 
     useEffect(() => {
         const urlCode = getCodeFromUrl()
-        const recentCode = getRecentCode().pop()
-        if (urlCode && recentCode && urlCode.codeString !== recentCode.codeString) {
-            setCode(urlCode)
-            stateChange(currentState => ({...currentState, code: urlCode}))
+        const recentCode = getRecentCode()
+        const storedCode = recentCode.length > 0 ? recentCode[0] : bootstrapCode[0]
+        if (storedCode) {
+            const initialCode = urlCode && urlCode.codeString !== storedCode.codeString ? urlCode : storedCode
+            setCode(initialCode)
+            stateChange(currentState => ({...currentState, code: initialCode}))
         }
     }, [])
 

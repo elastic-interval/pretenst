@@ -59,14 +59,6 @@ const plusOne: FeatureAdjustment = (factor: number, up: boolean) => up || factor
 
 const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
-        feature: FabricFeature.TicksPerFrame,
-        name: "TicksPerFrame",
-        defaultValue: 100.0,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 0,
-        adjustment: plusOne,
-    },
-    {
         feature: FabricFeature.Gravity,
         name: "Gravity",
         defaultValue: 0.0000005,
@@ -83,28 +75,36 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         adjustment: byTenPercent,
     },
     {
-        feature: FabricFeature.SlackThreshold,
-        name: "SlackThreshold",
-        defaultValue: 0.0001,
-        multiplier: FeatureMultiplier.Millionths,
-        fixedDigits: 1,
-        adjustment: byTenPercent,
-    },
-    {
-        feature: FabricFeature.MaxStiffness,
-        name: "Max Stiffness",
-        defaultValue: 0.001,
-        multiplier: FeatureMultiplier.Millionths,
-        fixedDigits: 0,
-        adjustment: byTenPercent,
-    },
-    {
         feature: FabricFeature.PretenseFactor,
         name: "Pretense Factor",
         defaultValue: 0.1,
         multiplier: FeatureMultiplier.Thousandths,
         fixedDigits: 1,
         adjustment: byTenPercent,
+    },
+    {
+        feature: FabricFeature.PushStrainFactor,
+        name: "Push strain factor",
+        defaultValue: 1,
+        multiplier: FeatureMultiplier.One,
+        fixedDigits: 3,
+        adjustment: byTenPercent,
+    },
+    {
+        feature: FabricFeature.PushPullDifferential,
+        name: "Push/Pull differential",
+        defaultValue: 1,
+        multiplier: FeatureMultiplier.One,
+        fixedDigits: 3,
+        adjustment: byTenPercent,
+    },
+    {
+        feature: FabricFeature.TicksPerFrame,
+        name: "TicksPerFrame",
+        defaultValue: 100.0,
+        multiplier: FeatureMultiplier.One,
+        fixedDigits: 0,
+        adjustment: plusOne,
     },
     {
         feature: FabricFeature.IntervalBusyTicks,
@@ -128,6 +128,30 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 2,
+        adjustment: byTenPercent,
+    },
+    {
+        feature: FabricFeature.SlackThreshold,
+        name: "SlackThreshold",
+        defaultValue: 0.0001,
+        multiplier: FeatureMultiplier.Millionths,
+        fixedDigits: 1,
+        adjustment: byTenPercent,
+    },
+    {
+        feature: FabricFeature.RadiusFactor,
+        name: "Girth",
+        defaultValue: 20,
+        multiplier: FeatureMultiplier.One,
+        fixedDigits: 1,
+        adjustment: byTenPercent,
+    },
+    {
+        feature: FabricFeature.MaxStiffness,
+        name: "Max Stiffness",
+        defaultValue: 0.001,
+        multiplier: FeatureMultiplier.Millionths,
+        fixedDigits: 0,
         adjustment: byTenPercent,
     },
     {
@@ -177,14 +201,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         adjustment: byOnePercent,
-    },
-    {
-        feature: FabricFeature.Girth,
-        name: "Girth",
-        defaultValue: 20,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 1,
-        adjustment: byTenPercent,
     },
 ]
 

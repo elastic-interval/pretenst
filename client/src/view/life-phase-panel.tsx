@@ -47,10 +47,10 @@ export function LifePhasePanel({fabric, lifePhase$}: {
             </div>
             <ButtonGroup vertical={true} className="w-100">
                 <Button
-                    disabled={lifePhase !== LifePhase.Shaping}
+                    disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}
                     onClick={() => fabric.toMature(true)}
                 >
-                    <span>Prepare to <FaYinYang/> pretense</span>
+                    <span>Slack and <FaYinYang/> Pretense</span>
                 </Button>
                 <Button
                     disabled={lifePhase !== LifePhase.Pretenst}

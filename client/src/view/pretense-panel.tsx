@@ -132,7 +132,6 @@ export function PretensePanel({fabric, selectedBrick, features, fabricState$, li
                 />
                 <div style={{backgroundColor: "white", borderRadius: "1em"}} className="my-2 p-1">
                     <FeaturePanel feature={features[FabricFeature.PretenseFactor]} mutable={true}/>
-                    <FeaturePanel feature={features[FabricFeature.PretenseIntensity]} mutable={true}/>
                     <FeaturePanel feature={features[FabricFeature.PretenseTicks]} mutable={true}/>
                 </div>
             </div>

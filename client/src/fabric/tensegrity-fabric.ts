@@ -5,8 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
-import { FloatFeature, roleDefaultLength } from "./fabric-features"
+import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
 import { executeActiveCode, IActiveCode, ICode } from "./tenscript"
@@ -77,13 +77,13 @@ function pretensingAdjustments(strains: Float32Array, existingStiffnesses: Float
     console.log(`Average pull: ${averagePullStrain}`)
     console.log(`Push vs Pull: ${((averagePullStrain + averagePushStrain) * 1000).toFixed(8)}`)
     const averageAbsoluteStrain = (-averagePushStrain + averagePullStrain) / 2
-    // TODO: make this a feature!
-    const effectivePullOverPushFactor = 0.01
+    const pushStrainFactor = fabricFeatureValue(FabricFeature.PushStrainFactor)
+    const pretenseIntensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
     const changes = intervals.map(interval => {
-        const absoluteStrain = strains[interval.index] * (interval.isPush ? -effectivePullOverPushFactor : 1)
+        const absoluteStrain = strains[interval.index] * (interval.isPush ? -pushStrainFactor : 1)
         const normalizedStrain = absoluteStrain - averageAbsoluteStrain
         const strainFactor = normalizedStrain / averageAbsoluteStrain
-        return 1 + strainFactor
+        return 1 + strainFactor * pretenseIntensity
     })
     const stiffness = existingStiffnesses.map((value, index) => value * changes[index])
     const linearDensities = stiffness.map(stiffnessToLinearDensity)
@@ -125,6 +125,8 @@ export class TensegrityFabric {
     public toMature(firstTime: boolean): void {
         if (firstTime) {
             this.instance.cloneTo(this.slackInstance)
+            this.mature = false
+            this.iterate(0)
         } else {
             this.cloneWithNewStiffnesses()
         }
@@ -298,14 +300,14 @@ export class TensegrityFabric {
         ))
     }
 
-    public orientInterval(interval: IInterval, girth: number): { scale: Vector3, rotation: Quaternion } {
+    public orientInterval(interval: IInterval, radiusFactor: number): { scale: Vector3, rotation: Quaternion } {
         const Y_AXIS = new Vector3(0, 1, 0)
         const unit = this.instance.unitVector(interval.index)
         const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
         const alphaLocation = this.instance.location(interval.alpha.index)
         const omegaLocation = this.instance.location(interval.omega.index)
         const intervalLength = alphaLocation.distanceTo(omegaLocation)
-        const scale = new Vector3(SPHERE_RADIUS * girth, intervalLength / SPHERE_RADIUS / 2, SPHERE_RADIUS * girth)
+        const scale = new Vector3(SPHERE_RADIUS * radiusFactor, intervalLength / SPHERE_RADIUS / 2, SPHERE_RADIUS * radiusFactor)
         return {scale, rotation}
     }
 

@@ -98,6 +98,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
     useEffect(() => {
         orbit.current.autoRotate = rotating
     }, [rotating])
+    const radiusFactor = fabricFeatureValue(FabricFeature.RadiusFactor)
 
     const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
@@ -158,8 +159,6 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
     }
 
 
-    const girth = fabricFeatureValue(FabricFeature.Girth)
-
     function IntervalMesh({interval, attenuated}: {
         interval: IInterval,
         attenuated: boolean,
@@ -173,7 +172,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fabricState
             return slack ? SLACK : interval.isPush ? PUSH_MATERIAL : PULL_MATERIAL
         }
         const linearDensity = fabric.instance.linearDensities[interval.index]
-        const {scale, rotation} = fabric.orientInterval(interval, girth * linearDensity)
+        const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
         return (
             <mesh
                 geometry={SPHERE}

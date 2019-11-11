@@ -14,27 +14,31 @@ declare function logInt(idx: u32, i: i32): void
 const RESURFACE: f32 = 0.001
 const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
-const IN_UTERO_STIFFNESS: f32 = 0.9
+const IN_UTERO_STIFFNESS: f32 = 0.1
 const IN_UTERO_DRAG: f32 = 0.0000001
-const IN_UTERO_PRETENST: f32 = 0.5
 
 export enum FabricFeature {
-    TicksPerFrame = 0,
-    Gravity = 1,
-    Drag = 2,
-    SlackThreshold = 3,
-    MaxStiffness = 4,
-    PretenseFactor = 5,
+    Gravity = 0,
+    Drag = 1,
+    PretenseFactor = 2,
+    PushStrainFactor = 3,
+    PushPullDifferential = 4,
+
+    TicksPerFrame = 5,
     IntervalBusyTicks = 6,
     PretenseTicks = 7,
+
     PretenseIntensity = 8,
-    PushLength = 9,
-    TriangleLength = 10,
-    RingLength = 11,
-    CrossLength = 12,
-    BowMidLength = 13,
-    BowEndLength = 14,
-    Girth = 15,
+    SlackThreshold = 9,
+    RadiusFactor = 10,
+    MaxStiffness = 11,
+
+    PushLength = 12,
+    TriangleLength = 13,
+    RingLength = 14,
+    CrossLength = 15,
+    BowMidLength = 16,
+    BowEndLength = 17,
 }
 
 enum SurfaceCharacter {
@@ -1057,7 +1061,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             case LifePhase.Growing:
             case LifePhase.Shaping:
             case LifePhase.Slack:
-                currentLength *= 1 + IN_UTERO_PRETENST
+                currentLength *= 2
                 break
             case LifePhase.Pretensing:
                 currentLength *= 1 + getFeature(FabricFeature.PretenseFactor) * getPretensingNuance()

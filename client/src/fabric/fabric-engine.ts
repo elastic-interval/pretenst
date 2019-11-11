@@ -10,22 +10,27 @@ export interface IMemory {
 }
 
 export enum FabricFeature {
-    TicksPerFrame = 0,
-    Gravity = 1,
-    Drag = 2,
-    SlackThreshold = 3,
-    MaxStiffness = 4,
-    PretenseFactor = 5,
+    Gravity = 0,
+    Drag = 1,
+    PretenseFactor = 2,
+    PushStrainFactor = 3,
+    PushPullDifferential = 4,
+
+    TicksPerFrame = 5,
     IntervalBusyTicks = 6,
     PretenseTicks = 7,
+
     PretenseIntensity = 8,
-    PushLength = 9,
-    TriangleLength = 10,
-    RingLength = 11,
-    CrossLength = 12,
-    BowMidLength = 13,
-    BowEndLength = 14,
-    Girth = 15,
+    SlackThreshold = 9,
+    RadiusFactor = 10,
+    MaxStiffness = 11,
+
+    PushLength = 12,
+    TriangleLength = 13,
+    RingLength = 14,
+    CrossLength = 15,
+    BowMidLength = 16,
+    BowEndLength = 17,
 }
 
 export enum IntervalRole {
