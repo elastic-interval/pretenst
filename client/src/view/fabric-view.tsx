@@ -49,7 +49,8 @@ const SUN_POSITION = new Vector3(0, 600, 0)
 const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
 const SPACE_RADIUS = 100
-const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
+const SPACE_SCALE = 1
+const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25).scale(SPACE_SCALE, SPACE_SCALE, SPACE_SCALE)
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
@@ -108,7 +109,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         orb.object = perspective
         orb.minPolarAngle = -0.98 * Math.PI / 2
         orb.maxPolarAngle = 0.8 * Math.PI
-        orb.maxDistance = SPACE_RADIUS * 0.9
+        orb.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
         orb.zoomSpeed = 0.5
         orb.enableZoom = true
         orb.target.set(midpoint.x, midpoint.y, midpoint.z)
@@ -225,7 +226,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {rotating || frozen || lifePhase <= LifePhase.Slack ? undefined : <StiffnessScale/>}
+                {rotating || frozen || lifePhase <= LifePhase.Shaping ? undefined : <StiffnessScale/>}
                 {!fabric ? undefined : frozen ? (
                     <group>
                         {fabric.splitIntervals ? (
