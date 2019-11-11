@@ -143,7 +143,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.MaxStiffness,
         name: "Max Stiffness",
-        defaultValue: 0.001,
+        defaultValue: 0.0005,
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 0,
         adjustment: byTenPercent,

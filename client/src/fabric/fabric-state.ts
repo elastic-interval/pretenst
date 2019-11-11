@@ -85,7 +85,7 @@ export enum PushStrainFactor {
 export const PUSH_STRAIN_FACTOR = [
     3,
     1,
-    1/3,
+    1 / 3,
 ]
 
 export enum ControlTab {
