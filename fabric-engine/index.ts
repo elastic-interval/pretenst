@@ -86,16 +86,13 @@ const ATTENUATED_COLOR: f32[] = [
     0.1, 0.1, 0.1
 ]
 const HOT_COLOR: f32[] = [
-    1.0, 0.2, 0.0
+    1.0, 0.3, 0.2
 ]
 const COLD_COLOR: f32[] = [
-    0.0, 0.5, 1.0
+    0.2, 0.5, 1.0
 ]
 const SLACK_COLOR: f32[] = [
-    0.0, 1.0, 0.0
-]
-const CROSS_COLOR: f32[] = [
-    1.0, 1.0, 0.0
+    1.0, 1.0, 1.0
 ]
 
 export function getInstanceCount(): u16 {
@@ -514,11 +511,11 @@ function dot(vPtr: usize, v: usize): f32 {
     return getX(vPtr) * getX(v) + getY(vPtr) * getY(v) + getZ(vPtr) * getZ(v)
 }
 
-function lerp(vPtr: usize, v: usize, interpolation: f32): void {
+function lerp(a: usize, b: usize, interpolation: f32): void {
     let antiInterpolation = <f32>1.0 - interpolation
-    setX(vPtr, getX(vPtr) * antiInterpolation + getX(v) * interpolation)
-    setY(vPtr, getY(vPtr) * antiInterpolation + getY(v) * interpolation)
-    setX(vPtr, getZ(vPtr) * antiInterpolation + getZ(v) * interpolation)
+    setX(a, getX(a) * antiInterpolation + getX(b) * interpolation)
+    setY(a, getY(a) * antiInterpolation + getY(b) * interpolation)
+    setX(a, getZ(a) * antiInterpolation + getZ(b) * interpolation)
 }
 
 function quadrance(vPtr: usize): f32 {
@@ -960,11 +957,11 @@ function outputLinesGeometry(): void {
                 let min = isPush ? minPushStrain : minPullStrain
                 let max = isPush ? maxPushStrain : maxPullStrain
                 let temperature = (strain - min) / (max - min)
-                setLineColor(intervalIndex,
-                    HOT_COLOR[0] * temperature + COLD_COLOR[0] * (1 - temperature),
-                    HOT_COLOR[1] * temperature + COLD_COLOR[1] * (1 - temperature),
-                    HOT_COLOR[2] * temperature + COLD_COLOR[2] * (1 - temperature)
-                )
+                let rainbowIndex = <i32>(temperature * (<f32>RAINBOW.length / <f32>3.01))
+                let r = RAINBOW[rainbowIndex * 3]
+                let g = RAINBOW[rainbowIndex * 3 + 1]
+                let b = RAINBOW[rainbowIndex * 3 + 2]
+                setLineColor(intervalIndex, r, g, b)
             }
         }
     }
@@ -1336,3 +1333,33 @@ export function _fabricFeatures(): usize {
     return _FABRIC_FEATURES
 }
 
+/*
+    const steps = 24
+    const colors: string[] = []
+    const max = 2 * Math.PI * (2 / 3)
+    for (let step = 0; step < max; step += max / (steps - 10)) {
+        const angle = step + Math.PI / 2
+        const b = (Math.sin(angle) + 1) / 2
+        const r = (Math.sin(angle + Math.PI * 2 / 3) + 1) / 2
+        const g = (Math.sin(angle + 2 * Math.PI * 2 / 3) + 1) / 2.5
+        colors.push(`${r.toFixed(5)}, ${g.toFixed(5)}, ${b.toFixed(5)},`)
+    }
+    console.log("rainbow", colors.join("\n"))
+*/
+const RAINBOW: f32[] = [
+    0.25000, 0.21739, 1.00000,
+    0.13347, 0.33803, 0.97779,
+    0.04952, 0.46727, 0.91312,
+    0.00558, 0.59363, 0.81174,
+    0.00558, 0.70587, 0.68267,
+    0.04952, 0.79402, 0.53737,
+    0.13347, 0.85025, 0.38874,
+    0.25000, 0.86957, 0.25000,
+    0.38874, 0.85025, 0.13347,
+    0.53737, 0.79402, 0.04952,
+    0.68267, 0.70587, 0.00558,
+    0.81174, 0.59363, 0.00558,
+    0.91312, 0.46727, 0.04952,
+    0.97779, 0.33803, 0.13347,
+    1.00000, 0.21739, 0.25000,
+]

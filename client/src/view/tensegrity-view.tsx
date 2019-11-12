@@ -159,6 +159,7 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                         selectedBrick={selectedBrick}
                         setSelectedBrick={setSelectedBrick}
                         setCode={setCode}
+                        rebuild={buildFromCode}
                         setFrozen={setFrozen}
                         fabricState$={fabricState$}
                         lifePhase$={lifePhase$}

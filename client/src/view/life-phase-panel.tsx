@@ -5,16 +5,26 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowRight, FaClock, FaHammer, FaHandSpock, FaSeedling, FaYinYang } from "react-icons/all"
+import {
+    FaArrowDown,
+    FaArrowRight,
+    FaClock,
+    FaHammer,
+    FaHandSpock,
+    FaLeaf,
+    FaSeedling,
+    FaYinYang,
+} from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function LifePhasePanel({fabric, lifePhase$}: {
+export function LifePhasePanel({fabric, lifePhase$, rebuild}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
+    rebuild: () => void,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
@@ -46,28 +56,19 @@ export function LifePhasePanel({fabric, lifePhase$}: {
                 <LifePhaseIcon/>
             </div>
             <ButtonGroup vertical={true} className="w-100">
-                <Button
-                    disabled={lifePhase !== LifePhase.Shaping}
-                    onClick={() => fabric.toSlack()}
-                >
+                <Button onClick={rebuild}>
+                    <span>Regrow <FaLeaf/> <FaArrowRight/> Shaping <FaHammer/></span>
+                </Button>
+                <Button disabled={lifePhase !== LifePhase.Shaping} onClick={() => fabric.toSlack()}>
                     <span>Shaping <FaHammer/> <FaArrowRight/> Slack <FaYinYang/></span>
                 </Button>
-                <Button
-                    disabled={lifePhase !== LifePhase.Slack}
-                    onClick={() => fabric.fromSlackToPretensing()}
-                >
+                <Button disabled={lifePhase !== LifePhase.Slack} onClick={() => fabric.fromSlackToPretensing()}>
                     <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/> Gravity <FaArrowDown/></span>
                 </Button>
-                <Button
-                    disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabric.fromPretenstStrainsToSlackStiffnesses()}
-                >
+                <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => fabric.fromPretenstStrainsToSlackStiffnesses()}>
                     <span>Pretenst <FaHandSpock/> Strain <FaArrowRight/> Slack <FaYinYang/> Stiffness</span>
                 </Button>
-                <Button
-                    disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={() => fabric.toSlack()}
-                >
+                <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => fabric.toSlack()}>
                     <span>Pretenst <FaHandSpock/> <FaArrowRight/> Slack <FaYinYang/></span>
                 </Button>
             </ButtonGroup>

@@ -39,11 +39,12 @@ function Icon(controlTab: ControlTab): JSX.Element {
     }
 }
 
-export function ControlTabs({fabric, selectedBrick, setSelectedBrick, setCode, setFrozen, fabricState$, lifePhase$, bootstrapCode, features}: {
+export function ControlTabs({fabric, selectedBrick, setSelectedBrick, setCode, rebuild, setFrozen, fabricState$, lifePhase$, bootstrapCode, features}: {
     fabric?: TensegrityFabric,
     selectedBrick?: IBrick,
     setSelectedBrick: (brick?: IBrick) => void,
     setCode: (code: ICode) => void,
+    rebuild: () => void,
     setFrozen: (frozen: boolean) => void,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
@@ -93,6 +94,7 @@ export function ControlTabs({fabric, selectedBrick, setSelectedBrick, setCode, s
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
+                            rebuild={rebuild}
                         />
                     )
                 case ControlTab.Explore:
