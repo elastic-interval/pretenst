@@ -89,26 +89,34 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
 
-    useEffect(() => {
-        const urlCode = getCodeFromUrl()
-        const recentCode = getRecentCode()
-        const storedCode = recentCode.length > 0 ? recentCode[0] : bootstrap[0]
-        if (storedCode) {
-            const initialCode = urlCode && urlCode.code !== storedCode.code ? urlCode : storedCode
-            setTenscript(initialCode)
-        }
-    }, [])
-
-    function grow(): void {
-        if (!tenscript || !mainInstance || !slackInstance) {
+    function growFromTenscript(newTenscript: ITenscript, replaceUrl: boolean): void {
+        if (!mainInstance || !slackInstance) {
             return
         }
         mainInstance.forgetDimensions()
         mainInstance.engine.initInstance()
         lifePhase$.next(LifePhase.Growing)
-        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, tenscript))
-        location.hash = tenscript.code
+        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript))
+        if (replaceUrl) {
+            location.hash = newTenscript.code
+        }
     }
+
+    useEffect(() => {
+        const urlCode = getCodeFromUrl()
+        const recentCode = getRecentCode()
+        const storedCode = recentCode.length > 0 ? recentCode[0] : bootstrap[0]
+        if (!storedCode) {
+            throw new Error("No stored code")
+        }
+        if (urlCode && urlCode.code === storedCode.code) {
+            setTenscript(urlCode)
+            growFromTenscript(urlCode, false)
+        } else {
+            setTenscript(storedCode)
+            growFromTenscript(storedCode, true)
+        }
+    }, [])
 
     return (
         <div className="the-whole-page">
@@ -152,11 +160,16 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                         setSelectedBrick={setSelectedBrick}
                         tenscript={tenscript}
                         setTenscript={setTenscript}
-                        growFabric={grow}
+                        growFabric={() => {
+                            if (!tenscript) {
+                                return
+                            }
+                            growFromTenscript(tenscript, true)
+                        }}
                         setFrozen={setFrozen}
                         fabricState$={fabricState$}
                         lifePhase$={lifePhase$}
-                        bootstrapCode={bootstrap}
+                        bootstrap={bootstrap}
                         features={features}
                     />
                 </div>

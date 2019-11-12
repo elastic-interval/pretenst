@@ -22,8 +22,8 @@ const FABRIC_CODE_KEY = "FabricCode"
 
 const MAX_RECENT = 12
 
-export function TenscriptPanel({bootstrapCode, tenscript, setTenscript, grow}: {
-    bootstrapCode: ITenscript[],
+export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
+    bootstrap: ITenscript[],
     tenscript?: ITenscript,
     setTenscript: (tenscript?: ITenscript) => void,
     grow: () => void,
@@ -73,7 +73,7 @@ export function TenscriptPanel({bootstrapCode, tenscript, setTenscript, grow}: {
                 )}
                 <div className="m-4">
                     <h6>Suggestions</h6>
-                    {bootstrapCode.map((bootstrapProgram, index) => (
+                    {bootstrap.map((bootstrapProgram, index) => (
                         <Button key={index} color="dark" style={{
                             margin: "0.3em",
                             fontSize: "small",

@@ -41,7 +41,7 @@ function Icon(controlTab: ControlTab): JSX.Element {
 
 export function ControlTabs({
                                 fabric, selectedBrick, setSelectedBrick, tenscript, setTenscript, growFabric,
-                                setFrozen, fabricState$, lifePhase$, bootstrapCode, features,
+                                setFrozen, fabricState$, lifePhase$, bootstrap, features,
                             }: {
     fabric?: TensegrityFabric,
     selectedBrick?: IBrick,
@@ -52,21 +52,19 @@ export function ControlTabs({
     setFrozen: (frozen: boolean) => void,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    bootstrapCode: ITenscript [],
+    bootstrap: ITenscript[],
     features: FloatFeature[],
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState(loadControlTab)
+    const [activeTab, setActiveTab] = useState(ControlTab.Grow)
 
     function Link({controlTab}: { controlTab: ControlTab }): JSX.Element {
         return (
             <NavItem>
                 <NavLink
+                    disabled={controlTab !== ControlTab.Grow && !fabric}
                     active={activeTab === controlTab}
-                    onClick={() => {
-                        saveControlTab(controlTab)
-                        setActiveTab(controlTab)
-                    }}
+                    onClick={() => setActiveTab(controlTab)}
                 >{Icon(controlTab)} {controlTab}</NavLink>
             </NavItem>
         )
@@ -79,7 +77,7 @@ export function ControlTabs({
                 case ControlTab.Grow:
                     return (
                         <TenscriptPanel
-                            bootstrapCode={bootstrapCode}
+                            bootstrap={bootstrap}
                             tenscript={tenscript}
                             setTenscript={setTenscript}
                             grow={growFabric}
@@ -185,16 +183,16 @@ export function ControlTabs({
     )
 }
 
-const CONTROL_TAB_KEY = "ControlTab"
-
-function saveControlTab(controlTab: ControlTab): void {
-    localStorage.setItem(CONTROL_TAB_KEY, controlTab)
-}
-
-function loadControlTab(): ControlTab {
-    const item = localStorage.getItem(CONTROL_TAB_KEY)
-    if (item) {
-        return ControlTab[item]
-    }
-    return ControlTab.Grow
-}
+// const CONTROL_TAB_KEY = "ControlTab"
+//
+// function saveControlTab(controlTab: ControlTab): void {
+//     localStorage.setItem(CONTROL_TAB_KEY, controlTab)
+// }
+//
+// function loadControlTab(): ControlTab {
+//     const item = localStorage.getItem(CONTROL_TAB_KEY)
+//     if (item) {
+//         return ControlTab[item]
+//     }
+//     return ControlTab.Grow
+// }
