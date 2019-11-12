@@ -30,7 +30,8 @@ import { getCodeFromUrl, getRecentCode } from "./code-panel"
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { ToolbarLeft } from "./toolbar-left"
-import { ToolbarRight } from "./toolbar-right"
+import { ToolbarRightBottom } from "./toolbar-right-bottom"
+import { ToolbarRightTop } from "./toolbar-right-top"
 
 const SPLIT_LEFT = "29em"
 const SPLIT_RIGHT = "30em"
@@ -189,9 +190,14 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                             lifePhase$={lifePhase$}
                             fullScreen={frozen}
                         />
-                        <ToolbarRight
+                        <ToolbarRightBottom
                             fabric={fabric}
                             lifePhase$={lifePhase$}
+                            fabricState$={fabricState$}
+                        />
+                        <ToolbarRightTop
+                            fabric={fabric}
+                            fabricState$={fabricState$}
                         />
                         <Canvas style={{
                             backgroundColor: "black",

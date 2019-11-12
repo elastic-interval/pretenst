@@ -54,10 +54,7 @@ export function StrainPanel({fabric, pushes, showPushes, showPulls}: {
         width: "12em",
         backgroundColor: "#cccccc",
         borderColor: "#575757",
-        borderTopRightRadius: "1em",
-        borderBottomRightRadius: "1em",
-        borderTopLeftRadius: 0,
-        borderBottomLeftRadius: 0,
+        borderRadius: "1em",
     }
     return (
         <div style={style}>

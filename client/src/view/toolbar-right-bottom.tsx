@@ -9,18 +9,20 @@ import { FaCompressArrowsAlt, FaHandRock, FaParachuteBox } from "react-icons/all
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { LifePhase } from "../fabric/fabric-state"
+import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function ToolbarRight({fabric, lifePhase$}: {
+export function ToolbarRightBottom({fabric, lifePhase$, fabricState$}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
+    fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
     useEffect(() => {
         const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
     })
+
     const engine = fabric.instance.engine
     return (
         <div id="bottom-right">
