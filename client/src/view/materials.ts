@@ -41,7 +41,7 @@ export const FACE_SPHERE = new MeshPhongMaterial({
 })
 
 function generateRainbow(): Color[] {
-    const steps = 24
+    const steps = 50
     const rgbs: Color[] = []
     const colors: string[] = []
     const max = 2 * Math.PI * (2 / 3)
@@ -53,7 +53,7 @@ function generateRainbow(): Color[] {
         rgbs.push(new Color(r, g, b))
         colors.push(`${r.toFixed(5)}, ${g.toFixed(5)}, ${b.toFixed(5)},`)
     }
-    console.log("rainbow", colors.join("\n"))
+    console.log(`rainbow ${colors.length}`, colors.join("\n"))
     return rgbs
 }
 
@@ -69,17 +69,16 @@ export function rainbowMaterial(nuance: number): Material {
 function roleColor(intervalRole: IntervalRole): string {
     switch (intervalRole) {
         case IntervalRole.Push:
-            return "#f8002d"
+            return "#850018"
         case IntervalRole.Triangle:
-            return "#02cd80"
+            return "#02844f"
         case IntervalRole.Ring:
-            return "#62a6cf"
+            return "#293a94"
         case IntervalRole.Cross:
-            return "#b0940b"
+            return "#977b0b"
         case IntervalRole.BowMid:
-            return "#fff600"
         case IntervalRole.BowEnd:
-            return "#fff600"
+            return "#299c99"
     }
 }
 

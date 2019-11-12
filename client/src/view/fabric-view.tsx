@@ -108,12 +108,10 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         }
         const timer = setInterval(() => {
             if (showPushes) {
-                console.log("updating pushes")
                 updateMinPushStrain(currentLimit(Limit.MinPushStrain))
                 updateMaxPushStrain(currentLimit(Limit.MaxPushStrain))
             }
             if (showPulls) {
-                console.log("updating pulls")
                 updateMinPullStrain(currentLimit(Limit.MinPullStrain))
                 updateMaxPullStrain(currentLimit(Limit.MaxPullStrain))
             }
@@ -160,9 +158,6 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        // if (frozen) {
-        //     return
-        // }
         const newLifePhase = fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
