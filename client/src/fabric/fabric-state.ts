@@ -113,6 +113,10 @@ export interface IFabricState {
     showPulls: boolean
 }
 
+export function fabricStateTransition(state: IFabricState, partial: Partial<IFabricState>): IFabricState {
+    return {...state, nonce: state.nonce + 1, ...partial}
+}
+
 const INITIAL_FABRIC_STATE: IFabricState = {
     nonce: 0,
     gravityLevel: GravityLevel.Light,

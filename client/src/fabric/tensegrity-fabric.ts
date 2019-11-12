@@ -9,7 +9,7 @@ import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric
 import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
-import { executeActiveCode, IActiveCode, ICode } from "./tenscript"
+import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import { createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,
@@ -96,7 +96,7 @@ export class TensegrityFabric {
     public intervals: IInterval[] = []
     public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
-    public activeCode?: IActiveCode[]
+    public activeTenscript?: IActiveTenscript[]
 
     private faceCount: number
     private faceLocations: Float32BufferAttribute
@@ -114,11 +114,11 @@ export class TensegrityFabric {
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
         public readonly features: FloatFeature[],
-        public readonly code: ICode,
+        public readonly tenscript: ITenscript,
     ) {
         features.forEach(feature => this.instance.applyFeature(feature))
         const brick = createBrickOnOrigin(this, percentOrHundred())
-        this.activeCode = [{codeTree: this.code.codeTree, brick}]
+        this.activeTenscript = [{tree: this.tenscript.tree, brick}]
         this.refreshLineGeometry()
         this.refreshFaceGeometry()
     }
@@ -147,7 +147,7 @@ export class TensegrityFabric {
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
-        if (this.activeCode) {
+        if (this.activeTenscript) {
             return 0
         }
         this.splitIntervals = this.intervals.reduce(intervalSplitter(selectionFilter), emptySplit())
@@ -289,15 +289,15 @@ export class TensegrityFabric {
         if (lifePhase === LifePhase.Busy) {
             return lifePhase
         }
-        const activeCode = this.activeCode
+        const activeCode = this.activeTenscript
         if (activeCode) {
             if (activeCode.length > 0) {
-                this.activeCode = executeActiveCode(activeCode)
+                this.activeTenscript = execute(activeCode)
                 engine.centralize()
             }
             if (activeCode.length === 0) {
                 optimizeFabric(this)
-                this.activeCode = undefined
+                this.activeTenscript = undefined
                 if (lifePhase === LifePhase.Growing) {
                     return engine.finishGrowing()
                 }
@@ -330,7 +330,7 @@ export class TensegrityFabric {
         const stiffnesses = this.instance.stiffnesses
         const linearDensities = this.instance.linearDensities
         return {
-            name: this.code.codeString,
+            name: this.tenscript.code,
             joints: this.joints.map(joint => {
                 const vector = this.instance.location(joint.index)
                 return {

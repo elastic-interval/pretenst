@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaClock } from "react-icons/all"
+import { FaArrowRight, FaClock, FaRunning } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -22,13 +22,13 @@ import {
     PRETENSE_SPEED,
     PUSH_STRAIN_FACTOR,
 } from "../fabric/fabric-state"
-import { ICode } from "../fabric/tenscript"
+import { ITenscript } from "../fabric/tenscript"
 import { IBrick, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { getCodeFromUrl, getRecentCode } from "./code-panel"
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
+import { getCodeFromUrl, getRecentCode } from "./tenscript-panel"
 import { ToolbarLeft } from "./toolbar-left"
 import { ToolbarRightBottom } from "./toolbar-right-bottom"
 import { ToolbarRightTop } from "./toolbar-right-top"
@@ -36,14 +36,14 @@ import { ToolbarRightTop } from "./toolbar-right-top"
 const SPLIT_LEFT = "29em"
 const SPLIT_RIGHT = "30em"
 
-export function TensegrityView({fabricKernel, features, bootstrapCode, fabricState$, lifePhase$}: {
+export function TensegrityView({fabricKernel, features, bootstrap, fabricState$, lifePhase$}: {
     fabricKernel: FabricKernel,
     features: FloatFeature[],
-    bootstrapCode: ICode[],
+    bootstrap: ITenscript[],
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
-    const [code, setCode] = useState<ICode | undefined>()
+    const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [frozen, setFrozen] = useState(false)
@@ -89,35 +89,26 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
 
-    const stateChange = (modifier: (currentState: IFabricState) => IFabricState) => {
-        const nextValue = modifier(fabricState$.getValue())
-        nextValue.nonce = fabricState$.getValue().nonce + 1
-        fabricState$.next(nextValue)
-    }
-
     useEffect(() => {
         const urlCode = getCodeFromUrl()
         const recentCode = getRecentCode()
-        const storedCode = recentCode.length > 0 ? recentCode[0] : bootstrapCode[0]
+        const storedCode = recentCode.length > 0 ? recentCode[0] : bootstrap[0]
         if (storedCode) {
-            const initialCode = urlCode && urlCode.codeString !== storedCode.codeString ? urlCode : storedCode
-            setCode(initialCode)
-            stateChange(currentState => ({...currentState, code: initialCode}))
+            const initialCode = urlCode && urlCode.code !== storedCode.code ? urlCode : storedCode
+            setTenscript(initialCode)
         }
     }, [])
 
-    function buildFromCode(): void {
-        if (!code || !mainInstance || !slackInstance) {
+    function grow(): void {
+        if (!tenscript || !mainInstance || !slackInstance) {
             return
         }
         mainInstance.forgetDimensions()
         mainInstance.engine.initInstance()
         lifePhase$.next(LifePhase.Growing)
-        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, code))
-        location.hash = code.codeString
+        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, tenscript))
+        location.hash = tenscript.code
     }
-
-    useEffect(buildFromCode, [code])
 
     return (
         <div className="the-whole-page">
@@ -159,12 +150,13 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                         fabric={fabric}
                         selectedBrick={selectedBrick}
                         setSelectedBrick={setSelectedBrick}
-                        setCode={setCode}
-                        rebuild={buildFromCode}
+                        tenscript={tenscript}
+                        setTenscript={setTenscript}
+                        growFabric={grow}
                         setFrozen={setFrozen}
                         fabricState$={fabricState$}
                         lifePhase$={lifePhase$}
-                        bootstrapCode={bootstrapCode}
+                        bootstrapCode={bootstrap}
                         features={features}
                     />
                 </div>
@@ -176,12 +168,20 @@ export function TensegrityView({fabricKernel, features, bootstrapCode, fabricSta
                 height: "100%",
             }}>
                 {!fabric ? (
-                    <h1>Canvas</h1>
+                    <div id="tensegrity-view" className="h-100">
+                        <div style={{
+                            position: "relative",
+                            top: "50%",
+                            left: "50%",
+                        }}>
+                            <h1><FaRunning/></h1>
+                        </div>
+                    </div>
                 ) : (
                     <div id="tensegrity-view" className="h-100">
-                        {!code ? undefined : (
+                        {!tenscript ? undefined : (
                             <div id="top-middle">
-                                {code.codeString}
+                                {tenscript.code}
                             </div>
                         )}
                         <ToolbarLeft

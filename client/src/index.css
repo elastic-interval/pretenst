@@ -41,6 +41,11 @@ a, a:hover {
     height: 100%;
 }
 
+#tensegrity-view {
+    background-color: black;
+    color: white;
+}
+
 .welcome {
     display: inline-block;
     color: white;

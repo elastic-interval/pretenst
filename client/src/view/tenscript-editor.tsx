@@ -5,31 +5,29 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
+import { FaRunning, FaSignOutAlt } from "react-icons/all"
 import SortableTree, { TreeItem } from "react-sortable-tree"
 import { Button } from "reactstrap"
 
-import { ICode, ICodeTree, tenscriptToCodeTree } from "../fabric/tenscript"
+import { codeToTenscriptTree, ITenscript, ITenscriptTree } from "../fabric/tenscript"
 
-export function CodeTreeEditor({code, setCode}: {
-    code: ICode,
-    setCode: (code?: ICode) => void,
+export function TenscriptEditor({tenscript, growTenscript, leaveEditMode}: {
+    tenscript: ITenscript,
+    growTenscript: (tenscript: ITenscript) => void,
+    leaveEditMode: () => void,
 }): JSX.Element {
 
     const [treeData, setTreeData] = useState<TreeItem[]>([])
-    useEffect(() => setTreeData(codeTreeToTreeData("", code.codeTree)), [code])
-    const [codeString, setCodeString] = useState(code.codeString)
+    useEffect(() => setTreeData(codeTreeToTreeData("", tenscript.tree)), [tenscript])
+    const [codeString, setCodeString] = useState(tenscript.code)
     useEffect(() => setCodeString(treeDataToCodeString(treeData)), [treeData])
 
     function onRun(): void {
-        const codeTree = tenscriptToCodeTree(error => console.error(error), codeString)
+        const codeTree = codeToTenscriptTree(error => console.error(error), codeString)
         if (!codeTree) {
             return
         }
-        setCode({codeString, codeTree})
-    }
-
-    function onEscape(): void {
-        setCode()
+        growTenscript({code: codeString, tree: codeTree})
     }
 
     return (
@@ -55,14 +53,14 @@ export function CodeTreeEditor({code, setCode}: {
                 textAlign: "center",
                 width: "40em",
             }}>
-                <Button color="success" className="m-3" onClick={onRun}>Run</Button>
-                <Button color="warning" className="m-3" onClick={onEscape}>Cancel</Button>
+                <Button color="success" className="m-3" onClick={onRun}><FaRunning/></Button>
+                <Button color="warning" className="m-3" onClick={leaveEditMode}><FaSignOutAlt/></Button>
             </div>
         </div>
     )
 }
 
-function codeTreeToTitle(prefix: string, codeTree: ICodeTree): JSX.Element {
+function codeTreeToTitle(prefix: string, codeTree: ITenscriptTree): JSX.Element {
     const scaleStatement = codeTree.S ? ` scaled ${codeTree.S._}%` : ""
     const steps = codeTree._
     const stepStatement = `${steps} ${steps === 1 ? "step" : "steps"}`
@@ -89,7 +87,7 @@ function codeTreeToTitle(prefix: string, codeTree: ICodeTree): JSX.Element {
     }
 }
 
-function codeTreeToTreeData(prefix: string, codeTree?: ICodeTree): TreeItem[] {
+function codeTreeToTreeData(prefix: string, codeTree?: ITenscriptTree): TreeItem[] {
     if (!codeTree) {
         return []
     }

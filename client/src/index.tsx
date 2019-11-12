@@ -15,7 +15,7 @@ import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { LifePhase, loadFabricState, saveFabricState } from "./fabric/fabric-state"
-import { codeTreeToTenscript, ICode, ICodeTree } from "./fabric/tenscript"
+import { codeTreeToTenscript, ITenscript, ITenscriptTree } from "./fabric/tenscript"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
@@ -42,14 +42,14 @@ APP_EVENT.subscribe(appEvent => {
     }
 })
 
-async function getBootstrapCode(): Promise<ICode[]> {
+async function getBootstrapTenscripts(): Promise<ITenscript[]> {
     const response = await fetch("/bootstrap.json")
     const body = await response.json()
     if (!body) {
-        return [{codeString: "0", codeTree: {_: 0}}]
+        return [{code: "0", tree: {_: 0}}]
     }
-    const pretenst: ICodeTree[] = body.pretenst
-    return pretenst.map(codeTree => ({codeTree, codeString: codeTreeToTenscript(codeTree)}))
+    const pretenst: ITenscriptTree[] = body.pretenst
+    return pretenst.map(codeTreeToTenscript)
 }
 
 async function start(): Promise<void> {
@@ -60,14 +60,14 @@ async function start(): Promise<void> {
     const fabricState$ = new BehaviorSubject(loadFabricState())
     const lifePhase$ = new BehaviorSubject(LifePhase.Growing)
     fabricState$.subscribe(newState => saveFabricState(newState))
-    const bootstrapCode = await getBootstrapCode()
+    const bootstrap = await getBootstrapTenscripts()
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         ReactDOM.render(
             <TensegrityView
                 fabricKernel={fabricKernel}
                 features={fabricFeatures}
-                bootstrapCode={bootstrapCode}
+                bootstrap={bootstrap}
                 fabricState$={fabricState$}
                 lifePhase$={lifePhase$}
             />,

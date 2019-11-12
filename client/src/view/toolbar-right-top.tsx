@@ -9,7 +9,7 @@ import { FaExpandArrowsAlt, FaHandPointUp, FaVolleyballBall } from "react-icons/
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricState } from "../fabric/fabric-state"
+import { fabricStateTransition, IFabricState } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 export function ToolbarRightTop({fabric, fabricState$}: {
@@ -28,8 +28,7 @@ export function ToolbarRightTop({fabric, fabricState$}: {
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
         const onClick = () => {
-            const nonce = fabricState$.getValue().nonce + 1
-            fabricState$.next({...fabricState$.getValue(), nonce, showPulls: pulls, showPushes: pushes})
+            fabricState$.next(fabricStateTransition(fabricState$.getValue(), {showPulls: pulls, showPushes: pushes}))
         }
         const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
         return <Button style={{color: "white"}} color={color} onClick={onClick}>

@@ -6,38 +6,39 @@
 import { createConnectedBrick } from "./tensegrity-brick"
 import { IBrick, IPercent, percentOrHundred, Triangle, TRIANGLE_DEFINITIONS } from "./tensegrity-brick-types"
 
-export interface ICode {
-    codeString: string
-    codeTree: ICodeTree
+export interface ITenscript {
+    code: string
+    tree: ITenscriptTree
 }
 
-export interface ICodeTree {
+export interface ITenscriptTree {
     _?: number, // forward steps
     S?: IPercent, // scale
-    A?: ICodeTree, // directions
-    B?: ICodeTree, // kinda up
-    C?: ICodeTree,
-    D?: ICodeTree,
-    b?: ICodeTree, // kinda down
-    c?: ICodeTree,
-    d?: ICodeTree,
-    a?: ICodeTree, // down
+    A?: ITenscriptTree, // directions
+    B?: ITenscriptTree, // kinda up
+    C?: ITenscriptTree,
+    D?: ITenscriptTree,
+    b?: ITenscriptTree, // kinda down
+    c?: ITenscriptTree,
+    d?: ITenscriptTree,
+    a?: ITenscriptTree, // down
 }
 
-export function codeTreeToTenscript(codeTree: ICodeTree): string {
+export function codeTreeToTenscript(codeTree: ITenscriptTree): ITenscript {
     const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
-    return  JSON.stringify(codeTree)
+    const codeString = JSON.stringify(codeTree)
         .replace(/[_.:"]/g, "")
         .replace(/[{]/g, "(")
         .replace(/[}]/g, ")")
         .replace(/([ABCDabcdS])\((\d*)\)/g, replacer)
+    return {tree: codeTree, code: codeString}
 }
 
 export function spaceAfterComma(tenscript: string): string {
     return tenscript.replace(/[,]/g, ", ")
 }
 
-function assignSubtree(tree: ICodeTree, directionChar: string, child: ICodeTree): void {
+function assignSubtree(tree: ITenscriptTree, directionChar: string, child: ITenscriptTree): void {
     switch (directionChar) {
         case "A":
             tree.A = child
@@ -87,8 +88,8 @@ function matchBracket(s: string): number {
     throw new Error(`No matching end bracket: |${s}|`)
 }
 
-export function tenscriptToCodeTree(error: (message: string) => void, code?: string): ICodeTree | undefined {
-    function _fragmentToTree(codeFragment: string): ICodeTree | undefined {
+export function codeToTenscriptTree(error: (message: string) => void, code?: string): ITenscriptTree | undefined {
+    function _fragmentToTree(codeFragment: string): ITenscriptTree | undefined {
 
         function argument(maybeBracketed: string, stripBrackets: boolean): { content: string, skip: number } {
             const commaPos = maybeBracketed.indexOf(",")
@@ -106,9 +107,9 @@ export function tenscriptToCodeTree(error: (message: string) => void, code?: str
 
         const initialCode = argument(codeFragment, true)
         const codeString = initialCode.content
-        const tree: ICodeTree = {}
+        const tree: ITenscriptTree = {}
 
-        function subtree(index: number): { codeTree?: ICodeTree, skip: number } {
+        function subtree(index: number): { codeTree?: ITenscriptTree, skip: number } {
             const {content, skip} = argument(codeString.substring(index), false)
             const codeTree = _fragmentToTree(content)
             return {codeTree, skip}
@@ -173,46 +174,46 @@ export function tenscriptToCodeTree(error: (message: string) => void, code?: str
     }
 }
 
-export interface IActiveCode {
-    codeTree: ICodeTree
+export interface IActiveTenscript {
+    tree: ITenscriptTree
     brick: IBrick
 }
 
-export function executeActiveCode(before: IActiveCode[]): IActiveCode[] {
-    const active: IActiveCode[] = []
+export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
+    const active: IActiveTenscript[] = []
 
-    function grow(previousBrick: IBrick, codeTree: ICodeTree, triangle: Triangle, scale: IPercent): IActiveCode {
+    function grow(previousBrick: IBrick, tree: ITenscriptTree, triangle: Triangle, scale: IPercent): IActiveTenscript {
         const connectTriangle = previousBrick.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
         const brick = createConnectedBrick(previousBrick, connectTriangle, scale)
-        return {codeTree, brick}
+        return {tree, brick}
     }
 
-    function maybeGrow(previousBrick: IBrick, triangle: Triangle, codeTree?: ICodeTree): void {
-        if (!codeTree) {
+    function maybeGrow(previousBrick: IBrick, triangle: Triangle, tree?: ITenscriptTree): void {
+        if (!tree) {
             return
         }
-        const scale = percentOrHundred(codeTree.S)
-        const _ = codeTree._ ? codeTree._ - 1 : undefined
-        const decremented = {...codeTree, _}
+        const scale = percentOrHundred(tree.S)
+        const _ = tree._ ? tree._ - 1 : undefined
+        const decremented = {...tree, _}
         active.push(grow(previousBrick, decremented, triangle, scale))
     }
 
     before.forEach(beforeCode => {
-        const {brick, codeTree} = beforeCode
-        const scale = percentOrHundred(codeTree.S)
-        const forward = codeTree._
+        const {brick, tree} = beforeCode
+        const scale = percentOrHundred(tree.S)
+        const forward = tree._
         if (forward) {
             const _ = forward - 1
-            active.push(grow(beforeCode.brick, {...codeTree, _}, Triangle.PPP, scale))
+            active.push(grow(beforeCode.brick, {...tree, _}, Triangle.PPP, scale))
         } else {
-            maybeGrow(brick, Triangle.PPP, codeTree.A)
-            maybeGrow(brick, Triangle.NPP, codeTree.B)
-            maybeGrow(brick, Triangle.PNP, codeTree.C)
-            maybeGrow(brick, Triangle.PPN, codeTree.D)
-            maybeGrow(brick, Triangle.PNN, codeTree.b)
-            maybeGrow(brick, Triangle.NPN, codeTree.c)
-            maybeGrow(brick, Triangle.NNP, codeTree.d)
-            maybeGrow(brick, Triangle.NNN, codeTree.a)
+            maybeGrow(brick, Triangle.PPP, tree.A)
+            maybeGrow(brick, Triangle.NPP, tree.B)
+            maybeGrow(brick, Triangle.PNP, tree.C)
+            maybeGrow(brick, Triangle.PPN, tree.D)
+            maybeGrow(brick, Triangle.PNN, tree.b)
+            maybeGrow(brick, Triangle.NPN, tree.c)
+            maybeGrow(brick, Triangle.NNP, tree.d)
+            maybeGrow(brick, Triangle.NNN, tree.a)
         }
     })
     return active

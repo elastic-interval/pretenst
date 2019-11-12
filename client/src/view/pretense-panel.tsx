@@ -13,6 +13,7 @@ import { SurfaceCharacter } from "../fabric/fabric-engine"
 import {
     DragLevel,
     enumValues,
+    fabricStateTransition,
     GravityLevel,
     IFabricState,
     LifePhase,
@@ -49,6 +50,10 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
         return () => subscription.unsubscribe()
     })
 
+    function changeState(changed: Partial<IFabricState>): void {
+        fabricState$.next(fabricStateTransition(fabricState$.getValue(), changed))
+    }
+
     return (
         <div className="m-2">
             <div className="my-2 w-100">
@@ -68,10 +73,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                         <Button
                             key={GravityLevel[value]}
                             active={gravityLevel === value}
-                            onClick={() => {
-                                const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, gravityLevel: value})
-                            }}
+                            onClick={() => changeState({gravityLevel: value})}
                         >{GravityLevel[value]}</Button>
                     ))}
                 </ButtonGroup>
@@ -83,10 +85,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                         <Button
                             key={DragLevel[value]}
                             active={dragLevel === value}
-                            onClick={() => {
-                                const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, dragLevel: value})
-                            }}
+                            onClick={() => changeState({dragLevel: value})}
                         >{DragLevel[value]}</Button>
                     ))}
                 </ButtonGroup>
@@ -98,10 +97,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                         <Button
                             key={SurfaceCharacter[value]}
                             active={surfaceCharacter === value}
-                            onClick={() => {
-                                const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, surfaceCharacter: value})
-                            }}
+                            onClick={() => changeState({surfaceCharacter: value})}
                         >{SurfaceCharacter[value]}</Button>
                     ))}
                 </ButtonGroup>
@@ -113,10 +109,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                         <Button
                             key={PretenseFactor[value]}
                             active={pretenseSize === value}
-                            onClick={() => {
-                                const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, pretenseFactor: value})
-                            }}
+                            onClick={() => changeState({pretenseFactor: value})}
                         >{PretenseFactor[value]}</Button>
                     ))}
                 </ButtonGroup>
@@ -128,10 +121,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                         <Button
                             key={PretenseSpeed[value]}
                             active={pretenseSpeed === value}
-                            onClick={() => {
-                                const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, pretenseSpeed: value})
-                            }}
+                            onClick={() => changeState({pretenseSpeed: value})}
                         >{PretenseSpeed[value]}</Button>
                     ))}
                 </ButtonGroup>
@@ -139,14 +129,11 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
             <div className="my-1">
                 <h6>Push Strain Factor</h6>
                 <ButtonGroup className="w-100">
-                    {enumValues(PushStrainFactor ).map(value => (
+                    {enumValues(PushStrainFactor).map(value => (
                         <Button
                             key={PushStrainFactor[value]}
                             active={pushStrainFactor === value}
-                            onClick={() => {
-                                const nonce = fabricState$.getValue().nonce + 1
-                                fabricState$.next({...fabricState$.getValue(), nonce, pushStrainFactor: value})
-                            }}
+                            onClick={() => changeState({pushStrainFactor: value})}
                         >{PushStrainFactor[value]}</Button>
                     ))}
                 </ButtonGroup>

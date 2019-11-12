@@ -12,15 +12,15 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
-import { ICode } from "../fabric/tenscript"
+import { ITenscript } from "../fabric/tenscript"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { CodePanel } from "./code-panel"
 import { ExplorePanel } from "./explore-panel"
 import { FeaturePanel } from "./feature-panel"
 import { PretensePanel } from "./pretense-panel"
 import { ShapePanel } from "./shape-panel"
+import { TenscriptPanel } from "./tenscript-panel"
 
 const SPLIT_LEFT = "29em"
 
@@ -39,16 +39,20 @@ function Icon(controlTab: ControlTab): JSX.Element {
     }
 }
 
-export function ControlTabs({fabric, selectedBrick, setSelectedBrick, setCode, rebuild, setFrozen, fabricState$, lifePhase$, bootstrapCode, features}: {
+export function ControlTabs({
+                                fabric, selectedBrick, setSelectedBrick, tenscript, setTenscript, growFabric,
+                                setFrozen, fabricState$, lifePhase$, bootstrapCode, features,
+                            }: {
     fabric?: TensegrityFabric,
     selectedBrick?: IBrick,
     setSelectedBrick: (brick?: IBrick) => void,
-    setCode: (code: ICode) => void,
-    rebuild: () => void,
+    tenscript?: ITenscript,
+    setTenscript: (tenscript?: ITenscript) => void,
+    growFabric: () => void,
     setFrozen: (frozen: boolean) => void,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    bootstrapCode: ICode [],
+    bootstrapCode: ITenscript [],
     features: FloatFeature[],
 }): JSX.Element {
 
@@ -74,9 +78,11 @@ export function ControlTabs({fabric, selectedBrick, setSelectedBrick, setCode, r
             switch (tab) {
                 case ControlTab.Grow:
                     return (
-                        <CodePanel
+                        <TenscriptPanel
                             bootstrapCode={bootstrapCode}
-                            setCode={setCode}
+                            tenscript={tenscript}
+                            setTenscript={setTenscript}
+                            grow={growFabric}
                         />
                     )
                 case ControlTab.Shape:
@@ -94,7 +100,7 @@ export function ControlTabs({fabric, selectedBrick, setSelectedBrick, setCode, r
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
-                            rebuild={rebuild}
+                            rebuild={growFabric}
                         />
                     )
                 case ControlTab.Explore:
