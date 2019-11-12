@@ -7,7 +7,6 @@ import { Color, DoubleSide, FaceColors, LineBasicMaterial, Material, MeshPhongMa
 
 import { IntervalRole } from "../fabric/fabric-engine"
 
-export const ATTENUATED_COLOR = "#212121"
 export const FACE_SPHERE_COLOR = "#a88d00"
 export const SCALE_LINE_COLOR = "#cace02"
 
@@ -43,7 +42,7 @@ export const FACE_SPHERE = new MeshPhongMaterial({
 function generateRainbow(): Color[] {
     const steps = 50
     const rgbs: Color[] = []
-    const colors: string[] = []
+    // const colors: string[] = []
     const max = 2 * Math.PI * (2 / 3)
     for (let step = 0; step < max; step += max / (steps - 10)) {
         const angle = step + Math.PI / 2
@@ -51,15 +50,13 @@ function generateRainbow(): Color[] {
         const g = (Math.sin(angle + 2 * Math.PI * 2 / 3) + 1) / 2.5
         const b = (Math.sin(angle) + 1) / 2
         rgbs.push(new Color(r, g, b))
-        colors.push(`${r.toFixed(5)}, ${g.toFixed(5)}, ${b.toFixed(5)},`)
+        // colors.push(`${r.toFixed(5)}, ${g.toFixed(5)}, ${b.toFixed(5)},`)
     }
-    console.log(`rainbow ${colors.length}`, colors.join("\n"))
+    // console.log(`rainbow ${colors.length}`, colors.join("\n"))
     return rgbs
 }
 
 const RAINBOW = generateRainbow().map(color => new MeshPhongMaterial({color, lights}))
-
-export const ATTENUATED = new MeshPhongMaterial({color: ATTENUATED_COLOR, lights})
 
 export function rainbowMaterial(nuance: number): Material {
     const index = Math.floor(nuance * RAINBOW.length)
@@ -71,14 +68,14 @@ function roleColor(intervalRole: IntervalRole): string {
         case IntervalRole.Push:
             return "#850018"
         case IntervalRole.Triangle:
-            return "#02844f"
+            return "#4b3484"
         case IntervalRole.Ring:
-            return "#293a94"
+            return "#041494"
         case IntervalRole.Cross:
-            return "#977b0b"
+            return "#084a7b"
         case IntervalRole.BowMid:
         case IntervalRole.BowEnd:
-            return "#299c99"
+            return "#2a9c45"
     }
 }
 

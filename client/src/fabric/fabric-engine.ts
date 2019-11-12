@@ -180,6 +180,8 @@ export interface IFabricEngine {
 
     _intervalStrains(): number
 
+    _intervalStrainNuances(): number
+
     _stiffnesses(): number
 
     _linearDensities(): number

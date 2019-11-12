@@ -244,7 +244,14 @@ function _intervalStrain(intervalIndex: u16): usize {
     return _INTERVAL_STRAINS + _32(intervalIndex)
 }
 
-const _STIFFNESSES = _INTERVAL_STRAINS + _32_INTERVALS
+const _INTERVAL_STRAIN_NUANCES = _INTERVAL_STRAINS + _32_INTERVALS
+
+@inline()
+function _intervalStrainNuance(intervalIndex: u16): usize {
+    return _INTERVAL_STRAIN_NUANCES + _32(intervalIndex)
+}
+
+const _STIFFNESSES = _INTERVAL_STRAIN_NUANCES + _32_INTERVALS
 
 @inline()
 function _stiffness(intervalIndex: u16): usize {
@@ -839,6 +846,14 @@ function setStrain(intervalIndex: u16, strain: f32): void {
     setF32(_intervalStrain(intervalIndex), strain)
 }
 
+function getStrainNuance(intervalIndex: u16): f32 {
+    return getF32(_intervalStrainNuance(intervalIndex))
+}
+
+function setStrainNuance(intervalIndex: u16, nuance: f32): void {
+    setF32(_intervalStrainNuance(intervalIndex), nuance)
+}
+
 function calculateRealLength(intervalIndex: u16): f32 {
     let unit = _unit(intervalIndex)
     subVectors(unit, _location(omegaIndex(intervalIndex)), _location(alphaIndex(intervalIndex)))
@@ -937,10 +952,24 @@ function outputLinesGeometry(): void {
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
-        let directionalStrain = getStrain(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
         let isPush: boolean = intervalRole === IntervalRole.Push
+        let minStrain = isPush ? minPushStrain : minPullStrain
+        let maxStrain = isPush ? maxPushStrain : maxPullStrain
+        let directionalStrain = getStrain(intervalIndex)
         let strain = isPush ? -directionalStrain : directionalStrain
+        // if (directionalStrain < 0) {
+        //     setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
+        //     setStrainNuance(intervalIndex, 0)
+        //     return
+        // }
+        // if (strain < slackThreshold) {
+        //     setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
+        //     setStrainNuance(intervalIndex, 0)
+        //     return
+        // }
+        let nuance = (strain - minStrain) / (maxStrain - minStrain)
+        setStrainNuance(intervalIndex, nuance < 0 ? 0 : nuance > 1 ? 1 : nuance)
         if (colorPushes && colorPulls) {
             if (strain < slackThreshold) {
                 setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
@@ -954,10 +983,7 @@ function outputLinesGeometry(): void {
             } else if (strain < slackThreshold) {
                 setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
-                let min = isPush ? minPushStrain : minPullStrain
-                let max = isPush ? maxPushStrain : maxPullStrain
-                let temperature = (strain - min) / (max - min)
-                let rainbowIndex = <i32>(temperature * (<f32>RAINBOW.length / <f32>3.01))
+                let rainbowIndex = <i32>(nuance * (<f32>RAINBOW.length / <f32>3.01))
                 let r = RAINBOW[rainbowIndex * 3]
                 let g = RAINBOW[rainbowIndex * 3 + 1]
                 let b = RAINBOW[rainbowIndex * 3 + 2]
@@ -1319,6 +1345,10 @@ export function _intervalUnits(): usize {
 
 export function _intervalStrains(): usize {
     return _INTERVAL_STRAINS
+}
+
+export function _intervalStrainNuances(): usize {
+    return _INTERVAL_STRAIN_NUANCES
 }
 
 export function _stiffnesses(): usize {

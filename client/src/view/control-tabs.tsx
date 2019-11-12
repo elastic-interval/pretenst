@@ -5,11 +5,10 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaCamera, FaEye, FaHammer, FaHandSpock, FaLeaf, FaList } from "react-icons/all"
+import { FaArrowLeft, FaCamera, FaEye, FaHammer, FaHandSpock, FaLeaf } from "react-icons/all"
 import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
@@ -17,7 +16,6 @@ import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ExplorePanel } from "./explore-panel"
-import { FeaturePanel } from "./feature-panel"
 import { PretensePanel } from "./pretense-panel"
 import { ShapePanel } from "./shape-panel"
 import { TenscriptPanel } from "./tenscript-panel"
@@ -34,14 +32,14 @@ function Icon(controlTab: ControlTab): JSX.Element {
             return <FaHandSpock key="spock"/>
         case ControlTab.Explore:
             return <FaEye key="eye"/>
-        case ControlTab.X:
-            return <FaList key="list"/>
+        // case ControlTab.X:
+        //     return <FaList key="list"/>
     }
 }
 
 export function ControlTabs({
                                 fabric, selectedBrick, setSelectedBrick, tenscript, setTenscript, growFabric,
-                                setFrozen, fabricState$, lifePhase$, bootstrap, features,
+                                toFullScreen, fabricState$, lifePhase$, bootstrap, features,
                             }: {
     fabric?: TensegrityFabric,
     selectedBrick?: IBrick,
@@ -49,7 +47,7 @@ export function ControlTabs({
     tenscript?: ITenscript,
     setTenscript: (tenscript?: ITenscript) => void,
     growFabric: () => void,
-    setFrozen: (frozen: boolean) => void,
+    toFullScreen: () => void,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
     bootstrap: ITenscript[],
@@ -109,25 +107,25 @@ export function ControlTabs({
                             fabricState$={fabricState$}
                         />
                     )
-                case ControlTab.X:
-                    return !fabric ? <div/> : (
-                        <div>
-                            {features.filter(feature => !lengthFeatureToRole(feature.fabricFeature)).map(feature => (
-                                <div key={feature.title} style={{
-                                    borderStyle: "solid",
-                                    borderColor: "white",
-                                    borderWidth: "0.1em",
-                                    borderRadius: "0.7em",
-                                    padding: "0.2em",
-                                    marginTop: "0.3em",
-                                    color: "white",
-                                    backgroundColor: "#545454",
-                                }}>
-                                    <FeaturePanel feature={feature} mutable={true}/>
-                                </div>
-                            ))}
-                        </div>
-                    )
+                // case ControlTab.X:
+                //     return !fabric ? <div/> : (
+                //         <div>
+                //             {features.filter(feature => !lengthFeatureToRole(feature.fabricFeature)).map(feature => (
+                //                 <div key={feature.title} style={{
+                //                     borderStyle: "solid",
+                //                     borderColor: "white",
+                //                     borderWidth: "0.1em",
+                //                     borderRadius: "0.7em",
+                //                     padding: "0.2em",
+                //                     marginTop: "0.3em",
+                //                     color: "white",
+                //                     backgroundColor: "#545454",
+                //                 }}>
+                //                     <FeaturePanel feature={feature} mutable={true}/>
+                //                 </div>
+                //             ))}
+                //         </div>
+                //     )
             }
         }
 
@@ -152,7 +150,7 @@ export function ControlTabs({
                     width: "1em",
                 }}
                 className="w-100 h-100" color="dark"
-                onClick={() => setFrozen(true)}
+                onClick={toFullScreen}
             >
                 <FaCamera/>
                 <br/>

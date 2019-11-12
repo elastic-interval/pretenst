@@ -93,7 +93,7 @@ export enum ControlTab {
     Shape = "Shape",
     Optimize = "Optimize",
     Explore = "Explore",
-    X = "X",
+    // X = "X",
 }
 
 export function enumValues(e: object): number[] {
@@ -108,6 +108,7 @@ export interface IFabricState {
     pretenseFactor: PretenseFactor
     pretenseSpeed: PretenseSpeed
     pushStrainFactor: PushStrainFactor
+    fullScreen: boolean
     rotating: boolean
     showPushes: boolean
     showPulls: boolean
@@ -125,6 +126,7 @@ const INITIAL_FABRIC_STATE: IFabricState = {
     pretenseFactor: PretenseFactor.Tiny,
     pretenseSpeed: PretenseSpeed.Slow,
     pushStrainFactor: PushStrainFactor.Equal,
+    fullScreen: false,
     rotating: false,
     showPushes: true,
     showPulls: true,

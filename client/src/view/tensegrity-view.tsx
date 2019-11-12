@@ -14,7 +14,7 @@ import { FabricFeature, lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import {
-    DRAG_LEVEL,
+    DRAG_LEVEL, fabricStateTransition,
     GRAVITY_LEVEL,
     IFabricState,
     LifePhase,
@@ -46,11 +46,12 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [frozen, setFrozen] = useState(false)
+    const [fullScreen, setFullScreen] = useState(fabricState$.getValue().fullScreen)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
             if (fabric) {
                 const instance = fabric.instance
+                setFullScreen(newState.fullScreen)
                 instance.engine.setColoring(newState.showPushes, newState.showPulls)
                 instance.engine.setSurfaceCharacter(newState.surfaceCharacter)
                 const adjust = (feature: FabricFeature, array: number[], choice: number) => {
@@ -118,9 +119,13 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
         }
     }, [])
 
+    function toFullScreen(value: boolean): void {
+        fabricState$.next(fabricStateTransition(fabricState$.getValue(), {fullScreen: value}))
+    }
+
     return (
         <div className="the-whole-page">
-            {frozen ? (
+            {fullScreen ? (
                 <Button
                     color="dark"
                     style={{
@@ -132,7 +137,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                         height: "100%",
                         zIndex: 1,
                     }}
-                    onClick={() => setFrozen(false)}
+                    onClick={() => toFullScreen(false)}
                 >
                     <FaClock/>
                     <br/>
@@ -141,7 +146,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
             ) : (
                 <div style={{
                     position: "absolute",
-                    visibility: frozen ? "collapse" : "visible",
+                    visibility: fullScreen ? "collapse" : "visible",
                     left: 0,
                     width: SPLIT_LEFT,
                     height: "100%",
@@ -166,7 +171,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                             }
                             growFromTenscript(tenscript, true)
                         }}
-                        setFrozen={setFrozen}
+                        toFullScreen={() => toFullScreen(true)}
                         fabricState$={fabricState$}
                         lifePhase$={lifePhase$}
                         bootstrap={bootstrap}
@@ -176,7 +181,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
             )}
             <div style={{
                 position: "absolute",
-                left: frozen ? 0 : SPLIT_RIGHT,
+                left: fullScreen ? 0 : SPLIT_RIGHT,
                 right: 0,
                 height: "100%",
             }}>
@@ -201,7 +206,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
-                            fullScreen={frozen}
+                            fullScreen={fullScreen}
                         />
                         <ToolbarRightBottom
                             fabric={fabric}
@@ -219,7 +224,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                                 fabric={fabric}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
-                                frozen={frozen}
+                                fullScreen={fullScreen}
                                 fabricState$={fabricState$}
                                 lifePhase$={lifePhase$}
                             />

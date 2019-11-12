@@ -22,14 +22,13 @@ import {
     Vector3,
 } from "three"
 
-import { FabricFeature, Limit } from "../fabric/fabric-engine"
+import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import {
-    ATTENUATED,
     FACE,
     FACE_SPHERE,
     LINE_VERTEX_COLORS,
@@ -66,11 +65,11 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fabricState$, lifePhase$}: {
+export function FabricView({fabric, selectedBrick, setSelectedBrick, fullScreen, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
     selectedBrick?: IBrick,
     setSelectedBrick: (selectedBrick: IBrick) => void,
-    frozen: boolean,
+    fullScreen: boolean,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
@@ -95,29 +94,8 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         orbit.current.autoRotate = fabricState$.getValue().rotating
     }, [fabric])
 
-    const currentLimit = (limit: Limit) => fabric.instance.engine.getLimit(limit)
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
-    const [minPushStrain, updateMinPushStrain] = useState(currentLimit(Limit.MinPushStrain))
-    const [maxPushStrain, updateMaxPushStrain] = useState(currentLimit(Limit.MaxPushStrain))
     const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
-    const [minPullStrain, updateMinPullStrain] = useState(currentLimit(Limit.MinPullStrain))
-    const [maxPullStrain, updateMaxPullStrain] = useState(currentLimit(Limit.MaxPullStrain))
-    useEffect(() => {
-        if (showPushes && showPulls || !frozen) {
-            return
-        }
-        const timer = setInterval(() => {
-            if (showPushes) {
-                updateMinPushStrain(currentLimit(Limit.MinPushStrain))
-                updateMaxPushStrain(currentLimit(Limit.MaxPushStrain))
-            }
-            if (showPulls) {
-                updateMinPullStrain(currentLimit(Limit.MinPullStrain))
-                updateMaxPullStrain(currentLimit(Limit.MaxPullStrain))
-            }
-        }, 1000)
-        return () => clearTimeout(timer)
-    }, [showPushes, showPulls, frozen])
 
     const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
     useEffect(() => {
@@ -169,7 +147,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         }
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, targetBrick, selectedBrick, age, lifePhase, frozen, showPushes, showPulls,
+        fabric, targetBrick, selectedBrick, age, lifePhase, fullScreen, showPushes, showPulls,
     ])
 
     const selectBrick = (newSelectedBrick: IBrick) => {
@@ -195,39 +173,26 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         )
     }
 
-    function IntervalMesh({interval}: { interval: IInterval }): JSX.Element {
+    function IntervalMesh({interval}: { interval: IInterval }): JSX.Element | null {
+        const material = showPushes && showPulls ? roleMaterial(interval.intervalRole) : (
+            showPushes ? (
+                !interval.isPush ? undefined : rainbowMaterial(fabric.instance.strainNuances[interval.index])
+            ) : (
+                interval.isPush ? undefined : rainbowMaterial(fabric.instance.strainNuances[interval.index])
+            )
+        )
+        if (material === undefined) {
+            return <group/>
+        }
         const linearDensity = fabric.instance.linearDensities[interval.index]
         const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
-        const strainRainbow = () => {
-            const strain = fabric.instance.strains[interval.index] * (interval.isPush ? -1 : 1)
-            const min = interval.isPush ? minPushStrain : minPullStrain
-            const max = interval.isPush ? maxPushStrain : maxPullStrain
-            const nuance = (strain - min) / (max - min)
-            return rainbowMaterial(nuance)
-        }
-        const material = () => {
-            if (showPushes && showPulls) {
-                return roleMaterial(interval.intervalRole)
-            }
-            if (showPushes) {
-                if (!interval.isPush) {
-                    return ATTENUATED
-                }
-                return strainRainbow()
-            } else {
-                if (interval.isPush) {
-                    return ATTENUATED
-                }
-                return strainRainbow()
-            }
-        }
         return (
             <mesh
                 geometry={SPHERE}
                 position={fabric.instance.getIntervalMidpoint(interval.index)}
                 rotation={new Euler().setFromQuaternion(rotation)}
                 scale={scale}
-                material={material()}
+                material={material}
                 matrixWorldNeedsUpdate={true}
             />
         )
@@ -271,7 +236,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
                 {rotating || lifePhase <= LifePhase.Shaping ? undefined : <StiffnessScale/>}
-                {!fabric ? undefined : frozen ? (
+                {!fabric ? undefined : fullScreen ? (
                     <group>
                         {fabric.splitIntervals ? (
                             [
