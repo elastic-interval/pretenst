@@ -99,8 +99,8 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
                         <div>
                             <div style={{
                                 height: "10em",
-                                backgroundColor: "white",
-                                color: "black",
+                                backgroundColor: "#a7a7a7",
+                                color: "white",
                                 borderRadius: "1em",
                                 borderColor: "black",
                                 borderWidth: "1px",

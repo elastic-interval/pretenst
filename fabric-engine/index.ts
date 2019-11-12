@@ -1333,19 +1333,6 @@ export function _fabricFeatures(): usize {
     return _FABRIC_FEATURES
 }
 
-/*
-    const steps = 24
-    const colors: string[] = []
-    const max = 2 * Math.PI * (2 / 3)
-    for (let step = 0; step < max; step += max / (steps - 10)) {
-        const angle = step + Math.PI / 2
-        const b = (Math.sin(angle) + 1) / 2
-        const r = (Math.sin(angle + Math.PI * 2 / 3) + 1) / 2
-        const g = (Math.sin(angle + 2 * Math.PI * 2 / 3) + 1) / 2.5
-        colors.push(`${r.toFixed(5)}, ${g.toFixed(5)}, ${b.toFixed(5)},`)
-    }
-    console.log("rainbow", colors.join("\n"))
-*/
 const RAINBOW: f32[] = [
     0.25000, 0.21739, 1.00000,
     0.13347, 0.33803, 0.97779,

@@ -22,13 +22,21 @@ import {
     Vector3,
 } from "three"
 
-import { FabricFeature } from "../fabric/fabric-engine"
+import { FabricFeature, Limit } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { ATTENUATED, FACE, FACE_SPHERE, LINE, PULL_MATERIAL, PUSH_MATERIAL, SCALE_LINE, SLACK } from "./materials"
+import {
+    ATTENUATED,
+    FACE,
+    FACE_SPHERE,
+    LINE_VERTEX_COLORS,
+    rainbowMaterial,
+    roleMaterial,
+    SCALE_LINE,
+} from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
@@ -77,15 +85,42 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+
     useEffect(() => {
         const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
     })
+
     useEffect(() => {
         orbit.current.autoRotate = fabricState$.getValue().rotating
     }, [fabric])
+
+    const currentLimit = (limit: Limit) => fabric.instance.engine.getLimit(limit)
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
+    const [minPushStrain, updateMinPushStrain] = useState(currentLimit(Limit.MinPushStrain))
+    const [maxPushStrain, updateMaxPushStrain] = useState(currentLimit(Limit.MaxPushStrain))
     const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
+    const [minPullStrain, updateMinPullStrain] = useState(currentLimit(Limit.MinPullStrain))
+    const [maxPullStrain, updateMaxPullStrain] = useState(currentLimit(Limit.MaxPullStrain))
+    useEffect(() => {
+        if (showPushes && showPulls || !frozen) {
+            return
+        }
+        const timer = setInterval(() => {
+            if (showPushes) {
+                console.log("updating pushes")
+                updateMinPushStrain(currentLimit(Limit.MinPushStrain))
+                updateMaxPushStrain(currentLimit(Limit.MaxPushStrain))
+            }
+            if (showPulls) {
+                console.log("updating pulls")
+                updateMinPullStrain(currentLimit(Limit.MinPullStrain))
+                updateMaxPullStrain(currentLimit(Limit.MaxPullStrain))
+            }
+        }, 1000)
+        return () => clearTimeout(timer)
+    }, [showPushes, showPulls, frozen])
+
     const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
@@ -125,9 +160,9 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        if (frozen) {
-            return
-        }
+        // if (frozen) {
+        //     return
+        // }
         const newLifePhase = fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
@@ -138,7 +173,9 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
             }
         }
         setAge(instance.engine.getAge())
-    }, true, [fabric, targetBrick, selectedBrick, age, lifePhase, frozen])
+    }, true, [
+        fabric, targetBrick, selectedBrick, age, lifePhase, frozen, showPushes, showPulls,
+    ])
 
     const selectBrick = (newSelectedBrick: IBrick) => {
         if (fabric) {
@@ -163,20 +200,32 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         )
     }
 
-    function IntervalMesh({interval, attenuated}: {
-        interval: IInterval,
-        attenuated: boolean,
-    }): JSX.Element {
-        const material = () => {
-            if (attenuated) {
-                return ATTENUATED
-            }
-            const strain = fabric.instance.strains[interval.index] * (interval.isPush ? -1 : 1)
-            const slack = strain < fabricFeatureValue(FabricFeature.SlackThreshold)
-            return slack ? SLACK : interval.isPush ? PUSH_MATERIAL : PULL_MATERIAL
-        }
+    function IntervalMesh({interval}: { interval: IInterval }): JSX.Element {
         const linearDensity = fabric.instance.linearDensities[interval.index]
         const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
+        const strainRainbow = () => {
+            const strain = fabric.instance.strains[interval.index] * (interval.isPush ? -1 : 1)
+            const min = interval.isPush ? minPushStrain : minPullStrain
+            const max = interval.isPush ? maxPushStrain : maxPullStrain
+            const nuance = (strain - min) / (max - min)
+            return rainbowMaterial(nuance)
+        }
+        const material = () => {
+            if (showPushes && showPulls) {
+                return roleMaterial(interval.intervalRole)
+            }
+            if (showPushes) {
+                if (!interval.isPush) {
+                    return ATTENUATED
+                }
+                return strainRainbow()
+            } else {
+                if (interval.isPush) {
+                    return ATTENUATED
+                }
+                return strainRainbow()
+            }
+        }
         return (
             <mesh
                 geometry={SPHERE}
@@ -214,7 +263,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         const scalePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, targetPull + 0.001).add(toDaLeft)
         return (
             <group>
-                <lineSegments geometry={needleGeometry} material={LINE}
+                <lineSegments geometry={needleGeometry} material={LINE_VERTEX_COLORS}
                               position={needlePosition} rotation={camera.rotation}/>
                 <lineSegments geometry={scaleGeometry} material={SCALE_LINE}
                               position={scalePosition} rotation={camera.rotation}/>
@@ -226,32 +275,30 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, frozen, fab
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {rotating || frozen || lifePhase <= LifePhase.Shaping ? undefined : <StiffnessScale/>}
+                {rotating || lifePhase <= LifePhase.Shaping ? undefined : <StiffnessScale/>}
                 {!fabric ? undefined : frozen ? (
                     <group>
                         {fabric.splitIntervals ? (
                             [
                                 ...fabric.splitIntervals.unselected.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                                  attenuated={true}/>
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
                                 )),
                                 ...fabric.splitIntervals.selected.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval}
-                                                  attenuated={false}/>
+                                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
                                 )),
                             ]
                         ) : (
                             fabric.intervals.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                                <IntervalMesh key={`I${interval.index}`} interval={interval}/>
                             ))
                         )}}
                     </group>
                 ) : (
                     <group>
-                        <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE}/>
+                        <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
                         {!fabric.splitIntervals ? undefined : (
                             fabric.splitIntervals.selected.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval} attenuated={false}/>
+                                <IntervalMesh key={`I${interval.index}`} interval={interval}/>
                             ))
                         )}
                     </group>

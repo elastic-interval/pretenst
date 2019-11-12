@@ -10,16 +10,12 @@ import { FaSortAmountUp, FaYinYang } from "react-icons/all"
 import { Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { ATTENUATED_COLOR, COLD_COLOR, HOT_COLOR, SLACK_COLOR } from "./materials"
-
 const STRAIN_MULTIPLY = 10000
 const VISIBLE_LIMIT = 0.0002
 
-export function StrainPanel({fabric, pushes, showPushes, showPulls}: {
+export function StrainPanel({fabric, pushes}: {
     fabric: TensegrityFabric,
     pushes: boolean,
-    showPushes: boolean,
-    showPulls: boolean,
 }): JSX.Element {
 
     const engine = fabric.instance.engine
@@ -42,11 +38,6 @@ export function StrainPanel({fabric, pushes, showPushes, showPulls}: {
     const min = Math.floor(minStrain * STRAIN_MULTIPLY)
     const max = Math.floor(maxStrain * STRAIN_MULTIPLY)
     const zen = Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
-    const both = showPushes && showPulls
-    const nativeColor = pushes ? HOT_COLOR : COLD_COLOR
-    const attenuated = pushes !== showPushes
-    const maxColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : HOT_COLOR
-    const minColor = both ? nativeColor : attenuated ? ATTENUATED_COLOR : COLD_COLOR
     const minString = min.toFixed()
     const maxString = max.toFixed()
     const style: CSSProperties = {
@@ -61,7 +52,6 @@ export function StrainPanel({fabric, pushes, showPushes, showPulls}: {
             {zen ? (
                 <div style={{
                     fontSize: "large",
-                    color: SLACK_COLOR,
                     margin: 0,
                     paddingTop: "0.2em",
                     height: "100%",
@@ -74,9 +64,9 @@ export function StrainPanel({fabric, pushes, showPushes, showPulls}: {
                     marginRight: "1em",
                     marginLeft: "1em",
                 }}>
-                    <span style={{color: minColor}}>{minString}</span>
+                    <span>{minString}</span>
                     &nbsp;<FaSortAmountUp/>&nbsp;
-                    <span style={{color: maxColor}}>{maxString}</span>
+                    <span>{maxString}</span>
                 </div>
             )}
         </div>

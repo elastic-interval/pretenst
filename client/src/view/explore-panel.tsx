@@ -37,13 +37,13 @@ export function ExplorePanel({fabric, features, fabricState$}: {
             <div className="text-center">
                 <h2><FaEye/> View <FaEye/></h2>
             </div>
-            <StrainPanel fabric={fabric} pushes={false}
-                         showPushes={showPushes} showPulls={showPulls}/>
-            <StrainPanel fabric={fabric} pushes={true}
-                         showPushes={showPushes} showPulls={showPulls}/>
+            <StrainPanel fabric={fabric} pushes={false}/>
+            <StrainPanel fabric={fabric} pushes={true}/>
             <div style={{backgroundColor: "white", borderRadius: "1em"}} className="my-2 p-1">
                 <FeaturePanel feature={features[FabricFeature.MaxStiffness]} mutable={true}/>
             </div>
+            <h1>pushes={showPushes.toString()}</h1>
+            <h1>pulls={showPulls.toString()}</h1>
         </div>
     )
 }

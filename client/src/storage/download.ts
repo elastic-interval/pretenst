@@ -9,7 +9,7 @@ import { OBJExporter } from "three/examples/jsm/exporters/OBJExporter"
 
 import { IInterval } from "../fabric/tensegrity-brick-types"
 import { IFabricOutput, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { FACE, PULL_MATERIAL, PUSH_MATERIAL } from "../view/materials"
+import { FACE, roleMaterial } from "../view/materials"
 
 function extractJointBlob(output: IFabricOutput): Blob {
     const csvJoints: string[][] = []
@@ -59,9 +59,8 @@ function extractOBJBlob(fabric: TensegrityFabric, faces: boolean): Blob {
         object3d.add(new Mesh(fabric.facesGeometry, FACE))
     } else {
         object3d.add(...fabric.intervals.map((interval: IInterval) => {
-            const material = interval.isPush ? PUSH_MATERIAL : PULL_MATERIAL
             const {scale, rotation} = fabric.orientInterval(interval, interval.isPush ? 1 : 0.1)
-            const mesh = new Mesh(SPHERE, material)
+            const mesh = new Mesh(SPHERE, roleMaterial(interval.intervalRole))
             mesh.position.copy(fabric.instance.getIntervalMidpoint(interval.index))
             mesh.scale.copy(scale)
             mesh.rotation.setFromQuaternion(rotation)
