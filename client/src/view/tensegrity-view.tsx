@@ -124,7 +124,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     }
 
     return (
-        <div className="the-whole-page">
+        <>
             {fullScreen ? (
                 <Button
                     color="dark"
@@ -144,21 +144,23 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                     <FaArrowRight/>
                 </Button>
             ) : (
-                <div style={{
-                    position: "absolute",
-                    visibility: fullScreen ? "collapse" : "visible",
-                    left: 0,
-                    width: SPLIT_LEFT,
-                    height: "100%",
-                    borderStyle: "solid",
-                    borderColor: "#5c5c5c",
-                    borderLeftWidth: 0,
-                    borderTopWidth: 0,
-                    borderBottomWidth: 0,
-                    borderRightWidth: "1px",
-                    color: "#136412",
-                    backgroundColor: "#000000",
-                }}>
+                <div id="left-side"
+                    style={{
+                        position: "absolute",
+                        visibility: fullScreen ? "collapse" : "visible",
+                        left: 0,
+                        width: SPLIT_LEFT,
+                        height: "100%",
+                        borderStyle: "solid",
+                        borderColor: "#5c5c5c",
+                        borderLeftWidth: 0,
+                        borderTopWidth: 0,
+                        borderBottomWidth: 0,
+                        borderRightWidth: "1px",
+                        color: "#136412",
+                        backgroundColor: "#000000",
+                    }}
+                >
                     <ControlTabs
                         fabric={fabric}
                         selectedBrick={selectedBrick}
@@ -217,9 +219,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                             fabric={fabric}
                             fabricState$={fabricState$}
                         />
-                        <Canvas style={{
-                            backgroundColor: "black",
-                        }}>
+                        <Canvas style={{backgroundColor: "black"}}>
                             <FabricView
                                 fabric={fabric}
                                 selectedBrick={selectedBrick}
@@ -232,6 +232,6 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                     </div>
                 )}
             </div>
-        </div>
+        </>
     )
 }

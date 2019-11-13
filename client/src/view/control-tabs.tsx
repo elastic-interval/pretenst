@@ -130,7 +130,7 @@ export function ControlTabs({
         }
 
         return (
-            <TabPane tabId={tab}><Content/></TabPane>
+            <TabPane id="tab-pane" style={{height: "100%"}} tabId={tab}><Content/></TabPane>
         )
     }
 
@@ -164,7 +164,7 @@ export function ControlTabs({
             <Nav tabs={true} style={{backgroundColor: "#b2b2b2"}}>
                 {Object.keys(ControlTab).map(tab => <Link key={`T${tab}`} controlTab={ControlTab[tab]}/>)}
             </Nav>
-            <TabContent activeTab={activeTab}>
+            <TabContent style={{flex: 1, flexFlow: "auto"}} id="tab-content" activeTab={activeTab}>
                 {Object.keys(ControlTab).map(tab => <Pane key={tab} tab={ControlTab[tab]}/>)}
             </TabContent>
             <div style={{

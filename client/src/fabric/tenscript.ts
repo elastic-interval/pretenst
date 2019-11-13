@@ -24,7 +24,7 @@ export interface ITenscriptTree {
     a?: ITenscriptTree, // down
 }
 
-export function codeTreeToTenscript(codeTree: ITenscriptTree): ITenscript {
+export function treeToTenscript(codeTree: ITenscriptTree): ITenscript {
     const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
     const codeString = JSON.stringify(codeTree)
         .replace(/[_.:"]/g, "")
@@ -88,7 +88,7 @@ function matchBracket(s: string): number {
     throw new Error(`No matching end bracket: |${s}|`)
 }
 
-export function codeToTenscriptTree(error: (message: string) => void, code?: string): ITenscriptTree | undefined {
+export function codeToTenscript(error: (message: string) => void, code?: string): ITenscript | undefined {
     function _fragmentToTree(codeFragment: string): ITenscriptTree | undefined {
 
         function argument(maybeBracketed: string, stripBrackets: boolean): { content: string, skip: number } {
@@ -167,7 +167,11 @@ export function codeToTenscriptTree(error: (message: string) => void, code?: str
             error("No code to parse")
             return undefined
         }
-        return _fragmentToTree(code)
+        const tree = _fragmentToTree(code)
+        if (!tree) {
+            return undefined
+        }
+        return treeToTenscript(tree)
     } catch (e) {
         error(e.message)
         return undefined

@@ -5,22 +5,14 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { FaArrowRight, FaEdit, FaList, FaRegFolder, FaRegFolderOpen, FaRunning } from "react-icons/all"
-import { Badge, Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
+import { FaRegFolder, FaRegFolderOpen, FaRunning } from "react-icons/all"
+import { Button, ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 
-import {
-    codeToTenscriptTree,
-    codeTreeToTenscript,
-    ITenscript,
-    ITenscriptTree,
-    spaceAfterComma,
-} from "../fabric/tenscript"
-
-import { TenscriptEditor } from "./tenscript-editor"
+import { codeToTenscript, ITenscript, ITenscriptTree, spaceAfterComma, treeToTenscript } from "../fabric/tenscript"
 
 const FABRIC_CODE_KEY = "FabricCode"
 
-const MAX_RECENT = 12
+const MAX_RECENT = 10
 
 export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
     bootstrap: ITenscript[],
@@ -29,7 +21,8 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
     grow: () => void,
 }): JSX.Element {
 
-    const [editMode, setEditMode] = useState(false)
+    const [runnable, setRunnable] = useState(tenscript)
+    const [recentOpen, setRecentOpen] = useState(false)
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
     const [recentPrograms, setRecentPrograms] = useState<ITenscript[]>(getRecentCode())
 
@@ -51,103 +44,117 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
         addToRecentPrograms(newScript)
     }
 
-    function ExistingCode(): JSX.Element {
-        return (
-            <div>
-                {recentPrograms.length === 0 ? undefined : (
-                    <div className="m-4">
-                        <h6>Recent</h6>
-                        <ButtonGroup vertical={true} style={{width: "100%"}}>
-                            {recentPrograms.map((recentCode, index) => (
-                                <Button key={index} color="dark" style={{
-                                    margin: "0.1em",
-                                    fontSize: "small",
-                                    textAlign: "left",
-                                }} onClick={() => setTenscript(recentCode)}>
-                                    {index === undefined ? undefined : <Badge color="info" size="sm">{index}</Badge>}
-                                    {spaceAfterComma(recentCode.code)}
-                                </Button>
-                            ))}
-                        </ButtonGroup>
-                    </div>
-                )}
-                <div className="m-4">
-                    <ButtonDropdown className="w-100 my-2" isOpen={bootstrapOpen} toggle={() => setBootstrapOpen(!bootstrapOpen)}>
-                        <DropdownToggle style={{borderRadius: "1.078em"}}>
-                            {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
-                        </DropdownToggle>
-                        <DropdownMenu>
-                            {bootstrap.map((bootstrapProgram, index) => (
-                                <DropdownItem key={`Buffer${index}`} onClick={() => adoptTenscript(bootstrapProgram)}>
-                                    {spaceAfterComma(bootstrapProgram.code)}
-                                </DropdownItem>
-                            ))}
-                        </DropdownMenu>
-                    </ButtonDropdown>
-                </div>
-            </div>
-        )
+    function onRun(): void {
+        if (!runnable) {
+            throw new Error("No tenscript")
+        }
+        adoptTenscript(runnable)
+        grow()
     }
 
     return (
-        <div style={{
+        <div id="tenscript-panel" style={{
+            flexDirection: "column",
+            position: "relative",
             padding: "2em",
             backgroundColor: "rgba(0,0,0,1)",
             height: "100%",
             color: "#69aaea",
         }}>
-            <div>
-                {tenscript ? (
-                    <div>
-                        <div>
-                            <div style={{
-                                height: "10em",
-                                backgroundColor: "#a7a7a7",
-                                color: "white",
-                                borderRadius: "1em",
-                                borderColor: "black",
-                                borderWidth: "1px",
-                                width: "100%",
-                                padding: "1em",
-                                overflowX: "scroll",
-                            }}>
-                                {spaceAfterComma(tenscript.code)}
-                            </div>
-                            <div className="w-100 my-3">
-                                <ButtonGroup>
-                                    <Button color={editMode ? "success" : "secondary"}
-                                            disabled={!tenscript || editMode}
-                                            onClick={() => setEditMode(true)}
-                                    >
-                                        <FaEdit/>
-                                    </Button>
-                                    <Button color={!editMode ? "success" : "secondary"}
-                                            disabled={!tenscript || !editMode}
-                                            onClick={() => setEditMode(false)}
-                                    >
-                                        <FaList/>
-                                    </Button>
-                                </ButtonGroup>
-                                <Button className="float-right"
-                                        disabled={!tenscript}
-                                        onClick={() => grow()}
-                                >
-                                    <FaRunning/><FaArrowRight/>
-                                </Button>
-                            </div>
-                        </div>
-                        {!editMode ? <ExistingCode/> : (
-                            <TenscriptEditor
-                                tenscript={tenscript}
-                                growTenscript={adoptTenscript}
-                                leaveEditMode={() => setEditMode(false)}
-                            />
-                        )}
-                    </div>
-                ) : (
-                    <ExistingCode/>
-                )}
+            <div id="code-and-run" style={{
+                flexDirection: "column",
+                height: "available",
+            }}>
+                <CodeArea
+                    tenscript={tenscript}
+                    setRunnable={setRunnable}
+                />
+                <div>
+                    <Button
+                        className="w-100 my-2"
+                        color={runnable ? "success" : "secondary"}
+                        disabled={!runnable}
+                        onClick={onRun}
+                    >
+                        <FaRunning/> Run
+                    </Button>
+                </div>
             </div>
+                {recentPrograms.length === 0 ? undefined : (
+                    <ButtonDropdown
+                        className="w-100 my-2"
+                        isOpen={recentOpen}
+                        toggle={() => setRecentOpen(!recentOpen)}
+                    >
+                        <DropdownToggle style={{borderRadius: "1.078em"}}>
+                            {recentOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Recent
+                        </DropdownToggle>
+                        <DropdownMenu>{recentPrograms.map((recentCode, index) => (
+                            <DropdownItem key={`Recent${index}`} onClick={() => adoptTenscript(recentCode)}>
+                                {spaceAfterComma(recentCode.code)}
+                            </DropdownItem>
+                        ))}</DropdownMenu>
+                    </ButtonDropdown>
+                )}
+                <ButtonDropdown
+                    className="w-100 my-2"
+                    isOpen={bootstrapOpen}
+                    toggle={() => setBootstrapOpen(!bootstrapOpen)}
+                >
+                    <DropdownToggle style={{borderRadius: "1.078em"}}>
+                        {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
+                    </DropdownToggle>
+                    <DropdownMenu>{bootstrap.map((bootstrapProgram, index) => (
+                        <DropdownItem key={`Boot${index}`} onClick={() => adoptTenscript(bootstrapProgram)}>
+                            {spaceAfterComma(bootstrapProgram.code)}
+                        </DropdownItem>
+                    ))}</DropdownMenu>
+                </ButtonDropdown>
+        </div>
+    )
+}
+
+function CodeArea({tenscript, setRunnable}: {
+    tenscript?: ITenscript,
+    setRunnable: (tenscript?: ITenscript) => void,
+}): JSX.Element {
+
+    const [tenscriptCode, setTenscriptCode] = useState(tenscript ? tenscript.code : "")
+
+    function compile(newCode: string): void {
+        console.log("compiling", newCode)
+        setRunnable(codeToTenscript(message => console.error(message), newCode))
+    }
+
+    function onCodeChange(newCode: string): void {
+        console.log("code change", newCode)
+        setTenscriptCode(newCode)
+        compile(newCode)
+    }
+
+    return (
+        <div style={{
+            backgroundColor: "#757575",
+            color: "#ffffff",
+            borderRadius: "1em",
+            borderColor: "black",
+            borderWidth: "1px",
+            width: "100%",
+            padding: "0.5em",
+            overflowX: "scroll",
+        }}
+        >
+            <div className="w-100 text-center">
+                <h6>Tenscript Construction Code</h6>
+            </div>
+            <Input
+                style={{
+                    borderRadius: "1em",
+                }}
+                type="textarea" id="tenscript"
+                defaultValue={tenscriptCode}
+                onChange={changeEvent => onCodeChange(changeEvent.target.value)}
+            />
         </div>
     )
 }
@@ -155,10 +162,7 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
 export function getCodeFromUrl(): ITenscript | undefined {
     const codeString = location.hash.substring(1)
     try {
-        const codeTree = codeToTenscriptTree(message => console.error(message), codeString)
-        if (codeTree) {
-            return {code: codeString, tree: codeTree}
-        }
+        return codeToTenscript(message => console.error(message), codeString)
     } catch (e) {
         console.error("Code error", e)
     }
@@ -172,5 +176,5 @@ function storeRecentCode(recent: ITenscript[]): void {
 export function getRecentCode(): ITenscript[] {
     const recentCode = localStorage.getItem(FABRIC_CODE_KEY)
     const codeTrees: ITenscriptTree[] = recentCode ? JSON.parse(recentCode) : []
-    return codeTrees.map(codeTreeToTenscript)
+    return codeTrees.map(treeToTenscript)
 }

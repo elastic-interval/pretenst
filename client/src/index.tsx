@@ -5,7 +5,6 @@
 
 import * as React from "react"
 import * as ReactDOM from "react-dom"
-import "react-sortable-tree/style.css"
 import { BehaviorSubject } from "rxjs"
 
 import { App } from "./app"
@@ -15,7 +14,7 @@ import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { LifePhase, loadFabricState, saveFabricState } from "./fabric/fabric-state"
-import { codeTreeToTenscript, ITenscript, ITenscriptTree } from "./fabric/tenscript"
+import { ITenscript, ITenscriptTree, treeToTenscript } from "./fabric/tenscript"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
@@ -49,7 +48,7 @@ async function getBootstrapTenscripts(): Promise<ITenscript[]> {
         return [{code: "0", tree: {_: 0}}]
     }
     const pretenst: ITenscriptTree[] = body.pretenst
-    return pretenst.map(codeTreeToTenscript)
+    return pretenst.map(treeToTenscript)
 }
 
 async function start(): Promise<void> {
