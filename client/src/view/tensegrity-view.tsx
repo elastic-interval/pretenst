@@ -165,7 +165,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                         setSelectedBrick={setSelectedBrick}
                         tenscript={tenscript}
                         setTenscript={setTenscript}
-                        growFabric={() => {
+                        grow={() => {
                             if (!tenscript) {
                                 return
                             }
@@ -197,9 +197,9 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                     </div>
                 ) : (
                     <div id="tensegrity-view" className="h-100">
-                        {!tenscript ? undefined : (
+                        {!fabric ? undefined : (
                             <div id="top-middle">
-                                {tenscript.code}
+                                {fabric.tenscript.code}
                             </div>
                         )}
                         <ToolbarLeft

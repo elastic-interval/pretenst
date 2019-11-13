@@ -5,8 +5,8 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { FaArrowRight, FaEdit, FaList, FaRunning } from "react-icons/all"
-import { Badge, Button, ButtonGroup } from "reactstrap"
+import { FaArrowRight, FaEdit, FaList, FaRegFolder, FaRegFolderOpen, FaRunning } from "react-icons/all"
+import { Badge, Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle } from "reactstrap"
 
 import {
     codeToTenscriptTree,
@@ -30,6 +30,7 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
 }): JSX.Element {
 
     const [editMode, setEditMode] = useState(false)
+    const [bootstrapOpen, setBootstrapOpen] = useState(false)
     const [recentPrograms, setRecentPrograms] = useState<ITenscript[]>(getRecentCode())
 
     function addToRecentPrograms(newCode: ITenscript): void {
@@ -45,10 +46,9 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
         setRecentPrograms(recent)
     }
 
-    function adoptAndGrow(newScript: ITenscript): void {
+    function adoptTenscript(newScript: ITenscript): void {
         setTenscript(newScript)
         addToRecentPrograms(newScript)
-        grow()
     }
 
     function ExistingCode(): JSX.Element {
@@ -72,15 +72,18 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
                     </div>
                 )}
                 <div className="m-4">
-                    <h6>Suggestions</h6>
-                    {bootstrap.map((bootstrapProgram, index) => (
-                        <Button key={index} color="dark" style={{
-                            margin: "0.3em",
-                            fontSize: "small",
-                        }} onClick={() => setTenscript(bootstrapProgram)}>
-                            {spaceAfterComma(bootstrapProgram.code)}
-                        </Button>
-                    ))}
+                    <ButtonDropdown className="w-100 my-2" isOpen={bootstrapOpen} toggle={() => setBootstrapOpen(!bootstrapOpen)}>
+                        <DropdownToggle style={{borderRadius: "1.078em"}}>
+                            {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
+                        </DropdownToggle>
+                        <DropdownMenu>
+                            {bootstrap.map((bootstrapProgram, index) => (
+                                <DropdownItem key={`Buffer${index}`} onClick={() => adoptTenscript(bootstrapProgram)}>
+                                    {spaceAfterComma(bootstrapProgram.code)}
+                                </DropdownItem>
+                            ))}
+                        </DropdownMenu>
+                    </ButtonDropdown>
                 </div>
             </div>
         )
@@ -136,7 +139,7 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
                         {!editMode ? <ExistingCode/> : (
                             <TenscriptEditor
                                 tenscript={tenscript}
-                                growTenscript={adoptAndGrow}
+                                growTenscript={adoptTenscript}
                                 leaveEditMode={() => setEditMode(false)}
                             />
                         )}
