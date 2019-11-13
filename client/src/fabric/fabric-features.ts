@@ -17,15 +17,13 @@ export enum FeatureMultiplier {
     Billionths,
 }
 
-type FeatureAdjustment = (factor: number, up: boolean) => number
-
 interface IFeatureConfig {
     feature: FabricFeature
     name: string
     defaultValue: number
     multiplier: FeatureMultiplier
     fixedDigits: number
-    adjustment: FeatureAdjustment
+    percents: number[]
 }
 
 function multiplierValue(multiplier: FeatureMultiplier): number {
@@ -47,9 +45,9 @@ function multiplierValue(multiplier: FeatureMultiplier): number {
     }
 }
 
-const byTenPercent: FeatureAdjustment = (factor: number, up: boolean) => factor * (up ? 1.1 : 1 / 1.1)
-const byOnePercent: FeatureAdjustment = (factor: number, up: boolean) => factor * (up ? 1.01 : 1 / 1.01)
-const plusOne: FeatureAdjustment = (factor: number, up: boolean) => up || factor > 1 ? factor + (up ? 1 : -1) : 1
+const FEATURE_PERCENTS = [
+    50, 75, 90, 100, 125, 150, 200,
+]
 
 const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
@@ -58,7 +56,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 0.0000005,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.Drag,
@@ -66,7 +64,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 0.0001,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.PretenseFactor,
@@ -74,7 +72,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 0.01,
         multiplier: FeatureMultiplier.Hundredths,
         fixedDigits: 2,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.PushStrainFactor,
@@ -82,7 +80,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.PushPullDifferential,
@@ -90,7 +88,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.TicksPerFrame,
@@ -98,7 +96,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 100.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 0,
-        adjustment: plusOne,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.IntervalBusyTicks,
@@ -106,7 +104,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 500.0,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 1,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.PretenseTicks,
@@ -114,7 +112,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 30000,
         multiplier: FeatureMultiplier.OneThousand,
         fixedDigits: 1,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.PretenseIntensity,
@@ -122,7 +120,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 2,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.SlackThreshold,
@@ -130,7 +128,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 0.0001,
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 1,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.RadiusFactor,
@@ -138,7 +136,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 50,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 1,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.MaxStiffness,
@@ -146,7 +144,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 0.0005,
         multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 0,
-        adjustment: byTenPercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.PushLength,
@@ -154,7 +152,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 2 * 1.618,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        adjustment: byOnePercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.TriangleLength,
@@ -162,7 +160,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 2.123,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        adjustment: byOnePercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.RingLength,
@@ -170,7 +168,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 1.440,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        adjustment: byOnePercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.CrossLength,
@@ -178,7 +176,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 2.123,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        adjustment: byOnePercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.BowMidLength,
@@ -186,7 +184,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 0.8521,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        adjustment: byOnePercent,
+        percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.BowEndLength,
@@ -194,36 +192,41 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 1.2,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        adjustment: byOnePercent,
+        percents: FEATURE_PERCENTS,
     },
 ]
 
-export function fabricFeatureValue(fabricFeature: FabricFeature, defaultValue?: boolean): number {
+function featureKey(fabricFeature: FabricFeature): string {
+    return `${FabricFeature[fabricFeature]}Value`
+}
+
+interface IFeatureValue {
+    numeric: number
+    percent: number,
+}
+
+export function fabricFeatureValue(fabricFeature: FabricFeature): IFeatureValue {
     const config = FEATURE_CONFIGS[fabricFeature]
-    if (defaultValue) {
-        return config.defaultValue
-    }
-    const key = FabricFeature[fabricFeature]
-    const value = localStorage.getItem(key)
-    return value ? parseFloat(value) : config.defaultValue
+    const value = localStorage.getItem(featureKey(fabricFeature))
+    return value ? JSON.parse(value) as IFeatureValue : {numeric: config.defaultValue, percent: 100}
 }
 
 export function roleDefaultLength(intervalRole: IntervalRole): number {
-    return fabricFeatureValue(roleToLengthFeature(intervalRole))
+    return fabricFeatureValue(roleToLengthFeature(intervalRole)).numeric
 }
 
 export class FloatFeature {
-    private factor$: BehaviorSubject<number>
+    private factor$: BehaviorSubject<IFeatureValue>
 
     constructor(public readonly config: IFeatureConfig) {
         const initialValue = fabricFeatureValue(config.feature)
-        this.factor$ = new BehaviorSubject<number>(initialValue)
+        this.factor$ = new BehaviorSubject<IFeatureValue>(initialValue)
         this.factor$.subscribe(newFactor => {
-            const key = FabricFeature[this.config.feature]
+            const key = featureKey(config.feature)
             if (this.isAtDefault) {
                 localStorage.removeItem(key)
             } else {
-                localStorage.setItem(key, newFactor.toFixed(18))
+                localStorage.setItem(key, JSON.stringify(newFactor))
             }
         })
     }
@@ -232,12 +235,28 @@ export class FloatFeature {
         return this.config.name
     }
 
-    public get factor(): number {
-        return this.factor$.getValue()
+    public get percentChoices(): number[] {
+        return this.config.percents
+    }
+
+    public get numeric(): number {
+        return this.factor$.getValue().numeric
+    }
+
+    public set numeric(numeric: number) {
+        this.factor$.next({numeric, percent: -666})
+    }
+
+    public get percent(): number {
+        return this.factor$.getValue().percent
+    }
+
+    public set percent(percent: number) {
+        this.factor$.next({numeric: this.config.defaultValue * percent / 100, percent})
     }
 
     public get formatted(): string {
-        const scaledValue = this.factor * multiplierValue(this.config.multiplier)
+        const scaledValue = this.numeric * multiplierValue(this.config.multiplier)
         return scaledValue.toFixed(this.config.fixedDigits)
     }
 
@@ -249,21 +268,9 @@ export class FloatFeature {
         return this.config.feature
     }
 
-    public setValue(value: number): void {
-        this.factor$.next(value)
-    }
-
-    public adjustValue(up: boolean): void {
-        this.factor$.next(this.config.adjustment(this.factor$.getValue(), up))
-    }
-
-    public reset(): void {
-        this.factor$.next(this.config.defaultValue)
-    }
-
     public get isAtDefault(): boolean {
         const defaultValue = this.config.defaultValue
-        const overDefault = Math.abs(this.factor / defaultValue)
+        const overDefault = Math.abs(this.numeric / defaultValue)
         const difference = Math.abs(overDefault - 1)
         return difference < 0.00001
     }

@@ -49,7 +49,7 @@ export class FabricInstance {
     }
 
     public applyFeature(feature: FloatFeature): void {
-        this._fabricFeatures.floats[feature.fabricFeature] = feature.factor
+        this._fabricFeatures.floats[feature.fabricFeature] = feature.numeric
     }
 
     public setFeatureValue(fabricFeature: FabricFeature, value: number): void {

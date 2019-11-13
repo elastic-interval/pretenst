@@ -77,8 +77,8 @@ function pretensingAdjustments(strains: Float32Array, existingStiffnesses: Float
     log("Push Strain", averagePushStrain)
     log("Pull Strain", averagePullStrain)
     log("Push + Pull", averagePushStrain + averagePullStrain)
-    const pushStrainFactor = fabricFeatureValue(FabricFeature.PushStrainFactor)
-    const pretenseIntensity = fabricFeatureValue(FabricFeature.PretenseIntensity)
+    const pushStrainFactor = fabricFeatureValue(FabricFeature.PushStrainFactor).numeric
+    const pretenseIntensity = fabricFeatureValue(FabricFeature.PretenseIntensity).numeric
     const averageAbsoluteStrain = (-pushStrainFactor * averagePushStrain + averagePullStrain) / 2
     const changes = intervals.map(interval => {
         const absoluteStrain = strains[interval.index] * (interval.isPush ? -pushStrainFactor : 1)

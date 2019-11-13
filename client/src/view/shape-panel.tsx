@@ -4,6 +4,7 @@
  */
 
 import * as React from "react"
+import { useState } from "react"
 import { FaArrowDown, FaArrowUp, FaHammer, FaTimesCircle } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
@@ -12,7 +13,6 @@ import { FloatFeature } from "../fabric/fabric-features"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { FeaturePanel } from "./feature-panel"
 import { roleColorString } from "./materials"
 
 export function ShapePanel({fabric, features, selectedBrick, setSelectedBrick}: {
@@ -75,15 +75,48 @@ export function ShapePanel({fabric, features, selectedBrick, setSelectedBrick}: 
                     padding: "0.5em",
                 }}>
                     {features.filter(feature => lengthFeatureToRole(feature.fabricFeature) !== undefined).map(feature => (
-                        <div className="my-2 p-2" key={feature.title} style={{
-                            color: "white",
-                            backgroundColor: roleColorString(lengthFeatureToRole(feature.fabricFeature)),
-                        }}>
-                            <FeaturePanel feature={feature} mutable={true}/>
+                        <div className="my-2 p-2" key={feature.title}>
+                            <FeatureChoice feature={feature}/>
                         </div>
                     ))}
                 </div>
             </div>
+        </div>
+    )
+}
+
+function FeatureChoice({feature}: {
+    feature: FloatFeature,
+}): JSX.Element {
+    const [featurePercent, setFeaturePercent] = useState(feature.percent)
+    feature.onChange(() => {
+        const percent = feature.percent
+        if (percent !== featurePercent) {
+            setFeaturePercent(feature.percent)
+        }
+    })
+    return (
+        <div>
+            <div className="text-center">
+                {feature.config.name}
+            </div>
+            <ButtonGroup className="w-100">
+                {feature.percentChoices.map(percent => {
+                    const roleColor = roleColorString(lengthFeatureToRole(feature.fabricFeature))
+                    const backgroundColor = featurePercent === percent ? "#cccccc" : roleColor
+                    return (
+                        <Button
+                            size="sm"
+                            style={{
+                                color: "white",
+                                backgroundColor,
+                            }}
+                            key={`${feature.config.name}:${percent}`}
+                            onClick={() => feature.percent = percent}
+                        >{percent}%</Button>
+                    )
+                })}
+            </ButtonGroup>
         </div>
     )
 }

@@ -5,31 +5,12 @@
 
 import * as React from "react"
 import { CSSProperties, useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaEquals, FaGlobe } from "react-icons/all"
+import { FaGlobe } from "react-icons/all"
 import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactstrap"
 
-import { FeatureMultiplier, FloatFeature } from "../fabric/fabric-features"
+import { FloatFeature } from "../fabric/fabric-features"
 
-function multiplierSymbol(multiplier: FeatureMultiplier): JSX.Element {
-    switch (multiplier) {
-        case FeatureMultiplier.OneThousand:
-            return <span className="small">10<sup>3</sup></span>
-        case FeatureMultiplier.One:
-            return <span>1</span>
-        case FeatureMultiplier.Hundredths:
-            return <span className="small">10<sup>-2</sup></span>
-        case FeatureMultiplier.Thousandths:
-            return <span className="small">10<sup>-3</sup></span>
-        case FeatureMultiplier.Millionths:
-            return <span className="small">10<sup>-6</sup></span>
-        case FeatureMultiplier.Billionths:
-            return <span className="small">10<sup>-9</sup></span>
-        default:
-            throw new Error("Bad multiplier")
-    }
-}
-
-export function FeaturePanel({feature, mutable}: { feature: FloatFeature, mutable: boolean }): JSX.Element {
+export function FeaturePanel({feature}: { feature: FloatFeature }): JSX.Element {
 
     const [factorString, setFactorString] = useState<string>(feature.toString)
 
@@ -51,24 +32,22 @@ export function FeaturePanel({feature, mutable}: { feature: FloatFeature, mutabl
         borderWidth: "1px",
         borderColor: "red",
     }
-    const UpdateButtonGroup = (): JSX.Element => (
-        <ButtonGroup className="mx-1">
-            <Button size="sm" onClick={() => feature.adjustValue(true)}><FaArrowUp/></Button>
-            <Button size="sm" onClick={() => feature.adjustValue(false)}><FaArrowDown/></Button>
-            <Button size="sm" onClick={() => feature.reset()}><FaEquals/></Button>
-        </ButtonGroup>
-    )
     return (
         <InputGroup size="sm">
             <strong>&nbsp;&nbsp;<FaGlobe/>&nbsp;&nbsp;</strong>
             <InputGroupAddon addonType="prepend">
                 <InputGroupText>{feature.title}</InputGroupText>
             </InputGroupAddon>
-            <InputGroupAddon addonType="prepend">
-                <InputGroupText>{multiplierSymbol(feature.config.multiplier)}</InputGroupText>
-            </InputGroupAddon>
             <Input style={inputStyle} value={factorString} disabled={true}/>
-            {mutable ? <UpdateButtonGroup/> : undefined}
+            <ButtonGroup className="mx-1">
+                {feature.percentChoices.map(percent => (
+                    <Button
+                        key={`${feature.config.name}-${percent}`}
+                        size="x-sm"
+                        onClick={() => feature.percent = percent}
+                    >{percent}%</Button>
+                ))}
+            </ButtonGroup>
         </InputGroup>
     )
 }

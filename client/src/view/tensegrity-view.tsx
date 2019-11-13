@@ -47,16 +47,18 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [fullScreen, setFullScreen] = useState(fabricState$.getValue().fullScreen)
+    const [ellipsoids, setEllipsoids] = useState(fabricState$.getValue().ellipsoids)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
             if (fabric) {
                 const instance = fabric.instance
                 setFullScreen(newState.fullScreen)
+                setEllipsoids(newState.ellipsoids)
                 instance.engine.setColoring(newState.showPushes, newState.showPulls)
                 instance.engine.setSurfaceCharacter(newState.surfaceCharacter)
                 const adjust = (feature: FabricFeature, array: number[], choice: number) => {
                     const value = array[choice]
-                    features[feature].setValue(value)
+                    features[feature].numeric = value
                     instance.setFeatureValue(feature, value)
                 }
                 adjust(FabricFeature.Gravity, GRAVITY_LEVEL, newState.gravityLevel)
@@ -80,7 +82,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                 fabric.intervals
                     .filter(interval => interval.intervalRole === intervalRole)
                     .forEach(interval => {
-                        const scaledLength = feature.factor * percentToFactor(interval.scale)
+                        const scaledLength = feature.numeric * percentToFactor(interval.scale)
                         engine.changeRestLength(interval.index, scaledLength)
                     })
             }
@@ -157,7 +159,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                          borderTopWidth: 0,
                          borderBottomWidth: 0,
                          borderRightWidth: "1px",
-                         color: "#136412",
+                         color: "#179a16",
                          backgroundColor: "#000000",
                      }}
                 >
@@ -203,11 +205,9 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                     </div>
                 ) : (
                     <div id="tensegrity-view" className="h-100">
-                        {!fabric ? undefined : (
-                            <div id="top-middle">
-                                {fabric.tenscript.code}
-                            </div>
-                        )}
+                        <div id="top-middle">
+                            {fabric.tenscript.code}
+                        </div>
                         <ToolbarLeft
                             fabric={fabric}
                             fabricState$={fabricState$}
@@ -228,7 +228,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                                 fabric={fabric}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
-                                fullScreen={fullScreen}
+                                ellipsoids={ellipsoids}
                                 fabricState$={fabricState$}
                                 lifePhase$={lifePhase$}
                             />

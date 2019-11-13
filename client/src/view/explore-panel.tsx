@@ -40,7 +40,7 @@ export function ExplorePanel({fabric, features, fabricState$}: {
             <StrainPanel fabric={fabric} pushes={false}/>
             <StrainPanel fabric={fabric} pushes={true}/>
             <div style={{backgroundColor: "white", borderRadius: "1em"}} className="my-2 p-1">
-                <FeaturePanel feature={features[FabricFeature.MaxStiffness]} mutable={true}/>
+                <FeaturePanel feature={features[FabricFeature.MaxStiffness]}/>
             </div>
             <h1>pushes={showPushes.toString()}</h1>
             <h1>pulls={showPulls.toString()}</h1>

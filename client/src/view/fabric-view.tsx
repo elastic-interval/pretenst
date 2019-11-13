@@ -65,11 +65,11 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedBrick, setSelectedBrick, fullScreen, fabricState$, lifePhase$}: {
+export function FabricView({fabric, selectedBrick, setSelectedBrick, ellipsoids, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
     selectedBrick?: IBrick,
     setSelectedBrick: (selectedBrick: IBrick) => void,
-    fullScreen: boolean,
+    ellipsoids: boolean,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
@@ -109,7 +109,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fullScreen,
     useEffect(() => {
         orbit.current.autoRotate = rotating
     }, [rotating])
-    const radiusFactor = fabricFeatureValue(FabricFeature.RadiusFactor)
+    const radiusFactor = fabricFeatureValue(FabricFeature.RadiusFactor).numeric
 
     const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
@@ -127,6 +127,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fullScreen,
         orb.update()
     }, [fabric])
 
+    const ticks = fabricFeatureValue(FabricFeature.TicksPerFrame).numeric
     useRender(() => {
         if (!fabric) {
             return
@@ -136,7 +137,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fullScreen,
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        const newLifePhase = fabric.iterate(fabricFeatureValue(FabricFeature.TicksPerFrame))
+        const newLifePhase = fabric.iterate(ticks)
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
             if (newLifePhase === LifePhase.Pretensing) {
@@ -147,7 +148,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fullScreen,
         }
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, targetBrick, selectedBrick, age, lifePhase, fullScreen, showPushes, showPulls,
+        fabric, targetBrick, selectedBrick, age, lifePhase, showPushes, showPulls,
     ])
 
     const selectBrick = (newSelectedBrick: IBrick) => {
@@ -231,38 +232,46 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, fullScreen,
         )
     }
 
+    function EllipsoidView(): JSX.Element {
+        return (
+            <group>
+                {fabric.splitIntervals ? (
+                    [
+                        ...fabric.splitIntervals.unselected.map(interval => (
+                            <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                        )),
+                        ...fabric.splitIntervals.selected.map(interval => (
+                            <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                        )),
+                    ]
+                ) : (
+                    fabric.intervals.map(interval => (
+                        <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                    ))
+                )}}
+            </group>
+        )
+    }
+
+    function LineView(): JSX.Element {
+        return (
+            <group>
+                <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
+                {!fabric.splitIntervals ? undefined : (
+                    fabric.splitIntervals.selected.map(interval => (
+                        <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                    ))
+                )}
+            </group>
+        )
+    }
+
     return (
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
                 {rotating || lifePhase <= LifePhase.Shaping ? undefined : <StiffnessScale/>}
-                {!fabric ? undefined : fullScreen ? (
-                    <group>
-                        {fabric.splitIntervals ? (
-                            [
-                                ...fabric.splitIntervals.unselected.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
-                                )),
-                                ...fabric.splitIntervals.selected.map(interval => (
-                                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
-                                )),
-                            ]
-                        ) : (
-                            fabric.intervals.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval}/>
-                            ))
-                        )}}
-                    </group>
-                ) : (
-                    <group>
-                        <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
-                        {!fabric.splitIntervals ? undefined : (
-                            fabric.splitIntervals.selected.map(interval => (
-                                <IntervalMesh key={`I${interval.index}`} interval={interval}/>
-                            ))
-                        )}
-                    </group>
-                )}
+                {!fabric ? undefined : ellipsoids ? <EllipsoidView/> : <LineView/>}
                 {!(showPushes && showPulls) ? undefined : (
                     <Faces
                         fabric={fabric}
@@ -332,7 +341,7 @@ function Faces({fabric, lifePhase, selectBrick}: {
 
 function strainPushLines(fabric: TensegrityFabric): Float32Array {
 
-    const maxStiffness = fabricFeatureValue(FabricFeature.MaxStiffness)
+    const maxStiffness = fabricFeatureValue(FabricFeature.MaxStiffness).numeric
     const instance = fabric.instance
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
     const stiffnesses = instance.stiffnesses

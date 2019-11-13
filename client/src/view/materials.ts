@@ -87,8 +87,9 @@ export function roleColorString(intervalRole?: IntervalRole): string {
         case IntervalRole.Cross:
             return "#7b7349"
         case IntervalRole.BowMid:
-        case IntervalRole.BowEnd:
             return "#217838"
+        case IntervalRole.BowEnd:
+            return "#6d7b44"
         default:
             return "#ff0205"
     }

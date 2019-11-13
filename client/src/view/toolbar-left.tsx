@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaAnchor, FaCubes, FaFileCsv, FaSyncAlt } from "react-icons/all"
+import { FaAnchor, FaCamera, FaClock, FaCubes, FaFileCsv, FaSyncAlt } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -20,9 +20,11 @@ export function ToolbarLeft({fabric, fabricState$, lifePhase$, fullScreen}: {
     fullScreen: boolean,
 }): JSX.Element {
     const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
+    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
             updateRotating(newState.rotating)
+            updateEllipsoids(newState.ellipsoids)
         })
         return () => subscription.unsubscribe()
     })
@@ -37,7 +39,13 @@ export function ToolbarLeft({fabric, fabricState$, lifePhase$, fullScreen}: {
         }} id="bottom-left">
             <ButtonGroup>
                 <Button
-                    color={fabricState$.getValue().rotating ? "warning" : "secondary"}
+                    color={ellipsoids ? "warning" : "secondary"}
+                    onClick={() => fabricState$.next(fabricStateTransition(fabricState$.getValue(), {ellipsoids: !ellipsoids}))}
+                >
+                    {ellipsoids ? <FaCamera/> : <FaClock/>}
+                </Button>
+                <Button
+                    color={rotating ? "warning" : "secondary"}
                     onClick={() => fabricState$.next(fabricStateTransition(fabricState$.getValue(), {rotating: !rotating}))}
                 >
                     {rotating ? <FaAnchor/> : <FaSyncAlt/>}
