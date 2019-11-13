@@ -14,11 +14,10 @@ const FABRIC_CODE_KEY = "FabricCode"
 
 const MAX_RECENT = 10
 
-export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
+export function TenscriptPanel({bootstrap, tenscript, setTenscript}: {
     bootstrap: ITenscript[],
     tenscript?: ITenscript,
-    setTenscript: (tenscript?: ITenscript) => void,
-    grow: () => void,
+    setTenscript: (grow: boolean, tenscript?: ITenscript) => void,
 }): JSX.Element {
 
     const [runnable, setRunnable] = useState(tenscript)
@@ -39,8 +38,8 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
         setRecentPrograms(recent)
     }
 
-    function adoptTenscript(newScript: ITenscript): void {
-        setTenscript(newScript)
+    function adoptTenscript(grow: boolean, newScript: ITenscript): void {
+        setTenscript(grow, newScript)
         addToRecentPrograms(newScript)
     }
 
@@ -48,8 +47,7 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
         if (!runnable) {
             throw new Error("No tenscript")
         }
-        adoptTenscript(runnable)
-        grow()
+        adoptTenscript(true, runnable)
     }
 
     return (
@@ -80,36 +78,36 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript, grow}: {
                     </Button>
                 </div>
             </div>
-                {recentPrograms.length === 0 ? undefined : (
-                    <ButtonDropdown
-                        className="w-100 my-2"
-                        isOpen={recentOpen}
-                        toggle={() => setRecentOpen(!recentOpen)}
-                    >
-                        <DropdownToggle style={{borderRadius: "1.078em"}}>
-                            {recentOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Recent
-                        </DropdownToggle>
-                        <DropdownMenu>{recentPrograms.map((recentCode, index) => (
-                            <DropdownItem key={`Recent${index}`} onClick={() => adoptTenscript(recentCode)}>
-                                {spaceAfterComma(recentCode.code)}
-                            </DropdownItem>
-                        ))}</DropdownMenu>
-                    </ButtonDropdown>
-                )}
+            {recentPrograms.length === 0 ? undefined : (
                 <ButtonDropdown
                     className="w-100 my-2"
-                    isOpen={bootstrapOpen}
-                    toggle={() => setBootstrapOpen(!bootstrapOpen)}
+                    isOpen={recentOpen}
+                    toggle={() => setRecentOpen(!recentOpen)}
                 >
                     <DropdownToggle style={{borderRadius: "1.078em"}}>
-                        {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
+                        {recentOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Recent
                     </DropdownToggle>
-                    <DropdownMenu>{bootstrap.map((bootstrapProgram, index) => (
-                        <DropdownItem key={`Boot${index}`} onClick={() => adoptTenscript(bootstrapProgram)}>
-                            {spaceAfterComma(bootstrapProgram.code)}
+                    <DropdownMenu>{recentPrograms.map((recentCode, index) => (
+                        <DropdownItem key={`Recent${index}`} onClick={() => adoptTenscript(false, recentCode)}>
+                            {spaceAfterComma(recentCode.code)}
                         </DropdownItem>
                     ))}</DropdownMenu>
                 </ButtonDropdown>
+            )}
+            <ButtonDropdown
+                className="w-100 my-2"
+                isOpen={bootstrapOpen}
+                toggle={() => setBootstrapOpen(!bootstrapOpen)}
+            >
+                <DropdownToggle style={{borderRadius: "1.078em"}}>
+                    {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
+                </DropdownToggle>
+                <DropdownMenu>{bootstrap.map((bootstrapProgram, index) => (
+                    <DropdownItem key={`Boot${index}`} onClick={() => adoptTenscript(false, bootstrapProgram)}>
+                        {spaceAfterComma(bootstrapProgram.code)}
+                    </DropdownItem>
+                ))}</DropdownMenu>
+            </ButtonDropdown>
         </div>
     )
 }
@@ -141,7 +139,6 @@ function CodeArea({tenscript, setRunnable}: {
             borderWidth: "1px",
             width: "100%",
             padding: "0.5em",
-            overflowX: "scroll",
         }}
         >
             <div className="w-100 text-center">

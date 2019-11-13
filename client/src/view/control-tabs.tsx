@@ -38,15 +38,14 @@ function Icon(controlTab: ControlTab): JSX.Element {
 }
 
 export function ControlTabs({
-                                fabric, selectedBrick, setSelectedBrick, tenscript, setTenscript, grow,
+                                fabric, selectedBrick, setSelectedBrick, tenscript, setTenscript,
                                 toFullScreen, fabricState$, lifePhase$, bootstrap, features,
                             }: {
     fabric?: TensegrityFabric,
     selectedBrick?: IBrick,
     setSelectedBrick: (brick?: IBrick) => void,
     tenscript?: ITenscript,
-    setTenscript: (tenscript?: ITenscript) => void,
-    grow: () => void,
+    setTenscript: (grow: boolean, tenscript?: ITenscript) => void,
     toFullScreen: () => void,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
@@ -78,7 +77,6 @@ export function ControlTabs({
                             bootstrap={bootstrap}
                             tenscript={tenscript}
                             setTenscript={setTenscript}
-                            grow={grow}
                         />
                     )
                 case ControlTab.Shape:
@@ -96,7 +94,7 @@ export function ControlTabs({
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
-                            rebuild={grow}
+                            rebuild={() => setTenscript(true)}
                         />
                     )
                 case ControlTab.Explore:

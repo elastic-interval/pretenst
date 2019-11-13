@@ -145,33 +145,32 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                 </Button>
             ) : (
                 <div id="left-side"
-                    style={{
-                        position: "absolute",
-                        visibility: fullScreen ? "collapse" : "visible",
-                        left: 0,
-                        width: SPLIT_LEFT,
-                        height: "100%",
-                        borderStyle: "solid",
-                        borderColor: "#5c5c5c",
-                        borderLeftWidth: 0,
-                        borderTopWidth: 0,
-                        borderBottomWidth: 0,
-                        borderRightWidth: "1px",
-                        color: "#136412",
-                        backgroundColor: "#000000",
-                    }}
+                     style={{
+                         position: "absolute",
+                         visibility: fullScreen ? "collapse" : "visible",
+                         left: 0,
+                         width: SPLIT_LEFT,
+                         height: "100%",
+                         borderStyle: "solid",
+                         borderColor: "#5c5c5c",
+                         borderLeftWidth: 0,
+                         borderTopWidth: 0,
+                         borderBottomWidth: 0,
+                         borderRightWidth: "1px",
+                         color: "#136412",
+                         backgroundColor: "#000000",
+                     }}
                 >
                     <ControlTabs
                         fabric={fabric}
                         selectedBrick={selectedBrick}
                         setSelectedBrick={setSelectedBrick}
                         tenscript={tenscript}
-                        setTenscript={setTenscript}
-                        grow={() => {
-                            if (!tenscript) {
-                                return
+                        setTenscript={(grow: boolean, newScript: ITenscript) => {
+                            setTenscript(newScript)
+                            if (grow) {
+                                growFromTenscript(newScript, true)
                             }
-                            growFromTenscript(tenscript, true)
                         }}
                         toFullScreen={() => toFullScreen(true)}
                         fabricState$={fabricState$}
