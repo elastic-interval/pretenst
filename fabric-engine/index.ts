@@ -297,7 +297,7 @@ const _FACE_JOINTS = _INTERVAL_UNITS + _32x3_INTERVALS
 
 @inline()
 function _faceJointIndex(faceIndex: u16, jointNumber: u16): usize {
-    return _INTERVAL_UNITS + _FACE_JOINTS + _16(faceIndex) * 3 + _16(jointNumber)
+    return _FACE_JOINTS + _16(faceIndex) * 3 + _16(jointNumber)
 }
 
 const _FACE_MIDPOINTS = _FACE_JOINTS + _16_FACES * 3
@@ -1026,19 +1026,19 @@ function outputFaceGeometry(faceIndex: u16): void {
     add(midpoint, loc2)
     multiplyScalar(midpoint, 1 / 3.0)
     // normals for each vertex
-    let normal0 = _faceNormal(faceIndex, 0)
-    let normal1 = _faceNormal(faceIndex, 1)
-    let normal2 = _faceNormal(faceIndex, 2)
+    let _normal0 = _faceNormal(faceIndex, 0)
+    let _normal1 = _faceNormal(faceIndex, 1)
+    let _normal2 = _faceNormal(faceIndex, 2)
     subVectors(_A, loc1, loc0)
     subVectors(_B, loc2, loc0)
-    crossVectors(normal0, _A, _B)
-    multiplyScalar(normal0, 1 / magnitude(normal0))
-    setVector(normal1, normal0)
-    setVector(normal2, normal0)
+    crossVectors(_normal0, _A, _B)
+    multiplyScalar(_normal0, 1 / magnitude(_normal0))
+    setVector(_normal1, _normal0)
+    setVector(_normal2, _normal0)
     // adjust them
-    pushNormalTowardsJoint(normal0, loc0, midpoint)
-    pushNormalTowardsJoint(normal1, loc1, midpoint)
-    pushNormalTowardsJoint(normal2, loc2, midpoint)
+    pushNormalTowardsJoint(_normal0, loc0, midpoint)
+    pushNormalTowardsJoint(_normal1, loc1, midpoint)
+    pushNormalTowardsJoint(_normal2, loc2, midpoint)
 }
 
 export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): usize {
