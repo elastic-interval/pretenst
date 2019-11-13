@@ -20,7 +20,7 @@ import { PretensePanel } from "./pretense-panel"
 import { ShapePanel } from "./shape-panel"
 import { TenscriptPanel } from "./tenscript-panel"
 
-const SPLIT_LEFT = "29em"
+const SPLIT_LEFT = "25em"
 
 function Icon(controlTab: ControlTab): JSX.Element {
     switch (controlTab) {
@@ -53,7 +53,7 @@ export function ControlTabs({
     features: FloatFeature[],
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState(ControlTab.Grow)
+    const [activeTab, setActiveTab] = useState(loadControlTab)
 
     function Link({controlTab}: { controlTab: ControlTab }): JSX.Element {
         return (
@@ -61,7 +61,13 @@ export function ControlTabs({
                 <NavLink
                     disabled={controlTab !== ControlTab.Grow && !fabric}
                     active={activeTab === controlTab}
-                    onClick={() => setActiveTab(controlTab)}
+                    onClick={() => {
+                        setActiveTab(controlTab)
+                        saveControlTab(controlTab)
+                        if (controlTab !== ControlTab.Shape) {
+                            setSelectedBrick()
+                        }
+                    }}
                 >{Icon(controlTab)} {controlTab}</NavLink>
             </NavItem>
         )
@@ -179,16 +185,16 @@ export function ControlTabs({
     )
 }
 
-// const CONTROL_TAB_KEY = "ControlTab"
-//
-// function saveControlTab(controlTab: ControlTab): void {
-//     localStorage.setItem(CONTROL_TAB_KEY, controlTab)
-// }
-//
-// function loadControlTab(): ControlTab {
-//     const item = localStorage.getItem(CONTROL_TAB_KEY)
-//     if (item) {
-//         return ControlTab[item]
-//     }
-//     return ControlTab.Grow
-// }
+const CONTROL_TAB_KEY = "ControlTab"
+
+function saveControlTab(controlTab: ControlTab): void {
+    localStorage.setItem(CONTROL_TAB_KEY, controlTab)
+}
+
+function loadControlTab(): ControlTab {
+    const item = localStorage.getItem(CONTROL_TAB_KEY)
+    if (item) {
+        return ControlTab[item]
+    }
+    return ControlTab.Grow
+}

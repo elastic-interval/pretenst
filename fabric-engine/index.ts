@@ -85,14 +85,17 @@ const STATE_COUNT: u8 = 16
 const ATTENUATED_COLOR: f32[] = [
     0.1, 0.1, 0.1
 ]
-const HOT_COLOR: f32[] = [
-    1.0, 0.3, 0.2
-]
-const COLD_COLOR: f32[] = [
-    0.2, 0.5, 1.0
-]
 const SLACK_COLOR: f32[] = [
     1.0, 1.0, 1.0
+]
+
+const ROLE_COLORS: f32[][] = [
+    [0.879, 0.295, 0.374],
+    [0.215, 0.629, 0.747],
+    [0.618, 0.126, 0.776],
+    [0.670, 0.627, 0.398],
+    [0.242, 0.879, 0.410],
+    [0.242, 0.879, 0.410],
 ]
 
 export function getInstanceCount(): u16 {
@@ -974,7 +977,7 @@ function outputLinesGeometry(): void {
             if (strain < slackThreshold) {
                 setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
-                let color = isPush ? HOT_COLOR : COLD_COLOR
+                let color = ROLE_COLORS[intervalRole]
                 setLineColor(intervalIndex, color[0], color[1], color[2])
             }
         } else if (colorPushes || colorPulls) {

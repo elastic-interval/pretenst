@@ -33,8 +33,8 @@ import { ToolbarLeft } from "./toolbar-left"
 import { ToolbarRightBottom } from "./toolbar-right-bottom"
 import { ToolbarRightTop } from "./toolbar-right-top"
 
-const SPLIT_LEFT = "29em"
-const SPLIT_RIGHT = "30em"
+const SPLIT_LEFT = "25em"
+const SPLIT_RIGHT = "26em"
 
 export function TensegrityView({fabricKernel, features, bootstrap, fabricState$, lifePhase$}: {
     fabricKernel: FabricKernel,
@@ -164,7 +164,12 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                     <ControlTabs
                         fabric={fabric}
                         selectedBrick={selectedBrick}
-                        setSelectedBrick={setSelectedBrick}
+                        setSelectedBrick={(brick?: IBrick) => {
+                            setSelectedBrick(brick)
+                            if (fabric && !brick) {
+                                fabric.clearSelection()
+                            }
+                        }}
                         tenscript={tenscript}
                         setTenscript={(grow: boolean, newScript: ITenscript) => {
                             setTenscript(newScript)

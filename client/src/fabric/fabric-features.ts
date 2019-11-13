@@ -150,7 +150,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.PushLength,
-        name: "Push Length",
+        name: "Push",
         defaultValue: 2 * 1.618,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -158,7 +158,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.TriangleLength,
-        name: "Triangle Length",
+        name: "Triangle",
         defaultValue: 2.123,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -166,7 +166,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.RingLength,
-        name: "Ring Length",
+        name: "Ring",
         defaultValue: 1.440,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -174,7 +174,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.CrossLength,
-        name: "Cross Length",
+        name: "Cross",
         defaultValue: 2.123,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -182,7 +182,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.BowMidLength,
-        name: "BowMid Length",
+        name: "BowMid",
         defaultValue: 0.8521,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -190,7 +190,7 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.BowEndLength,
-        name: "BowEnd Length",
+        name: "BowEnd",
         defaultValue: 1.2,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,

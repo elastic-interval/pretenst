@@ -53,6 +53,19 @@ function generateRainbow(): Color[] {
         // colors.push(`${r.toFixed(5)}, ${g.toFixed(5)}, ${b.toFixed(5)},`)
     }
     // console.log(`rainbow ${colors.length}`, colors.join("\n"))
+    const roleColors = Object.keys(IntervalRole).filter(role => role.length > 1).map(roleKey => {
+        const role: IntervalRole = IntervalRole[roleKey]
+        const color = roleColor(role)
+        const r = color.r
+        const g = color.g
+        const b = color.b
+        const length = Math.sqrt(r*r + g*g + b*b)
+        const rr = r/length
+        const gg = g/length
+        const bb = b/length
+        return `[${rr.toFixed(3)}, ${gg.toFixed(3)}, ${bb.toFixed(3)}],`
+    })
+    console.log("ROLES\n", roleColors.join("\n"))
     return rgbs
 }
 
@@ -63,20 +76,26 @@ export function rainbowMaterial(nuance: number): Material {
     return RAINBOW[index >= RAINBOW.length ? RAINBOW.length - 1 : index]
 }
 
-function roleColor(intervalRole: IntervalRole): string {
+export function roleColorString(intervalRole?: IntervalRole): string {
     switch (intervalRole) {
         case IntervalRole.Push:
-            return "#850018"
+            return "#862d39"
         case IntervalRole.Triangle:
-            return "#4b3484"
+            return "#266f84"
         case IntervalRole.Ring:
-            return "#041494"
+            return "#761894"
         case IntervalRole.Cross:
-            return "#084a7b"
+            return "#7b7349"
         case IntervalRole.BowMid:
         case IntervalRole.BowEnd:
-            return "#2a9c45"
+            return "#217838"
+        default:
+            return "#ff0205"
     }
+}
+
+export function roleColor(intervalRole?: IntervalRole): Color {
+    return new Color(roleColorString(intervalRole))
 }
 
 export function roleMaterial(intervalRole: IntervalRole): Material {
