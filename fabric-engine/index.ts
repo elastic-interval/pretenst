@@ -925,7 +925,7 @@ export function setColoring(pushes: boolean, pulls: boolean): void {
     colorPulls = pulls
 }
 
-function outputLinesGeometry(): void {
+function outputIntervals(): void {
     let slackThreshold = getFeature(FabricFeature.SlackThreshold)
     minPushStrain = BIG_STRAIN
     maxPushStrain = -BIG_STRAIN
@@ -1013,35 +1013,38 @@ function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize)
     multiplyScalar(normal, 1 / magnitude(normal))
 }
 
-function outputFaceGeometry(faceIndex: u16): void {
-    let loc0 = _location(getFaceJointIndex(faceIndex, 0))
-    let loc1 = _location(getFaceJointIndex(faceIndex, 1))
-    let loc2 = _location(getFaceJointIndex(faceIndex, 2))
-    // output the locations for rendering triangles
-    setVector(_faceLocation(faceIndex, 0), loc0)
-    setVector(_faceLocation(faceIndex, 1), loc1)
-    setVector(_faceLocation(faceIndex, 2), loc2)
-    // midpoint
-    let midpoint = _faceMidpoint(faceIndex)
-    zero(midpoint)
-    add(midpoint, loc0)
-    add(midpoint, loc1)
-    add(midpoint, loc2)
-    multiplyScalar(midpoint, 1 / 3.0)
-    // normals for each vertex
-    let _normal0 = _faceNormal(faceIndex, 0)
-    let _normal1 = _faceNormal(faceIndex, 1)
-    let _normal2 = _faceNormal(faceIndex, 2)
-    subVectors(_A, loc1, loc0)
-    subVectors(_B, loc2, loc0)
-    crossVectors(_normal0, _A, _B)
-    multiplyScalar(_normal0, 1 / magnitude(_normal0))
-    setVector(_normal1, _normal0)
-    setVector(_normal2, _normal0)
-    // adjust them
-    pushNormalTowardsJoint(_normal0, loc0, midpoint)
-    pushNormalTowardsJoint(_normal1, loc1, midpoint)
-    pushNormalTowardsJoint(_normal2, loc2, midpoint)
+function outputFaces(): void {
+    let faceCount = getFaceCount()
+    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
+        let loc0 = _location(getFaceJointIndex(faceIndex, 0))
+        let loc1 = _location(getFaceJointIndex(faceIndex, 1))
+        let loc2 = _location(getFaceJointIndex(faceIndex, 2))
+        // output the locations for rendering triangles
+        setVector(_faceLocation(faceIndex, 0), loc0)
+        setVector(_faceLocation(faceIndex, 1), loc1)
+        setVector(_faceLocation(faceIndex, 2), loc2)
+        // midpoint
+        let midpoint = _faceMidpoint(faceIndex)
+        zero(midpoint)
+        add(midpoint, loc0)
+        add(midpoint, loc1)
+        add(midpoint, loc2)
+        multiplyScalar(midpoint, 1 / 3.0)
+        // normals for each vertex
+        let _normal0 = _faceNormal(faceIndex, 0)
+        let _normal1 = _faceNormal(faceIndex, 1)
+        let _normal2 = _faceNormal(faceIndex, 2)
+        subVectors(_A, loc1, loc0)
+        subVectors(_B, loc2, loc0)
+        crossVectors(_normal0, _A, _B)
+        multiplyScalar(_normal0, 1 / magnitude(_normal0))
+        setVector(_normal1, _normal0)
+        setVector(_normal2, _normal0)
+        // adjust them
+        pushNormalTowardsJoint(_normal0, loc0, midpoint)
+        pushNormalTowardsJoint(_normal1, loc1, midpoint)
+        pushNormalTowardsJoint(_normal2, loc2, midpoint)
+    }
 }
 
 export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16): usize {
@@ -1054,7 +1057,6 @@ export function createFace(joint0Index: u16, joint1Index: u16, joint2Index: u16)
     setFaceJointIndex(faceIndex, 0, joint0Index)
     setFaceJointIndex(faceIndex, 1, joint1Index)
     setFaceJointIndex(faceIndex, 2, joint2Index)
-    outputFaceGeometry(faceIndex)
     return faceIndex
 }
 
@@ -1065,7 +1067,6 @@ export function removeFace(deadFaceIndex: u16): void {
         setFaceJointIndex(faceIndex, 0, getFaceJointIndex(nextFace, 0))
         setFaceJointIndex(faceIndex, 1, getFaceJointIndex(nextFace, 1))
         setFaceJointIndex(faceIndex, 2, getFaceJointIndex(nextFace, 2))
-        outputFaceGeometry(faceIndex)
     }
     setFaceCount(faceCount)
 }
@@ -1219,8 +1220,15 @@ export function initInstance(): LifePhase {
     return setLifePhase(LifePhase.Busy)
 }
 
+function output(): void {
+    calculateJointMidpoint()
+    outputIntervals()
+    outputFaces()
+}
+
 export function finishGrowing(): LifePhase {
     setAltitude(0.0)
+    output()
     return setLifePhase(LifePhase.Shaping)
 }
 
@@ -1237,23 +1245,31 @@ function slacken(): LifePhase {
         zero(_velocity(jointIndex))
     }
     setAltitude(0.0)
+    output()
     return setLifePhase(LifePhase.Slack)
 }
 
 function startPretensing(): LifePhase {
     setAltitude(0.0)
     setFabricBusyTicks(<u32>getFeature(FabricFeature.PretenseTicks))
+    output()
     return setLifePhase(LifePhase.Pretensing)
 }
 
 export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
     let age = getAge()
     let lifePhase = getLifePhase()
+    let intervalBusyCountdown: u16 = 0
+    let currentState = getCurrentState()
+    for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
+        intervalBusyCountdown = tick(intervalBusyCountdown, currentState, lifePhase)
+    }
+    setAge(age + <u32>ticks)
     switch (lifePhase) {
         case LifePhase.Busy:
             if (nextLifePhase === LifePhase.Growing) {
-                setAltitude(0.0)
                 setLifePhase(nextLifePhase)
+                return nextLifePhase
             }
             break
         case LifePhase.Growing:
@@ -1276,20 +1292,7 @@ export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
             }
             break
     }
-    let intervalBusyCountdown: u16 = 0
-    if (ticks > 0) {
-        let currentState = getCurrentState()
-        for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
-            intervalBusyCountdown = tick(intervalBusyCountdown, currentState, lifePhase)
-        }
-        setAge(age + <u32>ticks)
-    }
-    calculateJointMidpoint()
-    outputLinesGeometry()
-    let faceCount = getFaceCount()
-    for (let faceIndex: u16 = 0; faceIndex < faceCount; faceIndex++) {
-        outputFaceGeometry(faceIndex)
-    }
+    output()
     let fabricBusyCountdown = getFabricBusyCountdown()
     if (intervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
         if (fabricBusyCountdown === 0) {

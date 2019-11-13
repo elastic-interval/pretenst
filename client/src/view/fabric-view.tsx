@@ -28,14 +28,7 @@ import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabr
 import { byBrick, IBrick, IInterval } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import {
-    FACE,
-    FACE_SPHERE,
-    LINE_VERTEX_COLORS,
-    rainbowMaterial,
-    roleMaterial,
-    SCALE_LINE,
-} from "./materials"
+import { FACE, FACE_SPHERE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE } from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
@@ -94,12 +87,14 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, ellipsoids,
         orbit.current.autoRotate = fabricState$.getValue().rotating
     }, [fabric])
 
+    const [editMode, updateEditMode] = useState(fabricState$.getValue().editMode)
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
     const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
 
     const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => {
+            updateEditMode(newState.editMode)
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
             updateRotating(newState.rotating)
@@ -137,8 +132,13 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, ellipsoids,
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        const newLifePhase = fabric.iterate(ticks)
-        fabric.needsUpdate()
+        let newLifePhase = LifePhase.Busy
+        if (!ellipsoids) {
+            newLifePhase = fabric.iterate(ticks)
+            fabric.needsUpdate()
+        } else {
+            newLifePhase = fabric.iterate(0)
+        }
         if (lifePhase !== newLifePhase) {
             if (newLifePhase === LifePhase.Pretensing) {
                 lifePhase$.next(newLifePhase)
@@ -152,22 +152,17 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, ellipsoids,
     ])
 
     const selectBrick = (newSelectedBrick: IBrick) => {
-        if (fabric) {
-            fabric.selectIntervals(byBrick(newSelectedBrick))
-            setSelectedBrick(newSelectedBrick)
-            setTargetBrick(true)
-        }
+        fabric.selectIntervals(byBrick(newSelectedBrick))
+        setSelectedBrick(newSelectedBrick)
+        setTargetBrick(true)
     }
 
-    function SelectedFace(): JSX.Element {
-        if (!selectedBrick) {
-            return <group/>
-        }
+    function SelectedBrick({selected}: { selected: IBrick }): JSX.Element {
         const scale = 0.6
         return (
             <mesh
                 geometry={SPHERE}
-                position={fabric.brickMidpoint(selectedBrick)}
+                position={fabric.brickMidpoint(selected)}
                 material={FACE_SPHERE}
                 scale={new Vector3(scale, scale, scale)}
             />
@@ -266,24 +261,30 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, ellipsoids,
         )
     }
 
+    const hideStiffness = rotating || ellipsoids || lifePhase <= LifePhase.Shaping
     return (
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {rotating || lifePhase <= LifePhase.Shaping ? undefined : <StiffnessScale/>}
+                {hideStiffness ? undefined : <StiffnessScale/>}
                 {!fabric ? undefined : ellipsoids ? <EllipsoidView/> : <LineView/>}
-                {!(showPushes && showPulls) ? undefined : (
-                    <Faces
-                        fabric={fabric}
-                        lifePhase={lifePhase}
-                        selectBrick={selectBrick}
-                    />
+                {!editMode ? undefined : (
+                    <group>
+                        {!selectedBrick ? undefined : (
+                            <SelectedBrick key="selected brick" selected={selectedBrick}/>
+                        )}
+                        <Faces
+                            key="faces"
+                            fabric={fabric}
+                            lifePhase={lifePhase}
+                            selectBrick={selectBrick}
+                        />
+                    </group>
                 )}
-                <SelectedFace/>
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
-                <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
-                <mesh geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
+                <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
+                <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
             </scene>
         </group>

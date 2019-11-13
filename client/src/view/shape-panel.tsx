@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FaArrowDown, FaArrowUp, FaHammer, FaTimesCircle } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
@@ -89,11 +89,14 @@ function FeatureChoice({feature}: {
     feature: FloatFeature,
 }): JSX.Element {
     const [featurePercent, setFeaturePercent] = useState(feature.percent)
-    feature.onChange(() => {
-        const percent = feature.percent
-        if (percent !== featurePercent) {
-            setFeaturePercent(feature.percent)
-        }
+    useEffect(() => {
+        const subscription = feature.onChange(() => {
+            const percent = feature.percent
+            if (percent !== featurePercent) {
+                setFeaturePercent(feature.percent)
+            }
+        })
+        return () => subscription.unsubscribe()
     })
     return (
         <div>

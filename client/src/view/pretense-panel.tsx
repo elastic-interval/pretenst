@@ -13,13 +13,13 @@ import { SurfaceCharacter } from "../fabric/fabric-engine"
 import {
     DragLevel,
     enumValues,
-    fabricStateTransition,
     GravityLevel,
     IFabricState,
     LifePhase,
     PretenseFactor,
     PretenseSpeed,
     PushStrainFactor,
+    transition,
 } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -51,7 +51,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
     })
 
     function changeState(changed: Partial<IFabricState>): void {
-        fabricState$.next(fabricStateTransition(fabricState$.getValue(), changed))
+        fabricState$.next(transition(fabricState$.getValue(), changed))
     }
 
     return (

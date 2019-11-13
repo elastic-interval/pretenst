@@ -9,7 +9,7 @@ import { FaAnchor, FaCamera, FaClock, FaCubes, FaFileCsv, FaSyncAlt } from "reac
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { fabricStateTransition, IFabricState, LifePhase } from "../fabric/fabric-state"
+import { IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
@@ -40,13 +40,13 @@ export function ToolbarLeft({fabric, fabricState$, lifePhase$, fullScreen}: {
             <ButtonGroup>
                 <Button
                     color={ellipsoids ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next(fabricStateTransition(fabricState$.getValue(), {ellipsoids: !ellipsoids}))}
+                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {ellipsoids: !ellipsoids}))}
                 >
-                    {ellipsoids ? <FaCamera/> : <FaClock/>}
+                    {ellipsoids ? <FaClock/> : <FaCamera/>}
                 </Button>
                 <Button
                     color={rotating ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next(fabricStateTransition(fabricState$.getValue(), {rotating: !rotating}))}
+                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {rotating: !rotating}))}
                 >
                     {rotating ? <FaAnchor/> : <FaSyncAlt/>}
                 </Button>

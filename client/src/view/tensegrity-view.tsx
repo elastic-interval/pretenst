@@ -14,13 +14,14 @@ import { FabricFeature, lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import {
-    DRAG_LEVEL, fabricStateTransition,
+    DRAG_LEVEL,
     GRAVITY_LEVEL,
     IFabricState,
     LifePhase,
     PRETENSE_FACTOR,
     PRETENSE_SPEED,
     PUSH_STRAIN_FACTOR,
+    transition,
 } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
 import { IBrick, percentToFactor } from "../fabric/tensegrity-brick-types"
@@ -99,6 +100,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
         mainInstance.forgetDimensions()
         mainInstance.engine.initInstance()
         lifePhase$.next(LifePhase.Growing)
+        fabricState$.next(transition(fabricState$.getValue(), {ellipsoids: false}))
         setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript))
         if (replaceUrl) {
             location.hash = newTenscript.code
@@ -122,7 +124,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     }, [])
 
     function toFullScreen(value: boolean): void {
-        fabricState$.next(fabricStateTransition(fabricState$.getValue(), {fullScreen: value}))
+        fabricState$.next(transition(fabricState$.getValue(), {fullScreen: value}))
     }
 
     return (
@@ -220,7 +222,6 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                             fabricState$={fabricState$}
                         />
                         <ToolbarRightTop
-                            fabric={fabric}
                             fabricState$={fabricState$}
                         />
                         <Canvas style={{backgroundColor: "black"}}>

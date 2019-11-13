@@ -10,7 +10,7 @@ import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
-import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
+import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -53,7 +53,13 @@ export function ControlTabs({
     features: FloatFeature[],
 }): JSX.Element {
 
-    const [activeTab, setActiveTab] = useState(loadControlTab)
+    function setEditMode(controlTab: ControlTab): ControlTab {
+        const editMode = controlTab === ControlTab.Shape
+        fabricState$.next(transition(fabricState$.getValue(), {editMode}))
+        return controlTab
+    }
+
+    const [activeTab, setActiveTab] = useState(() => setEditMode(loadControlTab()))
 
     function Link({controlTab}: { controlTab: ControlTab }): JSX.Element {
         return (
@@ -66,7 +72,10 @@ export function ControlTabs({
                         saveControlTab(controlTab)
                         if (controlTab !== ControlTab.Shape) {
                             setSelectedBrick()
+                            fabricState$.next(transition(fabricState$.getValue(), {editMode: false}))
+                        } else {
                         }
+                        setEditMode(controlTab)
                     }}
                 >{Icon(controlTab)} {controlTab}</NavLink>
             </NavItem>

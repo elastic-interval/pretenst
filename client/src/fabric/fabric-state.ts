@@ -108,6 +108,7 @@ export interface IFabricState {
     pretenseFactor: PretenseFactor
     pretenseSpeed: PretenseSpeed
     pushStrainFactor: PushStrainFactor
+    editMode: boolean
     fullScreen: boolean
     ellipsoids: boolean
     rotating: boolean
@@ -115,7 +116,7 @@ export interface IFabricState {
     showPulls: boolean
 }
 
-export function fabricStateTransition(state: IFabricState, partial: Partial<IFabricState>): IFabricState {
+export function transition(state: IFabricState, partial: Partial<IFabricState>): IFabricState {
     return {...state, nonce: state.nonce + 1, ...partial}
 }
 
@@ -128,6 +129,7 @@ const INITIAL_FABRIC_STATE: IFabricState = {
     pretenseSpeed: PretenseSpeed.Slow,
     pushStrainFactor: PushStrainFactor.Equal,
     fullScreen: false,
+    editMode: false,
     ellipsoids: false,
     rotating: false,
     showPushes: true,

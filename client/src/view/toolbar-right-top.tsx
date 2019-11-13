@@ -9,11 +9,9 @@ import { FaExpandArrowsAlt, FaHandPointUp, FaVolleyballBall } from "react-icons/
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { fabricStateTransition, IFabricState } from "../fabric/fabric-state"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IFabricState, transition } from "../fabric/fabric-state"
 
-export function ToolbarRightTop({fabric, fabricState$}: {
-    fabric: TensegrityFabric,
+export function ToolbarRightTop({fabricState$}: {
     fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
     const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
@@ -28,7 +26,7 @@ export function ToolbarRightTop({fabric, fabricState$}: {
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
         const onClick = () => {
-            fabricState$.next(fabricStateTransition(fabricState$.getValue(), {showPulls: pulls, showPushes: pushes}))
+            fabricState$.next(transition(fabricState$.getValue(), {showPulls: pulls, showPushes: pushes}))
         }
         const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
         return <Button style={{color: "white"}} color={color} onClick={onClick}>
