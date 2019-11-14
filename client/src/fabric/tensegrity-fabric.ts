@@ -132,7 +132,7 @@ export class TensegrityFabric {
         this.nextLifePhase = LifePhase.Pretensing
     }
 
-    public fromPretenstStrainsToSlackStiffnesses(): void {
+    public fromStrainsToStiffnesses(): void {
         const instance = this.instance
         const {stiffnesses, linearDensities} = pretensingAdjustments(
             instance.strains,

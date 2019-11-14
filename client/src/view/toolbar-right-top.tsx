@@ -22,7 +22,7 @@ export function ToolbarRightTop({fabricState$}: {
             updateShowPulls(newState.showPulls)
         })
         return () => subscription.unsubscribe()
-    })
+    }, [])
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
         const onClick = () => {

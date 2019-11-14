@@ -31,7 +31,7 @@ export function LifePhasePanel({fabric, lifePhase$, rebuild}: {
     useEffect(() => {
         const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
-    })
+    }, [])
 
     function LifePhaseIcon(): JSX.Element {
         switch (lifePhase) {
@@ -65,7 +65,7 @@ export function LifePhasePanel({fabric, lifePhase$, rebuild}: {
                 <Button disabled={lifePhase !== LifePhase.Slack} onClick={() => fabric.fromSlackToPretensing()}>
                     <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/> Gravity <FaArrowDown/></span>
                 </Button>
-                <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => fabric.fromPretenstStrainsToSlackStiffnesses()}>
+                <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => fabric.fromStrainsToStiffnesses()}>
                     <span>Pretenst <FaHandSpock/> Strain <FaArrowRight/> Slack <FaYinYang/> Stiffness</span>
                 </Button>
                 <Button disabled={lifePhase !== LifePhase.Pretenst} onClick={() => fabric.toSlack()}>

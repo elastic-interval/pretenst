@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaClock, FaRunning } from "react-icons/all"
+import { FaArrowRight, FaRunning } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -44,33 +44,43 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
+
+    const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
+    const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
+
     const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [fullScreen, setFullScreen] = useState(fabricState$.getValue().fullScreen)
-    const [ellipsoids, setEllipsoids] = useState(fabricState$.getValue().ellipsoids)
+
+    const [fabricState, setFabricState] = useState(fabricState$.getValue())
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
-            if (fabric) {
-                const instance = fabric.instance
-                setFullScreen(newState.fullScreen)
-                setEllipsoids(newState.ellipsoids)
-                instance.engine.setColoring(newState.showPushes, newState.showPulls)
-                instance.engine.setSurfaceCharacter(newState.surfaceCharacter)
-                const adjust = (feature: FabricFeature, array: number[], choice: number) => {
-                    const value = array[choice]
-                    features[feature].numeric = value
-                    instance.setFeatureValue(feature, value)
-                }
-                adjust(FabricFeature.Gravity, GRAVITY_LEVEL, newState.gravityLevel)
-                adjust(FabricFeature.Drag, DRAG_LEVEL, newState.dragLevel)
-                adjust(FabricFeature.PretenseFactor, PRETENSE_FACTOR, newState.pretenseFactor)
-                adjust(FabricFeature.PretenseTicks, PRETENSE_SPEED, newState.pretenseSpeed)
-                adjust(FabricFeature.PushStrainFactor, PUSH_STRAIN_FACTOR, newState.pushStrainFactor)
-            }
-        })
+        const subscription = fabricState$.subscribe(newState => setFabricState(newState))
         return () => subscription.unsubscribe()
-    })
+    }, [])
+
+    useEffect(() => {
+        if (!fabric) {
+            return
+        }
+        const instance = fabric.instance
+        instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
+        instance.engine.setSurfaceCharacter(fabricState.surfaceCharacter)
+        const adjust = (feature: FabricFeature, array: number[], choice: number) => {
+            const value = array[choice]
+            if (features[feature].numeric === value) {
+                return
+            }
+            features[feature].numeric = value
+            console.error("adjusting feature", features[feature].config.name, value)
+            instance.setFeatureValue(feature, value)
+        }
+        adjust(FabricFeature.Gravity, GRAVITY_LEVEL, fabricState.gravityLevel)
+        adjust(FabricFeature.Drag, DRAG_LEVEL, fabricState.dragLevel)
+        adjust(FabricFeature.PretenseFactor, PRETENSE_FACTOR, fabricState.pretenseFactor)
+        adjust(FabricFeature.PretenseTicks, PRETENSE_SPEED, fabricState.pretenseSpeed)
+        adjust(FabricFeature.PushStrainFactor, PUSH_STRAIN_FACTOR, fabricState.pushStrainFactor)
+    }, [fabricState, fabric])
+
     useEffect(() => {
         const subscriptions = features.map(feature => feature.onChange(() => {
             if (!fabric) {
@@ -89,9 +99,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
             }
         }))
         return () => subscriptions.forEach(sub => sub.unsubscribe())
-    })
-    const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
-    const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
+    }, [fabric])
 
     function growFromTenscript(newTenscript: ITenscript, replaceUrl: boolean): void {
         if (!mainInstance || !slackInstance) {
@@ -129,7 +137,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
 
     return (
         <>
-            {fullScreen ? (
+            {fabricState.fullScreen ? (
                 <Button
                     color="dark"
                     style={{
@@ -143,15 +151,13 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                     }}
                     onClick={() => toFullScreen(false)}
                 >
-                    <FaClock/>
-                    <br/>
                     <FaArrowRight/>
                 </Button>
             ) : (
                 <div id="left-side"
                      style={{
                          position: "absolute",
-                         visibility: fullScreen ? "collapse" : "visible",
+                         visibility: fabricState.fullScreen ? "collapse" : "visible",
                          left: 0,
                          width: SPLIT_LEFT,
                          height: "100%",
@@ -191,7 +197,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
             )}
             <div style={{
                 position: "absolute",
-                left: fullScreen ? 0 : SPLIT_RIGHT,
+                left: fabricState.fullScreen ? 0 : SPLIT_RIGHT,
                 right: 0,
                 height: "100%",
             }}>
@@ -214,7 +220,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
-                            fullScreen={fullScreen}
+                            fullScreen={fabricState.fullScreen}
                         />
                         <ToolbarRightBottom
                             fabric={fabric}
@@ -229,7 +235,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                                 fabric={fabric}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
-                                ellipsoids={ellipsoids}
+                                ellipsoids={fabricState.ellipsoids}
                                 fabricState$={fabricState$}
                                 lifePhase$={lifePhase$}
                             />

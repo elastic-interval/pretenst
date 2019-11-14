@@ -81,7 +81,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, ellipsoids,
     useEffect(() => {
         const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
-    })
+    }, [])
 
     useEffect(() => {
         orbit.current.autoRotate = fabricState$.getValue().rotating
@@ -100,7 +100,7 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, ellipsoids,
             updateRotating(newState.rotating)
         })
         return () => subscription.unsubscribe()
-    })
+    }, [])
     useEffect(() => {
         orbit.current.autoRotate = rotating
     }, [rotating])

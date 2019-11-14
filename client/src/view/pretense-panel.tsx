@@ -48,7 +48,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
             updatePushStrainFactor(newState.pushStrainFactor)
         })
         return () => subscription.unsubscribe()
-    })
+    }, [])
 
     function changeState(changed: Partial<IFabricState>): void {
         fabricState$.next(transition(fabricState$.getValue(), changed))

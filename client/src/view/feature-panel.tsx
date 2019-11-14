@@ -19,7 +19,7 @@ export function FeaturePanel({feature}: { feature: FloatFeature }): JSX.Element 
             setFactorString(feature.formatted)
         })
         return () => subscription.unsubscribe()
-    })
+    }, [])
 
     const basicStyle: CSSProperties = {
         textAlign: "right",

@@ -131,15 +131,15 @@ function CodeArea({tenscript, setRunnable}: {
     }
 
     return (
-        <div style={{
-            backgroundColor: "#757575",
-            color: "#ffffff",
-            borderRadius: "1em",
-            borderColor: "black",
-            borderWidth: "1px",
-            width: "100%",
-            padding: "0.5em",
-        }}
+        <div
+            className="my-2 p-2 w-100"
+            style={{
+                backgroundColor: "#757575",
+                color: "#ffffff",
+                borderRadius: "1em",
+                borderColor: "black",
+                borderWidth: "1px",
+            }}
         >
             <div className="w-100 text-center">
                 <h6>Tenscript Construction Code</h6>
@@ -147,6 +147,7 @@ function CodeArea({tenscript, setRunnable}: {
             <Input
                 style={{
                     borderRadius: "1em",
+                    height: "20em",
                 }}
                 type="textarea" id="tenscript"
                 defaultValue={tenscriptCode}

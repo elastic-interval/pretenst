@@ -21,7 +21,7 @@ export function ToolbarRightBottom({fabric, lifePhase$, fabricState$}: {
     useEffect(() => {
         const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
-    })
+    }, [])
 
     const engine = fabric.instance.engine
     return (

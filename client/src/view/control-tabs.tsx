@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaCamera, FaEye, FaHammer, FaHandSpock, FaLeaf } from "react-icons/all"
+import { FaArrowLeft, FaEye, FaHammer, FaHandSpock, FaLeaf } from "react-icons/all"
 import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -152,7 +152,7 @@ export function ControlTabs({
         useEffect(() => {
             const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
             return () => subscription.unsubscribe()
-        })
+        }, [])
         return (
             <Button
                 disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}
@@ -165,8 +165,6 @@ export function ControlTabs({
                 className="w-100 h-100" color="dark"
                 onClick={toFullScreen}
             >
-                <FaCamera/>
-                <br/>
                 <FaArrowLeft/>
             </Button>
         )

@@ -30,7 +30,7 @@ export function ExplorePanel({fabric, features, fabricState$}: {
             updateShowPulls(newState.showPulls)
         })
         return () => subscription.unsubscribe()
-    })
+    }, [])
 
     return (
         <div className="my-2 w-100">

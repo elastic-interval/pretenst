@@ -97,7 +97,7 @@ function FeatureChoice({feature}: {
             }
         })
         return () => subscription.unsubscribe()
-    })
+    },[])
     return (
         <div>
             <div className="text-center">

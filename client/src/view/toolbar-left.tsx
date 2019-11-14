@@ -27,12 +27,12 @@ export function ToolbarLeft({fabric, fabricState$, lifePhase$, fullScreen}: {
             updateEllipsoids(newState.ellipsoids)
         })
         return () => subscription.unsubscribe()
-    })
+    }, [])
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
     useEffect(() => {
         const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
-    })
+    }, [])
     return (
         <div style={{
             left: fullScreen ? "2em" : "1em",
