@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { createConnectedBrick } from "./tensegrity-brick"
 import { IBrick, IPercent, percentOrHundred, Triangle, TRIANGLE_DEFINITIONS } from "./tensegrity-brick-types"
+import { TensegrityFabric } from "./tensegrity-fabric"
 
 export interface ITenscript {
     code: string
@@ -181,34 +181,35 @@ export function codeToTenscript(error: (message: string) => void, code?: string)
 export interface IActiveTenscript {
     tree: ITenscriptTree
     brick: IBrick
+    fabric: TensegrityFabric
 }
 
 export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
 
-    function grow(previousBrick: IBrick, tree: ITenscriptTree, triangle: Triangle, scale: IPercent): IActiveTenscript {
-        const connectTriangle = previousBrick.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
-        const brick = createConnectedBrick(previousBrick, connectTriangle, scale)
-        return {tree, brick}
-    }
+    before.forEach(({brick, tree, fabric}) => {
 
-    function maybeGrow(previousBrick: IBrick, triangle: Triangle, tree?: ITenscriptTree): void {
-        if (!tree) {
-            return
+        function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
+            const connectTriangle = previous.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
+            const newBrick = fabric.builder.createConnectedBrick(previous, connectTriangle, treeScale)
+            return {tree: newTree, brick: newBrick, fabric}
         }
-        const scale = percentOrHundred(tree.S)
-        const _ = tree._ ? tree._ - 1 : undefined
-        const decremented = {...tree, _}
-        active.push(grow(previousBrick, decremented, triangle, scale))
-    }
 
-    before.forEach(beforeCode => {
-        const {brick, tree} = beforeCode
+        function maybeGrow(previous: IBrick, triangle: Triangle, possibleSubtree?: ITenscriptTree): void {
+            if (!possibleSubtree) {
+                return
+            }
+            const subtreeScale = percentOrHundred(possibleSubtree.S)
+            const _ = possibleSubtree._ ? possibleSubtree._ - 1 : undefined
+            const decremented = {...possibleSubtree, _}
+            active.push(grow(previous, decremented, triangle, subtreeScale))
+        }
+
         const scale = percentOrHundred(tree.S)
         const forward = tree._
         if (forward) {
             const _ = forward - 1
-            active.push(grow(beforeCode.brick, {...tree, _}, Triangle.PPP, scale))
+            active.push(grow(brick, {...tree, _}, Triangle.PPP, scale))
         } else {
             maybeGrow(brick, Triangle.PPP, tree.A)
             maybeGrow(brick, Triangle.NPP, tree.B)

@@ -50,15 +50,15 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
 
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
-    const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
+    const [selectedBricks, setSelectedBricks] = useState<IBrick[]>([])
 
     useEffect(() => {
-        if (selectedBrick) {
+        if (selectedBricks.length) {
             fabricState$.next(transition(fabricState$.getValue(), {faceSelection: false}))
         } else if (fabric) {
             fabric.clearSelection()
         }
-    }, [fabric, selectedBrick])
+    }, [fabric, selectedBricks])
 
     const [faceSelection, updateFaceSelection] = useState(fabricState$.getValue().faceSelection)
     const [fullScreen, updateFullScreen] = useState(fabricState$.getValue().fullScreen)
@@ -163,8 +163,8 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                 >
                     <ControlTabs
                         fabric={fabric}
-                        selectedBrick={selectedBrick}
-                        clearSelectedBrick={() => setSelectedBrick(undefined)}
+                        selectedBricks={selectedBricks}
+                        clearSelectedBrick={() => setSelectedBricks([])}
                         tenscript={tenscript}
                         setTenscript={(grow: boolean, newScript: ITenscript) => {
                             setTenscript(newScript)
@@ -219,8 +219,8 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                         }}>
                             <FabricView
                                 fabric={fabric}
-                                selectedBrick={selectedBrick}
-                                setSelectedBrick={setSelectedBrick}
+                                selectedBricks={selectedBricks}
+                                setSelectedBricks={setSelectedBricks}
                                 faceSelection={faceSelection}
                                 ellipsoids={ellipsoids}
                                 fabricState$={fabricState$}

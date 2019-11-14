@@ -6,7 +6,6 @@
 import { Vector3 } from "three"
 
 import { IntervalRole } from "./fabric-engine"
-import { TensegrityFabric } from "./tensegrity-fabric"
 
 export const PHI = 1.61803398875
 
@@ -157,9 +156,9 @@ export function factorToPercent(factor: number): IPercent {
 }
 
 export interface IBrick {
+    index: number,
     base: Triangle
     scale: IPercent
-    fabric: TensegrityFabric
     joints: IJoint[]
     pushes: IInterval[]
     pulls: IInterval[]
@@ -167,17 +166,20 @@ export interface IBrick {
     faces: IFace[]
 }
 
+export function initialBrick(index: number, base: Triangle, scale: IPercent): IBrick {
+    return {index, base, scale, joints: [], pushes: [], pulls: [], rings: [[], [], [], []], faces: []}
+}
+
 export interface IConnector {
     pulls: IInterval[]
     facesToRemove: IFace[]
 }
 
-export function byBrick(brick: IBrick): (interval: IInterval) => boolean {
-    return interval => {
-        const matchesInterval = (faceInterval: IInterval) => (
-            !faceInterval.removed && faceInterval.index === interval.index
-        )
-        return brick.pushes.some(matchesInterval) || brick.pulls.some(matchesInterval)
+export function byBricks(bricks: IBrick[]): (interval: IInterval) => boolean {
+    return interval => { // TODO: use a map to speed this up
+        const matchesInterval = (faceInterval: IInterval) => !faceInterval.removed && faceInterval.index === interval.index
+        const matchesBrick = (brick: IBrick) => (brick.pushes.some(matchesInterval) || brick.pulls.some(matchesInterval))
+        return bricks.some(matchesBrick)
     }
 }
 

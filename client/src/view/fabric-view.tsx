@@ -25,7 +25,7 @@ import {
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
-import { byBrick, IBrick, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { byBricks, IBrick, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { FACE, FACE_SPHERE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE } from "./materials"
@@ -58,10 +58,10 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedBrick, setSelectedBrick, faceSelection, ellipsoids, fabricState$, lifePhase$}: {
+export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelection, ellipsoids, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
-    selectedBrick?: IBrick,
-    setSelectedBrick: (selectedBrick: IBrick) => void,
+    selectedBricks: IBrick[],
+    setSelectedBricks: (selectedBricks: IBrick[]) => void,
     faceSelection: boolean,
     ellipsoids: boolean,
     fabricState$: BehaviorSubject<IFabricState>,
@@ -70,7 +70,6 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, faceSelecti
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
     const [age, setAge] = useState(0)
-    const [targetBrick, setTargetBrick] = useState(false)
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const spaceMaterial = useMemo(() => {
@@ -127,7 +126,9 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, faceSelecti
             return
         }
         const instance = fabric.instance
-        const target = targetBrick && selectedBrick ? fabric.brickMidpoint(selectedBrick) : instance.getMidpoint()
+        const addToVector = (sum: Vector3, brick: IBrick) => sum.add(fabric.brickMidpoint(brick))
+        const averageBrickMidpoint = () => selectedBricks.reduce(addToVector, new Vector3()).multiplyScalar(1 / selectedBricks.length)
+        const target = selectedBricks.length === 0 ? instance.getMidpoint() : averageBrickMidpoint()
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
@@ -147,13 +148,20 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, faceSelecti
         }
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, targetBrick, selectedBrick, age, lifePhase, showPushes, showPulls, faceSelection,
+        fabric, selectedBricks, age, lifePhase, showPushes, showPulls, faceSelection,
     ])
 
-    const selectBrick = (newSelectedBrick: IBrick) => {
-        fabric.selectIntervals(byBrick(newSelectedBrick))
-        setSelectedBrick(newSelectedBrick)
-        setTargetBrick(true)
+    function selectBrick(newSelectedBrick: IBrick): void {
+        console.log("select", newSelectedBrick.index)
+        if (selectedBricks.some(selected => selected.index === newSelectedBrick.index)) {
+            const withoutNewBrick = selectedBricks.filter(b => b.index !== newSelectedBrick.index)
+            fabric.selectIntervals(byBricks(withoutNewBrick))
+            setSelectedBricks(withoutNewBrick)
+        } else {
+            const withNewBrick = [...selectedBricks, newSelectedBrick]
+            fabric.selectIntervals(byBricks(withNewBrick))
+            setSelectedBricks(withNewBrick)
+        }
     }
 
     function SelectedBrick({selected}: { selected: IBrick }): JSX.Element {
@@ -261,31 +269,27 @@ export function FabricView({fabric, selectedBrick, setSelectedBrick, faceSelecti
     }
 
     const hideStiffness = rotating || ellipsoids || lifePhase <= LifePhase.Shaping
-    return (
-        <group>
-            <orbit ref={orbit} args={[perspective, tensegrityView]}/>
-            <scene>
-                {hideStiffness ? undefined : <StiffnessScale/>}
-                {!fabric ? undefined : ellipsoids ? <EllipsoidView/> : <LineView/>}
-                {!faceSelection ? undefined : (
-                    <Faces
-                        key="faces"
-                        fabric={fabric}
-                        lifePhase={lifePhase}
-                        selectBrick={selectBrick}
-                    />
-                )}
-                {!selectedBrick ? undefined : (
-                    <SelectedBrick key="selected brick" selected={selectedBrick}/>
-                )}
-                {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
-                <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
-                <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
-                <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
-                <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
-            </scene>
-        </group>
-    )
+    return <group>
+        <orbit ref={orbit} args={[perspective, tensegrityView]}/>
+        <scene>
+            {hideStiffness ? undefined : <StiffnessScale/>}
+            {!fabric ? undefined : ellipsoids ? <EllipsoidView/> : <LineView/>}
+            {!faceSelection ? undefined : (
+                <Faces
+                    key="faces"
+                    fabric={fabric}
+                    lifePhase={lifePhase}
+                    selectBrick={selectBrick}
+                />
+            )}
+            {selectedBricks.map(brick => <SelectedBrick key={`brick${brick.index}`} selected={brick}/>)}
+            {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
+            <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
+            <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
+            <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
+            <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
+        </scene>
+    </group>
 }
 
 function Faces({fabric, lifePhase, selectBrick}: {

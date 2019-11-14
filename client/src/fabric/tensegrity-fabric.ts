@@ -10,7 +10,6 @@ import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-fe
 import { FabricInstance } from "./fabric-instance"
 import { LifePhase } from "./fabric-state"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
-import { createBrickOnOrigin, optimizeFabric } from "./tensegrity-brick"
 import {
     emptySplit,
     IBrick,
@@ -26,6 +25,7 @@ import {
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
+import { TensegrityBuilder } from "./tensegrity-builder"
 
 interface IOutputInterval {
     joints: string,
@@ -96,7 +96,9 @@ export class TensegrityFabric {
     public intervals: IInterval[] = []
     public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
+    public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
+    public readonly builder: TensegrityBuilder
 
     private faceCount: number
     private faceLocations: Float32BufferAttribute
@@ -116,9 +118,11 @@ export class TensegrityFabric {
         public readonly features: FloatFeature[],
         public readonly tenscript: ITenscript,
     ) {
+        this.builder = new TensegrityBuilder(this)
         features.forEach(feature => this.instance.applyFeature(feature))
-        const brick = createBrickOnOrigin(this, percentOrHundred())
-        this.activeTenscript = [{tree: this.tenscript.tree, brick}]
+        const brick = this.builder.createBrickOnOrigin(percentOrHundred())
+        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
+        this.bricks = [brick]
         this.refreshLineGeometry()
         this.refreshFaceGeometry()
     }
@@ -296,7 +300,7 @@ export class TensegrityFabric {
                 engine.centralize()
             }
             if (activeCode.length === 0) {
-                optimizeFabric(this)
+                this.builder.optimize()
                 this.activeTenscript = undefined
                 if (lifePhase === LifePhase.Growing) {
                     return engine.finishGrowing()

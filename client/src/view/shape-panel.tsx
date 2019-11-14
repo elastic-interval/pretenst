@@ -17,10 +17,10 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
-export function ShapePanel({fabric, features, selectedBrick, fabricState$}: {
+export function ShapePanel({fabric, features, selectedBricks, fabricState$}: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
-    selectedBrick?: IBrick,
+    selectedBricks: IBrick[],
     fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
@@ -73,13 +73,13 @@ export function ShapePanel({fabric, features, selectedBrick, fabricState$}: {
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
                     <Button
-                        disabled={!fabric.splitIntervals || !selectedBrick}
+                        disabled={!fabric.splitIntervals || selectedBricks.length === 0}
                         onClick={adjustValue(true)}
                     >
                         <FaArrowUp/><span> Bigger</span>
                     </Button>
                     <Button
-                        disabled={!fabric.splitIntervals || !selectedBrick}
+                        disabled={!fabric.splitIntervals || selectedBricks.length === 0}
                         onClick={adjustValue(false)}
                     >
                         <FaArrowDown/><span> Smaller</span>
