@@ -231,7 +231,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                             backgroundColor: "black",
                             borderStyle: "solid",
                             borderColor: faceSelection || ellipsoids ? "#f0ad4e" : "black",
-                            cursor: faceSelection ? "pointer" : "default",
+                            cursor: faceSelection ? "pointer" : "all-scroll",
                             borderWidth: "2px",
                         }}>
                             <FabricView
