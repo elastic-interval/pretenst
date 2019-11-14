@@ -19,7 +19,7 @@ import {
 
 const FABRIC_CODE_KEY = "FabricCode"
 
-const MAX_RECENT = 10
+const MAX_RECENT = 24
 
 export function TenscriptPanel({tenscript, setTenscript}: {
     tenscript?: ITenscript,
@@ -33,9 +33,6 @@ export function TenscriptPanel({tenscript, setTenscript}: {
 
     function addToRecentPrograms(newCode: ITenscript): void {
         const withoutNewCode = recentPrograms.filter(program => newCode.code !== program.code)
-        if (withoutNewCode.length !== recentPrograms.length) { // it was there already
-            return
-        }
         const recent = [newCode, ...withoutNewCode]
         while (recent.length > MAX_RECENT) {
             recent.pop()
