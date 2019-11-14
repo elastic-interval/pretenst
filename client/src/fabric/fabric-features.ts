@@ -4,7 +4,7 @@
  * something extra so it can compile
  */
 
-import { BehaviorSubject, Subscription } from "rxjs"
+import { BehaviorSubject } from "rxjs"
 
 import { FabricFeature, IntervalRole, roleToLengthFeature } from "./fabric-engine"
 
@@ -244,6 +244,7 @@ export class FloatFeature {
     }
 
     public set numeric(numeric: number) {
+        console.warn("set numeric")
         this.factor$.next({numeric, percent: -666})
     }
 
@@ -255,13 +256,8 @@ export class FloatFeature {
         this.factor$.next({numeric: this.config.defaultValue * percent / 100, percent})
     }
 
-    public get formatted(): string {
-        const scaledValue = this.numeric * multiplierValue(this.config.multiplier)
-        return scaledValue.toFixed(this.config.fixedDigits)
-    }
-
-    public onChange(change: () => void): Subscription {
-        return this.factor$.subscribe(() => change())
+    public get observable(): BehaviorSubject<IFeatureValue> {
+        return this.factor$
     }
 
     public get fabricFeature(): FabricFeature {
@@ -274,6 +270,11 @@ export class FloatFeature {
         const difference = Math.abs(overDefault - 1)
         return difference < 0.00001
     }
+}
+
+export function formatFeatureValue(config: IFeatureConfig, numeric: number): string {
+    const scaledValue = numeric * multiplierValue(config.multiplier)
+    return scaledValue.toFixed(config.fixedDigits)
 }
 
 export function createFabricFeatures(): FloatFeature[] {

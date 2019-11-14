@@ -10,7 +10,7 @@ import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
-import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
+import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -38,12 +38,12 @@ function Icon(controlTab: ControlTab): JSX.Element {
 }
 
 export function ControlTabs({
-                                fabric, selectedBrick, setSelectedBrick, tenscript, setTenscript,
+                                fabric, selectedBrick, clearSelectedBrick, tenscript, setTenscript,
                                 toFullScreen, fabricState$, lifePhase$, bootstrap, features,
                             }: {
     fabric?: TensegrityFabric,
     selectedBrick?: IBrick,
-    setSelectedBrick: (brick?: IBrick) => void,
+    clearSelectedBrick: () => void,
     tenscript?: ITenscript,
     setTenscript: (grow: boolean, tenscript?: ITenscript) => void,
     toFullScreen: () => void,
@@ -53,13 +53,15 @@ export function ControlTabs({
     features: FloatFeature[],
 }): JSX.Element {
 
-    function setEditMode(controlTab: ControlTab): ControlTab {
-        const editMode = controlTab === ControlTab.Shape
-        fabricState$.next(transition(fabricState$.getValue(), {editMode}))
+    function adjustForTab(controlTab: ControlTab): ControlTab {
+        if (controlTab !== ControlTab.Shape) {
+            return controlTab
+        }
+        clearSelectedBrick()
         return controlTab
     }
 
-    const [activeTab, setActiveTab] = useState(() => setEditMode(loadControlTab()))
+    const [activeTab, setActiveTab] = useState(() => adjustForTab(loadControlTab()))
 
     function Link({controlTab}: { controlTab: ControlTab }): JSX.Element {
         return (
@@ -70,12 +72,7 @@ export function ControlTabs({
                     onClick={() => {
                         setActiveTab(controlTab)
                         saveControlTab(controlTab)
-                        if (controlTab !== ControlTab.Shape) {
-                            setSelectedBrick()
-                            fabricState$.next(transition(fabricState$.getValue(), {editMode: false}))
-                        } else {
-                        }
-                        setEditMode(controlTab)
+                        adjustForTab(controlTab)
                     }}
                 >{Icon(controlTab)} {controlTab}</NavLink>
             </NavItem>
@@ -99,8 +96,8 @@ export function ControlTabs({
                         <ShapePanel
                             fabric={fabric}
                             selectedBrick={selectedBrick}
-                            setSelectedBrick={setSelectedBrick}
                             features={features}
+                            fabricState$={fabricState$}
                         />
                     )
                 case ControlTab.Optimize:

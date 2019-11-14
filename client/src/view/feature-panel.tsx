@@ -8,15 +8,15 @@ import { CSSProperties, useEffect, useState } from "react"
 import { FaGlobe } from "react-icons/all"
 import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactstrap"
 
-import { FloatFeature } from "../fabric/fabric-features"
+import { FloatFeature, formatFeatureValue } from "../fabric/fabric-features"
 
 export function FeaturePanel({feature}: { feature: FloatFeature }): JSX.Element {
 
     const [factorString, setFactorString] = useState<string>(feature.toString)
 
     useEffect(() => {
-        const subscription = feature.onChange(() => {
-            setFactorString(feature.formatted)
+        const subscription = feature.observable.subscribe(({numeric}) => {
+            setFactorString(formatFeatureValue(feature.config, numeric))
         })
         return () => subscription.unsubscribe()
     }, [])

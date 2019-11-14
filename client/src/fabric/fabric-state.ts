@@ -108,7 +108,7 @@ export interface IFabricState {
     pretenseFactor: PretenseFactor
     pretenseSpeed: PretenseSpeed
     pushStrainFactor: PushStrainFactor
-    editMode: boolean
+    faceSelection: boolean
     fullScreen: boolean
     ellipsoids: boolean
     rotating: boolean
@@ -129,7 +129,7 @@ const INITIAL_FABRIC_STATE: IFabricState = {
     pretenseSpeed: PretenseSpeed.Slow,
     pushStrainFactor: PushStrainFactor.Equal,
     fullScreen: false,
-    editMode: false,
+    faceSelection: false,
     ellipsoids: false,
     rotating: false,
     showPushes: true,

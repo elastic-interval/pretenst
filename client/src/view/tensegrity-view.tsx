@@ -48,15 +48,27 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
 
+    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
-    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [fullScreen, setFullScreen] = useState(fabricState$.getValue().fullScreen)
-    const [ellipsoids, setEllipsoids] = useState(fabricState$.getValue().ellipsoids)
+
+    useEffect(() => {
+        if (selectedBrick) {
+            fabricState$.next(transition(fabricState$.getValue(), {faceSelection: false}))
+        } else if (fabric) {
+            fabric.clearSelection()
+        }
+    }, [fabric, selectedBrick])
+
+    const [faceSelection, updateFaceSelection] = useState(fabricState$.getValue().faceSelection)
+    const [fullScreen, updateFullScreen] = useState(fabricState$.getValue().fullScreen)
+    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
+
     useEffect(() => {
         const subscription = fabricState$.subscribe(fabricState => {
-            setFullScreen(fabricState.fullScreen)
-            setEllipsoids(fabricState.ellipsoids)
+            updateFaceSelection(fabricState.faceSelection)
+            updateFullScreen(fabricState.fullScreen)
+            updateEllipsoids(fabricState.ellipsoids)
             if (!fabric) {
                 return
             }
@@ -82,7 +94,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     }, [fabric])
 
     useEffect(() => {
-        const subscriptions = features.map(feature => feature.onChange(() => {
+        const subscriptions = features.map(feature => feature.observable.subscribe(() => {
             if (!fabric) {
                 return
             }
@@ -152,12 +164,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                     <ControlTabs
                         fabric={fabric}
                         selectedBrick={selectedBrick}
-                        setSelectedBrick={(brick?: IBrick) => {
-                            setSelectedBrick(brick)
-                            if (fabric && !brick) {
-                                fabric.clearSelection()
-                            }
-                        }}
+                        clearSelectedBrick={() => setSelectedBrick(undefined)}
                         tenscript={tenscript}
                         setTenscript={(grow: boolean, newScript: ITenscript) => {
                             setTenscript(newScript)
@@ -204,11 +211,17 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                         <ToolbarRightTop
                             fabricState$={fabricState$}
                         />
-                        <Canvas style={{backgroundColor: "black"}}>
+                        <Canvas style={{
+                            backgroundColor: "black",
+                            borderStyle: "solid",
+                            borderColor: faceSelection || ellipsoids ? "#f0ad4e" : "black",
+                            borderWidth: "2px",
+                        }}>
                             <FabricView
                                 fabric={fabric}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
+                                faceSelection={faceSelection}
                                 ellipsoids={ellipsoids}
                                 fabricState$={fabricState$}
                                 lifePhase$={lifePhase$}
