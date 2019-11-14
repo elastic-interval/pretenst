@@ -10,7 +10,7 @@ import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
-import { ControlTab, IFabricState, LifePhase } from "../fabric/fabric-state"
+import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -53,28 +53,29 @@ export function ControlTabs({
     features: FloatFeature[],
 }): JSX.Element {
 
-    function adjustForTab(controlTab: ControlTab): ControlTab {
+    const [controlTab, updateActiveTab] = useState(fabricState$.getValue().controlTab)
+    useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
-            return controlTab
+            clearSelectedBricks()
         }
-        clearSelectedBricks()
-        return controlTab
-    }
+    }, [controlTab])
+    useEffect(() => {
+        const subscription = fabricState$.subscribe(newState => {
+            updateActiveTab(newState.controlTab)
+        })
+        return () => subscription.unsubscribe()
+    }, [])
 
-    const [activeTab, setActiveTab] = useState(() => adjustForTab(loadControlTab()))
-
-    function Link({controlTab}: { controlTab: ControlTab }): JSX.Element {
+    function Link({tab}: { tab: ControlTab }): JSX.Element {
         return (
             <NavItem>
                 <NavLink
-                    disabled={controlTab !== ControlTab.Grow && !fabric}
-                    active={activeTab === controlTab}
+                    disabled={tab !== ControlTab.Grow && !fabric}
+                    active={controlTab === tab}
                     onClick={() => {
-                        setActiveTab(controlTab)
-                        saveControlTab(controlTab)
-                        adjustForTab(controlTab)
+                        fabricState$.next(transition(fabricState$.getValue(), {controlTab: tab}))
                     }}
-                >{Icon(controlTab)} {controlTab}</NavLink>
+                >{Icon(tab)} {tab}</NavLink>
             </NavItem>
         )
     }
@@ -171,9 +172,9 @@ export function ControlTabs({
     return (
         <div className="h-100">
             <Nav tabs={true} style={{backgroundColor: "#b2b2b2"}}>
-                {Object.keys(ControlTab).map(tab => <Link key={`T${tab}`} controlTab={ControlTab[tab]}/>)}
+                {Object.keys(ControlTab).map(tab => <Link key={`T${tab}`} tab={ControlTab[tab]}/>)}
             </Nav>
-            <TabContent style={{flex: 1, flexFlow: "auto"}} id="tab-content" activeTab={activeTab}>
+            <TabContent style={{flex: 1, flexFlow: "auto"}} id="tab-content" activeTab={controlTab}>
                 {Object.keys(ControlTab).map(tab => <Pane key={tab} tab={ControlTab[tab]}/>)}
             </TabContent>
             <div style={{
@@ -188,18 +189,4 @@ export function ControlTabs({
             </div>
         </div>
     )
-}
-
-const CONTROL_TAB_KEY = "ControlTab"
-
-function saveControlTab(controlTab: ControlTab): void {
-    localStorage.setItem(CONTROL_TAB_KEY, controlTab)
-}
-
-function loadControlTab(): ControlTab {
-    const item = localStorage.getItem(CONTROL_TAB_KEY)
-    if (item) {
-        return ControlTab[item]
-    }
-    return ControlTab.Grow
 }

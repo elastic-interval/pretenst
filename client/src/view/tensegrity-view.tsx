@@ -14,6 +14,7 @@ import { FabricFeature, lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import {
+    ControlTab,
     DRAG_LEVEL,
     GRAVITY_LEVEL,
     IFabricState,
@@ -54,19 +55,19 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     const [selectedBricks, setSelectedBricks] = useState<IBrick[]>([])
 
     useEffect(() => {
-        if (selectedBricks.length) {
-            fabricState$.next(transition(fabricState$.getValue(), {faceSelection: false}))
-        } else if (fabric) {
+        if (fabric && selectedBricks.length === 0) {
             fabric.clearSelection()
         }
     }, [fabric, selectedBricks])
 
+    const [controlTab, updateControlTab] = useState(fabricState$.getValue().controlTab)
     const [faceSelection, updateFaceSelection] = useState(fabricState$.getValue().faceSelection)
     const [fullScreen, updateFullScreen] = useState(fabricState$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
 
     useEffect(() => {
         const subscription = fabricState$.subscribe(fabricState => {
+            updateControlTab(fabricState.controlTab)
             updateFaceSelection(fabricState.faceSelection)
             updateFullScreen(fabricState.fullScreen)
             updateEllipsoids(fabricState.ellipsoids)
@@ -198,10 +199,12 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                         <div id="top-middle">
                             {fabric.tenscript.code}
                         </div>
-                        <ToolbarLeftTop
-                            fabricState$={fabricState$}
-                            fullScreen={fullScreen}
-                        />
+                        {controlTab !== ControlTab.Shape ? undefined : (
+                            <ToolbarLeftTop
+                                fabricState$={fabricState$}
+                                fullScreen={fullScreen}
+                            />
+                        )}
                         <ToolbarLeftBottom
                             fabric={fabric}
                             fabricState$={fabricState$}

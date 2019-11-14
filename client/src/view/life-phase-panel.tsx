@@ -13,6 +13,7 @@ import {
     FaHandSpock,
     FaLeaf,
     FaSeedling,
+    FaTools,
     FaYinYang,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
@@ -39,7 +40,7 @@ export function LifePhasePanel({fabric, lifePhase$, rebuild, disabled}: {
             case LifePhase.Growing:
                 return <h2><FaSeedling/> Growing <FaSeedling/></h2>
             case LifePhase.Shaping:
-                return <h2><FaHammer/> Shaping <FaHammer/></h2>
+                return <h2><FaTools/> Shaping <FaTools/></h2>
             case LifePhase.Slack:
                 return <h2><FaYinYang/> Slack <FaYinYang/></h2>
             case LifePhase.Pretensing:

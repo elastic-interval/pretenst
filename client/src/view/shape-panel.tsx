@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaCompressArrowsAlt, FaHammer } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaCompressArrowsAlt, FaHandPointUp, FaSlidersH } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -55,7 +55,7 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
         <div className="w-100">
             <div className="m-4">
                 <div className="text-center">
-                    <h2>Editing <FaHammer/></h2>
+                    <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
                 </div>
                 <ButtonGroup className="w-100 my-2">
                     <Button
@@ -82,7 +82,7 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
             </div>
             <div className="m-4">
                 <div className="text-center">
-                    <h2><FaHammer/> Lengths</h2>
+                    <h2><FaSlidersH/> Lengths <FaSlidersH/></h2>
                 </div>
                 <div className="my-2" style={{
                     borderStyle: "solid",
