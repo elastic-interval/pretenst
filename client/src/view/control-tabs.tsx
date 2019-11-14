@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaEye, FaHammer, FaHandSpock, FaLeaf } from "react-icons/all"
+import { FaArrowLeft, FaHandSpock, FaLeaf, FaSearch, FaTools } from "react-icons/all"
 import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -16,7 +16,7 @@ import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ExplorePanel } from "./explore-panel"
-import { PretensePanel } from "./pretense-panel"
+import { OptimizePanel } from "./optimize-panel"
 import { ShapePanel } from "./shape-panel"
 import { TenscriptPanel } from "./tenscript-panel"
 
@@ -25,13 +25,13 @@ const SPLIT_LEFT = "25em"
 function Icon(controlTab: ControlTab): JSX.Element {
     switch (controlTab) {
         case ControlTab.Grow:
-            return <FaLeaf key="leaf"/>
+            return <FaLeaf key="grow"/>
         case ControlTab.Shape:
-            return <FaHammer key="hammer"/>
+            return <FaTools key="shape"/>
         case ControlTab.Optimize:
-            return <FaHandSpock key="spock"/>
+            return <FaHandSpock key="optimize"/>
         case ControlTab.Explore:
-            return <FaEye key="eye"/>
+            return <FaSearch key="explore"/>
         // case ControlTab.X:
         //     return <FaList key="list"/>
     }
@@ -104,7 +104,7 @@ export function ControlTabs({
                     )
                 case ControlTab.Optimize:
                     return !fabric ? (<div/>) : (
-                        <PretensePanel
+                        <OptimizePanel
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}

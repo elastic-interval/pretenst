@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaCompressArrowsAlt, FaHandPointUp, FaSlidersH } from "react-icons/all"
+import { FaCompressArrowsAlt, FaExpandArrowsAlt, FaHandPointUp, FaLink, FaSlidersH } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -62,13 +62,13 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
                         disabled={!fabric.splitIntervals || selectedBricks.length !== 1}
                         onClick={adjustValue(true)}
                     >
-                        <FaArrowUp/><span> Bigger</span>
+                        <FaExpandArrowsAlt/><span> Grow</span>
                     </Button>
                     <Button
                         disabled={!fabric.splitIntervals || selectedBricks.length !== 1}
                         onClick={adjustValue(false)}
                     >
-                        <FaArrowDown/><span> Smaller</span>
+                        <FaCompressArrowsAlt/><span> Shrink</span>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
@@ -76,7 +76,7 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
                         disabled={!fabric.splitIntervals || selectedBricks.length < 2}
                         onClick={() => connectBricks()}
                     >
-                        <FaCompressArrowsAlt/><span> Bring together</span>
+                        <FaLink/><span> Bring together</span>
                     </Button>
                 </ButtonGroup>
             </div>
@@ -113,7 +113,7 @@ function FeatureChoice({feature, disabled}: {
     }, [])
     return (
         <div>
-            <div className="text-center">
+            <div>
                 {feature.config.name}
             </div>
             <ButtonGroup className="w-100">

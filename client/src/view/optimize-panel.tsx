@@ -25,7 +25,7 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { LifePhasePanel } from "./life-phase-panel"
 
-export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
+export function OptimizePanel({fabric, fabricState$, lifePhase$, rebuild}: {
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
@@ -44,7 +44,7 @@ export function PretensePanel({fabric, fabricState$, lifePhase$, rebuild}: {
     }
 
     return (
-        <div className="m-2">
+        <div className="m-4">
             <div className="my-2 w-100">
                 <LifePhasePanel
                     fabric={fabric}
