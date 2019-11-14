@@ -138,38 +138,16 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     return (
         <>
             {fabricState.fullScreen ? (
-                <Button
-                    color="dark"
-                    style={{
-                        position: "absolute",
-                        padding: 0,
-                        margin: 0,
-                        top: 0,
-                        left: 0,
-                        height: "100%",
-                        zIndex: 1,
-                    }}
-                    onClick={() => toFullScreen(false)}
-                >
+                <Button id="to-full-screen" color="dark" onClick={() => toFullScreen(false)}>
                     <FaArrowRight/>
                 </Button>
             ) : (
-                <div id="left-side"
-                     style={{
-                         position: "absolute",
-                         visibility: fabricState.fullScreen ? "collapse" : "visible",
-                         left: 0,
-                         width: SPLIT_LEFT,
-                         height: "100%",
-                         borderStyle: "solid",
-                         borderColor: "#5c5c5c",
-                         borderLeftWidth: 0,
-                         borderTopWidth: 0,
-                         borderBottomWidth: 0,
-                         borderRightWidth: "1px",
-                         color: "#179a16",
-                         backgroundColor: "#000000",
-                     }}
+                <div
+                    id="left-side"
+                    style={{
+                        visibility: fabricState.fullScreen ? "collapse" : "visible",
+                        width: SPLIT_LEFT,
+                    }}
                 >
                     <ControlTabs
                         fabric={fabric}
