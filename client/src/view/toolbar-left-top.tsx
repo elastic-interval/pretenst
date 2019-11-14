@@ -5,21 +5,24 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaHandPointUp } from "react-icons/all"
+import { FaHandPointUp, FaTimesCircle } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, transition } from "../fabric/fabric-state"
+import { IBrick } from "../fabric/tensegrity-brick-types"
 
-export function ToolbarLeftTop({fabricState$, fullScreen}: {
-    fabricState$: BehaviorSubject<IFabricState>,
+export function ToolbarLeftTop({app$, fullScreen, selectedBricks, clearSelectedBricks}: {
+    app$: BehaviorSubject<IFabricState>,
     fullScreen: boolean,
+    selectedBricks: IBrick[]
+    clearSelectedBricks: () => void,
 }): JSX.Element {
 
-    const [faceSelection, updateFaceSelection] = useState(fabricState$.getValue().faceSelection)
+    const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
 
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = app$.subscribe(newState => {
             updateFaceSelection(newState.faceSelection)
         })
         return () => subscription.unsubscribe()
@@ -32,9 +35,21 @@ export function ToolbarLeftTop({fabricState$, fullScreen}: {
             <ButtonGroup>
                 <Button
                     color={faceSelection ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {faceSelection: !faceSelection}))}
+                    onClick={() => app$.next(transition(app$.getValue(), {faceSelection: !faceSelection}))}
                 >
                     <FaHandPointUp/>
+                </Button>
+                <Button
+                    disabled={selectedBricks.length === 0}
+                    onClick={() => clearSelectedBricks()}
+                >
+                    {selectedBricks.length > 0 ? (
+                        selectedBricks.map(({index}) => (
+                            <span key={`Dot${index}`}><FaTimesCircle/> </span>
+                        ))
+                    ) : (
+                        <FaTimesCircle/>
+                    )}
                 </Button>
             </ButtonGroup>
         </div>

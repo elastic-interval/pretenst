@@ -14,7 +14,6 @@ import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { LifePhase, loadFabricState, saveFabricState } from "./fabric/fabric-state"
-import { ITenscript, ITenscriptTree, treeToTenscript } from "./fabric/tenscript"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
@@ -41,33 +40,21 @@ APP_EVENT.subscribe(appEvent => {
     }
 })
 
-async function getBootstrapTenscripts(): Promise<ITenscript[]> {
-    const response = await fetch("/bootstrap.json")
-    const body = await response.json()
-    if (!body) {
-        return [{code: "0", tree: {_: 0}}]
-    }
-    const pretenst: ITenscriptTree[] = body.pretenst
-    return pretenst.map(treeToTenscript)
-}
-
 async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const fabricKernel = new FabricKernel(engine)
     const root = document.getElementById("root") as HTMLElement
     const fabricFeatures = createFabricFeatures()
-    const fabricState$ = new BehaviorSubject(loadFabricState())
+    const app$ = new BehaviorSubject(loadFabricState())
     const lifePhase$ = new BehaviorSubject(LifePhase.Growing)
-    fabricState$.subscribe(newState => saveFabricState(newState))
-    const bootstrap = await getBootstrapTenscripts()
+    app$.subscribe(newState => saveFabricState(newState))
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         ReactDOM.render(
             <TensegrityView
                 fabricKernel={fabricKernel}
                 features={fabricFeatures}
-                bootstrap={bootstrap}
-                fabricState$={fabricState$}
+                app$={app$}
                 lifePhase$={lifePhase$}
             />,
             root,

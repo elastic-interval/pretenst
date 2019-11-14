@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { CSSProperties, useEffect, useState } from "react"
+import { useEffect, useState } from "react"
 import { FaSortAmountUp, FaYinYang } from "react-icons/all"
 
 import { Limit } from "../fabric/fabric-engine"
@@ -40,22 +40,21 @@ export function StrainPanel({fabric, pushes}: {
     const zen = Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
     const minString = min.toFixed()
     const maxString = max.toFixed()
-    const style: CSSProperties = {
-        textAlign: "center",
-        width: "12em",
-        backgroundColor: "#cccccc",
-        borderColor: "#575757",
-        borderRadius: "1em",
-    }
     return (
-        <div style={style}>
+        <div style={{
+            textAlign: "center",
+            backgroundColor: "#cccccc",
+            borderColor: "#575757",
+            borderRadius: "1em",
+            width: "100%",
+        }}>
             {zen ? (
                 <div style={{
-                    fontSize: "large",
                     margin: 0,
-                    paddingTop: "0.2em",
-                    height: "100%",
-                }}><FaYinYang/></div>
+                    paddingTop: "0.6em",
+                    height: "2.5em",
+                    width: "100%",
+                }}>? <FaYinYang/> ?</div>
             ) : (
                 <div style={{
                     display: "block",
@@ -63,6 +62,8 @@ export function StrainPanel({fabric, pushes}: {
                     paddingTop: "0.6em",
                     marginRight: "1em",
                     marginLeft: "1em",
+                    height: "2.5em",
+                    width: "100%",
                 }}>
                     <span>{minString}</span>
                     &nbsp;<FaSortAmountUp/>&nbsp;

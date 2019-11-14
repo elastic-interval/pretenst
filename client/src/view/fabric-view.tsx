@@ -58,13 +58,13 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelection, ellipsoids, fabricState$, lifePhase$}: {
+export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelection, ellipsoids, app$, lifePhase$}: {
     fabric: TensegrityFabric,
     selectedBricks: IBrick[],
     setSelectedBricks: (selectedBricks: IBrick[]) => void,
     faceSelection: boolean,
     ellipsoids: boolean,
-    fabricState$: BehaviorSubject<IFabricState>,
+    app$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
@@ -84,15 +84,15 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
     }, [])
 
     useEffect(() => {
-        orbit.current.autoRotate = fabricState$.getValue().rotating
+        orbit.current.autoRotate = app$.getValue().rotating
     }, [fabric])
 
-    const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
-    const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
+    const [showPushes, updateShowPushes] = useState(app$.getValue().showPushes)
+    const [showPulls, updateShowPulls] = useState(app$.getValue().showPulls)
 
-    const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
+    const [rotating, updateRotating] = useState(app$.getValue().rotating)
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = app$.subscribe(newState => {
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
             updateRotating(newState.rotating)
@@ -151,13 +151,13 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
         fabric, selectedBricks, age, lifePhase, showPushes, showPulls, faceSelection,
     ])
 
-    function selectBrick(newSelectedBrick: IBrick): void {
-        if (selectedBricks.some(selected => selected.index === newSelectedBrick.index)) {
-            const withoutNewBrick = selectedBricks.filter(b => b.index !== newSelectedBrick.index)
+    function toggleBrickSelection(brickToToggle: IBrick): void {
+        if (selectedBricks.some(selected => selected.index === brickToToggle.index)) {
+            const withoutNewBrick = selectedBricks.filter(b => b.index !== brickToToggle.index)
             fabric.selectIntervals(byBricks(withoutNewBrick))
             setSelectedBricks(withoutNewBrick)
         } else {
-            const withNewBrick = [...selectedBricks, newSelectedBrick]
+            const withNewBrick = [...selectedBricks, brickToToggle]
             fabric.selectIntervals(byBricks(withNewBrick))
             setSelectedBricks(withNewBrick)
         }
@@ -268,27 +268,29 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
     }
 
     const hideStiffness = rotating || ellipsoids || lifePhase <= LifePhase.Shaping
-    return <group>
-        <orbit ref={orbit} args={[perspective, tensegrityView]}/>
-        <scene>
-            {hideStiffness ? undefined : <StiffnessScale/>}
-            {!fabric ? undefined : ellipsoids ? <EllipsoidView/> : <LineView/>}
-            {!faceSelection ? undefined : (
-                <Faces
-                    key="faces"
-                    fabric={fabric}
-                    lifePhase={lifePhase}
-                    selectBrick={selectBrick}
-                />
-            )}
-            {selectedBricks.map(brick => <SelectedBrick key={`brick${brick.index}`} selected={brick}/>)}
-            {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
-            <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
-            <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
-            <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
-            <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
-        </scene>
-    </group>
+    return (
+        <group>
+            <orbit ref={orbit} args={[perspective, tensegrityView]}/>
+            <scene>
+                {hideStiffness ? undefined : <StiffnessScale/>}
+                {!fabric ? undefined : ellipsoids ? <EllipsoidView/> : <LineView/>}
+                {!faceSelection ? undefined : (
+                    <Faces
+                        key="faces"
+                        fabric={fabric}
+                        lifePhase={lifePhase}
+                        selectBrick={toggleBrickSelection}
+                    />
+                )}
+                {selectedBricks.map(brick => <SelectedBrick key={`brick${brick.index}`} selected={brick}/>)}
+                {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
+                <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
+                <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
+                <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
+                <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
+            </scene>
+        </group>
+    )
 }
 
 function Faces({fabric, lifePhase, selectBrick}: {

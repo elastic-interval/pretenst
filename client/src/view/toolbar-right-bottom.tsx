@@ -12,10 +12,10 @@ import { BehaviorSubject } from "rxjs"
 import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function ToolbarRightBottom({fabric, lifePhase$, fabricState$}: {
+export function ToolbarRightBottom({fabric, lifePhase$, app$}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
-    fabricState$: BehaviorSubject<IFabricState>,
+    app$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
     useEffect(() => {

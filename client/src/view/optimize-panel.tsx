@@ -24,23 +24,24 @@ import {
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { LifePhasePanel } from "./life-phase-panel"
+import { StrainPanel } from "./strain-panel"
 
-export function OptimizePanel({fabric, fabricState$, lifePhase$, rebuild}: {
+export function OptimizePanel({fabric, app$, lifePhase$, rebuild}: {
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    app$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
     rebuild: () => void,
 }): JSX.Element {
-    const [fabricState, updateFabricState] = useState(fabricState$.getValue())
+    const [fabricState, updateFabricState] = useState(app$.getValue())
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = app$.subscribe(newState => {
             updateFabricState(newState)
         })
         return () => subscription.unsubscribe()
     }, [])
 
     function changeState(changed: Partial<IFabricState>): void {
-        fabricState$.next(transition(fabricState$.getValue(), changed))
+        app$.next(transition(app$.getValue(), changed))
     }
 
     return (
@@ -57,11 +58,12 @@ export function OptimizePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                 <h2><FaGlobe/> Environment <FaGlobe/></h2>
             </div>
             <div className="my-1">
-                <h6>Gravity</h6>
+                <div>Gravity</div>
                 <ButtonGroup className="w-100">
                     {enumValues(GravityLevel).map(value => (
                         <Button
                             key={GravityLevel[value]}
+                            size="sm"
                             active={fabricState.gravityLevel === value}
                             onClick={() => changeState({gravityLevel: value})}
                         >{GravityLevel[value]}</Button>
@@ -69,11 +71,12 @@ export function OptimizePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                 </ButtonGroup>
             </div>
             <div className="my-1">
-                <h6>Drag</h6>
+                <div>Drag</div>
                 <ButtonGroup className="w-100">
                     {enumValues(DragLevel).map(value => (
                         <Button
                             key={DragLevel[value]}
+                            size="sm"
                             active={fabricState.dragLevel === value}
                             onClick={() => changeState({dragLevel: value})}
                         >{DragLevel[value]}</Button>
@@ -81,11 +84,12 @@ export function OptimizePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                 </ButtonGroup>
             </div>
             <div className="my-1">
-                <h6>Surface</h6>
+                <div>Surface</div>
                 <ButtonGroup className="w-100">
                     {enumValues(SurfaceCharacter).map(value => (
                         <Button
                             key={SurfaceCharacter[value]}
+                            size="sm"
                             active={fabricState.surfaceCharacter === value}
                             onClick={() => changeState({surfaceCharacter: value})}
                         >{SurfaceCharacter[value]}</Button>
@@ -93,11 +97,12 @@ export function OptimizePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                 </ButtonGroup>
             </div>
             <div className="my-1">
-                <h6>Pretense Size</h6>
+                <div>Pretense Size</div>
                 <ButtonGroup className="w-100">
                     {enumValues(PretenseFactor).map(value => (
                         <Button
                             key={PretenseFactor[value]}
+                            size="sm"
                             active={fabricState.pretenseFactor === value}
                             onClick={() => changeState({pretenseFactor: value})}
                         >{PretenseFactor[value]}</Button>
@@ -105,11 +110,12 @@ export function OptimizePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                 </ButtonGroup>
             </div>
             <div className="my-1">
-                <h6>Pretense Speed</h6>
+                <div>Pretense Speed</div>
                 <ButtonGroup className="w-100">
                     {enumValues(PretenseSpeed).map(value => (
                         <Button
                             key={PretenseSpeed[value]}
+                            size="sm"
                             active={fabricState.pretenseSpeed === value}
                             onClick={() => changeState({pretenseSpeed: value})}
                         >{PretenseSpeed[value]}</Button>
@@ -117,16 +123,30 @@ export function OptimizePanel({fabric, fabricState$, lifePhase$, rebuild}: {
                 </ButtonGroup>
             </div>
             <div className="my-1">
-                <h6>Push Strain Factor</h6>
+                <div>Push Strain Factor</div>
                 <ButtonGroup className="w-100">
                     {enumValues(PushStrainFactor).map(value => (
                         <Button
                             key={PushStrainFactor[value]}
+                            size="sm"
                             active={fabricState.pushStrainFactor === value}
                             onClick={() => changeState({pushStrainFactor: value})}
                         >{PushStrainFactor[value]}</Button>
                     ))}
                 </ButtonGroup>
+            </div>
+            <div className="text-center">
+                <h2><FaGlobe/> Limits <FaGlobe/></h2>
+            </div>
+            <div className="my-1">
+                <div className="my-1">
+                    <div>Pulls</div>
+                    <StrainPanel fabric={fabric} pushes={false}/>
+                </div>
+                <div className="my-1">
+                    <div>Pushes</div>
+                    <StrainPanel fabric={fabric} pushes={true}/>
+                </div>
             </div>
         </div>
     )

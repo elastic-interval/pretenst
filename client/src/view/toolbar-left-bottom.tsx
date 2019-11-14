@@ -13,16 +13,16 @@ import { IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
-export function ToolbarLeftBottom({fabric, fabricState$, lifePhase$, fullScreen}: {
+export function ToolbarLeftBottom({fabric, app$, lifePhase$, fullScreen}: {
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    app$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
     fullScreen: boolean,
 }): JSX.Element {
-    const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
-    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
+    const [rotating, updateRotating] = useState(app$.getValue().rotating)
+    const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = app$.subscribe(newState => {
             updateRotating(newState.rotating)
             updateEllipsoids(newState.ellipsoids)
         })
@@ -40,13 +40,13 @@ export function ToolbarLeftBottom({fabric, fabricState$, lifePhase$, fullScreen}
             <ButtonGroup>
                 <Button
                     color={ellipsoids ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {ellipsoids: !ellipsoids}))}
+                    onClick={() => app$.next(transition(app$.getValue(), {ellipsoids: !ellipsoids}))}
                 >
                     {ellipsoids ? <FaClock/> : <FaCamera/>}
                 </Button>
                 <Button
                     color={rotating ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {rotating: !rotating}))}
+                    onClick={() => app$.next(transition(app$.getValue(), {rotating: !rotating}))}
                 >
                     {rotating ? <FaAnchor/> : <FaSyncAlt/>}
                 </Button>

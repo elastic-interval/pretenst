@@ -8,14 +8,20 @@ import { useState } from "react"
 import { FaRegFolder, FaRegFolderOpen, FaRunning } from "react-icons/all"
 import { Button, ButtonDropdown, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 
-import { codeToTenscript, ITenscript, ITenscriptTree, spaceAfterComma, treeToTenscript } from "../fabric/tenscript"
+import {
+    BOOTSTRAP,
+    codeToTenscript,
+    ITenscript,
+    ITenscriptTree,
+    spaceAfterComma,
+    treeToTenscript,
+} from "../fabric/tenscript"
 
 const FABRIC_CODE_KEY = "FabricCode"
 
 const MAX_RECENT = 10
 
-export function TenscriptPanel({bootstrap, tenscript, setTenscript}: {
-    bootstrap: ITenscript[],
+export function TenscriptPanel({tenscript, setTenscript}: {
     tenscript?: ITenscript,
     setTenscript: (grow: boolean, tenscript?: ITenscript) => void,
 }): JSX.Element {
@@ -102,7 +108,7 @@ export function TenscriptPanel({bootstrap, tenscript, setTenscript}: {
                 <DropdownToggle style={{borderRadius: "1.078em"}}>
                     {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
                 </DropdownToggle>
-                <DropdownMenu>{bootstrap.map((bootstrapProgram, index) => (
+                <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
                     <DropdownItem key={`Boot${index}`} onClick={() => adoptTenscript(false, bootstrapProgram)}>
                         {spaceAfterComma(bootstrapProgram.code)}
                     </DropdownItem>

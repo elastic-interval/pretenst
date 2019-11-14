@@ -17,18 +17,18 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
-export function ShapePanel({fabric, features, selectedBricks, clearSelectedBricks, fabricState$}: {
+export function ShapePanel({fabric, features, selectedBricks, clearSelectedBricks, app$}: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
     selectedBricks: IBrick[],
     clearSelectedBricks: () => void,
-    fabricState$: BehaviorSubject<IFabricState>,
+    app$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
-    const [faceSelection, updateFaceSelection] = useState(fabricState$.getValue().faceSelection)
-    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
+    const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
+    const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = app$.subscribe(newState => {
             updateFaceSelection(newState.faceSelection)
             updateEllipsoids(newState.ellipsoids)
         })
@@ -51,6 +51,10 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
         clearSelectedBricks()
     }
 
+    function disabled(requiredBrickCount: number): boolean {
+        return !fabric.splitIntervals || selectedBricks.length < requiredBrickCount || faceSelection || ellipsoids
+    }
+
     return (
         <div className="w-100">
             <div className="m-4">
@@ -58,24 +62,15 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
                     <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
                 </div>
                 <ButtonGroup className="w-100 my-2">
-                    <Button
-                        disabled={!fabric.splitIntervals || selectedBricks.length !== 1}
-                        onClick={adjustValue(true)}
-                    >
+                    <Button disabled={disabled(1)} onClick={adjustValue(true)}>
                         <FaExpandArrowsAlt/><span> Grow</span>
                     </Button>
-                    <Button
-                        disabled={!fabric.splitIntervals || selectedBricks.length !== 1}
-                        onClick={adjustValue(false)}
-                    >
+                    <Button disabled={disabled(1)} onClick={adjustValue(false)}>
                         <FaCompressArrowsAlt/><span> Shrink</span>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
-                    <Button
-                        disabled={!fabric.splitIntervals || selectedBricks.length < 2}
-                        onClick={() => connectBricks()}
-                    >
+                    <Button disabled={disabled(2)} onClick={() => connectBricks()}>
                         <FaLink/><span> Bring together</span>
                     </Button>
                 </ButtonGroup>
@@ -113,9 +108,7 @@ function FeatureChoice({feature, disabled}: {
     }, [])
     return (
         <div>
-            <div>
-                {feature.config.name}
-            </div>
+            <div>{feature.config.name}</div>
             <ButtonGroup className="w-100">
                 {feature.percentChoices.map(percent => {
                     const roleColor = roleColorString(lengthFeatureToRole(feature.fabricFeature))

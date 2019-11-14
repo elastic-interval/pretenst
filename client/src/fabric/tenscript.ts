@@ -6,6 +6,21 @@
 import { IBrick, IPercent, percentOrHundred, Triangle, TRIANGLE_DEFINITIONS } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
+const BOOTSTRAP_TENSCRIPTS = [
+    "(0)",
+    "(1)",
+    "(2)",
+    "(6)",
+    "(6,S85)",
+    "(B1,a1)",
+    "(B3,a3)",
+    "(A1,b3,c3,d3)",
+    "(B2,C2,D2,a2)",
+    "(b(5,S70),c(5,S70),d(5,S70),A1)",
+    "(B2,C2,D2,a(2,B2,C2,D2))",
+    "(A2,b(3,B(2,S90),S80),c(3,C(2,S90),S80),d(3,D(2,S90),S80))",
+]
+
 export interface ITenscript {
     code: string
     tree: ITenscriptTree
@@ -177,6 +192,12 @@ export function codeToTenscript(error: (message: string) => void, code?: string)
         return undefined
     }
 }
+
+function noParseErrors(message: string): void {
+    throw new Error(`Unable to parse: ${message}`)
+}
+
+export const BOOTSTRAP: ITenscript[] = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noParseErrors, script)) as ITenscript[]
 
 export interface IActiveTenscript {
     tree: ITenscriptTree

@@ -11,13 +11,13 @@ import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, transition } from "../fabric/fabric-state"
 
-export function ToolbarRightTop({fabricState$}: {
-    fabricState$: BehaviorSubject<IFabricState>,
+export function ToolbarRightTop({app$}: {
+    app$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
-    const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
-    const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
+    const [showPushes, updateShowPushes] = useState(app$.getValue().showPushes)
+    const [showPulls, updateShowPulls] = useState(app$.getValue().showPulls)
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = app$.subscribe(newState => {
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
         })
@@ -26,7 +26,7 @@ export function ToolbarRightTop({fabricState$}: {
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
         const onClick = () => {
-            fabricState$.next(transition(fabricState$.getValue(), {showPulls: pulls, showPushes: pushes}))
+            app$.next(transition(app$.getValue(), {showPulls: pulls, showPushes: pushes}))
         }
         const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
         return <Button style={{color: "white"}} color={color} onClick={onClick}>

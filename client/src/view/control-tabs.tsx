@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaHandSpock, FaLeaf, FaSearch, FaTools } from "react-icons/all"
+import { FaArrowLeft, FaHandSpock, FaLeaf, FaTools } from "react-icons/all"
 import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -15,7 +15,6 @@ import { ITenscript } from "../fabric/tenscript"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { ExplorePanel } from "./explore-panel"
 import { OptimizePanel } from "./optimize-panel"
 import { ShapePanel } from "./shape-panel"
 import { TenscriptPanel } from "./tenscript-panel"
@@ -30,37 +29,32 @@ function Icon(controlTab: ControlTab): JSX.Element {
             return <FaTools key="shape"/>
         case ControlTab.Optimize:
             return <FaHandSpock key="optimize"/>
-        case ControlTab.Explore:
-            return <FaSearch key="explore"/>
-        // case ControlTab.X:
-        //     return <FaList key="list"/>
     }
 }
 
 export function ControlTabs({
                                 fabric, selectedBricks, clearSelectedBricks, tenscript, setTenscript,
-                                toFullScreen, fabricState$, lifePhase$, bootstrap, features,
+                                toFullScreen, app$, lifePhase$, features,
                             }: {
     fabric?: TensegrityFabric,
     selectedBricks: IBrick[],
     clearSelectedBricks: () => void,
     tenscript?: ITenscript,
-    setTenscript: (grow: boolean, tenscript?: ITenscript) => void,
+    setTenscript: (grow: boolean, tenscript: ITenscript) => void,
     toFullScreen: () => void,
-    fabricState$: BehaviorSubject<IFabricState>,
+    app$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    bootstrap: ITenscript[],
     features: FloatFeature[],
 }): JSX.Element {
 
-    const [controlTab, updateActiveTab] = useState(fabricState$.getValue().controlTab)
+    const [controlTab, updateActiveTab] = useState(app$.getValue().controlTab)
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
             clearSelectedBricks()
         }
     }, [controlTab])
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = app$.subscribe(newState => {
             updateActiveTab(newState.controlTab)
         })
         return () => subscription.unsubscribe()
@@ -73,7 +67,7 @@ export function ControlTabs({
                     disabled={tab !== ControlTab.Grow && !fabric}
                     active={controlTab === tab}
                     onClick={() => {
-                        fabricState$.next(transition(fabricState$.getValue(), {controlTab: tab}))
+                        app$.next(transition(app$.getValue(), {controlTab: tab}))
                     }}
                 >{Icon(tab)} {tab}</NavLink>
             </NavItem>
@@ -87,7 +81,6 @@ export function ControlTabs({
                 case ControlTab.Grow:
                     return (
                         <TenscriptPanel
-                            bootstrap={bootstrap}
                             tenscript={tenscript}
                             setTenscript={setTenscript}
                         />
@@ -99,45 +92,22 @@ export function ControlTabs({
                             selectedBricks={selectedBricks}
                             clearSelectedBricks={clearSelectedBricks}
                             features={features}
-                            fabricState$={fabricState$}
+                            app$={app$}
                         />
                     )
                 case ControlTab.Optimize:
                     return !fabric ? (<div/>) : (
                         <OptimizePanel
                             fabric={fabric}
-                            fabricState$={fabricState$}
+                            app$={app$}
                             lifePhase$={lifePhase$}
-                            rebuild={() => setTenscript(true)}
+                            rebuild={() => {
+                                if (tenscript) {
+                                    setTenscript(true, tenscript)
+                                }
+                            }}
                         />
                     )
-                case ControlTab.Explore:
-                    return !fabric ? (<div/>) : (
-                        <ExplorePanel
-                            fabric={fabric}
-                            features={features}
-                            fabricState$={fabricState$}
-                        />
-                    )
-                // case ControlTab.X:
-                //     return !fabric ? <div/> : (
-                //         <div>
-                //             {features.filter(feature => !lengthFeatureToRole(feature.fabricFeature)).map(feature => (
-                //                 <div key={feature.title} style={{
-                //                     borderStyle: "solid",
-                //                     borderColor: "white",
-                //                     borderWidth: "0.1em",
-                //                     borderRadius: "0.7em",
-                //                     padding: "0.2em",
-                //                     marginTop: "0.3em",
-                //                     color: "white",
-                //                     backgroundColor: "#545454",
-                //                 }}>
-                //                     <FeaturePanel feature={feature} mutable={true}/>
-                //                 </div>
-                //             ))}
-                //         </div>
-                //     )
             }
         }
 
