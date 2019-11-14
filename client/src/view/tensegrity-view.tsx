@@ -51,35 +51,35 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
     const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
     const [selectedBrick, setSelectedBrick] = useState<IBrick | undefined>()
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-
-    const [fabricState, setFabricState] = useState(fabricState$.getValue())
+    const [fullScreen, setFullScreen] = useState(fabricState$.getValue().fullScreen)
+    const [ellipsoids, setEllipsoids] = useState(fabricState$.getValue().ellipsoids)
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => setFabricState(newState))
-        return () => subscription.unsubscribe()
-    }, [])
-
-    useEffect(() => {
-        if (!fabric) {
-            return
-        }
-        const instance = fabric.instance
-        instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
-        instance.engine.setSurfaceCharacter(fabricState.surfaceCharacter)
-        const adjust = (feature: FabricFeature, array: number[], choice: number) => {
-            const value = array[choice]
-            if (features[feature].numeric === value) {
+        const subscription = fabricState$.subscribe(fabricState => {
+            setFullScreen(fabricState.fullScreen)
+            setEllipsoids(fabricState.ellipsoids)
+            if (!fabric) {
                 return
             }
-            features[feature].numeric = value
-            console.error("adjusting feature", features[feature].config.name, value)
-            instance.setFeatureValue(feature, value)
-        }
-        adjust(FabricFeature.Gravity, GRAVITY_LEVEL, fabricState.gravityLevel)
-        adjust(FabricFeature.Drag, DRAG_LEVEL, fabricState.dragLevel)
-        adjust(FabricFeature.PretenseFactor, PRETENSE_FACTOR, fabricState.pretenseFactor)
-        adjust(FabricFeature.PretenseTicks, PRETENSE_SPEED, fabricState.pretenseSpeed)
-        adjust(FabricFeature.PushStrainFactor, PUSH_STRAIN_FACTOR, fabricState.pushStrainFactor)
-    }, [fabricState, fabric])
+            const instance = fabric.instance
+            instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
+            instance.engine.setSurfaceCharacter(fabricState.surfaceCharacter)
+            const adjust = (feature: FabricFeature, array: number[], choice: number) => {
+                const value = array[choice]
+                if (features[feature].numeric === value) {
+                    return
+                }
+                features[feature].numeric = value
+                console.error("adjusting feature", features[feature].config.name, value)
+                instance.setFeatureValue(feature, value)
+            }
+            adjust(FabricFeature.Gravity, GRAVITY_LEVEL, fabricState.gravityLevel)
+            adjust(FabricFeature.Drag, DRAG_LEVEL, fabricState.dragLevel)
+            adjust(FabricFeature.PretenseFactor, PRETENSE_FACTOR, fabricState.pretenseFactor)
+            adjust(FabricFeature.PretenseTicks, PRETENSE_SPEED, fabricState.pretenseSpeed)
+            adjust(FabricFeature.PushStrainFactor, PUSH_STRAIN_FACTOR, fabricState.pushStrainFactor)
+        })
+        return () => subscription.unsubscribe()
+    }, [fabric])
 
     useEffect(() => {
         const subscriptions = features.map(feature => feature.onChange(() => {
@@ -137,7 +137,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
 
     return (
         <>
-            {fabricState.fullScreen ? (
+            {fullScreen ? (
                 <Button id="to-full-screen" color="dark" onClick={() => toFullScreen(false)}>
                     <FaArrowRight/>
                 </Button>
@@ -145,7 +145,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                 <div
                     id="left-side"
                     style={{
-                        visibility: fabricState.fullScreen ? "collapse" : "visible",
+                        visibility: fullScreen ? "collapse" : "visible",
                         width: SPLIT_LEFT,
                     }}
                 >
@@ -175,17 +175,13 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
             )}
             <div style={{
                 position: "absolute",
-                left: fabricState.fullScreen ? 0 : SPLIT_RIGHT,
+                left: fullScreen ? 0 : SPLIT_RIGHT,
                 right: 0,
                 height: "100%",
             }}>
                 {!fabric ? (
                     <div id="tensegrity-view" className="h-100">
-                        <div style={{
-                            position: "relative",
-                            top: "50%",
-                            left: "50%",
-                        }}>
+                        <div style={{position: "relative", top: "50%", left: "50%"}}>
                             <h1><FaRunning/></h1>
                         </div>
                     </div>
@@ -198,7 +194,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
-                            fullScreen={fabricState.fullScreen}
+                            fullScreen={fullScreen}
                         />
                         <ToolbarRightBottom
                             fabric={fabric}
@@ -213,7 +209,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                                 fabric={fabric}
                                 selectedBrick={selectedBrick}
                                 setSelectedBrick={setSelectedBrick}
-                                ellipsoids={fabricState.ellipsoids}
+                                ellipsoids={ellipsoids}
                                 fabricState$={fabricState$}
                                 lifePhase$={lifePhase$}
                             />
