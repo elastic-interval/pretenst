@@ -30,7 +30,8 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
 import { getCodeFromUrl, getRecentCode } from "./tenscript-panel"
-import { ToolbarLeft } from "./toolbar-left"
+import { ToolbarLeftBottom } from "./toolbar-left-bottom"
+import { ToolbarLeftTop } from "./toolbar-left-top"
 import { ToolbarRightBottom } from "./toolbar-right-bottom"
 import { ToolbarRightTop } from "./toolbar-right-top"
 
@@ -164,7 +165,7 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                     <ControlTabs
                         fabric={fabric}
                         selectedBricks={selectedBricks}
-                        clearSelectedBrick={() => setSelectedBricks([])}
+                        clearSelectedBricks={() => setSelectedBricks([])}
                         tenscript={tenscript}
                         setTenscript={(grow: boolean, newScript: ITenscript) => {
                             setTenscript(newScript)
@@ -197,18 +198,22 @@ export function TensegrityView({fabricKernel, features, bootstrap, fabricState$,
                         <div id="top-middle">
                             {fabric.tenscript.code}
                         </div>
-                        <ToolbarLeft
+                        <ToolbarLeftTop
+                            fabricState$={fabricState$}
+                            fullScreen={fullScreen}
+                        />
+                        <ToolbarLeftBottom
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
                             fullScreen={fullScreen}
                         />
+                        <ToolbarRightTop
+                            fabricState$={fabricState$}
+                        />
                         <ToolbarRightBottom
                             fabric={fabric}
                             lifePhase$={lifePhase$}
-                            fabricState$={fabricState$}
-                        />
-                        <ToolbarRightTop
                             fabricState$={fabricState$}
                         />
                         <Canvas style={{

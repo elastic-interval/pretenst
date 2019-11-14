@@ -38,12 +38,12 @@ function Icon(controlTab: ControlTab): JSX.Element {
 }
 
 export function ControlTabs({
-                                fabric, selectedBricks, clearSelectedBrick, tenscript, setTenscript,
+                                fabric, selectedBricks, clearSelectedBricks, tenscript, setTenscript,
                                 toFullScreen, fabricState$, lifePhase$, bootstrap, features,
                             }: {
     fabric?: TensegrityFabric,
     selectedBricks: IBrick[],
-    clearSelectedBrick: () => void,
+    clearSelectedBricks: () => void,
     tenscript?: ITenscript,
     setTenscript: (grow: boolean, tenscript?: ITenscript) => void,
     toFullScreen: () => void,
@@ -57,7 +57,7 @@ export function ControlTabs({
         if (controlTab !== ControlTab.Shape) {
             return controlTab
         }
-        clearSelectedBrick()
+        clearSelectedBricks()
         return controlTab
     }
 
@@ -96,6 +96,7 @@ export function ControlTabs({
                         <ShapePanel
                             fabric={fabric}
                             selectedBricks={selectedBricks}
+                            clearSelectedBricks={clearSelectedBricks}
                             features={features}
                             fabricState$={fabricState$}
                         />

@@ -152,7 +152,6 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
     ])
 
     function selectBrick(newSelectedBrick: IBrick): void {
-        console.log("select", newSelectedBrick.index)
         if (selectedBricks.some(selected => selected.index === newSelectedBrick.index)) {
             const withoutNewBrick = selectedBricks.filter(b => b.index !== newSelectedBrick.index)
             fabric.selectIntervals(byBricks(withoutNewBrick))

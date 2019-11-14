@@ -13,7 +13,7 @@ import { IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles, saveOBJFile } from "../storage/download"
 
-export function ToolbarLeft({fabric, fabricState$, lifePhase$, fullScreen}: {
+export function ToolbarLeftBottom({fabric, fabricState$, lifePhase$, fullScreen}: {
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,

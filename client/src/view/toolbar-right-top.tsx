@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaExpandArrowsAlt, FaHandPointUp, FaVolleyballBall } from "react-icons/all"
+import { FaExpandArrowsAlt, FaFutbol, FaVolleyballBall } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -30,7 +30,7 @@ export function ToolbarRightTop({fabricState$}: {
         }
         const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
         return <Button style={{color: "white"}} color={color} onClick={onClick}>
-            {pushes && pulls ? <FaHandPointUp/> : pushes ? <FaExpandArrowsAlt/> : <FaVolleyballBall/>}
+            {pushes && pulls ? <FaFutbol/> : pushes ? <FaExpandArrowsAlt/> : <FaVolleyballBall/>}
         </Button>
     }
 

@@ -5,22 +5,23 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowDown, FaArrowUp, FaHammer, FaHandPointUp, FaRunning } from "react-icons/all"
+import { FaArrowDown, FaArrowUp, FaCompressArrowsAlt, FaHammer } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { IFabricState, transition } from "../fabric/fabric-state"
+import { IFabricState } from "../fabric/fabric-state"
 import { IBrick } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
-export function ShapePanel({fabric, features, selectedBricks, fabricState$}: {
+export function ShapePanel({fabric, features, selectedBricks, clearSelectedBricks, fabricState$}: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
     selectedBricks: IBrick[],
+    clearSelectedBricks: () => void,
     fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
@@ -33,6 +34,7 @@ export function ShapePanel({fabric, features, selectedBricks, fabricState$}: {
         })
         return () => subscription.unsubscribe()
     }, [])
+
     const adjustValue = (up: boolean) => () => {
         function adjustment(): number {
             const factor = 1.03
@@ -44,21 +46,9 @@ export function ShapePanel({fabric, features, selectedBricks, fabricState$}: {
         })
     }
 
-    function EditModeButton({mode}: { mode: boolean }): JSX.Element {
-        const onClick = () => fabricState$.next(transition(fabricState$.getValue(), {faceSelection: mode}))
-        return (
-            <Button
-                color={faceSelection === mode ? "success" : "secondary"}
-                disabled={faceSelection === mode}
-                onClick={onClick}
-            >
-                {mode ? (
-                    <span><FaHandPointUp/> Selecting</span>
-                ) : (
-                    <span><FaRunning/> Running</span>
-                )}
-            </Button>
-        )
+    function connectBricks(): void {
+        console.log("Connect!", selectedBricks.map(b => b.index))
+        clearSelectedBricks()
     }
 
     return (
@@ -68,21 +58,25 @@ export function ShapePanel({fabric, features, selectedBricks, fabricState$}: {
                     <h2>Editing <FaHammer/></h2>
                 </div>
                 <ButtonGroup className="w-100 my-2">
-                    <EditModeButton mode={true}/>
-                    <EditModeButton mode={false}/>
-                </ButtonGroup>
-                <ButtonGroup className="w-100 my-2">
                     <Button
-                        disabled={!fabric.splitIntervals || selectedBricks.length === 0}
+                        disabled={!fabric.splitIntervals || selectedBricks.length !== 1}
                         onClick={adjustValue(true)}
                     >
                         <FaArrowUp/><span> Bigger</span>
                     </Button>
                     <Button
-                        disabled={!fabric.splitIntervals || selectedBricks.length === 0}
+                        disabled={!fabric.splitIntervals || selectedBricks.length !== 1}
                         onClick={adjustValue(false)}
                     >
                         <FaArrowDown/><span> Smaller</span>
+                    </Button>
+                </ButtonGroup>
+                <ButtonGroup className="w-100 my-2">
+                    <Button
+                        disabled={!fabric.splitIntervals || selectedBricks.length < 2}
+                        onClick={() => connectBricks()}
+                    >
+                        <FaCompressArrowsAlt/><span> Bring together</span>
                     </Button>
                 </ButtonGroup>
             </div>
