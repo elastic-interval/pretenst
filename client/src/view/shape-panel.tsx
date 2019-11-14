@@ -119,7 +119,7 @@ function FeatureChoice({feature, disabled}: {
             <ButtonGroup className="w-100">
                 {feature.percentChoices.map(percent => {
                     const roleColor = roleColorString(lengthFeatureToRole(feature.fabricFeature))
-                    const backgroundColor = featurePercent === percent ? "#cccccc" : roleColor
+                    const backgroundColor = featurePercent === percent ? "#000000" : roleColor
                     return (
                         <Button
                             disabled={disabled}
