@@ -65,7 +65,6 @@ export class TensegrityBuilder {
         const connectablePairs = brickPairs.filter(({brickA, brickB}) => {
             const distance = fabric.brickMidpoint(brickA).distanceTo(fabric.brickMidpoint(brickB))
             const connectDistance = (percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) * 3
-            console.log("Not connectable", distance, connectDistance)
             return distance <= connectDistance
         })
         const connectedPairs = connectablePairs.filter(({brickA, brickB}) => {
@@ -92,10 +91,6 @@ export class TensegrityBuilder {
         this.brickPairs = brickPairs.filter(({brickA, brickB}) => !connectedPairs.some(pair => (
             pair.brickA.index === brickA.index && pair.brickB.index === brickB.index
         )))
-        if (connectedPairs.length > 0) {
-            console.warn("slow")
-            fabric.slow = true
-        }
         return this.brickPairs.length > 0
     }
 
@@ -217,7 +212,7 @@ export class TensegrityBuilder {
             this.fabric.instance.moveLocation(joint.index, move)
         })
         const scaleSum = percentToFactor(brickA.scale) + percentToFactor(brickB.scale)
-        const closer = scaleSum / 10
+        const closer = scaleSum / 3
         const fromAToB = new Vector3().subVectors(midB, midA).normalize().multiplyScalar(closer / 2)
         moveBrick(brickA, fromAToB)
         moveBrick(brickB, fromAToB.multiplyScalar(-1))
@@ -355,7 +350,6 @@ export class TensegrityBuilder {
     }
 
     private facesToRing(faceA: IFace, faceB: IFace): IJoint[] | undefined {
-        const instance = this.fabric.instance
         const defA = TRIANGLE_DEFINITIONS[faceA.triangle]
         const endsA = defA.pushEnds.map(end => faceA.brick.joints[end])
         const jointsA = defA.negative ? endsA.reverse() : endsA
@@ -363,13 +357,14 @@ export class TensegrityBuilder {
         const endsB = defB.pushEnds.map(end => faceB.brick.joints[end])
         const jointsB = defA.negative ? endsB.reverse() : endsB
         // todo: prove that the normal is that
-        const a01 = new Vector3().subVectors(instance.location(jointsA[1].index), instance.location(jointsA[0].index))
-        const a02 = new Vector3().subVectors(instance.location(jointsA[2].index), instance.location(jointsA[0].index))
-        const b01 = new Vector3().subVectors(instance.location(jointsB[1].index), instance.location(jointsB[0].index))
-        const b02 = new Vector3().subVectors(instance.location(jointsB[2].index), instance.location(jointsB[0].index))
-        const crossA = new Vector3().crossVectors(a01, a02).normalize()
-        const crossB = new Vector3().crossVectors(b01, b02).normalize()
-        console.log(`dot=${crossA.dot(crossB)}`)
+        // const instance = this.fabric.instance
+        // const a01 = new Vector3().subVectors(instance.location(jointsA[1].index), instance.location(jointsA[0].index))
+        // const a02 = new Vector3().subVectors(instance.location(jointsA[2].index), instance.location(jointsA[0].index))
+        // const b01 = new Vector3().subVectors(instance.location(jointsB[1].index), instance.location(jointsB[0].index))
+        // const b02 = new Vector3().subVectors(instance.location(jointsB[2].index), instance.location(jointsB[0].index))
+        // const crossA = new Vector3().crossVectors(a01, a02).normalize()
+        // const crossB = new Vector3().crossVectors(b01, b02).normalize()
+        // console.log(`dot=${crossA.dot(crossB)}`)
         // todo: =========================
         const ninePairs: IJointPair[] = []
         jointsA.forEach(jointA => {
@@ -383,21 +378,18 @@ export class TensegrityBuilder {
         ninePairs.sort((a, b) => a.distance - b.distance)
         const closePairs = ninePairs.slice(0, 6)
         const farPairs = ninePairs.slice(6)
-        // console.log("close pairs", closePairs.map(p => `${p.jointA.index}:${p.jointB.index}=${p.distance}`))
-        // console.log("far pairs", farPairs.map(p => `${p.jointA.index}:${p.jointB.index}=${p.distance}`))
         const addDistance = (sum: number, {distance}: IJointPair) => sum + distance
         const averageClose = closePairs.reduce(addDistance, 0) / closePairs.length
         const averageFar = farPairs.reduce(addDistance, 0) / farPairs.length
         const discrepancy = Math.abs(averageFar - averageClose * 2)
         const furthestClose = closePairs[closePairs.length - 1].distance
-        console.log(`averageClose=${averageClose.toFixed(2)} averageFar=${averageFar.toFixed(2)}`, furthestClose.toFixed(4))
+        // console.log(`averageClose=${averageClose.toFixed(2)} averageFar=${averageFar.toFixed(2)}`, furthestClose.toFixed(4))
         // TODO: not 2 but something with scale?
         if (furthestClose > 2 || discrepancy > averageClose / 3) {
-            console.log("nope!")
             return undefined
         }
         const ring: IJoint[] = []
-        console.log("Pairs", closePairs.map(p => `${p.jointA.index}-${p.jointB.index}:${p.distance.toFixed(4)}`))
+        // console.log("Pairs", closePairs.map(p => `${p.jointA.index}-${p.jointB.index}:${p.distance.toFixed(4)}`))
         const closest = closePairs.shift()
         if (!closest) {
             throw new Error()
@@ -426,7 +418,7 @@ export class TensegrityBuilder {
                 closePairs.splice(fromA, 1)
                 findB = true
             }
-            console.log("Ring", ring.map(j => j.index), closePairs.map(p => `${p.jointA.index}-${p.jointB.index}:${p.distance.toFixed(4)}`))
+            // console.log("Ring", ring.map(j => j.index), closePairs.map(p => `${p.jointA.index}-${p.jointB.index}:${p.distance.toFixed(4)}`))
         }
         return ring
     }

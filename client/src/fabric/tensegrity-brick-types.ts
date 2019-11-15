@@ -138,6 +138,10 @@ export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
     },
 ]
 
+export interface IBrickMark {
+    _: number
+}
+
 export interface IPercent {
     _: number
 }

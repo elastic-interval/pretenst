@@ -136,7 +136,7 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
         if (ellipsoids || faceSelection) {
             newLifePhase = fabric.iterate(0)
         } else {
-            newLifePhase = fabric.iterate(fabric.slow ? 1 : ticks)
+            newLifePhase = fabric.iterate(ticks)
             fabric.needsUpdate()
         }
         if (lifePhase !== newLifePhase) {

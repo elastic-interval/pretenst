@@ -94,7 +94,7 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={needsBricks(2)} onClick={()=> fabric.builder.optimize()}>
+                    <Button onClick={()=> fabric.builder.optimize()}>
                         <FaMicroscope/><span> Remove redundancies</span>
                     </Button>
                 </ButtonGroup>

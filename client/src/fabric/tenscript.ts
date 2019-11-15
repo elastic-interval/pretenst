@@ -3,7 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IBrick, IPercent, percentOrHundred, Triangle, TRIANGLE_DEFINITIONS } from "./tensegrity-brick-types"
+import {
+    IBrick,
+    IBrickMark,
+    IPercent,
+    percentOrHundred,
+    Triangle,
+    TRIANGLE_DEFINITIONS,
+} from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const BOOTSTRAP_TENSCRIPTS = [
@@ -31,6 +38,7 @@ export interface ITenscript {
 export interface ITenscriptTree {
     _?: number, // forward steps
     S?: IPercent, // scale
+    M?: IBrickMark, // mark
     A?: ITenscriptTree, // directions
     B?: ITenscriptTree, // kinda up
     C?: ITenscriptTree,
@@ -151,10 +159,14 @@ export function codeToTenscript(error: (message: string) => void, code?: string)
                     index += direction.skip
                     break
                 case "S":
-                    const number = codeString.substring(index + 1)
-                    const percent = argument(number, true)
-                    tree.S = {_: parseInt(percent.content, 10)}
-                    index += percent.skip
+                    const scaleArg = argument(codeString.substring(index + 1), true)
+                    tree.S = {_: parseInt(scaleArg.content, 10)}
+                    index += scaleArg.skip
+                    break
+                case "M":
+                    const markArg = argument(codeString.substring(index + 1), true)
+                    tree.M = {_: parseInt(markArg.content, 10)}
+                    index += markArg.skip
                     break
                 case "0":
                 case "1":
@@ -205,17 +217,18 @@ export interface IActiveTenscript {
     tree: ITenscriptTree
     brick: IBrick
     fabric: TensegrityFabric
+    markedBricks: Record<number, IBrick>
 }
 
 export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
 
-    before.forEach(({brick, tree, fabric}) => {
+    before.forEach(({brick, tree, fabric, markedBricks}) => {
 
         function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
             const connectTriangle = previous.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
             const newBrick = fabric.builder.createConnectedBrick(previous, connectTriangle, treeScale)
-            return {tree: newTree, brick: newBrick, fabric}
+            return {tree: newTree, brick: newBrick, fabric, markedBricks}
         }
 
         function maybeGrow(previous: IBrick, triangle: Triangle, possibleSubtree?: ITenscriptTree): void {
@@ -228,20 +241,28 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
             active.push(grow(previous, decremented, triangle, subtreeScale))
         }
 
-        const scale = percentOrHundred(tree.S)
         const forward = tree._
         if (forward) {
             const _ = forward - 1
-            active.push(grow(brick, {...tree, _}, Triangle.PPP, scale))
-        } else {
-            maybeGrow(brick, Triangle.PPP, tree.A)
-            maybeGrow(brick, Triangle.NPP, tree.B)
-            maybeGrow(brick, Triangle.PNP, tree.C)
-            maybeGrow(brick, Triangle.PPN, tree.D)
-            maybeGrow(brick, Triangle.PNN, tree.b)
-            maybeGrow(brick, Triangle.NPN, tree.c)
-            maybeGrow(brick, Triangle.NNP, tree.d)
-            maybeGrow(brick, Triangle.NNN, tree.a)
+            active.push(grow(brick, {...tree, _}, Triangle.PPP, percentOrHundred(tree.S)))
+            return
+        }
+        maybeGrow(brick, Triangle.PPP, tree.A)
+        maybeGrow(brick, Triangle.NPP, tree.B)
+        maybeGrow(brick, Triangle.PNP, tree.C)
+        maybeGrow(brick, Triangle.PPN, tree.D)
+        maybeGrow(brick, Triangle.PNN, tree.b)
+        maybeGrow(brick, Triangle.NPN, tree.c)
+        maybeGrow(brick, Triangle.NNP, tree.d)
+        maybeGrow(brick, Triangle.NNN, tree.a)
+        if (tree.M) {
+            const brickMark = tree.M._
+            const markedBrick = markedBricks[brickMark]
+            if (markedBrick) {
+                fabric.builder.engageBricks(markedBrick, brick)
+                console.log("engaged", markedBrick.index, brick.index)
+            }
+            markedBricks[brickMark] = brick
         }
     })
     return active

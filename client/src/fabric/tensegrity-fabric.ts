@@ -92,8 +92,6 @@ function pretensingAdjustments(strains: Float32Array, existingStiffnesses: Float
 }
 
 export class TensegrityFabric {
-    public slow = false
-
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public splitIntervals?: IIntervalSplit
@@ -123,7 +121,7 @@ export class TensegrityFabric {
         this.builder = new TensegrityBuilder(this)
         features.forEach(feature => this.instance.applyFeature(feature))
         const brick = this.builder.createBrickOnOrigin(percentOrHundred())
-        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
+        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this, markedBricks: {}}]
         this.bricks = [brick]
         this.refreshLineGeometry()
         this.refreshFaceGeometry()
