@@ -5,7 +5,14 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaCompressArrowsAlt, FaExpandArrowsAlt, FaHandPointUp, FaLink, FaSlidersH } from "react-icons/all"
+import {
+    FaCompressArrowsAlt,
+    FaExpandArrowsAlt,
+    FaHandPointUp,
+    FaLink,
+    FaMicroscope,
+    FaSlidersH,
+} from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -46,12 +53,21 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
         })
     }
 
-    function connectBricks(): void {
+    function engageBricks(): void {
         console.log("Connect!", selectedBricks.map(b => b.index))
+        const from = selectedBricks.shift()
+        if (!from || selectedBricks.length < 1) {
+            throw new Error("Connect what?")
+        }
+        selectedBricks.forEach(selectedBrick => fabric.builder.engageBricks(from, selectedBrick))
         clearSelectedBricks()
     }
 
-    function disabled(requiredBrickCount: number): boolean {
+    function tightenEngagements(): void {
+        fabric.builder.tightenEngagements()
+    }
+
+    function needsBricks(requiredBrickCount: number): boolean {
         return !fabric.splitIntervals || selectedBricks.length < requiredBrickCount || faceSelection || ellipsoids
     }
 
@@ -62,16 +78,24 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
                     <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
                 </div>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={disabled(1)} onClick={adjustValue(true)}>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(true)}>
                         <FaExpandArrowsAlt/><span> Grow</span>
                     </Button>
-                    <Button disabled={disabled(1)} onClick={adjustValue(false)}>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(false)}>
                         <FaCompressArrowsAlt/><span> Shrink</span>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={disabled(2)} onClick={() => connectBricks()}>
-                        <FaLink/><span> Bring together</span>
+                    <Button disabled={needsBricks(2)} onClick={engageBricks}>
+                        <FaLink/><span> Engage</span>
+                    </Button>
+                    <Button disabled={fabric.builder.noEngagements} onClick={tightenEngagements}>
+                        <FaCompressArrowsAlt/><span> Approach</span>
+                    </Button>
+                </ButtonGroup>
+                <ButtonGroup className="w-100 my-2">
+                    <Button disabled={needsBricks(2)} onClick={()=> fabric.builder.optimize()}>
+                        <FaMicroscope/><span> Remove redundancies</span>
                     </Button>
                 </ButtonGroup>
             </div>

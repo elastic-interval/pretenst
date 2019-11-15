@@ -15,20 +15,28 @@ const HEXALOT_BITS = 128
 const SPOT_CENTERS_FLOATS = HEXALOT_BITS * FLOATS_IN_VECTOR
 const SPOT_CENTERS_SIZE = SPOT_CENTERS_FLOATS * Float32Array.BYTES_PER_ELEMENT
 
-export const vectorFromFloatArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
+export const vectorFromArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
+    const offset = index * 3
     if (vector) {
-        vector.set(array[index], array[index + 1], array[index + 2])
+        vector.set(array[offset], array[offset + 1], array[offset + 2])
         return vector
     } else {
-        return new Vector3(array[index], array[index + 1], array[index + 2])
+        return new Vector3(array[offset], array[offset + 1], array[offset + 2])
     }
+}
+
+export const vectorToArray = (vector: Vector3, array: Float32Array, index: number): void => {
+    const offset = index * 3
+    array[offset] = vector.x
+    array[offset + 1] = vector.y
+    array[offset + 2] = vector.z
 }
 
 export function faceVector(faceIndex: number, array: Float32Array): Vector3 {
     const index = faceIndex * 3
-    const a = vectorFromFloatArray(array, 3 * index)
-    const b = vectorFromFloatArray(array, 3 * (index + 1))
-    const c = vectorFromFloatArray(array, 3 * (index + 2))
+    const a = vectorFromArray(array, index)
+    const b = vectorFromArray(array, index + 1)
+    const c = vectorFromArray(array, index + 2)
     return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
 }
 

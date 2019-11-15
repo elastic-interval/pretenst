@@ -10,10 +10,10 @@ import { roleDefaultLength } from "./fabric-features"
 import {
     factorToPercent,
     IBrick,
-    IConnector,
     IFace,
     IInterval,
-    IJoint, initialBrick,
+    IJoint,
+    initialBrick,
     IPercent,
     IPushDefinition,
     percentToFactor,
@@ -27,6 +27,9 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 const SNUGGLE_BRICKS = 0.9
 
 export class TensegrityBuilder {
+
+    private brickPairs: IBrickPair[] = []
+
     constructor(public readonly fabric: TensegrityFabric) {
     }
 
@@ -35,35 +38,65 @@ export class TensegrityBuilder {
         return this.createBrick(points, Triangle.NNN, scale)
     }
 
-    public createConnectedBrick(brick: IBrick, triangle: Triangle, scale: IPercent): IBrick {
-        const face = brick.faces[triangle]
-        const scaleFactor = percentToFactor(scale)
-        const existingScale = percentToFactor(brick.scale)
-        const brickScale = factorToPercent(scaleFactor * existingScale)
-        const next = this.createBrickOnFace(face, brickScale)
-        const connector = this.connectBricks(face, next.faces[next.base], brickScale)
-        connector.facesToRemove.forEach(faceToRemove => this.fabric.removeFace(faceToRemove, true))
-        return next
+    public createConnectedBrick(brickA: IBrick, triangle: Triangle, scale: IPercent): IBrick {
+        const faceA = brickA.faces[triangle]
+        const scaleA = percentToFactor(brickA.scale)
+        const scaleB = scaleA * percentToFactor(scale)
+        const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
+        const faceB = brickB.faces[brickB.base]
+        const connector = this.connectBricks(faceA, faceB, factorToPercent((scaleA + scaleB) / 2))
+        if (!connector) {
+            console.error("Cannot connect!")
+        }
+        return brickB
     }
 
-    public createBrickOnFace(face: IFace, scale: IPercent): IBrick {
-        const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
-        const brick = face.brick
-        const triangle = face.triangle
-        const trianglePoints = brick.faces[triangle].joints.map(joint => this.fabric.instance.location(joint.index))
-        const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-        const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
-        const x = new Vector3().subVectors(midSide, midpoint).normalize()
-        const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
-        const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
-        const z = u.sub(proj).normalize()
-        const y = new Vector3().crossVectors(z, x).normalize()
-        const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-        const base = negativeFace ? Triangle.NNN : Triangle.PPP
-        const points = this.createBrickPointsOnOrigin(base, scale)
-        const movedToFace = points.map(p => p.applyMatrix4(xform))
-        const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
-        return this.createBrick(movedToFace, baseTriangle, scale)
+    public get noEngagements(): boolean {
+        return this.brickPairs.length === 0
+    }
+
+    public engageBricks(brickA: IBrick, brickB: IBrick): void {
+        this.brickPairs.push({brickA, brickB})
+    }
+
+    public tightenEngagements(): boolean {
+        const fabric = this.fabric
+        const brickPairs = this.brickPairs.map(pair => this.tightenEngagement(pair))
+        const connectablePairs = brickPairs.filter(({brickA, brickB}) => {
+            const distance = fabric.brickMidpoint(brickA).distanceTo(fabric.brickMidpoint(brickB))
+            const connectDistance = (percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) * 3
+            console.log("Not connectable", distance, connectDistance)
+            return distance <= connectDistance
+        })
+        const connectedPairs = connectablePairs.filter(({brickA, brickB}) => {
+            const locate = (face: IFace): ILocatedFace => ({face, midpoint: fabric.instance.faceMidpoint(face.index)})
+            const facesA = brickA.faces.map(locate)
+            const facesB = brickB.faces.map(locate)
+            const midpointA = fabric.brickMidpoint(brickA)
+            const midpointB = fabric.brickMidpoint(brickB)
+            const proximity = (midpoint: Vector3) => (triangle: ITriangle, locatedFace: ILocatedFace) => {
+                const distance = midpoint.distanceTo(midpointB)
+                if (distance < triangle.distance) {
+                    return {triangle: locatedFace.face.triangle, distance}
+                }
+                return triangle
+            }
+            const initial: ITriangle = {triangle: Triangle.PPP, distance: Number.MAX_VALUE}
+            const closestA = facesA.reduce(proximity(midpointB), initial)
+            const closestB = facesB.reduce(proximity(midpointA), initial)
+            const faceA = brickA.faces[closestA.triangle]
+            const faceB = brickB.faces[closestB.triangle]
+            const connectorScale = factorToPercent((percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) / 2)
+            return this.connectBricks(faceA, faceB, connectorScale)
+        })
+        this.brickPairs = brickPairs.filter(({brickA, brickB}) => !connectedPairs.some(pair => (
+            pair.brickA.index === brickA.index && pair.brickB.index === brickB.index
+        )))
+        if (connectedPairs.length > 0) {
+            console.warn("slow")
+            fabric.slow = true
+        }
+        return this.brickPairs.length > 0
     }
 
     public optimize(): void {
@@ -177,6 +210,40 @@ export class TensegrityBuilder {
         instance.forgetDimensions()
     }
 
+    private tightenEngagement({brickA, brickB}: IBrickPair): IBrickPair {
+        const midA = this.fabric.brickMidpoint(brickA)
+        const midB = this.fabric.brickMidpoint(brickB)
+        const moveBrick = (brick: IBrick, move: Vector3) => brick.joints.forEach(joint => {
+            this.fabric.instance.moveLocation(joint.index, move)
+        })
+        const scaleSum = percentToFactor(brickA.scale) + percentToFactor(brickB.scale)
+        const closer = scaleSum / 10
+        const fromAToB = new Vector3().subVectors(midB, midA).normalize().multiplyScalar(closer / 2)
+        moveBrick(brickA, fromAToB)
+        moveBrick(brickB, fromAToB.multiplyScalar(-1))
+        return {brickA, brickB}
+    }
+
+    private createBrickOnFace(face: IFace, scale: IPercent): IBrick {
+        const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
+        const brick = face.brick
+        const triangle = face.triangle
+        const trianglePoints = brick.faces[triangle].joints.map(joint => this.fabric.instance.location(joint.index))
+        const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+        const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
+        const x = new Vector3().subVectors(midSide, midpoint).normalize()
+        const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
+        const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
+        const z = u.sub(proj).normalize()
+        const y = new Vector3().crossVectors(z, x).normalize()
+        const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+        const base = negativeFace ? Triangle.NNN : Triangle.PPP
+        const points = this.createBrickPointsOnOrigin(base, scale)
+        const movedToFace = points.map(p => p.applyMatrix4(xform))
+        const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
+        return this.createBrick(movedToFace, baseTriangle, scale)
+    }
+
     private createBrick(points: Vector3[], base: Triangle, scale: IPercent): IBrick {
         const brick = initialBrick(this.fabric.bricks.length, base, scale)
         this.fabric.bricks.push(brick)
@@ -236,15 +303,16 @@ export class TensegrityBuilder {
         return points.map(p => p.applyMatrix4(fromBasis))
     }
 
-    private connectBricks(faceA: IFace, faceB: IFace, scale: IPercent): IConnector {
-        const ring = facesToRing(this.fabric, faceA, faceB)
-        const pulls: IInterval[] = []
+    private connectBricks(faceA: IFace, faceB: IFace, connectorScale: IPercent): boolean {
+        const ring = this.facesToRing(faceA, faceB)
+        if (!ring) {
+            return false
+        }
         const createRingPull = (index: number) => {
             const role = IntervalRole.Ring
             const joint = ring[index]
             const nextJoint = ring[(index + 1) % ring.length]
-            const ringPull = this.fabric.createInterval(joint, nextJoint, role, scale)
-            pulls.push(ringPull)
+            this.fabric.createInterval(joint, nextJoint, role, connectorScale)
         }
         const createCrossPull = (index: number) => {
             const role = IntervalRole.Cross
@@ -257,14 +325,13 @@ export class TensegrityBuilder {
             const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
             const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
             const partnerJoint = this.fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-            const crossPull = this.fabric.createInterval(joint, partnerJoint, role, scale)
-            pulls.push(crossPull)
+            this.fabric.createInterval(joint, partnerJoint, role, connectorScale)
         }
         for (let walk = 0; walk < ring.length; walk++) {
             createRingPull(walk)
             createCrossPull(walk)
         }
-        const handleFace = (faceToRemove: IFace): IFace => {
+        const handleFace = (faceToRemove: IFace): void => {
             const triangle = faceToRemove.triangle
             const brick = faceToRemove.brick
             const face = brick.faces[triangle]
@@ -273,72 +340,118 @@ export class TensegrityBuilder {
             })
             const triangleRing = TRIANGLE_DEFINITIONS[triangle].ring
             const engine = this.fabric.instance.engine
-            const scaleFactor = percentToFactor(scale)
+            const scaleFactor = percentToFactor(connectorScale)
             brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
                 engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
                 const length = scaleFactor * roleDefaultLength(interval.intervalRole)
                 engine.changeRestLength(interval.index, length)
             })
-            return face
+            this.fabric.removeFace(face, true)
         }
+        handleFace(faceA)
+        handleFace(faceB)
         this.fabric.instance.forgetDimensions()
-        return {
-            pulls,
-            facesToRemove: [
-                handleFace(faceA),
-                handleFace(faceB),
-            ],
+        return true
+    }
+
+    private facesToRing(faceA: IFace, faceB: IFace): IJoint[] | undefined {
+        const instance = this.fabric.instance
+        const defA = TRIANGLE_DEFINITIONS[faceA.triangle]
+        const endsA = defA.pushEnds.map(end => faceA.brick.joints[end])
+        const jointsA = defA.negative ? endsA.reverse() : endsA
+        const defB = TRIANGLE_DEFINITIONS[faceB.triangle]
+        const endsB = defB.pushEnds.map(end => faceB.brick.joints[end])
+        const jointsB = defA.negative ? endsB.reverse() : endsB
+        // todo: prove that the normal is that
+        const a01 = new Vector3().subVectors(instance.location(jointsA[1].index), instance.location(jointsA[0].index))
+        const a02 = new Vector3().subVectors(instance.location(jointsA[2].index), instance.location(jointsA[0].index))
+        const b01 = new Vector3().subVectors(instance.location(jointsB[1].index), instance.location(jointsB[0].index))
+        const b02 = new Vector3().subVectors(instance.location(jointsB[2].index), instance.location(jointsB[0].index))
+        const crossA = new Vector3().crossVectors(a01, a02).normalize()
+        const crossB = new Vector3().crossVectors(b01, b02).normalize()
+        console.log(`dot=${crossA.dot(crossB)}`)
+        // todo: =========================
+        const ninePairs: IJointPair[] = []
+        jointsA.forEach(jointA => {
+            jointsB.forEach(jointB => {
+                const locationA = this.fabric.instance.location(jointA.index)
+                const locationB = this.fabric.instance.location(jointB.index)
+                const distance = locationA.distanceTo(locationB)
+                ninePairs.push({jointA, jointB, distance})
+            })
+        })
+        ninePairs.sort((a, b) => a.distance - b.distance)
+        const closePairs = ninePairs.slice(0, 6)
+        const farPairs = ninePairs.slice(6)
+        // console.log("close pairs", closePairs.map(p => `${p.jointA.index}:${p.jointB.index}=${p.distance}`))
+        // console.log("far pairs", farPairs.map(p => `${p.jointA.index}:${p.jointB.index}=${p.distance}`))
+        const addDistance = (sum: number, {distance}: IJointPair) => sum + distance
+        const averageClose = closePairs.reduce(addDistance, 0) / closePairs.length
+        const averageFar = farPairs.reduce(addDistance, 0) / farPairs.length
+        const discrepancy = Math.abs(averageFar - averageClose * 2)
+        const furthestClose = closePairs[closePairs.length - 1].distance
+        console.log(`averageClose=${averageClose.toFixed(2)} averageFar=${averageFar.toFixed(2)}`, furthestClose.toFixed(4))
+        // TODO: not 2 but something with scale?
+        if (furthestClose > 2 || discrepancy > averageClose / 3) {
+            console.log("nope!")
+            return undefined
         }
+        const ring: IJoint[] = []
+        console.log("Pairs", closePairs.map(p => `${p.jointA.index}-${p.jointB.index}:${p.distance.toFixed(4)}`))
+        const closest = closePairs.shift()
+        if (!closest) {
+            throw new Error()
+        }
+        ring.push(closest.jointA, closest.jointB)
+        let findB = true
+        while (ring.length < 6) {
+            if (findB) {
+                const endB = ring[ring.length - 1]
+                const fromB = closePairs.findIndex(p => p.jointB.index === endB.index)
+                if (fromB < 0) {
+                    console.log(`No findB=${findB}`, ring.length)
+                    return undefined
+                }
+                ring.push(closePairs[fromB].jointA)
+                closePairs.splice(fromB, 1)
+                findB = false
+            } else {
+                const endA = ring[ring.length - 1]
+                const fromA = closePairs.findIndex(p => p.jointA.index === endA.index)
+                if (fromA < 0) {
+                    console.log(`No findB=${findB}`, ring.length)
+                    return undefined
+                }
+                ring.push(closePairs[fromA].jointB)
+                closePairs.splice(fromA, 1)
+                findB = true
+            }
+            console.log("Ring", ring.map(j => j.index), closePairs.map(p => `${p.jointA.index}-${p.jointB.index}:${p.distance.toFixed(4)}`))
+        }
+        return ring
     }
 }
 
-interface IJointPair {
-    jointA: IJoint
-    locationA: Vector3
-    jointB: IJoint
-    locationB: Vector3
+interface ILocatedFace {
+    face: IFace
+    midpoint: Vector3
+}
+
+interface ITriangle {
+    triangle: Triangle
     distance: number
 }
 
-function facesToRing(fabric: TensegrityFabric, faceA: IFace, faceB: IFace): IJoint[] {
-    const jointsA: IJoint[] = TRIANGLE_DEFINITIONS[faceA.triangle].pushEnds.map(end => faceA.brick.joints[end])
-    const jointsB: IJoint[] = TRIANGLE_DEFINITIONS[faceB.triangle].pushEnds.map(end => faceB.brick.joints[end])
-    const jointPairs: IJointPair[] = []
-    jointsA.forEach(jointA => {
-        jointsB.forEach(jointB => {
-            const locationA = fabric.instance.location(jointA.index)
-            const locationB = fabric.instance.location(jointB.index)
-            const distance = locationA.distanceTo(locationB)
-            jointPairs.push({jointA, locationA, jointB, locationB, distance})
-        })
-    })
-    jointPairs.sort((a, b) => a.distance - b.distance)
-    // console.log("jointPairs", jointPairs.map(p => `${p.jointA.index}:${p.jointB.index}=${p.distance}`))
-    const ring: IJoint[] = []
-    let takeA = true
-    let pairIndex = 0
-    while (ring.length < 6) {
-        const jointPair = jointPairs[pairIndex]
-        if (!jointPair) {
-            throw new Error()
-        }
-        jointPairs.splice(pairIndex, 1)
-        if (takeA) {
-            ring.push(jointPair.jointA)
-            pairIndex = jointPairs.findIndex(p => p.jointB === jointPair.jointB)
-            takeA = false
-        } else {
-            ring.push(jointPair.jointB)
-            pairIndex = jointPairs.findIndex(p => p.jointA === jointPair.jointA)
-            takeA = true
-        }
-    }
-    if (TRIANGLE_DEFINITIONS[faceA.triangle].negative) {
-        ring.reverse()
-    }
-    return ring
+interface IBrickPair {
+    brickA: IBrick
+    brickB: IBrick
 }
 
+interface IJointPair {
+    jointA: IJoint,
+    jointB: IJoint,
+    distance: number
+}
 
 interface IPair {
     scale: IPercent

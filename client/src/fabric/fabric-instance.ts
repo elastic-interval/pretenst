@@ -7,7 +7,7 @@ import { Vector3 } from "three"
 
 import { FabricFeature, IFabricEngine } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
-import { faceVector, vectorFromFloatArray } from "./fabric-kernel"
+import { faceVector, vectorFromArray, vectorToArray } from "./fabric-kernel"
 
 export class FabricInstance {
     private _fabricFeatures: LazyFloatArray
@@ -75,11 +75,16 @@ export class FabricInstance {
     }
 
     public location(jointIndex: number): Vector3 {
-        return vectorFromFloatArray(this._jointLocations.floats, jointIndex * 3)
+        return vectorFromArray(this._jointLocations.floats, jointIndex )
+    }
+
+    public moveLocation(jointIndex: number, move: Vector3): void {
+        const newLocation = this.location(jointIndex).add(move)
+        vectorToArray(newLocation, this._jointLocations.floats, jointIndex)
     }
 
     public unitVector(intervalIndex: number): Vector3 {
-        return vectorFromFloatArray(this._unitVectors.floats, intervalIndex * 3)
+        return vectorFromArray(this._unitVectors.floats, intervalIndex)
     }
 
     public get strains(): Float32Array {
@@ -111,7 +116,7 @@ export class FabricInstance {
     }
 
     public intervalLocation(intervalIndex: number): Vector3 {
-        return vectorFromFloatArray(this._lineLocations.floats, intervalIndex * 3)
+        return vectorFromArray(this._lineLocations.floats, intervalIndex)
     }
 
     public get faceNormals(): Float32Array {
@@ -133,7 +138,7 @@ export class FabricInstance {
     }
 
     public getMidpoint(midpoint?: Vector3): Vector3 {
-        return vectorFromFloatArray(this._midpoint.floats, 0, midpoint)
+        return vectorFromArray(this._midpoint.floats, 0, midpoint)
     }
 
     public get engine(): IFabricEngine {

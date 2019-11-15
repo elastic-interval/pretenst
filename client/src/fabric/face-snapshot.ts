@@ -7,7 +7,7 @@ import { Vector3 } from "three"
 
 import { IFabricEngine, Laterality } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
-import { vectorFromFloatArray } from "./fabric-kernel"
+import { vectorFromArray } from "./fabric-kernel"
 import { GotchiBody } from "./gotchi-body"
 
 export interface IJointSnapshot {
@@ -34,7 +34,7 @@ export class FaceSnapshot {
                 const engine = this.engine
                 const jointIndex = engine.getFaceJointIndex(faceIndex, jointNumber)
                 const tag = engine.getJointTag(jointIndex)
-                const location = vectorFromFloatArray(this.instance.faceLocations, (faceIndex * 3 + jointNumber) * 3)
+                const location = vectorFromArray(this.instance.faceLocations, faceIndex * 3 + jointNumber)
                 return {jointNumber, jointIndex, tag, location} as IJointSnapshot
             })
     }
@@ -81,10 +81,7 @@ export class FaceSnapshot {
 
     public get normal(): Vector3 {
         return TRIANGLE
-            .map(jointNumber => vectorFromFloatArray(
-                this.instance.faceNormals,
-                (this.faceIndex * 3 + jointNumber) * 3,
-            ))
+            .map(jointNumber => vectorFromArray(this.instance.faceNormals, this.faceIndex * 3 + jointNumber))
             .reduce((prev, current) => prev.add(current), new Vector3())
             .multiplyScalar(1 / 3.0)
     }

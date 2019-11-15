@@ -92,6 +92,8 @@ function pretensingAdjustments(strains: Float32Array, existingStiffnesses: Float
 }
 
 export class TensegrityFabric {
+    public slow = false
+
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public splitIntervals?: IIntervalSplit
@@ -300,7 +302,6 @@ export class TensegrityFabric {
                 engine.centralize()
             }
             if (activeCode.length === 0) {
-                this.builder.optimize()
                 this.activeTenscript = undefined
                 if (lifePhase === LifePhase.Growing) {
                     return engine.finishGrowing()

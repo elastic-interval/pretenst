@@ -170,11 +170,6 @@ export function initialBrick(index: number, base: Triangle, scale: IPercent): IB
     return {index, base, scale, joints: [], pushes: [], pulls: [], rings: [[], [], [], []], faces: []}
 }
 
-export interface IConnector {
-    pulls: IInterval[]
-    facesToRemove: IFace[]
-}
-
 export function byBricks(bricks: IBrick[]): (interval: IInterval) => boolean {
     return interval => { // TODO: use a map to speed this up
         const matchesInterval = (faceInterval: IInterval) => !faceInterval.removed && faceInterval.index === interval.index
