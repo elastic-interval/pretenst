@@ -10,6 +10,7 @@ import { roleDefaultLength } from "./fabric-features"
 import {
     factorToPercent,
     IBrick,
+    IBrickPair,
     IFace,
     IInterval,
     IJoint,
@@ -27,8 +28,6 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 const SNUGGLE_BRICKS = 0.9
 
 export class TensegrityBuilder {
-
-    private brickPairs: IBrickPair[] = []
 
     constructor(public readonly fabric: TensegrityFabric) {
     }
@@ -51,20 +50,18 @@ export class TensegrityBuilder {
         return brickB
     }
 
-    public get noEngagements(): boolean {
-        return this.brickPairs.length === 0
+    public addBrickPair(brickA: IBrick, brickB: IBrick): IBrickPair[] {
+        const distance = this.fabric.brickMidpoint(brickA).distanceTo(this.fabric.brickMidpoint(brickB))
+        const brickPair: IBrickPair = {brickA, brickB, distance}
+        const pairs = this.fabric.brickPairs
+        pairs.push(brickPair)
+        return pairs
     }
 
-    public engageBricks(brickA: IBrick, brickB: IBrick): void {
-        this.brickPairs.push({brickA, brickB})
-    }
-
-    public tightenEngagements(): boolean {
+    public tightenBrickPairs(): IBrickPair[] {
         const fabric = this.fabric
-        const brickPairs = this.brickPairs.map(pair => this.tightenEngagement(pair))
-        const connectablePairs = brickPairs.filter(({brickA, brickB}) => {
-            const distance = fabric.brickMidpoint(brickA).distanceTo(fabric.brickMidpoint(brickB))
-            const connectDistance = (percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) * 3
+        const connectablePairs = fabric.brickPairs.filter(({brickA, brickB, distance}) => {
+            const connectDistance = (percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) * 2
             return distance <= connectDistance
         })
         const connectedPairs = connectablePairs.filter(({brickA, brickB}) => {
@@ -88,10 +85,11 @@ export class TensegrityBuilder {
             const connectorScale = factorToPercent((percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) / 2)
             return this.connectBricks(faceA, faceB, connectorScale)
         })
-        this.brickPairs = brickPairs.filter(({brickA, brickB}) => !connectedPairs.some(pair => (
+        fabric.brickPairs = fabric.brickPairs.filter(({brickA, brickB}) => !connectedPairs.some(pair => (
             pair.brickA.index === brickA.index && pair.brickB.index === brickB.index
         )))
-        return this.brickPairs.length > 0
+        fabric.brickPairs.forEach(pair => pair.distance -= percentToFactor(pair.brickA.scale) + percentToFactor(pair.brickB.scale))
+        return fabric.brickPairs
     }
 
     public optimize(): void {
@@ -203,20 +201,6 @@ export class TensegrityBuilder {
             engine.changeRestLength(bx.index, percentToFactor(bx.scale) * roleDefaultLength(role))
         })
         instance.forgetDimensions()
-    }
-
-    private tightenEngagement({brickA, brickB}: IBrickPair): IBrickPair {
-        const midA = this.fabric.brickMidpoint(brickA)
-        const midB = this.fabric.brickMidpoint(brickB)
-        const moveBrick = (brick: IBrick, move: Vector3) => brick.joints.forEach(joint => {
-            this.fabric.instance.moveLocation(joint.index, move)
-        })
-        const scaleSum = percentToFactor(brickA.scale) + percentToFactor(brickB.scale)
-        const closer = scaleSum / 3
-        const fromAToB = new Vector3().subVectors(midB, midA).normalize().multiplyScalar(closer / 2)
-        moveBrick(brickA, fromAToB)
-        moveBrick(brickB, fromAToB.multiplyScalar(-1))
-        return {brickA, brickB}
     }
 
     private createBrickOnFace(face: IFace, scale: IPercent): IBrick {
@@ -432,11 +416,6 @@ interface ILocatedFace {
 interface ITriangle {
     triangle: Triangle
     distance: number
-}
-
-interface IBrickPair {
-    brickA: IBrick
-    brickB: IBrick
 }
 
 interface IJointPair {

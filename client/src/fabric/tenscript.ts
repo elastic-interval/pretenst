@@ -259,7 +259,7 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
             const brickMark = tree.M._
             const markedBrick = markedBricks[brickMark]
             if (markedBrick) {
-                fabric.builder.engageBricks(markedBrick, brick)
+                fabric.builder.addBrickPair(markedBrick, brick)
                 console.log("engaged", markedBrick.index, brick.index)
             }
             markedBricks[brickMark] = brick

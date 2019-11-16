@@ -170,6 +170,12 @@ export interface IBrick {
     faces: IFace[]
 }
 
+export interface IBrickPair {
+    brickA: IBrick
+    brickB: IBrick
+    distance: number
+}
+
 export function initialBrick(index: number, base: Triangle, scale: IPercent): IBrick {
     return {index, base, scale, joints: [], pushes: [], pulls: [], rings: [[], [], [], []], faces: []}
 }

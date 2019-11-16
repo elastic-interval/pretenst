@@ -12,7 +12,7 @@ import { BehaviorSubject } from "rxjs"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
-import { IBrick } from "../fabric/tensegrity-brick-types"
+import { IBrick, IBrickPair } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { OptimizePanel } from "./optimize-panel"
@@ -34,11 +34,15 @@ function Icon(controlTab: ControlTab): JSX.Element {
 
 export function ControlTabs({
                                 fabric, selectedBricks, clearSelectedBricks, tenscript, setTenscript,
+                                brickPairs, addBrickPair, tightenBrickPairs,
                                 toFullScreen, app$, lifePhase$, features,
                             }: {
     fabric?: TensegrityFabric,
     selectedBricks: IBrick[],
     clearSelectedBricks: () => void,
+    brickPairs: IBrickPair[],
+    addBrickPair: (brickA: IBrick, brickB: IBrick) => void,
+    tightenBrickPairs: () => void,
     tenscript?: ITenscript,
     setTenscript: (grow: boolean, tenscript: ITenscript) => void,
     toFullScreen: () => void,
@@ -91,6 +95,9 @@ export function ControlTabs({
                             fabric={fabric}
                             selectedBricks={selectedBricks}
                             clearSelectedBricks={clearSelectedBricks}
+                            brickPairs={brickPairs}
+                            addBrickPair={addBrickPair}
+                            tightenBrickPairs={tightenBrickPairs}
                             features={features}
                             app$={app$}
                         />

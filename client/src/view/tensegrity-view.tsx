@@ -25,7 +25,7 @@ import {
     transition,
 } from "../fabric/fabric-state"
 import { BOOTSTRAP, ITenscript } from "../fabric/tenscript"
-import { IBrick, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { IBrick, IBrickPair, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ControlTabs } from "./control-tabs"
@@ -52,6 +52,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
     const [selectedBricks, setSelectedBricks] = useState<IBrick[]>([])
+    const [brickPairs, setBrickPairs] = useState<IBrickPair[]>([])
 
     useEffect(() => {
         app$.next(transition(app$.getValue(), {faceSelection: false}))
@@ -64,6 +65,20 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
     const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
     const [fullScreen, updateFullScreen] = useState(app$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
+
+    function addBrickPair(brickA: IBrick, brickB: IBrick): void {
+        if (!fabric) {
+            return
+        }
+        setBrickPairs(fabric.builder.addBrickPair(brickA, brickB))
+    }
+
+    function tightenBrickPairs(): void {
+        if (!fabric) {
+            return
+        }
+        setBrickPairs(fabric.builder.tightenBrickPairs())
+    }
 
     useEffect(() => {
         const subscription = app$.subscribe(fabricState => {
@@ -123,7 +138,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
         mainInstance.engine.initInstance()
         lifePhase$.next(LifePhase.Growing)
         app$.next(transition(app$.getValue(), {ellipsoids: false, faceSelection: false}))
-        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript))
+        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript, setBrickPairs))
         if (replaceUrl) {
             location.hash = newTenscript.code
         }
@@ -167,6 +182,9 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                         fabric={fabric}
                         selectedBricks={selectedBricks}
                         clearSelectedBricks={() => setSelectedBricks([])}
+                        brickPairs={brickPairs}
+                        addBrickPair={addBrickPair}
+                        tightenBrickPairs={tightenBrickPairs}
                         tenscript={tenscript}
                         setTenscript={(grow: boolean, newScript?: ITenscript) => {
                             if (grow) {

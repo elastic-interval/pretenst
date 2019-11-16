@@ -19,15 +19,21 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
-import { IBrick } from "../fabric/tensegrity-brick-types"
+import { IBrick, IBrickPair } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
-export function ShapePanel({fabric, features, selectedBricks, clearSelectedBricks, app$}: {
+export function ShapePanel({
+                               fabric, features, selectedBricks, brickPairs, addBrickPair, tightenBrickPairs,
+                               clearSelectedBricks, app$,
+                           }: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
     selectedBricks: IBrick[],
+    brickPairs: IBrickPair[],
+    addBrickPair: (brickA: IBrick, brickB: IBrick) => void,
+    tightenBrickPairs: () => void,
     clearSelectedBricks: () => void,
     app$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
@@ -53,18 +59,13 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
         })
     }
 
-    function engageBricks(): void {
-        console.log("Connect!", selectedBricks.map(b => b.index))
+    function connect(): void {
         const from = selectedBricks.shift()
         if (!from || selectedBricks.length < 1) {
             throw new Error("Connect what?")
         }
-        selectedBricks.forEach(selectedBrick => fabric.builder.engageBricks(from, selectedBrick))
+        selectedBricks.forEach(selectedBrick => addBrickPair(from, selectedBrick))
         clearSelectedBricks()
-    }
-
-    function tightenEngagements(): void {
-        fabric.builder.tightenEngagements()
     }
 
     function needsBricks(requiredBrickCount: number): boolean {
@@ -86,15 +87,15 @@ export function ShapePanel({fabric, features, selectedBricks, clearSelectedBrick
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={needsBricks(2)} onClick={engageBricks}>
+                    <Button disabled={needsBricks(2)} onClick={connect}>
                         <FaLink/><span> Engage</span>
                     </Button>
-                    <Button disabled={fabric.builder.noEngagements} onClick={tightenEngagements}>
+                    <Button disabled={brickPairs.length === 0} onClick={tightenBrickPairs}>
                         <FaCompressArrowsAlt/><span> Approach</span>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
-                    <Button onClick={()=> fabric.builder.optimize()}>
+                    <Button onClick={() => fabric.builder.optimize()}>
                         <FaMicroscope/><span> Remove redundancies</span>
                     </Button>
                 </ButtonGroup>
