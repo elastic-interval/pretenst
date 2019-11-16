@@ -5,13 +5,13 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaAnchor, FaCamera, FaClock, FaCubes, FaFileCsv, FaSyncAlt } from "react-icons/all"
+import { FaAnchor, FaCamera, FaClock, FaFileCsv, FaSyncAlt } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { saveCSVFiles, saveOBJFile } from "../storage/download"
+import { saveCSVFiles } from "../storage/download"
 
 export function ToolbarLeftBottom({fabric, app$, lifePhase$, fullScreen}: {
     fabric: TensegrityFabric,
@@ -26,11 +26,6 @@ export function ToolbarLeftBottom({fabric, app$, lifePhase$, fullScreen}: {
             updateRotating(newState.rotating)
             updateEllipsoids(newState.ellipsoids)
         })
-        return () => subscription.unsubscribe()
-    }, [])
-    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
-    useEffect(() => {
-        const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
     }, [])
     return (
@@ -53,16 +48,9 @@ export function ToolbarLeftBottom({fabric, app$, lifePhase$, fullScreen}: {
             </ButtonGroup>
             <ButtonGroup className="mx-1">
                 <Button
-                    disabled={lifePhase !== LifePhase.Pretenst}
                     onClick={() => saveCSVFiles(fabric)}
                 >
                     <FaFileCsv/>
-                </Button>
-                <Button
-                    disabled={lifePhase !== LifePhase.Pretenst}
-                    onClick={() => saveOBJFile(fabric)}
-                >
-                    <FaCubes/>
                 </Button>
             </ButtonGroup>
 

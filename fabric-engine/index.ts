@@ -888,6 +888,14 @@ function setLineColor(intervalIndex: u16, red: f32, green: f32, blue: f32): void
     setZ(_color, blue)
 }
 
+function setLineColorNuance(intervalIndex: u16, nuance: f32): void {
+    let rainbowIndex = <i32>(nuance * (<f32>RAINBOW.length / <f32>3.01))
+    let r = RAINBOW[rainbowIndex * 3]
+    let g = RAINBOW[rainbowIndex * 3 + 1]
+    let b = RAINBOW[rainbowIndex * 3 + 2]
+    setLineColor(intervalIndex, r, g, b)
+}
+
 enum Limit {
     MinPushStrain = 0,
     MaxPushStrain = 1,
@@ -926,7 +934,6 @@ export function setColoring(pushes: boolean, pulls: boolean): void {
 }
 
 function outputIntervals(): void {
-    let slackThreshold = getFeature(FabricFeature.SlackThreshold)
     minPushStrain = BIG_STRAIN
     maxPushStrain = -BIG_STRAIN
     minPullStrain = BIG_STRAIN
@@ -956,41 +963,41 @@ function outputIntervals(): void {
         setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
         let intervalRole = getIntervalRole(intervalIndex)
-        let isPush: boolean = intervalRole === IntervalRole.Push
-        let minStrain = isPush ? minPushStrain : minPullStrain
-        let maxStrain = isPush ? maxPushStrain : maxPullStrain
-        let directionalStrain = getStrain(intervalIndex)
-        let strain = isPush ? -directionalStrain : directionalStrain
-        // if (directionalStrain < 0) {
-        //     setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
-        //     setStrainNuance(intervalIndex, 0)
-        //     return
-        // }
-        // if (strain < slackThreshold) {
-        //     setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
-        //     setStrainNuance(intervalIndex, 0)
-        //     return
-        // }
-        let nuance = (strain - minStrain) / (maxStrain - minStrain)
-        setStrainNuance(intervalIndex, nuance < 0 ? 0 : nuance > 1 ? 1 : nuance)
-        if (colorPushes && colorPulls) {
-            if (strain < slackThreshold) {
-                setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
-            } else {
-                let color = ROLE_COLORS[intervalRole]
-                setLineColor(intervalIndex, color[0], color[1], color[2])
-            }
-        } else if (colorPushes || colorPulls) {
-            if (isPush && colorPulls || !isPush && colorPushes) {
+        let signedStrain = getStrain(intervalIndex)
+        if (signedStrain === 0) {
+            setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
+            continue
+        }
+        let isPush = intervalRole === IntervalRole.Push
+        let strain = isPush ? -signedStrain : signedStrain
+        if (!colorPushes && !colorPulls) {
+            let roleColor = ROLE_COLORS[intervalRole]
+            setLineColor(intervalIndex, roleColor[0], roleColor[1], roleColor[2])
+        } else if (colorPushes && colorPulls) {
+            let roleColor = ROLE_COLORS[intervalRole]
+            setLineColor(intervalIndex, roleColor[0], roleColor[1], roleColor[2])
+            let maxStrainSum = maxPushStrain + maxPullStrain
+            if (maxStrainSum < 0.001) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
-            } else if (strain < slackThreshold) {
-                setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
             } else {
-                let rainbowIndex = <i32>(nuance * (<f32>RAINBOW.length / <f32>3.01))
-                let r = RAINBOW[rainbowIndex * 3]
-                let g = RAINBOW[rainbowIndex * 3 + 1]
-                let b = RAINBOW[rainbowIndex * 3 + 2]
-                setLineColor(intervalIndex, r, g, b)
+                let nuance = (signedStrain + maxPushStrain) / (maxPushStrain + maxPullStrain)
+                setLineColorNuance(intervalIndex, nuance)
+            }
+        } else if (isPush) {
+            let nuance = (strain - minPushStrain) / (maxPushStrain - minPushStrain)
+            setStrainNuance(intervalIndex, nuance < 0 ? 0 : nuance > 1 ? 1 : nuance)
+            if (colorPulls) {
+                setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
+            } else {
+                setLineColorNuance(intervalIndex, nuance)
+            }
+        } else { // pull
+            let nuance = (strain - minPullStrain) / (maxPullStrain - minPullStrain)
+            setStrainNuance(intervalIndex, nuance < 0 ? 0 : nuance > 1 ? 1 : nuance)
+            if (colorPushes) {
+                setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
+            } else {
+                setLineColorNuance(intervalIndex, nuance)
             }
         }
     }

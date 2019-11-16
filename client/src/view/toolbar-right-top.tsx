@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaExpandArrowsAlt, FaFutbol, FaVolleyballBall } from "react-icons/all"
+import { FaCircle, FaExpandArrowsAlt, FaFutbol, FaVolleyballBall } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -29,9 +29,13 @@ export function ToolbarRightTop({app$}: {
             app$.next(transition(app$.getValue(), {showPulls: pulls, showPushes: pushes}))
         }
         const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
-        return <Button style={{color: "white"}} color={color} onClick={onClick}>
-            {pushes && pulls ? <FaFutbol/> : pushes ? <FaExpandArrowsAlt/> : <FaVolleyballBall/>}
-        </Button>
+        return (
+            <Button style={{color: "white"}} color={color} onClick={onClick}>
+                {pushes && pulls ? <FaFutbol/> :
+                    pushes ? <FaExpandArrowsAlt/> :
+                        pulls ? <FaVolleyballBall/> : <FaCircle/>}
+            </Button>
+        )
     }
 
     return (
@@ -40,6 +44,7 @@ export function ToolbarRightTop({app$}: {
                 <ViewButton pushes={true} pulls={true}/>
                 <ViewButton pushes={false} pulls={true}/>
                 <ViewButton pushes={true} pulls={false}/>
+                <ViewButton pushes={false} pulls={false}/>
             </ButtonGroup>
         </div>
     )
