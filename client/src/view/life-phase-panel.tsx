@@ -38,17 +38,17 @@ export function LifePhasePanel({fabric, lifePhase$, rebuild, disabled}: {
     function LifePhaseIcon(): JSX.Element {
         switch (lifePhase) {
             case LifePhase.Growing:
-                return <h2><FaSeedling/> Growing <FaSeedling/></h2>
+                return <h4><FaSeedling/> Growing <FaSeedling/></h4>
             case LifePhase.Shaping:
-                return <h2><FaTools/> Shaping <FaTools/></h2>
+                return <h4><FaTools/> Shaping <FaTools/></h4>
             case LifePhase.Slack:
-                return <h2><FaYinYang/> Slack <FaYinYang/></h2>
+                return <h4><FaYinYang/> Slack <FaYinYang/></h4>
             case LifePhase.Pretensing:
-                return <h2><FaYinYang/> Pretensing <FaYinYang/></h2>
+                return <h4><FaYinYang/> Pretensing <FaYinYang/></h4>
             case LifePhase.Pretenst:
-                return <h2><FaHandSpock/> Pretenst <FaHandSpock/></h2>
+                return <h4><FaHandSpock/> Pretenst <FaHandSpock/></h4>
             case LifePhase.Busy:
-                return <h2><FaClock/> Pretenst <FaHandSpock/></h2>
+                return <h4><FaClock/> Pretenst <FaHandSpock/></h4>
         }
     }
 

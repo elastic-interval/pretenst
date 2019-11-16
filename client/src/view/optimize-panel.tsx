@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaGlobe } from "react-icons/all"
+import { FaGlobe, FaSearchMinus, FaSearchPlus } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -55,7 +55,7 @@ export function OptimizePanel({fabric, app$, lifePhase$, rebuild}: {
                 />
             </div>
             <div className="text-center">
-                <h2><FaGlobe/> Environment <FaGlobe/></h2>
+                <h4><FaGlobe/> Environment <FaGlobe/></h4>
             </div>
             <div className="my-1">
                 <div>Gravity</div>
@@ -63,23 +63,9 @@ export function OptimizePanel({fabric, app$, lifePhase$, rebuild}: {
                     {enumValues(GravityLevel).map(value => (
                         <Button
                             key={GravityLevel[value]}
-                            size="sm"
                             active={fabricState.gravityLevel === value}
                             onClick={() => changeState({gravityLevel: value})}
                         >{GravityLevel[value]}</Button>
-                    ))}
-                </ButtonGroup>
-            </div>
-            <div className="my-1">
-                <div>Drag</div>
-                <ButtonGroup className="w-100">
-                    {enumValues(DragLevel).map(value => (
-                        <Button
-                            key={DragLevel[value]}
-                            size="sm"
-                            active={fabricState.dragLevel === value}
-                            onClick={() => changeState({dragLevel: value})}
-                        >{DragLevel[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>
@@ -89,10 +75,22 @@ export function OptimizePanel({fabric, app$, lifePhase$, rebuild}: {
                     {enumValues(SurfaceCharacter).map(value => (
                         <Button
                             key={SurfaceCharacter[value]}
-                            size="sm"
                             active={fabricState.surfaceCharacter === value}
                             onClick={() => changeState({surfaceCharacter: value})}
                         >{SurfaceCharacter[value]}</Button>
+                    ))}
+                </ButtonGroup>
+            </div>
+            <div className="my-1">
+                <div>Drag</div>
+                <ButtonGroup className="w-100">
+                    {enumValues(DragLevel).map(value => (
+                        <Button
+                            size="sm"
+                            key={DragLevel[value]}
+                            active={fabricState.dragLevel === value}
+                            onClick={() => changeState({dragLevel: value})}
+                        >{DragLevel[value]}</Button>
                     ))}
                 </ButtonGroup>
             </div>
@@ -135,17 +133,19 @@ export function OptimizePanel({fabric, app$, lifePhase$, rebuild}: {
                     ))}
                 </ButtonGroup>
             </div>
-            <div className="text-center">
-                <h2><FaGlobe/> Limits <FaGlobe/></h2>
-            </div>
-            <div className="my-1">
-                <div className="my-1">
-                    <div>Pulls</div>
-                    <StrainPanel fabric={fabric} pushes={false}/>
+            <div className="my-3">
+                <div className="text-center">
+                    <h4><FaSearchMinus/> Strain <FaSearchPlus/></h4>
                 </div>
-                <div className="my-1">
-                    <div>Pushes</div>
-                    <StrainPanel fabric={fabric} pushes={true}/>
+                <div>
+                    <div className="my-1">
+                        <div>Pulls</div>
+                        <StrainPanel fabric={fabric} pushes={false}/>
+                    </div>
+                    <div className="my-1">
+                        <div>Pushes</div>
+                        <StrainPanel fabric={fabric} pushes={true}/>
+                    </div>
                 </div>
             </div>
         </div>

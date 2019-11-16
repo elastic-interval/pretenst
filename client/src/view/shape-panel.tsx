@@ -96,7 +96,7 @@ export function ShapePanel({
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
                     <Button onClick={() => fabric.builder.optimize()}>
-                        <FaMicroscope/><span> Remove redundancies</span>
+                        <FaMicroscope/><span> Bow optimization</span>
                     </Button>
                 </ButtonGroup>
             </div>

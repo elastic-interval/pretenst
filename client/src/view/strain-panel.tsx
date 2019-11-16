@@ -5,13 +5,10 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaSortAmountUp, FaYinYang } from "react-icons/all"
+import { FaArrowsAltH } from "react-icons/all"
 
 import { Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-
-const STRAIN_MULTIPLY = 10000
-const VISIBLE_LIMIT = 0.0002
 
 export function StrainPanel({fabric, pushes}: {
     fabric: TensegrityFabric,
@@ -35,41 +32,30 @@ export function StrainPanel({fabric, pushes}: {
         return () => clearTimeout(timer)
     }, [])
 
-    const min = Math.floor(minStrain * STRAIN_MULTIPLY)
-    const max = Math.floor(maxStrain * STRAIN_MULTIPLY)
-    const zen = Math.abs(minStrain) < VISIBLE_LIMIT && Math.abs(maxStrain) < VISIBLE_LIMIT
-    const minString = min.toFixed()
-    const maxString = max.toFixed()
     return (
         <div style={{
             textAlign: "center",
-            backgroundColor: "#cccccc",
-            borderColor: "#575757",
+            backgroundColor: "#919191",
+            borderColor: "#bdbdbd",
+            borderWidth: "2px",
+            borderStyle: "solid",
+            color: "#ffffff",
             borderRadius: "1em",
             width: "100%",
         }}>
-            {zen ? (
-                <div style={{
-                    margin: 0,
-                    paddingTop: "0.6em",
-                    height: "2.5em",
-                    width: "100%",
-                }}>? <FaYinYang/> ?</div>
-            ) : (
-                <div style={{
-                    display: "block",
-                    textAlign: "center",
-                    paddingTop: "0.6em",
-                    marginRight: "1em",
-                    marginLeft: "1em",
-                    height: "2.5em",
-                    width: "100%",
-                }}>
-                    <span>{minString}</span>
-                    &nbsp;<FaSortAmountUp/>&nbsp;
-                    <span>{maxString}</span>
-                </div>
-            )}
+            <div style={{
+                display: "block",
+                textAlign: "center",
+                paddingTop: "0.6em",
+                marginRight: "1em",
+                marginLeft: "1em",
+                height: "2.5em",
+                width: "100%",
+            }}>
+                <span>{minStrain.toFixed(6)}</span>
+                &nbsp;<FaArrowsAltH/>&nbsp;
+                <span>{maxStrain.toFixed(6)}</span>
+            </div>
         </div>
     )
 }
