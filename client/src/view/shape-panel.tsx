@@ -133,7 +133,7 @@ function FeatureChoice({feature, disabled}: {
     }, [])
     return (
         <div>
-            <div>{feature.config.name}</div>
+            <div>{feature.config.name} {feature.numeric.toFixed(6)}</div>
             <ButtonGroup className="w-100">
                 {feature.percentChoices.map(percent => {
                     const roleColor = roleColorString(lengthFeatureToRole(feature.fabricFeature))
