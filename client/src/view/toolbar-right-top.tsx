@@ -25,15 +25,18 @@ export function ToolbarRightTop({app$}: {
     }, [])
 
     function ViewButton({pushes, pulls}: { pushes: boolean, pulls: boolean }): JSX.Element {
-        const onClick = () => {
-            app$.next(transition(app$.getValue(), {showPulls: pulls, showPushes: pushes}))
-        }
-        const color = pushes === showPushes && pulls === showPulls ? "success" : "secondary"
         return (
-            <Button style={{color: "white"}} color={color} onClick={onClick}>
+            <Button
+                style={{color: "white"}}
+                color={pushes === showPushes && pulls === showPulls ? "success" : "secondary"}
+                onClick={() => {
+                    app$.next(transition(app$.getValue(), {showPulls: pulls, showPushes: pushes}))
+                }}
+            >
                 {pushes && pulls ? <FaFutbol/> :
                     pushes ? <FaExpandArrowsAlt/> :
-                        pulls ? <FaVolleyballBall/> : <FaCircle/>}
+                        pulls ? <FaVolleyballBall/> :
+                            <FaCircle/>}
             </Button>
         )
     }

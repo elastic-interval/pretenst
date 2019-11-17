@@ -91,6 +91,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
             }
             const instance = fabric.instance
             instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
+            instance.engine.iterate(0, lifePhase$.getValue())
             instance.engine.setSurfaceCharacter(fabricState.surfaceCharacter)
             const adjust = (feature: FabricFeature, array: number[], choice: number) => {
                 const value = array[choice]

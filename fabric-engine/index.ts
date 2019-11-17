@@ -877,7 +877,7 @@ function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
     return currentLength * (1 - progress) + stateLength * progress
 }
 
-function setLineColor(intervalIndex: u16, red: f32, green: f32, blue: f32): void {
+function setLineColorRGB(intervalIndex: u16, red: f32, green: f32, blue: f32): void {
     let _color = _lineColor(intervalIndex, false)
     setX(_color, red)
     setY(_color, green)
@@ -888,12 +888,20 @@ function setLineColor(intervalIndex: u16, red: f32, green: f32, blue: f32): void
     setZ(_color, blue)
 }
 
+function setLineColor(intervalIndex: u16, color: f32[]): void {
+    setLineColorRGB(intervalIndex, color[0], color[1], color[2])
+}
+
 function setLineColorNuance(intervalIndex: u16, nuance: f32): void {
     let rainbowIndex = <i32>(nuance * (<f32>RAINBOW.length / <f32>3.01))
     let r = RAINBOW[rainbowIndex * 3]
     let g = RAINBOW[rainbowIndex * 3 + 1]
     let b = RAINBOW[rainbowIndex * 3 + 2]
-    setLineColor(intervalIndex, r, g, b)
+    setLineColorRGB(intervalIndex, r, g, b)
+}
+
+function limitNuance(nuance: f32): f32 {
+    return nuance < 0 ? 0 : nuance > 1 ? 1 : nuance
 }
 
 enum Limit {
@@ -963,43 +971,35 @@ function outputIntervals(): void {
         setVector(_lineLocation(intervalIndex, false), _location(alphaIndex(intervalIndex)))
         setVector(_lineLocation(intervalIndex, true), _location(omegaIndex(intervalIndex)))
         let intervalRole = getIntervalRole(intervalIndex)
-        let signedStrain = getStrain(intervalIndex)
-        if (signedStrain === 0) {
-            setLineColor(intervalIndex, SLACK_COLOR[0], SLACK_COLOR[1], SLACK_COLOR[2])
-            continue
-        }
-        let isPush = intervalRole === IntervalRole.Push
-        let strain = isPush ? -signedStrain : signedStrain
-        if (!colorPushes && !colorPulls) {
-            let roleColor = ROLE_COLORS[intervalRole]
-            setLineColor(intervalIndex, roleColor[0], roleColor[1], roleColor[2])
-        } else if (colorPushes && colorPulls) {
-            let roleColor = ROLE_COLORS[intervalRole]
-            setLineColor(intervalIndex, roleColor[0], roleColor[1], roleColor[2])
-            let maxStrainSum = maxPushStrain + maxPullStrain
-            if (maxStrainSum < 0.001) {
-                setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
-            } else {
-                let nuance = (signedStrain + maxPushStrain) / (maxPushStrain + maxPullStrain)
+        let strain = getStrain(intervalIndex)
+        let nuance: f32 = 0.5
+        let maxStrainSum = maxPushStrain + maxPullStrain
+        if (strain === 0 || maxStrainSum < 0.0001) {
+            setLineColor(intervalIndex, SLACK_COLOR)
+        } else {
+            if (!colorPushes && !colorPulls) {
+                let roleColor = ROLE_COLORS[intervalRole]
+                setLineColor(intervalIndex, roleColor)
+            } else if (colorPushes && colorPulls) {
+                nuance = limitNuance((strain + maxPushStrain) / maxStrainSum)
                 setLineColorNuance(intervalIndex, nuance)
-            }
-        } else if (isPush) {
-            let nuance = (strain - minPushStrain) / (maxPushStrain - minPushStrain)
-            setStrainNuance(intervalIndex, nuance < 0 ? 0 : nuance > 1 ? 1 : nuance)
-            if (colorPulls) {
-                setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
-            } else {
-                setLineColorNuance(intervalIndex, nuance)
-            }
-        } else { // pull
-            let nuance = (strain - minPullStrain) / (maxPullStrain - minPullStrain)
-            setStrainNuance(intervalIndex, nuance < 0 ? 0 : nuance > 1 ? 1 : nuance)
-            if (colorPushes) {
-                setLineColor(intervalIndex, ATTENUATED_COLOR[0], ATTENUATED_COLOR[1], ATTENUATED_COLOR[2])
-            } else {
-                setLineColorNuance(intervalIndex, nuance)
+            } else if (intervalRole === IntervalRole.Push) {
+                nuance = limitNuance((-strain - minPushStrain) / (maxPushStrain - minPushStrain))
+                if (colorPulls) {
+                    setLineColor(intervalIndex, ATTENUATED_COLOR)
+                } else {
+                    setLineColorNuance(intervalIndex, nuance)
+                }
+            } else { // pull
+                nuance = limitNuance((strain - minPullStrain) / (maxPullStrain - minPullStrain))
+                if (colorPushes) {
+                    setLineColor(intervalIndex, ATTENUATED_COLOR)
+                } else {
+                    setLineColorNuance(intervalIndex, nuance)
+                }
             }
         }
+        setStrainNuance(intervalIndex, nuance)
     }
 }
 

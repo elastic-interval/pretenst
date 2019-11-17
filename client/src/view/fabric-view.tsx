@@ -176,15 +176,12 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
     }
 
     function IntervalMesh({interval}: { interval: IInterval }): JSX.Element | null {
-        const material = showPushes && showPulls ? roleMaterial(interval.intervalRole) : (
-            showPushes ? (
-                !interval.isPush ? undefined : rainbowMaterial(fabric.instance.strainNuances[interval.index])
-            ) : (
-                interval.isPush ? undefined : rainbowMaterial(fabric.instance.strainNuances[interval.index])
-            )
-        )
-        if (material === undefined) {
-            return <group/>
+        let material = roleMaterial(interval.intervalRole)
+        if (showPushes || showPulls) {
+            material = rainbowMaterial(fabric.instance.strainNuances[interval.index])
+            if (!(showPushes && showPulls) && (showPushes && !interval.isPush || showPulls && interval.isPush)) {
+                return <group/>
+            }
         }
         const linearDensity = fabric.instance.linearDensities[interval.index]
         const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
