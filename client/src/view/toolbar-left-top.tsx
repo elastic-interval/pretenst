@@ -10,13 +10,13 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, transition } from "../fabric/fabric-state"
-import { IBrick } from "../fabric/tensegrity-brick-types"
+import { IFace } from "../fabric/tensegrity-brick-types"
 
-export function ToolbarLeftTop({app$, fullScreen, selectedBricks, clearSelectedBricks}: {
+export function ToolbarLeftTop({app$, fullScreen, selectedFaces, clearSelectedFaces}: {
     app$: BehaviorSubject<IFabricState>,
     fullScreen: boolean,
-    selectedBricks: IBrick[]
-    clearSelectedBricks: () => void,
+    selectedFaces: IFace[]
+    clearSelectedFaces: () => void,
 }): JSX.Element {
 
     const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
@@ -40,11 +40,11 @@ export function ToolbarLeftTop({app$, fullScreen, selectedBricks, clearSelectedB
                     <FaHandPointUp/>
                 </Button>
                 <Button
-                    disabled={selectedBricks.length === 0}
-                    onClick={() => clearSelectedBricks()}
+                    disabled={selectedFaces.length === 0}
+                    onClick={() => clearSelectedFaces()}
                 >
-                    {selectedBricks.length > 0 ? (
-                        selectedBricks.map(({index}) => (
+                    {selectedFaces.length > 0 ? (
+                        selectedFaces.map(({index}) => (
                             <span key={`Dot${index}`}><FaTimesCircle/> </span>
                         ))
                     ) : (

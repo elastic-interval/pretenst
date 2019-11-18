@@ -4,8 +4,8 @@
  */
 
 import {
-    IBrick,
-    IBrickMark,
+    IBrick, IFace,
+    IFaceMark,
     IPercent,
     percentOrHundred,
     Triangle,
@@ -25,7 +25,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(B2,C2,D2,a2)",
     "(C(2,B(2,D(2,C2))))",
     "(C(3,B(3,D(3,C(3,B1)))))",
-    "(a(1,M(0)),C(3,B(3,D(3,C(3,B(1,M(0)))))))",
+    "(a(1,MA0),C(3,B(3,D(3,C(3,B(1,MA0))))))",
     "(b(5,S70),c(5,S70),d(5,S70),A1)",
     "(B2,C2,D2,a(2,B2,C2,D2))",
     "(A2,b(3,B(2,S90),S80),c(3,C(2,S90),S80),d(3,D(2,S90),S80))",
@@ -39,7 +39,6 @@ export interface ITenscript {
 export interface ITenscriptTree {
     _?: number, // forward steps
     S?: IPercent, // scale
-    M?: IBrickMark, // mark
     A?: ITenscriptTree, // directions
     B?: ITenscriptTree, // kinda up
     C?: ITenscriptTree,
@@ -48,6 +47,14 @@ export interface ITenscriptTree {
     c?: ITenscriptTree,
     d?: ITenscriptTree,
     a?: ITenscriptTree, // down
+    MA?: IFaceMark, // marks
+    MB?: IFaceMark,
+    MC?: IFaceMark,
+    MD?: IFaceMark,
+    Ma?: IFaceMark,
+    Mb?: IFaceMark,
+    Mc?: IFaceMark,
+    Md?: IFaceMark,
 }
 
 export function treeToTenscript(codeTree: ITenscriptTree): ITenscript {
@@ -56,8 +63,20 @@ export function treeToTenscript(codeTree: ITenscriptTree): ITenscript {
         .replace(/[_.:"]/g, "")
         .replace(/[{]/g, "(")
         .replace(/[}]/g, ")")
-        .replace(/([ABCDabcdS])\((\d*)\)/g, replacer)
+        .replace(/([ABCDabcdSM])\((\d*)\)/g, replacer)
     return {tree: codeTree, code: codeString}
+}
+
+const DIRECTIONS = "ABCDabcd"
+
+function isDirection(char: string): boolean {
+    return DIRECTIONS.indexOf(char) >= 0
+}
+
+const DIGITS = "0123456789"
+
+function isDigit(char: string): boolean {
+    return DIGITS.indexOf(char) >= 0
 }
 
 export function spaceAfterComma(tenscript: string): string {
@@ -89,6 +108,37 @@ function assignSubtree(tree: ITenscriptTree, directionChar: string, child: ITens
             break
         case "a":
             tree.a = child
+            break
+        default:
+            throw new Error("Unexpected direction directionChar: " + directionChar)
+    }
+}
+
+function assignMark(tree: ITenscriptTree, directionChar: string, faceMark: IFaceMark): void {
+    switch (directionChar) {
+        case "A":
+            tree.MA = faceMark
+            break
+        case "B":
+            tree.MB = faceMark
+            break
+        case "C":
+            tree.MC = faceMark
+            break
+        case "D":
+            tree.MD = faceMark
+            break
+        case "a":
+            tree.Ma = faceMark
+            break
+        case "b":
+            tree.Mb = faceMark
+            break
+        case "c":
+            tree.Mc = faceMark
+            break
+        case "d":
+            tree.Md = faceMark
             break
         default:
             throw new Error("Unexpected direction directionChar: " + directionChar)
@@ -143,50 +193,36 @@ export function codeToTenscript(error: (message: string) => void, code?: string)
 
         for (let index = 0; index < codeString.length; index++) {
             const char = codeString.charAt(index)
-            switch (char) {
-                case "A":
-                case "B":
-                case "C":
-                case "D":
-                case "a":
-                case "b":
-                case "c":
-                case "d":
-                    const direction = subtree(index + 1)
-                    if (!direction.codeTree) {
-                        throw new Error(`No subtree: ${codeString.substring(index)}`)
-                    }
-                    assignSubtree(tree, char, direction.codeTree)
-                    index += direction.skip
-                    break
-                case "S":
-                    const scaleArg = argument(codeString.substring(index + 1), true)
-                    tree.S = {_: parseInt(scaleArg.content, 10)}
-                    index += scaleArg.skip
-                    break
-                case "M":
-                    const markArg = argument(codeString.substring(index + 1), true)
-                    tree.M = {_: parseInt(markArg.content, 10)}
-                    index += markArg.skip
-                    break
-                case "0":
-                case "1":
-                case "2":
-                case "3":
-                case "4":
-                case "5":
-                case "6":
-                case "7":
-                case "8":
-                case "9":
-                    const forward = argument(codeString, false)
-                    tree._ = parseInt(forward.content, 10)
-                    index += forward.skip
-                    break
-                case ",":
-                    break
-                default:
-                    throw new Error(`Unexpected: ${char}`)
+            if (isDirection(char)) {
+                const direction = subtree(index + 1)
+                if (!direction.codeTree) {
+                    throw new Error(`No subtree: ${codeString.substring(index)}`)
+                }
+                assignSubtree(tree, char, direction.codeTree)
+                index += direction.skip
+            } else if (isDigit(char)) {
+                const forward = argument(codeString, false)
+                tree._ = parseInt(forward.content, 10)
+                index += forward.skip
+            } else {
+                switch (char) {
+                    case "S":
+                        const scaleArg = argument(codeString.substring(index + 1), true)
+                        tree.S = {_: parseInt(scaleArg.content, 10)}
+                        index += scaleArg.skip
+                        break
+                    case "M":
+                        const directionChar = codeString.charAt(index + 1)
+                        const markNumber = argument(codeString.substring(index + 2), true)
+                        assignMark(tree, directionChar, {_: parseInt(markNumber.content, 10)})
+                        index += markNumber.skip + 1
+                        break
+                    case ",":
+                    case " ":
+                        break
+                    default:
+                        throw new Error(`Unexpected: ${char}`)
+                }
             }
         }
         return Object.keys(tree).length === 0 ? undefined : tree
@@ -218,28 +254,46 @@ export interface IActiveTenscript {
     tree: ITenscriptTree
     brick: IBrick
     fabric: TensegrityFabric
-    markedBricks: Record<number, IBrick>
+    markedFaces: Record<number, IFace>
 }
 
 export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
 
-    before.forEach(({brick, tree, fabric, markedBricks}) => {
+    before.forEach(({brick, tree, fabric, markedFaces}) => {
+
+        function markBrick(brickToMark: IBrick, treeWithMarks: ITenscriptTree): void {
+            function maybeMark(triangle: Triangle, mark?: IFaceMark): void {
+                if (!mark) {
+                    return
+                }
+                const definition = TRIANGLE_DEFINITIONS[triangle]
+                // todo: why this switch? (it works, but)
+                const brickFace = !definition.negative ? brickToMark.faces[definition.opposite] : brickToMark.faces[triangle]
+                const markedFace = markedFaces[mark._]
+                if (markedFace) {
+                    fabric.builder.addFacePair(markedFace, brickFace)
+                }
+                markedFaces[mark._] = brickFace
+            }
+
+            maybeMark(Triangle.PPP, treeWithMarks.MA)
+            maybeMark(Triangle.NPP, treeWithMarks.MB)
+            maybeMark(Triangle.PNP, treeWithMarks.MC)
+            maybeMark(Triangle.PPN, treeWithMarks.MD)
+            maybeMark(Triangle.PNN, treeWithMarks.Mb)
+            maybeMark(Triangle.NPN, treeWithMarks.Mc)
+            maybeMark(Triangle.NNP, treeWithMarks.Md)
+            maybeMark(Triangle.NNN, treeWithMarks.Ma)
+        }
 
         function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
             const connectTriangle = previous.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
             const newBrick = fabric.builder.createConnectedBrick(previous, connectTriangle, treeScale)
-            return {tree: newTree, brick: newBrick, fabric, markedBricks}
-        }
-
-        function maybeGrow(previous: IBrick, triangle: Triangle, possibleSubtree?: ITenscriptTree): void {
-            if (!possibleSubtree) {
-                return
+            if (newTree._ === 0) {
+                markBrick(newBrick, newTree)
             }
-            const subtreeScale = percentOrHundred(possibleSubtree.S)
-            const _ = possibleSubtree._ ? possibleSubtree._ - 1 : undefined
-            const decremented = {...possibleSubtree, _}
-            active.push(grow(previous, decremented, triangle, subtreeScale))
+            return {tree: newTree, brick: newBrick, fabric, markedFaces}
         }
 
         const forward = tree._
@@ -248,6 +302,17 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
             active.push(grow(brick, {...tree, _}, Triangle.PPP, percentOrHundred(tree.S)))
             return
         }
+
+        function maybeGrow(growBrick: IBrick, triangle: Triangle, subtree?: ITenscriptTree): void {
+            if (!subtree) {
+                return
+            }
+            const subtreeScale = percentOrHundred(subtree.S)
+            const _ = subtree._ ? subtree._ - 1 : undefined
+            const decremented = {...subtree, _}
+            active.push(grow(growBrick, decremented, triangle, subtreeScale))
+        }
+
         maybeGrow(brick, Triangle.PPP, tree.A)
         maybeGrow(brick, Triangle.NPP, tree.B)
         maybeGrow(brick, Triangle.PNP, tree.C)
@@ -256,14 +321,6 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
         maybeGrow(brick, Triangle.NPN, tree.c)
         maybeGrow(brick, Triangle.NNP, tree.d)
         maybeGrow(brick, Triangle.NNN, tree.a)
-        if (tree.M) {
-            const brickMark = tree.M._
-            const markedBrick = markedBricks[brickMark]
-            if (markedBrick) {
-                fabric.builder.addBrickPair(markedBrick, brick)
-            }
-            markedBricks[brickMark] = brick
-        }
     })
     return active
 }

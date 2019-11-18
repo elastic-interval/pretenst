@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaAnchor, FaCamera, FaClock, FaFileCsv, FaSyncAlt } from "react-icons/all"
+import { FaCamera, FaFileCsv, FaSyncAlt } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -37,13 +37,13 @@ export function ToolbarLeftBottom({fabric, app$, lifePhase$, fullScreen}: {
                     color={ellipsoids ? "warning" : "secondary"}
                     onClick={() => app$.next(transition(app$.getValue(), {ellipsoids: !ellipsoids}))}
                 >
-                    {ellipsoids ? <FaClock/> : <FaCamera/>}
+                    <FaCamera/>
                 </Button>
                 <Button
                     color={rotating ? "warning" : "secondary"}
                     onClick={() => app$.next(transition(app$.getValue(), {rotating: !rotating}))}
                 >
-                    {rotating ? <FaAnchor/> : <FaSyncAlt/>}
+                    <FaSyncAlt/>
                 </Button>
             </ButtonGroup>
             <ButtonGroup className="mx-1">

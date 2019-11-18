@@ -10,8 +10,8 @@ import { roleDefaultLength } from "./fabric-features"
 import {
     factorToPercent,
     IBrick,
-    IBrickPair,
     IFace,
+    IFacePair,
     IInterval,
     IJoint,
     initialBrick,
@@ -29,7 +29,7 @@ const SNUGGLE_BRICKS = 0.9
 
 export class TensegrityBuilder {
 
-    private initialBrickPairs: IBrickPair[] = []
+    private initialFacePairs: IFacePair[] = []
 
     constructor(public readonly fabric: TensegrityFabric) {
     }
@@ -52,54 +52,44 @@ export class TensegrityBuilder {
         return brickB
     }
 
-    public addBrickPair(brickA: IBrick, brickB: IBrick): IBrickPair {
-        const distance = this.fabric.brickMidpoint(brickA).distanceTo(this.fabric.brickMidpoint(brickB))
-        const brickPair: IBrickPair = {brickA, brickB, distance}
-        this.initialBrickPairs.push(brickPair)
+    public addFacePair(faceA: IFace, faceB: IFace): IFacePair {
+        const instance = this.fabric.instance
+        const distance = instance.faceMidpoint(faceA.index).distanceTo(instance.faceMidpoint(faceB.index))
+        const brickPair: IFacePair = {faceA, faceB, distance}
+        this.initialFacePairs.push(brickPair)
         return brickPair
     }
 
-    public takeBrickPairs(): IBrickPair[] {
-        const pairs = this.initialBrickPairs
-        this.initialBrickPairs = []
-        return pairs
+    public get initialPairs(): IFacePair[] {
+        return this.initialFacePairs.map(pair => {
+            const findByJoints = (face: IFace): IFace => {
+                this.fabric.faces.find(({index, joints}) => (
+                    joints[0].index === face.joints[0].index
+                ))
+                return face
+            }
+            const distance = 1
+            return {
+                faceA: findByJoints(pair.faceA),
+                faceB: findByJoints(pair.faceB),
+                distance,
+            }
+        })
     }
 
-    public tightenBrickPairs(brickPairs: IBrickPair[], approach: number): IBrickPair[] {
-        const fabric = this.fabric
-        const connectablePairs = brickPairs.filter(({brickA, brickB, distance}) => {
-            const connectDistance = (percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) * 2
-            return distance <= connectDistance
-        })
-        const connectedPairs = connectablePairs.filter(({brickA, brickB}) => {
-            const locate = (face: IFace): ILocatedFace => ({face, midpoint: fabric.instance.faceMidpoint(face.index)})
-            const facesA = brickA.faces.map(locate)
-            const facesB = brickB.faces.map(locate)
-            const midpointA = fabric.brickMidpoint(brickA)
-            const midpointB = fabric.brickMidpoint(brickB)
-            const proximity = (midpoint: Vector3) => (triangle: ITriangle, locatedFace: ILocatedFace) => {
-                const distance = midpoint.distanceTo(midpointB)
-                if (distance < triangle.distance) {
-                    return {triangle: locatedFace.face.triangle, distance}
+    public tightenFacePairs(facePairs: IFacePair[], approach: number): IFacePair[] {
+        return facePairs.filter(pair => {
+            const scaleSum = percentToFactor(pair.faceA.brick.scale) + percentToFactor(pair.faceB.brick.scale)
+            const connectorScale = factorToPercent(scaleSum / 2)
+            const step = scaleSum * approach
+            if (pair.distance - step < step / 2) {
+                if (!this.connectBricks(pair.faceA, pair.faceB, connectorScale)) {
+                    console.log("Unable to connect")
                 }
-                return triangle
-            }
-            const initial: ITriangle = {triangle: Triangle.PPP, distance: Number.MAX_VALUE}
-            const closestA = facesA.reduce(proximity(midpointB), initial)
-            const closestB = facesB.reduce(proximity(midpointA), initial)
-            const faceA = brickA.faces[closestA.triangle]
-            const faceB = brickB.faces[closestB.triangle]
-            const connectorScale = factorToPercent((percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) / 2)
-            return this.connectBricks(faceA, faceB, connectorScale)
-        })
-        return brickPairs.filter(pair => {
-            const isConnected = connectedPairs.some(conn => conn.brickA.index === pair.brickA.index && conn.brickB.index === pair.brickB.index)
-            if (isConnected) {
                 return false
             }
-            const scaleSum = percentToFactor(pair.brickA.scale) + percentToFactor(pair.brickB.scale)
-            pair.distance -= scaleSum * approach
-            return pair.distance > scaleSum
+            pair.distance -= step
+            return true
         })
     }
 
@@ -361,62 +351,44 @@ export class TensegrityBuilder {
             })
         })
         ninePairs.sort((a, b) => a.distance - b.distance)
-        const closePairs = ninePairs.slice(0, 6)
-        const farPairs = ninePairs.slice(6)
-        const addDistance = (sum: number, {distance}: IJointPair) => sum + distance
-        const averageClose = closePairs.reduce(addDistance, 0) / closePairs.length
-        const averageFar = farPairs.reduce(addDistance, 0) / farPairs.length
-        const discrepancy = Math.abs(averageFar - averageClose * 2)
-        const furthestClose = closePairs[closePairs.length - 1].distance
-        // console.log(`averageClose=${averageClose.toFixed(2)} averageFar=${averageFar.toFixed(2)}`, furthestClose.toFixed(4))
-        const scaleSum = percentToFactor(faceA.brick.scale) + percentToFactor(faceB.brick.scale)
-        if (furthestClose > scaleSum * 2 || discrepancy > averageClose / 3) {
-            return undefined
-        }
-        const ring: IJoint[] = []
-        // console.log("Pairs", closePairs.map(p => `${p.jointA.index}-${p.jointB.index}:${p.distance.toFixed(4)}`))
-        const closest = closePairs.shift()
+        const closest = ninePairs.shift()
         if (!closest) {
             throw new Error()
         }
-        ring.push(closest.jointA, closest.jointB)
-        let findB = true
+        let ring: IJoint[] = [closest.jointA, closest.jointB]
+        let beforeMatchA = true
+        let afterMatchB = true
         while (ring.length < 6) {
-            if (findB) {
-                const endB = ring[ring.length - 1]
-                const fromB = closePairs.findIndex(p => p.jointB.index === endB.index)
-                if (fromB < 0) {
-                    console.log(`No findB=${findB}`, ring.length)
+            const findClose = (joint: IJoint, findA: boolean): { index: number, jointToAdd: IJoint } | undefined => {
+                const index = ninePairs.findIndex(p => joint.index === (findA ? p.jointA.index : p.jointB.index))
+                if (index < 0) {
                     return undefined
                 }
-                ring.push(closePairs[fromB].jointA)
-                closePairs.splice(fromB, 1)
-                findB = false
-            } else {
-                const endA = ring[ring.length - 1]
-                const fromA = closePairs.findIndex(p => p.jointA.index === endA.index)
-                if (fromA < 0) {
-                    console.log(`No findB=${findB}`, ring.length)
-                    return undefined
-                }
-                ring.push(closePairs[fromA].jointB)
-                closePairs.splice(fromA, 1)
-                findB = true
+                const closePair = ninePairs[index]
+                const jointToAdd = findA ? closePair.jointB : closePair.jointA
+                return {index, jointToAdd}
             }
-            // console.log("Ring", ring.map(j => j.index), closePairs.map(p => `${p.jointA.index}-${p.jointB.index}:${p.distance.toFixed(4)}`))
+            const beforeEnd = ring[0]
+            const foundBefore = findClose(beforeEnd, beforeMatchA)
+            const afterEnd = ring[ring.length - 1]
+            const foundAfter = findClose(afterEnd, !afterMatchB)
+            if (!foundBefore || !foundAfter) {
+                throw new Error("Before or after not found!")
+            }
+            const before = ninePairs[foundBefore.index]
+            const after = ninePairs[foundAfter.index]
+            if (before.distance < after.distance) {
+                ring = [foundBefore.jointToAdd, ...ring]
+                ninePairs.splice(foundBefore.index, 1)
+                beforeMatchA = !beforeMatchA
+            } else {
+                ring = [...ring, foundAfter.jointToAdd]
+                ninePairs.splice(foundAfter.index, 1)
+                afterMatchB = !afterMatchB
+            }
         }
         return ring
     }
-}
-
-interface ILocatedFace {
-    face: IFace
-    midpoint: Vector3
-}
-
-interface ITriangle {
-    triangle: Triangle
-    distance: number
 }
 
 interface IJointPair {
