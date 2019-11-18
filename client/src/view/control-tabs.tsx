@@ -12,7 +12,7 @@ import { BehaviorSubject } from "rxjs"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
-import { IBrick, IBrickPair } from "../fabric/tensegrity-brick-types"
+import { IFace, IFacePair } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { OptimizePanel } from "./optimize-panel"
@@ -33,16 +33,16 @@ function Icon(controlTab: ControlTab): JSX.Element {
 }
 
 export function ControlTabs({
-                                fabric, selectedBricks, clearSelectedBricks, tenscript, setTenscript,
-                                brickPairs, addBrickPair, tightenBrickPairs,
+                                fabric, selectedFaces, clearSelectedFaces, tenscript, setTenscript,
+                                brickPairs, addFacePair, tightenFacePairs,
                                 toFullScreen, app$, lifePhase$, features,
                             }: {
     fabric?: TensegrityFabric,
-    selectedBricks: IBrick[],
-    clearSelectedBricks: () => void,
-    brickPairs: IBrickPair[],
-    addBrickPair: (brickA: IBrick, brickB: IBrick) => void,
-    tightenBrickPairs: () => void,
+    selectedFaces: IFace[],
+    clearSelectedFaces: () => void,
+    brickPairs: IFacePair[],
+    addFacePair: (faceA: IFace, faceB: IFace) => void,
+    tightenFacePairs: () => void,
     tenscript?: ITenscript,
     setTenscript: (grow: boolean, tenscript: ITenscript) => void,
     toFullScreen: () => void,
@@ -54,7 +54,7 @@ export function ControlTabs({
     const [controlTab, updateActiveTab] = useState(app$.getValue().controlTab)
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
-            clearSelectedBricks()
+            clearSelectedFaces()
         }
     }, [controlTab])
     useEffect(() => {
@@ -93,11 +93,11 @@ export function ControlTabs({
                     return !fabric ? (<div/>) : (
                         <ShapePanel
                             fabric={fabric}
-                            selectedBricks={selectedBricks}
-                            clearSelectedBricks={clearSelectedBricks}
-                            brickPairs={brickPairs}
-                            addBrickPair={addBrickPair}
-                            tightenBrickPairs={tightenBrickPairs}
+                            selectedFaces={selectedFaces}
+                            clearSelectedFaces={clearSelectedFaces}
+                            facePairs={brickPairs}
+                            addFacePair={addFacePair}
+                            tightenFacePairs={tightenFacePairs}
                             features={features}
                             app$={app$}
                         />

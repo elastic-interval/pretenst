@@ -13,8 +13,8 @@ import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import {
     emptySplit,
     IBrick,
-    IBrickPair,
     IFace,
+    IFacePair,
     IInterval,
     IIntervalSplit,
     IJoint,
@@ -118,12 +118,12 @@ export class TensegrityFabric {
         public readonly slackInstance: FabricInstance,
         public readonly features: FloatFeature[],
         public readonly tenscript: ITenscript,
-        private setBrickPairs: (brickPairs: IBrickPair[]) => void,
+        private setBrickPairs: (brickPairs: IFacePair[]) => void,
     ) {
         this.builder = new TensegrityBuilder(this)
         features.forEach(feature => this.instance.applyFeature(feature))
         const brick = this.builder.createBrickOnOrigin(percentOrHundred())
-        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this, markedBricks: {}}]
+        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this, markedFaces: {}}]
         this.bricks = [brick]
         this.refreshLineGeometry()
         this.refreshFaceGeometry()
@@ -185,6 +185,7 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
+        face.removed = true
         if (removeIntervals) {
             face.pulls.forEach(interval => this.removeInterval(interval))
         }
@@ -248,7 +249,7 @@ export class TensegrityFabric {
         const pulls = [0, 1, 2].map(offset => brick.pulls[triangle * 3 + offset])
         const face: IFace = {
             index: this.engine.createFace(joints[0].index, joints[1].index, joints[2].index),
-            canGrow: true,
+            canGrow: true, removed: false,
             brick, triangle, joints, pushes, pulls,
         }
         this.faces.push(face)
@@ -304,7 +305,7 @@ export class TensegrityFabric {
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
                 if (lifePhase === LifePhase.Growing) {
-                    this.setBrickPairs(this.builder.takeBrickPairs())
+                    this.setBrickPairs(this.builder.initialPairs)
                     return engine.finishGrowing()
                 }
             }
@@ -312,17 +313,17 @@ export class TensegrityFabric {
         return lifePhase
     }
 
-    public enforceBrickPair({brickA, brickB, distance}: IBrickPair): void {
-        const midA = this.brickMidpoint(brickA)
-        const midB = this.brickMidpoint(brickB)
-        const moveBrick = (brick: IBrick, move: Vector3) => brick.joints.forEach(joint => {
-            this.instance.moveLocation(joint.index, move)
-        })
-        const ab = new Vector3().subVectors(midB, midA)
-        const distanceChange = ab.length() - distance
-        const halfMove = ab.normalize().multiplyScalar(distanceChange / 2)
-        moveBrick(brickA, halfMove)
-        moveBrick(brickB, halfMove.multiplyScalar(-1))
+    public enforceBrickPair({faceA, faceB, distance}: IFacePair): void {
+        // const midA = this.instance.faceMidpoint(faceA.index)
+        // const midB = this.instance.faceMidpoint(faceB.index)
+        // const moveFace = (face: IFace, move: Vector3) => face.joints.forEach(joint => {
+        //     this.instance.moveLocation(joint.index, move)
+        // })
+        // const ab = new Vector3().subVectors(midB, midA)
+        // const distanceChange = ab.length() - distance
+        // const halfMove = ab.normalize().multiplyScalar(distanceChange / 2)
+        // moveFace(faceA, halfMove)
+        // moveFace(faceB, halfMove.multiplyScalar(-1))
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {

@@ -25,16 +25,10 @@ import {
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
-import { byBricks, IBrick, IBrickPair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { byFaces, IFace, IFacePair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { CYLINDER, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import {
-    FACE,
-    LINE_VERTEX_COLORS,
-    rainbowMaterial,
-    roleMaterial,
-    SCALE_LINE, SELECT_MATERIAL,
-} from "./materials"
+import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
@@ -64,11 +58,11 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPairs, faceSelection, ellipsoids, app$, lifePhase$}: {
+export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, faceSelection, ellipsoids, app$, lifePhase$}: {
     fabric: TensegrityFabric,
-    selectedBricks: IBrick[],
-    setSelectedBricks: (selectedBricks: IBrick[]) => void,
-    brickPairs: IBrickPair[],
+    selectedFaces: IFace[],
+    setSelectedFaces: (selectedFaces: IFace[]) => void,
+    facePairs: IFacePair[],
     faceSelection: boolean,
     ellipsoids: boolean,
     app$: BehaviorSubject<IFabricState>,
@@ -129,9 +123,9 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPair
             return
         }
         const instance = fabric.instance
-        const addToVector = (sum: Vector3, brick: IBrick) => sum.add(fabric.brickMidpoint(brick))
-        const averageBrickMidpoint = () => selectedBricks.reduce(addToVector, new Vector3()).multiplyScalar(1 / selectedBricks.length)
-        const target = selectedBricks.length === 0 ? instance.getMidpoint() : averageBrickMidpoint()
+        const addToVector = (sum: Vector3, face: IFace) => sum.add(fabric.instance.faceMidpoint(face.index))
+        const averageFaceMidpoint = () => selectedFaces.reduce(addToVector, new Vector3()).multiplyScalar(1 / selectedFaces.length)
+        const target = selectedFaces.length === 0 ? instance.getMidpoint() : averageFaceMidpoint()
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
@@ -140,7 +134,7 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPair
             newLifePhase = fabric.iterate(0)
         } else {
             newLifePhase = fabric.iterate(ticks)
-            brickPairs.forEach(pair => fabric.enforceBrickPair(pair))
+            facePairs.forEach(pair => fabric.enforceBrickPair(pair))
             fabric.needsUpdate()
         }
         if (lifePhase !== newLifePhase) {
@@ -152,42 +146,42 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPair
         }
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, selectedBricks, age, lifePhase, showPushes, showPulls, faceSelection,
+        fabric, selectedFaces, age, lifePhase, showPushes, showPulls, faceSelection,
     ])
 
-    function toggleBrickSelection(brickToToggle: IBrick): void {
-        if (selectedBricks.some(selected => selected.index === brickToToggle.index)) {
-            const withoutNewBrick = selectedBricks.filter(b => b.index !== brickToToggle.index)
-            fabric.selectIntervals(byBricks(withoutNewBrick))
-            setSelectedBricks(withoutNewBrick)
+    function toggleFacesSelection(faceToToggle: IFace): void {
+        if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
+            const withoutNewFace = selectedFaces.filter(b => b.index !== faceToToggle.index)
+            fabric.selectIntervals(byFaces(withoutNewFace))
+            setSelectedFaces(withoutNewFace)
         } else {
-            const withNewBrick = [...selectedBricks, brickToToggle]
-            fabric.selectIntervals(byBricks(withNewBrick))
-            setSelectedBricks(withNewBrick)
+            const withNewFace = [...selectedFaces, faceToToggle]
+            fabric.selectIntervals(byFaces(withNewFace))
+            setSelectedFaces(withNewFace)
         }
     }
 
-    function SelectedBrick({selected}: { selected: IBrick }): JSX.Element {
-        const scale = percentToFactor(selected.scale) / 3
+    function SelectedFace({selected}: { selected: IFace }): JSX.Element {
+        const scale = percentToFactor(selected.brick.scale) / 3
         return (
             <mesh
                 geometry={SPHERE}
-                position={fabric.brickMidpoint(selected)}
+                position={fabric.instance.faceMidpoint(selected.index)}
                 material={SELECT_MATERIAL}
                 scale={new Vector3(scale, scale, scale)}
             />
         )
     }
 
-    function BrickPair({brickPair}: { brickPair: IBrickPair }): JSX.Element {
-        const a = fabric.brickMidpoint(brickPair.brickA)
-        const b = fabric.brickMidpoint(brickPair.brickB)
+    function BrickPair({brickPair}: { brickPair: IFacePair }): JSX.Element {
+        const a = fabric.instance.faceMidpoint(brickPair.faceA.index)
+        const b = fabric.instance.faceMidpoint(brickPair.faceB.index)
         const position = new Vector3().addVectors(a, b).multiplyScalar(0.5)
-        const radius = (percentToFactor(brickPair.brickA.scale) + percentToFactor(brickPair.brickB.scale)) / 24
+        const radius = (percentToFactor(brickPair.faceA.brick.scale) + percentToFactor(brickPair.faceB.brick.scale)) / 24
         const {scale, rotation} = fabric.orientVectorPair(a, b, radius)
         return (
             <>
-                <SelectedBrick selected={brickPair.brickA}/>
+                <SelectedFace selected={brickPair.faceA}/>
                 <mesh
                     geometry={CYLINDER}
                     rotation={new Euler().setFromQuaternion(rotation)}
@@ -195,7 +189,7 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPair
                     material={SELECT_MATERIAL}
                     scale={scale}
                 />
-                <SelectedBrick selected={brickPair.brickB}/>
+                <SelectedFace selected={brickPair.faceB}/>
             </>
         )
     }
@@ -301,11 +295,11 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPair
                         key="faces"
                         fabric={fabric}
                         lifePhase={lifePhase}
-                        selectBrick={toggleBrickSelection}
+                        selectFace={toggleFacesSelection}
                     />
                 )}
-                {selectedBricks.map(brick => <SelectedBrick key={`brick${brick.index}`} selected={brick}/>)}
-                {brickPairs.map((brickPair, index) => <BrickPair key={`Pair${index}`} brickPair={brickPair}/>)}
+                {selectedFaces.map(brick => <SelectedFace key={`brick${brick.index}`} selected={brick}/>)}
+                {facePairs.map((brickPair, index) => <BrickPair key={`Pair${index}`} brickPair={brickPair}/>)}
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
@@ -316,10 +310,10 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPair
     )
 }
 
-function Faces({fabric, lifePhase, selectBrick}: {
+function Faces({fabric, lifePhase, selectFace}: {
     fabric: TensegrityFabric,
     lifePhase: LifePhase,
-    selectBrick: (brick: IBrick) => void,
+    selectFace: (face: IFace) => void,
 }): JSX.Element {
     const {raycaster} = useThree()
     const meshRef = useRef<Object3D>()
@@ -349,7 +343,7 @@ function Faces({fabric, lifePhase, selectBrick}: {
         if (!face) {
             return
         }
-        selectBrick(face.brick)
+        selectFace(face)
     }
     return (
         <mesh

@@ -19,22 +19,22 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
-import { IBrick, IBrickPair } from "../fabric/tensegrity-brick-types"
+import { IFace, IFacePair } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
 export function ShapePanel({
-                               fabric, features, selectedBricks, brickPairs, addBrickPair, tightenBrickPairs,
-                               clearSelectedBricks, app$,
+                               fabric, features, selectedFaces, facePairs, addFacePair, tightenFacePairs,
+                               clearSelectedFaces, app$,
                            }: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
-    selectedBricks: IBrick[],
-    brickPairs: IBrickPair[],
-    addBrickPair: (brickA: IBrick, brickB: IBrick) => void,
-    tightenBrickPairs: () => void,
-    clearSelectedBricks: () => void,
+    selectedFaces: IFace[],
+    facePairs: IFacePair[],
+    addFacePair: (faceA: IFace, faceB: IFace) => void,
+    tightenFacePairs: () => void,
+    clearSelectedFaces: () => void,
     app$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
@@ -60,16 +60,16 @@ export function ShapePanel({
     }
 
     function connect(): void {
-        const from = selectedBricks.shift()
-        if (!from || selectedBricks.length < 1) {
+        const fromFace = selectedFaces.shift()
+        if (!fromFace || selectedFaces.length < 1) {
             throw new Error("Connect what?")
         }
-        selectedBricks.forEach(selectedBrick => addBrickPair(from, selectedBrick))
-        clearSelectedBricks()
+        selectedFaces.forEach(face => addFacePair(fromFace, face))
+        clearSelectedFaces()
     }
 
-    function needsBricks(requiredBrickCount: number): boolean {
-        return !fabric.splitIntervals || selectedBricks.length < requiredBrickCount || faceSelection || ellipsoids
+    function needsBricks(requiredFaceCount: number): boolean {
+        return !fabric.splitIntervals || selectedFaces.length < requiredFaceCount || faceSelection || ellipsoids
     }
 
     return (
@@ -90,7 +90,7 @@ export function ShapePanel({
                     <Button disabled={needsBricks(2)} onClick={connect}>
                         <FaLink/><span> Engage</span>
                     </Button>
-                    <Button disabled={brickPairs.length === 0} onClick={tightenBrickPairs}>
+                    <Button disabled={facePairs.length === 0} onClick={tightenFacePairs}>
                         <FaCompressArrowsAlt/><span> Approach</span>
                     </Button>
                 </ButtonGroup>

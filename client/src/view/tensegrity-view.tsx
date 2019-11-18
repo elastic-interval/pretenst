@@ -25,7 +25,7 @@ import {
     transition,
 } from "../fabric/fabric-state"
 import { BOOTSTRAP, ITenscript } from "../fabric/tenscript"
-import { IBrick, IBrickPair, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { IFace, IFacePair, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ControlTabs } from "./control-tabs"
@@ -51,34 +51,34 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
 
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
-    const [selectedBricks, setSelectedBricks] = useState<IBrick[]>([])
-    const [brickPairs, setBrickPairs] = useState<IBrickPair[]>([])
+    const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
+    const [facePairs, setFacePairs] = useState<IFacePair[]>([])
 
     useEffect(() => {
         app$.next(transition(app$.getValue(), {faceSelection: false}))
-        if (fabric && selectedBricks.length === 0) {
+        if (fabric && selectedFaces.length === 0) {
             fabric.clearSelection()
         }
-    }, [fabric, selectedBricks])
+    }, [fabric, selectedFaces])
 
     const [controlTab, updateControlTab] = useState(app$.getValue().controlTab)
     const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
     const [fullScreen, updateFullScreen] = useState(app$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
 
-    function addBrickPair(brickA: IBrick, brickB: IBrick): void {
+    function addFacePair(faceA: IFace, faceB: IFace): void {
         if (!fabric) {
             return
         }
-        const brickPair = fabric.builder.addBrickPair(brickA, brickB)
-        setBrickPairs([...brickPairs, brickPair])
+        const facePair = fabric.builder.addFacePair(faceA, faceB)
+        setFacePairs([...facePairs, facePair])
     }
 
     function tightenBrickPairs(): void {
         if (!fabric) {
             return
         }
-        setBrickPairs(fabric.builder.tightenBrickPairs( brickPairs, 0.2))
+        setFacePairs(fabric.builder.tightenFacePairs( facePairs, 0.2))
     }
 
     useEffect(() => {
@@ -140,7 +140,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
         mainInstance.engine.initInstance()
         lifePhase$.next(LifePhase.Growing)
         app$.next(transition(app$.getValue(), {ellipsoids: false, faceSelection: false}))
-        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript, setBrickPairs))
+        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript, setFacePairs))
         if (replaceUrl) {
             location.hash = newTenscript.code
         }
@@ -182,11 +182,11 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                 >
                     <ControlTabs
                         fabric={fabric}
-                        selectedBricks={selectedBricks}
-                        clearSelectedBricks={() => setSelectedBricks([])}
-                        brickPairs={brickPairs}
-                        addBrickPair={addBrickPair}
-                        tightenBrickPairs={tightenBrickPairs}
+                        selectedFaces={selectedFaces}
+                        clearSelectedFaces={() => setSelectedFaces([])}
+                        brickPairs={facePairs}
+                        addFacePair={addFacePair}
+                        tightenFacePairs={tightenBrickPairs}
                         tenscript={tenscript}
                         setTenscript={(grow: boolean, newScript?: ITenscript) => {
                             if (grow) {
@@ -229,8 +229,8 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                             <ToolbarLeftTop
                                 app$={app$}
                                 fullScreen={fullScreen}
-                                selectedBricks={selectedBricks}
-                                clearSelectedBricks={() => setSelectedBricks([])}
+                                selectedFaces={selectedFaces}
+                                clearSelectedFaces={() => setSelectedFaces([])}
                             />
                         )}
                         <ToolbarLeftBottom
@@ -256,9 +256,9 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                         }}>
                             <FabricView
                                 fabric={fabric}
-                                selectedBricks={selectedBricks}
-                                setSelectedBricks={setSelectedBricks}
-                                brickPairs={brickPairs}
+                                selectedFaces={selectedFaces}
+                                setSelectedFaces={setSelectedFaces}
+                                facePairs={facePairs}
                                 faceSelection={faceSelection}
                                 ellipsoids={ellipsoids}
                                 app$={app$}

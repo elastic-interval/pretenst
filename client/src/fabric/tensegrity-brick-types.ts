@@ -54,6 +54,7 @@ export interface IFace {
     joints: IJoint[]
     pushes: IInterval[]
     pulls: IInterval[]
+    removed: boolean
 }
 
 export interface IPushDefinition {
@@ -138,7 +139,7 @@ export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
     },
 ]
 
-export interface IBrickMark {
+export interface IFaceMark {
     _: number
 }
 
@@ -170,9 +171,9 @@ export interface IBrick {
     faces: IFace[]
 }
 
-export interface IBrickPair {
-    brickA: IBrick
-    brickB: IBrick
+export interface IFacePair {
+    faceA: IFace
+    faceB: IFace
     distance: number
 }
 
@@ -180,11 +181,13 @@ export function initialBrick(index: number, base: Triangle, scale: IPercent): IB
     return {index, base, scale, joints: [], pushes: [], pulls: [], rings: [[], [], [], []], faces: []}
 }
 
-export function byBricks(bricks: IBrick[]): (interval: IInterval) => boolean {
-    return interval => { // TODO: use a map to speed this up
+export function byFaces(faces: IFace[]): (interval: IInterval) => boolean {
+    return interval => {
         const matchesInterval = (faceInterval: IInterval) => !faceInterval.removed && faceInterval.index === interval.index
-        const matchesBrick = (brick: IBrick) => (brick.pushes.some(matchesInterval) || brick.pulls.some(matchesInterval))
-        return bricks.some(matchesBrick)
+        const matchesFace = (face: IFace) => (
+            face.pushes.some(matchesInterval) || face.pulls.some(matchesInterval)
+        )
+        return faces.some(matchesFace)
     }
 }
 
