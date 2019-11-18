@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
+import { BufferGeometry, CylinderGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
 import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
 import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
@@ -51,8 +51,8 @@ export interface IFabricOutput {
     intervals: IOutputInterval[]
 }
 
-export const SPHERE_RADIUS = 0.35
-export const SPHERE = new SphereGeometry(SPHERE_RADIUS, 8, 8)
+export const SPHERE = new SphereGeometry(1, 16, 8)
+export const CYLINDER = new CylinderGeometry(1, 1, 1, 20)
 
 function scaleToStiffness(scale: IPercent): number {
     return percentToFactor(scale) / 10000
@@ -328,7 +328,16 @@ export class TensegrityFabric {
         const alphaLocation = this.instance.location(interval.alpha.index)
         const omegaLocation = this.instance.location(interval.omega.index)
         const intervalLength = alphaLocation.distanceTo(omegaLocation)
-        const scale = new Vector3(SPHERE_RADIUS * radiusFactor, intervalLength / SPHERE_RADIUS / 2, SPHERE_RADIUS * radiusFactor)
+        const scale = new Vector3(radiusFactor, intervalLength / 2, radiusFactor)
+        return {scale, rotation}
+    }
+
+    public orientVectorPair(a: Vector3, b: Vector3, radiusFactor: number): { scale: Vector3, rotation: Quaternion } {
+        const Y_AXIS = new Vector3(0, 1, 0)
+        const unit = new Vector3().subVectors(b, a).normalize()
+        const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
+        const distance = a.distanceTo(b)
+        const scale = new Vector3(radiusFactor, distance, radiusFactor)
         return {scale, rotation}
     }
 

@@ -257,6 +257,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                                 fabric={fabric}
                                 selectedBricks={selectedBricks}
                                 setSelectedBricks={setSelectedBricks}
+                                brickPairs={brickPairs}
                                 faceSelection={faceSelection}
                                 ellipsoids={ellipsoids}
                                 app$={app$}
