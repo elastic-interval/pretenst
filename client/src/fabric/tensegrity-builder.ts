@@ -29,6 +29,8 @@ const SNUGGLE_BRICKS = 0.9
 
 export class TensegrityBuilder {
 
+    private initialBrickPairs: IBrickPair[] = []
+
     constructor(public readonly fabric: TensegrityFabric) {
     }
 
@@ -50,21 +52,25 @@ export class TensegrityBuilder {
         return brickB
     }
 
-    public addBrickPair(brickA: IBrick, brickB: IBrick): IBrickPair[] {
+    public addBrickPair(brickA: IBrick, brickB: IBrick): IBrickPair {
         const distance = this.fabric.brickMidpoint(brickA).distanceTo(this.fabric.brickMidpoint(brickB))
         const brickPair: IBrickPair = {brickA, brickB, distance}
-        const pairs = this.fabric.brickPairs
-        pairs.push(brickPair)
+        this.initialBrickPairs.push(brickPair)
+        return brickPair
+    }
+
+    public takeBrickPairs(): IBrickPair[] {
+        const pairs = this.initialBrickPairs
+        this.initialBrickPairs = []
         return pairs
     }
 
-    public tightenBrickPairs(): IBrickPair[] {
+    public tightenBrickPairs(brickPairs: IBrickPair[], approach: number): IBrickPair[] {
         const fabric = this.fabric
-        const connectablePairs = fabric.brickPairs.filter(({brickA, brickB, distance}) => {
+        const connectablePairs = brickPairs.filter(({brickA, brickB, distance}) => {
             const connectDistance = (percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) * 2
             return distance <= connectDistance
         })
-        console.log("connectable", connectablePairs.length)
         const connectedPairs = connectablePairs.filter(({brickA, brickB}) => {
             const locate = (face: IFace): ILocatedFace => ({face, midpoint: fabric.instance.faceMidpoint(face.index)})
             const facesA = brickA.faces.map(locate)
@@ -86,14 +92,15 @@ export class TensegrityBuilder {
             const connectorScale = factorToPercent((percentToFactor(brickA.scale) + percentToFactor(brickB.scale)) / 2)
             return this.connectBricks(faceA, faceB, connectorScale)
         })
-        fabric.brickPairs = fabric.brickPairs.filter(({brickA, brickB}) => !connectedPairs.some(pair => (
-            pair.brickA.index === brickA.index && pair.brickB.index === brickB.index
-        )))
-        fabric.brickPairs.forEach(pair => {
-            const averageScale = (percentToFactor(pair.brickA.scale) + percentToFactor(pair.brickB.scale)) / 2
-            pair.distance -= averageScale / 5
+        return brickPairs.filter(pair => {
+            const isConnected = connectedPairs.some(conn => conn.brickA.index === pair.brickA.index && conn.brickB.index === pair.brickB.index)
+            if (isConnected) {
+                return false
+            }
+            const scaleSum = percentToFactor(pair.brickA.scale) + percentToFactor(pair.brickB.scale)
+            pair.distance -= scaleSum * approach
+            return pair.distance > scaleSum
         })
-        return fabric.brickPairs
     }
 
     public optimize(): void {
@@ -362,9 +369,8 @@ export class TensegrityBuilder {
         const discrepancy = Math.abs(averageFar - averageClose * 2)
         const furthestClose = closePairs[closePairs.length - 1].distance
         // console.log(`averageClose=${averageClose.toFixed(2)} averageFar=${averageFar.toFixed(2)}`, furthestClose.toFixed(4))
-        // TODO: not 2 but something with scale?
-        if (furthestClose > 2 || discrepancy > averageClose / 3) {
-            console.log("discrepancey too large")
+        const scaleSum = percentToFactor(faceA.brick.scale) + percentToFactor(faceB.brick.scale)
+        if (furthestClose > scaleSum * 2 || discrepancy > averageClose / 3) {
             return undefined
         }
         const ring: IJoint[] = []
