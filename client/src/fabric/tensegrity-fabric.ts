@@ -98,7 +98,6 @@ export class TensegrityFabric {
     public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
     public bricks: IBrick[] = []
-    public brickPairs: IBrickPair[] = []
     public activeTenscript?: IActiveTenscript[]
     public readonly builder: TensegrityBuilder
 
@@ -305,13 +304,25 @@ export class TensegrityFabric {
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
                 if (lifePhase === LifePhase.Growing) {
-                    this.setBrickPairs(this.brickPairs)
+                    this.setBrickPairs(this.builder.takeBrickPairs())
                     return engine.finishGrowing()
                 }
             }
         }
-        this.brickPairs.forEach(pair => this.enforceBrickPair(pair))
         return lifePhase
+    }
+
+    public enforceBrickPair({brickA, brickB, distance}: IBrickPair): void {
+        const midA = this.brickMidpoint(brickA)
+        const midB = this.brickMidpoint(brickB)
+        const moveBrick = (brick: IBrick, move: Vector3) => brick.joints.forEach(joint => {
+            this.instance.moveLocation(joint.index, move)
+        })
+        const ab = new Vector3().subVectors(midB, midA)
+        const distanceChange = ab.length() - distance
+        const halfMove = ab.normalize().multiplyScalar(distanceChange / 2)
+        moveBrick(brickA, halfMove)
+        moveBrick(brickB, halfMove.multiplyScalar(-1))
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
@@ -388,19 +399,6 @@ export class TensegrityFabric {
                 return a.stiffness - b.stiffness
             }),
         }
-    }
-
-    private enforceBrickPair({brickA, brickB, distance}: IBrickPair): void {
-        const midA = this.brickMidpoint(brickA)
-        const midB = this.brickMidpoint(brickB)
-        const moveBrick = (brick: IBrick, move: Vector3) => brick.joints.forEach(joint => {
-            this.instance.moveLocation(joint.index, move)
-        })
-        const ab = new Vector3().subVectors(midB, midA)
-        const distanceChange = ab.length() - distance
-        const halfMove = ab.normalize().multiplyScalar(distanceChange / 2)
-        moveBrick(brickA, halfMove)
-        moveBrick(brickB, halfMove.multiplyScalar(-1))
     }
 
     private refreshLineGeometry(): void {

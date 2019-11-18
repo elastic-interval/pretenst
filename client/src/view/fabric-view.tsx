@@ -140,6 +140,7 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPair
             newLifePhase = fabric.iterate(0)
         } else {
             newLifePhase = fabric.iterate(ticks)
+            brickPairs.forEach(pair => fabric.enforceBrickPair(pair))
             fabric.needsUpdate()
         }
         if (lifePhase !== newLifePhase) {

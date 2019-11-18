@@ -261,7 +261,6 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
             const markedBrick = markedBricks[brickMark]
             if (markedBrick) {
                 fabric.builder.addBrickPair(markedBrick, brick)
-                console.log("engaged", markedBrick.index, brick.index)
             }
             markedBricks[brickMark] = brick
         }

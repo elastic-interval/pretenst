@@ -70,14 +70,15 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
         if (!fabric) {
             return
         }
-        setBrickPairs(fabric.builder.addBrickPair(brickA, brickB))
+        const brickPair = fabric.builder.addBrickPair(brickA, brickB)
+        setBrickPairs([...brickPairs, brickPair])
     }
 
     function tightenBrickPairs(): void {
         if (!fabric) {
             return
         }
-        setBrickPairs(fabric.builder.tightenBrickPairs())
+        setBrickPairs(fabric.builder.tightenBrickPairs( brickPairs, 0.2))
     }
 
     useEffect(() => {
