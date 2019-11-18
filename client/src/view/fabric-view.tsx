@@ -25,10 +25,16 @@ import {
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
-import { byBricks, IBrick, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
-import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { byBricks, IBrick, IBrickPair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { CYLINDER, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { FACE, FACE_SPHERE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE } from "./materials"
+import {
+    FACE,
+    LINE_VERTEX_COLORS,
+    rainbowMaterial,
+    roleMaterial,
+    SCALE_LINE, SELECT_MATERIAL,
+} from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
 
@@ -58,10 +64,11 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelection, ellipsoids, app$, lifePhase$}: {
+export function FabricView({fabric, selectedBricks, setSelectedBricks, brickPairs, faceSelection, ellipsoids, app$, lifePhase$}: {
     fabric: TensegrityFabric,
     selectedBricks: IBrick[],
     setSelectedBricks: (selectedBricks: IBrick[]) => void,
+    brickPairs: IBrickPair[],
     faceSelection: boolean,
     ellipsoids: boolean,
     app$: BehaviorSubject<IFabricState>,
@@ -76,20 +83,15 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
         const spaceTexture = new TextureLoader().load("space.jpg")
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
-    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
 
+    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
     useEffect(() => {
         const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
         return () => subscription.unsubscribe()
     }, [])
 
-    useEffect(() => {
-        orbit.current.autoRotate = app$.getValue().rotating
-    }, [fabric])
-
     const [showPushes, updateShowPushes] = useState(app$.getValue().showPushes)
     const [showPulls, updateShowPulls] = useState(app$.getValue().showPulls)
-
     const [rotating, updateRotating] = useState(app$.getValue().rotating)
     useEffect(() => {
         const subscription = app$.subscribe(newState => {
@@ -102,6 +104,7 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
     useEffect(() => {
         orbit.current.autoRotate = rotating
     }, [rotating])
+
     const radiusFactor = fabricFeatureValue(FabricFeature.RadiusFactor).numeric
 
     const orbit = useUpdate<Orbit>(orb => {
@@ -164,14 +167,35 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
     }
 
     function SelectedBrick({selected}: { selected: IBrick }): JSX.Element {
-        const scale = percentToFactor(selected.scale)
+        const scale = percentToFactor(selected.scale) / 3
         return (
             <mesh
                 geometry={SPHERE}
                 position={fabric.brickMidpoint(selected)}
-                material={FACE_SPHERE}
+                material={SELECT_MATERIAL}
                 scale={new Vector3(scale, scale, scale)}
             />
+        )
+    }
+
+    function BrickPair({brickPair}: { brickPair: IBrickPair }): JSX.Element {
+        const a = fabric.brickMidpoint(brickPair.brickA)
+        const b = fabric.brickMidpoint(brickPair.brickB)
+        const position = new Vector3().addVectors(a, b).multiplyScalar(0.5)
+        const radius = (percentToFactor(brickPair.brickA.scale) + percentToFactor(brickPair.brickB.scale)) / 24
+        const {scale, rotation} = fabric.orientVectorPair(a, b, radius)
+        return (
+            <>
+                <SelectedBrick selected={brickPair.brickA}/>
+                <mesh
+                    geometry={CYLINDER}
+                    rotation={new Euler().setFromQuaternion(rotation)}
+                    position={position}
+                    material={SELECT_MATERIAL}
+                    scale={scale}
+                />
+                <SelectedBrick selected={brickPair.brickB}/>
+            </>
         )
     }
 
@@ -280,6 +304,7 @@ export function FabricView({fabric, selectedBricks, setSelectedBricks, faceSelec
                     />
                 )}
                 {selectedBricks.map(brick => <SelectedBrick key={`brick${brick.index}`} selected={brick}/>)}
+                {brickPairs.map((brickPair, index) => <BrickPair key={`Pair${index}`} brickPair={brickPair}/>)}
                 {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>

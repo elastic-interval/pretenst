@@ -7,7 +7,7 @@ import { Color, DoubleSide, FaceColors, LineBasicMaterial, Material, MeshPhongMa
 
 import { IntervalRole } from "../fabric/fabric-engine"
 
-export const FACE_SPHERE_COLOR = "#a88d00"
+export const SELECTION_COLOR = "#91934f"
 export const SCALE_LINE_COLOR = "#cace02"
 
 const lights = true
@@ -34,8 +34,8 @@ export const FACE = new MeshPhongMaterial({
     opacity: 0.2,
 })
 
-export const FACE_SPHERE = new MeshPhongMaterial({
-    color: new Color(FACE_SPHERE_COLOR),
+export const SELECT_MATERIAL = new MeshPhongMaterial({
+    color: new Color(SELECTION_COLOR),
     lights: true,
 })
 

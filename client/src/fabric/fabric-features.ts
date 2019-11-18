@@ -133,9 +133,9 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.RadiusFactor,
         name: "Radius Factor",
-        defaultValue: 50,
+        defaultValue: 5,
         multiplier: FeatureMultiplier.One,
-        fixedDigits: 1,
+        fixedDigits: 2,
         percents: FEATURE_PERCENTS,
     },
     {
