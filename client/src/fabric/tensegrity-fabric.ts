@@ -314,16 +314,16 @@ export class TensegrityFabric {
     }
 
     public enforceBrickPair({faceA, faceB, distance}: IFacePair): void {
-        // const midA = this.instance.faceMidpoint(faceA.index)
-        // const midB = this.instance.faceMidpoint(faceB.index)
-        // const moveFace = (face: IFace, move: Vector3) => face.joints.forEach(joint => {
-        //     this.instance.moveLocation(joint.index, move)
-        // })
-        // const ab = new Vector3().subVectors(midB, midA)
-        // const distanceChange = ab.length() - distance
-        // const halfMove = ab.normalize().multiplyScalar(distanceChange / 2)
-        // moveFace(faceA, halfMove)
-        // moveFace(faceB, halfMove.multiplyScalar(-1))
+        const midA = this.instance.faceMidpoint(faceA.index)
+        const midB = this.instance.faceMidpoint(faceB.index)
+        const moveFace = (face: IFace, move: Vector3) => face.joints.forEach(joint => {
+            this.instance.moveLocation(joint.index, move)
+        })
+        const ab = new Vector3().subVectors(midB, midA)
+        const distanceChange = ab.length() - distance
+        const halfMove = ab.normalize().multiplyScalar(distanceChange / 2)
+        moveFace(faceA, halfMove)
+        moveFace(faceB, halfMove.multiplyScalar(-1))
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {

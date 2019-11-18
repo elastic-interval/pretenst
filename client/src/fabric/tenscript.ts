@@ -3,14 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import {
-    IBrick, IFace,
-    IFaceMark,
-    IPercent,
-    percentOrHundred,
-    Triangle,
-    TRIANGLE_DEFINITIONS,
-} from "./tensegrity-brick-types"
+import { IBrick, IFace, IFaceMark, IPercent, opposite, percentOrHundred, Triangle } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const BOOTSTRAP_TENSCRIPTS = [
@@ -267,9 +260,10 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
                 if (!mark) {
                     return
                 }
-                const definition = TRIANGLE_DEFINITIONS[triangle]
-                // todo: why this switch? (it works, but)
-                const brickFace = !definition.negative ? brickToMark.faces[definition.opposite] : brickToMark.faces[triangle]
+                const brickFace = brickToMark.base === Triangle.NNN ? brickToMark.faces[triangle] : brickToMark.faces[opposite(triangle)]
+                if (brickFace.removed) {
+                    throw new Error("!! trying to use a face that was removed")
+                }
                 const markedFace = markedFaces[mark._]
                 if (markedFace) {
                     fabric.builder.addFacePair(markedFace, brickFace)
@@ -288,7 +282,7 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
         }
 
         function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
-            const connectTriangle = previous.base === Triangle.PPP ? TRIANGLE_DEFINITIONS[triangle].opposite : triangle
+            const connectTriangle = previous.base === Triangle.PPP ? opposite(triangle) : triangle
             const newBrick = fabric.builder.createConnectedBrick(previous, connectTriangle, treeScale)
             if (newTree._ === 0) {
                 markBrick(newBrick, newTree)

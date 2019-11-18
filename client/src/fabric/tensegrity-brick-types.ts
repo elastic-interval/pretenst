@@ -139,6 +139,10 @@ export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
     },
 ]
 
+export function opposite(triangle: Triangle): Triangle {
+    return TRIANGLE_DEFINITIONS[triangle].opposite
+}
+
 export interface IFaceMark {
     _: number
 }

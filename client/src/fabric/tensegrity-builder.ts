@@ -17,6 +17,7 @@ import {
     initialBrick,
     IPercent,
     IPushDefinition,
+    opposite,
     percentToFactor,
     PUSH_ARRAY,
     PushEnd,
@@ -68,21 +69,20 @@ export class TensegrityBuilder {
                 ))
                 return face
             }
-            const distance = 1
-            return {
-                faceA: findByJoints(pair.faceA),
-                faceB: findByJoints(pair.faceB),
-                distance,
-            }
+            const faceA = findByJoints(pair.faceA)
+            const faceB = findByJoints(pair.faceB)
+            const instance = this.fabric.instance
+            const distance = instance.faceMidpoint(faceA.index).distanceTo(instance.faceMidpoint(faceB.index))
+            return {faceA, faceB, distance}
         })
     }
 
-    public tightenFacePairs(facePairs: IFacePair[], approach: number): IFacePair[] {
-        return facePairs.filter(pair => {
+    public tightenFacePairs(beforePairs: IFacePair[], approach: number): IFacePair[] | undefined {
+        const afterPairs = beforePairs.filter(pair => {
             const scaleSum = percentToFactor(pair.faceA.brick.scale) + percentToFactor(pair.faceB.brick.scale)
             const connectorScale = factorToPercent(scaleSum / 2)
             const step = scaleSum * approach
-            if (pair.distance - step < step / 2) {
+            if (pair.distance - step < 0) {
                 if (!this.connectBricks(pair.faceA, pair.faceB, connectorScale)) {
                     console.log("Unable to connect")
                 }
@@ -91,6 +91,7 @@ export class TensegrityBuilder {
             pair.distance -= step
             return true
         })
+        return afterPairs.length === beforePairs.length ? undefined : afterPairs
     }
 
     public optimize(): void {
@@ -268,7 +269,7 @@ export class TensegrityBuilder {
             return vectors
         }
         const points = PUSH_ARRAY.reduce(pushesToPoints, [])
-        const newBase = TRIANGLE_DEFINITIONS[base].opposite
+        const newBase = opposite(base)
         const trianglePoints = TRIANGLE_DEFINITIONS[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()

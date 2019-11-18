@@ -74,12 +74,21 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
         setFacePairs([...facePairs, facePair])
     }
 
-    function tightenBrickPairs(): void {
-        if (!fabric) {
+    useEffect(() => {
+        if (facePairs.length === 0) {
             return
         }
-        setFacePairs(fabric.builder.tightenFacePairs( facePairs, 0.2))
-    }
+        const timer = setInterval(() => {
+            if (!fabric || facePairs.length === 0) {
+                return
+            }
+            const newFacePairs = fabric.builder.tightenFacePairs(facePairs, 0.01)
+            if (newFacePairs) {
+                setFacePairs(newFacePairs)
+            }
+        }, 50)
+        return () => clearTimeout(timer)
+    }, [facePairs])
 
     useEffect(() => {
         const subscription = app$.subscribe(fabricState => {
@@ -184,9 +193,8 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                         fabric={fabric}
                         selectedFaces={selectedFaces}
                         clearSelectedFaces={() => setSelectedFaces([])}
-                        brickPairs={facePairs}
+                        facePairs={facePairs}
                         addFacePair={addFacePair}
-                        tightenFacePairs={tightenBrickPairs}
                         tenscript={tenscript}
                         setTenscript={(grow: boolean, newScript?: ITenscript) => {
                             if (grow) {

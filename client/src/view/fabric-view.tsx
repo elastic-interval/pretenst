@@ -150,6 +150,7 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, 
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
+        console.log("toggle", faceToToggle.index)
         if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
             const withoutNewFace = selectedFaces.filter(b => b.index !== faceToToggle.index)
             fabric.selectIntervals(byFaces(withoutNewFace))
