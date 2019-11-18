@@ -19,21 +19,19 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
-import { IFace, IFacePair } from "../fabric/tensegrity-brick-types"
+import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
 export function ShapePanel({
-                               fabric, features, selectedFaces, facePairs, addFacePair, tightenFacePairs,
+                               fabric, features, selectedFaces, addFacePair,
                                clearSelectedFaces, app$,
                            }: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
     selectedFaces: IFace[],
-    facePairs: IFacePair[],
     addFacePair: (faceA: IFace, faceB: IFace) => void,
-    tightenFacePairs: () => void,
     clearSelectedFaces: () => void,
     app$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
@@ -88,10 +86,7 @@ export function ShapePanel({
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
                     <Button disabled={needsBricks(2)} onClick={connect}>
-                        <FaLink/><span> Engage</span>
-                    </Button>
-                    <Button disabled={facePairs.length === 0} onClick={tightenFacePairs}>
-                        <FaCompressArrowsAlt/><span> Approach</span>
+                        <FaLink/><span> Connect</span>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
