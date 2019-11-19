@@ -23,19 +23,19 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
-import { IFace } from "../fabric/tensegrity-brick-types"
+import { IFace, IFacePair } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
 export function ShapePanel({
-                               fabric, features, selectedFaces, addFacePair,
+                               fabric, features, selectedFaces, addFacePairs,
                                clearSelectedFaces, app$,
                            }: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
     selectedFaces: IFace[],
-    addFacePair: (faceA: IFace, faceB: IFace) => void,
+    addFacePairs: (newFacePairs: IFacePair[]) => void,
     clearSelectedFaces: () => void,
     app$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
@@ -65,11 +65,7 @@ export function ShapePanel({
     }
 
     function connect(): void {
-        const fromFace = selectedFaces.shift()
-        if (!fromFace || selectedFaces.length < 1) {
-            throw new Error("Connect what?")
-        }
-        selectedFaces.forEach(face => addFacePair(fromFace, face))
+        addFacePairs(fabric.builder.connect(selectedFaces))
         clearSelectedFaces()
     }
 

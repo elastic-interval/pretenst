@@ -123,9 +123,7 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, 
             return
         }
         const instance = fabric.instance
-        const addToVector = (sum: Vector3, face: IFace) => sum.add(fabric.instance.faceMidpoint(face.index))
-        const averageFaceMidpoint = () => selectedFaces.reduce(addToVector, new Vector3()).multiplyScalar(1 / selectedFaces.length)
-        const target = selectedFaces.length === 0 ? instance.getMidpoint() : averageFaceMidpoint()
+        const target = instance.getMidpoint()
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()

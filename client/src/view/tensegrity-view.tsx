@@ -66,12 +66,11 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
     const [fullScreen, updateFullScreen] = useState(app$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
 
-    function addFacePair(faceA: IFace, faceB: IFace): void {
+    function addFacePairs(newFacePairs: IFacePair[]): void {
         if (!fabric) {
             return
         }
-        const facePair = fabric.builder.addFacePair(faceA, faceB)
-        setFacePairs([...facePairs, facePair])
+        setFacePairs([...facePairs, ...newFacePairs])
     }
 
     useEffect(() => {
@@ -121,7 +120,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
         return () => subscription.unsubscribe()
     }, [fabric])
 
-    useEffect(() => {
+    useEffect(() => { // todo: look when this happens
         const subscriptions = features.map(feature => feature.observable.subscribe(() => {
             if (!fabric) {
                 return
@@ -194,7 +193,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                         selectedFaces={selectedFaces}
                         clearSelectedFaces={() => setSelectedFaces([])}
                         facePairs={facePairs}
-                        addFacePair={addFacePair}
+                        addFacePairs={addFacePairs}
                         tenscript={tenscript}
                         setTenscript={(grow: boolean, newScript?: ITenscript) => {
                             if (grow) {

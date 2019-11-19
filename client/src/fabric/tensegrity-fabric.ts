@@ -122,8 +122,8 @@ export class TensegrityFabric {
     ) {
         this.builder = new TensegrityBuilder(this)
         features.forEach(feature => this.instance.applyFeature(feature))
-        const brick = this.builder.createBrickOnOrigin(percentOrHundred())
-        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this, markedFaces: {}}]
+        const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred()) // todo: maybe raise
+        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
         this.bricks = [brick]
         this.refreshLineGeometry()
         this.refreshFaceGeometry()
@@ -299,7 +299,7 @@ export class TensegrityFabric {
         const activeCode = this.activeTenscript
         if (activeCode) {
             if (activeCode.length > 0) {
-                this.activeTenscript = execute(activeCode)
+                this.activeTenscript = execute(activeCode, this.builder.markFace)
                 engine.centralize()
             }
             if (activeCode.length === 0) {

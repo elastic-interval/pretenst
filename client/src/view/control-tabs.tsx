@@ -34,13 +34,13 @@ function Icon(controlTab: ControlTab): JSX.Element {
 
 export function ControlTabs({
                                 fabric, selectedFaces, clearSelectedFaces, tenscript, setTenscript,
-                                addFacePair, toFullScreen, app$, lifePhase$, features,
+                                addFacePairs, toFullScreen, app$, lifePhase$, features,
                             }: {
     fabric?: TensegrityFabric,
     selectedFaces: IFace[],
     clearSelectedFaces: () => void,
     facePairs: IFacePair[],
-    addFacePair: (faceA: IFace, faceB: IFace) => void,
+    addFacePairs: (newFacePairs: IFacePair[]) => void,
     tenscript?: ITenscript,
     setTenscript: (grow: boolean, tenscript: ITenscript) => void,
     toFullScreen: () => void,
@@ -93,7 +93,7 @@ export function ControlTabs({
                             fabric={fabric}
                             selectedFaces={selectedFaces}
                             clearSelectedFaces={clearSelectedFaces}
-                            addFacePair={addFacePair}
+                            addFacePairs={addFacePairs}
                             features={features}
                             app$={app$}
                         />

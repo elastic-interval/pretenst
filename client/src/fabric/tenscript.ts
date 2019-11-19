@@ -20,6 +20,8 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(C(3,B(3,D(3,C(3,B1)))))",
     "(a(1,MA0),C(3,B(3,D(3,C(3,B(3,D(1,MA0)))))))",
     "(b(7,S80,MA1),c(2,S120),d(7,S80,MA1))",
+    "(b(7,S80,MA1,MB2),c(6,S80,MA2),d(6,S80,MA1))",
+    "(a1,B(10,S85,MA1),C(10,S85,MA1),D(10,S85,MA1))",
     "(b(5,S70),c(5,S70),d(5,S70),A1)",
     "(B2,C2,D2,a(2,B2,C2,D2))",
     "(A2,b(3,B(2,S90),S80),c(3,C(2,S90),S80),d(3,D(2,S90),S80))",
@@ -248,13 +250,12 @@ export interface IActiveTenscript {
     tree: ITenscriptTree
     brick: IBrick
     fabric: TensegrityFabric
-    markedFaces: Record<number, IFace>
 }
 
-export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
+export function execute(before: IActiveTenscript[], markFace: (mark: number, face: IFace) => void): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
 
-    before.forEach(({brick, tree, fabric, markedFaces}) => {
+    before.forEach(({brick, tree, fabric}) => {
 
         function markBrick(brickToMark: IBrick, treeWithMarks: ITenscriptTree): void {
             function maybeMark(triangle: Triangle, mark?: IFaceMark): void {
@@ -265,11 +266,7 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
                 if (brickFace.removed) {
                     throw new Error("!! trying to use a face that was removed")
                 }
-                const markedFace = markedFaces[mark._]
-                if (markedFace) {
-                    fabric.builder.addFacePair(markedFace, brickFace)
-                }
-                markedFaces[mark._] = brickFace
+                markFace(mark._,brickFace)
             }
 
             maybeMark(Triangle.PPP, treeWithMarks.MA)
@@ -288,7 +285,7 @@ export function execute(before: IActiveTenscript[]): IActiveTenscript[] {
             if (newTree._ === 0) {
                 markBrick(newBrick, newTree)
             }
-            return {tree: newTree, brick: newBrick, fabric, markedFaces}
+            return {tree: newTree, brick: newBrick, fabric}
         }
 
         const forward = tree._
