@@ -6,13 +6,16 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
-    FaAnchor,
-    FaCompressArrowsAlt,
+    FaArrowDown,
+    FaArrowUp,
+    FaCompass,
     FaExpandArrowsAlt,
+    FaFutbol,
     FaHandPointUp,
     FaLink,
-    FaMicroscope,
+    FaMagic,
     FaSlidersH,
+    FaVolleyballBall,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -47,13 +50,16 @@ export function ShapePanel({
         return () => subscription.unsubscribe()
     }, [])
 
-    const adjustValue = (up: boolean) => () => {
+    const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
         function adjustment(): number {
             const factor = 1.03
             return up ? factor : (1 / factor)
         }
 
         fabric.forEachSelected(interval => {
+            if (interval.isPush && !pushes || !interval.isPush && !pulls) {
+                return
+            }
             fabric.instance.engine.multiplyRestLength(interval.index, adjustment())
         })
     }
@@ -78,28 +84,38 @@ export function ShapePanel({
                     <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
                 </div>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(true)}>
-                        <FaExpandArrowsAlt/><span> Grow</span>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, true, true)}>
+                        <FaArrowUp/><FaFutbol/>
                     </Button>
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(false)}>
-                        <FaCompressArrowsAlt/><span> Shrink</span>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, false, true)}>
+                        <FaArrowUp/><FaVolleyballBall/>
+                    </Button>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, true, false)}>
+                        <FaArrowUp/><FaExpandArrowsAlt/>
+                    </Button>
+                </ButtonGroup>
+                <ButtonGroup className="w-100 my-2">
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, true, true)}>
+                        <FaArrowDown/><FaFutbol/>
+                    </Button>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, false, true)}>
+                        <FaArrowDown/><FaVolleyballBall/>
+                    </Button>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, true, false)}>
+                        <FaArrowDown/><FaExpandArrowsAlt/>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
                     <Button disabled={needsBricks(1)} onClick={() => {
                         fabric.builder.orientToOrigin(selectedFaces[0])
                     }}>
-                        <FaAnchor/><span> Orient</span>
+                        <FaCompass/><span> Orient</span>
                     </Button>
-                </ButtonGroup>
-                <ButtonGroup className="w-100 my-2">
                     <Button disabled={needsBricks(2)} onClick={connect}>
                         <FaLink/><span> Connect</span>
                     </Button>
-                </ButtonGroup>
-                <ButtonGroup className="w-100 my-2">
                     <Button onClick={() => fabric.builder.optimize()}>
-                        <FaMicroscope/><span> Bow optimization</span>
+                        <FaMagic/><span> Bows</span>
                     </Button>
                 </ButtonGroup>
             </div>
