@@ -6,6 +6,7 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaAnchor,
     FaCompressArrowsAlt,
     FaExpandArrowsAlt,
     FaHandPointUp,
@@ -82,6 +83,13 @@ export function ShapePanel({
                     </Button>
                     <Button disabled={needsBricks(1)} onClick={adjustValue(false)}>
                         <FaCompressArrowsAlt/><span> Shrink</span>
+                    </Button>
+                </ButtonGroup>
+                <ButtonGroup className="w-100 my-2">
+                    <Button disabled={needsBricks(1)} onClick={() => {
+                        fabric.builder.orientToOrigin(selectedFaces[0])
+                    }}>
+                        <FaAnchor/><span> Orient</span>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">

@@ -11,7 +11,7 @@ declare function logInt(idx: u32, i: i32): void
 
 // DECLARATION
 
-const RESURFACE: f32 = 0.001
+const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const IN_UTERO_STIFFNESS: f32 = 0.1
@@ -690,17 +690,19 @@ export function centralize(): void {
 }
 
 export function setAltitude(altitude: f32): f32 {
+    logFloat(getAge(), altitude)
     let jointCount = getJointCount()
     let lowY: f32 = 10000
-    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        let y = getY(_location(thisJoint))
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        let y = getY(_location(jointIndex))
         if (y < lowY) {
             lowY = y
         }
     }
-    for (let thisJoint: u16 = 0; thisJoint < jointCount; thisJoint++) {
-        let jPtr = _location(thisJoint)
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        let jPtr = _location(jointIndex)
         setY(jPtr, getY(jPtr) + altitude - lowY)
+        zero(_velocity(jointIndex))
     }
     return altitude - lowY
 }
@@ -1234,7 +1236,6 @@ function output(): void {
 }
 
 export function finishGrowing(): LifePhase {
-    setAltitude(0.0)
     output()
     return setLifePhase(LifePhase.Shaping)
 }
@@ -1257,8 +1258,10 @@ function slacken(): LifePhase {
 }
 
 function startPretensing(): LifePhase {
-    setAltitude(0.0)
     setFabricBusyTicks(<u32>getFeature(FabricFeature.PretenseTicks))
+    if (surfaceCharacter === SurfaceCharacter.Frozen) {
+        setAltitude(-0.1)
+    }
     output()
     return setLifePhase(LifePhase.Pretensing)
 }
@@ -1280,8 +1283,10 @@ export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
             }
             break
         case LifePhase.Growing:
+            setAltitude(0.0)
             break
         case LifePhase.Shaping:
+            setAltitude(0.0)
             if (nextLifePhase === LifePhase.Slack) {
                 return slacken()
             }

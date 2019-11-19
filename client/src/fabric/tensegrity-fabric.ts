@@ -305,8 +305,9 @@ export class TensegrityFabric {
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
                 if (lifePhase === LifePhase.Growing) {
+                    const afterGrowing = engine.finishGrowing()
                     this.setBrickPairs(this.builder.initialPairs)
-                    return engine.finishGrowing()
+                    return afterGrowing
                 }
             }
         }

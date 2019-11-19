@@ -82,7 +82,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
             if (!fabric || facePairs.length === 0) {
                 return
             }
-            const newFacePairs = fabric.builder.tightenFacePairs(facePairs, 0.01)
+            const newFacePairs = fabric.builder.tightenFacePairs(facePairs, 0.1)
             if (newFacePairs) {
                 setFacePairs(newFacePairs)
             }

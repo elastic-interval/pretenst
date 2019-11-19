@@ -205,6 +205,11 @@ export class TensegrityBuilder {
         instance.forgetDimensions()
     }
 
+    public orientToOrigin(face: IFace): void {
+        const matrix = this.faceToOrigin(face)
+        this.fabric.instance.apply(matrix)
+    }
+
     private createBrickOnFace(face: IFace, scale: IPercent): IBrick {
         const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
         const brick = face.brick
@@ -282,6 +287,18 @@ export class TensegrityBuilder {
             .setPosition(new Vector3(0, midpoint.length() * scaleFactor * SNUGGLE_BRICKS, 0))
             .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
         return points.map(p => p.applyMatrix4(fromBasis))
+    }
+
+    private faceToOrigin(face: IFace): Matrix4 {
+        this.fabric.iterate(0)
+        const trianglePoints = face.joints.map(joint => this.fabric.instance.location(joint.index))
+        const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+        const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
+        const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+        const y = new Vector3().crossVectors(z, x).normalize()
+        z.crossVectors(x, y).normalize()
+        const basis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+        return new Matrix4().getInverse(basis)
     }
 
     private connectBricks(faceA: IFace, faceB: IFace, connectorScale: IPercent): boolean {

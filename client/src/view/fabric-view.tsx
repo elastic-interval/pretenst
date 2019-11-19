@@ -24,7 +24,7 @@ import {
 
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
-import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
+import { doNotClick, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { byFaces, IFace, IFacePair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { CYLINDER, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -301,7 +301,7 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, 
                 )}
                 {selectedFaces.map(brick => <SelectedFace key={`brick${brick.index}`} selected={brick}/>)}
                 {facePairs.map((brickPair, index) => <BrickPair key={`Pair${index}`} brickPair={brickPair}/>)}
-                {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
+                <SurfaceComponent ghost={lifePhase <= LifePhase.Slack}/>
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
