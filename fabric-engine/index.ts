@@ -690,7 +690,6 @@ export function centralize(): void {
 }
 
 export function setAltitude(altitude: f32): f32 {
-    logFloat(getAge(), altitude)
     let jointCount = getJointCount()
     let lowY: f32 = 10000
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
