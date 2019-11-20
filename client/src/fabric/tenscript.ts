@@ -7,6 +7,7 @@ import { IBrick, IFace, IFaceMark, IPercent, opposite, percentOrHundred, Triangl
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const BOOTSTRAP_TENSCRIPTS = [
+    "(b(7,S80,MA1),c(2,S120,MA0),d(7,S80,MA1))",
     "(0)",
     "(1)",
     "(2)",
@@ -19,7 +20,6 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(C(2,B(2,D(2,C2))))",
     "(C(3,B(3,D(3,C(3,B1)))))",
     "(a(1,MA0),C(3,B(3,D(3,C(3,B(3,D(1,MA0)))))))",
-    "(b(7,S80,MA1),c(2,S120),d(7,S80,MA1))",
     "(b(7,S80,MA1,MB2),c(6,S80,MA2),d(6,S80,MA1))",
     "(a1,B(10,S85,MA1),C(10,S85,MA1),D(10,S85,MA1))",
     "(b(5,S70),c(5,S70),d(5,S70),A1)",
@@ -30,6 +30,7 @@ const BOOTSTRAP_TENSCRIPTS = [
 export interface ITenscript {
     code: string
     tree: ITenscriptTree
+    fromUrl: boolean
 }
 
 export interface ITenscriptTree {
@@ -53,14 +54,14 @@ export interface ITenscriptTree {
     Md?: IFaceMark,
 }
 
-export function treeToTenscript(codeTree: ITenscriptTree): ITenscript {
+export function treeToTenscript(codeTree: ITenscriptTree, fromUrl: boolean): ITenscript {
     const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
     const codeString = JSON.stringify(codeTree)
         .replace(/[_.:"]/g, "")
         .replace(/[{]/g, "(")
         .replace(/[}]/g, ")")
         .replace(/([ABCDabcdSM])\((\d*)\)/g, replacer)
-    return {tree: codeTree, code: codeString}
+    return {tree: codeTree, code: codeString, fromUrl}
 }
 
 const DIRECTIONS = "ABCDabcd"
@@ -160,7 +161,7 @@ function matchBracket(s: string): number {
     throw new Error(`No matching end bracket: |${s}|`)
 }
 
-export function codeToTenscript(error: (message: string) => void, code?: string): ITenscript | undefined {
+export function codeToTenscript(error: (message: string) => void, fromUrl: boolean, code?: string): ITenscript | undefined {
     function _fragmentToTree(codeFragment: string): ITenscriptTree | undefined {
 
         function argument(maybeBracketed: string, stripBrackets: boolean): { content: string, skip: number } {
@@ -233,7 +234,7 @@ export function codeToTenscript(error: (message: string) => void, code?: string)
         if (!tree) {
             return undefined
         }
-        return treeToTenscript(tree)
+        return treeToTenscript(tree, fromUrl)
     } catch (e) {
         error(e.message)
         return undefined
@@ -244,7 +245,7 @@ function noParseErrors(message: string): void {
     throw new Error(`Unable to parse: ${message}`)
 }
 
-export const BOOTSTRAP: ITenscript[] = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noParseErrors, script)) as ITenscript[]
+export const BOOTSTRAP: ITenscript[] = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noParseErrors, false, script)) as ITenscript[]
 
 export interface IActiveTenscript {
     tree: ITenscriptTree

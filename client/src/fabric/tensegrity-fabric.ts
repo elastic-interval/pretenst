@@ -100,6 +100,7 @@ export class TensegrityFabric {
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
     public readonly builder: TensegrityBuilder
+    public facePairs: IFacePair[] = []
 
     private faceCount: number
     private faceLocations: Float32BufferAttribute
@@ -118,7 +119,7 @@ export class TensegrityFabric {
         public readonly slackInstance: FabricInstance,
         public readonly features: FloatFeature[],
         public readonly tenscript: ITenscript,
-        private setBrickPairs: (brickPairs: IFacePair[]) => void,
+        private setFacePairs: (facePairs: IFacePair[]) => void,
     ) {
         this.builder = new TensegrityBuilder(this)
         features.forEach(feature => this.instance.applyFeature(feature))
@@ -290,6 +291,10 @@ export class TensegrityFabric {
         return this._linesGeometry
     }
 
+    public startTightening(facePairs: IFacePair[]): void {
+        this.facePairs = facePairs
+    }
+
     public iterate(ticks: number): LifePhase {
         const engine = this.engine
         const lifePhase = engine.iterate(ticks, this.nextLifePhase)
@@ -306,25 +311,24 @@ export class TensegrityFabric {
                 this.activeTenscript = undefined
                 if (lifePhase === LifePhase.Growing) {
                     const afterGrowing = engine.finishGrowing()
-                    this.setBrickPairs(this.builder.initialPairs)
+                    this.facePairs = this.builder.initialPairs
                     return afterGrowing
                 }
             }
+        } else {
+            const newPairs = this.builder.tighten(this.facePairs)
+            if (newPairs) {
+                this.facePairs = newPairs
+                this.setFacePairs(newPairs)
+                if (newPairs.length === 0) {
+                    this.builder.turnUpright()
+                }
+            }
+        }
+        if (ticks > 0 && this.facePairs.length > 0) {
+            this.facePairs.forEach(pair => this.enforceBrickPair(pair))
         }
         return lifePhase
-    }
-
-    public enforceBrickPair({faceA, faceB, distance}: IFacePair): void {
-        const midA = this.instance.faceMidpoint(faceA.index)
-        const midB = this.instance.faceMidpoint(faceB.index)
-        const moveFace = (face: IFace, move: Vector3) => face.joints.forEach(joint => {
-            this.instance.moveLocation(joint.index, move)
-        })
-        const ab = new Vector3().subVectors(midB, midA)
-        const distanceChange = ab.length() - distance
-        const halfMove = ab.normalize().multiplyScalar(distanceChange / 2)
-        moveFace(faceA, halfMove)
-        moveFace(faceB, halfMove.multiplyScalar(-1))
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {
@@ -401,6 +405,19 @@ export class TensegrityFabric {
                 return a.stiffness - b.stiffness
             }),
         }
+    }
+
+    private enforceBrickPair({faceA, faceB, distance}: IFacePair): void {
+        const midA = this.instance.faceMidpoint(faceA.index)
+        const midB = this.instance.faceMidpoint(faceB.index)
+        const moveFace = (face: IFace, move: Vector3) => face.joints.forEach(joint => {
+            this.instance.moveLocation(joint.index, move)
+        })
+        const ab = new Vector3().subVectors(midB, midA)
+        const distanceChange = ab.length() - distance
+        const halfMove = ab.normalize().multiplyScalar(distanceChange / 2)
+        moveFace(faceA, halfMove)
+        moveFace(faceB, halfMove.multiplyScalar(-1))
     }
 
     private refreshLineGeometry(): void {

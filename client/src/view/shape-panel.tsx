@@ -23,31 +23,31 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
-import { IFace, IFacePair } from "../fabric/tensegrity-brick-types"
+import { IOperations } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
-export function ShapePanel({
-                               fabric, features, selectedFaces, addFacePairs,
-                               clearSelectedFaces, app$,
-                           }: {
+export function ShapePanel({fabric, features, app$, operations$}: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
-    selectedFaces: IFace[],
-    addFacePairs: (newFacePairs: IFacePair[]) => void,
-    clearSelectedFaces: () => void,
     app$: BehaviorSubject<IFabricState>,
+    operations$: BehaviorSubject<IOperations>,
 }): JSX.Element {
 
-    const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
+    const [selectionMode, updateSelectionMode] = useState(app$.getValue().selectionMode)
     const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
+
+    const [operations, updateOperations] = useState(operations$.getValue())
     useEffect(() => {
-        const subscription = app$.subscribe(newState => {
-            updateFaceSelection(newState.faceSelection)
-            updateEllipsoids(newState.ellipsoids)
-        })
-        return () => subscription.unsubscribe()
+        const subscriptions = [
+            app$.subscribe(newState => {
+                updateSelectionMode(newState.selectionMode)
+                updateEllipsoids(newState.ellipsoids)
+            }),
+            operations$.subscribe(newOps => updateOperations(newOps)),
+        ]
+        return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
 
     const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
@@ -65,12 +65,12 @@ export function ShapePanel({
     }
 
     function connect(): void {
-        addFacePairs(fabric.builder.connect(selectedFaces))
-        clearSelectedFaces()
+        const facePairs = fabric.builder.faceEffects(operations.selectedFaces)
+        operations$.next({selectedFaces: [], facePairs})
     }
 
     function needsBricks(requiredFaceCount: number): boolean {
-        return !fabric.splitIntervals || selectedFaces.length < requiredFaceCount || faceSelection || ellipsoids
+        return !fabric.splitIntervals || operations.selectedFaces.length < requiredFaceCount || selectionMode || ellipsoids
     }
 
     return (
@@ -103,9 +103,9 @@ export function ShapePanel({
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
                     <Button disabled={needsBricks(1)} onClick={() => {
-                        fabric.builder.orientToOrigin(selectedFaces[0])
+                        fabric.builder.uprightAtOrigin(operations.selectedFaces[0])
                     }}>
-                        <FaCompass/><span> Orient</span>
+                        <FaCompass/><span> Upright</span>
                     </Button>
                     <Button disabled={needsBricks(2)} onClick={connect}>
                         <FaLink/><span> Connect</span>
@@ -121,14 +121,14 @@ export function ShapePanel({
                 </div>
                 <div className="my-2" style={{
                     borderStyle: "solid",
-                    borderColor: faceSelection || ellipsoids ? "gray" : "white",
+                    borderColor: selectionMode || ellipsoids ? "gray" : "white",
                     borderWidth: "0.1em",
                     borderRadius: "0.7em",
                     padding: "0.5em",
                 }}>
                     {features.filter(feature => lengthFeatureToRole(feature.fabricFeature) !== undefined).map(feature => (
                         <div className="my-2 p-2" key={feature.title}>
-                            <FeatureChoice feature={feature} disabled={faceSelection || ellipsoids}/>
+                            <FeatureChoice feature={feature} disabled={selectionMode || ellipsoids}/>
                         </div>
                     ))}
                 </div>

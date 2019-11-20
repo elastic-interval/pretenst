@@ -11,7 +11,6 @@ import {
     FaClock,
     FaHammer,
     FaHandSpock,
-    FaLeaf,
     FaSeedling,
     FaTools,
     FaYinYang,
@@ -22,10 +21,9 @@ import { BehaviorSubject } from "rxjs"
 import { LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function LifePhasePanel({fabric, lifePhase$, rebuild, disabled}: {
+export function LifePhasePanel({fabric, lifePhase$, disabled}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
-    rebuild: () => void,
     disabled: boolean,
 }): JSX.Element {
 
@@ -58,9 +56,6 @@ export function LifePhasePanel({fabric, lifePhase$, rebuild, disabled}: {
                 <LifePhaseIcon/>
             </div>
             <ButtonGroup vertical={true} className="w-100">
-                <Button disabled={disabled} onClick={rebuild}>
-                    <span>Regrow <FaLeaf/> <FaArrowRight/> Shaping <FaHammer/></span>
-                </Button>
                 <Button disabled={lifePhase !== LifePhase.Shaping || disabled} onClick={() => fabric.toSlack()}>
                     <span>Shaping <FaHammer/> <FaArrowRight/> Slack <FaYinYang/></span>
                 </Button>

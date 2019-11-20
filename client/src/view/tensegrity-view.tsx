@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaRunning } from "react-icons/all"
+import { FaArrowRight, FaPlay } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -25,7 +25,7 @@ import {
     transition,
 } from "../fabric/fabric-state"
 import { BOOTSTRAP, ITenscript } from "../fabric/tenscript"
-import { IFace, IFacePair, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { IFacePair, IOperations, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ControlTabs } from "./control-tabs"
@@ -39,60 +39,42 @@ import { ToolbarRightTop } from "./toolbar-right-top"
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 
-export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
+function getCodeToRun(): ITenscript {
+    const fromUrl = getCodeFromUrl()
+    if (fromUrl) {
+        return fromUrl
+    }
+    const recentCode = getRecentCode()
+    return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
+}
+
+export function TensegrityView({fabricKernel, features, app$, lifePhase$, operations$}: {
     fabricKernel: FabricKernel,
     features: FloatFeature[],
     app$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
+    operations$: BehaviorSubject<IOperations>,
 }): JSX.Element {
 
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
 
-    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-    const [tenscript, setTenscript] = useState<ITenscript | undefined>(getCodeFromUrl)
-    const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
-    const [facePairs, setFacePairs] = useState<IFacePair[]>([])
-
+    const [initialTenscript, setInitialTenscript] = useState(getCodeToRun)
     useEffect(() => {
-        app$.next(transition(app$.getValue(), {faceSelection: false}))
-        if (fabric && selectedFaces.length === 0) {
-            fabric.clearSelection()
-        }
-    }, [fabric, selectedFaces])
+        location.hash = initialTenscript.code
+    }, [initialTenscript])
+
+    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
 
     const [controlTab, updateControlTab] = useState(app$.getValue().controlTab)
-    const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
+    const [selectionMode, updateSelectionMode] = useState(app$.getValue().selectionMode)
     const [fullScreen, updateFullScreen] = useState(app$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
-
-    function addFacePairs(newFacePairs: IFacePair[]): void {
-        if (!fabric) {
-            return
-        }
-        setFacePairs([...facePairs, ...newFacePairs])
-    }
-
-    useEffect(() => {
-        if (facePairs.length === 0) {
-            return
-        }
-        const timer = setInterval(() => {
-            if (!fabric || facePairs.length === 0) {
-                return
-            }
-            const newFacePairs = fabric.builder.tightenFacePairs(facePairs, 0.1)
-            if (newFacePairs) {
-                setFacePairs(newFacePairs)
-            }
-        }, 50)
-        return () => clearTimeout(timer)
-    }, [facePairs])
 
     useEffect(() => {
         const subscription = app$.subscribe(fabricState => {
             updateControlTab(fabricState.controlTab)
-            updateFaceSelection(fabricState.faceSelection)
+            updateSelectionMode(fabricState.selectionMode)
             updateFullScreen(fabricState.fullScreen)
             updateEllipsoids(fabricState.ellipsoids)
             if (!fabric) {
@@ -140,35 +122,27 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
         return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [fabric])
 
-    function growFromTenscript(newTenscript: ITenscript, replaceUrl: boolean): void {
+    function runTenscript(newTenscript: ITenscript): void {
         if (!mainInstance || !slackInstance) {
             return
         }
         mainInstance.forgetDimensions()
         mainInstance.engine.initInstance()
+        operations$.next({selectedFaces: [], facePairs: []})
         lifePhase$.next(LifePhase.Growing)
-        app$.next(transition(app$.getValue(), {ellipsoids: false, faceSelection: false}))
+        app$.next(transition(app$.getValue(), {ellipsoids: false, selectionMode: false}))
+        const setFacePairs = (facePairs: IFacePair[]) => operations$.next({facePairs, selectedFaces: []})
         setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript, setFacePairs))
-        if (replaceUrl) {
-            location.hash = newTenscript.code
-        }
     }
 
     useEffect(() => {
-        const urlCode = getCodeFromUrl()
-        const recentCode = getRecentCode()
-        const storedCode = recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
-        if (!storedCode) {
-            throw new Error("No stored code")
-        }
-        if (urlCode && urlCode.code === storedCode.code) {
-            setTenscript(urlCode)
-            growFromTenscript(urlCode, false)
-        } else {
-            setTenscript(storedCode)
-            growFromTenscript(storedCode, true)
-        }
-    }, [])
+        const timer = setTimeout(() => {
+            if (!fabric) {
+                runTenscript(initialTenscript)
+            }
+        }, 200)
+        return () => clearTimeout(timer)
+    }, [fabric, initialTenscript])
 
     function toFullScreen(value: boolean): void {
         app$.next(transition(app$.getValue(), {fullScreen: value}))
@@ -190,27 +164,13 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                 >
                     <ControlTabs
                         fabric={fabric}
-                        selectedFaces={selectedFaces}
-                        clearSelectedFaces={() => setSelectedFaces([])}
-                        facePairs={facePairs}
-                        addFacePairs={addFacePairs}
-                        tenscript={tenscript}
-                        setTenscript={(grow: boolean, newScript?: ITenscript) => {
-                            if (grow) {
-                                if (!newScript || !tenscript) {
-                                    console.warn("No tenscript to grow")
-                                    return
-                                }
-                                const scriptToGrow = newScript ? newScript : tenscript
-                                setTenscript(scriptToGrow)
-                                growFromTenscript(scriptToGrow, true)
-                            } else {
-                                setTenscript(newScript)
-                            }
-                        }}
+                        initialTenscript={initialTenscript}
+                        setInitialTenscript={setInitialTenscript}
+                        runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
                         app$={app$}
                         lifePhase$={lifePhase$}
+                        operations$={operations$}
                         features={features}
                     />
                 </div>
@@ -224,7 +184,10 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                 {!fabric ? (
                     <div id="tensegrity-view" className="h-100">
                         <div style={{position: "relative", top: "50%", left: "50%"}}>
-                            <h1><FaRunning/></h1>
+                            <Button onClick={() => runTenscript(initialTenscript)}>
+                                <h6>{initialTenscript.code}</h6>
+                                <h1><FaPlay/></h1>
+                            </Button>
                         </div>
                     </div>
                 ) : (
@@ -235,9 +198,8 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                         {controlTab !== ControlTab.Shape ? undefined : (
                             <ToolbarLeftTop
                                 app$={app$}
+                                operations$={operations$}
                                 fullScreen={fullScreen}
-                                selectedFaces={selectedFaces}
-                                clearSelectedFaces={() => setSelectedFaces([])}
                             />
                         )}
                         <ToolbarLeftBottom
@@ -257,19 +219,17 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$}: {
                         <Canvas style={{
                             backgroundColor: "black",
                             borderStyle: "solid",
-                            borderColor: faceSelection || ellipsoids ? "#f0ad4e" : "black",
-                            cursor: faceSelection ? "pointer" : "all-scroll",
+                            borderColor: selectionMode || ellipsoids ? "#f0ad4e" : "black",
+                            cursor: selectionMode ? "pointer" : "all-scroll",
                             borderWidth: "2px",
                         }}>
                             <FabricView
                                 fabric={fabric}
-                                selectedFaces={selectedFaces}
-                                setSelectedFaces={setSelectedFaces}
-                                facePairs={facePairs}
-                                faceSelection={faceSelection}
+                                selectionMode={selectionMode}
                                 ellipsoids={ellipsoids}
                                 app$={app$}
                                 lifePhase$={lifePhase$}
+                                operations$={operations$}
                             />
                         </Canvas>
                     </div>

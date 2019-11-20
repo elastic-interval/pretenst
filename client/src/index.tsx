@@ -14,6 +14,7 @@ import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { LifePhase, loadFabricState, saveFabricState } from "./fabric/fabric-state"
+import { IOperations } from "./fabric/tensegrity-brick-types"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
@@ -46,7 +47,6 @@ async function start(): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
     const fabricFeatures = createFabricFeatures()
     const app$ = new BehaviorSubject(loadFabricState())
-    const lifePhase$ = new BehaviorSubject(LifePhase.Growing)
     app$.subscribe(newState => saveFabricState(newState))
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
@@ -55,7 +55,8 @@ async function start(): Promise<void> {
                 fabricKernel={fabricKernel}
                 features={fabricFeatures}
                 app$={app$}
-                lifePhase$={lifePhase$}
+                lifePhase$={new BehaviorSubject(LifePhase.Growing)}
+                operations$={new BehaviorSubject<IOperations>({facePairs: [], selectedFaces: []})}
             />,
             root,
         )

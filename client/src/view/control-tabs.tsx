@@ -12,7 +12,7 @@ import { BehaviorSubject } from "rxjs"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
-import { IFace, IFacePair } from "../fabric/tensegrity-brick-types"
+import { IOperations } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { OptimizePanel } from "./optimize-panel"
@@ -33,32 +33,30 @@ function Icon(controlTab: ControlTab): JSX.Element {
 }
 
 export function ControlTabs({
-                                fabric, selectedFaces, clearSelectedFaces, tenscript, setTenscript,
-                                addFacePairs, toFullScreen, app$, lifePhase$, features,
+                                fabric, initialTenscript, setInitialTenscript, runTenscript,
+                                toFullScreen, app$, lifePhase$, operations$, features,
                             }: {
     fabric?: TensegrityFabric,
-    selectedFaces: IFace[],
-    clearSelectedFaces: () => void,
-    facePairs: IFacePair[],
-    addFacePairs: (newFacePairs: IFacePair[]) => void,
-    tenscript?: ITenscript,
-    setTenscript: (grow: boolean, tenscript: ITenscript) => void,
+    initialTenscript: ITenscript,
+    setInitialTenscript: (tenscript: ITenscript) => void,
+    runTenscript: (tenscript: ITenscript) => void,
     toFullScreen: () => void,
     app$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
+    operations$: BehaviorSubject<IOperations>,
     features: FloatFeature[],
 }): JSX.Element {
 
     const [controlTab, updateActiveTab] = useState(app$.getValue().controlTab)
+
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
-            clearSelectedFaces()
+            operations$.next({selectedFaces: [], facePairs: []})
         }
     }, [controlTab])
+
     useEffect(() => {
-        const subscription = app$.subscribe(newState => {
-            updateActiveTab(newState.controlTab)
-        })
+        const subscription = app$.subscribe(newState => updateActiveTab(newState.controlTab))
         return () => subscription.unsubscribe()
     }, [])
 
@@ -83,19 +81,18 @@ export function ControlTabs({
                 case ControlTab.Grow:
                     return (
                         <TenscriptPanel
-                            tenscript={tenscript}
-                            setTenscript={setTenscript}
+                            initialTenscript={initialTenscript}
+                            setInitialTenscript={setInitialTenscript}
+                            runTenscript={runTenscript}
                         />
                     )
                 case ControlTab.Shape:
                     return !fabric ? (<div/>) : (
                         <ShapePanel
                             fabric={fabric}
-                            selectedFaces={selectedFaces}
-                            clearSelectedFaces={clearSelectedFaces}
-                            addFacePairs={addFacePairs}
                             features={features}
                             app$={app$}
+                            operations$={operations$}
                         />
                     )
                 case ControlTab.Optimize:
@@ -104,11 +101,6 @@ export function ControlTabs({
                             fabric={fabric}
                             app$={app$}
                             lifePhase$={lifePhase$}
-                            rebuild={() => {
-                                if (tenscript) {
-                                    setTenscript(true, tenscript)
-                                }
-                            }}
                         />
                     )
             }

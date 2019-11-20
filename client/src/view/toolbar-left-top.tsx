@@ -10,22 +10,23 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, transition } from "../fabric/fabric-state"
-import { IFace } from "../fabric/tensegrity-brick-types"
+import { IOperations } from "../fabric/tensegrity-brick-types"
 
-export function ToolbarLeftTop({app$, fullScreen, selectedFaces, clearSelectedFaces}: {
+export function ToolbarLeftTop({app$, operations$, fullScreen}: {
     app$: BehaviorSubject<IFabricState>,
+    operations$: BehaviorSubject<IOperations>,
     fullScreen: boolean,
-    selectedFaces: IFace[]
-    clearSelectedFaces: () => void,
 }): JSX.Element {
 
-    const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
+    const [selectedFaces, updateSelectedFaces] = useState(operations$.getValue().selectedFaces)
+    const [selectionMode, updateSelectionMode] = useState(app$.getValue().selectionMode)
 
     useEffect(() => {
-        const subscription = app$.subscribe(newState => {
-            updateFaceSelection(newState.faceSelection)
-        })
-        return () => subscription.unsubscribe()
+        const subscriptions = [
+            app$.subscribe(newState => updateSelectionMode(newState.selectionMode)),
+            operations$.subscribe(newOps => updateSelectedFaces(newOps.selectedFaces)),
+        ]
+        return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
 
     return (
@@ -34,14 +35,14 @@ export function ToolbarLeftTop({app$, fullScreen, selectedFaces, clearSelectedFa
         }} id="top-left">
             <ButtonGroup>
                 <Button
-                    color={faceSelection ? "warning" : "secondary"}
-                    onClick={() => app$.next(transition(app$.getValue(), {faceSelection: !faceSelection}))}
+                    color={selectionMode ? "warning" : "secondary"}
+                    onClick={() => app$.next(transition(app$.getValue(), {selectionMode: !selectionMode}))}
                 >
                     <FaHandPointUp/>
                 </Button>
                 <Button
                     disabled={selectedFaces.length === 0}
-                    onClick={() => clearSelectedFaces()}
+                    onClick={() => operations$.next({...operations$.getValue(), selectedFaces: []})}
                 >
                     {selectedFaces.length > 0 ? (
                         selectedFaces.map(({index}) => (
