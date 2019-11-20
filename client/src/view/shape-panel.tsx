@@ -6,12 +6,16 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
-    FaCompressArrowsAlt,
+    FaArrowDown,
+    FaArrowUp,
+    FaCompass,
     FaExpandArrowsAlt,
+    FaFutbol,
     FaHandPointUp,
     FaLink,
-    FaMicroscope,
+    FaMagic,
     FaSlidersH,
+    FaVolleyballBall,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -19,55 +23,54 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
-import { IFace } from "../fabric/tensegrity-brick-types"
+import { IOperations } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
-export function ShapePanel({
-                               fabric, features, selectedFaces, addFacePair,
-                               clearSelectedFaces, app$,
-                           }: {
+export function ShapePanel({fabric, features, app$, operations$}: {
     fabric: TensegrityFabric,
     features: FloatFeature[]
-    selectedFaces: IFace[],
-    addFacePair: (faceA: IFace, faceB: IFace) => void,
-    clearSelectedFaces: () => void,
     app$: BehaviorSubject<IFabricState>,
+    operations$: BehaviorSubject<IOperations>,
 }): JSX.Element {
 
-    const [faceSelection, updateFaceSelection] = useState(app$.getValue().faceSelection)
+    const [selectionMode, updateSelectionMode] = useState(app$.getValue().selectionMode)
     const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
+
+    const [operations, updateOperations] = useState(operations$.getValue())
     useEffect(() => {
-        const subscription = app$.subscribe(newState => {
-            updateFaceSelection(newState.faceSelection)
-            updateEllipsoids(newState.ellipsoids)
-        })
-        return () => subscription.unsubscribe()
+        const subscriptions = [
+            app$.subscribe(newState => {
+                updateSelectionMode(newState.selectionMode)
+                updateEllipsoids(newState.ellipsoids)
+            }),
+            operations$.subscribe(newOps => updateOperations(newOps)),
+        ]
+        return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
 
-    const adjustValue = (up: boolean) => () => {
+    const adjustValue = (up: boolean, pushes: boolean, pulls: boolean) => () => {
         function adjustment(): number {
             const factor = 1.03
             return up ? factor : (1 / factor)
         }
 
         fabric.forEachSelected(interval => {
+            if (interval.isPush && !pushes || !interval.isPush && !pulls) {
+                return
+            }
             fabric.instance.engine.multiplyRestLength(interval.index, adjustment())
         })
     }
 
     function connect(): void {
-        const fromFace = selectedFaces.shift()
-        if (!fromFace || selectedFaces.length < 1) {
-            throw new Error("Connect what?")
-        }
-        selectedFaces.forEach(face => addFacePair(fromFace, face))
-        clearSelectedFaces()
+        const facePairs = fabric.builder.faceEffects(operations.selectedFaces)
+        operations$.next({selectedFaces: [], facePairs})
     }
 
     function needsBricks(requiredFaceCount: number): boolean {
-        return !fabric.splitIntervals || selectedFaces.length < requiredFaceCount || faceSelection || ellipsoids
+        return !fabric.splitIntervals || operations.selectedFaces.length < requiredFaceCount || selectionMode || ellipsoids
     }
 
     return (
@@ -77,21 +80,38 @@ export function ShapePanel({
                     <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
                 </div>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(true)}>
-                        <FaExpandArrowsAlt/><span> Grow</span>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, true, true)}>
+                        <FaArrowUp/><FaFutbol/>
                     </Button>
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(false)}>
-                        <FaCompressArrowsAlt/><span> Shrink</span>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, false, true)}>
+                        <FaArrowUp/><FaVolleyballBall/>
+                    </Button>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, true, false)}>
+                        <FaArrowUp/><FaExpandArrowsAlt/>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, true, true)}>
+                        <FaArrowDown/><FaFutbol/>
+                    </Button>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, false, true)}>
+                        <FaArrowDown/><FaVolleyballBall/>
+                    </Button>
+                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, true, false)}>
+                        <FaArrowDown/><FaExpandArrowsAlt/>
+                    </Button>
+                </ButtonGroup>
+                <ButtonGroup className="w-100 my-2">
+                    <Button disabled={needsBricks(1)} onClick={() => {
+                        fabric.builder.uprightAtOrigin(operations.selectedFaces[0])
+                    }}>
+                        <FaCompass/><span> Upright</span>
+                    </Button>
                     <Button disabled={needsBricks(2)} onClick={connect}>
                         <FaLink/><span> Connect</span>
                     </Button>
-                </ButtonGroup>
-                <ButtonGroup className="w-100 my-2">
                     <Button onClick={() => fabric.builder.optimize()}>
-                        <FaMicroscope/><span> Bow optimization</span>
+                        <FaMagic/><span> Bows</span>
                     </Button>
                 </ButtonGroup>
             </div>
@@ -101,14 +121,14 @@ export function ShapePanel({
                 </div>
                 <div className="my-2" style={{
                     borderStyle: "solid",
-                    borderColor: faceSelection || ellipsoids ? "gray" : "white",
+                    borderColor: selectionMode || ellipsoids ? "gray" : "white",
                     borderWidth: "0.1em",
                     borderRadius: "0.7em",
                     padding: "0.5em",
                 }}>
                     {features.filter(feature => lengthFeatureToRole(feature.fabricFeature) !== undefined).map(feature => (
                         <div className="my-2 p-2" key={feature.title}>
-                            <FeatureChoice feature={feature} disabled={faceSelection || ellipsoids}/>
+                            <FeatureChoice feature={feature} disabled={selectionMode || ellipsoids}/>
                         </div>
                     ))}
                 </div>

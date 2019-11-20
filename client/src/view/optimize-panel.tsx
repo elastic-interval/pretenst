@@ -26,11 +26,10 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function OptimizePanel({fabric, app$, lifePhase$, rebuild}: {
+export function OptimizePanel({fabric, app$, lifePhase$}: {
     fabric: TensegrityFabric,
     app$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    rebuild: () => void,
 }): JSX.Element {
     const [fabricState, updateFabricState] = useState(app$.getValue())
     useEffect(() => {
@@ -50,8 +49,7 @@ export function OptimizePanel({fabric, app$, lifePhase$, rebuild}: {
                 <LifePhasePanel
                     fabric={fabric}
                     lifePhase$={lifePhase$}
-                    rebuild={rebuild}
-                    disabled={fabricState.ellipsoids || fabricState.faceSelection}
+                    disabled={fabricState.ellipsoids || fabricState.selectionMode}
                 />
             </div>
             <div className="text-center">

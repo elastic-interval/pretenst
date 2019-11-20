@@ -24,8 +24,8 @@ import {
 
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
-import { doNotClick, hideSurface, IFabricState, LifePhase } from "../fabric/fabric-state"
-import { byFaces, IFace, IFacePair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { doNotClick, IFabricState, LifePhase } from "../fabric/fabric-state"
+import { byFaces, IFace, IFacePair, IInterval, IOperations, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { CYLINDER, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE, SELECT_MATERIAL } from "./materials"
@@ -58,15 +58,13 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, faceSelection, ellipsoids, app$, lifePhase$}: {
+export function FabricView({fabric, selectionMode, ellipsoids, app$, lifePhase$, operations$}: {
     fabric: TensegrityFabric,
-    selectedFaces: IFace[],
-    setSelectedFaces: (selectedFaces: IFace[]) => void,
-    facePairs: IFacePair[],
-    faceSelection: boolean,
+    selectionMode: boolean,
     ellipsoids: boolean,
     app$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
+    operations$: BehaviorSubject<IOperations>,
 }): JSX.Element {
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
@@ -99,6 +97,15 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, 
         orbit.current.autoRotate = rotating
     }, [rotating])
 
+    const [operations, updateOperations] = useState(operations$.getValue())
+    useEffect(() => {
+        const subscription = operations$.subscribe(newOps => {
+            updateOperations(newOps)
+            fabric.startTightening(newOps.facePairs)
+        })
+        return () => subscription.unsubscribe()
+    }, [])
+
     const radiusFactor = fabricFeatureValue(FabricFeature.RadiusFactor).numeric
 
     const orbit = useUpdate<Orbit>(orb => {
@@ -123,20 +130,17 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, 
             return
         }
         const instance = fabric.instance
-        const addToVector = (sum: Vector3, face: IFace) => sum.add(fabric.instance.faceMidpoint(face.index))
-        const averageFaceMidpoint = () => selectedFaces.reduce(addToVector, new Vector3()).multiplyScalar(1 / selectedFaces.length)
-        const target = selectedFaces.length === 0 ? instance.getMidpoint() : averageFaceMidpoint()
+        const target = instance.getMidpoint()
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
         let newLifePhase = LifePhase.Busy
-        if (ellipsoids || faceSelection) {
+        if (ellipsoids || selectionMode) {
             newLifePhase = fabric.iterate(0)
         } else {
             newLifePhase = fabric.iterate(ticks)
-            facePairs.forEach(pair => fabric.enforceBrickPair(pair))
-            fabric.needsUpdate()
         }
+        fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
             if (newLifePhase === LifePhase.Pretensing) {
                 lifePhase$.next(newLifePhase)
@@ -146,19 +150,20 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, 
         }
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, selectedFaces, age, lifePhase, showPushes, showPulls, faceSelection,
+        fabric, operations, age, lifePhase, showPushes, showPulls, selectionMode,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
         console.log("toggle", faceToToggle.index)
+        const selectedFaces = operations$.getValue().selectedFaces
         if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
             const withoutNewFace = selectedFaces.filter(b => b.index !== faceToToggle.index)
             fabric.selectIntervals(byFaces(withoutNewFace))
-            setSelectedFaces(withoutNewFace)
+            operations$.next({...operations$.getValue(), selectedFaces: withoutNewFace})
         } else {
             const withNewFace = [...selectedFaces, faceToToggle]
             fabric.selectIntervals(byFaces(withNewFace))
-            setSelectedFaces(withNewFace)
+            operations$.next({...operations$.getValue(), selectedFaces: withNewFace})
         }
     }
 
@@ -291,7 +296,7 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, 
             <scene>
                 {hideStiffness ? undefined : <StiffnessScale/>}
                 {!fabric ? undefined : ellipsoids ? <EllipsoidView/> : <LineView/>}
-                {!faceSelection ? undefined : (
+                {!selectionMode ? undefined : (
                     <Faces
                         key="faces"
                         fabric={fabric}
@@ -299,9 +304,11 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, facePairs, 
                         selectFace={toggleFacesSelection}
                     />
                 )}
-                {selectedFaces.map(brick => <SelectedFace key={`brick${brick.index}`} selected={brick}/>)}
-                {facePairs.map((brickPair, index) => <BrickPair key={`Pair${index}`} brickPair={brickPair}/>)}
-                {hideSurface(lifePhase) ? undefined : <SurfaceComponent/>}
+                {operations.selectedFaces.map(brick => <SelectedFace key={`brick${brick.index}`} selected={brick}/>)}
+                {fabric.facePairs.map((brickPair, index) => (
+                    <BrickPair key={`Pair${index}`} brickPair={brickPair}/>
+                ))}
+                <SurfaceComponent ghost={lifePhase <= LifePhase.Slack}/>
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>

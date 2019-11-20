@@ -98,7 +98,10 @@ export function enumValues(e: object): number[] {
     return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
 
+const VERSION = "2019-11-20"
+
 export interface IFabricState {
+    version: string,
     nonce: number
     gravityLevel: GravityLevel
     dragLevel: DragLevel
@@ -107,7 +110,7 @@ export interface IFabricState {
     pretenseSpeed: PretenseSpeed
     pushStrainFactor: PushStrainFactor
     controlTab: ControlTab
-    faceSelection: boolean
+    selectionMode: boolean
     fullScreen: boolean
     ellipsoids: boolean
     rotating: boolean
@@ -120,6 +123,7 @@ export function transition(state: IFabricState, partial: Partial<IFabricState>):
 }
 
 const INITIAL_FABRIC_STATE: IFabricState = {
+    version: VERSION,
     nonce: 0,
     gravityLevel: GravityLevel.Light,
     dragLevel: DragLevel.Light,
@@ -128,8 +132,8 @@ const INITIAL_FABRIC_STATE: IFabricState = {
     pretenseSpeed: PretenseSpeed.Slow,
     pushStrainFactor: PushStrainFactor.Equal,
     controlTab: ControlTab.Grow,
-    fullScreen: false,
-    faceSelection: false,
+    fullScreen: true,
+    selectionMode: false,
     ellipsoids: false,
     rotating: false,
     showPushes: true,
@@ -145,7 +149,10 @@ export function saveFabricState(fabricState: IFabricState): void {
 export function loadFabricState(): IFabricState {
     const item = localStorage.getItem(FABRIC_STATE_KEY)
     if (item) {
-        return JSON.parse(item) as IFabricState
+        const storedState = JSON.parse(item) as IFabricState
+        if (storedState.version === VERSION) {
+            return storedState
+        }
     }
     return INITIAL_FABRIC_STATE
 }

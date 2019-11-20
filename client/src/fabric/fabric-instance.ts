@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Vector3 } from "three"
+import { Matrix4, Vector3 } from "three"
 
 import { FabricFeature, IFabricEngine } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
@@ -75,7 +75,15 @@ export class FabricInstance {
     }
 
     public location(jointIndex: number): Vector3 {
-        return vectorFromArray(this._jointLocations.floats, jointIndex )
+        return vectorFromArray(this._jointLocations.floats, jointIndex)
+    }
+
+    public apply(matrix: Matrix4): void {
+        const jointCount = this.engine.getJointCount()
+        for (let jointIndex = 0; jointIndex < jointCount; jointIndex++) {
+            const jointLocation = vectorFromArray(this._jointLocations.floats, jointIndex)
+            vectorToArray(jointLocation.applyMatrix4(matrix), this._jointLocations.floats, jointIndex)
+        }
     }
 
     public moveLocation(jointIndex: number, move: Vector3): void {

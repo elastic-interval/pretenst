@@ -26,17 +26,28 @@ import {
 } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
-const SNUGGLE_BRICKS = 0.9
+const APPROACH_STEP = 0.05
 
 export class TensegrityBuilder {
 
-    private initialFacePairs: IFacePair[] = []
+    private faceMarks: Record<number, IFace[]> = {}
 
     constructor(public readonly fabric: TensegrityFabric) {
     }
 
-    public createBrickOnOrigin(scale: IPercent): IBrick {
-        const points = this.createBrickPointsOnOrigin(Triangle.PPP, scale)
+    public get markFace(): (mark: number, face: IFace) => void {
+        return (mark: number, face: IFace) => {
+            const found = this.faceMarks[mark]
+            if (found) {
+                found.push(face)
+            } else {
+                this.faceMarks[mark] = [face]
+            }
+        }
+    }
+
+    public createBrickAt(midpoint: Vector3, scale: IPercent): IBrick {
+        const points = this.createBrickPointsAt(Triangle.PPP, scale, midpoint)
         return this.createBrick(points, Triangle.NNN, scale)
     }
 
@@ -53,35 +64,54 @@ export class TensegrityBuilder {
         return brickB
     }
 
-    public addFacePair(faceA: IFace, faceB: IFace): IFacePair {
-        const instance = this.fabric.instance
-        const distance = instance.faceMidpoint(faceA.index).distanceTo(instance.faceMidpoint(faceB.index))
-        const brickPair: IFacePair = {faceA, faceB, distance}
-        this.initialFacePairs.push(brickPair)
-        return brickPair
+    public faceEffects(faces: IFace[]): IFacePair[] {
+        switch (faces.length) {
+            case 2:
+                return [this.addFacePair(faces[0], faces[1])]
+            case 3:
+                const instance = this.fabric.instance
+                const scale = faces.reduce((sum, face) => sum + percentToFactor(face.brick.scale), 0) / 3
+                const midpoint = faces.reduce((sum, face) => sum.add(instance.faceMidpoint(face.index)), new Vector3()).multiplyScalar(1 / 3.0)
+                const brick = this.createBrickAt(midpoint, factorToPercent(scale))
+                this.fabric.iterate(0)
+                const top = true
+                const closestTo = (face: IFace) => {
+                    const faceLocation = instance.faceMidpoint(face.index)
+                    const brickFaces = brick.faces
+                    const facesToCheck = top ? brickFaces.slice(Triangle.PNN, Triangle.NNP + 1) : brickFaces.slice(Triangle.NPP, Triangle.PPN + 1)
+                    return facesToCheck.reduce((a, b) => {
+                        const aa = instance.faceMidpoint(a.index).distanceTo(faceLocation)
+                        const bb = instance.faceMidpoint(b.index).distanceTo(faceLocation)
+                        return aa < bb ? a : b
+                    })
+                }
+                return faces.map(face => this.addFacePair(closestTo(face), face))
+            default:
+                return []
+        }
     }
 
-    public get initialPairs(): IFacePair[] {
-        return this.initialFacePairs.map(pair => {
-            const findByJoints = (face: IFace): IFace => {
-                this.fabric.faces.find(({index, joints}) => (
-                    joints[0].index === face.joints[0].index
-                ))
-                return face
-            }
-            const faceA = findByJoints(pair.faceA)
-            const faceB = findByJoints(pair.faceB)
-            const instance = this.fabric.instance
-            const distance = instance.faceMidpoint(faceA.index).distanceTo(instance.faceMidpoint(faceB.index))
-            return {faceA, faceB, distance}
-        })
+    public turnUpright(): void {
+        const markedFace = this.faceMarkLists.find(list => list.length === 1)
+        if (!markedFace) {
+            return
+        }
+        this.uprightAtOrigin(markedFace[0])
     }
 
-    public tightenFacePairs(beforePairs: IFacePair[], approach: number): IFacePair[] | undefined {
-        const afterPairs = beforePairs.filter(pair => {
+    public tighten(facePairs: IFacePair[]): IFacePair[] | undefined {
+        if (facePairs.length === 0) {
+            return
+        }
+        const newPairs = facePairs.filter(pair => {
             const scaleSum = percentToFactor(pair.faceA.brick.scale) + percentToFactor(pair.faceB.brick.scale)
             const connectorScale = factorToPercent(scaleSum / 2)
-            const step = scaleSum * approach
+            let step = scaleSum * APPROACH_STEP
+            if (pair.distance < step * 5) {
+                step /= 20
+            } else if (pair.distance < step * 10) {
+                step /= 10
+            }
             if (pair.distance - step < 0) {
                 if (!this.connectBricks(pair.faceA, pair.faceB, connectorScale)) {
                     console.log("Unable to connect")
@@ -91,7 +121,7 @@ export class TensegrityBuilder {
             pair.distance -= step
             return true
         })
-        return afterPairs.length === beforePairs.length ? undefined : afterPairs
+        return newPairs.length === facePairs.length ? undefined : newPairs
     }
 
     public optimize(): void {
@@ -205,6 +235,43 @@ export class TensegrityBuilder {
         instance.forgetDimensions()
     }
 
+    public uprightAtOrigin(face: IFace): void {
+        const matrix = this.faceToOrigin(face)
+        this.fabric.instance.apply(matrix)
+    }
+
+    public get initialPairs(): IFacePair[] {
+        return this.faceMarkLists
+            .filter(list => list.length === 2 || list.length === 3)
+            .reduce((pairs: IFacePair[], faceList: IFace[]) => {
+                pairs.push(...this.faceEffects(faceList))
+                return pairs
+            }, [])
+            .map((pair: IFacePair) => {
+                const findByJoints = (face: IFace): IFace => {
+                    this.fabric.faces.find(({index, joints}) => (
+                        joints[0].index === face.joints[0].index
+                    ))
+                    return face
+                }
+                const faceA = findByJoints(pair.faceA)
+                const faceB = findByJoints(pair.faceB)
+                const instance = this.fabric.instance
+                const distance = instance.faceMidpoint(faceA.index).distanceTo(instance.faceMidpoint(faceB.index))
+                return {faceA, faceB, distance}
+            })
+    }
+
+    private get faceMarkLists(): IFace[][] {
+        return Object.keys(this.faceMarks).map(key => this.faceMarks[key])
+    }
+
+    private addFacePair(faceA: IFace, faceB: IFace): IFacePair {
+        const instance = this.fabric.instance
+        const distance = instance.faceMidpoint(faceA.index).distanceTo(instance.faceMidpoint(faceB.index))
+        return {faceA, faceB, distance}
+    }
+
     private createBrickOnFace(face: IFace, scale: IPercent): IBrick {
         const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
         const brick = face.brick
@@ -219,7 +286,7 @@ export class TensegrityBuilder {
         const y = new Vector3().crossVectors(z, x).normalize()
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
         const base = negativeFace ? Triangle.NNN : Triangle.PPP
-        const points = this.createBrickPointsOnOrigin(base, scale)
+        const points = this.createBrickPointsAt(base, scale, new Vector3()) // todo: maybe raise it
         const movedToFace = points.map(p => p.applyMatrix4(xform))
         const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
         return this.createBrick(movedToFace, baseTriangle, scale)
@@ -262,7 +329,7 @@ export class TensegrityBuilder {
         return brick
     }
 
-    private createBrickPointsOnOrigin(base: Triangle, scale: IPercent): Vector3 [] {
+    private createBrickPointsAt(base: Triangle, scale: IPercent, position: Vector3): Vector3 [] {
         const pushesToPoints = (vectors: Vector3[], push: IPushDefinition): Vector3[] => {
             vectors.push(new Vector3().add(push.alpha))
             vectors.push(new Vector3().add(push.omega))
@@ -279,9 +346,21 @@ export class TensegrityBuilder {
         const scaleFactor = percentToFactor(scale)
         const fromBasis = new Matrix4()
             .getInverse(basis)
-            .setPosition(new Vector3(0, midpoint.length() * scaleFactor * SNUGGLE_BRICKS, 0))
+            .setPosition(position)
             .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
         return points.map(p => p.applyMatrix4(fromBasis))
+    }
+
+    private faceToOrigin(face: IFace): Matrix4 {
+        this.fabric.iterate(0)
+        const trianglePoints = face.joints.map(joint => this.fabric.instance.location(joint.index))
+        const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+        const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
+        const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+        const y = new Vector3().crossVectors(z, x).normalize()
+        z.crossVectors(x, y).normalize()
+        const basis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+        return new Matrix4().getInverse(basis)
     }
 
     private connectBricks(faceA: IFace, faceB: IFace, connectorScale: IPercent): boolean {
@@ -410,61 +489,3 @@ interface IPush {
     interval: IInterval
     joint: IJoint
 }
-
-
-// export interface IFacePair {
-//     faceA: IFace
-//     locationA: Vector3
-//     normalA: Vector3
-//     faceB: IFace
-//     locationB: Vector3
-//     normalB: Vector3
-//     distance: number
-//     dot: number
-// }
-//
-// export function closestFacePairs(fabric: TensegrityFabric, maxDistance: number): IFacePair[] {
-//     const faces = fabric.growthFaces
-//     const facePairs: IFacePair[] = []
-//     faces.forEach((faceA, indexA) => {
-//         faces.forEach((faceB, indexB) => {
-//             if (indexB >= indexA) {
-//                 return
-//             }
-//             const locationA = fabric.instance.faceMidpoint(faceA.index)
-//             const locationB = fabric.instance.faceMidpoint(faceB.index)
-//             const distance = locationA.distanceTo(locationB)
-//             if (distance >= maxDistance) {
-//                 return
-//             }
-//             const normalA = fabric.instance.faceNormal(faceA.index)
-//             const normalB = fabric.instance.faceNormal(faceB.index)
-//             const dot = normalA.dot(normalB)
-//             if (dot > -0.2) {
-//                 return
-//             }
-//             facePairs.push({faceA, locationA, normalA, faceB, locationB, normalB, distance, dot})
-//         })
-//     })
-//     facePairs.sort((a, b) => a.distance - b.distance)
-//     return facePairs
-// }
-//
-// export function connectClosestFacePair(fabric: TensegrityFabric): void {
-//     const closestPairs = closestFacePairs(fabric, 5)
-//     const facePair = closestPairs[0]
-//     const scale = percentOrHundred() // TODO: figure this out
-//     const connector = connectBricks(facePair.faceA, facePair.faceB, scale)
-//     connector.facesToRemove.forEach(faceToRemove => fabric.removeFace(faceToRemove, true))
-// }
-
-// function createBrickPointsUpright(): Vector3[] {
-//     const points = PUSH_ARRAY.reduce(pushesToPoints, [])
-//     points.forEach(p => {
-//         const xx = p.x
-//         p.x = p.z
-//         p.y += PHI
-//         p.z = xx
-//     })
-//     return points
-// }

@@ -57,6 +57,17 @@ export interface IFace {
     removed: boolean
 }
 
+export interface IFacePair {
+    faceA: IFace
+    faceB: IFace
+    distance: number
+}
+
+export interface IOperations {
+    selectedFaces: IFace[]
+    facePairs: IFacePair[]
+}
+
 export interface IPushDefinition {
     alpha: Vector3
     omega: Vector3
@@ -173,12 +184,6 @@ export interface IBrick {
     pulls: IInterval[]
     rings: IInterval[][]
     faces: IFace[]
-}
-
-export interface IFacePair {
-    faceA: IFace
-    faceB: IFace
-    distance: number
 }
 
 export function initialBrick(index: number, base: Triangle, scale: IPercent): IBrick {
