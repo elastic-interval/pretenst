@@ -25,7 +25,7 @@ import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-import { roleColorString } from "./materials"
+import { FeaturePanel } from "./feature-panel"
 
 export function ShapePanel({features, fabric, setFabric, fabricState$}: {
     features: FloatFeature[],
@@ -124,9 +124,7 @@ export function ShapePanel({features, fabric, setFabric, fabricState$}: {
                     padding: "0.5em",
                 }}>
                     {features.filter(feature => lengthFeatureToRole(feature.fabricFeature) !== undefined).map(feature => (
-                        <div className="my-2 p-2" key={feature.title}>
-                            <FeatureChoice feature={feature} disabled={selectionMode || ellipsoids}/>
-                        </div>
+                        <FeaturePanel key={feature.title} feature={feature} disabled={selectionMode || ellipsoids}/>
                     ))}
                 </div>
             </div>
@@ -134,36 +132,3 @@ export function ShapePanel({features, fabric, setFabric, fabricState$}: {
     )
 }
 
-function FeatureChoice({feature, disabled}: {
-    feature: FloatFeature,
-    disabled: boolean,
-}): JSX.Element {
-    const [featurePercent, setFeaturePercent] = useState(() => feature.percent)
-    useEffect(() => {
-        const subscription = feature.observable.subscribe(({percent}) => setFeaturePercent(percent))
-        return () => subscription.unsubscribe()
-    }, [])
-    return (
-        <div>
-            <div>{feature.config.name} {feature.numeric.toFixed(6)}</div>
-            <ButtonGroup className="w-100">
-                {feature.percentChoices.map(percent => {
-                    const roleColor = roleColorString(lengthFeatureToRole(feature.fabricFeature))
-                    const backgroundColor = featurePercent === percent ? "#000000" : roleColor
-                    return (
-                        <Button
-                            disabled={disabled}
-                            size="sm"
-                            style={{
-                                color: "white",
-                                backgroundColor,
-                            }}
-                            key={`${feature.config.name}:${percent}`}
-                            onClick={() => feature.percent = percent}
-                        >{percent}%</Button>
-                    )
-                })}
-            </ButtonGroup>
-        </div>
-    )
-}

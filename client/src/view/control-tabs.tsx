@@ -105,6 +105,7 @@ export function ControlTabs({
                 case ControlTab.Optimize:
                     return !fabric ? NO_FABRIC : (
                         <OptimizePanel
+                            features={features}
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}

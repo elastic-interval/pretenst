@@ -22,72 +22,6 @@ export function hideSurface(lifePhase: LifePhase): boolean {
     return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack
 }
 
-export enum GravityLevel {
-    Light,
-    Medium,
-    Heavy,
-    Space,
-}
-
-export const GRAVITY_LEVEL = [
-    0.00000005,
-    0.0000001,
-    0.0000003,
-    0.0,
-]
-
-export enum DragLevel {
-    Light,
-    Medium,
-    Heavy,
-    Free,
-}
-
-export const DRAG_LEVEL = [
-    0.0001,
-    0.001,
-    0.01,
-    0.0,
-]
-
-export enum PretenseFactor {
-    Tiny,
-    Small,
-    Medium,
-    Large,
-}
-
-export const PRETENSE_FACTOR = [
-    0.001,
-    0.01,
-    0.05,
-    0.10,
-]
-
-export enum PretenseSpeed {
-    Slow,
-    Medium,
-    Fast,
-}
-
-export const PRETENSE_SPEED = [
-    30000,
-    3000,
-    300,
-]
-
-export enum PushStrainFactor {
-    PushDominant,
-    Equal,
-    PullDominant,
-}
-
-export const PUSH_STRAIN_FACTOR = [
-    3,
-    1,
-    1 / 3,
-]
-
 export enum ControlTab {
     Grow = "Grow",
     Shape = "Shape",
@@ -103,12 +37,7 @@ const VERSION = "2019-11-20"
 export interface IFabricState {
     version: string,
     nonce: number
-    gravityLevel: GravityLevel
-    dragLevel: DragLevel
     surfaceCharacter: SurfaceCharacter
-    pretenseFactor: PretenseFactor
-    pretenseSpeed: PretenseSpeed
-    pushStrainFactor: PushStrainFactor
     controlTab: ControlTab
     selectionMode: boolean
     fullScreen: boolean
@@ -125,12 +54,7 @@ export function transition(state: IFabricState, partial: Partial<IFabricState>):
 const INITIAL_FABRIC_STATE: IFabricState = {
     version: VERSION,
     nonce: 0,
-    gravityLevel: GravityLevel.Light,
-    dragLevel: DragLevel.Light,
     surfaceCharacter: SurfaceCharacter.Sticky,
-    pretenseFactor: PretenseFactor.Tiny,
-    pretenseSpeed: PretenseSpeed.Slow,
-    pushStrainFactor: PushStrainFactor.Equal,
     controlTab: ControlTab.Grow,
     fullScreen: true,
     selectionMode: false,

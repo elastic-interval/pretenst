@@ -86,7 +86,7 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, r
                             addToRecentPrograms(tenscript)
                         }}
                     >
-                        <FaHeart/> Save in the Browser
+                        <FaHeart/> Save to the Browser
                     </Button>
                 </ButtonGroup>
             </div>

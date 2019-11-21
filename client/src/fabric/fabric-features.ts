@@ -26,7 +26,7 @@ interface IFeatureConfig {
     percents: number[]
 }
 
-function multiplierValue(multiplier: FeatureMultiplier): number {
+export function multiplierValue(multiplier: FeatureMultiplier): number {
     switch (multiplier) {
         case FeatureMultiplier.OneThousand:
             return 1 / 1000.0
@@ -40,6 +40,25 @@ function multiplierValue(multiplier: FeatureMultiplier): number {
             return 1000000
         case FeatureMultiplier.Billionths:
             return 1000000000
+        default:
+            throw new Error("Bad multiplier:" + multiplier)
+    }
+}
+
+export function multiplierSymbol(multiplier: FeatureMultiplier): string {
+    switch (multiplier) {
+        case FeatureMultiplier.OneThousand:
+            return "k"
+        case FeatureMultiplier.One:
+            return ""
+        case FeatureMultiplier.Hundredths:
+            return "%"
+        case FeatureMultiplier.Thousandths:
+            return "m"
+        case FeatureMultiplier.Millionths:
+            return "\u03BC"
+        case FeatureMultiplier.Billionths:
+            return "\u03BC"
         default:
             throw new Error("Bad multiplier")
     }
@@ -77,14 +96,6 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PushStrainFactor,
         name: "Push Strain Factor",
-        defaultValue: 1,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 3,
-        percents: FEATURE_PERCENTS,
-    },
-    {
-        feature: FabricFeature.PushPullDifferential,
-        name: "Push/Pull Differential",
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
@@ -241,11 +252,6 @@ export class FloatFeature {
 
     public get numeric(): number {
         return this.factor$.getValue().numeric
-    }
-
-    public set numeric(numeric: number) {
-        console.warn("set numeric")
-        this.factor$.next({numeric, percent: -666})
     }
 
     public get percent(): number {

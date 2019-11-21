@@ -10,20 +10,10 @@ import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, lengthFeatureToRole } from "../fabric/fabric-engine"
+import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
-import {
-    ControlTab,
-    DRAG_LEVEL,
-    GRAVITY_LEVEL,
-    IFabricState,
-    LifePhase,
-    PRETENSE_FACTOR,
-    PRETENSE_SPEED,
-    PUSH_STRAIN_FACTOR,
-    transition,
-} from "../fabric/fabric-state"
+import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { BOOTSTRAP, ITenscript } from "../fabric/tenscript"
 import { IFace, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -82,20 +72,6 @@ export function TensegrityView({fabricKernel, features, fabricState$, lifePhase$
             instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
             instance.engine.iterate(0, lifePhase$.getValue())
             instance.engine.setSurfaceCharacter(fabricState.surfaceCharacter)
-            const adjust = (feature: FabricFeature, array: number[], choice: number) => {
-                const value = array[choice]
-                if (features[feature].numeric === value) {
-                    return
-                }
-                features[feature].numeric = value
-                console.error("adjusting feature", features[feature].config.name, value)
-                instance.setFeatureValue(feature, value)
-            }
-            adjust(FabricFeature.Gravity, GRAVITY_LEVEL, fabricState.gravityLevel)
-            adjust(FabricFeature.Drag, DRAG_LEVEL, fabricState.dragLevel)
-            adjust(FabricFeature.PretenseFactor, PRETENSE_FACTOR, fabricState.pretenseFactor)
-            adjust(FabricFeature.PretenseTicks, PRETENSE_SPEED, fabricState.pretenseSpeed)
-            adjust(FabricFeature.PushStrainFactor, PUSH_STRAIN_FACTOR, fabricState.pushStrainFactor)
         })
         return () => subscription.unsubscribe()
     }, [fabric])
@@ -195,7 +171,7 @@ export function TensegrityView({fabricKernel, features, fabricState$, lifePhase$
                             <ToolbarLeftTop
                                 fabric={fabric}
                                 clearSelectedFaces={() => {
-                                    fabric.selectedFaces=[]
+                                    fabric.selectedFaces = []
                                     setFabric(fabric) // trigger change
                                 }}
                                 fabricState$={fabricState$}
