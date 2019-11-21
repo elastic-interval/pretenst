@@ -26,7 +26,7 @@ import {
 } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
-const APPROACH_STEP = 0.05
+const APPROACH_STEP = 0.1
 
 export class TensegrityBuilder {
 

@@ -12,6 +12,7 @@ import { BehaviorSubject } from "rxjs"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
+import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { OptimizePanel } from "./optimize-panel"
@@ -33,11 +34,14 @@ function Icon(controlTab: ControlTab): JSX.Element {
 
 export function ControlTabs({
                                 floatFeatures, initialTenscript, setInitialTenscript,
+                                selectedFaces, clearSelectedFaces,
                                 fabric, setFabric, runTenscript,
                                 toFullScreen, fabricState$, lifePhase$,
                             }: {
     floatFeatures: FloatFeature[],
     initialTenscript: ITenscript,
+    selectedFaces: IFace[],
+    clearSelectedFaces: () => void,
     setInitialTenscript: (tenscript: ITenscript) => void,
     runTenscript: (tenscript: ITenscript) => void,
     fabric?: TensegrityFabric,
@@ -51,12 +55,7 @@ export function ControlTabs({
 
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
-            if (!fabric) {
-                return
-            }
-            fabric.selectedFaces = []
-            fabric.facePairs = []
-            // todo: what about fabric$.next(fabric)
+            clearSelectedFaces()
         }
     }, [controlTab])
 
@@ -99,6 +98,8 @@ export function ControlTabs({
                             floatFeatures={floatFeatures}
                             fabric={fabric}
                             setFabric={setFabric}
+                            selectedFaces={selectedFaces}
+                            clearSelectedFaces={clearSelectedFaces}
                             fabricState$={fabricState$}
                         />
                     )

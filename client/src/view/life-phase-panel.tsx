@@ -5,16 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import {
-    FaArrowDown,
-    FaArrowRight,
-    FaClock,
-    FaHammer,
-    FaHandSpock,
-    FaSeedling,
-    FaTools,
-    FaYinYang,
-} from "react-icons/all"
+import { FaArrowRight, FaClock, FaHammer, FaHandSpock, FaSeedling, FaTools, FaYinYang } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -65,8 +56,13 @@ export function LifePhasePanel({fabric, lifePhase$, fabricState$, disabled}: {
                 <Button disabled={lifePhase !== LifePhase.Shaping || disabled} onClick={() => fabric.toSlack()}>
                     <span>Shaping <FaHammer/> <FaArrowRight/> Slack <FaYinYang/></span>
                 </Button>
-                <Button disabled={lifePhase !== LifePhase.Slack || disabled} onClick={() => fabric.fromSlackToPretensing()}>
-                    <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/> Gravity <FaArrowDown/></span>
+                <Button disabled={lifePhase !== LifePhase.Slack || disabled}
+                        onClick={() => fabric.fromSlackToPretensing()}>
+                    <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/></span>
+                </Button>
+                <Button disabled={lifePhase !== LifePhase.Slack || disabled}
+                        onClick={() => fabric.fromSlackToShaping()}>
+                    <span>Slack <FaYinYang/> <FaArrowRight/> Shaping <FaHammer/></span>
                 </Button>
                 <Button disabled={lifePhase !== LifePhase.Pretenst || disabled} onClick={() => {
                     const pushStrainFactor = featureValues[FabricFeature.PushStrainFactor].numeric

@@ -48,6 +48,7 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
+    const [selectedFaces, setSelectedFaces] = useState< IFace[] >([])
 
     const [initialTenscript, setInitialTenscript] = useState(getCodeToRun)
     useEffect(() => {
@@ -141,6 +142,8 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
                         setInitialTenscript={setInitialTenscript}
                         fabric={fabric}
                         setFabric={setFabric}
+                        selectedFaces={selectedFaces}
+                        clearSelectedFaces={() => setSelectedFaces([])}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
                         fabricState$={fabricState$}
@@ -171,10 +174,8 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
                         {controlTab !== ControlTab.Shape ? undefined : (
                             <ToolbarLeftTop
                                 fabric={fabric}
-                                clearSelectedFaces={() => {
-                                    fabric.selectedFaces = []
-                                    setFabric(fabric) // trigger change
-                                }}
+                                selectedFaces={selectedFaces}
+                                clearSelectedFaces={() => setSelectedFaces([])}
                                 fabricState$={fabricState$}
                                 fullScreen={fullScreen}
                             />
@@ -201,10 +202,8 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
                         }}>
                             <FabricView
                                 fabric={fabric}
-                                setSelectedFaces={(faces: IFace[]) => {
-                                    fabric.selectedFaces = faces
-                                    setFabric(fabric) // trigger change
-                                }}
+                                selectedFaces={selectedFaces}
+                                setSelectedFaces={setSelectedFaces}
                                 selectionMode={selectionMode}
                                 ellipsoids={ellipsoids}
                                 fabricState$={fabricState$}

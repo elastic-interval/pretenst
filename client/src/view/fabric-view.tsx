@@ -23,7 +23,7 @@ import {
 } from "three"
 
 import { FabricFeature } from "../fabric/fabric-engine"
-import { doNotClick, IFabricState, LifePhase } from "../fabric/fabric-state"
+import { doNotClick, IFabricState, IFeatureValue, LifePhase } from "../fabric/fabric-state"
 import { IFace, IFacePair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { CYLINDER, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -57,8 +57,9 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids, fabricState$, lifePhase$}: {
+export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
+    selectedFaces: IFace[],
     setSelectedFaces: (faces: IFace[]) => void,
     selectionMode: boolean,
     ellipsoids: boolean,
@@ -134,28 +135,19 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
 
     function toggleFacesSelection(faceToToggle: IFace): void {
         console.log("toggle", faceToToggle.index)
-        const selectedFaces = fabric.selectedFaces
         if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
             setSelectedFaces(selectedFaces.filter(b => b.index !== faceToToggle.index))
-            // TODO:
-            // fabric.selectedFaces = withoutNewFace
-            // fabric.selectIntervals(byFaces(withoutNewFace))
-            // fabric$.next(fabric)
         } else {
             setSelectedFaces([...selectedFaces, faceToToggle])
-            // TODO:
-            // fabric.selectedFaces = withNewFace
-            // fabric.selectIntervals(byFaces(withNewFace))
-            // fabric$.next(fabric)
         }
     }
 
-    function SelectedFace({selected}: { selected: IFace }): JSX.Element {
-        const scale = percentToFactor(selected.brick.scale) / 3
+    function SelectedFace({face}: { face: IFace }): JSX.Element {
+        const scale = percentToFactor(face.brick.scale) / 3
         return (
             <mesh
                 geometry={SPHERE}
-                position={fabric.instance.faceMidpoint(selected.index)}
+                position={fabric.instance.faceMidpoint(face.index)}
                 material={SELECT_MATERIAL}
                 scale={new Vector3(scale, scale, scale)}
             />
@@ -170,7 +162,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
         const {scale, rotation} = fabric.orientVectorPair(a, b, radius)
         return (
             <>
-                <SelectedFace selected={brickPair.faceA}/>
+                <SelectedFace face={brickPair.faceA}/>
                 <mesh
                     geometry={CYLINDER}
                     rotation={new Euler().setFromQuaternion(rotation)}
@@ -178,7 +170,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
                     material={SELECT_MATERIAL}
                     scale={scale}
                 />
-                <SelectedFace selected={brickPair.faceB}/>
+                <SelectedFace face={brickPair.faceB}/>
             </>
         )
     }
@@ -213,7 +205,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
             return <group/>
         }
         const needleGeometry = new BufferGeometry()
-        const lines = strainPushLines(fabric, fabricState)
+        const lines = strainPushLines(fabric, fabricState.featureValues)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.lineColors, 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
@@ -289,7 +281,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
                         selectFace={toggleFacesSelection}
                     />
                 )}
-                {fabric.selectedFaces.map(brick => <SelectedFace key={`brick${brick.index}`} selected={brick}/>)}
+                {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} face={face}/>)}
                 {fabric.facePairs.map((brickPair, index) => (
                     <BrickPair key={`Pair${index}`} brickPair={brickPair}/>
                 ))}
@@ -350,9 +342,9 @@ function Faces({fabric, lifePhase, selectFace}: {
     )
 }
 
-function strainPushLines(fabric: TensegrityFabric, fabricState: IFabricState): Float32Array {
+function strainPushLines(fabric: TensegrityFabric, featureValues: Record<FabricFeature, IFeatureValue>): Float32Array {
 
-    const maxStiffness = fabricState[FabricFeature.MaxStiffness].numeric
+    const maxStiffness = featureValues[FabricFeature.MaxStiffness].numeric
     const instance = fabric.instance
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
     const stiffnesses = instance.stiffnesses

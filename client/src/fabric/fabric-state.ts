@@ -33,7 +33,7 @@ export function enumValues(e: object): number[] {
     return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
 
-const VERSION = "2019-11-21"
+const VERSION = "2019-11-21-a"
 
 export interface IFeatureValue {
     numeric: number

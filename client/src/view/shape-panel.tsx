@@ -23,14 +23,17 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
+import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { FeaturePanel } from "./feature-panel"
 
-export function ShapePanel({floatFeatures, fabric, setFabric, fabricState$}: {
+export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, clearSelectedFaces, fabricState$}: {
     floatFeatures: FloatFeature[],
     fabric: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
+    selectedFaces: IFace[],
+    clearSelectedFaces: () => void,
     fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
@@ -62,12 +65,12 @@ export function ShapePanel({floatFeatures, fabric, setFabric, fabricState$}: {
     }
 
     function connect(): void {
-        fabric.facePairs = fabric.builder.faceEffects(fabric.selectedFaces)
+        fabric.facePairs = fabric.builder.faceEffects(selectedFaces)
         setFabric(fabric)
     }
 
-    function needsBricks(requiredFaceCount: number): boolean {
-        return !fabric.splitIntervals || fabric.selectedFaces.length < requiredFaceCount || selectionMode || ellipsoids
+    function disableUnlessFaceCount(faceCount: number): boolean {
+        return selectedFaces.length < faceCount || ellipsoids
     }
 
     return (
@@ -77,34 +80,35 @@ export function ShapePanel({floatFeatures, fabric, setFabric, fabricState$}: {
                     <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
                 </div>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, true, true)}>
+                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, true)}>
                         <FaArrowUp/><FaFutbol/>
                     </Button>
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, false, true)}>
+                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, false, true)}>
                         <FaArrowUp/><FaVolleyballBall/>
                     </Button>
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(true, true, false)}>
+                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, false)}>
                         <FaArrowUp/><FaExpandArrowsAlt/>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, true, true)}>
+                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, true)}>
                         <FaArrowDown/><FaFutbol/>
                     </Button>
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, false, true)}>
+                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, false, true)}>
                         <FaArrowDown/><FaVolleyballBall/>
                     </Button>
-                    <Button disabled={needsBricks(1)} onClick={adjustValue(false, true, false)}>
+                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, false)}>
                         <FaArrowDown/><FaExpandArrowsAlt/>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
-                    <Button disabled={needsBricks(1)} onClick={() => {
-                        fabric.builder.uprightAtOrigin(fabric.selectedFaces[0])
+                    <Button disabled={disableUnlessFaceCount(1)} onClick={() => {
+                        fabric.builder.uprightAtOrigin(selectedFaces[0])
+                        clearSelectedFaces()
                     }}>
                         <FaCompass/><span> Upright</span>
                     </Button>
-                    <Button disabled={needsBricks(2)} onClick={connect}>
+                    <Button disabled={disableUnlessFaceCount(2)} onClick={connect}>
                         <FaLink/><span> Connect</span>
                     </Button>
                     <Button onClick={() => fabric.builder.optimize()}>

@@ -1258,10 +1258,20 @@ function slacken(): LifePhase {
 function startPretensing(): LifePhase {
     setFabricBusyTicks(<u32>getFeature(FabricFeature.PretenseTicks))
     if (surfaceCharacter === SurfaceCharacter.Frozen) {
-        setAltitude(-0.1)
+        setAltitude(-0.2)
     }
     output()
     return setLifePhase(LifePhase.Pretensing)
+}
+
+function slackToShaping(): LifePhase {
+    let intervalCount = getIntervalCount()
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        if (getIntervalRole(intervalIndex) === IntervalRole.Push) {
+            multiplyRestLength(intervalIndex, 1.3)
+        }
+    }
+    return setLifePhase(LifePhase.Shaping)
 }
 
 export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
@@ -1292,6 +1302,8 @@ export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
         case LifePhase.Slack:
             if (nextLifePhase === LifePhase.Pretensing) {
                 return startPretensing()
+            } else if (nextLifePhase === LifePhase.Shaping) {
+                return slackToShaping()
             }
             break
         case LifePhase.Pretensing:
