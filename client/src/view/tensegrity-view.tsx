@@ -38,9 +38,9 @@ function getCodeToRun(): ITenscript {
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
 }
 
-export function TensegrityView({fabricKernel, features, fabricState$, lifePhase$}: {
+export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifePhase$}: {
     fabricKernel: FabricKernel,
-    features: FloatFeature[],
+    floatFeatures: FloatFeature[],
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
@@ -77,7 +77,7 @@ export function TensegrityView({fabricKernel, features, fabricState$, lifePhase$
     }, [fabric])
 
     useEffect(() => { // todo: look when this happens
-        const featureSubscriptions = features.map(feature => feature.observable.subscribe(() => {
+        const featureSubscriptions = floatFeatures.map(feature => feature.observable.subscribe(() => {
             if (!fabric) {
                 return
             }
@@ -103,7 +103,8 @@ export function TensegrityView({fabricKernel, features, fabricState$, lifePhase$
         mainInstance.forgetDimensions()
         mainInstance.engine.initInstance()
         lifePhase$.next(LifePhase.Growing)
-        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript))
+        const featureValues = fabricState$.getValue().featureValues
+        setFabric(new TensegrityFabric(mainInstance, slackInstance, floatFeatures, featureValues, newTenscript))
         fabricState$.next(transition(fabricState$.getValue(), {ellipsoids: false, selectionMode: false}))
     }
 
@@ -135,7 +136,7 @@ export function TensegrityView({fabricKernel, features, fabricState$, lifePhase$
                     }}
                 >
                     <ControlTabs
-                        features={features}
+                        floatFeatures={floatFeatures}
                         initialTenscript={initialTenscript}
                         setInitialTenscript={setInitialTenscript}
                         fabric={fabric}

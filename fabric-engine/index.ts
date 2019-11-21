@@ -41,17 +41,17 @@ export enum FabricFeature {
 }
 
 enum SurfaceCharacter {
-    Sticky = 0,
-    Bouncy = 1,
+    Frozen = 0,
+    Sticky = 1,
     Slippery = 2,
-    Frozen = 3,
+    Bouncy = 3,
 }
 
 export function setSurfaceCharacter(character: SurfaceCharacter): void {
     surfaceCharacter = character
 }
 
-let surfaceCharacter: SurfaceCharacter = SurfaceCharacter.Bouncy
+let surfaceCharacter: SurfaceCharacter = SurfaceCharacter.Frozen
 
 enum IntervalRole {
     Push = 0,
@@ -1139,21 +1139,21 @@ function jointPhysics(jointIndex: u16, lifePhase: LifePhase, baseGravity: f32, b
         let degreeSubmerged: f32 = -altitude < 1 ? -altitude : 0
         let degreeCushioned: f32 = 1 - degreeSubmerged
         switch (surfaceCharacter) {
-            case SurfaceCharacter.Bouncy:
-                multiplyScalar(_velocityVector, degreeCushioned)
-                setY(_velocityVector, getY(_velocityVector) - ANTIGRAVITY * degreeSubmerged)
-                break
-            case SurfaceCharacter.Slippery:
-                setY(_location(jointIndex), 0)
-                setY(_velocityVector, 0)
+            case SurfaceCharacter.Frozen:
+                zero(_velocityVector)
+                setY(_location(jointIndex), -RESURFACE)
                 break
             case SurfaceCharacter.Sticky:
                 multiplyScalar(_velocityVector, degreeCushioned)
                 setY(_velocityVector, degreeSubmerged * RESURFACE)
                 break
-            case SurfaceCharacter.Frozen:
-                zero(_velocityVector)
-                setY(_location(jointIndex), -RESURFACE)
+            case SurfaceCharacter.Slippery:
+                setY(_location(jointIndex), 0)
+                setY(_velocityVector, 0)
+                break
+            case SurfaceCharacter.Bouncy:
+                multiplyScalar(_velocityVector, degreeCushioned)
+                setY(_velocityVector, getY(_velocityVector) - ANTIGRAVITY * degreeSubmerged)
                 break
         }
     }

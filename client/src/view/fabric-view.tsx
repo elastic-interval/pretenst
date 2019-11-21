@@ -23,7 +23,6 @@ import {
 } from "three"
 
 import { FabricFeature } from "../fabric/fabric-engine"
-import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, IFabricState, LifePhase } from "../fabric/fabric-state"
 import { IFace, IFacePair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { CYLINDER, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -82,22 +81,14 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
         return () => subscription.unsubscribe()
     }, [])
 
-    const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
-    const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
-    const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
+    const [fabricState, updateFabricState] = useState(fabricState$.getValue())
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
-            updateShowPushes(newState.showPushes)
-            updateShowPulls(newState.showPulls)
-            updateRotating(newState.rotating)
-        })
+        const subscription = fabricState$.subscribe(newState => updateFabricState(newState))
         return () => subscription.unsubscribe()
     }, [])
     useEffect(() => {
-        orbit.current.autoRotate = rotating
-    }, [rotating])
-
-    const radiusFactor = fabricFeatureValue(FabricFeature.RadiusFactor).numeric
+        orbit.current.autoRotate = fabricState.rotating
+    }, [fabricState])
 
     const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, ALTITUDE, 0)
@@ -115,7 +106,6 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
         orb.update()
     }, [fabric])
 
-    const ticks = fabricFeatureValue(FabricFeature.TicksPerFrame).numeric
     useRender(() => {
         const instance = fabric.instance
         const target = instance.getMidpoint()
@@ -126,7 +116,8 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
         if (ellipsoids || selectionMode) {
             newLifePhase = fabric.iterate(0)
         } else {
-            newLifePhase = fabric.iterate(ticks)
+            const ticksPerFrame = fabricState.featureValues[FabricFeature.TicksPerFrame].numeric
+            newLifePhase = fabric.iterate(ticksPerFrame)
         }
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
@@ -138,7 +129,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
         }
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, fabric, age, lifePhase, showPushes, showPulls, selectionMode,
+        fabric, fabric, age, lifePhase, fabricState, selectionMode,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
@@ -193,6 +184,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
     }
 
     function IntervalMesh({interval}: { interval: IInterval }): JSX.Element | null {
+        const {showPushes, showPulls} = fabricState
         let material = roleMaterial(interval.intervalRole)
         if (showPushes || showPulls) {
             material = rainbowMaterial(fabric.instance.strainNuances[interval.index])
@@ -201,6 +193,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
             }
         }
         const linearDensity = fabric.instance.linearDensities[interval.index]
+        const radiusFactor = fabricState.featureValues[FabricFeature.RadiusFactor].numeric
         const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
         return (
             <mesh
@@ -220,7 +213,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
             return <group/>
         }
         const needleGeometry = new BufferGeometry()
-        const lines = strainPushLines(fabric)
+        const lines = strainPushLines(fabric, fabricState)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.lineColors, 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
@@ -281,7 +274,7 @@ export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids,
         )
     }
 
-    const hideStiffness = rotating || ellipsoids || lifePhase <= LifePhase.Shaping
+    const hideStiffness = fabricState.rotating || ellipsoids || lifePhase <= LifePhase.Shaping
     return (
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
@@ -357,9 +350,9 @@ function Faces({fabric, lifePhase, selectFace}: {
     )
 }
 
-function strainPushLines(fabric: TensegrityFabric): Float32Array {
+function strainPushLines(fabric: TensegrityFabric, fabricState: IFabricState): Float32Array {
 
-    const maxStiffness = fabricFeatureValue(FabricFeature.MaxStiffness).numeric
+    const maxStiffness = fabricState[FabricFeature.MaxStiffness].numeric
     const instance = fabric.instance
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
     const stiffnesses = instance.stiffnesses

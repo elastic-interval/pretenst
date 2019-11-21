@@ -6,9 +6,9 @@
 import { BufferGeometry, CylinderGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
 import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
-import { fabricFeatureValue, FloatFeature, roleDefaultLength } from "./fabric-features"
+import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
-import { LifePhase } from "./fabric-state"
+import { IFeatureValue, LifePhase, roleDefaultLength } from "./fabric-state"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import {
     emptySplit,
@@ -62,7 +62,13 @@ function stiffnessToLinearDensity(stiffness: number): number {
     return Math.sqrt(stiffness)
 }
 
-function pretensingAdjustments(strains: Float32Array, existingStiffnesses: Float32Array, intervals: IInterval[]): {
+function pretensingAdjustments(
+    strains: Float32Array,
+    existingStiffnesses: Float32Array,
+    intervals: IInterval[],
+    pushStrainFactor: number,
+    pretenseIntensity: number,
+): {
     stiffnesses: Float32Array,
     linearDensities: Float32Array,
 } {
@@ -78,8 +84,6 @@ function pretensingAdjustments(strains: Float32Array, existingStiffnesses: Float
     log("Push Strain", averagePushStrain)
     log("Pull Strain", averagePullStrain)
     log("Push + Pull", averagePushStrain + averagePullStrain)
-    const pushStrainFactor = fabricFeatureValue(FabricFeature.PushStrainFactor).numeric
-    const pretenseIntensity = fabricFeatureValue(FabricFeature.PretenseIntensity).numeric
     const averageAbsoluteStrain = (-pushStrainFactor * averagePushStrain + averagePullStrain) / 2
     const changes = intervals.map(interval => {
         const absoluteStrain = strains[interval.index] * (interval.isPush ? -pushStrainFactor : 1)
@@ -118,11 +122,12 @@ export class TensegrityFabric {
     constructor(
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
-        public readonly features: FloatFeature[],
+        public readonly floatFeatures: FloatFeature[],
+        public readonly featureValues: Record<FabricFeature, IFeatureValue>,
         public readonly tenscript: ITenscript,
     ) {
         this.builder = new TensegrityBuilder(this)
-        features.forEach(feature => this.instance.applyFeature(feature))
+        floatFeatures.forEach(feature => this.instance.applyFeature(feature))
         const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred()) // todo: maybe raise
         this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
         this.bricks = [brick]
@@ -139,18 +144,20 @@ export class TensegrityFabric {
         this.nextLifePhase = LifePhase.Pretensing
     }
 
-    public fromStrainsToStiffnesses(): void {
+    public fromStrainsToStiffnesses(pushStrainFactor: number, pretensingIntensity: number): void {
         const instance = this.instance
         const {stiffnesses, linearDensities} = pretensingAdjustments(
             instance.strains,
             instance.stiffnesses,
             this.intervals,
+            pushStrainFactor,
+            pretensingIntensity,
         )
         instance.engine.cloneInstance(this.slackInstance.index, instance.index)
         this.nextLifePhase = LifePhase.Slack
         stiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
         linearDensities.forEach((value, index) => instance.linearDensities[index] = value)
-        this.features.forEach(feature => instance.applyFeature(feature))
+        this.floatFeatures.forEach(feature => instance.applyFeature(feature))
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
@@ -217,7 +224,7 @@ export class TensegrityFabric {
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent): IInterval {
         const scaleFactor = percentToFactor(scale)
-        const defaultLength = roleDefaultLength(intervalRole)
+        const defaultLength = roleDefaultLength(this.featureValues, intervalRole)
         const restLength = scaleFactor * defaultLength
         const isPush = intervalRole === IntervalRole.Push
         const stiffness = scaleToStiffness(scale)

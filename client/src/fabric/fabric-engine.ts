@@ -75,10 +75,10 @@ export enum Limit {
 }
 
 export enum SurfaceCharacter {
-    Sticky = 0,
-    Bouncy = 1,
+    Frozen = 0,
+    Sticky = 1,
     Slippery = 2,
-    Frozen = 3,
+    Bouncy = 3,
 }
 
 export interface IFabricEngine {

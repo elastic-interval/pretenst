@@ -6,7 +6,7 @@
 import { Matrix4, Vector3 } from "three"
 
 import { IntervalRole } from "./fabric-engine"
-import { roleDefaultLength } from "./fabric-features"
+import { roleDefaultLength } from "./fabric-state"
 import {
     factorToPercent,
     IBrick,
@@ -228,9 +228,9 @@ export class TensegrityBuilder {
             fabric.removeInterval(ax)
             fabric.removeInterval(by)
             engine.setIntervalRole(ay.index, ay.intervalRole = role)
-            engine.changeRestLength(ay.index, percentToFactor(ay.scale) * roleDefaultLength(role))
+            engine.changeRestLength(ay.index, percentToFactor(ay.scale) * roleDefaultLength(fabric.featureValues, role))
             engine.setIntervalRole(bx.index, bx.intervalRole = role)
-            engine.changeRestLength(bx.index, percentToFactor(bx.scale) * roleDefaultLength(role))
+            engine.changeRestLength(bx.index, percentToFactor(bx.scale) * roleDefaultLength(fabric.featureValues, role))
         })
         instance.forgetDimensions()
     }
@@ -403,7 +403,7 @@ export class TensegrityBuilder {
             const scaleFactor = percentToFactor(connectorScale)
             brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
                 engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
-                const length = scaleFactor * roleDefaultLength(interval.intervalRole)
+                const length = scaleFactor * roleDefaultLength(this.fabric.featureValues, interval.intervalRole)
                 engine.changeRestLength(interval.index, length)
             })
             this.fabric.removeFace(face, true)

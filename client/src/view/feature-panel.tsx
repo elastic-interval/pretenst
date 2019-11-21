@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
 
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
-import { FloatFeature, multiplierSymbol, multiplierValue } from "../fabric/fabric-features"
+import { FloatFeature, formatFeatureValue } from "../fabric/fabric-features"
 
 import { roleColorString } from "./materials"
 
@@ -27,8 +27,7 @@ export function FeaturePanel({feature, disabled}: { feature: FloatFeature, disab
     return (
         <div className="my-1">
             <div className="float-right text-white">
-                {(featureNumeric * multiplierValue(feature.config.multiplier)).toFixed(feature.config.fixedDigits)}
-                {multiplierSymbol(feature.config.multiplier)}
+                {formatFeatureValue(feature.config, featureNumeric)}
             </div>
             <div>
                 {feature.config.name}

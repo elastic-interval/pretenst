@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaGlobe, FaSearchMinus, FaSearchPlus } from "react-icons/all"
+import { FaCog, FaGlobe, FaSearchMinus, FaSearchPlus } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -18,8 +18,8 @@ import { FeaturePanel } from "./feature-panel"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function OptimizePanel({features, fabric, fabricState$, lifePhase$}: {
-    features: FloatFeature[],
+export function OptimizePanel({floatFeatures, fabric, fabricState$, lifePhase$}: {
+    floatFeatures: FloatFeature[],
     fabric: TensegrityFabric,
     fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
@@ -43,32 +43,40 @@ export function OptimizePanel({features, fabric, fabricState$, lifePhase$}: {
                 <LifePhasePanel
                     fabric={fabric}
                     lifePhase$={lifePhase$}
+                    fabricState$={fabricState$}
                     disabled={fabricState.ellipsoids || fabricState.selectionMode}
                 />
             </div>
-            <div className="text-center">
-                <h4><FaGlobe/> Environment <FaGlobe/></h4>
-            </div>
-            <div className="my-1">
-                <div className="float-right text-white">
-                    {SurfaceCharacter[fabricState.surfaceCharacter]}
+            <div className="my-3">
+                <div className="text-center">
+                    <h4><FaGlobe/> Environment <FaGlobe/></h4>
                 </div>
-                <div>Surface</div>
-                <ButtonGroup size="sm" className="w-100">
-                    {enumValues(SurfaceCharacter).map(value => (
-                        <Button
-                            key={SurfaceCharacter[value]}
-                            active={fabricState.surfaceCharacter === value}
-                            onClick={() => changeState({surfaceCharacter: value})}
-                        >{SurfaceCharacter[value]}</Button>
-                    ))}
-                </ButtonGroup>
+                <div className="my-1">
+                    <div className="float-right text-white">
+                        {SurfaceCharacter[fabricState.surfaceCharacter]}
+                    </div>
+                    <div>Surface</div>
+                    <ButtonGroup size="sm" className="w-100">
+                        {enumValues(SurfaceCharacter).map(value => (
+                            <Button
+                                key={SurfaceCharacter[value]}
+                                active={fabricState.surfaceCharacter === value}
+                                onClick={() => changeState({surfaceCharacter: value})}
+                            >{SurfaceCharacter[value]}</Button>
+                        ))}
+                    </ButtonGroup>
+                </div>
+                <FeaturePanel feature={floatFeatures[FabricFeature.Gravity]} disabled={false}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.Drag]} disabled={false}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.PushStrainFactor]} disabled={false}/>
             </div>
-            <FeaturePanel feature={features[FabricFeature.Gravity]} disabled={false}/>
-            <FeaturePanel feature={features[FabricFeature.Drag]} disabled={false}/>
-            <FeaturePanel feature={features[FabricFeature.PretenseFactor]} disabled={false}/>
-            <FeaturePanel feature={features[FabricFeature.PretenseTicks]} disabled={false}/>
-            <FeaturePanel feature={features[FabricFeature.PushStrainFactor]} disabled={false}/>
+            <div className="my-3">
+                <div className="text-center">
+                    <h4><FaCog/> Behavior <FaCog/></h4>
+                </div>
+                <FeaturePanel feature={floatFeatures[FabricFeature.PretenseFactor]} disabled={false}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.PretenseTicks]} disabled={false}/>
+            </div>
             <div className="my-3">
                 <div className="text-center">
                     <h4><FaSearchMinus/> Strain <FaSearchPlus/></h4>

@@ -27,8 +27,8 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { FeaturePanel } from "./feature-panel"
 
-export function ShapePanel({features, fabric, setFabric, fabricState$}: {
-    features: FloatFeature[],
+export function ShapePanel({floatFeatures, fabric, setFabric, fabricState$}: {
+    floatFeatures: FloatFeature[],
     fabric: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
     fabricState$: BehaviorSubject<IFabricState>,
@@ -123,7 +123,7 @@ export function ShapePanel({features, fabric, setFabric, fabricState$}: {
                     borderRadius: "0.7em",
                     padding: "0.5em",
                 }}>
-                    {features.filter(feature => lengthFeatureToRole(feature.fabricFeature) !== undefined).map(feature => (
+                    {floatFeatures.filter(feature => lengthFeatureToRole(feature.fabricFeature) !== undefined).map(feature => (
                         <FeaturePanel key={feature.title} feature={feature} disabled={selectionMode || ellipsoids}/>
                     ))}
                 </div>

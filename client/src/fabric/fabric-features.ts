@@ -6,7 +6,8 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, IntervalRole, roleToLengthFeature } from "./fabric-engine"
+import { FabricFeature } from "./fabric-engine"
+import { IFabricState } from "./fabric-state"
 
 export enum FeatureMultiplier {
     OneThousand,
@@ -68,7 +69,7 @@ const FEATURE_PERCENTS = [
     50, 75, 90, 100, 125, 150, 200,
 ]
 
-const FEATURE_CONFIGS: IFeatureConfig[] = [
+export const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.Gravity,
         name: "Gravity",
@@ -207,38 +208,22 @@ const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
 ]
 
-function featureKey(fabricFeature: FabricFeature): string {
-    return `${FabricFeature[fabricFeature]}Value`
-}
-
 interface IFeatureValue {
     numeric: number
     percent: number,
 }
 
-export function fabricFeatureValue(fabricFeature: FabricFeature): IFeatureValue {
-    const config = FEATURE_CONFIGS[fabricFeature]
-    const value = localStorage.getItem(featureKey(fabricFeature))
-    return value ? JSON.parse(value) as IFeatureValue : {numeric: config.defaultValue, percent: 100}
-}
-
-export function roleDefaultLength(intervalRole: IntervalRole): number {
-    return fabricFeatureValue(roleToLengthFeature(intervalRole)).numeric
-}
-
 export class FloatFeature {
-    private factor$: BehaviorSubject<IFeatureValue>
+    private value$: BehaviorSubject<IFeatureValue>
 
-    constructor(public readonly config: IFeatureConfig) {
-        const initialValue = fabricFeatureValue(config.feature)
-        this.factor$ = new BehaviorSubject<IFeatureValue>(initialValue)
-        this.factor$.subscribe(newFactor => {
-            const key = featureKey(config.feature)
-            if (this.isAtDefault) {
-                localStorage.removeItem(key)
-            } else {
-                localStorage.setItem(key, JSON.stringify(newFactor))
-            }
+    constructor(public readonly config: IFeatureConfig, fabricState$: BehaviorSubject<IFabricState>) {
+        const features = fabricState$.getValue().featureValues
+        const initialValue = features[config.feature]
+        this.value$ = new BehaviorSubject<IFeatureValue>(initialValue)
+        this.value$.subscribe(value => {
+            const fabricState = fabricState$.getValue()
+            fabricState.featureValues[config.feature] = value
+            fabricState$.next(fabricState)
         })
     }
 
@@ -251,19 +236,19 @@ export class FloatFeature {
     }
 
     public get numeric(): number {
-        return this.factor$.getValue().numeric
+        return this.value$.getValue().numeric
     }
 
     public get percent(): number {
-        return this.factor$.getValue().percent
+        return this.value$.getValue().percent
     }
 
     public set percent(percent: number) {
-        this.factor$.next({numeric: this.config.defaultValue * percent / 100, percent})
+        this.value$.next({numeric: this.config.defaultValue * percent / 100, percent})
     }
 
     public get observable(): BehaviorSubject<IFeatureValue> {
-        return this.factor$
+        return this.value$
     }
 
     public get fabricFeature(): FabricFeature {
@@ -283,6 +268,6 @@ export function formatFeatureValue(config: IFeatureConfig, numeric: number): str
     return scaledValue.toFixed(config.fixedDigits)
 }
 
-export function createFabricFeatures(): FloatFeature[] {
-    return FEATURE_CONFIGS.map(config => new FloatFeature(config))
+export function createFabricFeatures(fabricState$: BehaviorSubject<IFabricState>): FloatFeature[] {
+    return FEATURE_CONFIGS.map(config => new FloatFeature(config, fabricState$))
 }

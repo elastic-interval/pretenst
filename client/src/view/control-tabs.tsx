@@ -32,11 +32,11 @@ function Icon(controlTab: ControlTab): JSX.Element {
 }
 
 export function ControlTabs({
-                                features, initialTenscript, setInitialTenscript,
+                                floatFeatures, initialTenscript, setInitialTenscript,
                                 fabric, setFabric, runTenscript,
                                 toFullScreen, fabricState$, lifePhase$,
                             }: {
-    features: FloatFeature[],
+    floatFeatures: FloatFeature[],
     initialTenscript: ITenscript,
     setInitialTenscript: (tenscript: ITenscript) => void,
     runTenscript: (tenscript: ITenscript) => void,
@@ -96,7 +96,7 @@ export function ControlTabs({
                 case ControlTab.Shape:
                     return !fabric ? NO_FABRIC : (
                         <ShapePanel
-                            features={features}
+                            floatFeatures={floatFeatures}
                             fabric={fabric}
                             setFabric={setFabric}
                             fabricState$={fabricState$}
@@ -105,7 +105,7 @@ export function ControlTabs({
                 case ControlTab.Optimize:
                     return !fabric ? NO_FABRIC : (
                         <OptimizePanel
-                            features={features}
+                            floatFeatures={floatFeatures}
                             fabric={fabric}
                             fabricState$={fabricState$}
                             lifePhase$={lifePhase$}

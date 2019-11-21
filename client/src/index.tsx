@@ -43,15 +43,15 @@ async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const fabricKernel = new FabricKernel(engine)
     const root = document.getElementById("root") as HTMLElement
-    const fabricFeatures = createFabricFeatures()
     const fabricState$ = new BehaviorSubject(loadFabricState())
+    const fabricFeatures = createFabricFeatures(fabricState$)
     fabricState$.subscribe(newState => saveFabricState(newState))
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         ReactDOM.render(
             <TensegrityView
                 fabricKernel={fabricKernel}
-                features={fabricFeatures}
+                floatFeatures={fabricFeatures}
                 fabricState$={fabricState$}
                 lifePhase$={new BehaviorSubject(LifePhase.Growing)}
             />,
@@ -65,7 +65,7 @@ async function start(): Promise<void> {
         ReactDOM.render(
             <App
                 engine={engine}
-                roleFeatures={fabricFeatures} // todo
+                floatFeatures={fabricFeatures} // todo
                 storage={storage}
                 user={user}
             />,

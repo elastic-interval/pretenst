@@ -3,7 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { SurfaceCharacter } from "./fabric-engine"
+import { FabricFeature, IntervalRole, roleToLengthFeature, SurfaceCharacter } from "./fabric-engine"
+import { FEATURE_CONFIGS } from "./fabric-features"
 
 export enum LifePhase {
     Busy = 0,
@@ -32,12 +33,18 @@ export function enumValues(e: object): number[] {
     return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
 
-const VERSION = "2019-11-20"
+const VERSION = "2019-11-21"
+
+export interface IFeatureValue {
+    numeric: number
+    percent: number,
+}
 
 export interface IFabricState {
     version: string,
     nonce: number
     surfaceCharacter: SurfaceCharacter
+    featureValues: Record<FabricFeature, IFeatureValue>
     controlTab: ControlTab
     selectionMode: boolean
     fullScreen: boolean
@@ -47,6 +54,10 @@ export interface IFabricState {
     showPulls: boolean
 }
 
+export function roleDefaultLength(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
+    return featureValues[roleToLengthFeature(intervalRole)].numeric
+}
+
 export function transition(state: IFabricState, partial: Partial<IFabricState>): IFabricState {
     return {...state, nonce: state.nonce + 1, ...partial}
 }
@@ -54,7 +65,11 @@ export function transition(state: IFabricState, partial: Partial<IFabricState>):
 const INITIAL_FABRIC_STATE: IFabricState = {
     version: VERSION,
     nonce: 0,
-    surfaceCharacter: SurfaceCharacter.Sticky,
+    surfaceCharacter: SurfaceCharacter.Frozen,
+    featureValues: FEATURE_CONFIGS.reduce((record, config) => {
+        record[config.feature] = ({percent: 100, numeric: config.defaultValue})
+        return record
+    }, {} as Record<FabricFeature, IFeatureValue>),
     controlTab: ControlTab.Grow,
     fullScreen: true,
     selectionMode: false,
