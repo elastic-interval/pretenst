@@ -17,7 +17,7 @@ import { IFlightState } from "../view/flight-state"
 
 export interface IAppProps {
     engine: IFabricEngine
-    roleFeatures: FloatFeature[]
+    floatFeatures: FloatFeature[]
     storage: RemoteStorage
     user?: IUser
 }

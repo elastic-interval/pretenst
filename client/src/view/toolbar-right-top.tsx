@@ -11,13 +11,13 @@ import { BehaviorSubject } from "rxjs"
 
 import { IFabricState, transition } from "../fabric/fabric-state"
 
-export function ToolbarRightTop({app$}: {
-    app$: BehaviorSubject<IFabricState>,
+export function ToolbarRightTop({fabricState$}: {
+    fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
-    const [showPushes, updateShowPushes] = useState(app$.getValue().showPushes)
-    const [showPulls, updateShowPulls] = useState(app$.getValue().showPulls)
+    const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
+    const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
     useEffect(() => {
-        const subscription = app$.subscribe(newState => {
+        const subscription = fabricState$.subscribe(newState => {
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
         })
@@ -30,7 +30,7 @@ export function ToolbarRightTop({app$}: {
                 style={{color: "white"}}
                 color={pushes === showPushes && pulls === showPulls ? "success" : "secondary"}
                 onClick={() => {
-                    app$.next(transition(app$.getValue(), {showPulls: pulls, showPushes: pushes}))
+                    fabricState$.next(transition(fabricState$.getValue(), {showPulls: pulls, showPushes: pushes}))
                 }}
             >
                 {pushes && pulls ? <FaFutbol/> :

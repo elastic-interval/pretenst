@@ -4,50 +4,52 @@
  */
 
 import * as React from "react"
-import { CSSProperties, useEffect, useState } from "react"
-import { FaGlobe } from "react-icons/all"
-import { Button, ButtonGroup, Input, InputGroup, InputGroupAddon, InputGroupText } from "reactstrap"
+import { useEffect, useState } from "react"
+import { Button, ButtonGroup } from "reactstrap"
 
+import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature, formatFeatureValue } from "../fabric/fabric-features"
 
-export function FeaturePanel({feature}: { feature: FloatFeature }): JSX.Element {
+import { roleColorString } from "./materials"
 
-    const [factorString, setFactorString] = useState<string>(feature.toString)
-
+export function FeaturePanel({feature, disabled}: { feature: FloatFeature, disabled: boolean }): JSX.Element {
+    const [featurePercent, setFeaturePercent] = useState(() => feature.percent)
+    const [featureNumeric, setFeatureNumeric] = useState(() => feature.numeric)
     useEffect(() => {
-        const subscription = feature.observable.subscribe(({numeric}) => {
-            setFactorString(formatFeatureValue(feature.config, numeric))
+        const subscription = feature.observable.subscribe(({percent, numeric}) => {
+            setFeaturePercent(percent)
+            setFeatureNumeric(numeric)
         })
         return () => subscription.unsubscribe()
     }, [])
-
-    const basicStyle: CSSProperties = {
-        textAlign: "right",
-        width: "6em",
-    }
-    const inputStyle: CSSProperties = feature.isAtDefault ? basicStyle : {
-        ...basicStyle,
-        color: "red",
-        borderStyle: "solid",
-        borderWidth: "1px",
-        borderColor: "red",
-    }
+    const roleColor = roleColorString(lengthFeatureToRole(feature.fabricFeature))
+    const color = roleColor ? roleColor : "#919191"
     return (
-        <InputGroup size="sm">
-            <strong>&nbsp;&nbsp;<FaGlobe/>&nbsp;&nbsp;</strong>
-            <InputGroupAddon addonType="prepend">
-                <InputGroupText>{feature.title}</InputGroupText>
-            </InputGroupAddon>
-            <Input style={inputStyle} value={factorString} disabled={true}/>
-            <ButtonGroup className="mx-1">
-                {feature.percentChoices.map(percent => (
-                    <Button
-                        key={`${feature.config.name}-${percent}`}
-                        size="x-sm"
-                        onClick={() => feature.percent = percent}
-                    >{percent}%</Button>
-                ))}
+        <div className="my-1">
+            <div className="float-right text-white">
+                {formatFeatureValue(feature.config, featureNumeric)}
+            </div>
+            <div>
+                {feature.config.name}
+            </div>
+            <ButtonGroup className="w-100">
+                {feature.percentChoices.map(percent => {
+                    const backgroundColor = featurePercent === percent ? "#000000" : color
+                    return (
+                        <Button
+                            disabled={disabled}
+                            size="sm"
+                            style={{
+                                color: "white",
+                                backgroundColor,
+                            }}
+                            key={`${feature.config.name}:${percent}`}
+                            onClick={() => feature.percent = percent}
+                        >{percent}%</Button>
+                    )
+                })}
             </ButtonGroup>
-        </InputGroup>
+        </div>
     )
 }
+

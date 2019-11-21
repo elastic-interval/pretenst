@@ -6,13 +6,12 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowLeft, FaHandSpock, FaLeaf, FaTools } from "react-icons/all"
-import { Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
+import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
 import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
-import { IOperations } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { OptimizePanel } from "./optimize-panel"
@@ -33,30 +32,36 @@ function Icon(controlTab: ControlTab): JSX.Element {
 }
 
 export function ControlTabs({
-                                fabric, initialTenscript, setInitialTenscript, runTenscript,
-                                toFullScreen, app$, lifePhase$, operations$, features,
+                                floatFeatures, initialTenscript, setInitialTenscript,
+                                fabric, setFabric, runTenscript,
+                                toFullScreen, fabricState$, lifePhase$,
                             }: {
-    fabric?: TensegrityFabric,
+    floatFeatures: FloatFeature[],
     initialTenscript: ITenscript,
     setInitialTenscript: (tenscript: ITenscript) => void,
     runTenscript: (tenscript: ITenscript) => void,
+    fabric?: TensegrityFabric,
+    setFabric: (fabric: TensegrityFabric) => void,
     toFullScreen: () => void,
-    app$: BehaviorSubject<IFabricState>,
+    fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    operations$: BehaviorSubject<IOperations>,
-    features: FloatFeature[],
 }): JSX.Element {
 
-    const [controlTab, updateActiveTab] = useState(app$.getValue().controlTab)
+    const [controlTab, updateActiveTab] = useState(fabricState$.getValue().controlTab)
 
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
-            operations$.next({selectedFaces: [], facePairs: []})
+            if (!fabric) {
+                return
+            }
+            fabric.selectedFaces = []
+            fabric.facePairs = []
+            // todo: what about fabric$.next(fabric)
         }
     }, [controlTab])
 
     useEffect(() => {
-        const subscription = app$.subscribe(newState => updateActiveTab(newState.controlTab))
+        const subscription = fabricState$.subscribe(newState => updateActiveTab(newState.controlTab))
         return () => subscription.unsubscribe()
     }, [])
 
@@ -64,10 +69,9 @@ export function ControlTabs({
         return (
             <NavItem>
                 <NavLink
-                    disabled={tab !== ControlTab.Grow && !fabric}
                     active={controlTab === tab}
                     onClick={() => {
-                        app$.next(transition(app$.getValue(), {controlTab: tab}))
+                        fabricState$.next(transition(fabricState$.getValue(), {controlTab: tab}))
                     }}
                 >{Icon(tab)} {tab}</NavLink>
             </NavItem>
@@ -76,6 +80,8 @@ export function ControlTabs({
 
     function Pane({tab}: { tab: ControlTab }): JSX.Element {
 
+        const NO_FABRIC = <Alert color="warning">No fabric</Alert>
+
         function Content(): JSX.Element {
             switch (tab) {
                 case ControlTab.Grow:
@@ -83,23 +89,25 @@ export function ControlTabs({
                         <TenscriptPanel
                             initialTenscript={initialTenscript}
                             setInitialTenscript={setInitialTenscript}
+                            fabric={fabric}
                             runTenscript={runTenscript}
                         />
                     )
                 case ControlTab.Shape:
-                    return !fabric ? (<div/>) : (
+                    return !fabric ? NO_FABRIC : (
                         <ShapePanel
+                            floatFeatures={floatFeatures}
                             fabric={fabric}
-                            features={features}
-                            app$={app$}
-                            operations$={operations$}
+                            setFabric={setFabric}
+                            fabricState$={fabricState$}
                         />
                     )
                 case ControlTab.Optimize:
-                    return !fabric ? (<div/>) : (
+                    return !fabric ? NO_FABRIC : (
                         <OptimizePanel
+                            floatFeatures={floatFeatures}
                             fabric={fabric}
-                            app$={app$}
+                            fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
                         />
                     )

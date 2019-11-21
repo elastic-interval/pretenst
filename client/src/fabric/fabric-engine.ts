@@ -14,23 +14,22 @@ export enum FabricFeature {
     Drag = 1,
     PretenseFactor = 2,
     PushStrainFactor = 3,
-    PushPullDifferential = 4,
 
-    TicksPerFrame = 5,
-    IntervalBusyTicks = 6,
-    PretenseTicks = 7,
+    TicksPerFrame = 4,
+    IntervalBusyTicks = 5,
+    PretenseTicks = 6,
 
-    PretenseIntensity = 8,
-    SlackThreshold = 9,
-    RadiusFactor = 10,
-    MaxStiffness = 11,
+    PretenseIntensity = 7,
+    SlackThreshold = 8,
+    RadiusFactor = 9,
+    MaxStiffness = 10,
 
-    PushLength = 12,
-    TriangleLength = 13,
-    RingLength = 14,
-    CrossLength = 15,
-    BowMidLength = 16,
-    BowEndLength = 17,
+    PushLength = 11,
+    TriangleLength = 12,
+    RingLength = 13,
+    CrossLength = 14,
+    BowMidLength = 15,
+    BowEndLength = 16,
 }
 
 export enum IntervalRole {
@@ -76,10 +75,10 @@ export enum Limit {
 }
 
 export enum SurfaceCharacter {
-    Sticky = 0,
-    Bouncy = 1,
+    Frozen = 0,
+    Sticky = 1,
     Slippery = 2,
-    Frozen = 3,
+    Bouncy = 3,
 }
 
 export interface IFabricEngine {

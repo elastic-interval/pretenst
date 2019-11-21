@@ -18,19 +18,25 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { LifePhase } from "../fabric/fabric-state"
+import { FabricFeature } from "../fabric/fabric-engine"
+import { IFabricState, LifePhase } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function LifePhasePanel({fabric, lifePhase$, disabled}: {
+export function LifePhasePanel({fabric, lifePhase$, fabricState$, disabled}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
+    fabricState$: BehaviorSubject<IFabricState>,
     disabled: boolean,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+    const [featureValues, setFeatureValues] = useState(fabricState$.getValue().featureValues)
     useEffect(() => {
-        const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
-        return () => subscription.unsubscribe()
+        const subscription = [
+            lifePhase$.subscribe(newPhase => setLifePhase(newPhase)),
+            fabricState$.subscribe(newState => setFeatureValues(newState.featureValues)),
+        ]
+        return () => subscription.forEach(s => s.unsubscribe())
     }, [])
 
     function LifePhaseIcon(): JSX.Element {
@@ -62,7 +68,11 @@ export function LifePhasePanel({fabric, lifePhase$, disabled}: {
                 <Button disabled={lifePhase !== LifePhase.Slack || disabled} onClick={() => fabric.fromSlackToPretensing()}>
                     <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/> Gravity <FaArrowDown/></span>
                 </Button>
-                <Button disabled={lifePhase !== LifePhase.Pretenst || disabled} onClick={() => fabric.fromStrainsToStiffnesses()}>
+                <Button disabled={lifePhase !== LifePhase.Pretenst || disabled} onClick={() => {
+                    const pushStrainFactor = featureValues[FabricFeature.PushStrainFactor].numeric
+                    const pretensingIntensity = featureValues[FabricFeature.PretenseIntensity].numeric
+                    fabric.fromStrainsToStiffnesses(pushStrainFactor, pretensingIntensity)
+                }}>
                     <span>Pretenst <FaHandSpock/> Strain <FaArrowRight/> Slack <FaYinYang/> Stiffness</span>
                 </Button>
                 <Button disabled={lifePhase !== LifePhase.Pretenst || disabled} onClick={() => fabric.toSlack()}>

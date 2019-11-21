@@ -81,7 +81,7 @@ export function rainbowMaterial(nuance: number): Material {
     return RAINBOW[index >= RAINBOW.length ? RAINBOW.length - 1 : index]
 }
 
-export function roleColorString(intervalRole?: IntervalRole): string {
+export function roleColorString(intervalRole?: IntervalRole): string | undefined {
     switch (intervalRole) {
         case IntervalRole.Push:
             return "#862d39"
@@ -96,7 +96,7 @@ export function roleColorString(intervalRole?: IntervalRole): string {
         case IntervalRole.BowEnd:
             return "#6d7b44"
         default:
-            return "#ff0205"
+            return undefined
     }
 }
 

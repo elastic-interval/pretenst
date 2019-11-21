@@ -46,10 +46,10 @@ export function StrainPanel({fabric, pushes}: {
             <div style={{
                 display: "block",
                 textAlign: "center",
-                paddingTop: "0.6em",
+                paddingTop: "0.3em",
                 marginRight: "1em",
                 marginLeft: "1em",
-                height: "2.5em",
+                height: "2em",
                 width: "100%",
             }}>
                 <span>{minStrain.toFixed(6)}</span>

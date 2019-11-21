@@ -63,11 +63,6 @@ export interface IFacePair {
     distance: number
 }
 
-export interface IOperations {
-    selectedFaces: IFace[]
-    facePairs: IFacePair[]
-}
-
 export interface IPushDefinition {
     alpha: Vector3
     omega: Vector3
