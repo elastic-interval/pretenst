@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { FaBug, FaHeart, FaPlay, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 
@@ -16,22 +16,25 @@ import {
     spaceAfterComma,
     treeToTenscript,
 } from "../fabric/tenscript"
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 const FABRIC_CODE_KEY = "FabricCode"
 
 const MAX_RECENT = 24
 
-export function TenscriptPanel({initialTenscript, setInitialTenscript, runTenscript}: {
+export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, runTenscript}: {
     initialTenscript: ITenscript,
     setInitialTenscript: (tenscript: ITenscript) => void,
+    fabric?: TensegrityFabric,
     runTenscript: (tenscript: ITenscript) => void,
 }): JSX.Element {
 
-    const [currentTenscript, setCurrentTenscript] = useState<ITenscript>(initialTenscript)
+    const [tenscript, setTenscript] = useState<ITenscript>(fabric && !fabric.tenscript.fromUrl ? fabric.tenscript : initialTenscript)
     const [error, setError] = useState("")
+
     const [recentOpen, setRecentOpen] = useState(false)
-    const [bootstrapOpen, setBootstrapOpen] = useState(false)
     const [recentPrograms, setRecentPrograms] = useState<ITenscript[]>(getRecentCode())
+    const [bootstrapOpen, setBootstrapOpen] = useState(false)
 
     function addToRecentPrograms(newCode: ITenscript): void {
         const withoutNewCode = recentPrograms.filter(program => newCode.code !== program.code)
@@ -57,8 +60,8 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, runTenscr
                 height: "available",
             }}>
                 <CodeArea
-                    initialTenscript={initialTenscript}
-                    setCurrentTenscript={setCurrentTenscript}
+                    tenscript={tenscript}
+                    setTenscript={setTenscript}
                     error={error}
                     setError={setError}
                 />
@@ -66,10 +69,10 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, runTenscr
                     <Button
                         color={error.length > 0 ? "warning" : "success"}
                         disabled={error.length > 0}
-                        onClick={() => runTenscript(currentTenscript)}
+                        onClick={() => runTenscript(tenscript)}
                     >
                         {error.length === 0 ? (
-                            <span><FaPlay/> Run</span>
+                            <span><FaPlay/> Run Tenscript</span>
                         ) : (
                             <span><FaBug/> {error}</span>
                         )}
@@ -77,13 +80,13 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, runTenscr
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
                     <Button
-                        disabled={currentTenscript.code === initialTenscript.code}
+                        disabled={tenscript.code === initialTenscript.code}
                         onClick={() => {
-                            setInitialTenscript(currentTenscript)
-                            addToRecentPrograms(currentTenscript)
+                            setInitialTenscript(tenscript)
+                            addToRecentPrograms(tenscript)
                         }}
                     >
-                        <FaHeart/> Save
+                        <FaHeart/> Save in the Browser
                     </Button>
                 </ButtonGroup>
             </div>
@@ -97,7 +100,7 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, runTenscr
                         {recentOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Recent
                     </DropdownToggle>
                     <DropdownMenu>{recentPrograms.map((recentCode, index) => (
-                        <DropdownItem key={`Recent${index}`} onClick={() => setCurrentTenscript(recentCode)}>
+                        <DropdownItem key={`Recent${index}`} onClick={() => setTenscript(recentCode)}>
                             {spaceAfterComma(recentCode.code)}
                         </DropdownItem>
                     ))}</DropdownMenu>
@@ -112,7 +115,7 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, runTenscr
                     {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
                 </DropdownToggle>
                 <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
-                    <DropdownItem key={`Boot${index}`} onClick={() => setCurrentTenscript(bootstrapProgram)}>
+                    <DropdownItem key={`Boot${index}`} onClick={() => setTenscript(bootstrapProgram)}>
                         {spaceAfterComma(bootstrapProgram.code)}
                     </DropdownItem>
                 ))}</DropdownMenu>
@@ -121,20 +124,21 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, runTenscr
     )
 }
 
-function CodeArea({initialTenscript, setCurrentTenscript, error, setError}: {
-    initialTenscript: ITenscript,
-    setCurrentTenscript: (tenscript: ITenscript) => void,
+function CodeArea({tenscript, setTenscript, error, setError}: {
+    tenscript: ITenscript,
+    setTenscript: (tenscript: ITenscript) => void,
     error: string,
     setError: (message: string) => void,
 }): JSX.Element {
 
-    const [tenscriptCode, setTenscriptCode] = useState(initialTenscript.code)
+    const [tenscriptCode, setTenscriptCode] = useState("")
+    useEffect(() => setTenscriptCode(spaceAfterComma(tenscript.code)), [])
 
     function compile(newCode: string): void {
-        const tenscript = codeToTenscript(setError, false, newCode)
-        if (tenscript) {
+        const compiled = codeToTenscript(setError, false, newCode)
+        if (compiled) {
             setError("")
-            setCurrentTenscript(tenscript)
+            setTenscript(compiled)
         }
     }
 
@@ -164,7 +168,7 @@ function CodeArea({initialTenscript, setCurrentTenscript, error, setError}: {
                     height: "20em",
                 }}
                 type="textarea" id="tenscript"
-                defaultValue={tenscriptCode}
+                value={tenscriptCode}
                 onChange={changeEvent => onCodeChange(changeEvent.target.value)}
             />
         </div>

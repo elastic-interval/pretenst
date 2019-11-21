@@ -13,16 +13,16 @@ import { IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles } from "../storage/download"
 
-export function ToolbarLeftBottom({fabric, app$, lifePhase$, fullScreen}: {
+export function ToolbarLeftBottom({fabric, fabricState$, lifePhase$, fullScreen}: {
     fabric: TensegrityFabric,
-    app$: BehaviorSubject<IFabricState>,
+    fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
     fullScreen: boolean,
 }): JSX.Element {
-    const [rotating, updateRotating] = useState(app$.getValue().rotating)
-    const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
+    const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
+    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
     useEffect(() => {
-        const subscription = app$.subscribe(newState => {
+        const subscription = fabricState$.subscribe(newState => {
             updateRotating(newState.rotating)
             updateEllipsoids(newState.ellipsoids)
         })
@@ -35,13 +35,13 @@ export function ToolbarLeftBottom({fabric, app$, lifePhase$, fullScreen}: {
             <ButtonGroup>
                 <Button
                     color={ellipsoids ? "warning" : "secondary"}
-                    onClick={() => app$.next(transition(app$.getValue(), {ellipsoids: !ellipsoids}))}
+                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {ellipsoids: !ellipsoids}))}
                 >
                     <FaCamera/>
                 </Button>
                 <Button
                     color={rotating ? "warning" : "secondary"}
-                    onClick={() => app$.next(transition(app$.getValue(), {rotating: !rotating}))}
+                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {rotating: !rotating}))}
                 >
                     <FaSyncAlt/>
                 </Button>

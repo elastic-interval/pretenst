@@ -101,6 +101,7 @@ export class TensegrityFabric {
     public activeTenscript?: IActiveTenscript[]
     public readonly builder: TensegrityBuilder
     public facePairs: IFacePair[] = []
+    public selectedFaces: IFace[] = []
 
     private faceCount: number
     private faceLocations: Float32BufferAttribute
@@ -119,7 +120,6 @@ export class TensegrityFabric {
         public readonly slackInstance: FabricInstance,
         public readonly features: FloatFeature[],
         public readonly tenscript: ITenscript,
-        private setFacePairs: (facePairs: IFacePair[]) => void,
     ) {
         this.builder = new TensegrityBuilder(this)
         features.forEach(feature => this.instance.applyFeature(feature))
@@ -319,7 +319,6 @@ export class TensegrityFabric {
             const newPairs = this.builder.tighten(this.facePairs)
             if (newPairs) {
                 this.facePairs = newPairs
-                this.setFacePairs(newPairs)
                 if (newPairs.length === 0) {
                     this.builder.turnUpright()
                 }

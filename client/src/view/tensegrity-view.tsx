@@ -25,7 +25,7 @@ import {
     transition,
 } from "../fabric/fabric-state"
 import { BOOTSTRAP, ITenscript } from "../fabric/tenscript"
-import { IFacePair, IOperations, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { IFace, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ControlTabs } from "./control-tabs"
@@ -48,31 +48,29 @@ function getCodeToRun(): ITenscript {
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
 }
 
-export function TensegrityView({fabricKernel, features, app$, lifePhase$, operations$}: {
+export function TensegrityView({fabricKernel, features, fabricState$, lifePhase$}: {
     fabricKernel: FabricKernel,
     features: FloatFeature[],
-    app$: BehaviorSubject<IFabricState>,
+    fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    operations$: BehaviorSubject<IOperations>,
 }): JSX.Element {
 
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
+    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
 
     const [initialTenscript, setInitialTenscript] = useState(getCodeToRun)
     useEffect(() => {
         location.hash = initialTenscript.code
     }, [initialTenscript])
 
-    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
-
-    const [controlTab, updateControlTab] = useState(app$.getValue().controlTab)
-    const [selectionMode, updateSelectionMode] = useState(app$.getValue().selectionMode)
-    const [fullScreen, updateFullScreen] = useState(app$.getValue().fullScreen)
-    const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
+    const [controlTab, updateControlTab] = useState(fabricState$.getValue().controlTab)
+    const [selectionMode, updateSelectionMode] = useState(fabricState$.getValue().selectionMode)
+    const [fullScreen, updateFullScreen] = useState(fabricState$.getValue().fullScreen)
+    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
 
     useEffect(() => {
-        const subscription = app$.subscribe(fabricState => {
+        const subscription = fabricState$.subscribe(fabricState => {
             updateControlTab(fabricState.controlTab)
             updateSelectionMode(fabricState.selectionMode)
             updateFullScreen(fabricState.fullScreen)
@@ -103,7 +101,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$, operat
     }, [fabric])
 
     useEffect(() => { // todo: look when this happens
-        const subscriptions = features.map(feature => feature.observable.subscribe(() => {
+        const featureSubscriptions = features.map(feature => feature.observable.subscribe(() => {
             if (!fabric) {
                 return
             }
@@ -119,7 +117,7 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$, operat
                     })
             }
         }))
-        return () => subscriptions.forEach(sub => sub.unsubscribe())
+        return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
     }, [fabric])
 
     function runTenscript(newTenscript: ITenscript): void {
@@ -128,11 +126,9 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$, operat
         }
         mainInstance.forgetDimensions()
         mainInstance.engine.initInstance()
-        operations$.next({selectedFaces: [], facePairs: []})
         lifePhase$.next(LifePhase.Growing)
-        app$.next(transition(app$.getValue(), {ellipsoids: false, selectionMode: false}))
-        const setFacePairs = (facePairs: IFacePair[]) => operations$.next({facePairs, selectedFaces: []})
-        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript, setFacePairs))
+        setFabric(new TensegrityFabric(mainInstance, slackInstance, features, newTenscript))
+        fabricState$.next(transition(fabricState$.getValue(), {ellipsoids: false, selectionMode: false}))
     }
 
     useEffect(() => {
@@ -142,10 +138,10 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$, operat
             }
         }, 200)
         return () => clearTimeout(timer)
-    }, [fabric, initialTenscript])
+    }, [initialTenscript])
 
     function toFullScreen(value: boolean): void {
-        app$.next(transition(app$.getValue(), {fullScreen: value}))
+        fabricState$.next(transition(fabricState$.getValue(), {fullScreen: value}))
     }
 
     return (
@@ -163,15 +159,15 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$, operat
                     }}
                 >
                     <ControlTabs
-                        fabric={fabric}
+                        features={features}
                         initialTenscript={initialTenscript}
                         setInitialTenscript={setInitialTenscript}
+                        fabric={fabric}
+                        setFabric={setFabric}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
-                        app$={app$}
+                        fabricState$={fabricState$}
                         lifePhase$={lifePhase$}
-                        operations$={operations$}
-                        features={features}
                     />
                 </div>
             )}
@@ -197,24 +193,27 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$, operat
                         </div>
                         {controlTab !== ControlTab.Shape ? undefined : (
                             <ToolbarLeftTop
-                                app$={app$}
-                                operations$={operations$}
+                                fabric={fabric}
+                                clearSelectedFaces={() => {
+                                    fabric.selectedFaces=[]
+                                    setFabric(fabric) // trigger change
+                                }}
+                                fabricState$={fabricState$}
                                 fullScreen={fullScreen}
                             />
                         )}
                         <ToolbarLeftBottom
                             fabric={fabric}
-                            app$={app$}
+                            fabricState$={fabricState$}
                             lifePhase$={lifePhase$}
                             fullScreen={fullScreen}
                         />
                         <ToolbarRightTop
-                            app$={app$}
+                            fabricState$={fabricState$}
                         />
                         <ToolbarRightBottom
                             fabric={fabric}
                             lifePhase$={lifePhase$}
-                            app$={app$}
                         />
                         <Canvas style={{
                             backgroundColor: "black",
@@ -225,11 +224,14 @@ export function TensegrityView({fabricKernel, features, app$, lifePhase$, operat
                         }}>
                             <FabricView
                                 fabric={fabric}
+                                setSelectedFaces={(faces: IFace[]) => {
+                                    fabric.selectedFaces = faces
+                                    setFabric(fabric) // trigger change
+                                }}
                                 selectionMode={selectionMode}
                                 ellipsoids={ellipsoids}
-                                app$={app$}
+                                fabricState$={fabricState$}
                                 lifePhase$={lifePhase$}
-                                operations$={operations$}
                             />
                         </Canvas>
                     </div>

@@ -8,13 +8,11 @@ import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
 
 import { App } from "./app"
-import { APP_EVENT, AppEvent } from "./app-event"
 import { API_URI } from "./constants"
 import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFabricFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { LifePhase, loadFabricState, saveFabricState } from "./fabric/fabric-state"
-import { IOperations } from "./fabric/tensegrity-brick-types"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
 import { TensegrityView } from "./view/tensegrity-view"
@@ -27,36 +25,35 @@ declare const getFabricEngine: () => Promise<IFabricEngine> // implementation: i
 
 const TENSEGRITY = process.env.REACT_APP_ENABLED_APP === "pretenst"
 
-APP_EVENT.subscribe(appEvent => {
-    switch (appEvent.event) {
-        case AppEvent.Command:
-            console.log(`App Event: ${appEvent.event}: ${appEvent.command}`)
-            break
-        case AppEvent.AppMode:
-            console.log(`App Event: ${appEvent.event}: ${appEvent.appMode}`)
-            break
-        default:
-            console.log(`App Event: ${appEvent.event}`)
-            break
-    }
-})
+// APP_EVENT.subscribe(appEvent => {
+//     switch (appEvent.event) {
+//         case AppEvent.Command:
+//             console.log(`App Event: ${appEvent.event}: ${appEvent.command}`)
+//             break
+//         case AppEvent.AppMode:
+//             console.log(`App Event: ${appEvent.event}: ${appEvent.appMode}`)
+//             break
+//         default:
+//             console.log(`App Event: ${appEvent.event}`)
+//             break
+//     }
+// })
 
 async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const fabricKernel = new FabricKernel(engine)
     const root = document.getElementById("root") as HTMLElement
     const fabricFeatures = createFabricFeatures()
-    const app$ = new BehaviorSubject(loadFabricState())
-    app$.subscribe(newState => saveFabricState(newState))
+    const fabricState$ = new BehaviorSubject(loadFabricState())
+    fabricState$.subscribe(newState => saveFabricState(newState))
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         ReactDOM.render(
             <TensegrityView
                 fabricKernel={fabricKernel}
                 features={fabricFeatures}
-                app$={app$}
+                fabricState$={fabricState$}
                 lifePhase$={new BehaviorSubject(LifePhase.Growing)}
-                operations$={new BehaviorSubject<IOperations>({facePairs: [], selectedFaces: []})}
             />,
             root,
         )

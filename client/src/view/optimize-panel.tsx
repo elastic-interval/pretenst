@@ -26,21 +26,22 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function OptimizePanel({fabric, app$, lifePhase$}: {
+export function OptimizePanel({fabric, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
-    app$: BehaviorSubject<IFabricState>,
+    fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
-    const [fabricState, updateFabricState] = useState(app$.getValue())
+
+    const [fabricState, updateFabricState] = useState(fabricState$.getValue())
     useEffect(() => {
-        const subscription = app$.subscribe(newState => {
-            updateFabricState(newState)
-        })
-        return () => subscription.unsubscribe()
+        const subscriptions = [
+            fabricState$.subscribe(newState => updateFabricState(newState)),
+        ]
+        return () => subscriptions.forEach(s => s.unsubscribe())
     }, [])
 
     function changeState(changed: Partial<IFabricState>): void {
-        app$.next(transition(app$.getValue(), changed))
+        fabricState$.next(transition(fabricState$.getValue(), changed))
     }
 
     return (

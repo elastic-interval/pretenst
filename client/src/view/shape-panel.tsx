@@ -23,29 +23,26 @@ import { BehaviorSubject } from "rxjs"
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFabricState } from "../fabric/fabric-state"
-import { IOperations } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { roleColorString } from "./materials"
 
-export function ShapePanel({fabric, features, app$, operations$}: {
+export function ShapePanel({features, fabric, setFabric, fabricState$}: {
+    features: FloatFeature[],
     fabric: TensegrityFabric,
-    features: FloatFeature[]
-    app$: BehaviorSubject<IFabricState>,
-    operations$: BehaviorSubject<IOperations>,
+    setFabric: (fabric: TensegrityFabric) => void,
+    fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
-    const [selectionMode, updateSelectionMode] = useState(app$.getValue().selectionMode)
-    const [ellipsoids, updateEllipsoids] = useState(app$.getValue().ellipsoids)
+    const [selectionMode, updateSelectionMode] = useState(fabricState$.getValue().selectionMode)
+    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
 
-    const [operations, updateOperations] = useState(operations$.getValue())
     useEffect(() => {
         const subscriptions = [
-            app$.subscribe(newState => {
+            fabricState$.subscribe(newState => {
                 updateSelectionMode(newState.selectionMode)
                 updateEllipsoids(newState.ellipsoids)
             }),
-            operations$.subscribe(newOps => updateOperations(newOps)),
         ]
         return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
@@ -65,12 +62,12 @@ export function ShapePanel({fabric, features, app$, operations$}: {
     }
 
     function connect(): void {
-        const facePairs = fabric.builder.faceEffects(operations.selectedFaces)
-        operations$.next({selectedFaces: [], facePairs})
+        fabric.facePairs = fabric.builder.faceEffects(fabric.selectedFaces)
+        setFabric(fabric)
     }
 
     function needsBricks(requiredFaceCount: number): boolean {
-        return !fabric.splitIntervals || operations.selectedFaces.length < requiredFaceCount || selectionMode || ellipsoids
+        return !fabric.splitIntervals || fabric.selectedFaces.length < requiredFaceCount || selectionMode || ellipsoids
     }
 
     return (
@@ -103,7 +100,7 @@ export function ShapePanel({fabric, features, app$, operations$}: {
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
                     <Button disabled={needsBricks(1)} onClick={() => {
-                        fabric.builder.uprightAtOrigin(operations.selectedFaces[0])
+                        fabric.builder.uprightAtOrigin(fabric.selectedFaces[0])
                     }}>
                         <FaCompass/><span> Upright</span>
                     </Button>

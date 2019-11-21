@@ -25,7 +25,7 @@ import {
 import { FabricFeature } from "../fabric/fabric-engine"
 import { fabricFeatureValue } from "../fabric/fabric-features"
 import { doNotClick, IFabricState, LifePhase } from "../fabric/fabric-state"
-import { byFaces, IFace, IFacePair, IInterval, IOperations, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { IFace, IFacePair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { CYLINDER, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE, SELECT_MATERIAL } from "./materials"
@@ -58,13 +58,13 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectionMode, ellipsoids, app$, lifePhase$, operations$}: {
+export function FabricView({fabric, setSelectedFaces, selectionMode, ellipsoids, fabricState$, lifePhase$}: {
     fabric: TensegrityFabric,
+    setSelectedFaces: (faces: IFace[]) => void,
     selectionMode: boolean,
     ellipsoids: boolean,
-    app$: BehaviorSubject<IFabricState>,
+    fabricState$: BehaviorSubject<IFabricState>,
     lifePhase$: BehaviorSubject<LifePhase>,
-    operations$: BehaviorSubject<IOperations>,
 }): JSX.Element {
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
@@ -82,11 +82,11 @@ export function FabricView({fabric, selectionMode, ellipsoids, app$, lifePhase$,
         return () => subscription.unsubscribe()
     }, [])
 
-    const [showPushes, updateShowPushes] = useState(app$.getValue().showPushes)
-    const [showPulls, updateShowPulls] = useState(app$.getValue().showPulls)
-    const [rotating, updateRotating] = useState(app$.getValue().rotating)
+    const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
+    const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
+    const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
     useEffect(() => {
-        const subscription = app$.subscribe(newState => {
+        const subscription = fabricState$.subscribe(newState => {
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
             updateRotating(newState.rotating)
@@ -96,15 +96,6 @@ export function FabricView({fabric, selectionMode, ellipsoids, app$, lifePhase$,
     useEffect(() => {
         orbit.current.autoRotate = rotating
     }, [rotating])
-
-    const [operations, updateOperations] = useState(operations$.getValue())
-    useEffect(() => {
-        const subscription = operations$.subscribe(newOps => {
-            updateOperations(newOps)
-            fabric.startTightening(newOps.facePairs)
-        })
-        return () => subscription.unsubscribe()
-    }, [])
 
     const radiusFactor = fabricFeatureValue(FabricFeature.RadiusFactor).numeric
 
@@ -126,9 +117,6 @@ export function FabricView({fabric, selectionMode, ellipsoids, app$, lifePhase$,
 
     const ticks = fabricFeatureValue(FabricFeature.TicksPerFrame).numeric
     useRender(() => {
-        if (!fabric) {
-            return
-        }
         const instance = fabric.instance
         const target = instance.getMidpoint()
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
@@ -150,20 +138,24 @@ export function FabricView({fabric, selectionMode, ellipsoids, app$, lifePhase$,
         }
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, operations, age, lifePhase, showPushes, showPulls, selectionMode,
+        fabric, fabric, age, lifePhase, showPushes, showPulls, selectionMode,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
         console.log("toggle", faceToToggle.index)
-        const selectedFaces = operations$.getValue().selectedFaces
+        const selectedFaces = fabric.selectedFaces
         if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
-            const withoutNewFace = selectedFaces.filter(b => b.index !== faceToToggle.index)
-            fabric.selectIntervals(byFaces(withoutNewFace))
-            operations$.next({...operations$.getValue(), selectedFaces: withoutNewFace})
+            setSelectedFaces(selectedFaces.filter(b => b.index !== faceToToggle.index))
+            // TODO:
+            // fabric.selectedFaces = withoutNewFace
+            // fabric.selectIntervals(byFaces(withoutNewFace))
+            // fabric$.next(fabric)
         } else {
-            const withNewFace = [...selectedFaces, faceToToggle]
-            fabric.selectIntervals(byFaces(withNewFace))
-            operations$.next({...operations$.getValue(), selectedFaces: withNewFace})
+            setSelectedFaces([...selectedFaces, faceToToggle])
+            // TODO:
+            // fabric.selectedFaces = withNewFace
+            // fabric.selectIntervals(byFaces(withNewFace))
+            // fabric$.next(fabric)
         }
     }
 
@@ -295,7 +287,7 @@ export function FabricView({fabric, selectionMode, ellipsoids, app$, lifePhase$,
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
                 {hideStiffness ? undefined : <StiffnessScale/>}
-                {!fabric ? undefined : ellipsoids ? <EllipsoidView/> : <LineView/>}
+                {ellipsoids ? <EllipsoidView/> : <LineView/>}
                 {!selectionMode ? undefined : (
                     <Faces
                         key="faces"
@@ -304,7 +296,7 @@ export function FabricView({fabric, selectionMode, ellipsoids, app$, lifePhase$,
                         selectFace={toggleFacesSelection}
                     />
                 )}
-                {operations.selectedFaces.map(brick => <SelectedFace key={`brick${brick.index}`} selected={brick}/>)}
+                {fabric.selectedFaces.map(brick => <SelectedFace key={`brick${brick.index}`} selected={brick}/>)}
                 {fabric.facePairs.map((brickPair, index) => (
                     <BrickPair key={`Pair${index}`} brickPair={brickPair}/>
                 ))}
