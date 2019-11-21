@@ -27,7 +27,7 @@ interface IFeatureConfig {
     percents: number[]
 }
 
-export function multiplierValue(multiplier: FeatureMultiplier): number {
+function multiplierValue(multiplier: FeatureMultiplier): number {
     switch (multiplier) {
         case FeatureMultiplier.OneThousand:
             return 1 / 1000.0
@@ -46,7 +46,7 @@ export function multiplierValue(multiplier: FeatureMultiplier): number {
     }
 }
 
-export function multiplierSymbol(multiplier: FeatureMultiplier): string {
+function multiplierSymbol(multiplier: FeatureMultiplier): string {
     switch (multiplier) {
         case FeatureMultiplier.OneThousand:
             return "k"
@@ -73,7 +73,7 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.Gravity,
         name: "Gravity",
-        defaultValue: 0.0000005,
+        defaultValue: 0.00000005,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
         percents: FEATURE_PERCENTS,
@@ -82,14 +82,14 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
         feature: FabricFeature.Drag,
         name: "Drag",
         defaultValue: 0.0001,
-        multiplier: FeatureMultiplier.Billionths,
+        multiplier: FeatureMultiplier.Millionths,
         fixedDigits: 1,
         percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.PretenseFactor,
         name: "Pretense Factor",
-        defaultValue: 0.01,
+        defaultValue: 0.03,
         multiplier: FeatureMultiplier.Hundredths,
         fixedDigits: 2,
         percents: FEATURE_PERCENTS,
@@ -265,7 +265,8 @@ export class FloatFeature {
 
 export function formatFeatureValue(config: IFeatureConfig, numeric: number): string {
     const scaledValue = numeric * multiplierValue(config.multiplier)
-    return scaledValue.toFixed(config.fixedDigits)
+    const symbol = multiplierSymbol(config.multiplier)
+    return `${scaledValue.toFixed(config.fixedDigits)}${symbol}`
 }
 
 export function createFabricFeatures(fabricState$: BehaviorSubject<IFabricState>): FloatFeature[] {

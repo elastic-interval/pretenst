@@ -13,19 +13,16 @@ import { IFabricState, transition } from "../fabric/fabric-state"
 import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function ToolbarLeftTop({fabric, clearSelectedFaces, fabricState$, fullScreen}: {
+export function ToolbarLeftTop({fabric, selectedFaces, clearSelectedFaces, fabricState$, fullScreen}: {
     fabric?: TensegrityFabric,
+    selectedFaces: IFace[],
     clearSelectedFaces: () => void,
     fabricState$: BehaviorSubject<IFabricState>,
     fullScreen: boolean,
 }): JSX.Element {
 
     const [selectionMode, updateSelectionMode] = useState(fabricState$.getValue().selectionMode)
-    const [selectedFaces, updateSelectedFaces] = useState<IFace[]>([])
 
-    useEffect(() => {
-        updateSelectedFaces(fabric ? fabric.selectedFaces : [])
-    }, [fabric])
     useEffect(() => {
         const subscription = fabricState$.subscribe(newState => updateSelectionMode(newState.selectionMode))
         return () => subscription.unsubscribe()

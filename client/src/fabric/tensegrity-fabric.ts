@@ -105,7 +105,6 @@ export class TensegrityFabric {
     public activeTenscript?: IActiveTenscript[]
     public readonly builder: TensegrityBuilder
     public facePairs: IFacePair[] = []
-    public selectedFaces: IFace[] = []
 
     private faceCount: number
     private faceLocations: Float32BufferAttribute
@@ -142,6 +141,10 @@ export class TensegrityFabric {
 
     public fromSlackToPretensing(): void {
         this.nextLifePhase = LifePhase.Pretensing
+    }
+
+    public fromSlackToShaping(): void {
+        this.nextLifePhase = LifePhase.Shaping
     }
 
     public fromStrainsToStiffnesses(pushStrainFactor: number, pretensingIntensity: number): void {
