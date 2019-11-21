@@ -162,6 +162,14 @@ function matchBracket(s: string): number {
 }
 
 export function codeToTenscript(error: (message: string) => void, fromUrl: boolean, code?: string): ITenscript | undefined {
+
+    function toNumber(digits: string): number {
+        if (!digits.match(/^\d+$/)) {
+            throw new Error(`Not a number: ${digits}`)
+        }
+        return parseInt(digits, 10)
+    }
+
     function _fragmentToTree(codeFragment: string): ITenscriptTree | undefined {
 
         function argument(maybeBracketed: string, stripBrackets: boolean): { content: string, skip: number } {
@@ -199,26 +207,26 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
                 index += direction.skip
             } else if (isDigit(char)) {
                 const forward = argument(codeString, false)
-                tree._ = parseInt(forward.content, 10)
+                tree._ = toNumber(forward.content)
                 index += forward.skip
             } else {
                 switch (char) {
                     case "S":
                         const scaleArg = argument(codeString.substring(index + 1), true)
-                        tree.S = {_: parseInt(scaleArg.content, 10)}
+                        tree.S = {_: toNumber(scaleArg.content)}
                         index += scaleArg.skip
                         break
                     case "M":
                         const directionChar = codeString.charAt(index + 1)
                         const markNumber = argument(codeString.substring(index + 2), true)
-                        assignMark(tree, directionChar, {_: parseInt(markNumber.content, 10)})
+                        assignMark(tree, directionChar, {_: toNumber(markNumber.content)})
                         index += markNumber.skip + 1
                         break
                     case ",":
                     case " ":
                         break
                     default:
-                        throw new Error(`Unexpected: ${char}`)
+                        throw new Error(`Unexpected character: ${char}`)
                 }
             }
         }
@@ -267,7 +275,7 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
                 if (brickFace.removed) {
                     throw new Error("!! trying to use a face that was removed")
                 }
-                markFace(mark._,brickFace)
+                markFace(mark._, brickFace)
             }
 
             maybeMark(Triangle.PPP, treeWithMarks.MA)

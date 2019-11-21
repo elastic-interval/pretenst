@@ -5,17 +5,8 @@
 
 import * as React from "react"
 import { useState } from "react"
-import { FaHeart, FaPlay, FaRegFolder, FaRegFolderOpen, FaThumbsUp } from "react-icons/all"
-import {
-    Alert,
-    Button,
-    ButtonDropdown,
-    ButtonGroup,
-    DropdownItem,
-    DropdownMenu,
-    DropdownToggle,
-    Input,
-} from "reactstrap"
+import { FaBug, FaHeart, FaPlay, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
+import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 
 import {
     BOOTSTRAP,
@@ -71,28 +62,30 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, runTenscr
                     error={error}
                     setError={setError}
                 />
-                <div>
-                    <ButtonGroup className="w-100">
-                        <Button
-                            color={error.length > 0 ? "secondary" : "success"}
-                            disabled={error.length > 0}
-                            className="w-100 my-2"
-                            onClick={() => runTenscript(currentTenscript)}
-                        >
-                            <FaPlay/> Run
-                        </Button>
-                        <Button
-                            className="w-100 my-2"
-                            disabled={currentTenscript.code === initialTenscript.code}
-                            onClick={() => {
-                                setInitialTenscript(currentTenscript)
-                                addToRecentPrograms(currentTenscript)
-                            }}
-                        >
-                            <FaHeart/> Save
-                        </Button>
-                    </ButtonGroup>
-                </div>
+                <ButtonGroup className="w-100 my-2">
+                    <Button
+                        color={error.length > 0 ? "warning" : "success"}
+                        disabled={error.length > 0}
+                        onClick={() => runTenscript(currentTenscript)}
+                    >
+                        {error.length === 0 ? (
+                            <span><FaPlay/> Run</span>
+                        ) : (
+                            <span><FaBug/> {error}</span>
+                        )}
+                    </Button>
+                </ButtonGroup>
+                <ButtonGroup className="w-100 my-2">
+                    <Button
+                        disabled={currentTenscript.code === initialTenscript.code}
+                        onClick={() => {
+                            setInitialTenscript(currentTenscript)
+                            addToRecentPrograms(currentTenscript)
+                        }}
+                    >
+                        <FaHeart/> Save
+                    </Button>
+                </ButtonGroup>
             </div>
             {recentPrograms.length === 0 ? undefined : (
                 <ButtonDropdown
@@ -138,7 +131,6 @@ function CodeArea({initialTenscript, setCurrentTenscript, error, setError}: {
     const [tenscriptCode, setTenscriptCode] = useState(initialTenscript.code)
 
     function compile(newCode: string): void {
-        console.log("compiling", newCode)
         const tenscript = codeToTenscript(setError, false, newCode)
         if (tenscript) {
             setError("")
@@ -147,7 +139,6 @@ function CodeArea({initialTenscript, setCurrentTenscript, error, setError}: {
     }
 
     function onCodeChange(newCode: string): void {
-        console.log("code change", newCode)
         setTenscriptCode(newCode)
         compile(newCode)
     }
@@ -161,7 +152,7 @@ function CodeArea({initialTenscript, setCurrentTenscript, error, setError}: {
                 borderStyle: "solid",
                 borderRadius: "1em",
                 borderColor: error.length === 0 ? "black" : "#f0ad4e",
-                borderWidth: "1px",
+                borderWidth: "2px",
             }}
         >
             <div className="w-100 text-center">
@@ -176,11 +167,6 @@ function CodeArea({initialTenscript, setCurrentTenscript, error, setError}: {
                 defaultValue={tenscriptCode}
                 onChange={changeEvent => onCodeChange(changeEvent.target.value)}
             />
-            <div className="text-center">
-                <Alert color={error.length === 0 ? "secondary" : "warning"}>
-                    {error.length === 0 ? <FaThumbsUp/> : <span>{error}</span>}
-                </Alert>
-            </div>
         </div>
     )
 }
