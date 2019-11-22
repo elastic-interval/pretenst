@@ -375,7 +375,7 @@ export class TensegrityFabric {
         return {
             name: this.tenscript.code,
             joints: this.joints.map(joint => {
-                const vector = this.instance.location(joint.index)
+                const vector = this.slackInstance.location(joint.index)
                 return {
                     index: (joint.index + 1).toString(),
                     x: numberToString(vector.x),
