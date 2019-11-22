@@ -76,7 +76,7 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
         defaultValue: 0.00000005,
         multiplier: FeatureMultiplier.Billionths,
         fixedDigits: 1,
-        percents: FEATURE_PERCENTS,
+        percents: [0, 10, 50, 100, 150, 200],
     },
     {
         feature: FabricFeature.Drag,
@@ -88,7 +88,7 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.PretenseFactor,
-        name: "Pretense Factor",
+        name: "Pretense",
         defaultValue: 0.03,
         multiplier: FeatureMultiplier.Hundredths,
         fixedDigits: 2,
@@ -96,11 +96,11 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
     },
     {
         feature: FabricFeature.PushStrainFactor,
-        name: "Push Strain Factor",
+        name: "Push Over Pull",
         defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
-        percents: FEATURE_PERCENTS,
+        percents: [20, 50, 100, 200, 400],
     },
     {
         feature: FabricFeature.TicksPerFrame,

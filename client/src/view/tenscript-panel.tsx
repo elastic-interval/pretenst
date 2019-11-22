@@ -100,7 +100,7 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, r
                         {recentOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Recent
                     </DropdownToggle>
                     <DropdownMenu>{recentPrograms.map((recentCode, index) => (
-                        <DropdownItem key={`Recent${index}`} onClick={() => setTenscript(recentCode)}>
+                        <DropdownItem key={`Recent${index}`} onClick={() => runTenscript(recentCode)}>
                             {spaceAfterComma(recentCode.code)}
                         </DropdownItem>
                     ))}</DropdownMenu>
@@ -115,7 +115,7 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, r
                     {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
                 </DropdownToggle>
                 <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
-                    <DropdownItem key={`Boot${index}`} onClick={() => setTenscript(bootstrapProgram)}>
+                    <DropdownItem key={`Boot${index}`} onClick={() => runTenscript(bootstrapProgram)}>
                         {spaceAfterComma(bootstrapProgram.code)}
                     </DropdownItem>
                 ))}</DropdownMenu>
