@@ -10,7 +10,7 @@ import { BehaviorSubject } from "rxjs"
 import { App } from "./app"
 import { API_URI } from "./constants"
 import { IFabricEngine } from "./fabric/fabric-engine"
-import { createFabricFeatures } from "./fabric/fabric-features"
+import { createFloatFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import { LifePhase, loadFabricState, saveFabricState } from "./fabric/fabric-state"
 import registerServiceWorker from "./service-worker"
@@ -44,7 +44,7 @@ async function start(): Promise<void> {
     const fabricKernel = new FabricKernel(engine)
     const root = document.getElementById("root") as HTMLElement
     const fabricState$ = new BehaviorSubject(loadFabricState())
-    const fabricFeatures = createFabricFeatures(fabricState$)
+    const fabricFeatures = createFloatFeatures(fabricState$)
     fabricState$.subscribe(newState => saveFabricState(newState))
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")

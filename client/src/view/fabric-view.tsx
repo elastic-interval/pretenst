@@ -24,8 +24,8 @@ import {
 
 import { FabricFeature } from "../fabric/fabric-engine"
 import { doNotClick, IFabricState, IFeatureValue, LifePhase } from "../fabric/fabric-state"
-import { IFace, IFacePair, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
-import { CYLINDER, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
+import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
@@ -118,7 +118,8 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
             newLifePhase = fabric.iterate(0)
         } else {
             const ticksPerFrame = fabricState.featureValues[FabricFeature.TicksPerFrame].numeric
-            newLifePhase = fabric.iterate(ticksPerFrame)
+            const ticks = fabric.facePulls.length === 0 && lifePhase === LifePhase.Shaping ? 1 : ticksPerFrame
+            newLifePhase = fabric.iterate(ticks)
         }
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
@@ -154,26 +155,26 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
         )
     }
 
-    function BrickPair({brickPair}: { brickPair: IFacePair }): JSX.Element {
-        const a = fabric.instance.faceMidpoint(brickPair.faceA.index)
-        const b = fabric.instance.faceMidpoint(brickPair.faceB.index)
-        const position = new Vector3().addVectors(a, b).multiplyScalar(0.5)
-        const radius = (percentToFactor(brickPair.faceA.brick.scale) + percentToFactor(brickPair.faceB.brick.scale)) / 24
-        const {scale, rotation} = fabric.orientVectorPair(a, b, radius)
-        return (
-            <>
-                <SelectedFace face={brickPair.faceA}/>
-                <mesh
-                    geometry={CYLINDER}
-                    rotation={new Euler().setFromQuaternion(rotation)}
-                    position={position}
-                    material={SELECT_MATERIAL}
-                    scale={scale}
-                />
-                <SelectedFace face={brickPair.faceB}/>
-            </>
-        )
-    }
+    // function FacePull({facePull}: { facePull: IFacePull }): JSX.Element {
+    //     const alpha = fabric.instance.faceMidpoint(facePull.alpha.index)
+    //     const omega = fabric.instance.faceMidpoint(facePull.omega.index)
+    //     const position = new Vector3().addVectors(alpha, omega).multiplyScalar(0.5)
+    //     const radius = facePull.scaleFactor / 10
+    //     const {scale, rotation} = fabric.orientVectorPair(alpha, omega, radius)
+    //     return (
+    //         <>
+    //             <SelectedFace face={facePull.alpha}/>
+    //             <mesh
+    //                 geometry={CYLINDER}
+    //                 rotation={new Euler().setFromQuaternion(rotation)}
+    //                 position={position}
+    //                 material={SELECT_MATERIAL}
+    //                 scale={scale}
+    //             />
+    //             <SelectedFace face={facePull.omega}/>
+    //         </>
+    //     )
+    // }
 
     function IntervalMesh({interval}: { interval: IInterval }): JSX.Element | null {
         const {showPushes, showPulls} = fabricState
@@ -282,9 +283,9 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
                     />
                 )}
                 {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} face={face}/>)}
-                {fabric.facePairs.map((brickPair, index) => (
-                    <BrickPair key={`Pair${index}`} brickPair={brickPair}/>
-                ))}
+                {/*{fabric.facePulls.map((facePull, index) => (*/}
+                {/*    facePull.removed ? undefined : <FacePull key={`Pair${index}`} facePull={facePull}/>*/}
+                {/*))}*/}
                 <SurfaceComponent ghost={lifePhase <= LifePhase.Slack}/>
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>

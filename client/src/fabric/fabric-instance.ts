@@ -18,6 +18,7 @@ export class FabricInstance {
     private _faceNormals: LazyFloatArray
     private _faceLocations: LazyFloatArray
     private _jointLocations: LazyFloatArray
+    private _jointVelocities: LazyFloatArray
     private _unitVectors: LazyFloatArray
     private _strains: LazyFloatArray
     private _strainNuances: LazyFloatArray
@@ -41,6 +42,7 @@ export class FabricInstance {
         this._faceNormals = new LazyFloatArray(b, offset + e._faceNormals(), () => e.getFaceCount() * 3 * 3)
         this._faceLocations = new LazyFloatArray(b, offset + e._faceLocations(), () => e.getFaceCount() * 3 * 3)
         this._jointLocations = new LazyFloatArray(b, offset + e._jointLocations(), () => e.getJointCount() * 3)
+        this._jointVelocities = new LazyFloatArray(b, offset + e._jointVelocities(), () => e.getJointCount() * 3)
         this._unitVectors = new LazyFloatArray(b, offset + e._intervalUnits(), () => e.getIntervalCount() * 3)
         this._strains = new LazyFloatArray(b, offset + e._intervalStrains(), () => e.getIntervalCount())
         this._strainNuances = new LazyFloatArray(b, offset + e._intervalStrainNuances(), () => e.getIntervalCount())
@@ -86,13 +88,12 @@ export class FabricInstance {
         }
     }
 
-    public moveLocation(jointIndex: number, move: Vector3): void {
-        const newLocation = this.location(jointIndex).add(move)
-        vectorToArray(newLocation, this._jointLocations.floats, jointIndex)
-    }
-
     public unitVector(intervalIndex: number): Vector3 {
         return vectorFromArray(this._unitVectors.floats, intervalIndex)
+    }
+
+    public velocities(): Float32Array {
+        return this._jointVelocities.floats
     }
 
     public get strains(): Float32Array {

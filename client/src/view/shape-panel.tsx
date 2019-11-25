@@ -60,12 +60,12 @@ export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, cle
             if (interval.isPush && !pushes || !interval.isPush && !pulls) {
                 return
             }
-            fabric.instance.engine.multiplyRestLength(interval.index, adjustment())
+            fabric.instance.engine.multiplyRestLength(interval.index, adjustment(), 100)
         })
     }
 
     function connect(): void {
-        fabric.facePairs = fabric.builder.faceEffects(selectedFaces)
+        fabric.facePulls.push(...fabric.builder.createFacePulls(selectedFaces))
         setFabric(fabric)
     }
 

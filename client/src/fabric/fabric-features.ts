@@ -161,31 +161,31 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.PushLength,
         name: "Push",
-        defaultValue: 2 * 1.618,
+        defaultValue: Math.sqrt(2),
         multiplier: FeatureMultiplier.One,
-        fixedDigits: 3,
+        fixedDigits: 6,
         percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.TriangleLength,
         name: "Triangle",
-        defaultValue: 2.123,
+        defaultValue: 1,
         multiplier: FeatureMultiplier.One,
-        fixedDigits: 3,
+        fixedDigits: 6,
         percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.RingLength,
         name: "Ring",
-        defaultValue: 1.440,
+        defaultValue: Math.sqrt(2 - 2 * Math.sqrt(2 / 3)),
         multiplier: FeatureMultiplier.One,
-        fixedDigits: 3,
-        percents: FEATURE_PERCENTS,
+        fixedDigits: 6,
+        percents: [10, 80, 90, 100, 110, 120, 130],
     },
     {
         feature: FabricFeature.CrossLength,
         name: "Cross",
-        defaultValue: 2.123,
+        defaultValue: 1,
         multiplier: FeatureMultiplier.One,
         fixedDigits: 3,
         percents: FEATURE_PERCENTS,
@@ -193,17 +193,17 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.BowMidLength,
         name: "BowMid",
-        defaultValue: 0.8521,
+        defaultValue: 0.4,
         multiplier: FeatureMultiplier.One,
-        fixedDigits: 3,
+        fixedDigits: 6,
         percents: FEATURE_PERCENTS,
     },
     {
         feature: FabricFeature.BowEndLength,
         name: "BowEnd",
-        defaultValue: 1.2,
+        defaultValue: 0.6,
         multiplier: FeatureMultiplier.One,
-        fixedDigits: 3,
+        fixedDigits: 6,
         percents: FEATURE_PERCENTS,
     },
 ]
@@ -269,6 +269,6 @@ export function formatFeatureValue(config: IFeatureConfig, numeric: number): str
     return `${scaledValue.toFixed(config.fixedDigits)}${symbol}`
 }
 
-export function createFabricFeatures(fabricState$: BehaviorSubject<IFabricState>): FloatFeature[] {
+export function createFloatFeatures(fabricState$: BehaviorSubject<IFabricState>): FloatFeature[] {
     return FEATURE_CONFIGS.map(config => new FloatFeature(config, fabricState$))
 }

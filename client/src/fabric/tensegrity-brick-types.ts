@@ -8,6 +8,7 @@ import { Vector3 } from "three"
 import { IntervalRole } from "./fabric-engine"
 
 export const PHI = 1.61803398875
+export const DEFAULT_PUSH_LENGTH = Math.sqrt(2)
 
 export enum Ray {
     XP = 0, XN, YP, YN, ZP, ZN,
@@ -46,6 +47,14 @@ export interface IInterval {
     omega: IJoint
 }
 
+export interface IFacePull {
+    index: number
+    alpha: IFace
+    omega: IFace
+    scaleFactor: number
+    removed: boolean
+}
+
 export interface IFace {
     index: number
     canGrow: boolean
@@ -55,12 +64,6 @@ export interface IFace {
     pushes: IInterval[]
     pulls: IInterval[]
     removed: boolean
-}
-
-export interface IFacePair {
-    faceA: IFace
-    faceB: IFace
-    distance: number
 }
 
 export interface IPushDefinition {
@@ -89,7 +92,9 @@ function rayVector(ray: Ray): Vector3 {
 }
 
 function brickPoint(primaryRay: Ray, secondaryRay: Ray): Vector3 {
-    return rayVector(primaryRay).multiplyScalar(PHI).add(rayVector(secondaryRay))
+    return rayVector(primaryRay)
+        .multiplyScalar(DEFAULT_PUSH_LENGTH / 2)
+        .addScaledVector(rayVector(secondaryRay), DEFAULT_PUSH_LENGTH / 2 / PHI)
 }
 
 export const PUSH_ARRAY: IPushDefinition[] = [

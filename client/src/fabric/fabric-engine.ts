@@ -39,6 +39,7 @@ export enum IntervalRole {
     Cross = 3,
     BowMid = 4,
     BowEnd = 5,
+    FacePull = 6,
 }
 
 export function roleToLengthFeature(intervalRole: IntervalRole): FabricFeature {
@@ -131,13 +132,14 @@ export interface IFabricEngine {
 
     getIntervalCount(): number
 
-    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole, restLength: number, stiffness: number, linearDensity: number): number
+    createInterval(alphaIndex: number, omegaIndex: number, intervalRole: IntervalRole,
+                   restLength: number, stiffness: number, linearDensity: number, countdown: number): number
 
     setIntervalRole(intervalIndex: number, intervalRole: IntervalRole): void
 
-    changeRestLength(intervalIndex: number, length: number): void
+    changeRestLength(intervalIndex: number, length: number, countdown: number): void
 
-    multiplyRestLength(intervalIndex: number, length: number): void
+    multiplyRestLength(intervalIndex: number, length: number, countdown: number): void
 
     removeInterval(intervalIndex: number): void
 
@@ -174,6 +176,8 @@ export interface IFabricEngine {
     _faceLocations(): number
 
     _jointLocations(): number
+
+    _jointVelocities(): number
 
     _intervalUnits(): number
 
