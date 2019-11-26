@@ -26,9 +26,9 @@ import {
 } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
 
-const COUNTDOWN = 500
-const FACE_PULL_COUNTDOWN = 65500
-export const CONNECT_DISTANCE = 0.25
+const COUNTDOWN = 100
+const FACE_PULL_COUNTDOWN = 20000
+export const CONNECT_DISTANCE = 1
 
 export class TensegrityBuilder {
 
@@ -59,7 +59,7 @@ export class TensegrityBuilder {
         const scaleB = scaleA * percentToFactor(scale)
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
         const faceB = brickB.faces[brickB.base]
-        const connector = this.connectBricks(faceA, faceB, factorToPercent((scaleA + scaleB) / 2))
+        const connector = this.connectBricks(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), COUNTDOWN)
         if (!connector) {
             console.error("Cannot connect!")
         }
@@ -82,7 +82,7 @@ export class TensegrityBuilder {
             const instance = this.fabric.instance
             const distance = instance.faceMidpoint(facePull.alpha.index)
                 .distanceTo(instance.faceMidpoint(facePull.omega.index))
-            if (distance > CONNECT_DISTANCE) {
+            if (distance > CONNECT_DISTANCE * 10 * facePull.scaleFactor) {
                 return true
             }
             this.fabric.removeFacePull(facePull)
@@ -94,7 +94,7 @@ export class TensegrityBuilder {
             }
             const alpha = findByJoints(facePull.alpha) // todo: WHY?
             const omega = findByJoints(facePull.omega)
-            if (!this.connectBricks(alpha, omega, factorToPercent(facePull.scaleFactor))) {
+            if (!this.connectBricks(alpha, omega, factorToPercent(facePull.scaleFactor), COUNTDOWN)) {
                 console.log("Unable to connect")
             }
             return false
@@ -349,7 +349,7 @@ export class TensegrityBuilder {
         return new Matrix4().getInverse(basis)
     }
 
-    private connectBricks(faceA: IFace, faceB: IFace, connectorScale: IPercent): boolean {
+    private connectBricks(faceA: IFace, faceB: IFace, connectorScale: IPercent, countdown: number): boolean {
         const ring = this.facesToRing(faceA, faceB)
         if (!ring) {
             return false
@@ -358,7 +358,7 @@ export class TensegrityBuilder {
             const role = IntervalRole.Ring
             const joint = ring[index]
             const nextJoint = ring[(index + 1) % ring.length]
-            this.fabric.createInterval(joint, nextJoint, role, connectorScale, COUNTDOWN)
+            this.fabric.createInterval(joint, nextJoint, role, connectorScale, countdown)
         }
         const createCrossPull = (index: number) => {
             const role = IntervalRole.Cross
@@ -371,7 +371,7 @@ export class TensegrityBuilder {
             const prevOpposite = jointLocation.distanceTo(prevJointOppositeLocation)
             const nextOpposite = jointLocation.distanceTo(nextJointOppositeLocation)
             const partnerJoint = this.fabric.joints[(prevOpposite < nextOpposite) ? prevJoint.oppositeIndex : nextJoint.oppositeIndex]
-            this.fabric.createInterval(joint, partnerJoint, role, connectorScale, COUNTDOWN)
+            this.fabric.createInterval(joint, partnerJoint, role, connectorScale, countdown)
         }
         for (let walk = 0; walk < ring.length; walk++) {
             createRingPull(walk)
@@ -390,7 +390,7 @@ export class TensegrityBuilder {
             brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
                 engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
                 const length = scaleFactor * roleDefaultLength(this.fabric.featureValues, interval.intervalRole)
-                engine.changeRestLength(interval.index, length, COUNTDOWN)
+                engine.changeRestLength(interval.index, length, countdown)
             })
             this.fabric.removeFace(face, true)
         }

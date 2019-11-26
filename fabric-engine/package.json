@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "build": "asc index.ts -b build/fabric.wasm -t build/optimized.wat --sourceMap --validate --optimize",
-    "sym": "wasm-as build/optimized.wat -s symbols.txt -o build/sym.wasm"
+    "prep-sym": "asc index.ts -b build/fabric-unoptimized.wasm -t build/unoptimized.wat --sourceMap --validate",
+    "sym": "wasm-as build/unoptimized.wat -s symbols.txt -o build/fabric-unoptimized.wasm"
   },
   "author": "Gerald A. de Jong",
   "license": "",

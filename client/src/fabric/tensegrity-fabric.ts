@@ -247,10 +247,11 @@ export class TensegrityFabric {
     public createFacePull(alpha: IFace, omega: IFace, countdown: number): IFacePull {
         const instance = this.instance
         const distance = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
-        const stiffness = scaleToStiffness(percentOrHundred()) * 100
+        const stiffness = scaleToStiffness(percentOrHundred())
         const linearDensity = stiffnessToLinearDensity(stiffness)
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
-        const index = this.engine.createInterval(alpha.index, omega.index, IntervalRole.FacePull, CONNECT_DISTANCE, stiffness, linearDensity, countdown)
+        const restLength = CONNECT_DISTANCE * scaleFactor
+        const index = this.engine.createInterval(alpha.index, omega.index, IntervalRole.FacePull, restLength, stiffness, linearDensity, countdown)
         const facePull = {index, alpha, omega, distance, scaleFactor, removed: false}
         this.facePulls.push(facePull)
         this.instance.forgetDimensions()

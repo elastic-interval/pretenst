@@ -57,19 +57,19 @@ function generateRainbow(): Color[] {
         rgbs.push(new Color(r, g, b))
     }
     // Generates code for a WASM constant:
-    const roleColors = Object.keys(IntervalRole).filter(role => role.length > 1).map(roleKey => {
-        const role: IntervalRole = IntervalRole[roleKey]
-        const color = roleColor(role)
-        const r = color.r
-        const g = color.g
-        const b = color.b
-        const length = Math.sqrt(r*r + g*g + b*b)
-        const rr = r/length
-        const gg = g/length
-        const bb = b/length
-        return `[${rr.toFixed(3)}, ${gg.toFixed(3)}, ${bb.toFixed(3)}],`
-    })
-    console.log("ROLES\n", roleColors.join("\n"))
+    // const roleColors = Object.keys(IntervalRole).filter(role => role.length > 1).map(roleKey => {
+    //     const role: IntervalRole = IntervalRole[roleKey]
+    //     const color = roleColor(role)
+    //     const r = color.r
+    //     const g = color.g
+    //     const b = color.b
+    //     const length = Math.sqrt(r*r + g*g + b*b)
+    //     const rr = r/length
+    //     const gg = g/length
+    //     const bb = b/length
+    //     return `[${rr.toFixed(3)}, ${gg.toFixed(3)}, ${bb.toFixed(3)}],`
+    // })
+    // console.log("ROLES\n", roleColors.join("\n"))
     return rgbs
 }
 

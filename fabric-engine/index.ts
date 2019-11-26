@@ -13,7 +13,11 @@ declare function logInt(idx: u32, i: i32): void
 
 const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
+const IN_UTERO_DRAG: f32 = 0.05
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
+const IN_UTERO_STIFFNESS_FACTOR: f32 = 10
+const FACE_PULL_END_ZONE: f32 = 4
+const FACE_PULL_END_ZONE_FORCE: f32 = 0.0001
 
 export enum FabricFeature {
     Gravity = 0,
@@ -826,6 +830,7 @@ export function changeRestLength(intervalIndex: u16, restLength: f32, countdown:
     setIntervalStateLength(intervalIndex, REST_STATE, restLength)
     setIntervalBusyMaxTicks(intervalIndex, countdown)
     setIntervalBusyTicks(intervalIndex, countdown)
+    setFabricBusyTicks(countdown)
 }
 
 export function multiplyRestLength(intervalIndex: u16, factor: f32, countdown: u16): void {
@@ -873,16 +878,20 @@ function setStrainNuance(intervalIndex: u16, nuance: f32): void {
     setF32(_intervalStrainNuance(intervalIndex), nuance)
 }
 
-function calculateRealLength(intervalIndex: u16, intervalRole: IntervalRole): f32 {
-    let unit = _unit(intervalIndex)
-    if (intervalRole === IntervalRole.FacePull) {
-        subVectors(unit, _faceMidpoint(omegaIndex(intervalIndex)), _faceMidpoint(alphaIndex(intervalIndex)))
-    } else {
-        subVectors(unit, _location(omegaIndex(intervalIndex)), _location(alphaIndex(intervalIndex)))
-    }
-    let length = magnitude(unit)
-    multiplyScalar(unit, 1 / length)
+function normalize(_unit: usize): f32 {
+    let length = magnitude(_unit)
+    multiplyScalar(_unit, 1 / length)
     return length
+}
+
+function calculateRealLength(intervalIndex: u16, intervalRole: IntervalRole): f32 {
+    let _intervalUnit = _unit(intervalIndex)
+    if (intervalRole === IntervalRole.FacePull) {
+        subVectors(_intervalUnit, _faceMidpoint(omegaIndex(intervalIndex)), _faceMidpoint(alphaIndex(intervalIndex)))
+    } else {
+        subVectors(_intervalUnit, _location(omegaIndex(intervalIndex)), _location(alphaIndex(intervalIndex)))
+    }
+    return normalize(_intervalUnit)
 }
 
 function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
@@ -920,7 +929,13 @@ function setLineColorNuance(intervalIndex: u16, nuance: f32): void {
     setLineColorRGB(intervalIndex, r, g, b)
 }
 
-function limitNuance(nuance: f32): f32 {
+function toNuance(numerator: f32, denominator: f32): f32 {
+    if (denominator < 0.0001 && denominator > -0.0001) {
+        logFloat(1, numerator)
+        logFloat(2, denominator)
+        return 0.5
+    }
+    let nuance: f32 = numerator / denominator
     return nuance < 0 ? 0 : nuance > 1 ? 1 : nuance
 }
 
@@ -1009,17 +1024,17 @@ function outputIntervals(): void {
                 let roleColor = ROLE_COLORS[intervalRole]
                 setLineColor(intervalIndex, roleColor)
             } else if (colorPushes && colorPulls) {
-                nuance = limitNuance((strain + maxPushStrain) / maxStrainSum)
+                nuance = toNuance(strain + maxPushStrain, maxStrainSum)
                 setLineColorNuance(intervalIndex, nuance)
             } else if (intervalRole === IntervalRole.Push) {
-                nuance = limitNuance((-strain - minPushStrain) / (maxPushStrain - minPushStrain))
+                nuance = toNuance(-strain - minPushStrain, maxPushStrain - minPushStrain)
                 if (colorPulls) {
                     setLineColor(intervalIndex, ATTENUATED_COLOR)
                 } else {
                     setLineColorNuance(intervalIndex, nuance)
                 }
             } else { // pull
-                nuance = limitNuance((strain - minPullStrain) / (maxPullStrain - minPullStrain))
+                nuance = toNuance(strain - minPullStrain, maxPullStrain - minPullStrain)
                 if (colorPushes) {
                     setLineColor(intervalIndex, ATTENUATED_COLOR)
                 } else {
@@ -1041,12 +1056,12 @@ function setFaceJointIndex(faceIndex: u16, jointNumber: u16, v: u16): void {
     setU16(_faceJointIndex(faceIndex, jointNumber), v)
 }
 
-function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
-    subVectors(_X, location, midpoint)
-    multiplyScalar(_X, 1 / magnitude(_X))
-    addScaledVector(normal, _X, 0.7)
-    multiplyScalar(normal, 1 / magnitude(normal))
-}
+// function pushNormalTowardsJoint(normal: usize, location: usize, midpoint: usize): void {
+//     subVectors(_X, location, midpoint)
+//     multiplyScalar(_X, 1 / magnitude(_X))
+//     addScaledVector(normal, _X, 0.7)
+//     multiplyScalar(normal, 1 / magnitude(normal))
+// }
 
 function setFaceMidpoints(): void {
     let faceCount = getFaceCount()
@@ -1085,10 +1100,10 @@ function setFaceVectors(): void {
         setVector(_normal1, _normal0)
         setVector(_normal2, _normal0)
         // adjust them
-        let midpoint = _faceMidpoint(faceIndex)
-        pushNormalTowardsJoint(_normal0, loc0, midpoint)
-        pushNormalTowardsJoint(_normal1, loc1, midpoint)
-        pushNormalTowardsJoint(_normal2, loc2, midpoint)
+        // let midpoint = _faceMidpoint(faceIndex)
+        // pushNormalTowardsJoint(_normal0, loc0, midpoint)
+        // pushNormalTowardsJoint(_normal1, loc1, midpoint)
+        // pushNormalTowardsJoint(_normal2, loc2, midpoint)
     }
 }
 
@@ -1118,6 +1133,34 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Physics =====================================================================================
 
+function pushPullEndZonePhysics(intervalIndex: u16, alphaFaceIndex: u16, omegaFaceIndex: u16, finalNuance: f32): void {
+    let alphaDistanceSum: f32 = 0
+    let omegaDistanceSum: f32 = 0
+    let _alphaMidpoint = _faceMidpoint(alphaFaceIndex)
+    let _omegaMidpoint = _faceMidpoint(omegaFaceIndex)
+    for (let faceJoint: u16 = 0; faceJoint < 3; faceJoint++) {
+        alphaDistanceSum += distance(_location(getFaceJointIndex(alphaFaceIndex, faceJoint)), _omegaMidpoint)
+        omegaDistanceSum += distance(_location(getFaceJointIndex(omegaFaceIndex, faceJoint)), _alphaMidpoint)
+    }
+    let averageAlpha = alphaDistanceSum / <f32>3
+    let averageOmega = omegaDistanceSum / <f32>3
+    for (let faceJoint: u16 = 0; faceJoint < 3; faceJoint++) {
+        let faceAlphaJointIndex = getFaceJointIndex(alphaFaceIndex, faceJoint)
+        let faceOmegaJointIndex = getFaceJointIndex(omegaFaceIndex, faceJoint)
+        let _alpha = _location(faceAlphaJointIndex)
+        let _omega = _location(faceOmegaJointIndex)
+        subVectors(_A, _alpha, _omegaMidpoint)
+        subVectors(_B, _omega, _alphaMidpoint)
+        let lengthAlpha = normalize(_A)
+        let lengthOmega = normalize(_B)
+        let pushAlphaJoint = finalNuance * (averageAlpha - lengthAlpha)
+        let pushOmegaJoint = finalNuance * (averageOmega - lengthOmega)
+        addScaledVector(_force(faceAlphaJointIndex), _A, pushAlphaJoint * FACE_PULL_END_ZONE_FORCE)
+        addScaledVector(_force(faceOmegaJointIndex), _B, pushOmegaJoint * FACE_PULL_END_ZONE_FORCE)
+    }
+
+}
+
 function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
     let currentLength = interpolateCurrentLength(intervalIndex, state)
     let intervalRole = getIntervalRole(intervalIndex)
@@ -1138,16 +1181,15 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
                 break
         }
     }
-    let strain = (calculateRealLength(intervalIndex, intervalRole) - currentLength) / currentLength
+    let realLength = calculateRealLength(intervalIndex, intervalRole)
+    let strain = (realLength - currentLength) / currentLength
     if (!isPush && strain < 0) {
         strain = 0
     }
     setStrain(intervalIndex, strain)
-    let force = strain * getStiffness(intervalIndex)
-    let mass = currentLength * getLinearDensity(intervalIndex)
+    let force = strain * getStiffness(intervalIndex) * (lifePhase <= LifePhase.Slack ? IN_UTERO_STIFFNESS_FACTOR : 1)
     if (intervalRole === IntervalRole.FacePull) {
         force /= 6
-        mass /= 6
         let alphaFaceIndex = alphaIndex(intervalIndex)
         let omegaFaceIndex = omegaIndex(intervalIndex)
         for (let faceJoint: u16 = 0; faceJoint < 3; faceJoint++) {
@@ -1155,16 +1197,16 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             let faceOmegaJointIndex = getFaceJointIndex(omegaFaceIndex, faceJoint)
             addScaledVector(_force(faceAlphaJointIndex), _unit(intervalIndex), force)
             addScaledVector(_force(faceOmegaJointIndex), _unit(intervalIndex), -force)
-            let _alphaMass = _intervalMass(faceAlphaJointIndex)
-            setF32(_alphaMass, getF32(_alphaMass) + mass)
-            let _omegaMass = _intervalMass(faceOmegaJointIndex)
-            setF32(_omegaMass, getF32(_omegaMass) + mass)
+        }
+        if (currentLength <= FACE_PULL_END_ZONE) {
+            let finalNuance: f32 = (FACE_PULL_END_ZONE - currentLength) / FACE_PULL_END_ZONE
+            pushPullEndZonePhysics(intervalIndex, alphaFaceIndex, omegaFaceIndex, finalNuance)
         }
     } else {
         force /= 2
-        mass /= 2
         addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force)
         addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force)
+        let mass = currentLength * getLinearDensity(intervalIndex) / 2
         let _alphaMass = _intervalMass(alphaIndex(intervalIndex))
         setF32(_alphaMass, getF32(_alphaMass) + mass)
         let _omegaMass = _intervalMass(omegaIndex(intervalIndex))
@@ -1250,7 +1292,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
             case LifePhase.Growing:
             case LifePhase.Shaping:
             case LifePhase.Slack:
-                jointPhysics(jointIndex, 0, 0.001, false)
+                jointPhysics(jointIndex, 0, IN_UTERO_DRAG, false)
                 break
             case LifePhase.Pretensing:
                 jointPhysics(jointIndex, gravity * pretensingNuance, drag, true)

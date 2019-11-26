@@ -10,11 +10,12 @@ import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
+import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { BOOTSTRAP, ITenscript } from "../fabric/tenscript"
-import { IFace } from "../fabric/tensegrity-brick-types"
+import { IFace, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ControlTabs } from "./control-tabs"
@@ -76,25 +77,25 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
         return () => subscription.unsubscribe()
     }, [fabric])
 
-    // useEffect(() => { // todo: look when this happens
-    //     const featureSubscriptions = floatFeatures.map(feature => feature.observable.subscribe(() => {
-    //         if (!fabric) {
-    //             return
-    //         }
-    //         fabric.instance.applyFeature(feature)
-    //         const intervalRole = lengthFeatureToRole(feature.config.feature)
-    //         if (intervalRole !== undefined) {
-    //             const engine = fabric.instance.engine
-    //             fabric.intervals
-    //                 .filter(interval => interval.intervalRole === intervalRole)
-    //                 .forEach(interval => {
-    //                     const scaledLength = feature.numeric * percentToFactor(interval.scale)
-    //                     engine.changeRestLength(interval.index, scaledLength, 500)
-    //                 })
-    //         }
-    //     }))
-    //     return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
-    // }, [fabric])
+    useEffect(() => { // todo: look when this happens
+        const featureSubscriptions = floatFeatures.map(feature => feature.observable.subscribe(() => {
+            if (!fabric) {
+                return
+            }
+            fabric.instance.applyFeature(feature)
+            const intervalRole = lengthFeatureToRole(feature.config.feature)
+            if (intervalRole !== undefined) {
+                const engine = fabric.instance.engine
+                fabric.intervals
+                    .filter(interval => interval.intervalRole === intervalRole)
+                    .forEach(interval => {
+                        const scaledLength = feature.numeric * percentToFactor(interval.scale)
+                        engine.changeRestLength(interval.index, scaledLength, 500)
+                    })
+            }
+        }))
+        return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
+    }, [fabric])
 
     function runTenscript(newTenscript: ITenscript): void {
         if (!mainInstance || !slackInstance) {
