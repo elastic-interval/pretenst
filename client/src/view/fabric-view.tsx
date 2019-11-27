@@ -105,7 +105,7 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
         orb.enableZoom = true
         orb.target.set(midpoint.x, midpoint.y, midpoint.z)
         orb.update()
-    }, [fabric])
+    }, [])
 
     useRender(() => {
         const instance = fabric.instance
@@ -154,27 +154,6 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
             />
         )
     }
-
-    // function FacePull({facePull}: { facePull: IFacePull }): JSX.Element {
-    //     const alpha = fabric.instance.faceMidpoint(facePull.alpha.index)
-    //     const omega = fabric.instance.faceMidpoint(facePull.omega.index)
-    //     const position = new Vector3().addVectors(alpha, omega).multiplyScalar(0.5)
-    //     const radius = facePull.scaleFactor / 10
-    //     const {scale, rotation} = fabric.orientVectorPair(alpha, omega, radius)
-    //     return (
-    //         <>
-    //             <SelectedFace face={facePull.alpha}/>
-    //             <mesh
-    //                 geometry={CYLINDER}
-    //                 rotation={new Euler().setFromQuaternion(rotation)}
-    //                 position={position}
-    //                 material={SELECT_MATERIAL}
-    //                 scale={scale}
-    //             />
-    //             <SelectedFace face={facePull.omega}/>
-    //         </>
-    //     )
-    // }
 
     function IntervalMesh({interval}: { interval: IInterval }): JSX.Element | null {
         const {showPushes, showPulls} = fabricState
@@ -283,9 +262,6 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
                     />
                 )}
                 {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} face={face}/>)}
-                {/*{fabric.facePulls.map((facePull, index) => (*/}
-                {/*    facePull.removed ? undefined : <FacePull key={`Pair${index}`} facePull={facePull}/>*/}
-                {/*))}*/}
                 <SurfaceComponent ghost={lifePhase <= LifePhase.Slack}/>
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
