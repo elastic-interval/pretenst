@@ -26,7 +26,7 @@ import {
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-brick-types"
-import { CONNECT_DISTANCE, TensegrityBuilder } from "./tensegrity-builder"
+import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 
 interface IOutputInterval {
     joints: string,
@@ -54,6 +54,13 @@ export interface IFabricOutput {
 
 export const SPHERE = new SphereGeometry(1, 16, 8)
 export const CYLINDER = new CylinderGeometry(1, 1, 1, 20)
+
+const COUNTDOWN_MAX = 65535
+
+function facePullCountdown(distance: number): number {
+    const countdown = distance * 4000
+    return countdown > COUNTDOWN_MAX ? COUNTDOWN_MAX : countdown
+}
 
 function scaleToStiffness(scale: IPercent): number {
     return percentToFactor(scale) / 10000
@@ -244,14 +251,17 @@ export class TensegrityFabric {
         return this.engine.createJoint(jointTag, Laterality.RightSide, location.x, location.y, location.z)
     }
 
-    public createFacePull(alpha: IFace, omega: IFace, countdown: number): IFacePull {
+    public createFacePull(alpha: IFace, omega: IFace): IFacePull {
         const instance = this.instance
         const distance = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
         const stiffness = scaleToStiffness(percentOrHundred())
         const linearDensity = stiffnessToLinearDensity(stiffness)
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
-        const restLength = CONNECT_DISTANCE * scaleFactor
-        const index = this.engine.createInterval(alpha.index, omega.index, IntervalRole.FacePull, restLength, stiffness, linearDensity, countdown)
+        const restLength = scaleToFacePullLength(scaleFactor)
+        const index = this.engine.createInterval(
+            alpha.index, omega.index, IntervalRole.FacePull,
+            restLength, stiffness, linearDensity, facePullCountdown(distance),
+        )
         const facePull = {index, alpha, omega, distance, scaleFactor, removed: false}
         this.facePulls.push(facePull)
         this.instance.forgetDimensions()
@@ -279,8 +289,9 @@ export class TensegrityFabric {
     }
 
     public createFace(brick: IBrick, triangle: Triangle): IFace {
-        const joints = TRIANGLE_DEFINITIONS[triangle].pushEnds.map(end => brick.joints[end])
-        const pushes = TRIANGLE_DEFINITIONS[triangle].pushEnds.map(end => {
+        const {negative, pushEnds} = TRIANGLE_DEFINITIONS[triangle]
+        const joints = pushEnds.map(end => brick.joints[end])
+        const pushes = pushEnds.map(end => {
             const foundPush = brick.pushes.find(push => {
                 const endJoint = brick.joints[end]
                 return endJoint.index === push.alpha.index || endJoint.index === push.omega.index
@@ -293,7 +304,7 @@ export class TensegrityFabric {
         const pulls = [0, 1, 2].map(offset => brick.pulls[triangle * 3 + offset])
         const face: IFace = {
             index: this.engine.createFace(joints[0].index, joints[1].index, joints[2].index),
-            canGrow: true, removed: false,
+            canGrow: true, negative, removed: false,
             brick, triangle, joints, pushes, pulls,
         }
         this.faces.push(face)
@@ -404,7 +415,7 @@ export class TensegrityFabric {
         const stiffnesses = this.instance.stiffnesses
         const linearDensities = this.instance.linearDensities
         return {
-            name: this.tenscript.code,
+            name: this.tenscript.name,
             joints: this.joints.map(joint => {
                 const vector = this.slackInstance.location(joint.index)
                 return {

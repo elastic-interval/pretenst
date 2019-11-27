@@ -35,6 +35,19 @@ export interface IJoint {
     oppositeIndex: number
 }
 
+export interface IRingJoint {
+    joint: IJoint
+    fromA: boolean
+}
+
+export interface IRing {
+    faceA: IFace
+    matchesA: boolean
+    faceB: IFace
+    matchesB: boolean
+    joints: IJoint[]
+}
+
 export type JointTag = number
 
 export interface IInterval {
@@ -57,6 +70,7 @@ export interface IFacePull {
 
 export interface IFace {
     index: number
+    negative: boolean
     canGrow: boolean
     brick: IBrick
     triangle: Triangle
@@ -64,6 +78,21 @@ export interface IFace {
     pushes: IInterval[]
     pulls: IInterval[]
     removed: boolean
+}
+
+export function averageScaleFactor(faces: IFace[]): number {
+    return faces.reduce((sum, face) => sum + percentToFactor(face.brick.scale), 0) / faces.length
+}
+
+export function averageLocation(locations: Vector3[]): Vector3 {
+    return locations
+        .reduce((sum, location) => sum.add(location), new Vector3())
+        .multiplyScalar(1 / locations.length)
+}
+
+export function getOrderedJoints(face: IFace): IJoint[] {
+    const clone = [...face.joints]
+    return [...TRIANGLE_DEFINITIONS[face.triangle].negative ? clone.reverse() : clone]
 }
 
 export interface IPushDefinition {

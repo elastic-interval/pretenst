@@ -7,27 +7,24 @@ import { IBrick, IFace, IFaceMark, IPercent, opposite, percentOrHundred, Triangl
 import { TensegrityFabric } from "./tensegrity-fabric"
 
 const BOOTSTRAP_TENSCRIPTS = [
-    "(b(7,S80,MA1),c(2,S120,MA0),d(7,S80,MA1))",
-    "(0)",
-    "(1)",
-    "(2)",
-    "(6)",
-    "(6,S85)",
-    "(B1,a1)",
-    "(B3,a3)",
-    "(A1,b3,c3,d3)",
-    "(B2,C2,D2,a2)",
-    "(C(2,B(2,D(2,C2))))",
-    "(C(3,B(3,D(3,C(3,B1)))))",
-    "(a(1,MA0),C(3,B(3,D(3,C(3,B(3,D(1,MA0)))))))",
-    "(b(7,S80,MA1,MB2),c(6,S80,MA2),d(6,S80,MA1))",
-    "(a1,B(10,S85,MA1),C(10,S85,MA1),D(10,S85,MA1))",
-    "(b(5,S70),c(5,S70),d(5,S70),A1)",
-    "(B2,C2,D2,a(2,B2,C2,D2))",
-    "(A2,b(3,B(2,S90),S80),c(3,C(2,S90),S80),d(3,D(2,S90),S80))",
+    "(0):Zen",
+    "(1):One",
+    "(6):Six",
+    "(16,S90):Axoneme",
+    "(b1,a1):Knee",
+    "(b3,a3):Leg",
+    "(a1,b1,c1,d1):Nexus",
+    "(A2,B(3,b(2,S90),S80),C(3,c(2,S90),S80),D(3,d(2,S90),S80)):Tripod with Knees",
+    "(a1,b(3,S85,MA1),c(3,S85,MA1),d(3,S85,MA1)):Convergence Three",
+    "(a1,b(12,S85,MA1),c(12,S85,MA1),d(12,S85,MA1)):Convergence Twelve",
+    "(B(7,S80,MA1),C(2,S120,MA0),D(7,S80,MA1)):Halo by Crane",
+    "(B(5,S75),C(5,S75),D(5,S75)):Pretenst Lander",
+    // "(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0))))))):Zig Zag Loop",
+    "(B2, C2, D2, A(2, b2, c2, d2)):Crystal Interstitial",
 ]
 
 export interface ITenscript {
+    name: string,
     code: string
     tree: ITenscriptTree
     fromUrl: boolean
@@ -36,13 +33,13 @@ export interface ITenscript {
 export interface ITenscriptTree {
     _?: number, // forward steps
     S?: IPercent, // scale
-    A?: ITenscriptTree, // directions
-    B?: ITenscriptTree, // kinda up
-    C?: ITenscriptTree,
-    D?: ITenscriptTree,
-    b?: ITenscriptTree, // kinda down
+    A?: ITenscriptTree, // directions: up
+    b?: ITenscriptTree, // kinda up
     c?: ITenscriptTree,
     d?: ITenscriptTree,
+    B?: ITenscriptTree, // kinda down
+    C?: ITenscriptTree,
+    D?: ITenscriptTree,
     a?: ITenscriptTree, // down
     MA?: IFaceMark, // marks
     MB?: IFaceMark,
@@ -54,14 +51,14 @@ export interface ITenscriptTree {
     Md?: IFaceMark,
 }
 
-export function treeToTenscript(codeTree: ITenscriptTree, fromUrl: boolean): ITenscript {
+export function treeToTenscript(name: string, tree: ITenscriptTree, fromUrl: boolean): ITenscript {
     const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
-    const codeString = JSON.stringify(codeTree)
+    const code = JSON.stringify(tree)
         .replace(/[_.:"]/g, "")
         .replace(/[{]/g, "(")
         .replace(/[}]/g, ")")
         .replace(/([ABCDabcdSM])\((\d*)\)/g, replacer)
-    return {tree: codeTree, code: codeString, fromUrl}
+    return {name, tree, code, fromUrl}
 }
 
 const DIRECTIONS = "ABCDabcd"
@@ -242,7 +239,7 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
         if (!tree) {
             return undefined
         }
-        return treeToTenscript(tree, fromUrl)
+        return treeToTenscript(getNameFromCode(code), tree, fromUrl)
     } catch (e) {
         error(e.message)
         return undefined
@@ -253,7 +250,24 @@ function noParseErrors(message: string): void {
     throw new Error(`Unable to parse: ${message}`)
 }
 
-export const BOOTSTRAP: ITenscript[] = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noParseErrors, false, script)) as ITenscript[]
+export function addNameToCode(code: string, name: string): string {
+    const colonSplit = code.split(":")
+    if (colonSplit.length === 2) {
+        return `${colonSplit[0]}:${name.trim()}`
+    } else {
+        return `${code}:${name}`
+    }
+}
+
+export function getNameFromCode(code: string): string {
+    const colonSplit = code.split(":")
+    if (colonSplit.length === 2) {
+        return colonSplit[1]
+    }
+    return code.split("").filter(char => isDirection(char) || isDigit(char)).join("")
+}
+
+export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noParseErrors, false, script)) as ITenscript[]
 
 export interface IActiveTenscript {
     tree: ITenscriptTree
@@ -279,12 +293,12 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
             }
 
             maybeMark(Triangle.PPP, treeWithMarks.MA)
-            maybeMark(Triangle.NPP, treeWithMarks.MB)
-            maybeMark(Triangle.PNP, treeWithMarks.MC)
-            maybeMark(Triangle.PPN, treeWithMarks.MD)
-            maybeMark(Triangle.PNN, treeWithMarks.Mb)
-            maybeMark(Triangle.NPN, treeWithMarks.Mc)
-            maybeMark(Triangle.NNP, treeWithMarks.Md)
+            maybeMark(Triangle.NPP, treeWithMarks.Mb)
+            maybeMark(Triangle.PNP, treeWithMarks.Mc)
+            maybeMark(Triangle.PPN, treeWithMarks.Md)
+            maybeMark(Triangle.PNN, treeWithMarks.MB)
+            maybeMark(Triangle.NPN, treeWithMarks.MC)
+            maybeMark(Triangle.NNP, treeWithMarks.MD)
             maybeMark(Triangle.NNN, treeWithMarks.Ma)
         }
 
@@ -315,12 +329,12 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
         }
 
         maybeGrow(brick, Triangle.PPP, tree.A)
-        maybeGrow(brick, Triangle.NPP, tree.B)
-        maybeGrow(brick, Triangle.PNP, tree.C)
-        maybeGrow(brick, Triangle.PPN, tree.D)
-        maybeGrow(brick, Triangle.PNN, tree.b)
-        maybeGrow(brick, Triangle.NPN, tree.c)
-        maybeGrow(brick, Triangle.NNP, tree.d)
+        maybeGrow(brick, Triangle.NPP, tree.b)
+        maybeGrow(brick, Triangle.PNP, tree.c)
+        maybeGrow(brick, Triangle.PPN, tree.d)
+        maybeGrow(brick, Triangle.PNN, tree.B)
+        maybeGrow(brick, Triangle.NPN, tree.C)
+        maybeGrow(brick, Triangle.NNP, tree.D)
         maybeGrow(brick, Triangle.NNN, tree.a)
     })
     return active

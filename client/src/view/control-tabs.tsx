@@ -90,6 +90,7 @@ export function ControlTabs({
                             setInitialTenscript={setInitialTenscript}
                             fabric={fabric}
                             runTenscript={runTenscript}
+                            fabricState$={fabricState$}
                         />
                     )
                 case ControlTab.Shape:

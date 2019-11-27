@@ -7,43 +7,31 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaBug, FaHeart, FaPlay, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
+import { BehaviorSubject } from "rxjs"
 
-import {
-    BOOTSTRAP,
-    codeToTenscript,
-    ITenscript,
-    ITenscriptTree,
-    spaceAfterComma,
-    treeToTenscript,
-} from "../fabric/tenscript"
+import { addRecentCode, getRecentTenscript, IFabricState } from "../fabric/fabric-state"
+import { BOOTSTRAP, codeToTenscript, ITenscript, spaceAfterComma } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-const FABRIC_CODE_KEY = "FabricCode"
-
-const MAX_RECENT = 24
-
-export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, runTenscript}: {
+export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, runTenscript, fabricState$}: {
     initialTenscript: ITenscript,
     setInitialTenscript: (tenscript: ITenscript) => void,
     fabric?: TensegrityFabric,
     runTenscript: (tenscript: ITenscript) => void,
+    fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
     const [tenscript, setTenscript] = useState<ITenscript>(fabric && !fabric.tenscript.fromUrl ? fabric.tenscript : initialTenscript)
     const [error, setError] = useState("")
 
     const [recentOpen, setRecentOpen] = useState(false)
-    const [recentPrograms, setRecentPrograms] = useState<ITenscript[]>(getRecentCode())
+    const [recentPrograms, setRecentPrograms] = useState<ITenscript[]>(getRecentTenscript(fabricState$.getValue()))
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
 
     function addToRecentPrograms(newCode: ITenscript): void {
-        const withoutNewCode = recentPrograms.filter(program => newCode.code !== program.code)
-        const recent = [newCode, ...withoutNewCode]
-        while (recent.length > MAX_RECENT) {
-            recent.pop()
-        }
-        storeRecentCode(recent)
-        setRecentPrograms(recent)
+        const state = addRecentCode(fabricState$.getValue(), newCode)
+        setRecentPrograms(getRecentTenscript(state))
+        fabricState$.next(state)
     }
 
     return (
@@ -101,7 +89,7 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, r
                     </DropdownToggle>
                     <DropdownMenu>{recentPrograms.map((recentCode, index) => (
                         <DropdownItem key={`Recent${index}`} onClick={() => runTenscript(recentCode)}>
-                            {spaceAfterComma(recentCode.code)}
+                            {recentCode.name}
                         </DropdownItem>
                     ))}</DropdownMenu>
                 </ButtonDropdown>
@@ -116,7 +104,7 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, r
                 </DropdownToggle>
                 <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
                     <DropdownItem key={`Boot${index}`} onClick={() => runTenscript(bootstrapProgram)}>
-                        {spaceAfterComma(bootstrapProgram.code)}
+                        {bootstrapProgram.name}
                     </DropdownItem>
                 ))}</DropdownMenu>
             </ButtonDropdown>
@@ -160,7 +148,8 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
             }}
         >
             <div className="w-100 text-center">
-                <h6>Tenscript Construction Code</h6>
+                <pre style={{color: "#f2bc30"}} className="float-left">Tenscript</pre>
+                <h6><i>"{tenscript.name}"</i></h6>
             </div>
             <Input
                 style={{
@@ -183,14 +172,4 @@ export function getCodeFromUrl(): ITenscript | undefined {
         console.error("Code error", e)
     }
     return undefined
-}
-
-function storeRecentCode(recent: ITenscript[]): void {
-    localStorage.setItem(FABRIC_CODE_KEY, JSON.stringify(recent.map(program => program.tree)))
-}
-
-export function getRecentCode(): ITenscript[] {
-    const recentCode = localStorage.getItem(FABRIC_CODE_KEY)
-    const codeTrees: ITenscriptTree[] = recentCode ? JSON.parse(recentCode) : []
-    return codeTrees.map(codeTree => treeToTenscript(codeTree, false))
 }

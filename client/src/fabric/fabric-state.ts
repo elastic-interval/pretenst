@@ -5,6 +5,7 @@
 
 import { FabricFeature, IntervalRole, roleToLengthFeature, SurfaceCharacter } from "./fabric-engine"
 import { FEATURE_CONFIGS } from "./fabric-features"
+import { addNameToCode, codeToTenscript, ITenscript } from "./tenscript"
 
 export enum LifePhase {
     Busy = 0,
@@ -33,7 +34,7 @@ export function enumValues(e: object): number[] {
     return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
 
-const VERSION = "2019-11-26"
+const VERSION = "2019-11-27"
 
 export interface IFeatureValue {
     numeric: number
@@ -45,6 +46,7 @@ export interface IFabricState {
     nonce: number
     surfaceCharacter: SurfaceCharacter
     featureValues: Record<FabricFeature, IFeatureValue>
+    recentCode: Record<string, string>,
     controlTab: ControlTab
     selectionMode: boolean
     fullScreen: boolean
@@ -52,6 +54,23 @@ export interface IFabricState {
     rotating: boolean
     showPushes: boolean
     showPulls: boolean
+}
+
+export function addRecentCode(state: IFabricState, {code, name}: ITenscript): IFabricState {
+    const recentCode = {...state.recentCode}
+    recentCode[name] = addNameToCode(code, name)
+    return transition(state, {recentCode})
+}
+
+export function getRecentTenscript(state: IFabricState): ITenscript[] {
+    return Object.keys(state.recentCode).map(key => {
+        const code = state.recentCode[key]
+        const tenscript = codeToTenscript(error => console.error(error), false, code)
+        if (!tenscript) {
+            throw new Error(`Unable to read recent tenscript code: ${code}`)
+        }
+        return tenscript
+    })
 }
 
 export function roleDefaultLength(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
@@ -73,6 +92,7 @@ const INITIAL_FABRIC_STATE: IFabricState = {
         record[config.feature] = ({percent: 100, numeric: config.defaultValue})
         return record
     }, {} as Record<FabricFeature, IFeatureValue>),
+    recentCode: {},
     controlTab: ControlTab.Grow,
     fullScreen: true,
     selectionMode: false,
