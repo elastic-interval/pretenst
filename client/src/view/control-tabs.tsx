@@ -33,16 +33,16 @@ function Icon(controlTab: ControlTab): JSX.Element {
 }
 
 export function ControlTabs({
-                                floatFeatures, initialTenscript, setInitialTenscript,
+                                floatFeatures, rootTenscript, setRootTenscript,
                                 selectedFaces, clearSelectedFaces,
                                 fabric, setFabric, runTenscript,
                                 toFullScreen, fabricState$, lifePhase$,
                             }: {
     floatFeatures: FloatFeature[],
-    initialTenscript: ITenscript,
+    rootTenscript: ITenscript,
+    setRootTenscript: (tenscript: ITenscript) => void,
     selectedFaces: IFace[],
     clearSelectedFaces: () => void,
-    setInitialTenscript: (tenscript: ITenscript) => void,
     runTenscript: (tenscript: ITenscript) => void,
     fabric?: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
@@ -86,8 +86,8 @@ export function ControlTabs({
                 case ControlTab.Grow:
                     return (
                         <TenscriptPanel
-                            initialTenscript={initialTenscript}
-                            setInitialTenscript={setInitialTenscript}
+                            rootTenscript={rootTenscript}
+                            setRootTenscript={setRootTenscript}
                             fabric={fabric}
                             runTenscript={runTenscript}
                             fabricState$={fabricState$}

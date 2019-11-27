@@ -3,18 +3,16 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { codeToTenscript, ITenscriptTree, treeToTenscript } from "./tenscript"
+import { BOOTSTRAP, codeToTenscript, ITenscript, treeToTenscript } from "./tenscript"
 
 describe("Code parser", () => {
     it("should encode/decode", () => {
-        const codeTrees = require("../../public/bootstrap.json").pretenst
-        codeTrees.forEach((tree: ITenscriptTree) => {
-            const tenscript = treeToTenscript(tree)
-            const middleman = codeToTenscript(error => console.error(error), tenscript.code)
+        BOOTSTRAP.forEach((tenscript: ITenscript) => {
+            const middleman = codeToTenscript(error => console.error(error), false, tenscript.code)
             if (!middleman) {
                 throw new Error()
             }
-            const codeAfter = treeToTenscript(middleman.tree)
+            const codeAfter = treeToTenscript(tenscript.name, middleman.tree, false)
             expect(codeAfter).toBe(tenscript.code)
         })
     })

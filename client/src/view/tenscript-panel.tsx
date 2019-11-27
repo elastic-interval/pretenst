@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBug, FaHeart, FaPlay, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
+import { FaBiohazard, FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -13,15 +13,15 @@ import { addRecentCode, getRecentTenscript, IFabricState } from "../fabric/fabri
 import { BOOTSTRAP, codeToTenscript, ITenscript, spaceAfterComma } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, runTenscript, fabricState$}: {
-    initialTenscript: ITenscript,
-    setInitialTenscript: (tenscript: ITenscript) => void,
+export function TenscriptPanel({rootTenscript, setRootTenscript, fabric, runTenscript, fabricState$}: {
+    rootTenscript: ITenscript,
+    setRootTenscript: (tenscript: ITenscript) => void,
     fabric?: TensegrityFabric,
     runTenscript: (tenscript: ITenscript) => void,
     fabricState$: BehaviorSubject<IFabricState>,
 }): JSX.Element {
 
-    const [tenscript, setTenscript] = useState<ITenscript>(fabric && !fabric.tenscript.fromUrl ? fabric.tenscript : initialTenscript)
+    const [tenscript, setTenscript] = useState<ITenscript>(fabric && !fabric.tenscript.fromUrl ? fabric.tenscript : rootTenscript)
     const [error, setError] = useState("")
 
     const [recentOpen, setRecentOpen] = useState(false)
@@ -60,7 +60,7 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, r
                         onClick={() => runTenscript(tenscript)}
                     >
                         {error.length === 0 ? (
-                            <span><FaPlay/> Run Tenscript</span>
+                            <span>Run <FaPlay/> Tenscript</span>
                         ) : (
                             <span><FaBug/> {error}</span>
                         )}
@@ -68,13 +68,13 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, r
                 </ButtonGroup>
                 <ButtonGroup className="w-100 my-2">
                     <Button
-                        disabled={tenscript.code === initialTenscript.code}
+                        disabled={tenscript.code === rootTenscript.code}
                         onClick={() => {
-                            setInitialTenscript(tenscript)
+                            setRootTenscript(tenscript)
                             addToRecentPrograms(tenscript)
                         }}
                     >
-                        <FaHeart/> Save to the Browser
+                        Save <FaHeart/> to the Browser
                     </Button>
                 </ButtonGroup>
             </div>
@@ -99,8 +99,8 @@ export function TenscriptPanel({initialTenscript, setInitialTenscript, fabric, r
                 isOpen={bootstrapOpen}
                 toggle={() => setBootstrapOpen(!bootstrapOpen)}
             >
-                <DropdownToggle style={{borderRadius: "1.078em"}}>
-                    {bootstrapOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Examples
+                <DropdownToggle color="info" style={{borderRadius: "1.078em"}}>
+                    {bootstrapOpen ? <FaBiohazard/> : <FaHiking/>} Explore some examples
                 </DropdownToggle>
                 <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
                     <DropdownItem key={`Boot${index}`} onClick={() => runTenscript(bootstrapProgram)}>
@@ -148,8 +148,8 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
             }}
         >
             <div className="w-100 text-center">
-                <pre style={{color: "#f2bc30"}} className="float-left">Tenscript</pre>
-                <h6><i>"{tenscript.name}"</i></h6>
+                <span style={{color: "#f2bc30"}} className="float-left m-1">Tenscript:</span>
+                <i>"{tenscript.name}"</i>
             </div>
             <Input
                 style={{
@@ -162,14 +162,4 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
             />
         </div>
     )
-}
-
-export function getCodeFromUrl(): ITenscript | undefined {
-    const codeString = location.hash.substring(1)
-    try {
-        return codeToTenscript(message => console.error(message), true, codeString)
-    } catch (e) {
-        console.error("Code error", e)
-    }
-    return undefined
 }

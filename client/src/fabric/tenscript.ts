@@ -340,3 +340,12 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
     return active
 }
 
+export function getCodeFromUrl(): ITenscript | undefined {
+    const urlCode = location.hash.substring(1)
+    try {
+        return codeToTenscript(message => console.error(message), true, decodeURIComponent(urlCode))
+    } catch (e) {
+        console.error("Code error", e)
+    }
+    return undefined
+}

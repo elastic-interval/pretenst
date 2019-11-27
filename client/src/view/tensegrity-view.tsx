@@ -14,13 +14,12 @@ import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { ControlTab, getRecentTenscript, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
-import { addNameToCode, BOOTSTRAP, ITenscript } from "../fabric/tenscript"
+import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { IFace, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
-import { getCodeFromUrl } from "./tenscript-panel"
 import { ToolbarLeftBottom } from "./toolbar-left-bottom"
 import { ToolbarLeftTop } from "./toolbar-left-top"
 import { ToolbarRightBottom } from "./toolbar-right-bottom"
@@ -50,12 +49,12 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
 
-    const [initialTenscript, setInitialTenscript] = useState(() => getCodeToRun(fabricState$.getValue()))
+    const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(fabricState$.getValue()))
     useEffect(() => {
         if (location.hash.length === 0) {
-            location.hash = addNameToCode(initialTenscript.code, initialTenscript.name)
+            location.hash = addNameToCode(rootTenscript.code, rootTenscript.name)
         }
-    }, [initialTenscript])
+    }, [rootTenscript])
 
     const [controlTab, updateControlTab] = useState(fabricState$.getValue().controlTab)
     const [selectionMode, updateSelectionMode] = useState(fabricState$.getValue().selectionMode)
@@ -115,11 +114,11 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
     useEffect(() => {
         const timer = setTimeout(() => {
             if (!fabric) {
-                runTenscript(initialTenscript)
+                runTenscript(rootTenscript)
             }
         }, 200)
         return () => clearTimeout(timer)
-    }, [initialTenscript])
+    }, [rootTenscript])
 
     function toFullScreen(value: boolean): void {
         fabricState$.next(transition(fabricState$.getValue(), {fullScreen: value}))
@@ -141,8 +140,8 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
                 >
                     <ControlTabs
                         floatFeatures={floatFeatures}
-                        initialTenscript={initialTenscript}
-                        setInitialTenscript={setInitialTenscript}
+                        rootTenscript={rootTenscript}
+                        setRootTenscript={setRootTenscript}
                         fabric={fabric}
                         setFabric={setFabric}
                         selectedFaces={selectedFaces}
@@ -163,8 +162,8 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
                 {!fabric ? (
                     <div id="tensegrity-view" className="h-100">
                         <div style={{position: "relative", top: "50%", left: "50%"}}>
-                            <Button onClick={() => runTenscript(initialTenscript)}>
-                                <h6>{initialTenscript.name}</h6>
+                            <Button onClick={() => runTenscript(rootTenscript)}>
+                                <h6>{rootTenscript.name}</h6>
                                 <h1><FaPlay/></h1>
                             </Button>
                         </div>
