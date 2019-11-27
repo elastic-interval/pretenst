@@ -66,7 +66,7 @@ export class TensegrityBuilder {
         const scaleB = scaleA * percentToFactor(scale)
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
         const faceB = brickB.faces[brickB.base]
-        const connector = this.connectBricks(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), COUNTDOWN)
+        const connector = this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), COUNTDOWN)
         if (!connector) {
             console.error("Cannot connect!")
         }
@@ -93,7 +93,7 @@ export class TensegrityBuilder {
                 return true
             }
             this.fabric.removeFacePull(facePull)
-            if (!this.connectBricks(alpha, omega, factorToPercent(scaleFactor), COUNTDOWN)) {
+            if (!this.connectFaces(alpha, omega, factorToPercent(scaleFactor), COUNTDOWN)) {
                 console.log("Unable to connect")
             }
             return false
@@ -220,14 +220,10 @@ export class TensegrityBuilder {
     public get initialFacePulls(): IFacePull[] {
         return this.faceMarkLists
             .filter(list => list.length === 2 || list.length === 3)
-            .reduce((facePulls: IFacePull[], faceList: IFace[]) => {
-                facePulls.push(...this.createFacePulls(faceList))
-                return facePulls
-            }, [])
+            .reduce((list: IFacePull[], faceList: IFace[]) => [...list, ...this.createFacePulls(faceList)], [])
     }
 
     public createFacePulls(faces: IFace[]): IFacePull[] {
-        // todo: make the countdown depend on distance
         const instance = this.fabric.instance
         const centerBrickFacePulls = () => {
             const brick = this.createBrickAt(
@@ -354,7 +350,10 @@ export class TensegrityBuilder {
         return new Matrix4().getInverse(basis)
     }
 
-    private connectBricks(faceA: IFace, faceB: IFace, connectorScale: IPercent, countdown: number): boolean {
+    private connectFaces(faceA: IFace, faceB: IFace, connectorScale: IPercent, countdown: number): boolean {
+        if (faceA.negative === faceB.negative) {
+            throw new Error("Same polarity!")
+        }
         const ring = this.facesToRing(faceA, faceB)
         if (!ring) {
             return false
@@ -387,7 +386,6 @@ export class TensegrityBuilder {
         const handleFace = (faceToRemove: IFace): void => {
             const triangle = faceToRemove.triangle
             const brick = faceToRemove.brick
-            const face = brick.faces[triangle]
             TRIANGLE_DEFINITIONS.filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_DEFINITIONS[triangle].negative).forEach(t => {
                 brick.faces[t.name].canGrow = false
             })
@@ -399,7 +397,7 @@ export class TensegrityBuilder {
                 const length = scaleFactor * roleDefaultLength(this.fabric.featureValues, interval.intervalRole)
                 engine.changeRestLength(interval.index, length, countdown)
             })
-            this.fabric.removeFace(face, true)
+            this.fabric.removeFace(faceToRemove, true)
         }
         handleFace(faceA)
         handleFace(faceB)

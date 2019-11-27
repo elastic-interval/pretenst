@@ -22,7 +22,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { IFabricState } from "../fabric/fabric-state"
+import { IFabricState, transition } from "../fabric/fabric-state"
 import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
@@ -65,7 +65,9 @@ export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, cle
     }
 
     function connect(): void {
-        fabric.facePulls.push(...fabric.builder.createFacePulls(selectedFaces))
+        fabric.connectFaces(selectedFaces)
+        clearSelectedFaces()
+        fabricState$.next(transition(fabricState$.getValue(), {selectionMode: false}))
         setFabric(fabric)
     }
 

@@ -108,6 +108,7 @@ export class TensegrityFabric {
     public faces: IFace[] = []
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
+    public facesToConnect: IFace[] | undefined
     public readonly builder: TensegrityBuilder
 
     private faceCount: number
@@ -192,52 +193,8 @@ export class TensegrityFabric {
         return this.faces.filter(face => face.canGrow)
     }
 
-    public removeFace(face: IFace, removeIntervals: boolean): void {
-        this.engine.removeFace(face.index)
-        this.faces = this.faces.filter(existing => existing.index !== face.index)
-        this.faces.forEach(existing => {
-            if (existing.index > face.index) {
-                existing.index--
-            }
-        })
-        face.removed = true
-        if (removeIntervals) {
-            face.pulls.forEach(interval => this.removeInterval(interval))
-        }
-    }
-
-    public removeInterval(interval: IInterval): void {
-        this.engine.removeInterval(interval.index)
-        interval.removed = true
-        this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
-        this.intervals.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
-        this.facePulls.forEach(existing => {
-            if (existing.index > interval.index) {
-                existing.index--
-            }
-        })
-        this.instance.forgetDimensions()
-    }
-
-    public removeFacePull(facePull: IFacePull): void {
-        this.engine.removeInterval(facePull.index)
-        this.facePulls = this.facePulls.filter(existing => existing.index !== facePull.index)
-        this.facePulls.forEach(existing => {
-            if (existing.index > facePull.index) {
-                existing.index--
-            }
-        })
-        this.intervals.forEach(existing => {
-            if (existing.index > facePull.index) {
-                existing.index--
-            }
-        })
-        facePull.removed = true
-        this.instance.forgetDimensions()
+    public connectFaces(faces: IFace[]): void {
+        this.facesToConnect = faces
     }
 
     public brickMidpoint({joints}: IBrick, midpoint?: Vector3): Vector3 {
@@ -268,6 +225,23 @@ export class TensegrityFabric {
         return facePull
     }
 
+    public removeFacePull(facePull: IFacePull): void {
+        this.engine.removeInterval(facePull.index)
+        this.facePulls = this.facePulls.filter(existing => existing.index !== facePull.index)
+        this.facePulls.forEach(existing => {
+            if (existing.index > facePull.index) {
+                existing.index--
+            }
+        })
+        this.intervals.forEach(existing => {
+            if (existing.index > facePull.index) {
+                existing.index--
+            }
+        })
+        facePull.removed = true
+        this.instance.forgetDimensions()
+    }
+
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, coundown: number): IInterval {
         const scaleFactor = percentToFactor(scale)
         const defaultLength = roleDefaultLength(this.featureValues, intervalRole)
@@ -286,6 +260,24 @@ export class TensegrityFabric {
         }
         this.intervals.push(interval)
         return interval
+    }
+
+    public removeInterval(interval: IInterval): void {
+        const {index} = interval
+        this.engine.removeInterval(index)
+        interval.removed = true
+        this.intervals = this.intervals.filter(existing => existing.index !== index)
+        this.intervals.forEach(existing => {
+            if (existing.index > index) {
+                existing.index--
+            }
+        })
+        this.facePulls.forEach(existing => {
+            if (existing.index > index) {
+                existing.index--
+            }
+        })
+        this.instance.forgetDimensions()
     }
 
     public createFace(brick: IBrick, triangle: Triangle): IFace {
@@ -309,6 +301,20 @@ export class TensegrityFabric {
         }
         this.faces.push(face)
         return face
+    }
+
+    public removeFace(face: IFace, removeIntervals: boolean): void {
+        this.engine.removeFace(face.index)
+        this.faces = this.faces.filter(existing => existing.index !== face.index)
+        this.faces.forEach(existing => {
+            if (existing.index > face.index) {
+                existing.index--
+            }
+        })
+        face.removed = true
+        if (removeIntervals) {
+            face.pulls.forEach(interval => this.removeInterval(interval))
+        }
     }
 
     public release(): void {
@@ -370,8 +376,12 @@ export class TensegrityFabric {
                 }
             }
         } else {
+            const faces = this.facesToConnect
+            if (faces) {
+                this.facesToConnect = undefined
+                this.builder.createFacePulls(faces)
+            }
             const newFacePulls = this.builder.checkFacePulls(this.facePulls)
-            engine.iterate(0, this.nextLifePhase)
             if (newFacePulls) {
                 this.facePulls = newFacePulls
                 if (newFacePulls.length === 0) {
