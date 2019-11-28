@@ -49,7 +49,8 @@ const HEMISPHERE_COLOR = new Color("white")
 const AMBIENT_COLOR = new Color("#bababa")
 const SPACE_RADIUS = 100
 const SPACE_SCALE = 1
-const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25).scale(SPACE_SCALE, SPACE_SCALE, SPACE_SCALE)
+const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
+    .scale(SPACE_SCALE, SPACE_SCALE, SPACE_SCALE)
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
@@ -59,8 +60,9 @@ const SCALE_MAX = 0.45
 const RADIUS_FACTOR = 5 // TODO: make it easily adjustable!
 const MAX_STIFFNESS = 0.0005 // TODO: make it easily adjustable!
 
-export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$, lifePhase$}: {
+export function FabricView({fabric, selectedIntervals, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$, lifePhase$}: {
     fabric: TensegrityFabric,
+    selectedIntervals: IInterval[],
     selectedFaces: IFace[],
     setSelectedFaces: (faces: IFace[]) => void,
     selectionMode: boolean,
@@ -212,20 +214,11 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
     function EllipsoidView(): JSX.Element {
         return (
             <group>
-                {fabric.splitIntervals ? (
-                    [
-                        ...fabric.splitIntervals.unselected.map(interval => (
-                            <IntervalMesh key={`I${interval.index}`} interval={interval}/>
-                        )),
-                        ...fabric.splitIntervals.selected.map(interval => (
-                            <IntervalMesh key={`I${interval.index}`} interval={interval}/>
-                        )),
-                    ]
-                ) : (
-                    fabric.intervals.map(interval => (
-                        <IntervalMesh key={`I${interval.index}`} interval={interval}/>
-                    ))
-                )}}
+                {selectedIntervals ? selectedIntervals.map(interval => (
+                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                )) : fabric.intervals.map(interval => (
+                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                ))}}
             </group>
         )
     }
@@ -234,8 +227,8 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
         return (
             <group>
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
-                {!fabric.splitIntervals ? undefined : (
-                    fabric.splitIntervals.selected.map(interval => (
+                {!selectedIntervals ? undefined : (
+                    selectedIntervals.map(interval => (
                         <IntervalMesh key={`I${interval.index}`} interval={interval}/>
                     ))
                 )}
@@ -296,7 +289,6 @@ function Faces({fabric, lifePhase, selectFace}: {
             }
             return fabric.faces[faceIndex]
         })
-        fabric.clearSelection()
         const face = faces.reverse().pop()
         setDownEvent(undefined)
         if (!face) {

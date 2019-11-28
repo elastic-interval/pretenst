@@ -218,35 +218,3 @@ export interface IBrick {
 export function initialBrick(index: number, base: Triangle, scale: IPercent): IBrick {
     return {index, base, scale, joints: [], pushes: [], pulls: [], rings: [[], [], [], []], faces: []}
 }
-
-export function byFaces(faces: IFace[]): (interval: IInterval) => boolean {
-    return interval => {
-        const matchesInterval = (faceInterval: IInterval) => !faceInterval.removed && faceInterval.index === interval.index
-        const matchesFace = (face: IFace) => (
-            face.pushes.some(matchesInterval) || face.pulls.some(matchesInterval)
-        )
-        return faces.some(matchesFace)
-    }
-}
-
-export interface IIntervalSplit {
-    selected: IInterval[]
-    unselected: IInterval[]
-}
-
-export function emptySplit(): IIntervalSplit {
-    return {selected: [], unselected: []}
-}
-
-type IntervalSplitter = (split: IIntervalSplit, interval: IInterval) => IIntervalSplit
-
-export function intervalSplitter(selectionFilter: (interval: IInterval) => boolean): IntervalSplitter {
-    return (split, interval) => {
-        if (selectionFilter(interval)) {
-            split.selected.push(interval)
-        } else {
-            split.unselected.push(interval)
-        }
-        return split
-    }
-}

@@ -25,18 +25,19 @@ import { BehaviorSubject } from "rxjs"
 import { FabricFeature, fabricFeatureIntervalRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { IFace } from "../fabric/tensegrity-types"
+import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
 import { FeaturePanel } from "./feature-panel"
 
 export function ShapePanel({
-                               floatFeatures, fabric, setFabric, selectionMode, setSelectionMode,
+                               floatFeatures, fabric, selectedIntervals, setFabric, selectionMode, setSelectionMode,
                                selectedFaces, clearSelectedFaces, storedState$,
                            }: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
+    selectedIntervals: IInterval[],
     selectionMode: boolean,
     setSelectionMode: (selectionMode: boolean) => void,
     selectedFaces: IFace[],
@@ -57,8 +58,10 @@ export function ShapePanel({
             const factor = 1.03
             return up ? factor : (1 / factor)
         }
-
-        fabric.forEachSelected(interval => {
+        if (!selectedIntervals) {
+            return
+        }
+        selectedIntervals.forEach(interval => {
             if (interval.isPush && !pushes || !interval.isPush && !pulls) {
                 return
             }
@@ -74,6 +77,9 @@ export function ShapePanel({
     }
 
     function disableUnlessFaceCount(faceCount: number): boolean {
+        if (selectionMode || ellipsoids) {
+            return true
+        }
         return selectedFaces.length < faceCount || ellipsoids
     }
 
@@ -83,7 +89,8 @@ export function ShapePanel({
                 <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
             </div>
             <ButtonGroup className="w-100 my-2">
-                <Button color={selectionMode ? "warning" : "secondary"} onClick={() => setSelectionMode(!selectionMode)}>
+                <Button color={selectionMode ? "warning" : "secondary"}
+                        onClick={() => setSelectionMode(!selectionMode)}>
                     <span><FaHandPointUp/></span> Selection
                 </Button>
                 <Button disabled={selectedFaces.length === 0} onClick={() => clearSelectedFaces()}>
@@ -152,4 +159,3 @@ export function ShapePanel({
         </div>
     )
 }
-

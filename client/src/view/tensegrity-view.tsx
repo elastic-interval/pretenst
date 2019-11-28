@@ -15,7 +15,7 @@ import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { IFace, percentToFactor } from "../fabric/tensegrity-types"
+import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
@@ -43,8 +43,16 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
+    const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
-
+    useEffect(() => {
+        if (!fabric) {
+            return
+        }
+        const intervals = selectedFaces.reduce((accum, face) => [...accum, ...face.pushes, ...face.pulls], [] as IInterval[])
+        setSelectedIntervals(intervals)
+        setFabric(fabric)
+    }, [selectedFaces])
     const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(storedState$.getValue()))
     useEffect(() => {
         if (location.hash.length === 0) {
@@ -138,6 +146,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                         setRootTenscript={setRootTenscript}
                         fabric={fabric}
                         setFabric={setFabric}
+                        selectedIntervals={selectedIntervals}
                         selectionMode={selectionMode}
                         setSelectionMode={setSelectionMode}
                         selectedFaces={selectedFaces}
@@ -178,6 +187,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                         }}>
                             <FabricView
                                 fabric={fabric}
+                                selectedIntervals={selectedIntervals}
                                 selectedFaces={selectedFaces}
                                 setSelectedFaces={setSelectedFaces}
                                 selectionMode={selectionMode}

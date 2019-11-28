@@ -76,10 +76,10 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Gravity",
-                defaultValue: 0.00000005,
+                defaultValue: 0.0000001,
                 multiplier: FeatureMultiplier.Billionths,
                 fixedDigits: 1,
-                percents: [0, 10, 50, 100, 150, 200],
+                percents: [0, 10, 50, 100, 200, 500],
             }
         case FabricFeature.Drag:
             return {

@@ -13,7 +13,7 @@ import { FabricFeature, LifePhase } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { IFace } from "../fabric/tensegrity-types"
+import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { RealizePanel } from "./realize-panel"
@@ -39,7 +39,7 @@ function Icon(controlTab: ControlTab): JSX.Element {
 export function ControlTabs({
                                 floatFeatures, rootTenscript, setRootTenscript,
                                 selectionMode, setSelectionMode,
-                                selectedFaces, clearSelectedFaces,
+                                selectedFaces, clearSelectedFaces, selectedIntervals,
                                 fabric, setFabric, runTenscript,
                                 toFullScreen, storedState$, lifePhase$,
                             }: {
@@ -48,6 +48,7 @@ export function ControlTabs({
     setRootTenscript: (tenscript: ITenscript) => void,
     selectedFaces: IFace[],
     clearSelectedFaces: () => void,
+    selectedIntervals: IInterval[],
     runTenscript: (tenscript: ITenscript) => void,
     fabric?: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
@@ -113,6 +114,7 @@ export function ControlTabs({
                             floatFeatures={floatFeatures}
                             fabric={fabric}
                             setFabric={setFabric}
+                            selectedIntervals={selectedIntervals}
                             selectionMode={selectionMode}
                             setSelectionMode={setSelectionMode}
                             selectedFaces={selectedFaces}

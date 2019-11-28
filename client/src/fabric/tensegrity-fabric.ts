@@ -13,14 +13,11 @@ import { FabricInstance } from "./fabric-instance"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
-    emptySplit,
     IBrick,
     IFace,
     IFacePull,
     IInterval,
-    IIntervalSplit,
     IJoint,
-    intervalSplitter,
     IPercent,
     JointTag,
     percentOrHundred,
@@ -105,7 +102,6 @@ export class TensegrityFabric {
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public facePulls: IFacePull[] = []
-    public splitIntervals?: IIntervalSplit
     public faces: IFace[] = []
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
@@ -175,27 +171,6 @@ export class TensegrityFabric {
         stiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
         linearDensities.forEach((value, index) => instance.linearDensities[index] = value)
         Object.keys(this.floatFeatures).map(k => this.floatFeatures[k]).forEach(feature => instance.applyFeature(feature))
-    }
-
-    public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
-        if (this.activeTenscript) {
-            return 0
-        }
-        this.splitIntervals = this.intervals.reduce(intervalSplitter(selectionFilter), emptySplit())
-        return this.splitIntervals.selected.length
-    }
-
-    public clearSelection(): void {
-        this.splitIntervals = undefined
-    }
-
-    public forEachSelected(operation: (interval: IInterval) => void): number {
-        const splitIntervals = this.splitIntervals
-        if (!splitIntervals) {
-            return 0
-        }
-        splitIntervals.selected.forEach(operation)
-        return splitIntervals.selected.length
     }
 
     public get growthFaces(): IFace[] {
