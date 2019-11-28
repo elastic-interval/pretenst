@@ -38,6 +38,7 @@ function Icon(controlTab: ControlTab): JSX.Element {
 
 export function ControlTabs({
                                 floatFeatures, rootTenscript, setRootTenscript,
+                                selectionMode, setSelectionMode,
                                 selectedFaces, clearSelectedFaces,
                                 fabric, setFabric, runTenscript,
                                 toFullScreen, storedState$, lifePhase$,
@@ -50,21 +51,30 @@ export function ControlTabs({
     runTenscript: (tenscript: ITenscript) => void,
     fabric?: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
+    selectionMode: boolean,
+    setSelectionMode: (selectionMode: boolean) => void,
     toFullScreen: () => void,
     storedState$: BehaviorSubject<IStoredState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
-    const [controlTab, updateActiveTab] = useState(storedState$.getValue().controlTab)
-
+    const [lifePhase, updateLifePhase] = useState(lifePhase$.getValue())
     useEffect(() => {
-        if (controlTab !== ControlTab.Shape) {
+        const subscription = lifePhase$.subscribe(newPhase => updateLifePhase(newPhase))
+        return () => subscription.unsubscribe()
+    }, [])
+
+    const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
+    useEffect(() => {
+        const mode = controlTab === ControlTab.Shape && lifePhase === LifePhase.Shaping
+        setSelectionMode(mode)
+        if (!mode) {
             clearSelectedFaces()
         }
-    }, [controlTab])
+    }, [controlTab, lifePhase])
 
     useEffect(() => {
-        const subscription = storedState$.subscribe(newState => updateActiveTab(newState.controlTab))
+        const subscription = storedState$.subscribe(newState => updateControlTab(newState.controlTab))
         return () => subscription.unsubscribe()
     }, [])
 
@@ -103,6 +113,8 @@ export function ControlTabs({
                             floatFeatures={floatFeatures}
                             fabric={fabric}
                             setFabric={setFabric}
+                            selectionMode={selectionMode}
+                            setSelectionMode={setSelectionMode}
                             selectedFaces={selectedFaces}
                             clearSelectedFaces={clearSelectedFaces}
                             storedState$={storedState$}
@@ -113,6 +125,7 @@ export function ControlTabs({
                         <OptimizePanel
                             floatFeatures={floatFeatures}
                             fabric={fabric}
+                            selectionMode={selectionMode}
                             storedState$={storedState$}
                             lifePhase$={lifePhase$}
                         />
@@ -135,11 +148,6 @@ export function ControlTabs({
     }
 
     function FullScreenButton(): JSX.Element {
-        const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
-        useEffect(() => {
-            const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
-            return () => subscription.unsubscribe()
-        }, [])
         return (
             <Button
                 disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}

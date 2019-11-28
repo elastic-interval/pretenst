@@ -12,7 +12,6 @@ import {
     FaCompass,
     FaExpandArrowsAlt,
     FaFutbol,
-    FaHammer,
     FaHandPointUp,
     FaLink,
     FaMagic,
@@ -27,28 +26,29 @@ import { FabricFeature, fabricFeatureIntervalRole } from "../fabric/fabric-engin
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace } from "../fabric/tensegrity-types"
-import { IStoredState, transition } from "../storage/stored-state"
+import { IStoredState } from "../storage/stored-state"
 
 import { FeaturePanel } from "./feature-panel"
 
-export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, clearSelectedFaces, storedState$}: {
+export function ShapePanel({
+                               floatFeatures, fabric, setFabric, selectionMode, setSelectionMode,
+                               selectedFaces, clearSelectedFaces, storedState$,
+                           }: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
+    selectionMode: boolean,
+    setSelectionMode: (selectionMode: boolean) => void,
     selectedFaces: IFace[],
     clearSelectedFaces: () => void,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const [selectionMode, updateSelectionMode] = useState(storedState$.getValue().selectionMode)
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
 
     useEffect(() => {
         const subscriptions = [
-            storedState$.subscribe(newState => {
-                updateSelectionMode(newState.selectionMode)
-                updateEllipsoids(newState.ellipsoids)
-            }),
+            storedState$.subscribe(newState => updateEllipsoids(newState.ellipsoids)),
         ]
         return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
@@ -70,7 +70,7 @@ export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, cle
     function connect(): void {
         fabric.connectFaces(selectedFaces)
         clearSelectedFaces()
-        storedState$.next(transition(storedState$.getValue(), {selectionMode: false}))
+        setSelectionMode(false)
         setFabric(fabric)
     }
 
@@ -78,29 +78,20 @@ export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, cle
         return selectedFaces.length < faceCount || ellipsoids
     }
 
-    function toggleSelectionMode(): void {
-        storedState$.next(transition(storedState$.getValue(), {selectionMode: !selectionMode}))
-    }
-
     return (
         <div className="m-4">
             <div className="text-center">
-                <h2><FaHandPointUp/> Picking <FaHandPointUp/></h2>
+                <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
             </div>
-            <ButtonGroup vertical={true} className="my-2 w-100">
-                <Button color={selectionMode ? "warning" : "secondary"} onClick={toggleSelectionMode}>
-                    <span><FaHandPointUp/></span> Toggle selection mode
-                </Button>
+            <ButtonGroup className="w-100 my-2">
                 <Button disabled={selectedFaces.length === 0} onClick={() => clearSelectedFaces()}>
                     <span>
-                        <FaTimesCircle/> Clear selection&nbsp;&nbsp;&nbsp;
+                        <FaTimesCircle/>
+                        &nbsp;Clear selection&nbsp;&nbsp;&nbsp;
                         {selectedFaces.map(({index}) => <FaCircle key={`Dot${index}`}/>)}
                     </span>
                 </Button>
             </ButtonGroup>
-            <div className="text-center">
-                <h2><FaHammer/> Editing <FaHammer/></h2>
-            </div>
             <ButtonGroup className="w-100 my-2">
                 <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, true)}>
                     <FaArrowUp/><FaFutbol/>

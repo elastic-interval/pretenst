@@ -18,7 +18,7 @@ export function enumValues(e: object): number[] {
     return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
 
-const VERSION = "2019-11-28-b"
+const VERSION = "2019-11-28"
 
 export interface IFeatureValue {
     numeric: number
@@ -32,7 +32,6 @@ export interface IStoredState {
     featureValues: Record<FabricFeature, IFeatureValue>
     recentCode: Record<string, string>,
     controlTab: ControlTab
-    selectionMode: boolean
     fullScreen: boolean
     ellipsoids: boolean
     rotating: boolean
@@ -76,7 +75,6 @@ const INITIAL_STORED_STATE: IStoredState = {
     recentCode: {},
     controlTab: ControlTab.Grow,
     fullScreen: true,
-    selectionMode: false,
     ellipsoids: false,
     rotating: false,
     showPushes: true,

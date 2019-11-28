@@ -52,13 +52,12 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
         }
     }, [rootTenscript])
 
-    const [selectionMode, updateSelectionMode] = useState(storedState$.getValue().selectionMode)
+    const [selectionMode, setSelectionMode] = useState(false)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
 
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
-            updateSelectionMode(storedState.selectionMode)
             updateFullScreen(storedState.fullScreen)
             updateEllipsoids(storedState.ellipsoids)
             if (!fabric) {
@@ -103,7 +102,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
         lifePhase$.next(LifePhase.Growing)
         const featureValues = storedState$.getValue().featureValues
         setFabric(new TensegrityFabric(mainInstance, slackInstance, floatFeatures, featureValues, newTenscript))
-        storedState$.next(transition(storedState$.getValue(), {ellipsoids: false, selectionMode: false}))
+        storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
     }
 
     useEffect(() => {
@@ -139,6 +138,8 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                         setRootTenscript={setRootTenscript}
                         fabric={fabric}
                         setFabric={setFabric}
+                        selectionMode={selectionMode}
+                        setSelectionMode={setSelectionMode}
                         selectedFaces={selectedFaces}
                         clearSelectedFaces={() => setSelectedFaces([])}
                         runTenscript={runTenscript}

@@ -18,9 +18,10 @@ import { FeaturePanel } from "./feature-panel"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function OptimizePanel({floatFeatures, fabric, storedState$, lifePhase$}: {
+export function OptimizePanel({floatFeatures, fabric, selectionMode, storedState$, lifePhase$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
+    selectionMode: boolean,
     storedState$: BehaviorSubject<IStoredState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
@@ -44,7 +45,7 @@ export function OptimizePanel({floatFeatures, fabric, storedState$, lifePhase$}:
                     fabric={fabric}
                     lifePhase$={lifePhase$}
                     storedState$={storedState$}
-                    disabled={storedState.ellipsoids || storedState.selectionMode}
+                    disabled={storedState.ellipsoids || selectionMode}
                 />
             </div>
             <div className="my-3">
