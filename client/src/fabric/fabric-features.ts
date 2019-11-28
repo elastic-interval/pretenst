@@ -128,14 +128,6 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
         percents: FEATURE_PERCENTS,
     },
     {
-        feature: FabricFeature.PretenseIntensity,
-        name: "Pretensing Intensity",
-        defaultValue: 1,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 2,
-        percents: FEATURE_PERCENTS,
-    },
-    {
         feature: FabricFeature.SlackThreshold,
         name: "Slack Threshold",
         defaultValue: 0.0001,

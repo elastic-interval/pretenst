@@ -66,8 +66,7 @@ export function LifePhasePanel({fabric, lifePhase$, storedState$, disabled}: {
                 </Button>
                 <Button disabled={lifePhase !== LifePhase.Pretenst || disabled} onClick={() => {
                     const pushStrainFactor = featureValues[FabricFeature.PushStrainFactor].numeric
-                    const pretensingIntensity = featureValues[FabricFeature.PretenseIntensity].numeric
-                    fabric.fromStrainsToStiffnesses(pushStrainFactor, pretensingIntensity)
+                    fabric.fromStrainsToStiffnesses(pushStrainFactor, 1)
                 }}>
                     <span>Pretenst <FaHandSpock/> Strain <FaArrowRight/> Slack <FaYinYang/> Stiffness</span>
                 </Button>

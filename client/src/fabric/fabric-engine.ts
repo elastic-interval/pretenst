@@ -34,17 +34,16 @@ export enum FabricFeature {
     IntervalBusyTicks = 5,
     PretenseTicks = 6,
 
-    PretenseIntensity = 7,
-    SlackThreshold = 8,
-    RadiusFactor = 9,
-    MaxStiffness = 10,
+    SlackThreshold = 7,
+    RadiusFactor = 8,
+    MaxStiffness = 9,
 
-    PushLength = 11,
-    TriangleLength = 12,
-    RingLength = 13,
-    CrossLength = 14,
-    BowMidLength = 15,
-    BowEndLength = 16,
+    PushLength = 10,
+    TriangleLength = 11,
+    RingLength = 12,
+    CrossLength = 13,
+    BowMidLength = 14,
+    BowEndLength = 15,
 }
 
 export enum IntervalRole {
