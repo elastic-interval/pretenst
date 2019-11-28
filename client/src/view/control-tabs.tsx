@@ -9,7 +9,7 @@ import { FaArrowLeft, FaHandSpock, FaLeaf, FaTools } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { LifePhase } from "../fabric/fabric-engine"
+import { FabricFeature, LifePhase } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -39,7 +39,7 @@ export function ControlTabs({
                                 fabric, setFabric, runTenscript,
                                 toFullScreen, storedState$, lifePhase$,
                             }: {
-    floatFeatures: FloatFeature[],
+    floatFeatures: Record<FabricFeature, FloatFeature>,
     rootTenscript: ITenscript,
     setRootTenscript: (tenscript: ITenscript) => void,
     selectedFaces: IFace[],

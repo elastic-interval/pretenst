@@ -20,7 +20,7 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { fabricFeatureIntervalRole } from "../fabric/fabric-engine"
+import { FabricFeature, fabricFeatureIntervalRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace } from "../fabric/tensegrity-types"
@@ -29,7 +29,7 @@ import { IStoredState, transition } from "../storage/stored-state"
 import { FeaturePanel } from "./feature-panel"
 
 export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, clearSelectedFaces, storedState$}: {
-    floatFeatures: FloatFeature[],
+    floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
     selectedFaces: IFace[],
@@ -129,9 +129,12 @@ export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, cle
                     borderRadius: "0.7em",
                     padding: "0.5em",
                 }}>
-                    {floatFeatures.filter(feature => fabricFeatureIntervalRole(feature.fabricFeature) !== undefined).map(feature => (
-                        <FeaturePanel key={feature.title} feature={feature} disabled={selectionMode || ellipsoids}/>
-                    ))}
+                    {Object.keys(floatFeatures)
+                        .map(k => floatFeatures[k])
+                        .filter(feature => fabricFeatureIntervalRole(feature.fabricFeature) !== undefined)
+                        .map(feature => (
+                            <FeaturePanel key={feature.title} feature={feature} disabled={selectionMode || ellipsoids}/>
+                        ))}
                 </div>
             </div>
         </div>

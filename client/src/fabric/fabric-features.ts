@@ -8,7 +8,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { IStoredState } from "../storage/stored-state"
 
-import { FabricFeature } from "./fabric-engine"
+import { FABRIC_FEATURES, FabricFeature } from "./fabric-engine"
 
 export enum FeatureMultiplier {
     OneThousand,
@@ -70,88 +70,109 @@ const FEATURE_PERCENTS = [
     50, 75, 90, 100, 125, 150, 200,
 ]
 
-const FEATURE_CONFIGS: IFeatureConfig[] = [
-    {
-        feature: FabricFeature.Gravity,
-        name: "Gravity",
-        defaultValue: 0.00000005,
-        multiplier: FeatureMultiplier.Billionths,
-        fixedDigits: 1,
-        percents: [0, 10, 50, 100, 150, 200],
-    },
-    {
-        feature: FabricFeature.Drag,
-        name: "Drag",
-        defaultValue: 0.0001,
-        multiplier: FeatureMultiplier.Millionths,
-        fixedDigits: 1,
-        percents: FEATURE_PERCENTS,
-    },
-    {
-        feature: FabricFeature.PretenseFactor,
-        name: "Pretense",
-        defaultValue: 0.03,
-        multiplier: FeatureMultiplier.Hundredths,
-        fixedDigits: 2,
-        percents: FEATURE_PERCENTS,
-    },
-    {
-        feature: FabricFeature.PushStrainFactor,
-        name: "Push Over Pull",
-        defaultValue: 1,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 3,
-        percents: [20, 50, 100, 200, 400],
-    },
-    {
-        feature: FabricFeature.PushLength,
-        name: "Push",
-        defaultValue: Math.sqrt(2),
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 6,
-        percents: FEATURE_PERCENTS,
-    },
-    {
-        feature: FabricFeature.TriangleLength,
-        name: "Triangle",
-        defaultValue: 1,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 6,
-        percents: FEATURE_PERCENTS,
-    },
-    {
-        feature: FabricFeature.RingLength,
-        name: "Ring",
-        defaultValue: Math.sqrt(2 - 2 * Math.sqrt(2 / 3)),
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 6,
-        percents: [10, 80, 90, 100, 110, 120, 130],
-    },
-    {
-        feature: FabricFeature.CrossLength,
-        name: "Cross",
-        defaultValue: 1,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 3,
-        percents: FEATURE_PERCENTS,
-    },
-    {
-        feature: FabricFeature.BowMidLength,
-        name: "BowMid",
-        defaultValue: 0.4,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 6,
-        percents: FEATURE_PERCENTS,
-    },
-    {
-        feature: FabricFeature.BowEndLength,
-        name: "BowEnd",
-        defaultValue: 0.6,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 6,
-        percents: FEATURE_PERCENTS,
-    },
-]
+function featureConfig(feature: FabricFeature): IFeatureConfig {
+    switch (feature) {
+        case FabricFeature.Gravity:
+            return {
+                feature,
+                name: "Gravity",
+                defaultValue: 0.00000005,
+                multiplier: FeatureMultiplier.Billionths,
+                fixedDigits: 1,
+                percents: [0, 10, 50, 100, 150, 200],
+            }
+        case FabricFeature.Drag:
+            return {
+                feature,
+                name: "Drag",
+                defaultValue: 0.0001,
+                multiplier: FeatureMultiplier.Millionths,
+                fixedDigits: 1,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.PretenseFactor:
+            return {
+                feature,
+                name: "Pretense",
+                defaultValue: 0.03,
+                multiplier: FeatureMultiplier.Hundredths,
+                fixedDigits: 2,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.IntervalCountdown:
+            return {
+                feature,
+                name: "Interval Countdown",
+                defaultValue: 300,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 0,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.PushStrainFactor:
+            return {
+                feature,
+                name: "Push Over Pull",
+                defaultValue: 1,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 3,
+                percents: [20, 50, 100, 200, 400],
+            }
+        case FabricFeature.PushLength:
+            return {
+                feature,
+                name: "Push",
+                defaultValue: Math.sqrt(2),
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 6,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.TriangleLength:
+            return {
+                feature,
+                name: "Triangle",
+                defaultValue: 1,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 6,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.RingLength:
+            return {
+                feature,
+                name: "Ring",
+                defaultValue: Math.sqrt(2 - 2 * Math.sqrt(2 / 3)),
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 6,
+                percents: [10, 80, 90, 100, 110, 120, 130],
+            }
+        case FabricFeature.CrossLength:
+            return {
+                feature,
+                name: "Cross",
+                defaultValue: 1,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 3,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.BowMidLength:
+            return {
+                feature,
+                name: "BowMid",
+                defaultValue: 0.4,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 6,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.BowEndLength:
+            return {
+                feature,
+                name: "BowEnd",
+                defaultValue: 0.6,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 6,
+                percents: FEATURE_PERCENTS,
+            }
+    }
+}
 
 interface IFeatureValue {
     numeric: number
@@ -159,10 +180,13 @@ interface IFeatureValue {
 }
 
 export function defaultFeatureValues(): Record<FabricFeature, IFeatureValue> {
-    return FEATURE_CONFIGS.reduce((record, config) => {
-        record[config.feature] = ({percent: 100, numeric: config.defaultValue})
-        return record
-    }, {} as Record<FabricFeature, IFeatureValue>)
+    return FABRIC_FEATURES
+        .map(featureConfig)
+        .reduce((record, config) => {
+            console.log("FEATURE", config)
+            record[config.feature] = ({percent: 100, numeric: config.defaultValue})
+            return record
+        }, {} as Record<FabricFeature, IFeatureValue>)
 }
 
 export class FloatFeature {
@@ -170,7 +194,11 @@ export class FloatFeature {
 
     constructor(public readonly config: IFeatureConfig, storedState$: BehaviorSubject<IStoredState>) {
         const features = storedState$.getValue().featureValues
-        const initialValue = features[config.feature]
+        const fromConfig = features[config.feature]
+        const initialValue: IFeatureValue = fromConfig !== undefined ? fromConfig : {
+            numeric: config.defaultValue,
+            percent: 100,
+        }
         this.value$ = new BehaviorSubject<IFeatureValue>(initialValue)
         this.value$.subscribe(value => {
             const storedState = storedState$.getValue()
@@ -221,6 +249,8 @@ export function formatFeatureValue(config: IFeatureConfig, numeric: number): str
     return `${scaledValue.toFixed(config.fixedDigits)}${symbol}`
 }
 
-export function createFloatFeatures(storedState$: BehaviorSubject<IStoredState>): FloatFeature[] {
-    return FEATURE_CONFIGS.map(config => new FloatFeature(config, storedState$))
+export function createFloatFeatures(storedState$: BehaviorSubject<IStoredState>): Record<FabricFeature, FloatFeature> {
+    const features = {} as Record<FabricFeature, FloatFeature>
+    FABRIC_FEATURES.map(featureConfig).forEach(config => features[config.feature] = new FloatFeature(config, storedState$))
+    return features
 }

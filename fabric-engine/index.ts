@@ -21,10 +21,12 @@ const FACE_PULL_END_ZONE_FORCE: f32 = 0.0001
 const PRETENSE_COUNTDOWN_MAX: u32 = 30000
 const INTERVAL_BUSY_TICKS: u16 = 500
 
+const FEATURE_FLOATS = 256
 export enum FabricFeature {
     Gravity = 0,
     Drag = 1,
     PretenseFactor = 2,
+    IntervalCountdown = 3,
 }
 
 enum SurfaceCharacter {
@@ -72,7 +74,7 @@ const STATE_COUNT: u8 = 16
 const ATTENUATED_COLOR: f32[] = [
     0.1, 0.1, 0.1
 ]
-const SLACK_COLOR: f32[] = [
+const LOST_COLOR: f32[] = [
     1.0, 1.0, 1.0
 ]
 
@@ -333,7 +335,7 @@ const _AGE = _LINE_COLORS + _32x3_INTERVALS * 2
 const _MIDPOINT = _AGE + sizeof<u32>()
 const _PRETENST = _MIDPOINT + sizeof<f32>() * 3
 const _FABRIC_FEATURES = _PRETENST + sizeof<f32>()
-const _LIFE_PHASE = _FABRIC_FEATURES + 30 * sizeof<f32>() // lots
+const _LIFE_PHASE = _FABRIC_FEATURES + FEATURE_FLOATS * sizeof<f32>() // lots
 const _A = _LIFE_PHASE + sizeof<u16>()
 const _B = _A + sizeof<f32>() * 3
 const _X = _B + sizeof<f32>() * 3
@@ -996,7 +998,7 @@ function outputIntervals(): void {
         let nuance: f32 = 0.5
         let maxStrainSum = maxPushStrain + maxPullStrain
         if (strain === 0 || maxStrainSum < 0.0001) {
-            setLineColor(intervalIndex, SLACK_COLOR)
+            setLineColor(intervalIndex, LOST_COLOR)
         } else {
             if (!colorPushes && !colorPulls) {
                 let roleColor = ROLE_COLORS[intervalRole]

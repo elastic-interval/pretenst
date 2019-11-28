@@ -21,17 +21,25 @@ export function doNotClick(lifePhase: LifePhase): boolean {
 }
 
 export enum FabricFeature {
+
     Gravity = 0,
     Drag = 1,
     PretenseFactor = 2,
-    PushStrainFactor = 3,
-    PushLength = 4,
-    TriangleLength = 5,
-    RingLength = 6,
-    CrossLength = 7,
-    BowMidLength = 8,
-    BowEndLength = 9,
+    IntervalCountdown = 3,
+
+    PushLength = 11,
+    TriangleLength = 12,
+    RingLength = 13,
+    CrossLength = 14,
+    BowMidLength = 15,
+    BowEndLength = 16,
+
+    PushStrainFactor = 20,
 }
+
+export const FABRIC_FEATURES: FabricFeature[] = Object.keys(FabricFeature)
+    .filter(k => isNaN(parseInt(k, 10)))
+    .map(k => FabricFeature[k])
 
 export enum IntervalRole {
     Push = 0,

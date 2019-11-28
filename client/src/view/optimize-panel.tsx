@@ -19,7 +19,7 @@ import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
 export function OptimizePanel({floatFeatures, fabric, storedState$, lifePhase$}: {
-    floatFeatures: FloatFeature[],
+    floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
     storedState$: BehaviorSubject<IStoredState>,
     lifePhase$: BehaviorSubject<LifePhase>,

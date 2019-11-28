@@ -10,7 +10,7 @@ import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { fabricFeatureIntervalRole, LifePhase } from "../fabric/fabric-engine"
+import { FabricFeature, fabricFeatureIntervalRole, LifePhase } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
@@ -39,7 +39,7 @@ function getCodeToRun(state: IStoredState): ITenscript {
 
 export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifePhase$}: {
     fabricKernel: FabricKernel,
-    floatFeatures: FloatFeature[],
+    floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
@@ -79,22 +79,23 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
     }, [fabric])
 
     useEffect(() => { // todo: look when this happens
-        const featureSubscriptions = floatFeatures.map(feature => feature.observable.subscribe(() => {
-            if (!fabric) {
-                return
-            }
-            fabric.instance.applyFeature(feature)
-            const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
-            if (intervalRole !== undefined) {
-                const engine = fabric.instance.engine
-                fabric.intervals
-                    .filter(interval => interval.intervalRole === intervalRole)
-                    .forEach(interval => {
-                        const scaledLength = feature.numeric * percentToFactor(interval.scale)
-                        engine.changeRestLength(interval.index, scaledLength, 500)
-                    })
-            }
-        }))
+        const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map(feature =>
+            feature.observable.subscribe(() => {
+                if (!fabric) {
+                    return
+                }
+                fabric.instance.applyFeature(feature)
+                const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
+                if (intervalRole !== undefined) {
+                    const engine = fabric.instance.engine
+                    fabric.intervals
+                        .filter(interval => interval.intervalRole === intervalRole)
+                        .forEach(interval => {
+                            const scaledLength = feature.numeric * percentToFactor(interval.scale)
+                            engine.changeRestLength(interval.index, scaledLength, 500)
+                        })
+                }
+            }))
         return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
     }, [fabric])
 

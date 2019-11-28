@@ -127,12 +127,12 @@ export class TensegrityFabric {
     constructor(
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
-        public readonly floatFeatures: FloatFeature[],
+        public readonly floatFeatures: Record<FabricFeature, FloatFeature>,
         public readonly featureValues: Record<FabricFeature, IFeatureValue>,
         public readonly tenscript: ITenscript,
     ) {
         this.builder = new TensegrityBuilder(this)
-        floatFeatures.forEach(feature => this.instance.applyFeature(feature))
+        Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach(feature => this.instance.applyFeature(feature))
         const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred()) // todo: maybe raise
         this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
         this.bricks = [brick]
@@ -166,7 +166,7 @@ export class TensegrityFabric {
         this.nextLifePhase = LifePhase.Slack
         stiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
         linearDensities.forEach((value, index) => instance.linearDensities[index] = value)
-        this.floatFeatures.forEach(feature => instance.applyFeature(feature))
+        Object.keys(this.floatFeatures).map(k => this.floatFeatures[k]).forEach(feature => instance.applyFeature(feature))
     }
 
     public selectIntervals(selectionFilter: (interval: IInterval) => boolean): number {
