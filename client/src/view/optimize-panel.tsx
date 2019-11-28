@@ -75,7 +75,6 @@ export function OptimizePanel({floatFeatures, fabric, storedState$, lifePhase$}:
                     <h4><FaCog/> Behavior <FaCog/></h4>
                 </div>
                 <FeaturePanel feature={floatFeatures[FabricFeature.PretenseFactor]} disabled={false}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.PretenseTicks]} disabled={false}/>
             </div>
             <div className="my-3">
                 <div className="text-center">

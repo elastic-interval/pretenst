@@ -58,6 +58,7 @@ const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 const RADIUS_FACTOR = 5 // TODO: make it easily adjustable!
 const MAX_STIFFNESS = 0.0005 // TODO: make it easily adjustable!
+const TICKS_PER_FRAME = 100
 
 export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$, lifePhase$}: {
     fabric: TensegrityFabric,
@@ -119,8 +120,7 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
         if (ellipsoids || selectionMode) {
             newLifePhase = fabric.iterate(0)
         } else {
-            const ticksPerFrame = storedState.featureValues[FabricFeature.TicksPerFrame].numeric
-            const ticks = fabric.facePulls.length === 0 && lifePhase === LifePhase.Shaping ? 1 : ticksPerFrame
+            const ticks = fabric.facePulls.length === 0 && lifePhase === LifePhase.Shaping ? 1 : TICKS_PER_FRAME
             newLifePhase = fabric.iterate(ticks)
         }
         fabric.needsUpdate()

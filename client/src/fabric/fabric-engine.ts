@@ -29,17 +29,12 @@ export enum FabricFeature {
     Drag = 1,
     PretenseFactor = 2,
     PushStrainFactor = 3,
-
-    TicksPerFrame = 4,
-    IntervalBusyTicks = 5,
-    PretenseTicks = 6,
-
-    PushLength = 7,
-    TriangleLength = 8,
-    RingLength = 9,
-    CrossLength = 10,
-    BowMidLength = 11,
-    BowEndLength = 12,
+    PushLength = 4,
+    TriangleLength = 5,
+    RingLength = 6,
+    CrossLength = 7,
+    BowMidLength = 8,
+    BowEndLength = 9,
 }
 
 export enum IntervalRole {

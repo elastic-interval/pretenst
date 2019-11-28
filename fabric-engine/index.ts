@@ -18,23 +18,20 @@ const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const IN_UTERO_STIFFNESS_FACTOR: f32 = 10
 const FACE_PULL_END_ZONE: f32 = 4
 const FACE_PULL_END_ZONE_FORCE: f32 = 0.0001
+const PRETENSE_COUNTDOWN_MAX: u32 = 30000
+const INTERVAL_BUSY_TICKS: u16 = 500
 
 export enum FabricFeature {
     Gravity = 0,
     Drag = 1,
     PretenseFactor = 2,
     PushStrainFactor = 3,
-
-    TicksPerFrame = 4,
-    IntervalBusyTicks = 5,
-    PretenseTicks = 6,
-
-    PushLength = 7,
-    TriangleLength = 8,
-    RingLength = 9,
-    CrossLength = 10,
-    BowMidLength = 11,
-    BowEndLength = 12,
+    PushLength = 4,
+    TriangleLength = 5,
+    RingLength = 6,
+    CrossLength = 7,
+    BowMidLength = 8,
+    BowEndLength = 9,
 }
 
 enum SurfaceCharacter {
@@ -611,8 +608,7 @@ function setFabricBusyTicks(countdown: u32): void {
 
 function getPretensingNuance(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
-    let pretensingCountdownMax = getFeature(FabricFeature.PretenseTicks)
-    return (pretensingCountdownMax - <f32>fabricBusyCountdown) / pretensingCountdownMax
+    return (<f32>PRETENSE_COUNTDOWN_MAX - <f32>fabricBusyCountdown) / <f32>PRETENSE_COUNTDOWN_MAX
 }
 
 function getPreviousState(): u8 {
@@ -1348,7 +1344,7 @@ function slacken(): LifePhase {
 }
 
 function startPretensing(): LifePhase {
-    setFabricBusyTicks(<u32>getFeature(FabricFeature.PretenseTicks))
+    setFabricBusyTicks(PRETENSE_COUNTDOWN_MAX)
     if (surfaceCharacter === SurfaceCharacter.Frozen) {
         setAltitude(-0.2)
     }
@@ -1360,8 +1356,7 @@ function slackToShaping(): LifePhase {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         if (getIntervalRole(intervalIndex) === IntervalRole.Push) {
-            let countdown = <u16>getFeature(FabricFeature.IntervalBusyTicks)
-            multiplyRestLength(intervalIndex, 1.3, countdown)
+            multiplyRestLength(intervalIndex, 1.3, INTERVAL_BUSY_TICKS)
         }
     }
     return setLifePhase(LifePhase.Shaping)
