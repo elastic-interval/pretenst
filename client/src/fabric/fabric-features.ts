@@ -70,7 +70,7 @@ const FEATURE_PERCENTS = [
     50, 75, 90, 100, 125, 150, 200,
 ]
 
-export const FEATURE_CONFIGS: IFeatureConfig[] = [
+const FEATURE_CONFIGS: IFeatureConfig[] = [
     {
         feature: FabricFeature.Gravity,
         name: "Gravity",
@@ -156,6 +156,13 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
 interface IFeatureValue {
     numeric: number
     percent: number,
+}
+
+export function defaultFeatureValues(): Record<FabricFeature, IFeatureValue> {
+    return FEATURE_CONFIGS.reduce((record, config) => {
+        record[config.feature] = ({percent: 100, numeric: config.defaultValue})
+        return record
+    }, {} as Record<FabricFeature, IFeatureValue>)
 }
 
 export class FloatFeature {

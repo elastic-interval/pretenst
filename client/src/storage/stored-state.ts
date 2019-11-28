@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, roleToLengthFeature, SurfaceCharacter } from "../fabric/fabric-engine"
-import { FEATURE_CONFIGS } from "../fabric/fabric-features"
+import { FabricFeature, IntervalRole, SurfaceCharacter } from "../fabric/fabric-engine"
+import { defaultFeatureValues } from "../fabric/fabric-features"
 import { addNameToCode, codeToTenscript, ITenscript } from "../fabric/tenscript"
 
 export enum ControlTab {
@@ -60,7 +60,7 @@ export function roleDefaultLength(featureValues: Record<FabricFeature, IFeatureV
     if (intervalRole === IntervalRole.FacePull) {
         throw new Error()
     }
-    return featureValues[roleToLengthFeature(intervalRole)].numeric
+    return featureValues[FabricFeature[FabricFeature[intervalRole + FabricFeature.PushLength]]].numeric
 }
 
 export function transition(state: IStoredState, partial: Partial<IStoredState>): IStoredState {
@@ -71,10 +71,7 @@ const INITIAL_STORED_STATE: IStoredState = {
     version: VERSION,
     nonce: 0,
     surfaceCharacter: SurfaceCharacter.Frozen,
-    featureValues: FEATURE_CONFIGS.reduce((record, config) => {
-        record[config.feature] = ({percent: 100, numeric: config.defaultValue})
-        return record
-    }, {} as Record<FabricFeature, IFeatureValue>),
+    featureValues: defaultFeatureValues(),
     recentCode: {},
     controlTab: ControlTab.Grow,
     fullScreen: true,

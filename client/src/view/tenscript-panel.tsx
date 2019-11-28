@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBiohazard, FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
+import { FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -60,7 +60,7 @@ export function TenscriptPanel({rootTenscript, setRootTenscript, fabric, runTens
                         onClick={() => runTenscript(tenscript)}
                     >
                         {error.length === 0 ? (
-                            <span>Run <FaPlay/> Tenscript</span>
+                            <span>Execute <FaPlay/> tenscript</span>
                         ) : (
                             <span><FaBug/> {error}</span>
                         )}
@@ -74,7 +74,7 @@ export function TenscriptPanel({rootTenscript, setRootTenscript, fabric, runTens
                             addToRecentPrograms(tenscript)
                         }}
                     >
-                        Save <FaHeart/> to the Browser
+                        Save <FaHeart/> for later
                     </Button>
                 </ButtonGroup>
             </div>
@@ -100,7 +100,7 @@ export function TenscriptPanel({rootTenscript, setRootTenscript, fabric, runTens
                 toggle={() => setBootstrapOpen(!bootstrapOpen)}
             >
                 <DropdownToggle color="info" style={{borderRadius: "1.078em"}}>
-                    {bootstrapOpen ? <FaBiohazard/> : <FaHiking/>} Explore some examples
+                    Explore <FaHiking/> existing designs
                 </DropdownToggle>
                 <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
                     <DropdownItem key={`Boot${index}`} onClick={() => runTenscript(bootstrapProgram)}>

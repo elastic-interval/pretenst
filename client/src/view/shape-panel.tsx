@@ -20,7 +20,7 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { lengthFeatureToRole } from "../fabric/fabric-engine"
+import { fabricFeatureIntervalRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace } from "../fabric/tensegrity-types"
@@ -129,7 +129,7 @@ export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, cle
                     borderRadius: "0.7em",
                     padding: "0.5em",
                 }}>
-                    {floatFeatures.filter(feature => lengthFeatureToRole(feature.fabricFeature) !== undefined).map(feature => (
+                    {floatFeatures.filter(feature => fabricFeatureIntervalRole(feature.fabricFeature) !== undefined).map(feature => (
                         <FeaturePanel key={feature.title} feature={feature} disabled={selectionMode || ellipsoids}/>
                     ))}
                 </div>

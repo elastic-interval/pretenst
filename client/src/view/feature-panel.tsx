@@ -7,7 +7,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
 
-import { lengthFeatureToRole } from "../fabric/fabric-engine"
+import { fabricFeatureIntervalRole } from "../fabric/fabric-engine"
 import { FloatFeature, formatFeatureValue } from "../fabric/fabric-features"
 
 import { roleColorString } from "./materials"
@@ -22,7 +22,7 @@ export function FeaturePanel({feature, disabled}: { feature: FloatFeature, disab
         })
         return () => subscription.unsubscribe()
     }, [])
-    const roleColor = roleColorString(lengthFeatureToRole(feature.fabricFeature))
+    const roleColor = roleColorString(fabricFeatureIntervalRole(feature.fabricFeature))
     const color = roleColor ? roleColor : "#919191"
     return (
         <div className="my-1">

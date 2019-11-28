@@ -25,13 +25,6 @@ export enum FabricFeature {
     Gravity = 0,
     Drag = 1,
     PretenseFactor = 2,
-    PushStrainFactor = 3,
-    PushLength = 4,
-    TriangleLength = 5,
-    RingLength = 6,
-    CrossLength = 7,
-    BowMidLength = 8,
-    BowEndLength = 9,
 }
 
 enum SurfaceCharacter {
@@ -122,15 +115,9 @@ const _32x3_INTERVALS = MAX_INTERVALS * sizeof<f32>() * 3
 const _32x3_FACES = MAX_FACES * sizeof<f32>() * 3
 const _32_JOINTS = MAX_JOINTS * sizeof<f32>()
 const _32_INTERVALS = MAX_INTERVALS * sizeof<f32>()
-const _32_FACES = MAX_FACES * sizeof<f32>()
-const _16_JOINTS = MAX_JOINTS * sizeof<u16>()
 const _16_INTERVALS = MAX_INTERVALS * sizeof<u16>() * 3
 const _16_FACES = MAX_FACES * sizeof<u16>() * 3
-const _8_JOINTS = MAX_JOINTS * sizeof<u8>()
 const _8_INTERVALS = MAX_INTERVALS * sizeof<u8>() * 3
-const _8_FACES = MAX_FACES * sizeof<u8>() * 3
-
-// SURFACE
 
 const SURFACE_BITS: u8 = 128
 const SURFACE_SIZE =

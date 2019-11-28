@@ -20,10 +20,6 @@ export function doNotClick(lifePhase: LifePhase): boolean {
     return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
 }
 
-export function hideSurface(lifePhase: LifePhase): boolean {
-    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack
-}
-
 export enum FabricFeature {
     Gravity = 0,
     Drag = 1,
@@ -47,16 +43,12 @@ export enum IntervalRole {
     FacePull = 6,
 }
 
-export function roleToLengthFeature(intervalRole: IntervalRole): FabricFeature {
-    return FabricFeature[FabricFeature[intervalRole + FabricFeature.PushLength]]
-}
-
-export function lengthFeatureToRole(fabricFeature: FabricFeature): IntervalRole | undefined {
-    const roleIndex: number = fabricFeature - FabricFeature.PushLength
-    if (roleIndex < 0 || roleIndex > IntervalRole.BowEnd) {
+export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): IntervalRole | undefined {
+    const firstLengthFeature = FabricFeature.PushLength
+    if (fabricFeature < firstLengthFeature || fabricFeature > FabricFeature.BowEndLength) {
         return undefined
     }
-    return IntervalRole[IntervalRole[roleIndex]]
+    return IntervalRole[IntervalRole[fabricFeature - firstLengthFeature]]
 }
 
 export enum FabricDirection {

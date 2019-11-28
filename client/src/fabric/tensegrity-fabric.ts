@@ -251,14 +251,7 @@ export class TensegrityFabric {
         const stiffness = scaleToStiffness(scale)
         const linearDensity = stiffnessToLinearDensity(stiffness)
         const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, stiffness, linearDensity, coundown)
-        const interval: IInterval = {
-            index,
-            intervalRole,
-            scale,
-            alpha, omega,
-            removed: false,
-            isPush,
-        }
+        const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false, isPush}
         this.intervals.push(interval)
         return interval
     }

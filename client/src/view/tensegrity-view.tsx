@@ -10,7 +10,7 @@ import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { lengthFeatureToRole, LifePhase } from "../fabric/fabric-engine"
+import { fabricFeatureIntervalRole, LifePhase } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
@@ -84,7 +84,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                 return
             }
             fabric.instance.applyFeature(feature)
-            const intervalRole = lengthFeatureToRole(feature.config.feature)
+            const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
             if (intervalRole !== undefined) {
                 const engine = fabric.instance.engine
                 fabric.intervals
