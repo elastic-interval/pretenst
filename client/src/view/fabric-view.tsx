@@ -57,6 +57,7 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 const RADIUS_FACTOR = 5 // TODO: make it easily adjustable!
+const MAX_STIFFNESS = 0.0005 // TODO: make it easily adjustable!
 
 export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$, lifePhase$}: {
     fabric: TensegrityFabric,
@@ -321,14 +322,13 @@ function Faces({fabric, lifePhase, selectFace}: {
 
 function strainPushLines(fabric: TensegrityFabric, featureValues: Record<FabricFeature, IFeatureValue>): Float32Array {
 
-    const maxStiffness = featureValues[FabricFeature.MaxStiffness].numeric
     const instance = fabric.instance
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
     const stiffnesses = instance.stiffnesses
     let offset = 0
     fabric.intervals.forEach(interval => {
         const stiffness = stiffnesses[interval.index]
-        const height = stiffness / maxStiffness * (interval.isPush ? SCALE_MAX : -SCALE_MAX)
+        const height = stiffness / MAX_STIFFNESS * (interval.isPush ? SCALE_MAX : -SCALE_MAX)
         vertices[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
         vertices[offset++] = height
         vertices[offset++] = 0

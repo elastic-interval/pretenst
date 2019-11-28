@@ -29,15 +29,12 @@ export enum FabricFeature {
     IntervalBusyTicks = 5,
     PretenseTicks = 6,
 
-    SlackThreshold = 7,
-    MaxStiffness = 8,
-
-    PushLength = 9,
-    TriangleLength = 10,
-    RingLength = 11,
-    CrossLength = 12,
-    BowMidLength = 13,
-    BowEndLength = 14,
+    PushLength = 7,
+    TriangleLength = 8,
+    RingLength = 9,
+    CrossLength = 10,
+    BowMidLength = 11,
+    BowEndLength = 12,
 }
 
 enum SurfaceCharacter {

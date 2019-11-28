@@ -128,22 +128,6 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
         percents: FEATURE_PERCENTS,
     },
     {
-        feature: FabricFeature.SlackThreshold,
-        name: "Slack Threshold",
-        defaultValue: 0.0001,
-        multiplier: FeatureMultiplier.Millionths,
-        fixedDigits: 1,
-        percents: FEATURE_PERCENTS,
-    },
-    {
-        feature: FabricFeature.MaxStiffness,
-        name: "Max Stiffness",
-        defaultValue: 0.0005,
-        multiplier: FeatureMultiplier.Millionths,
-        fixedDigits: 0,
-        percents: FEATURE_PERCENTS,
-    },
-    {
         feature: FabricFeature.PushLength,
         name: "Push",
         defaultValue: Math.sqrt(2),
