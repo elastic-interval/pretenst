@@ -11,7 +11,6 @@ declare function logFloat(idx: u32, f: f32): void
 declare function logInt(idx: u32, i: i32): void
 
 // DECLARATION
-
 const FEATURE_FLOATS = 30
 
 const FROZEN_ALTITUDE: f32 = -0.02

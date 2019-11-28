@@ -78,9 +78,10 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                 <div className="text-center">
                     <h4><FaClock/> Time <FaClock/></h4>
                 </div>
-                <FeaturePanel key="iter" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={false}/>
-                <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={false}/>
-                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenseCountdown]} disabled={false}/>
+                <FeaturePanel key="iter" feature={floatFeatures[FabricFeature.IterationsPerFrame]}
+                              disabled={ellipsoids}/>
+                <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
+                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenseCountdown]} disabled={ellipsoids}/>
             </div>
             <div className="my-3">
                 <div className="text-center">
@@ -90,22 +91,25 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                     <ViewButton pushes={true} pulls={true}>
                         <span><FaFutbol/> Pushes and Pulls Gradient</span>
                     </ViewButton>
-                    <ViewButton pushes={false} pulls={true}>
-                        <span><FaVolleyballBall/> Pulls Gradient</span>
-                    </ViewButton>
-                    <ViewButton pushes={true} pulls={false}>
-                        <span><FaExpandArrowsAlt/> Pushes Gradient</span>
-                    </ViewButton>
+                    <ButtonGroup>
+                        <ViewButton pushes={false} pulls={true}>
+                            <span><FaVolleyballBall/> Pulls Gradient</span>
+                        </ViewButton>
+                        <ViewButton pushes={true} pulls={false}>
+                            <span><FaExpandArrowsAlt/> Pushes Gradient</span>
+                        </ViewButton>
+                    </ButtonGroup>
                     <ViewButton pushes={false} pulls={false}>
                         <span><FaCircle/> Role Colors</span>
                     </ViewButton>
                 </ButtonGroup>
-                <ButtonGroup vertical={true} className="w-100 my-3">
+                <ButtonGroup className="w-100 my-3">
                     <Button
+                        disabled={lifePhase < LifePhase.Shaping}
                         color={ellipsoids ? "warning" : "secondary"}
                         onClick={() => storedState$.next(transition(storedState$.getValue(), {ellipsoids: !ellipsoids}))}
                     >
-                        <FaCamera/> Frozen Detail View
+                        <FaCamera/> Deluxe View
                     </Button>
                     <Button
                         color={rotating ? "warning" : "secondary"}
@@ -114,6 +118,10 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                         <FaSyncAlt/> Rotating View
                     </Button>
                 </ButtonGroup>
+                <FeaturePanel key="pushrad" feature={floatFeatures[FabricFeature.PushRadiusFactor]}
+                              disabled={!ellipsoids}/>
+                <FeaturePanel key="pullrad" feature={floatFeatures[FabricFeature.PullRadiusFactor]}
+                              disabled={!ellipsoids}/>
             </div>
             <div className="my-3">
                 <div className="text-center">
@@ -128,7 +136,7 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                             onClick={() => fabric.instance.engine.setAltitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>
-                    <Button onClick={() => fabric.instance.engine.centralize()}>
+                    <Button disabled={ellipsoids} onClick={() => fabric.instance.engine.centralize()}>
                         <FaCompressArrowsAlt/> Centralize
                     </Button>
                 </ButtonGroup>

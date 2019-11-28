@@ -56,14 +56,16 @@ export function LifePhasePanel({fabric, lifePhase$, storedState$, disabled}: {
                 <Button disabled={lifePhase !== LifePhase.Shaping || disabled} onClick={() => fabric.toSlack()}>
                     <span>Shaping <FaHammer/> <FaArrowRight/> Slack <FaYinYang/></span>
                 </Button>
-                <Button disabled={lifePhase !== LifePhase.Slack || disabled}
-                        onClick={() => fabric.fromSlackToPretensing()}>
-                    <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/></span>
-                </Button>
-                <Button disabled={lifePhase !== LifePhase.Slack || disabled}
-                        onClick={() => fabric.fromSlackToShaping()}>
-                    <span>Slack <FaYinYang/> <FaArrowRight/> Shaping <FaHammer/></span>
-                </Button>
+                <ButtonGroup>
+                    <Button disabled={lifePhase !== LifePhase.Slack || disabled}
+                            onClick={() => fabric.fromSlackToPretensing()}>
+                        <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/></span>
+                    </Button>
+                    <Button disabled={lifePhase !== LifePhase.Slack || disabled}
+                            onClick={() => fabric.fromSlackToShaping()}>
+                        <span>Slack <FaYinYang/> <FaArrowRight/> Shaping <FaHammer/></span>
+                    </Button>
+                </ButtonGroup>
                 <Button disabled={lifePhase !== LifePhase.Pretenst || disabled} onClick={() => {
                     const pushStrainFactor = featureValues[FabricFeature.PushStrainFactor].numeric
                     fabric.fromStrainsToStiffnesses(pushStrainFactor, 1)

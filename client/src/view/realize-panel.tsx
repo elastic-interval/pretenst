@@ -40,7 +40,7 @@ export function RealizePanel({floatFeatures, fabric, selectionMode, storedState$
 
     return (
         <div className="m-4">
-            <div className="my-2 w-100">
+            <div className="my-1 w-100">
                 <LifePhasePanel
                     fabric={fabric}
                     lifePhase$={lifePhase$}
@@ -48,7 +48,7 @@ export function RealizePanel({floatFeatures, fabric, selectionMode, storedState$
                     disabled={storedState.ellipsoids || selectionMode}
                 />
             </div>
-            <div className="my-3">
+            <div className="my-1">
                 <div className="text-center">
                     <h4><FaGlobe/> Environment <FaGlobe/></h4>
                 </div>
@@ -71,13 +71,14 @@ export function RealizePanel({floatFeatures, fabric, selectionMode, storedState$
                 <FeaturePanel feature={floatFeatures[FabricFeature.Drag]} disabled={false}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.PushStrainFactor]} disabled={false}/>
             </div>
-            <div className="my-3">
+            <div className="my-1">
                 <div className="text-center">
                     <h4><FaCog/> Behavior <FaCog/></h4>
                 </div>
                 <FeaturePanel feature={floatFeatures[FabricFeature.PretenseFactor]} disabled={false}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.MaxStiffness]} disabled={false}/>
             </div>
-            <div className="my-3">
+            <div className="my-1">
                 <div className="text-center">
                     <h4><FaSearchMinus/> Strain <FaSearchPlus/></h4>
                 </div>

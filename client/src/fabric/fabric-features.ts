@@ -192,7 +192,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
         case FabricFeature.BowMidLength:
             return {
                 feature,
-                name: "BowMid",
+                name: "Bow Mid",
                 defaultValue: 0.4,
                 multiplier: FeatureMultiplier.One,
                 fixedDigits: 6,
@@ -201,11 +201,38 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
         case FabricFeature.BowEndLength:
             return {
                 feature,
-                name: "BowEnd",
+                name: "Bow End",
                 defaultValue: 0.6,
                 multiplier: FeatureMultiplier.One,
                 fixedDigits: 6,
                 percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.PushRadiusFactor:
+            return {
+                feature,
+                name: "Push Radius",
+                defaultValue: 5,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 2,
+                percents: [5, 25, 50, 100, 150, 200, 300],
+            }
+        case FabricFeature.PullRadiusFactor:
+            return {
+                feature,
+                name: "Pull Radius",
+                defaultValue: 2,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 2,
+                percents: [5, 25, 50, 100, 150, 200, 300],
+            }
+        case FabricFeature.MaxStiffness:
+            return {
+                feature,
+                name: "Maximum Stiffness",
+                defaultValue: 0.0005,
+                multiplier: FeatureMultiplier.Millionths,
+                fixedDigits: 0,
+                percents: [5, 25, 50, 100, 150, 200, 500],
             }
     }
 }

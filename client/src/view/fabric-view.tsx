@@ -25,7 +25,7 @@ import {
 import { doNotClick, FabricFeature, LifePhase } from "../fabric/fabric-engine"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
-import { IFeatureValue, IStoredState } from "../storage/stored-state"
+import { IStoredState } from "../storage/stored-state"
 
 import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
@@ -57,8 +57,6 @@ const ALTITUDE = 4
 const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
-const RADIUS_FACTOR = 5 // TODO: make it easily adjustable!
-const MAX_STIFFNESS = 0.0005 // TODO: make it easily adjustable!
 
 export function FabricView({fabric, selectedIntervals, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$, lifePhase$}: {
     fabric: TensegrityFabric,
@@ -86,9 +84,15 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         return () => subscription.unsubscribe()
     }, [])
 
-    const [storedState, updateFabricState] = useState(storedState$.getValue())
+    const [storedState, updateStoredState] = useState(storedState$.getValue())
+    const [pushRadius, updatePushRadius] = useState(storedState$.getValue().featureValues[FabricFeature.PushRadiusFactor].numeric)
+    const [pullRadius, updatePullRadius] = useState(storedState$.getValue().featureValues[FabricFeature.PullRadiusFactor].numeric)
     useEffect(() => {
-        const subscription = storedState$.subscribe(newState => updateFabricState(newState))
+        const subscription = storedState$.subscribe(newState => {
+            updateStoredState(newState)
+            updatePushRadius(newState.featureValues[FabricFeature.PushRadiusFactor].numeric)
+            updatePullRadius(newState.featureValues[FabricFeature.PullRadiusFactor].numeric)
+        })
         return () => subscription.unsubscribe()
     }, [])
     useEffect(() => {
@@ -155,7 +159,11 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         )
     }
 
-    function IntervalMesh({interval}: { interval: IInterval }): JSX.Element | null {
+    function IntervalMesh({interval, push, pull}: {
+        interval: IInterval,
+        push: number,
+        pull: number,
+    }): JSX.Element | null {
         const {showPushes, showPulls} = storedState
         let material = roleMaterial(interval.intervalRole)
         if (showPushes || showPulls) {
@@ -165,7 +173,8 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
             }
         }
         const linearDensity = fabric.instance.linearDensities[interval.index]
-        const {scale, rotation} = fabric.orientInterval(interval, RADIUS_FACTOR * linearDensity)
+        const radiusFactor = interval.isPush ? push : pull
+        const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
         return (
             <mesh
                 geometry={SPHERE}
@@ -184,7 +193,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
             return <group/>
         }
         const needleGeometry = new BufferGeometry()
-        const lines = strainPushLines(fabric, storedState.featureValues)
+        const lines = strainPushLines(fabric, storedState.featureValues[FabricFeature.MaxStiffness].numeric)
         needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
         needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.lineColors, 3))
         const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
@@ -215,9 +224,9 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         return (
             <group>
                 {selectedIntervals.length > 0 ? selectedIntervals.map(interval => (
-                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                    <IntervalMesh key={`SI${interval.index}`} interval={interval} push={pushRadius} pull={pullRadius}/>
                 )) : fabric.intervals.map(interval => (
-                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                    <IntervalMesh key={`I${interval.index}`} interval={interval} push={pushRadius} pull={pullRadius}/>
                 ))}}
             </group>
         )
@@ -228,7 +237,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
             <group>
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
                 {selectedIntervals.map(interval => (
-                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                    <IntervalMesh key={`SI${interval.index}`} interval={interval} push={pushRadius} pull={pullRadius}/>
                 ))}
             </group>
         )
@@ -306,15 +315,14 @@ function Faces({fabric, lifePhase, selectFace}: {
     )
 }
 
-function strainPushLines(fabric: TensegrityFabric, featureValues: Record<FabricFeature, IFeatureValue>): Float32Array {
-
+function strainPushLines(fabric: TensegrityFabric, maxStiffness: number): Float32Array {
     const instance = fabric.instance
     const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
     const stiffnesses = instance.stiffnesses
     let offset = 0
     fabric.intervals.forEach(interval => {
         const stiffness = stiffnesses[interval.index]
-        const height = stiffness / MAX_STIFFNESS * (interval.isPush ? SCALE_MAX : -SCALE_MAX)
+        const height = stiffness / maxStiffness * (interval.isPush ? SCALE_MAX : -SCALE_MAX)
         vertices[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
         vertices[offset++] = height
         vertices[offset++] = 0
