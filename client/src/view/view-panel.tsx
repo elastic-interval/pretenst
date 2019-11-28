@@ -119,7 +119,7 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                 <div className="text-center">
                     <h4><FaHandRock/> Disturb <FaHandRock/></h4>
                 </div>
-                <ButtonGroup vertical={true} className="w-100">
+                <ButtonGroup className="w-100">
                     <Button disabled={lifePhase !== LifePhase.Pretenst}
                             onClick={() => fabric.instance.engine.setAltitude(1)}>
                         <FaHandRock/> Nudge

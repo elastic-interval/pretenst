@@ -214,7 +214,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
     function EllipsoidView(): JSX.Element {
         return (
             <group>
-                {selectedIntervals ? selectedIntervals.map(interval => (
+                {selectedIntervals.length > 0 ? selectedIntervals.map(interval => (
                     <IntervalMesh key={`I${interval.index}`} interval={interval}/>
                 )) : fabric.intervals.map(interval => (
                     <IntervalMesh key={`I${interval.index}`} interval={interval}/>
@@ -227,11 +227,9 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         return (
             <group>
                 <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
-                {!selectedIntervals ? undefined : (
-                    selectedIntervals.map(interval => (
-                        <IntervalMesh key={`I${interval.index}`} interval={interval}/>
-                    ))
-                )}
+                {selectedIntervals.map(interval => (
+                    <IntervalMesh key={`I${interval.index}`} interval={interval}/>
+                ))}
             </group>
         )
     }
