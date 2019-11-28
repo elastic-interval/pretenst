@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { IBrick, IFace, IFaceMark, IPercent, opposite, percentOrHundred, Triangle } from "./tensegrity-brick-types"
 import { TensegrityFabric } from "./tensegrity-fabric"
+import { IBrick, IFace, IFaceMark, IPercent, opposite, percentOrHundred, Triangle } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
     "(0):Zen",

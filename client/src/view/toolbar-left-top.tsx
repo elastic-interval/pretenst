@@ -9,8 +9,8 @@ import { FaHandPointUp, FaTimesCircle } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IFace } from "../fabric/tensegrity-types"
 import { IStoredState, transition } from "../storage/stored-state"
 
 export function ToolbarLeftTop({fabric, selectedFaces, clearSelectedFaces, storedState$, fullScreen}: {

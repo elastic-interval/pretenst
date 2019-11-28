@@ -23,8 +23,8 @@ import {
 } from "three"
 
 import { doNotClick, FabricFeature, LifePhase } from "../fabric/fabric-engine"
-import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IFeatureValue, IStoredState } from "../storage/stored-state"
 
 import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE, SELECT_MATERIAL } from "./materials"

@@ -8,6 +8,7 @@ import { Matrix4, Vector3 } from "three"
 import { roleDefaultLength } from "../storage/stored-state"
 
 import { IntervalRole } from "./fabric-engine"
+import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     averageLocation,
     averageScaleFactor,
@@ -29,8 +30,7 @@ import {
     PushEnd,
     Triangle,
     TRIANGLE_DEFINITIONS,
-} from "./tensegrity-brick-types"
-import { TensegrityFabric } from "./tensegrity-fabric"
+} from "./tensegrity-types"
 
 const COUNTDOWN = 300
 

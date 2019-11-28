@@ -22,8 +22,8 @@ import { BehaviorSubject } from "rxjs"
 
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IFace } from "../fabric/tensegrity-types"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { FeaturePanel } from "./feature-panel"

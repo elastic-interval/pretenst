@@ -7,8 +7,8 @@ import * as FileSaver from "file-saver"
 import { Mesh, Object3D } from "three"
 import { OBJExporter } from "three/examples/jsm/exporters/OBJExporter"
 
-import { IInterval } from "../fabric/tensegrity-brick-types"
 import { IFabricOutput, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IInterval } from "../fabric/tensegrity-types"
 import { FACE, roleMaterial } from "../view/materials"
 
 function extractJointBlob(output: IFabricOutput): Blob {

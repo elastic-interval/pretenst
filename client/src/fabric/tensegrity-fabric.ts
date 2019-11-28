@@ -11,6 +11,7 @@ import { FabricFeature, IFabricEngine, IntervalRole, Laterality, LifePhase } fro
 import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
+import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
     emptySplit,
     IBrick,
@@ -26,8 +27,7 @@ import {
     percentToFactor,
     Triangle,
     TRIANGLE_DEFINITIONS,
-} from "./tensegrity-brick-types"
-import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
+} from "./tensegrity-types"
 
 interface IOutputInterval {
     joints: string,
