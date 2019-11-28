@@ -7,10 +7,10 @@ import * as React from "react"
 import { useMemo } from "react"
 import { Face3, Geometry, Vector3 } from "three"
 
+import { MeshKey } from "../gotchi-view/selector"
 import { HEXAGON_POINTS, LAND_NORMAL_SPREAD, SIX, SURFACE_LAND_COLOR, UP } from "../island/constants"
 
 import { SURFACE, SURFACE_GHOST } from "./materials"
-import { MeshKey } from "./selector"
 
 export function SurfaceComponent({ghost}: { ghost: boolean }): JSX.Element {
     const spots = useMemo(() => spotsGeometry(), [])

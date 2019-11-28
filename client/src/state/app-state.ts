@@ -5,6 +5,7 @@
 
 import { IFabricEngine } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
+import { IFlightState } from "../gotchi-view/flight-state"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { Hexalot } from "../island/hexalot"
@@ -13,7 +14,6 @@ import { coordsToString, IIslandData } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
 import { IUser, RemoteStorage } from "../storage/remote-storage"
-import { IFlightState } from "../view/flight-state"
 
 export interface IAppProps {
     engine: IFabricEngine

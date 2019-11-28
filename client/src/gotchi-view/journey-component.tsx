@@ -10,7 +10,7 @@ import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 import { HUNG_ALTITUDE } from "../fabric/gotchi-body"
 import { Journey } from "../island/journey"
 
-import { JOURNEY } from "./materials"
+import { JOURNEY } from "./gotchi-materials"
 
 export interface IJourneyProps {
     journey: Journey

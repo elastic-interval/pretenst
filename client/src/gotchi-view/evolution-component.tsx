@@ -10,7 +10,7 @@ import { Subscription } from "rxjs/Subscription"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 
-import { GOTCHI_ARROW, GOTCHI_GHOST } from "./materials"
+import { GOTCHI_ARROW, GOTCHI_GHOST } from "./gotchi-materials"
 
 export interface IEvolutionProps {
     evolution: Evolution

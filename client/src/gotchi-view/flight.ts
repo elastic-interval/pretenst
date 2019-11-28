@@ -5,8 +5,9 @@
 
 import { PerspectiveCamera, Vector3 } from "three"
 
+import { Orbit } from "../view/orbit"
+
 import { IFlightState } from "./flight-state"
-import { Orbit } from "./orbit"
 
 export const INITIAL_DISTANCE = 15000
 export const MINIMUM_DISTANCE = 3

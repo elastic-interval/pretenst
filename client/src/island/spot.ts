@@ -7,7 +7,7 @@
 import { Color, Face3, Matrix4, Vector3 } from "three"
 
 import { HUNG_ALTITUDE, SPOT_TO_HANGER } from "../fabric/gotchi-body"
-import { MeshKey } from "../view/selector"
+import { MeshKey } from "../gotchi-view/selector"
 
 import {
     HEXAGON_POINTS,

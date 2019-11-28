@@ -13,9 +13,9 @@ import { ClickHandler } from "../state/click-handler"
 import { IUser } from "../storage/remote-storage"
 
 import { EvolutionComponent } from "./evolution-component"
+import { GOTCHI, GOTCHI_ARROW } from "./gotchi-materials"
 import { IslandComponent } from "./island-component"
 import { JourneyComponent } from "./journey-component"
-import { GOTCHI, GOTCHI_ARROW } from "./materials"
 import { MeshKey, Selector } from "./selector"
 
 interface IWorldProps {

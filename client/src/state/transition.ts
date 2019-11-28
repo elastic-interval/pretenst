@@ -3,6 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import {
+    EvolutionTarget,
+    HexalotTarget,
+    IFlightState,
+    JockeyTarget,
+    WithHexalot,
+    WithSpot,
+} from "../gotchi-view/flight-state"
 import { Evolution } from "../gotchi/evolution"
 import { Jockey } from "../gotchi/jockey"
 import { fetchGenome, fetchJourney, Hexalot } from "../island/hexalot"
@@ -17,14 +25,6 @@ import {
 } from "../island/island-logic"
 import { Journey } from "../island/journey"
 import { Spot } from "../island/spot"
-import {
-    EvolutionTarget,
-    HexalotTarget,
-    IFlightState,
-    JockeyTarget,
-    WithHexalot,
-    WithSpot,
-} from "../view/flight-state"
 
 import { AppMode, IAppState } from "./app-state"
 

@@ -20,7 +20,7 @@ import {
     HOME_HEXALOT,
     ISLAND,
     SELECTED_POINTER,
-} from "./materials"
+} from "./gotchi-materials"
 import { MeshKey } from "./selector"
 
 const SUN_POSITION = new Vector3(0, 600, 0)
