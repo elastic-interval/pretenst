@@ -26,6 +26,9 @@ export enum FabricFeature {
     Drag = 1,
     PretenseFactor = 2,
     IntervalCountdown = 3,
+    PretenseCountdown = 4,
+    FacePullEndZone = 5,
+    FacePullOrientationForce = 6,
 
     PushLength = 11,
     TriangleLength = 12,
@@ -36,6 +39,8 @@ export enum FabricFeature {
 
     PushStrainFactor = 20,
 }
+
+export const FEATURE_FLOATS = 30
 
 export const FABRIC_FEATURES: FabricFeature[] = Object.keys(FabricFeature)
     .filter(k => isNaN(parseInt(k, 10)))

@@ -8,13 +8,16 @@ import { useEffect, useState } from "react"
 import {
     FaArrowDown,
     FaArrowUp,
+    FaCircle,
     FaCompass,
     FaExpandArrowsAlt,
     FaFutbol,
+    FaHammer,
     FaHandPointUp,
     FaLink,
     FaMagic,
     FaSlidersH,
+    FaTimesCircle,
     FaVolleyballBall,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
@@ -75,50 +78,66 @@ export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, cle
         return selectedFaces.length < faceCount || ellipsoids
     }
 
+    function toggleSelectionMode(): void {
+        storedState$.next(transition(storedState$.getValue(), {selectionMode: !selectionMode}))
+    }
+
     return (
-        <div className="w-100">
-            <div className="m-4">
-                <div className="text-center">
-                    <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
-                </div>
-                <ButtonGroup className="w-100 my-2">
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, true)}>
-                        <FaArrowUp/><FaFutbol/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, false, true)}>
-                        <FaArrowUp/><FaVolleyballBall/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, false)}>
-                        <FaArrowUp/><FaExpandArrowsAlt/>
-                    </Button>
-                </ButtonGroup>
-                <ButtonGroup className="w-100 my-2">
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, true)}>
-                        <FaArrowDown/><FaFutbol/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, false, true)}>
-                        <FaArrowDown/><FaVolleyballBall/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, false)}>
-                        <FaArrowDown/><FaExpandArrowsAlt/>
-                    </Button>
-                </ButtonGroup>
-                <ButtonGroup className="w-100 my-2">
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={() => {
-                        fabric.builder.uprightAtOrigin(selectedFaces[0])
-                        clearSelectedFaces()
-                    }}>
-                        <FaCompass/><span> Upright</span>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(2)} onClick={connect}>
-                        <FaLink/><span> Connect</span>
-                    </Button>
-                    <Button onClick={() => fabric.builder.optimize()}>
-                        <FaMagic/><span> Bows</span>
-                    </Button>
-                </ButtonGroup>
+        <div className="m-4">
+            <div className="text-center">
+                <h2><FaHandPointUp/> Picking <FaHandPointUp/></h2>
             </div>
-            <div className="m-4">
+            <ButtonGroup vertical={true} className="my-2 w-100">
+                <Button color={selectionMode ? "warning" : "secondary"} onClick={toggleSelectionMode}>
+                    <span><FaHandPointUp/></span> Toggle selection mode
+                </Button>
+                <Button disabled={selectedFaces.length === 0} onClick={() => clearSelectedFaces()}>
+                    <span>
+                        <FaTimesCircle/> Clear selection&nbsp;&nbsp;&nbsp;
+                        {selectedFaces.map(({index}) => <FaCircle key={`Dot${index}`}/>)}
+                    </span>
+                </Button>
+            </ButtonGroup>
+            <div className="text-center">
+                <h2><FaHammer/> Editing <FaHammer/></h2>
+            </div>
+            <ButtonGroup className="w-100 my-2">
+                <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, true)}>
+                    <FaArrowUp/><FaFutbol/>
+                </Button>
+                <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, false, true)}>
+                    <FaArrowUp/><FaVolleyballBall/>
+                </Button>
+                <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, false)}>
+                    <FaArrowUp/><FaExpandArrowsAlt/>
+                </Button>
+            </ButtonGroup>
+            <ButtonGroup className="w-100 my-2">
+                <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, true)}>
+                    <FaArrowDown/><FaFutbol/>
+                </Button>
+                <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, false, true)}>
+                    <FaArrowDown/><FaVolleyballBall/>
+                </Button>
+                <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, false)}>
+                    <FaArrowDown/><FaExpandArrowsAlt/>
+                </Button>
+            </ButtonGroup>
+            <ButtonGroup className="w-100 my-2">
+                <Button disabled={disableUnlessFaceCount(1)} onClick={() => {
+                    fabric.builder.uprightAtOrigin(selectedFaces[0])
+                    clearSelectedFaces()
+                }}>
+                    <FaCompass/><span> Upright</span>
+                </Button>
+                <Button disabled={disableUnlessFaceCount(2)} onClick={connect}>
+                    <FaLink/><span> Connect</span>
+                </Button>
+                <Button onClick={() => fabric.builder.optimize()}>
+                    <FaMagic/><span> Bows</span>
+                </Button>
+            </ButtonGroup>
+            <div className="my-4">
                 <div className="text-center">
                     <h2><FaSlidersH/> Lengths <FaSlidersH/></h2>
                 </div>

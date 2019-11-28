@@ -108,6 +108,33 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 fixedDigits: 0,
                 percents: FEATURE_PERCENTS,
             }
+        case FabricFeature.PretenseCountdown:
+            return {
+                feature,
+                name: "Pretense Countdown",
+                defaultValue: 30000,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 0,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.FacePullEndZone:
+            return {
+                feature,
+                name: "Face Pull End Zone",
+                defaultValue: 4,
+                multiplier: FeatureMultiplier.Hundredths,
+                fixedDigits: 2,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.FacePullOrientationForce:
+            return {
+                feature,
+                name: "Face Pull Orientation Force",
+                defaultValue: 0.0001,
+                multiplier: FeatureMultiplier.Millionths,
+                fixedDigits: 0,
+                percents: FEATURE_PERCENTS,
+            }
         case FabricFeature.PushStrainFactor:
             return {
                 feature,
@@ -183,7 +210,6 @@ export function defaultFeatureValues(): Record<FabricFeature, IFeatureValue> {
     return FABRIC_FEATURES
         .map(featureConfig)
         .reduce((record, config) => {
-            console.log("FEATURE", config)
             record[config.feature] = ({percent: 100, numeric: config.defaultValue})
             return record
         }, {} as Record<FabricFeature, IFeatureValue>)

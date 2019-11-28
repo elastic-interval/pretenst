@@ -11,6 +11,7 @@ export enum ControlTab {
     Grow = "Grow",
     Shape = "Shape",
     Optimize = "Optimize",
+    View = "View",
 }
 
 export function enumValues(e: object): number[] {

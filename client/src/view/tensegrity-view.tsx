@@ -16,14 +16,10 @@ import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, percentToFactor } from "../fabric/tensegrity-types"
-import { ControlTab, getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
+import { getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
-import { ToolbarLeftBottom } from "./toolbar-left-bottom"
-import { ToolbarLeftTop } from "./toolbar-left-top"
-import { ToolbarRightBottom } from "./toolbar-right-bottom"
-import { ToolbarRightTop } from "./toolbar-right-top"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -56,14 +52,12 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
         }
     }, [rootTenscript])
 
-    const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
     const [selectionMode, updateSelectionMode] = useState(storedState$.getValue().selectionMode)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
 
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
-            updateControlTab(storedState.controlTab)
             updateSelectionMode(storedState.selectionMode)
             updateFullScreen(storedState.fullScreen)
             updateEllipsoids(storedState.ellipsoids)
@@ -174,28 +168,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                         <div id="top-middle">
                             <i>"{fabric.tenscript.name}"</i>
                         </div>
-                        {controlTab !== ControlTab.Shape ? undefined : (
-                            <ToolbarLeftTop
-                                fabric={fabric}
-                                selectedFaces={selectedFaces}
-                                clearSelectedFaces={() => setSelectedFaces([])}
-                                storedState$={storedState$}
-                                fullScreen={fullScreen}
-                            />
-                        )}
-                        <ToolbarLeftBottom
-                            fabric={fabric}
-                            storedState$={storedState$}
-                            lifePhase$={lifePhase$}
-                            fullScreen={fullScreen}
-                        />
-                        <ToolbarRightTop
-                            storedState$={storedState$}
-                        />
-                        <ToolbarRightBottom
-                            fabric={fabric}
-                            lifePhase$={lifePhase$}
-                        />
                         <Canvas style={{
                             backgroundColor: "black",
                             borderStyle: "solid",

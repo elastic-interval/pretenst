@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaHandSpock, FaLeaf, FaTools } from "react-icons/all"
+import { FaArrowLeft, FaEye, FaHandSpock, FaLeaf, FaTools } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -19,6 +19,7 @@ import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 import { OptimizePanel } from "./optimize-panel"
 import { ShapePanel } from "./shape-panel"
 import { TenscriptPanel } from "./tenscript-panel"
+import { ViewPanel } from "./view-panel"
 
 const SPLIT_LEFT = "25em"
 
@@ -30,6 +31,8 @@ function Icon(controlTab: ControlTab): JSX.Element {
             return <FaTools key="shape"/>
         case ControlTab.Optimize:
             return <FaHandSpock key="optimize"/>
+        case ControlTab.View:
+            return <FaEye key="view"/>
     }
 }
 
@@ -108,6 +111,15 @@ export function ControlTabs({
                 case ControlTab.Optimize:
                     return !fabric ? NO_FABRIC : (
                         <OptimizePanel
+                            floatFeatures={floatFeatures}
+                            fabric={fabric}
+                            storedState$={storedState$}
+                            lifePhase$={lifePhase$}
+                        />
+                    )
+                case ControlTab.View:
+                    return !fabric ? NO_FABRIC : (
+                        <ViewPanel
                             floatFeatures={floatFeatures}
                             fabric={fabric}
                             storedState$={storedState$}

@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+
 declare function logBoolean(idx: u32, b: boolean): void
 
 declare function logFloat(idx: u32, f: f32): void
@@ -11,22 +12,22 @@ declare function logInt(idx: u32, i: i32): void
 
 // DECLARATION
 
+const FEATURE_FLOATS = 30
+
 const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_DRAG: f32 = 0.05
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const IN_UTERO_STIFFNESS_FACTOR: f32 = 10
-const FACE_PULL_END_ZONE: f32 = 4
-const FACE_PULL_END_ZONE_FORCE: f32 = 0.0001
-const PRETENSE_COUNTDOWN_MAX: u32 = 30000
-const INTERVAL_BUSY_TICKS: u16 = 500
 
-const FEATURE_FLOATS = 256
 export enum FabricFeature {
     Gravity = 0,
     Drag = 1,
     PretenseFactor = 2,
     IntervalCountdown = 3,
+    PretenseCountdown = 4,
+    FacePullEndZone = 5,
+    FacePullOrientationForce = 6,
 }
 
 enum SurfaceCharacter {
@@ -587,6 +588,10 @@ function getFeature(feature: FabricFeature): f32 {
     return getF32(_FABRIC_FEATURES + feature * sizeof<f32>())
 }
 
+function getU16Feature(feature: FabricFeature): u16 {
+    return <u16>getF32(_FABRIC_FEATURES + feature * sizeof<f32>())
+}
+
 function getFabricBusyCountdown(): u32 {
     return getU32(_FABRIC_BUSY_COUNTDOWN)
 }
@@ -597,7 +602,8 @@ function setFabricBusyTicks(countdown: u32): void {
 
 function getPretensingNuance(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
-    return (<f32>PRETENSE_COUNTDOWN_MAX - <f32>fabricBusyCountdown) / <f32>PRETENSE_COUNTDOWN_MAX
+    let countdown = getFeature(FabricFeature.PretenseCountdown)
+    return (countdown - <f32>fabricBusyCountdown) / countdown
 }
 
 function getPreviousState(): u8 {
@@ -1113,7 +1119,7 @@ export function removeFace(deadFaceIndex: u16): void {
 
 // Physics =====================================================================================
 
-function pushPullEndZonePhysics(intervalIndex: u16, alphaFaceIndex: u16, omegaFaceIndex: u16, finalNuance: f32): void {
+function pushPullEndZonePhysics(intervalIndex: u16, alphaFaceIndex: u16, omegaFaceIndex: u16, finalNuance: f32, orientationForce: f32): void {
     let alphaDistanceSum: f32 = 0
     let omegaDistanceSum: f32 = 0
     let _alphaMidpoint = _faceMidpoint(alphaFaceIndex)
@@ -1135,8 +1141,8 @@ function pushPullEndZonePhysics(intervalIndex: u16, alphaFaceIndex: u16, omegaFa
         let lengthOmega = normalize(_B)
         let pushAlphaJoint = finalNuance * (averageAlpha - lengthAlpha)
         let pushOmegaJoint = finalNuance * (averageOmega - lengthOmega)
-        addScaledVector(_force(faceAlphaJointIndex), _A, pushAlphaJoint * FACE_PULL_END_ZONE_FORCE)
-        addScaledVector(_force(faceOmegaJointIndex), _B, pushOmegaJoint * FACE_PULL_END_ZONE_FORCE)
+        addScaledVector(_force(faceAlphaJointIndex), _A, pushAlphaJoint * orientationForce)
+        addScaledVector(_force(faceOmegaJointIndex), _B, pushOmegaJoint * orientationForce)
     }
 
 }
@@ -1178,9 +1184,11 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
             addScaledVector(_force(faceAlphaJointIndex), _unit(intervalIndex), force)
             addScaledVector(_force(faceOmegaJointIndex), _unit(intervalIndex), -force)
         }
-        if (currentLength <= FACE_PULL_END_ZONE) {
-            let finalNuance: f32 = (FACE_PULL_END_ZONE - currentLength) / FACE_PULL_END_ZONE
-            pushPullEndZonePhysics(intervalIndex, alphaFaceIndex, omegaFaceIndex, finalNuance)
+        let endZone = getFeature(FabricFeature.FacePullEndZone)
+        if (currentLength <= endZone) {
+            let finalNuance: f32 = (endZone - currentLength) / endZone
+            let orientationForce = getFeature(FabricFeature.FacePullOrientationForce)
+            pushPullEndZonePhysics(intervalIndex, alphaFaceIndex, omegaFaceIndex, finalNuance, orientationForce)
         }
     } else {
         force /= 2
@@ -1333,7 +1341,7 @@ function slacken(): LifePhase {
 }
 
 function startPretensing(): LifePhase {
-    setFabricBusyTicks(PRETENSE_COUNTDOWN_MAX)
+    setFabricBusyTicks(getU16Feature(FabricFeature.PretenseCountdown))
     if (surfaceCharacter === SurfaceCharacter.Frozen) {
         setAltitude(-0.2)
     }
@@ -1343,9 +1351,10 @@ function startPretensing(): LifePhase {
 
 function slackToShaping(): LifePhase {
     let intervalCount = getIntervalCount()
+    let countdown = getU16Feature(FabricFeature.IntervalCountdown)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         if (getIntervalRole(intervalIndex) === IntervalRole.Push) {
-            multiplyRestLength(intervalIndex, 1.3, INTERVAL_BUSY_TICKS)
+            multiplyRestLength(intervalIndex, 1.3, countdown)
         }
     }
     return setLifePhase(LifePhase.Shaping)

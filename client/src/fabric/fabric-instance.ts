@@ -5,7 +5,7 @@
 
 import { Matrix4, Vector3 } from "three"
 
-import { FabricFeature, IFabricEngine } from "./fabric-engine"
+import { FabricFeature, FEATURE_FLOATS, IFabricEngine } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
 import { faceVector, vectorFromArray, vectorToArray } from "./fabric-kernel"
 
@@ -34,7 +34,7 @@ export class FabricInstance {
         const e = this.engine
         const offset = e._fabricOffset()
         const b = this.buffer
-        this._fabricFeatures = new LazyFloatArray(b, offset + e._fabricFeatures(), () => Object.keys(FabricFeature).length)
+        this._fabricFeatures = new LazyFloatArray(b, offset + e._fabricFeatures(), () => FEATURE_FLOATS)
         this._midpoint = new LazyFloatArray(b, offset + e._midpoint(), () => 3)
         this._lineColors = new LazyFloatArray(b, offset + e._lineColors(), () => e.getIntervalCount() * 3 * 2)
         this._lineLocations = new LazyFloatArray(b, offset + e._lineLocations(), () => e.getIntervalCount() * 3 * 2)
