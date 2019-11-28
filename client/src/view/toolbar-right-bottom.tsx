@@ -9,7 +9,7 @@ import { FaCompressArrowsAlt, FaHandRock, FaParachuteBox } from "react-icons/all
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { LifePhase } from "../fabric/fabric-state"
+import { LifePhase } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 export function ToolbarRightBottom({fabric, lifePhase$}: {

@@ -3,10 +3,25 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { LifePhase } from "./fabric-state"
-
 export interface IMemory {
     buffer: ArrayBuffer
+}
+
+export enum LifePhase {
+    Busy = 0,
+    Growing = 1,
+    Shaping = 2,
+    Slack = 3,
+    Pretensing = 4,
+    Pretenst = 5,
+}
+
+export function doNotClick(lifePhase: LifePhase): boolean {
+    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
+}
+
+export function hideSurface(lifePhase: LifePhase): boolean {
+    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack
 }
 
 export enum FabricFeature {

@@ -9,11 +9,12 @@ import { FaArrowLeft, FaHandSpock, FaLeaf, FaTools } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
+import { LifePhase } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { ControlTab, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { ITenscript } from "../fabric/tenscript"
 import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { OptimizePanel } from "./optimize-panel"
 import { ShapePanel } from "./shape-panel"
@@ -36,7 +37,7 @@ export function ControlTabs({
                                 floatFeatures, rootTenscript, setRootTenscript,
                                 selectedFaces, clearSelectedFaces,
                                 fabric, setFabric, runTenscript,
-                                toFullScreen, fabricState$, lifePhase$,
+                                toFullScreen, storedState$, lifePhase$,
                             }: {
     floatFeatures: FloatFeature[],
     rootTenscript: ITenscript,
@@ -47,11 +48,11 @@ export function ControlTabs({
     fabric?: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
     toFullScreen: () => void,
-    fabricState$: BehaviorSubject<IFabricState>,
+    storedState$: BehaviorSubject<IStoredState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
-    const [controlTab, updateActiveTab] = useState(fabricState$.getValue().controlTab)
+    const [controlTab, updateActiveTab] = useState(storedState$.getValue().controlTab)
 
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
@@ -60,7 +61,7 @@ export function ControlTabs({
     }, [controlTab])
 
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => updateActiveTab(newState.controlTab))
+        const subscription = storedState$.subscribe(newState => updateActiveTab(newState.controlTab))
         return () => subscription.unsubscribe()
     }, [])
 
@@ -70,7 +71,7 @@ export function ControlTabs({
                 <NavLink
                     active={controlTab === tab}
                     onClick={() => {
-                        fabricState$.next(transition(fabricState$.getValue(), {controlTab: tab}))
+                        storedState$.next(transition(storedState$.getValue(), {controlTab: tab}))
                     }}
                 >{Icon(tab)} {tab}</NavLink>
             </NavItem>
@@ -90,7 +91,7 @@ export function ControlTabs({
                             setRootTenscript={setRootTenscript}
                             fabric={fabric}
                             runTenscript={runTenscript}
-                            fabricState$={fabricState$}
+                            storedState$={storedState$}
                         />
                     )
                 case ControlTab.Shape:
@@ -101,7 +102,7 @@ export function ControlTabs({
                             setFabric={setFabric}
                             selectedFaces={selectedFaces}
                             clearSelectedFaces={clearSelectedFaces}
-                            fabricState$={fabricState$}
+                            storedState$={storedState$}
                         />
                     )
                 case ControlTab.Optimize:
@@ -109,7 +110,7 @@ export function ControlTabs({
                         <OptimizePanel
                             floatFeatures={floatFeatures}
                             fabric={fabric}
-                            fabricState$={fabricState$}
+                            storedState$={storedState$}
                             lifePhase$={lifePhase$}
                         />
                     )

@@ -9,22 +9,22 @@ import { FaHandPointUp, FaTimesCircle } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricState, transition } from "../fabric/fabric-state"
 import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IStoredState, transition } from "../storage/stored-state"
 
-export function ToolbarLeftTop({fabric, selectedFaces, clearSelectedFaces, fabricState$, fullScreen}: {
+export function ToolbarLeftTop({fabric, selectedFaces, clearSelectedFaces, storedState$, fullScreen}: {
     fabric?: TensegrityFabric,
     selectedFaces: IFace[],
     clearSelectedFaces: () => void,
-    fabricState$: BehaviorSubject<IFabricState>,
+    storedState$: BehaviorSubject<IStoredState>,
     fullScreen: boolean,
 }): JSX.Element {
 
-    const [selectionMode, updateSelectionMode] = useState(fabricState$.getValue().selectionMode)
+    const [selectionMode, updateSelectionMode] = useState(storedState$.getValue().selectionMode)
 
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => updateSelectionMode(newState.selectionMode))
+        const subscription = storedState$.subscribe(newState => updateSelectionMode(newState.selectionMode))
         return () => subscription.unsubscribe()
     }, [])
 
@@ -35,7 +35,7 @@ export function ToolbarLeftTop({fabric, selectedFaces, clearSelectedFaces, fabri
             <ButtonGroup>
                 <Button
                     color={selectionMode ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {selectionMode: !selectionMode}))}
+                    onClick={() => storedState$.next(transition(storedState$.getValue(), {selectionMode: !selectionMode}))}
                 >
                     <FaHandPointUp/>
                 </Button>

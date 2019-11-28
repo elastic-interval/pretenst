@@ -10,13 +10,13 @@ import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { lengthFeatureToRole } from "../fabric/fabric-engine"
+import { lengthFeatureToRole, LifePhase } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
-import { ControlTab, getRecentTenscript, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { IFace, percentToFactor } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { ControlTab, getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
@@ -28,7 +28,7 @@ import { ToolbarRightTop } from "./toolbar-right-top"
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
 
-function getCodeToRun(state: IFabricState): ITenscript {
+function getCodeToRun(state: IStoredState): ITenscript {
     const fromUrl = getCodeFromUrl()
     if (fromUrl) {
         return fromUrl
@@ -37,10 +37,10 @@ function getCodeToRun(state: IFabricState): ITenscript {
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
 }
 
-export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifePhase$}: {
+export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifePhase$}: {
     fabricKernel: FabricKernel,
     floatFeatures: FloatFeature[],
-    fabricState$: BehaviorSubject<IFabricState>,
+    storedState$: BehaviorSubject<IStoredState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
@@ -49,31 +49,31 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
 
-    const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(fabricState$.getValue()))
+    const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(storedState$.getValue()))
     useEffect(() => {
         if (location.hash.length === 0) {
             location.hash = addNameToCode(rootTenscript.code, rootTenscript.name)
         }
     }, [rootTenscript])
 
-    const [controlTab, updateControlTab] = useState(fabricState$.getValue().controlTab)
-    const [selectionMode, updateSelectionMode] = useState(fabricState$.getValue().selectionMode)
-    const [fullScreen, updateFullScreen] = useState(fabricState$.getValue().fullScreen)
-    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
+    const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
+    const [selectionMode, updateSelectionMode] = useState(storedState$.getValue().selectionMode)
+    const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
+    const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
 
     useEffect(() => {
-        const subscription = fabricState$.subscribe(fabricState => {
-            updateControlTab(fabricState.controlTab)
-            updateSelectionMode(fabricState.selectionMode)
-            updateFullScreen(fabricState.fullScreen)
-            updateEllipsoids(fabricState.ellipsoids)
+        const subscription = storedState$.subscribe(storedState => {
+            updateControlTab(storedState.controlTab)
+            updateSelectionMode(storedState.selectionMode)
+            updateFullScreen(storedState.fullScreen)
+            updateEllipsoids(storedState.ellipsoids)
             if (!fabric) {
                 return
             }
             const instance = fabric.instance
-            instance.engine.setColoring(fabricState.showPushes, fabricState.showPulls)
+            instance.engine.setColoring(storedState.showPushes, storedState.showPulls)
             instance.engine.iterate(0, lifePhase$.getValue())
-            instance.engine.setSurfaceCharacter(fabricState.surfaceCharacter)
+            instance.engine.setSurfaceCharacter(storedState.surfaceCharacter)
         })
         return () => subscription.unsubscribe()
     }, [fabric])
@@ -106,9 +106,9 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
         mainInstance.forgetDimensions()
         mainInstance.engine.initInstance()
         lifePhase$.next(LifePhase.Growing)
-        const featureValues = fabricState$.getValue().featureValues
+        const featureValues = storedState$.getValue().featureValues
         setFabric(new TensegrityFabric(mainInstance, slackInstance, floatFeatures, featureValues, newTenscript))
-        fabricState$.next(transition(fabricState$.getValue(), {ellipsoids: false, selectionMode: false}))
+        storedState$.next(transition(storedState$.getValue(), {ellipsoids: false, selectionMode: false}))
     }
 
     useEffect(() => {
@@ -121,7 +121,7 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
     }, [rootTenscript])
 
     function toFullScreen(value: boolean): void {
-        fabricState$.next(transition(fabricState$.getValue(), {fullScreen: value}))
+        storedState$.next(transition(storedState$.getValue(), {fullScreen: value}))
     }
 
     return (
@@ -148,7 +148,7 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
                         clearSelectedFaces={() => setSelectedFaces([])}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
-                        fabricState$={fabricState$}
+                        storedState$={storedState$}
                         lifePhase$={lifePhase$}
                     />
                 </div>
@@ -178,18 +178,18 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
                                 fabric={fabric}
                                 selectedFaces={selectedFaces}
                                 clearSelectedFaces={() => setSelectedFaces([])}
-                                fabricState$={fabricState$}
+                                storedState$={storedState$}
                                 fullScreen={fullScreen}
                             />
                         )}
                         <ToolbarLeftBottom
                             fabric={fabric}
-                            fabricState$={fabricState$}
+                            storedState$={storedState$}
                             lifePhase$={lifePhase$}
                             fullScreen={fullScreen}
                         />
                         <ToolbarRightTop
-                            fabricState$={fabricState$}
+                            storedState$={storedState$}
                         />
                         <ToolbarRightBottom
                             fabric={fabric}
@@ -208,7 +208,7 @@ export function TensegrityView({fabricKernel, floatFeatures, fabricState$, lifeP
                                 setSelectedFaces={setSelectedFaces}
                                 selectionMode={selectionMode}
                                 ellipsoids={ellipsoids}
-                                fabricState$={fabricState$}
+                                storedState$={storedState$}
                                 lifePhase$={lifePhase$}
                             />
                         </Canvas>

@@ -3,26 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, roleToLengthFeature, SurfaceCharacter } from "./fabric-engine"
-import { FEATURE_CONFIGS } from "./fabric-features"
-import { addNameToCode, codeToTenscript, ITenscript } from "./tenscript"
-
-export enum LifePhase {
-    Busy = 0,
-    Growing = 1,
-    Shaping = 2,
-    Slack = 3,
-    Pretensing = 4,
-    Pretenst = 5,
-}
-
-export function doNotClick(lifePhase: LifePhase): boolean {
-    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
-}
-
-export function hideSurface(lifePhase: LifePhase): boolean {
-    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Shaping || lifePhase === LifePhase.Slack
-}
+import { FabricFeature, IntervalRole, roleToLengthFeature, SurfaceCharacter } from "../fabric/fabric-engine"
+import { FEATURE_CONFIGS } from "../fabric/fabric-features"
+import { addNameToCode, codeToTenscript, ITenscript } from "../fabric/tenscript"
 
 export enum ControlTab {
     Grow = "Grow",
@@ -41,7 +24,7 @@ export interface IFeatureValue {
     percent: number,
 }
 
-export interface IFabricState {
+export interface IStoredState {
     version: string,
     nonce: number
     surfaceCharacter: SurfaceCharacter
@@ -56,13 +39,13 @@ export interface IFabricState {
     showPulls: boolean
 }
 
-export function addRecentCode(state: IFabricState, {code, name}: ITenscript): IFabricState {
+export function addRecentCode(state: IStoredState, {code, name}: ITenscript): IStoredState {
     const recentCode = {...state.recentCode}
     recentCode[name] = addNameToCode(code, name)
     return transition(state, {recentCode})
 }
 
-export function getRecentTenscript(state: IFabricState): ITenscript[] {
+export function getRecentTenscript(state: IStoredState): ITenscript[] {
     return Object.keys(state.recentCode).map(key => {
         const code = state.recentCode[key]
         const tenscript = codeToTenscript(error => console.error(error), false, code)
@@ -80,11 +63,11 @@ export function roleDefaultLength(featureValues: Record<FabricFeature, IFeatureV
     return featureValues[roleToLengthFeature(intervalRole)].numeric
 }
 
-export function transition(state: IFabricState, partial: Partial<IFabricState>): IFabricState {
+export function transition(state: IStoredState, partial: Partial<IStoredState>): IStoredState {
     return {...state, nonce: state.nonce + 1, ...partial}
 }
 
-const INITIAL_FABRIC_STATE: IFabricState = {
+const INITIAL_STORED_STATE: IStoredState = {
     version: VERSION,
     nonce: 0,
     surfaceCharacter: SurfaceCharacter.Frozen,
@@ -102,19 +85,19 @@ const INITIAL_FABRIC_STATE: IFabricState = {
     showPulls: true,
 }
 
-const FABRIC_STATE_KEY = "FabricState"
+const STORED_STATE_KEY = "State"
 
-export function saveFabricState(fabricState: IFabricState): void {
-    localStorage.setItem(FABRIC_STATE_KEY, JSON.stringify(fabricState))
+export function saveState(storedState: IStoredState): void {
+    localStorage.setItem(STORED_STATE_KEY, JSON.stringify(storedState))
 }
 
-export function loadFabricState(): IFabricState {
-    const item = localStorage.getItem(FABRIC_STATE_KEY)
+export function loadState(): IStoredState {
+    const item = localStorage.getItem(STORED_STATE_KEY)
     if (item) {
-        const storedState = JSON.parse(item) as IFabricState
+        const storedState = JSON.parse(item) as IStoredState
         if (storedState.version === VERSION) {
             return storedState
         }
     }
-    return INITIAL_FABRIC_STATE
+    return INITIAL_STORED_STATE
 }

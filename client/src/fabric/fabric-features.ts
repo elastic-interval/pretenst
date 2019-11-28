@@ -6,8 +6,9 @@
 
 import { BehaviorSubject } from "rxjs"
 
+import { IStoredState } from "../storage/stored-state"
+
 import { FabricFeature } from "./fabric-engine"
-import { IFabricState } from "./fabric-state"
 
 export enum FeatureMultiplier {
     OneThousand,
@@ -216,14 +217,14 @@ interface IFeatureValue {
 export class FloatFeature {
     private value$: BehaviorSubject<IFeatureValue>
 
-    constructor(public readonly config: IFeatureConfig, fabricState$: BehaviorSubject<IFabricState>) {
-        const features = fabricState$.getValue().featureValues
+    constructor(public readonly config: IFeatureConfig, storedState$: BehaviorSubject<IStoredState>) {
+        const features = storedState$.getValue().featureValues
         const initialValue = features[config.feature]
         this.value$ = new BehaviorSubject<IFeatureValue>(initialValue)
         this.value$.subscribe(value => {
-            const fabricState = fabricState$.getValue()
-            fabricState.featureValues[config.feature] = value
-            fabricState$.next(fabricState)
+            const storedState = storedState$.getValue()
+            storedState.featureValues[config.feature] = value
+            storedState$.next(storedState)
         })
     }
 
@@ -269,6 +270,6 @@ export function formatFeatureValue(config: IFeatureConfig, numeric: number): str
     return `${scaledValue.toFixed(config.fixedDigits)}${symbol}`
 }
 
-export function createFloatFeatures(fabricState$: BehaviorSubject<IFabricState>): FloatFeature[] {
-    return FEATURE_CONFIGS.map(config => new FloatFeature(config, fabricState$))
+export function createFloatFeatures(storedState$: BehaviorSubject<IStoredState>): FloatFeature[] {
+    return FEATURE_CONFIGS.map(config => new FloatFeature(config, storedState$))
 }

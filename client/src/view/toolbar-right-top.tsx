@@ -9,15 +9,15 @@ import { FaCircle, FaExpandArrowsAlt, FaFutbol, FaVolleyballBall } from "react-i
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricState, transition } from "../fabric/fabric-state"
+import { IStoredState, transition } from "../storage/stored-state"
 
-export function ToolbarRightTop({fabricState$}: {
-    fabricState$: BehaviorSubject<IFabricState>,
+export function ToolbarRightTop({storedState$}: {
+    storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
-    const [showPushes, updateShowPushes] = useState(fabricState$.getValue().showPushes)
-    const [showPulls, updateShowPulls] = useState(fabricState$.getValue().showPulls)
+    const [showPushes, updateShowPushes] = useState(storedState$.getValue().showPushes)
+    const [showPulls, updateShowPulls] = useState(storedState$.getValue().showPulls)
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = storedState$.subscribe(newState => {
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
         })
@@ -30,7 +30,7 @@ export function ToolbarRightTop({fabricState$}: {
                 style={{color: "white"}}
                 color={pushes === showPushes && pulls === showPulls ? "success" : "secondary"}
                 onClick={() => {
-                    fabricState$.next(transition(fabricState$.getValue(), {showPulls: pulls, showPushes: pushes}))
+                    storedState$.next(transition(storedState$.getValue(), {showPulls: pulls, showPushes: pushes}))
                 }}
             >
                 {pushes && pulls ? <FaFutbol/> :

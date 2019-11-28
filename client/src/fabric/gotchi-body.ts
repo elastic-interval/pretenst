@@ -5,9 +5,8 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { FabricDirection, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { FabricDirection, IFabricEngine, IntervalRole, Laterality, LifePhase } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
-import { LifePhase } from "./fabric-state"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
 const ARROW_LENGTH = 9

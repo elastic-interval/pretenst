@@ -5,8 +5,9 @@
 
 import { Matrix4, Vector3 } from "three"
 
+import { roleDefaultLength } from "../storage/stored-state"
+
 import { IntervalRole } from "./fabric-engine"
-import { roleDefaultLength } from "./fabric-state"
 import {
     averageLocation,
     averageScaleFactor,

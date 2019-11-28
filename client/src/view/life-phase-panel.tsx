@@ -9,23 +9,23 @@ import { FaArrowRight, FaClock, FaHammer, FaHandSpock, FaSeedling, FaTools, FaYi
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature } from "../fabric/fabric-engine"
-import { IFabricState, LifePhase } from "../fabric/fabric-state"
+import { FabricFeature, LifePhase } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IStoredState } from "../storage/stored-state"
 
-export function LifePhasePanel({fabric, lifePhase$, fabricState$, disabled}: {
+export function LifePhasePanel({fabric, lifePhase$, storedState$, disabled}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
-    fabricState$: BehaviorSubject<IFabricState>,
+    storedState$: BehaviorSubject<IStoredState>,
     disabled: boolean,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
-    const [featureValues, setFeatureValues] = useState(fabricState$.getValue().featureValues)
+    const [featureValues, setFeatureValues] = useState(storedState$.getValue().featureValues)
     useEffect(() => {
         const subscription = [
             lifePhase$.subscribe(newPhase => setLifePhase(newPhase)),
-            fabricState$.subscribe(newState => setFeatureValues(newState.featureValues)),
+            storedState$.subscribe(newState => setFeatureValues(newState.featureValues)),
         ]
         return () => subscription.forEach(s => s.unsubscribe())
     }, [])

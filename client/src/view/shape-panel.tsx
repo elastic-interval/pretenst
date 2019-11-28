@@ -22,27 +22,27 @@ import { BehaviorSubject } from "rxjs"
 
 import { lengthFeatureToRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { IFabricState, transition } from "../fabric/fabric-state"
 import { IFace } from "../fabric/tensegrity-brick-types"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { IStoredState, transition } from "../storage/stored-state"
 
 import { FeaturePanel } from "./feature-panel"
 
-export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, clearSelectedFaces, fabricState$}: {
+export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, clearSelectedFaces, storedState$}: {
     floatFeatures: FloatFeature[],
     fabric: TensegrityFabric,
     setFabric: (fabric: TensegrityFabric) => void,
     selectedFaces: IFace[],
     clearSelectedFaces: () => void,
-    fabricState$: BehaviorSubject<IFabricState>,
+    storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const [selectionMode, updateSelectionMode] = useState(fabricState$.getValue().selectionMode)
-    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
+    const [selectionMode, updateSelectionMode] = useState(storedState$.getValue().selectionMode)
+    const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
 
     useEffect(() => {
         const subscriptions = [
-            fabricState$.subscribe(newState => {
+            storedState$.subscribe(newState => {
                 updateSelectionMode(newState.selectionMode)
                 updateEllipsoids(newState.ellipsoids)
             }),
@@ -67,7 +67,7 @@ export function ShapePanel({floatFeatures, fabric, setFabric, selectedFaces, cle
     function connect(): void {
         fabric.connectFaces(selectedFaces)
         clearSelectedFaces()
-        fabricState$.next(transition(fabricState$.getValue(), {selectionMode: false}))
+        storedState$.next(transition(storedState$.getValue(), {selectionMode: false}))
         setFabric(fabric)
     }
 

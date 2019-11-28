@@ -9,20 +9,21 @@ import { FaCamera, FaFileCsv, FaSyncAlt } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { IFabricState, LifePhase, transition } from "../fabric/fabric-state"
+import { LifePhase } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVFiles } from "../storage/download"
+import { IStoredState, transition } from "../storage/stored-state"
 
-export function ToolbarLeftBottom({fabric, fabricState$, lifePhase$, fullScreen}: {
+export function ToolbarLeftBottom({fabric, storedState$, lifePhase$, fullScreen}: {
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    storedState$: BehaviorSubject<IStoredState>,
     lifePhase$: BehaviorSubject<LifePhase>,
     fullScreen: boolean,
 }): JSX.Element {
-    const [rotating, updateRotating] = useState(fabricState$.getValue().rotating)
-    const [ellipsoids, updateEllipsoids] = useState(fabricState$.getValue().ellipsoids)
+    const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
+    const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
     useEffect(() => {
-        const subscription = fabricState$.subscribe(newState => {
+        const subscription = storedState$.subscribe(newState => {
             updateRotating(newState.rotating)
             updateEllipsoids(newState.ellipsoids)
         })
@@ -35,13 +36,13 @@ export function ToolbarLeftBottom({fabric, fabricState$, lifePhase$, fullScreen}
             <ButtonGroup>
                 <Button
                     color={ellipsoids ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {ellipsoids: !ellipsoids}))}
+                    onClick={() => storedState$.next(transition(storedState$.getValue(), {ellipsoids: !ellipsoids}))}
                 >
                     <FaCamera/>
                 </Button>
                 <Button
                     color={rotating ? "warning" : "secondary"}
-                    onClick={() => fabricState$.next(transition(fabricState$.getValue(), {rotating: !rotating}))}
+                    onClick={() => storedState$.next(transition(storedState$.getValue(), {rotating: !rotating}))}
                 >
                     <FaSyncAlt/>
                 </Button>

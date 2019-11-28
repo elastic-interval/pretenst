@@ -9,32 +9,32 @@ import { FaCog, FaGlobe, FaSearchMinus, FaSearchPlus } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
+import { FabricFeature, LifePhase, SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { enumValues, IFabricState, LifePhase, transition } from "../fabric/fabric-state"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { enumValues, IStoredState, transition } from "../storage/stored-state"
 
 import { FeaturePanel } from "./feature-panel"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function OptimizePanel({floatFeatures, fabric, fabricState$, lifePhase$}: {
+export function OptimizePanel({floatFeatures, fabric, storedState$, lifePhase$}: {
     floatFeatures: FloatFeature[],
     fabric: TensegrityFabric,
-    fabricState$: BehaviorSubject<IFabricState>,
+    storedState$: BehaviorSubject<IStoredState>,
     lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
-    const [fabricState, updateFabricState] = useState(fabricState$.getValue())
+    const [storedState, updateFabricState] = useState(storedState$.getValue())
     useEffect(() => {
         const subscriptions = [
-            fabricState$.subscribe(newState => updateFabricState(newState)),
+            storedState$.subscribe(newState => updateFabricState(newState)),
         ]
         return () => subscriptions.forEach(s => s.unsubscribe())
     }, [])
 
-    function changeState(changed: Partial<IFabricState>): void {
-        fabricState$.next(transition(fabricState$.getValue(), changed))
+    function changeState(changed: Partial<IStoredState>): void {
+        storedState$.next(transition(storedState$.getValue(), changed))
     }
 
     return (
@@ -43,8 +43,8 @@ export function OptimizePanel({floatFeatures, fabric, fabricState$, lifePhase$}:
                 <LifePhasePanel
                     fabric={fabric}
                     lifePhase$={lifePhase$}
-                    fabricState$={fabricState$}
-                    disabled={fabricState.ellipsoids || fabricState.selectionMode}
+                    storedState$={storedState$}
+                    disabled={storedState.ellipsoids || storedState.selectionMode}
                 />
             </div>
             <div className="my-3">
@@ -53,14 +53,14 @@ export function OptimizePanel({floatFeatures, fabric, fabricState$, lifePhase$}:
                 </div>
                 <div className="my-1">
                     <div className="float-right text-white">
-                        {SurfaceCharacter[fabricState.surfaceCharacter]}
+                        {SurfaceCharacter[storedState.surfaceCharacter]}
                     </div>
                     <div>Surface</div>
                     <ButtonGroup size="sm" className="w-100">
                         {enumValues(SurfaceCharacter).map(value => (
                             <Button
                                 key={SurfaceCharacter[value]}
-                                active={fabricState.surfaceCharacter === value}
+                                active={storedState.surfaceCharacter === value}
                                 onClick={() => changeState({surfaceCharacter: value})}
                             >{SurfaceCharacter[value]}</Button>
                         ))}

@@ -5,10 +5,11 @@
 
 import { BufferGeometry, CylinderGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
-import { FabricFeature, IFabricEngine, IntervalRole, Laterality } from "./fabric-engine"
+import { IFeatureValue, roleDefaultLength } from "../storage/stored-state"
+
+import { FabricFeature, IFabricEngine, IntervalRole, Laterality, LifePhase } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
-import { IFeatureValue, LifePhase, roleDefaultLength } from "./fabric-state"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import {
     emptySplit,

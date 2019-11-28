@@ -9,12 +9,12 @@ import { BehaviorSubject } from "rxjs"
 
 import { App } from "./app"
 import { API_URI } from "./constants"
-import { IFabricEngine } from "./fabric/fabric-engine"
+import { IFabricEngine, LifePhase } from "./fabric/fabric-engine"
 import { createFloatFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
-import { LifePhase, loadFabricState, saveFabricState } from "./fabric/fabric-state"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
+import { loadState, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
 // eslint-disable-next-line @typescript-eslint/tslint/config
 import "./vendor/bootstrap.min.css"
@@ -43,16 +43,16 @@ async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const fabricKernel = new FabricKernel(engine)
     const root = document.getElementById("root") as HTMLElement
-    const fabricState$ = new BehaviorSubject(loadFabricState())
-    const fabricFeatures = createFloatFeatures(fabricState$)
-    fabricState$.subscribe(newState => saveFabricState(newState))
+    const storedState$ = new BehaviorSubject(loadState())
+    const fabricFeatures = createFloatFeatures(storedState$)
+    storedState$.subscribe(newState => saveState(newState))
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")
         ReactDOM.render(
             <TensegrityView
                 fabricKernel={fabricKernel}
                 floatFeatures={fabricFeatures}
-                fabricState$={fabricState$}
+                storedState$={storedState$}
                 lifePhase$={new BehaviorSubject(LifePhase.Growing)}
             />,
             root,

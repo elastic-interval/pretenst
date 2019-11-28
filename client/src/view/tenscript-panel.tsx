@@ -9,29 +9,29 @@ import { FaBiohazard, FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolder
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { addRecentCode, getRecentTenscript, IFabricState } from "../fabric/fabric-state"
 import { BOOTSTRAP, codeToTenscript, ITenscript, spaceAfterComma } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
 
-export function TenscriptPanel({rootTenscript, setRootTenscript, fabric, runTenscript, fabricState$}: {
+export function TenscriptPanel({rootTenscript, setRootTenscript, fabric, runTenscript, storedState$}: {
     rootTenscript: ITenscript,
     setRootTenscript: (tenscript: ITenscript) => void,
     fabric?: TensegrityFabric,
     runTenscript: (tenscript: ITenscript) => void,
-    fabricState$: BehaviorSubject<IFabricState>,
+    storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
     const [tenscript, setTenscript] = useState<ITenscript>(fabric && !fabric.tenscript.fromUrl ? fabric.tenscript : rootTenscript)
     const [error, setError] = useState("")
 
     const [recentOpen, setRecentOpen] = useState(false)
-    const [recentPrograms, setRecentPrograms] = useState<ITenscript[]>(getRecentTenscript(fabricState$.getValue()))
+    const [recentPrograms, setRecentPrograms] = useState<ITenscript[]>(getRecentTenscript(storedState$.getValue()))
     const [bootstrapOpen, setBootstrapOpen] = useState(false)
 
     function addToRecentPrograms(newCode: ITenscript): void {
-        const state = addRecentCode(fabricState$.getValue(), newCode)
+        const state = addRecentCode(storedState$.getValue(), newCode)
         setRecentPrograms(getRecentTenscript(state))
-        fabricState$.next(state)
+        storedState$.next(state)
     }
 
     return (
