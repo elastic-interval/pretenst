@@ -56,6 +56,7 @@ const ALTITUDE = 4
 const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
+const RADIUS_FACTOR = 5 // TODO: make it easily adjustable!
 
 export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$, lifePhase$}: {
     fabric: TensegrityFabric,
@@ -165,8 +166,7 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
             }
         }
         const linearDensity = fabric.instance.linearDensities[interval.index]
-        const radiusFactor = storedState.featureValues[FabricFeature.RadiusFactor].numeric
-        const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
+        const {scale, rotation} = fabric.orientInterval(interval, RADIUS_FACTOR * linearDensity)
         return (
             <mesh
                 geometry={SPHERE}

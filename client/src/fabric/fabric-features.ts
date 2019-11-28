@@ -136,14 +136,6 @@ export const FEATURE_CONFIGS: IFeatureConfig[] = [
         percents: FEATURE_PERCENTS,
     },
     {
-        feature: FabricFeature.RadiusFactor,
-        name: "Radius Factor",
-        defaultValue: 5,
-        multiplier: FeatureMultiplier.One,
-        fixedDigits: 2,
-        percents: FEATURE_PERCENTS,
-    },
-    {
         feature: FabricFeature.MaxStiffness,
         name: "Max Stiffness",
         defaultValue: 0.0005,
