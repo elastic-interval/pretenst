@@ -16,7 +16,7 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
-import { OptimizePanel } from "./optimize-panel"
+import { RealizePanel } from "./realize-panel"
 import { ShapePanel } from "./shape-panel"
 import { TenscriptPanel } from "./tenscript-panel"
 import { ViewPanel } from "./view-panel"
@@ -29,7 +29,7 @@ function Icon(controlTab: ControlTab): JSX.Element {
             return <FaLeaf key="grow"/>
         case ControlTab.Shape:
             return <FaTools key="shape"/>
-        case ControlTab.Optimize:
+        case ControlTab.Realize:
             return <FaHandSpock key="optimize"/>
         case ControlTab.View:
             return <FaEye key="view"/>
@@ -67,7 +67,6 @@ export function ControlTabs({
     const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
     useEffect(() => {
         const mode = controlTab === ControlTab.Shape && lifePhase === LifePhase.Shaping
-        setSelectionMode(mode)
         if (!mode) {
             clearSelectedFaces()
         }
@@ -82,6 +81,7 @@ export function ControlTabs({
         return (
             <NavItem>
                 <NavLink
+                    disabled={tab === ControlTab.Shape && lifePhase !== LifePhase.Shaping}
                     active={controlTab === tab}
                     onClick={() => {
                         storedState$.next(transition(storedState$.getValue(), {controlTab: tab}))
@@ -120,9 +120,9 @@ export function ControlTabs({
                             storedState$={storedState$}
                         />
                     )
-                case ControlTab.Optimize:
+                case ControlTab.Realize:
                     return !fabric ? NO_FABRIC : (
-                        <OptimizePanel
+                        <RealizePanel
                             floatFeatures={floatFeatures}
                             fabric={fabric}
                             selectionMode={selectionMode}

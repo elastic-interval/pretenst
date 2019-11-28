@@ -10,7 +10,7 @@ import { addNameToCode, codeToTenscript, ITenscript } from "../fabric/tenscript"
 export enum ControlTab {
     Grow = "Grow",
     Shape = "Shape",
-    Optimize = "Optimize",
+    Realize = "Realize",
     View = "View",
 }
 

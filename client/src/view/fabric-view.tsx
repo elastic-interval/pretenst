@@ -58,7 +58,6 @@ const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 const RADIUS_FACTOR = 5 // TODO: make it easily adjustable!
 const MAX_STIFFNESS = 0.0005 // TODO: make it easily adjustable!
-const TICKS_PER_FRAME = 100
 
 export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$, lifePhase$}: {
     fabric: TensegrityFabric,
@@ -117,12 +116,10 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
         let newLifePhase = LifePhase.Busy
-        if (ellipsoids || selectionMode) {
-            newLifePhase = fabric.iterate(0)
-        } else {
-            const ticks = fabric.facePulls.length === 0 && lifePhase === LifePhase.Shaping ? 1 : TICKS_PER_FRAME
-            newLifePhase = fabric.iterate(ticks)
+        if (!ellipsoids && !selectionMode) {
+            newLifePhase = fabric.iterate()
         }
+        instance.engine.renderFrame()
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
             if (newLifePhase === LifePhase.Pretensing) {
@@ -137,7 +134,6 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
-        console.log("toggle", faceToToggle.index)
         if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
             setSelectedFaces(selectedFaces.filter(b => b.index !== faceToToggle.index))
         } else {
@@ -146,7 +142,7 @@ export function FabricView({fabric, selectedFaces, setSelectedFaces, selectionMo
     }
 
     function SelectedFace({face}: { face: IFace }): JSX.Element {
-        const scale = percentToFactor(face.brick.scale) / 3
+        const scale = percentToFactor(face.brick.scale) / 6
         return (
             <mesh
                 geometry={SPHERE}

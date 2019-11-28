@@ -14,20 +14,23 @@ declare function logInt(idx: u32, i: i32): void
 
 const FEATURE_FLOATS = 30
 
+const FROZEN_ALTITUDE: f32 = -0.02
 const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_DRAG: f32 = 0.05
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const IN_UTERO_STIFFNESS_FACTOR: f32 = 10
+const TINY_FLOAT = 0.00000001
 
 export enum FabricFeature {
     Gravity = 0,
     Drag = 1,
     PretenseFactor = 2,
-    IntervalCountdown = 3,
-    PretenseCountdown = 4,
-    FacePullEndZone = 5,
-    FacePullOrientationForce = 6,
+    IterationsPerFrame = 3,
+    IntervalCountdown = 4,
+    PretenseCountdown = 5,
+    FacePullEndZone = 6,
+    FacePullOrientationForce = 7,
 }
 
 enum SurfaceCharacter {
@@ -916,7 +919,7 @@ function setLineColorNuance(intervalIndex: u16, nuance: f32): void {
 }
 
 function toNuance(numerator: f32, denominator: f32): f32 {
-    if (denominator < 0.0001 && denominator > -0.0001) {
+    if (denominator < TINY_FLOAT && denominator > -TINY_FLOAT) {
         logFloat(1, numerator)
         logFloat(2, denominator)
         return 0.5
@@ -1311,18 +1314,6 @@ export function initInstance(): LifePhase {
     return setLifePhase(LifePhase.Busy)
 }
 
-function output(): void {
-    calculateJointMidpoint()
-    setFaceMidpoints()
-    setFaceVectors()
-    outputIntervals()
-}
-
-export function finishGrowing(): LifePhase {
-    output()
-    return setLifePhase(LifePhase.Shaping)
-}
-
 function slacken(): LifePhase {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
@@ -1336,16 +1327,16 @@ function slacken(): LifePhase {
         zero(_velocity(jointIndex))
     }
     setAltitude(0.0)
-    output()
+    renderFrame()
     return setLifePhase(LifePhase.Slack)
 }
 
 function startPretensing(): LifePhase {
     setFabricBusyTicks(getU16Feature(FabricFeature.PretenseCountdown))
     if (surfaceCharacter === SurfaceCharacter.Frozen) {
-        setAltitude(-0.2)
+        setAltitude(FROZEN_ALTITUDE)
     }
-    output()
+    renderFrame()
     return setLifePhase(LifePhase.Pretensing)
 }
 
@@ -1360,15 +1351,16 @@ function slackToShaping(): LifePhase {
     return setLifePhase(LifePhase.Shaping)
 }
 
-export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
+export function iterate(nextLifePhase: LifePhase): LifePhase {
     let age = getAge()
     let lifePhase = getLifePhase()
     let intervalBusyCountdown: u16 = 0
     let currentState = getCurrentState()
-    for (let thisTick: u16 = 0; thisTick < ticks; thisTick++) {
+    let ticksPerFrame = getU16Feature(FabricFeature.IterationsPerFrame)
+    for (let thisTick: u16 = 0; thisTick < ticksPerFrame; thisTick++) {
         intervalBusyCountdown = tick(intervalBusyCountdown, currentState, lifePhase)
     }
-    setAge(age + <u32>ticks)
+    setAge(age + <u32>ticksPerFrame)
     switch (lifePhase) {
         case LifePhase.Busy:
             if (nextLifePhase === LifePhase.Growing) {
@@ -1400,7 +1392,6 @@ export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
             }
             break
     }
-    output()
     let fabricBusyCountdown = getFabricBusyCountdown()
     if (intervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
         if (fabricBusyCountdown === 0) {
@@ -1409,7 +1400,7 @@ export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
             }
             return lifePhase
         }
-        let nextCountdown: u32 = fabricBusyCountdown - ticks
+        let nextCountdown: u32 = fabricBusyCountdown - ticksPerFrame
         if (nextCountdown > fabricBusyCountdown) { // rollover
             nextCountdown = 0
         }
@@ -1419,6 +1410,18 @@ export function iterate(ticks: u16, nextLifePhase: LifePhase): LifePhase {
         }
     }
     return LifePhase.Busy
+}
+
+export function renderFrame(): void {
+    calculateJointMidpoint()
+    setFaceMidpoints()
+    setFaceVectors()
+    outputIntervals()
+}
+
+export function finishGrowing(): LifePhase {
+    renderFrame()
+    return setLifePhase(LifePhase.Shaping)
 }
 
 export function _fabricOffset(): usize {

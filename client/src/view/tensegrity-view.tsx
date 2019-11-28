@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaPlay } from "react-icons/all"
+import { FaArrowRight, FaPlay, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -63,10 +63,10 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
             if (!fabric) {
                 return
             }
-            const instance = fabric.instance
-            instance.engine.setColoring(storedState.showPushes, storedState.showPulls)
-            instance.engine.iterate(0, lifePhase$.getValue())
-            instance.engine.setSurfaceCharacter(storedState.surfaceCharacter)
+            const engine = fabric.instance.engine
+            engine.setColoring(storedState.showPushes, storedState.showPulls)
+            engine.renderFrame()
+            engine.setSurfaceCharacter(storedState.surfaceCharacter)
         })
         return () => subscription.unsubscribe()
     }, [fabric])
@@ -101,7 +101,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
         mainInstance.engine.initInstance()
         lifePhase$.next(LifePhase.Growing)
         const featureValues = storedState$.getValue().featureValues
-        setFabric(new TensegrityFabric(mainInstance, slackInstance, floatFeatures, featureValues, newTenscript))
+        setFabric(new TensegrityFabric(featureValues, mainInstance, slackInstance, floatFeatures, newTenscript))
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
     }
 
@@ -122,7 +122,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
         <>
             {fullScreen ? (
                 <Button id="to-full-screen" color="dark" onClick={() => toFullScreen(false)}>
-                    <FaArrowRight/>
+                    <FaArrowRight/><br/><FaToolbox/><br/><FaArrowRight/>
                 </Button>
             ) : (
                 <div

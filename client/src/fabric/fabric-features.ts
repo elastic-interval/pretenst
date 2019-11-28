@@ -88,7 +88,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 defaultValue: 0.0001,
                 multiplier: FeatureMultiplier.Millionths,
                 fixedDigits: 1,
-                percents: FEATURE_PERCENTS,
+                percents: [0, 10, 50, 100, 150, 200],
             }
         case FabricFeature.PretenseFactor:
             return {
@@ -99,6 +99,15 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 fixedDigits: 2,
                 percents: FEATURE_PERCENTS,
             }
+        case FabricFeature.IterationsPerFrame:
+            return {
+                feature,
+                name: "Iterations per frame",
+                defaultValue: 100,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 0,
+                percents: [10, 25, 50, 100, 200, 300, 500],
+            }
         case FabricFeature.IntervalCountdown:
             return {
                 feature,
@@ -106,7 +115,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 defaultValue: 300,
                 multiplier: FeatureMultiplier.One,
                 fixedDigits: 0,
-                percents: FEATURE_PERCENTS,
+                percents: [20, 50, 100, 200, 300, 1000],
             }
         case FabricFeature.PretenseCountdown:
             return {

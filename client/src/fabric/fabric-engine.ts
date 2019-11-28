@@ -25,10 +25,12 @@ export enum FabricFeature {
     Gravity = 0,
     Drag = 1,
     PretenseFactor = 2,
-    IntervalCountdown = 3,
-    PretenseCountdown = 4,
-    FacePullEndZone = 5,
-    FacePullOrientationForce = 6,
+
+    IterationsPerFrame = 3,
+    IntervalCountdown = 4,
+    PretenseCountdown = 5,
+    FacePullEndZone = 6,
+    FacePullOrientationForce = 7,
 
     PushLength = 11,
     TriangleLength = 12,
@@ -124,7 +126,9 @@ export interface IFabricEngine {
 
     setNextState(state: FabricDirection): void
 
-    iterate(ticks: number, nextLifePhase: LifePhase): LifePhase
+    iterate(nextLifePhase: LifePhase): LifePhase
+
+    renderFrame(): void
 
     centralize(): void
 

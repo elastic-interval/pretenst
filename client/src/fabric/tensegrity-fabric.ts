@@ -125,10 +125,10 @@ export class TensegrityFabric {
     private nextLifePhase: LifePhase = LifePhase.Growing
 
     constructor(
+        private featureValues: Record<FabricFeature, IFeatureValue>,
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
         public readonly floatFeatures: Record<FabricFeature, FloatFeature>,
-        public readonly featureValues: Record<FabricFeature, IFeatureValue>,
         public readonly tenscript: ITenscript,
     ) {
         this.builder = new TensegrityBuilder(this)
@@ -140,8 +140,16 @@ export class TensegrityFabric {
         this.refreshFaceGeometry()
     }
 
+    public featureValue(fabricFeature: FabricFeature): number {
+        return this.featureValues[fabricFeature].numeric
+    }
+
+    public defaultLength(intervalRole: IntervalRole): number {
+        return roleDefaultLength(this.featureValues, intervalRole)
+    }
+
     public toSlack(): void {
-        this.nextLifePhase = this.instance.engine.iterate(0, LifePhase.Slack)
+        this.nextLifePhase = this.instance.engine.iterate(LifePhase.Slack)
         this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
     }
 
@@ -349,9 +357,10 @@ export class TensegrityFabric {
         this.facePulls = facePulls
     }
 
-    public iterate(ticks: number): LifePhase {
+    public iterate(): LifePhase {
         const engine = this.engine
-        const lifePhase = engine.iterate(ticks, this.nextLifePhase)
+        const lifePhase = engine.iterate(this.nextLifePhase)
+        engine.renderFrame()
         if (lifePhase === LifePhase.Busy) {
             return lifePhase
         }
@@ -467,7 +476,7 @@ export class TensegrityFabric {
     }
 
     private refreshLineGeometry(): void {
-        this.iterate(0)
+        this.engine.renderFrame()
         this.intervalCount = this.instance.engine.getIntervalCount()
         this.lineLocations = new Float32BufferAttribute(this.instance.lineLocations, 3)
         this.lineColors = new Float32BufferAttribute(this.instance.lineColors, 3)
@@ -476,7 +485,7 @@ export class TensegrityFabric {
     }
 
     private refreshFaceGeometry(): void {
-        this.iterate(0)
+        this.engine.renderFrame()
         this.faceCount = this.instance.engine.getFaceCount()
         this.faceLocations = new Float32BufferAttribute(this.instance.faceLocations, 3)
         this.faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)

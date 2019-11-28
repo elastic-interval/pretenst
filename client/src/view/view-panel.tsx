@@ -8,13 +8,17 @@ import { useEffect, useState } from "react"
 import {
     FaCamera,
     FaCircle,
+    FaClipboardCheck,
     FaClock,
-    FaCompressArrowsAlt, FaDownload,
+    FaCompressArrowsAlt,
+    FaDownload,
     FaExpandArrowsAlt,
-    FaEye, FaFileCsv,
+    FaEye,
+    FaFileCsv,
     FaFutbol,
     FaHandRock,
-    FaParachuteBox, FaSyncAlt,
+    FaParachuteBox,
+    FaSyncAlt,
     FaVolleyballBall,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
@@ -74,8 +78,9 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                 <div className="text-center">
                     <h4><FaClock/> Time <FaClock/></h4>
                 </div>
-                <FeaturePanel feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={false}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.PretenseCountdown]} disabled={false}/>
+                <FeaturePanel key="iter" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={false}/>
+                <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={false}/>
+                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenseCountdown]} disabled={false}/>
             </div>
             <div className="my-3">
                 <div className="text-center">
@@ -129,6 +134,9 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                 </ButtonGroup>
             </div>
             <div className="my-3">
+                <div className="text-center">
+                    <h4><FaClipboardCheck/> Validate <FaClipboardCheck/></h4>
+                </div>
                 <ButtonGroup vertical={true} className="w-100">
                     <Button onClick={() => saveCSVFiles(fabric)}>
                         <FaDownload/> Download CSV <FaFileCsv/>

@@ -18,7 +18,7 @@ import { FeaturePanel } from "./feature-panel"
 import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function OptimizePanel({floatFeatures, fabric, selectionMode, storedState$, lifePhase$}: {
+export function RealizePanel({floatFeatures, fabric, selectionMode, storedState$, lifePhase$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
     selectionMode: boolean,

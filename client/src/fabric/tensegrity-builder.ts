@@ -5,9 +5,7 @@
 
 import { Matrix4, Vector3 } from "three"
 
-import { roleDefaultLength } from "../storage/stored-state"
-
-import { IntervalRole } from "./fabric-engine"
+import { FabricFeature, IntervalRole } from "./fabric-engine"
 import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     averageLocation,
@@ -31,8 +29,6 @@ import {
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
-
-const COUNTDOWN = 300
 
 export function scaleToFacePullLength(scaleFactor: number): number {
     return 0.6 * scaleFactor
@@ -67,7 +63,8 @@ export class TensegrityBuilder {
         const scaleB = scaleA * percentToFactor(scale)
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
         const faceB = brickB.faces[brickB.base]
-        const connector = this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), COUNTDOWN)
+        const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
+        const connector = this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
         if (!connector) {
             console.error("Cannot connect!")
         }
@@ -94,7 +91,8 @@ export class TensegrityBuilder {
                 return true
             }
             this.fabric.removeFacePull(facePull)
-            if (!this.connectFaces(alpha, omega, factorToPercent(scaleFactor), COUNTDOWN)) {
+            const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
+            if (!this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)) {
                 console.log("Unable to connect")
             }
             return false
@@ -193,8 +191,10 @@ export class TensegrityBuilder {
             })
         })
         const engine = instance.engine
+        const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
+        const bowEndLength = this.fabric.defaultLength(IntervalRole.BowEnd)
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
-            fabric.createInterval(x, y, IntervalRole.BowMid, scale, COUNTDOWN)
+            fabric.createInterval(x, y, IntervalRole.BowMid, scale, countdown)
             const ax = fabric.findInterval(a, x)
             const ay = fabric.findInterval(a, y)
             const bx = fabric.findInterval(b, x)
@@ -204,11 +204,10 @@ export class TensegrityBuilder {
             }
             fabric.removeInterval(ax)
             fabric.removeInterval(by)
-            const role = IntervalRole.BowEnd
-            engine.setIntervalRole(ay.index, ay.intervalRole = role)
-            engine.changeRestLength(ay.index, percentToFactor(ay.scale) * roleDefaultLength(fabric.featureValues, role), COUNTDOWN)
-            engine.setIntervalRole(bx.index, bx.intervalRole = role)
-            engine.changeRestLength(bx.index, percentToFactor(bx.scale) * roleDefaultLength(fabric.featureValues, role), COUNTDOWN)
+            engine.setIntervalRole(ay.index, ay.intervalRole = IntervalRole.BowEnd)
+            engine.changeRestLength(ay.index, percentToFactor(ay.scale) * bowEndLength, countdown)
+            engine.setIntervalRole(bx.index, bx.intervalRole = IntervalRole.BowEnd)
+            engine.changeRestLength(bx.index, percentToFactor(bx.scale) * bowEndLength, countdown)
         })
         instance.forgetDimensions()
     }
@@ -231,7 +230,7 @@ export class TensegrityBuilder {
                 averageLocation(faces.map(face => instance.faceMidpoint(face.index))),
                 factorToPercent(averageScaleFactor(faces)),
             )
-            this.fabric.iterate(0)
+            instance.engine.renderFrame()
             const closestTo = (face: IFace) => {
                 const faceLocation = instance.faceMidpoint(face.index)
                 const opposingFaces = brick.faces.filter(({negative}) => negative !== face.negative)
@@ -281,6 +280,7 @@ export class TensegrityBuilder {
     }
 
     private createBrick(points: Vector3[], base: Triangle, scale: IPercent): IBrick {
+        const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
         const brick = initialBrick(this.fabric.bricks.length, base, scale)
         this.fabric.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.fabric.createJointIndex(idx, p))
@@ -290,7 +290,7 @@ export class TensegrityBuilder {
             const omegaIndex = jointIndexes[idx * 2 + 1]
             const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
             const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
-            brick.pushes.push(this.fabric.createInterval(alpha, omega, role, scale, COUNTDOWN))
+            brick.pushes.push(this.fabric.createInterval(alpha, omega, role, scale, countdown))
         })
         brick.pushes.forEach(push => brick.joints.push(push.alpha, push.omega))
         const joints = brick.pushes.reduce((arr: IJoint[], push) => {
@@ -304,7 +304,7 @@ export class TensegrityBuilder {
                 const role = IntervalRole.Triangle
                 const alpha = tJoints[walk]
                 const omega = tJoints[(walk + 1) % 3]
-                const interval = this.fabric.createInterval(alpha, omega, role, scale, COUNTDOWN)
+                const interval = this.fabric.createInterval(alpha, omega, role, scale, countdown)
                 brick.pulls.push(interval)
                 brick.rings[triangle.ringMember[walk]].push(interval)
             }
@@ -340,7 +340,7 @@ export class TensegrityBuilder {
     }
 
     private faceToOrigin(face: IFace): Matrix4 {
-        this.fabric.iterate(0)
+        this.fabric.instance.engine.renderFrame() // todo: necessary?
         const trianglePoints = face.joints.map(joint => this.fabric.instance.location(joint.index))
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
@@ -395,7 +395,7 @@ export class TensegrityBuilder {
             const scaleFactor = percentToFactor(connectorScale)
             brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
                 engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
-                const length = scaleFactor * roleDefaultLength(this.fabric.featureValues, interval.intervalRole)
+                const length = scaleFactor * this.fabric.defaultLength(interval.intervalRole)
                 engine.changeRestLength(interval.index, length, countdown)
             })
             this.fabric.removeFace(faceToRemove, true)

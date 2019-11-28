@@ -45,7 +45,6 @@ export function ShapePanel({
 }): JSX.Element {
 
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
-
     useEffect(() => {
         const subscriptions = [
             storedState$.subscribe(newState => updateEllipsoids(newState.ellipsoids)),
@@ -84,6 +83,9 @@ export function ShapePanel({
                 <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
             </div>
             <ButtonGroup className="w-100 my-2">
+                <Button color={selectionMode ? "warning" : "secondary"} onClick={() => setSelectionMode(!selectionMode)}>
+                    <span><FaHandPointUp/></span> Selection
+                </Button>
                 <Button disabled={selectedFaces.length === 0} onClick={() => clearSelectedFaces()}>
                     <span>
                         <FaTimesCircle/>
@@ -124,7 +126,7 @@ export function ShapePanel({
                 <Button disabled={disableUnlessFaceCount(2)} onClick={connect}>
                     <FaLink/><span> Connect</span>
                 </Button>
-                <Button onClick={() => fabric.builder.optimize()}>
+                <Button disabled={selectionMode || ellipsoids} onClick={() => fabric.builder.optimize()}>
                     <FaMagic/><span> Bows</span>
                 </Button>
             </ButtonGroup>
