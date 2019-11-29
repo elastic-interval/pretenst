@@ -32,11 +32,12 @@ export enum FabricFeature {
     FacePullEndZone = 6,
     FacePullOrientationForce = 7,
 
-    PushLength = 10,
-    TriangleLength = 11,
-    RingLength = 12,
-    CrossLength = 13,
-    BowMidLength = 14,
+    NexusPushLength = 10,
+    ColumnPushLength = 11,
+    TriangleLength = 12,
+    RingLength = 13,
+    CrossLength = 14,
+    BowMidLength = 15,
     BowEndLength = 16,
 
     PushStrainFactor = 20,
@@ -52,17 +53,23 @@ export const FABRIC_FEATURES: FabricFeature[] = Object.keys(FabricFeature)
     .map(k => FabricFeature[k])
 
 export enum IntervalRole {
-    Push = 0,
-    Triangle = 1,
-    Ring = 2,
-    Cross = 3,
-    BowMid = 4,
-    BowEnd = 5,
-    FacePull = 6,
+    NexusPush = 0,
+    ColumnPush = 1,
+    Triangle = 2,
+    Ring = 3,
+    Cross = 4,
+    BowMid = 5,
+    BowEnd = 6,
+    FacePull = 7,
+    Shaper = 8,
+}
+
+export function isPush(intervalRole: IntervalRole): boolean {
+    return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush
 }
 
 export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): IntervalRole | undefined {
-    const firstLengthFeature = FabricFeature.PushLength
+    const firstLengthFeature = FabricFeature.NexusPushLength
     if (fabricFeature < firstLengthFeature || fabricFeature > FabricFeature.BowEndLength) {
         return undefined
     }

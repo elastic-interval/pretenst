@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-
 declare function logBoolean(idx: u32, b: boolean): void
 
 declare function logFloat(idx: u32, f: f32): void
@@ -46,13 +45,20 @@ export function setSurfaceCharacter(character: SurfaceCharacter): void {
 let surfaceCharacter: SurfaceCharacter = SurfaceCharacter.Frozen
 
 enum IntervalRole {
-    Push = 0,
-    Triangle = 1,
-    Ring = 2,
-    Cross = 3,
-    BowMid = 4,
-    BowEnd = 5,
-    FacePull = 6,
+    NexusPush = 0,
+    ColumnPush = 1,
+    Triangle = 2,
+    Ring = 3,
+    Cross = 4,
+    BowMid = 5,
+    BowEnd = 6,
+    FacePull = 7,
+    Shaper = 8,
+}
+
+@inline()
+function isPush(intervalRole: IntervalRole): boolean {
+    return intervalRole === IntervalRole.NexusPush || intervalRole === IntervalRole.ColumnPush
 }
 
 export enum LifePhase {
@@ -82,6 +88,7 @@ const LOST_COLOR: f32[] = [
 ]
 
 const ROLE_COLORS: f32[][] = [
+    [0.799, 0.519, 0.304],
     [0.879, 0.295, 0.374],
     [0.215, 0.629, 0.747],
     [0.618, 0.126, 0.776],
@@ -89,6 +96,7 @@ const ROLE_COLORS: f32[][] = [
     [0.242, 0.879, 0.410],
     [0.613, 0.692, 0.382],
     [0.705, 0.709, 0.019],
+    [0.577, 0.577, 0.577],
 ]
 
 export function getInstanceCount(): u16 {
@@ -973,7 +981,7 @@ function outputIntervals(): void {
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let strain = getStrain(intervalIndex)
         let intervalRole = getIntervalRole(intervalIndex)
-        if (intervalRole === IntervalRole.Push) {
+        if (isPush(intervalRole)) {
             strain = -strain
             if (strain < minPushStrain) {
                 minPushStrain = strain
@@ -1014,7 +1022,7 @@ function outputIntervals(): void {
             } else if (colorPushes && colorPulls) {
                 nuance = toNuance(strain + maxPushStrain, maxStrainSum)
                 setLineColorNuance(intervalIndex, nuance)
-            } else if (intervalRole === IntervalRole.Push) {
+            } else if (isPush(intervalRole)) {
                 nuance = toNuance(-strain - minPushStrain, maxPushStrain - minPushStrain)
                 if (colorPulls) {
                     setLineColor(intervalIndex, ATTENUATED_COLOR)
@@ -1152,12 +1160,11 @@ function pushPullEndZonePhysics(intervalIndex: u16, alphaFaceIndex: u16, omegaFa
 function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
     let currentLength = interpolateCurrentLength(intervalIndex, state)
     let intervalRole = getIntervalRole(intervalIndex)
-    let isPush = intervalRole === IntervalRole.Push
-    if (isPush) {
+    if (isPush(intervalRole)) {
         switch (lifePhase) {
             case LifePhase.Growing:
             case LifePhase.Shaping:
-                currentLength *= 2
+                // currentLength *= 2
                 break
             case LifePhase.Slack:
                 break
@@ -1343,7 +1350,7 @@ function slackToShaping(): LifePhase {
     let intervalCount = getIntervalCount()
     let countdown = getU16Feature(FabricFeature.IntervalCountdown)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        if (getIntervalRole(intervalIndex) === IntervalRole.Push) {
+        if (isPush(getIntervalRole(intervalIndex))) {
             multiplyRestLength(intervalIndex, 1.3, countdown)
         }
     }

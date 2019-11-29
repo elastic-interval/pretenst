@@ -213,8 +213,15 @@ export interface IBrick {
     pulls: IInterval[]
     rings: IInterval[][]
     faces: IFace[]
+    negativeAdjacent: number
+    postiveeAdjacent: number
 }
 
 export function initialBrick(index: number, base: Triangle, scale: IPercent): IBrick {
-    return {index, base, scale, joints: [], pushes: [], pulls: [], rings: [[], [], [], []], faces: []}
+    return {
+        index, base, scale, joints: [],
+        pushes: [], pulls: [],
+        rings: [[], [], [], []], faces: [],
+        negativeAdjacent: 0, postiveeAdjacent: 0,
+    }
 }

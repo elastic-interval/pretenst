@@ -190,9 +190,7 @@ export class TensegrityBuilder {
                 pairs.push({scale, a, x, b, y})
             })
         })
-        const engine = instance.engine
         const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
-        const bowEndLength = this.fabric.defaultLength(IntervalRole.BowEnd)
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
             fabric.createInterval(x, y, IntervalRole.BowMid, scale, countdown)
             const ax = fabric.findInterval(a, x)
@@ -204,10 +202,8 @@ export class TensegrityBuilder {
             }
             fabric.removeInterval(ax)
             fabric.removeInterval(by)
-            engine.setIntervalRole(ay.index, ay.intervalRole = IntervalRole.BowEnd)
-            engine.changeRestLength(ay.index, percentToFactor(ay.scale) * bowEndLength, countdown)
-            engine.setIntervalRole(bx.index, bx.intervalRole = IntervalRole.BowEnd)
-            engine.changeRestLength(bx.index, percentToFactor(bx.scale) * bowEndLength, countdown)
+            this.fabric.changeIntervalRole(ay, IntervalRole.BowEnd, scale, countdown)
+            this.fabric.changeIntervalRole(bx, IntervalRole.BowEnd, scale, countdown)
         })
         instance.forgetDimensions()
     }
@@ -285,12 +281,11 @@ export class TensegrityBuilder {
         this.fabric.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.fabric.createJointIndex(idx, p))
         PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
-            const role = IntervalRole.Push
             const alphaIndex = jointIndexes[idx * 2]
             const omegaIndex = jointIndexes[idx * 2 + 1]
             const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
             const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
-            brick.pushes.push(this.fabric.createInterval(alpha, omega, role, scale, countdown))
+            brick.pushes.push(this.fabric.createInterval(alpha, omega, IntervalRole.NexusPush, scale, countdown))
         })
         brick.pushes.forEach(push => brick.joints.push(push.alpha, push.omega))
         const joints = brick.pushes.reduce((arr: IJoint[], push) => {
@@ -301,10 +296,9 @@ export class TensegrityBuilder {
         TRIANGLE_DEFINITIONS.forEach(triangle => {
             const tJoints = triangle.pushEnds.map(end => joints[end])
             for (let walk = 0; walk < 3; walk++) {
-                const role = IntervalRole.Triangle
                 const alpha = tJoints[walk]
                 const omega = tJoints[(walk + 1) % 3]
-                const interval = this.fabric.createInterval(alpha, omega, role, scale, countdown)
+                const interval = this.fabric.createInterval(alpha, omega, IntervalRole.Triangle, scale, countdown)
                 brick.pulls.push(interval)
                 brick.rings[triangle.ringMember[walk]].push(interval)
             }
@@ -385,19 +379,23 @@ export class TensegrityBuilder {
             createCrossPull(walk)
         }
         const handleFace = (faceToRemove: IFace): void => {
+            const scale = faceToRemove.brick.scale
             const triangle = faceToRemove.triangle
             const brick = faceToRemove.brick
+            if (faceToRemove.negative) {
+                brick.negativeAdjacent++
+            } else {
+                brick.postiveeAdjacent++
+            }
             TRIANGLE_DEFINITIONS.filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_DEFINITIONS[triangle].negative).forEach(t => {
                 brick.faces[t.name].canGrow = false
             })
             const triangleRing = TRIANGLE_DEFINITIONS[triangle].ring
-            const engine = this.fabric.instance.engine
-            const scaleFactor = percentToFactor(connectorScale)
             brick.rings[triangleRing].filter(interval => !interval.removed).forEach(interval => {
-                engine.setIntervalRole(interval.index, interval.intervalRole = IntervalRole.Ring)
-                const length = scaleFactor * this.fabric.defaultLength(interval.intervalRole)
-                engine.changeRestLength(interval.index, length, countdown)
+                this.fabric.changeIntervalRole(interval, IntervalRole.Ring, scale, countdown)
             })
+            const role = brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1 ? IntervalRole.NexusPush : IntervalRole.ColumnPush
+            brick.pushes.filter(interval => !interval.removed).forEach(interval => this.fabric.changeIntervalRole(interval, role, scale, countdown))
             this.fabric.removeFace(faceToRemove, true)
         }
         handleFace(faceA)

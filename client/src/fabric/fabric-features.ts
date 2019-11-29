@@ -153,10 +153,20 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 fixedDigits: 3,
                 percents: [20, 50, 100, 200, 400],
             }
-        case FabricFeature.PushLength:
+        case FabricFeature.NexusPushLength:
             return {
                 feature,
-                name: "Push",
+                name: "Nexus Push",
+                defaultValue: Math.sqrt(2),
+                // defaultValue: (1 + Math.sqrt(5)) / 2,
+                multiplier: FeatureMultiplier.One,
+                fixedDigits: 6,
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.ColumnPushLength:
+            return {
+                feature,
+                name: "Column Push",
                 defaultValue: Math.sqrt(2),
                 multiplier: FeatureMultiplier.One,
                 fixedDigits: 6,

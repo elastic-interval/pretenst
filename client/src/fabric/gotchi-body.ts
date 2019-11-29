@@ -239,7 +239,7 @@ export class GotchiBody {
     }
 
     private muscle(alphaIndex: number, omegaIndex: number): number { // TODO: no more muscles
-        return this.engine.createInterval(alphaIndex, omegaIndex, IntervalRole.Push, 1, 1, 1, 1)
+        return this.engine.createInterval(alphaIndex, omegaIndex, IntervalRole.ColumnPush, 1, 1, 1, 1)
     }
 
     private unfoldFace(faceToReplace: FaceSnapshot, faceJointIndex: number, apexTag: number): FaceSnapshot [] {

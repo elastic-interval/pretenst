@@ -7,7 +7,7 @@ import { BufferGeometry, CylinderGeometry, Float32BufferAttribute, Quaternion, S
 
 import { IFeatureValue, roleDefaultLength } from "../storage/stored-state"
 
-import { FabricFeature, IFabricEngine, IntervalRole, Laterality, LifePhase } from "./fabric-engine"
+import { FabricFeature, IFabricEngine, IntervalRole, isPush, Laterality, LifePhase } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
@@ -140,10 +140,6 @@ export class TensegrityFabric {
         return this.featureValues[fabricFeature].numeric
     }
 
-    public defaultLength(intervalRole: IntervalRole): number {
-        return roleDefaultLength(this.featureValues, intervalRole)
-    }
-
     public toSlack(): void {
         this.nextLifePhase = this.instance.engine.iterate(LifePhase.Slack)
         this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
@@ -230,13 +226,27 @@ export class TensegrityFabric {
         const scaleFactor = percentToFactor(scale)
         const defaultLength = roleDefaultLength(this.featureValues, intervalRole)
         const restLength = scaleFactor * defaultLength
-        const isPush = intervalRole === IntervalRole.Push
         const stiffness = scaleToStiffness(scale)
         const linearDensity = stiffnessToLinearDensity(stiffness)
         const index = this.engine.createInterval(alpha.index, omega.index, intervalRole, restLength, stiffness, linearDensity, coundown)
-        const interval: IInterval = {index, intervalRole, scale, alpha, omega, removed: false, isPush}
+        const interval: IInterval = {
+            index,
+            intervalRole,
+            scale,
+            alpha,
+            omega,
+            removed: false,
+            isPush: isPush(intervalRole),
+        }
         this.intervals.push(interval)
         return interval
+    }
+
+    public changeIntervalRole(interval: IInterval, intervalRole: IntervalRole, scaleFactor: IPercent, countdown: number): void {
+        interval.intervalRole = intervalRole
+        const engine = this.instance.engine
+        engine.setIntervalRole(interval.index, intervalRole)
+        engine.changeRestLength(interval.index, percentToFactor(scaleFactor) * roleDefaultLength(this.featureValues, intervalRole), countdown)
     }
 
     public removeInterval(interval: IInterval): void {
@@ -425,7 +435,6 @@ export class TensegrityFabric {
                 const linearDensity = linearDensities[interval.index]
                 const linearDensityString = numberToString(linearDensity)
                 const role = IntervalRole[interval.intervalRole]
-                const isPush = interval.isPush
                 return <IOutputInterval>{
                     joints,
                     type,
@@ -434,7 +443,7 @@ export class TensegrityFabric {
                     stiffnessString,
                     linearDensity,
                     linearDensityString,
-                    isPush,
+                    isPush: isPush(interval.intervalRole),
                     role,
                     length,
                 }
