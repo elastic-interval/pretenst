@@ -31,6 +31,7 @@ export enum FabricFeature {
     PretenseCountdown = 5,
     FacePullEndZone = 6,
     FacePullOrientationForce = 7,
+    SlackThreshold = 8,
 
     NexusPushLength = 10,
     ColumnPushLength = 11,

@@ -103,6 +103,7 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                         <span><FaCircle/> Role Colors</span>
                     </ViewButton>
                 </ButtonGroup>
+                <FeaturePanel key="sthresh" feature={floatFeatures[FabricFeature.SlackThreshold]} disabled={false}/>
                 <ButtonGroup className="w-100 my-3">
                     <Button
                         disabled={lifePhase < LifePhase.Shaping}

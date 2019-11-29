@@ -144,6 +144,15 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 fixedDigits: 0,
                 percents: FEATURE_PERCENTS,
             }
+        case FabricFeature.SlackThreshold:
+            return {
+                feature,
+                name: "Slack threshold",
+                defaultValue: 0.0001,
+                multiplier: FeatureMultiplier.Millionths,
+                fixedDigits: 0,
+                percents: FEATURE_PERCENTS,
+            }
         case FabricFeature.PushStrainFactor:
             return {
                 feature,
@@ -157,8 +166,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Nexus Push",
-                defaultValue: Math.sqrt(2),
-                // defaultValue: (1 + Math.sqrt(5)) / 2,
+                defaultValue: (1 + Math.sqrt(5)) / 2,
                 multiplier: FeatureMultiplier.One,
                 fixedDigits: 6,
                 percents: FEATURE_PERCENTS,

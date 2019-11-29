@@ -15,9 +15,9 @@ const FEATURE_FLOATS = 30
 const FROZEN_ALTITUDE: f32 = -0.02
 const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
-const IN_UTERO_DRAG: f32 = 0.05
+const IN_UTERO_DRAG: f32 = 0.01
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
-const IN_UTERO_STIFFNESS_FACTOR: f32 = 10
+const IN_UTERO_STIFFNESS_FACTOR: f32 = 100
 const TINY_FLOAT = 0.00000001
 
 export enum FabricFeature {
@@ -29,6 +29,7 @@ export enum FabricFeature {
     PretenseCountdown = 5,
     FacePullEndZone = 6,
     FacePullOrientationForce = 7,
+    SlackThreshold = 8,
 }
 
 enum SurfaceCharacter {
@@ -85,6 +86,9 @@ const ATTENUATED_COLOR: f32[] = [
 ]
 const LOST_COLOR: f32[] = [
     1.0, 1.0, 1.0
+]
+const SLACK_COLOR: f32[] = [
+    0.0, 1.0, 0.0
 ]
 
 const ROLE_COLORS: f32[][] = [
@@ -999,6 +1003,7 @@ function outputIntervals(): void {
         }
     }
     setFaceMidpoints()
+    let slackThreshold = getFeature(FabricFeature.SlackThreshold)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let intervalRole = getIntervalRole(intervalIndex)
         let outputAlpha = _lineLocation(intervalIndex, false)
@@ -1013,19 +1018,25 @@ function outputIntervals(): void {
         let strain = getStrain(intervalIndex)
         let nuance: f32 = 0.5
         let maxStrainSum = maxPushStrain + maxPullStrain
-        if (strain === 0 || maxStrainSum < 0.0001) {
+        if (maxStrainSum < 0.0001) {
             setLineColor(intervalIndex, LOST_COLOR)
         } else {
             if (!colorPushes && !colorPulls) {
                 let roleColor = ROLE_COLORS[intervalRole]
                 setLineColor(intervalIndex, roleColor)
             } else if (colorPushes && colorPulls) {
-                nuance = toNuance(strain + maxPushStrain, maxStrainSum)
-                setLineColorNuance(intervalIndex, nuance)
+                if (strain < slackThreshold) {
+                    setLineColor(intervalIndex, LOST_COLOR)
+                } else {
+                    nuance = toNuance(strain + maxPushStrain, maxStrainSum)
+                    setLineColorNuance(intervalIndex, nuance)
+                }
             } else if (isPush(intervalRole)) {
                 nuance = toNuance(-strain - minPushStrain, maxPushStrain - minPushStrain)
                 if (colorPulls) {
                     setLineColor(intervalIndex, ATTENUATED_COLOR)
+                } else if (strain < slackThreshold) {
+                    setLineColor(intervalIndex, LOST_COLOR)
                 } else {
                     setLineColorNuance(intervalIndex, nuance)
                 }
@@ -1033,6 +1044,8 @@ function outputIntervals(): void {
                 nuance = toNuance(strain - minPullStrain, maxPullStrain - minPullStrain)
                 if (colorPushes) {
                     setLineColor(intervalIndex, ATTENUATED_COLOR)
+                } else if (strain < slackThreshold) {
+                    setLineColor(intervalIndex, LOST_COLOR)
                 } else {
                     setLineColorNuance(intervalIndex, nuance)
                 }
