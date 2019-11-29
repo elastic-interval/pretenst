@@ -186,7 +186,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 name: "Cross",
                 defaultValue: 1,
                 multiplier: FeatureMultiplier.One,
-                fixedDigits: 3,
+                fixedDigits: 6,
                 percents: FEATURE_PERCENTS,
             }
         case FabricFeature.BowMidLength:
