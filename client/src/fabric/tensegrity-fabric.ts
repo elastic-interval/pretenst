@@ -118,7 +118,7 @@ export class TensegrityFabric {
     private lineColors: Float32BufferAttribute
     private _linesGeometry = new BufferGeometry()
 
-    private nextLifePhase: LifePhase = LifePhase.Growing
+    private requestedLifePhase: LifePhase = LifePhase.Growing
 
     constructor(
         private featureValues: Record<FabricFeature, IFeatureValue>,
@@ -140,17 +140,19 @@ export class TensegrityFabric {
         return this.featureValues[fabricFeature].numeric
     }
 
-    public toSlack(): void {
-        this.nextLifePhase = this.instance.engine.iterate(LifePhase.Slack)
-        this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
+    public toSlack(snapshot: boolean): void {
+        this.requestedLifePhase = this.instance.engine.iterate(LifePhase.Slack)
+        if (snapshot) {
+            this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
+        }
     }
 
-    public fromSlackToPretensing(): void {
-        this.nextLifePhase = LifePhase.Pretensing
+    public toPretensing(gravity: boolean): void {
+        this.requestedLifePhase = gravity ? LifePhase.PretenstGravity : LifePhase.PretenstShaping
     }
 
-    public fromSlackToShaping(): void {
-        this.nextLifePhase = LifePhase.Shaping
+    public toShaping(pretenst: boolean): void {
+        this.requestedLifePhase = pretenst ? LifePhase.PretenstShaping : LifePhase.SlackShaping
     }
 
     public fromStrainsToStiffnesses(pushStrainFactor: number, pretensingIntensity: number): void {
@@ -163,14 +165,10 @@ export class TensegrityFabric {
             pretensingIntensity,
         )
         instance.engine.cloneInstance(this.slackInstance.index, instance.index)
-        this.nextLifePhase = LifePhase.Slack
+        this.requestedLifePhase = LifePhase.Slack
         stiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
         linearDensities.forEach((value, index) => instance.linearDensities[index] = value)
         Object.keys(this.floatFeatures).map(k => this.floatFeatures[k]).forEach(feature => instance.applyFeature(feature))
-    }
-
-    public get growthFaces(): IFace[] {
-        return this.faces.filter(face => face.canGrow)
     }
 
     public connectFaces(faces: IFace[]): void {
@@ -344,7 +342,7 @@ export class TensegrityFabric {
 
     public iterate(): LifePhase {
         const engine = this.engine
-        const lifePhase = engine.iterate(this.nextLifePhase)
+        const lifePhase = engine.iterate(this.requestedLifePhase)
         engine.renderFrame()
         if (lifePhase === LifePhase.Busy) {
             return lifePhase

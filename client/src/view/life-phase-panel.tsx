@@ -5,13 +5,70 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowRight, FaClock, FaHammer, FaHandSpock, FaSeedling, FaTools, FaYinYang } from "react-icons/all"
+import {
+    FaArrowDown,
+    FaArrowRight,
+    FaBaby,
+    FaCamera,
+    FaChartBar,
+    FaClock,
+    FaHandSpock,
+    FaSeedling,
+    FaTools,
+    FaYinYang,
+} from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FabricFeature, LifePhase } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IStoredState } from "../storage/stored-state"
+
+function Symbol({phase}: { phase: LifePhase }): JSX.Element {
+    switch (phase) {
+        case LifePhase.Busy:
+            return <span><FaClock/></span>
+        case LifePhase.Growing:
+            return <span><FaSeedling/></span>
+        case LifePhase.SlackShaping:
+            return <span>( <FaYinYang/> <FaTools/> )</span>
+        case LifePhase.PretenstShaping:
+            return <span>( <FaHandSpock/> <FaTools/> )</span>
+        case LifePhase.Slack:
+            return <span><FaYinYang/></span>
+        case LifePhase.PretensingToGravity:
+            return <span><FaYinYang/> <FaArrowRight/> ( <FaArrowDown/> <FaHandSpock/> )</span>
+        case LifePhase.PretensingToShaping:
+            return <span><FaYinYang/> <FaArrowRight/> ( <FaYinYang/> <FaTools/> )</span>
+        case LifePhase.Unpretensing:
+            return <span><FaHandSpock/> <FaArrowRight/> ( <FaYinYang/> <FaTools/> )</span>
+        case LifePhase.PretenstGravity:
+            return <span>( <FaHandSpock/> <FaArrowDown/> )</span>
+    }
+}
+
+function lifePhaseName(lifePhase: LifePhase): string {
+    switch (lifePhase) {
+        case LifePhase.Growing:
+            return "Growing"
+        case LifePhase.SlackShaping:
+            return "Slack Shaping"
+        case LifePhase.PretenstShaping:
+            return "Pretenst Shaping"
+        case LifePhase.Slack:
+            return "Slack"
+        case LifePhase.PretensingToGravity:
+            return "To Gravity"
+        case LifePhase.PretensingToShaping:
+            return "To Shaping"
+        case LifePhase.Unpretensing:
+            return "To Shaping"
+        case LifePhase.PretenstGravity:
+            return "Pretenst Gravity"
+        case LifePhase.Busy:
+            return "Busy"
+    }
+}
 
 export function LifePhasePanel({fabric, lifePhase$, storedState$, disabled}: {
     fabric: TensegrityFabric,
@@ -30,50 +87,91 @@ export function LifePhasePanel({fabric, lifePhase$, storedState$, disabled}: {
         return () => subscription.forEach(s => s.unsubscribe())
     }, [])
 
-    function LifePhaseIcon(): JSX.Element {
-        switch (lifePhase) {
-            case LifePhase.Growing:
-                return <h4><FaSeedling/> Growing <FaSeedling/></h4>
-            case LifePhase.Shaping:
-                return <h4><FaTools/> Shaping <FaTools/></h4>
-            case LifePhase.Slack:
-                return <h4><FaYinYang/> Slack <FaYinYang/></h4>
-            case LifePhase.Pretensing:
-                return <h4><FaYinYang/> Pretensing <FaYinYang/></h4>
-            case LifePhase.Pretenst:
-                return <h4><FaHandSpock/> Pretenst <FaHandSpock/></h4>
-            case LifePhase.Busy:
-                return <h4><FaClock/> Pretenst <FaHandSpock/></h4>
+    function disabledExcept(liveLifePhase: LifePhase): boolean {
+        if (disabled) {
+            return true
         }
+        return lifePhase !== liveLifePhase
     }
 
     return (
-        <div className="my-4 w-100">
-            <div className="text-center">
-                <LifePhaseIcon/>
+        <div className="d-inline">
+            <div className="float-left mx-2 p-2 text-center" style={{
+                width: "15em",
+                backgroundColor: "#5b5b5b",
+                borderRadius: "1em",
+            }}>
+                <Symbol phase={lifePhase}/> {lifePhaseName(lifePhase)}
             </div>
-            <ButtonGroup vertical={true} className="w-100">
-                <Button disabled={lifePhase !== LifePhase.Shaping || disabled} onClick={() => fabric.toSlack()}>
-                    <span>Shaping <FaHammer/> <FaArrowRight/> Slack <FaYinYang/></span>
+            <ButtonGroup>
+                <Button
+                    disabled={disabledExcept(LifePhase.SlackShaping)}
+                    onClick={() => fabric.toSlack(false)}
+                >
+                    <Symbol phase={LifePhase.SlackShaping}/>
+                    <FaArrowRight/>
+                    <Symbol phase={LifePhase.Slack}/>
                 </Button>
-                <ButtonGroup>
-                    <Button disabled={lifePhase !== LifePhase.Slack || disabled}
-                            onClick={() => fabric.fromSlackToPretensing()}>
-                        <span>Slack <FaYinYang/> <FaArrowRight/> Pretenst <FaHandSpock/></span>
-                    </Button>
-                    <Button disabled={lifePhase !== LifePhase.Slack || disabled}
-                            onClick={() => fabric.fromSlackToShaping()}>
-                        <span>Slack <FaYinYang/> <FaArrowRight/> Shaping <FaHammer/></span>
-                    </Button>
-                </ButtonGroup>
-                <Button disabled={lifePhase !== LifePhase.Pretenst || disabled} onClick={() => {
-                    const pushStrainFactor = featureValues[FabricFeature.PushStrainFactor].numeric
-                    fabric.fromStrainsToStiffnesses(pushStrainFactor, 1)
-                }}>
-                    <span>Pretenst <FaHandSpock/> Strain <FaArrowRight/> Slack <FaYinYang/> Stiffness</span>
+                <Button
+                    disabled={disabledExcept(LifePhase.SlackShaping)}
+                    onClick={() => fabric.toPretensing(false)}
+                >
+                    <Symbol phase={LifePhase.SlackShaping}/>
+                    <FaArrowRight/>
+                    <Symbol phase={LifePhase.PretenstShaping}/>
                 </Button>
-                <Button disabled={lifePhase !== LifePhase.Pretenst || disabled} onClick={() => fabric.toSlack()}>
-                    <span>Pretenst <FaHandSpock/> <FaArrowRight/> Slack <FaYinYang/></span>
+                <Button
+                    disabled={disabledExcept(LifePhase.PretenstShaping)}
+                    onClick={() => fabric.toSlack(false)}
+                >
+                    <Symbol phase={LifePhase.PretenstShaping}/>
+                    <FaArrowRight/>
+                    <Symbol phase={LifePhase.Slack}/>
+                </Button>
+                <Button
+                    disabled={disabledExcept(LifePhase.Slack)}
+                    onClick={() => fabric.toPretensing(true)}
+                >
+                    <Symbol phase={LifePhase.Slack}/>
+                    <FaArrowRight/>
+                    <Symbol phase={LifePhase.PretenstGravity}/>
+                </Button>
+                <Button
+                    disabled={disabledExcept(LifePhase.Slack)}
+                    onClick={() => fabric.toShaping(false)}
+                >
+                    <Symbol phase={LifePhase.Slack}/>
+                    <FaArrowRight/>
+                    <Symbol phase={LifePhase.SlackShaping}/>
+                </Button>
+                <Button
+                    disabled={disabledExcept(LifePhase.Slack)}
+                    onClick={() => fabric.toShaping(true)}
+                >
+                    <Symbol phase={LifePhase.Slack}/>
+                    <FaArrowRight/>
+                    <Symbol phase={LifePhase.PretenstShaping}/>
+                </Button>
+                <Button
+                    disabled={disabledExcept(LifePhase.PretenstShaping)}
+                    onClick={() => fabric.toSlack(true)}
+                >
+                    <FaCamera/>
+                    <Symbol phase={LifePhase.PretenstShaping}/>
+                    <FaArrowRight/>
+                    ( <FaBaby/> <Symbol phase={LifePhase.Slack}/> )
+                </Button>
+                <Button
+                    disabled={disabledExcept(LifePhase.PretenstGravity)}
+                    onClick={() => {
+                        const pushStrainFactor = featureValues[FabricFeature.PushStrainFactor].numeric
+                        fabric.fromStrainsToStiffnesses(pushStrainFactor, 1)
+                    }}
+                >
+                    <FaCamera/>
+                    <Symbol phase={LifePhase.PretenstShaping}/>
+                    <FaArrowRight/>
+                    ( <Symbol phase={LifePhase.Slack}/> <FaChartBar/> )
                 </Button>
             </ButtonGroup>
         </div>

@@ -10,10 +10,13 @@ export interface IMemory {
 export enum LifePhase {
     Busy = 0,
     Growing = 1,
-    Shaping = 2,
-    Slack = 3,
-    Pretensing = 4,
-    Pretenst = 5,
+    SlackShaping = 2,
+    PretenstShaping = 3,
+    Slack = 4,
+    PretensingToGravity = 5,
+    PretensingToShaping = 6,
+    Unpretensing = 7,
+    PretenstGravity = 8,
 }
 
 export function doNotClick(lifePhase: LifePhase): boolean {

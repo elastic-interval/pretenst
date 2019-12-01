@@ -106,7 +106,7 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                 <FeaturePanel key="sthresh" feature={floatFeatures[FabricFeature.SlackThreshold]} disabled={false}/>
                 <ButtonGroup className="w-100 my-3">
                     <Button
-                        disabled={lifePhase < LifePhase.Shaping}
+                        disabled={lifePhase <= LifePhase.Growing}
                         color={ellipsoids ? "warning" : "secondary"}
                         onClick={() => storedState$.next(transition(storedState$.getValue(), {ellipsoids: !ellipsoids}))}
                     >
@@ -129,11 +129,11 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                     <h4><FaHandRock/> Disturb <FaHandRock/></h4>
                 </div>
                 <ButtonGroup className="w-100">
-                    <Button disabled={lifePhase !== LifePhase.Pretenst}
+                    <Button disabled={lifePhase !== LifePhase.PretenstGravity}
                             onClick={() => fabric.instance.engine.setAltitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
-                    <Button disabled={lifePhase !== LifePhase.Pretenst}
+                    <Button disabled={lifePhase !== LifePhase.PretenstGravity}
                             onClick={() => fabric.instance.engine.setAltitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>

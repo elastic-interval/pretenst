@@ -15,7 +15,7 @@ const FEATURE_FLOATS = 30
 const FROZEN_ALTITUDE: f32 = -0.02
 const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
-const IN_UTERO_DRAG: f32 = 0.01
+const IN_UTERO_DRAG: f32 = 0.1
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const IN_UTERO_STIFFNESS_FACTOR: f32 = 100
 const TINY_FLOAT = 0.00000001
@@ -65,10 +65,13 @@ function isPush(intervalRole: IntervalRole): boolean {
 export enum LifePhase {
     Busy = 0,
     Growing = 1,
-    Shaping = 2,
-    Slack = 3,
-    Pretensing = 4,
-    Pretenst = 5,
+    SlackShaping = 2,
+    PretenstShaping = 3,
+    Slack = 4,
+    PretensingToGravity = 5,
+    PretensingToShaping = 6,
+    Unpretensing = 7,
+    PretenstGravity = 8,
 }
 
 const LAND: u8 = 1
@@ -1176,15 +1179,21 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     if (isPush(intervalRole)) {
         switch (lifePhase) {
             case LifePhase.Growing:
-            case LifePhase.Shaping:
-                // currentLength *= 2
+            case LifePhase.SlackShaping:
+                break
+            case LifePhase.PretenstShaping:
+                currentLength *= 2
                 break
             case LifePhase.Slack:
                 break
-            case LifePhase.Pretensing:
+            case LifePhase.PretensingToGravity:
+            case LifePhase.PretensingToShaping:
                 currentLength *= 1 + getFeature(FabricFeature.PretenseFactor) * getPretensingNuance()
                 break
-            case LifePhase.Pretenst:
+            case LifePhase.Unpretensing:
+                currentLength *= 1 + getFeature(FabricFeature.PretenseFactor) * (1 - getPretensingNuance())
+                break;
+            case LifePhase.PretenstGravity:
                 currentLength *= 1 + getFeature(FabricFeature.PretenseFactor)
                 break
         }
@@ -1300,14 +1309,21 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         switch (lifePhase) {
             case LifePhase.Growing:
-            case LifePhase.Shaping:
+            case LifePhase.SlackShaping:
+            case LifePhase.PretenstShaping:
             case LifePhase.Slack:
                 jointPhysics(jointIndex, 0, IN_UTERO_DRAG, false)
                 break
-            case LifePhase.Pretensing:
+            case LifePhase.PretensingToGravity:
                 jointPhysics(jointIndex, gravity * pretensingNuance, drag, true)
                 break
-            case LifePhase.Pretenst:
+            case LifePhase.PretensingToShaping:
+                jointPhysics(jointIndex, 0, drag, false)
+                break
+            case LifePhase.Unpretensing:
+                jointPhysics(jointIndex, 0, drag, false)
+                break;
+            case LifePhase.PretenstGravity:
                 jointPhysics(jointIndex, gravity, drag, true)
                 break
         }
@@ -1350,16 +1366,22 @@ function slacken(): LifePhase {
     return setLifePhase(LifePhase.Slack)
 }
 
-function startPretensing(): LifePhase {
+function startPretensing(gravity: boolean): LifePhase {
     setFabricBusyTicks(getU16Feature(FabricFeature.PretenseCountdown))
     if (surfaceCharacter === SurfaceCharacter.Frozen) {
         setAltitude(FROZEN_ALTITUDE)
     }
     renderFrame()
-    return setLifePhase(LifePhase.Pretensing)
+    let lifePhase = gravity ? LifePhase.PretensingToGravity : LifePhase.PretensingToShaping
+    return setLifePhase(lifePhase)
 }
 
-function slackToShaping(): LifePhase {
+function startUnpretensing(): LifePhase {
+    setFabricBusyTicks(getU16Feature(FabricFeature.PretenseCountdown))
+    return setLifePhase(LifePhase.SlackShaping)
+}
+
+function slackToShaping(pretenst: boolean): LifePhase {
     let intervalCount = getIntervalCount()
     let countdown = getU16Feature(FabricFeature.IntervalCountdown)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
@@ -1367,10 +1389,10 @@ function slackToShaping(): LifePhase {
             multiplyRestLength(intervalIndex, 1.3, countdown)
         }
     }
-    return setLifePhase(LifePhase.Shaping)
+    return setLifePhase(pretenst ? LifePhase.PretenstShaping : LifePhase.SlackShaping)
 }
 
-export function iterate(nextLifePhase: LifePhase): LifePhase {
+export function iterate(requestedLifePhase: LifePhase): LifePhase {
     let age = getAge()
     let lifePhase = getLifePhase()
     let intervalBusyCountdown: u16 = 0
@@ -1382,31 +1404,48 @@ export function iterate(nextLifePhase: LifePhase): LifePhase {
     setAge(age + <u32>ticksPerFrame)
     switch (lifePhase) {
         case LifePhase.Busy:
-            if (nextLifePhase === LifePhase.Growing) {
-                setLifePhase(nextLifePhase)
-                return nextLifePhase
+            if (requestedLifePhase === LifePhase.Growing) {
+                setLifePhase(requestedLifePhase)
+                return requestedLifePhase
             }
             break
         case LifePhase.Growing:
             setAltitude(0.0)
             break
-        case LifePhase.Shaping:
+        case LifePhase.SlackShaping:
             setAltitude(0.0)
-            if (nextLifePhase === LifePhase.Slack) {
+            if (requestedLifePhase === LifePhase.Slack) {
                 return slacken()
+            }
+            if (requestedLifePhase === LifePhase.PretenstShaping) {
+                return startPretensing(false)
+            }
+            break
+        case LifePhase.PretenstShaping:
+            setAltitude(0.0)
+            if (requestedLifePhase === LifePhase.Slack) {
+                return slacken()
+            }
+            if (requestedLifePhase === LifePhase.SlackShaping) {
+                return startUnpretensing()
             }
             break
         case LifePhase.Slack:
-            if (nextLifePhase === LifePhase.Pretensing) {
-                return startPretensing()
-            } else if (nextLifePhase === LifePhase.Shaping) {
-                return slackToShaping()
+            switch (requestedLifePhase) {
+                case LifePhase.PretenstGravity:
+                    return startPretensing(true)
+                case LifePhase.SlackShaping:
+                    return slackToShaping(false)
+                case  LifePhase.PretenstShaping:
+                    return slackToShaping(true)
             }
             break
-        case LifePhase.Pretensing:
+        case LifePhase.PretensingToGravity:
+        case LifePhase.PretensingToShaping:
+        case LifePhase.Unpretensing:
             break
-        case LifePhase.Pretenst:
-            if (nextLifePhase === LifePhase.Slack) {
+        case LifePhase.PretenstGravity:
+            if (requestedLifePhase === LifePhase.Slack) {
                 return slacken()
             }
             break
@@ -1414,8 +1453,11 @@ export function iterate(nextLifePhase: LifePhase): LifePhase {
     let fabricBusyCountdown = getFabricBusyCountdown()
     if (intervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
         if (fabricBusyCountdown === 0) {
-            if (lifePhase === LifePhase.Pretensing) {
-                return setLifePhase(LifePhase.Pretenst)
+            if (lifePhase === LifePhase.PretensingToGravity) {
+                return setLifePhase(LifePhase.PretenstGravity)
+            }
+            if (lifePhase === LifePhase.PretensingToShaping) {
+                return setLifePhase(LifePhase.PretenstShaping)
             }
             return lifePhase
         }
@@ -1440,7 +1482,7 @@ export function renderFrame(): void {
 
 export function finishGrowing(): LifePhase {
     renderFrame()
-    return setLifePhase(LifePhase.Shaping)
+    return setLifePhase(LifePhase.SlackShaping)
 }
 
 export function _fabricOffset(): usize {

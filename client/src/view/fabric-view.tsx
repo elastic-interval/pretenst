@@ -128,7 +128,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         instance.engine.renderFrame()
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
-            if (newLifePhase === LifePhase.Pretensing) {
+            if (newLifePhase === LifePhase.PretensingToGravity || newLifePhase === LifePhase.PretensingToShaping) {
                 lifePhase$.next(newLifePhase)
             } else if (newLifePhase !== LifePhase.Busy) {
                 lifePhase$.next(newLifePhase)
@@ -243,7 +243,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         )
     }
 
-    const hideStiffness = storedState.rotating || ellipsoids || lifePhase <= LifePhase.Shaping
+    const hideStiffness = storedState.rotating || ellipsoids || lifePhase < LifePhase.Slack
     return (
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>

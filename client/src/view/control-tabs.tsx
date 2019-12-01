@@ -67,8 +67,7 @@ export function ControlTabs({
 
     const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
     useEffect(() => {
-        const mode = controlTab === ControlTab.Shape && lifePhase === LifePhase.Shaping
-        if (!mode) {
+        if (controlTab !== ControlTab.Shape) {
             clearSelectedFaces()
         }
     }, [controlTab, lifePhase])
@@ -78,11 +77,15 @@ export function ControlTabs({
         return () => subscription.unsubscribe()
     }, [])
 
+    function shapeDisabled(): boolean {
+        return lifePhase !== LifePhase.PretenstShaping && lifePhase !== LifePhase.SlackShaping
+    }
+
     function Link({tab}: { tab: ControlTab }): JSX.Element {
         return (
             <NavItem>
                 <NavLink
-                    disabled={tab === ControlTab.Shape && lifePhase !== LifePhase.Shaping}
+                    disabled={tab === ControlTab.Shape && shapeDisabled()}
                     active={controlTab === tab}
                     onClick={() => {
                         storedState$.next(transition(storedState$.getValue(), {controlTab: tab}))
@@ -152,7 +155,6 @@ export function ControlTabs({
     function FullScreenButton(): JSX.Element {
         return (
             <Button
-                disabled={lifePhase !== LifePhase.Shaping && lifePhase !== LifePhase.Pretenst}
                 style={{
                     padding: 0,
                     margin: 0,

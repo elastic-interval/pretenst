@@ -15,7 +15,6 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { enumValues, IStoredState, transition } from "../storage/stored-state"
 
 import { FeaturePanel } from "./feature-panel"
-import { LifePhasePanel } from "./life-phase-panel"
 import { StrainPanel } from "./strain-panel"
 
 export function RealizePanel({floatFeatures, fabric, selectionMode, storedState$, lifePhase$}: {
@@ -40,14 +39,6 @@ export function RealizePanel({floatFeatures, fabric, selectionMode, storedState$
 
     return (
         <div className="m-4">
-            <div className="my-1 w-100">
-                <LifePhasePanel
-                    fabric={fabric}
-                    lifePhase$={lifePhase$}
-                    storedState$={storedState$}
-                    disabled={storedState.ellipsoids || selectionMode}
-                />
-            </div>
             <div className="my-1">
                 <div className="text-center">
                     <h4><FaGlobe/> Environment <FaGlobe/></h4>

@@ -20,6 +20,7 @@ import { getRecentTenscript, IStoredState, transition } from "../storage/stored-
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
+import { LifePhasePanel } from "./life-phase-panel"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -177,6 +178,14 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                     <div id="tensegrity-view" className="h-100">
                         <div id="top-middle">
                             <i>"{fabric.tenscript.name}"</i>
+                        </div>
+                        <div id="bottom-middle">
+                            <LifePhasePanel
+                                fabric={fabric}
+                                lifePhase$={lifePhase$}
+                                storedState$={storedState$}
+                                disabled={ellipsoids || selectionMode}
+                            />
                         </div>
                         <Canvas style={{
                             backgroundColor: "black",
