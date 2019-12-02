@@ -15,7 +15,6 @@ const FEATURE_FLOATS = 30
 const FROZEN_ALTITUDE: f32 = -0.02
 const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
-const IN_UTERO_DRAG: f32 = 0.1
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
 const TINY_FLOAT = 1e-30
 
@@ -30,7 +29,8 @@ export enum FabricFeature {
     FacePullOrientationForce = 7,
     SlackThreshold = 8,
     ShapingPretenstFactor = 9,
-    ShapingStiffnessFactor = 10
+    ShapingStiffnessFactor = 10,
+    ShapingDrag = 11,
 }
 
 enum SurfaceCharacter {
@@ -1285,12 +1285,13 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
     let jointCount = getJointCount()
     let pretensingNuance = getRealizingNuance()
     let gravity = getFeature(FabricFeature.Gravity)
+    let shapingDrag = getFeature(FabricFeature.ShapingDrag)
     let drag = getFeature(FabricFeature.Drag)
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         switch (lifePhase) {
             case LifePhase.Growing:
             case LifePhase.Shaping:
-                jointPhysics(jointIndex, 0, IN_UTERO_DRAG, false)
+                jointPhysics(jointIndex, 0, shapingDrag, false)
                 break
             case LifePhase.Slack:
                 break

@@ -33,6 +33,7 @@ export enum FabricFeature {
     SlackThreshold = 8,
     ShapingPretenstFactor = 9,
     ShapingStiffnessFactor = 10,
+    ShapingDrag = 11,
 
     NexusPushLength = 15,
     ColumnPushLength = 16,

@@ -88,7 +88,7 @@ export function ShapePanel({
             <div className="text-center">
                 <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
             </div>
-            <ButtonGroup className="w-100 my-2">
+            <ButtonGroup size="sm" className="w-100 my-2">
                 <Button color={selectionMode ? "warning" : "secondary"}
                         onClick={() => setSelectionMode(!selectionMode)}>
                     <span><FaHandPointUp/></span> Selection
@@ -101,7 +101,7 @@ export function ShapePanel({
                     </span>
                 </Button>
             </ButtonGroup>
-            <ButtonGroup className="w-100 my-2">
+            <ButtonGroup size="sm" className="w-100 my-2">
                 <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, true)}>
                     <FaArrowUp/><FaFutbol/>
                 </Button>
@@ -112,7 +112,7 @@ export function ShapePanel({
                     <FaArrowUp/><FaExpandArrowsAlt/>
                 </Button>
             </ButtonGroup>
-            <ButtonGroup className="w-100 my-2">
+            <ButtonGroup size="sm" className="w-100 my-2">
                 <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, true)}>
                     <FaArrowDown/><FaFutbol/>
                 </Button>
@@ -123,7 +123,7 @@ export function ShapePanel({
                     <FaArrowDown/><FaExpandArrowsAlt/>
                 </Button>
             </ButtonGroup>
-            <ButtonGroup className="w-100 my-2">
+            <ButtonGroup size="sm" className="w-100 my-2">
                 <Button disabled={disableUnlessFaceCount(1)} onClick={() => {
                     fabric.builder.uprightAtOrigin(selectedFaces[0])
                     clearSelectedFaces()
@@ -139,6 +139,7 @@ export function ShapePanel({
             </ButtonGroup>
             <div className="my-4">
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={false}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={false}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={false}/>
             </div>
             <div className="my-4">

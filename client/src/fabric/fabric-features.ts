@@ -98,6 +98,13 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 defaultValue: 10,
                 percents: [100, 200, 400, 1000, 2000, 3000],
             }
+        case FabricFeature.ShapingDrag:
+            return {
+                feature,
+                name: "Shaping drag",
+                defaultValue: 0.1,
+                percents: [0, 10, 50, 100, 200, 500],
+            }
         case FabricFeature.PushOverPull:
             return {
                 feature,
