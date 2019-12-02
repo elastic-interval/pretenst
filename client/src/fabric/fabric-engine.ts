@@ -32,19 +32,20 @@ export enum FabricFeature {
     FacePullOrientationForce = 7,
     SlackThreshold = 8,
     ShapingPretenstFactor = 9,
+    ShapingStiffnessFactor = 10,
 
-    NexusPushLength = 10,
-    ColumnPushLength = 11,
-    TriangleLength = 12,
-    RingLength = 13,
-    CrossLength = 14,
-    BowMidLength = 15,
-    BowEndLength = 16,
+    NexusPushLength = 15,
+    ColumnPushLength = 16,
+    TriangleLength = 17,
+    RingLength = 18,
+    CrossLength = 19,
+    BowMidLength = 20,
+    BowEndLength = 21,
 
-    PushOverPull = 20,
-    PushRadiusFactor = 21,
-    PullRadiusFactor = 22,
-    MaxStiffness = 23,
+    PushOverPull = 25,
+    PushRadiusFactor = 26,
+    PullRadiusFactor = 27,
+    MaxStiffness = 28,
 }
 
 export const FEATURE_FLOATS = 30

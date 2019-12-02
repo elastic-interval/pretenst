@@ -17,9 +17,7 @@ interface IFeatureConfig {
     percents: number[]
 }
 
-const FEATURE_PERCENTS = [
-    50, 75, 90, 100, 125, 150, 200,
-]
+const FEATURE_PERCENTS = [50, 75, 90, 100, 125, 150, 200]
 
 function featureConfig(feature: FabricFeature): IFeatureConfig {
     switch (feature) {
@@ -84,14 +82,21 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 feature,
                 name: "Slack threshold",
                 defaultValue: 0.0001,
-                percents: FEATURE_PERCENTS,
+                percents: [0, 1, 10, 50, 100, 150, 200],
             }
         case FabricFeature.ShapingPretenstFactor:
             return {
                 feature,
                 name: "Shaping pretenst factor",
                 defaultValue: 1,
-                percents: [0, 0.01, 0.1, 0.2, 0.3, 0.5, 0.7, 1, 10, 100],
+                percents: [0, 0.1, 0.59, 0.6, 0.92, 0.93, 10],
+            }
+        case FabricFeature.ShapingStiffnessFactor:
+            return {
+                feature,
+                name: "Shaping stiffness factor",
+                defaultValue: 10,
+                percents: [100, 200, 400, 1000, 2000, 3000],
             }
         case FabricFeature.PushOverPull:
             return {

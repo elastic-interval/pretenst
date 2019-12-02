@@ -139,6 +139,7 @@ export function ShapePanel({
             </ButtonGroup>
             <div className="my-4">
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={false}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={false}/>
             </div>
             <div className="my-4">
                 <div className="text-center">
