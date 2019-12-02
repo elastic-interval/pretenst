@@ -17,19 +17,20 @@ const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_DRAG: f32 = 0.1
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
-const IN_UTERO_STIFFNESS_FACTOR: f32 = 100
+const IN_UTERO_STIFFNESS_FACTOR: f32 = 10
 const TINY_FLOAT = 0.00000001
 
 export enum FabricFeature {
     Gravity = 0,
     Drag = 1,
-    PretenseFactor = 2,
+    PretenstFactor = 2,
     IterationsPerFrame = 3,
     IntervalCountdown = 4,
-    PretenseCountdown = 5,
+    RealizingCountdown = 5,
     FacePullEndZone = 6,
     FacePullOrientationForce = 7,
     SlackThreshold = 8,
+    ShapingPretenstFactor = 9,
 }
 
 enum SurfaceCharacter {
@@ -65,13 +66,10 @@ function isPush(intervalRole: IntervalRole): boolean {
 export enum LifePhase {
     Busy = 0,
     Growing = 1,
-    SlackShaping = 2,
-    PretenstShaping = 3,
-    Slack = 4,
-    PretensingToGravity = 5,
-    PretensingToShaping = 6,
-    Unpretensing = 7,
-    PretenstGravity = 8,
+    Shaping = 2,
+    Slack = 3,
+    Realizing = 4,
+    Realized = 6,
 }
 
 const LAND: u8 = 1
@@ -617,9 +615,9 @@ function setFabricBusyTicks(countdown: u32): void {
     setU32(_FABRIC_BUSY_COUNTDOWN, countdown)
 }
 
-function getPretensingNuance(): f32 {
+function getRealizingNuance(): f32 {
     let fabricBusyCountdown = getFabricBusyCountdown()
-    let countdown = getFeature(FabricFeature.PretenseCountdown)
+    let countdown = getFeature(FabricFeature.RealizingCountdown)
     return (countdown - <f32>fabricBusyCountdown) / countdown
 }
 
@@ -967,7 +965,7 @@ export function getLimit(limit: Limit): f32 {
         case Limit.MaxPullStrain:
             return maxPullStrain
         default:
-            return 666
+            return -1
     }
 }
 
@@ -1179,22 +1177,16 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     if (isPush(intervalRole)) {
         switch (lifePhase) {
             case LifePhase.Growing:
-            case LifePhase.SlackShaping:
-                break
-            case LifePhase.PretenstShaping:
-                currentLength *= 2
+            case LifePhase.Shaping:
+                currentLength *= 1 + getFeature(FabricFeature.ShapingPretenstFactor)
                 break
             case LifePhase.Slack:
                 break
-            case LifePhase.PretensingToGravity:
-            case LifePhase.PretensingToShaping:
-                currentLength *= 1 + getFeature(FabricFeature.PretenseFactor) * getPretensingNuance()
+            case LifePhase.Realizing:
+                currentLength *= 1 + getFeature(FabricFeature.PretenstFactor) * getRealizingNuance()
                 break
-            case LifePhase.Unpretensing:
-                currentLength *= 1 + getFeature(FabricFeature.PretenseFactor) * (1 - getPretensingNuance())
-                break;
-            case LifePhase.PretenstGravity:
-                currentLength *= 1 + getFeature(FabricFeature.PretenseFactor)
+            case LifePhase.Realized:
+                currentLength *= 1 + getFeature(FabricFeature.PretenstFactor)
                 break
         }
     }
@@ -1232,22 +1224,6 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
         setF32(_omegaMass, getF32(_omegaMass) + mass)
     }
 }
-
-// const forceAverageDistance = (point: Vector3, face: IFace): void => {
-//     const joints = face.joints
-//     const distances = joints.map(faceJoint => point.distanceTo(instance.location(faceJoint.index)))
-//     const average = distances.reduce((sum, d) => d + sum, 0) / distances.length
-//     joints.forEach((joint, index) => {
-//         const moveDistance = distances[index] - average
-//         // console.log("distance before", average, moveDistance, instance.location(joint.index).distanceTo(point))
-//         const move = new Vector3().subVectors(point, instance.location(joint.index)).normalize().multiplyScalar(moveDistance)
-//         instance.pushJoint(joint.index, move)
-//         // console.log("distance after", average, instance.location(joint.index).distanceTo(point))
-//     })
-// }
-// forceAverageDistance(midA, pair.faceB)
-// forceAverageDistance(midB, pair.faceA)
-// }
 
 function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32, activeSurface: boolean): void {
     let altitude = getY(_location(jointIndex))
@@ -1303,27 +1279,21 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
         }
     }
     let jointCount = getJointCount()
-    let pretensingNuance = getPretensingNuance()
+    let pretensingNuance = getRealizingNuance()
     let gravity = getFeature(FabricFeature.Gravity)
     let drag = getFeature(FabricFeature.Drag)
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
         switch (lifePhase) {
             case LifePhase.Growing:
-            case LifePhase.SlackShaping:
-            case LifePhase.PretenstShaping:
-            case LifePhase.Slack:
+            case LifePhase.Shaping:
                 jointPhysics(jointIndex, 0, IN_UTERO_DRAG, false)
                 break
-            case LifePhase.PretensingToGravity:
+            case LifePhase.Slack:
+                break
+            case LifePhase.Realizing:
                 jointPhysics(jointIndex, gravity * pretensingNuance, drag, true)
                 break
-            case LifePhase.PretensingToShaping:
-                jointPhysics(jointIndex, 0, drag, false)
-                break
-            case LifePhase.Unpretensing:
-                jointPhysics(jointIndex, 0, drag, false)
-                break;
-            case LifePhase.PretenstGravity:
+            case LifePhase.Realized:
                 jointPhysics(jointIndex, gravity, drag, true)
                 break
         }
@@ -1366,30 +1336,25 @@ function slacken(): LifePhase {
     return setLifePhase(LifePhase.Slack)
 }
 
-function startPretensing(gravity: boolean): LifePhase {
-    setFabricBusyTicks(getU16Feature(FabricFeature.PretenseCountdown))
+function startRealizing(): LifePhase {
+    setFabricBusyTicks(getU16Feature(FabricFeature.RealizingCountdown))
     if (surfaceCharacter === SurfaceCharacter.Frozen) {
         setAltitude(FROZEN_ALTITUDE)
     }
     renderFrame()
-    let lifePhase = gravity ? LifePhase.PretensingToGravity : LifePhase.PretensingToShaping
-    return setLifePhase(lifePhase)
+    return setLifePhase(LifePhase.Realizing)
 }
 
-function startUnpretensing(): LifePhase {
-    setFabricBusyTicks(getU16Feature(FabricFeature.PretenseCountdown))
-    return setLifePhase(LifePhase.SlackShaping)
-}
-
-function slackToShaping(pretenst: boolean): LifePhase {
+function slackToShaping(): LifePhase {
     let intervalCount = getIntervalCount()
     let countdown = getU16Feature(FabricFeature.IntervalCountdown)
+    let shapingPretenseFactor = getFeature(FabricFeature.ShapingPretenstFactor)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         if (isPush(getIntervalRole(intervalIndex))) {
-            multiplyRestLength(intervalIndex, 1.3, countdown)
+            multiplyRestLength(intervalIndex, shapingPretenseFactor, countdown)
         }
     }
-    return setLifePhase(pretenst ? LifePhase.PretenstShaping : LifePhase.SlackShaping)
+    return setLifePhase(LifePhase.Shaping)
 }
 
 export function iterate(requestedLifePhase: LifePhase): LifePhase {
@@ -1405,46 +1370,29 @@ export function iterate(requestedLifePhase: LifePhase): LifePhase {
     switch (lifePhase) {
         case LifePhase.Busy:
             if (requestedLifePhase === LifePhase.Growing) {
-                setLifePhase(requestedLifePhase)
-                return requestedLifePhase
+                return setLifePhase(requestedLifePhase)
             }
             break
         case LifePhase.Growing:
             setAltitude(0.0)
             break
-        case LifePhase.SlackShaping:
+        case LifePhase.Shaping:
             setAltitude(0.0)
             if (requestedLifePhase === LifePhase.Slack) {
                 return slacken()
-            }
-            if (requestedLifePhase === LifePhase.PretenstShaping) {
-                return startPretensing(false)
-            }
-            break
-        case LifePhase.PretenstShaping:
-            setAltitude(0.0)
-            if (requestedLifePhase === LifePhase.Slack) {
-                return slacken()
-            }
-            if (requestedLifePhase === LifePhase.SlackShaping) {
-                return startUnpretensing()
             }
             break
         case LifePhase.Slack:
             switch (requestedLifePhase) {
-                case LifePhase.PretenstGravity:
-                    return startPretensing(true)
-                case LifePhase.SlackShaping:
-                    return slackToShaping(false)
-                case  LifePhase.PretenstShaping:
-                    return slackToShaping(true)
+                case LifePhase.Realized:
+                    return startRealizing()
+                case LifePhase.Shaping:
+                    return slackToShaping()
             }
             break
-        case LifePhase.PretensingToGravity:
-        case LifePhase.PretensingToShaping:
-        case LifePhase.Unpretensing:
+        case LifePhase.Realizing:
             break
-        case LifePhase.PretenstGravity:
+        case LifePhase.Realized:
             if (requestedLifePhase === LifePhase.Slack) {
                 return slacken()
             }
@@ -1453,11 +1401,8 @@ export function iterate(requestedLifePhase: LifePhase): LifePhase {
     let fabricBusyCountdown = getFabricBusyCountdown()
     if (intervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
         if (fabricBusyCountdown === 0) {
-            if (lifePhase === LifePhase.PretensingToGravity) {
-                return setLifePhase(LifePhase.PretenstGravity)
-            }
-            if (lifePhase === LifePhase.PretensingToShaping) {
-                return setLifePhase(LifePhase.PretenstShaping)
+            if (lifePhase === LifePhase.Realizing) {
+                return setLifePhase(LifePhase.Realized)
             }
             return lifePhase
         }
@@ -1482,7 +1427,7 @@ export function renderFrame(): void {
 
 export function finishGrowing(): LifePhase {
     renderFrame()
-    return setLifePhase(LifePhase.SlackShaping)
+    return setLifePhase(LifePhase.Shaping)
 }
 
 export function _fabricOffset(): usize {

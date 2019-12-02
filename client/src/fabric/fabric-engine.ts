@@ -10,13 +10,10 @@ export interface IMemory {
 export enum LifePhase {
     Busy = 0,
     Growing = 1,
-    SlackShaping = 2,
-    PretenstShaping = 3,
-    Slack = 4,
-    PretensingToGravity = 5,
-    PretensingToShaping = 6,
-    Unpretensing = 7,
-    PretenstGravity = 8,
+    Shaping = 2,
+    Slack = 3,
+    Realizing = 4,
+    Realized = 6,
 }
 
 export function doNotClick(lifePhase: LifePhase): boolean {
@@ -27,14 +24,14 @@ export enum FabricFeature {
 
     Gravity = 0,
     Drag = 1,
-    PretenseFactor = 2,
-
+    PretenstFactor = 2,
     IterationsPerFrame = 3,
     IntervalCountdown = 4,
-    PretenseCountdown = 5,
+    PretenstCountdown = 5,
     FacePullEndZone = 6,
     FacePullOrientationForce = 7,
     SlackThreshold = 8,
+    ShapingPretenstFactor = 9,
 
     NexusPushLength = 10,
     ColumnPushLength = 11,
@@ -44,7 +41,7 @@ export enum FabricFeature {
     BowMidLength = 15,
     BowEndLength = 16,
 
-    PushStrainFactor = 20,
+    PushOverPull = 20,
     PushRadiusFactor = 21,
     PullRadiusFactor = 22,
     MaxStiffness = 23,

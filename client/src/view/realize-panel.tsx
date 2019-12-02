@@ -60,13 +60,13 @@ export function RealizePanel({floatFeatures, fabric, selectionMode, storedState$
                 </div>
                 <FeaturePanel feature={floatFeatures[FabricFeature.Gravity]} disabled={false}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.Drag]} disabled={false}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.PushStrainFactor]} disabled={false}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.PushOverPull]} disabled={false}/>
             </div>
             <div className="my-1">
                 <div className="text-center">
                     <h4><FaCog/> Behavior <FaCog/></h4>
                 </div>
-                <FeaturePanel feature={floatFeatures[FabricFeature.PretenseFactor]} disabled={false}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.PretenstFactor]} disabled={false}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.MaxStiffness]} disabled={false}/>
             </div>
             <div className="my-1">

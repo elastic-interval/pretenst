@@ -140,28 +140,20 @@ export class TensegrityFabric {
         return this.featureValues[fabricFeature].numeric
     }
 
-    public toSlack(snapshot: boolean): void {
+    public snapshotShape(): void {
         this.requestedLifePhase = this.instance.engine.iterate(LifePhase.Slack)
-        if (snapshot) {
-            this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
-        }
+        this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
     }
 
-    public toPretensing(gravity: boolean): void {
-        this.requestedLifePhase = gravity ? LifePhase.PretenstGravity : LifePhase.PretenstShaping
-    }
-
-    public toShaping(pretenst: boolean): void {
-        this.requestedLifePhase = pretenst ? LifePhase.PretenstShaping : LifePhase.SlackShaping
-    }
-
-    public fromStrainsToStiffnesses(pushStrainFactor: number, pretensingIntensity: number): void {
+    public snapshotStrainToStiffness(): void {
         const instance = this.instance
+        const pushOverPull = this.featureValues[FabricFeature.PushOverPull].numeric
+        const pretensingIntensity = 1 // TODO
         const {stiffnesses, linearDensities} = pretensingAdjustments(
             instance.strains,
             instance.stiffnesses,
             this.intervals,
-            pushStrainFactor,
+            pushOverPull,
             pretensingIntensity,
         )
         instance.engine.cloneInstance(this.slackInstance.index, instance.index)
@@ -169,6 +161,18 @@ export class TensegrityFabric {
         stiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
         linearDensities.forEach((value, index) => instance.linearDensities[index] = value)
         Object.keys(this.floatFeatures).map(k => this.floatFeatures[k]).forEach(feature => instance.applyFeature(feature))
+    }
+
+    public toSlack(): void {
+        this.requestedLifePhase = LifePhase.Slack
+    }
+
+    public toRealized(): void {
+        this.requestedLifePhase = LifePhase.Realized
+    }
+
+    public toShaping(): void {
+        this.requestedLifePhase = LifePhase.Shaping
     }
 
     public connectFaces(faces: IFace[]): void {
@@ -464,6 +468,7 @@ export class TensegrityFabric {
         this.lineColors = new Float32BufferAttribute(this.instance.lineColors, 3)
         this._linesGeometry.addAttribute("position", this.lineLocations)
         this._linesGeometry.addAttribute("color", this.lineColors)
+        this._linesGeometry.computeBoundingSphere()
     }
 
     private refreshFaceGeometry(): void {
@@ -473,6 +478,7 @@ export class TensegrityFabric {
         this.faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)
         this._facesGeometry.addAttribute("position", this.faceLocations)
         this._facesGeometry.addAttribute("normal", this.faceNormals)
+        this._facesGeometry.computeBoundingSphere()
     }
 
     private get engine(): IFabricEngine {

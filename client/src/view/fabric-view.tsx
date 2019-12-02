@@ -105,6 +105,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         perspective.lookAt(orbit.current.target)
         perspective.fov = 60
         perspective.far = SPACE_RADIUS * 2
+        perspective.near = 0.001
         orb.object = perspective
         orb.minPolarAngle = -0.98 * Math.PI / 2
         orb.maxPolarAngle = 0.8 * Math.PI
@@ -128,7 +129,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         instance.engine.renderFrame()
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
-            if (newLifePhase === LifePhase.PretensingToGravity || newLifePhase === LifePhase.PretensingToShaping) {
+            if (newLifePhase === LifePhase.Realizing) {
                 lifePhase$.next(newLifePhase)
             } else if (newLifePhase !== LifePhase.Busy) {
                 lifePhase$.next(newLifePhase)

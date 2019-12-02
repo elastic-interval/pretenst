@@ -6,7 +6,6 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
-    FaArrowDown,
     FaArrowRight,
     FaBaby,
     FaCamera,
@@ -20,69 +19,53 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, LifePhase } from "../fabric/fabric-engine"
+import { LifePhase } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { IStoredState } from "../storage/stored-state"
 
 function Symbol({phase}: { phase: LifePhase }): JSX.Element {
     switch (phase) {
         case LifePhase.Busy:
-            return <span><FaClock/></span>
+            return <FaClock/>
         case LifePhase.Growing:
-            return <span><FaSeedling/></span>
-        case LifePhase.SlackShaping:
-            return <span>( <FaYinYang/> <FaTools/> )</span>
-        case LifePhase.PretenstShaping:
-            return <span>( <FaHandSpock/> <FaTools/> )</span>
+            return <FaSeedling/>
+        case LifePhase.Shaping:
+            return <FaTools/>
         case LifePhase.Slack:
-            return <span><FaYinYang/></span>
-        case LifePhase.PretensingToGravity:
-            return <span><FaYinYang/> <FaArrowRight/> ( <FaArrowDown/> <FaHandSpock/> )</span>
-        case LifePhase.PretensingToShaping:
-            return <span><FaYinYang/> <FaArrowRight/> ( <FaYinYang/> <FaTools/> )</span>
-        case LifePhase.Unpretensing:
-            return <span><FaHandSpock/> <FaArrowRight/> ( <FaYinYang/> <FaTools/> )</span>
-        case LifePhase.PretenstGravity:
-            return <span>( <FaHandSpock/> <FaArrowDown/> )</span>
+            return <FaYinYang/>
+        case LifePhase.Realizing:
+            return <FaClock/>
+        case LifePhase.Realized:
+            return <FaHandSpock/>
     }
 }
 
 function lifePhaseName(lifePhase: LifePhase): string {
     switch (lifePhase) {
-        case LifePhase.Growing:
-            return "Growing"
-        case LifePhase.SlackShaping:
-            return "Slack Shaping"
-        case LifePhase.PretenstShaping:
-            return "Pretenst Shaping"
-        case LifePhase.Slack:
-            return "Slack"
-        case LifePhase.PretensingToGravity:
-            return "To Gravity"
-        case LifePhase.PretensingToShaping:
-            return "To Shaping"
-        case LifePhase.Unpretensing:
-            return "To Shaping"
-        case LifePhase.PretenstGravity:
-            return "Pretenst Gravity"
         case LifePhase.Busy:
             return "Busy"
+        case LifePhase.Growing:
+            return "Growing"
+        case LifePhase.Shaping:
+            return "Shaping"
+        case LifePhase.Slack:
+            return "Slack"
+        case LifePhase.Realizing:
+            return "Realizing"
+        case LifePhase.Realized:
+            return "Realized"
     }
 }
 
-export function LifePhasePanel({fabric, lifePhase$, storedState$, disabled}: {
+export function LifePhasePanel({fabric, lifePhase$, disabled}: {
     fabric: TensegrityFabric,
     lifePhase$: BehaviorSubject<LifePhase>,
-    storedState$: BehaviorSubject<IStoredState>,
     disabled: boolean,
 }): JSX.Element {
 
     const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
-    const [featureValues, setFeatureValues] = useState(storedState$.getValue().featureValues)
     useEffect(() => {
         const subscription = [
             lifePhase$.subscribe(newPhase => setLifePhase(newPhase)),
-            storedState$.subscribe(newState => setFeatureValues(newState.featureValues)),
         ]
         return () => subscription.forEach(s => s.unsubscribe())
     }, [])
@@ -97,7 +80,7 @@ export function LifePhasePanel({fabric, lifePhase$, storedState$, disabled}: {
     return (
         <div className="d-inline">
             <div className="float-left mx-2 p-2 text-center" style={{
-                width: "15em",
+                width: "8em",
                 backgroundColor: "#5b5b5b",
                 borderRadius: "1em",
             }}>
@@ -105,71 +88,51 @@ export function LifePhasePanel({fabric, lifePhase$, storedState$, disabled}: {
             </div>
             <ButtonGroup>
                 <Button
-                    disabled={disabledExcept(LifePhase.SlackShaping)}
-                    onClick={() => fabric.toSlack(false)}
-                >
-                    <Symbol phase={LifePhase.SlackShaping}/>
-                    <FaArrowRight/>
-                    <Symbol phase={LifePhase.Slack}/>
-                </Button>
-                <Button
-                    disabled={disabledExcept(LifePhase.SlackShaping)}
-                    onClick={() => fabric.toPretensing(false)}
-                >
-                    <Symbol phase={LifePhase.SlackShaping}/>
-                    <FaArrowRight/>
-                    <Symbol phase={LifePhase.PretenstShaping}/>
-                </Button>
-                <Button
-                    disabled={disabledExcept(LifePhase.PretenstShaping)}
-                    onClick={() => fabric.toSlack(false)}
-                >
-                    <Symbol phase={LifePhase.PretenstShaping}/>
-                    <FaArrowRight/>
-                    <Symbol phase={LifePhase.Slack}/>
-                </Button>
-                <Button
-                    disabled={disabledExcept(LifePhase.Slack)}
-                    onClick={() => fabric.toPretensing(true)}
+                    className="mx-1"
+                    disabled={disabledExcept(LifePhase.Shaping)}
+                    onClick={() => fabric.toSlack()}
                 >
                     <Symbol phase={LifePhase.Slack}/>
-                    <FaArrowRight/>
-                    <Symbol phase={LifePhase.PretenstGravity}/>
                 </Button>
                 <Button
-                    disabled={disabledExcept(LifePhase.Slack)}
-                    onClick={() => fabric.toShaping(false)}
-                >
-                    <Symbol phase={LifePhase.Slack}/>
-                    <FaArrowRight/>
-                    <Symbol phase={LifePhase.SlackShaping}/>
-                </Button>
-                <Button
-                    disabled={disabledExcept(LifePhase.Slack)}
-                    onClick={() => fabric.toShaping(true)}
-                >
-                    <Symbol phase={LifePhase.Slack}/>
-                    <FaArrowRight/>
-                    <Symbol phase={LifePhase.PretenstShaping}/>
-                </Button>
-                <Button
-                    disabled={disabledExcept(LifePhase.PretenstShaping)}
-                    onClick={() => fabric.toSlack(true)}
+                    className="mx-1"
+                    disabled={disabledExcept(LifePhase.Shaping)}
+                    onClick={() => fabric.snapshotShape()}
                 >
                     <FaCamera/>
-                    <Symbol phase={LifePhase.PretenstShaping}/>
                     <FaArrowRight/>
                     ( <FaBaby/> <Symbol phase={LifePhase.Slack}/> )
                 </Button>
                 <Button
-                    disabled={disabledExcept(LifePhase.PretenstGravity)}
-                    onClick={() => {
-                        const pushStrainFactor = featureValues[FabricFeature.PushStrainFactor].numeric
-                        fabric.fromStrainsToStiffnesses(pushStrainFactor, 1)
-                    }}
+                    className="mx-1"
+                    disabled={disabledExcept(LifePhase.Slack)}
+                    onClick={() => fabric.toRealized()}
+                >
+                    <Symbol phase={LifePhase.Realized}/>
+                </Button>
+                <Button
+                    className="mx-1"
+                    disabled={disabledExcept(LifePhase.Slack)}
+                    onClick={() => fabric.toShaping()}
+                >
+                    <Symbol phase={LifePhase.Shaping}/>
+                </Button>
+                <Button
+                    className="mx-1"
+                    disabled={disabledExcept(LifePhase.Realized)}
+                    onClick={() => fabric.snapshotShape()}
                 >
                     <FaCamera/>
-                    <Symbol phase={LifePhase.PretenstShaping}/>
+                    <FaArrowRight/>
+                    ( <FaBaby/> <Symbol phase={LifePhase.Slack}/> )
+                </Button>
+                <Button
+                    className="mx-1"
+                    disabled={disabledExcept(LifePhase.Realized)}
+                    onClick={() => fabric.snapshotStrainToStiffness()}
+                >
+                    <FaCamera/>
+                    <Symbol phase={LifePhase.Realized}/>
                     <FaArrowRight/>
                     ( <Symbol phase={LifePhase.Slack}/> <FaChartBar/> )
                 </Button>

@@ -78,7 +78,7 @@ export function ControlTabs({
     }, [])
 
     function shapeDisabled(): boolean {
-        return lifePhase !== LifePhase.PretenstShaping && lifePhase !== LifePhase.SlackShaping
+        return lifePhase !== LifePhase.Shaping
     }
 
     function Link({tab}: { tab: ControlTab }): JSX.Element {

@@ -81,7 +81,7 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                 <FeaturePanel key="iter" feature={floatFeatures[FabricFeature.IterationsPerFrame]}
                               disabled={ellipsoids}/>
                 <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
-                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenseCountdown]} disabled={ellipsoids}/>
+                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenstCountdown]} disabled={ellipsoids}/>
             </div>
             <div className="my-3">
                 <div className="text-center">
@@ -129,15 +129,16 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                     <h4><FaHandRock/> Disturb <FaHandRock/></h4>
                 </div>
                 <ButtonGroup className="w-100">
-                    <Button disabled={lifePhase !== LifePhase.PretenstGravity}
+                    <Button disabled={lifePhase !== LifePhase.Realized}
                             onClick={() => fabric.instance.engine.setAltitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
-                    <Button disabled={lifePhase !== LifePhase.PretenstGravity}
+                    <Button disabled={lifePhase !== LifePhase.Realized}
                             onClick={() => fabric.instance.engine.setAltitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>
-                    <Button disabled={ellipsoids} onClick={() => fabric.instance.engine.centralize()}>
+                    <Button disabled={ellipsoids}
+                            onClick={() => fabric.instance.engine.centralize()}>
                         <FaCompressArrowsAlt/> Centralize
                     </Button>
                 </ButtonGroup>

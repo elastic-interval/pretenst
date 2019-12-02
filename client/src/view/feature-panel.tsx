@@ -8,18 +8,14 @@ import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
 
 import { fabricFeatureIntervalRole } from "../fabric/fabric-engine"
-import { FloatFeature, formatFeatureValue } from "../fabric/fabric-features"
+import { FloatFeature } from "../fabric/fabric-features"
 
 import { roleColorString } from "./materials"
 
 export function FeaturePanel({feature, disabled}: { feature: FloatFeature, disabled: boolean }): JSX.Element {
     const [featurePercent, setFeaturePercent] = useState(() => feature.percent)
-    const [featureNumeric, setFeatureNumeric] = useState(() => feature.numeric)
     useEffect(() => {
-        const subscription = feature.observable.subscribe(({percent, numeric}) => {
-            setFeaturePercent(percent)
-            setFeatureNumeric(numeric)
-        })
+        const subscription = feature.observable.subscribe(({percent}) => setFeaturePercent(percent))
         return () => subscription.unsubscribe()
     }, [])
     const roleColor = roleColorString(fabricFeatureIntervalRole(feature.fabricFeature))
@@ -27,7 +23,7 @@ export function FeaturePanel({feature, disabled}: { feature: FloatFeature, disab
     return (
         <div className="my-1">
             <div className="float-right text-white">
-                {formatFeatureValue(feature.config, featureNumeric)}
+                {feature.formatted}
             </div>
             <div>
                 {feature.config.name}

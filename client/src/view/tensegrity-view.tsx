@@ -183,7 +183,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                             <LifePhasePanel
                                 fabric={fabric}
                                 lifePhase$={lifePhase$}
-                                storedState$={storedState$}
                                 disabled={ellipsoids || selectionMode}
                             />
                         </div>
