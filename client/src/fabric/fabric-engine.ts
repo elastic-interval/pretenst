@@ -141,7 +141,7 @@ export interface IFabricEngine {
 
     iterate(nextLifePhase: LifePhase): LifePhase
 
-    renderFrame(): void
+    renderNumbers(): number
 
     centralize(): void
 

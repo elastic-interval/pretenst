@@ -74,7 +74,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
             }
             const engine = fabric.instance.engine
             engine.setColoring(storedState.showPushes, storedState.showPulls)
-            engine.renderFrame()
             engine.setSurfaceCharacter(storedState.surfaceCharacter)
         })
         return () => subscription.unsubscribe()

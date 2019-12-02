@@ -349,8 +349,7 @@ function _lineColor(intervalIndex: u16, omega: boolean): usize {
 
 const _AGE = _LINE_COLORS + _32x3_INTERVALS * 2
 const _MIDPOINT = _AGE + sizeof<u32>()
-const _PRETENST = _MIDPOINT + sizeof<f32>() * 3
-const _FABRIC_FEATURES = _PRETENST + sizeof<f32>()
+const _FABRIC_FEATURES = _MIDPOINT + sizeof<f32>() * 3
 const _LIFE_PHASE = _FABRIC_FEATURES + FEATURE_FLOATS * sizeof<f32>() // lots
 const _A = _LIFE_PHASE + sizeof<u16>()
 const _B = _A + sizeof<f32>() * 3
@@ -715,18 +714,6 @@ export function setAltitude(altitude: f32): f32 {
         zero(_velocity(jointIndex))
     }
     return altitude - lowY
-}
-
-function calculateJointMidpoint(): void {
-    zero(_MIDPOINT)
-    let jointCount = getJointCount()
-    if (jointCount <= 0) {
-        return
-    }
-    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        add(_MIDPOINT, _location(jointIndex))
-    }
-    multiplyScalar(_MIDPOINT, 1.0 / <f32>jointCount)
 }
 
 // Intervals =====================================================================================
@@ -1320,7 +1307,6 @@ export function initInstance(): LifePhase {
     setPreviousState(REST_STATE)
     setCurrentState(REST_STATE)
     setNextState(REST_STATE)
-    setF32(_PRETENST, 0)
     return setLifePhase(LifePhase.Busy)
 }
 
@@ -1337,7 +1323,7 @@ function slacken(): LifePhase {
         zero(_velocity(jointIndex))
     }
     setAltitude(0.0)
-    renderFrame()
+    renderNumbers()
     return setLifePhase(LifePhase.Slack)
 }
 
@@ -1346,7 +1332,7 @@ function startRealizing(): LifePhase {
     if (surfaceCharacter === SurfaceCharacter.Frozen) {
         setAltitude(FROZEN_ALTITUDE)
     }
-    renderFrame()
+    renderNumbers()
     return setLifePhase(LifePhase.Realizing)
 }
 
@@ -1423,15 +1409,26 @@ export function iterate(requestedLifePhase: LifePhase): LifePhase {
     return LifePhase.Busy
 }
 
-export function renderFrame(): void {
-    calculateJointMidpoint()
+export function renderNumbers(): f32 {
+    zero(_MIDPOINT)
+    let jointCount = getJointCount()
+    let maxJointSpeedSquared: f32 = 0
+    for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
+        add(_MIDPOINT, _location(jointIndex))
+        let jointSpeedSquared = quadrance(_velocity(jointIndex))
+        if (jointSpeedSquared > maxJointSpeedSquared) {
+            maxJointSpeedSquared = jointSpeedSquared
+        }
+    }
+    multiplyScalar(_MIDPOINT, 1.0 / <f32>jointCount)
     setFaceMidpoints()
     setFaceVectors()
     outputIntervals()
+    return maxJointSpeedSquared
 }
 
 export function finishGrowing(): LifePhase {
-    renderFrame()
+    renderNumbers()
     return setLifePhase(LifePhase.Shaping)
 }
 

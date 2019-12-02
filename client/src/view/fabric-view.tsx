@@ -125,8 +125,9 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         let newLifePhase = LifePhase.Busy
         if (!ellipsoids && !selectionMode) {
             newLifePhase = fabric.iterate()
+        } else {
+            instance.engine.renderNumbers()
         }
-        instance.engine.renderFrame()
         fabric.needsUpdate()
         if (lifePhase !== newLifePhase) {
             if (newLifePhase === LifePhase.Realizing) {

@@ -226,7 +226,7 @@ export class TensegrityBuilder {
                 averageLocation(faces.map(face => instance.faceMidpoint(face.index))),
                 factorToPercent(averageScaleFactor(faces)),
             )
-            instance.engine.renderFrame()
+            instance.engine.renderNumbers()
             const closestTo = (face: IFace) => {
                 const faceLocation = instance.faceMidpoint(face.index)
                 const opposingFaces = brick.faces.filter(({negative}) => negative !== face.negative)
@@ -334,7 +334,7 @@ export class TensegrityBuilder {
     }
 
     private faceToOrigin(face: IFace): Matrix4 {
-        this.fabric.instance.engine.renderFrame() // todo: necessary?
+        this.fabric.instance.engine.renderNumbers() // todo: necessary?
         const trianglePoints = face.joints.map(joint => this.fabric.instance.location(joint.index))
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()

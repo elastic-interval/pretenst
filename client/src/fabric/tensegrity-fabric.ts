@@ -106,6 +106,7 @@ export class TensegrityFabric {
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
     public facesToConnect: IFace[] | undefined
+    public maxJointSpeed = 0
     public readonly builder: TensegrityBuilder
 
     private faceCount: number
@@ -347,7 +348,7 @@ export class TensegrityFabric {
     public iterate(): LifePhase {
         const engine = this.engine
         const lifePhase = engine.iterate(this.requestedLifePhase)
-        engine.renderFrame()
+        this.maxJointSpeed = Math.sqrt(engine.renderNumbers())
         if (lifePhase === LifePhase.Busy) {
             return lifePhase
         }
@@ -462,7 +463,7 @@ export class TensegrityFabric {
     }
 
     private refreshLineGeometry(): void {
-        this.engine.renderFrame()
+        this.engine.renderNumbers()
         this.intervalCount = this.instance.engine.getIntervalCount()
         this.lineLocations = new Float32BufferAttribute(this.instance.lineLocations, 3)
         this.lineColors = new Float32BufferAttribute(this.instance.lineColors, 3)
@@ -472,7 +473,7 @@ export class TensegrityFabric {
     }
 
     private refreshFaceGeometry(): void {
-        this.engine.renderFrame()
+        this.engine.renderNumbers()
         this.faceCount = this.instance.engine.getFaceCount()
         this.faceLocations = new Float32BufferAttribute(this.instance.faceLocations, 3)
         this.faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)
