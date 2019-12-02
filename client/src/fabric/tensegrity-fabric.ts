@@ -149,7 +149,7 @@ export class TensegrityFabric {
     public snapshotStrainToStiffness(): void {
         const instance = this.instance
         const pushOverPull = this.featureValues[FabricFeature.PushOverPull].numeric
-        const pretensingIntensity = 1 // TODO
+        const pretensingIntensity = 1
         const {stiffnesses, linearDensities} = pretensingAdjustments(
             instance.strains,
             instance.stiffnesses,
@@ -161,11 +161,11 @@ export class TensegrityFabric {
         this.requestedLifePhase = LifePhase.Slack
         stiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
         linearDensities.forEach((value, index) => instance.linearDensities[index] = value)
-        Object.keys(this.floatFeatures).map(k => this.floatFeatures[k]).forEach(feature => instance.applyFeature(feature))
     }
 
     public toSlack(): void {
         this.requestedLifePhase = LifePhase.Slack
+        this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
     }
 
     public toRealized(): void {

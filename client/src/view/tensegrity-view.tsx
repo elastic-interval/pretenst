@@ -105,11 +105,11 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
             return
         }
         location.hash = addNameToCode(newTenscript.code, newTenscript.name)
-        mainInstance.forgetDimensions()
         mainInstance.engine.initInstance()
-        lifePhase$.next(LifePhase.Growing)
+        mainInstance.forgetDimensions()
         const featureValues = storedState$.getValue().featureValues
         setFabric(new TensegrityFabric(featureValues, mainInstance, slackInstance, floatFeatures, newTenscript))
+        lifePhase$.next(LifePhase.Growing)
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
     }
 

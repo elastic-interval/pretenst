@@ -39,7 +39,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Pretenst factor",
-                defaultValue: 1.03,
+                defaultValue: 0.03,
                 percents: FEATURE_PERCENTS,
             }
         case FabricFeature.IterationsPerFrame:
@@ -165,7 +165,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Push Radius",
-                defaultValue: 5,
+                defaultValue: 4,
                 percents: [5, 25, 50, 100, 150, 200, 300],
             }
         case FabricFeature.PullRadiusFactor:

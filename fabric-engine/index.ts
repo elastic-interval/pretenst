@@ -1033,7 +1033,7 @@ function outputIntervals(): void {
                 setLineColor(intervalIndex, ATTENUATED_COLOR)
             } else if (absoluteStrain < slackThreshold) {
                 setLineColor(intervalIndex, SLACK_COLOR)
-            } else if (maxPullStrain - minPullStrain) {
+            } else if (maxPullStrain - minPullStrain < TINY_FLOAT) {
                 setLineColor(intervalIndex, LOST_COLOR)
             } else {
                 nuance = toNuance(strain - minPullStrain, maxPullStrain - minPullStrain)
@@ -1162,7 +1162,8 @@ function pushPullEndZonePhysics(intervalIndex: u16, alphaFaceIndex: u16, omegaFa
 function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
     let currentLength = interpolateCurrentLength(intervalIndex, state)
     let intervalRole = getIntervalRole(intervalIndex)
-    if (isPush(intervalRole)) {
+    let push = isPush(intervalRole)
+    if (push) {
         switch (lifePhase) {
             case LifePhase.Growing:
             case LifePhase.Shaping:
@@ -1180,7 +1181,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     }
     let realLength = calculateRealLength(intervalIndex, intervalRole)
     let strain = (realLength - currentLength) / currentLength
-    if (!isPush && strain < 0) {
+    if (push && strain > 0 || !push && strain < 0) {
         strain = 0
     }
     setStrain(intervalIndex, strain)
