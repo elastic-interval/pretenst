@@ -4,6 +4,7 @@
  */
 
 import * as FileSaver from "file-saver"
+import JSZip from "jszip"
 import { Mesh, Object3D } from "three"
 import { OBJExporter } from "three/examples/jsm/exporters/OBJExporter"
 
@@ -11,15 +12,14 @@ import { IFabricOutput, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fa
 import { IInterval } from "../fabric/tensegrity-types"
 import { FACE, roleMaterial } from "../view/materials"
 
-function extractJointBlob(output: IFabricOutput): Blob {
+function extractJointFile(output: IFabricOutput): string {
     const csvJoints: string[][] = []
     csvJoints.push(["index", "x", "y", "z"])
     output.joints.forEach(joint => csvJoints.push([joint.index, joint.x, joint.y, joint.z]))
-    const jointsFile = csvJoints.map(a => a.join(";")).join("\n")
-    return new Blob([jointsFile], {type: "application/csv"})
+    return csvJoints.map(a => a.join(";")).join("\n")
 }
 
-function extractIntervalBlob(output: IFabricOutput): Blob {
+function extractIntervalFile(output: IFabricOutput): string {
     const csvIntervals: string[][] = []
     csvIntervals.push(["joints", "type", "strain", "elasticity", "linear density", "role", "length"])
     output.intervals.forEach(interval => {
@@ -33,25 +33,27 @@ function extractIntervalBlob(output: IFabricOutput): Blob {
             interval.length.toFixed(8),
         ])
     })
-    const intervalsFile = csvIntervals.map(a => a.join(";")).join("\n")
-    return new Blob([intervalsFile], {type: "application/csv"})
+    return csvIntervals.map(a => a.join(";")).join("\n")
 }
 
-function extractSubmergedJointBlob(fabric: TensegrityFabric): Blob {
+function extractSubmergedFile(fabric: TensegrityFabric): string {
     const csvSubmerged: string[][] = []
     csvSubmerged.push(["joints"])
     csvSubmerged.push([`"=""${fabric.submergedJoints.map(joint => joint.index + 1)}"""`])
-    const submergedFile = csvSubmerged.map(a => a.join(";")).join("\n")
-    return new Blob([submergedFile], {type: "application/csv"})
+    return csvSubmerged.map(a => a.join(";")).join("\n")
 }
 
-export function saveCSVFiles(fabric: TensegrityFabric): void {
-    // const dateString = new Date().toISOString()
-    //     .replace(/[.].*/, "").replace(/[:T_]/g, "-")
+export function saveCSVZip(fabric: TensegrityFabric): void {
     const output = fabric.output
-    FileSaver.saveAs(extractJointBlob(output), "joints.csv")
-    FileSaver.saveAs(extractIntervalBlob(output), "intervals.csv")
-    FileSaver.saveAs(extractSubmergedJointBlob(fabric), "submerged.csv")
+    const zip = new JSZip()
+    zip.file("joints.csv", extractJointFile(output))
+    zip.file("intervals.csv", extractIntervalFile(output))
+    zip.file("submerged.csv", extractSubmergedFile(fabric))
+    zip.generateAsync({type: "blob", mimeType: "application/zip"}).then(blob => {
+        const dateString = new Date().toISOString()
+            .replace(/[.].*/, "").replace(/[:T_]/g, "-")
+        FileSaver.saveAs(blob, `pretenst-${dateString}.zip`)
+    })
 }
 
 function extractOBJBlob(fabric: TensegrityFabric, faces: boolean): Blob {

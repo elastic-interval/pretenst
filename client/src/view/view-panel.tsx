@@ -8,12 +8,9 @@ import { useEffect, useState } from "react"
 import {
     FaCamera,
     FaCircle,
-    FaClipboardCheck,
-    FaClock,
     FaCompressArrowsAlt,
     FaDownload,
     FaExpandArrowsAlt,
-    FaEye,
     FaFileCsv,
     FaFutbol,
     FaHandRock,
@@ -27,9 +24,10 @@ import { BehaviorSubject } from "rxjs"
 import { FabricFeature, LifePhase } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { saveCSVFiles } from "../storage/download"
+import { saveCSVZip } from "../storage/download"
 import { IStoredState, transition } from "../storage/stored-state"
 
+import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 
 export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
@@ -73,20 +71,13 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
     }
 
     return (
-        <div className="m-4">
-            <div className="my-3">
-                <div className="text-center">
-                    <h4><FaClock/> Time <FaClock/></h4>
-                </div>
-                <FeaturePanel key="iter" feature={floatFeatures[FabricFeature.IterationsPerFrame]}
-                              disabled={ellipsoids}/>
+        <div>
+            <Grouping>
+                <FeaturePanel key="it" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={ellipsoids}/>
                 <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
                 <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenstCountdown]} disabled={ellipsoids}/>
-            </div>
-            <div className="my-3">
-                <div className="text-center">
-                    <h4><FaEye/> Appearance <FaEye/></h4>
-                </div>
+            </Grouping>
+            <Grouping>
                 <ButtonGroup vertical={true} className="w-100">
                     <ViewButton pushes={true} pulls={true}>
                         <span><FaFutbol/> Pushes and Pulls Gradient</span>
@@ -104,6 +95,8 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                     </ViewButton>
                 </ButtonGroup>
                 <FeaturePanel key="sthresh" feature={floatFeatures[FabricFeature.SlackThreshold]} disabled={false}/>
+            </Grouping>
+            <Grouping>
                 <ButtonGroup className="w-100 my-3">
                     <Button
                         disabled={lifePhase <= LifePhase.Growing}
@@ -123,11 +116,9 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                               disabled={!ellipsoids}/>
                 <FeaturePanel key="pullrad" feature={floatFeatures[FabricFeature.PullRadiusFactor]}
                               disabled={!ellipsoids}/>
-            </div>
-            <div className="my-3">
-                <div className="text-center">
-                    <h4><FaHandRock/> Disturb <FaHandRock/></h4>
-                </div>
+                <FeaturePanel feature={floatFeatures[FabricFeature.MaxStiffness]} disabled={false}/>
+            </Grouping>
+            <Grouping>
                 <ButtonGroup className="w-100">
                     <Button disabled={lifePhase !== LifePhase.Realized}
                             onClick={() => fabric.instance.engine.setAltitude(1)}>
@@ -142,17 +133,14 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
                         <FaCompressArrowsAlt/> Centralize
                     </Button>
                 </ButtonGroup>
-            </div>
-            <div className="my-3">
-                <div className="text-center">
-                    <h4><FaClipboardCheck/> Validate <FaClipboardCheck/></h4>
-                </div>
+            </Grouping>
+            <Grouping>
                 <ButtonGroup vertical={true} className="w-100">
-                    <Button onClick={() => saveCSVFiles(fabric)}>
+                    <Button onClick={() => saveCSVZip(fabric)}>
                         <FaDownload/> Download CSV <FaFileCsv/>
                     </Button>
                 </ButtonGroup>
-            </div>
+            </Grouping>
         </div>
     )
 }

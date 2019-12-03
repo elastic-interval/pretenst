@@ -190,3 +190,16 @@ export function ControlTabs({
         </div>
     )
 }
+
+export function Grouping({children}: { children: JSX.Element | JSX.Element[] }): JSX.Element {
+    return (
+        <div className="m-3 p-2" style={{
+            borderRadius: "1em",
+            borderStyle: "solid",
+            borderWidth: "0.1em",
+            borderColor: "#45782e",
+        }}>
+            {children}
+        </div>
+    )
+}

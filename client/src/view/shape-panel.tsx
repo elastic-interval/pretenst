@@ -15,7 +15,6 @@ import {
     FaHandPointUp,
     FaLink,
     FaMagic,
-    FaSlidersH,
     FaTimesCircle,
     FaVolleyballBall,
 } from "react-icons/all"
@@ -58,6 +57,7 @@ export function ShapePanel({
             const factor = 1.03
             return up ? factor : (1 / factor)
         }
+
         if (!selectedIntervals) {
             return
         }
@@ -85,9 +85,6 @@ export function ShapePanel({
 
     return (
         <div className="m-4">
-            <div className="text-center">
-                <h2><FaHandPointUp/> Editing <FaHandPointUp/></h2>
-            </div>
             <ButtonGroup size="sm" className="w-100 my-2">
                 <Button color={selectionMode ? "warning" : "secondary"}
                         onClick={() => setSelectionMode(!selectionMode)}>
@@ -142,24 +139,13 @@ export function ShapePanel({
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={false}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={false}/>
             </div>
-            <div className="my-4">
-                <div className="text-center">
-                    <h2><FaSlidersH/> Lengths <FaSlidersH/></h2>
-                </div>
-                <div className="my-2" style={{
-                    borderStyle: "solid",
-                    borderColor: selectionMode || ellipsoids ? "gray" : "white",
-                    borderWidth: "0.1em",
-                    borderRadius: "0.7em",
-                    padding: "0.5em",
-                }}>
-                    {Object.keys(floatFeatures)
-                        .map(k => floatFeatures[k])
-                        .filter(feature => fabricFeatureIntervalRole(feature.fabricFeature) !== undefined)
-                        .map(feature => (
-                            <FeaturePanel key={feature.title} feature={feature} disabled={selectionMode || ellipsoids}/>
-                        ))}
-                </div>
+            <div className="my-2">
+                {Object.keys(floatFeatures)
+                    .map(k => floatFeatures[k])
+                    .filter(feature => fabricFeatureIntervalRole(feature.fabricFeature) !== undefined)
+                    .map(feature => (
+                        <FeaturePanel key={feature.title} feature={feature} disabled={selectionMode || ellipsoids}/>
+                    ))}
             </div>
         </div>
     )

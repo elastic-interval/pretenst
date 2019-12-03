@@ -21,7 +21,7 @@ export function FeaturePanel({feature, disabled}: { feature: FloatFeature, disab
     const roleColor = roleColorString(fabricFeatureIntervalRole(feature.fabricFeature))
     const color = roleColor ? roleColor : "#919191"
     return (
-        <div className="my-1">
+        <div className="my-2">
             <div className="float-right text-white">
                 {feature.formatted}
             </div>
