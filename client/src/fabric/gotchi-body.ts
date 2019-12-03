@@ -5,7 +5,7 @@
 
 import { BufferGeometry, Float32BufferAttribute, Geometry, Matrix4, Vector3 } from "three"
 
-import { FabricDirection, IFabricEngine, IntervalRole, Laterality, LifePhase } from "./fabric-engine"
+import { FabricDirection, IFabricEngine, IntervalRole, Laterality, Stage } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
 import { FaceSnapshot, IJointSnapshot } from "./face-snapshot"
 
@@ -202,7 +202,7 @@ export class GotchiBody {
     }
 
     public iterate(ticks: number): boolean {
-        return !this.engine.iterate(LifePhase.Busy) // todo
+        return !this.engine.iterate(Stage.Busy) // todo
     }
 
     public get age(): number {

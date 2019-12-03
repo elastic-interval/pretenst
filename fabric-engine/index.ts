@@ -63,7 +63,7 @@ function isPush(intervalRole: IntervalRole): boolean {
     return intervalRole === IntervalRole.NexusPush || intervalRole === IntervalRole.ColumnPush
 }
 
-export enum LifePhase {
+export enum Stage {
     Busy = 0,
     Growing = 1,
     Shaping = 2,
@@ -644,13 +644,13 @@ export function setNextState(value: u8): void {
     setU8(_NEXT_STATE, value)
 }
 
-function getLifePhase(): LifePhase {
+function getStage(): Stage {
     return getU8(_LIFE_PHASE)
 }
 
-function setLifePhase(lifePhase: LifePhase): LifePhase {
-    setU8(_LIFE_PHASE, <u8>lifePhase)
-    return lifePhase
+function setStage(stage: Stage): Stage {
+    setU8(_LIFE_PHASE, <u8>stage)
+    return stage
 }
 
 // Joints =====================================================================================
@@ -1159,22 +1159,22 @@ function pushPullEndZonePhysics(intervalIndex: u16, alphaFaceIndex: u16, omegaFa
 
 }
 
-function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): void {
+function intervalPhysics(intervalIndex: u16, state: u8, stage: Stage): void {
     let currentLength = interpolateCurrentLength(intervalIndex, state)
     let intervalRole = getIntervalRole(intervalIndex)
     let push = isPush(intervalRole)
     if (push) {
-        switch (lifePhase) {
-            case LifePhase.Growing:
-            case LifePhase.Shaping:
+        switch (stage) {
+            case Stage.Growing:
+            case Stage.Shaping:
                 currentLength *= 1 + getFeature(FabricFeature.ShapingPretenstFactor)
                 break
-            case LifePhase.Slack:
+            case Stage.Slack:
                 break
-            case LifePhase.Realizing:
+            case Stage.Realizing:
                 currentLength *= 1 + getFeature(FabricFeature.PretenstFactor) * getRealizingNuance()
                 break
-            case LifePhase.Realized:
+            case Stage.Realized:
                 currentLength *= 1 + getFeature(FabricFeature.PretenstFactor)
                 break
         }
@@ -1186,7 +1186,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, lifePhase: LifePhase): v
     }
     setStrain(intervalIndex, strain)
     let force = strain * getStiffness(intervalIndex)
-    if (lifePhase <= LifePhase.Slack) {
+    if (stage <= Stage.Slack) {
         force *= getFeature(FabricFeature.ShapingStiffnessFactor)
     }
     if (intervalRole === IntervalRole.FacePull) {
@@ -1252,11 +1252,11 @@ function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32, active
     }
 }
 
-function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u16 {
+function tick(maxIntervalBusyCountdown: u16, state: u8, stage: Stage): u16 {
     setFaceMidpoints()
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        intervalPhysics(intervalIndex, state, lifePhase)
+        intervalPhysics(intervalIndex, state, stage)
         let countdown = getIntervalBusyTicks(intervalIndex)
         if (countdown === 0) {
             continue
@@ -1276,17 +1276,17 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
     let shapingDrag = getFeature(FabricFeature.ShapingDrag)
     let drag = getFeature(FabricFeature.Drag)
     for (let jointIndex: u16 = 0; jointIndex < jointCount; jointIndex++) {
-        switch (lifePhase) {
-            case LifePhase.Growing:
-            case LifePhase.Shaping:
+        switch (stage) {
+            case Stage.Growing:
+            case Stage.Shaping:
                 jointPhysics(jointIndex, 0, shapingDrag, false)
                 break
-            case LifePhase.Slack:
+            case Stage.Slack:
                 break
-            case LifePhase.Realizing:
+            case Stage.Realizing:
                 jointPhysics(jointIndex, gravity * pretensingNuance, drag, true)
                 break
-            case LifePhase.Realized:
+            case Stage.Realized:
                 jointPhysics(jointIndex, gravity, drag, true)
                 break
         }
@@ -1299,7 +1299,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, lifePhase: LifePhase): u
     return maxIntervalBusyCountdown
 }
 
-export function initInstance(): LifePhase {
+export function initInstance(): Stage {
     setAge(0)
     setJointCount(0)
     setIntervalCount(0)
@@ -1308,10 +1308,10 @@ export function initInstance(): LifePhase {
     setPreviousState(REST_STATE)
     setCurrentState(REST_STATE)
     setNextState(REST_STATE)
-    return setLifePhase(LifePhase.Busy)
+    return setStage(Stage.Busy)
 }
 
-function slacken(): LifePhase {
+export function adoptLengths(): Stage {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let lengthNow: f32 = calculateRealLength(intervalIndex, getIntervalRole(intervalIndex))
@@ -1325,19 +1325,19 @@ function slacken(): LifePhase {
     }
     setAltitude(0.0)
     renderNumbers()
-    return setLifePhase(LifePhase.Slack)
+    return setStage(Stage.Slack)
 }
 
-function startRealizing(): LifePhase {
+function startRealizing(): Stage {
     setFabricBusyTicks(getU16Feature(FabricFeature.RealizingCountdown))
     if (surfaceCharacter === SurfaceCharacter.Frozen) {
         setAltitude(FROZEN_ALTITUDE)
     }
     renderNumbers()
-    return setLifePhase(LifePhase.Realizing)
+    return setStage(Stage.Realizing)
 }
 
-function slackToShaping(): LifePhase {
+function slackToShaping(): Stage {
     let intervalCount = getIntervalCount()
     let countdown = getU16Feature(FabricFeature.IntervalCountdown)
     let shapingPretenseFactor = getFeature(FabricFeature.ShapingPretenstFactor)
@@ -1346,57 +1346,51 @@ function slackToShaping(): LifePhase {
             multiplyRestLength(intervalIndex, shapingPretenseFactor, countdown)
         }
     }
-    return setLifePhase(LifePhase.Shaping)
+    return setStage(Stage.Shaping)
 }
 
-export function iterate(requestedLifePhase: LifePhase): LifePhase {
+export function iterate(requestedStage: Stage): Stage {
     let age = getAge()
-    let lifePhase = getLifePhase()
+    let stage = getStage()
     let intervalBusyCountdown: u16 = 0
     let currentState = getCurrentState()
     let ticksPerFrame = getU16Feature(FabricFeature.IterationsPerFrame)
     for (let thisTick: u16 = 0; thisTick < ticksPerFrame; thisTick++) {
-        intervalBusyCountdown = tick(intervalBusyCountdown, currentState, lifePhase)
+        intervalBusyCountdown = tick(intervalBusyCountdown, currentState, stage)
     }
     setAge(age + <u32>ticksPerFrame)
-    switch (lifePhase) {
-        case LifePhase.Busy:
-            if (requestedLifePhase === LifePhase.Growing) {
-                return setLifePhase(requestedLifePhase)
+    switch (stage) {
+        case Stage.Busy:
+            if (requestedStage === Stage.Growing) {
+                return setStage(requestedStage)
             }
             break
-        case LifePhase.Growing:
+        case Stage.Growing:
             setAltitude(0.0)
             break
-        case LifePhase.Shaping:
+        case Stage.Shaping:
             setAltitude(0.0)
-            if (requestedLifePhase === LifePhase.Slack) {
-                return slacken()
-            }
-            break
-        case LifePhase.Slack:
-            switch (requestedLifePhase) {
-                case LifePhase.Realized:
+            switch (requestedStage) {
+                case Stage.Realizing:
                     return startRealizing()
-                case LifePhase.Shaping:
-                    return slackToShaping()
             }
             break
-        case LifePhase.Realizing:
-            break
-        case LifePhase.Realized:
-            if (requestedLifePhase === LifePhase.Slack) {
-                return slacken()
+        case Stage.Slack:
+            switch (requestedStage) {
+                case Stage.Realizing:
+                    return startRealizing()
+                case Stage.Shaping:
+                    return slackToShaping()
             }
             break
     }
     let fabricBusyCountdown = getFabricBusyCountdown()
     if (intervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
         if (fabricBusyCountdown === 0) {
-            if (lifePhase === LifePhase.Realizing) {
-                return setLifePhase(LifePhase.Realized)
+            if (stage === Stage.Realizing) {
+                return setStage(Stage.Realized)
             }
-            return lifePhase
+            return stage
         }
         let nextCountdown: u32 = fabricBusyCountdown - ticksPerFrame
         if (nextCountdown > fabricBusyCountdown) { // rollover
@@ -1404,10 +1398,10 @@ export function iterate(requestedLifePhase: LifePhase): LifePhase {
         }
         setFabricBusyTicks(nextCountdown)
         if (nextCountdown === 0) {
-            return lifePhase
+            return stage
         }
     }
-    return LifePhase.Busy
+    return Stage.Busy
 }
 
 export function renderNumbers(): f32 {
@@ -1428,9 +1422,9 @@ export function renderNumbers(): f32 {
     return maxJointSpeedSquared
 }
 
-export function finishGrowing(): LifePhase {
+export function finishGrowing(): Stage {
     renderNumbers()
-    return setLifePhase(LifePhase.Shaping)
+    return setStage(Stage.Shaping)
 }
 
 export function _fabricOffset(): usize {

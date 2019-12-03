@@ -6,6 +6,7 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaArrowDown,
     FaArrowRight,
     FaBaby,
     FaCamera,
@@ -17,64 +18,26 @@ import {
     FaYinYang,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
-import { BehaviorSubject } from "rxjs"
 
-import { LifePhase } from "../fabric/fabric-engine"
+import { Stage } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-function Symbol({phase}: { phase: LifePhase }): JSX.Element {
-    switch (phase) {
-        case LifePhase.Busy:
-            return <FaClock/>
-        case LifePhase.Growing:
-            return <FaSeedling/>
-        case LifePhase.Shaping:
-            return <FaTools/>
-        case LifePhase.Slack:
-            return <FaYinYang/>
-        case LifePhase.Realizing:
-            return <FaClock/>
-        case LifePhase.Realized:
-            return <FaHandSpock/>
-    }
-}
-
-function lifePhaseName(lifePhase: LifePhase): string {
-    switch (lifePhase) {
-        case LifePhase.Busy:
-            return "Busy"
-        case LifePhase.Growing:
-            return "Growing"
-        case LifePhase.Shaping:
-            return "Shaping"
-        case LifePhase.Slack:
-            return "Slack"
-        case LifePhase.Realizing:
-            return "Realizing"
-        case LifePhase.Realized:
-            return "Realized"
-    }
-}
-
-export function LifePhasePanel({fabric, lifePhase$, disabled}: {
+export function LifePhasePanel({fabric, disabled}: {
     fabric: TensegrityFabric,
-    lifePhase$: BehaviorSubject<LifePhase>,
     disabled: boolean,
 }): JSX.Element {
 
-    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+    const [life, updateLife] = useState(fabric.life)
     useEffect(() => {
-        const subscription = [
-            lifePhase$.subscribe(newPhase => setLifePhase(newPhase)),
-        ]
-        return () => subscription.forEach(s => s.unsubscribe())
-    }, [])
+        const sub = fabric.life$.subscribe(updateLife)
+        return () => sub.unsubscribe()
+    }, [fabric])
 
-    function disabledExcept(liveLifePhase: LifePhase): boolean {
+    function disabledExcept(stage: Stage): boolean {
         if (disabled) {
             return true
         }
-        return lifePhase !== liveLifePhase
+        return life.stage !== stage
     }
 
     return (
@@ -84,59 +47,87 @@ export function LifePhasePanel({fabric, lifePhase$, disabled}: {
                 backgroundColor: "#5b5b5b",
                 borderRadius: "1em",
             }}>
-                <Symbol phase={lifePhase}/> {lifePhaseName(lifePhase)}
+                <Symbol stage={life.stage}/> {stageName(life.stage)}
             </div>
             <ButtonGroup>
                 <Button
                     className="mx-1"
-                    disabled={disabledExcept(LifePhase.Shaping)}
-                    onClick={() => fabric.toSlack()}
+                    disabled={disabledExcept(Stage.Shaping)}
+                    onClick={() => fabric.toStage(Stage.Realizing)}
                 >
-                    <Symbol phase={LifePhase.Slack}/>
+                    <Symbol stage={Stage.Realized}/>
                 </Button>
                 <Button
                     className="mx-1"
-                    disabled={disabledExcept(LifePhase.Shaping)}
-                    onClick={() => fabric.snapshotShape()}
+                    disabled={disabledExcept(Stage.Shaping)}
+                    onClick={() => fabric.toStage(Stage.Slack, {adoptLengths: true})}
                 >
-                    <FaCamera/>
-                    <FaArrowRight/>
-                    ( <FaBaby/> <Symbol phase={LifePhase.Slack}/> )
+                    <FaCamera/> <FaArrowRight/> ( <FaBaby/> <Symbol stage={Stage.Slack}/> )
                 </Button>
                 <Button
                     className="mx-1"
-                    disabled={disabledExcept(LifePhase.Slack)}
-                    onClick={() => fabric.toRealized()}
+                    disabled={disabledExcept(Stage.Slack)}
+                    onClick={() => fabric.toStage(Stage.Realizing)}
                 >
-                    <Symbol phase={LifePhase.Realized}/>
+                    <Symbol stage={Stage.Realized}/> <FaArrowDown/>
                 </Button>
                 <Button
                     className="mx-1"
-                    disabled={disabledExcept(LifePhase.Slack)}
-                    onClick={() => fabric.toShaping()}
+                    disabled={disabledExcept(Stage.Slack)}
+                    onClick={() => fabric.toStage(Stage.Shaping)}
                 >
-                    <Symbol phase={LifePhase.Shaping}/>
+                    <Symbol stage={Stage.Shaping}/>
                 </Button>
                 <Button
                     className="mx-1"
-                    disabled={disabledExcept(LifePhase.Realized)}
-                    onClick={() => fabric.snapshotShape()}
+                    disabled={disabledExcept(Stage.Realized)}
+                    onClick={() => fabric.toStage(Stage.Slack, {adoptLengths: true})}
                 >
-                    <FaCamera/>
-                    <FaArrowRight/>
-                    ( <FaBaby/> <Symbol phase={LifePhase.Slack}/> )
+                    <FaCamera/> <FaArrowRight/> ( <FaBaby/> <Symbol stage={Stage.Slack}/> )
                 </Button>
                 <Button
                     className="mx-1"
-                    disabled={disabledExcept(LifePhase.Realized)}
-                    onClick={() => fabric.snapshotStrainToStiffness()}
+                    disabled={disabledExcept(Stage.Realized)}
+                    onClick={() => fabric.toStage(Stage.Slack, {strainToStiffness: true})}
                 >
-                    <FaCamera/>
-                    <Symbol phase={LifePhase.Realized}/>
-                    <FaArrowRight/>
-                    ( <Symbol phase={LifePhase.Slack}/> <FaChartBar/> )
+                    <FaCamera/> <Symbol stage={Stage.Realized}/> <FaArrowRight/>
+                    ( <Symbol stage={Stage.Slack}/> <FaChartBar/> )
                 </Button>
             </ButtonGroup>
         </div>
     )
+}
+
+function Symbol({stage}: { stage: Stage }): JSX.Element {
+    switch (stage) {
+        case Stage.Busy:
+            return <FaClock/>
+        case Stage.Growing:
+            return <FaSeedling/>
+        case Stage.Shaping:
+            return <FaTools/>
+        case Stage.Slack:
+            return <FaYinYang/>
+        case Stage.Realizing:
+            return <FaClock/>
+        case Stage.Realized:
+            return <FaHandSpock/>
+    }
+}
+
+function stageName(stage: Stage): string {
+    switch (stage) {
+        case Stage.Busy:
+            return "Busy"
+        case Stage.Growing:
+            return "Growing"
+        case Stage.Shaping:
+            return "Shaping"
+        case Stage.Slack:
+            return "Slack"
+        case Stage.Realizing:
+            return "Realizing"
+        case Stage.Realized:
+            return "Realized"
+    }
 }

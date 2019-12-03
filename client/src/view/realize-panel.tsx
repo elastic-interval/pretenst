@@ -8,7 +8,7 @@ import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, LifePhase, SurfaceCharacter } from "../fabric/fabric-engine"
+import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { enumValues, IStoredState, transition } from "../storage/stored-state"
@@ -17,12 +17,10 @@ import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function RealizePanel({floatFeatures, fabric, selectionMode, storedState$, lifePhase$}: {
+export function RealizePanel({floatFeatures, fabric, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
-    selectionMode: boolean,
     storedState$: BehaviorSubject<IStoredState>,
-    lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
     const [storedState, updateFabricState] = useState(storedState$.getValue())

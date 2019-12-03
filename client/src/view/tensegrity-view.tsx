@@ -10,7 +10,7 @@ import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, fabricFeatureIntervalRole, LifePhase } from "../fabric/fabric-engine"
+import { FabricFeature, fabricFeatureIntervalRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
@@ -34,11 +34,10 @@ function getCodeToRun(state: IStoredState): ITenscript {
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
 }
 
-export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifePhase$}: {
+export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
     fabricKernel: FabricKernel,
     floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
-    lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
@@ -109,7 +108,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
         mainInstance.forgetDimensions()
         const featureValues = storedState$.getValue().featureValues
         setFabric(new TensegrityFabric(featureValues, mainInstance, slackInstance, floatFeatures, newTenscript))
-        lifePhase$.next(LifePhase.Growing)
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
     }
 
@@ -154,7 +152,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
                         storedState$={storedState$}
-                        lifePhase$={lifePhase$}
                     />
                 </div>
             )}
@@ -181,7 +178,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                         <div id="bottom-middle">
                             <LifePhasePanel
                                 fabric={fabric}
-                                lifePhase$={lifePhase$}
                                 disabled={ellipsoids || selectionMode}
                             />
                         </div>
@@ -200,7 +196,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$, lifeP
                                 selectionMode={selectionMode}
                                 ellipsoids={ellipsoids}
                                 storedState$={storedState$}
-                                lifePhase$={lifePhase$}
                             />
                         </Canvas>
                     </div>

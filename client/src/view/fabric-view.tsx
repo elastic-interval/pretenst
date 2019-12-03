@@ -22,7 +22,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick, FabricFeature, LifePhase } from "../fabric/fabric-engine"
+import { doNotClick, FabricFeature, Stage } from "../fabric/fabric-engine"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
@@ -58,7 +58,7 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedIntervals, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$, lifePhase$}: {
+export function FabricView({fabric, selectedIntervals, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$}: {
     fabric: TensegrityFabric,
     selectedIntervals: IInterval[],
     selectedFaces: IFace[],
@@ -66,7 +66,6 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
     selectionMode: boolean,
     ellipsoids: boolean,
     storedState$: BehaviorSubject<IStoredState>,
-    lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
     const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
@@ -78,11 +77,11 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
 
-    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+    const [life, updateLife] = useState(fabric.life)
     useEffect(() => {
-        const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
-        return () => subscription.unsubscribe()
-    }, [])
+        const sub = fabric.life$.subscribe(updateLife)
+        return () => sub.unsubscribe()
+    }, [fabric])
 
     const [storedState, updateStoredState] = useState(storedState$.getValue())
     const [pushRadius, updatePushRadius] = useState(storedState$.getValue().featureValues[FabricFeature.PushRadiusFactor].numeric)
@@ -122,23 +121,20 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
         orbit.current.update()
-        let newLifePhase = LifePhase.Busy
         if (!ellipsoids && !selectionMode) {
-            newLifePhase = fabric.iterate()
+            const nextStage = fabric.iterate()
+            if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
+                setTimeout(() => fabric.toStage(Stage.Realized, {}))
+            } else if (nextStage !== life.stage && life.stage !== Stage.Realizing && nextStage !== Stage.Busy) {
+                setTimeout(() => fabric.toStage(nextStage, {}))
+            }
         } else {
             instance.engine.renderNumbers()
         }
         fabric.needsUpdate()
-        if (lifePhase !== newLifePhase) {
-            if (newLifePhase === LifePhase.Realizing) {
-                lifePhase$.next(newLifePhase)
-            } else if (newLifePhase !== LifePhase.Busy) {
-                lifePhase$.next(newLifePhase)
-            }
-        }
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, fabric, age, lifePhase, storedState, selectionMode,
+        fabric, fabric, age, life, storedState, selectionMode,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
@@ -245,7 +241,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         )
     }
 
-    const hideStiffness = storedState.rotating || ellipsoids || lifePhase < LifePhase.Slack
+    const hideStiffness = storedState.rotating || ellipsoids || life.stage <= Stage.Slack
     return (
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
@@ -256,12 +252,12 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
                     <Faces
                         key="faces"
                         fabric={fabric}
-                        lifePhase={lifePhase}
+                        stage={life.stage}
                         selectFace={toggleFacesSelection}
                     />
                 )}
                 {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} face={face}/>)}
-                <SurfaceComponent ghost={lifePhase <= LifePhase.Slack}/>
+                <SurfaceComponent ghost={life.stage <= Stage.Slack}/>
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
@@ -271,9 +267,9 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
     )
 }
 
-function Faces({fabric, lifePhase, selectFace}: {
+function Faces({fabric, stage, selectFace}: {
     fabric: TensegrityFabric,
-    lifePhase: LifePhase,
+    stage: Stage,
     selectFace: (face: IFace) => void,
 }): JSX.Element {
     const {raycaster} = useThree()
@@ -282,7 +278,7 @@ function Faces({fabric, lifePhase, selectFace}: {
     const onPointerDown = (event: DomEvent) => setDownEvent(event)
     const onPointerUp = (event: DomEvent) => {
         const mesh = meshRef.current
-        if (doNotClick(lifePhase) || !downEvent || !mesh) {
+        if (doNotClick(stage) || !downEvent || !mesh) {
             return
         }
         const dx = downEvent.clientX - event.clientX

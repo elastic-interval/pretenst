@@ -9,7 +9,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { App } from "./app"
 import { API_URI } from "./constants"
-import { IFabricEngine, LifePhase } from "./fabric/fabric-engine"
+import { IFabricEngine } from "./fabric/fabric-engine"
 import { createFloatFeatures } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import registerServiceWorker from "./service-worker"
@@ -52,7 +52,6 @@ async function start(): Promise<void> {
                 fabricKernel={fabricKernel}
                 floatFeatures={createFloatFeatures(storedState$)}
                 storedState$={storedState$}
-                lifePhase$={new BehaviorSubject(LifePhase.Growing)}
             />,
             root,
         )

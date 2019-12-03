@@ -8,9 +8,34 @@ import JSZip from "jszip"
 import { Mesh, Object3D } from "three"
 import { OBJExporter } from "three/examples/jsm/exporters/OBJExporter"
 
-import { IFabricOutput, SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IInterval } from "../fabric/tensegrity-types"
 import { FACE, roleMaterial } from "../view/materials"
+
+export interface IOutputInterval {
+    joints: string,
+    type: string,
+    strainString: string,
+    stiffness: number,
+    stiffnessString: string,
+    linearDensity: number,
+    linearDensityString: string,
+    isPush: boolean,
+    role: string,
+    length: number,
+}
+
+export interface IFabricOutput {
+    name: string
+    joints: {
+        index: string,
+        x: string,
+        y: string,
+        z: string,
+    }[]
+    intervals: IOutputInterval[]
+}
+
 
 function extractJointFile(output: IFabricOutput): string {
     const csvJoints: string[][] = []

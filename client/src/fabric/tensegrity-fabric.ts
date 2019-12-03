@@ -3,13 +3,16 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, CylinderGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
+import { IFabricOutput, IOutputInterval } from "../storage/download"
 import { IFeatureValue, roleDefaultLength } from "../storage/stored-state"
 
-import { FabricFeature, IFabricEngine, IntervalRole, isPush, Laterality, LifePhase } from "./fabric-engine"
+import { FabricFeature, IFabricEngine, IntervalRole, isPush, Laterality, Stage } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
+import { ITransitionPrefs, Life, stiffnessToLinearDensity } from "./life"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
@@ -26,30 +29,6 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
-interface IOutputInterval {
-    joints: string,
-    type: string,
-    strainString: string,
-    stiffness: number,
-    stiffnessString: string,
-    linearDensity: number,
-    linearDensityString: string,
-    isPush: boolean,
-    role: string,
-    length: number,
-}
-
-export interface IFabricOutput {
-    name: string
-    joints: {
-        index: string,
-        x: string,
-        y: string,
-        z: string,
-    }[]
-    intervals: IOutputInterval[]
-}
-
 export const SPHERE = new SphereGeometry(1, 16, 8)
 export const CYLINDER = new CylinderGeometry(1, 1, 1, 20)
 
@@ -64,41 +43,8 @@ function scaleToStiffness(scale: IPercent): number {
     return percentToFactor(scale) / 10000
 }
 
-function stiffnessToLinearDensity(stiffness: number): number {
-    return Math.sqrt(stiffness)
-}
-
-function pretensingAdjustments(
-    strains: Float32Array,
-    existingStiffnesses: Float32Array,
-    intervals: IInterval[],
-    pushStrainFactor: number,
-    pretenseIntensity: number,
-): {
-    stiffnesses: Float32Array,
-    linearDensities: Float32Array,
-} {
-    const getAverageStrain = (toAverage: IInterval[]) => {
-        const totalStrain = toAverage.reduce((sum, interval) => sum + strains[interval.index], 0)
-        return totalStrain / toAverage.length
-    }
-    const pushes = intervals.filter(interval => interval.isPush)
-    const averagePushStrain = getAverageStrain(pushes)
-    const pulls = intervals.filter(interval => !interval.isPush)
-    const averagePullStrain = getAverageStrain(pulls)
-    const averageAbsoluteStrain = (-pushStrainFactor * averagePushStrain + averagePullStrain) / 2
-    const changes = intervals.map(interval => {
-        const absoluteStrain = strains[interval.index] * (interval.isPush ? -pushStrainFactor : 1)
-        const normalizedStrain = absoluteStrain - averageAbsoluteStrain
-        const strainFactor = normalizedStrain / averageAbsoluteStrain
-        return 1 + strainFactor * pretenseIntensity
-    })
-    const stiffness = existingStiffnesses.map((value, index) => value * changes[index])
-    const linearDensities = stiffness.map(stiffnessToLinearDensity)
-    return {stiffnesses: stiffness, linearDensities}
-}
-
 export class TensegrityFabric {
+    public life$: BehaviorSubject<Life>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public facePulls: IFacePull[] = []
@@ -119,15 +65,14 @@ export class TensegrityFabric {
     private lineColors: Float32BufferAttribute
     private _linesGeometry = new BufferGeometry()
 
-    private requestedLifePhase: LifePhase = LifePhase.Growing
-
     constructor(
-        private featureValues: Record<FabricFeature, IFeatureValue>,
+        public featureValues: Record<FabricFeature, IFeatureValue>,
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
         public readonly floatFeatures: Record<FabricFeature, FloatFeature>,
         public readonly tenscript: ITenscript,
     ) {
+        this.life$ = new BehaviorSubject(new Life(this, Stage.Growing))
         this.builder = new TensegrityBuilder(this)
         Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach(feature => this.instance.applyFeature(feature))
         const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred()) // todo: maybe raise
@@ -137,43 +82,19 @@ export class TensegrityFabric {
         this.refreshFaceGeometry()
     }
 
+    public get life(): Life {
+        return this.life$.getValue()
+    }
+
+    public toStage(stage: Stage, prefs?: ITransitionPrefs): void {
+        if (stage === this.life.stage) {
+            return
+        }
+        this.life$.next(this.life.withStage(stage, prefs))
+    }
+
     public featureValue(fabricFeature: FabricFeature): number {
         return this.featureValues[fabricFeature].numeric
-    }
-
-    public snapshotShape(): void {
-        this.requestedLifePhase = this.instance.engine.iterate(LifePhase.Slack)
-        this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
-    }
-
-    public snapshotStrainToStiffness(): void {
-        const instance = this.instance
-        const pushOverPull = this.featureValues[FabricFeature.PushOverPull].numeric
-        const pretensingIntensity = 1
-        const {stiffnesses, linearDensities} = pretensingAdjustments(
-            instance.strains,
-            instance.stiffnesses,
-            this.intervals,
-            pushOverPull,
-            pretensingIntensity,
-        )
-        instance.engine.cloneInstance(this.slackInstance.index, instance.index)
-        this.requestedLifePhase = LifePhase.Slack
-        stiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
-        linearDensities.forEach((value, index) => instance.linearDensities[index] = value)
-    }
-
-    public toSlack(): void {
-        this.requestedLifePhase = LifePhase.Slack
-        this.instance.engine.cloneInstance(this.instance.index, this.slackInstance.index)
-    }
-
-    public toRealized(): void {
-        this.requestedLifePhase = LifePhase.Realized
-    }
-
-    public toShaping(): void {
-        this.requestedLifePhase = LifePhase.Shaping
     }
 
     public connectFaces(faces: IFace[]): void {
@@ -345,11 +266,11 @@ export class TensegrityFabric {
         this.facePulls = facePulls
     }
 
-    public iterate(): LifePhase {
+    public iterate(): Stage {
         const engine = this.engine
-        const lifePhase = engine.iterate(this.requestedLifePhase)
+        const lifePhase = engine.iterate(this.life$.getValue().stage)
         this.maxJointSpeed = Math.sqrt(engine.renderNumbers())
-        if (lifePhase === LifePhase.Busy) {
+        if (lifePhase === Stage.Busy) {
             return lifePhase
         }
         const activeCode = this.activeTenscript
@@ -360,7 +281,7 @@ export class TensegrityFabric {
             }
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
-                if (lifePhase === LifePhase.Growing) {
+                if (lifePhase === Stage.Growing) {
                     const afterGrowing = engine.finishGrowing()
                     this.facePulls = this.builder.initialFacePulls
                     return afterGrowing

@@ -21,7 +21,7 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, LifePhase } from "../fabric/fabric-engine"
+import { FabricFeature, Stage } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVZip } from "../storage/download"
@@ -30,11 +30,10 @@ import { IStoredState, transition } from "../storage/stored-state"
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 
-export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
+export function ViewPanel({floatFeatures, fabric, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
     storedState$: BehaviorSubject<IStoredState>,
-    lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
@@ -50,11 +49,12 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
         })
         return () => subscription.unsubscribe()
     }, [])
-    const [lifePhase, setLifePhase] = useState(lifePhase$.getValue())
+
+    const [life, updateLife] = useState(fabric.life)
     useEffect(() => {
-        const subscription = lifePhase$.subscribe(newPhase => setLifePhase(newPhase))
-        return () => subscription.unsubscribe()
-    }, [])
+        const sub = fabric.life$.subscribe(updateLife)
+        return () => sub.unsubscribe()
+    }, [fabric])
 
     function ViewButton({pushes, pulls, children}: { pushes: boolean, pulls: boolean, children: JSX.Element }): JSX.Element {
         return (
@@ -99,7 +99,7 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
             <Grouping>
                 <ButtonGroup className="w-100 my-3">
                     <Button
-                        disabled={lifePhase <= LifePhase.Growing}
+                        disabled={life.stage <= Stage.Growing}
                         color={ellipsoids ? "warning" : "secondary"}
                         onClick={() => storedState$.next(transition(storedState$.getValue(), {ellipsoids: !ellipsoids}))}
                     >
@@ -120,11 +120,11 @@ export function ViewPanel({floatFeatures, fabric, storedState$, lifePhase$}: {
             </Grouping>
             <Grouping>
                 <ButtonGroup className="w-100">
-                    <Button disabled={lifePhase !== LifePhase.Realized}
+                    <Button disabled={life.stage !== Stage.Realized}
                             onClick={() => fabric.instance.engine.setAltitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
-                    <Button disabled={lifePhase !== LifePhase.Realized}
+                    <Button disabled={life.stage !== Stage.Realized}
                             onClick={() => fabric.instance.engine.setAltitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>

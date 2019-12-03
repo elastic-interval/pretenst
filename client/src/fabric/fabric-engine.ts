@@ -7,7 +7,7 @@ export interface IMemory {
     buffer: ArrayBuffer
 }
 
-export enum LifePhase {
+export enum Stage {
     Busy = 0,
     Growing = 1,
     Shaping = 2,
@@ -16,8 +16,8 @@ export enum LifePhase {
     Realized = 6,
 }
 
-export function doNotClick(lifePhase: LifePhase): boolean {
-    return lifePhase === LifePhase.Growing || lifePhase === LifePhase.Slack
+export function doNotClick(stage: Stage): boolean {
+    return stage === Stage.Growing || stage === Stage.Slack
 }
 
 export enum FabricFeature {
@@ -127,9 +127,9 @@ export interface IFabricEngine {
 
     // below methods use instance index
 
-    initInstance(): LifePhase
+    initInstance(): Stage
 
-    finishGrowing(): LifePhase
+    finishGrowing(): Stage
 
     getAge(): number
 
@@ -139,7 +139,9 @@ export interface IFabricEngine {
 
     setNextState(state: FabricDirection): void
 
-    iterate(nextLifePhase: LifePhase): LifePhase
+    iterate(nextStage: Stage): Stage
+
+    adoptLengths(): Stage
 
     renderNumbers(): number
 

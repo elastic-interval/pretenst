@@ -9,8 +9,9 @@ import { FaArrowLeft, FaEye, FaHandSpock, FaLeaf, FaTools } from "react-icons/al
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, LifePhase } from "../fabric/fabric-engine"
+import { FabricFeature, Stage } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
+import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
@@ -41,7 +42,7 @@ export function ControlTabs({
                                 selectionMode, setSelectionMode,
                                 selectedFaces, clearSelectedFaces, selectedIntervals,
                                 fabric, setFabric, runTenscript,
-                                toFullScreen, storedState$, lifePhase$,
+                                toFullScreen, storedState$,
                             }: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     rootTenscript: ITenscript,
@@ -56,21 +57,24 @@ export function ControlTabs({
     setSelectionMode: (selectionMode: boolean) => void,
     toFullScreen: () => void,
     storedState$: BehaviorSubject<IStoredState>,
-    lifePhase$: BehaviorSubject<LifePhase>,
 }): JSX.Element {
 
-    const [lifePhase, updateLifePhase] = useState(lifePhase$.getValue())
+    const [life, updateLife] = useState<Life | undefined>(fabric ? fabric.life : undefined)
     useEffect(() => {
-        const subscription = lifePhase$.subscribe(newPhase => updateLifePhase(newPhase))
-        return () => subscription.unsubscribe()
-    }, [])
+        const sub = fabric ? fabric.life$.subscribe(updateLife) : undefined
+        return () => {
+            if (sub) {
+                sub.unsubscribe()
+            }
+        }
+    }, [fabric])
 
     const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
             clearSelectedFaces()
         }
-    }, [controlTab, lifePhase])
+    }, [controlTab, life])
 
     useEffect(() => {
         const subscription = storedState$.subscribe(newState => updateControlTab(newState.controlTab))
@@ -78,7 +82,7 @@ export function ControlTabs({
     }, [])
 
     function shapeDisabled(): boolean {
-        return lifePhase !== LifePhase.Shaping
+        return !life || life.stage !== Stage.Shaping
     }
 
     function Link({tab}: { tab: ControlTab }): JSX.Element {
@@ -130,9 +134,7 @@ export function ControlTabs({
                         <RealizePanel
                             floatFeatures={floatFeatures}
                             fabric={fabric}
-                            selectionMode={selectionMode}
                             storedState$={storedState$}
-                            lifePhase$={lifePhase$}
                         />
                     )
                 case ControlTab.View:
@@ -141,7 +143,6 @@ export function ControlTabs({
                             floatFeatures={floatFeatures}
                             fabric={fabric}
                             storedState$={storedState$}
-                            lifePhase$={lifePhase$}
                         />
                     )
             }
