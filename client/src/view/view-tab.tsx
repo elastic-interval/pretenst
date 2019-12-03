@@ -30,7 +30,7 @@ import { IStoredState, transition } from "../storage/stored-state"
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 
-export function ViewPanel({floatFeatures, fabric, storedState$}: {
+export function ViewTab({floatFeatures, fabric, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
     storedState$: BehaviorSubject<IStoredState>,
@@ -78,26 +78,24 @@ export function ViewPanel({floatFeatures, fabric, storedState$}: {
                 <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenstCountdown]} disabled={ellipsoids}/>
             </Grouping>
             <Grouping>
-                <ButtonGroup vertical={true} className="w-100">
+                <ButtonGroup className="w-100 my-2">
                     <ViewButton pushes={true} pulls={true}>
-                        <span><FaFutbol/> Pushes and Pulls Gradient</span>
+                        <span><FaFutbol/> All</span>
                     </ViewButton>
-                    <ButtonGroup>
-                        <ViewButton pushes={false} pulls={true}>
-                            <span><FaVolleyballBall/> Pulls Gradient</span>
-                        </ViewButton>
-                        <ViewButton pushes={true} pulls={false}>
-                            <span><FaExpandArrowsAlt/> Pushes Gradient</span>
-                        </ViewButton>
-                    </ButtonGroup>
+                    <ViewButton pushes={false} pulls={true}>
+                        <span><FaVolleyballBall/> Pulls</span>
+                    </ViewButton>
+                    <ViewButton pushes={true} pulls={false}>
+                        <span><FaExpandArrowsAlt/> Pushes</span>
+                    </ViewButton>
                     <ViewButton pushes={false} pulls={false}>
-                        <span><FaCircle/> Role Colors</span>
+                        <span><FaCircle/> Roles</span>
                     </ViewButton>
                 </ButtonGroup>
                 <FeaturePanel key="sthresh" feature={floatFeatures[FabricFeature.SlackThreshold]} disabled={false}/>
             </Grouping>
             <Grouping>
-                <ButtonGroup className="w-100 my-3">
+                <ButtonGroup className="w-100 my-2">
                     <Button
                         disabled={life.stage <= Stage.Growing}
                         color={ellipsoids ? "warning" : "secondary"}

@@ -8,25 +8,31 @@ import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, SurfaceCharacter } from "../fabric/fabric-engine"
+import { FabricFeature, Stage, SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { enumValues, IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
+import { LifeStagePanel } from "./life-stage-panel"
 import { StrainPanel } from "./strain-panel"
 
-export function RealizePanel({floatFeatures, fabric, storedState$}: {
+export function RealizeTab({floatFeatures, fabric, selectionMode, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
+    selectionMode: boolean,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
     const [storedState, updateFabricState] = useState(storedState$.getValue())
+    const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
     useEffect(() => {
         const subscriptions = [
-            storedState$.subscribe(newState => updateFabricState(newState)),
+            storedState$.subscribe(newState => {
+                updateEllipsoids(storedState.ellipsoids)
+                updateFabricState(newState)
+            }),
         ]
         return () => subscriptions.forEach(s => s.unsubscribe())
     }, [])
@@ -37,6 +43,18 @@ export function RealizePanel({floatFeatures, fabric, storedState$}: {
 
     return (
         <div>
+            <Grouping>
+                <LifeStagePanel
+                    fabric={fabric}
+                    stage={Stage.Slack}
+                    disabled={ellipsoids || selectionMode}
+                />
+                <LifeStagePanel
+                    fabric={fabric}
+                    stage={Stage.Realized}
+                    disabled={ellipsoids || selectionMode}
+                />
+            </Grouping>
             <Grouping>
                 <div className="float-right text-white">
                     {SurfaceCharacter[storedState.surfaceCharacter]}

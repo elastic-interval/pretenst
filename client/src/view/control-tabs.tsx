@@ -17,10 +17,10 @@ import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
-import { RealizePanel } from "./realize-panel"
-import { ShapePanel } from "./shape-panel"
-import { TenscriptPanel } from "./tenscript-panel"
-import { ViewPanel } from "./view-panel"
+import { RealizeTab } from "./realize-tab"
+import { ShapeTab } from "./shape-tab"
+import { TenscriptTab } from "./tenscript-tab"
+import { ViewTab } from "./view-tab"
 
 const SPLIT_LEFT = "25em"
 
@@ -107,7 +107,7 @@ export function ControlTabs({
             switch (tab) {
                 case ControlTab.Grow:
                     return (
-                        <TenscriptPanel
+                        <TenscriptTab
                             rootTenscript={rootTenscript}
                             setRootTenscript={setRootTenscript}
                             fabric={fabric}
@@ -117,7 +117,7 @@ export function ControlTabs({
                     )
                 case ControlTab.Shape:
                     return !fabric ? NO_FABRIC : (
-                        <ShapePanel
+                        <ShapeTab
                             floatFeatures={floatFeatures}
                             fabric={fabric}
                             setFabric={setFabric}
@@ -131,15 +131,16 @@ export function ControlTabs({
                     )
                 case ControlTab.Realize:
                     return !fabric ? NO_FABRIC : (
-                        <RealizePanel
+                        <RealizeTab
                             floatFeatures={floatFeatures}
                             fabric={fabric}
+                            selectionMode={selectionMode}
                             storedState$={storedState$}
                         />
                     )
                 case ControlTab.View:
                     return !fabric ? NO_FABRIC : (
-                        <ViewPanel
+                        <ViewTab
                             floatFeatures={floatFeatures}
                             fabric={fabric}
                             storedState$={storedState$}

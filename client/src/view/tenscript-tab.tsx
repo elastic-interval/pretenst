@@ -13,7 +13,7 @@ import { BOOTSTRAP, codeToTenscript, ITenscript, spaceAfterComma } from "../fabr
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
 
-export function TenscriptPanel({rootTenscript, setRootTenscript, fabric, runTenscript, storedState$}: {
+export function TenscriptTab({rootTenscript, setRootTenscript, fabric, runTenscript, storedState$}: {
     rootTenscript: ITenscript,
     setRootTenscript: (tenscript: ITenscript) => void,
     fabric?: TensegrityFabric,
