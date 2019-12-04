@@ -15,6 +15,7 @@ import {
     FaFutbol,
     FaHandRock,
     FaParachuteBox,
+    FaSnowflake,
     FaSyncAlt,
     FaVolleyballBall,
 } from "react-icons/all"
@@ -75,7 +76,6 @@ export function ViewTab({floatFeatures, fabric, storedState$}: {
             <Grouping>
                 <FeaturePanel key="it" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={ellipsoids}/>
                 <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
-                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenstCountdown]} disabled={ellipsoids}/>
             </Grouping>
             <Grouping>
                 <ButtonGroup className="w-100 my-2">
@@ -101,7 +101,7 @@ export function ViewTab({floatFeatures, fabric, storedState$}: {
                         color={ellipsoids ? "warning" : "secondary"}
                         onClick={() => storedState$.next(transition(storedState$.getValue(), {ellipsoids: !ellipsoids}))}
                     >
-                        <FaCamera/> Deluxe View
+                        <FaCamera/> Frozen View <FaSnowflake/>
                     </Button>
                     <Button
                         color={rotating ? "warning" : "secondary"}
