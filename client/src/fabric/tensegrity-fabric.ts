@@ -242,6 +242,8 @@ export class TensegrityFabric {
         this.lineLocations.needsUpdate = true
         this.lineColors.array = instance.lineColors
         this.lineColors.needsUpdate = true
+        this._linesGeometry.computeBoundingSphere()
+        this._facesGeometry.computeBoundingSphere()
     }
 
     public get submergedJoints(): IJoint[] {

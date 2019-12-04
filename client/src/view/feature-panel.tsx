@@ -12,17 +12,25 @@ import { FloatFeature } from "../fabric/fabric-features"
 
 import { roleColorString } from "./materials"
 
-export function FeaturePanel({feature, disabled}: { feature: FloatFeature, disabled: boolean }): JSX.Element {
+export function FeaturePanel({feature, disabled}: {
+    feature: FloatFeature,
+    disabled: boolean,
+}): JSX.Element {
+
     const [featurePercent, setFeaturePercent] = useState(() => feature.percent)
     useEffect(() => {
         const subscription = feature.observable.subscribe(({percent}) => setFeaturePercent(percent))
         return () => subscription.unsubscribe()
     }, [])
+
     const roleColor = roleColorString(fabricFeatureIntervalRole(feature.fabricFeature))
     const color = roleColor ? roleColor : "#919191"
+
     return (
         <div className="my-2">
-            <div className="float-right text-white">
+            <div className="float-right" style={{
+                color: disabled ? "gray" : "white",
+            }}>
                 {feature.formatted}
             </div>
             <div>

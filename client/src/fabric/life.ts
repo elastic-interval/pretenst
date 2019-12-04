@@ -4,6 +4,7 @@
  */
 
 import { FabricFeature, Stage } from "./fabric-engine"
+import { FloatFeature } from "./fabric-features"
 import { TensegrityFabric } from "./tensegrity-fabric"
 import { IInterval } from "./tensegrity-types"
 
@@ -43,8 +44,8 @@ export class Life {
                     case Stage.Slack:
                         if (prefs && prefs.adoptLengths) {
                             this.fabric.instance.engine.adoptLengths()
+                            this.save()
                         }
-                        this.save()
                         return
                     case Stage.Realizing:
                         return
@@ -95,6 +96,10 @@ export class Life {
 
     private restore(): void {
         this.fabric.instance.engine.cloneInstance(this.fabric.slackInstance.index, this.fabric.instance.index)
+        const floatFeatures = this.fabric.floatFeatures
+        Object.keys(floatFeatures)
+            .map(k => floatFeatures[k] as FloatFeature)
+            .forEach(feature => this.fabric.instance.applyFeature(feature))
     }
 }
 

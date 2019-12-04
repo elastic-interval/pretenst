@@ -40,7 +40,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 feature,
                 name: "Pretenst factor",
                 defaultValue: 0.03,
-                percents: FEATURE_PERCENTS,
+                percents: [0, 50, 90, 100, 125, 150, 200],
             }
         case FabricFeature.IterationsPerFrame:
             return {
@@ -59,7 +59,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
         case FabricFeature.PretenstCountdown:
             return {
                 feature,
-                name: "Pretense Countdown",
+                name: "Slack to Pretenst countdown",
                 defaultValue: 30000,
                 percents: FEATURE_PERCENTS,
             }
@@ -87,21 +87,21 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
         case FabricFeature.ShapingPretenstFactor:
             return {
                 feature,
-                name: "Shaping pretenst factor",
+                name: "Pretenst factor",
                 defaultValue: 1,
                 percents: [0, 0.1, 0.59, 0.6, 0.92, 0.93, 10],
             }
         case FabricFeature.ShapingStiffnessFactor:
             return {
                 feature,
-                name: "Shaping stiffness factor",
+                name: "Stiffness factor",
                 defaultValue: 10,
                 percents: [100, 200, 400, 1000, 2000, 3000],
             }
         case FabricFeature.ShapingDrag:
             return {
                 feature,
-                name: "Shaping drag",
+                name: "Drag",
                 defaultValue: 0.1,
                 percents: [0, 10, 50, 100, 200, 500],
             }

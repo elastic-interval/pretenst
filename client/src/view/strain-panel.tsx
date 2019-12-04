@@ -10,9 +10,10 @@ import { FaArrowsAltH } from "react-icons/all"
 import { Limit } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function StrainPanel({fabric, pushes}: {
+export function StrainPanel({fabric, pushes, disabled}: {
     fabric: TensegrityFabric,
     pushes: boolean,
+    disabled: boolean,
 }): JSX.Element {
 
     const engine = fabric.instance.engine
@@ -35,11 +36,11 @@ export function StrainPanel({fabric, pushes}: {
     return (
         <div style={{
             textAlign: "center",
-            backgroundColor: "#919191",
-            borderColor: "#bdbdbd",
-            borderWidth: "2px",
+            backgroundColor: disabled ? "#646464" : "#919191",
+            borderColor: disabled ? "#878787" : "#cfcfcf",
+            borderWidth: "1px",
             borderStyle: "solid",
-            color: "#ffffff",
+            color: disabled ? "gray" : "white",
             borderRadius: "1em",
             width: "100%",
         }}>

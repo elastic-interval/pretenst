@@ -9,7 +9,7 @@ import { FaArrowLeft, FaEye, FaHandSpock, FaLeaf, FaTools } from "react-icons/al
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, Stage } from "../fabric/fabric-engine"
+import { FabricFeature } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
@@ -77,23 +77,16 @@ export function ControlTabs({
     }, [controlTab, life])
 
     useEffect(() => {
-        const subscription = storedState$.subscribe(newState => updateControlTab(newState.controlTab))
-        return () => subscription.unsubscribe()
+        const sub = storedState$.subscribe(newState => updateControlTab(newState.controlTab))
+        return () => sub.unsubscribe()
     }, [])
-
-    function shapeDisabled(): boolean {
-        return !life || life.stage !== Stage.Shaping
-    }
 
     function Link({tab}: { tab: ControlTab }): JSX.Element {
         return (
             <NavItem>
                 <NavLink
-                    disabled={tab === ControlTab.Shape && shapeDisabled()}
                     active={controlTab === tab}
-                    onClick={() => {
-                        storedState$.next(transition(storedState$.getValue(), {controlTab: tab}))
-                    }}
+                    onClick={() => storedState$.next(transition(storedState$.getValue(), {controlTab: tab}))}
                 >{Icon(tab)} {tab}</NavLink>
             </NavItem>
         )

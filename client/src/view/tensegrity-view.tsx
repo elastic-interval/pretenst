@@ -10,7 +10,7 @@ import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, fabricFeatureIntervalRole } from "../fabric/fabric-engine"
+import { FabricFeature, fabricFeatureIntervalRole, Stage } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
@@ -41,6 +41,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
 
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
+
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
@@ -52,6 +53,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         setSelectedIntervals(intervals)
         setFabric(fabric)
     }, [selectedFaces])
+
     const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(storedState$.getValue()))
     useEffect(() => {
         if (location.hash.length === 0) {
@@ -62,7 +64,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
     const [selectionMode, setSelectionMode] = useState(false)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
-
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)
@@ -171,9 +172,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                     </div>
                 ) : (
                     <div id="tensegrity-view" className="h-100">
-                        <div id="top-middle">
-                            <i>"{fabric.tenscript.name}"</i>
-                        </div>
+                        <TopMiddle fabric={fabric}/>
                         <Canvas style={{
                             backgroundColor: "black",
                             borderStyle: "solid",
@@ -195,5 +194,18 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                 )}
             </div>
         </>
+    )
+}
+
+function TopMiddle({fabric}:{fabric: TensegrityFabric}): JSX.Element {
+    const [life, updateLife] = useState(fabric.life)
+    useEffect(() => {
+        const sub = fabric.life$.subscribe(updateLife)
+        return () => sub.unsubscribe()
+    }, [fabric])
+    return (
+        <div id="top-middle">
+            <span>{Stage[life.stage]}</span> <i>"{fabric.tenscript.name}"</i>
+        </div>
     )
 }

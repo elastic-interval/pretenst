@@ -58,7 +58,10 @@ const SCALE_WIDTH = 0.01
 const NEEDLE_WIDTH = 2
 const SCALE_MAX = 0.45
 
-export function FabricView({fabric, selectedIntervals, selectedFaces, setSelectedFaces, selectionMode, ellipsoids, storedState$}: {
+export function FabricView({
+                               fabric, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
+                               selectionMode, ellipsoids,
+                           }: {
     fabric: TensegrityFabric,
     selectedIntervals: IInterval[],
     selectedFaces: IFace[],
@@ -134,7 +137,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         fabric.needsUpdate()
         setAge(instance.engine.getAge())
     }, true, [
-        fabric, fabric, age, life, storedState, selectionMode,
+        fabric, fabric, age, life, selectionMode, ellipsoids,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
@@ -241,7 +244,7 @@ export function FabricView({fabric, selectedIntervals, selectedFaces, setSelecte
         )
     }
 
-    const hideStiffness = storedState.rotating || ellipsoids || life.stage <= Stage.Slack
+    const hideStiffness = storedState.rotating || ellipsoids || selectionMode || life.stage <= Stage.Slack
     return (
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>

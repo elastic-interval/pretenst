@@ -1373,6 +1373,8 @@ export function iterate(requestedStage: Stage): Stage {
             switch (requestedStage) {
                 case Stage.Realizing:
                     return startRealizing()
+                case Stage.Slack:
+                    return setStage(Stage.Slack)
             }
             break
         case Stage.Slack:
