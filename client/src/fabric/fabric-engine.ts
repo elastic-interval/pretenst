@@ -34,22 +34,23 @@ export enum FabricFeature {
     ShapingPretenstFactor = 9,
     ShapingStiffnessFactor = 10,
     ShapingDrag = 11,
+    MaxStrain = 12,
 
-    NexusPushLength = 15,
-    ColumnPushLength = 16,
-    TriangleLength = 17,
-    RingLength = 18,
-    CrossLength = 19,
-    BowMidLength = 20,
-    BowEndLength = 21,
+    NexusPushLength = 20,
+    ColumnPushLength = 21,
+    TriangleLength = 22,
+    RingLength = 23,
+    CrossLength = 24,
+    BowMidLength = 25,
+    BowEndLength = 26,
 
-    PushOverPull = 25,
-    PushRadiusFactor = 26,
-    PullRadiusFactor = 27,
-    MaxStiffness = 28,
+    PushOverPull = 27,
+    PushRadiusFactor = 28,
+    PullRadiusFactor = 29,
+    MaxStiffness = 30,
 }
 
-export const FEATURE_FLOATS = 30
+export const FEATURE_FLOATS = 60
 
 export const FABRIC_FEATURES: FabricFeature[] = Object.keys(FabricFeature)
     .filter(k => isNaN(parseInt(k, 10)))
@@ -93,13 +94,6 @@ export enum Laterality {
     LeftSide = 2,
 }
 
-export enum Limit {
-    MinPushStrain = 0,
-    MaxPushStrain = 1,
-    MinPullStrain = 2,
-    MaxPullStrain = 3,
-}
-
 export enum SurfaceCharacter {
     Frozen = 0,
     Sticky = 1,
@@ -114,8 +108,6 @@ export interface IFabricEngine {
     init(): number
 
     setSurfaceCharacter(character: SurfaceCharacter): void
-
-    getLimit(limit: Limit): number
 
     setColoring(pushes: boolean, pulls: boolean): void
 

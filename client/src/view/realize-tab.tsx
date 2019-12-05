@@ -16,7 +16,6 @@ import { enumValues, IStoredState, transition } from "../storage/stored-state"
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { LifeStagePanel } from "./life-stage-panel"
-import { StrainPanel } from "./strain-panel"
 
 export function RealizeTab({floatFeatures, fabric, selectionMode, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
@@ -84,16 +83,6 @@ export function RealizeTab({floatFeatures, fabric, selectionMode, storedState$}:
                 <FeaturePanel feature={floatFeatures[FabricFeature.PushOverPull]} disabled={disabled()}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.PretenstFactor]} disabled={disabled()}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.PretenstCountdown]} disabled={disabled()}/>
-            </Grouping>
-            <Grouping>
-                <div className="my-2">
-                    <div>Pull Strain Range</div>
-                    <StrainPanel disabled={disabled()} fabric={fabric} pushes={false}/>
-                </div>
-                <div className="my-2">
-                    <div>Push Strain Range</div>
-                    <StrainPanel disabled={disabled()} fabric={fabric} pushes={true}/>
-                </div>
             </Grouping>
         </div>
     )

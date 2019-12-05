@@ -48,12 +48,13 @@ export const SELECT_MATERIAL = new MeshPhongMaterial({
 function generateRainbow(): Color[] {
     const steps = 50
     const rgbs: Color[] = []
-    const max = 2 * Math.PI * (2 / 3)
-    for (let step = 0; step < max; step += max / (steps - 10)) {
+    const twoThirds = Math.PI * 2 / 3
+    const max = 2 * twoThirds
+    for (let step = 0; step < max; step += max / steps) {
         const angle = step + Math.PI / 2
-        const r = (Math.sin(angle + Math.PI * 2 / 3) + 1) / 2
-        const g = (Math.sin(angle + 2 * Math.PI * 2 / 3) + 1) / 2.5
-        const b = (Math.sin(angle) + 1) / 2
+        const r = (1 + Math.sin(angle + twoThirds))
+        const g = (1 + Math.sin(angle + 2 * twoThirds))
+        const b = (1 + Math.sin(angle))
         rgbs.push(new Color(r, g, b))
     }
     // Generates code for a WASM constant:
@@ -70,6 +71,16 @@ function generateRainbow(): Color[] {
     //     return `[${rr.toFixed(3)}, ${gg.toFixed(3)}, ${bb.toFixed(3)}],`
     // })
     // console.log("ROLES\n", roleColors.join("\n"))
+    // console.log(`const RAINBOW: f32[] = [\n${rgbs.map((color, index) => {
+    //     const r = color.r
+    //     const g = color.g
+    //     const b = color.b
+    //     const length = Math.sqrt(r * r + g * g + b * b)
+    //     const rr = r / length
+    //     const gg = g / length
+    //     const bb = b / length
+    //     return `${rr.toFixed(3)}, ${gg.toFixed(3)}, ${bb.toFixed(3)}, // ${index}`
+    // }).join("\n")}\n]`)
     return rgbs
 }
 

@@ -45,6 +45,7 @@ function scaleToStiffness(scale: IPercent): number {
 
 export class TensegrityFabric {
     public life$: BehaviorSubject<Life>
+    public featureValues$: BehaviorSubject<Record<FabricFeature, IFeatureValue>>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public facePulls: IFacePull[] = []
@@ -66,16 +67,20 @@ export class TensegrityFabric {
     private _linesGeometry = new BufferGeometry()
 
     constructor(
-        public featureValues: Record<FabricFeature, IFeatureValue>,
+        public readonly floatFeatures: Record<FabricFeature, FloatFeature>,
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
-        public readonly floatFeatures: Record<FabricFeature, FloatFeature>,
         public readonly tenscript: ITenscript,
     ) {
         this.life$ = new BehaviorSubject(new Life(this, Stage.Growing))
         this.builder = new TensegrityBuilder(this)
-        Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach(feature => this.instance.applyFeature(feature))
-        const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred()) // todo: maybe raise
+        const initialValues = {} as Record<FabricFeature, IFeatureValue>
+        Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach((feature: FloatFeature) => {
+            this.instance.applyFeature(feature)
+            initialValues[feature.config.feature]= feature.value
+        })
+        this.featureValues$ = new BehaviorSubject<Record<FabricFeature, IFeatureValue>>(initialValues)
+        const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred())
         this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
         this.bricks = [brick]
         this.refreshLineGeometry()
@@ -93,8 +98,12 @@ export class TensegrityFabric {
         this.life$.next(this.life.withStage(stage, prefs))
     }
 
-    public featureValue(fabricFeature: FabricFeature): number {
-        return this.featureValues[fabricFeature].numeric
+    public get featureValues(): Record<FabricFeature, IFeatureValue> {
+        return this.featureValues$.getValue()
+    }
+
+    public featureValue(feature: FabricFeature): number {
+        return this.featureValues[feature].numeric
     }
 
     public connectFaces(faces: IFace[]): void {

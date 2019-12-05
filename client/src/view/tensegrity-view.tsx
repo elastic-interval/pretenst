@@ -16,7 +16,7 @@ import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
-import { getRecentTenscript, IStoredState, transition } from "../storage/stored-state"
+import { getRecentTenscript, IFeatureValue, IStoredState, transition } from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
@@ -79,12 +79,15 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
     }, [fabric])
 
     useEffect(() => { // todo: look when this happens
-        const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map(feature =>
-            feature.observable.subscribe(() => {
+        const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map((feature: FloatFeature) =>
+            feature.observable.subscribe((value: IFeatureValue) => {
                 if (!fabric) {
                     return
                 }
                 fabric.instance.applyFeature(feature)
+                const freshValues = {...fabric.featureValues}
+                freshValues[feature.config.feature] = value
+                fabric.featureValues$.next(freshValues)
                 const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
                 if (intervalRole !== undefined) {
                     const engine = fabric.instance.engine
@@ -106,8 +109,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         location.hash = addNameToCode(newTenscript.code, newTenscript.name)
         mainInstance.engine.initInstance()
         mainInstance.forgetDimensions()
-        const featureValues = storedState$.getValue().featureValues
-        setFabric(new TensegrityFabric(featureValues, mainInstance, slackInstance, floatFeatures, newTenscript))
+        setFabric(new TensegrityFabric(floatFeatures, mainInstance, slackInstance, newTenscript))
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
     }
 
@@ -197,7 +199,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
     )
 }
 
-function TopMiddle({fabric}:{fabric: TensegrityFabric}): JSX.Element {
+function TopMiddle({fabric}: { fabric: TensegrityFabric }): JSX.Element {
     const [life, updateLife] = useState(fabric.life)
     useEffect(() => {
         const sub = fabric.life$.subscribe(updateLife)

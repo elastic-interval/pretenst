@@ -27,7 +27,6 @@ import { IStoredState } from "../storage/stored-state"
 import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
-import { VisualScale } from "./visual-scale"
 
 extend({Orbit})
 
@@ -143,8 +142,6 @@ export function FabricView({
         }
     }
 
-    const hideStiffness = storedState.rotating || ellipsoids || selectionMode || life.stage <= Stage.Slack
-    const maxStiffness = storedState.featureValues[FabricFeature.MaxStiffness].numeric
     return (
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
@@ -170,7 +167,6 @@ export function FabricView({
                         selectFace={toggleFacesSelection}
                     />
                 )}
-                {hideStiffness ? undefined : <VisualScale fabric={fabric} target={orbit.current.target} maxStiffness={maxStiffness}/>}
                 {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} fabric={fabric} face={face}/>)}
                 <SurfaceComponent ghost={life.stage <= Stage.Slack}/>
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>

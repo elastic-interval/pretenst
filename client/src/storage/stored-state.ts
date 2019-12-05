@@ -12,6 +12,7 @@ export enum ControlTab {
     Shape = "Shape",
     Realize = "Realize",
     View = "View",
+    Strain = "Strain",
 }
 
 export function enumValues(e: object): number[] {

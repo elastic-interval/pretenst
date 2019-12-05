@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaArrowLeft, FaEye, FaHandSpock, FaLeaf, FaTools } from "react-icons/all"
+import { FaArrowLeft } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -19,23 +19,11 @@ import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { RealizeTab } from "./realize-tab"
 import { ShapeTab } from "./shape-tab"
+import { StrainTab } from "./strain-tab"
 import { TenscriptTab } from "./tenscript-tab"
 import { ViewTab } from "./view-tab"
 
 const SPLIT_LEFT = "25em"
-
-function Icon(controlTab: ControlTab): JSX.Element {
-    switch (controlTab) {
-        case ControlTab.Grow:
-            return <FaLeaf key="grow"/>
-        case ControlTab.Shape:
-            return <FaTools key="shape"/>
-        case ControlTab.Realize:
-            return <FaHandSpock key="optimize"/>
-        case ControlTab.View:
-            return <FaEye key="view"/>
-    }
-}
 
 export function ControlTabs({
                                 floatFeatures, rootTenscript, setRootTenscript,
@@ -87,7 +75,7 @@ export function ControlTabs({
                 <NavLink
                     active={controlTab === tab}
                     onClick={() => storedState$.next(transition(storedState$.getValue(), {controlTab: tab}))}
-                >{Icon(tab)} {tab}</NavLink>
+                >{tab}</NavLink>
             </NavItem>
         )
     }
@@ -139,6 +127,13 @@ export function ControlTabs({
                             storedState$={storedState$}
                         />
                     )
+                case ControlTab.Strain:
+                    return !fabric ? NO_FABRIC : (
+                        <StrainTab
+                            floatFeatures={floatFeatures}
+                            fabric={fabric}
+                        />
+                    )
             }
         }
 
@@ -169,7 +164,7 @@ export function ControlTabs({
             <Nav tabs={true} style={{backgroundColor: "#b2b2b2"}}>
                 {Object.keys(ControlTab).map(tab => <Link key={`T${tab}`} tab={ControlTab[tab]}/>)}
             </Nav>
-            <TabContent style={{flex: 1, flexFlow: "auto"}} id="tab-content" activeTab={controlTab}>
+            <TabContent style={{flex: 1, flexFlow: "auto", height: "100%"}} id="tab-content" activeTab={controlTab}>
                 {Object.keys(ControlTab).map(tab => <Pane key={tab} tab={ControlTab[tab]}/>)}
             </TabContent>
             <div style={{
@@ -186,9 +181,13 @@ export function ControlTabs({
     )
 }
 
-export function Grouping({children}: { children: JSX.Element | JSX.Element[] }): JSX.Element {
+export function Grouping({children, height}: {
+    children: JSX.Element | JSX.Element[],
+    height?: string,
+}): JSX.Element {
     return (
         <div className="m-3 p-2" style={{
+            height,
             borderRadius: "1em",
             borderStyle: "solid",
             borderWidth: "0.1em",

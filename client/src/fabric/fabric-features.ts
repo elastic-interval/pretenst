@@ -105,6 +105,13 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 defaultValue: 0.1,
                 percents: [0, 10, 50, 100, 200, 500],
             }
+        case FabricFeature.MaxStrain:
+            return {
+                feature,
+                name: "Maximum Strain",
+                defaultValue: 0.1,
+                percents: [10, 20, 30, 40, 50, 100, 200],
+            }
         case FabricFeature.PushOverPull:
             return {
                 feature,
@@ -215,6 +222,10 @@ export class FloatFeature {
             storedState.featureValues[config.feature] = value
             storedState$.next(storedState)
         })
+    }
+
+    public get value(): IFeatureValue {
+        return this.value$.getValue()
     }
 
     public get title(): string {

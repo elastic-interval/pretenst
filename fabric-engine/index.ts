@@ -10,13 +10,12 @@ declare function logFloat(idx: u32, f: f32): void
 declare function logInt(idx: u32, i: i32): void
 
 // DECLARATION
-const FEATURE_FLOATS = 30
+const FEATURE_FLOATS = 60
 
 const FROZEN_ALTITUDE: f32 = -0.02
 const RESURFACE: f32 = 0.01
 const ANTIGRAVITY: f32 = -0.001
 const IN_UTERO_JOINT_MASS: f32 = 0.00001
-const TINY_FLOAT = 1e-30
 
 export enum FabricFeature {
     Gravity = 0,
@@ -31,6 +30,7 @@ export enum FabricFeature {
     ShapingPretenstFactor = 9,
     ShapingStiffnessFactor = 10,
     ShapingDrag = 11,
+    MaxStrain = 12,
 }
 
 enum SurfaceCharacter {
@@ -85,11 +85,9 @@ const STATE_COUNT: u8 = 16
 const ATTENUATED_COLOR: f32[] = [
     0.1, 0.1, 0.1
 ]
-const LOST_COLOR: f32[] = [
-    1.0, 1.0, 1.0
-]
+const THIRD: f32 = 1 / <f32>sqrt(3)
 const SLACK_COLOR: f32[] = [
-    0.0, 1.0, 0.0
+    THIRD, THIRD, THIRD
 ]
 
 const ROLE_COLORS: f32[][] = [
@@ -917,44 +915,6 @@ function setLineColorNuance(intervalIndex: u16, nuance: f32): void {
     setLineColorRGB(intervalIndex, r, g, b)
 }
 
-function toNuance(numerator: f32, denominator: f32): f32 {
-    if (denominator < TINY_FLOAT && denominator > -TINY_FLOAT) {
-        logFloat(667, denominator)
-        return 0.5
-    }
-    let nuance: f32 = numerator / denominator
-    return nuance < 0 ? 0 : nuance > 1 ? 1 : nuance
-}
-
-enum Limit {
-    MinPushStrain = 0,
-    MaxPushStrain = 1,
-    MinPullStrain = 2,
-    MaxPullStrain = 3,
-}
-
-const BIG_STRAIN: f32 = 0.999
-
-let minPushStrain: f32 = BIG_STRAIN
-let maxPushStrain: f32 = -BIG_STRAIN
-let minPullStrain: f32 = BIG_STRAIN
-let maxPullStrain: f32 = -BIG_STRAIN
-
-export function getLimit(limit: Limit): f32 {
-    switch (limit) {
-        case Limit.MinPushStrain:
-            return minPushStrain
-        case Limit.MaxPushStrain:
-            return maxPushStrain
-        case Limit.MinPullStrain:
-            return minPullStrain
-        case Limit.MaxPullStrain:
-            return maxPullStrain
-        default:
-            return -1
-    }
-}
-
 let colorPushes = true
 let colorPulls = true
 
@@ -964,31 +924,8 @@ export function setColoring(pushes: boolean, pulls: boolean): void {
 }
 
 function outputIntervals(): void {
-    minPushStrain = BIG_STRAIN
-    maxPushStrain = -BIG_STRAIN
-    minPullStrain = BIG_STRAIN
-    maxPullStrain = -BIG_STRAIN
+    let maxStrain = getFeature(FabricFeature.MaxStrain)
     let intervalCount = getIntervalCount()
-    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
-        let strain = getStrain(intervalIndex)
-        let intervalRole = getIntervalRole(intervalIndex)
-        if (isPush(intervalRole)) {
-            strain = -strain
-            if (strain < minPushStrain) {
-                minPushStrain = strain
-            }
-            if (strain > maxPushStrain) {
-                maxPushStrain = strain
-            }
-        } else { // pull
-            if (strain < minPullStrain) {
-                minPullStrain = strain
-            }
-            if (strain > maxPullStrain) {
-                maxPullStrain = strain
-            }
-        }
-    }
     setFaceMidpoints()
     let slackThreshold = getFeature(FabricFeature.SlackThreshold)
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
@@ -1003,44 +940,36 @@ function outputIntervals(): void {
             setVector(outputOmega, _location(omegaIndex(intervalIndex)))
         }
         let strain = getStrain(intervalIndex)
-        let absoluteStrain = strain < 0 ? -strain : strain
-        let nuance: f32 = 0.5
+        let unboundedNuance: f32 = (strain + maxStrain) / (maxStrain * 2)
+        let nuance: f32 = unboundedNuance < 0 ? 0 : unboundedNuance >= 1 ? 0.99999999 : unboundedNuance
+        setStrainNuance(intervalIndex, nuance)
+        let slack = (strain < 0 ? -strain : strain) < slackThreshold
         if (!colorPushes && !colorPulls) {
             let roleColor = ROLE_COLORS[intervalRole]
             setLineColor(intervalIndex, roleColor)
         } else if (colorPushes && colorPulls) {
-            if (absoluteStrain < slackThreshold) {
+            if (slack) {
                 setLineColor(intervalIndex, SLACK_COLOR)
-            } else if (maxPushStrain + maxPullStrain < TINY_FLOAT) {
-                setLineColor(intervalIndex, LOST_COLOR)
             } else {
-                nuance = toNuance(strain + maxPushStrain, maxPushStrain + maxPullStrain)
                 setLineColorNuance(intervalIndex, nuance)
             }
         } else if (isPush(intervalRole)) {
             if (colorPulls) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR)
-            } else if (absoluteStrain < slackThreshold) {
+            } else if (slack) {
                 setLineColor(intervalIndex, SLACK_COLOR)
-            } else if (maxPushStrain - minPushStrain < TINY_FLOAT) {
-                setLineColor(intervalIndex, LOST_COLOR)
             } else {
-                nuance = toNuance(-strain - minPushStrain, maxPushStrain - minPushStrain)
                 setLineColorNuance(intervalIndex, nuance)
             }
         } else { // pull
             if (colorPushes) {
                 setLineColor(intervalIndex, ATTENUATED_COLOR)
-            } else if (absoluteStrain < slackThreshold) {
+            } else if (slack) {
                 setLineColor(intervalIndex, SLACK_COLOR)
-            } else if (maxPullStrain - minPullStrain < TINY_FLOAT) {
-                setLineColor(intervalIndex, LOST_COLOR)
             } else {
-                nuance = toNuance(strain - minPullStrain, maxPullStrain - minPullStrain)
                 setLineColorNuance(intervalIndex, nuance)
             }
         }
-        setStrainNuance(intervalIndex, nuance)
     }
 }
 
