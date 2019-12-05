@@ -82,14 +82,14 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 feature,
                 name: "Slack threshold",
                 defaultValue: 0.0001,
-                percents: [0, 1, 10, 50, 100, 150, 200],
+                percents: [0.01, 0.1, 1, 10, 100, 1000],
             }
         case FabricFeature.ShapingPretenstFactor:
             return {
                 feature,
                 name: "Pretenst factor",
-                defaultValue: 1,
-                percents: [0, 0.1, 0.85, 0.86, 0.92, 0.93, 10],
+                defaultValue: 0.5,
+                percents: [0, 1.7, 1.71, 1.84, 1.85, 10, 100],
             }
         case FabricFeature.ShapingStiffnessFactor:
             return {

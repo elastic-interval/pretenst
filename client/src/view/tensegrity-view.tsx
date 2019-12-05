@@ -110,6 +110,9 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         mainInstance.engine.initInstance()
         mainInstance.forgetDimensions()
         setFabric(new TensegrityFabric(floatFeatures, mainInstance, slackInstance, newTenscript))
+        floatFeatures[FabricFeature.ShapingPretenstFactor].percent = 100
+        floatFeatures[FabricFeature.ShapingDrag].percent = 100
+        floatFeatures[FabricFeature.ShapingStiffnessFactor].percent = 100
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
     }
 
