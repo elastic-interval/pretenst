@@ -89,7 +89,7 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 feature,
                 name: "Pretenst factor",
                 defaultValue: 1,
-                percents: [0, 0.1, 0.59, 0.6, 0.92, 0.93, 10],
+                percents: [0, 0.1, 0.85, 0.86, 0.92, 0.93, 10],
             }
         case FabricFeature.ShapingStiffnessFactor:
             return {

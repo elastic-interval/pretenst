@@ -9,11 +9,8 @@ import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } fro
 import { BehaviorSubject } from "rxjs"
 import {
     BackSide,
-    BufferGeometry,
     Color,
     Euler,
-    Float32BufferAttribute,
-    Geometry,
     MeshPhongMaterial,
     Object3D,
     PerspectiveCamera,
@@ -27,9 +24,10 @@ import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
-import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SCALE_LINE, SELECT_MATERIAL } from "./materials"
+import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { SurfaceComponent } from "./surface-component"
+import { VisualScale } from "./visual-scale"
 
 extend({Orbit})
 
@@ -54,9 +52,6 @@ const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
-const SCALE_WIDTH = 0.01
-const NEEDLE_WIDTH = 2
-const SCALE_MAX = 0.45
 
 export function FabricView({
                                fabric, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
@@ -148,109 +143,25 @@ export function FabricView({
         }
     }
 
-    function SelectedFace({face}: { face: IFace }): JSX.Element {
-        const scale = percentToFactor(face.brick.scale) / 6
-        return (
-            <mesh
-                geometry={SPHERE}
-                position={fabric.instance.faceMidpoint(face.index)}
-                material={SELECT_MATERIAL}
-                scale={new Vector3(scale, scale, scale)}
-            />
-        )
-    }
-
-    function IntervalMesh({interval, push, pull}: {
-        interval: IInterval,
-        push: number,
-        pull: number,
-    }): JSX.Element | null {
-        const {showPushes, showPulls} = storedState
-        let material = roleMaterial(interval.intervalRole)
-        if (showPushes || showPulls) {
-            material = rainbowMaterial(fabric.instance.strainNuances[interval.index])
-            if (!(showPushes && showPulls) && (showPushes && !interval.isPush || showPulls && interval.isPush)) {
-                return <group/>
-            }
-        }
-        const linearDensity = fabric.instance.linearDensities[interval.index]
-        const radiusFactor = interval.isPush ? push : pull
-        const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
-        return (
-            <mesh
-                geometry={SPHERE}
-                position={fabric.instance.getIntervalMidpoint(interval.index)}
-                rotation={new Euler().setFromQuaternion(rotation)}
-                scale={scale}
-                material={material}
-                matrixWorldNeedsUpdate={true}
-            />
-        )
-    }
-
-    function StiffnessScale(): JSX.Element {
-        const current = orbit.current
-        if (!current) {
-            return <group/>
-        }
-        const needleGeometry = new BufferGeometry()
-        const lines = strainPushLines(fabric, storedState.featureValues[FabricFeature.MaxStiffness].numeric)
-        needleGeometry.addAttribute("position", new Float32BufferAttribute(lines, 3))
-        needleGeometry.addAttribute("color", new Float32BufferAttribute(fabric.instance.lineColors, 3))
-        const toTarget = new Vector3().subVectors(current.target, camera.position).normalize()
-        const leftDistance = perspective.fov * perspective.aspect / 132
-        const toDaLeft = new Vector3().crossVectors(camera.up, toTarget).normalize().multiplyScalar(leftDistance)
-        const scaleGeometry = new Geometry()
-        const v = (x: number, y: number) => new Vector3(x, y, 0)
-        scaleGeometry.vertices = [
-            v(0, -SCALE_MAX), v(0, SCALE_MAX),
-            v(-SCALE_WIDTH, SCALE_MAX), v(SCALE_WIDTH, SCALE_MAX),
-            v(-SCALE_WIDTH, 0), v(SCALE_WIDTH, 0),
-            v(-SCALE_WIDTH, -SCALE_MAX), v(SCALE_WIDTH, -SCALE_MAX),
-        ]
-        const targetPull = 0.85
-        const needlePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, targetPull).add(toDaLeft)
-        const scalePosition = new Vector3().copy(camera.position).addScaledVector(toTarget, targetPull + 0.001).add(toDaLeft)
-        return (
-            <group>
-                <lineSegments geometry={needleGeometry} material={LINE_VERTEX_COLORS}
-                              position={needlePosition} rotation={camera.rotation}/>
-                <lineSegments geometry={scaleGeometry} material={SCALE_LINE}
-                              position={scalePosition} rotation={camera.rotation}/>
-            </group>
-        )
-    }
-
-    function EllipsoidView(): JSX.Element {
-        return (
-            <group>
-                {selectedIntervals.length > 0 ? selectedIntervals.map(interval => (
-                    <IntervalMesh key={`SI${interval.index}`} interval={interval} push={pushRadius} pull={pullRadius}/>
-                )) : fabric.intervals.map(interval => (
-                    <IntervalMesh key={`I${interval.index}`} interval={interval} push={pushRadius} pull={pullRadius}/>
-                ))}}
-            </group>
-        )
-    }
-
-    function LineView(): JSX.Element {
-        return (
-            <group>
-                <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
-                {selectedIntervals.map(interval => (
-                    <IntervalMesh key={`SI${interval.index}`} interval={interval} push={pushRadius} pull={pullRadius}/>
-                ))}
-            </group>
-        )
-    }
-
     const hideStiffness = storedState.rotating || ellipsoids || selectionMode || life.stage <= Stage.Slack
+    const maxStiffness = storedState.featureValues[FabricFeature.MaxStiffness].numeric
     return (
         <group>
             <orbit ref={orbit} args={[perspective, tensegrityView]}/>
             <scene>
-                {hideStiffness ? undefined : <StiffnessScale/>}
-                {ellipsoids ? <EllipsoidView/> : <LineView/>}
+                {ellipsoids ? (
+                    <EllipsoidView
+                        fabric={fabric} selectedIntervals={selectedIntervals}
+                        showPushes={storedState.showPushes} showPulls={storedState.showPulls}
+                        pushRadius={pushRadius} pullRadius={pullRadius}
+                    />
+                ) : (
+                    <LineView
+                        fabric={fabric} selectedIntervals={selectedIntervals}
+                        showPushes={storedState.showPushes} showPulls={storedState.showPulls}
+                        pushRadius={pushRadius} pullRadius={pullRadius}
+                    />
+                )}
                 {!selectionMode ? undefined : (
                     <Faces
                         key="faces"
@@ -259,13 +170,104 @@ export function FabricView({
                         selectFace={toggleFacesSelection}
                     />
                 )}
-                {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} face={face}/>)}
+                {hideStiffness ? undefined : <VisualScale fabric={fabric} target={orbit.current.target} maxStiffness={maxStiffness}/>}
+                {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} fabric={fabric} face={face}/>)}
                 <SurfaceComponent ghost={life.stage <= Stage.Slack}/>
                 <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
                 <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
             </scene>
+        </group>
+    )
+}
+
+function SelectedFace({fabric, face}: { fabric: TensegrityFabric, face: IFace }): JSX.Element {
+    const scale = percentToFactor(face.brick.scale) / 6
+    return (
+        <mesh
+            geometry={SPHERE}
+            position={fabric.instance.faceMidpoint(face.index)}
+            material={SELECT_MATERIAL}
+            scale={new Vector3(scale, scale, scale)}
+        />
+    )
+}
+
+function IntervalMesh({fabric, interval, pushRadius, pullRadius, showPushes, showPulls}: {
+    fabric: TensegrityFabric,
+    interval: IInterval,
+    pushRadius: number,
+    pullRadius: number,
+    showPushes: boolean,
+    showPulls: boolean,
+}): JSX.Element | null {
+    let material = roleMaterial(interval.intervalRole)
+    if (showPushes || showPulls) {
+        material = rainbowMaterial(fabric.instance.strainNuances[interval.index])
+        if (!(showPushes && showPulls) && (showPushes && !interval.isPush || showPulls && interval.isPush)) {
+            return <group/>
+        }
+    }
+    const linearDensity = fabric.instance.linearDensities[interval.index]
+    const radiusFactor = interval.isPush ? pushRadius : pullRadius
+    const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
+    return (
+        <mesh
+            geometry={SPHERE}
+            position={fabric.instance.getIntervalMidpoint(interval.index)}
+            rotation={new Euler().setFromQuaternion(rotation)}
+            scale={scale}
+            material={material}
+            matrixWorldNeedsUpdate={true}
+        />
+    )
+}
+
+function EllipsoidView({fabric, selectedIntervals, pushRadius, pullRadius, showPushes, showPulls}: {
+    fabric: TensegrityFabric,
+    selectedIntervals: IInterval[],
+    pushRadius: number,
+    pullRadius: number,
+    showPushes: boolean,
+    showPulls: boolean,
+}): JSX.Element {
+    return (
+        <group>
+            {selectedIntervals.length > 0 ? selectedIntervals.map(interval => (
+                <IntervalMesh key={`SI${interval.index}`}
+                              fabric={fabric} interval={interval}
+                              pushRadius={pushRadius} pullRadius={pullRadius}
+                              showPushes={showPushes} showPulls={showPulls}
+                />
+            )) : fabric.intervals.map(interval => (
+                <IntervalMesh key={`I${interval.index}`}
+                              fabric={fabric} interval={interval}
+                              pushRadius={pushRadius} pullRadius={pullRadius}
+                              showPushes={showPushes} showPulls={showPulls}
+                />
+            ))}}
+        </group>
+    )
+}
+
+function LineView({fabric, selectedIntervals, pushRadius, pullRadius, showPushes, showPulls}: {
+    fabric: TensegrityFabric,
+    selectedIntervals: IInterval[],
+    pushRadius: number,
+    pullRadius: number,
+    showPushes: boolean,
+    showPulls: boolean,
+}): JSX.Element {
+    return (
+        <group>
+            <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
+            {selectedIntervals.map(interval => (
+                <IntervalMesh key={`SI${interval.index}`}
+                              fabric={fabric} interval={interval}
+                              pushRadius={pushRadius} pullRadius={pullRadius}
+                              showPushes={showPushes} showPulls={showPulls}/>
+            ))}
         </group>
     )
 }
@@ -316,20 +318,3 @@ function Faces({fabric, stage, selectFace}: {
     )
 }
 
-function strainPushLines(fabric: TensegrityFabric, maxStiffness: number): Float32Array {
-    const instance = fabric.instance
-    const vertices = new Float32Array(instance.engine.getIntervalCount() * 2 * 3)
-    const stiffnesses = instance.stiffnesses
-    let offset = 0
-    fabric.intervals.forEach(interval => {
-        const stiffness = stiffnesses[interval.index]
-        const height = stiffness / maxStiffness * (interval.isPush ? SCALE_MAX : -SCALE_MAX)
-        vertices[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
-        vertices[offset++] = height
-        vertices[offset++] = 0
-        vertices[offset++] = SCALE_WIDTH * NEEDLE_WIDTH
-        vertices[offset++] = height
-        vertices[offset++] = 0
-    })
-    return vertices
-}
