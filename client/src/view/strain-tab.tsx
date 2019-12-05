@@ -18,28 +18,28 @@ import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { LINE_VERTEX_COLORS, SCALE_LINE } from "./materials"
 
-const SCALE_WIDTH = 0.3
-const NEEDLE_WIDTH = 2
+const SCALE_WIDTH = 0.7
+const NEEDLE_WIDTH = 1.4
 const SCALE_MAX = 3.5
 
 const FEATURES = [
-    FabricFeature.MaxStiffness,
     FabricFeature.MaxStrain,
+    FabricFeature.MaxStiffness,
 ]
 
-function scaleGeometry(): Geometry {
+function scaleGeometry(middleTick: boolean): Geometry {
     const geometry = new Geometry()
     const v = (x: number, y: number) => new Vector3(x, y, 0)
     geometry.vertices = [
         v(0, -SCALE_MAX), v(0, SCALE_MAX),
         v(-SCALE_WIDTH, SCALE_MAX), v(SCALE_WIDTH, SCALE_MAX),
-        v(-SCALE_WIDTH, 0), v(SCALE_WIDTH, 0),
         v(-SCALE_WIDTH, -SCALE_MAX), v(SCALE_WIDTH, -SCALE_MAX),
     ]
+    if (middleTick) {
+        geometry.vertices.push(v(-SCALE_WIDTH, 0), v(SCALE_WIDTH, 0))
+    }
     return geometry
 }
-
-const SCALE_GEOMETRY = scaleGeometry()
 
 function needleGeometry(
     intervals: IInterval[], lineColors: Float32Array,
@@ -49,12 +49,13 @@ function needleGeometry(
     let offset = 0
     intervals.forEach(interval => {
         const value = values[interval.index]
-        const height = (value - midValue) / (maxValue - midValue) * SCALE_MAX
+        const unboundedHeight = (value - midValue) / (maxValue - midValue)
+        const height = unboundedHeight < -1 ? -1 : unboundedHeight > 1 ? 1 : unboundedHeight
         position[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
-        position[offset++] = height
+        position[offset++] = height * SCALE_MAX
         position[offset++] = 0
         position[offset++] = SCALE_WIDTH * NEEDLE_WIDTH
-        position[offset++] = height
+        position[offset++] = height * SCALE_MAX
         position[offset++] = 0
     })
     const geometry = new BufferGeometry()
@@ -94,19 +95,20 @@ export function StrainTab({floatFeatures, fabric}: {
 
         const instance = fabric.instance
 
-        function Scale({position, intervals, floats, mid, max}: {
+        function Scale({position, intervals, floats, mid, max, middleTick}: {
             position: number,
             intervals: IInterval[],
             floats: Float32Array,
-            mid: number
+            mid: number,
             max: number,
+            middleTick: boolean,
         }): JSX.Element {
             return (
-                <group position={new Vector3(position)}>
+                <group position={new Vector3(position, -0.15, 0)}>
                     <lineSegments
                         geometry={needleGeometry(intervals, instance.lineColors, floats, mid, max)}
                         material={LINE_VERTEX_COLORS}/>
-                    <lineSegments geometry={SCALE_GEOMETRY} material={SCALE_LINE}/>
+                    <lineSegments geometry={scaleGeometry(middleTick)} material={SCALE_LINE}/>
                 </group>
             )
         }
@@ -121,6 +123,7 @@ export function StrainTab({floatFeatures, fabric}: {
                         floats={instance.strains}
                         mid={0}
                         max={maxStrain}
+                        middleTick={true}
                     />
                     <Scale
                         position={1.5}
@@ -128,6 +131,7 @@ export function StrainTab({floatFeatures, fabric}: {
                         floats={instance.stiffnesses}
                         mid={0}
                         max={maxStiffness}
+                        middleTick={false}
                     />
                 </scene>
             </Canvas>
@@ -136,6 +140,18 @@ export function StrainTab({floatFeatures, fabric}: {
 
     return <>
         <Grouping height="50%">
+            <div style={{
+                position: "absolute",
+                left: "6em",
+            }}>
+                Strain
+            </div>
+            <div style={{
+                position: "absolute",
+                right: "5em",
+            }}>
+                Stiffness
+            </div>
             <ScaleView/>
         </Grouping>
         <Grouping>
