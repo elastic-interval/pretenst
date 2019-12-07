@@ -234,7 +234,7 @@ function _omega(intervalIndex: u16): usize {
 const _CURRENT_LENGTHS = _OMEGAS + _16_INTERVALS
 
 @inline()
-function _currentLength(intervalIndex: u16): usize {
+function _idealLength(intervalIndex: u16): usize {
     return _CURRENT_LENGTHS + _32(intervalIndex)
 }
 
@@ -727,7 +727,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLen
     setOmegaIndex(intervalIndex, omega)
     zero(_unit(intervalIndex))
     setIntervalRole(intervalIndex, intervalRole)
-    initializeCurrentLength(intervalIndex, calculateRealLength(intervalIndex, intervalRole))
+    initializeIdealLength(intervalIndex, calculateRealLength(intervalIndex, intervalRole))
     setStiffness(intervalIndex, stiffness)
     setLinearDensity(intervalIndex, linearDensity)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
@@ -755,7 +755,7 @@ function copyIntervalFromOffset(intervalIndex: u16, offset: u16): void {
     setAlphaIndex(intervalIndex, alphaIndex(nextIndex))
     setOmegaIndex(intervalIndex, omegaIndex(nextIndex))
     setVector(_unit(intervalIndex), _unit(nextIndex))
-    initializeCurrentLength(intervalIndex, getCurrentLength(nextIndex))
+    initializeIdealLength(intervalIndex, getIdealLength(nextIndex))
     setStiffness(intervalIndex, getStiffness(nextIndex))
     setLinearDensity(intervalIndex, getLinearDensity(nextIndex))
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {
@@ -779,12 +779,12 @@ function setOmegaIndex(intervalIndex: u16, index: u16): void {
     setU16(_omega(intervalIndex), index)
 }
 
-function getCurrentLength(intervalIndex: u16): f32 {
-    return getF32(_currentLength(intervalIndex))
+function getIdealLength(intervalIndex: u16): f32 {
+    return getF32(_idealLength(intervalIndex))
 }
 
-function initializeCurrentLength(intervalIndex: u16, idealLength: f32): void {
-    setF32(_currentLength(intervalIndex), idealLength)
+function initializeIdealLength(intervalIndex: u16, idealLength: f32): void {
+    setF32(_idealLength(intervalIndex), idealLength)
 }
 
 function getStiffness(intervalIndex: u16): f32 {
@@ -812,7 +812,7 @@ export function setIntervalRole(intervalIndex: u16, intervalRole: u8): void {
 }
 
 export function changeRestLength(intervalIndex: u16, restLength: f32, countdown: u16): void {
-    initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
+    initializeIdealLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
     setIntervalStateLength(intervalIndex, REST_STATE, restLength)
     setIntervalBusyMaxTicks(intervalIndex, countdown)
     setIntervalBusyTicks(intervalIndex, countdown)
@@ -880,8 +880,8 @@ function calculateRealLength(intervalIndex: u16, intervalRole: IntervalRole): f3
     return normalize(_intervalUnit)
 }
 
-function interpolateCurrentLength(intervalIndex: u16, state: u8): f32 {
-    let currentLength = getCurrentLength(intervalIndex)
+function idealLengthNow(intervalIndex: u16, state: u8): f32 {
+    let currentLength = getIdealLength(intervalIndex)
     let intervalBusyTicks = getIntervalBusyTicks(intervalIndex)
     if (intervalBusyTicks === 0) {
         return currentLength
@@ -932,14 +932,17 @@ function outputIntervals(): void {
         let intervalRole = getIntervalRole(intervalIndex)
         let outputAlpha = _lineLocation(intervalIndex, false)
         let outputOmega = _lineLocation(intervalIndex, true)
+        let strain = getStrain(intervalIndex)
         if (intervalRole === IntervalRole.FacePull) {
             setVector(outputAlpha, _faceMidpoint(alphaIndex(intervalIndex)))
             setVector(outputOmega, _faceMidpoint(omegaIndex(intervalIndex)))
         } else {
             setVector(outputAlpha, _location(alphaIndex(intervalIndex)))
             setVector(outputOmega, _location(omegaIndex(intervalIndex)))
+            let extend = strain / 2 / maxStrain / 10 // TODO: this factor, and use length!
+            addScaledVector(outputAlpha, _unit(intervalIndex), extend)
+            addScaledVector(outputOmega, _unit(intervalIndex), -extend)
         }
-        let strain = getStrain(intervalIndex)
         let unboundedNuance: f32 = (strain + maxStrain) / (maxStrain * 2)
         let nuance: f32 = unboundedNuance < 0 ? 0 : unboundedNuance >= 1 ? 0.99999999 : unboundedNuance
         setStrainNuance(intervalIndex, nuance)
@@ -1085,31 +1088,30 @@ function pushPullEndZonePhysics(intervalIndex: u16, alphaFaceIndex: u16, omegaFa
         addScaledVector(_force(faceAlphaJointIndex), _A, pushAlphaJoint * orientationForce)
         addScaledVector(_force(faceOmegaJointIndex), _B, pushOmegaJoint * orientationForce)
     }
-
 }
 
 function intervalPhysics(intervalIndex: u16, state: u8, stage: Stage): void {
-    let currentLength = interpolateCurrentLength(intervalIndex, state)
+    let idealLength = idealLengthNow(intervalIndex, state)
     let intervalRole = getIntervalRole(intervalIndex)
     let push = isPush(intervalRole)
     if (push) {
         switch (stage) {
             case Stage.Growing:
             case Stage.Shaping:
-                currentLength *= 1 + getFeature(FabricFeature.ShapingPretenstFactor)
+                idealLength *= 1 + getFeature(FabricFeature.ShapingPretenstFactor)
                 break
             case Stage.Slack:
                 break
             case Stage.Realizing:
-                currentLength *= 1 + getFeature(FabricFeature.PretenstFactor) * getRealizingNuance()
+                idealLength *= 1 + getFeature(FabricFeature.PretenstFactor) * getRealizingNuance()
                 break
             case Stage.Realized:
-                currentLength *= 1 + getFeature(FabricFeature.PretenstFactor)
+                idealLength *= 1 + getFeature(FabricFeature.PretenstFactor)
                 break
         }
     }
     let realLength = calculateRealLength(intervalIndex, intervalRole)
-    let strain = (realLength - currentLength) / currentLength
+    let strain = (realLength - idealLength) / idealLength
     if (push && strain > 0 || !push && strain < 0) {
         strain = 0
     }
@@ -1129,8 +1131,8 @@ function intervalPhysics(intervalIndex: u16, state: u8, stage: Stage): void {
             addScaledVector(_force(faceOmegaJointIndex), _unit(intervalIndex), -force)
         }
         let endZone = getFeature(FabricFeature.FacePullEndZone)
-        if (currentLength <= endZone) {
-            let finalNuance: f32 = (endZone - currentLength) / endZone
+        if (idealLength <= endZone) {
+            let finalNuance: f32 = (endZone - idealLength) / endZone
             let orientationForce = getFeature(FabricFeature.FacePullOrientationForce)
             pushPullEndZonePhysics(intervalIndex, alphaFaceIndex, omegaFaceIndex, finalNuance, orientationForce)
         }
@@ -1138,7 +1140,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, stage: Stage): void {
         force /= 2
         addScaledVector(_force(alphaIndex(intervalIndex)), _unit(intervalIndex), force)
         addScaledVector(_force(omegaIndex(intervalIndex)), _unit(intervalIndex), -force)
-        let mass = currentLength * getLinearDensity(intervalIndex) / 2
+        let mass = idealLength * getLinearDensity(intervalIndex) / 2
         let _alphaMass = _intervalMass(alphaIndex(intervalIndex))
         setF32(_alphaMass, getF32(_alphaMass) + mass)
         let _omegaMass = _intervalMass(omegaIndex(intervalIndex))
@@ -1196,7 +1198,7 @@ function tick(maxIntervalBusyCountdown: u16, state: u8, stage: Stage): u16 {
         countdown--
         setIntervalBusyTicks(intervalIndex, countdown)
         if (countdown === 0) { // reached the end just now
-            initializeCurrentLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
+            initializeIdealLength(intervalIndex, getIntervalStateLength(intervalIndex, REST_STATE))
         }
     }
     let jointCount = getJointCount()
@@ -1244,7 +1246,7 @@ export function adoptLengths(): Stage {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         let lengthNow: f32 = calculateRealLength(intervalIndex, getIntervalRole(intervalIndex))
-        initializeCurrentLength(intervalIndex, lengthNow)
+        initializeIdealLength(intervalIndex, lengthNow)
         setIntervalStateLength(intervalIndex, REST_STATE, lengthNow)
     }
     let jointCount = getJointCount()
