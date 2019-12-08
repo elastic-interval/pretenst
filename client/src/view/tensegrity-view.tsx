@@ -10,16 +10,23 @@ import { Canvas } from "react-three-fiber"
 import { Button } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, fabricFeatureIntervalRole, Stage } from "../fabric/fabric-engine"
+import { FabricFeature, fabricFeatureIntervalRole, IntervalRole, Stage } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
-import { getRecentTenscript, IFeatureValue, IStoredState, transition } from "../storage/stored-state"
+import {
+    getRecentTenscript,
+    IFeatureValue,
+    IStoredState,
+    roleDefaultFromFeatures,
+    transition,
+} from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
+import { FeaturePanel } from "./feature-panel"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -85,9 +92,6 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                     return
                 }
                 fabric.instance.applyFeature(feature)
-                const freshValues = {...fabric.featureValues}
-                freshValues[feature.config.feature] = value
-                fabric.featureValues$.next(freshValues)
                 const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
                 if (intervalRole !== undefined) {
                     const engine = fabric.instance.engine
@@ -109,7 +113,10 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         location.hash = addNameToCode(newTenscript.code, newTenscript.name)
         mainInstance.engine.initInstance()
         mainInstance.forgetDimensions()
-        setFabric(new TensegrityFabric(floatFeatures, mainInstance, slackInstance, newTenscript))
+        Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach((feature: FloatFeature) => mainInstance.applyFeature(feature))
+        const roleDefaultLength = (intervalRole: IntervalRole) => roleDefaultFromFeatures(floatFeatures, intervalRole)
+        const numericFeature = (fabricFeature: FabricFeature) => storedState$.getValue().featureValues[fabricFeature].numeric
+        setFabric(new TensegrityFabric(roleDefaultLength, numericFeature, mainInstance, slackInstance, newTenscript))
         floatFeatures[FabricFeature.ShapingPretenstFactor].percent = 100
         floatFeatures[FabricFeature.ShapingDrag].percent = 100
         floatFeatures[FabricFeature.ShapingStiffnessFactor].percent = 100
@@ -176,25 +183,33 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                         </div>
                     </div>
                 ) : (
-                    <div id="tensegrity-view" className="h-100">
+                    <div className="h-100">
                         <TopMiddle fabric={fabric}/>
-                        <Canvas style={{
-                            backgroundColor: "black",
-                            borderStyle: "solid",
-                            borderColor: selectionMode || ellipsoids ? "#f0ad4e" : "black",
-                            cursor: selectionMode ? "pointer" : "all-scroll",
-                            borderWidth: "2px",
-                        }}>
-                            <FabricView
-                                fabric={fabric}
-                                selectedIntervals={selectedIntervals}
-                                selectedFaces={selectedFaces}
-                                setSelectedFaces={setSelectedFaces}
-                                selectionMode={selectionMode}
-                                ellipsoids={ellipsoids}
-                                storedState$={storedState$}
+                        <div id="bottom-middle">
+                            <FeaturePanel
+                                feature={floatFeatures[FabricFeature.VisualStrain]}
+                                disabled={false}
                             />
-                        </Canvas>
+                        </div>
+                        <div id="view-container" className="h-100">
+                            <Canvas style={{
+                                backgroundColor: "black",
+                                borderStyle: "solid",
+                                borderColor: selectionMode || ellipsoids ? "#f0ad4e" : "black",
+                                cursor: selectionMode ? "pointer" : "all-scroll",
+                                borderWidth: "2px",
+                            }}>
+                                <FabricView
+                                    fabric={fabric}
+                                    selectedIntervals={selectedIntervals}
+                                    selectedFaces={selectedFaces}
+                                    setSelectedFaces={setSelectedFaces}
+                                    selectionMode={selectionMode}
+                                    ellipsoids={ellipsoids}
+                                    storedState$={storedState$}
+                                />
+                            </Canvas>
+                        </div>
                     </div>
                 )}
             </div>

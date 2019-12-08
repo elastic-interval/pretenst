@@ -7,12 +7,14 @@
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Canvas } from "react-three-fiber"
+import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Geometry, Vector3 } from "three"
 
 import { FabricFeature } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IInterval } from "../fabric/tensegrity-types"
+import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
@@ -64,21 +66,22 @@ function needleGeometry(
     return geometry
 }
 
-export function StrainTab({floatFeatures, fabric}: {
+export function StrainTab({floatFeatures, fabric, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
+    storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
     const camera = useRef()
 
     function ScaleView(): JSX.Element {
         const [age, updateAge] = useState(0)
-        const [maxStrain, updateMaxStrain] = useState(fabric.featureValues[FabricFeature.MaxStrain].numeric)
-        const [maxStiffness, updateMaxStiffness] = useState(fabric.featureValues[FabricFeature.MaxStiffness].numeric)
+        const [maxStrain, updateMaxStrain] = useState(storedState$.getValue().featureValues[FabricFeature.MaxStrain].numeric)
+        const [maxStiffness, updateMaxStiffness] = useState(storedState$.getValue().featureValues[FabricFeature.MaxStiffness].numeric)
 
         useEffect(() => {
-            const sub = fabric.featureValues$.subscribe(featureValues => {
-                updateMaxStrain(featureValues[FabricFeature.MaxStrain].numeric)
-                updateMaxStiffness(featureValues[FabricFeature.MaxStiffness].numeric)
+            const sub = storedState$.subscribe(storedState => {
+                updateMaxStrain(storedState.featureValues[FabricFeature.MaxStrain].numeric)
+                updateMaxStiffness(storedState.featureValues[FabricFeature.MaxStiffness].numeric)
             })
             return () => sub.unsubscribe()
         }, [fabric])
@@ -155,8 +158,12 @@ export function StrainTab({floatFeatures, fabric}: {
             <ScaleView/>
         </Grouping>
         <Grouping>
-            {FEATURES.map(feature => <FeaturePanel key={FabricFeature[feature]} feature={floatFeatures[feature]}
-                                                   disabled={false}/>)}
+            {FEATURES.map(feature => (
+                <FeaturePanel
+                    key={FabricFeature[feature]}
+                    feature={floatFeatures[feature]}
+                    disabled={false}
+                />))}
         </Grouping>
     </>
 }

@@ -6,11 +6,11 @@
 
 import { BehaviorSubject } from "rxjs"
 
-import { IStoredState } from "../storage/stored-state"
+import { IFeatureValue, IStoredState, transition } from "../storage/stored-state"
 
 import { FABRIC_FEATURES, FabricFeature } from "./fabric-engine"
 
-interface IFeatureConfig {
+export interface IFeatureConfig {
     feature: FabricFeature
     name: string
     defaultValue: number
@@ -19,7 +19,7 @@ interface IFeatureConfig {
 
 const FEATURE_PERCENTS = [50, 75, 90, 100, 125, 150, 200]
 
-function featureConfig(feature: FabricFeature): IFeatureConfig {
+export function featureConfig(feature: FabricFeature): IFeatureConfig {
     switch (feature) {
         case FabricFeature.Gravity:
             return {
@@ -110,7 +110,14 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
                 feature,
                 name: "Maximum Strain",
                 defaultValue: 0.1,
-                percents: [10, 20, 30, 40, 50, 100, 200],
+                percents: [1, 2, 3, 5, 8, 13, 21, 34, 55, 100],
+            }
+        case FabricFeature.VisualStrain:
+            return {
+                feature,
+                name: "Visual Strain",
+                defaultValue: 1,
+                percents: [0, 10, 50, 100, 200, 300, 500, 1000, 10000, 100000],
             }
         case FabricFeature.PushOverPull:
             return {
@@ -192,20 +199,6 @@ function featureConfig(feature: FabricFeature): IFeatureConfig {
     }
 }
 
-interface IFeatureValue {
-    numeric: number
-    percent: number,
-}
-
-export function defaultFeatureValues(): Record<FabricFeature, IFeatureValue> {
-    return FABRIC_FEATURES
-        .map(featureConfig)
-        .reduce((record, config) => {
-            record[config.feature] = ({percent: 100, numeric: config.defaultValue})
-            return record
-        }, {} as Record<FabricFeature, IFeatureValue>)
-}
-
 export class FloatFeature {
     private value$: BehaviorSubject<IFeatureValue>
 
@@ -219,8 +212,9 @@ export class FloatFeature {
         this.value$ = new BehaviorSubject<IFeatureValue>(initialValue)
         this.value$.subscribe(value => {
             const storedState = storedState$.getValue()
-            storedState.featureValues[config.feature] = value
-            storedState$.next(storedState)
+            const featureValues = {...storedState.featureValues} as Record<FabricFeature, IFeatureValue>
+            featureValues[config.feature] = value
+            storedState$.next(transition(storedState, {featureValues}))
         })
     }
 

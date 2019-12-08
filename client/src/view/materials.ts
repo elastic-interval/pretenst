@@ -10,6 +10,27 @@ import { IntervalRole } from "../fabric/fabric-engine"
 export const SELECTION_COLOR = "#91934f"
 export const SCALE_LINE_COLOR = "#cace02"
 
+const RAINBOW_GRADIENT = [
+    "#fc4d4d",
+    "#fb712a",
+    "#ed9400",
+    "#d4b500",
+    "#afd200",
+    "#80da52",
+    "#4edd83",
+    "#00ddad",
+    "#00c4d7",
+    "#00a5ff",
+    "#007bff",
+    "#2329f7",
+].reverse()
+
+const RAINBOW_COLORS = RAINBOW_GRADIENT.map(colorString => new Color(colorString))
+
+// console.log("RAINBOW\n",`const RAINBOW: f32[] = [\n${RAINBOW_COLORS.map(color => (
+//     `${(color.r).toFixed(4)}, ${(color.g).toFixed(4)}, ${(color.b).toFixed(4)}`
+// )).join(",\n")}\n]`)
+
 const lights = true
 
 export const SURFACE = new MeshPhongMaterial({
@@ -45,50 +66,11 @@ export const SELECT_MATERIAL = new MeshPhongMaterial({
     lights: true,
 })
 
-function generateRainbow(): Color[] {
-    const steps = 50
-    const rgbs: Color[] = []
-    const twoThirds = Math.PI * 2 / 3
-    const max = 2 * twoThirds
-    for (let step = 0; step < max; step += max / steps) {
-        const angle = step + Math.PI / 2
-        const r = (1 + Math.sin(angle + twoThirds))
-        const g = (1 + Math.sin(angle + 2 * twoThirds))
-        const b = (1 + Math.sin(angle))
-        rgbs.push(new Color(r, g, b))
-    }
-    // Generates code for a WASM constant:
-    // const roleColors = Object.keys(IntervalRole).filter(role => role.length > 1).map(roleKey => {
-    //     const role: IntervalRole = IntervalRole[roleKey]
-    //     const color = roleColor(role)
-    //     const r = color.r
-    //     const g = color.g
-    //     const b = color.b
-    //     const length = Math.sqrt(r*r + g*g + b*b)
-    //     const rr = r/length
-    //     const gg = g/length
-    //     const bb = b/length
-    //     return `[${rr.toFixed(3)}, ${gg.toFixed(3)}, ${bb.toFixed(3)}],`
-    // })
-    // console.log("ROLES\n", roleColors.join("\n"))
-    // console.log(`const RAINBOW: f32[] = [\n${rgbs.map((color, index) => {
-    //     const r = color.r
-    //     const g = color.g
-    //     const b = color.b
-    //     const length = Math.sqrt(r * r + g * g + b * b)
-    //     const rr = r / length
-    //     const gg = g / length
-    //     const bb = b / length
-    //     return `${rr.toFixed(3)}, ${gg.toFixed(3)}, ${bb.toFixed(3)}, // ${index}`
-    // }).join("\n")}\n]`)
-    return rgbs
-}
-
-const RAINBOW = generateRainbow().map(color => new MeshPhongMaterial({color, lights}))
+const RAINBOW_PHONG = RAINBOW_COLORS.map(color => new MeshPhongMaterial({color}))
 
 export function rainbowMaterial(nuance: number): Material {
-    const index = Math.floor(nuance * RAINBOW.length)
-    return RAINBOW[index >= RAINBOW.length ? RAINBOW.length - 1 : index]
+    const index = Math.floor(nuance * RAINBOW_PHONG.length)
+    return RAINBOW_PHONG[index >= RAINBOW_PHONG.length ? RAINBOW_PHONG.length - 1 : index]
 }
 
 export function roleColorString(intervalRole?: IntervalRole): string | undefined {

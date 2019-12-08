@@ -38,7 +38,7 @@ export class TensegrityBuilder {
 
     private faceMarks: Record<number, IFace[]> = {}
 
-    constructor(public readonly fabric: TensegrityFabric) {
+    constructor(public readonly fabric: TensegrityFabric, private numericFeature: (fabricFeature: FabricFeature) => number) {
     }
 
     public get markFace(): (mark: number, face: IFace) => void {
@@ -63,7 +63,7 @@ export class TensegrityBuilder {
         const scaleB = scaleA * percentToFactor(scale)
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
         const faceB = brickB.faces[brickB.base]
-        const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
+        const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
         const connector = this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
         if (!connector) {
             console.error("Cannot connect!")
@@ -91,7 +91,7 @@ export class TensegrityBuilder {
                 return true
             }
             this.fabric.removeFacePull(facePull)
-            const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
+            const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
             if (!this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)) {
                 console.log("Unable to connect")
             }
@@ -190,7 +190,7 @@ export class TensegrityBuilder {
                 pairs.push({scale, a, x, b, y})
             })
         })
-        const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
+        const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
             fabric.createInterval(x, y, IntervalRole.BowMid, scale, countdown)
             const ax = fabric.findInterval(a, x)
@@ -276,7 +276,7 @@ export class TensegrityBuilder {
     }
 
     private createBrick(points: Vector3[], base: Triangle, scale: IPercent): IBrick {
-        const countdown = this.fabric.featureValue(FabricFeature.IntervalCountdown)
+        const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
         const brick = initialBrick(this.fabric.bricks.length, base, scale)
         this.fabric.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.fabric.createJointIndex(idx, p))

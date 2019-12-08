@@ -7,10 +7,8 @@ import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, CylinderGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
 import { IFabricOutput, IOutputInterval } from "../storage/download"
-import { IFeatureValue, roleDefaultLength } from "../storage/stored-state"
 
 import { FabricFeature, IFabricEngine, IntervalRole, isPush, Laterality, Stage } from "./fabric-engine"
-import { FloatFeature } from "./fabric-features"
 import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life, stiffnessToLinearDensity } from "./life"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
@@ -45,7 +43,6 @@ function scaleToStiffness(scale: IPercent): number {
 
 export class TensegrityFabric {
     public life$: BehaviorSubject<Life>
-    public featureValues$: BehaviorSubject<Record<FabricFeature, IFeatureValue>>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
     public facePulls: IFacePull[] = []
@@ -67,19 +64,14 @@ export class TensegrityFabric {
     private _linesGeometry = new BufferGeometry()
 
     constructor(
-        public readonly floatFeatures: Record<FabricFeature, FloatFeature>,
+        public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
+        public readonly numericFeature: (fabricFeature: FabricFeature) => number,
         public readonly instance: FabricInstance,
         public readonly slackInstance: FabricInstance,
         public readonly tenscript: ITenscript,
     ) {
-        this.life$ = new BehaviorSubject(new Life(this, Stage.Growing))
-        this.builder = new TensegrityBuilder(this)
-        const initialValues = {} as Record<FabricFeature, IFeatureValue>
-        Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach((feature: FloatFeature) => {
-            this.instance.applyFeature(feature)
-            initialValues[feature.config.feature]= feature.value
-        })
-        this.featureValues$ = new BehaviorSubject<Record<FabricFeature, IFeatureValue>>(initialValues)
+        this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
+        this.builder = new TensegrityBuilder(this, numericFeature)
         const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred())
         this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
         this.bricks = [brick]
@@ -96,14 +88,6 @@ export class TensegrityFabric {
             return
         }
         this.life$.next(this.life.withStage(stage, prefs))
-    }
-
-    public get featureValues(): Record<FabricFeature, IFeatureValue> {
-        return this.featureValues$.getValue()
-    }
-
-    public featureValue(feature: FabricFeature): number {
-        return this.featureValues[feature].numeric
     }
 
     public connectFaces(faces: IFace[]): void {
@@ -157,7 +141,7 @@ export class TensegrityFabric {
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, coundown: number): IInterval {
         const scaleFactor = percentToFactor(scale)
-        const defaultLength = roleDefaultLength(this.featureValues, intervalRole)
+        const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const stiffness = scaleToStiffness(scale)
         const linearDensity = stiffnessToLinearDensity(stiffness)
@@ -179,7 +163,7 @@ export class TensegrityFabric {
         interval.intervalRole = intervalRole
         const engine = this.instance.engine
         engine.setIntervalRole(interval.index, intervalRole)
-        engine.changeRestLength(interval.index, percentToFactor(scaleFactor) * roleDefaultLength(this.featureValues, intervalRole), countdown)
+        engine.changeRestLength(interval.index, percentToFactor(scaleFactor) * this.roleDefaultLength(intervalRole), countdown)
     }
 
     public removeInterval(interval: IInterval): void {
@@ -322,25 +306,27 @@ export class TensegrityFabric {
         ))
     }
 
-    public orientInterval(interval: IInterval, radiusFactor: number): { scale: Vector3, rotation: Quaternion } {
+    public orientInterval(interval: IInterval, radiusFactor: number, visualStrain: number): { scale: Vector3, rotation: Quaternion } {
         const Y_AXIS = new Vector3(0, 1, 0)
         const unit = this.instance.unitVector(interval.index)
         const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
         const alphaLocation = this.instance.location(interval.alpha.index)
         const omegaLocation = this.instance.location(interval.omega.index)
         const intervalLength = alphaLocation.distanceTo(omegaLocation)
-        const scale = new Vector3(radiusFactor, intervalLength / 2, radiusFactor)
+        const strain = this.instance.strains[interval.index]
+        const half = intervalLength / 2
+        const scale = new Vector3(radiusFactor, half + half * (-strain) * visualStrain, radiusFactor)
         return {scale, rotation}
     }
 
-    public orientVectorPair(a: Vector3, b: Vector3, radiusFactor: number): { scale: Vector3, rotation: Quaternion } {
-        const Y_AXIS = new Vector3(0, 1, 0)
-        const unit = new Vector3().subVectors(b, a).normalize()
-        const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
-        const distance = a.distanceTo(b)
-        const scale = new Vector3(radiusFactor, distance, radiusFactor)
-        return {scale, rotation}
-    }
+    // public orientVectorPair(a: Vector3, b: Vector3, radiusFactor: number): { scale: Vector3, rotation: Quaternion } {
+    //     const Y_AXIS = new Vector3(0, 1, 0)
+    //     const unit = new Vector3().subVectors(b, a).normalize()
+    //     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
+    //     const distance = a.distanceTo(b)
+    //     const scale = new Vector3(radiusFactor, distance, radiusFactor)
+    //     return {scale, rotation}
+    // }
 
     public get output(): IFabricOutput {
         const numberToString = (n: number) => n.toFixed(5).replace(/[.]/, ",")
@@ -350,7 +336,7 @@ export class TensegrityFabric {
         return {
             name: this.tenscript.name,
             joints: this.joints.map(joint => {
-                const vector = this.slackInstance.location(joint.index)
+                const vector = this.instance.location(joint.index)
                 return {
                     index: (joint.index + 1).toString(),
                     x: numberToString(vector.x),

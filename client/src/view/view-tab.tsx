@@ -92,6 +92,7 @@ export function ViewTab({floatFeatures, fabric, storedState$}: {
                         <span><FaCircle/> Roles</span>
                     </ViewButton>
                 </ButtonGroup>
+                <FeaturePanel key="vs" feature={floatFeatures[FabricFeature.VisualStrain]} disabled={false}/>
                 <FeaturePanel key="sthresh" feature={floatFeatures[FabricFeature.SlackThreshold]} disabled={false}/>
             </Grouping>
             <Grouping>

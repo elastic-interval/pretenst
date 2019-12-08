@@ -3,8 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, Stage } from "./fabric-engine"
-import { FloatFeature } from "./fabric-features"
+import { FABRIC_FEATURES, FabricFeature, Stage } from "./fabric-engine"
 import { TensegrityFabric } from "./tensegrity-fabric"
 import { IInterval } from "./tensegrity-types"
 
@@ -16,14 +15,14 @@ export interface ITransitionPrefs {
 export class Life {
     private _stage: Stage
 
-    constructor(private fabric: TensegrityFabric, stage: Stage) {
+    constructor(private numericFeature: (fabricFeature: FabricFeature) => number, private fabric: TensegrityFabric, stage: Stage) {
         this._stage = stage
     }
 
     public withStage(stage: Stage, prefs?: ITransitionPrefs): Life {
         this.transition(stage, prefs)
         this._stage = stage
-        return new Life(this.fabric, stage)
+        return new Life(this.numericFeature, this.fabric, stage)
     }
 
     public get stage(): Stage {
@@ -69,7 +68,8 @@ export class Life {
                 switch (stage) {
                     case Stage.Slack:
                         if (prefs && prefs.strainToStiffness) {
-                            const {newStiffnesses, newLinearDensities} = adjustedStiffness(this.fabric)
+                            const pushOverPull = this.numericFeature(FabricFeature.PushOverPull)
+                            const {newStiffnesses, newLinearDensities} = adjustedStiffness(this.fabric, pushOverPull)
                             this.restore()
                             const instance = this.fabric.instance
                             newStiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
@@ -96,10 +96,9 @@ export class Life {
 
     private restore(): void {
         this.fabric.instance.engine.cloneInstance(this.fabric.slackInstance.index, this.fabric.instance.index)
-        const floatFeatures = this.fabric.floatFeatures
-        Object.keys(floatFeatures)
-            .map(k => floatFeatures[k] as FloatFeature)
-            .forEach(feature => this.fabric.instance.applyFeature(feature))
+        FABRIC_FEATURES.forEach(fabricFeature => {
+            this.fabric.instance.setFeatureValue(fabricFeature, this.numericFeature(fabricFeature))
+        })
     }
 }
 
@@ -107,11 +106,10 @@ export function stiffnessToLinearDensity(stiffness: number): number {
     return Math.sqrt(stiffness)
 }
 
-function adjustedStiffness(fabric: TensegrityFabric): {
+function adjustedStiffness(fabric: TensegrityFabric, pushOverPull: number): {
     newStiffnesses: Float32Array,
     newLinearDensities: Float32Array,
 } {
-    const pushOverPull = fabric.featureValues[FabricFeature.PushOverPull].numeric
     const strains: Float32Array = fabric.instance.strains
     const existingStiffnesses = fabric.instance.stiffnesses
     const getAverageStrain = (toAverage: IInterval[]) => {

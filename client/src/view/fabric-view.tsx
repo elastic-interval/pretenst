@@ -42,7 +42,7 @@ declare global {
 }
 
 const SUN_POSITION = new Vector3(0, 600, 0)
-const HEMISPHERE_COLOR = new Color("white")
+const HEMISPHERE_COLOR = new Color("#bababa")
 const AMBIENT_COLOR = new Color("#bababa")
 const SPACE_RADIUS = 100
 const SPACE_SCALE = 1
@@ -65,7 +65,7 @@ export function FabricView({
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const tensegrityView = document.getElementById("tensegrity-view") as HTMLElement
+    const viewContainer = document.getElementById("view-container") as HTMLElement
     const [age, setAge] = useState(0)
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
@@ -81,15 +81,9 @@ export function FabricView({
     }, [fabric])
 
     const [storedState, updateStoredState] = useState(storedState$.getValue())
-    const [pushRadius, updatePushRadius] = useState(storedState$.getValue().featureValues[FabricFeature.PushRadiusFactor].numeric)
-    const [pullRadius, updatePullRadius] = useState(storedState$.getValue().featureValues[FabricFeature.PullRadiusFactor].numeric)
     useEffect(() => {
-        const subscription = storedState$.subscribe(newState => {
-            updateStoredState(newState)
-            updatePushRadius(newState.featureValues[FabricFeature.PushRadiusFactor].numeric)
-            updatePullRadius(newState.featureValues[FabricFeature.PullRadiusFactor].numeric)
-        })
-        return () => subscription.unsubscribe()
+        const sub = storedState$.subscribe(newState => updateStoredState(newState))
+        return () => sub.unsubscribe()
     }, [])
     useEffect(() => {
         orbit.current.autoRotate = storedState.rotating
@@ -144,19 +138,21 @@ export function FabricView({
 
     return (
         <group>
-            <orbit ref={orbit} args={[perspective, tensegrityView]}/>
+            <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
                 {ellipsoids ? (
                     <EllipsoidView
-                        fabric={fabric} selectedIntervals={selectedIntervals}
-                        showPushes={storedState.showPushes} showPulls={storedState.showPulls}
-                        pushRadius={pushRadius} pullRadius={pullRadius}
+                        key="ellipsoid"
+                        fabric={fabric}
+                        selectedIntervals={selectedIntervals}
+                        storedState={storedState}
                     />
                 ) : (
                     <LineView
-                        fabric={fabric} selectedIntervals={selectedIntervals}
-                        showPushes={storedState.showPushes} showPulls={storedState.showPulls}
-                        pushRadius={pushRadius} pullRadius={pullRadius}
+                        key="lines"
+                        fabric={fabric}
+                        selectedIntervals={selectedIntervals}
+                        storedState={storedState}
                     />
                 )}
                 {!selectionMode ? undefined : (
@@ -190,24 +186,23 @@ function SelectedFace({fabric, face}: { fabric: TensegrityFabric, face: IFace })
     )
 }
 
-function IntervalMesh({fabric, interval, pushRadius, pullRadius, showPushes, showPulls}: {
+function IntervalMesh({fabric, interval, storedState}: {
     fabric: TensegrityFabric,
     interval: IInterval,
-    pushRadius: number,
-    pullRadius: number,
-    showPushes: boolean,
-    showPulls: boolean,
+    storedState: IStoredState,
 }): JSX.Element | null {
+
     let material = roleMaterial(interval.intervalRole)
-    if (showPushes || showPulls) {
+    if (storedState.showPushes || storedState.showPulls) {
         material = rainbowMaterial(fabric.instance.strainNuances[interval.index])
-        if (!(showPushes && showPulls) && (showPushes && !interval.isPush || showPulls && interval.isPush)) {
+        if (!(storedState.showPushes && storedState.showPulls) && (storedState.showPushes && !interval.isPush || storedState.showPulls && interval.isPush)) {
             return <group/>
         }
     }
     const linearDensity = fabric.instance.linearDensities[interval.index]
-    const radiusFactor = interval.isPush ? pushRadius : pullRadius
-    const {scale, rotation} = fabric.orientInterval(interval, radiusFactor * linearDensity)
+    const radiusFactor = storedState.featureValues[interval.isPush ? FabricFeature.PushRadiusFactor : FabricFeature.PullRadiusFactor]
+    const visualStrain = storedState.featureValues[FabricFeature.VisualStrain]
+    const {scale, rotation} = fabric.orientInterval(interval, radiusFactor.numeric * linearDensity, visualStrain.numeric)
     return (
         <mesh
             geometry={SPHERE}
@@ -220,49 +215,51 @@ function IntervalMesh({fabric, interval, pushRadius, pullRadius, showPushes, sho
     )
 }
 
-function EllipsoidView({fabric, selectedIntervals, pushRadius, pullRadius, showPushes, showPulls}: {
+function EllipsoidView({fabric, selectedIntervals, storedState}: {
     fabric: TensegrityFabric,
     selectedIntervals: IInterval[],
-    pushRadius: number,
-    pullRadius: number,
-    showPushes: boolean,
-    showPulls: boolean,
+    storedState: IStoredState,
 }): JSX.Element {
     return (
         <group>
             {selectedIntervals.length > 0 ? selectedIntervals.map(interval => (
-                <IntervalMesh key={`SI${interval.index}`}
-                              fabric={fabric} interval={interval}
-                              pushRadius={pushRadius} pullRadius={pullRadius}
-                              showPushes={showPushes} showPulls={showPulls}
+                <IntervalMesh
+                    key={`SI${interval.index}`}
+                    fabric={fabric}
+                    interval={interval}
+                    storedState={storedState}
                 />
             )) : fabric.intervals.map(interval => (
-                <IntervalMesh key={`I${interval.index}`}
-                              fabric={fabric} interval={interval}
-                              pushRadius={pushRadius} pullRadius={pullRadius}
-                              showPushes={showPushes} showPulls={showPulls}
+                <IntervalMesh
+                    key={`I${interval.index}`}
+                    fabric={fabric}
+                    interval={interval}
+                    storedState={storedState}
                 />
             ))}}
         </group>
     )
 }
 
-function LineView({fabric, selectedIntervals, pushRadius, pullRadius, showPushes, showPulls}: {
+function LineView({fabric, selectedIntervals, storedState}: {
     fabric: TensegrityFabric,
     selectedIntervals: IInterval[],
-    pushRadius: number,
-    pullRadius: number,
-    showPushes: boolean,
-    showPulls: boolean,
+    storedState: IStoredState,
 }): JSX.Element {
     return (
         <group>
-            <lineSegments key="lines" geometry={fabric.linesGeometry} material={LINE_VERTEX_COLORS}/>
+            <lineSegments
+                key="lines"
+                geometry={fabric.linesGeometry}
+                material={LINE_VERTEX_COLORS}
+            />
             {selectedIntervals.map(interval => (
-                <IntervalMesh key={`SI${interval.index}`}
-                              fabric={fabric} interval={interval}
-                              pushRadius={pushRadius} pullRadius={pullRadius}
-                              showPushes={showPushes} showPulls={showPulls}/>
+                <IntervalMesh
+                    key={`SI${interval.index}`}
+                    fabric={fabric}
+                    interval={interval}
+                    storedState={storedState}
+                />
             ))}
         </group>
     )

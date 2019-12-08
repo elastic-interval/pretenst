@@ -10,7 +10,7 @@ import { BehaviorSubject } from "rxjs"
 import { App } from "./app"
 import { API_URI } from "./constants"
 import { IFabricEngine } from "./fabric/fabric-engine"
-import { createFloatFeatures } from "./fabric/fabric-features"
+import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
 import { FabricKernel } from "./fabric/fabric-kernel"
 import registerServiceWorker from "./service-worker"
 import { RemoteStorage } from "./storage/remote-storage"
@@ -43,7 +43,7 @@ async function start(): Promise<void> {
     const engine = await getFabricEngine()
     const fabricKernel = new FabricKernel(engine)
     const root = document.getElementById("root") as HTMLElement
-    const storedState$ = new BehaviorSubject(loadState())
+    const storedState$ = new BehaviorSubject(loadState(featureConfig))
     storedState$.subscribe(newState => saveState(newState))
     if (TENSEGRITY) {
         console.log("Starting Pretenst..")

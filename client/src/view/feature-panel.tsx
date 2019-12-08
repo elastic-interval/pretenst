@@ -26,6 +26,14 @@ export function FeaturePanel({feature, disabled}: {
     const roleColor = roleColorString(fabricFeatureIntervalRole(feature.fabricFeature))
     const color = roleColor ? roleColor : "#919191"
 
+    function percentLabel(percent: number): string {
+        if (percent <= 100) {
+            return `${percent}%`
+        } else {
+            return `${percent / 100}x`
+        }
+    }
+
     return (
         <div className="my-2">
             <div className="float-right" style={{
@@ -49,7 +57,7 @@ export function FeaturePanel({feature, disabled}: {
                             }}
                             key={`${feature.config.name}:${percent}`}
                             onClick={() => feature.percent = percent}
-                        >{percent}%</Button>
+                        >{percentLabel(percent)}</Button>
                     )
                 })}
             </ButtonGroup>

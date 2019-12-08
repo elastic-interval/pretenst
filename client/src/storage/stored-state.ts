@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, SurfaceCharacter } from "../fabric/fabric-engine"
-import { defaultFeatureValues } from "../fabric/fabric-features"
+import { FABRIC_FEATURES, FabricFeature, IntervalRole, SurfaceCharacter } from "../fabric/fabric-engine"
+import { IFeatureConfig } from "../fabric/fabric-features"
 import { addNameToCode, codeToTenscript, ITenscript } from "../fabric/tenscript"
 
 export enum ControlTab {
@@ -19,7 +19,7 @@ export function enumValues(e: object): number[] {
     return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
 
-const VERSION = "2019-12-5"
+const VERSION = "2019-12-8"
 
 export interface IFeatureValue {
     numeric: number
@@ -57,7 +57,7 @@ export function getRecentTenscript(state: IStoredState): ITenscript[] {
     })
 }
 
-export function roleDefaultLength(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
+export function roleDefaultFromFeatures(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
     if (intervalRole === IntervalRole.FacePull) {
         throw new Error()
     }
@@ -68,18 +68,26 @@ export function transition(state: IStoredState, partial: Partial<IStoredState>):
     return {...state, nonce: state.nonce + 1, ...partial}
 }
 
-const INITIAL_STORED_STATE: IStoredState = {
-    version: VERSION,
-    nonce: 0,
-    surfaceCharacter: SurfaceCharacter.Frozen,
-    featureValues: defaultFeatureValues(),
-    recentCode: {},
-    controlTab: ControlTab.Grow,
-    fullScreen: true,
-    ellipsoids: false,
-    rotating: false,
-    showPushes: true,
-    showPulls: true,
+function initialStoredState(toConfig: (feature: FabricFeature) => IFeatureConfig): IStoredState {
+    const DEFAULT_FEATURE_VALUES = FABRIC_FEATURES.map(toConfig)
+        .reduce((record, config) => {
+            record[config.feature] = ({percent: 100, numeric: config.defaultValue})
+            return record
+        }, {} as Record<FabricFeature, IFeatureValue>)
+
+    return ({
+        version: VERSION,
+        nonce: 0,
+        surfaceCharacter: SurfaceCharacter.Frozen,
+        featureValues: DEFAULT_FEATURE_VALUES,
+        recentCode: {},
+        controlTab: ControlTab.Grow,
+        fullScreen: true,
+        ellipsoids: false,
+        rotating: false,
+        showPushes: true,
+        showPulls: true,
+    })
 }
 
 const STORED_STATE_KEY = "State"
@@ -88,7 +96,7 @@ export function saveState(storedState: IStoredState): void {
     localStorage.setItem(STORED_STATE_KEY, JSON.stringify(storedState))
 }
 
-export function loadState(): IStoredState {
+export function loadState(toConfig: (feature: FabricFeature) => IFeatureConfig): IStoredState {
     const item = localStorage.getItem(STORED_STATE_KEY)
     if (item) {
         const storedState = JSON.parse(item) as IStoredState
@@ -96,5 +104,5 @@ export function loadState(): IStoredState {
             return storedState
         }
     }
-    return INITIAL_STORED_STATE
+    return initialStoredState(toConfig)
 }

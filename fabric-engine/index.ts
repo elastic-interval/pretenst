@@ -31,6 +31,7 @@ export enum FabricFeature {
     ShapingStiffnessFactor = 10,
     ShapingDrag = 11,
     MaxStrain = 12,
+    VisualStrain = 13,
 }
 
 enum SurfaceCharacter {
@@ -925,6 +926,7 @@ export function setColoring(pushes: boolean, pulls: boolean): void {
 
 function outputIntervals(): void {
     let maxStrain = getFeature(FabricFeature.MaxStrain)
+    let visualStrain = getFeature(FabricFeature.VisualStrain)
     let intervalCount = getIntervalCount()
     setFaceMidpoints()
     let slackThreshold = getFeature(FabricFeature.SlackThreshold)
@@ -939,7 +941,7 @@ function outputIntervals(): void {
         } else {
             setVector(outputAlpha, _location(alphaIndex(intervalIndex)))
             setVector(outputOmega, _location(omegaIndex(intervalIndex)))
-            let extend = strain / 2 / maxStrain / 10 // TODO: this factor, and use length!
+            let extend = strain / 2 * visualStrain
             addScaledVector(outputAlpha, _unit(intervalIndex), extend)
             addScaledVector(outputOmega, _unit(intervalIndex), -extend)
         }
@@ -1421,44 +1423,16 @@ export function _fabricFeatures(): usize {
 }
 
 const RAINBOW: f32[] = [
-    0.25000, 0.20000, 1.00000,
-    0.20611, 0.23731, 0.99726,
-    0.16543, 0.27639, 0.98907,
-    0.12843, 0.31684, 0.97553,
-    0.09549, 0.35819, 0.95677,
-    0.06699, 0.40000, 0.93301,
-    0.04323, 0.44181, 0.90451,
-    0.02447, 0.48316, 0.87157,
-    0.01093, 0.52361, 0.83457,
-    0.00274, 0.56269, 0.79389,
-    0.00000, 0.60000, 0.75000,
-    0.00274, 0.63511, 0.70337,
-    0.01093, 0.66765, 0.65451,
-    0.02447, 0.69726, 0.60396,
-    0.04323, 0.72361, 0.55226,
-    0.06699, 0.74641, 0.50000,
-    0.09549, 0.76542, 0.44774,
-    0.12843, 0.78042, 0.39604,
-    0.16543, 0.79126, 0.34549,
-    0.20611, 0.79781, 0.29663,
-    0.25000, 0.80000, 0.25000,
-    0.29663, 0.79781, 0.20611,
-    0.34549, 0.79126, 0.16543,
-    0.39604, 0.78042, 0.12843,
-    0.44774, 0.76542, 0.09549,
-    0.50000, 0.74641, 0.06699,
-    0.55226, 0.72361, 0.04323,
-    0.60396, 0.69726, 0.02447,
-    0.65451, 0.66765, 0.01093,
-    0.70337, 0.63511, 0.00274,
-    0.75000, 0.60000, 0.00000,
-    0.79389, 0.56269, 0.00274,
-    0.83457, 0.52361, 0.01093,
-    0.87157, 0.48316, 0.02447,
-    0.90451, 0.44181, 0.04323,
-    0.93301, 0.40000, 0.06699,
-    0.95677, 0.35819, 0.09549,
-    0.97553, 0.31684, 0.12843,
-    0.98907, 0.27639, 0.16543,
-    0.99726, 0.23731, 0.20611,
+    0.1373, 0.1608, 0.9686,
+    0.0000, 0.4824, 1.0000,
+    0.0000, 0.6471, 1.0000,
+    0.0000, 0.7686, 0.8431,
+    0.0000, 0.8667, 0.6784,
+    0.3059, 0.8667, 0.5137,
+    0.5020, 0.8549, 0.3216,
+    0.6863, 0.8235, 0.0000,
+    0.8314, 0.7098, 0.0000,
+    0.9294, 0.5804, 0.0000,
+    0.9843, 0.4431, 0.1647,
+    0.9882, 0.3020, 0.3020,
 ]

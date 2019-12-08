@@ -35,6 +35,7 @@ export enum FabricFeature {
     ShapingStiffnessFactor = 10,
     ShapingDrag = 11,
     MaxStrain = 12,
+    VisualStrain = 13,
 
     NexusPushLength = 20,
     ColumnPushLength = 21,

@@ -132,6 +132,7 @@ export function ControlTabs({
                         <StrainTab
                             floatFeatures={floatFeatures}
                             fabric={fabric}
+                            storedState$={storedState$}
                         />
                     )
             }
