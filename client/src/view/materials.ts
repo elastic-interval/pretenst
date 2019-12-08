@@ -3,7 +3,15 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Color, DoubleSide, LineBasicMaterial, Material, MeshPhongMaterial, VertexColors } from "three"
+import {
+    Color,
+    DoubleSide,
+    LineBasicMaterial,
+    Material,
+    MeshLambertMaterial,
+    MeshPhongMaterial,
+    VertexColors,
+} from "three"
 
 import { IntervalRole } from "../fabric/fabric-engine"
 
@@ -66,11 +74,11 @@ export const SELECT_MATERIAL = new MeshPhongMaterial({
     lights: true,
 })
 
-const RAINBOW_PHONG = RAINBOW_COLORS.map(color => new MeshPhongMaterial({color}))
+const RAINBOW_LAMBERT = RAINBOW_COLORS.map(color => new MeshLambertMaterial({color, lights}))
 
 export function rainbowMaterial(nuance: number): Material {
-    const index = Math.floor(nuance * RAINBOW_PHONG.length)
-    return RAINBOW_PHONG[index >= RAINBOW_PHONG.length ? RAINBOW_PHONG.length - 1 : index]
+    const index = Math.floor(nuance * RAINBOW_LAMBERT.length)
+    return RAINBOW_LAMBERT[index >= RAINBOW_LAMBERT.length ? RAINBOW_LAMBERT.length - 1 : index]
 }
 
 export function roleColorString(intervalRole?: IntervalRole): string | undefined {
@@ -102,5 +110,5 @@ export function roleColor(intervalRole?: IntervalRole): Color {
 
 export function roleMaterial(intervalRole: IntervalRole): Material {
     const color = roleColor(intervalRole)
-    return new MeshPhongMaterial({color, lights})
+    return new MeshLambertMaterial({color, lights})
 }

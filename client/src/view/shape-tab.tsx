@@ -86,12 +86,12 @@ export function ShapeTab({
         setFabric(fabric)
     }
 
-    function disabled(): boolean {
-        return selectionMode || ellipsoids || life.stage !== Stage.Shaping
+    function shapeDisabled(): boolean {
+        return ellipsoids || life.stage !== Stage.Shaping
     }
 
     function disableUnlessFaceCount(faceCount: number): boolean {
-        if (disabled()) {
+        if (shapeDisabled()) {
             return true
         }
         return selectedFaces.length < faceCount || ellipsoids
@@ -110,13 +110,13 @@ export function ShapeTab({
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
                         color={selectionMode ? "warning" : "secondary"}
-                        disabled={disabled()}
+                        disabled={shapeDisabled() && !selectionMode}
                         onClick={() => setSelectionMode(!selectionMode)}
                     >
                         <span><FaHandPointUp/></span> Selection
                     </Button>
                     <Button
-                        disabled={selectedFaces.length === 0 || disabled()}
+                        disabled={selectedFaces.length === 0 || shapeDisabled() && !selectionMode}
                         onClick={() => clearSelectedFaces()}
                     >
                         <FaTimesCircle/>&nbsp;Clear selection&nbsp;&nbsp;{selectedFaces.map(({index}) => <FaCircle
@@ -158,19 +158,19 @@ export function ShapeTab({
                         <FaLink/><span> Connect</span>
                     </Button>
                     <Button
-                        disabled={disabled()}
+                        disabled={shapeDisabled()}
                         onClick={() => fabric.builder.optimize()}>
                         <FaMagic/><span> Bows</span>
                     </Button>
                 </ButtonGroup>
             </Grouping>
             <Grouping>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={shapeDisabled()}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={shapeDisabled()}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={shapeDisabled()}/>
             </Grouping>
             <Grouping>
-                <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={disabled()}/>
+                <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={shapeDisabled()}/>
                 <ButtonGroup className="my-2">{
                     Object.keys(floatFeatures)
                         .map(k => floatFeatures[k] as FloatFeature)

@@ -729,6 +729,7 @@ export function createInterval(alpha: u16, omega: u16, intervalRole: u8, restLen
     zero(_unit(intervalIndex))
     setIntervalRole(intervalIndex, intervalRole)
     initializeIdealLength(intervalIndex, calculateRealLength(intervalIndex, intervalRole))
+    setStrain(intervalIndex, 0)
     setStiffness(intervalIndex, stiffness)
     setLinearDensity(intervalIndex, linearDensity)
     for (let state: u8 = REST_STATE; state < STATE_COUNT; state++) {

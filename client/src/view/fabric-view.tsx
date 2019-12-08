@@ -42,7 +42,6 @@ declare global {
 }
 
 const SUN_POSITION = new Vector3(0, 600, 0)
-const HEMISPHERE_COLOR = new Color("#bababa")
 const AMBIENT_COLOR = new Color("#bababa")
 const SPACE_RADIUS = 100
 const SPACE_SCALE = 1
@@ -53,10 +52,11 @@ const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
 
 export function FabricView({
-                               fabric, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
+                               fabric, fabricError, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
                                selectionMode, ellipsoids,
                            }: {
     fabric: TensegrityFabric,
+    fabricError: (error: string) => void,
     selectedIntervals: IInterval[],
     selectedFaces: IFace[],
     setSelectedFaces: (faces: IFace[]) => void,
@@ -107,23 +107,26 @@ export function FabricView({
     }, [])
 
     useRender(() => {
-        const instance = fabric.instance
-        const target = instance.getMidpoint()
-        const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
-        orbit.current.target.add(towardsTarget)
-        orbit.current.update()
-        if (!ellipsoids && !selectionMode) {
-            const nextStage = fabric.iterate()
-            if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
-                setTimeout(() => fabric.toStage(Stage.Realized, {}))
-            } else if (nextStage !== life.stage && life.stage !== Stage.Realizing && nextStage !== Stage.Busy) {
-                setTimeout(() => fabric.toStage(nextStage, {}))
+        try {
+            const instance = fabric.instance
+            const target = instance.getMidpoint()
+            const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
+            orbit.current.target.add(towardsTarget)
+            orbit.current.update()
+            if (!ellipsoids && !selectionMode) {
+                const nextStage = fabric.iterate()
+                if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
+                    setTimeout(() => fabric.toStage(Stage.Realized, {}))
+                } else if (nextStage !== life.stage && life.stage !== Stage.Realizing && nextStage !== Stage.Busy) {
+                    setTimeout(() => fabric.toStage(nextStage, {}))
+                }
             }
-        } else {
             instance.engine.renderNumbers()
+            fabric.needsUpdate()
+            setAge(instance.engine.getAge())
+        } catch (e) {
+            fabricError(e)
         }
-        fabric.needsUpdate()
-        setAge(instance.engine.getAge())
     }, true, [
         fabric, fabric, age, life, selectionMode, ellipsoids,
     ])
@@ -165,10 +168,9 @@ export function FabricView({
                 )}
                 {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} fabric={fabric} face={face}/>)}
                 <SurfaceComponent ghost={life.stage <= Stage.Slack}/>
-                <pointLight key="Sun" distance={10000} decay={0.01} position={SUN_POSITION}/>
-                <hemisphereLight key="Hemi" color={HEMISPHERE_COLOR}/>
+                <pointLight key="Sun" intensity={3} decay={1} position={SUN_POSITION}/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
-                <ambientLight color={AMBIENT_COLOR} intensity={0.1}/>
+                <ambientLight color={AMBIENT_COLOR} intensity={0.7}/>
             </scene>
         </group>
     )

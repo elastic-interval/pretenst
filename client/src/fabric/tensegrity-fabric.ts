@@ -4,7 +4,7 @@
  */
 
 import { BehaviorSubject } from "rxjs"
-import { BufferGeometry, CylinderGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
 import { IFabricOutput, IOutputInterval } from "../storage/download"
 
@@ -27,8 +27,7 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
-export const SPHERE = new SphereGeometry(1, 16, 8)
-export const CYLINDER = new CylinderGeometry(1, 1, 1, 20)
+export const SPHERE = new SphereGeometry(1, 32, 8)
 
 const COUNTDOWN_MAX = 65535
 
@@ -72,11 +71,11 @@ export class TensegrityFabric {
     ) {
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
         this.builder = new TensegrityBuilder(this, numericFeature)
-        const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred())
-        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
-        this.bricks = [brick]
         this.refreshLineGeometry()
         this.refreshFaceGeometry()
+        const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred())
+        this.bricks = [brick]
+        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
     }
 
     public get life(): Life {

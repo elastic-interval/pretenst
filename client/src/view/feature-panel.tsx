@@ -64,4 +64,3 @@ export function FeaturePanel({feature, disabled}: {
         </div>
     )
 }
-

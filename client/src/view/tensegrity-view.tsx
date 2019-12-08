@@ -113,14 +113,14 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         location.hash = addNameToCode(newTenscript.code, newTenscript.name)
         mainInstance.engine.initInstance()
         mainInstance.forgetDimensions()
-        Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach((feature: FloatFeature) => mainInstance.applyFeature(feature))
-        const roleDefaultLength = (intervalRole: IntervalRole) => roleDefaultFromFeatures(floatFeatures, intervalRole)
-        const numericFeature = (fabricFeature: FabricFeature) => storedState$.getValue().featureValues[fabricFeature].numeric
-        setFabric(new TensegrityFabric(roleDefaultLength, numericFeature, mainInstance, slackInstance, newTenscript))
         floatFeatures[FabricFeature.ShapingPretenstFactor].percent = 100
         floatFeatures[FabricFeature.ShapingDrag].percent = 100
         floatFeatures[FabricFeature.ShapingStiffnessFactor].percent = 100
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
+        Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach((feature: FloatFeature) => mainInstance.applyFeature(feature))
+        const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(floatFeatures, role)
+        const numericFeature = (feature: FabricFeature) => storedState$.getValue().featureValues[feature].numeric
+        setFabric(new TensegrityFabric(roleLength, numericFeature, mainInstance, slackInstance, newTenscript))
     }
 
     useEffect(() => {
@@ -201,6 +201,12 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                             }}>
                                 <FabricView
                                     fabric={fabric}
+                                    fabricError={error => {
+                                        console.error(error)
+                                        const tenscript = fabric.tenscript
+                                        setFabric(undefined)
+                                        setTimeout(() => runTenscript(tenscript), 1000)
+                                    }}
                                     selectedIntervals={selectedIntervals}
                                     selectedFaces={selectedFaces}
                                     setSelectedFaces={setSelectedFaces}

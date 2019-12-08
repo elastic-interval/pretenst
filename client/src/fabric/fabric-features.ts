@@ -96,7 +96,7 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 feature,
                 name: "Stiffness factor",
                 defaultValue: 10,
-                percents: [100, 200, 400, 1000, 2000, 3000],
+                percents: [100, 150, 200, 250, 300, 400, 500],
             }
         case FabricFeature.ShapingDrag:
             return {
@@ -244,6 +244,10 @@ export class FloatFeature {
         const minus = Math.max(expo.indexOf("e-1"), expo.indexOf("e-2"))
         if (minus > 0) {
             return numeric.toFixed(5)
+        }
+        const plus = Math.max(expo.indexOf("e+1"), expo.indexOf("e+2"))
+        if (plus > 0) {
+            return numeric.toFixed(1)
         }
         return expo
     }

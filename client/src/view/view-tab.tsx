@@ -115,7 +115,6 @@ export function ViewTab({floatFeatures, fabric, storedState$}: {
                               disabled={!ellipsoids}/>
                 <FeaturePanel key="pullrad" feature={floatFeatures[FabricFeature.PullRadiusFactor]}
                               disabled={!ellipsoids}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.MaxStiffness]} disabled={false}/>
             </Grouping>
             <Grouping>
                 <ButtonGroup className="w-100">
