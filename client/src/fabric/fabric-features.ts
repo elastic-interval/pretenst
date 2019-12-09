@@ -154,10 +154,17 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 defaultValue: Math.sqrt(2 - 2 * Math.sqrt(2 / 3)),
                 percents: [10, 80, 90, 100, 110, 120, 130],
             }
-        case FabricFeature.CrossLength:
+        case FabricFeature.NexusCrossLength:
             return {
                 feature,
-                name: "Cross",
+                name: "Nexus Cross",
+                defaultValue: 1, // TODO
+                percents: FEATURE_PERCENTS,
+            }
+        case FabricFeature.ColumnCrossLength:
+            return {
+                feature,
+                name: "Column Cross",
                 defaultValue: 1,
                 percents: FEATURE_PERCENTS,
             }

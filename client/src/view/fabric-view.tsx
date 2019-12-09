@@ -41,7 +41,7 @@ declare global {
     }
 }
 
-const AMBIENT_COLOR = new Color("#bababa")
+const AMBIENT_COLOR = new Color("#ffffff")
 const SPACE_RADIUS = 100
 const SPACE_SCALE = 1
 const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
@@ -167,9 +167,9 @@ export function FabricView({
                 )}
                 {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} fabric={fabric} face={face}/>)}
                 {life.stage <= Stage.Slack ? undefined : <SurfaceComponent/>}
-                <directionalLight color={new Color("#FFFFFF")}/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
-                <ambientLight color={AMBIENT_COLOR} intensity={0.7}/>
+                <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
+                <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
             </scene>
         </group>
     )

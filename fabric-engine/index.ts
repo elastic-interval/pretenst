@@ -58,11 +58,12 @@ enum IntervalRole {
     ColumnPush = 1,
     Triangle = 2,
     Ring = 3,
-    Cross = 4,
-    BowMid = 5,
-    BowEnd = 6,
-    FacePull = 7,
-    Shaper = 8,
+    NexusCross = 4,
+    ColumnCross = 5,
+    BowMid = 6,
+    BowEnd = 7,
+    FacePull = 8,
+    Shaper = 9,
 }
 
 @inline()

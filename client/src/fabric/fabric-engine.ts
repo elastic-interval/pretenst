@@ -41,14 +41,15 @@ export enum FabricFeature {
     ColumnPushLength = 21,
     TriangleLength = 22,
     RingLength = 23,
-    CrossLength = 24,
-    BowMidLength = 25,
-    BowEndLength = 26,
+    NexusCrossLength = 24,
+    ColumnCrossLength = 25,
+    BowMidLength = 26,
+    BowEndLength = 27,
 
-    PushOverPull = 27,
-    PushRadiusFactor = 28,
-    PullRadiusFactor = 29,
-    MaxStiffness = 30,
+    PushOverPull = 30,
+    PushRadiusFactor = 31,
+    PullRadiusFactor = 32,
+    MaxStiffness = 33,
 }
 
 export const FEATURE_FLOATS = 60
@@ -62,11 +63,12 @@ export enum IntervalRole {
     ColumnPush = 1,
     Triangle = 2,
     Ring = 3,
-    Cross = 4,
-    BowMid = 5,
-    BowEnd = 6,
-    FacePull = 7,
-    Shaper = 8,
+    NexusCross = 4,
+    ColumnCross = 5,
+    BowMid = 6,
+    BowEnd = 7,
+    FacePull = 8,
+    Shaper = 9,
 }
 
 export function isPush(intervalRole: IntervalRole): boolean {

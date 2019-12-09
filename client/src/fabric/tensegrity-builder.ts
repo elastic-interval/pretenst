@@ -114,7 +114,10 @@ export class TensegrityBuilder {
             const joint: IJoint = interval.alpha.index === jointIndex ? interval.alpha : interval.omega
             return {interval, joint}
         }
-        const crossPulls = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.Cross)
+        const crossPulls = fabric.intervals.filter(interval => (
+            interval.intervalRole === IntervalRole.ColumnCross ||
+            interval.intervalRole === IntervalRole.NexusCross),
+        )
         crossPulls.forEach((intervalA, indexA) => {
             const aAlpha = intervalA.alpha.index
             const aOmega = intervalA.omega.index
@@ -361,8 +364,7 @@ export class TensegrityBuilder {
             const nextJoint = joints[(index + 1) % ringLength]
             this.fabric.createInterval(joint, nextJoint, role, connectorScale, countdown)
         }
-        const createCrossPull = (index: number) => {
-            const role = IntervalRole.Cross
+        const createCrossPull = (index: number, role: IntervalRole) => {
             const current = joints[index]
             if (!ring.matchesA) {
                 const next = joints[(index + 1) % ringLength]
@@ -376,7 +378,7 @@ export class TensegrityBuilder {
         }
         for (let walk = 0; walk < ringLength; walk++) {
             createRingPull(walk)
-            createCrossPull(walk)
+            createCrossPull(walk, IntervalRole.ColumnCross) // TODO: IntervalRole.NexusCross
         }
         const handleFace = (faceToRemove: IFace): void => {
             const scale = faceToRemove.brick.scale
