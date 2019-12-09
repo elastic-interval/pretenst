@@ -56,12 +56,22 @@ export function Docs({cancel}: { cancel: () => void }): JSX.Element {
     )
 }
 
+function Loop({name}: { name: string }): JSX.Element {
+    return (
+        <video style={{borderRadius: "2em"}} width="30%" controls={false} loop={true} autoPlay={true}>
+            <source src={`/pretenst/movies/${name}.mp4`} type="video/mp4"/>
+            Your browser does not support the video tag.
+        </video>
+    )
+}
+
 function PageContent({page}: { page: Page }): JSX.Element {
     switch (page) {
         case Page.Main:
             return (
                 <div>
-                    This site is...
+                    Here's a movie:
+                    <Loop name="zero-pretenst"/>
                 </div>
             )
         case Page.Tensegrity:
