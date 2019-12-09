@@ -5,11 +5,12 @@
 
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaCamera, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
+import { FaArrowRight, FaCamera, FaInfoCircle, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
+import { Docs } from "../docs/docs"
 import { FabricFeature, fabricFeatureIntervalRole, INTERVAL_ROLES, IntervalRole, Stage } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
@@ -48,6 +49,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
 
+    const [docs, setDocs] = useState(true)
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
@@ -139,6 +141,10 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         storedState$.next(transition(storedState$.getValue(), {fullScreen: value}))
     }
 
+    if (docs) {
+        return <Docs cancel={() => setDocs(false)}/>
+    }
+
     return (
         <>
             {fullScreen ? (
@@ -190,6 +196,9 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                 ) : (
                     <div className="h-100">
                         <TopMiddle fabric={fabric}/>
+                        <div id="top-right">
+                            <Button color="info" onClick={() => setDocs(true)}><FaInfoCircle/> About</Button>
+                        </div>
                         <div id="bottom-middle">
                             <ButtonGroup>
                                 <Button
