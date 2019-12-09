@@ -27,6 +27,7 @@ const SCALE_MAX = 3.5
 const FEATURES = [
     FabricFeature.MaxStrain,
     FabricFeature.MaxStiffness,
+    FabricFeature.VisualStrain,
 ]
 
 function scaleGeometry(middleTick: boolean): Geometry {

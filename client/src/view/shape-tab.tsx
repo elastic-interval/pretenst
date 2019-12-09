@@ -177,10 +177,12 @@ export function ShapeTab(
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={shapeDisabled()}/>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
+                        disabled={shapeDisabled()}
                         color={pushAndPull ? "secondary" : "success"}
                         onClick={() => setPushAndPull(false)}
                     ><FaCheck/>Push or Pull</Button>
                     <Button
+                        disabled={shapeDisabled()}
                         color={pushAndPull ? "success" : "secondary"}
                         onClick={() => setPushAndPull(true)}
                     ><FaBiohazard/> Push and Pull</Button>

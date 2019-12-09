@@ -10,12 +10,12 @@ import { Face3, Geometry, Vector3 } from "three"
 import { MeshKey } from "../gotchi-view/selector"
 import { HEXAGON_POINTS, LAND_NORMAL_SPREAD, SIX, SURFACE_LAND_COLOR, UP } from "../island/constants"
 
-import { SURFACE, SURFACE_GHOST } from "./materials"
+import { SURFACE } from "./materials"
 
-export function SurfaceComponent({ghost}: { ghost: boolean }): JSX.Element {
+export function SurfaceComponent(): JSX.Element {
     const spots = useMemo(() => spotsGeometry(), [])
     return (
-        <mesh name="Spots" geometry={spots} material={ghost ? SURFACE_GHOST : SURFACE}/>
+        <mesh name="Spots" geometry={spots} material={SURFACE}/>
     )
 }
 

@@ -46,13 +46,6 @@ export const SURFACE = new MeshPhongMaterial({
     side: DoubleSide,
 })
 
-export const SURFACE_GHOST = new MeshPhongMaterial({
-    color: new Color("#1c1608"),
-    side: DoubleSide,
-    transparent: true,
-    opacity: 0.5,
-})
-
 export const LINE_VERTEX_COLORS = new LineBasicMaterial({
     vertexColors: VertexColors,
 })

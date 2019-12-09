@@ -143,15 +143,9 @@ a, a:hover {
 
 #bottom-middle {
     position: absolute;
-    color: #179a16;
-    background-color: black;
-    border-color: #9fa8b2;
-    border-width: 2px;
-    border-style: solid;
     padding-right: 1em;
     padding-left: 1em;
     bottom: 1em;
-    width: 47em;
     left: 50%;
     transform: translate(-50%);
     z-index: 100;

@@ -6,7 +6,6 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
-    FaCamera,
     FaCircle,
     FaCompressArrowsAlt,
     FaDownload,
@@ -15,8 +14,6 @@ import {
     FaFutbol,
     FaHandRock,
     FaParachuteBox,
-    FaSnowflake,
-    FaSyncAlt,
     FaVolleyballBall,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
@@ -37,13 +34,11 @@ export function ViewTab({floatFeatures, fabric, storedState$}: {
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
     const [showPushes, updateShowPushes] = useState(storedState$.getValue().showPushes)
     const [showPulls, updateShowPulls] = useState(storedState$.getValue().showPulls)
     useEffect(() => {
         const subscription = storedState$.subscribe(newState => {
-            updateRotating(newState.rotating)
             updateEllipsoids(newState.ellipsoids)
             updateShowPushes(newState.showPushes)
             updateShowPulls(newState.showPulls)
@@ -92,25 +87,9 @@ export function ViewTab({floatFeatures, fabric, storedState$}: {
                         <span><FaCircle/> Roles</span>
                     </ViewButton>
                 </ButtonGroup>
-                <FeaturePanel key="vs" feature={floatFeatures[FabricFeature.VisualStrain]} disabled={false}/>
                 <FeaturePanel key="sthresh" feature={floatFeatures[FabricFeature.SlackThreshold]} disabled={false}/>
             </Grouping>
             <Grouping>
-                <ButtonGroup className="w-100 my-2">
-                    <Button
-                        disabled={life.stage <= Stage.Growing}
-                        color={ellipsoids ? "warning" : "secondary"}
-                        onClick={() => storedState$.next(transition(storedState$.getValue(), {ellipsoids: !ellipsoids}))}
-                    >
-                        <FaCamera/> Frozen View <FaSnowflake/>
-                    </Button>
-                    <Button
-                        color={rotating ? "warning" : "secondary"}
-                        onClick={() => storedState$.next(transition(storedState$.getValue(), {rotating: !rotating}))}
-                    >
-                        <FaSyncAlt/> Rotating View
-                    </Button>
-                </ButtonGroup>
                 <FeaturePanel key="pushrad" feature={floatFeatures[FabricFeature.PushRadiusFactor]}
                               disabled={!ellipsoids}/>
                 <FeaturePanel key="pullrad" feature={floatFeatures[FabricFeature.PullRadiusFactor]}

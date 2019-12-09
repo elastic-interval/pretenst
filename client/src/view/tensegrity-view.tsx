@@ -5,9 +5,9 @@
 
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaPlay, FaToolbox } from "react-icons/all"
+import { FaArrowRight, FaCamera, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
-import { Button } from "reactstrap"
+import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FabricFeature, fabricFeatureIntervalRole, IntervalRole, Stage } from "../fabric/fabric-engine"
@@ -26,7 +26,6 @@ import {
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
-import { FeaturePanel } from "./feature-panel"
 
 const SPLIT_LEFT = "25em"
 const SPLIT_RIGHT = "26em"
@@ -68,6 +67,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         }
     }, [rootTenscript])
 
+    const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [selectionMode, setSelectionMode] = useState(false)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
@@ -75,6 +75,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)
             updateEllipsoids(storedState.ellipsoids)
+            updateRotating(storedState.rotating)
             if (!fabric) {
                 return
             }
@@ -186,10 +187,20 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                     <div className="h-100">
                         <TopMiddle fabric={fabric}/>
                         <div id="bottom-middle">
-                            <FeaturePanel
-                                feature={floatFeatures[FabricFeature.VisualStrain]}
-                                disabled={false}
-                            />
+                            <ButtonGroup>
+                                <Button
+                                    color={ellipsoids ? "warning" : "secondary"}
+                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {ellipsoids: !ellipsoids}))}
+                                >
+                                    <FaCamera/>
+                                </Button>
+                                <Button
+                                    color={rotating ? "warning" : "secondary"}
+                                    onClick={() => storedState$.next(transition(storedState$.getValue(), {rotating: !rotating}))}
+                                >
+                                    <FaSyncAlt/>
+                                </Button>
+                            </ButtonGroup>
                         </div>
                         <div id="view-container" className="h-100">
                             <Canvas style={{

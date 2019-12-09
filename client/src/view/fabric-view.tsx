@@ -41,7 +41,6 @@ declare global {
     }
 }
 
-const SUN_POSITION = new Vector3(0, 600, 0)
 const AMBIENT_COLOR = new Color("#bababa")
 const SPACE_RADIUS = 100
 const SPACE_SCALE = 1
@@ -167,8 +166,8 @@ export function FabricView({
                     />
                 )}
                 {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} fabric={fabric} face={face}/>)}
-                <SurfaceComponent ghost={life.stage <= Stage.Slack}/>
-                <pointLight key="Sun" intensity={3} decay={1} position={SUN_POSITION}/>
+                {life.stage <= Stage.Slack ? undefined : <SurfaceComponent/>}
+                <directionalLight color={new Color("#FFFFFF")}/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.7}/>
             </scene>
