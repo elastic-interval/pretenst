@@ -41,11 +41,17 @@ enum SurfaceCharacter {
     Bouncy = 3,
 }
 
+let surfaceCharacter: SurfaceCharacter = SurfaceCharacter.Frozen
+
 export function setSurfaceCharacter(character: SurfaceCharacter): void {
     surfaceCharacter = character
 }
 
-let surfaceCharacter: SurfaceCharacter = SurfaceCharacter.Frozen
+let pushAndPull = false
+
+export function setPushAndPull(value: boolean): void {
+    pushAndPull = value
+}
 
 enum IntervalRole {
     NexusPush = 0,
@@ -1115,7 +1121,7 @@ function intervalPhysics(intervalIndex: u16, state: u8, stage: Stage): void {
     }
     let realLength = calculateRealLength(intervalIndex, intervalRole)
     let strain = (realLength - idealLength) / idealLength
-    if (push && strain > 0 || !push && strain < 0) {
+    if (!pushAndPull && (push && strain > 0 || !push && strain < 0)) {
         strain = 0
     }
     setStrain(intervalIndex, strain)

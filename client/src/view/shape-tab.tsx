@@ -7,7 +7,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import {
     FaArrowDown,
-    FaArrowUp,
+    FaArrowUp, FaBiohazard, FaCheck,
     FaCircle,
     FaCompass,
     FaExpandArrowsAlt,
@@ -31,20 +31,27 @@ import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { LifeStagePanel } from "./life-stage-panel"
 
-export function ShapeTab({
-                             floatFeatures, fabric, selectedIntervals, setFabric, selectionMode, setSelectionMode,
-                             selectedFaces, clearSelectedFaces, storedState$,
-                         }: {
-    floatFeatures: Record<FabricFeature, FloatFeature>,
-    fabric: TensegrityFabric,
-    setFabric: (fabric: TensegrityFabric) => void,
-    selectedIntervals: IInterval[],
-    selectionMode: boolean,
-    setSelectionMode: (selectionMode: boolean) => void,
-    selectedFaces: IFace[],
-    clearSelectedFaces: () => void,
-    storedState$: BehaviorSubject<IStoredState>,
-}): JSX.Element {
+export function ShapeTab(
+    {
+        floatFeatures, fabric, selectedIntervals,
+        setFabric, selectionMode, setSelectionMode,
+        selectedFaces, clearSelectedFaces, storedState$,
+    }: {
+        floatFeatures: Record<FabricFeature, FloatFeature>,
+        fabric: TensegrityFabric,
+        setFabric: (fabric: TensegrityFabric) => void,
+        selectedIntervals: IInterval[],
+        selectionMode: boolean,
+        setSelectionMode: (selectionMode: boolean) => void,
+        selectedFaces: IFace[],
+        clearSelectedFaces: () => void,
+        storedState$: BehaviorSubject<IStoredState>,
+    }): JSX.Element {
+
+    const [pushAndPull, setPushAndPull] = useState(false)
+    useEffect(() => {
+        fabric.instance.engine.setPushAndPull(pushAndPull)
+    }, [pushAndPull])
 
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
     useEffect(() => {
@@ -168,6 +175,16 @@ export function ShapeTab({
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={shapeDisabled()}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={shapeDisabled()}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={shapeDisabled()}/>
+                <ButtonGroup size="sm" className="w-100 my-2">
+                    <Button
+                        color={pushAndPull ? "secondary" : "success"}
+                        onClick={() => setPushAndPull(false)}
+                    ><FaCheck/>Push or Pull</Button>
+                    <Button
+                        color={pushAndPull ? "success" : "secondary"}
+                        onClick={() => setPushAndPull(true)}
+                    ><FaBiohazard/> Push and Pull</Button>
+                </ButtonGroup>
             </Grouping>
             <Grouping>
                 <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={shapeDisabled()}/>

@@ -110,6 +110,8 @@ export interface IFabricEngine {
 
     setSurfaceCharacter(character: SurfaceCharacter): void
 
+    setPushAndPull(value: boolean): void
+
     setColoring(pushes: boolean, pulls: boolean): void
 
     setInstance(index: number): void
