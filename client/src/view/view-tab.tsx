@@ -19,7 +19,7 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, Stage } from "../fabric/fabric-engine"
+import { FabricFeature, INTERVAL_ROLES, IntervalRole, intervalRoleName, Stage } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVZip } from "../storage/download"
@@ -28,11 +28,17 @@ import { IStoredState, transition } from "../storage/stored-state"
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 
-export function ViewTab({floatFeatures, fabric, storedState$}: {
-    floatFeatures: Record<FabricFeature, FloatFeature>,
-    fabric: TensegrityFabric,
-    storedState$: BehaviorSubject<IStoredState>,
-}): JSX.Element {
+export function ViewTab(
+    {
+        floatFeatures, fabric,
+        visibleRoles, setVisibleRoles, storedState$,
+    }: {
+        floatFeatures: Record<FabricFeature, FloatFeature>,
+        fabric: TensegrityFabric,
+        visibleRoles: IntervalRole[],
+        setVisibleRoles: (roles: IntervalRole[]) => void,
+        storedState$: BehaviorSubject<IStoredState>,
+    }): JSX.Element {
 
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
     const [showPushes, updateShowPushes] = useState(storedState$.getValue().showPushes)
@@ -90,6 +96,24 @@ export function ViewTab({floatFeatures, fabric, storedState$}: {
                 <FeaturePanel key="sthresh" feature={floatFeatures[FabricFeature.SlackThreshold]} disabled={false}/>
             </Grouping>
             <Grouping>
+                <ButtonGroup size="sm">
+                    {INTERVAL_ROLES.map(intervalRole => (
+                        <Button
+                            color={visibleRoles.indexOf(intervalRole) < 0 ? "secondary" : "success"}
+                            key={`viz${intervalRole}`}
+                            onClick={() => {
+                                if (visibleRoles.indexOf(intervalRole) < 0) {
+                                    setVisibleRoles([...visibleRoles, intervalRole])
+                                } else {
+                                    setVisibleRoles(visibleRoles.filter(role => role !== intervalRole))
+                                }
+                            }}
+                            disabled={!ellipsoids}
+                        >
+                            {intervalRoleName(intervalRole)}
+                        </Button>
+                    ))}
+                </ButtonGroup>
                 <FeaturePanel key="pushrad" feature={floatFeatures[FabricFeature.PushRadiusFactor]}
                               disabled={!ellipsoids}/>
                 <FeaturePanel key="pullrad" feature={floatFeatures[FabricFeature.PullRadiusFactor]}

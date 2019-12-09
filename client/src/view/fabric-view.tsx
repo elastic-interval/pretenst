@@ -19,7 +19,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick, FabricFeature, Stage } from "../fabric/fabric-engine"
+import { doNotClick, FabricFeature, IntervalRole, Stage } from "../fabric/fabric-engine"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
@@ -52,7 +52,7 @@ const ALTITUDE = 4
 
 export function FabricView({
                                fabric, fabricError, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
-                               selectionMode, ellipsoids,
+                               selectionMode, ellipsoids, visibleRoles,
                            }: {
     fabric: TensegrityFabric,
     fabricError: (error: string) => void,
@@ -61,6 +61,7 @@ export function FabricView({
     setSelectedFaces: (faces: IFace[]) => void,
     selectionMode: boolean,
     ellipsoids: boolean,
+    visibleRoles: IntervalRole[],
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
@@ -148,6 +149,7 @@ export function FabricView({
                         fabric={fabric}
                         selectedIntervals={selectedIntervals}
                         storedState={storedState}
+                        visibleRoles={visibleRoles}
                     />
                 ) : (
                     <LineView
@@ -216,8 +218,9 @@ function IntervalMesh({fabric, interval, storedState}: {
     )
 }
 
-function EllipsoidView({fabric, selectedIntervals, storedState}: {
+function EllipsoidView({fabric, visibleRoles, selectedIntervals, storedState}: {
     fabric: TensegrityFabric,
+    visibleRoles: IntervalRole[],
     selectedIntervals: IInterval[],
     storedState: IStoredState,
 }): JSX.Element {
@@ -230,13 +233,13 @@ function EllipsoidView({fabric, selectedIntervals, storedState}: {
                     interval={interval}
                     storedState={storedState}
                 />
-            )) : fabric.intervals.map(interval => (
-                <IntervalMesh
-                    key={`I${interval.index}`}
-                    fabric={fabric}
-                    interval={interval}
-                    storedState={storedState}
-                />
+            )) : fabric.intervals.map(interval => (visibleRoles.indexOf(interval.intervalRole) < 0 ? undefined :
+                    <IntervalMesh
+                        key={`I${interval.index}`}
+                        fabric={fabric}
+                        interval={interval}
+                        storedState={storedState}
+                    />
             ))}}
         </group>
     )

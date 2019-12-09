@@ -9,7 +9,7 @@ import { FaArrowLeft } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature } from "../fabric/fabric-engine"
+import { FabricFeature, IntervalRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
@@ -25,27 +25,32 @@ import { ViewTab } from "./view-tab"
 
 const SPLIT_LEFT = "25em"
 
-export function ControlTabs({
-                                floatFeatures, rootTenscript, setRootTenscript,
-                                selectionMode, setSelectionMode,
-                                selectedFaces, clearSelectedFaces, selectedIntervals,
-                                fabric, setFabric, runTenscript,
-                                toFullScreen, storedState$,
-                            }: {
-    floatFeatures: Record<FabricFeature, FloatFeature>,
-    rootTenscript: ITenscript,
-    setRootTenscript: (tenscript: ITenscript) => void,
-    selectedFaces: IFace[],
-    clearSelectedFaces: () => void,
-    selectedIntervals: IInterval[],
-    runTenscript: (tenscript: ITenscript) => void,
-    fabric?: TensegrityFabric,
-    setFabric: (fabric: TensegrityFabric) => void,
-    selectionMode: boolean,
-    setSelectionMode: (selectionMode: boolean) => void,
-    toFullScreen: () => void,
-    storedState$: BehaviorSubject<IStoredState>,
-}): JSX.Element {
+export function ControlTabs(
+    {
+        floatFeatures,
+        rootTenscript, setRootTenscript,
+        selectionMode, setSelectionMode,
+        selectedFaces, clearSelectedFaces, selectedIntervals,
+        fabric, setFabric, runTenscript,
+        visibleRoles, setVisibleRoles,
+        toFullScreen, storedState$,
+    }: {
+        floatFeatures: Record<FabricFeature, FloatFeature>,
+        rootTenscript: ITenscript,
+        setRootTenscript: (tenscript: ITenscript) => void,
+        selectedFaces: IFace[],
+        clearSelectedFaces: () => void,
+        selectedIntervals: IInterval[],
+        runTenscript: (tenscript: ITenscript) => void,
+        fabric?: TensegrityFabric,
+        setFabric: (fabric: TensegrityFabric) => void,
+        selectionMode: boolean,
+        setSelectionMode: (selectionMode: boolean) => void,
+        toFullScreen: () => void,
+        visibleRoles: IntervalRole[],
+        setVisibleRoles: (roles: IntervalRole[]) => void,
+        storedState$: BehaviorSubject<IStoredState>,
+    }): JSX.Element {
 
     const [life, updateLife] = useState<Life | undefined>(fabric ? fabric.life : undefined)
     useEffect(() => {
@@ -124,6 +129,8 @@ export function ControlTabs({
                         <ViewTab
                             floatFeatures={floatFeatures}
                             fabric={fabric}
+                            visibleRoles={visibleRoles}
+                            setVisibleRoles={setVisibleRoles}
                             storedState$={storedState$}
                         />
                     )

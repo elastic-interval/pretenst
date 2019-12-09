@@ -63,7 +63,6 @@ enum IntervalRole {
     BowMid = 6,
     BowEnd = 7,
     FacePull = 8,
-    Shaper = 9,
 }
 
 @inline()

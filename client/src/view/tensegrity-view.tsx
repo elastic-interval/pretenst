@@ -10,7 +10,7 @@ import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, fabricFeatureIntervalRole, IntervalRole, Stage } from "../fabric/fabric-engine"
+import { FabricFeature, fabricFeatureIntervalRole, INTERVAL_ROLES, IntervalRole, Stage } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricKernel } from "../fabric/fabric-kernel"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
@@ -67,10 +67,12 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
         }
     }, [rootTenscript])
 
+    const [visibleRoles, setVisibleRoles] = useState(INTERVAL_ROLES)
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [selectionMode, setSelectionMode] = useState(false)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
+    useEffect(() => setVisibleRoles(INTERVAL_ROLES), [ellipsoids])
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)
@@ -164,6 +166,8 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                         clearSelectedFaces={() => setSelectedFaces([])}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
+                        visibleRoles={visibleRoles}
+                        setVisibleRoles={setVisibleRoles}
                         storedState$={storedState$}
                     />
                 </div>
@@ -223,6 +227,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                                     setSelectedFaces={setSelectedFaces}
                                     selectionMode={selectionMode}
                                     ellipsoids={ellipsoids}
+                                    visibleRoles={visibleRoles}
                                     storedState$={storedState$}
                                 />
                             </Canvas>

@@ -68,8 +68,34 @@ export enum IntervalRole {
     BowMid = 6,
     BowEnd = 7,
     FacePull = 8,
-    Shaper = 9,
 }
+
+export function intervalRoleName(intervalRole: IntervalRole): string {
+    switch (intervalRole) {
+        case IntervalRole.NexusPush:
+            return "Nex Push"
+        case IntervalRole.ColumnPush:
+            return "Col Push"
+        case IntervalRole.Triangle:
+            return "Tri"
+        case IntervalRole.Ring:
+            return "Ring"
+        case IntervalRole.NexusCross:
+            return "Nex Cross"
+        case IntervalRole.ColumnCross:
+            return "Col Cross"
+        case IntervalRole.BowMid:
+            return "Bow Mid"
+        case IntervalRole.BowEnd:
+            return "Bow End"
+        case IntervalRole.FacePull:
+            return "Face Pull"
+    }
+}
+
+export const INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
+    .filter(role => role.length > 1 && IntervalRole[role] !== IntervalRole.FacePull)
+    .map(role => IntervalRole[role])
 
 export function isPush(intervalRole: IntervalRole): boolean {
     return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush
