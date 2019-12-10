@@ -8,12 +8,8 @@ import { useState } from "react"
 import { FaGrinStars } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
-enum Page {
-    Main,
-    Tensegrity,
-}
+import { Definition, Frame, ImagePointer, Loop, Page, PageLink, PAGES, Picture } from "./doc-parts"
 
-const PAGES: Page[] = Object.keys(Page).filter(key => key.length > 2).map(key => Page[key])
 
 export function Docs({cancel}: { cancel: () => void }): JSX.Element {
     const [page, setPage] = useState(Page.Main)
@@ -31,10 +27,8 @@ export function Docs({cancel}: { cancel: () => void }): JSX.Element {
                 height: "calc(100% - 8em)",
                 borderStyle: "solid",
                 borderRadius: "2em",
-            }} className="text-center mx-4 p-4">
-                <div>
-                    <PageContent page={page}/>
-                </div>
+            }} className="mx-4 p-4">
+                <PageContent page={page}/>
             </div>
             <div className="w-100 fixed-bottom my-3 text-center">
                 <ButtonGroup>
@@ -49,19 +43,10 @@ export function Docs({cancel}: { cancel: () => void }): JSX.Element {
                     ))}
                 </ButtonGroup>
                 <ButtonGroup className="mx-2">
-                    <Button onClick={cancel}><FaGrinStars/> Ok go!</Button>
+                    <Button color="warning" onClick={cancel}><FaGrinStars/> Ok go!</Button>
                 </ButtonGroup>
             </div>
         </div>
-    )
-}
-
-function Loop({name}: { name: string }): JSX.Element {
-    return (
-        <video style={{borderRadius: "2em"}} width="30%" controls={false} loop={true} autoPlay={true}>
-            <source src={`/pretenst/movies/${name}.mp4`} type="video/mp4"/>
-            Your browser does not support the video tag.
-        </video>
     )
 }
 
@@ -69,9 +54,23 @@ function PageContent({page}: { page: Page }): JSX.Element {
     switch (page) {
         case Page.Main:
             return (
-                <div>
-                    Here's a movie:
-                    <Loop name="zero-pretenst"/>
+                <div style={{
+                    display: "flex",
+                    width: "100%",
+                }}>
+                    <Loop name="zero-pretenst" caption="The Zero Shape"/>
+                    <Frame>
+                        <Definition term="Pretenst">
+                            A misspelling of the word "pretensed".
+                        </Definition>
+                    </Frame>
+                    <Picture name="optimize" caption="Something to optimize"/>
+                    <Frame>
+                        <ImagePointer name="optimize" x={10} y={10}>Picture pointer</ImagePointer>
+                    </Frame>
+                    <Frame>
+                        <PageLink page={Page.Tensegrity}/>
+                    </Frame>
                 </div>
             )
         case Page.Tensegrity:
