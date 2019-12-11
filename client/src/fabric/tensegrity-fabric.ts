@@ -14,6 +14,7 @@ import { ITransitionPrefs, Life, stiffnessToLinearDensity } from "./life"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
+    factorToPercent,
     IBrick,
     IFace,
     IFacePull,
@@ -156,6 +157,11 @@ export class TensegrityFabric {
         }
         this.intervals.push(interval)
         return interval
+    }
+
+    public changeIntervalScale(interval: IInterval, factor: number): void {
+        interval.scale = factorToPercent(percentToFactor(interval.scale) * factor)
+        this.instance.engine.multiplyRestLength(interval.index, factor, 100)
     }
 
     public changeIntervalRole(interval: IInterval, intervalRole: IntervalRole, scaleFactor: IPercent, countdown: number): void {

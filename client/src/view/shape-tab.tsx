@@ -10,7 +10,6 @@ import {
     FaArrowUp,
     FaBiohazard,
     FaCheck,
-    FaCircle,
     FaCompass,
     FaExpandArrowsAlt,
     FaFutbol,
@@ -89,7 +88,7 @@ export function ShapeTab(
             if (interval.isPush && !pushes || !interval.isPush && !pulls) {
                 return
             }
-            fabric.instance.engine.multiplyRestLength(interval.index, adjustment(), 100)
+            fabric.changeIntervalScale(interval, adjustment())
         })
     }
 
@@ -126,7 +125,7 @@ export function ShapeTab(
                         disabled={selectedFaces.length === 0 || disabled() && shapeSelection !== ShapeSelection.None}
                         onClick={() => clearSelectedFaces()}
                     >
-                        <FaTimesCircle/>&nbsp;Clear selection&nbsp;&nbsp;{selectedFaces.map(({index}) => <FaCircle
+                        Clear selection {selectedFaces.map(({index}) => <FaTimesCircle
                         key={`Dot${index}`}/>)}
                     </Button>
                     <Button
