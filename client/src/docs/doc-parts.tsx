@@ -13,7 +13,7 @@ export enum Page {
 export const PAGES: Page[] = Object.keys(Page).filter(key => key.length > 2).map(key => Page[key])
 
 export function Frame({children}: {
-    children: JSX.Element | JSX.Element[],
+    children: JSX.Element | JSX.Element[] | string,
 }): JSX.Element {
     return (
         <div className="m-3 p-2" style={{

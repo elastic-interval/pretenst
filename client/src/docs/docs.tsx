@@ -56,9 +56,17 @@ function PageContent({page}: { page: Page }): JSX.Element {
             return (
                 <div style={{
                     display: "flex",
-                    width: "100%",
                 }}>
                     <Loop name="zero-pretenst" caption="The Zero Shape"/>
+                    <Frame>
+                        Documentation coming soon....
+                    </Frame>
+                </div>
+            )
+        case Page.Tensegrity:
+            return (
+                <div>
+                    <h3>Tensegrity Page</h3>
                     <Frame>
                         <Definition term="Pretenst">
                             A misspelling of the word "pretensed".
@@ -69,14 +77,8 @@ function PageContent({page}: { page: Page }): JSX.Element {
                         <ImagePointer name="optimize" x={10} y={10}>Picture pointer</ImagePointer>
                     </Frame>
                     <Frame>
-                        <PageLink page={Page.Tensegrity}/>
+                        <PageLink page={Page.Main}/>
                     </Frame>
-                </div>
-            )
-        case Page.Tensegrity:
-            return (
-                <div>
-                    Tensegrity
                 </div>
             )
     }

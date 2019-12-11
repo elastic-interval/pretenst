@@ -49,7 +49,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
     const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
     const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
 
-    const [docs, setDocs] = useState(true)
+    const [docs, setDocs] = useState(false)
     const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
     const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
