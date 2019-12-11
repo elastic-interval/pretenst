@@ -122,9 +122,9 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
         case FabricFeature.PushOverPull:
             return {
                 feature,
-                name: "Push Over Pull",
+                name: "Compression/Tension",
                 defaultValue: 1,
-                percents: [20, 50, 100, 200, 400],
+                percents: [10, 20, 30, 50, 100, 200, 300, 500, 1000],
             }
         case FabricFeature.NexusPushLength:
             return {

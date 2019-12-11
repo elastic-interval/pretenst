@@ -109,6 +109,10 @@ export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): Interva
     return IntervalRole[IntervalRole[fabricFeature - firstLengthFeature]]
 }
 
+export function intervalRoleFabricFeature(intervalRole: IntervalRole): FabricFeature {
+    return FabricFeature[FabricFeature[intervalRole + FabricFeature.NexusPushLength]]
+}
+
 export enum FabricDirection {
     Rest,
     Forward,

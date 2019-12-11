@@ -190,7 +190,7 @@ export function ControlTabs(
 }
 
 export function Grouping({children, height}: {
-    children: JSX.Element | JSX.Element[],
+    children: JSX.Element | (JSX.Element[] | JSX.Element | undefined)[],
     height?: string,
 }): JSX.Element {
     return (

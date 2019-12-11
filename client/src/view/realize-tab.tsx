@@ -5,6 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
+import { FaArrowAltCircleRight, FaBalanceScale, FaGlobe } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
@@ -15,7 +16,7 @@ import { enumValues, IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
-import { LifeStagePanel } from "./life-stage-panel"
+import { LifeStageButton, StageTransition } from "./life-stage-button"
 import { ShapeSelection } from "./shape-tab"
 
 export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}: {
@@ -51,23 +52,35 @@ export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}
         storedState$.next(transition(storedState$.getValue(), changed))
     }
 
+    function disabledLifeStage(): boolean {
+        return ellipsoids || shapeSelection !== ShapeSelection.None
+    }
+
     return (
         <div>
             <Grouping>
-                <LifeStagePanel
+                <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
+                <LifeStageButton
                     fabric={fabric}
-                    beforeSlack={false}
-                    disabled={ellipsoids || shapeSelection !== ShapeSelection.None}
+                    stageTransition={StageTransition.SlackToRealizing}
+                    disabled={disabledLifeStage()}
+                />
+                <LifeStageButton
+                    fabric={fabric}
+                    stageTransition={StageTransition.CaptureRealizedToSlack}
+                    disabled={disabledLifeStage()}
                 />
             </Grouping>
             <Grouping>
+                <h6 className="w-100 text-center"><FaGlobe/> Environment</h6>
+                <FeaturePanel feature={floatFeatures[FabricFeature.PretenstFactor]} disabled={disabled()}/>
                 <div className="float-right" style={{
                     color: disabled() ? "gray" : "white",
                 }}>
                     {SurfaceCharacter[storedState.surfaceCharacter]}
                 </div>
                 <div>Surface</div>
-                <ButtonGroup className="w-100">
+                <ButtonGroup size="sm" className="w-100">
                     {enumValues(SurfaceCharacter).map(value => (
                         <Button
                             key={SurfaceCharacter[value]}
@@ -81,9 +94,13 @@ export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}
                 <FeaturePanel feature={floatFeatures[FabricFeature.Drag]} disabled={disabled()}/>
             </Grouping>
             <Grouping>
+                <h6 className="w-100 text-center"><FaBalanceScale/> Compression vs Tension</h6>
+                <LifeStageButton
+                    fabric={fabric}
+                    stageTransition={StageTransition.CaptureStrainForStiffness}
+                    disabled={disabledLifeStage()}
+                />
                 <FeaturePanel feature={floatFeatures[FabricFeature.PushOverPull]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.PretenstFactor]} disabled={disabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.PretenstCountdown]} disabled={disabled()}/>
             </Grouping>
         </div>
     )

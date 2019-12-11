@@ -5,13 +5,15 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolderOpen } from "react-icons/all"
+import { FaBox, FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolderOpen, FaSeedling } from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { BOOTSTRAP, codeToTenscript, ITenscript, spaceAfterComma } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
+
+import { Grouping } from "./control-tabs"
 
 export function TenscriptTab({rootTenscript, setRootTenscript, fabric, runTenscript, storedState$}: {
     rootTenscript: ITenscript,
@@ -38,34 +40,54 @@ export function TenscriptTab({rootTenscript, setRootTenscript, fabric, runTenscr
         <div id="tenscript-panel" style={{
             flexDirection: "column",
             position: "relative",
-            padding: "2em",
             backgroundColor: "rgba(0,0,0,1)",
             height: "100%",
-            color: "#69aaea",
         }}>
-            <div id="code-and-run" style={{
-                flexDirection: "column",
-                height: "available",
-            }}>
-                <CodeArea
-                    tenscript={tenscript}
-                    setTenscript={setTenscript}
-                    error={error}
-                    setError={setError}
-                />
-                <ButtonGroup className="w-100 my-2">
-                    <Button
-                        color={error.length > 0 ? "warning" : "success"}
-                        disabled={error.length > 0}
-                        onClick={() => runTenscript(tenscript)}
+            <Grouping>
+                <h6 className="w-100 text-center"><FaSeedling/> Tenscript</h6>
+                <div id="code-and-run" style={{
+                    flexDirection: "column",
+                    height: "available",
+                }}>
+                    <CodeArea
+                        tenscript={tenscript}
+                        setTenscript={setTenscript}
+                        error={error}
+                        setError={setError}
+                    />
+                    <ButtonGroup className="w-100 my-2">
+                        <Button
+                            color={error.length > 0 ? "warning" : "success"}
+                            disabled={error.length > 0}
+                            onClick={() => runTenscript(tenscript)}
+                        >
+                            {error.length === 0 ? (
+                                <span>Execute <FaPlay/> tenscript</span>
+                            ) : (
+                                <span><FaBug/> {error}</span>
+                            )}
+                        </Button>
+                    </ButtonGroup>
+                </div>
+            </Grouping>
+            <Grouping>
+                <h6 className="w-100 text-center"><FaBox/> Storage</h6>
+                {recentPrograms.length === 0 ? undefined : (
+                    <ButtonDropdown
+                        className="w-100 my-2"
+                        isOpen={recentOpen}
+                        toggle={() => setRecentOpen(!recentOpen)}
                     >
-                        {error.length === 0 ? (
-                            <span>Execute <FaPlay/> tenscript</span>
-                        ) : (
-                            <span><FaBug/> {error}</span>
-                        )}
-                    </Button>
-                </ButtonGroup>
+                        <DropdownToggle style={{borderRadius: "1.078em"}}>
+                            {recentOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Recent
+                        </DropdownToggle>
+                        <DropdownMenu>{recentPrograms.map((recentCode, index) => (
+                            <DropdownItem key={`Recent${index}`} onClick={() => runTenscript(recentCode)}>
+                                {recentCode.name}
+                            </DropdownItem>
+                        ))}</DropdownMenu>
+                    </ButtonDropdown>
+                )}
                 <ButtonGroup className="w-100 my-2">
                     <Button
                         disabled={tenscript.code === rootTenscript.code}
@@ -77,37 +99,21 @@ export function TenscriptTab({rootTenscript, setRootTenscript, fabric, runTenscr
                         Save <FaHeart/> for later
                     </Button>
                 </ButtonGroup>
-            </div>
-            {recentPrograms.length === 0 ? undefined : (
                 <ButtonDropdown
                     className="w-100 my-2"
-                    isOpen={recentOpen}
-                    toggle={() => setRecentOpen(!recentOpen)}
+                    isOpen={bootstrapOpen}
+                    toggle={() => setBootstrapOpen(!bootstrapOpen)}
                 >
-                    <DropdownToggle style={{borderRadius: "1.078em"}}>
-                        {recentOpen ? <FaRegFolderOpen/> : <FaRegFolder/>} Recent
+                    <DropdownToggle color="info" style={{borderRadius: "1.078em"}}>
+                        Explore <FaHiking/> existing designs
                     </DropdownToggle>
-                    <DropdownMenu>{recentPrograms.map((recentCode, index) => (
-                        <DropdownItem key={`Recent${index}`} onClick={() => runTenscript(recentCode)}>
-                            {recentCode.name}
+                    <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
+                        <DropdownItem key={`Boot${index}`} onClick={() => runTenscript(bootstrapProgram)}>
+                            {bootstrapProgram.name}
                         </DropdownItem>
                     ))}</DropdownMenu>
                 </ButtonDropdown>
-            )}
-            <ButtonDropdown
-                className="w-100 my-2"
-                isOpen={bootstrapOpen}
-                toggle={() => setBootstrapOpen(!bootstrapOpen)}
-            >
-                <DropdownToggle color="info" style={{borderRadius: "1.078em"}}>
-                    Explore <FaHiking/> existing designs
-                </DropdownToggle>
-                <DropdownMenu>{BOOTSTRAP.map((bootstrapProgram, index) => (
-                    <DropdownItem key={`Boot${index}`} onClick={() => runTenscript(bootstrapProgram)}>
-                        {bootstrapProgram.name}
-                    </DropdownItem>
-                ))}</DropdownMenu>
-            </ButtonDropdown>
+            </Grouping>
         </div>
     )
 }
@@ -147,10 +153,9 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
                 borderWidth: "2px",
             }}
         >
-            <div className="w-100 text-center">
-                <span style={{color: "#f2bc30"}} className="float-left m-1">Tenscript:</span>
+            <h6 className="w-100 text-center">
                 <i>"{tenscript.name}"</i>
-            </div>
+            </h6>
             <Input
                 style={{
                     borderRadius: "1em",

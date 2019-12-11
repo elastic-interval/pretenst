@@ -6,6 +6,7 @@
 
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
+import { FaSlidersH } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Geometry, Vector3 } from "three"
@@ -28,6 +29,7 @@ const FEATURES = [
     FabricFeature.MaxStrain,
     FabricFeature.MaxStiffness,
     FabricFeature.VisualStrain,
+    FabricFeature.SlackThreshold,
 ]
 
 function scaleGeometry(middleTick: boolean): Geometry {
@@ -159,6 +161,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
             <ScaleView/>
         </Grouping>
         <Grouping>
+            <h6 className="w-100 text-center"><FaSlidersH/> Adjustments</h6>
             {FEATURES.map(feature => (
                 <FeaturePanel
                     key={FabricFeature[feature]}

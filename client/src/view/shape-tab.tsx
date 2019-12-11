@@ -6,22 +6,30 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaArrowAltCircleRight,
     FaArrowDown,
     FaArrowUp,
-    FaBiohazard,
     FaCheck,
     FaCompass,
-    FaExpandArrowsAlt,
-    FaFutbol,
+    FaDragon,
+    FaHandPointUp,
     FaLink,
+    FaList,
     FaMagic,
     FaTimesCircle,
-    FaVolleyballBall,
+    FaTools,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, fabricFeatureIntervalRole, Stage } from "../fabric/fabric-engine"
+import {
+    FabricFeature,
+    INTERVAL_ROLES,
+    IntervalRole,
+    intervalRoleFabricFeature,
+    intervalRoleName,
+    Stage,
+} from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
@@ -29,7 +37,7 @@ import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
-import { LifeStagePanel } from "./life-stage-panel"
+import { LifeStageButton, StageTransition } from "./life-stage-button"
 
 export enum ShapeSelection {
     None,
@@ -110,54 +118,75 @@ export function ShapeTab(
         return selectedFaces.length < faceCount || ellipsoids
     }
 
+    function disabledLifeStage(): boolean {
+        return ellipsoids || shapeSelection !== ShapeSelection.None
+    }
+
     return (
         <div>
             <Grouping>
-                <LifeStagePanel
+                <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
+                <LifeStageButton
                     fabric={fabric}
-                    beforeSlack={true}
-                    disabled={ellipsoids || shapeSelection !== ShapeSelection.None}
+                    stageTransition={StageTransition.CaptureLengthsToSlack}
+                    disabled={disabledLifeStage()}
+                />
+                <LifeStageButton
+                    fabric={fabric}
+                    stageTransition={StageTransition.CurrentLengthsToSlack}
+                    disabled={disabledLifeStage()}
+                />
+                <LifeStageButton
+                    fabric={fabric}
+                    stageTransition={StageTransition.SlackToShaping}
+                    disabled={disabledLifeStage()}
                 />
             </Grouping>
             <Grouping>
+                <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
+                <ButtonGroup size="sm" className="w-100 my-2">
+                    <Button
+                        color={shapeSelection === ShapeSelection.Intervals ? "warning" : "secondary"}
+                        disabled={ellipsoids && shapeSelection === ShapeSelection.None || selectedFaces.length === 0}
+                        onClick={() => {
+                            const selection = shapeSelection === ShapeSelection.Intervals ? ShapeSelection.None : ShapeSelection.Intervals
+                            setShapeSelection(selection)
+                        }}
+                    >
+                        <span><FaArrowDown/> Adjust <FaArrowUp/></span>
+                    </Button>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
+                            onClick={adjustValue(true, true, true)}>
+                        TC <FaArrowUp/>
+                    </Button>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
+                            onClick={adjustValue(false, true, true)}>
+                        TC <FaArrowDown/>
+                    </Button>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
+                            onClick={adjustValue(true, false, true)}>
+                        T<FaArrowUp/>
+                    </Button>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
+                            onClick={adjustValue(false, false, true)}>
+                        T <FaArrowDown/>
+                    </Button>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
+                            onClick={adjustValue(true, true, false)}>
+                        C <FaArrowUp/>
+                    </Button>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
+                            onClick={adjustValue(false, true, false)}>
+                        C <FaArrowDown/>
+                    </Button>
+                </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
                         disabled={selectedFaces.length === 0 || disabled() && shapeSelection !== ShapeSelection.None}
                         onClick={() => clearSelectedFaces()}
                     >
-                        Clear selection {selectedFaces.map(({index}) => <FaTimesCircle
-                        key={`Dot${index}`}/>)}
+                        <FaTimesCircle/> Clear selection
                     </Button>
-                    <Button
-                        color={shapeSelection === ShapeSelection.Intervals ? "warning" : "secondary"}
-                        disabled={ellipsoids && shapeSelection === ShapeSelection.None}
-                        onClick={() => setShapeSelection(ShapeSelection.Intervals)}
-                    >
-                        <span><FaArrowDown/> Adjust <FaArrowUp/></span>
-                    </Button>
-                </ButtonGroup>
-                <ButtonGroup size="sm" className="w-100 my-2">
-                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
-                            onClick={adjustValue(true, true, true)}>
-                        <FaArrowUp/><FaFutbol/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(false, true, true)}>
-                        <FaArrowDown/><FaFutbol/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(true, false, true)}>
-                        <FaArrowUp/><FaVolleyballBall/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(false, false, true)}>
-                        <FaArrowDown/><FaVolleyballBall/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(true, true, false)}>
-                        <FaArrowUp/><FaExpandArrowsAlt/>
-                    </Button>
-                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(false, true, false)}>
-                        <FaArrowDown/><FaExpandArrowsAlt/>
-                    </Button>
-                </ButtonGroup>
-                <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
                         disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
                         onClick={() => {
@@ -179,6 +208,7 @@ export function ShapeTab(
                 </ButtonGroup>
             </Grouping>
             <Grouping>
+                <h6 className="w-100 text-center"><FaTools/> Adjustments</h6>
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={disabled()}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={disabled()}/>
                 <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={disabled()}/>
@@ -187,26 +217,29 @@ export function ShapeTab(
                         disabled={disabled()}
                         color={pushAndPull ? "secondary" : "success"}
                         onClick={() => setPushAndPull(false)}
-                    ><FaCheck/>Push or Pull</Button>
+                    ><FaCheck/>: T or C</Button>
                     <Button
                         disabled={disabled()}
                         color={pushAndPull ? "success" : "secondary"}
                         onClick={() => setPushAndPull(true)}
-                    ><FaBiohazard/> Push and Pull</Button>
+                    ><FaDragon/>: T=C</Button>
                 </ButtonGroup>
             </Grouping>
             <Grouping>
+                <h6 className="w-100 text-center"><FaList/> Default Lengths</h6>
                 <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={disabled()}/>
                 <ButtonGroup className="my-2">{
-                    Object.keys(floatFeatures)
-                        .map(k => floatFeatures[k] as FloatFeature)
-                        .filter(feature => fabricFeatureIntervalRole(feature.fabricFeature) !== undefined)
-                        .map(feature => (
-                            <Button size="sm" key={feature.title}
+                    INTERVAL_ROLES
+                        .map(intervalRole => ({
+                            intervalRole,
+                            feature: floatFeatures[intervalRoleFabricFeature(intervalRole)],
+                        }))
+                        .map(({intervalRole, feature}) => (
+                            <Button size="sm" key={IntervalRole[intervalRole]}
                                     onClick={() => setLengthFeature(feature)}
                                     color={lengthFeature.fabricFeature === feature.fabricFeature ? "success" : "secondary"}
                             >
-                                {feature.title}
+                                {intervalRoleName(intervalRole)}
                             </Button>
                         ))
                 }</ButtonGroup>

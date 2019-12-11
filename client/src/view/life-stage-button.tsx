@@ -22,9 +22,18 @@ import { Button, ButtonGroup } from "reactstrap"
 import { Stage } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
-export function LifeStagePanel({fabric, beforeSlack, disabled}: {
+export enum StageTransition {
+    CaptureLengthsToSlack,
+    CurrentLengthsToSlack,
+    SlackToRealizing,
+    SlackToShaping,
+    CaptureRealizedToSlack,
+    CaptureStrainForStiffness,
+}
+
+export function LifeStageButton({fabric, stageTransition, disabled}: {
     fabric: TensegrityFabric,
-    beforeSlack: boolean,
+    stageTransition: StageTransition,
     disabled: boolean,
 }): JSX.Element {
 
@@ -41,59 +50,74 @@ export function LifeStagePanel({fabric, beforeSlack, disabled}: {
         return life.stage !== stageAccepted
     }
 
-    if (beforeSlack) {
-        return (
-            <ButtonGroup vertical={true} className="w-100 my-1">
+    switch (stageTransition) {
+        case StageTransition.CaptureLengthsToSlack:
+            return (
                 <Button
-                    className="my-1"
+                    className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Shaping)}
                     onClick={() => fabric.toStage(Stage.Slack, {adoptLengths: true})}
                 >
-                    Capture Lengths <FaCamera/> ( <Symbol stage={Stage.Shaping}/> ) <FaArrowRight/> ( <FaBaby/><Symbol stage={Stage.Slack}/> ) New Slack
+                    Capture Lengths <FaCamera/> (
+                    <Symbol stage={Stage.Shaping}/> ) <FaArrowRight/> ( <FaBaby/><Symbol stage={Stage.Slack}/> )
+                    New Slack
                 </Button>
+            )
+        case StageTransition.CurrentLengthsToSlack:
+            return (
                 <Button
+                    className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Shaping)}
                     onClick={() => fabric.toStage(Stage.Slack)}
                 >
                     Current Lengths <Symbol stage={Stage.Shaping}/> <FaArrowRight/>
                     <Symbol stage={Stage.Slack}/> Slack
                 </Button>
-            </ButtonGroup>
-        )
-    } else {
-        return (
-            <ButtonGroup vertical={true} className="w-100 my-2">
+            )
+        case StageTransition.SlackToRealizing:
+            return (
                 <Button
-                    className="my-1"
+                    className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Slack)}
                     onClick={() => fabric.toStage(Stage.Realizing)}
                 >
                     Slack <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Realized}/> Realized
                 </Button>
+            )
+        case StageTransition.SlackToShaping:
+            return (
+                <ButtonGroup vertical={true} className="w-100 my-1">
+                    <Button
+                        className="my-1 w-100"
+                        disabled={allDisabledExcept(Stage.Slack)}
+                        onClick={() => fabric.toStage(Stage.Shaping)}
+                    >
+                        Slack <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Shaping}/> Shaping
+                    </Button>
+                </ButtonGroup>
+            )
+        case StageTransition.CaptureRealizedToSlack:
+            return (
                 <Button
-                    className="my-1"
-                    disabled={allDisabledExcept(Stage.Slack)}
-                    onClick={() => fabric.toStage(Stage.Shaping)}
-                >
-                    Slack <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Shaping}/> Shaping
-                </Button>
-                <Button
-                    className="my-1"
+                    className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Realized)}
                     onClick={() => fabric.toStage(Stage.Slack, {adoptLengths: true})}
                 >
-                    Capture realized <FaCamera/> ( <Symbol stage={Stage.Realized}/> ) <FaArrowRight/> ( <FaBaby/> <Symbol stage={Stage.Slack}/> ) New Slack
+                    Capture realized <FaCamera/> ( <Symbol stage={Stage.Realized}/> ) <FaArrowRight/> ( <FaBaby/>
+                    <Symbol stage={Stage.Slack}/> ) New Slack
                 </Button>
+            )
+        case StageTransition.CaptureStrainForStiffness:
+            return (
                 <Button
-                    className="my-1"
+                    className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Realized)}
                     onClick={() => fabric.toStage(Stage.Slack, {strainToStiffness: true})}
                 >
                     Capture Strain <FaCamera/> ( <Symbol stage={Stage.Realized}/> <FaList/> ) <FaArrowRight/>
                     ( <Symbol stage={Stage.Slack}/> <FaChartBar/> ) Slack Stiffness
                 </Button>
-            </ButtonGroup>
-        )
+            )
     }
 }
 

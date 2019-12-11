@@ -6,14 +6,17 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaCamera,
     FaCircle,
+    FaClock,
     FaCompressArrowsAlt,
     FaDownload,
-    FaExpandArrowsAlt,
+    FaExpandArrowsAlt, FaEye,
     FaFileCsv,
+    FaFistRaised,
     FaFutbol,
     FaHandRock,
-    FaParachuteBox,
+    FaParachuteBox, FaRunning,
     FaVolleyballBall,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
@@ -75,10 +78,7 @@ export function ViewTab(
     return (
         <div>
             <Grouping>
-                <FeaturePanel key="it" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={ellipsoids}/>
-                <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
-            </Grouping>
-            <Grouping>
+                <h6 className="w-100 text-center"><FaEye/> Coloring</h6>
                 <ButtonGroup className="w-100 my-2">
                     <ViewButton pushes={true} pulls={true}>
                         <span><FaFutbol/> All</span>
@@ -93,9 +93,9 @@ export function ViewTab(
                         <span><FaCircle/> Roles</span>
                     </ViewButton>
                 </ButtonGroup>
-                <FeaturePanel key="sthresh" feature={floatFeatures[FabricFeature.SlackThreshold]} disabled={false}/>
             </Grouping>
             <Grouping>
+                <h6 className="w-100 text-center"><FaCamera/> Snapshot</h6>
                 <ButtonGroup size="sm">
                     {INTERVAL_ROLES.map(intervalRole => (
                         <Button
@@ -120,6 +120,13 @@ export function ViewTab(
                               disabled={!ellipsoids}/>
             </Grouping>
             <Grouping>
+                <h6 className="w-100 text-center"><FaClock/> Time</h6>
+                <FeaturePanel key="it" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={ellipsoids}/>
+                <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
+                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenstCountdown]} disabled={ellipsoids}/>
+            </Grouping>
+            <Grouping>
+                <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>
                 <ButtonGroup className="w-100">
                     <Button disabled={life.stage !== Stage.Realized}
                             onClick={() => fabric.instance.engine.setAltitude(1)}>
@@ -136,6 +143,7 @@ export function ViewTab(
                 </ButtonGroup>
             </Grouping>
             <Grouping>
+                <h6 className="w-100 text-center"><FaRunning/> Take</h6>
                 <ButtonGroup vertical={true} className="w-100">
                     <Button onClick={() => saveCSVZip(fabric)}>
                         <FaDownload/> Download CSV <FaFileCsv/>
