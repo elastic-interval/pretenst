@@ -18,7 +18,7 @@ import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
 import { RealizeTab } from "./realize-tab"
-import { ShapeTab } from "./shape-tab"
+import { ShapeSelection, ShapeTab } from "./shape-tab"
 import { StrainTab } from "./strain-tab"
 import { TenscriptTab } from "./tenscript-tab"
 import { ViewTab } from "./view-tab"
@@ -29,7 +29,7 @@ export function ControlTabs(
     {
         floatFeatures,
         rootTenscript, setRootTenscript,
-        selectionMode, setSelectionMode,
+        shapeSelection, setShapeSelection,
         selectedFaces, clearSelectedFaces, selectedIntervals,
         fabric, setFabric, runTenscript,
         visibleRoles, setVisibleRoles,
@@ -44,8 +44,8 @@ export function ControlTabs(
         runTenscript: (tenscript: ITenscript) => void,
         fabric?: TensegrityFabric,
         setFabric: (fabric: TensegrityFabric) => void,
-        selectionMode: boolean,
-        setSelectionMode: (selectionMode: boolean) => void,
+        shapeSelection: ShapeSelection,
+        setShapeSelection: (shapeSelection: ShapeSelection) => void,
         toFullScreen: () => void,
         visibleRoles: IntervalRole[],
         setVisibleRoles: (roles: IntervalRole[]) => void,
@@ -108,8 +108,8 @@ export function ControlTabs(
                             fabric={fabric}
                             setFabric={setFabric}
                             selectedIntervals={selectedIntervals}
-                            selectionMode={selectionMode}
-                            setSelectionMode={setSelectionMode}
+                            shapeSelection={shapeSelection}
+                            setShapeSelection={setShapeSelection}
                             selectedFaces={selectedFaces}
                             clearSelectedFaces={clearSelectedFaces}
                             storedState$={storedState$}
@@ -120,7 +120,7 @@ export function ControlTabs(
                         <RealizeTab
                             floatFeatures={floatFeatures}
                             fabric={fabric}
-                            selectionMode={selectionMode}
+                            shapeSelection={shapeSelection}
                             storedState$={storedState$}
                         />
                     )

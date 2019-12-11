@@ -26,6 +26,7 @@ import { IStoredState } from "../storage/stored-state"
 
 import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
+import { ShapeSelection } from "./shape-tab"
 import { SurfaceComponent } from "./surface-component"
 
 extend({Orbit})
@@ -52,14 +53,14 @@ const ALTITUDE = 4
 
 export function FabricView({
                                fabric, fabricError, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
-                               selectionMode, ellipsoids, visibleRoles,
+                               shapeSelection, ellipsoids, visibleRoles,
                            }: {
     fabric: TensegrityFabric,
     fabricError: (error: string) => void,
     selectedIntervals: IInterval[],
     selectedFaces: IFace[],
     setSelectedFaces: (faces: IFace[]) => void,
-    selectionMode: boolean,
+    shapeSelection: ShapeSelection,
     ellipsoids: boolean,
     visibleRoles: IntervalRole[],
     storedState$: BehaviorSubject<IStoredState>,
@@ -113,7 +114,7 @@ export function FabricView({
             const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
             orbit.current.target.add(towardsTarget)
             orbit.current.update()
-            if (!ellipsoids && !selectionMode) {
+            if (!ellipsoids && shapeSelection !== ShapeSelection.Faces) {
                 const nextStage = fabric.iterate()
                 if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
                     setTimeout(() => fabric.toStage(Stage.Realized, {}))
@@ -128,7 +129,7 @@ export function FabricView({
             fabricError(e)
         }
     }, true, [
-        fabric, fabric, age, life, selectionMode, ellipsoids,
+        fabric, fabric, age, life, shapeSelection, ellipsoids,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
@@ -159,7 +160,7 @@ export function FabricView({
                         storedState={storedState}
                     />
                 )}
-                {!selectionMode ? undefined : (
+                {shapeSelection !== ShapeSelection.Faces ? undefined : (
                     <Faces
                         key="faces"
                         fabric={fabric}
@@ -178,7 +179,7 @@ export function FabricView({
 }
 
 function SelectedFace({fabric, face}: { fabric: TensegrityFabric, face: IFace }): JSX.Element {
-    const scale = percentToFactor(face.brick.scale) / 6
+    const scale = percentToFactor(face.brick.scale) / 8
     return (
         <mesh
             geometry={SPHERE}

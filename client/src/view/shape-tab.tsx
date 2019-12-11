@@ -7,12 +7,13 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import {
     FaArrowDown,
-    FaArrowUp, FaBiohazard, FaCheck,
+    FaArrowUp,
+    FaBiohazard,
+    FaCheck,
     FaCircle,
     FaCompass,
     FaExpandArrowsAlt,
     FaFutbol,
-    FaHandPointUp,
     FaLink,
     FaMagic,
     FaTimesCircle,
@@ -31,18 +32,24 @@ import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { LifeStagePanel } from "./life-stage-panel"
 
+export enum ShapeSelection {
+    None,
+    Faces,
+    Intervals,
+}
+
 export function ShapeTab(
     {
         floatFeatures, fabric, selectedIntervals,
-        setFabric, selectionMode, setSelectionMode,
+        setFabric, shapeSelection, setShapeSelection,
         selectedFaces, clearSelectedFaces, storedState$,
     }: {
         floatFeatures: Record<FabricFeature, FloatFeature>,
         fabric: TensegrityFabric,
         setFabric: (fabric: TensegrityFabric) => void,
         selectedIntervals: IInterval[],
-        selectionMode: boolean,
-        setSelectionMode: (selectionMode: boolean) => void,
+        shapeSelection: ShapeSelection,
+        setShapeSelection: (shapeSelection: ShapeSelection) => void,
         selectedFaces: IFace[],
         clearSelectedFaces: () => void,
         storedState$: BehaviorSubject<IStoredState>,
@@ -89,16 +96,16 @@ export function ShapeTab(
     function connect(): void {
         fabric.connectFaces(selectedFaces)
         clearSelectedFaces()
-        setSelectionMode(false)
+        setShapeSelection(ShapeSelection.None)
         setFabric(fabric)
     }
 
-    function shapeDisabled(): boolean {
+    function disabled(): boolean {
         return ellipsoids || life.stage !== Stage.Shaping
     }
 
-    function disableUnlessFaceCount(faceCount: number): boolean {
-        if (shapeDisabled()) {
+    function disableUnlessFaceCount(faceCount: number, mode: ShapeSelection): boolean {
+        if (disabled() || shapeSelection !== mode) {
             return true
         }
         return selectedFaces.length < faceCount || ellipsoids
@@ -110,49 +117,50 @@ export function ShapeTab(
                 <LifeStagePanel
                     fabric={fabric}
                     beforeSlack={true}
-                    disabled={ellipsoids || selectionMode}
+                    disabled={ellipsoids || shapeSelection !== ShapeSelection.None}
                 />
             </Grouping>
             <Grouping>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        color={selectionMode ? "warning" : "secondary"}
-                        disabled={shapeDisabled() && !selectionMode}
-                        onClick={() => setSelectionMode(!selectionMode)}
-                    >
-                        <span><FaHandPointUp/></span> Selection
-                    </Button>
-                    <Button
-                        disabled={selectedFaces.length === 0 || shapeDisabled() && !selectionMode}
+                        disabled={selectedFaces.length === 0 || disabled() && shapeSelection !== ShapeSelection.None}
                         onClick={() => clearSelectedFaces()}
                     >
                         <FaTimesCircle/>&nbsp;Clear selection&nbsp;&nbsp;{selectedFaces.map(({index}) => <FaCircle
                         key={`Dot${index}`}/>)}
                     </Button>
+                    <Button
+                        color={shapeSelection === ShapeSelection.Intervals ? "warning" : "secondary"}
+                        disabled={ellipsoids && shapeSelection === ShapeSelection.None}
+                        onClick={() => setShapeSelection(ShapeSelection.Intervals)}
+                    >
+                        <span><FaArrowDown/> Adjust <FaArrowUp/></span>
+                    </Button>
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, true)}>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
+                            onClick={adjustValue(true, true, true)}>
                         <FaArrowUp/><FaFutbol/>
                     </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, true)}>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(false, true, true)}>
                         <FaArrowDown/><FaFutbol/>
                     </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, false, true)}>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(true, false, true)}>
                         <FaArrowUp/><FaVolleyballBall/>
                     </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, false, true)}>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(false, false, true)}>
                         <FaArrowDown/><FaVolleyballBall/>
                     </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(true, true, false)}>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(true, true, false)}>
                         <FaArrowUp/><FaExpandArrowsAlt/>
                     </Button>
-                    <Button disabled={disableUnlessFaceCount(1)} onClick={adjustValue(false, true, false)}>
+                    <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)} onClick={adjustValue(false, true, false)}>
                         <FaArrowDown/><FaExpandArrowsAlt/>
                     </Button>
                 </ButtonGroup>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        disabled={disableUnlessFaceCount(1)}
+                        disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
                         onClick={() => {
                             fabric.builder.uprightAtOrigin(selectedFaces[0])
                             clearSelectedFaces()
@@ -160,36 +168,36 @@ export function ShapeTab(
                         <FaCompass/><span> Upright</span>
                     </Button>
                     <Button
-                        disabled={disableUnlessFaceCount(2)}
+                        disabled={disableUnlessFaceCount(2, ShapeSelection.Faces)}
                         onClick={connect}>
                         <FaLink/><span> Connect</span>
                     </Button>
                     <Button
-                        disabled={shapeDisabled()}
+                        disabled={disabled()}
                         onClick={() => fabric.builder.optimize()}>
                         <FaMagic/><span> Bows</span>
                     </Button>
                 </ButtonGroup>
             </Grouping>
             <Grouping>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={shapeDisabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={shapeDisabled()}/>
-                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={shapeDisabled()}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingPretenstFactor]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingDrag]} disabled={disabled()}/>
+                <FeaturePanel feature={floatFeatures[FabricFeature.ShapingStiffnessFactor]} disabled={disabled()}/>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
-                        disabled={shapeDisabled()}
+                        disabled={disabled()}
                         color={pushAndPull ? "secondary" : "success"}
                         onClick={() => setPushAndPull(false)}
                     ><FaCheck/>Push or Pull</Button>
                     <Button
-                        disabled={shapeDisabled()}
+                        disabled={disabled()}
                         color={pushAndPull ? "success" : "secondary"}
                         onClick={() => setPushAndPull(true)}
                     ><FaBiohazard/> Push and Pull</Button>
                 </ButtonGroup>
             </Grouping>
             <Grouping>
-                <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={shapeDisabled()}/>
+                <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={disabled()}/>
                 <ButtonGroup className="my-2">{
                     Object.keys(floatFeatures)
                         .map(k => floatFeatures[k] as FloatFeature)

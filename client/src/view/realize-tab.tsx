@@ -16,11 +16,12 @@ import { enumValues, IStoredState, transition } from "../storage/stored-state"
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
 import { LifeStagePanel } from "./life-stage-panel"
+import { ShapeSelection } from "./shape-tab"
 
-export function RealizeTab({floatFeatures, fabric, selectionMode, storedState$}: {
+export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
     fabric: TensegrityFabric,
-    selectionMode: boolean,
+    shapeSelection: ShapeSelection,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
@@ -43,7 +44,7 @@ export function RealizeTab({floatFeatures, fabric, selectionMode, storedState$}:
     }, [fabric])
 
     function disabled(): boolean {
-        return ellipsoids || selectionMode || life.stage < Stage.Slack
+        return ellipsoids || shapeSelection !== ShapeSelection.None || life.stage < Stage.Slack
     }
 
     function changeState(changed: Partial<IStoredState>): void {
@@ -56,7 +57,7 @@ export function RealizeTab({floatFeatures, fabric, selectionMode, storedState$}:
                 <LifeStagePanel
                     fabric={fabric}
                     beforeSlack={false}
-                    disabled={ellipsoids || selectionMode}
+                    disabled={ellipsoids || shapeSelection !== ShapeSelection.None}
                 />
             </Grouping>
             <Grouping>
