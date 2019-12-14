@@ -18,6 +18,14 @@ export interface IFeatureConfig {
 }
 
 const FEATURE_PERCENTS = [50, 75, 90, 100, 125, 150, 200]
+const PHI = (1 + Math.sqrt(5)) / 2
+const RT2 = Math.sqrt(2)
+const RT3 = Math.sqrt(3)
+const RING = Math.sqrt(2 - 2 * Math.sqrt(2 / 3))
+const T1 = 1 / 2
+const T2 = (PHI / 3 - 1 / 6) * RT3
+const T3 = PHI / 3 * RT3 - 1 + RT2 / RT3
+const CROSS = Math.sqrt(T1 * T1 + T2 * T2 + T3 * T3)
 
 export function featureConfig(feature: FabricFeature): IFeatureConfig {
     switch (feature) {
@@ -130,14 +138,14 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Nexus Push",
-                defaultValue: (1 + Math.sqrt(5)) / 2,
+                defaultValue: PHI,
                 percents: FEATURE_PERCENTS,
             }
         case FabricFeature.ColumnPushLength:
             return {
                 feature,
                 name: "Column Push",
-                defaultValue: Math.sqrt(2),
+                defaultValue: RT2,
                 percents: FEATURE_PERCENTS,
             }
         case FabricFeature.TriangleLength:
@@ -151,14 +159,14 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Ring",
-                defaultValue: Math.sqrt(2 - 2 * Math.sqrt(2 / 3)),
+                defaultValue: RING,
                 percents: [10, 80, 90, 100, 110, 120, 130],
             }
         case FabricFeature.NexusCrossLength:
             return {
                 feature,
                 name: "Nexus Cross",
-                defaultValue: 1, // TODO
+                defaultValue: CROSS,
                 percents: FEATURE_PERCENTS,
             }
         case FabricFeature.ColumnCrossLength:

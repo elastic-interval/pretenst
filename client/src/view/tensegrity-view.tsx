@@ -213,7 +213,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
                                 <Button
                                     color={shapeSelection === ShapeSelection.Faces ? "warning" : "secondary"}
                                     disabled={ellipsoids && shapeSelection === ShapeSelection.None}
-                                    onClick={() => setShapeSelection(ShapeSelection.Faces)}
+                                    onClick={() => setShapeSelection(shapeSelection !== ShapeSelection.Faces ? ShapeSelection.Faces : ShapeSelection.None)}
                                 >
                                     <span><FaHandPointUp/></span>
                                 </Button>
