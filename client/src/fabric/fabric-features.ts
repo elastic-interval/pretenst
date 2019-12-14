@@ -61,8 +61,8 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Interval Countdown",
-                defaultValue: 300,
-                percents: [20, 50, 100, 200, 300, 1000],
+                defaultValue: 1000,
+                percents: [10, 20, 30, 100, 150, 400, 1000],
             }
         case FabricFeature.PretenstCountdown:
             return {

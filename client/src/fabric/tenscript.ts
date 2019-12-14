@@ -22,7 +22,25 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(B(5,S75),C(5,S75),D(5,S75)):Pretenst Lander",
     "(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0))))))):Zig Zag Loop",
     "(B2, C2, D2, A(2, b2, c2, d2)):Crystal Interstitial",
+    "(a(2,b(2,c(2,d(1,MA11)),d(2,c(1,MA10))),c(2,d(2,b(1,MA13)),b(2,d(1,MA12))),d(2,b(2,c(1,MA15)),c(2,b(1,MA14)))),b(2,d(2,Mc13),c(2,Md14)),c(2,b(2,Md15),d(2,Mb10)),d(2,c(2,Mb11),b(2,Mc12))): Diamond",
 ]
+
+/*
+(
+    a(2,
+        b(2, c(2, d(1, MA11)), d(2, c(1, MA10))),
+        c(2, d(2, b(1, MA13)), b(2, d(1, MA12))),
+        d(2, b(2, c(1, MA15)), c(2, b(1, MA14)))
+    ),
+    b(2, d(2, Mc13), c(2, Md14)),
+    c(2, b(2, Md15), d(2, Mb10)),
+    d(2, c(2, Mb11), b(2, Mc12))
+)
+*/
+
+function purify(code: string): string {
+    return code.replace(/[\n\r\t ]/g, "")
+}
 
 export interface ITenscript {
     name: string,
@@ -236,7 +254,7 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
             error("No code to parse")
             return undefined
         }
-        const tree = _fragmentToTree(code)
+        const tree = _fragmentToTree(purify(code))
         if (!tree) {
             return undefined
         }
