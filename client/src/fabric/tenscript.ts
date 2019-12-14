@@ -20,7 +20,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(a1,b(12,S85,MA1),c(12,S85,MA1),d(12,S85,MA1)):Convergence Twelve",
     "(B(7,S80,MA1),C(2,S120,MA0),D(7,S80,MA1)):Halo by Crane",
     "(B(5,S75),C(5,S75),D(5,S75)):Pretenst Lander",
-    // "(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0))))))):Zig Zag Loop",
+    "(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0))))))):Zig Zag Loop",
     "(B2, C2, D2, A(2, b2, c2, d2)):Crystal Interstitial",
 ]
 
