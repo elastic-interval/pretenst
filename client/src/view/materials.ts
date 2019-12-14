@@ -87,13 +87,13 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
         case IntervalRole.NexusCross:
             return "#59ebcb"
         case IntervalRole.ColumnCross:
-            return "#55b293"
+            return "#73c84a"
         case IntervalRole.BowMid:
             return "#f101e9"
         case IntervalRole.BowEnd:
             return "#cb01c3"
         case IntervalRole.FacePull:
-            return "#0ebf08"
+            return "#bf0105"
         default:
             return undefined
     }

@@ -41,11 +41,8 @@ export interface IRingJoint {
 }
 
 export interface IRing {
-    faceA: IFace
     matchesA: boolean
-    faceB: IFace
-    matchesB: boolean
-    joints: IJoint[]
+    ringJoints: IRingJoint[]
 }
 
 export type JointTag = number
@@ -211,6 +208,7 @@ export interface IBrick {
     joints: IJoint[]
     pushes: IInterval[]
     pulls: IInterval[]
+    crosses: IInterval[]
     rings: IInterval[][]
     faces: IFace[]
     negativeAdjacent: number
@@ -220,7 +218,7 @@ export interface IBrick {
 export function initialBrick(index: number, base: Triangle, scale: IPercent): IBrick {
     return {
         index, base, scale, joints: [],
-        pushes: [], pulls: [],
+        pushes: [], pulls: [], crosses: [],
         rings: [[], [], [], []], faces: [],
         negativeAdjacent: 0, postiveeAdjacent: 0,
     }
