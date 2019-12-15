@@ -4,7 +4,7 @@
  */
 
 import { TensegrityFabric } from "./tensegrity-fabric"
-import { IBrick, IFace, IFaceMark, IPercent, opposite, percentOrHundred, Triangle } from "./tensegrity-types"
+import { IBrick, IFace, IFaceMark, IPercent, oppositeTriangle, percentOrHundred, Triangle } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
     "(0):Zen",
@@ -304,7 +304,7 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
                 if (!mark) {
                     return
                 }
-                const brickFace = brickToMark.base === Triangle.NNN ? brickToMark.faces[triangle] : brickToMark.faces[opposite(triangle)]
+                const brickFace = brickToMark.base === Triangle.NNN ? brickToMark.faces[triangle] : brickToMark.faces[oppositeTriangle(triangle)]
                 if (brickFace.removed) {
                     throw new Error("!! trying to use a face that was removed")
                 }
@@ -322,7 +322,7 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
         }
 
         function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
-            const connectTriangle = previous.base === Triangle.PPP ? opposite(triangle) : triangle
+            const connectTriangle = previous.base === Triangle.PPP ? oppositeTriangle(triangle) : triangle
             const newBrick = fabric.builder.createConnectedBrick(previous, connectTriangle, treeScale)
             if (newTree._ === 0) {
                 markBrick(newBrick, newTree)

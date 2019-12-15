@@ -11,7 +11,6 @@ import {
     averageLocation,
     averageScaleFactor,
     factorToPercent,
-    getOrderedJoints,
     IBrick,
     IFace,
     IFacePull,
@@ -21,8 +20,7 @@ import {
     IPercent,
     IPushDefinition,
     IRing,
-    IRingJoint,
-    opposite,
+    oppositeTriangle,
     percentToFactor,
     PUSH_ARRAY,
     PushEnd,
@@ -79,25 +77,24 @@ export class TensegrityBuilder {
         this.uprightAtOrigin(markedFace[0])
     }
 
-    public checkFacePulls(facePulls: IFacePull[]): IFacePull[] | undefined {
+    public checkFacePulls(facePulls: IFacePull[]): IFacePull | undefined {
         if (facePulls.length === 0) {
             return
         }
         const instance = this.fabric.instance
-        const newPairs = facePulls.filter(facePull => {
+        const facePullFinished = facePulls.find(facePull => {
             const {alpha, omega, scaleFactor} = facePull
             const distance = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
-            if (distance > scaleToFacePullLength(scaleFactor) * 10) {
-                return true
-            }
-            this.fabric.removeFacePull(facePull)
+            return distance <= scaleToFacePullLength(scaleFactor) * 10
+        })
+        if (facePullFinished) {
+            const {alpha, omega, scaleFactor} = facePullFinished
             const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
             if (!this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)) {
                 console.log("Unable to connect")
             }
-            return false
-        })
-        return newPairs.length === facePulls.length ? undefined : newPairs
+        }
+        return facePullFinished
     }
 
     public optimize(): void {
@@ -272,7 +269,7 @@ export class TensegrityBuilder {
         const y = new Vector3().crossVectors(z, x).normalize()
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
         const base = negativeFace ? Triangle.NNN : Triangle.PPP
-        const points = this.createBrickPointsAt(base, scale, new Vector3()) // todo: maybe raise it
+        const points = this.createBrickPointsAt(base, scale, new Vector3(0, 1, 0)) // todo: maybe raise it
         const movedToFace = points.map(p => p.applyMatrix4(xform))
         const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
         return this.createBrick(movedToFace, baseTriangle, scale)
@@ -321,7 +318,7 @@ export class TensegrityBuilder {
             return vectors
         }
         const points = PUSH_ARRAY.reduce(pushesToPoints, [])
-        const newBase = opposite(base)
+        const newBase = oppositeTriangle(base)
         const trianglePoints = TRIANGLE_DEFINITIONS[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
@@ -348,6 +345,73 @@ export class TensegrityBuilder {
         return new Matrix4().getInverse(basis)
     }
 
+    private nineJointPairsByProximity(faceA: IFace, faceB: IFace): IJointPair[] {
+        const ninePairs: IJointPair[] = []
+        const instance = this.fabric.instance
+        faceA.joints.forEach(jointA => {
+            faceB.joints.forEach(jointB => {
+                const locationA = instance.location(jointA.index)
+                const locationB = instance.location(jointB.index)
+                const distance = locationA.distanceTo(locationB)
+                ninePairs.push({jointA, jointB, distance})
+            })
+        })
+        return ninePairs.sort((a, b) => a.distance - b.distance)
+    }
+
+    private facesToRing(faceA: IFace, faceB: IFace): IRing | undefined {
+        if (faceA.negative === faceB.negative) {
+            throw new Error("Polarity not opposite")
+        }
+        const ninePairs = this.nineJointPairsByProximity(faceA, faceB)
+        const sixPairs = ninePairs.slice(0, 6)
+        const closest = sixPairs.shift()
+        if (!closest) {
+            throw new Error("No closest found")
+        }
+        const extractPair = (predicate: (jointPair: IJointPair) => boolean) => {
+            const index = sixPairs.findIndex(predicate)
+            return index >= 0 ? sixPairs.splice(index, 1)[0] : undefined
+        }
+        const closestA = (jointB: IJoint) => {
+            const pair = extractPair(p => p.jointB.index === jointB.index)
+            return pair ? pair.jointA : undefined
+        }
+        const closestB = (jointA: IJoint) => {
+            const pair = extractPair(p => p.jointA.index === jointA.index)
+            return pair ? pair.jointB : undefined
+        }
+        const a0 = closest.jointA
+        const b0 = closest.jointB
+        const b1 = closestB(a0)
+        if (!b1) {
+            return undefined
+        }
+        const a1 = closestA(b1)
+        if (!a1) {
+            return undefined
+        }
+        const b2 = closestB(a1)
+        if (!b2) {
+            return undefined
+        }
+        const a2 = closestA(b2)
+        if (!a2) {
+            return undefined
+        }
+        const b3 = closestB(a2)
+        if (!b3 || b3.index !== b0.index) {
+            console.error("Cannot complete ring!")
+            return undefined
+        }
+        const pos0 = faceA.joints.findIndex(j => j.index === a0.index)
+        const pos1 = faceA.joints.findIndex(j => j.index === a1.index)
+        const ringMatchesA = (pos0 + 1) % 3 === pos1
+        const jointsA = ringMatchesA !== faceA.negative ? [a0, a2, a1] : [a0, a1, a2]
+        const jointsB = ringMatchesA !== faceA.negative ? [b1, b0, b2] : [b0, b1, b2]
+        return {faceA, faceB, jointsA, jointsB}
+    }
+
     private connectFaces(faceA: IFace, faceB: IFace, connectorScale: IPercent, countdown: number): boolean {
         if (faceA.negative === faceB.negative) {
             throw new Error("Same polarity!")
@@ -356,34 +420,22 @@ export class TensegrityBuilder {
         if (!ring) {
             return false
         }
-        const joints = ring.ringJoints
-        const ringLength = joints.length
-        const createRingPull = (index: number) => {
-            const role = IntervalRole.Ring
-            const joint = joints[index]
-            const nextJoint = joints[(index + 1) % ringLength]
-            this.fabric.createInterval(joint.joint, nextJoint.joint, role, connectorScale, countdown)
-        }
         const brickIsNexus = (brick: IBrick) => brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
-        const createCrossPull = (index: number) => {
-            const current = joints[index]
-            if (!ring.matchesA) {
-                const next = joints[(index + 1) % ringLength]
-                const face = next.fromA ? faceA : faceB
-                const role = brickIsNexus(face.brick) ? IntervalRole.NexusCross : IntervalRole.ColumnCross
-                const partnerJoint = this.fabric.joints[next.joint.oppositeIndex]
-                face.brick.crosses.push(this.fabric.createInterval(current.joint, partnerJoint, role, connectorScale, countdown))
-            } else {
-                const prev = joints[(index + ringLength - 1) % joints.length]
-                const face = prev.fromA ? faceA : faceB
-                const role = brickIsNexus(face.brick) ? IntervalRole.NexusCross : IntervalRole.ColumnCross
-                const partnerJoint = this.fabric.joints[prev.joint.oppositeIndex]
-                face.brick.crosses.push(this.fabric.createInterval(current.joint, partnerJoint, role, connectorScale, countdown))
-            }
+        const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) => this.fabric.createInterval(from, to, role, connectorScale, countdown)
+        const ringInterval = (from: IJoint, to: IJoint) => createInterval(from, to, IntervalRole.Ring)
+        const crossInterval = (from: IJoint, opposite: IJoint, toFace: IFace) => {
+            const to = this.fabric.joints[opposite.oppositeIndex]
+            const role = brickIsNexus(toFace.brick) ? IntervalRole.NexusCross : IntervalRole.ColumnCross
+            return createInterval(from, to, role)
         }
-        for (let walk = 0; walk < ringLength; walk++) {
-            createRingPull(walk)
-            createCrossPull(walk)
+        for (let corner = 0; corner < 3; corner++) {
+            const a0 = ring.jointsA[corner]
+            const b0 = ring.jointsB[corner]
+            const b1 = ring.jointsB[(corner + 1) % 3]
+            ringInterval(a0, b0)
+            ringInterval(a0, b1)
+            crossInterval(a0, b1, faceB)
+            crossInterval(b0, a0, faceA)
         }
         const handleFace = (faceToRemove: IFace): void => {
             const scale = faceToRemove.brick.scale
@@ -420,87 +472,6 @@ export class TensegrityBuilder {
         handleFace(faceB)
         this.fabric.instance.forgetDimensions()
         return true
-    }
-
-    private nineJointPairsByProximity(faceA: IFace, faceB: IFace): IJointPair[] {
-        const ninePairs: IJointPair[] = []
-        const instance = this.fabric.instance
-        faceA.joints.forEach(jointA => {
-            faceB.joints.forEach(jointB => {
-                const locationA = instance.location(jointA.index)
-                const locationB = instance.location(jointB.index)
-                const distance = locationA.distanceTo(locationB)
-                ninePairs.push({jointA, jointB, distance})
-            })
-        })
-        return ninePairs.sort((a, b) => a.distance - b.distance)
-    }
-
-    private sameOrientation(ring: IRingJoint[], face: IFace): boolean {
-        const firstIndex = ring.findIndex(ringJoint => face.joints.some(fj => fj.index === ringJoint.joint.index))
-        if (firstIndex < 0) {
-            throw new Error()
-        }
-        const first = ring[firstIndex]
-        const next = ring[firstIndex + 2]
-        const faceJoints = getOrderedJoints(face)
-        const faceFirst = faceJoints.findIndex(j => j.index === first.joint.index)
-        const faceNext = faceJoints.findIndex(j => j.index === next.joint.index)
-        return (faceFirst + 1) % 3 === faceNext
-    }
-
-    private facesToRing(faceA: IFace, faceB: IFace): IRing | undefined {
-        const ninePairs = this.nineJointPairsByProximity(faceA, faceB)
-        const closest = ninePairs.shift()
-        if (!closest) {
-            throw new Error()
-        }
-        let ringJoints: IRingJoint[] = [
-            {joint: closest.jointA, fromA: true},
-            {joint: closest.jointB, fromA: false},
-        ]
-        let beforeMatchA = true
-        let afterMatchB = true
-        while (ringJoints.length < 6) {
-            const findClose = (joint: IJoint, findA: boolean): { index: number, jointToAdd: IJoint } | undefined => {
-                const index = ninePairs.findIndex(p => {
-                    const goingToAdd = findA ? p.jointB : p.jointA
-                    if (ringJoints.some(ringJoint => ringJoint.joint.index === goingToAdd.index)) {
-                        return false
-                    }
-                    return joint.index === (findA ? p.jointA.index : p.jointB.index)
-                })
-                if (index < 0) {
-                    return undefined
-                }
-                const closePair = ninePairs[index]
-                const jointToAdd = findA ? closePair.jointB : closePair.jointA
-                return {index, jointToAdd}
-            }
-            const beforeEnd = ringJoints[0]
-            const foundBefore = findClose(beforeEnd.joint, beforeMatchA)
-            const afterEnd = ringJoints[ringJoints.length - 1]
-            const foundAfter = findClose(afterEnd.joint, !afterMatchB)
-            if (!foundBefore || !foundAfter) {
-                console.log("Unable to form a ring", ringJoints.length, ninePairs.length)
-                return undefined
-            }
-            const before = ninePairs[foundBefore.index]
-            const after = ninePairs[foundAfter.index]
-            if (before.distance < after.distance) {
-                const ringJoint = {joint: foundBefore.jointToAdd, fromA: !beforeMatchA}
-                ringJoints = [ringJoint, ...ringJoints]
-                ninePairs.splice(foundBefore.index, 1)
-                beforeMatchA = !beforeMatchA
-            } else {
-                const ringJoint = {joint: foundAfter.jointToAdd, fromA: afterMatchB}
-                ringJoints = [...ringJoints, ringJoint]
-                ninePairs.splice(foundAfter.index, 1)
-                afterMatchB = !afterMatchB
-            }
-        }
-        const matchesA = this.sameOrientation(ringJoints, faceA)
-        return {matchesA, ringJoints}
     }
 }
 

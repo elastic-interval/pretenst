@@ -35,14 +35,11 @@ export interface IJoint {
     oppositeIndex: number
 }
 
-export interface IRingJoint {
-    joint: IJoint
-    fromA: boolean
-}
-
 export interface IRing {
-    matchesA: boolean
-    ringJoints: IRingJoint[]
+    faceA: IFace
+    faceB: IFace
+    jointsA: IJoint[]
+    jointsB: IJoint[]
 }
 
 export type JointTag = number
@@ -176,7 +173,7 @@ export const TRIANGLE_DEFINITIONS: ITriangleDefinition[] = [
     },
 ]
 
-export function opposite(triangle: Triangle): Triangle {
+export function oppositeTriangle(triangle: Triangle): Triangle {
     return TRIANGLE_DEFINITIONS[triangle].opposite
 }
 

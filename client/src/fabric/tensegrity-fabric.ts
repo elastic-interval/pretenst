@@ -293,10 +293,10 @@ export class TensegrityFabric {
                 this.facesToConnect = undefined
                 this.builder.createFacePulls(faces)
             }
-            const newFacePulls = this.builder.checkFacePulls(this.facePulls)
-            if (newFacePulls) {
-                this.facePulls = newFacePulls
-                if (newFacePulls.length === 0) {
+            const facePullFinished = this.builder.checkFacePulls(this.facePulls)
+            if (facePullFinished) {
+                this.removeFacePull(facePullFinished)
+                if (this.facePulls.length === 0) {
                     this.builder.turnUpright()
                 }
             }
