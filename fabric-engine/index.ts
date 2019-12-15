@@ -1070,11 +1070,11 @@ export function removeFace(deadFaceIndex: u16): void {
     let intervalCount = getIntervalCount()
     for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
         if (getIntervalRole(intervalIndex) === IntervalRole.FacePull) {
-            const alpha = alphaIndex(intervalIndex)
+            let alpha = alphaIndex(intervalIndex)
             if (alpha > deadFaceIndex) {
                 setAlphaIndex(intervalIndex, alpha - 1)
             }
-            const omega = omegaIndex(intervalIndex)
+            let omega = omegaIndex(intervalIndex)
             if (omega > deadFaceIndex) {
                 setOmegaIndex(intervalIndex, omega - 1)
             }
