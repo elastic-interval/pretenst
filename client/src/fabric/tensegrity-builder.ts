@@ -77,24 +77,28 @@ export class TensegrityBuilder {
         this.uprightAtOrigin(markedFace[0])
     }
 
-    public checkFacePulls(facePulls: IFacePull[]): IFacePull | undefined {
+    public checkFacePulls(facePulls: IFacePull[], removeFacePull: (facePull: IFacePull) => void): IFacePull[] {
         if (facePulls.length === 0) {
-            return
+            return facePulls
         }
         const instance = this.fabric.instance
-        const facePullFinished = facePulls.find(facePull => {
-            const {alpha, omega, scaleFactor} = facePull
-            const distance = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
-            return distance <= scaleToFacePullLength(scaleFactor) * 10
-        })
-        if (facePullFinished) {
-            const {alpha, omega, scaleFactor} = facePullFinished
+        const connectFacePull = ({alpha, omega, scaleFactor} : IFacePull) => {
             const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
             if (!this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)) {
-                console.log("Unable to connect")
+                console.error("Unable to connect")
             }
         }
-        return facePullFinished
+        return facePulls.filter(facePull => {
+            const {alpha, omega, scaleFactor} = facePull
+            const distance = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
+            const closeEnough = distance <= scaleToFacePullLength(scaleFactor) * 10
+            if (closeEnough) {
+                connectFacePull(facePull)
+                removeFacePull(facePull)
+                return false
+            }
+            return true
+        })
     }
 
     public optimize(): void {
@@ -269,7 +273,7 @@ export class TensegrityBuilder {
         const y = new Vector3().crossVectors(z, x).normalize()
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
         const base = negativeFace ? Triangle.NNN : Triangle.PPP
-        const points = this.createBrickPointsAt(base, scale, new Vector3(0, 1, 0)) // todo: maybe raise it
+        const points = this.createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it
         const movedToFace = points.map(p => p.applyMatrix4(xform))
         const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
         return this.createBrick(movedToFace, baseTriangle, scale)

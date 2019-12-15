@@ -123,8 +123,8 @@ export class TensegrityFabric {
     }
 
     public removeFacePull(facePull: IFacePull): void {
-        this.engine.removeInterval(facePull.index)
         this.facePulls = this.facePulls.filter(existing => existing.index !== facePull.index)
+        this.engine.removeInterval(facePull.index)
         this.facePulls.forEach(existing => {
             if (existing.index > facePull.index) {
                 existing.index--
@@ -172,20 +172,19 @@ export class TensegrityFabric {
     }
 
     public removeInterval(interval: IInterval): void {
-        const {index} = interval
-        this.engine.removeInterval(index)
-        interval.removed = true
-        this.intervals = this.intervals.filter(existing => existing.index !== index)
+        this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
+        this.engine.removeInterval(interval.index)
         this.intervals.forEach(existing => {
-            if (existing.index > index) {
+            if (existing.index > interval.index) {
                 existing.index--
             }
         })
         this.facePulls.forEach(existing => {
-            if (existing.index > index) {
+            if (existing.index > interval.index) {
                 existing.index--
             }
         })
+        interval.removed = true
         this.instance.forgetDimensions()
     }
 
@@ -293,13 +292,7 @@ export class TensegrityFabric {
                 this.facesToConnect = undefined
                 this.builder.createFacePulls(faces)
             }
-            const facePullFinished = this.builder.checkFacePulls(this.facePulls)
-            if (facePullFinished) {
-                this.removeFacePull(facePullFinished)
-                if (this.facePulls.length === 0) {
-                    this.builder.turnUpright()
-                }
-            }
+            this.facePulls = this.builder.checkFacePulls(this.facePulls, facePull => this.removeFacePull(facePull))
         }
         return lifePhase
     }

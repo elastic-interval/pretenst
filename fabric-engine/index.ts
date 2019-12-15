@@ -1067,6 +1067,19 @@ export function removeFace(deadFaceIndex: u16): void {
         setFaceJointIndex(faceIndex, 1, getFaceJointIndex(nextFace, 1))
         setFaceJointIndex(faceIndex, 2, getFaceJointIndex(nextFace, 2))
     }
+    let intervalCount = getIntervalCount()
+    for (let intervalIndex: u16 = 0; intervalIndex < intervalCount; intervalIndex++) {
+        if (getIntervalRole(intervalIndex) === IntervalRole.FacePull) {
+            const alpha = alphaIndex(intervalIndex)
+            if (alpha > deadFaceIndex) {
+                setAlphaIndex(intervalIndex, alpha - 1)
+            }
+            const omega = omegaIndex(intervalIndex)
+            if (omega > deadFaceIndex) {
+                setOmegaIndex(intervalIndex, omega - 1)
+            }
+        }
+    }
     setFaceCount(faceCount)
 }
 
