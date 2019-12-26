@@ -1,0 +1,12 @@
+[package]
+name = "eig"
+version = "0.1.0"
+authors = ["Gerald de Jong <geralddejong@gmail.com>"]
+
+[dependencies]
+vec3 = "0.2.1"
+wasm-bindgen = "0.2"
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
