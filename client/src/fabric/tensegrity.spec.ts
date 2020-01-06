@@ -13,7 +13,7 @@ describe("Code parser", () => {
                 throw new Error()
             }
             const codeAfter = treeToTenscript(tenscript.name, middleman.tree, false)
-            expect(codeAfter).toBe(tenscript.code)
+            expect(codeAfter.code).toBe(tenscript.code)
         })
     })
 })

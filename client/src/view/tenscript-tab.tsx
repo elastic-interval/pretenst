@@ -9,7 +9,7 @@ import { FaBox, FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolderOpen, 
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { BOOTSTRAP, codeToTenscript, ITenscript, spaceAfterComma } from "../fabric/tenscript"
+import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
 
@@ -126,7 +126,7 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
 }): JSX.Element {
 
     const [tenscriptCode, setTenscriptCode] = useState("")
-    useEffect(() => setTenscriptCode(spaceAfterComma(tenscript.code)), [])
+    useEffect(() => setTenscriptCode(tenscript.code), [])
 
     function compile(newCode: string): void {
         const compiled = codeToTenscript(setError, false, newCode)
