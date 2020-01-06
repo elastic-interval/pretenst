@@ -10,7 +10,7 @@ import { Button } from "reactstrap"
 import { Vector3 } from "three"
 
 import { APP_EVENT, AppEvent } from "../app-event"
-import { ToolbarState } from "../docs/toolbar-state-docs"
+import { ToolbarState } from "../docs/gotchidocs/toolbar-state-docs"
 import { Island } from "../island/island"
 import { AppMode, Command, homeHexalotSelected, IAppState } from "../state/app-state"
 import { CommandHandler } from "../state/command-handler"

@@ -7,8 +7,8 @@ import * as React from "react"
 import { Button, ButtonToolbar, Card, CardBody, CardFooter, CardTitle } from "reactstrap"
 
 import { DOCS_ON_GITHUB } from "../constants"
-import { getCommandDoc } from "../docs/command-docs"
-import { TOOLBAR_STATE_DOCS, ToolbarState } from "../docs/toolbar-state-docs"
+import { getCommandDoc } from "../docs/gotchidocs/command-docs"
+import { TOOLBAR_STATE_DOCS, ToolbarState } from "../docs/gotchidocs/toolbar-state-docs"
 import { Command, IAppState } from "../state/app-state"
 
 export interface IHelpProps {

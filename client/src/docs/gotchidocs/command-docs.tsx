@@ -1,12 +1,12 @@
 /*
- * Copyright (c) 2019. Beautiful Code BV, Rotterdam, Netherlands
+ * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
 import * as React from "react"
 import { CardText } from "reactstrap"
 
-import { Command } from "../state/app-state"
+import { Command } from "../../state/app-state"
 
 export interface ICommandDoc {
     title: Command,
