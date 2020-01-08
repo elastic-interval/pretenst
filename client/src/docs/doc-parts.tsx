@@ -3,18 +3,39 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { default as React, useEffect, useState } from "react"
+import * as React from "react"
+import { useEffect, useState } from "react"
 
-export enum Page {
+type Children = JSX.Element | JSX.Element[] | string
+
+export enum PageName {
     Main,
     Tensegrity,
 }
 
-export const PAGES: Page[] = Object.keys(Page).filter(key => key.length > 2).map(key => Page[key])
+export const PAGES: PageName[] = Object.keys(PageName).filter(key => key.length > 2).map(key => PageName[key])
 
-export function Frame({children}: {
-    children: JSX.Element | JSX.Element[] | string,
-}): JSX.Element {
+export function Page({children}: { children: Children }): JSX.Element {
+    return (
+        <div>
+            {children}
+        </div>
+    )
+}
+
+export function Title({children}: { children: Children }): JSX.Element {
+    return <h3>{children}</h3>
+}
+
+export function Special({children}: { children: Children }): JSX.Element {
+    return <i>{children}</i>
+}
+
+export function Para({children}: { children: Children }): JSX.Element {
+    return <p>{children}</p>
+}
+
+export function Frame({children}: { children: Children }): JSX.Element {
     return (
         <div className="m-3 p-2" style={{
             borderRadius: "1em",
@@ -27,7 +48,7 @@ export function Frame({children}: {
     )
 }
 
-export function Loop({name, caption}: { name: string, caption: string }): JSX.Element {
+export function VideoLoop({name, caption, width}: { name: string, caption: string, width: number }): JSX.Element {
     return (
         <div style={{
             borderRadius: "1em",
@@ -37,7 +58,7 @@ export function Loop({name, caption}: { name: string, caption: string }): JSX.El
         }}>
             <video
                 style={{borderTopLeftRadius: "1em", borderTopRightRadius: "1em"}}
-                height="300"
+                width={width}
                 controls={false} loop={true} autoPlay={true}>
                 <source src={`/pretenst/movies/${name}.mp4`} type="video/mp4"/>
                 Your browser does not support the video tag.
@@ -47,9 +68,9 @@ export function Loop({name, caption}: { name: string, caption: string }): JSX.El
     )
 }
 
-export function PageLink({page}: { page: Page }): JSX.Element {
+export function PageLink({page}: { page: PageName }): JSX.Element {
     return (
-        <a href={`#${Page[page]}`}>{Page[page]}</a>
+        <a href={`#${PageName[page]}`}>{PageName[page]}</a>
     )
 }
 
