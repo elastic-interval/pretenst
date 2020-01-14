@@ -15,3 +15,5 @@ if [ -z "$(git diff)" ]; then
 fi
 git add -A
 git commit -m "Publish app - $(date)"
+
+# Test
