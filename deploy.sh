@@ -3,23 +3,13 @@
 set -x
 
 cd client
-yarn install
+yarn build:fabric-engine
+yarn build
 
-build_app() {
-  APP=$1
-  echo "Building $APP.."
-  yarn run build:"$APP"
-  rm -rf /home/galapagotchi/www/"$APP"
-  cp -r build /home/galapagotchi/www/"$APP"
-}
+cd ../../pretenst-com
+rm -rf app/*
+cp -r ../pretenst/client/build/* app/
+git add -A
+git commit -m "Publish app - $(date)"
 
-# Build fabric engine, used by both apps
-yarn run build:fabric-engine
-
-# Build apps
-build_app pretenst
-build_app galapagotchi
-
-# Launch Galapagotchi backend server
-cd ..
-docker-compose up --build -d
+#test
