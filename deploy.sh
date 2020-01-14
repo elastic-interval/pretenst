@@ -11,3 +11,5 @@ rm -rf app/*
 cp -r ../pretenst/client/build/* app/
 git add -A
 git commit -m "Publish app - $(date)"
+
+#test
