@@ -2,6 +2,7 @@
   "name": "galapagotchi-client",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://pretenst.com/app",
   "dependencies": {
     "@babel/core": "7.6.0",
     "@svgr/webpack": "4.3.2",
