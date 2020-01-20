@@ -79,7 +79,6 @@ export enum Stage {
     Realized = 6,
 }
 
-const LAND: u8 = 1
 const ERROR: u16 = 65535
 
 const MAX_INSTANCES: u16 = 32
@@ -108,6 +107,23 @@ const ROLE_COLORS: f32[][] = [
     [0.705, 0.709, 0.019],
     [0.577, 0.577, 0.577],
 ]
+
+const RAINBOW: f32[] = [
+    0.1373, 0.1608, 0.9686,
+    0.0000, 0.4824, 1.0000,
+    0.0000, 0.6471, 1.0000,
+    0.0000, 0.7686, 0.8431,
+    0.0000, 0.8667, 0.6784,
+    0.3059, 0.8667, 0.5137,
+    0.5020, 0.8549, 0.3216,
+    0.6863, 0.8235, 0.0000,
+    0.8314, 0.7098, 0.0000,
+    0.9294, 0.5804, 0.0000,
+    0.9843, 0.4431, 0.1647,
+    0.9882, 0.3020, 0.3020,
+]
+
+const BIZARRE_OFFSET = 128
 
 export function getInstanceCount(): u16 {
     return MAX_INSTANCES
@@ -141,58 +157,6 @@ const _32_INTERVALS = MAX_INTERVALS * sizeof<f32>()
 const _16_INTERVALS = MAX_INTERVALS * sizeof<u16>() * 3
 const _16_FACES = MAX_FACES * sizeof<u16>() * 3
 const _8_INTERVALS = MAX_INTERVALS * sizeof<u8>() * 3
-
-const SURFACE_BITS: u8 = 128
-const SURFACE_SIZE =
-    SURFACE_BITS * sizeof<f32>() * 2 + // location of the spots
-    SURFACE_BITS * sizeof<u8>() // bit values
-
-function getSpotLocationX(bitNumber: u8): f32 {
-    return load<f32>(bitNumber * sizeof<f32>())
-}
-
-function getSpotLocationZ(bitNumber: u8): f32 {
-    return load<f32>(SURFACE_BITS * sizeof<f32>() + bitNumber * sizeof<f32>())
-}
-
-function getHexalotBit(bitNumber: u8): u8 {
-    return load<u8>(SURFACE_BITS * sizeof<f32>() * 2 + bitNumber * sizeof<u8>())
-}
-
-function getNearestSpotIndex(jointIndex: u16): u8 {
-    let locPtr = _location(jointIndex)
-    let x = getX(locPtr)
-    let z = getZ(locPtr)
-    let minimumQuadrance: f32 = 10000
-    let nearestSpotIndex: u8 = SURFACE_BITS
-    for (let bit: u8 = 0; bit < SURFACE_BITS - 1; bit++) {
-        let xx = getSpotLocationX(bit)
-        let dx = xx - x
-        let zz = getSpotLocationZ(bit)
-        let dz = zz - z
-        let q = dx * dx + dz * dz
-        if (q < minimumQuadrance) {
-            minimumQuadrance = q
-            nearestSpotIndex = bit
-        }
-    }
-    return nearestSpotIndex
-}
-
-let useHexalot: boolean = false;
-
-function getTerrainUnder(jointIndex: u16): u8 {
-    if (!useHexalot) {
-        return LAND
-    }
-    // TODO: save the three most recent spotIndexes at the joint and check mostly only those
-    // TODO: use minimum and maximum quadrance limits (inner and outer circle of hexagon)
-    let spotIndex = getNearestSpotIndex(jointIndex)
-    if (spotIndex === SURFACE_BITS - 1) {
-        return SURFACE_BITS
-    }
-    return getHexalotBit(spotIndex)
-}
 
 // INSTANCE
 
@@ -377,12 +341,12 @@ let _instance: usize = 0
 
 export function setInstance(index: u16): void {
     instance = index
-    _instance = SURFACE_SIZE + instance * FABRIC_SIZE
+    _instance = BIZARRE_OFFSET + instance * FABRIC_SIZE
 }
 
 export function cloneInstance(fromIndex: u16, toIndex: u16): void {
-    let fromAddress = SURFACE_SIZE + fromIndex * FABRIC_SIZE
-    let toAddress = SURFACE_SIZE + toIndex * FABRIC_SIZE
+    let fromAddress = BIZARRE_OFFSET + fromIndex * FABRIC_SIZE
+    let toAddress = BIZARRE_OFFSET + toIndex * FABRIC_SIZE
     for (let walk: usize = 0; walk < FABRIC_SIZE; walk += sizeof<u32>()) {
         store<u32>(toAddress + walk, load<u32>(fromAddress + walk))
     }
@@ -391,7 +355,7 @@ export function cloneInstance(fromIndex: u16, toIndex: u16): void {
 // ?????
 
 export function init(): usize {
-    const bytes = SURFACE_SIZE + FABRIC_SIZE * MAX_INSTANCES
+    const bytes = BIZARRE_OFFSET + FABRIC_SIZE * MAX_INSTANCES
     let blocks = (bytes) >> 16
     memory.grow(blocks + 1)
     return bytes
@@ -1178,7 +1142,7 @@ function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32, active
         setY(_velocityVector, getY(_velocityVector) - gravityAbove)
         multiplyScalar(_velocityVector, 1 - dragAbove)
         addScaledVector(_velocityVector, _forceVector, 1.0 / getF32(_intervalMass(jointIndex)))
-    } else if (getTerrainUnder(jointIndex) === LAND) {
+    } else {
         addScaledVector(_velocityVector, _forceVector, 1.0 / getF32(_intervalMass(jointIndex)))
         let degreeSubmerged: f32 = -altitude < 1 ? -altitude : 0
         let degreeCushioned: f32 = 1 - degreeSubmerged
@@ -1200,8 +1164,6 @@ function jointPhysics(jointIndex: u16, gravityAbove: f32, dragAbove: f32, active
                 setY(_velocityVector, getY(_velocityVector) - ANTIGRAVITY * degreeSubmerged)
                 break
         }
-    } else {
-        logInt(1, 666) // not implemented
     }
 }
 
@@ -1383,7 +1345,7 @@ export function finishGrowing(): Stage {
 }
 
 export function _fabricOffset(): usize {
-    return SURFACE_SIZE + FABRIC_SIZE * instance
+    return BIZARRE_OFFSET + FABRIC_SIZE * instance
 }
 
 export function _midpoint(): usize {
@@ -1442,17 +1404,3 @@ export function _fabricFeatures(): usize {
     return _FABRIC_FEATURES
 }
 
-const RAINBOW: f32[] = [
-    0.1373, 0.1608, 0.9686,
-    0.0000, 0.4824, 1.0000,
-    0.0000, 0.6471, 1.0000,
-    0.0000, 0.7686, 0.8431,
-    0.0000, 0.8667, 0.6784,
-    0.3059, 0.8667, 0.5137,
-    0.5020, 0.8549, 0.3216,
-    0.6863, 0.8235, 0.0000,
-    0.8314, 0.7098, 0.0000,
-    0.9294, 0.5804, 0.0000,
-    0.9843, 0.4431, 0.1647,
-    0.9882, 0.3020, 0.3020,
-]

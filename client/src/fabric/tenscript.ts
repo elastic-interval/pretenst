@@ -93,10 +93,6 @@ function isDigit(char: string): boolean {
     return DIGITS.indexOf(char) >= 0
 }
 
-export function spaceAfterComma(tenscript: string): string {
-    return tenscript.replace(/[,]/g, ", ")
-}
-
 function assignSubtree(tree: ITenscriptTree, directionChar: string, child: ITenscriptTree): void {
     switch (directionChar) {
         case "A":

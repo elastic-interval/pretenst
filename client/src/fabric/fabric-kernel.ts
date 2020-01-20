@@ -5,15 +5,8 @@
 
 import { Vector3 } from "three"
 
-import { HEXALOT_SHAPE } from "../island/island-logic"
-
 import { IFabricEngine } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
-
-const FLOATS_IN_VECTOR = 3
-const HEXALOT_BITS = 128
-const SPOT_CENTERS_FLOATS = HEXALOT_BITS * FLOATS_IN_VECTOR
-const SPOT_CENTERS_SIZE = SPOT_CENTERS_FLOATS * Float32Array.BYTES_PER_ELEMENT
 
 export const vectorFromArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
     const offset = index * 3
@@ -44,14 +37,10 @@ export class FabricKernel {
     private instanceArray: FabricInstance[] = []
     private instanceUsed: boolean[] = []
     private arrayBuffer: ArrayBuffer
-    private spotCenters: Float32Array
-    private hexalotBits: Int8Array
 
     constructor(engine: IFabricEngine) {
         const fabricBytes = engine.init()
         this.arrayBuffer = engine.memory.buffer
-        this.spotCenters = new Float32Array(this.arrayBuffer, 0, SPOT_CENTERS_FLOATS)
-        this.hexalotBits = new Int8Array(this.arrayBuffer, SPOT_CENTERS_SIZE, HEXALOT_BITS)
         const byteLength = this.arrayBuffer.byteLength
         if (byteLength === 0) {
             throw new Error(`Zero byte length! ${fabricBytes}`)
@@ -65,20 +54,6 @@ export class FabricKernel {
             ))
             this.instanceUsed.push(false)
         }
-    }
-
-    public setHexalot(spotCenters: Vector3[], surface: boolean[]): void {
-        if (spotCenters.length !== HEXALOT_SHAPE.length || surface.length !== HEXALOT_SHAPE.length) {
-            throw new Error("Size problem")
-        }
-        spotCenters.forEach((center, index) => {
-            this.spotCenters[index * FLOATS_IN_VECTOR] = center.x
-            this.spotCenters[index * FLOATS_IN_VECTOR + 1] = center.y
-            this.spotCenters[index * FLOATS_IN_VECTOR + 2] = center.z
-        })
-        surface.forEach((land, index) => {
-            this.hexalotBits[index] = land ? 1 : 0
-        })
     }
 
     public allocateInstance(): FabricInstance | undefined {
