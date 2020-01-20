@@ -5,12 +5,24 @@
 
 import * as React from "react"
 import { useMemo } from "react"
-import { Face3, Geometry, Vector3 } from "three"
-
-import { MeshKey } from "../gotchi-view/selector"
-import { HEXAGON_POINTS, LAND_NORMAL_SPREAD, SIX, SURFACE_LAND_COLOR, UP } from "../island/constants"
+import { Color, Face3, Geometry, Vector3 } from "three"
 
 import { SURFACE } from "./materials"
+
+export const KINDA = 0.866
+export const SURFACE_SCALE = 20
+export const HEXAGON_POINTS = [
+    new Vector3(0, 0, -SURFACE_SCALE),
+    new Vector3(-KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE / 2),
+    new Vector3(-KINDA * SURFACE_SCALE, 0, SURFACE_SCALE / 2),
+    new Vector3(0, 0, SURFACE_SCALE),
+    new Vector3(KINDA * SURFACE_SCALE, 0, SURFACE_SCALE / 2),
+    new Vector3(KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE / 2),
+]
+export const SURFACE_LAND_COLOR = new Color("tan")
+export const SIX = 6
+export const UP = new Vector3(0, 1, 0)
+export const LAND_NORMAL_SPREAD = 0.03
 
 export function SurfaceComponent(): JSX.Element {
     const spots = useMemo(() => spotsGeometry(), [])
@@ -21,24 +33,23 @@ export function SurfaceComponent(): JSX.Element {
 
 function spotsGeometry(): Geometry {
     const geometry = new Geometry()
-    addSurfaceGeometry(MeshKey.SPOTS_KEY, 0, geometry.vertices, geometry.faces)
+    addSurfaceGeometry(geometry.vertices, geometry.faces)
     geometry.vertices.forEach(v => v.sub(new Vector3(0, 0.01, 0)))
     geometry.computeBoundingSphere()
     return geometry
 }
 
-function addSurfaceGeometry(meshKey: MeshKey, index: number, vertices: Vector3[], faces: Face3[]): void {
+function addSurfaceGeometry(vertices: Vector3[], faces: Face3[]): void {
     vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3(hexPoint.x, hexPoint.y, hexPoint.z)))
     vertices.push(new Vector3())
     for (let a = 0; a < SIX; a++) {
-        const offset = index * (HEXAGON_POINTS.length + 1)
         const b = (a + 1) % SIX
         const vertexNormals = [
             UP,
             new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], LAND_NORMAL_SPREAD).normalize(),
             new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], LAND_NORMAL_SPREAD).normalize(),
         ]
-        faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, SURFACE_LAND_COLOR))
+        faces.push(new Face3(SIX, a, b, vertexNormals, SURFACE_LAND_COLOR))
     }
 }
 

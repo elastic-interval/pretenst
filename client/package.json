@@ -1,5 +1,5 @@
 {
-  "name": "galapagotchi-client",
+  "name": "pretenst",
   "version": "0.1.0",
   "private": true,
   "homepage": "https://pretenst.com/app",
@@ -90,13 +90,9 @@
   },
   "scripts": {
     "prestart": "yarn build:fabric-engine",
-    "start": "yarn start:pretenst",
-    "start:pretenst": "REACT_APP_ENABLED_APP=pretenst node scripts/start.js",
-    "start:galapagotchi": "REACT_APP_ENABLED_APP=galapagotchi node scripts/start.js",
-    "build": "yarn build:pretenst",
+    "start": "node scripts/start.js",
+    "build": "node scripts/build.js",
     "build:fabric-engine": "cd ../fabric-engine && yarn build && cp ./build/fabric.wasm ../client/public",
-    "build:pretenst": "REACT_APP_ENABLED_APP=pretenst node scripts/build.js",
-    "build:galapagotchi": "REACT_APP_ENABLED_APP=galapagotchi node scripts/build.js",
     "test": "node scripts/test.js --env=jsdom",
     "lint": "npx eslint --ext .tsx,.ts src/ --fix",
     "preinstall": "node -e 'if(!/yarn\\.js$/.test(process.env.npm_execpath))throw new Error(\"Use yarn instead\")'",
