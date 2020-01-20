@@ -108,6 +108,23 @@ const ROLE_COLORS: f32[][] = [
     [0.577, 0.577, 0.577],
 ]
 
+const RAINBOW: f32[] = [
+    0.1373, 0.1608, 0.9686,
+    0.0000, 0.4824, 1.0000,
+    0.0000, 0.6471, 1.0000,
+    0.0000, 0.7686, 0.8431,
+    0.0000, 0.8667, 0.6784,
+    0.3059, 0.8667, 0.5137,
+    0.5020, 0.8549, 0.3216,
+    0.6863, 0.8235, 0.0000,
+    0.8314, 0.7098, 0.0000,
+    0.9294, 0.5804, 0.0000,
+    0.9843, 0.4431, 0.1647,
+    0.9882, 0.3020, 0.3020,
+]
+
+const BIZARRE_OFFSET = 128
+
 export function getInstanceCount(): u16 {
     return MAX_INSTANCES
 }
@@ -324,12 +341,12 @@ let _instance: usize = 0
 
 export function setInstance(index: u16): void {
     instance = index
-    _instance = instance * FABRIC_SIZE
+    _instance = BIZARRE_OFFSET + instance * FABRIC_SIZE
 }
 
 export function cloneInstance(fromIndex: u16, toIndex: u16): void {
-    let fromAddress = fromIndex * FABRIC_SIZE
-    let toAddress = toIndex * FABRIC_SIZE
+    let fromAddress = BIZARRE_OFFSET + fromIndex * FABRIC_SIZE
+    let toAddress = BIZARRE_OFFSET + toIndex * FABRIC_SIZE
     for (let walk: usize = 0; walk < FABRIC_SIZE; walk += sizeof<u32>()) {
         store<u32>(toAddress + walk, load<u32>(fromAddress + walk))
     }
@@ -338,7 +355,7 @@ export function cloneInstance(fromIndex: u16, toIndex: u16): void {
 // ?????
 
 export function init(): usize {
-    const bytes = FABRIC_SIZE * MAX_INSTANCES
+    const bytes = BIZARRE_OFFSET + FABRIC_SIZE * MAX_INSTANCES
     let blocks = (bytes) >> 16
     memory.grow(blocks + 1)
     return bytes
@@ -1328,7 +1345,7 @@ export function finishGrowing(): Stage {
 }
 
 export function _fabricOffset(): usize {
-    return FABRIC_SIZE * instance
+    return BIZARRE_OFFSET + FABRIC_SIZE * instance
 }
 
 export function _midpoint(): usize {
@@ -1387,17 +1404,3 @@ export function _fabricFeatures(): usize {
     return _FABRIC_FEATURES
 }
 
-const RAINBOW: f32[] = [
-    0.1373, 0.1608, 0.9686,
-    0.0000, 0.4824, 1.0000,
-    0.0000, 0.6471, 1.0000,
-    0.0000, 0.7686, 0.8431,
-    0.0000, 0.8667, 0.6784,
-    0.3059, 0.8667, 0.5137,
-    0.5020, 0.8549, 0.3216,
-    0.6863, 0.8235, 0.0000,
-    0.8314, 0.7098, 0.0000,
-    0.9294, 0.5804, 0.0000,
-    0.9843, 0.4431, 0.1647,
-    0.9882, 0.3020, 0.3020,
-]
