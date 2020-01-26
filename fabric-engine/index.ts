@@ -123,7 +123,7 @@ const RAINBOW: f32[] = [
     0.9882, 0.3020, 0.3020,
 ]
 
-const BIZARRE_OFFSET = 128
+const BIZARRE_OFFSET = 1024
 
 export function getInstanceCount(): u16 {
     return MAX_INSTANCES
