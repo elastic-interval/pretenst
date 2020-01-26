@@ -143,5 +143,7 @@ build
 *.wasm
 *.wasm.map
 
+wasm-pack.log
+
 .env
 

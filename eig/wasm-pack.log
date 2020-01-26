@@ -1,5 +1,0 @@
-Dec 21 14:18:54.976 ERRO crate-type must be cdylib to compile to wasm32-unknown-unknown. Add the following to your Cargo.toml file:
-
-[lib]
-crate-type = ["cdylib", "rlib"]
-Dec 21 14:20:27.281 ERRO Compiling your crate to WebAssembly

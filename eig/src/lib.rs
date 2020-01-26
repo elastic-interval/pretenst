@@ -1,7 +1,9 @@
 extern crate vec3;
 
+use wasm_bindgen::prelude::*;
+
 #[wasm_bindgen]
-fn gumby() -> [i32; 3] {
+pub fn gumby() -> [i32; 3] {
     let a = [1, 1, 1];
     let b = [1, 1, 1];
     let mut out = vec3::new(0, 0, 0);
