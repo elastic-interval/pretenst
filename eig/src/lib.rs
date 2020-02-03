@@ -1,6 +1,8 @@
+use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SurfaceCharacter {
     Frozen,
     Sticky,
@@ -9,57 +11,78 @@ pub enum SurfaceCharacter {
 }
 
 #[wasm_bindgen]
-pub fn init() -> usize {
-    10101
+#[derive(Clone, Copy, Debug, Hash, PartialEq, Eq)]
+pub enum FabricFeature {
+    Gravity,
+    Drag,
+    PretenstFactor,
+    IterationsPerFrame,
+    IntervalCountdown,
+    PretenstCountdown,
+    FacePullEndZone,
+    FacePullOrientationForce,
+    SlackThreshold,
+    ShapingPretenstFactor,
+    ShapingStiffnessFactor,
+    ShapingDrag,
+    MaxStrain,
+    VisualStrain,
+    NexusPushLength,
+    ColumnPushLength,
+    TriangleLength,
+    RingLength,
+    NexusCrossLength,
+    ColumnCrossLength,
+    BowMidLength,
+    BowEndLength,
+    PushOverPull,
+    PushRadiusFactor,
+    PullRadiusFactor,
+    MaxStiffness,
 }
 
 #[wasm_bindgen]
-pub fn set_surface_character(character: SurfaceCharacter) -> ()  {
-    unsafe {
-        SURFACE_CHARACTER = character
+pub struct Environment {
+    surface_character: SurfaceCharacter,
+    push_and_pull: bool,
+    color_pushes: bool,
+    color_pulls: bool,
+    float_features: HashMap<FabricFeature, f32>,
+}
+
+#[wasm_bindgen]
+impl Environment {
+    pub fn new(push_and_pull: bool, color_pushes: bool, color_pulls: bool) -> Environment {
+        Environment {
+            surface_character: SurfaceCharacter::Bouncy,
+            push_and_pull,
+            color_pushes,
+            color_pulls,
+            float_features: HashMap::new(),
+        }
+    }
+
+    pub fn set_coloring(&mut self, pushes: bool, pulls: bool) -> () {
+        self.color_pushes = pushes;
+        self.color_pulls = pulls;
+    }
+
+    pub fn set_surface_character(&mut self, surface_character: SurfaceCharacter) -> () {
+        self.surface_character = surface_character;
+    }
+
+    pub fn set_push_and_pull(&mut self, push_and_pull: bool) -> () {
+        self.push_and_pull = push_and_pull;
+    }
+
+    pub fn set_float_feature(&mut self, feature: FabricFeature, value: f32) -> Option<f32> {
+        self.float_features.insert(feature, value)
     }
 }
-
-#[wasm_bindgen]
-pub fn set_push_and_pull(value: bool) -> () {
-    unsafe {
-        PUSH_AND_PULL = value
-    }
-}
-
-#[wasm_bindgen]
-pub fn set_coloring(pushes: bool, pulls: bool) -> () {
-    unsafe {
-        COLOR_PUSHES = pushes;
-        COLOR_PULLS = pulls;
-    }
-}
-
-#[wasm_bindgen]
-pub fn set_instance(index: u16) -> () {
-    unsafe {
-        INSTANCE_NUMBER = index;
-    }
-}
-
-#[wasm_bindgen]
-pub fn clone_instance(_from_index: u16, _index: u16) -> () {
-}
-
-#[wasm_bindgen]
-pub fn get_instance_count() -> u16 {
-    1
-}
-
-static mut SURFACE_CHARACTER: SurfaceCharacter = SurfaceCharacter::Frozen;
-static mut PUSH_AND_PULL: bool = true;
-static mut COLOR_PUSHES: bool = true;
-static mut COLOR_PULLS: bool = true;
-static mut INSTANCE_NUMBER: u16 = 0;
 
 #[cfg(test)]
 #[test]
 fn it_works() {
-    assert_eq!(init(), 10101);
+    assert_eq!(10101, 10101);
 }
 
