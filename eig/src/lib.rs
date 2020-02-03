@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
+use nalgebra::*;
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -104,14 +105,14 @@ impl Fabric {
 }
 
 struct Joint {
-    location: [f32; 3],
-    force: [f32; 3],
-    velocity: [f32; 3],
+    location: Vector3<f32>,
+    force: Vector3<f32>,
+    velocity: Vector3<f32>,
 }
 
 impl Joint {
     pub fn physics(&mut self) {
-        vec3::add_mut(&mut self.location, &self.velocity);
+        self.location += &self.velocity;
     }
 }
 
@@ -122,21 +123,21 @@ struct Interval {
     stiffness: f32,
     linear_density: f32,
     countdown: u16,
-    unit: [f32; 3],
+    unit: Vector3<f32>,
 }
 
 impl Interval {
     pub fn physics(&mut self, joints: &mut Vec<Joint>) {
-        let omega_location = joints[self.omega_index].location;
-        let alpha_location = joints[self.alpha_index].location;
-        vec3::sub(&mut self.unit, &omega_location, &alpha_location);
-        let length = vec3::norm_mut(&mut self.unit);
+        let omega_location = &joints[self.omega_index].location;
+        let alpha_location = &joints[self.alpha_index].location;
+        self.unit = omega_location - alpha_location;
+        let length = self.unit.norm();
         let strain = (length - self.rest_length) / self.rest_length;
-        let mut push = vec3::new_zero();
-        vec3::add_mut(&mut push, &self.unit);
-        vec3::smul_mut(&mut push, &strain);
-        vec3::add_mut(&mut joints[self.alpha_index].force, &push);
-        vec3::sub_mut(&mut joints[self.omega_index].force, &push);
+        let mut push: Vector3<f32> = zero();
+        push += &self.unit;
+        push *= strain;
+        joints[self.alpha_index].force += &push;
+        joints[self.omega_index].force -= &push;
     }
 }
 
@@ -161,9 +162,9 @@ impl EIG {
     pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
         let index = self.joints.len();
         self.joints.push(Joint {
-            location: [x, y, z],
-            force: [0.0, 0.0, 0.0],
-            velocity: [0.0, 0.0, 0.0],
+            location: Vector3::new(x, y, z),
+            force: zero(),
+            velocity: zero(),
         });
         index
     }
@@ -178,7 +179,7 @@ impl EIG {
             stiffness,
             linear_density,
             countdown,
-            unit: [0.0; 3],
+            unit: zero(),
         });
         index
     }
@@ -193,8 +194,8 @@ impl EIG {
             }
         }
         for (index, interval) in self.intervals.iter().enumerate() {
-            let omega_location = self.joints[interval.omega_index].location;
-            let alpha_location = self.joints[interval.alpha_index].location;
+            let omega_location = &self.joints[interval.omega_index].location;
+            let alpha_location = &self.joints[interval.alpha_index].location;
             let offset = index * 6;
             self.fabric.line_locations[offset] = alpha_location[0];
             self.fabric.line_locations[offset + 1] = alpha_location[1];
