@@ -91,6 +91,18 @@ impl Environment {
     }
 }
 
+#[wasm_bindgen]
+pub struct Fabric {
+    line_locations: Vec<f32>
+}
+
+#[wasm_bindgen]
+impl Fabric {
+    pub fn line_locations(&self, line_locations: &mut [f32]) {
+        line_locations.copy_from_slice(&self.line_locations);
+    }
+}
+
 struct Joint {
     location: [f32; 3],
     force: [f32; 3],
@@ -129,13 +141,18 @@ impl Interval {
 }
 
 struct EIG {
+    fabric: Fabric,
     joints: Vec<Joint>,
     intervals: Vec<Interval>,
 }
 
 impl EIG {
     pub fn new(joint_count: usize, interval_count: usize) -> EIG {
+        let line_floats = joint_count * 2 * 3;
         EIG {
+            fabric: Fabric {
+                line_locations: Vec::with_capacity(line_floats),
+            },
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(interval_count),
         }
@@ -174,6 +191,17 @@ impl EIG {
             for joint in &mut self.joints {
                 joint.physics()
             }
+        }
+        for (index, interval) in self.intervals.iter().enumerate() {
+            let omega_location = self.joints[interval.omega_index].location;
+            let alpha_location = self.joints[interval.alpha_index].location;
+            let offset = index * 6;
+            self.fabric.line_locations[offset] = alpha_location[0];
+            self.fabric.line_locations[offset + 1] = alpha_location[1];
+            self.fabric.line_locations[offset + 2] = alpha_location[2];
+            self.fabric.line_locations[offset + 3] = omega_location[0];
+            self.fabric.line_locations[offset + 4] = omega_location[1];
+            self.fabric.line_locations[offset + 5] = omega_location[2];
         }
         Stage::Busy
     }
