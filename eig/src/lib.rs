@@ -3,6 +3,17 @@ use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Stage {
+    Busy,
+    Growing,
+    Shaping,
+    Slack,
+    Realizing,
+    Realized,
+}
+
+#[wasm_bindgen]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum SurfaceCharacter {
     Frozen,
     Sticky,
@@ -80,9 +91,107 @@ impl Environment {
     }
 }
 
+struct Joint {
+    location: [f32; 3],
+    force: [f32; 3],
+    velocity: [f32; 3],
+}
+
+impl Joint {
+    pub fn physics(&mut self) {
+        vec3::add_mut(&mut self.location, &self.velocity);
+    }
+}
+
+struct Interval {
+    alpha_index: usize,
+    omega_index: usize,
+    rest_length: f32,
+    stiffness: f32,
+    linear_density: f32,
+    countdown: u16,
+    unit: [f32; 3],
+}
+
+impl Interval {
+    pub fn physics(&mut self, joints: &mut Vec<Joint>) {
+        let omega_location = joints[self.omega_index].location;
+        let alpha_location = joints[self.alpha_index].location;
+        vec3::sub(&mut self.unit, &omega_location, &alpha_location);
+        let length = vec3::norm_mut(&mut self.unit);
+        let strain = (length - self.rest_length) / self.rest_length;
+        let mut push = vec3::new_zero();
+        vec3::add_mut(&mut push, &self.unit);
+        vec3::smul_mut(&mut push, &strain);
+        vec3::add_mut(&mut joints[self.alpha_index].force, &push);
+        vec3::sub_mut(&mut joints[self.omega_index].force, &push);
+    }
+}
+
+struct EIG {
+    joints: Vec<Joint>,
+    intervals: Vec<Interval>,
+}
+
+impl EIG {
+    pub fn new(joint_count: usize, interval_count: usize) -> EIG {
+        EIG {
+            joints: Vec::with_capacity(joint_count),
+            intervals: Vec::with_capacity(interval_count),
+        }
+    }
+
+    pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
+        let index = self.joints.len();
+        self.joints.push(Joint {
+            location: [x, y, z],
+            force: [0.0, 0.0, 0.0],
+            velocity: [0.0, 0.0, 0.0],
+        });
+        index
+    }
+
+    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize,
+                           rest_length: f32, stiffness: f32, linear_density: f32, countdown: u16) -> usize {
+        let index = self.intervals.len();
+        self.intervals.push(Interval {
+            alpha_index,
+            omega_index,
+            rest_length,
+            stiffness,
+            linear_density,
+            countdown,
+            unit: [0.0; 3],
+        });
+        index
+    }
+
+    pub fn iterate(&mut self, iterations: u32) -> Stage {
+        for _tick in 0..iterations {
+            for interval in &mut self.intervals {
+                interval.physics(&mut self.joints)
+            }
+            for joint in &mut self.joints {
+                joint.physics()
+            }
+        }
+        Stage::Busy
+    }
+}
+
+pub fn main() {
+    let mut eig = EIG::new(10, 10);
+    let alpha = eig.create_joint(1.0, 1.0, 1.0);
+    let omega = eig.create_joint(1.0, 1.0, -1.0);
+    let interval = eig.create_interval(alpha, omega,
+                                       1.0, 1.0, 1.0, 500);
+    eig.iterate(1);
+    println!("{}", interval);
+}
+
 #[cfg(test)]
 #[test]
 fn it_works() {
-    assert_eq!(10101, 10101);
+    assert_eq!(100, 10101);
 }
 
