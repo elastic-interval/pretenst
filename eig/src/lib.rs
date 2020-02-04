@@ -125,26 +125,38 @@ impl Environment {
 }
 
 #[wasm_bindgen]
-pub struct Fabric {
+pub struct View {
+    joint_locations: Vec<f32>,
     line_locations: Vec<f32>,
     line_colors: Vec<f32>,
 }
 
 #[wasm_bindgen]
-impl Fabric {
-    pub fn new(interval_count: u16) -> Fabric {
-        Fabric {
+impl View {
+    pub fn new(joint_count: u16, interval_count: u16) -> View {
+        View {
+            joint_locations: Vec::with_capacity((joint_count * 3) as usize),
             line_locations: Vec::with_capacity((interval_count * 2 * 3) as usize),
-            line_colors: Vec::with_capacity((interval_count * 2 * 3) as usize)
+            line_colors: Vec::with_capacity((interval_count * 2 * 3) as usize),
         }
     }
 
-    pub fn line_locations(&self, line_locations: &mut [f32]) {
+    pub fn clear(&mut self) {
+        self.joint_locations.clear();
+        self.line_locations.clear();
+        self.line_colors.clear();
+    }
+
+    pub fn copy_line_locations_to(&self, line_locations: &mut [f32]) {
         line_locations.copy_from_slice(&self.line_locations);
     }
 
-    pub fn line_colors(&self, line_colors: &mut [f32]) {
+    pub fn copy_line_colors_to(&self, line_colors: &mut [f32]) {
         line_colors.copy_from_slice(&self.line_colors);
+    }
+
+    pub fn copy_joint_locations_to(&self, joint_locations: &mut [f32]) {
+        joint_locations.copy_from_slice(&self.joint_locations);
     }
 }
 
@@ -155,10 +167,10 @@ pub fn main() {
     let omega = eig.create_joint(1.0, 1.0, -1.0);
     let interval = eig.create_interval(alpha, omega, IntervalRole::NexusPush,
                                        1.0, 1.0, 1.0, 500);
-    let face = eig.create_face(1,2,3);
+    let face = eig.create_face(1, 2, 3);
     eig.iterate(Stage::Growing, &environment);
-    let mut fabric = Fabric::new(eig.get_interval_count());
-    eig.render_to(&mut fabric, &environment);
+    let mut view = View::new(eig.get_joint_count(), eig.get_interval_count());
+    eig.render_to(&mut view, &environment);
     println!("{} {}", interval, face);
 }
 

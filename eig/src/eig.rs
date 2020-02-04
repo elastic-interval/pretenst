@@ -7,9 +7,6 @@ use crate::*;
 use joint::Joint;
 use interval::Interval;
 use face::Face;
-use constants::ROLE_COLORS;
-use constants::SLACK_COLOR;
-use constants::ATTENUATED_COLOR;
 
 pub struct EIG {
     age: u32,
@@ -34,6 +31,10 @@ impl EIG {
 
     pub fn get_interval_count(&self) -> u16 {
         self.intervals.len() as u16
+    }
+
+    pub fn get_joint_count(&self) -> u16 {
+        self.joints.len() as u16
     }
 
     fn get_realizing_nuance(&self, environment: &Environment) -> f32 {
@@ -174,41 +175,48 @@ impl EIG {
         Stage::Busy
     }
 
-    pub fn render_to(&mut self, fabric: &mut Fabric, environment: &Environment) {
+    pub fn render_to(&mut self, view: &mut View, environment: &Environment) {
         self.set_face_midpoints();
+        view.clear();
+        for joint in self.joints.iter() {
+            view.joint_locations.push(joint.location.x);
+            view.joint_locations.push(joint.location.y);
+            view.joint_locations.push(joint.location.z);
+        }
         let max_strain = environment.get_float_feature(FabricFeature::MaxStrain);
         let visual_strain = environment.get_float_feature(FabricFeature::VisualStrain);
         let slack_threshold = environment.get_float_feature(FabricFeature::SlackThreshold);
-        for (index, interval) in self.intervals.iter().enumerate() {
+        for interval in self.intervals.iter() {
             let extend = interval.strain / 2.0 * visual_strain;
-            let offset = index * 6;
-            interval.set_line_locations(&mut fabric.line_locations, offset, &self.joints, extend);
+            interval.project_line_locations(view, &self.joints, extend);
+        }
+        for interval in self.intervals.iter() {
             let unsafe_nuance = (interval.strain + max_strain) / (max_strain * 2.0);
             let nuance = if unsafe_nuance < 0.0 { 0.0 } else { if unsafe_nuance >= 1.0 { 0.9999999 } else { unsafe_nuance } };
             let slack = interval.strain.abs() < slack_threshold;
             if !environment.color_pushes && !environment.color_pulls {
-                interval.set_line_color(&mut fabric.line_colors, offset, ROLE_COLORS[interval.interval_role as usize])
+                interval.project_role_color(view)
             } else if environment.color_pushes && environment.color_pulls {
                 if slack {
-                    interval.set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                    Interval::project_slack_color(view)
                 } else {
-                    interval.set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                    Interval::project_line_color_nuance(view, nuance)
                 }
             } else if interval.is_push() {
                 if environment.color_pulls {
-                    interval.set_line_color(&mut fabric.line_colors, offset, ATTENUATED_COLOR)
+                    Interval::project_attenuated_color(view)
                 } else if slack {
-                    interval.set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                    Interval::project_slack_color(view)
                 } else {
-                    interval.set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                    Interval::project_line_color_nuance(view, nuance)
                 }
             } else { // pull
                 if environment.color_pushes {
-                    interval.set_line_color(&mut fabric.line_colors, offset, ATTENUATED_COLOR)
+                    Interval::project_attenuated_color(view)
                 } else if slack {
-                    interval.set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                    Interval::project_slack_color(view)
                 } else {
-                    interval.set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                    Interval::project_line_color_nuance(view, nuance)
                 }
             }
         }

@@ -6,6 +6,9 @@ use nalgebra::*;
 use crate::*;
 use joint::Joint;
 use constants::RAINBOW;
+use constants::ROLE_COLORS;
+use constants::SLACK_COLOR;
+use constants::ATTENUATED_COLOR;
 
 pub struct Interval {
     alpha_index: usize,
@@ -120,29 +123,41 @@ impl Interval {
         self.change_rest_length(rest_length * factor, countdown)
     }
 
-    pub fn set_line_locations<'a>(&self, line_locations: &mut Vec<f32>, offset: usize, joints: &'a Vec<Joint>, extend: f32) {
+    pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a Vec<Joint>, extend: f32) {
         let alpha = &self.alpha(joints).location;
         let omega = &self.omega(joints).location;
-        line_locations[offset] = alpha.x - self.unit.x * extend;
-        line_locations[offset + 1] = alpha.y - self.unit.y * extend;
-        line_locations[offset + 2] = alpha.z - self.unit.z * extend;
-        line_locations[offset + 3] = omega.x + self.unit.x * extend;
-        line_locations[offset + 4] = omega.y + self.unit.y * extend;
-        line_locations[offset + 5] = omega.z + self.unit.z * extend;
+        view.line_locations.push(alpha.x - self.unit.x * extend);
+        view.line_locations.push(alpha.y - self.unit.y * extend);
+        view.line_locations.push(alpha.z - self.unit.z * extend);
+        view.line_locations.push(omega.x + self.unit.x * extend);
+        view.line_locations.push(omega.y + self.unit.y * extend);
+        view.line_locations.push(omega.z + self.unit.z * extend);
     }
 
-    pub fn set_line_color(&self, line_colors: &mut Vec<f32>, offset: usize, color: [f32; 3]) {
-        line_colors[offset] = color[0];
-        line_colors[offset + 1] = color[1];
-        line_colors[offset + 2] = color[2];
-        line_colors[offset + 3] = color[0];
-        line_colors[offset + 4] = color[1];
-        line_colors[offset + 5] = color[2];
+    pub fn project_role_color(&self, view: &mut View) {
+        Interval::project_line_color(view, ROLE_COLORS[self.interval_role as usize])
     }
 
-    pub fn set_line_color_nuance(&self, line_colors: &mut Vec<f32>, offset: usize, nuance: f32) {
+    pub fn project_line_color(view: &mut View, color: [f32; 3]) {
+        view.line_colors.push(color[0]);
+        view.line_colors.push(color[1]);
+        view.line_colors.push(color[2]);
+        view.line_colors.push(color[0]);
+        view.line_colors.push(color[1]);
+        view.line_colors.push(color[2]);
+    }
+
+    pub fn project_line_color_nuance(view: &mut View, nuance: f32) {
         let rainbow_index = (nuance * RAINBOW.len() as f32 / 3.01).floor() as usize;
-        self.set_line_color(line_colors, offset, RAINBOW[rainbow_index])
+        Interval::project_line_color(view, RAINBOW[rainbow_index])
+    }
+
+    pub fn project_slack_color(view: &mut View) {
+        Interval::project_line_color(view, SLACK_COLOR)
+    }
+
+    pub fn project_attenuated_color(view: &mut View) {
+        Interval::project_line_color(view, ATTENUATED_COLOR)
     }
 }
 
