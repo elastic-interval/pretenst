@@ -5,7 +5,15 @@
 use nalgebra::*;
 use crate::*;
 
-const _ROLE_COLORS: [[f32; 3]; 9] = [
+const ATTENUATED_COLOR: [f32; 3] = [
+    0.0, 0.0, 0.0,
+];
+
+const SLACK_COLOR: [f32; 3] = [
+    0.0, 1.0, 0.0,
+];
+
+const ROLE_COLORS: [[f32; 3]; 9] = [
     [0.799, 0.519, 0.304],
     [0.879, 0.295, 0.374],
     [0.215, 0.629, 0.747],
@@ -17,7 +25,7 @@ const _ROLE_COLORS: [[f32; 3]; 9] = [
     [0.577, 0.577, 0.577],
 ];
 
-static _RAINBOW: [[f32; 3]; 12] = [
+const RAINBOW: [[f32; 3]; 12] = [
     [0.1373, 0.1608, 0.9686],
     [0.0000, 0.4824, 1.0000],
     [0.0000, 0.6471, 1.0000],
@@ -32,8 +40,8 @@ static _RAINBOW: [[f32; 3]; 12] = [
     [0.9882, 0.3020, 0.3020],
 ];
 
-static RESURFACE: f32 = 0.01;
-static ANTIGRAVITY: f32 = -0.001;
+const RESURFACE: f32 = 0.01;
+const ANTIGRAVITY: f32 = -0.001;
 
 struct Joint {
     location: Vector3<f32>,
@@ -90,7 +98,7 @@ struct Interval {
 }
 
 impl Interval {
-    pub fn physics(&mut self, joints: &mut Vec<Joint>, stage: Stage, environment: &Environment) {
+    pub fn physics(&mut self, joints: &mut Vec<Joint>, stage: Stage, environment: &Environment, realizing_nuance: f32) {
         let mut ideal_length = self.ideal_length_now();
         let omega_location = &joints[self.omega_index].location;
         let alpha_location = &joints[self.alpha_index].location;
@@ -104,7 +112,7 @@ impl Interval {
                     ideal_length *= 1.0 + environment.get_float_feature(FabricFeature::ShapingPretenstFactor);
                 }
                 Stage::Realizing => {
-                    ideal_length *= 1.0 + environment.get_float_feature(FabricFeature::PretenstFactor);// TODO * getRealizingNuance()
+                    ideal_length *= 1.0 + environment.get_float_feature(FabricFeature::PretenstFactor) * realizing_nuance
                 }
                 Stage::Realized => {
                     ideal_length *= 1.0 + environment.get_float_feature(FabricFeature::PretenstFactor)
@@ -164,25 +172,40 @@ impl Interval {
     }
 }
 
+struct Face {
+    joints: [u16; 3],
+    midpoint: Vector3<f32>,
+    normal: Vector3<f32>,
+}
+
 pub struct EIG {
+    age: u32,
     stage: Stage,
     busy_countdown: u32,
     joints: Vec<Joint>,
     intervals: Vec<Interval>,
+    faces: Vec<Face>,
 }
 
 impl EIG {
     pub fn new(joint_count: usize, interval_count: usize) -> EIG {
         EIG {
+            age: 0,
             stage: Stage::Busy,
             busy_countdown: 0,
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(interval_count),
+            faces: Vec::with_capacity(interval_count / 3), // todo
         }
     }
 
     pub fn get_interval_count(&self) -> u16 {
         self.intervals.len() as u16
+    }
+
+    fn get_realizing_nuance(&self, environment: &Environment) -> f32 {
+        let countdown = environment.get_float_feature(FabricFeature::RealizingCountdown);
+        return (countdown - self.busy_countdown as f32) / countdown;
     }
 
     pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
@@ -215,14 +238,34 @@ impl EIG {
         index
     }
 
-    fn tick(&mut self, environment: &Environment) -> u16 {
+    pub fn create_face(&mut self, joint0: u16, joint1: u16, joint2: u16) -> usize {
+        let index = self.faces.len();
+        self.faces.push(Face {
+            joints: [joint0, joint1, joint2],
+            midpoint: zero(),
+            normal: zero(),
+        });
+        index
+    }
+
+    fn set_face_midpoints(&mut self) {
+        for face in &mut self.faces {
+            let mut sum: Vector3<f32> = zero();
+            for index in 0..3 {
+                sum += &self.joints[face.joints[index] as usize].location
+            }
+            face.midpoint = sum / 3.0;
+        }
+    }
+
+    fn tick(&mut self, environment: &Environment) {
+        let realizing_nuance = self.get_realizing_nuance(environment);
         for interval in &mut self.intervals {
-            interval.physics(&mut self.joints, self.stage, environment)
+            interval.physics(&mut self.joints, self.stage, environment, realizing_nuance)
         }
         for joint in &mut self.joints {
             joint.physics(0.0, 0.0, environment)
         }
-        self.intervals.iter().map(|interval| interval.countdown).max().unwrap()
     }
 
     fn set_stage(&mut self, stage: Stage) -> Stage {
@@ -260,10 +303,10 @@ impl EIG {
     }
 
     pub fn iterate(&mut self, requested_stage: Stage, environment: &Environment) -> Stage {
-        let mut interval_busy_countdown: u16 = 0;
         for _tick in 0..environment.iterations_per_frame {
-            interval_busy_countdown = self.tick(environment);
+            self.tick(environment);
         }
+        self.age += environment.iterations_per_frame as u32;
         match self.stage {
             Stage::Busy => {
                 if requested_stage == Stage::Growing {
@@ -290,12 +333,14 @@ impl EIG {
             }
             _ => {}
         }
+        let interval_busy_countdown = self.intervals.iter()
+            .map(|interval| interval.countdown).max().unwrap();
         if interval_busy_countdown == 0 || self.busy_countdown > 0 {
             if self.busy_countdown == 0 {
                 if self.stage == Stage::Realizing {
-                    return self.set_stage(Stage::Realized)
+                    return self.set_stage(Stage::Realized);
                 }
-                return self.stage
+                return self.stage;
             }
             let mut next_countdown: u32 = self.busy_countdown - environment.iterations_per_frame as u32;
             if next_countdown > self.busy_countdown { // rollover
@@ -303,23 +348,76 @@ impl EIG {
             }
             self.busy_countdown = next_countdown;
             if next_countdown == 0 {
-                return self.stage
+                return self.stage;
             }
         }
         Stage::Busy
     }
 
-    pub fn render_to(&self, fabric: &mut Fabric) {
+    fn set_line_color(line_colors: &mut Vec<f32>, offset: usize, color: [f32; 3]) {
+        line_colors[offset] = color[0];
+        line_colors[offset + 1] = color[1];
+        line_colors[offset + 2] = color[2];
+        line_colors[offset + 3] = color[0];
+        line_colors[offset + 4] = color[1];
+        line_colors[offset + 5] = color[2];
+    }
+
+    fn set_line_color_nuance(line_colors: &mut Vec<f32>, offset: usize, nuance: f32) {
+        let rainbow_index = (nuance * RAINBOW.len() as f32 / 3.01).floor() as usize;
+        EIG::set_line_color(line_colors, offset, RAINBOW[rainbow_index])
+    }
+
+    fn set_line_locations(line_locations: &mut Vec<f32>, offset: usize, alpha: &Vector3<f32>, omega: &Vector3<f32>, extend: f32, unit: &Vector3<f32>) {
+        line_locations[offset] = alpha.x - unit.x * extend;
+        line_locations[offset + 1] = alpha.y - unit.y * extend;
+        line_locations[offset + 2] = alpha.z - unit.z * extend;
+        line_locations[offset + 3] = omega.x + unit.x * extend;
+        line_locations[offset + 4] = omega.y + unit.y * extend;
+        line_locations[offset + 5] = omega.z + unit.z * extend;
+    }
+
+    pub fn render_to(&mut self, fabric: &mut Fabric, environment: &Environment) {
+        self.set_face_midpoints();
+        let max_strain = environment.get_float_feature(FabricFeature::MaxStrain);
+        let visual_strain = environment.get_float_feature(FabricFeature::VisualStrain);
+        let slack_threshold = environment.get_float_feature(FabricFeature::SlackThreshold);
         for (index, interval) in self.intervals.iter().enumerate() {
-            let omega_location = &self.joints[interval.omega_index].location;
-            let alpha_location = &self.joints[interval.alpha_index].location;
+            let extend = interval.strain / 2.0 * visual_strain;
             let offset = index * 6;
-            fabric.line_locations[offset] = alpha_location[0];
-            fabric.line_locations[offset + 1] = alpha_location[1];
-            fabric.line_locations[offset + 2] = alpha_location[2];
-            fabric.line_locations[offset + 3] = omega_location[0];
-            fabric.line_locations[offset + 4] = omega_location[1];
-            fabric.line_locations[offset + 5] = omega_location[2];
+            EIG::set_line_locations(
+                &mut fabric.line_locations, offset,
+                &self.joints[interval.alpha_index].location,
+                &self.joints[interval.omega_index].location,
+                extend, &interval.unit);
+            let unsafe_nuance = (interval.strain + max_strain) / (max_strain * 2.0);
+            let nuance = if unsafe_nuance < 0.0 { 0.0 } else { if unsafe_nuance >= 1.0 { 0.9999999 } else { unsafe_nuance } };
+            let slack = interval.strain.abs() < slack_threshold;
+            if !environment.color_pushes && !environment.color_pulls {
+                EIG::set_line_color(&mut fabric.line_colors, offset, ROLE_COLORS[interval.interval_role as usize])
+            } else if environment.color_pushes && environment.color_pulls {
+                if slack {
+                    EIG::set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                } else {
+                    EIG::set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                }
+            } else if interval.is_push() {
+                if environment.color_pulls {
+                    EIG::set_line_color(&mut fabric.line_colors, offset, ATTENUATED_COLOR)
+                } else if slack {
+                    EIG::set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                } else {
+                    EIG::set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                }
+            } else { // pull
+                if environment.color_pushes {
+                    EIG::set_line_color(&mut fabric.line_colors, offset, ATTENUATED_COLOR)
+                } else if slack {
+                    EIG::set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                } else {
+                    EIG::set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                }
+            }
         }
     }
 }

@@ -35,7 +35,7 @@ pub enum FabricFeature {
     PretenstFactor,
     IterationsPerFrame,
     IntervalCountdown,
-    PretenstCountdown,
+    RealizingCountdown,
     FacePullEndZone,
     FacePullOrientationForce,
     SlackThreshold,
@@ -122,19 +122,25 @@ impl Environment {
 
 #[wasm_bindgen]
 pub struct Fabric {
-    line_locations: Vec<f32>
+    line_locations: Vec<f32>,
+    line_colors: Vec<f32>,
 }
 
 #[wasm_bindgen]
 impl Fabric {
     pub fn new(interval_count: u16) -> Fabric {
         Fabric {
-            line_locations: Vec::with_capacity((interval_count * 2 * 6) as usize)
+            line_locations: Vec::with_capacity((interval_count * 2 * 3) as usize),
+            line_colors: Vec::with_capacity((interval_count * 2 * 3) as usize)
         }
     }
 
     pub fn line_locations(&self, line_locations: &mut [f32]) {
         line_locations.copy_from_slice(&self.line_locations);
+    }
+
+    pub fn line_colors(&self, line_colors: &mut [f32]) {
+        line_colors.copy_from_slice(&self.line_colors);
     }
 }
 
@@ -145,10 +151,11 @@ pub fn main() {
     let omega = eig.create_joint(1.0, 1.0, -1.0);
     let interval = eig.create_interval(alpha, omega, IntervalRole::NexusPush,
                                        1.0, 1.0, 1.0, 500);
+    let face = eig.create_face(1,2,3);
     eig.iterate(Stage::Growing, &environment);
     let mut fabric = Fabric::new(eig.get_interval_count());
-    eig.render_to(&mut fabric);
-    println!("{}", interval);
+    eig.render_to(&mut fabric, &environment);
+    println!("{} {}", interval, face);
 }
 
 
