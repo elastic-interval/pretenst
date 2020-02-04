@@ -5,22 +5,39 @@
 use nalgebra::*;
 use crate::*;
 use joint::Joint;
+use constants::RAINBOW;
 
 pub struct Interval {
-    pub(crate) alpha_index: usize,
-    pub(crate) omega_index: usize,
+    alpha_index: usize,
+    omega_index: usize,
     pub(crate) interval_role: IntervalRole,
     pub(crate) rest_length: f32,
-    pub(crate) state_length: [f32; 2],
+    state_length: [f32; 2],
     pub(crate) stiffness: f32,
     pub(crate) linear_density: f32,
     pub(crate) countdown: u16,
-    pub(crate) max_countdown: u16,
-    pub(crate) unit: Vector3<f32>,
+    max_countdown: u16,
+    unit: Vector3<f32>,
     pub(crate) strain: f32,
 }
 
 impl Interval {
+    pub fn new(alpha_index: usize, omega_index: usize, interval_role: IntervalRole,
+               rest_length: f32, stiffness: f32, linear_density: f32, countdown: u16) -> Interval {
+        Interval {
+            alpha_index,
+            omega_index,
+            interval_role,
+            rest_length,
+            state_length: [1.0; 2],
+            stiffness,
+            linear_density,
+            countdown,
+            max_countdown: countdown,
+            unit: zero(),
+            strain: 0.0,
+        }
+    }
 
     pub fn alpha<'a>(&self, joints: &'a Vec<Joint>) -> &'a Joint {
         &joints[self.alpha_index]
@@ -101,6 +118,31 @@ impl Interval {
     pub fn multiply_rest_length(&mut self, factor: f32, countdown: u16) {
         let rest_length = self.state_length[0];
         self.change_rest_length(rest_length * factor, countdown)
+    }
+
+    pub fn set_line_locations<'a>(&self, line_locations: &mut Vec<f32>, offset: usize, joints: &'a Vec<Joint>, extend: f32) {
+        let alpha = &self.alpha(joints).location;
+        let omega = &self.omega(joints).location;
+        line_locations[offset] = alpha.x - self.unit.x * extend;
+        line_locations[offset + 1] = alpha.y - self.unit.y * extend;
+        line_locations[offset + 2] = alpha.z - self.unit.z * extend;
+        line_locations[offset + 3] = omega.x + self.unit.x * extend;
+        line_locations[offset + 4] = omega.y + self.unit.y * extend;
+        line_locations[offset + 5] = omega.z + self.unit.z * extend;
+    }
+
+    pub fn set_line_color(&self, line_colors: &mut Vec<f32>, offset: usize, color: [f32; 3]) {
+        line_colors[offset] = color[0];
+        line_colors[offset + 1] = color[1];
+        line_colors[offset + 2] = color[2];
+        line_colors[offset + 3] = color[0];
+        line_colors[offset + 4] = color[1];
+        line_colors[offset + 5] = color[2];
+    }
+
+    pub fn set_line_color_nuance(&self, line_colors: &mut Vec<f32>, offset: usize, nuance: f32) {
+        let rainbow_index = (nuance * RAINBOW.len() as f32 / 3.01).floor() as usize;
+        self.set_line_color(line_colors, offset, RAINBOW[rainbow_index])
     }
 }
 

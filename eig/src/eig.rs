@@ -7,7 +7,6 @@ use crate::*;
 use joint::Joint;
 use interval::Interval;
 use face::Face;
-use constants::RAINBOW;
 use constants::ROLE_COLORS;
 use constants::SLACK_COLOR;
 use constants::ATTENUATED_COLOR;
@@ -44,41 +43,28 @@ impl EIG {
 
     pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
         let index = self.joints.len();
-        self.joints.push(Joint {
-            location: Vector3::new(x, y, z),
-            force: zero(),
-            velocity: zero(),
-            interval_mass: 0.0,
-        });
+        self.joints.push(Joint::new(x, y, z));
         index
     }
 
     pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, interval_role: IntervalRole,
                            rest_length: f32, stiffness: f32, linear_density: f32, countdown: u16) -> usize {
         let index = self.intervals.len();
-        self.intervals.push(Interval {
+        self.intervals.push(Interval::new(
             alpha_index,
             omega_index,
             interval_role,
             rest_length,
-            state_length: [1.0; 2],
             stiffness,
             linear_density,
             countdown,
-            max_countdown: countdown,
-            unit: zero(),
-            strain: 0.0,
-        });
+        ));
         index
     }
 
     pub fn create_face(&mut self, joint0: u16, joint1: u16, joint2: u16) -> usize {
         let index = self.faces.len();
-        self.faces.push(Face {
-            joints: [joint0, joint1, joint2],
-            midpoint: zero(),
-            normal: zero(),
-        });
+        self.faces.push(Face::new(joint0, joint1, joint2));
         index
     }
 
@@ -188,29 +174,6 @@ impl EIG {
         Stage::Busy
     }
 
-    fn set_line_color(line_colors: &mut Vec<f32>, offset: usize, color: [f32; 3]) {
-        line_colors[offset] = color[0];
-        line_colors[offset + 1] = color[1];
-        line_colors[offset + 2] = color[2];
-        line_colors[offset + 3] = color[0];
-        line_colors[offset + 4] = color[1];
-        line_colors[offset + 5] = color[2];
-    }
-
-    fn set_line_color_nuance(line_colors: &mut Vec<f32>, offset: usize, nuance: f32) {
-        let rainbow_index = (nuance * RAINBOW.len() as f32 / 3.01).floor() as usize;
-        EIG::set_line_color(line_colors, offset, RAINBOW[rainbow_index])
-    }
-
-    fn set_line_locations(line_locations: &mut Vec<f32>, offset: usize, alpha: &Vector3<f32>, omega: &Vector3<f32>, extend: f32, unit: &Vector3<f32>) {
-        line_locations[offset] = alpha.x - unit.x * extend;
-        line_locations[offset + 1] = alpha.y - unit.y * extend;
-        line_locations[offset + 2] = alpha.z - unit.z * extend;
-        line_locations[offset + 3] = omega.x + unit.x * extend;
-        line_locations[offset + 4] = omega.y + unit.y * extend;
-        line_locations[offset + 5] = omega.z + unit.z * extend;
-    }
-
     pub fn render_to(&mut self, fabric: &mut Fabric, environment: &Environment) {
         self.set_face_midpoints();
         let max_strain = environment.get_float_feature(FabricFeature::MaxStrain);
@@ -219,37 +182,33 @@ impl EIG {
         for (index, interval) in self.intervals.iter().enumerate() {
             let extend = interval.strain / 2.0 * visual_strain;
             let offset = index * 6;
-            EIG::set_line_locations(
-                &mut fabric.line_locations, offset,
-                &interval.alpha(&self.joints).location,
-                &interval.omega(&self.joints).location,
-                extend, &interval.unit);
+            interval.set_line_locations(&mut fabric.line_locations, offset, &self.joints, extend);
             let unsafe_nuance = (interval.strain + max_strain) / (max_strain * 2.0);
             let nuance = if unsafe_nuance < 0.0 { 0.0 } else { if unsafe_nuance >= 1.0 { 0.9999999 } else { unsafe_nuance } };
             let slack = interval.strain.abs() < slack_threshold;
             if !environment.color_pushes && !environment.color_pulls {
-                EIG::set_line_color(&mut fabric.line_colors, offset, ROLE_COLORS[interval.interval_role as usize])
+                interval.set_line_color(&mut fabric.line_colors, offset, ROLE_COLORS[interval.interval_role as usize])
             } else if environment.color_pushes && environment.color_pulls {
                 if slack {
-                    EIG::set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                    interval.set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
                 } else {
-                    EIG::set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                    interval.set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
                 }
             } else if interval.is_push() {
                 if environment.color_pulls {
-                    EIG::set_line_color(&mut fabric.line_colors, offset, ATTENUATED_COLOR)
+                    interval.set_line_color(&mut fabric.line_colors, offset, ATTENUATED_COLOR)
                 } else if slack {
-                    EIG::set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                    interval.set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
                 } else {
-                    EIG::set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                    interval.set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
                 }
             } else { // pull
                 if environment.color_pushes {
-                    EIG::set_line_color(&mut fabric.line_colors, offset, ATTENUATED_COLOR)
+                    interval.set_line_color(&mut fabric.line_colors, offset, ATTENUATED_COLOR)
                 } else if slack {
-                    EIG::set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
+                    interval.set_line_color(&mut fabric.line_colors, offset, SLACK_COLOR)
                 } else {
-                    EIG::set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
+                    interval.set_line_color_nuance(&mut fabric.line_colors, offset, nuance)
                 }
             }
         }

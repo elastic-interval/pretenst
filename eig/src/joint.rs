@@ -9,13 +9,22 @@ const RESURFACE: f32 = 0.01;
 const ANTIGRAVITY: f32 = -0.001;
 
 pub struct Joint {
-    pub location: Vector3<f32>,
-    pub force: Vector3<f32>,
-    pub velocity: Vector3<f32>,
-    pub interval_mass: f32,
+    pub(crate) location: Vector3<f32>,
+    pub(crate) force: Vector3<f32>,
+    pub(crate) velocity: Vector3<f32>,
+    pub(crate) interval_mass: f32,
 }
 
 impl Joint {
+    pub fn new(x: f32, y: f32, z: f32) -> Joint {
+        Joint {
+            location: Vector3::new(x, y, z),
+            force: zero(),
+            velocity: zero(),
+            interval_mass: 0.0,
+        }
+    }
+
     pub fn physics(&mut self, gravity_above: f32, drag_above: f32, environment: &Environment) {
         let altitude = self.location.y;
         if altitude > 0.0 {
