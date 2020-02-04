@@ -1,3 +1,7 @@
+mod constants;
+mod joint;
+mod interval;
+mod face;
 mod eig;
 
 use std::collections::HashMap;
