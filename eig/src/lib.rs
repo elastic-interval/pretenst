@@ -79,6 +79,8 @@ pub struct Environment {
     push_and_pull: bool,
     color_pushes: bool,
     color_pulls: bool,
+    iterations_per_frame: u16,
+    realizing_countdown: u32,
     float_features: HashMap<FabricFeature, f32>,
 }
 
@@ -90,6 +92,8 @@ impl Environment {
             push_and_pull,
             color_pushes,
             color_pulls,
+            iterations_per_frame: 50,
+            realizing_countdown: 1000,
             float_features: HashMap::new(),
         }
     }
@@ -123,6 +127,12 @@ pub struct Fabric {
 
 #[wasm_bindgen]
 impl Fabric {
+    pub fn new(interval_count: u16) -> Fabric {
+        Fabric {
+            line_locations: Vec::with_capacity((interval_count * 2 * 6) as usize)
+        }
+    }
+
     pub fn line_locations(&self, line_locations: &mut [f32]) {
         line_locations.copy_from_slice(&self.line_locations);
     }
@@ -135,7 +145,9 @@ pub fn main() {
     let omega = eig.create_joint(1.0, 1.0, -1.0);
     let interval = eig.create_interval(alpha, omega, IntervalRole::NexusPush,
                                        1.0, 1.0, 1.0, 500);
-    eig.iterate(1, &environment);
+    eig.iterate(Stage::Growing, &environment);
+    let mut fabric = Fabric::new(eig.get_interval_count());
+    eig.render_to(&mut fabric);
     println!("{}", interval);
 }
 

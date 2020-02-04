@@ -32,6 +32,9 @@ static _RAINBOW: [[f32; 3]; 12] = [
     [0.9882, 0.3020, 0.3020],
 ];
 
+static RESURFACE: f32 = 0.01;
+static ANTIGRAVITY: f32 = -0.001;
+
 struct Joint {
     location: Vector3<f32>,
     force: Vector3<f32>,
@@ -53,11 +56,11 @@ impl Joint {
             match environment.surface_character {
                 SurfaceCharacter::Frozen => {
                     self.velocity.fill(0.0);
-                    self.location.y = -0.0001; // RESURFACE
+                    self.location.y = -RESURFACE;
                 }
                 SurfaceCharacter::Sticky => {
                     self.velocity *= degree_cushioned;
-                    self.velocity.y = degree_submerged * 0.0001; // RESURFACE
+                    self.velocity.y = degree_submerged * RESURFACE;
                 }
                 SurfaceCharacter::Slippery => {
                     self.location.fill(0.0);
@@ -65,7 +68,7 @@ impl Joint {
                 }
                 SurfaceCharacter::Bouncy => {
                     self.velocity *= degree_cushioned;
-                    self.velocity.y -= 0.001 * degree_submerged; // ANTIGRAVITY
+                    self.velocity.y -= ANTIGRAVITY * degree_submerged;
                 }
             }
         }
@@ -147,26 +150,39 @@ impl Interval {
             self.rest_length * (1.0 - progress) + state_length * progress
         }
     }
+
+    fn change_rest_length(&mut self, rest_length: f32, countdown: u16) {
+        self.rest_length = self.state_length[0];
+        self.state_length[0] = rest_length;
+        self.max_countdown = countdown;
+        self.countdown = countdown;
+    }
+
+    fn multiply_rest_length(&mut self, factor: f32, countdown: u16) {
+        let rest_length = self.state_length[0];
+        self.change_rest_length(rest_length * factor, countdown)
+    }
 }
 
 pub struct EIG {
     stage: Stage,
-    fabric: Fabric,
+    busy_countdown: u32,
     joints: Vec<Joint>,
     intervals: Vec<Interval>,
 }
 
 impl EIG {
     pub fn new(joint_count: usize, interval_count: usize) -> EIG {
-        let line_floats = joint_count * 2 * 3;
         EIG {
             stage: Stage::Busy,
-            fabric: Fabric {
-                line_locations: Vec::with_capacity(line_floats),
-            },
+            busy_countdown: 0,
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(interval_count),
         }
+    }
+
+    pub fn get_interval_count(&self) -> u16 {
+        self.intervals.len() as u16
     }
 
     pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
@@ -199,31 +215,112 @@ impl EIG {
         index
     }
 
-    fn tick(&mut self, environment: &Environment) {
+    fn tick(&mut self, environment: &Environment) -> u16 {
         for interval in &mut self.intervals {
             interval.physics(&mut self.joints, self.stage, environment)
         }
         for joint in &mut self.joints {
             joint.physics(0.0, 0.0, environment)
         }
+        self.intervals.iter().map(|interval| interval.countdown).max().unwrap()
     }
 
-    pub fn iterate(&mut self, iterations: u32, environment: &Environment) -> Stage {
-        for _tick in 0..iterations {
-            self.tick(environment);
+    fn set_stage(&mut self, stage: Stage) -> Stage {
+        self.stage = stage;
+        stage
+    }
+
+    fn set_altitude(&mut self, altitude: f32) -> f32 {
+        let low_y = self.joints.iter()
+            .map(|joint| joint.location.y)
+            .min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+        for joint in &mut self.joints {
+            joint.location.y += altitude - low_y;
+        };
+        for joint in &mut self.joints {
+            joint.velocity.fill(0.0);
+        };
+        return altitude - low_y;
+    }
+
+    fn start_realizing(&mut self, environment: &Environment) -> Stage {
+        self.busy_countdown = environment.realizing_countdown;
+        self.set_stage(Stage::Realizing)
+    }
+
+    fn slack_to_shaping(&mut self, environment: &Environment) -> Stage {
+        let countdown = environment.get_float_feature(FabricFeature::IntervalCountdown) as u16;
+        let shaping_pretenst_factor = environment.get_float_feature(FabricFeature::ShapingPretenstFactor);
+        for interval in &mut self.intervals {
+            if interval.is_push() {
+                interval.multiply_rest_length(shaping_pretenst_factor, countdown);
+            }
         }
+        self.set_stage(Stage::Shaping)
+    }
+
+    pub fn iterate(&mut self, requested_stage: Stage, environment: &Environment) -> Stage {
+        let mut interval_busy_countdown: u16 = 0;
+        for _tick in 0..environment.iterations_per_frame {
+            interval_busy_countdown = self.tick(environment);
+        }
+        match self.stage {
+            Stage::Busy => {
+                if requested_stage == Stage::Growing {
+                    return self.set_stage(requested_stage);
+                }
+            }
+            Stage::Growing => {
+                self.set_altitude(0.0);
+            }
+            Stage::Shaping => {
+                self.set_altitude(0.0);
+                match requested_stage {
+                    Stage::Realizing => return self.start_realizing(environment),
+                    Stage::Slack => return self.set_stage(Stage::Slack),
+                    _ => {}
+                }
+            }
+            Stage::Slack => {
+                match requested_stage {
+                    Stage::Realizing => return self.start_realizing(environment),
+                    Stage::Shaping => return self.slack_to_shaping(environment),
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+        if interval_busy_countdown == 0 || self.busy_countdown > 0 {
+            if self.busy_countdown == 0 {
+                if self.stage == Stage::Realizing {
+                    return self.set_stage(Stage::Realized)
+                }
+                return self.stage
+            }
+            let mut next_countdown: u32 = self.busy_countdown - environment.iterations_per_frame as u32;
+            if next_countdown > self.busy_countdown { // rollover
+                next_countdown = 0
+            }
+            self.busy_countdown = next_countdown;
+            if next_countdown == 0 {
+                return self.stage
+            }
+        }
+        Stage::Busy
+    }
+
+    pub fn render_to(&self, fabric: &mut Fabric) {
         for (index, interval) in self.intervals.iter().enumerate() {
             let omega_location = &self.joints[interval.omega_index].location;
             let alpha_location = &self.joints[interval.alpha_index].location;
             let offset = index * 6;
-            self.fabric.line_locations[offset] = alpha_location[0];
-            self.fabric.line_locations[offset + 1] = alpha_location[1];
-            self.fabric.line_locations[offset + 2] = alpha_location[2];
-            self.fabric.line_locations[offset + 3] = omega_location[0];
-            self.fabric.line_locations[offset + 4] = omega_location[1];
-            self.fabric.line_locations[offset + 5] = omega_location[2];
+            fabric.line_locations[offset] = alpha_location[0];
+            fabric.line_locations[offset + 1] = alpha_location[1];
+            fabric.line_locations[offset + 2] = alpha_location[2];
+            fabric.line_locations[offset + 3] = omega_location[0];
+            fabric.line_locations[offset + 4] = omega_location[1];
+            fabric.line_locations[offset + 5] = omega_location[2];
         }
-        Stage::Busy
     }
 }
 
