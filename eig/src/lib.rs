@@ -1,12 +1,13 @@
 mod constants;
-mod joint;
-mod interval;
-mod face;
 mod fabric;
+mod face;
+mod interval;
+mod joint;
 
+use fabric::*;
+use nalgebra::*;
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
-use fabric::*;
 
 #[wasm_bindgen]
 #[repr(u8)]
@@ -126,6 +127,7 @@ impl Environment {
 
 #[wasm_bindgen]
 pub struct View {
+    midpoint: Point3<f32>,
     joint_locations: Vec<f32>,
     line_locations: Vec<f32>,
     line_colors: Vec<f32>,
@@ -135,6 +137,7 @@ pub struct View {
 impl View {
     pub fn new(joint_count: u16, interval_count: u16) -> View {
         View {
+            midpoint: Point3::origin(),
             joint_locations: Vec::with_capacity((joint_count * 3) as usize),
             line_locations: Vec::with_capacity((interval_count * 2 * 3) as usize),
             line_colors: Vec::with_capacity((interval_count * 2 * 3) as usize),
@@ -142,6 +145,7 @@ impl View {
     }
 
     pub fn clear(&mut self) {
+        self.midpoint.coords.fill(0.0);
         self.joint_locations.clear();
         self.line_locations.clear();
         self.line_colors.clear();
@@ -165,8 +169,7 @@ pub fn main() {
     let mut eig = Fabric::new(10, 10);
     let alpha = eig.create_joint(1.0, 1.0, 1.0);
     let omega = eig.create_joint(1.0, 1.0, -1.0);
-    let interval = eig.create_interval(alpha, omega, IntervalRole::NexusPush,
-                                       1.0, 1.0, 1.0, 500);
+    let interval = eig.create_interval(alpha, omega, IntervalRole::NexusPush, 1.0, 1.0, 1.0, 500);
     let face = eig.create_face(1, 2, 3);
     eig.iterate(Stage::Growing, &environment);
     let mut view = View::new(eig.get_joint_count(), eig.get_interval_count());
@@ -174,10 +177,8 @@ pub fn main() {
     println!("{} {}", interval, face);
 }
 
-
 #[cfg(test)]
 #[test]
 fn it_works() {
     assert_eq!(100, 10101);
 }
-

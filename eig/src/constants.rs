@@ -38,3 +38,5 @@ pub const RAINBOW: [[f32; 3]; 12] = [
     [0.9882, 0.3020, 0.3020],
 ];
 
+pub const SHAPE_COUNT: usize = 16;
+pub const REST_SHAPE: u8 = 0;

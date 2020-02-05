@@ -2,15 +2,16 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-use nalgebra::*;
+use crate::constants::REST_SHAPE;
 use crate::*;
-use joint::Joint;
-use interval::Interval;
 use face::Face;
+use interval::Interval;
+use joint::Joint;
 
 pub struct Fabric {
     age: u32,
     stage: Stage,
+    current_shape: u8,
     busy_countdown: u32,
     joints: Vec<Joint>,
     intervals: Vec<Interval>,
@@ -23,6 +24,7 @@ impl Fabric {
             age: 0,
             stage: Stage::Busy,
             busy_countdown: 0,
+            current_shape: REST_SHAPE,
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(interval_count),
             faces: Vec::with_capacity(interval_count / 3), // todo
@@ -48,8 +50,16 @@ impl Fabric {
         index
     }
 
-    pub fn create_interval(&mut self, alpha_index: usize, omega_index: usize, interval_role: IntervalRole,
-                           rest_length: f32, stiffness: f32, linear_density: f32, countdown: u16) -> usize {
+    pub fn create_interval(
+        &mut self,
+        alpha_index: usize,
+        omega_index: usize,
+        interval_role: IntervalRole,
+        rest_length: f32,
+        stiffness: f32,
+        linear_density: f32,
+        countdown: u16,
+    ) -> usize {
         let index = self.intervals.len();
         self.intervals.push(Interval::new(
             alpha_index,
@@ -69,20 +79,17 @@ impl Fabric {
         index
     }
 
-    fn set_face_midpoints(&mut self) {
-        for face in &mut self.faces {
-            let mut sum: Vector3<f32> = zero();
-            for index in 0..3 {
-                sum += &face.joint(&self.joints, index).location
-            }
-            face.midpoint = sum / 3.0;
-        }
-    }
-
     fn tick(&mut self, environment: &Environment) {
         let realizing_nuance = self.get_realizing_nuance(environment);
         for interval in &mut self.intervals {
-            interval.physics(&mut self.joints, self.stage, environment, realizing_nuance)
+            interval.physics(
+                &mut self.joints,
+                &mut self.faces,
+                self.stage,
+                environment,
+                realizing_nuance,
+                self.current_shape,
+            )
         }
         for joint in &mut self.joints {
             joint.physics(0.0, 0.0, environment)
@@ -95,15 +102,18 @@ impl Fabric {
     }
 
     fn set_altitude(&mut self, altitude: f32) -> f32 {
-        let low_y = self.joints.iter()
+        let low_y = self
+            .joints
+            .iter()
             .map(|joint| joint.location.y)
-            .min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap();
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
         for joint in &mut self.joints {
             joint.location.y += altitude - low_y;
-        };
+        }
         for joint in &mut self.joints {
             joint.velocity.fill(0.0);
-        };
+        }
         return altitude - low_y;
     }
 
@@ -114,10 +124,11 @@ impl Fabric {
 
     fn slack_to_shaping(&mut self, environment: &Environment) -> Stage {
         let countdown = environment.get_float_feature(FabricFeature::IntervalCountdown) as u16;
-        let shaping_pretenst_factor = environment.get_float_feature(FabricFeature::ShapingPretenstFactor);
+        let shaping_pretenst_factor =
+            environment.get_float_feature(FabricFeature::ShapingPretenstFactor);
         for interval in &mut self.intervals {
             if interval.is_push() {
-                interval.multiply_rest_length(shaping_pretenst_factor, countdown);
+                interval.multiply_rest_length(shaping_pretenst_factor, countdown, REST_SHAPE);
             }
         }
         self.set_stage(Stage::Shaping)
@@ -145,17 +156,19 @@ impl Fabric {
                     _ => {}
                 }
             }
-            Stage::Slack => {
-                match requested_stage {
-                    Stage::Realizing => return self.start_realizing(environment),
-                    Stage::Shaping => return self.slack_to_shaping(environment),
-                    _ => {}
-                }
-            }
+            Stage::Slack => match requested_stage {
+                Stage::Realizing => return self.start_realizing(environment),
+                Stage::Shaping => return self.slack_to_shaping(environment),
+                _ => {}
+            },
             _ => {}
         }
-        let interval_busy_countdown = self.intervals.iter()
-            .map(|interval| interval.countdown).max().unwrap();
+        let interval_busy_countdown = self
+            .intervals
+            .iter()
+            .map(|interval| interval.countdown)
+            .max()
+            .unwrap();
         if interval_busy_countdown == 0 || self.busy_countdown > 0 {
             if self.busy_countdown == 0 {
                 if self.stage == Stage::Realizing {
@@ -163,8 +176,10 @@ impl Fabric {
                 }
                 return self.stage;
             }
-            let mut next_countdown: u32 = self.busy_countdown - environment.iterations_per_frame as u32;
-            if next_countdown > self.busy_countdown { // rollover
+            let mut next_countdown: u32 =
+                self.busy_countdown - environment.iterations_per_frame as u32;
+            if next_countdown > self.busy_countdown {
+                // rollover
                 next_countdown = 0
             }
             self.busy_countdown = next_countdown;
@@ -176,13 +191,14 @@ impl Fabric {
     }
 
     pub fn render_to(&mut self, view: &mut View, environment: &Environment) {
-        self.set_face_midpoints();
         view.clear();
         for joint in self.joints.iter() {
+            view.midpoint += &joint.location.coords;
             view.joint_locations.push(joint.location.x);
             view.joint_locations.push(joint.location.y);
             view.joint_locations.push(joint.location.z);
         }
+        view.midpoint /= view.joint_locations.len() as f32;
         let max_strain = environment.get_float_feature(FabricFeature::MaxStrain);
         let visual_strain = environment.get_float_feature(FabricFeature::VisualStrain);
         let slack_threshold = environment.get_float_feature(FabricFeature::SlackThreshold);
@@ -192,7 +208,15 @@ impl Fabric {
         }
         for interval in self.intervals.iter() {
             let unsafe_nuance = (interval.strain + max_strain) / (max_strain * 2.0);
-            let nuance = if unsafe_nuance < 0.0 { 0.0 } else { if unsafe_nuance >= 1.0 { 0.9999999 } else { unsafe_nuance } };
+            let nuance = if unsafe_nuance < 0.0 {
+                0.0
+            } else {
+                if unsafe_nuance >= 1.0 {
+                    0.9999999
+                } else {
+                    unsafe_nuance
+                }
+            };
             let slack = interval.strain.abs() < slack_threshold;
             if !environment.color_pushes && !environment.color_pulls {
                 interval.project_role_color(view)
@@ -210,7 +234,8 @@ impl Fabric {
                 } else {
                     Interval::project_line_color_nuance(view, nuance)
                 }
-            } else { // pull
+            } else {
+                // pull
                 if environment.color_pushes {
                     Interval::project_attenuated_color(view)
                 } else if slack {
@@ -222,4 +247,3 @@ impl Fabric {
         }
     }
 }
-

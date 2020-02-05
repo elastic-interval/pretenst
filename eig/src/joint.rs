@@ -2,14 +2,14 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-use nalgebra::*;
 use crate::*;
+use nalgebra::*;
 
 const RESURFACE: f32 = 0.01;
 const ANTIGRAVITY: f32 = -0.001;
 
 pub struct Joint {
-    pub(crate) location: Vector3<f32>,
+    pub(crate) location: Point3<f32>,
     pub(crate) force: Vector3<f32>,
     pub(crate) velocity: Vector3<f32>,
     pub(crate) interval_mass: f32,
@@ -18,7 +18,7 @@ pub struct Joint {
 impl Joint {
     pub fn new(x: f32, y: f32, z: f32) -> Joint {
         Joint {
-            location: Vector3::new(x, y, z),
+            location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
             interval_mass: 0.0,
@@ -45,7 +45,7 @@ impl Joint {
                     self.velocity.y = degree_submerged * RESURFACE;
                 }
                 SurfaceCharacter::Slippery => {
-                    self.location.fill(0.0);
+                    self.location = Point::origin();
                     self.velocity.fill(0.0);
                 }
                 SurfaceCharacter::Bouncy => {
@@ -56,4 +56,3 @@ impl Joint {
         }
     }
 }
-

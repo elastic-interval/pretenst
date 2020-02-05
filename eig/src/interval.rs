@@ -2,20 +2,22 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-use nalgebra::*;
 use crate::*;
-use joint::Joint;
+use constants::ATTENUATED_COLOR;
 use constants::RAINBOW;
 use constants::ROLE_COLORS;
+use constants::SHAPE_COUNT;
 use constants::SLACK_COLOR;
-use constants::ATTENUATED_COLOR;
+use face::Face;
+use joint::Joint;
+use nalgebra::*;
 
 pub struct Interval {
     alpha_index: usize,
     omega_index: usize,
     pub(crate) interval_role: IntervalRole,
     pub(crate) rest_length: f32,
-    state_length: [f32; 2],
+    length_for_shape: [f32; SHAPE_COUNT],
     pub(crate) stiffness: f32,
     pub(crate) linear_density: f32,
     pub(crate) countdown: u16,
@@ -25,14 +27,21 @@ pub struct Interval {
 }
 
 impl Interval {
-    pub fn new(alpha_index: usize, omega_index: usize, interval_role: IntervalRole,
-               rest_length: f32, stiffness: f32, linear_density: f32, countdown: u16) -> Interval {
+    pub fn new(
+        alpha_index: usize,
+        omega_index: usize,
+        interval_role: IntervalRole,
+        rest_length: f32,
+        stiffness: f32,
+        linear_density: f32,
+        countdown: u16,
+    ) -> Interval {
         Interval {
             alpha_index,
             omega_index,
             interval_role,
             rest_length,
-            state_length: [1.0; 2],
+            length_for_shape: [1.0; SHAPE_COUNT],
             stiffness,
             linear_density,
             countdown,
@@ -50,24 +59,134 @@ impl Interval {
         &joints[self.omega_index]
     }
 
-    pub fn physics(&mut self, joints: &mut Vec<Joint>, stage: Stage, environment: &Environment, realizing_nuance: f32) {
-        let mut ideal_length = self.ideal_length_now();
+    pub fn alpha_joint<'a>(
+        &self,
+        joints: &'a Vec<Joint>,
+        faces: &'a Vec<Face>,
+        index: usize,
+    ) -> &'a Joint {
+        &faces[self.alpha_index].joint(joints, index)
+    }
+
+    pub fn omega_joint<'a>(
+        &self,
+        joints: &'a Vec<Joint>,
+        faces: &'a Vec<Face>,
+        index: usize,
+    ) -> &'a Joint {
+        &faces[self.omega_index].joint(joints, index)
+    }
+
+    pub fn alpha_joint_mut<'a>(
+        &self,
+        joints: &'a mut Vec<Joint>,
+        faces: &'a Vec<Face>,
+        index: usize,
+    ) -> &'a mut Joint {
+        faces[self.alpha_index].joint_mut(joints, index)
+    }
+
+    pub fn omega_joint_mut<'a>(
+        &self,
+        joints: &'a mut Vec<Joint>,
+        faces: &'a Vec<Face>,
+        index: usize,
+    ) -> &'a mut Joint {
+        faces[self.omega_index].joint_mut(joints, index)
+    }
+
+    pub fn calculate_current_length(&mut self, joints: &Vec<Joint>, faces: &Vec<Face>) -> f32 {
+        if self.interval_role == IntervalRole::FacePull {
+            let mut alpha_midpoint: Point3<f32> = Point3::origin();
+            let mut omega_midpoint: Point3<f32> = Point3::origin();
+            &faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
+            &faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
+            self.unit = omega_midpoint - alpha_midpoint;
+        } else {
+            let alpha_location = &joints[self.alpha_index].location;
+            let omega_location = &joints[self.omega_index].location;
+            self.unit = omega_location - alpha_location;
+        }
+        self.unit.norm()
+    }
+
+    fn end_zone_physics(
+        &mut self,
+        environment: &Environment,
+        joints: &mut Vec<Joint>,
+        faces: &mut Vec<Face>,
+        final_nuance: f32,
+    ) {
+        let orientation_force =
+            environment.get_float_feature(FabricFeature::FacePullOrientationForce);
+        let mut alpha_distance_sum: f32 = 0.0;
+        let mut omega_distance_sum: f32 = 0.0;
+        let mut alpha_midpoint: Point3<f32> = Point3::origin();
+        let mut omega_midpoint: Point3<f32> = Point3::origin();
+        faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
+        faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
+        for face_joint_index in 0..3 {
+            alpha_distance_sum += distance(
+                &omega_midpoint,
+                &self.alpha_joint(joints, faces, face_joint_index).location,
+            );
+            omega_distance_sum += distance(
+                &alpha_midpoint,
+                &self.omega_joint(joints, faces, face_joint_index).location,
+            );
+        }
+        let average_alpha = alpha_distance_sum / 3.0;
+        let average_omega = omega_distance_sum / 3.0;
+        for face_joint_index in 0..3 {
+            let alpha_location = &self.alpha_joint(joints, faces, face_joint_index).location;
+            let omega_location = &self.omega_joint(joints, faces, face_joint_index).location;
+            let mut to_alpha: Vector3<f32> = zero();
+            to_alpha += &alpha_location.coords;
+            to_alpha -= &omega_midpoint.coords;
+            let mut to_omega: Vector3<f32> = zero();
+            to_omega += &omega_location.coords;
+            to_omega -= &alpha_midpoint.coords;
+            let alpha_distance = to_alpha.magnitude();
+            let omega_distance = to_omega.magnitude();
+            let push_alpha = final_nuance * (average_alpha - alpha_distance);
+            let push_omega = final_nuance * (average_omega - omega_distance);
+            self.alpha_joint_mut(joints, faces, face_joint_index).force +=
+                to_alpha * orientation_force * push_alpha / alpha_distance;
+            self.omega_joint_mut(joints, faces, face_joint_index).force +=
+                to_omega * orientation_force * push_omega / omega_distance;
+        }
+    }
+
+    pub fn physics(
+        &mut self,
+        joints: &mut Vec<Joint>,
+        faces: &mut Vec<Face>,
+        stage: Stage,
+        environment: &Environment,
+        realizing_nuance: f32,
+        shape: u8,
+    ) {
+        let mut ideal_length = self.ideal_length_now(shape);
         let omega_location = &joints[self.omega_index].location;
         let alpha_location = &joints[self.alpha_index].location;
         self.unit = omega_location - alpha_location;
-        let real_length = self.unit.norm();
+        let real_length = self.calculate_current_length(joints, faces);
         let push = self.is_push();
         if push {
             match stage {
                 Stage::Busy | Stage::Slack => {}
                 Stage::Growing | Stage::Shaping => {
-                    ideal_length *= 1.0 + environment.get_float_feature(FabricFeature::ShapingPretenstFactor);
+                    ideal_length *=
+                        1.0 + environment.get_float_feature(FabricFeature::ShapingPretenstFactor);
                 }
                 Stage::Realizing => {
-                    ideal_length *= 1.0 + environment.get_float_feature(FabricFeature::PretenstFactor) * realizing_nuance
+                    ideal_length *= 1.0
+                        + environment.get_float_feature(FabricFeature::PretenstFactor)
+                            * realizing_nuance
                 }
                 Stage::Realized => {
-                    ideal_length *= 1.0 + environment.get_float_feature(FabricFeature::PretenstFactor)
+                    ideal_length *=
+                        1.0 + environment.get_float_feature(FabricFeature::PretenstFactor)
                 }
             }
         }
@@ -83,9 +202,23 @@ impl Interval {
         push += &self.unit;
         if self.interval_role == IntervalRole::FacePull {
             push *= force / 6.0;
-            // TODO
-            joints[self.alpha_index].force += &push;
-            joints[self.omega_index].force -= &push;
+            let mut alpha_midpoint: Point3<f32> = Point3::origin();
+            let mut omega_midpoint: Point3<f32> = Point3::origin();
+            faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
+            faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
+            for face_joint_index in 0..3 {
+                faces[self.alpha_index]
+                    .joint_mut(joints, face_joint_index)
+                    .force += &push;
+                faces[self.omega_index]
+                    .joint_mut(joints, face_joint_index)
+                    .force -= &push;
+            }
+            let end_zone = environment.get_float_feature(FabricFeature::FacePullEndZone);
+            if ideal_length <= end_zone {
+                let final_nuance: f32 = (end_zone - ideal_length) / end_zone;
+                self.end_zone_physics(environment, joints, faces, final_nuance);
+            }
         } else {
             push *= force / 2.0;
             joints[self.alpha_index].force += &push;
@@ -97,30 +230,31 @@ impl Interval {
     }
 
     pub fn is_push(&self) -> bool {
-        self.interval_role == IntervalRole::NexusPush || self.interval_role == IntervalRole::ColumnPush
+        self.interval_role == IntervalRole::NexusPush
+            || self.interval_role == IntervalRole::ColumnPush
     }
 
-    fn ideal_length_now(&mut self) -> f32 {
+    fn ideal_length_now(&mut self, shape: u8) -> f32 {
         if self.countdown == 0 {
             self.rest_length
         } else {
             let max = self.max_countdown as f32;
             let progress: f32 = (max - self.countdown as f32) / max;
-            let state_length = self.state_length[0];
-            self.rest_length * (1.0 - progress) + state_length * progress
+            let shape_length = self.length_for_shape[shape as usize];
+            self.rest_length * (1.0 - progress) + shape_length * progress
         }
     }
 
-    fn change_rest_length(&mut self, rest_length: f32, countdown: u16) {
-        self.rest_length = self.state_length[0];
-        self.state_length[0] = rest_length;
+    fn change_rest_length(&mut self, rest_length: f32, countdown: u16, shape: u8) {
+        self.rest_length = self.length_for_shape[shape as usize];
+        self.length_for_shape[shape as usize] = rest_length;
         self.max_countdown = countdown;
         self.countdown = countdown;
     }
 
-    pub fn multiply_rest_length(&mut self, factor: f32, countdown: u16) {
-        let rest_length = self.state_length[0];
-        self.change_rest_length(rest_length * factor, countdown)
+    pub fn multiply_rest_length(&mut self, factor: f32, countdown: u16, shape: u8) {
+        let rest_length = self.length_for_shape[shape as usize];
+        self.change_rest_length(rest_length * factor, countdown, shape)
     }
 
     pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a Vec<Joint>, extend: f32) {
@@ -160,4 +294,3 @@ impl Interval {
         Interval::project_line_color(view, ATTENUATED_COLOR)
     }
 }
-
