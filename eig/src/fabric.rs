@@ -39,11 +39,6 @@ impl Fabric {
         self.joints.len() as u16
     }
 
-    fn get_realizing_nuance(&self, environment: &Environment) -> f32 {
-        let countdown = environment.get_float_feature(FabricFeature::RealizingCountdown);
-        return (countdown - self.busy_countdown as f32) / countdown;
-    }
-
     pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
         let index = self.joints.len();
         self.joints.push(Joint::new(x, y, z));
@@ -79,20 +74,34 @@ impl Fabric {
         index
     }
 
-    fn tick(&mut self, environment: &Environment) {
-        let realizing_nuance = self.get_realizing_nuance(environment);
+    fn tick(
+        &mut self,
+        surface_character: SurfaceCharacter,
+        push_and_pull: bool,
+        realizing_nuance: f32,
+        pretenst_factor: f32,
+        shaping_pretenst_factor: f32,
+        shaping_stiffness_factor: f32,
+        face_pull_end_zone: f32,
+        orientation_force: f32,
+    ) {
         for interval in &mut self.intervals {
             interval.physics(
                 &mut self.joints,
                 &mut self.faces,
                 self.stage,
-                environment,
                 realizing_nuance,
                 self.current_shape,
+                push_and_pull,
+                pretenst_factor,
+                shaping_pretenst_factor,
+                shaping_stiffness_factor,
+                face_pull_end_zone,
+                orientation_force,
             )
         }
         for joint in &mut self.joints {
-            joint.physics(0.0, 0.0, environment)
+            joint.physics(surface_character, 0.0, 0.0)
         }
     }
 
@@ -123,9 +132,8 @@ impl Fabric {
     }
 
     fn slack_to_shaping(&mut self, environment: &Environment) -> Stage {
-        let countdown = environment.get_float_feature(FabricFeature::IntervalCountdown) as u16;
-        let shaping_pretenst_factor =
-            environment.get_float_feature(FabricFeature::ShapingPretenstFactor);
+        let countdown = environment.get_float(FabricFeature::IntervalCountdown) as u16;
+        let shaping_pretenst_factor = environment.get_float(FabricFeature::ShapingPretenstFactor);
         for interval in &mut self.intervals {
             if interval.is_push() {
                 interval.multiply_rest_length(shaping_pretenst_factor, countdown, REST_SHAPE);
@@ -135,8 +143,24 @@ impl Fabric {
     }
 
     pub fn iterate(&mut self, requested_stage: Stage, environment: &Environment) -> Stage {
+        let countdown = environment.get_float(FabricFeature::RealizingCountdown);
+        let realizing_nuance = (countdown - self.busy_countdown as f32) / countdown;
+        let pretenst_factor = environment.get_float(FabricFeature::PretenstFactor);
+        let shaping_pretenst_factor = environment.get_float(FabricFeature::ShapingPretenstFactor);
+        let shaping_stiffness_factor = environment.get_float(FabricFeature::ShapingStiffnessFactor);
+        let face_pull_end_zone = environment.get_float(FabricFeature::FacePullEndZone);
+        let orientation_force = environment.get_float(FabricFeature::FacePullOrientationForce);
         for _tick in 0..environment.iterations_per_frame {
-            self.tick(environment);
+            self.tick(
+                environment.surface_character,
+                environment.push_and_pull,
+                realizing_nuance,
+                pretenst_factor,
+                shaping_pretenst_factor,
+                shaping_stiffness_factor,
+                face_pull_end_zone,
+                orientation_force,
+            );
         }
         self.age += environment.iterations_per_frame as u32;
         match self.stage {
@@ -199,9 +223,9 @@ impl Fabric {
             view.joint_locations.push(joint.location.z);
         }
         view.midpoint /= view.joint_locations.len() as f32;
-        let max_strain = environment.get_float_feature(FabricFeature::MaxStrain);
-        let visual_strain = environment.get_float_feature(FabricFeature::VisualStrain);
-        let slack_threshold = environment.get_float_feature(FabricFeature::SlackThreshold);
+        let max_strain = environment.get_float(FabricFeature::MaxStrain);
+        let visual_strain = environment.get_float(FabricFeature::VisualStrain);
+        let slack_threshold = environment.get_float(FabricFeature::SlackThreshold);
         for interval in self.intervals.iter() {
             let extend = interval.strain / 2.0 * visual_strain;
             interval.project_line_locations(view, &self.joints, extend);

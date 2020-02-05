@@ -25,7 +25,12 @@ impl Joint {
         }
     }
 
-    pub fn physics(&mut self, gravity_above: f32, drag_above: f32, environment: &Environment) {
+    pub fn physics(
+        &mut self,
+        surface_character: SurfaceCharacter,
+        gravity_above: f32,
+        drag_above: f32,
+    ) {
         let altitude = self.location.y;
         if altitude > 0.0 {
             self.velocity.y -= gravity_above;
@@ -35,7 +40,7 @@ impl Joint {
             self.velocity += &self.force / self.interval_mass;
             let degree_submerged: f32 = if -altitude < 1.0 { -altitude } else { 0.0 };
             let degree_cushioned: f32 = 1.0 - degree_submerged;
-            match environment.surface_character {
+            match surface_character {
                 SurfaceCharacter::Frozen => {
                     self.velocity.fill(0.0);
                     self.location.y = -RESURFACE;

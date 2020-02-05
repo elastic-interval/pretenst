@@ -120,7 +120,7 @@ impl Environment {
         self.float_features.insert(feature, value)
     }
 
-    pub fn get_float_feature(&self, feature: FabricFeature) -> f32 {
+    pub fn get_float(&self, feature: FabricFeature) -> f32 {
         *self.float_features.get(&feature).unwrap()
     }
 }
