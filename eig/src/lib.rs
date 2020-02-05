@@ -2,11 +2,11 @@ mod constants;
 mod joint;
 mod interval;
 mod face;
-mod eig;
+mod fabric;
 
 use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
-use eig::*;
+use fabric::*;
 
 #[wasm_bindgen]
 #[repr(u8)]
@@ -162,7 +162,7 @@ impl View {
 
 pub fn main() {
     let environment = Environment::new(false, true, true);
-    let mut eig = EIG::new(10, 10);
+    let mut eig = Fabric::new(10, 10);
     let alpha = eig.create_joint(1.0, 1.0, 1.0);
     let omega = eig.create_joint(1.0, 1.0, -1.0);
     let interval = eig.create_interval(alpha, omega, IntervalRole::NexusPush,

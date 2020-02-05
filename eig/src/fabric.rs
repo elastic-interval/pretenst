@@ -8,7 +8,7 @@ use joint::Joint;
 use interval::Interval;
 use face::Face;
 
-pub struct EIG {
+pub struct Fabric {
     age: u32,
     stage: Stage,
     busy_countdown: u32,
@@ -17,9 +17,9 @@ pub struct EIG {
     faces: Vec<Face>,
 }
 
-impl EIG {
-    pub fn new(joint_count: usize, interval_count: usize) -> EIG {
-        EIG {
+impl Fabric {
+    pub fn new(joint_count: usize, interval_count: usize) -> Fabric {
+        Fabric {
             age: 0,
             stage: Stage::Busy,
             busy_countdown: 0,
