@@ -7,7 +7,6 @@ mod joint;
 use fabric::*;
 use nalgebra::*;
 use std::collections::HashMap;
-use wasm_bindgen::__rt::core::f32::consts::SQRT_2;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -64,9 +63,9 @@ pub enum FabricFeature {
     MaxStiffness,
 }
 
-const ROOT5: f32 = 2.23606797749979;
-const ROOT2: f32 = SQRT_2;
+const ROOT2: f32 = 1.414213562373095;
 const ROOT3: f32 = 1.732050807568877;
+const ROOT5: f32 = 2.23606797749979;
 const PHI: f32 = (1_f32 + ROOT5) / 2_f32;
 const CROSS1: f32 = 0.5_f32;
 const CROSS2: f32 = (PHI / 3_f32 - 1_f32 / 6_f32) * ROOT3;
