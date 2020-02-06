@@ -214,7 +214,7 @@ impl Fabric {
         Stage::Busy
     }
 
-    pub fn render_to(&mut self, view: &mut View, environment: &Environment) {
+    pub fn render_to(&mut self, view: &mut FabricView, environment: &Environment) {
         view.clear();
         for joint in self.joints.iter() {
             view.midpoint += &joint.location.coords;

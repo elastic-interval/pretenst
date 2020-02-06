@@ -3,13 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-pub const ATTENUATED_COLOR: [f32; 3] = [
-    0.0, 0.0, 0.0,
-];
+pub const ATTENUATED_COLOR: [f32; 3] = [0.0, 0.0, 0.0];
 
-pub const SLACK_COLOR: [f32; 3] = [
-    0.0, 1.0, 0.0,
-];
+pub const SLACK_COLOR: [f32; 3] = [0.0, 1.0, 0.0];
 
 pub const ROLE_COLORS: [[f32; 3]; 9] = [
     [0.799, 0.519, 0.304],

@@ -251,7 +251,12 @@ impl Interval {
         self.change_rest_length(rest_length * factor, countdown, shape)
     }
 
-    pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a Vec<Joint>, extend: f32) {
+    pub fn project_line_locations<'a>(
+        &self,
+        view: &mut FabricView,
+        joints: &'a Vec<Joint>,
+        extend: f32,
+    ) {
         let alpha = &self.alpha(joints).location;
         let omega = &self.omega(joints).location;
         view.line_locations.push(alpha.x - self.unit.x * extend);
@@ -262,11 +267,11 @@ impl Interval {
         view.line_locations.push(omega.z + self.unit.z * extend);
     }
 
-    pub fn project_role_color(&self, view: &mut View) {
+    pub fn project_role_color(&self, view: &mut FabricView) {
         Interval::project_line_color(view, ROLE_COLORS[self.interval_role as usize])
     }
 
-    pub fn project_line_color(view: &mut View, color: [f32; 3]) {
+    pub fn project_line_color(view: &mut FabricView, color: [f32; 3]) {
         view.line_colors.push(color[0]);
         view.line_colors.push(color[1]);
         view.line_colors.push(color[2]);
@@ -275,16 +280,16 @@ impl Interval {
         view.line_colors.push(color[2]);
     }
 
-    pub fn project_line_color_nuance(view: &mut View, nuance: f32) {
+    pub fn project_line_color_nuance(view: &mut FabricView, nuance: f32) {
         let rainbow_index = (nuance * RAINBOW.len() as f32 / 3.01).floor() as usize;
         Interval::project_line_color(view, RAINBOW[rainbow_index])
     }
 
-    pub fn project_slack_color(view: &mut View) {
+    pub fn project_slack_color(view: &mut FabricView) {
         Interval::project_line_color(view, SLACK_COLOR)
     }
 
-    pub fn project_attenuated_color(view: &mut View) {
+    pub fn project_attenuated_color(view: &mut FabricView) {
         Interval::project_line_color(view, ATTENUATED_COLOR)
     }
 }
