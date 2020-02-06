@@ -7,6 +7,7 @@ mod joint;
 use fabric::*;
 use nalgebra::*;
 use std::collections::HashMap;
+use wasm_bindgen::__rt::core::f32::consts::SQRT_2;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -63,17 +64,16 @@ pub enum FabricFeature {
     MaxStiffness,
 }
 
+const ROOT5: f32 = 2.23606797749979;
+const ROOT2: f32 = SQRT_2;
+const ROOT3: f32 = 1.732050807568877;
+const PHI: f32 = (1_f32 + ROOT5) / 2_f32;
+const CROSS1: f32 = 0.5_f32;
+const CROSS2: f32 = (PHI / 3_f32 - 1_f32 / 6_f32) * ROOT3;
+const CROSS3: f32 = PHI / 3_f32 * ROOT3 - 1_f32 + ROOT2 / ROOT3;
+
 #[wasm_bindgen]
 pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
-    let phi = (1_f32 + 5_f32.sqrt()) / 2_f32;
-    let sqrt2 = 2_f32.sqrt();
-    let sqrt3 = 3_f32.sqrt();
-    let ring = (2_f32 - 2_f32 * (2_f32 / 3_f32).sqrt()).sqrt();
-    let t1 = 0.5_f32;
-    let t2 = (phi / 3_f32 - 1_f32 / 6_f32) * sqrt3;
-    let t3 = phi / 3_f32 * sqrt3 - 1_f32 + sqrt2 / sqrt3;
-    let cross = (t1 * t1 + t2 * t2 + t3 * t3).sqrt();
-
     match fabric_feature {
         FabricFeature::Gravity => 0.0000001_f32,
         FabricFeature::Drag => 0.0001_f32,
@@ -89,11 +89,13 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::ShapingDrag => 0.1_f32,
         FabricFeature::MaxStrain => 0.1_f32,
         FabricFeature::VisualStrain => 1_f32,
-        FabricFeature::NexusPushLength => phi,
-        FabricFeature::ColumnPushLength => sqrt2,
+        FabricFeature::NexusPushLength => PHI,
+        FabricFeature::ColumnPushLength => ROOT2,
         FabricFeature::TriangleLength => 1_f32,
-        FabricFeature::RingLength => ring,
-        FabricFeature::NexusCrossLength => cross,
+        FabricFeature::RingLength => (2_f32 - 2_f32 * (2_f32 / 3_f32).sqrt()).sqrt(),
+        FabricFeature::NexusCrossLength => {
+            (CROSS1 * CROSS1 + CROSS2 * CROSS2 + CROSS3 * CROSS3).sqrt()
+        }
         FabricFeature::ColumnCrossLength => 1_f32,
         FabricFeature::BowMidLength => 0.4_f32,
         FabricFeature::BowEndLength => 0.6_f32,
