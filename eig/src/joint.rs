@@ -2,7 +2,8 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-use crate::*;
+
+use crate::constants::SurfaceCharacter;
 use nalgebra::*;
 
 const RESURFACE: f32 = 0.01;
@@ -50,7 +51,7 @@ impl Joint {
                     self.velocity.y = degree_submerged * RESURFACE;
                 }
                 SurfaceCharacter::Slippery => {
-                    self.location = Point::origin();
+                    self.location.coords.fill(0.0);
                     self.velocity.fill(0.0);
                 }
                 SurfaceCharacter::Bouncy => {

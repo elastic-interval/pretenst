@@ -2,22 +2,28 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-use crate::constants::REST_SHAPE;
-use crate::*;
-use face::Face;
-use interval::Interval;
-use joint::Joint;
 
+use wasm_bindgen::prelude::*;
+
+use crate::constants::*;
+use crate::face::Face;
+use crate::interval::Interval;
+use crate::joint::Joint;
+use crate::view::View;
+use crate::world::World;
+
+#[wasm_bindgen]
 pub struct Fabric {
-    age: u32,
-    stage: Stage,
-    current_shape: u8,
-    busy_countdown: u32,
-    joints: Vec<Joint>,
-    intervals: Vec<Interval>,
-    faces: Vec<Face>,
+    pub(crate) age: u32,
+    pub(crate) stage: Stage,
+    pub(crate) current_shape: u8,
+    pub(crate) busy_countdown: u32,
+    pub(crate) joints: Vec<Joint>,
+    pub(crate) intervals: Vec<Interval>,
+    pub(crate) faces: Vec<Face>,
 }
 
+#[wasm_bindgen]
 impl Fabric {
     pub fn new(joint_count: usize, interval_count: usize) -> Fabric {
         Fabric {
@@ -74,75 +80,7 @@ impl Fabric {
         index
     }
 
-    fn tick(
-        &mut self,
-        surface_character: SurfaceCharacter,
-        push_and_pull: bool,
-        realizing_nuance: f32,
-        pretenst_factor: f32,
-        shaping_pretenst_factor: f32,
-        shaping_stiffness_factor: f32,
-        face_pull_end_zone: f32,
-        orientation_force: f32,
-    ) {
-        for interval in &mut self.intervals {
-            interval.physics(
-                &mut self.joints,
-                &mut self.faces,
-                self.stage,
-                realizing_nuance,
-                self.current_shape,
-                push_and_pull,
-                pretenst_factor,
-                shaping_pretenst_factor,
-                shaping_stiffness_factor,
-                face_pull_end_zone,
-                orientation_force,
-            )
-        }
-        for joint in &mut self.joints {
-            joint.physics(surface_character, 0.0, 0.0)
-        }
-    }
-
-    fn set_stage(&mut self, stage: Stage) -> Stage {
-        self.stage = stage;
-        stage
-    }
-
-    fn set_altitude(&mut self, altitude: f32) -> f32 {
-        let low_y = self
-            .joints
-            .iter()
-            .map(|joint| joint.location.y)
-            .min_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap();
-        for joint in &mut self.joints {
-            joint.location.y += altitude - low_y;
-        }
-        for joint in &mut self.joints {
-            joint.velocity.fill(0.0);
-        }
-        return altitude - low_y;
-    }
-
-    fn start_realizing(&mut self, environment: &Environment) -> Stage {
-        self.busy_countdown = environment.realizing_countdown;
-        self.set_stage(Stage::Realizing)
-    }
-
-    fn slack_to_shaping(&mut self, environment: &Environment) -> Stage {
-        let countdown = environment.get_float(FabricFeature::IntervalCountdown) as u16;
-        let shaping_pretenst_factor = environment.get_float(FabricFeature::ShapingPretenstFactor);
-        for interval in &mut self.intervals {
-            if interval.is_push() {
-                interval.multiply_rest_length(shaping_pretenst_factor, countdown, REST_SHAPE);
-            }
-        }
-        self.set_stage(Stage::Shaping)
-    }
-
-    pub fn iterate(&mut self, requested_stage: Stage, environment: &Environment) -> Stage {
+    pub fn iterate(&mut self, requested_stage: Stage, environment: &World) -> Stage {
         let countdown = environment.get_float(FabricFeature::RealizingCountdown);
         let realizing_nuance = (countdown - self.busy_countdown as f32) / countdown;
         let pretenst_factor = environment.get_float(FabricFeature::PretenstFactor);
@@ -214,7 +152,7 @@ impl Fabric {
         Stage::Busy
     }
 
-    pub fn render_to(&mut self, view: &mut FabricView, environment: &Environment) {
+    pub fn render_to(&mut self, view: &mut View, environment: &World) {
         view.clear();
         for joint in self.joints.iter() {
             view.midpoint += &joint.location.coords;
@@ -269,5 +207,73 @@ impl Fabric {
                 }
             }
         }
+    }
+
+    fn tick(
+        &mut self,
+        surface_character: SurfaceCharacter,
+        push_and_pull: bool,
+        realizing_nuance: f32,
+        pretenst_factor: f32,
+        shaping_pretenst_factor: f32,
+        shaping_stiffness_factor: f32,
+        face_pull_end_zone: f32,
+        orientation_force: f32,
+    ) {
+        for interval in &mut self.intervals {
+            interval.physics(
+                &mut self.joints,
+                &mut self.faces,
+                self.stage,
+                realizing_nuance,
+                self.current_shape,
+                push_and_pull,
+                pretenst_factor,
+                shaping_pretenst_factor,
+                shaping_stiffness_factor,
+                face_pull_end_zone,
+                orientation_force,
+            )
+        }
+        for joint in &mut self.joints {
+            joint.physics(surface_character, 0.0, 0.0)
+        }
+    }
+
+    fn set_stage(&mut self, stage: Stage) -> Stage {
+        self.stage = stage;
+        stage
+    }
+
+    fn set_altitude(&mut self, altitude: f32) -> f32 {
+        let low_y = self
+            .joints
+            .iter()
+            .map(|joint| joint.location.y)
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+        for joint in &mut self.joints {
+            joint.location.y += altitude - low_y;
+        }
+        for joint in &mut self.joints {
+            joint.velocity.fill(0.0);
+        }
+        return altitude - low_y;
+    }
+
+    fn start_realizing(&mut self, environment: &World) -> Stage {
+        self.busy_countdown = environment.realizing_countdown;
+        self.set_stage(Stage::Realizing)
+    }
+
+    fn slack_to_shaping(&mut self, environment: &World) -> Stage {
+        let countdown = environment.get_float(FabricFeature::IntervalCountdown) as u16;
+        let shaping_pretenst_factor = environment.get_float(FabricFeature::ShapingPretenstFactor);
+        for interval in &mut self.intervals {
+            if interval.is_push() {
+                interval.multiply_rest_length(shaping_pretenst_factor, countdown, REST_SHAPE);
+            }
+        }
+        self.set_stage(Stage::Shaping)
     }
 }

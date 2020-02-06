@@ -2,8 +2,7 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
-use crate::*;
-use joint::Joint;
+use crate::joint::Joint;
 use nalgebra::*;
 
 pub struct Face {
