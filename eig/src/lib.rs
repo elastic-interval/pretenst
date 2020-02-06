@@ -65,20 +65,14 @@ pub enum FabricFeature {
 
 #[wasm_bindgen]
 pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
-    let one: f32 = 1.0;
-    let two: f32 = 2.0;
-    let three: f32 = 3.0;
-    let five: f32 = 5.0;
-    let six: f32 = 6.0;
-    let two_thirds: f32 = two / three;
-    let phi: f32 = (one + five.sqrt()) / two;
-    let rt2: f32 = two.sqrt();
-    let rt3: f32 = three.sqrt();
-    let ring: f32 = (two - two * two_thirds.sqrt()).sqrt();
-    let t1: f32 = 0.5;
-    let t2: f32 = (phi / three - one / six) * rt3;
-    let t3: f32 = phi / three * rt3 - one + rt2 / rt3;
-    let cross: f32 = (t1 * t1 + t2 * t2 + t3 * t3).sqrt();
+    let phi = (1_f32 + 5_f32.sqrt()) / 2_f32;
+    let sqrt2 = 2_f32.sqrt();
+    let sqrt3 = 3_f32.sqrt();
+    let ring = (2_f32 - 2_f32 * (2_f32 / 3_f32).sqrt()).sqrt();
+    let t1 = 0.5_f32;
+    let t2 = (phi / 3_f32 - 1_f32 / 6_f32) * sqrt3;
+    let t3 = phi / 3_f32 * sqrt3 - 1_f32 + sqrt2 / sqrt3;
+    let cross = (t1 * t1 + t2 * t2 + t3 * t3).sqrt();
 
     match fabric_feature {
         FabricFeature::Gravity => 0.0000001_f32,
@@ -96,14 +90,14 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::MaxStrain => 0.1_f32,
         FabricFeature::VisualStrain => 1_f32,
         FabricFeature::NexusPushLength => phi,
-        FabricFeature::ColumnPushLength => rt2,
-        FabricFeature::TriangleLength => one,
+        FabricFeature::ColumnPushLength => sqrt2,
+        FabricFeature::TriangleLength => 1_f32,
         FabricFeature::RingLength => ring,
         FabricFeature::NexusCrossLength => cross,
-        FabricFeature::ColumnCrossLength => one,
+        FabricFeature::ColumnCrossLength => 1_f32,
         FabricFeature::BowMidLength => 0.4_f32,
         FabricFeature::BowEndLength => 0.6_f32,
-        FabricFeature::PushOverPull => one,
+        FabricFeature::PushOverPull => 1_f32,
         FabricFeature::PushRadiusFactor => 4_f32,
         FabricFeature::PullRadiusFactor => 2_f32,
         FabricFeature::MaxStiffness => 0.0005_f32,
