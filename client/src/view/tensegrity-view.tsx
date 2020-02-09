@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import * as EIG from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaArrowRight, FaCamera, FaHandPointUp, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
@@ -49,8 +50,10 @@ function selectIntervals(faces: IFace[]): IInterval[] {
     }, [] as IInterval[])
 }
 
-export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
+export function TensegrityView({fabricKernel, eigWorld, eigFabric, floatFeatures, storedState$}: {
     fabricKernel: FabricKernel,
+    eigWorld: EIG.World,
+    eigFabric: EIG.Fabric,
     floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
@@ -78,6 +81,7 @@ export function TensegrityView({fabricKernel, floatFeatures, storedState$}: {
     useEffect(() => setVisibleRoles(INTERVAL_ROLES), [ellipsoids])
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
+            console.log("eig joint count!", eigFabric.get_joint_count())
             updateFullScreen(storedState.fullScreen)
             updateEllipsoids(storedState.ellipsoids)
             updateRotating(storedState.rotating)
