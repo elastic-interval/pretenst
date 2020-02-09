@@ -23,23 +23,23 @@ impl Joint {
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
-            interval_mass: 0.0,
+            interval_mass: 0_f32,
         }
     }
 
     pub fn physics(&mut self, world: &World) {
         let altitude = self.location.y;
-        if altitude > 0.0 {
+        if altitude > 0_f32 {
             self.velocity.y -= world.gravity;
-            self.velocity *= 1.0 - world.drag;
+            self.velocity *= 1_f32 - world.drag;
             self.velocity += &self.force / self.interval_mass;
         } else {
             self.velocity += &self.force / self.interval_mass;
-            let degree_submerged: f32 = if -altitude < 1.0 { -altitude } else { 0.0 };
-            let degree_cushioned: f32 = 1.0 - degree_submerged;
+            let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
+            let degree_cushioned: f32 = 1_f32 - degree_submerged;
             match world.surface_character {
                 SurfaceCharacter::Frozen => {
-                    self.velocity.fill(0.0);
+                    self.velocity.fill(0_f32);
                     self.location.y = -RESURFACE;
                 }
                 SurfaceCharacter::Sticky => {
@@ -47,8 +47,8 @@ impl Joint {
                     self.velocity.y = degree_submerged * RESURFACE;
                 }
                 SurfaceCharacter::Slippery => {
-                    self.location.coords.fill(0.0);
-                    self.velocity.fill(0.0);
+                    self.location.coords.fill(0_f32);
+                    self.velocity.fill(0_f32);
                 }
                 SurfaceCharacter::Bouncy => {
                     self.velocity *= degree_cushioned;

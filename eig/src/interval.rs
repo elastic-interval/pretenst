@@ -38,13 +38,13 @@ impl Interval {
             omega_index,
             interval_role,
             rest_length,
-            length_for_shape: [1.0; SHAPE_COUNT],
+            length_for_shape: [1_f32; SHAPE_COUNT],
             stiffness,
             linear_density,
             countdown,
             max_countdown: countdown,
             unit: zero(),
-            strain: 0.0,
+            strain: 0_f32,
         }
     }
 
@@ -114,8 +114,8 @@ impl Interval {
         final_nuance: f32,
         orientation_force: f32,
     ) {
-        let mut alpha_distance_sum: f32 = 0.0;
-        let mut omega_distance_sum: f32 = 0.0;
+        let mut alpha_distance_sum: f32 = 0_f32;
+        let mut omega_distance_sum: f32 = 0_f32;
         let mut alpha_midpoint: Point3<f32> = Point3::origin();
         let mut omega_midpoint: Point3<f32> = Point3::origin();
         faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
@@ -171,15 +171,17 @@ impl Interval {
             match stage {
                 Stage::Busy | Stage::Slack => {}
                 Stage::Growing | Stage::Shaping => {
-                    ideal_length *= 1.0 + world.shaping_pretenst_factor;
+                    ideal_length *= 1_f32 + world.shaping_pretenst_factor;
                 }
-                Stage::Realizing => ideal_length *= 1.0 + world.pretenst_factor * realizing_nuance,
-                Stage::Realized => ideal_length *= 1.0 + world.pretenst_factor,
+                Stage::Realizing => {
+                    ideal_length *= 1_f32 + world.pretenst_factor * realizing_nuance
+                }
+                Stage::Realized => ideal_length *= 1_f32 + world.pretenst_factor,
             }
         }
         self.strain = (real_length - ideal_length) / ideal_length;
-        if !world.push_and_pull && (push && self.strain > 0.0 || !push && self.strain < 0.0) {
-            self.strain = 0.0;
+        if !world.push_and_pull && (push && self.strain > 0_f32 || !push && self.strain < 0_f32) {
+            self.strain = 0_f32;
         }
         let mut force = self.strain * self.stiffness;
         if stage <= Stage::Slack {
@@ -188,7 +190,7 @@ impl Interval {
         let mut push: Vector3<f32> = zero();
         push += &self.unit;
         if self.interval_role == IntervalRole::FacePull {
-            push *= force / 6.0;
+            push *= force / 6_f32;
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
             faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
@@ -212,10 +214,10 @@ impl Interval {
                 );
             }
         } else {
-            push *= force / 2.0;
+            push *= force / 2_f32;
             joints[self.alpha_index].force += &push;
             joints[self.omega_index].force -= &push;
-            let half_mass = ideal_length * self.linear_density / 2.0;
+            let half_mass = ideal_length * self.linear_density / 2_f32;
             joints[self.alpha_index].interval_mass += half_mass;
             joints[self.omega_index].interval_mass += half_mass;
         }
@@ -233,7 +235,7 @@ impl Interval {
             let max = self.max_countdown as f32;
             let progress: f32 = (max - self.countdown as f32) / max;
             let shape_length = self.length_for_shape[shape as usize];
-            self.rest_length * (1.0 - progress) + shape_length * progress
+            self.rest_length * (1_f32 - progress) + shape_length * progress
         }
     }
 
