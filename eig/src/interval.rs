@@ -6,6 +6,7 @@ use crate::constants::*;
 use crate::face::Face;
 use crate::joint::Joint;
 use crate::view::View;
+use crate::world::World;
 use nalgebra::*;
 
 pub struct Interval {
@@ -153,17 +154,12 @@ impl Interval {
 
     pub fn physics(
         &mut self,
+        world: &World,
         joints: &mut Vec<Joint>,
         faces: &mut Vec<Face>,
         stage: Stage,
         realizing_nuance: f32,
         shape: u8,
-        push_and_pull: bool,
-        pretenst_factor: f32,
-        shaping_pretenst_factor: f32,
-        shaping_stiffness_factor: f32,
-        face_pull_end_zone: f32,
-        orientation_force: f32,
     ) {
         let mut ideal_length = self.ideal_length_now(shape);
         let omega_location = &joints[self.omega_index].location;
@@ -175,19 +171,19 @@ impl Interval {
             match stage {
                 Stage::Busy | Stage::Slack => {}
                 Stage::Growing | Stage::Shaping => {
-                    ideal_length *= 1.0 + shaping_pretenst_factor;
+                    ideal_length *= 1.0 + world.shaping_pretenst_factor;
                 }
-                Stage::Realizing => ideal_length *= 1.0 + pretenst_factor * realizing_nuance,
-                Stage::Realized => ideal_length *= 1.0 + pretenst_factor,
+                Stage::Realizing => ideal_length *= 1.0 + world.pretenst_factor * realizing_nuance,
+                Stage::Realized => ideal_length *= 1.0 + world.pretenst_factor,
             }
         }
         self.strain = (real_length - ideal_length) / ideal_length;
-        if !push_and_pull && (push && self.strain > 0.0 || !push && self.strain < 0.0) {
+        if !world.push_and_pull && (push && self.strain > 0.0 || !push && self.strain < 0.0) {
             self.strain = 0.0;
         }
         let mut force = self.strain * self.stiffness;
         if stage <= Stage::Slack {
-            force *= shaping_stiffness_factor;
+            force *= world.shaping_stiffness_factor;
         }
         let mut push: Vector3<f32> = zero();
         push += &self.unit;
@@ -205,9 +201,15 @@ impl Interval {
                     .joint_mut(joints, face_joint_index)
                     .force -= &push;
             }
-            if ideal_length <= face_pull_end_zone {
-                let final_nuance: f32 = (face_pull_end_zone - ideal_length) / face_pull_end_zone;
-                self.end_zone_physics(joints, faces, final_nuance, orientation_force);
+            if ideal_length <= world.face_pull_end_zone {
+                let final_nuance: f32 =
+                    (world.face_pull_end_zone - ideal_length) / world.face_pull_end_zone;
+                self.end_zone_physics(
+                    joints,
+                    faces,
+                    final_nuance,
+                    world.face_pull_orientation_force,
+                );
             }
         } else {
             push *= force / 2.0;

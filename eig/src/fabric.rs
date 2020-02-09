@@ -80,27 +80,13 @@ impl Fabric {
         index
     }
 
-    pub fn iterate(&mut self, requested_stage: Stage, environment: &World) -> Stage {
-        let countdown = environment.get_float(FabricFeature::RealizingCountdown);
+    pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
+        let countdown = world.realizing_countdown;
         let realizing_nuance = (countdown - self.busy_countdown as f32) / countdown;
-        let pretenst_factor = environment.get_float(FabricFeature::PretenstFactor);
-        let shaping_pretenst_factor = environment.get_float(FabricFeature::ShapingPretenstFactor);
-        let shaping_stiffness_factor = environment.get_float(FabricFeature::ShapingStiffnessFactor);
-        let face_pull_end_zone = environment.get_float(FabricFeature::FacePullEndZone);
-        let orientation_force = environment.get_float(FabricFeature::FacePullOrientationForce);
-        for _tick in 0..environment.iterations_per_frame {
-            self.tick(
-                environment.surface_character,
-                environment.push_and_pull,
-                realizing_nuance,
-                pretenst_factor,
-                shaping_pretenst_factor,
-                shaping_stiffness_factor,
-                face_pull_end_zone,
-                orientation_force,
-            );
+        for _tick in 0..(world.iterations_per_frame as usize) {
+            self.tick(&world, realizing_nuance);
         }
-        self.age += environment.iterations_per_frame as u32;
+        self.age += world.iterations_per_frame as u32;
         match self.stage {
             Stage::Busy => {
                 if requested_stage == Stage::Growing {
@@ -113,14 +99,14 @@ impl Fabric {
             Stage::Shaping => {
                 self.set_altitude(0.0);
                 match requested_stage {
-                    Stage::Realizing => return self.start_realizing(environment),
+                    Stage::Realizing => return self.start_realizing(world),
                     Stage::Slack => return self.set_stage(Stage::Slack),
                     _ => {}
                 }
             }
             Stage::Slack => match requested_stage {
-                Stage::Realizing => return self.start_realizing(environment),
-                Stage::Shaping => return self.slack_to_shaping(environment),
+                Stage::Realizing => return self.start_realizing(world),
+                Stage::Shaping => return self.slack_to_shaping(world),
                 _ => {}
             },
             _ => {}
@@ -138,8 +124,7 @@ impl Fabric {
                 }
                 return self.stage;
             }
-            let mut next_countdown: u32 =
-                self.busy_countdown - environment.iterations_per_frame as u32;
+            let mut next_countdown: u32 = self.busy_countdown - world.iterations_per_frame as u32;
             if next_countdown > self.busy_countdown {
                 // rollover
                 next_countdown = 0
@@ -152,7 +137,7 @@ impl Fabric {
         Stage::Busy
     }
 
-    pub fn render_to(&mut self, view: &mut View, environment: &World) {
+    pub fn render_to(&mut self, view: &mut View, world: &World) {
         view.clear();
         for joint in self.joints.iter() {
             view.midpoint += &joint.location.coords;
@@ -161,15 +146,12 @@ impl Fabric {
             view.joint_locations.push(joint.location.z);
         }
         view.midpoint /= view.joint_locations.len() as f32;
-        let max_strain = environment.get_float(FabricFeature::MaxStrain);
-        let visual_strain = environment.get_float(FabricFeature::VisualStrain);
-        let slack_threshold = environment.get_float(FabricFeature::SlackThreshold);
         for interval in self.intervals.iter() {
-            let extend = interval.strain / 2.0 * visual_strain;
+            let extend = interval.strain / 2.0 * world.visual_strain;
             interval.project_line_locations(view, &self.joints, extend);
         }
         for interval in self.intervals.iter() {
-            let unsafe_nuance = (interval.strain + max_strain) / (max_strain * 2.0);
+            let unsafe_nuance = (interval.strain + world.max_strain) / (world.max_strain * 2.0);
             let nuance = if unsafe_nuance < 0.0 {
                 0.0
             } else {
@@ -179,17 +161,17 @@ impl Fabric {
                     unsafe_nuance
                 }
             };
-            let slack = interval.strain.abs() < slack_threshold;
-            if !environment.color_pushes && !environment.color_pulls {
+            let slack = interval.strain.abs() < world.slack_threshold;
+            if !world.color_pushes && !world.color_pulls {
                 interval.project_role_color(view)
-            } else if environment.color_pushes && environment.color_pulls {
+            } else if world.color_pushes && world.color_pulls {
                 if slack {
                     Interval::project_slack_color(view)
                 } else {
                     Interval::project_line_color_nuance(view, nuance)
                 }
             } else if interval.is_push() {
-                if environment.color_pulls {
+                if world.color_pulls {
                     Interval::project_attenuated_color(view)
                 } else if slack {
                     Interval::project_slack_color(view)
@@ -198,7 +180,7 @@ impl Fabric {
                 }
             } else {
                 // pull
-                if environment.color_pushes {
+                if world.color_pushes {
                     Interval::project_attenuated_color(view)
                 } else if slack {
                     Interval::project_slack_color(view)
@@ -209,34 +191,19 @@ impl Fabric {
         }
     }
 
-    fn tick(
-        &mut self,
-        surface_character: SurfaceCharacter,
-        push_and_pull: bool,
-        realizing_nuance: f32,
-        pretenst_factor: f32,
-        shaping_pretenst_factor: f32,
-        shaping_stiffness_factor: f32,
-        face_pull_end_zone: f32,
-        orientation_force: f32,
-    ) {
+    fn tick(&mut self, world: &World, realizing_nuance: f32) {
         for interval in &mut self.intervals {
             interval.physics(
+                world,
                 &mut self.joints,
                 &mut self.faces,
                 self.stage,
                 realizing_nuance,
                 self.current_shape,
-                push_and_pull,
-                pretenst_factor,
-                shaping_pretenst_factor,
-                shaping_stiffness_factor,
-                face_pull_end_zone,
-                orientation_force,
             )
         }
         for joint in &mut self.joints {
-            joint.physics(surface_character, 0.0, 0.0)
+            joint.physics(world)
         }
     }
 
@@ -261,17 +228,16 @@ impl Fabric {
         return altitude - low_y;
     }
 
-    fn start_realizing(&mut self, environment: &World) -> Stage {
-        self.busy_countdown = environment.realizing_countdown;
+    fn start_realizing(&mut self, world: &World) -> Stage {
+        self.busy_countdown = world.realizing_countdown as u32;
         self.set_stage(Stage::Realizing)
     }
 
-    fn slack_to_shaping(&mut self, environment: &World) -> Stage {
-        let countdown = environment.get_float(FabricFeature::IntervalCountdown) as u16;
-        let shaping_pretenst_factor = environment.get_float(FabricFeature::ShapingPretenstFactor);
+    fn slack_to_shaping(&mut self, world: &World) -> Stage {
+        let countdown = world.interval_countdown as u16;
         for interval in &mut self.intervals {
             if interval.is_push() {
-                interval.multiply_rest_length(shaping_pretenst_factor, countdown, REST_SHAPE);
+                interval.multiply_rest_length(world.shaping_pretenst_factor, countdown, REST_SHAPE);
             }
         }
         self.set_stage(Stage::Shaping)

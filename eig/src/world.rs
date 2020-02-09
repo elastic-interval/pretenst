@@ -4,7 +4,6 @@
  */
 
 use crate::constants::*;
-use std::collections::HashMap;
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -13,9 +12,32 @@ pub struct World {
     pub(crate) push_and_pull: bool,
     pub(crate) color_pushes: bool,
     pub(crate) color_pulls: bool,
-    pub(crate) iterations_per_frame: u16,
-    pub(crate) realizing_countdown: u32,
-    pub(crate) float_features: HashMap<FabricFeature, f32>,
+    pub(crate) gravity: f32,
+    pub(crate) drag: f32,
+    pub(crate) pretenst_factor: f32,
+    pub(crate) iterations_per_frame: f32,
+    pub(crate) interval_countdown: f32,
+    pub(crate) realizing_countdown: f32,
+    pub(crate) face_pull_end_zone: f32,
+    pub(crate) face_pull_orientation_force: f32,
+    pub(crate) slack_threshold: f32,
+    pub(crate) shaping_pretenst_factor: f32,
+    pub(crate) shaping_stiffness_factor: f32,
+    pub(crate) shaping_drag: f32,
+    pub(crate) max_strain: f32,
+    pub(crate) visual_strain: f32,
+    pub(crate) nexus_push_length: f32,
+    pub(crate) column_push_length: f32,
+    pub(crate) triangle_length: f32,
+    pub(crate) ring_length: f32,
+    pub(crate) nexus_cross_length: f32,
+    pub(crate) column_cross_length: f32,
+    pub(crate) bow_mid_length: f32,
+    pub(crate) bow_end_length: f32,
+    pub(crate) push_over_pull: f32,
+    pub(crate) push_radius_factor: f32,
+    pub(crate) pull_radius_factor: f32,
+    pub(crate) max_stiffness: f32,
 }
 
 #[wasm_bindgen]
@@ -26,9 +48,34 @@ impl World {
             push_and_pull: false,
             color_pushes: false,
             color_pulls: false,
-            iterations_per_frame: 50,
-            realizing_countdown: 1000,
-            float_features: HashMap::new(),
+            gravity: default_fabric_feature(FabricFeature::Gravity),
+            drag: default_fabric_feature(FabricFeature::Drag),
+            pretenst_factor: default_fabric_feature(FabricFeature::PretenstFactor),
+            iterations_per_frame: default_fabric_feature(FabricFeature::IterationsPerFrame),
+            interval_countdown: default_fabric_feature(FabricFeature::IntervalCountdown),
+            realizing_countdown: default_fabric_feature(FabricFeature::RealizingCountdown),
+            face_pull_end_zone: default_fabric_feature(FabricFeature::FacePullEndZone),
+            face_pull_orientation_force: default_fabric_feature(
+                FabricFeature::FacePullOrientationForce,
+            ),
+            slack_threshold: default_fabric_feature(FabricFeature::SlackThreshold),
+            shaping_pretenst_factor: default_fabric_feature(FabricFeature::ShapingPretenstFactor),
+            shaping_stiffness_factor: default_fabric_feature(FabricFeature::ShapingStiffnessFactor),
+            shaping_drag: default_fabric_feature(FabricFeature::ShapingDrag),
+            max_strain: default_fabric_feature(FabricFeature::MaxStrain),
+            visual_strain: default_fabric_feature(FabricFeature::VisualStrain),
+            nexus_push_length: default_fabric_feature(FabricFeature::NexusPushLength),
+            column_push_length: default_fabric_feature(FabricFeature::ColumnPushLength),
+            triangle_length: default_fabric_feature(FabricFeature::TriangleLength),
+            ring_length: default_fabric_feature(FabricFeature::RingLength),
+            nexus_cross_length: default_fabric_feature(FabricFeature::NexusCrossLength),
+            column_cross_length: default_fabric_feature(FabricFeature::ColumnCrossLength),
+            bow_mid_length: default_fabric_feature(FabricFeature::BowMidLength),
+            bow_end_length: default_fabric_feature(FabricFeature::BowEndLength),
+            push_over_pull: default_fabric_feature(FabricFeature::PushOverPull),
+            push_radius_factor: default_fabric_feature(FabricFeature::PushRadiusFactor),
+            pull_radius_factor: default_fabric_feature(FabricFeature::PullRadiusFactor),
+            max_stiffness: default_fabric_feature(FabricFeature::MaxStiffness),
         }
     }
 
@@ -45,24 +92,37 @@ impl World {
         self.push_and_pull = push_and_pull;
     }
 
-    pub fn set_iterations_per_frame(&mut self, iterations: u16) {
-        self.iterations_per_frame = iterations;
-    }
-
-    pub fn set_realizing_countdown(&mut self, countdown: u32) {
-        self.realizing_countdown = countdown;
-    }
-
     pub fn set_float_percent(&mut self, feature: FabricFeature, percent: f32) -> f32 {
         let value = percent * default_fabric_feature(feature) / 100_f32;
-        self.float_features.insert(feature, value);
+        let value_pointer: &mut f32 = match feature {
+            FabricFeature::Gravity => &mut self.gravity,
+            FabricFeature::Drag => &mut self.drag,
+            FabricFeature::PretenstFactor => &mut self.pretenst_factor,
+            FabricFeature::IterationsPerFrame => &mut self.iterations_per_frame,
+            FabricFeature::IntervalCountdown => &mut self.interval_countdown,
+            FabricFeature::RealizingCountdown => &mut self.realizing_countdown,
+            FabricFeature::FacePullEndZone => &mut self.face_pull_end_zone,
+            FabricFeature::FacePullOrientationForce => &mut self.face_pull_orientation_force,
+            FabricFeature::SlackThreshold => &mut self.slack_threshold,
+            FabricFeature::ShapingPretenstFactor => &mut self.shaping_pretenst_factor,
+            FabricFeature::ShapingStiffnessFactor => &mut self.shaping_stiffness_factor,
+            FabricFeature::ShapingDrag => &mut self.shaping_drag,
+            FabricFeature::MaxStrain => &mut self.max_strain,
+            FabricFeature::VisualStrain => &mut self.visual_strain,
+            FabricFeature::NexusPushLength => &mut self.nexus_push_length,
+            FabricFeature::ColumnPushLength => &mut self.column_push_length,
+            FabricFeature::TriangleLength => &mut self.triangle_length,
+            FabricFeature::RingLength => &mut self.ring_length,
+            FabricFeature::NexusCrossLength => &mut self.nexus_cross_length,
+            FabricFeature::ColumnCrossLength => &mut self.column_cross_length,
+            FabricFeature::BowMidLength => &mut self.bow_mid_length,
+            FabricFeature::BowEndLength => &mut self.bow_end_length,
+            FabricFeature::PushOverPull => &mut self.push_over_pull,
+            FabricFeature::PushRadiusFactor => &mut self.push_radius_factor,
+            FabricFeature::PullRadiusFactor => &mut self.pull_radius_factor,
+            FabricFeature::MaxStiffness => &mut self.max_stiffness,
+        };
+        *value_pointer = value;
         value
-    }
-
-    pub fn get_float(&self, feature: FabricFeature) -> f32 {
-        match self.float_features.get(&feature) {
-            Some(value) => *value,
-            None => default_fabric_feature(feature),
-        }
     }
 }
