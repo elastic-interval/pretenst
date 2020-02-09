@@ -111,30 +111,32 @@ impl Fabric {
             },
             _ => {}
         }
-        let interval_busy_countdown = self
-            .intervals
-            .iter()
-            .map(|interval| interval.countdown)
-            .max()
-            .unwrap();
-        if interval_busy_countdown == 0 || self.busy_countdown > 0 {
+        let interval_busy = self.intervals.iter().map(|i| i.countdown).max().unwrap();
+        if interval_busy > 0 {
+            return Stage::Busy;
+        }
+        if self.busy_countdown > 0 {
             if self.busy_countdown == 0 {
                 if self.stage == Stage::Realizing {
                     return self.set_stage(Stage::Realized);
                 }
                 return self.stage;
             }
-            let mut next_countdown: u32 = self.busy_countdown - world.iterations_per_frame as u32;
-            if next_countdown > self.busy_countdown {
+            let mut next: u32 = self.busy_countdown - world.iterations_per_frame as u32;
+            if next > self.busy_countdown {
                 // rollover
-                next_countdown = 0
+                next = 0
             }
-            self.busy_countdown = next_countdown;
-            if next_countdown == 0 {
+            self.busy_countdown = next;
+            if next == 0 {
                 return self.stage;
             }
         }
         Stage::Busy
+    }
+
+    pub fn finish_growing(&mut self) -> Stage {
+        self.set_stage(Stage::Shaping)
     }
 
     pub fn render_to(&mut self, view: &mut View, world: &World) {
