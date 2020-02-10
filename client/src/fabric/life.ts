@@ -3,7 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FABRIC_FEATURES, FabricFeature, Stage } from "./fabric-engine"
+import {FabricFeature, Stage} from "eig"
+
 import { TensegrityFabric } from "./tensegrity-fabric"
 import { IInterval } from "./tensegrity-types"
 
@@ -42,7 +43,7 @@ export class Life {
                 switch (stage) {
                     case Stage.Slack:
                         if (prefs && prefs.adoptLengths) {
-                            this.fabric.instance.engine.adoptLengths()
+                            this.fabric.instance.fabric.adopt_lengths()
                             this.save()
                         }
                         return
@@ -77,7 +78,7 @@ export class Life {
                             return
                         }
                         if (prefs && prefs.adoptLengths) {
-                            this.fabric.instance.engine.adoptLengths()
+                            this.fabric.instance.fabric.adopt_lengths()
                             this.save()
                             return
                         } else {
@@ -91,14 +92,18 @@ export class Life {
     }
 
     private save(): void {
-        this.fabric.instance.engine.cloneInstance(this.fabric.instance.index, this.fabric.slackInstance.index)
+        // TODO
+        // this.fabric.instance.engine.cloneInstance(this.fabric.instance.index, this.fabric.slackInstance.index)
+        throw new Error("cannot save")
     }
 
     private restore(): void {
-        this.fabric.instance.engine.cloneInstance(this.fabric.slackInstance.index, this.fabric.instance.index)
-        FABRIC_FEATURES.forEach(fabricFeature => {
-            this.fabric.instance.setFeatureValue(fabricFeature, this.numericFeature(fabricFeature))
-        })
+        // TODO
+        // this.fabric.instance.engine.cloneInstance(this.fabric.slackInstance.index, this.fabric.instance.index)
+        // FABRIC_FEATURES.forEach(fabricFeature => {
+        //     this.fabric.instance.setFeatureValue(fabricFeature, this.numericFeature(fabricFeature))
+        // })
+        throw new Error("cannot restore")
     }
 }
 

@@ -3,7 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FABRIC_FEATURES, FabricFeature, IntervalRole, SurfaceCharacter } from "../fabric/fabric-engine"
+import { FabricFeature, IntervalRole, SurfaceCharacter } from "eig"
+
+import { FABRIC_FEATURES } from "../fabric/fabric-engine"
 import { IFeatureConfig } from "../fabric/fabric-features"
 import { addNameToCode, codeToTenscript, ITenscript } from "../fabric/tenscript"
 
@@ -58,6 +60,7 @@ export function getRecentTenscript(state: IStoredState): ITenscript[] {
 }
 
 export function roleDefaultFromFeatures(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
+
     if (intervalRole === IntervalRole.FacePull) {
         throw new Error()
     }

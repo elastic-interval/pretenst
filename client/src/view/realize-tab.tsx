@@ -3,13 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { FabricFeature, Stage, SurfaceCharacter } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowAltCircleRight, FaBalanceScale, FaGlobe } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, Stage, SurfaceCharacter } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { enumValues, IStoredState, transition } from "../storage/stored-state"

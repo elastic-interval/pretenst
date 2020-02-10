@@ -11,10 +11,11 @@ use crate::interval::Interval;
 use crate::joint::Joint;
 use crate::view::View;
 use crate::world::World;
+use nalgebra::*;
 
 #[wasm_bindgen]
 pub struct Fabric {
-    pub(crate) age: u32,
+    pub age: u32,
     pub(crate) stage: Stage,
     pub(crate) current_shape: u8,
     pub(crate) busy_countdown: u32,
@@ -25,7 +26,7 @@ pub struct Fabric {
 
 #[wasm_bindgen]
 impl Fabric {
-    pub fn new(joint_count: usize, interval_count: usize) -> Fabric {
+    pub fn new(joint_count: usize, interval_count: usize, face_count: usize) -> Fabric {
         Fabric {
             age: 0,
             stage: Stage::Busy,
@@ -33,16 +34,20 @@ impl Fabric {
             current_shape: REST_SHAPE,
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(interval_count),
-            faces: Vec::with_capacity(interval_count / 3), // todo
+            faces: Vec::with_capacity(face_count),
         }
+    }
+
+    pub fn get_joint_count(&self) -> u16 {
+        self.joints.len() as u16
     }
 
     pub fn get_interval_count(&self) -> u16 {
         self.intervals.len() as u16
     }
 
-    pub fn get_joint_count(&self) -> u16 {
-        self.joints.len() as u16
+    pub fn get_face_count(&self) -> u16 {
+        self.faces.len() as u16
     }
 
     pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
@@ -74,10 +79,18 @@ impl Fabric {
         index
     }
 
+    pub fn remove_interval(&mut self, index: usize) {
+        self.intervals.remove(index);
+    }
+
     pub fn create_face(&mut self, joint0: u16, joint1: u16, joint2: u16) -> usize {
         let index = self.faces.len();
         self.faces.push(Face::new(joint0, joint1, joint2));
         index
+    }
+
+    pub fn remove_face(&mut self, index: usize) {
+        self.faces.remove(index);
     }
 
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
@@ -135,8 +148,60 @@ impl Fabric {
         Stage::Busy
     }
 
+    pub fn centralize(&mut self) {
+        let mut midpoint: Vector3<f32> = zero();
+        for joint in self.joints.iter() {
+            midpoint += &joint.location.coords;
+        }
+        midpoint /= self.joints.len() as f32;
+        for joint in self.joints.iter_mut() {
+            joint.location -= &midpoint;
+        }
+    }
+
+    pub fn set_altitude(&mut self, altitude: f32) -> f32 {
+        let low_y = self
+            .joints
+            .iter()
+            .map(|joint| joint.location.y)
+            .min_by(|a, b| a.partial_cmp(b).unwrap())
+            .unwrap();
+        for joint in &mut self.joints {
+            joint.location.y += altitude - low_y;
+        }
+        for joint in &mut self.joints {
+            joint.velocity.fill(0.0);
+        }
+        return altitude - low_y;
+    }
+
+    pub fn adopt_lengths(&mut self) -> Stage {
+        for interval in self.intervals.iter_mut() {
+            interval.rest_length = interval.calculate_current_length(&self.joints, &self.faces);
+            interval.length_for_shape[self.current_shape as usize] = interval.rest_length;
+        }
+        for joint in self.joints.iter_mut() {
+            joint.force.fill(0_f32);
+            joint.velocity.fill(0_f32);
+        }
+        self.set_altitude(0_f32);
+        self.set_stage(Stage::Slack)
+    }
+
     pub fn finish_growing(&mut self) -> Stage {
         self.set_stage(Stage::Shaping)
+    }
+
+    pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: u16) {
+        self.intervals[index].multiply_rest_length(factor, countdown, self.current_shape);
+    }
+
+    pub fn change_rest_length(&mut self, index: usize, rest_length: f32, countdown: u16) {
+        self.intervals[index].change_rest_length(rest_length, countdown, self.current_shape);
+    }
+
+    pub fn set_interval_role(&mut self, index: usize, interval_role: IntervalRole) {
+        self.intervals[index].set_interval_role(interval_role);
     }
 
     pub fn render_to(&mut self, view: &mut View, world: &World) {
@@ -212,22 +277,6 @@ impl Fabric {
     fn set_stage(&mut self, stage: Stage) -> Stage {
         self.stage = stage;
         stage
-    }
-
-    fn set_altitude(&mut self, altitude: f32) -> f32 {
-        let low_y = self
-            .joints
-            .iter()
-            .map(|joint| joint.location.y)
-            .min_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap();
-        for joint in &mut self.joints {
-            joint.location.y += altitude - low_y;
-        }
-        for joint in &mut self.joints {
-            joint.velocity.fill(0.0);
-        }
-        return altitude - low_y;
     }
 
     fn start_realizing(&mut self, world: &World) -> Stage {

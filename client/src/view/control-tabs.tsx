@@ -3,13 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { FabricFeature, IntervalRole } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaArrowLeft } from "react-icons/all"
 import { Alert, Button, Nav, NavItem, NavLink, TabContent, TabPane } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, IntervalRole } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"

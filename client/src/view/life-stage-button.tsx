@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -19,7 +20,6 @@ import {
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
-import { Stage } from "../fabric/fabric-engine"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 export enum StageTransition {
@@ -135,6 +135,8 @@ function Symbol({stage}: { stage: Stage }): JSX.Element {
             return <FaClock/>
         case Stage.Realized:
             return <FaHandSpock/>
+        default:
+            throw new Error("Stage?")
     }
 }
 

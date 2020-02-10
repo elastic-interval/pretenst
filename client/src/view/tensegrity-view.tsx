@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import * as EIG from "eig"
+import { Fabric, FabricFeature, IntervalRole, Stage, View, World } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaArrowRight, FaCamera, FaHandPointUp, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
@@ -11,9 +11,9 @@ import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, fabricFeatureIntervalRole, INTERVAL_ROLES, IntervalRole, Stage } from "../fabric/fabric-engine"
+import { fabricFeatureIntervalRole, INTERVAL_ROLES } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
-import { FabricKernel } from "../fabric/fabric-kernel"
+import { FabricInstance } from "../fabric/fabric-instance"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
@@ -50,18 +50,17 @@ function selectIntervals(faces: IFace[]): IInterval[] {
     }, [] as IInterval[])
 }
 
-export function TensegrityView({fabricKernel, eigWorld, eigFabric, floatFeatures, storedState$}: {
-    fabricKernel: FabricKernel,
-    eigWorld: EIG.World,
-    eigFabric: EIG.Fabric,
+export function TensegrityView({world, fabric, view, floatFeatures, storedState$}: {
+    world: World,
+    fabric: Fabric,
+    view: View,
     floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const mainInstance = useMemo(() => fabricKernel.allocateInstance(), [])
-    const slackInstance = useMemo(() => fabricKernel.allocateInstance(), [])
+    const mainInstance = useMemo(() => new FabricInstance(world, view, fabric), [])
 
-    const [fabric, setFabric] = useState<TensegrityFabric | undefined>()
+    const [tensegrityFabric, setTensegrityFabric] = useState<TensegrityFabric | undefined>()
     const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
     useEffect(() => setSelectedIntervals(selectIntervals(selectedFaces)), [selectedFaces])
@@ -81,47 +80,44 @@ export function TensegrityView({fabricKernel, eigWorld, eigFabric, floatFeatures
     useEffect(() => setVisibleRoles(INTERVAL_ROLES), [ellipsoids])
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
-            console.log("eig joint count!", eigFabric.get_joint_count())
+            console.log("eig joint count!", mainInstance.fabric.get_joint_count())
             updateFullScreen(storedState.fullScreen)
             updateEllipsoids(storedState.ellipsoids)
             updateRotating(storedState.rotating)
-            if (!fabric) {
+            if (!tensegrityFabric) {
                 return
             }
-            const engine = fabric.instance.engine
-            engine.setColoring(storedState.showPushes, storedState.showPulls)
-            engine.setSurfaceCharacter(storedState.surfaceCharacter)
+            mainInstance.world.set_coloring(storedState.showPushes, storedState.showPulls)
+            mainInstance.world.set_surface_character(storedState.surfaceCharacter)
         })
         return () => subscription.unsubscribe()
-    }, [fabric])
+    }, [tensegrityFabric])
 
     useEffect(() => { // todo: look when this happens
         const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map((feature: FloatFeature) =>
             feature.observable.subscribe((value: IFeatureValue) => {
-                if (!fabric) {
+                if (!tensegrityFabric) {
                     return
                 }
-                fabric.instance.applyFeature(feature)
+                tensegrityFabric.instance.applyFeature(feature)
                 const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
                 if (intervalRole !== undefined) {
-                    const engine = fabric.instance.engine
-                    fabric.intervals
+                    tensegrityFabric.intervals
                         .filter(interval => interval.intervalRole === intervalRole)
                         .forEach(interval => {
                             const scaledLength = feature.numeric * percentToFactor(interval.scale)
-                            engine.changeRestLength(interval.index, scaledLength, 500)
+                            tensegrityFabric.instance.fabric.change_rest_length(interval.index, scaledLength, 500)
                         })
                 }
             }))
         return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
-    }, [fabric])
+    }, [tensegrityFabric])
 
     function runTenscript(newTenscript: ITenscript): void {
-        if (!mainInstance || !slackInstance) {
+        if (!mainInstance) {
             return
         }
         location.hash = addNameToCode(newTenscript.code, newTenscript.name)
-        mainInstance.engine.initInstance()
         mainInstance.forgetDimensions()
         floatFeatures[FabricFeature.ShapingPretenstFactor].percent = 100
         floatFeatures[FabricFeature.ShapingDrag].percent = 100
@@ -130,12 +126,12 @@ export function TensegrityView({fabricKernel, eigWorld, eigFabric, floatFeatures
         Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach((feature: FloatFeature) => mainInstance.applyFeature(feature))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(floatFeatures, role)
         const numericFeature = (feature: FabricFeature) => storedState$.getValue().featureValues[feature].numeric
-        setFabric(new TensegrityFabric(roleLength, numericFeature, mainInstance, slackInstance, newTenscript))
+        setTensegrityFabric(new TensegrityFabric(roleLength, numericFeature, mainInstance, newTenscript))
     }
 
     useEffect(() => {
         const timer = setTimeout(() => {
-            if (!fabric) {
+            if (!tensegrityFabric) {
                 runTenscript(rootTenscript)
             }
         }, 200)
@@ -164,8 +160,8 @@ export function TensegrityView({fabricKernel, eigWorld, eigFabric, floatFeatures
                         floatFeatures={floatFeatures}
                         rootTenscript={rootTenscript}
                         setRootTenscript={setRootTenscript}
-                        fabric={fabric}
-                        setFabric={setFabric}
+                        fabric={tensegrityFabric}
+                        setFabric={setTensegrityFabric}
                         selectedIntervals={selectedIntervals}
                         shapeSelection={shapeSelection}
                         setShapeSelection={setShapeSelection}
@@ -185,7 +181,7 @@ export function TensegrityView({fabricKernel, eigWorld, eigFabric, floatFeatures
                 right: 0,
                 height: "100%",
             }}>
-                {!fabric ? (
+                {!tensegrityFabric ? (
                     <div id="tensegrity-view" className="h-100">
                         <div style={{position: "relative", top: "50%", left: "50%"}}>
                             <Button onClick={() => runTenscript(rootTenscript)}>
@@ -196,7 +192,7 @@ export function TensegrityView({fabricKernel, eigWorld, eigFabric, floatFeatures
                     </div>
                 ) : (
                     <div className="h-100">
-                        <TopMiddle fabric={fabric}/>
+                        <TopMiddle fabric={tensegrityFabric}/>
                         <div id="bottom-middle">
                             <ButtonGroup>
                                 <Button
@@ -229,11 +225,11 @@ export function TensegrityView({fabricKernel, eigWorld, eigFabric, floatFeatures
                                 borderWidth: "2px",
                             }}>
                                 <FabricView
-                                    fabric={fabric}
+                                    fabric={tensegrityFabric}
                                     fabricError={error => {
                                         console.error(error)
-                                        const tenscript = fabric.tenscript
-                                        setFabric(undefined)
+                                        const tenscript = tensegrityFabric.tenscript
+                                        setTensegrityFabric(undefined)
                                         setTimeout(() => runTenscript(tenscript), 1000)
                                     }}
                                     selectedIntervals={selectedIntervals}

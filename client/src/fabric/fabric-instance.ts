@@ -3,18 +3,32 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Fabric, FabricFeature, View, World } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import { FabricFeature, FEATURE_FLOATS, IFabricEngine } from "./fabric-engine"
 import { FloatFeature } from "./fabric-features"
-import { faceVector, vectorFromArray, vectorToArray } from "./fabric-kernel"
+
+const vectorFromArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
+    const offset = index * 3
+    if (vector) {
+        vector.set(array[offset], array[offset + 1], array[offset + 2])
+        return vector
+    } else {
+        return new Vector3(array[offset], array[offset + 1], array[offset + 2])
+    }
+}
+
+function faceVector(faceIndex: number, array: Float32Array): Vector3 {
+    const index = faceIndex * 3
+    const a = vectorFromArray(array, index)
+    const b = vectorFromArray(array, index + 1)
+    const c = vectorFromArray(array, index + 2)
+    return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
+}
 
 export class FabricInstance {
-    private _fabricFeatures: LazyFloatArray
-    private _midpoint: LazyFloatArray
     private _lineColors: LazyFloatArray
     private _lineLocations: LazyFloatArray
-    private _faceMidpoints: LazyFloatArray
     private _faceNormals: LazyFloatArray
     private _faceLocations: LazyFloatArray
     private _jointLocations: LazyFloatArray
@@ -26,54 +40,66 @@ export class FabricInstance {
     private _linearDensities: LazyFloatArray
 
     constructor(
-        public readonly index: number,
-        private buffer: ArrayBuffer,
-        private releaseInstance: (index: number) => void,
-        private fabricEngine: IFabricEngine,
+        public readonly world: World,
+        public readonly view: View,
+        public readonly fabric: Fabric,
     ) {
-        const e = this.engine
-        const offset = e._fabricOffset()
-        const b = this.buffer
-        this._fabricFeatures = new LazyFloatArray(b, offset + e._fabricFeatures(), () => FEATURE_FLOATS)
-        this._midpoint = new LazyFloatArray(b, offset + e._midpoint(), () => 3)
-        this._lineColors = new LazyFloatArray(b, offset + e._lineColors(), () => e.getIntervalCount() * 3 * 2)
-        this._lineLocations = new LazyFloatArray(b, offset + e._lineLocations(), () => e.getIntervalCount() * 3 * 2)
-        this._faceMidpoints = new LazyFloatArray(b, offset + e._faceMidpoints(), () => e.getFaceCount() * 3)
-        this._faceNormals = new LazyFloatArray(b, offset + e._faceNormals(), () => e.getFaceCount() * 3 * 3)
-        this._faceLocations = new LazyFloatArray(b, offset + e._faceLocations(), () => e.getFaceCount() * 3 * 3)
-        this._jointLocations = new LazyFloatArray(b, offset + e._jointLocations(), () => e.getJointCount() * 3)
-        this._jointVelocities = new LazyFloatArray(b, offset + e._jointVelocities(), () => e.getJointCount() * 3)
-        this._unitVectors = new LazyFloatArray(b, offset + e._intervalUnits(), () => e.getIntervalCount() * 3)
-        this._strains = new LazyFloatArray(b, offset + e._intervalStrains(), () => e.getIntervalCount())
-        this._strainNuances = new LazyFloatArray(b, offset + e._intervalStrainNuances(), () => e.getIntervalCount())
-        this._stiffnesses = new LazyFloatArray(b, offset + e._stiffnesses(), () => e.getIntervalCount())
-        this._linearDensities = new LazyFloatArray(b, offset + e._linearDensities(), () => e.getIntervalCount())
+        this._lineColors = new LazyFloatArray(
+            array => this.view.copy_line_colors_to(array),
+            () => fabric.get_interval_count() * 3 * 2,
+        )
+        this._lineLocations = new LazyFloatArray(
+            array => this.view.copy_line_locations_to(array),
+            () => fabric.get_interval_count() * 3 * 2,
+        )
+        this._faceNormals = new LazyFloatArray(
+            array => this.view.copy_face_normals_to(array),
+            () => fabric.get_face_count() * 3 * 3,
+        )
+        this._faceLocations = new LazyFloatArray(
+            array => this.view.copy_face_vertex_locations_to(array),
+            () => fabric.get_face_count() * 3 * 3,
+        )
+        this._jointLocations = new LazyFloatArray(
+            array => this.view.copy_joint_locations_to(array),
+            () => fabric.get_joint_count() * 3,
+        )
+        this._jointVelocities = new LazyFloatArray(
+            array => this.view.copy_joint_velocities_to(array),
+            () => fabric.get_joint_count() * 3,
+        )
+        this._unitVectors = new LazyFloatArray(
+            array => this.view.copy_unit_vectors_to(array),
+            () => fabric.get_interval_count() * 3,
+        )
+        this._strains = new LazyFloatArray(
+            array => this.view.copy_strains_to(array),
+            () => fabric.get_interval_count(),
+        )
+        this._strainNuances = new LazyFloatArray(
+            array => this.view.copy_strain_nuances_to(array),
+            () => fabric.get_interval_count(),
+        )
+        this._stiffnesses = new LazyFloatArray(
+            array => this.view.copy_stiffnesses_to(array),
+            () => fabric.get_interval_count(),
+        )
+        this._linearDensities = new LazyFloatArray(
+            array => this.view.copy_linear_densities_to(array),
+            () => fabric.get_interval_count(),
+        )
     }
 
     public applyFeature(feature: FloatFeature): void {
-        this._fabricFeatures.floats[feature.fabricFeature] = feature.numeric
+        this.world.set_float_value(feature.fabricFeature, feature.numeric)
     }
 
     public setFeatureValue(fabricFeature: FabricFeature, value: number): void {
-        this._fabricFeatures.floats[fabricFeature] = value
-    }
-
-    public release(): void {
-        this.releaseInstance(this.index)
+        this.world.set_float_value(fabricFeature, value)
     }
 
     public forgetDimensions(): void {
-        this._faceMidpoints.clear()
-        this._faceLocations.clear()
-        this._faceNormals.clear()
-        this._jointLocations.clear()
-        this._lineLocations.clear()
-        this._lineColors.clear()
-        this._unitVectors.clear()
-        this._strains.clear()
-        this._strainNuances.clear()
-        this._stiffnesses.clear()
-        this._linearDensities.clear()
+        this.view.clear()
     }
 
     public location(jointIndex: number): Vector3 {
@@ -81,11 +107,8 @@ export class FabricInstance {
     }
 
     public apply(matrix: Matrix4): void {
-        const jointCount = this.engine.getJointCount()
-        for (let jointIndex = 0; jointIndex < jointCount; jointIndex++) {
-            const jointLocation = vectorFromArray(this._jointLocations.floats, jointIndex)
-            vectorToArray(jointLocation.applyMatrix4(matrix), this._jointLocations.floats, jointIndex)
-        }
+        // todo: do it in Rust
+        throw new Error("not implemented")
     }
 
     public unitVector(intervalIndex: number): Vector3 {
@@ -120,10 +143,6 @@ export class FabricInstance {
         return faceVector(faceIndex, this._faceLocations.floats)
     }
 
-    public faceNormal(faceIndex: number): Vector3 {
-        return faceVector(faceIndex, this._faceNormals.floats)
-    }
-
     public intervalLocation(intervalIndex: number): Vector3 {
         return vectorFromArray(this._lineLocations.floats, intervalIndex)
     }
@@ -145,28 +164,23 @@ export class FabricInstance {
         const b = this.intervalLocation(intervalIndex * 2 + 1)
         return new Vector3().add(a).add(b).multiplyScalar(0.5)
     }
-
-    public getMidpoint(midpoint?: Vector3): Vector3 {
-        return vectorFromArray(this._midpoint.floats, 0, midpoint)
-    }
-
-    public get engine(): IFabricEngine {
-        this.fabricEngine.setInstance(this.index)
-        return this.fabricEngine
-    }
 }
 
 class LazyFloatArray {
     private array: Float32Array | undefined
 
-    constructor(private buffer: ArrayBuffer, private offset: number, private length: () => number) {
+    constructor(
+        private copyFunction: (array: Float32Array) => void,
+        private length: () => number,
+    ) {
     }
 
     public get floats(): Float32Array {
-        if (this.array) {
-            return this.array
+        if (!this.array || this.array.length !== this.length()) {
+            this.array = new Float32Array(this.length())
         }
-        return this.array = new Float32Array(this.buffer, this.offset, this.length())
+        this.copyFunction(this.array) // todo: maybe executed too frequently
+        return this.array
     }
 
     public clear(): void {

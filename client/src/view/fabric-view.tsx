@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { FabricFeature, IntervalRole, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
 import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
@@ -19,7 +20,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick, FabricFeature, IntervalRole, Stage } from "../fabric/fabric-engine"
+import { doNotClick } from "../fabric/fabric-engine"
 import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
@@ -110,7 +111,8 @@ export function FabricView({
     useRender(() => {
         try {
             const instance = fabric.instance
-            const target = instance.getMidpoint()
+            const view = instance.view
+            const target = new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
             const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
             orbit.current.target.add(towardsTarget)
             orbit.current.update()
@@ -122,9 +124,9 @@ export function FabricView({
                     setTimeout(() => fabric.toStage(nextStage, {}))
                 }
             }
-            instance.engine.renderNumbers()
+            instance.fabric.render_to(instance.view, instance.world)
             fabric.needsUpdate()
-            setAge(instance.engine.getAge())
+            setAge(instance.fabric.age)
         } catch (e) {
             fabricError(e)
         }

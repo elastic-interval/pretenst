@@ -9,17 +9,17 @@ use crate::view::View;
 use crate::world::World;
 use nalgebra::*;
 
-pub struct Interval {
-    alpha_index: usize,
-    omega_index: usize,
+pub(crate) struct Interval {
+    pub(crate) alpha_index: usize,
+    pub(crate) omega_index: usize,
     pub(crate) interval_role: IntervalRole,
     pub(crate) rest_length: f32,
-    length_for_shape: [f32; SHAPE_COUNT],
+    pub(crate) length_for_shape: [f32; SHAPE_COUNT],
     pub(crate) stiffness: f32,
     pub(crate) linear_density: f32,
     pub(crate) countdown: u16,
-    max_countdown: u16,
-    unit: Vector3<f32>,
+    pub(crate) max_countdown: u16,
+    pub(crate) unit: Vector3<f32>,
     pub(crate) strain: f32,
 }
 
@@ -239,11 +239,15 @@ impl Interval {
         }
     }
 
-    fn change_rest_length(&mut self, rest_length: f32, countdown: u16, shape: u8) {
+    pub fn change_rest_length(&mut self, rest_length: f32, countdown: u16, shape: u8) {
         self.rest_length = self.length_for_shape[shape as usize];
         self.length_for_shape[shape as usize] = rest_length;
         self.max_countdown = countdown;
         self.countdown = countdown;
+    }
+
+    pub fn set_interval_role(&mut self, interval_role: IntervalRole) {
+        self.interval_role = interval_role;
     }
 
     pub fn multiply_rest_length(&mut self, factor: f32, countdown: u16, shape: u8) {

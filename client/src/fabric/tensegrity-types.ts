@@ -3,9 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { IntervalRole } from "eig"
 import { Vector3 } from "three"
-
-import { IntervalRole } from "./fabric-engine"
 
 export const PHI = 1.61803398875
 export const DEFAULT_PUSH_LENGTH = Math.sqrt(2)

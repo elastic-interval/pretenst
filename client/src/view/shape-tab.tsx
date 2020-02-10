@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { FabricFeature, IntervalRole, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -23,12 +24,9 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import {
-    FabricFeature,
     INTERVAL_ROLES,
-    IntervalRole,
     intervalRoleFabricFeature,
     intervalRoleName,
-    Stage,
 } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
@@ -64,7 +62,7 @@ export function ShapeTab(
 
     const [pushAndPull, setPushAndPull] = useState(false)
     useEffect(() => {
-        fabric.instance.engine.setPushAndPull(pushAndPull)
+        fabric.instance.world.set_push_and_pull(pushAndPull)
     }, [pushAndPull])
 
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)

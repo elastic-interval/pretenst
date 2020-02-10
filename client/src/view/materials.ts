@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { IntervalRole } from "eig"
 import {
     Color,
     DoubleSide,
@@ -13,7 +14,6 @@ import {
     VertexColors,
 } from "three"
 
-import { IntervalRole } from "../fabric/fabric-engine"
 
 export const SELECTION_COLOR = "#91934f"
 export const SCALE_LINE_COLOR = "#cace02"

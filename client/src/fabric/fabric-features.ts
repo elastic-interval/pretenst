@@ -4,11 +4,12 @@
  * something extra so it can compile
  */
 
+import { FabricFeature } from "eig"
 import { BehaviorSubject } from "rxjs"
 
 import { IFeatureValue, IStoredState, transition } from "../storage/stored-state"
 
-import { FABRIC_FEATURES, FabricFeature } from "./fabric-engine"
+import { FABRIC_FEATURES } from "./fabric-engine"
 
 export interface IFeatureConfig {
     feature: FabricFeature
@@ -64,7 +65,7 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 defaultValue: 1000,
                 percents: [10, 20, 30, 100, 150, 400, 1000],
             }
-        case FabricFeature.PretenstCountdown:
+        case FabricFeature.RealizingCountdown:
             return {
                 feature,
                 name: "Slack to Pretenst countdown",
@@ -211,6 +212,8 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 defaultValue: 0.0005,
                 percents: [5, 25, 50, 100, 150, 200, 500],
             }
+        default:
+            throw new Error("Feature?")
     }
 }
 

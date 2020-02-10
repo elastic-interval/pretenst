@@ -3,9 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { FabricFeature, IntervalRole } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import { FabricFeature, IntervalRole } from "./fabric-engine"
 import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     averageLocation,
@@ -82,7 +82,7 @@ export class TensegrityBuilder {
             return facePulls
         }
         const instance = this.fabric.instance
-        const connectFacePull = ({alpha, omega, scaleFactor} : IFacePull) => {
+        const connectFacePull = ({alpha, omega, scaleFactor}: IFacePull) => {
             const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
             if (!this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)) {
                 console.error("Unable to connect")
@@ -230,7 +230,6 @@ export class TensegrityBuilder {
                 averageLocation(faces.map(face => instance.faceMidpoint(face.index))),
                 factorToPercent(averageScaleFactor(faces)),
             )
-            instance.engine.renderNumbers()
             const closestTo = (face: IFace) => {
                 const faceLocation = instance.faceMidpoint(face.index)
                 const opposingFaces = brick.faces.filter(({negative}) => negative !== face.negative)
@@ -283,7 +282,7 @@ export class TensegrityBuilder {
         const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
         const brick = initialBrick(this.fabric.bricks.length, base, scale)
         this.fabric.bricks.push(brick)
-        const jointIndexes = points.map((p, idx) => this.fabric.createJointIndex(idx, p))
+        const jointIndexes = points.map((p, idx) => this.fabric.createJointIndex(p))
         PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
             const alphaIndex = jointIndexes[idx * 2]
             const omegaIndex = jointIndexes[idx * 2 + 1]
@@ -338,7 +337,6 @@ export class TensegrityBuilder {
     }
 
     private faceToOrigin(face: IFace): Matrix4 {
-        this.fabric.instance.engine.renderNumbers() // todo: necessary?
         const trianglePoints = face.joints.map(joint => this.fabric.instance.location(joint.index))
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()

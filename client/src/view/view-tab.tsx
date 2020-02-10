@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { FabricFeature, IntervalRole, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -22,7 +23,7 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { FabricFeature, INTERVAL_ROLES, IntervalRole, intervalRoleName, Stage } from "../fabric/fabric-engine"
+import { INTERVAL_ROLES, intervalRoleName } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVZip } from "../storage/download"
@@ -123,21 +124,21 @@ export function ViewTab(
                 <h6 className="w-100 text-center"><FaClock/> Time</h6>
                 <FeaturePanel key="it" feature={floatFeatures[FabricFeature.IterationsPerFrame]} disabled={ellipsoids}/>
                 <FeaturePanel key="ic" feature={floatFeatures[FabricFeature.IntervalCountdown]} disabled={ellipsoids}/>
-                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.PretenstCountdown]} disabled={ellipsoids}/>
+                <FeaturePanel key="pc" feature={floatFeatures[FabricFeature.RealizingCountdown]} disabled={ellipsoids}/>
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>
                 <ButtonGroup className="w-100">
                     <Button disabled={life.stage !== Stage.Realized}
-                            onClick={() => fabric.instance.engine.setAltitude(1)}>
+                            onClick={() => fabric.instance.fabric.set_altitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
                     <Button disabled={life.stage !== Stage.Realized}
-                            onClick={() => fabric.instance.engine.setAltitude(10)}>
+                            onClick={() => fabric.instance.fabric.set_altitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>
                     <Button disabled={ellipsoids}
-                            onClick={() => fabric.instance.engine.centralize()}>
+                            onClick={() => fabric.instance.fabric.centralize()}>
                         <FaCompressArrowsAlt/> Centralize
                     </Button>
                 </ButtonGroup>

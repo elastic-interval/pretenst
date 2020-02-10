@@ -4,6 +4,7 @@
  */
 
 
+import { FabricFeature } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { FaSlidersH } from "react-icons/all"
@@ -11,7 +12,6 @@ import { Canvas } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Geometry, Vector3 } from "three"
 
-import { FabricFeature } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IInterval } from "../fabric/tensegrity-types"
@@ -91,7 +91,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
 
         useEffect(() => {
             const timer = setInterval(() => {
-                const fabricAge = fabric.instance.engine.getAge()
+                const fabricAge = fabric.instance.fabric.age
                 if (age < fabricAge) {
                     updateAge(fabricAge) // to trigger repaint. better way?
                 }

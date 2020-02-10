@@ -92,8 +92,7 @@ impl World {
         self.push_and_pull = push_and_pull;
     }
 
-    pub fn set_float_percent(&mut self, feature: FabricFeature, percent: f32) -> f32 {
-        let value = percent * default_fabric_feature(feature) / 100_f32;
+    pub fn set_float_value(&mut self, feature: FabricFeature, value: f32) -> f32 {
         let value_pointer: &mut f32 = match feature {
             FabricFeature::Gravity => &mut self.gravity,
             FabricFeature::Drag => &mut self.drag,
@@ -124,5 +123,10 @@ impl World {
         };
         *value_pointer = value;
         value
+    }
+
+    pub fn set_float_percent(&mut self, feature: FabricFeature, percent: f32) -> f32 {
+        let value = percent * default_fabric_feature(feature) / 100_f32;
+        self.set_float_value(feature, value)
     }
 }
