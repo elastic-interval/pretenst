@@ -83,7 +83,7 @@ export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}
                 <ButtonGroup size="sm" className="w-100">
                     {enumValues(SurfaceCharacter).map(value => (
                         <Button
-                            key={SurfaceCharacter[value]}
+                            key={`SurfaceCharacter[${value}]`}
                             disabled={disabled()}
                             active={storedState.surfaceCharacter === value}
                             onClick={() => changeState({surfaceCharacter: value})}

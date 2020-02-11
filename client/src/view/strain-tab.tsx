@@ -164,7 +164,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
             <h6 className="w-100 text-center"><FaSlidersH/> Adjustments</h6>
             {FEATURES.map(feature => (
                 <FeaturePanel
-                    key={FabricFeature[feature]}
+                    key={`FabricFeature[${feature}]`}
                     feature={floatFeatures[feature]}
                     disabled={false}
                 />))}

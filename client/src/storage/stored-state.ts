@@ -59,39 +59,35 @@ export function getRecentTenscript(state: IStoredState): ITenscript[] {
     })
 }
 
+export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
+    switch (intervalRole) {
+        case IntervalRole.NexusPush:
+            return FabricFeature.NexusPushLength
+        case IntervalRole.ColumnPush:
+            return FabricFeature.ColumnPushLength
+        case IntervalRole.Triangle:
+            return FabricFeature.TriangleLength
+        case IntervalRole.Ring:
+            return FabricFeature.RingLength
+        case IntervalRole.NexusCross:
+            return FabricFeature.NexusCrossLength
+        case IntervalRole.ColumnCross:
+            return FabricFeature.ColumnCrossLength
+        case IntervalRole.BowMid:
+            return FabricFeature.BowMidLength
+        case IntervalRole.BowEnd:
+            return FabricFeature.BowMidLength
+        default:
+            throw new Error("role?")
+    }
+}
+
 export function roleDefaultFromFeatures(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
 
     if (intervalRole === IntervalRole.FacePull) {
         throw new Error()
     }
-    let feature = 0
-    switch (intervalRole) {
-        case IntervalRole.NexusPush:
-            feature = FabricFeature.NexusPushLength
-            break
-        case IntervalRole.ColumnPush:
-            feature = FabricFeature.ColumnPushLength
-            break
-        case IntervalRole.Triangle:
-            feature = FabricFeature.TriangleLength
-            break
-        case IntervalRole.Ring:
-            feature = FabricFeature.RingLength
-            break
-        case IntervalRole.NexusCross:
-            feature = FabricFeature.NexusCrossLength
-            break
-        case IntervalRole.ColumnCross:
-            feature = FabricFeature.ColumnCrossLength
-            break
-        case IntervalRole.BowMid:
-            feature = FabricFeature.BowMidLength
-            break
-        case IntervalRole.BowEnd:
-            feature = FabricFeature.BowMidLength
-            break
-    }
-    return featureValues[feature].numeric
+    return featureValues[roleLengthFeature(intervalRole)].numeric
 }
 
 export function transition(state: IStoredState, partial: Partial<IStoredState>): IStoredState {

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, Stage } from "eig"
+import { FabricFeature, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
@@ -25,13 +25,12 @@ import { BehaviorSubject } from "rxjs"
 
 import {
     INTERVAL_ROLES,
-    intervalRoleFabricFeature,
     intervalRoleName,
 } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
-import { IStoredState } from "../storage/stored-state"
+import { IStoredState, roleLengthFeature } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
@@ -230,10 +229,10 @@ export function ShapeTab(
                     INTERVAL_ROLES
                         .map(intervalRole => ({
                             intervalRole,
-                            feature: floatFeatures[intervalRoleFabricFeature(intervalRole)],
+                            feature: floatFeatures[roleLengthFeature(intervalRole)],
                         }))
                         .map(({intervalRole, feature}) => (
-                            <Button size="sm" key={IntervalRole[intervalRole]}
+                            <Button size="sm" key={`IntervalRole[${intervalRole}]`}
                                     onClick={() => setLengthFeature(feature)}
                                     color={lengthFeature.fabricFeature === feature.fabricFeature ? "success" : "secondary"}
                             >

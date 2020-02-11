@@ -64,7 +64,7 @@ export class TensegrityBuilder {
         const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
         const connector = this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
         if (!connector) {
-            console.error("Cannot connect!")
+            console.error("createConnectedBrick: Cannot connect!")
         }
         return brickB
     }
