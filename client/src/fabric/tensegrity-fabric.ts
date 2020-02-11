@@ -71,8 +71,6 @@ export class TensegrityFabric {
     ) {
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
         this.builder = new TensegrityBuilder(this, numericFeature)
-        this.refreshLineGeometry()
-        this.refreshFaceGeometry()
         const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred())
         this.bricks = [brick]
         this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]

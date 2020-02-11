@@ -80,7 +80,6 @@ export function TensegrityView({world, fabric, view, floatFeatures, storedState$
     useEffect(() => setVisibleRoles(INTERVAL_ROLES), [ellipsoids])
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
-            console.log("eig joint count!", mainInstance.fabric.get_joint_count())
             updateFullScreen(storedState.fullScreen)
             updateEllipsoids(storedState.ellipsoids)
             updateRotating(storedState.rotating)
@@ -118,7 +117,6 @@ export function TensegrityView({world, fabric, view, floatFeatures, storedState$
             return
         }
         location.hash = addNameToCode(newTenscript.code, newTenscript.name)
-        mainInstance.forgetDimensions()
         floatFeatures[FabricFeature.ShapingPretenstFactor].percent = 100
         floatFeatures[FabricFeature.ShapingDrag].percent = 100
         floatFeatures[FabricFeature.ShapingStiffnessFactor].percent = 100

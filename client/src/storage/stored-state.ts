@@ -64,7 +64,34 @@ export function roleDefaultFromFeatures(featureValues: Record<FabricFeature, IFe
     if (intervalRole === IntervalRole.FacePull) {
         throw new Error()
     }
-    return featureValues[FabricFeature[FabricFeature[intervalRole + FabricFeature.NexusPushLength]]].numeric
+    let feature = 0
+    switch (intervalRole) {
+        case IntervalRole.NexusPush:
+            feature = FabricFeature.NexusPushLength
+            break
+        case IntervalRole.ColumnPush:
+            feature = FabricFeature.ColumnPushLength
+            break
+        case IntervalRole.Triangle:
+            feature = FabricFeature.TriangleLength
+            break
+        case IntervalRole.Ring:
+            feature = FabricFeature.RingLength
+            break
+        case IntervalRole.NexusCross:
+            feature = FabricFeature.NexusCrossLength
+            break
+        case IntervalRole.ColumnCross:
+            feature = FabricFeature.ColumnCrossLength
+            break
+        case IntervalRole.BowMid:
+            feature = FabricFeature.BowMidLength
+            break
+        case IntervalRole.BowEnd:
+            feature = FabricFeature.BowMidLength
+            break
+    }
+    return featureValues[feature].numeric
 }
 
 export function transition(state: IStoredState, partial: Partial<IStoredState>): IStoredState {

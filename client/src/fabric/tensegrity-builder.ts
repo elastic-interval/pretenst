@@ -310,7 +310,6 @@ export class TensegrityBuilder {
             const face = this.fabric.createFace(brick, triangle.name)
             brick.faces.push(face)
         })
-        this.fabric.instance.forgetDimensions()
         return brick
     }
 
