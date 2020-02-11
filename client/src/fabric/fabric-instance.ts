@@ -26,65 +26,71 @@ function faceVector(faceIndex: number, array: Float32Array): Vector3 {
     return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
 }
 
+function floatArray(copyFunction: (array: Float32Array) => void, length: () => number): Float32Array {
+    const array = new Float32Array(length())
+    copyFunction(array)
+    return array
+}
+
 export class FabricInstance {
-    private _lineColors: LazyFloatArray
-    private _lineLocations: LazyFloatArray
-    private _faceNormals: LazyFloatArray
-    private _faceLocations: LazyFloatArray
-    private _jointLocations: LazyFloatArray
-    private _jointVelocities: LazyFloatArray
-    private _unitVectors: LazyFloatArray
-    private _strains: LazyFloatArray
-    private _strainNuances: LazyFloatArray
-    private _stiffnesses: LazyFloatArray
-    private _linearDensities: LazyFloatArray
+    public lineColors: Float32Array
+    public lineLocations: Float32Array
+    public faceNormals: Float32Array
+    public faceLocations: Float32Array
+    public jointLocations: Float32Array
+    public jointVelocities: Float32Array
+    public unitVectors: Float32Array
+    public strains: Float32Array
+    public strainNuances: Float32Array
+    public stiffnesses: Float32Array
+    public linearDensities: Float32Array
 
     constructor(
         public readonly world: World,
         public readonly view: View,
         public readonly fabric: Fabric,
     ) {
-        this._lineColors = new LazyFloatArray(
+        this.lineColors = floatArray(
             array => this.view.copy_line_colors_to(array),
             () => fabric.get_interval_count() * 3 * 2,
         )
-        this._lineLocations = new LazyFloatArray(
+        this.lineLocations = floatArray(
             array => this.view.copy_line_locations_to(array),
             () => fabric.get_interval_count() * 3 * 2,
         )
-        this._faceNormals = new LazyFloatArray(
+        this.faceNormals = floatArray(
             array => this.view.copy_face_normals_to(array),
             () => fabric.get_face_count() * 3 * 3,
         )
-        this._faceLocations = new LazyFloatArray(
+        this.faceLocations = floatArray(
             array => this.view.copy_face_vertex_locations_to(array),
             () => fabric.get_face_count() * 3 * 3,
         )
-        this._jointLocations = new LazyFloatArray(
+        this.jointLocations = floatArray(
             array => this.view.copy_joint_locations_to(array),
             () => fabric.get_joint_count() * 3,
         )
-        this._jointVelocities = new LazyFloatArray(
+        this.jointVelocities = floatArray(
             array => this.view.copy_joint_velocities_to(array),
             () => fabric.get_joint_count() * 3,
         )
-        this._unitVectors = new LazyFloatArray(
+        this.unitVectors = floatArray(
             array => this.view.copy_unit_vectors_to(array),
             () => fabric.get_interval_count() * 3,
         )
-        this._strains = new LazyFloatArray(
+        this.strains = floatArray(
             array => this.view.copy_strains_to(array),
             () => fabric.get_interval_count(),
         )
-        this._strainNuances = new LazyFloatArray(
+        this.strainNuances = floatArray(
             array => this.view.copy_strain_nuances_to(array),
             () => fabric.get_interval_count(),
         )
-        this._stiffnesses = new LazyFloatArray(
+        this.stiffnesses = floatArray(
             array => this.view.copy_stiffnesses_to(array),
             () => fabric.get_interval_count(),
         )
-        this._linearDensities = new LazyFloatArray(
+        this.linearDensities = floatArray(
             array => this.view.copy_linear_densities_to(array),
             () => fabric.get_interval_count(),
         )
@@ -103,7 +109,7 @@ export class FabricInstance {
     }
 
     public location(jointIndex: number): Vector3 {
-        return vectorFromArray(this._jointLocations.floats, jointIndex)
+        return vectorFromArray(this.jointLocations, jointIndex)
     }
 
     public apply(matrix: Matrix4): void {
@@ -112,78 +118,20 @@ export class FabricInstance {
     }
 
     public unitVector(intervalIndex: number): Vector3 {
-        return vectorFromArray(this._unitVectors.floats, intervalIndex)
-    }
-
-    public velocities(): Float32Array {
-        return this._jointVelocities.floats
-    }
-
-    public get strains(): Float32Array {
-        return this._strains.floats
-    }
-
-    public get strainNuances(): Float32Array {
-        return this._strainNuances.floats
-    }
-
-    public get stiffnesses(): Float32Array {
-        return this._stiffnesses.floats
-    }
-
-    public get linearDensities(): Float32Array {
-        return this._linearDensities.floats
-    }
-
-    public get faceLocations(): Float32Array {
-        return this._faceLocations.floats
+        return vectorFromArray(this.unitVectors, intervalIndex)
     }
 
     public faceMidpoint(faceIndex: number): Vector3 {
-        return faceVector(faceIndex, this._faceLocations.floats)
+        return faceVector(faceIndex, this.faceLocations)
     }
 
     public intervalLocation(intervalIndex: number): Vector3 {
-        return vectorFromArray(this._lineLocations.floats, intervalIndex)
-    }
-
-    public get faceNormals(): Float32Array {
-        return this._faceNormals.floats
-    }
-
-    public get lineLocations(): Float32Array {
-        return this._lineLocations.floats
-    }
-
-    public get lineColors(): Float32Array {
-        return this._lineColors.floats
+        return vectorFromArray(this.lineLocations, intervalIndex)
     }
 
     public getIntervalMidpoint(intervalIndex: number): Vector3 {
         const a = this.intervalLocation(intervalIndex * 2)
         const b = this.intervalLocation(intervalIndex * 2 + 1)
         return new Vector3().add(a).add(b).multiplyScalar(0.5)
-    }
-}
-
-class LazyFloatArray {
-    private array: Float32Array | undefined
-
-    constructor(
-        private copyFunction: (array: Float32Array) => void,
-        private length: () => number,
-    ) {
-    }
-
-    public get floats(): Float32Array {
-        if (!this.array || this.array.length !== this.length()) {
-            this.array = new Float32Array(this.length())
-        }
-        this.copyFunction(this.array) // todo: maybe executed too frequently
-        return this.array
-    }
-
-    public clear(): void {
-        this.array = undefined
     }
 }

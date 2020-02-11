@@ -125,7 +125,6 @@ export function FabricView({
                 }
             }
             instance.fabric.render_to(instance.view, instance.world)
-            fabric.needsUpdate()
             setAge(instance.fabric.age)
         } catch (e) {
             fabricError(e)

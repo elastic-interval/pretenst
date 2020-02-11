@@ -50,18 +50,7 @@ export class TensegrityFabric {
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
     public facesToConnect: IFace[] | undefined
-    public maxJointSpeed = 0
     public readonly builder: TensegrityBuilder
-
-    private faceCount: number
-    private faceLocations: Float32BufferAttribute
-    private faceNormals: Float32BufferAttribute
-    private _facesGeometry = new BufferGeometry()
-
-    private intervalCount: number
-    private lineLocations: Float32BufferAttribute
-    private lineColors: Float32BufferAttribute
-    private _linesGeometry = new BufferGeometry()
 
     constructor(
         public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
@@ -221,36 +210,28 @@ export class TensegrityFabric {
         }
     }
 
-    public needsUpdate(): void {
-        const instance = this.instance
-        this.faceLocations.array = instance.faceLocations
-        this.faceLocations.needsUpdate = true
-        this.faceNormals.array = instance.faceNormals
-        this.faceNormals.needsUpdate = true
-        this.lineLocations.array = instance.lineLocations
-        this.lineLocations.needsUpdate = true
-        this.lineColors.array = instance.lineColors
-        this.lineColors.needsUpdate = true
-        this._linesGeometry.computeBoundingSphere()
-        this._facesGeometry.computeBoundingSphere()
-    }
-
     public get submergedJoints(): IJoint[] {
         return this.joints.filter(joint => this.instance.location(joint.index).y < 0)
     }
 
     public get facesGeometry(): BufferGeometry {
-        if (this.faceCount !== this.instance.fabric.get_face_count()) {
-            this.refreshFaceGeometry()
-        }
-        return this._facesGeometry
+        const faceLocations = new Float32BufferAttribute(this.instance.faceLocations, 3)
+        const faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)
+        const geometry = new BufferGeometry()
+        geometry.addAttribute("position", faceLocations)
+        geometry.addAttribute("normal", faceNormals)
+        geometry.computeBoundingSphere()
+        return geometry
     }
 
     public get linesGeometry(): BufferGeometry {
-        if (this.intervalCount !== this.instance.fabric.get_interval_count()) {
-            this.refreshLineGeometry()
-        }
-        return this._linesGeometry
+        const lineLocations = new Float32BufferAttribute(this.instance.lineLocations, 3)
+        const lineColors = new Float32BufferAttribute(this.instance.lineColors, 3)
+        const geometry = new BufferGeometry()
+        geometry.addAttribute("position", lineLocations)
+        geometry.addAttribute("color", lineColors)
+        geometry.computeBoundingSphere()
+        return geometry
     }
 
     public startTightening(facePulls: IFacePull[]): void {
@@ -307,15 +288,6 @@ export class TensegrityFabric {
         return {scale, rotation}
     }
 
-    // public orientVectorPair(a: Vector3, b: Vector3, radiusFactor: number): { scale: Vector3, rotation: Quaternion } {
-    //     const Y_AXIS = new Vector3(0, 1, 0)
-    //     const unit = new Vector3().subVectors(b, a).normalize()
-    //     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
-    //     const distance = a.distanceTo(b)
-    //     const scale = new Vector3(radiusFactor, distance, radiusFactor)
-    //     return {scale, rotation}
-    // }
-
     public get output(): IFabricOutput {
         const numberToString = (n: number) => n.toFixed(5).replace(/[.]/, ",")
         const strains = this.instance.strains
@@ -366,25 +338,5 @@ export class TensegrityFabric {
                 return a.stiffness - b.stiffness
             }),
         }
-    }
-
-    private refreshLineGeometry(): void {
-        this.instance.fabric.render_to(this.instance.view, this.instance.world)
-        this.intervalCount = this.instance.fabric.get_interval_count()
-        this.lineLocations = new Float32BufferAttribute(this.instance.lineLocations, 3)
-        this.lineColors = new Float32BufferAttribute(this.instance.lineColors, 3)
-        this._linesGeometry.addAttribute("position", this.lineLocations)
-        this._linesGeometry.addAttribute("color", this.lineColors)
-        this._linesGeometry.computeBoundingSphere()
-    }
-
-    private refreshFaceGeometry(): void {
-        this.instance.fabric.render_to(this.instance.view, this.instance.world)
-        this.faceCount = this.instance.fabric.get_face_count()
-        this.faceLocations = new Float32BufferAttribute(this.instance.faceLocations, 3)
-        this.faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)
-        this._facesGeometry.addAttribute("position", this.faceLocations)
-        this._facesGeometry.addAttribute("normal", this.faceNormals)
-        this._facesGeometry.computeBoundingSphere()
     }
 }

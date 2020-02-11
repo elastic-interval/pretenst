@@ -12,8 +12,6 @@ async function start(eig: typeof import("eig")): Promise<void> {
     const world = eig.World.new()
     const fabric = eig.Fabric.new(100, 300, 10)
     const view = eig.View.new(100, 300, 10)
-    fabric.create_joint(1,1,1)
-    fabric.create_joint(2,1,1)
     const starter = await import("./start")
     await starter.startReact(world, fabric, view)
 }
