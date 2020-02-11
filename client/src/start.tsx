@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, View, World } from "eig"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
@@ -13,15 +12,13 @@ import registerServiceWorker from "./service-worker"
 import { loadState, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
 
-export async function startReact(world: World, fabric: Fabric, view: View): Promise<void> {
+export async function startReact(eig: typeof import("eig")): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
     const storedState$ = new BehaviorSubject(loadState(featureConfig))
     storedState$.subscribe(newState => saveState(newState))
     ReactDOM.render(
         <TensegrityView
-            world={world}
-            fabric={fabric}
-            view={view}
+            eig={eig}
             floatFeatures={createFloatFeatures(storedState$)}
             storedState$={storedState$}
         />,

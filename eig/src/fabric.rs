@@ -26,15 +26,15 @@ pub struct Fabric {
 
 #[wasm_bindgen]
 impl Fabric {
-    pub fn new(joint_count: usize, interval_count: usize, face_count: usize) -> Fabric {
+    pub fn new(joint_count: usize) -> Fabric {
         Fabric {
             age: 0,
             stage: Stage::Busy,
             busy_countdown: 0,
             current_shape: REST_SHAPE,
             joints: Vec::with_capacity(joint_count),
-            intervals: Vec::with_capacity(interval_count),
-            faces: Vec::with_capacity(face_count),
+            intervals: Vec::with_capacity(joint_count * 3),
+            faces: Vec::with_capacity(joint_count),
         }
     }
 
@@ -207,27 +207,26 @@ impl Fabric {
     pub fn render_to(&mut self, view: &mut View, world: &World) {
         view.clear();
         for joint in self.joints.iter() {
-            view.midpoint += &joint.location.coords;
-            view.joint_locations.push(joint.location.x);
-            view.joint_locations.push(joint.location.y);
-            view.joint_locations.push(joint.location.z);
+            joint.project(view);
         }
         view.midpoint /= view.joint_locations.len() as f32;
         for interval in self.intervals.iter() {
-            let extend = interval.strain / 2.0 * world.visual_strain;
+            let extend = interval.strain / 2_f32 * world.visual_strain;
             interval.project_line_locations(view, &self.joints, extend);
+            interval.project_line_features(view)
         }
         for interval in self.intervals.iter() {
-            let unsafe_nuance = (interval.strain + world.max_strain) / (world.max_strain * 2.0);
-            let nuance = if unsafe_nuance < 0.0 {
-                0.0
+            let unsafe_nuance = (interval.strain + world.max_strain) / (world.max_strain * 2_f32);
+            let nuance = if unsafe_nuance < 0_f32 {
+                0_f32
             } else {
-                if unsafe_nuance >= 1.0 {
-                    0.9999999
+                if unsafe_nuance >= 1_f32 {
+                    0.9999999_f32
                 } else {
                     unsafe_nuance
                 }
             };
+            view.strain_nuances.push(nuance);
             let slack = interval.strain.abs() < world.slack_threshold;
             if !world.color_pushes && !world.color_pulls {
                 interval.project_role_color(view)
@@ -255,6 +254,9 @@ impl Fabric {
                     Interval::project_line_color_nuance(view, nuance)
                 }
             }
+        }
+        for face in self.faces.iter() {
+            face.project_features(&self.joints, view)
         }
     }
 

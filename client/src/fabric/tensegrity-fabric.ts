@@ -104,7 +104,6 @@ export class TensegrityFabric {
         )
         const facePull = {index, alpha, omega, distance, scaleFactor, removed: false}
         this.facePulls.push(facePull)
-        this.instance.forgetDimensions()
         return facePull
     }
 
@@ -122,7 +121,6 @@ export class TensegrityFabric {
             }
         })
         facePull.removed = true
-        this.instance.forgetDimensions()
     }
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, coundown: number): IInterval {
@@ -170,7 +168,6 @@ export class TensegrityFabric {
             }
         })
         interval.removed = true
-        this.instance.forgetDimensions()
     }
 
     public createFace(brick: IBrick, triangle: Triangle): IFace {
@@ -215,8 +212,8 @@ export class TensegrityFabric {
     }
 
     public get facesGeometry(): BufferGeometry {
-        const faceLocations = new Float32BufferAttribute(this.instance.faceLocations, 3)
-        const faceNormals = new Float32BufferAttribute(this.instance.faceNormals, 3)
+        const faceLocations = new Float32BufferAttribute(this.instance.floatView.faceLocations, 3)
+        const faceNormals = new Float32BufferAttribute(this.instance.floatView.faceNormals, 3)
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", faceLocations)
         geometry.addAttribute("normal", faceNormals)
@@ -225,8 +222,8 @@ export class TensegrityFabric {
     }
 
     public get linesGeometry(): BufferGeometry {
-        const lineLocations = new Float32BufferAttribute(this.instance.lineLocations, 3)
-        const lineColors = new Float32BufferAttribute(this.instance.lineColors, 3)
+        const lineLocations = new Float32BufferAttribute(this.instance.floatView.lineLocations, 3)
+        const lineColors = new Float32BufferAttribute(this.instance.floatView.lineColors, 3)
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", lineLocations)
         geometry.addAttribute("color", lineColors)
@@ -239,7 +236,7 @@ export class TensegrityFabric {
     }
 
     public iterate(): Stage {
-        const lifePhase = this.instance.fabric.iterate(this.life$.getValue().stage, this.instance.world)
+        const lifePhase = this.instance.iterate(this.life$.getValue().stage)
         if (lifePhase === Stage.Busy) {
             return lifePhase
         }
@@ -282,7 +279,7 @@ export class TensegrityFabric {
         const alphaLocation = this.instance.location(interval.alpha.index)
         const omegaLocation = this.instance.location(interval.omega.index)
         const intervalLength = alphaLocation.distanceTo(omegaLocation)
-        const strain = this.instance.strains[interval.index]
+        const strain = this.instance.floatView.strains[interval.index]
         const half = intervalLength / 2
         const scale = new Vector3(radiusFactor, half + half * (-strain) * visualStrain, radiusFactor)
         return {scale, rotation}
@@ -290,9 +287,9 @@ export class TensegrityFabric {
 
     public get output(): IFabricOutput {
         const numberToString = (n: number) => n.toFixed(5).replace(/[.]/, ",")
-        const strains = this.instance.strains
-        const stiffnesses = this.instance.stiffnesses
-        const linearDensities = this.instance.linearDensities
+        const strains = this.instance.floatView.strains
+        const stiffnesses = this.instance.floatView.stiffnesses
+        const linearDensities = this.instance.floatView.linearDensities
         return {
             name: this.tenscript.name,
             joints: this.joints.map(joint => {

@@ -209,7 +209,6 @@ export class TensegrityBuilder {
             this.fabric.changeIntervalRole(ay, IntervalRole.BowEnd, scale, countdown)
             this.fabric.changeIntervalRole(bx, IntervalRole.BowEnd, scale, countdown)
         })
-        instance.forgetDimensions()
     }
 
     public uprightAtOrigin(face: IFace): void {
@@ -471,7 +470,6 @@ export class TensegrityBuilder {
         }
         handleFace(faceA)
         handleFace(faceB)
-        this.fabric.instance.forgetDimensions()
         return true
     }
 }

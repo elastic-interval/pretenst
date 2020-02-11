@@ -266,6 +266,16 @@ impl Interval {
         view.line_locations.push(omega.z + self.unit.z * extend);
     }
 
+    pub fn project_line_features<'a>(&self, view: &mut View) {
+        view.unit_vectors.push(self.unit.x);
+        view.unit_vectors.push(self.unit.y);
+        view.unit_vectors.push(self.unit.z);
+        view.strains.push(self.strain);
+        //        view.strain_nuances.push(self.strain_nuance) todo
+        view.stiffnesses.push(self.stiffness);
+        view.linear_densities.push(self.linear_density);
+    }
+
     pub fn project_role_color(&self, view: &mut View) {
         Interval::project_line_color(view, ROLE_COLORS[self.interval_role as usize])
     }

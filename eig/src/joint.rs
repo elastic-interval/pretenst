@@ -4,6 +4,7 @@
  */
 
 use crate::constants::SurfaceCharacter;
+use crate::view::View;
 use crate::world::World;
 use nalgebra::*;
 
@@ -56,5 +57,15 @@ impl Joint {
                 }
             }
         }
+    }
+
+    pub fn project(&self, view: &mut View) {
+        view.midpoint += &self.location.coords;
+        view.joint_locations.push(self.location.x);
+        view.joint_locations.push(self.location.y);
+        view.joint_locations.push(self.location.x);
+        view.joint_velocities.push(self.velocity.x);
+        view.joint_velocities.push(self.velocity.y);
+        view.joint_velocities.push(self.velocity.x);
     }
 }

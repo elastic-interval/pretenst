@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, FabricFeature, View, World } from "eig"
+import { Fabric, FabricFeature, Stage, View, World } from "eig"
 import { Matrix4, Vector3 } from "three"
 
 import { FloatFeature } from "./fabric-features"
@@ -26,6 +26,69 @@ function faceVector(faceIndex: number, array: Float32Array): Vector3 {
     return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
 }
 
+export interface IFloatView {
+    lineColors: Float32Array
+    lineLocations: Float32Array
+    faceNormals: Float32Array
+    faceLocations: Float32Array
+    jointLocations: Float32Array
+    jointVelocities: Float32Array
+    unitVectors: Float32Array
+    strains: Float32Array
+    strainNuances: Float32Array
+    stiffnesses: Float32Array
+    linearDensities: Float32Array
+}
+
+function createFloatView(fabric: Fabric, view: View): IFloatView {
+    return {
+        lineColors: floatArray(
+            array => view.copy_line_colors_to(array),
+            () => fabric.get_interval_count() * 3 * 2,
+        ),
+        lineLocations: floatArray(
+            array => view.copy_line_locations_to(array),
+            () => fabric.get_interval_count() * 3 * 2,
+        ),
+        faceNormals: floatArray(
+            array => view.copy_face_normals_to(array),
+            () => fabric.get_face_count() * 3 * 3,
+        ),
+        faceLocations: floatArray(
+            array => view.copy_face_vertex_locations_to(array),
+            () => fabric.get_face_count() * 3 * 3,
+        ),
+        jointLocations: floatArray(
+            array => view.copy_joint_locations_to(array),
+            () => fabric.get_joint_count() * 3,
+        ),
+        jointVelocities: floatArray(
+            array => view.copy_joint_velocities_to(array),
+            () => fabric.get_joint_count() * 3,
+        ),
+        unitVectors: floatArray(
+            array => view.copy_unit_vectors_to(array),
+            () => fabric.get_interval_count() * 3,
+        ),
+        strains: floatArray(
+            array => view.copy_strains_to(array),
+            () => fabric.get_interval_count(),
+        ),
+        strainNuances: floatArray(
+            array => view.copy_strain_nuances_to(array),
+            () => fabric.get_interval_count(),
+        ),
+        stiffnesses: floatArray(
+            array => view.copy_stiffnesses_to(array),
+            () => fabric.get_interval_count(),
+        ),
+        linearDensities: floatArray(
+            array => view.copy_linear_densities_to(array),
+            () => fabric.get_interval_count(),
+        ),
+    }
+}
+
 function floatArray(copyFunction: (array: Float32Array) => void, length: () => number): Float32Array {
     const array = new Float32Array(length())
     copyFunction(array)
@@ -33,67 +96,23 @@ function floatArray(copyFunction: (array: Float32Array) => void, length: () => n
 }
 
 export class FabricInstance {
-    public lineColors: Float32Array
-    public lineLocations: Float32Array
-    public faceNormals: Float32Array
-    public faceLocations: Float32Array
-    public jointLocations: Float32Array
-    public jointVelocities: Float32Array
-    public unitVectors: Float32Array
-    public strains: Float32Array
-    public strainNuances: Float32Array
-    public stiffnesses: Float32Array
-    public linearDensities: Float32Array
+    public fabric: Fabric
+    public world: World
+    public view: View
+    public floatView: IFloatView
 
-    constructor(
-        public readonly world: World,
-        public readonly view: View,
-        public readonly fabric: Fabric,
-    ) {
-        this.lineColors = floatArray(
-            array => this.view.copy_line_colors_to(array),
-            () => fabric.get_interval_count() * 3 * 2,
-        )
-        this.lineLocations = floatArray(
-            array => this.view.copy_line_locations_to(array),
-            () => fabric.get_interval_count() * 3 * 2,
-        )
-        this.faceNormals = floatArray(
-            array => this.view.copy_face_normals_to(array),
-            () => fabric.get_face_count() * 3 * 3,
-        )
-        this.faceLocations = floatArray(
-            array => this.view.copy_face_vertex_locations_to(array),
-            () => fabric.get_face_count() * 3 * 3,
-        )
-        this.jointLocations = floatArray(
-            array => this.view.copy_joint_locations_to(array),
-            () => fabric.get_joint_count() * 3,
-        )
-        this.jointVelocities = floatArray(
-            array => this.view.copy_joint_velocities_to(array),
-            () => fabric.get_joint_count() * 3,
-        )
-        this.unitVectors = floatArray(
-            array => this.view.copy_unit_vectors_to(array),
-            () => fabric.get_interval_count() * 3,
-        )
-        this.strains = floatArray(
-            array => this.view.copy_strains_to(array),
-            () => fabric.get_interval_count(),
-        )
-        this.strainNuances = floatArray(
-            array => this.view.copy_strain_nuances_to(array),
-            () => fabric.get_interval_count(),
-        )
-        this.stiffnesses = floatArray(
-            array => this.view.copy_stiffnesses_to(array),
-            () => fabric.get_interval_count(),
-        )
-        this.linearDensities = floatArray(
-            array => this.view.copy_linear_densities_to(array),
-            () => fabric.get_interval_count(),
-        )
+    constructor(eig: typeof import("eig"), jointCount: number) {
+        this.world = eig.World.new()
+        this.fabric = eig.Fabric.new(jointCount)
+        this.view = eig.View.on_fabric(this.fabric)
+        this.floatView = createFloatView(this.fabric, this.view)
+    }
+
+    public iterate(requestedStage: Stage): Stage {
+        const stage = this.fabric.iterate(requestedStage, this.world)
+        this.fabric.render_to(this.view, this.world)
+        this.floatView = createFloatView(this.fabric, this.view)
+        return stage
     }
 
     public applyFeature(feature: FloatFeature): void {
@@ -104,12 +123,8 @@ export class FabricInstance {
         this.world.set_float_value(fabricFeature, value)
     }
 
-    public forgetDimensions(): void {
-        this.view.clear()
-    }
-
     public location(jointIndex: number): Vector3 {
-        return vectorFromArray(this.jointLocations, jointIndex)
+        return vectorFromArray(this.floatView.jointLocations, jointIndex)
     }
 
     public apply(matrix: Matrix4): void {
@@ -118,15 +133,15 @@ export class FabricInstance {
     }
 
     public unitVector(intervalIndex: number): Vector3 {
-        return vectorFromArray(this.unitVectors, intervalIndex)
+        return vectorFromArray(this.floatView.unitVectors, intervalIndex)
     }
 
     public faceMidpoint(faceIndex: number): Vector3 {
-        return faceVector(faceIndex, this.faceLocations)
+        return faceVector(faceIndex, this.floatView.faceLocations)
     }
 
     public intervalLocation(intervalIndex: number): Vector3 {
-        return vectorFromArray(this.lineLocations, intervalIndex)
+        return vectorFromArray(this.floatView.lineLocations, intervalIndex)
     }
 
     public getIntervalMidpoint(intervalIndex: number): Vector3 {

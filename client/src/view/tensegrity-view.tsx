@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, FabricFeature, IntervalRole, Stage, View, World } from "eig"
+import { FabricFeature, IntervalRole, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
 import { FaArrowRight, FaCamera, FaHandPointUp, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
@@ -50,15 +50,13 @@ function selectIntervals(faces: IFace[]): IInterval[] {
     }, [] as IInterval[])
 }
 
-export function TensegrityView({world, fabric, view, floatFeatures, storedState$}: {
-    world: World,
-    fabric: Fabric,
-    view: View,
+export function TensegrityView({eig, floatFeatures, storedState$}: {
+    eig: typeof import("eig"),
     floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const mainInstance = useMemo(() => new FabricInstance(world, view, fabric), [])
+    const mainInstance = useMemo(() => new FabricInstance(eig, 100), [])
 
     const [tensegrityFabric, setTensegrityFabric] = useState<TensegrityFabric | undefined>()
     const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])

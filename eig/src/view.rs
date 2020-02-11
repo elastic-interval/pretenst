@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+use crate::fabric::Fabric;
 use nalgebra::*;
 use wasm_bindgen::prelude::*;
 
@@ -25,21 +26,24 @@ pub struct View {
 
 #[wasm_bindgen]
 impl View {
-    pub fn new(joint_count: u16, interval_count: u16, face_count: u16) -> View {
+    pub fn on_fabric(fabric: &Fabric) -> View {
+        let joint_count = fabric.get_joint_count() as usize;
+        let interval_count = fabric.get_interval_count() as usize;
+        let face_count = fabric.get_face_count() as usize;
         View {
             midpoint: Point3::origin(),
-            joint_locations: Vec::with_capacity((joint_count * 3) as usize),
-            joint_velocities: Vec::with_capacity((joint_count * 3) as usize),
-            line_locations: Vec::with_capacity((interval_count * 2 * 3) as usize),
-            line_colors: Vec::with_capacity((interval_count * 2 * 3) as usize),
-            face_midpoints: Vec::with_capacity((face_count * 3) as usize),
-            face_normals: Vec::with_capacity((face_count * 3 * 3) as usize),
-            face_vertex_locations: Vec::with_capacity((face_count * 3 * 3) as usize),
-            unit_vectors: Vec::with_capacity((interval_count * 3) as usize),
-            strains: Vec::with_capacity((interval_count) as usize),
-            strain_nuances: Vec::with_capacity((interval_count) as usize),
-            stiffnesses: Vec::with_capacity((interval_count) as usize),
-            linear_densities: Vec::with_capacity((interval_count) as usize),
+            joint_locations: Vec::with_capacity(joint_count * 3),
+            joint_velocities: Vec::with_capacity(joint_count * 3),
+            line_locations: Vec::with_capacity(interval_count * 2 * 3),
+            line_colors: Vec::with_capacity(interval_count * 2 * 3),
+            face_midpoints: Vec::with_capacity(face_count * 3),
+            face_normals: Vec::with_capacity(face_count * 3 * 3),
+            face_vertex_locations: Vec::with_capacity(face_count * 3 * 3),
+            unit_vectors: Vec::with_capacity(interval_count * 3),
+            strains: Vec::with_capacity(interval_count),
+            strain_nuances: Vec::with_capacity(interval_count),
+            stiffnesses: Vec::with_capacity(interval_count),
+            linear_densities: Vec::with_capacity(interval_count),
         }
     }
 

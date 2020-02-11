@@ -112,7 +112,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
             return (
                 <group position={new Vector3(position, -0.15, 0)}>
                     <lineSegments
-                        geometry={needleGeometry(intervals, instance.lineColors, floats, mid, max)}
+                        geometry={needleGeometry(intervals, instance.floatView.lineColors, floats, mid, max)}
                         material={LINE_VERTEX_COLORS}/>
                     <lineSegments geometry={scaleGeometry(middleTick)} material={SCALE_LINE}/>
                 </group>
@@ -126,7 +126,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
                     <Scale
                         position={-1.5}
                         intervals={fabric.intervals}
-                        floats={instance.strains}
+                        floats={instance.floatView.strains}
                         mid={0}
                         max={maxStrain}
                         middleTick={true}
@@ -134,7 +134,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
                     <Scale
                         position={1.5}
                         intervals={fabric.intervals}
-                        floats={instance.stiffnesses}
+                        floats={instance.floatView.stiffnesses}
                         mid={0}
                         max={maxStiffness}
                         middleTick={false}

@@ -73,9 +73,9 @@ export class Life {
                             const {newStiffnesses, newLinearDensities} = adjustedStiffness(this.fabric, pushOverPull)
                             this.restore()
                             const instance = this.fabric.instance
-                            newStiffnesses.forEach((value, index) => instance.stiffnesses[index] = value)
-                            newLinearDensities.forEach((value, index) => instance.linearDensities[index] = value)
-                            return
+                            newStiffnesses.forEach((value, index) => instance.floatView.stiffnesses[index] = value)
+                            newLinearDensities.forEach((value, index) => instance.floatView.linearDensities[index] = value)
+                            throw new Error("setting these values isn't going to work!")
                         }
                         if (prefs && prefs.adoptLengths) {
                             this.fabric.instance.fabric.adopt_lengths()
@@ -115,8 +115,8 @@ function adjustedStiffness(fabric: TensegrityFabric, pushOverPull: number): {
     newStiffnesses: Float32Array,
     newLinearDensities: Float32Array,
 } {
-    const strains: Float32Array = fabric.instance.strains
-    const existingStiffnesses = fabric.instance.stiffnesses
+    const strains: Float32Array = fabric.instance.floatView.strains
+    const existingStiffnesses = fabric.instance.floatView.stiffnesses
     const getAverageStrain = (toAverage: IInterval[]) => {
         const totalStrain = toAverage.reduce((sum, interval) => sum + strains[interval.index], 0)
         return totalStrain / toAverage.length

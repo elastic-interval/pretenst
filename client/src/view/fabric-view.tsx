@@ -124,7 +124,6 @@ export function FabricView({
                     setTimeout(() => fabric.toStage(nextStage, {}))
                 }
             }
-            instance.fabric.render_to(instance.view, instance.world)
             setAge(instance.fabric.age)
         } catch (e) {
             fabricError(e)
@@ -199,12 +198,12 @@ function IntervalMesh({fabric, interval, storedState}: {
 
     let material = roleMaterial(interval.intervalRole)
     if (storedState.showPushes || storedState.showPulls) {
-        material = rainbowMaterial(fabric.instance.strainNuances[interval.index])
+        material = rainbowMaterial(fabric.instance.floatView.strainNuances[interval.index])
         if (!(storedState.showPushes && storedState.showPulls) && (storedState.showPushes && !interval.isPush || storedState.showPulls && interval.isPush)) {
             return <group/>
         }
     }
-    const linearDensity = fabric.instance.linearDensities[interval.index]
+    const linearDensity = fabric.instance.floatView.linearDensities[interval.index]
     const radiusFactor = storedState.featureValues[interval.isPush ? FabricFeature.PushRadiusFactor : FabricFeature.PullRadiusFactor]
     const visualStrain = storedState.featureValues[FabricFeature.VisualStrain]
     const {scale, rotation} = fabric.orientInterval(interval, radiusFactor.numeric * linearDensity, visualStrain.numeric)
