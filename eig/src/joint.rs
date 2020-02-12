@@ -30,7 +30,7 @@ impl Joint {
 
     pub fn physics(&mut self, world: &World) {
         let altitude = self.location.y;
-        if altitude > 0_f32 {
+        if altitude >= 0_f32 {
             self.velocity.y -= world.gravity;
             self.velocity *= 1_f32 - world.drag;
             self.velocity += &self.force / self.interval_mass;

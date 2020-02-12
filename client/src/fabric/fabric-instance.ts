@@ -128,8 +128,7 @@ export class FabricInstance {
     }
 
     public apply(matrix: Matrix4): void {
-        // todo: do it in Rust
-        throw new Error("not implemented")
+        this.fabric.apply_matrix4(new Float32Array(matrix.toArray()))
     }
 
     public unitVector(intervalIndex: number): Vector3 {

@@ -104,7 +104,7 @@ function initialStoredState(toConfig: (feature: FabricFeature) => IFeatureConfig
     return ({
         version: VERSION,
         nonce: 0,
-        surfaceCharacter: SurfaceCharacter.Frozen,
+        surfaceCharacter: SurfaceCharacter.Bouncy,
         featureValues: DEFAULT_FEATURE_VALUES,
         recentCode: {},
         controlTab: ControlTab.Grow,

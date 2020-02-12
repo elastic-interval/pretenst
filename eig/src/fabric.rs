@@ -204,6 +204,13 @@ impl Fabric {
         self.intervals[index].set_interval_role(interval_role);
     }
 
+    pub fn apply_matrix4(&mut self, m: &[f32]) {
+        let matrix: Matrix4<f32> = Matrix4::from_vec(m.to_vec());
+        for joint in &mut self.joints {
+            *joint.location = *matrix.transform_point(&joint.location);
+        }
+    }
+
     pub fn render_to(&mut self, view: &mut View, world: &World) {
         view.clear();
         for joint in self.joints.iter() {
