@@ -276,7 +276,7 @@ impl Fabric {
                 self.stage,
                 realizing_nuance,
                 self.current_shape,
-            )
+            );
         }
         for joint in &mut self.joints {
             joint.physics(world)

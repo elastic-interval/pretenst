@@ -107,7 +107,7 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::Gravity => 0.0000001_f32,
         FabricFeature::Drag => 0.0001_f32,
         FabricFeature::PretenstFactor => 0.03_f32,
-        FabricFeature::IterationsPerFrame => 10_f32,
+        FabricFeature::IterationsPerFrame => 1_f32,
         FabricFeature::IntervalCountdown => 1000_f32,
         FabricFeature::RealizingCountdown => 30000_f32,
         FabricFeature::FacePullEndZone => 4_f32,
@@ -148,4 +148,25 @@ pub enum IntervalRole {
     BowMid,
     BowEnd,
     FacePull,
+}
+
+#[wasm_bindgen]
+extern "C" {
+    // Use `js_namespace` here to bind `console.log(..)` instead of just
+    // `log(..)`
+    #[wasm_bindgen(js_namespace = console)]
+    pub fn log(s: &str);
+
+    // The `console.log` is quite polymorphic, so we can bind it with multiple
+    // signatures. Note that we need to use `js_name` to ensure we always call
+    // `log` in JS.
+    #[wasm_bindgen(js_namespace = console, js_name = log)]
+    pub fn log_f32(s: &str, a: f32);
+
+    // The `console.log` is quite polymorphic, so we can bind it with multiple
+    // signatures. Note that we need to use `js_name` to ensure we always call
+    // `log` in JS.
+    #[wasm_bindgen(js_namespace = console, js_name = log)]
+    pub fn log_u32(s: &str, a: u32);
+
 }

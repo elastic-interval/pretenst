@@ -63,9 +63,9 @@ impl Joint {
         view.midpoint += &self.location.coords;
         view.joint_locations.push(self.location.x);
         view.joint_locations.push(self.location.y);
-        view.joint_locations.push(self.location.x);
+        view.joint_locations.push(self.location.z);
         view.joint_velocities.push(self.velocity.x);
         view.joint_velocities.push(self.velocity.y);
-        view.joint_velocities.push(self.velocity.x);
+        view.joint_velocities.push(self.velocity.z);
     }
 }

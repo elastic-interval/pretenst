@@ -129,7 +129,7 @@ export function FabricView({
             fabricError(e)
         }
     }, true, [
-        fabric, fabric, age, life, shapeSelection, ellipsoids,
+        fabric, age, life, shapeSelection, ellipsoids,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {

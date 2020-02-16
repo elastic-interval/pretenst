@@ -261,6 +261,7 @@ export class TensegrityBuilder {
         const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
         const brick = face.brick
         const triangle = face.triangle
+        this.fabric.instance.refreshFloatView()
         const trianglePoints = brick.faces[triangle].joints.map(joint => this.fabric.instance.location(joint.index))
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
@@ -309,6 +310,7 @@ export class TensegrityBuilder {
             const face = this.fabric.createFace(brick, triangle.name)
             brick.faces.push(face)
         })
+        this.fabric.instance.refreshFloatView()
         return brick
     }
 
