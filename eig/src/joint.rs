@@ -24,7 +24,7 @@ impl Joint {
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
-            interval_mass: 0_f32,
+            interval_mass: 1_f32,
         }
     }
 
@@ -68,4 +68,14 @@ impl Joint {
         view.joint_velocities.push(self.velocity.y);
         view.joint_velocities.push(self.velocity.z);
     }
+}
+
+#[cfg(test)]
+#[test]
+fn joint_physics() {
+    let world = World::new();
+    let mut joint = Joint::new(0_f32, 1_f32, 0_f32);
+    joint.physics(&world);
+    assert_eq!(joint.location.x, 0_f32);
+    assert_eq!(joint.velocity.y, -0.00000009999_f32)
 }

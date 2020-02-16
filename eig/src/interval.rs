@@ -302,3 +302,21 @@ impl Interval {
         Interval::project_line_color(view, ATTENUATED_COLOR)
     }
 }
+
+#[cfg(test)]
+#[test]
+fn interval_physics() {
+    let world = World::new();
+    let j0 = Joint::new(0_f32, 1_f32, 0_f32);
+    let j1 = Joint::new(1_f32, 1_f32, 0_f32);
+    let mut joints: Vec<Joint> = Vec::new();
+    joints.push(j0);
+    joints.push(j1);
+    let mut faces: Vec<Face> = Vec::new();
+    let mut interval = Interval::new(0, 1, IntervalRole::NexusPush, 1_f32, 1_f32, 1_f32, 0);
+    let current_length = interval.calculate_current_length(&joints, &faces);
+    assert_eq!(current_length, 1_f32);
+    interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32, 0);
+    let current_length_after_physics = interval.calculate_current_length(&joints, &faces);
+    assert_eq!(current_length_after_physics, 1_f32)
+}
