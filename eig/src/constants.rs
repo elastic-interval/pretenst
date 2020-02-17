@@ -108,7 +108,7 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::Drag => 0.0001_f32,
         FabricFeature::PretenstFactor => 0.03_f32,
         FabricFeature::IterationsPerFrame => 100_f32,
-        FabricFeature::IntervalCountdown => 1000_f32,
+        FabricFeature::IntervalCountdown => 3000_f32,
         FabricFeature::RealizingCountdown => 30000_f32,
         FabricFeature::FacePullEndZone => 4_f32,
         FabricFeature::FacePullOrientationForce => 0.0001_f32,

@@ -33,7 +33,7 @@ export const SPHERE = new SphereGeometry(1, 32, 8)
 const COUNTDOWN_MAX = 65535
 
 function facePullCountdown(distance: number): number {
-    const countdown = distance * 4000
+    const countdown = distance * 6000
     return countdown > COUNTDOWN_MAX ? COUNTDOWN_MAX : countdown
 }
 
@@ -131,11 +131,6 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
-        this.intervals.forEach(existing => {
-            if (existing.index > facePull.index) {
-                existing.index--
-            }
-        })
         facePull.removed = true
     }
 
@@ -218,6 +213,14 @@ export class TensegrityFabric {
         this.faces.forEach(existing => {
             if (existing.index > face.index) {
                 existing.index--
+            }
+        })
+        this.facePulls.forEach(existing => {
+            if (existing.alpha.index > face.index) {
+                existing.alpha.index--
+            }
+            if (existing.omega.index > face.index) {
+                existing.omega.index--
             }
         })
         face.removed = true

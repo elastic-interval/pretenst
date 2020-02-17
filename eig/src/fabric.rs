@@ -116,6 +116,16 @@ impl Fabric {
 
     pub fn remove_face(&mut self, index: usize) {
         self.faces.remove(index);
+        for interval in self.intervals.iter_mut() {
+            if interval.interval_role == IntervalRole::FacePull {
+                if interval.alpha_index > index {
+                    interval.alpha_index -= 1;
+                }
+                if interval.omega_index > index {
+                    interval.omega_index -= 1;
+                }
+            }
+        }
     }
 
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
