@@ -18,8 +18,8 @@ pub(crate) struct Interval {
     pub(crate) length_for_shape: [f32; SHAPE_COUNT],
     pub(crate) stiffness: f32,
     pub(crate) linear_density: f32,
-    pub(crate) countdown: u16,
-    pub(crate) max_countdown: u16,
+    pub(crate) countdown: f32,
+    pub(crate) max_countdown: f32,
     pub(crate) unit: Vector3<f32>,
     pub(crate) strain: f32,
 }
@@ -32,7 +32,7 @@ impl Interval {
         rest_length: f32,
         stiffness: f32,
         linear_density: f32,
-        countdown: u16,
+        countdown: f32,
     ) -> Interval {
         Interval {
             alpha_index,
@@ -105,7 +105,9 @@ impl Interval {
             let omega_location = &joints[self.omega_index].location;
             self.unit = omega_location - alpha_location;
         }
-        self.unit.norm()
+        let magnitude = self.unit.magnitude();
+        self.unit /= magnitude;
+        magnitude
     }
 
     fn end_zone_physics(
@@ -163,12 +165,9 @@ impl Interval {
         shape: u8,
     ) {
         let mut ideal_length = self.ideal_length_now(shape);
-        let omega_location = &joints[self.omega_index].location;
-        let alpha_location = &joints[self.alpha_index].location;
-        self.unit = omega_location - alpha_location;
         let real_length = self.calculate_current_length(joints, faces);
-        let push = self.is_push();
-        if push {
+        let is_push = self.is_push();
+        if is_push {
             match stage {
                 Stage::Busy | Stage::Slack => {}
                 Stage::Growing | Stage::Shaping => {
@@ -181,7 +180,9 @@ impl Interval {
             }
         }
         self.strain = (real_length - ideal_length) / ideal_length;
-        if !world.push_and_pull && (push && self.strain > 0_f32 || !push && self.strain < 0_f32) {
+        if !world.push_and_pull
+            && (is_push && self.strain > 0_f32 || !is_push && self.strain < 0_f32)
+        {
             self.strain = 0_f32;
         }
         let mut force = self.strain * self.stiffness;
@@ -222,8 +223,11 @@ impl Interval {
             joints[self.alpha_index].interval_mass += half_mass;
             joints[self.omega_index].interval_mass += half_mass;
         }
-        if self.countdown > 0 {
-            self.countdown = self.countdown - 1
+        if self.countdown > 0_f32 {
+            self.countdown -= 1_f32;
+            if self.countdown < 0_f32 {
+                self.countdown = 0_f32;
+            }
         }
     }
 
@@ -233,17 +237,16 @@ impl Interval {
     }
 
     fn ideal_length_now(&mut self, shape: u8) -> f32 {
-        if self.countdown == 0 {
+        if self.countdown == 0_f32 {
             self.rest_length
         } else {
-            let max = self.max_countdown as f32;
-            let progress: f32 = (max - self.countdown as f32) / max;
+            let progress: f32 = (self.max_countdown - self.countdown) / self.max_countdown;
             let shape_length = self.length_for_shape[shape as usize];
             self.rest_length * (1_f32 - progress) + shape_length * progress
         }
     }
 
-    pub fn change_rest_length(&mut self, rest_length: f32, countdown: u16, shape: u8) {
+    pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32, shape: u8) {
         self.rest_length = self.length_for_shape[shape as usize];
         self.length_for_shape[shape as usize] = rest_length;
         self.max_countdown = countdown;
@@ -254,7 +257,7 @@ impl Interval {
         self.interval_role = interval_role;
     }
 
-    pub fn multiply_rest_length(&mut self, factor: f32, countdown: u16, shape: u8) {
+    pub fn multiply_rest_length(&mut self, factor: f32, countdown: f32, shape: u8) {
         let rest_length = self.length_for_shape[shape as usize];
         self.change_rest_length(rest_length * factor, countdown, shape)
     }
@@ -310,17 +313,40 @@ impl Interval {
 #[cfg(test)]
 #[test]
 fn interval_physics() {
+    const LENGTH: f32 = 2.001;
+    const INTERVAL_MASS: f32 = 2.10055_f32;
     let world = World::new();
-    let j0 = Joint::new(0_f32, 1_f32, 0_f32);
-    let j1 = Joint::new(1_f32, 1_f32, 0_f32);
     let mut joints: Vec<Joint> = Vec::new();
-    joints.push(j0);
-    joints.push(j1);
+    joints.push(Joint::new(-1_f32, 1_f32, 0_f32));
+    joints.push(Joint::new(1_f32, 1_f32, 0_f32));
     let mut faces: Vec<Face> = Vec::new();
-    let mut interval = Interval::new(0, 1, IntervalRole::NexusPush, 1_f32, 1_f32, 1_f32, 0);
-    let current_length = interval.calculate_current_length(&joints, &faces);
-    assert_eq!(current_length, 1_f32);
+    let mut interval = Interval::new(0, 1, IntervalRole::NexusPush, LENGTH, 1_f32, 1_f32, 0_f32);
+    assert_eq!(interval.calculate_current_length(&joints, &faces), 2_f32);
     interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32, 0);
-    let current_length_after_physics = interval.calculate_current_length(&joints, &faces);
-    assert_eq!(current_length_after_physics, 1_f32)
+    assert_eq!(interval.unit, Vector3::new(1_f32, 0_f32, 0_f32));
+    assert_eq!(interval.rest_length, LENGTH);
+    let ideal_length = interval.rest_length * (1_f32 + world.shaping_pretenst_factor);
+    let real_length = interval.calculate_current_length(&joints, &faces);
+    assert_eq!(real_length, 2_f32);
+    assert_eq!(interval.strain, (real_length - ideal_length) / ideal_length);
+    let force = interval.strain * interval.stiffness * world.shaping_stiffness_factor;
+    assert_eq!(force, -0.9136336_f32);
+    let mut push: Vector3<f32> = zero();
+    push += &interval.unit * force;
+    assert_eq!(push, Vector3::new(force, 0_f32, 0_f32));
+    assert_eq!(joints[0].force, push / 2_f32);
+    assert_eq!(joints[1].interval_mass, INTERVAL_MASS);
+    assert_eq!(joints[1].force, push / -2_f32);
+    assert_eq!(joints[1].velocity, Vector3::new(0_f32, 0_f32, 0_f32));
+    joints[0].physics(&world, 0_f32, world.shaping_drag, false);
+    joints[1].physics(&world, 0_f32, world.shaping_drag, false);
+    assert_eq!(joints[1].velocity, -push / 2_f32 / INTERVAL_MASS);
+    assert_eq!(
+        joints[1].location,
+        Point3::new(1_f32 - push.x / 2_f32 / INTERVAL_MASS, 1_f32, 0_f32)
+    );
+    assert_eq!(
+        interval.calculate_current_length(&joints, &faces),
+        2_f32 - force / INTERVAL_MASS
+    );
 }

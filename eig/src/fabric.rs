@@ -19,10 +19,10 @@ pub struct Fabric {
     pub age: u32,
     pub(crate) stage: Stage,
     pub(crate) current_shape: u8,
-    pub(crate) busy_countdown: u32,
     pub(crate) joints: Vec<Joint>,
     pub(crate) intervals: Vec<Interval>,
     pub(crate) faces: Vec<Face>,
+    pub(crate) realizing_countdown: f32,
 }
 
 #[wasm_bindgen]
@@ -31,7 +31,7 @@ impl Fabric {
         Fabric {
             age: 0,
             stage: Stage::Busy,
-            busy_countdown: 0,
+            realizing_countdown: 0_f32,
             current_shape: REST_SHAPE,
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(joint_count * 3),
@@ -46,7 +46,7 @@ impl Fabric {
     pub fn restore(&mut self, fabric: &Fabric) {
         self.age = fabric.age;
         self.stage = fabric.stage;
-        self.busy_countdown = fabric.busy_countdown;
+        self.realizing_countdown = fabric.realizing_countdown;
         self.joints.copy_from_slice(&fabric.joints);
         self.intervals.copy_from_slice(&fabric.intervals);
         self.faces.copy_from_slice(&fabric.faces);
@@ -78,7 +78,7 @@ impl Fabric {
         rest_length: f32,
         stiffness: f32,
         linear_density: f32,
-        countdown: u16,
+        countdown: f32,
     ) -> usize {
         let index = self.intervals.len();
         self.intervals.push(Interval::new(
@@ -108,8 +108,8 @@ impl Fabric {
     }
 
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
-        let countdown = world.realizing_countdown;
-        let realizing_nuance = (countdown - self.busy_countdown as f32) / countdown;
+        let realizing_nuance =
+            (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown;
         for _tick in 0..(world.iterations_per_frame as usize) {
             self.tick(&world, realizing_nuance);
         }
@@ -138,47 +138,24 @@ impl Fabric {
             },
             _ => {}
         }
-        /*
-            let fabricBusyCountdown = getFabricBusyCountdown()
-            if (intervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
-                if (fabricBusyCountdown === 0) {
-                    if (stage === Stage.Realizing) {
-                        return setStage(Stage.Realized)
-                    }
-                    return stage
-                }
-                let nextCountdown: u32 = fabricBusyCountdown - ticksPerFrame
-                if (nextCountdown > fabricBusyCountdown) { // rollover
-                    nextCountdown = 0
-                }
-                setFabricBusyTicks(nextCountdown)
-                if (nextCountdown === 0) {
-                    return stage
-                }
-            }
-        */
-        let interval_busy = self.intervals.iter().map(|i| i.countdown).max().unwrap();
-        if interval_busy > 0 {
+        if self.interval_busy_max() > 0_f32 {
             return Stage::Busy;
         }
-        if self.busy_countdown == 0 {
+        if self.realizing_countdown == 0_f32 {
+            return self.stage;
+        }
+        let after_iterations: f32 = self.realizing_countdown - world.iterations_per_frame;
+        if after_iterations > 0_f32 {
+            self.realizing_countdown = after_iterations;
+            Stage::Busy
+        } else {
+            self.realizing_countdown = 0_f32;
             if self.stage == Stage::Realizing {
-                return self.set_stage(Stage::Realized);
+                self.set_stage(Stage::Realized)
+            } else {
+                self.stage
             }
-            return self.stage;
         }
-        let mut next: u32 = self.busy_countdown - world.iterations_per_frame as u32;
-        log_u32("next", next);
-        if next > self.busy_countdown {
-            log("rollover");
-            // rollover
-            next = 0
-        }
-        self.busy_countdown = next;
-        if next == 0 {
-            return self.stage;
-        }
-        Stage::Busy
     }
 
     pub fn centralize(&mut self) {
@@ -225,11 +202,11 @@ impl Fabric {
         self.set_stage(Stage::Shaping)
     }
 
-    pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: u16) {
+    pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: f32) {
         self.intervals[index].multiply_rest_length(factor, countdown, self.current_shape);
     }
 
-    pub fn change_rest_length(&mut self, index: usize, rest_length: f32, countdown: u16) {
+    pub fn change_rest_length(&mut self, index: usize, rest_length: f32, countdown: f32) {
         self.intervals[index].change_rest_length(rest_length, countdown, self.current_shape);
     }
 
@@ -301,6 +278,9 @@ impl Fabric {
     }
 
     fn tick(&mut self, world: &World, realizing_nuance: f32) {
+        for joint in &mut self.joints {
+            joint.interval_mass = 0_f32;
+        }
         for interval in &mut self.intervals {
             interval.physics(
                 world,
@@ -312,8 +292,25 @@ impl Fabric {
             );
         }
         for joint in &mut self.joints {
-            joint.physics(world)
+            match self.stage {
+                Stage::Growing | Stage::Shaping => {
+                    joint.physics(world, 0_f32, world.shaping_drag, false)
+                }
+                Stage::Realizing => {
+                    joint.physics(world, world.gravity * realizing_nuance, world.drag, true)
+                }
+                Stage::Realized => joint.physics(world, world.gravity, world.drag, true),
+                _ => {}
+            }
         }
+    }
+
+    fn interval_busy_max(&self) -> f32 {
+        self.intervals
+            .iter()
+            .cloned()
+            .map(|i| i.countdown)
+            .fold(0_f32, f32::max)
     }
 
     fn set_stage(&mut self, stage: Stage) -> Stage {
@@ -322,15 +319,18 @@ impl Fabric {
     }
 
     fn start_realizing(&mut self, world: &World) -> Stage {
-        self.busy_countdown = world.realizing_countdown as u32;
+        self.realizing_countdown = world.realizing_countdown;
         self.set_stage(Stage::Realizing)
     }
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
-        let countdown = world.interval_countdown as u16;
         for interval in &mut self.intervals {
             if interval.is_push() {
-                interval.multiply_rest_length(world.shaping_pretenst_factor, countdown, REST_SHAPE);
+                interval.multiply_rest_length(
+                    world.shaping_pretenst_factor,
+                    world.interval_countdown,
+                    REST_SHAPE,
+                );
             }
         }
         self.set_stage(Stage::Shaping)

@@ -29,11 +29,17 @@ impl Joint {
         }
     }
 
-    pub fn physics(&mut self, world: &World) {
+    pub fn physics(
+        &mut self,
+        world: &World,
+        gravity_above: f32,
+        drag_above: f32,
+        active_surface: bool,
+    ) {
         let altitude = self.location.y;
-        if altitude >= 0_f32 {
-            self.velocity.y -= world.gravity;
-            self.velocity *= 1_f32 - world.drag;
+        if !active_surface || altitude >= 0_f32 {
+            self.velocity.y -= gravity_above;
+            self.velocity *= 1_f32 - drag_above;
             self.velocity += &self.force / self.interval_mass;
         } else {
             self.velocity += &self.force / self.interval_mass;
@@ -58,6 +64,8 @@ impl Joint {
                 }
             }
         }
+        self.location += &self.velocity;
+        self.interval_mass = 0.000001_f32;
     }
 
     pub fn project(&self, view: &mut View) {
@@ -76,7 +84,12 @@ impl Joint {
 fn joint_physics() {
     let world = World::new();
     let mut joint = Joint::new(0_f32, 1_f32, 0_f32);
-    joint.physics(&world);
-    assert_eq!(joint.location.x, 0_f32);
-    assert_eq!(joint.velocity.y, -0.00000009999_f32)
+    joint.force.fill(1_f32);
+    joint.velocity.fill(1_f32);
+    joint.physics(&world, world.gravity, world.drag, false);
+    let vy_after = (1_f32 - world.gravity) * (1_f32 - world.drag) + 1_f32;
+    assert_eq!(joint.velocity.y, vy_after);
+    let vx_after = 1_f32 * (1_f32 - world.drag) + 1_f32;
+    assert_eq!(joint.velocity.x, vx_after);
+    assert_eq!(joint.location.x, vx_after);
 }
