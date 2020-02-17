@@ -9,6 +9,7 @@ use crate::view::View;
 use crate::world::World;
 use nalgebra::*;
 
+#[derive(Clone, Copy)]
 pub(crate) struct Interval {
     pub(crate) alpha_index: usize,
     pub(crate) omega_index: usize,
@@ -220,6 +221,9 @@ impl Interval {
             let half_mass = ideal_length * self.linear_density / 2_f32;
             joints[self.alpha_index].interval_mass += half_mass;
             joints[self.omega_index].interval_mass += half_mass;
+        }
+        if self.countdown > 0 {
+            self.countdown = self.countdown - 1
         }
     }
 

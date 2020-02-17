@@ -11,6 +11,7 @@ use nalgebra::*;
 const RESURFACE: f32 = 0.01;
 const ANTIGRAVITY: f32 = -0.001;
 
+#[derive(Clone, Copy)]
 pub struct Joint {
     pub(crate) location: Point3<f32>,
     pub(crate) force: Vector3<f32>,

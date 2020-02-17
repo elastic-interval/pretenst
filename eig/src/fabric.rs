@@ -14,6 +14,7 @@ use crate::world::World;
 use nalgebra::*;
 
 #[wasm_bindgen]
+#[derive(Clone)]
 pub struct Fabric {
     pub age: u32,
     pub(crate) stage: Stage,
@@ -36,6 +37,19 @@ impl Fabric {
             intervals: Vec::with_capacity(joint_count * 3),
             faces: Vec::with_capacity(joint_count),
         }
+    }
+
+    pub fn copy(&self) -> Fabric {
+        self.clone()
+    }
+
+    pub fn restore(&mut self, fabric: &Fabric) {
+        self.age = fabric.age;
+        self.stage = fabric.stage;
+        self.busy_countdown = fabric.busy_countdown;
+        self.joints.copy_from_slice(&fabric.joints);
+        self.intervals.copy_from_slice(&fabric.intervals);
+        self.faces.copy_from_slice(&fabric.faces);
     }
 
     pub fn get_joint_count(&self) -> u16 {
@@ -124,26 +138,45 @@ impl Fabric {
             },
             _ => {}
         }
+        /*
+            let fabricBusyCountdown = getFabricBusyCountdown()
+            if (intervalBusyCountdown === 0 || fabricBusyCountdown > 0) {
+                if (fabricBusyCountdown === 0) {
+                    if (stage === Stage.Realizing) {
+                        return setStage(Stage.Realized)
+                    }
+                    return stage
+                }
+                let nextCountdown: u32 = fabricBusyCountdown - ticksPerFrame
+                if (nextCountdown > fabricBusyCountdown) { // rollover
+                    nextCountdown = 0
+                }
+                setFabricBusyTicks(nextCountdown)
+                if (nextCountdown === 0) {
+                    return stage
+                }
+            }
+        */
         let interval_busy = self.intervals.iter().map(|i| i.countdown).max().unwrap();
         if interval_busy > 0 {
             return Stage::Busy;
         }
-        if self.busy_countdown > 0 {
-            if self.busy_countdown == 0 {
-                if self.stage == Stage::Realizing {
-                    return self.set_stage(Stage::Realized);
-                }
-                return self.stage;
+        if self.busy_countdown == 0 {
+            if self.stage == Stage::Realizing {
+                return self.set_stage(Stage::Realized);
             }
-            let mut next: u32 = self.busy_countdown - world.iterations_per_frame as u32;
-            if next > self.busy_countdown {
-                // rollover
-                next = 0
-            }
-            self.busy_countdown = next;
-            if next == 0 {
-                return self.stage;
-            }
+            return self.stage;
+        }
+        let mut next: u32 = self.busy_countdown - world.iterations_per_frame as u32;
+        log_u32("next", next);
+        if next > self.busy_countdown {
+            log("rollover");
+            // rollover
+            next = 0
+        }
+        self.busy_countdown = next;
+        if next == 0 {
+            return self.stage;
         }
         Stage::Busy
     }

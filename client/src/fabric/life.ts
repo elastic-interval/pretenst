@@ -35,7 +35,7 @@ export class Life {
             case Stage.Growing:
                 switch (stage) {
                     case Stage.Shaping:
-                        this.save()
+                        this.fabric.save()
                         return
                 }
                 break
@@ -44,7 +44,7 @@ export class Life {
                     case Stage.Slack:
                         if (prefs && prefs.adoptLengths) {
                             this.fabric.instance.fabric.adopt_lengths()
-                            this.save()
+                            this.fabric.save()
                         }
                         return
                     case Stage.Realizing:
@@ -71,7 +71,7 @@ export class Life {
                         if (prefs && prefs.strainToStiffness) {
                             const pushOverPull = this.numericFeature(FabricFeature.PushOverPull)
                             const {newStiffnesses, newLinearDensities} = adjustedStiffness(this.fabric, pushOverPull)
-                            this.restore()
+                            this.fabric.restore()
                             const instance = this.fabric.instance
                             newStiffnesses.forEach((value, index) => instance.floatView.stiffnesses[index] = value)
                             newLinearDensities.forEach((value, index) => instance.floatView.linearDensities[index] = value)
@@ -79,31 +79,16 @@ export class Life {
                         }
                         if (prefs && prefs.adoptLengths) {
                             this.fabric.instance.fabric.adopt_lengths()
-                            this.save()
+                            this.fabric.save()
                             return
                         } else {
-                            this.restore()
+                            this.fabric.restore()
                             return
                         }
                 }
                 break
         }
         throw new Error(`No transition ${Stage[this._stage]} to ${Stage[stage]}`)
-    }
-
-    private save(): void {
-        // TODO
-        // this.fabric.instance.engine.cloneInstance(this.fabric.instance.index, this.fabric.slackInstance.index)
-        throw new Error("cannot save")
-    }
-
-    private restore(): void {
-        // TODO
-        // this.fabric.instance.engine.cloneInstance(this.fabric.slackInstance.index, this.fabric.instance.index)
-        // FABRIC_FEATURES.forEach(fabricFeature => {
-        //     this.fabric.instance.setFeatureValue(fabricFeature, this.numericFeature(fabricFeature))
-        // })
-        throw new Error("cannot restore")
     }
 }
 

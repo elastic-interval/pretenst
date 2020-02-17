@@ -6,6 +6,7 @@ use crate::joint::Joint;
 use crate::view::View;
 use nalgebra::*;
 
+#[derive(Clone, Copy)]
 pub struct Face {
     joints: [u16; 3],
 }

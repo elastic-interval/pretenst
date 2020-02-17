@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, Stage } from "eig"
+import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
 
@@ -52,6 +52,8 @@ export class TensegrityFabric {
     public facesToConnect: IFace[] | undefined
     public readonly builder: TensegrityBuilder
 
+    private backup?: Fabric
+
     constructor(
         public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
         public readonly numericFeature: (fabricFeature: FabricFeature) => number,
@@ -67,6 +69,19 @@ export class TensegrityFabric {
 
     public get life(): Life {
         return this.life$.getValue()
+    }
+
+    public save(): void {
+        console.log("Saving backup")
+        this.backup = this.instance.fabric.copy()
+    }
+
+    public restore(): void {
+        if (!this.backup) {
+            throw new Error("No backup")
+        }
+        console.log("Restoring from backup")
+        this.instance.fabric.restore(this.backup)
     }
 
     public toStage(stage: Stage, prefs?: ITransitionPrefs): void {
