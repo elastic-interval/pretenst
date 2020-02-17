@@ -38,7 +38,7 @@ impl Joint {
     ) {
         let altitude = self.location.y;
         if !active_surface || altitude >= 0_f32 {
-            if (active_surface) {
+            if active_surface {
                 self.velocity.y -= gravity_above;
             }
             self.velocity += &self.force / self.interval_mass;

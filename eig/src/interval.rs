@@ -107,6 +107,9 @@ impl Interval {
             self.unit = omega_location - alpha_location;
         }
         let magnitude = self.unit.magnitude();
+        if magnitude < 0.001_f32 {
+            return 0.001_f32;
+        }
         self.unit /= magnitude;
         magnitude
     }
@@ -264,15 +267,34 @@ impl Interval {
         self.change_rest_length(rest_length * factor, countdown, shape)
     }
 
-    pub fn project_line_locations<'a>(&self, view: &mut View, joints: &'a Vec<Joint>, extend: f32) {
-        let alpha = &self.alpha(joints).location;
-        let omega = &self.omega(joints).location;
-        view.line_locations.push(alpha.x - self.unit.x * extend);
-        view.line_locations.push(alpha.y - self.unit.y * extend);
-        view.line_locations.push(alpha.z - self.unit.z * extend);
-        view.line_locations.push(omega.x + self.unit.x * extend);
-        view.line_locations.push(omega.y + self.unit.y * extend);
-        view.line_locations.push(omega.z + self.unit.z * extend);
+    pub fn project_line_locations<'a>(
+        &self,
+        view: &mut View,
+        joints: &'a Vec<Joint>,
+        faces: &'a Vec<Face>,
+        extend: f32,
+    ) {
+        if self.interval_role == IntervalRole::FacePull {
+            let mut alpha_midpoint: Point3<f32> = Point3::origin();
+            let mut omega_midpoint: Point3<f32> = Point3::origin();
+            faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
+            faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
+            view.line_locations.push(alpha_midpoint.x);
+            view.line_locations.push(alpha_midpoint.y);
+            view.line_locations.push(alpha_midpoint.z);
+            view.line_locations.push(omega_midpoint.x);
+            view.line_locations.push(omega_midpoint.y);
+            view.line_locations.push(omega_midpoint.z);
+        } else {
+            let alpha = &self.alpha(joints).location;
+            let omega = &self.omega(joints).location;
+            view.line_locations.push(alpha.x - self.unit.x * extend);
+            view.line_locations.push(alpha.y - self.unit.y * extend);
+            view.line_locations.push(alpha.z - self.unit.z * extend);
+            view.line_locations.push(omega.x + self.unit.x * extend);
+            view.line_locations.push(omega.y + self.unit.y * extend);
+            view.line_locations.push(omega.z + self.unit.z * extend);
+        }
     }
 
     pub fn project_line_features<'a>(&self, view: &mut View) {
