@@ -75,6 +75,7 @@ impl Fabric {
         alpha_index: usize,
         omega_index: usize,
         interval_role: IntervalRole,
+        actual_length: f32,
         rest_length: f32,
         stiffness: f32,
         linear_density: f32,
@@ -85,6 +86,7 @@ impl Fabric {
             alpha_index,
             omega_index,
             interval_role,
+            actual_length,
             rest_length,
             stiffness,
             linear_density,
@@ -228,7 +230,7 @@ impl Fabric {
         }
         view.midpoint /= view.joint_locations.len() as f32;
         for interval in self.intervals.iter() {
-            let extend = interval.strain / 2_f32 * world.visual_strain;
+            let extend = interval.strain / -2_f32 * world.visual_strain;
             interval.project_line_locations(view, &self.joints, extend);
             interval.project_line_features(view)
         }
@@ -291,17 +293,24 @@ impl Fabric {
                 self.current_shape,
             );
         }
-        for joint in &mut self.joints {
-            match self.stage {
-                Stage::Growing | Stage::Shaping => {
+        match self.stage {
+            Stage::Growing | Stage::Shaping => {
+                for joint in &mut self.joints {
                     joint.physics(world, 0_f32, world.shaping_drag, false)
                 }
-                Stage::Realizing => {
-                    joint.physics(world, world.gravity * realizing_nuance, world.drag, true)
-                }
-                Stage::Realized => joint.physics(world, world.gravity, world.drag, true),
-                _ => {}
             }
+            Stage::Realizing => {
+                let nuanced_gravity = world.gravity * realizing_nuance;
+                for joint in &mut self.joints {
+                    joint.physics(world, nuanced_gravity, world.drag, true)
+                }
+            }
+            Stage::Realized => {
+                for joint in &mut self.joints {
+                    joint.physics(world, world.gravity, world.drag, true)
+                }
+            }
+            _ => {}
         }
     }
 

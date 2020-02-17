@@ -39,8 +39,8 @@ impl Joint {
         let altitude = self.location.y;
         if !active_surface || altitude >= 0_f32 {
             self.velocity.y -= gravity_above;
-            self.velocity *= 1_f32 - drag_above;
             self.velocity += &self.force / self.interval_mass;
+            self.velocity *= 1_f32 - drag_above;
         } else {
             self.velocity += &self.force / self.interval_mass;
             let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
@@ -87,9 +87,9 @@ fn joint_physics() {
     joint.force.fill(1_f32);
     joint.velocity.fill(1_f32);
     joint.physics(&world, world.gravity, world.drag, false);
-    let vy_after = (1_f32 - world.gravity) * (1_f32 - world.drag) + 1_f32;
+    let vy_after = (1_f32 - world.gravity + 1_f32) * (1_f32 - world.drag);
     assert_eq!(joint.velocity.y, vy_after);
-    let vx_after = 1_f32 * (1_f32 - world.drag) + 1_f32;
+    let vx_after = 2_f32 * (1_f32 - world.drag);
     assert_eq!(joint.velocity.x, vx_after);
     assert_eq!(joint.location.x, vx_after);
 }

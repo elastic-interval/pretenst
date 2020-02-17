@@ -108,16 +108,16 @@ export class TensegrityFabric {
 
     public createFacePull(alpha: IFace, omega: IFace): IFacePull {
         const instance = this.instance
-        const distance = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
+        const actualLength = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
         const stiffness = scaleToStiffness(percentOrHundred())
         const linearDensity = stiffnessToLinearDensity(stiffness)
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = scaleToFacePullLength(scaleFactor)
         const index = this.instance.fabric.create_interval(
             alpha.index, omega.index, IntervalRole.FacePull,
-            restLength, stiffness, linearDensity, facePullCountdown(distance),
+            actualLength, restLength, stiffness, linearDensity, facePullCountdown(actualLength),
         )
-        const facePull = {index, alpha, omega, distance, scaleFactor, removed: false}
+        const facePull = {index, alpha, omega, distance: actualLength, scaleFactor, removed: false}
         this.facePulls.push(facePull)
         return facePull
     }
@@ -139,12 +139,13 @@ export class TensegrityFabric {
     }
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, coundown: number): IInterval {
+        const actualLength = this.instance.location(alpha.index).distanceTo(this.instance.location(omega.index))
         const scaleFactor = percentToFactor(scale)
         const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const stiffness = scaleToStiffness(scale)
         const linearDensity = stiffnessToLinearDensity(stiffness)
-        const index = this.instance.fabric.create_interval(alpha.index, omega.index, intervalRole, restLength, stiffness, linearDensity, coundown)
+        const index = this.instance.fabric.create_interval(alpha.index, omega.index, intervalRole, actualLength, restLength, stiffness, linearDensity, coundown)
         const interval: IInterval = {
             index,
             intervalRole,

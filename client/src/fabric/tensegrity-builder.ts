@@ -283,6 +283,7 @@ export class TensegrityBuilder {
         const brick = initialBrick(this.fabric.bricks.length, base, scale)
         this.fabric.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.fabric.createJointIndex(p))
+        this.fabric.instance.refreshFloatView()
         PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
             const alphaIndex = jointIndexes[idx * 2]
             const omegaIndex = jointIndexes[idx * 2 + 1]
