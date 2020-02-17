@@ -60,6 +60,7 @@ export class TensegrityFabric {
         public readonly instance: FabricInstance,
         public readonly tenscript: ITenscript,
     ) {
+        this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
         this.builder = new TensegrityBuilder(this, numericFeature)
         const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred())
@@ -139,13 +140,15 @@ export class TensegrityFabric {
     }
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, coundown: number): IInterval {
-        const actualLength = this.instance.location(alpha.index).distanceTo(this.instance.location(omega.index))
+        const idealLength = this.instance.location(alpha.index).distanceTo(this.instance.location(omega.index))
         const scaleFactor = percentToFactor(scale)
         const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const stiffness = scaleToStiffness(scale)
         const linearDensity = stiffnessToLinearDensity(stiffness)
-        const index = this.instance.fabric.create_interval(alpha.index, omega.index, intervalRole, actualLength, restLength, stiffness, linearDensity, coundown)
+        const index = this.instance.fabric.create_interval(
+            alpha.index, omega.index, intervalRole,
+            idealLength, restLength, stiffness, linearDensity, coundown)
         const interval: IInterval = {
             index,
             intervalRole,

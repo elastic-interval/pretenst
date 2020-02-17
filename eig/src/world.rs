@@ -45,7 +45,7 @@ impl World {
     pub fn new() -> World {
         World {
             surface_character: SurfaceCharacter::Bouncy,
-            push_and_pull: false,
+            push_and_pull: true,
             color_pushes: false,
             color_pulls: false,
             gravity: default_fabric_feature(FabricFeature::Gravity),

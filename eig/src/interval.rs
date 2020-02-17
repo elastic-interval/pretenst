@@ -14,7 +14,7 @@ pub(crate) struct Interval {
     pub(crate) alpha_index: usize,
     pub(crate) omega_index: usize,
     pub(crate) interval_role: IntervalRole,
-    pub(crate) rest_length: f32,
+    pub(crate) ideal_length: f32,
     pub(crate) length_for_shape: [f32; SHAPE_COUNT],
     pub(crate) stiffness: f32,
     pub(crate) linear_density: f32,
@@ -29,7 +29,7 @@ impl Interval {
         alpha_index: usize,
         omega_index: usize,
         interval_role: IntervalRole,
-        actual_length: f32,
+        ideal_length: f32,
         rest_length: f32,
         stiffness: f32,
         linear_density: f32,
@@ -39,7 +39,7 @@ impl Interval {
             alpha_index,
             omega_index,
             interval_role,
-            rest_length: actual_length,
+            ideal_length,
             length_for_shape: [rest_length; SHAPE_COUNT],
             stiffness,
             linear_density,
@@ -226,7 +226,8 @@ impl Interval {
         }
         if self.countdown > 0_f32 {
             self.countdown -= 1_f32;
-            if self.countdown < 0_f32 {
+            if self.countdown <= 0_f32 {
+                self.ideal_length = self.length_for_shape[shape as usize];
                 self.countdown = 0_f32;
             }
         }
@@ -239,16 +240,16 @@ impl Interval {
 
     fn ideal_length_now(&mut self, shape: u8) -> f32 {
         if self.countdown == 0_f32 {
-            self.rest_length
+            self.ideal_length
         } else {
             let progress: f32 = (self.max_countdown - self.countdown) / self.max_countdown;
             let shape_length = self.length_for_shape[shape as usize];
-            self.rest_length * (1_f32 - progress) + shape_length * progress
+            self.ideal_length * (1_f32 - progress) + shape_length * progress
         }
     }
 
     pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32, shape: u8) {
-        self.rest_length = self.length_for_shape[shape as usize];
+        self.ideal_length = self.length_for_shape[shape as usize];
         self.length_for_shape[shape as usize] = rest_length;
         self.max_countdown = countdown;
         self.countdown = countdown;
@@ -315,7 +316,7 @@ impl Interval {
 #[test]
 fn interval_physics() {
     const ACTUAL_LENGTH: f32 = 2_f32;
-    const REST_LENGTH: f32 = 2.001_f32;
+    const REST_LENGTH: f32 = 2.1_f32;
     const INTERVAL_MASS: f32 = 2.1_f32;
     let world = World::new();
     let mut joints: Vec<Joint> = Vec::new();
@@ -333,10 +334,22 @@ fn interval_physics() {
         100_f32,
     );
     assert_eq!(interval.calculate_current_length(&joints, &faces), 2_f32);
+    assert_eq!(interval.ideal_length_now(0), ACTUAL_LENGTH);
+    interval.countdown = 50_f32;
+    assert_eq!(
+        interval.ideal_length_now(0),
+        (REST_LENGTH + ACTUAL_LENGTH) / 2_f32
+    );
+    interval.countdown = 25_f32;
+    assert_eq!(
+        interval.ideal_length_now(0),
+        (REST_LENGTH * 3_f32 + ACTUAL_LENGTH) / 4_f32
+    );
+    interval.countdown = 100_f32;
     interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32, 0);
     assert_eq!(interval.unit, Vector3::new(1_f32, 0_f32, 0_f32));
-    assert_eq!(interval.rest_length, ACTUAL_LENGTH);
-    let ideal_length = interval.rest_length * (1_f32 + world.shaping_pretenst_factor);
+    assert_eq!(interval.ideal_length, ACTUAL_LENGTH);
+    let ideal_length = interval.ideal_length * (1_f32 + world.shaping_pretenst_factor);
     let real_length = interval.calculate_current_length(&joints, &faces);
     assert_eq!(real_length, 2_f32);
     assert_eq!(interval.strain, (real_length - ideal_length) / ideal_length);
@@ -367,4 +380,7 @@ fn interval_physics() {
         interval.calculate_current_length(&joints, &faces),
         2_f32 - force / INTERVAL_MASS * (1_f32 - world.shaping_drag)
     );
+    interval.countdown = 0.001_f32; // next step under zero
+    interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32, 0);
+    assert_eq!(interval.ideal_length, REST_LENGTH);
 }

@@ -120,6 +120,11 @@ export class FabricInstance {
         this.floatView = createFloatView(this.fabric, this.view)
     }
 
+    public clear(): void {
+        this.fabric.clear()
+        this.refreshFloatView()
+    }
+
     public applyFeature(feature: FloatFeature): void {
         this.world.set_float_value(feature.fabricFeature, feature.numeric)
     }

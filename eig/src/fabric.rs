@@ -39,6 +39,15 @@ impl Fabric {
         }
     }
 
+    pub fn clear(&mut self) {
+        self.age = 0;
+        self.stage = Stage::Busy;
+        self.current_shape = REST_SHAPE;
+        self.joints.clear();
+        self.intervals.clear();
+        self.faces.clear();
+    }
+
     pub fn copy(&self) -> Fabric {
         self.clone()
     }
@@ -75,7 +84,7 @@ impl Fabric {
         alpha_index: usize,
         omega_index: usize,
         interval_role: IntervalRole,
-        actual_length: f32,
+        ideal_length: f32,
         rest_length: f32,
         stiffness: f32,
         linear_density: f32,
@@ -86,7 +95,7 @@ impl Fabric {
             alpha_index,
             omega_index,
             interval_role,
-            actual_length,
+            ideal_length,
             rest_length,
             stiffness,
             linear_density,
@@ -123,7 +132,7 @@ impl Fabric {
                 }
             }
             Stage::Growing => {
-                self.set_altitude(0.0);
+                //                self.set_altitude(0.0);
             }
             Stage::Shaping => {
                 self.set_altitude(0.0);
@@ -189,8 +198,8 @@ impl Fabric {
 
     pub fn adopt_lengths(&mut self) -> Stage {
         for interval in self.intervals.iter_mut() {
-            interval.rest_length = interval.calculate_current_length(&self.joints, &self.faces);
-            interval.length_for_shape[self.current_shape as usize] = interval.rest_length;
+            interval.ideal_length = interval.calculate_current_length(&self.joints, &self.faces);
+            interval.length_for_shape[self.current_shape as usize] = interval.ideal_length;
         }
         for joint in self.joints.iter_mut() {
             joint.force.fill(0_f32);
@@ -281,6 +290,7 @@ impl Fabric {
 
     fn tick(&mut self, world: &World, realizing_nuance: f32) {
         for joint in &mut self.joints {
+            joint.force.fill(0_f32);
             joint.interval_mass = 0_f32;
         }
         for interval in &mut self.intervals {
@@ -311,6 +321,9 @@ impl Fabric {
                 }
             }
             _ => {}
+        }
+        for joint in &mut self.joints {
+            joint.location += &joint.velocity;
         }
     }
 

@@ -28,7 +28,6 @@ import { IStoredState } from "../storage/stored-state"
 import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { ShapeSelection } from "./shape-tab"
-import { SurfaceComponent } from "./surface-component"
 
 extend({Orbit})
 
@@ -169,7 +168,7 @@ export function FabricView({
                     />
                 )}
                 {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} fabric={fabric} face={face}/>)}
-                <SurfaceComponent/>
+                {/*<SurfaceComponent/>*/}
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>

@@ -38,7 +38,9 @@ impl Joint {
     ) {
         let altitude = self.location.y;
         if !active_surface || altitude >= 0_f32 {
-            self.velocity.y -= gravity_above;
+            if (active_surface) {
+                self.velocity.y -= gravity_above;
+            }
             self.velocity += &self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag_above;
         } else {
@@ -64,8 +66,6 @@ impl Joint {
                 }
             }
         }
-        self.location += &self.velocity;
-        self.interval_mass = 0.000001_f32;
     }
 
     pub fn project(&self, view: &mut View) {
