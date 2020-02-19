@@ -19,7 +19,6 @@ import {
     initialBrick,
     IPercent,
     IPushDefinition,
-    IRing,
     oppositeTriangle,
     percentToFactor,
     PUSH_ARRAY,
@@ -343,7 +342,7 @@ export class TensegrityBuilder {
         return new Matrix4().getInverse(basis)
     }
 
-    private facesToRing(faceA: IFace, faceB: IFace): IRing {
+    private facesToRing(faceA: IFace, faceB: IFace): IJoint[] {
         if (faceA.negative === faceB.negative) {
             throw new Error("Polarity not opposite")
         }
@@ -352,43 +351,22 @@ export class TensegrityBuilder {
             instance.location(faceA.joints[0].index),
             instance.faceMidpoint(faceA.index),
         ).normalize()
-        const worstDotB = faceB.joints.map((joint, index) => [
+        const oppositeJoint = faceB.joints.map((joint, index) => [
             new Vector3().subVectors(
                 instance.location(joint.index),
                 instance.faceMidpoint(faceB.index),
             ).normalize().dot(dirA),
             index,
         ]).sort((a, b) => b[0] - a[0]).pop()
-        if (!worstDotB) {
-            throw new Error("No worst dot-b")
+        if (!oppositeJoint) {
+            throw new Error("No opposite joint")
         }
-        let idxA: number[]
-        let idxB: number[]
-        switch (worstDotB[1]) {
-            case 0:
-                idxA = [1, 2, 0]
-                idxB = [1, 2, 0]
-                break
-            case 1:
-                idxA = [1, 2, 0]
-                idxB = [2, 0, 1]
-                break
-            case 2:
-                idxA = [1, 2, 0]
-                idxB = [0, 1, 2]
-                break
-            default:
-                throw new Error("Strange index worst dot-b")
-        }
-        if (!faceA.negative) {
-            idxA.reverse()
-        }
-        if (!faceB.negative) {
-            idxB.reverse()
-        }
-        const jointsA = idxA.map(idx => faceA.joints[idx])
-        const jointsB = idxB.map(idx => faceB.joints[idx])
-        return {faceA, faceB, jointsA, jointsB}
+        const permutation: number[] = [[1, 0, 2], [2, 1, 0], [0, 2, 1]][oppositeJoint[1]]
+        return [
+            faceA.joints[0], faceB.joints[permutation[0]],
+            faceA.joints[1], faceB.joints[permutation[1]],
+            faceA.joints[2], faceB.joints[permutation[2]],
+        ]
     }
 
     private connectFaces(faceA: IFace, faceB: IFace, connectorScale: IPercent, countdown: number): void {
@@ -398,20 +376,21 @@ export class TensegrityBuilder {
         const ring = this.facesToRing(faceA, faceB)
         const brickIsNexus = (brick: IBrick) => brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
         const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) => this.fabric.createInterval(from, to, role, connectorScale, countdown)
-        for (let corner = 0; corner < 3; corner++) {
-            const a0 = ring.jointsA[corner]
-            const b0 = ring.jointsB[corner]
-            const b1 = ring.jointsB[(corner + 1) % 3]
-            const ringInterval = (from: IJoint, to: IJoint) => createInterval(from, to, IntervalRole.Ring)
-            ringInterval(a0, b0)
-            ringInterval(a0, b1)
+        for (let corner = 0; corner < ring.length; corner++) {
+            const prev = ring[(corner + 5) % 6]
+            const curr = ring[corner]
+            const next = ring[(corner + 1) % 6]
+            createInterval(curr, next, IntervalRole.Ring)
             const crossInterval = (from: IJoint, opposite: IJoint, toFace: IFace) => {
                 const to = this.fabric.joints[opposite.oppositeIndex]
                 const role = brickIsNexus(toFace.brick) ? IntervalRole.NexusCross : IntervalRole.ColumnCross
                 createInterval(from, to, role)
             }
-            crossInterval(a0, b1, faceB)
-            crossInterval(b0, a0, faceA)
+            if (faceA.negative) {
+                crossInterval(prev, curr, faceA)
+            } else {
+                crossInterval(next, curr, faceB)
+            }
         }
         const handleFace = (faceToRemove: IFace): void => {
             const scale = faceToRemove.brick.scale

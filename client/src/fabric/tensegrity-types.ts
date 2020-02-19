@@ -34,15 +34,6 @@ export interface IJoint {
     oppositeIndex: number
 }
 
-export interface IRing {
-    faceA: IFace
-    faceB: IFace
-    jointsA: IJoint[]
-    jointsB: IJoint[]
-}
-
-export type JointTag = number
-
 export interface IInterval {
     index: number
     isPush: boolean
