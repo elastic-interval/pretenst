@@ -362,7 +362,58 @@ export class TensegrityBuilder {
         return ninePairs.sort((a, b) => a.distance - b.distance)
     }
 
-    private facesToRing(faceA: IFace, faceB: IFace): IRing | undefined {
+    // @ts-ignore
+    private facesToRingNew(faceA: IFace, faceB: IFace): IRing | undefined {
+        if (faceA.negative === faceB.negative) {
+            throw new Error("Polarity not opposite")
+        }
+        const instance = this.fabric.instance
+        const dirA = new Vector3().subVectors(
+            instance.location(faceA.joints[0].index),
+            instance.faceMidpoint(faceA.index),
+        ).normalize()
+        const worstDotB = faceB.joints.map((joint, index) => [
+            new Vector3().subVectors(
+                instance.location(joint.index),
+                instance.faceMidpoint(faceB.index),
+            ).normalize().dot(dirA),
+            index,
+        ]).sort((a, b) => b[0] - a[0]).pop()
+        if (!worstDotB) {
+            return undefined
+        }
+        let idxA: number[]
+        let idxB: number[]
+        console.log("worst", worstDotB[1])
+        switch (worstDotB[1]) {
+            case 0:
+                idxA = [1, 2, 0]
+                idxB = [1, 2, 0]
+                break
+            case 1:
+                idxA = [1, 2, 0]
+                idxB = [2, 0, 1]
+                break
+            case 2:
+                idxA = [1, 2, 0]
+                idxB = [0, 1, 2]
+                break
+            default:
+                return undefined
+        }
+        if (!faceA.negative) {
+            idxA.reverse()
+        }
+        if (!faceB.negative) {
+            idxB.reverse()
+        }
+        const jointsA = idxA.map(idx => faceA.joints[idx])
+        const jointsB = idxB.map(idx => faceB.joints[idx])
+        return {faceA, faceB, jointsA, jointsB}
+    }
+
+    // @ts-ignore
+    private facesToRingOld(faceA: IFace, faceB: IFace): IRing | undefined {
         if (faceA.negative === faceB.negative) {
             throw new Error("Polarity not opposite")
         }
@@ -419,24 +470,26 @@ export class TensegrityBuilder {
         if (faceA.negative === faceB.negative) {
             throw new Error("Same polarity!")
         }
-        const ring = this.facesToRing(faceA, faceB)
+        // const ring = this.facesToRingOld(faceA, faceB) // [1, 9, 5] [22, 18, 14]
+        const ring = this.facesToRingNew(faceA, faceB)
         if (!ring) {
             return false
         }
+        console.log("new", ring.jointsA.map(j => j.index), ring.jointsB.map(j => j.index))
         const brickIsNexus = (brick: IBrick) => brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
         const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) => this.fabric.createInterval(from, to, role, connectorScale, countdown)
-        const ringInterval = (from: IJoint, to: IJoint) => createInterval(from, to, IntervalRole.Ring)
-        const crossInterval = (from: IJoint, opposite: IJoint, toFace: IFace) => {
-            const to = this.fabric.joints[opposite.oppositeIndex]
-            const role = brickIsNexus(toFace.brick) ? IntervalRole.NexusCross : IntervalRole.ColumnCross
-            return createInterval(from, to, role)
-        }
         for (let corner = 0; corner < 3; corner++) {
             const a0 = ring.jointsA[corner]
             const b0 = ring.jointsB[corner]
             const b1 = ring.jointsB[(corner + 1) % 3]
+            const ringInterval = (from: IJoint, to: IJoint) => createInterval(from, to, IntervalRole.Ring)
             ringInterval(a0, b0)
             ringInterval(a0, b1)
+            const crossInterval = (from: IJoint, opposite: IJoint, toFace: IFace) => {
+                const to = this.fabric.joints[opposite.oppositeIndex]
+                const role = brickIsNexus(toFace.brick) ? IntervalRole.NexusCross : IntervalRole.ColumnCross
+                createInterval(from, to, role)
+            }
             crossInterval(a0, b1, faceB)
             crossInterval(b0, a0, faceA)
         }

@@ -72,20 +72,6 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 defaultValue: 30000,
                 percents: FEATURE_PERCENTS,
             }
-        case FabricFeature.FacePullEndZone:
-            return {
-                feature,
-                name: "Face Pull End Zone",
-                defaultValue: 4,
-                percents: FEATURE_PERCENTS,
-            }
-        case FabricFeature.FacePullOrientationForce:
-            return {
-                feature,
-                name: "Face Pull Orientation Force",
-                defaultValue: 0.0001,
-                percents: FEATURE_PERCENTS,
-            }
         case FabricFeature.SlackThreshold:
             return {
                 feature,

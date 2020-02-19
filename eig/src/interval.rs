@@ -58,42 +58,6 @@ impl Interval {
         &joints[self.omega_index]
     }
 
-    pub fn alpha_joint<'a>(
-        &self,
-        joints: &'a Vec<Joint>,
-        faces: &'a Vec<Face>,
-        index: usize,
-    ) -> &'a Joint {
-        &faces[self.alpha_index].joint(joints, index)
-    }
-
-    pub fn omega_joint<'a>(
-        &self,
-        joints: &'a Vec<Joint>,
-        faces: &'a Vec<Face>,
-        index: usize,
-    ) -> &'a Joint {
-        &faces[self.omega_index].joint(joints, index)
-    }
-
-    pub fn alpha_joint_mut<'a>(
-        &self,
-        joints: &'a mut Vec<Joint>,
-        faces: &'a Vec<Face>,
-        index: usize,
-    ) -> &'a mut Joint {
-        faces[self.alpha_index].joint_mut(joints, index)
-    }
-
-    pub fn omega_joint_mut<'a>(
-        &self,
-        joints: &'a mut Vec<Joint>,
-        faces: &'a Vec<Face>,
-        index: usize,
-    ) -> &'a mut Joint {
-        faces[self.omega_index].joint_mut(joints, index)
-    }
-
     pub fn calculate_current_length(&mut self, joints: &Vec<Joint>, faces: &Vec<Face>) -> f32 {
         if self.interval_role == IntervalRole::FacePull {
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
@@ -112,51 +76,6 @@ impl Interval {
         }
         self.unit /= magnitude;
         magnitude
-    }
-
-    fn end_zone_physics(
-        &mut self,
-        joints: &mut Vec<Joint>,
-        faces: &mut Vec<Face>,
-        final_nuance: f32,
-        orientation_force: f32,
-    ) {
-        let mut alpha_distance_sum: f32 = 0_f32;
-        let mut omega_distance_sum: f32 = 0_f32;
-        let mut alpha_midpoint: Point3<f32> = Point3::origin();
-        let mut omega_midpoint: Point3<f32> = Point3::origin();
-        faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
-        faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
-        for face_joint_index in 0..3 {
-            alpha_distance_sum += distance(
-                &omega_midpoint,
-                &self.alpha_joint(joints, faces, face_joint_index).location,
-            );
-            omega_distance_sum += distance(
-                &alpha_midpoint,
-                &self.omega_joint(joints, faces, face_joint_index).location,
-            );
-        }
-        let average_alpha = alpha_distance_sum / 3.0;
-        let average_omega = omega_distance_sum / 3.0;
-        for face_joint_index in 0..3 {
-            let alpha_location = &self.alpha_joint(joints, faces, face_joint_index).location;
-            let omega_location = &self.omega_joint(joints, faces, face_joint_index).location;
-            let mut to_alpha: Vector3<f32> = zero();
-            to_alpha += &alpha_location.coords;
-            to_alpha -= &omega_midpoint.coords;
-            let mut to_omega: Vector3<f32> = zero();
-            to_omega += &omega_location.coords;
-            to_omega -= &alpha_midpoint.coords;
-            let alpha_distance = to_alpha.magnitude();
-            let omega_distance = to_omega.magnitude();
-            let push_alpha = final_nuance * (average_alpha - alpha_distance);
-            let push_omega = final_nuance * (average_omega - omega_distance);
-            self.alpha_joint_mut(joints, faces, face_joint_index).force +=
-                to_alpha * orientation_force * push_alpha / alpha_distance;
-            self.omega_joint_mut(joints, faces, face_joint_index).force +=
-                to_omega * orientation_force * push_omega / omega_distance;
-        }
     }
 
     pub fn physics(
@@ -193,36 +112,22 @@ impl Interval {
         if stage <= Stage::Slack {
             force *= world.shaping_stiffness_factor;
         }
-        let mut push: Vector3<f32> = zero();
-        push += &self.unit;
+        let mut force_adjustment: Vector3<f32> = zero();
+        force_adjustment += &self.unit;
         if self.interval_role == IntervalRole::FacePull {
-            push *= force / 6_f32;
+            force_adjustment *= force * 6_f32;
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
             faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
             faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
-            for face_joint_index in 0..3 {
-                faces[self.alpha_index]
-                    .joint_mut(joints, face_joint_index)
-                    .force += &push;
-                faces[self.omega_index]
-                    .joint_mut(joints, face_joint_index)
-                    .force -= &push;
-            }
-            if ideal_length <= world.face_pull_end_zone {
-                let final_nuance: f32 =
-                    (world.face_pull_end_zone - ideal_length) / world.face_pull_end_zone;
-                self.end_zone_physics(
-                    joints,
-                    faces,
-                    final_nuance,
-                    world.face_pull_orientation_force,
-                );
+            for face_joint in 0..3 {
+                faces[self.alpha_index].joint_mut(joints, face_joint).force += &force_adjustment;
+                faces[self.omega_index].joint_mut(joints, face_joint).force -= &force_adjustment;
             }
         } else {
-            push *= force / 2_f32;
-            joints[self.alpha_index].force += &push;
-            joints[self.omega_index].force -= &push;
+            force_adjustment *= force / 2_f32;
+            joints[self.alpha_index].force += &force_adjustment;
+            joints[self.omega_index].force -= &force_adjustment;
             let half_mass = ideal_length * self.linear_density / 2_f32;
             joints[self.alpha_index].interval_mass += half_mass;
             joints[self.omega_index].interval_mass += half_mass;

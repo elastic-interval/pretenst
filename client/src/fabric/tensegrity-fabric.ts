@@ -186,7 +186,6 @@ export class TensegrityFabric {
 
     public createFace(brick: IBrick, triangle: Triangle): IFace {
         const {negative, pushEnds} = TRIANGLE_DEFINITIONS[triangle]
-        const joints = pushEnds.map(end => brick.joints[end])
         const pushes = pushEnds.map(end => {
             const foundPush = brick.pushes.find(push => {
                 const endJoint = brick.joints[end]
@@ -198,9 +197,10 @@ export class TensegrityFabric {
             return foundPush
         })
         const pulls = [0, 1, 2].map(offset => brick.pulls[triangle * 3 + offset])
+        const joints = pushEnds.map(end => brick.joints[end])
+        const index = this.instance.fabric.create_face(joints[0].index, joints[1].index, joints[2].index)
         const face: IFace = {
-            index: this.instance.fabric.create_face(joints[0].index, joints[1].index, joints[2].index),
-            canGrow: true, negative, removed: false,
+            index, canGrow: true, negative, removed: false,
             brick, triangle, joints, pushes, pulls,
         }
         this.faces.push(face)

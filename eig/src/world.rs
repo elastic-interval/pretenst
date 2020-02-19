@@ -18,8 +18,6 @@ pub struct World {
     pub(crate) iterations_per_frame: f32,
     pub(crate) interval_countdown: f32,
     pub(crate) realizing_countdown: f32,
-    pub(crate) face_pull_end_zone: f32,
-    pub(crate) face_pull_orientation_force: f32,
     pub(crate) slack_threshold: f32,
     pub(crate) shaping_pretenst_factor: f32,
     pub(crate) shaping_stiffness_factor: f32,
@@ -45,7 +43,7 @@ impl World {
     pub fn new() -> World {
         World {
             surface_character: SurfaceCharacter::Bouncy,
-            push_and_pull: true,
+            push_and_pull: false,
             color_pushes: false,
             color_pulls: false,
             gravity: default_fabric_feature(FabricFeature::Gravity),
@@ -54,10 +52,6 @@ impl World {
             iterations_per_frame: default_fabric_feature(FabricFeature::IterationsPerFrame),
             interval_countdown: default_fabric_feature(FabricFeature::IntervalCountdown),
             realizing_countdown: default_fabric_feature(FabricFeature::RealizingCountdown),
-            face_pull_end_zone: default_fabric_feature(FabricFeature::FacePullEndZone),
-            face_pull_orientation_force: default_fabric_feature(
-                FabricFeature::FacePullOrientationForce,
-            ),
             slack_threshold: default_fabric_feature(FabricFeature::SlackThreshold),
             shaping_pretenst_factor: default_fabric_feature(FabricFeature::ShapingPretenstFactor),
             shaping_stiffness_factor: default_fabric_feature(FabricFeature::ShapingStiffnessFactor),
@@ -100,8 +94,6 @@ impl World {
             FabricFeature::IterationsPerFrame => &mut self.iterations_per_frame,
             FabricFeature::IntervalCountdown => &mut self.interval_countdown,
             FabricFeature::RealizingCountdown => &mut self.realizing_countdown,
-            FabricFeature::FacePullEndZone => &mut self.face_pull_end_zone,
-            FabricFeature::FacePullOrientationForce => &mut self.face_pull_orientation_force,
             FabricFeature::SlackThreshold => &mut self.slack_threshold,
             FabricFeature::ShapingPretenstFactor => &mut self.shaping_pretenst_factor,
             FabricFeature::ShapingStiffnessFactor => &mut self.shaping_stiffness_factor,
