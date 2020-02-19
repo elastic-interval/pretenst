@@ -247,7 +247,7 @@ impl Fabric {
         for joint in self.joints.iter() {
             joint.project(view);
         }
-        view.midpoint /= view.joint_locations.len() as f32;
+        view.midpoint /= self.joints.len() as f32;
         for interval in self.intervals.iter() {
             let extend = interval.strain / -2_f32 * world.visual_strain;
             interval.project_line_locations(view, &self.joints, &self.faces, extend);

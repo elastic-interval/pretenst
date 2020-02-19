@@ -18,6 +18,7 @@ pub struct View {
     pub(crate) face_normals: Vec<f32>,
     pub(crate) face_vertex_locations: Vec<f32>,
     pub(crate) unit_vectors: Vec<f32>,
+    pub(crate) ideal_lengths: Vec<f32>,
     pub(crate) strains: Vec<f32>,
     pub(crate) strain_nuances: Vec<f32>,
     pub(crate) stiffnesses: Vec<f32>,
@@ -40,6 +41,7 @@ impl View {
             face_normals: Vec::with_capacity(face_count * 3 * 3),
             face_vertex_locations: Vec::with_capacity(face_count * 3 * 3),
             unit_vectors: Vec::with_capacity(interval_count * 3),
+            ideal_lengths: Vec::with_capacity(interval_count),
             strains: Vec::with_capacity(interval_count),
             strain_nuances: Vec::with_capacity(interval_count),
             stiffnesses: Vec::with_capacity(interval_count),
@@ -57,6 +59,7 @@ impl View {
         self.face_normals.clear();
         self.face_vertex_locations.clear();
         self.unit_vectors.clear();
+        self.ideal_lengths.clear();
         self.strains.clear();
         self.strain_nuances.clear();
         self.stiffnesses.clear();
@@ -105,6 +108,10 @@ impl View {
 
     pub fn copy_unit_vectors_to(&self, unit_vectors: &mut [f32]) {
         unit_vectors.copy_from_slice(&self.unit_vectors);
+    }
+
+    pub fn copy_ideal_lengths_to(&self, ideal_lengths: &mut [f32]) {
+        ideal_lengths.copy_from_slice(&self.ideal_lengths);
     }
 
     pub fn copy_strains_to(&self, strains: &mut [f32]) {

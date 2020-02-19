@@ -309,6 +309,7 @@ export class TensegrityFabric {
 
     public get output(): IFabricOutput {
         const numberToString = (n: number) => n.toFixed(5).replace(/[.]/, ",")
+        const idealLengths = this.instance.floatView.idealLengths
         const strains = this.instance.floatView.strains
         const stiffnesses = this.instance.floatView.stiffnesses
         const linearDensities = this.instance.floatView.linearDensities
@@ -324,9 +325,6 @@ export class TensegrityFabric {
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const alpha = this.instance.location(interval.alpha.index)
-                const omega = this.instance.location(interval.omega.index)
-                const length = alpha.distanceTo(omega)
                 const joints = `${interval.alpha.index + 1},${interval.omega.index + 1}`
                 const strainString = numberToString(strains[interval.index])
                 const type = interval.isPush ? "Push" : "Pull"
@@ -334,7 +332,8 @@ export class TensegrityFabric {
                 const stiffnessString = numberToString(stiffness)
                 const linearDensity = linearDensities[interval.index]
                 const linearDensityString = numberToString(linearDensity)
-                const role = IntervalRole[interval.intervalRole]
+                const role = interval.intervalRole.toFixed(0)
+                const length = idealLengths[interval.index]
                 return <IOutputInterval>{
                     joints,
                     type,

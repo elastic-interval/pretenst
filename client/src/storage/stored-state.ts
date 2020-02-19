@@ -21,7 +21,7 @@ export function enumValues(e: object): number[] {
     return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
 }
 
-const VERSION = "2019-12-14"
+const VERSION = "2020-02-19"
 
 export interface IFeatureValue {
     numeric: number
@@ -83,7 +83,6 @@ export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
 }
 
 export function roleDefaultFromFeatures(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
-
     if (intervalRole === IntervalRole.FacePull) {
         throw new Error()
     }

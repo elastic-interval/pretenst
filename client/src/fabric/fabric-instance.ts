@@ -34,6 +34,7 @@ export interface IFloatView {
     jointLocations: Float32Array
     jointVelocities: Float32Array
     unitVectors: Float32Array
+    idealLengths: Float32Array
     strains: Float32Array
     strainNuances: Float32Array
     stiffnesses: Float32Array
@@ -69,6 +70,10 @@ function createFloatView(fabric: Fabric, view: View): IFloatView {
         unitVectors: floatArray(
             array => view.copy_unit_vectors_to(array),
             () => fabric.get_interval_count() * 3,
+        ),
+        idealLengths: floatArray(
+            array => view.copy_ideal_lengths_to(array),
+            () => fabric.get_interval_count(),
         ),
         strains: floatArray(
             array => view.copy_strains_to(array),

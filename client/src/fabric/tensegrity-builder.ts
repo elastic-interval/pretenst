@@ -62,10 +62,7 @@ export class TensegrityBuilder {
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
         const faceB = brickB.faces[brickB.base]
         const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
-        const connector = this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
-        if (!connector) {
-            console.error("createConnectedBrick: Cannot connect!")
-        }
+        this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
         return brickB
     }
 
@@ -84,9 +81,7 @@ export class TensegrityBuilder {
         const instance = this.fabric.instance
         const connectFacePull = ({alpha, omega, scaleFactor}: IFacePull) => {
             const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
-            if (!this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)) {
-                console.error("Unable to connect")
-            }
+            this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)
         }
         return facePulls.filter(facePull => {
             const {alpha, omega, scaleFactor} = facePull
@@ -348,22 +343,7 @@ export class TensegrityBuilder {
         return new Matrix4().getInverse(basis)
     }
 
-    private nineJointPairsByProximity(faceA: IFace, faceB: IFace): IJointPair[] {
-        const ninePairs: IJointPair[] = []
-        const instance = this.fabric.instance
-        faceA.joints.forEach(jointA => {
-            faceB.joints.forEach(jointB => {
-                const locationA = instance.location(jointA.index)
-                const locationB = instance.location(jointB.index)
-                const distance = locationA.distanceTo(locationB)
-                ninePairs.push({jointA, jointB, distance})
-            })
-        })
-        return ninePairs.sort((a, b) => a.distance - b.distance)
-    }
-
-    // @ts-ignore
-    private facesToRingNew(faceA: IFace, faceB: IFace): IRing | undefined {
+    private facesToRing(faceA: IFace, faceB: IFace): IRing {
         if (faceA.negative === faceB.negative) {
             throw new Error("Polarity not opposite")
         }
@@ -380,11 +360,10 @@ export class TensegrityBuilder {
             index,
         ]).sort((a, b) => b[0] - a[0]).pop()
         if (!worstDotB) {
-            return undefined
+            throw new Error("No worst dot-b")
         }
         let idxA: number[]
         let idxB: number[]
-        console.log("worst", worstDotB[1])
         switch (worstDotB[1]) {
             case 0:
                 idxA = [1, 2, 0]
@@ -399,7 +378,7 @@ export class TensegrityBuilder {
                 idxB = [0, 1, 2]
                 break
             default:
-                return undefined
+                throw new Error("Strange index worst dot-b")
         }
         if (!faceA.negative) {
             idxA.reverse()
@@ -412,70 +391,11 @@ export class TensegrityBuilder {
         return {faceA, faceB, jointsA, jointsB}
     }
 
-    // @ts-ignore
-    private facesToRingOld(faceA: IFace, faceB: IFace): IRing | undefined {
-        if (faceA.negative === faceB.negative) {
-            throw new Error("Polarity not opposite")
-        }
-        const ninePairs = this.nineJointPairsByProximity(faceA, faceB)
-        const sixPairs = ninePairs.slice(0, 6)
-        const closest = sixPairs.shift()
-        if (!closest) {
-            throw new Error("No closest found")
-        }
-        const extractPair = (predicate: (jointPair: IJointPair) => boolean) => {
-            const index = sixPairs.findIndex(predicate)
-            return index >= 0 ? sixPairs.splice(index, 1)[0] : undefined
-        }
-        const closestA = (jointB: IJoint) => {
-            const pair = extractPair(p => p.jointB.index === jointB.index)
-            return pair ? pair.jointA : undefined
-        }
-        const closestB = (jointA: IJoint) => {
-            const pair = extractPair(p => p.jointA.index === jointA.index)
-            return pair ? pair.jointB : undefined
-        }
-        const a0 = closest.jointA
-        const b0 = closest.jointB
-        const b1 = closestB(a0)
-        if (!b1) {
-            return undefined
-        }
-        const a1 = closestA(b1)
-        if (!a1) {
-            return undefined
-        }
-        const b2 = closestB(a1)
-        if (!b2) {
-            return undefined
-        }
-        const a2 = closestA(b2)
-        if (!a2) {
-            return undefined
-        }
-        const b3 = closestB(a2)
-        if (!b3 || b3.index !== b0.index) {
-            console.error("Cannot complete ring!")
-            return undefined
-        }
-        const pos0 = faceA.joints.findIndex(j => j.index === a0.index)
-        const pos1 = faceA.joints.findIndex(j => j.index === a1.index)
-        const ringMatchesA = (pos0 + 1) % 3 === pos1
-        const jointsA = ringMatchesA !== faceA.negative ? [a0, a2, a1] : [a0, a1, a2]
-        const jointsB = ringMatchesA !== faceA.negative ? [b1, b0, b2] : [b0, b1, b2]
-        return {faceA, faceB, jointsA, jointsB}
-    }
-
-    private connectFaces(faceA: IFace, faceB: IFace, connectorScale: IPercent, countdown: number): boolean {
+    private connectFaces(faceA: IFace, faceB: IFace, connectorScale: IPercent, countdown: number): void {
         if (faceA.negative === faceB.negative) {
             throw new Error("Same polarity!")
         }
-        // const ring = this.facesToRingOld(faceA, faceB) // [1, 9, 5] [22, 18, 14]
-        const ring = this.facesToRingNew(faceA, faceB)
-        if (!ring) {
-            return false
-        }
-        console.log("new", ring.jointsA.map(j => j.index), ring.jointsB.map(j => j.index))
+        const ring = this.facesToRing(faceA, faceB)
         const brickIsNexus = (brick: IBrick) => brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
         const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) => this.fabric.createInterval(from, to, role, connectorScale, countdown)
         for (let corner = 0; corner < 3; corner++) {
@@ -526,14 +446,7 @@ export class TensegrityBuilder {
         }
         handleFace(faceA)
         handleFace(faceB)
-        return true
     }
-}
-
-interface IJointPair {
-    jointA: IJoint
-    jointB: IJoint
-    distance: number
 }
 
 interface IPair {

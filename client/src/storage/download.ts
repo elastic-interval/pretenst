@@ -46,7 +46,7 @@ function extractJointFile(output: IFabricOutput): string {
 
 function extractIntervalFile(output: IFabricOutput): string {
     const csvIntervals: string[][] = []
-    csvIntervals.push(["joints", "type", "strain", "elasticity", "linear density", "role", "length"])
+    csvIntervals.push(["joints", "type", "strain", "stiffness", "linear density", "role", "length"])
     output.intervals.forEach(interval => {
         csvIntervals.push([
             `"=""${interval.joints}"""`,

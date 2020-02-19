@@ -206,6 +206,7 @@ impl Interval {
         view.unit_vectors.push(self.unit.x);
         view.unit_vectors.push(self.unit.y);
         view.unit_vectors.push(self.unit.z);
+        view.ideal_lengths.push(self.ideal_length);
         view.strains.push(self.strain);
         //        view.strain_nuances.push(self.strain_nuance) todo
         view.stiffnesses.push(self.stiffness);
