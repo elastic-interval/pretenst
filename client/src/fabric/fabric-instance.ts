@@ -18,14 +18,6 @@ const vectorFromArray = (array: Float32Array, index: number, vector?: Vector3): 
     }
 }
 
-function faceVector(faceIndex: number, array: Float32Array): Vector3 {
-    const index = faceIndex * 3
-    const a = vectorFromArray(array, index)
-    const b = vectorFromArray(array, index + 1)
-    const c = vectorFromArray(array, index + 2)
-    return new Vector3().add(a).add(b).add(c).multiplyScalar(1.0 / 3.0)
-}
-
 export interface IFloatView {
     lineColors: Float32Array
     lineLocations: Float32Array
@@ -138,7 +130,7 @@ export class FabricInstance {
         this.world.set_float_value(fabricFeature, value)
     }
 
-    public location(jointIndex: number): Vector3 {
+    public jointLocation(jointIndex: number): Vector3 {
         return vectorFromArray(this.floatView.jointLocations, jointIndex)
     }
 
@@ -148,19 +140,5 @@ export class FabricInstance {
 
     public unitVector(intervalIndex: number): Vector3 {
         return vectorFromArray(this.floatView.unitVectors, intervalIndex)
-    }
-
-    public faceMidpoint(faceIndex: number): Vector3 {
-        return faceVector(faceIndex, this.floatView.faceLocations)
-    }
-
-    public intervalLocation(intervalIndex: number): Vector3 {
-        return vectorFromArray(this.floatView.lineLocations, intervalIndex)
-    }
-
-    public getIntervalMidpoint(intervalIndex: number): Vector3 {
-        const a = this.intervalLocation(intervalIndex * 2)
-        const b = this.intervalLocation(intervalIndex * 2 + 1)
-        return new Vector3().add(a).add(b).multiplyScalar(0.5)
     }
 }

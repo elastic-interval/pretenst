@@ -99,7 +99,7 @@ export class TensegrityFabric {
     public brickMidpoint({joints}: IBrick, midpoint?: Vector3): Vector3 {
         const accumulator = midpoint ? midpoint : new Vector3()
         return joints
-            .reduce((sum, joint) => sum.add(this.instance.location(joint.index)), accumulator)
+            .reduce((sum, joint) => sum.add(joint.location()), accumulator)
             .multiplyScalar(1.0 / joints.length)
     }
 
@@ -108,8 +108,7 @@ export class TensegrityFabric {
     }
 
     public createFacePull(alpha: IFace, omega: IFace): IFacePull {
-        const instance = this.instance
-        const actualLength = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
+        const actualLength = alpha.location().distanceTo(omega.location())
         const stiffness = scaleToStiffness(percentOrHundred())
         const linearDensity = stiffnessToLinearDensity(stiffness)
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
@@ -135,7 +134,7 @@ export class TensegrityFabric {
     }
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, coundown: number): IInterval {
-        const idealLength = this.instance.location(alpha.index).distanceTo(this.instance.location(omega.index))
+        const idealLength = alpha.location().distanceTo(omega.location())
         const scaleFactor = percentToFactor(scale)
         const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
@@ -152,6 +151,7 @@ export class TensegrityFabric {
             omega,
             removed: false,
             isPush: isPush(intervalRole),
+            location: () => new Vector3().addVectors(alpha.location(), omega.location()).multiplyScalar(0.5),
         }
         this.intervals.push(interval)
         return interval
@@ -202,6 +202,9 @@ export class TensegrityFabric {
         const face: IFace = {
             index, canGrow: true, negative, removed: false,
             brick, triangle, joints, pushes, pulls,
+            location: () =>
+                joints.reduce((sum, joint) => sum.add(joint.location()), new Vector3())
+                    .multiplyScalar(1.0 / 3.0),
         }
         this.faces.push(face)
         return face
@@ -230,7 +233,7 @@ export class TensegrityFabric {
     }
 
     public get submergedJoints(): IJoint[] {
-        return this.joints.filter(joint => this.instance.location(joint.index).y < 0)
+        return this.joints.filter(joint => joint.location().y < 0)
     }
 
     public get facesGeometry(): BufferGeometry {
@@ -298,9 +301,7 @@ export class TensegrityFabric {
         const Y_AXIS = new Vector3(0, 1, 0)
         const unit = this.instance.unitVector(interval.index)
         const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
-        const alphaLocation = this.instance.location(interval.alpha.index)
-        const omegaLocation = this.instance.location(interval.omega.index)
-        const intervalLength = alphaLocation.distanceTo(omegaLocation)
+        const intervalLength = interval.alpha.location().distanceTo(interval.omega.location())
         const strain = this.instance.floatView.strains[interval.index]
         const half = intervalLength / 2
         const scale = new Vector3(radiusFactor, half + half * (-strain) * visualStrain, radiusFactor)
@@ -316,7 +317,7 @@ export class TensegrityFabric {
         return {
             name: this.tenscript.name,
             joints: this.joints.map(joint => {
-                const vector = this.instance.location(joint.index)
+                const vector = joint.location()
                 return {
                     index: (joint.index + 1).toString(),
                     x: numberToString(vector.x),

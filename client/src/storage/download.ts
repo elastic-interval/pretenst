@@ -89,7 +89,7 @@ function extractOBJBlob(fabric: TensegrityFabric, faces: boolean): Blob {
         object3d.add(...fabric.intervals.map((interval: IInterval) => {
             const {scale, rotation} = fabric.orientInterval(interval, interval.isPush ? 1 : 0.1, 1)
             const mesh = new Mesh(SPHERE, roleMaterial(interval.intervalRole))
-            mesh.position.copy(fabric.instance.getIntervalMidpoint(interval.index))
+            mesh.position.copy(interval.location())
             mesh.scale.copy(scale)
             mesh.rotation.setFromQuaternion(rotation)
             return mesh

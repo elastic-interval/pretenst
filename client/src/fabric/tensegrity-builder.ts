@@ -10,6 +10,7 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     averageLocation,
     averageScaleFactor,
+    createBrickPointsAt,
     factorToPercent,
     IBrick,
     IFace,
@@ -19,10 +20,8 @@ import {
     initialBrick,
     IPercent,
     IPushDefinition,
-    oppositeTriangle,
     percentToFactor,
     PUSH_ARRAY,
-    PushEnd,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
@@ -50,7 +49,7 @@ export class TensegrityBuilder {
     }
 
     public createBrickAt(midpoint: Vector3, scale: IPercent): IBrick {
-        const points = this.createBrickPointsAt(Triangle.PPP, scale, midpoint)
+        const points = createBrickPointsAt(Triangle.PPP, scale, midpoint)
         return this.createBrick(points, Triangle.NNN, scale)
     }
 
@@ -77,14 +76,13 @@ export class TensegrityBuilder {
         if (facePulls.length === 0) {
             return facePulls
         }
-        const instance = this.fabric.instance
         const connectFacePull = ({alpha, omega, scaleFactor}: IFacePull) => {
             const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
             this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)
         }
         return facePulls.filter(facePull => {
             const {alpha, omega, scaleFactor} = facePull
-            const distance = instance.faceMidpoint(alpha.index).distanceTo(instance.faceMidpoint(omega.index))
+            const distance = alpha.location().distanceTo(omega.location())
             const closeEnough = distance <= scaleToFacePullLength(scaleFactor) * 10
             if (closeEnough) {
                 connectFacePull(facePull)
@@ -97,7 +95,6 @@ export class TensegrityBuilder {
 
     public optimize(): void {
         const fabric = this.fabric
-        const instance = fabric.instance
         const pairs: IPair[] = []
         const findPush = (jointIndex: number): IPush => {
             const interval = fabric.intervals
@@ -118,8 +115,8 @@ export class TensegrityBuilder {
             const aOmega = intervalA.omega.index
             const aAlphaPush = findPush(aAlpha)
             const aOmegaPush = findPush(aOmega)
-            const aAlphaLoc = instance.location(aAlpha)
-            const aOmegaLoc = instance.location(aOmega)
+            const aAlphaLoc = intervalA.alpha.location()
+            const aOmegaLoc = intervalA.omega.location()
             const aLength = aAlphaLoc.distanceTo(aOmegaLoc)
             const aMid = new Vector3().addVectors(aAlphaLoc, aOmegaLoc).multiplyScalar(0.5)
             crossPulls.forEach((intervalB, indexB) => {
@@ -163,8 +160,8 @@ export class TensegrityBuilder {
                 } else {
                     return
                 }
-                const bAlphaLoc = instance.location(bAlpha)
-                const bOmegaLoc = instance.location(bOmega)
+                const bAlphaLoc = intervalB.alpha.location()
+                const bOmegaLoc = intervalB.omega.location()
                 const bLength = bAlphaLoc.distanceTo(bOmegaLoc)
                 const bMid = new Vector3().addVectors(bAlphaLoc, bOmegaLoc).multiplyScalar(0.5)
                 const aAlphaMidB = aAlphaLoc.distanceTo(bMid) / bLength
@@ -217,18 +214,17 @@ export class TensegrityBuilder {
     }
 
     public createFacePulls(faces: IFace[]): IFacePull[] {
-        const instance = this.fabric.instance
         const centerBrickFacePulls = () => {
             const brick = this.createBrickAt(
-                averageLocation(faces.map(face => instance.faceMidpoint(face.index))),
+                averageLocation(faces.map(face => face.location())),
                 factorToPercent(averageScaleFactor(faces)),
             )
             const closestTo = (face: IFace) => {
-                const faceLocation = instance.faceMidpoint(face.index)
+                const faceLocation = face.location()
                 const opposingFaces = brick.faces.filter(({negative}) => negative !== face.negative)
                 return opposingFaces.reduce((a, b) => {
-                    const aa = instance.faceMidpoint(a.index).distanceTo(faceLocation)
-                    const bb = instance.faceMidpoint(b.index).distanceTo(faceLocation)
+                    const aa = a.location().distanceTo(faceLocation)
+                    const bb = b.location().distanceTo(faceLocation)
                     return aa < bb ? a : b
                 })
             }
@@ -256,7 +252,7 @@ export class TensegrityBuilder {
         const brick = face.brick
         const triangle = face.triangle
         this.fabric.instance.refreshFloatView()
-        const trianglePoints = brick.faces[triangle].joints.map(joint => this.fabric.instance.location(joint.index))
+        const trianglePoints = brick.faces[triangle].joints.map(joint => joint.location())
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
         const x = new Vector3().subVectors(midSide, midpoint).normalize()
@@ -266,7 +262,7 @@ export class TensegrityBuilder {
         const y = new Vector3().crossVectors(z, x).normalize()
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
         const base = negativeFace ? Triangle.NNN : Triangle.PPP
-        const points = this.createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it
+        const points = createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it
         const movedToFace = points.map(p => p.applyMatrix4(xform))
         const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
         return this.createBrick(movedToFace, baseTriangle, scale)
@@ -281,8 +277,16 @@ export class TensegrityBuilder {
         PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
             const alphaIndex = jointIndexes[idx * 2]
             const omegaIndex = jointIndexes[idx * 2 + 1]
-            const alpha: IJoint = {index: alphaIndex, oppositeIndex: omegaIndex}
-            const omega: IJoint = {index: omegaIndex, oppositeIndex: alphaIndex}
+            const alpha: IJoint = {
+                index: alphaIndex,
+                oppositeIndex: omegaIndex,
+                location: () => this.fabric.instance.jointLocation(alphaIndex),
+            }
+            const omega: IJoint = {
+                index: omegaIndex,
+                oppositeIndex: alphaIndex,
+                location: () => this.fabric.instance.jointLocation(omegaIndex),
+            }
             brick.pushes.push(this.fabric.createInterval(alpha, omega, IntervalRole.NexusPush, scale, countdown))
         })
         brick.pushes.forEach(push => brick.joints.push(push.alpha, push.omega))
@@ -309,30 +313,8 @@ export class TensegrityBuilder {
         return brick
     }
 
-    private createBrickPointsAt(base: Triangle, scale: IPercent, position: Vector3): Vector3 [] {
-        const pushesToPoints = (vectors: Vector3[], push: IPushDefinition): Vector3[] => {
-            vectors.push(new Vector3().add(push.alpha))
-            vectors.push(new Vector3().add(push.omega))
-            return vectors
-        }
-        const points = PUSH_ARRAY.reduce(pushesToPoints, [])
-        const newBase = oppositeTriangle(base)
-        const trianglePoints = TRIANGLE_DEFINITIONS[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
-        const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-        const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
-        const y = new Vector3().sub(midpoint).normalize()
-        const z = new Vector3().crossVectors(y, x).normalize()
-        const basis = new Matrix4().makeBasis(x, y, z)
-        const scaleFactor = percentToFactor(scale)
-        const fromBasis = new Matrix4()
-            .getInverse(basis)
-            .setPosition(position)
-            .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
-        return points.map(p => p.applyMatrix4(fromBasis))
-    }
-
     private faceToOrigin(face: IFace): Matrix4 {
-        const trianglePoints = face.joints.map(joint => this.fabric.instance.location(joint.index))
+        const trianglePoints = face.joints.map(joint => joint.location())
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
         const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
@@ -346,17 +328,9 @@ export class TensegrityBuilder {
         if (faceA.negative === faceB.negative) {
             throw new Error("Polarity not opposite")
         }
-        const instance = this.fabric.instance
-        const dirA = new Vector3().subVectors(
-            instance.location(faceA.joints[0].index),
-            instance.faceMidpoint(faceA.index),
-        ).normalize()
+        const dirA = new Vector3().subVectors(faceA.joints[0].location(), faceA.location()).normalize()
         const oppositeJoint = faceB.joints.map((joint, index) => [
-            new Vector3().subVectors(
-                instance.location(joint.index),
-                instance.faceMidpoint(faceB.index),
-            ).normalize().dot(dirA),
-            index,
+            new Vector3().subVectors(joint.location(), faceB.location()).normalize().dot(dirA), index,
         ]).sort((a, b) => b[0] - a[0]).pop()
         if (!oppositeJoint) {
             throw new Error("No opposite joint")

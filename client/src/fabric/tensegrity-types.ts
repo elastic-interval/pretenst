@@ -4,7 +4,7 @@
  */
 
 import { IntervalRole } from "eig"
-import { Vector3 } from "three"
+import { Matrix4, Vector3 } from "three"
 
 export const PHI = 1.61803398875
 export const DEFAULT_PUSH_LENGTH = Math.sqrt(2)
@@ -32,6 +32,7 @@ export enum Ring {
 export interface IJoint {
     index: number
     oppositeIndex: number
+    location: () => Vector3
 }
 
 export interface IInterval {
@@ -42,6 +43,7 @@ export interface IInterval {
     scale: IPercent
     alpha: IJoint
     omega: IJoint
+    location: () => Vector3
 }
 
 export interface IFacePull {
@@ -62,6 +64,7 @@ export interface IFace {
     pushes: IInterval[]
     pulls: IInterval[]
     removed: boolean
+    location: () => Vector3
 }
 
 export function averageScaleFactor(faces: IFace[]): number {
@@ -210,3 +213,26 @@ export function initialBrick(index: number, base: Triangle, scale: IPercent): IB
         negativeAdjacent: 0, postiveeAdjacent: 0,
     }
 }
+
+export function createBrickPointsAt(base: Triangle, scale: IPercent, position: Vector3): Vector3 [] {
+    const pushesToPoints = (vectors: Vector3[], push: IPushDefinition): Vector3[] => {
+        vectors.push(new Vector3().add(push.alpha))
+        vectors.push(new Vector3().add(push.omega))
+        return vectors
+    }
+    const points = PUSH_ARRAY.reduce(pushesToPoints, [])
+    const newBase = oppositeTriangle(base)
+    const trianglePoints = TRIANGLE_DEFINITIONS[newBase].pushEnds.map((end: PushEnd) => points[end]).reverse()
+    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const x = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+    const y = new Vector3().sub(midpoint).normalize()
+    const z = new Vector3().crossVectors(y, x).normalize()
+    const basis = new Matrix4().makeBasis(x, y, z)
+    const scaleFactor = percentToFactor(scale)
+    const fromBasis = new Matrix4()
+        .getInverse(basis)
+        .setPosition(position)
+        .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
+    return points.map(p => p.applyMatrix4(fromBasis))
+}
+

@@ -182,7 +182,7 @@ function SelectedFace({fabric, face}: { fabric: TensegrityFabric, face: IFace })
     return (
         <mesh
             geometry={SPHERE}
-            position={fabric.instance.faceMidpoint(face.index)}
+            position={face.location()}
             material={SELECT_MATERIAL}
             scale={new Vector3(scale, scale, scale)}
         />
@@ -209,7 +209,7 @@ function IntervalMesh({fabric, interval, storedState}: {
     return (
         <mesh
             geometry={SPHERE}
-            position={fabric.instance.getIntervalMidpoint(interval.index)}
+            position={interval.location()}
             rotation={new Euler().setFromQuaternion(rotation)}
             scale={scale}
             material={material}
