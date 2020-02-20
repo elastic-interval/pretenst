@@ -112,22 +112,42 @@ impl Interval {
         if stage <= Stage::Slack {
             force *= world.shaping_stiffness_factor;
         }
-        let mut force_adjustment: Vector3<f32> = zero();
-        force_adjustment += &self.unit;
         if self.interval_role == IntervalRole::FacePull {
-            force_adjustment *= force * 6_f32;
+            let force_vector: Vector3<f32> = self.unit.clone() * force;
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
             faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
             faces[self.omega_index].project_midpoint(joints, &mut omega_midpoint);
             for face_joint in 0..3 {
-                faces[self.alpha_index].joint_mut(joints, face_joint).force += &force_adjustment;
-                faces[self.omega_index].joint_mut(joints, face_joint).force -= &force_adjustment;
+                faces[self.alpha_index].joint_mut(joints, face_joint).force += &force_vector;
+                faces[self.omega_index].joint_mut(joints, face_joint).force -= &force_vector;
+            }
+            let mut total_distance = 0_f32;
+            for alpha in 0..3 {
+                for omega in 0..3 {
+                    total_distance += (&faces[self.alpha_index].joint(joints, alpha).location
+                        - &faces[self.omega_index].joint(joints, omega).location)
+                        .magnitude();
+                }
+            }
+            let average_distance = total_distance / 9_f32;
+            for alpha in 0..3 {
+                for omega in 0..3 {
+                    let parallel_vector: Vector3<f32> =
+                        &faces[self.alpha_index].joint(joints, alpha).location
+                            - &faces[self.omega_index].joint(joints, omega).location;
+                    let distance = parallel_vector.magnitude();
+                    let parallel_force = force * 3_f32 * (average_distance - distance);
+                    faces[self.alpha_index].joint_mut(joints, alpha).force +=
+                        &parallel_vector * parallel_force / distance;
+                    faces[self.omega_index].joint_mut(joints, omega).force -=
+                        &parallel_vector * parallel_force / distance;
+                }
             }
         } else {
-            force_adjustment *= force / 2_f32;
-            joints[self.alpha_index].force += &force_adjustment;
-            joints[self.omega_index].force -= &force_adjustment;
+            let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
+            joints[self.alpha_index].force += &force_vector;
+            joints[self.omega_index].force -= &force_vector;
             let half_mass = ideal_length * self.linear_density / 2_f32;
             joints[self.alpha_index].interval_mass += half_mass;
             joints[self.omega_index].interval_mass += half_mass;

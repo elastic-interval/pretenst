@@ -91,15 +91,21 @@ pub enum FabricFeature {
     MaxStiffness,
 }
 
-const ROOT2: f32 = f64::consts::SQRT_2 as f32;
+const ROOT2: f32 = 1.414213562373095_f32;
 const ROOT3: f32 = 1.732050807568877;
 const ROOT5: f32 = 2.23606797749979;
 const PHI: f32 = (1_f32 + ROOT5) / 2_f32;
-const CROSS1: f32 = 0.5_f32;
-const CROSS2: f32 = (PHI / 3_f32 - 1_f32 / 6_f32) * ROOT3;
-const CROSS3: f32 = PHI / 3_f32 * ROOT3 - 1_f32 + ROOT2 / ROOT3;
-const CROSS: f32 = (CROSS1 * CROSS1 + CROSS2 * CROSS2 + CROSS3 * CROSS3).sqrt();
-const RING: f32 = (2_f32 - 2_f32 * (2_f32 / 3_f32).sqrt()).sqrt();
+
+fn ring() -> f32 {
+    (2_f32 - 2_f32 * (2_f32 / 3_f32).sqrt()).sqrt()
+}
+
+fn cross() -> f32 {
+    const CROSS1: f32 = 0.5_f32;
+    const CROSS2: f32 = (PHI / 3_f32 - 1_f32 / 6_f32) * ROOT3;
+    const CROSS3: f32 = PHI / 3_f32 * ROOT3 - 1_f32 + ROOT2 / ROOT3;
+    (CROSS1 * CROSS1 + CROSS2 * CROSS2 + CROSS3 * CROSS3).sqrt()
+}
 
 #[wasm_bindgen]
 pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
@@ -119,8 +125,8 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::NexusPushLength => PHI,
         FabricFeature::ColumnPushLength => ROOT2,
         FabricFeature::TriangleLength => 1_f32,
-        FabricFeature::RingLength => RING,
-        FabricFeature::NexusCrossLength => CROSS,
+        FabricFeature::RingLength => ring(),
+        FabricFeature::NexusCrossLength => cross(),
         FabricFeature::ColumnCrossLength => 1_f32,
         FabricFeature::BowMidLength => 0.4_f32,
         FabricFeature::BowEndLength => 0.6_f32,

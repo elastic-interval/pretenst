@@ -142,7 +142,7 @@ impl Fabric {
                 }
             }
             Stage::Growing => {
-                //                self.set_altitude(0.0);
+                self.set_altitude(0.0);
             }
             Stage::Shaping => {
                 self.set_altitude(0.0);

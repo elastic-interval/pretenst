@@ -219,16 +219,16 @@ export class TensegrityBuilder {
                 averageLocation(faces.map(face => face.location())),
                 factorToPercent(averageScaleFactor(faces)),
             )
-            const closestTo = (face: IFace) => {
-                const faceLocation = face.location()
-                const opposingFaces = brick.faces.filter(({negative}) => negative !== face.negative)
-                return opposingFaces.reduce((a, b) => {
-                    const aa = a.location().distanceTo(faceLocation)
-                    const bb = b.location().distanceTo(faceLocation)
+            return faces.map(face => {
+                const opposing = brick.faces.filter(({negative, removed}) => !removed && negative !== face.negative)
+                const closestFace = opposing.reduce((a, b) => {
+                    const aa = a.location().distanceTo(face.location())
+                    const bb = b.location().distanceTo(face.location())
                     return aa < bb ? a : b
                 })
-            }
-            return faces.map(face => this.fabric.createFacePull(closestTo(face), face))
+                closestFace.removed = true
+                return this.fabric.createFacePull(closestFace, face)
+            })
         }
         switch (faces.length) {
             case 2:

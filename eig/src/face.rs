@@ -18,7 +18,7 @@ impl Face {
         }
     }
 
-    pub fn _joint<'a>(&self, joints: &'a Vec<Joint>, index: usize) -> &'a Joint {
+    pub fn joint<'a>(&self, joints: &'a Vec<Joint>, index: usize) -> &'a Joint {
         &joints[self.joints[index] as usize]
     }
 
