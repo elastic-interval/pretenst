@@ -17,7 +17,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(A2,B(3,b(2,S90),S80),C(3,c(2,S90),S80),D(3,d(2,S90),S80)):Tripod with Knees",
     "(A(8, S85, MA1), a(8, S85, MA1)):Bulge Ring",
     "(a1,b(3,S85,MA1),c(3,S85,MA1),d(3,S85,MA1)):Convergence Three",
-    "(a1,b(12,S85,MA1),c(12,S85,MA1),d(12,S85,MA1)):Convergence Twelve",
+    "(a1,b(10,S85,MA1),c(10,S85,MA1),d(10,S85,MA1)):Convergence Ten",
     "(B(7,S80,MA1),C(2,S120,MA0),D(7,S80,MA1)):Halo by Crane",
     "(B(5,S75),C(5,S75),D(5,S75)):Pretenst Lander",
     "(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0))))))):Zig Zag Loop",
