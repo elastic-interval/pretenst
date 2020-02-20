@@ -130,6 +130,11 @@ export class TensegrityFabric {
                 existing.index--
             }
         })
+        this.intervals.forEach(existing => {
+            if (existing.index > facePull.index) {
+                existing.index--
+            }
+        })
         facePull.removed = true
     }
 
