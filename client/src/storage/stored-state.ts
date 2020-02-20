@@ -17,11 +17,7 @@ export enum ControlTab {
     Strain = "Strain",
 }
 
-export function enumValues(e: object): number[] {
-    return Object.keys(e).filter(k => k.length > 1).map(k => e[k])
-}
-
-const VERSION = "2020-02-19"
+const VERSION = "2020-02-20"
 
 export interface IFeatureValue {
     numeric: number

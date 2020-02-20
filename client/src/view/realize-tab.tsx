@@ -12,7 +12,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { enumValues, IStoredState, transition } from "../storage/stored-state"
+import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
@@ -81,13 +81,13 @@ export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}
                 </div>
                 <div>Surface</div>
                 <ButtonGroup size="sm" className="w-100">
-                    {enumValues(SurfaceCharacter).map(value => (
+                    {Object.keys(SurfaceCharacter).map(key => (
                         <Button
-                            key={`SurfaceCharacter[${value}]`}
+                            key={`SurfaceCharacter[${key}]`}
                             disabled={disabled()}
-                            active={storedState.surfaceCharacter === value}
-                            onClick={() => changeState({surfaceCharacter: value})}
-                        >{SurfaceCharacter[value]}</Button>
+                            active={SurfaceCharacter[storedState.surfaceCharacter] === key}
+                            onClick={() => changeState({surfaceCharacter: SurfaceCharacter[key]})}
+                        >{key}</Button>
                     ))}
                 </ButtonGroup>
                 <FeaturePanel feature={floatFeatures[FabricFeature.Gravity]} disabled={disabled()}/>
