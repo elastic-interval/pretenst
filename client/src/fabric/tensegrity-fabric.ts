@@ -96,13 +96,6 @@ export class TensegrityFabric {
         this.facesToConnect = faces
     }
 
-    public brickMidpoint({joints}: IBrick, midpoint?: Vector3): Vector3 {
-        const accumulator = midpoint ? midpoint : new Vector3()
-        return joints
-            .reduce((sum, joint) => sum.add(joint.location()), accumulator)
-            .multiplyScalar(1.0 / joints.length)
-    }
-
     public createJointIndex(location: Vector3): number {
         return this.instance.fabric.create_joint(location.x, location.y, location.z)
     }
@@ -291,6 +284,9 @@ export class TensegrityFabric {
                 this.builder.createFacePulls(faces)
             }
             this.facePulls = this.builder.checkFacePulls(this.facePulls, facePull => this.removeFacePull(facePull))
+            if (this.facePulls.length === 0) {
+                this.builder.uprightOnSingleMarkedFace()
+            }
         }
         return lifePhase
     }

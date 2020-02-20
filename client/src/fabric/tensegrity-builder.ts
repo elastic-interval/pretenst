@@ -64,7 +64,7 @@ export class TensegrityBuilder {
         return brickB
     }
 
-    public turnUpright(): void {
+    public uprightOnSingleMarkedFace(): void {
         const markedFace = this.faceMarkLists.find(list => list.length === 1)
         if (!markedFace) {
             return
