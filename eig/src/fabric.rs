@@ -253,18 +253,8 @@ impl Fabric {
             interval.project_line_locations(view, &self.joints, &self.faces, extend);
             interval.project_line_features(view)
         }
-        for interval in self.intervals.iter() {
-            let unsafe_nuance = (interval.strain + world.max_strain) / (world.max_strain * 2_f32);
-            let nuance = if unsafe_nuance < 0_f32 {
-                0_f32
-            } else {
-                if unsafe_nuance >= 1_f32 {
-                    0.9999999_f32
-                } else {
-                    unsafe_nuance
-                }
-            };
-            view.strain_nuances.push(nuance);
+        for interval in self.intervals.iter_mut() {
+            interval.strain_nuance = interval.strain_nuance_in(world);
             let slack = interval.strain.abs() < world.slack_threshold;
             if !world.color_pushes && !world.color_pulls {
                 interval.project_role_color(view)
@@ -272,7 +262,7 @@ impl Fabric {
                 if slack {
                     Interval::project_slack_color(view)
                 } else {
-                    Interval::project_line_color_nuance(view, nuance)
+                    Interval::project_line_color_nuance(view, interval.strain_nuance)
                 }
             } else if interval.is_push() {
                 if world.color_pulls {
@@ -280,7 +270,7 @@ impl Fabric {
                 } else if slack {
                     Interval::project_slack_color(view)
                 } else {
-                    Interval::project_line_color_nuance(view, nuance)
+                    Interval::project_line_color_nuance(view, interval.strain_nuance)
                 }
             } else {
                 // pull
@@ -289,7 +279,7 @@ impl Fabric {
                 } else if slack {
                     Interval::project_slack_color(view)
                 } else {
-                    Interval::project_line_color_nuance(view, nuance)
+                    Interval::project_line_color_nuance(view, interval.strain_nuance)
                 }
             }
         }

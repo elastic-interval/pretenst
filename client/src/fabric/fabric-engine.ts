@@ -47,11 +47,26 @@ export function isPush(intervalRole: IntervalRole): boolean {
 }
 
 export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): IntervalRole | undefined {
-    const firstLengthFeature = FabricFeature.NexusPushLength
-    if (fabricFeature < firstLengthFeature || fabricFeature > FabricFeature.BowEndLength) {
-        return undefined
+    switch (fabricFeature) {
+        case FabricFeature.NexusPushLength:
+            return IntervalRole.NexusPush
+        case FabricFeature.ColumnPushLength:
+            return IntervalRole.ColumnPush
+        case FabricFeature.TriangleLength:
+            return IntervalRole.Triangle
+        case FabricFeature.RingLength:
+            return IntervalRole.Ring
+        case FabricFeature.NexusCrossLength:
+            return IntervalRole.NexusCross
+        case FabricFeature.ColumnCrossLength:
+            return IntervalRole.ColumnCross
+        case FabricFeature.BowMidLength:
+            return IntervalRole.BowMid
+        case FabricFeature.BowEndLength:
+            return IntervalRole.BowEnd
+        default:
+            return undefined
     }
-    return IntervalRole[IntervalRole[fabricFeature - firstLengthFeature]]
 }
 
 

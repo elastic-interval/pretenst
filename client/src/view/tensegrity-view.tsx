@@ -11,13 +11,19 @@ import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { INTERVAL_ROLES } from "../fabric/fabric-engine"
+import { fabricFeatureIntervalRole, INTERVAL_ROLES } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { IFace, IInterval } from "../fabric/tensegrity-types"
-import { getRecentTenscript, IStoredState, roleDefaultFromFeatures, transition } from "../storage/stored-state"
+import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
+import {
+    getRecentTenscript,
+    IFeatureValue,
+    IStoredState,
+    roleDefaultFromFeatures,
+    transition,
+} from "../storage/stored-state"
 
 import { ControlTabs } from "./control-tabs"
 import { FabricView } from "./fabric-view"
@@ -84,25 +90,26 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
         return () => subscription.unsubscribe()
     }, [tensegrityFabric])
 
-    // useEffect(() => { // todo: look when this happens
-    //     const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map((feature: FloatFeature) =>
-    //         feature.observable.subscribe((value: IFeatureValue) => {
-    //             if (!tensegrityFabric) {
-    //                 return
-    //             }
-    //             tensegrityFabric.instance.applyFeature(feature)
-    //             const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
-    //             if (intervalRole !== undefined) {
-    //                 tensegrityFabric.intervals
-    //                     .filter(interval => interval.intervalRole === intervalRole)
-    //                     .forEach(interval => {
-    //                         const scaledLength = feature.numeric * percentToFactor(interval.scale)
-    //                         tensegrityFabric.instance.fabric.change_rest_length(interval.index, scaledLength, 500)
-    //                     })
-    //             }
-    //         }))
-    //     return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
-    // }, [tensegrityFabric])
+    useEffect(() => { // todo: look when this happens
+        console.log("Subscribe!")
+        const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map((feature: FloatFeature) =>
+            feature.observable.subscribe((value: IFeatureValue) => {
+                if (!tensegrityFabric) {
+                    return
+                }
+                tensegrityFabric.instance.applyFeature(feature)
+                const intervalRole = fabricFeatureIntervalRole(feature.config.feature)
+                if (intervalRole !== undefined) {
+                    tensegrityFabric.intervals
+                        .filter(interval => interval.intervalRole === intervalRole)
+                        .forEach(interval => {
+                            const scaledLength = feature.numeric * percentToFactor(interval.scale)
+                            tensegrityFabric.instance.fabric.change_rest_length(interval.index, scaledLength, 500)
+                        })
+                }
+            }))
+        return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
+    }, [tensegrityFabric])
 
     function runTenscript(newTenscript: ITenscript): void {
         if (!mainInstance) {

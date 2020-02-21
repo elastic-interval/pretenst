@@ -22,6 +22,7 @@ pub(crate) struct Interval {
     pub(crate) max_countdown: f32,
     pub(crate) unit: Vector3<f32>,
     pub(crate) strain: f32,
+    pub(crate) strain_nuance: f32,
 }
 
 impl Interval {
@@ -47,6 +48,7 @@ impl Interval {
             max_countdown: countdown,
             unit: zero(),
             strain: 0_f32,
+            strain_nuance: 0_f32,
         }
     }
 
@@ -166,6 +168,17 @@ impl Interval {
             || self.interval_role == IntervalRole::ColumnPush
     }
 
+    pub fn strain_nuance_in(&self, world: &World) -> f32 {
+        let unsafe_nuance = (self.strain + world.max_strain) / (world.max_strain * 2_f32);
+        if unsafe_nuance < 0_f32 {
+            0_f32
+        } else if unsafe_nuance >= 1_f32 {
+            0.9999999_f32
+        } else {
+            unsafe_nuance
+        }
+    }
+
     fn ideal_length_now(&mut self, shape: u8) -> f32 {
         if self.countdown == 0_f32 {
             self.ideal_length
@@ -228,7 +241,7 @@ impl Interval {
         view.unit_vectors.push(self.unit.z);
         view.ideal_lengths.push(self.ideal_length);
         view.strains.push(self.strain);
-        //        view.strain_nuances.push(self.strain_nuance) todo
+        view.strain_nuances.push(self.strain_nuance);
         view.stiffnesses.push(self.stiffness);
         view.linear_densities.push(self.linear_density);
     }
@@ -247,7 +260,7 @@ impl Interval {
     }
 
     pub fn project_line_color_nuance(view: &mut View, nuance: f32) {
-        let rainbow_index = (nuance * RAINBOW.len() as f32 / 3.01).floor() as usize;
+        let rainbow_index = (nuance * RAINBOW.len() as f32).floor() as usize;
         Interval::project_line_color(view, RAINBOW[rainbow_index])
     }
 

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, FabricFeature, Stage, View, World } from "eig"
+import { Fabric, Stage, View, World } from "eig"
 import { Matrix4, Vector3 } from "three"
 
 import { FloatFeature } from "./fabric-features"
@@ -98,6 +98,8 @@ export class FabricInstance {
     public view: View
     public floatView: IFloatView
 
+    private featuresToApply: FloatFeature[] = []
+
     constructor(eig: typeof import("eig"), jointCount: number) {
         this.world = eig.World.new()
         this.fabric = eig.Fabric.new(jointCount)
@@ -108,6 +110,10 @@ export class FabricInstance {
     public iterate(requestedStage: Stage): Stage {
         const stage = this.fabric.iterate(requestedStage, this.world)
         this.fabric.render_to(this.view, this.world)
+        if (this.featuresToApply.length > 0) {
+            this.featuresToApply.forEach(feature => this.world.set_float_value(feature.fabricFeature, feature.numeric))
+            this.featuresToApply = []
+        }
         this.floatView = createFloatView(this.fabric, this.view)
         return stage
     }
@@ -123,11 +129,7 @@ export class FabricInstance {
     }
 
     public applyFeature(feature: FloatFeature): void {
-        this.world.set_float_value(feature.fabricFeature, feature.numeric)
-    }
-
-    public setFeatureValue(fabricFeature: FabricFeature, value: number): void {
-        this.world.set_float_value(fabricFeature, value)
+        this.featuresToApply.push(feature)
     }
 
     public jointLocation(jointIndex: number): Vector3 {

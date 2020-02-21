@@ -19,9 +19,9 @@ export const SELECTION_COLOR = "#91934f"
 export const SCALE_LINE_COLOR = "#cace02"
 
 const RAINBOW_GRADIENT = [
-    "#fc4d4d",
-    "#fb712a",
-    "#ed9400",
+    "#ff0012",
+    "#fb5c06",
+    "#e28a00",
     "#d4b500",
     "#afd200",
     "#80da52",
@@ -35,9 +35,9 @@ const RAINBOW_GRADIENT = [
 
 const RAINBOW_COLORS = RAINBOW_GRADIENT.map(colorString => new Color(colorString))
 
-// console.log("RAINBOW\n",`const RAINBOW: f32[] = [\n${RAINBOW_COLORS.map(color => (
-//     `${(color.r).toFixed(4)}, ${(color.g).toFixed(4)}, ${(color.b).toFixed(4)}`
-// )).join(",\n")}\n]`)
+// console.log("RAINBOW\n",`pub const RAINBOW: [[f32; 3]; ${RAINBOW_GRADIENT.length}] = [\n${RAINBOW_COLORS.map(color => (
+//     `[${(color.r).toFixed(4)}, ${(color.g).toFixed(4)}, ${(color.b).toFixed(4)}],`
+// )).join("\n")}\n];`)
 
 const lights = true
 
