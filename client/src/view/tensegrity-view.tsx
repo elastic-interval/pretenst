@@ -90,8 +90,7 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
         return () => subscription.unsubscribe()
     }, [tensegrityFabric])
 
-    useEffect(() => { // todo: look when this happens
-        console.log("Subscribe!")
+    useEffect(() => {
         const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map((feature: FloatFeature) =>
             feature.observable.subscribe((value: IFeatureValue) => {
                 if (!tensegrityFabric) {

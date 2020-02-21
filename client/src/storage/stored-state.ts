@@ -17,19 +17,19 @@ export enum ControlTab {
     Strain = "Strain",
 }
 
-const VERSION = "2020-02-20"
+const VERSION = "2020-02-21"
 
 export interface IFeatureValue {
     numeric: number
-    percent: number,
+    percent: number
 }
 
 export interface IStoredState {
-    version: string,
+    version: string
     nonce: number
     surfaceCharacter: SurfaceCharacter
     featureValues: Record<FabricFeature, IFeatureValue>
-    recentCode: Record<string, string>,
+    recentCode: Record<string, string>
     controlTab: ControlTab
     fullScreen: boolean
     ellipsoids: boolean
@@ -99,7 +99,7 @@ function initialStoredState(toConfig: (feature: FabricFeature) => IFeatureConfig
     return ({
         version: VERSION,
         nonce: 0,
-        surfaceCharacter: SurfaceCharacter.Bouncy,
+        surfaceCharacter: SurfaceCharacter.Frozen,
         featureValues: DEFAULT_FEATURE_VALUES,
         recentCode: {},
         controlTab: ControlTab.Grow,

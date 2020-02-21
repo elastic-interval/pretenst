@@ -85,7 +85,7 @@ export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}
                         <Button
                             key={`SurfaceCharacter[${key}]`}
                             disabled={disabled()}
-                            active={SurfaceCharacter[storedState.surfaceCharacter] === key}
+                            active={storedState.surfaceCharacter === SurfaceCharacter[key]}
                             onClick={() => changeState({surfaceCharacter: SurfaceCharacter[key]})}
                         >{key}</Button>
                     ))}
