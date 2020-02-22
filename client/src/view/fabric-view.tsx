@@ -11,26 +11,33 @@ import { BehaviorSubject } from "rxjs"
 import {
     BackSide,
     Color,
+    CylinderGeometry,
     Euler,
     MeshPhongMaterial,
     Object3D,
     PerspectiveCamera,
+    Quaternion,
     SphereGeometry,
     TextureLoader,
     Vector3,
 } from "three"
 
 import { doNotClick } from "../fabric/fabric-engine"
-import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
-import { FACE, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
+import { FACE, JOINT_MATERIAL, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { ShapeSelection } from "./shape-tab"
 import { SurfaceComponent } from "./surface-component"
 
 extend({Orbit})
+
+const SPHERE = new SphereGeometry(1, 32, 8)
+const PULL_CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
+const PUSH_CYLINDER_INNER = new CylinderGeometry(0.5, 0.5, 1, 6, 1, false)
+const PUSH_CYLINDER_OUTER = new CylinderGeometry(1, 1, 0.85, 12, 1, false)
 
 declare global {
     namespace JSX {
@@ -51,6 +58,7 @@ const SPACE_GEOMETRY = new SphereGeometry(SPACE_RADIUS, 25, 25)
 
 const TOWARDS_TARGET = 0.01
 const ALTITUDE = 4
+const Y_AXIS = new Vector3(0, 1, 0)
 
 export function FabricView({
                                fabric, fabricError, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
@@ -204,18 +212,60 @@ function IntervalMesh({fabric, interval, storedState}: {
         }
     }
     const linearDensity = fabric.instance.floatView.linearDensities[interval.index]
-    const radiusFactor = storedState.featureValues[interval.isPush ? FabricFeature.PushRadiusFactor : FabricFeature.PullRadiusFactor]
-    const visualStrain = storedState.featureValues[FabricFeature.VisualStrain]
-    const {scale, rotation} = fabric.orientInterval(interval, radiusFactor.numeric * linearDensity, visualStrain.numeric)
+    const pushRadius = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
+    const radius = pushRadius.numeric * linearDensity
+    const unit = fabric.instance.unitVector(interval.index)
+    const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
+    const length = interval.alpha.location().distanceTo(interval.omega.location())
+    const jointRadius = radius * storedState.featureValues[FabricFeature.JointRadius].numeric
+    const intervalScale = new Vector3(radius, length + (interval.isPush ? -jointRadius * 2 : 0), radius)
+    const jointScale = new Vector3(jointRadius, jointRadius, jointRadius)
     return (
-        <mesh
-            geometry={SPHERE}
-            position={interval.location()}
-            rotation={new Euler().setFromQuaternion(rotation)}
-            scale={scale}
-            material={material}
-            matrixWorldNeedsUpdate={true}
-        />
+        <>
+            {interval.isPush ? (
+                <>
+                    <mesh
+                        geometry={PUSH_CYLINDER_INNER}
+                        position={interval.location()}
+                        rotation={new Euler().setFromQuaternion(rotation)}
+                        scale={intervalScale}
+                        material={material}
+                        matrixWorldNeedsUpdate={true}
+                    />
+                    <mesh
+                        geometry={PUSH_CYLINDER_OUTER}
+                        position={interval.location()}
+                        rotation={new Euler().setFromQuaternion(rotation)}
+                        scale={intervalScale}
+                        material={material}
+                        matrixWorldNeedsUpdate={true}
+                    />
+                    <mesh
+                        geometry={SPHERE}
+                        position={interval.alpha.location()}
+                        material={JOINT_MATERIAL}
+                        scale={jointScale}
+                        matrixWorldNeedsUpdate={true}
+                    />
+                    <mesh
+                        geometry={SPHERE}
+                        position={interval.omega.location()}
+                        material={JOINT_MATERIAL}
+                        scale={jointScale}
+                        matrixWorldNeedsUpdate={true}
+                    />
+                </>
+            ) : (
+                <mesh
+                    geometry={PULL_CYLINDER}
+                    position={interval.location()}
+                    rotation={new Euler().setFromQuaternion(rotation)}
+                    scale={intervalScale}
+                    material={material}
+                    matrixWorldNeedsUpdate={true}
+                />
+            )}
+        </>
     )
 }
 

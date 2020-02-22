@@ -5,7 +5,7 @@
 
 import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
-import { BufferGeometry, Float32BufferAttribute, Quaternion, SphereGeometry, Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { IFabricOutput, IOutputInterval } from "../storage/download"
 
@@ -27,8 +27,6 @@ import {
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
-
-export const SPHERE = new SphereGeometry(1, 32, 8)
 
 const COUNTDOWN_MAX = 65535
 
@@ -296,17 +294,6 @@ export class TensegrityFabric {
             (interval.alpha.index === joint1.index && interval.omega.index === joint2.index) ||
             (interval.alpha.index === joint2.index && interval.omega.index === joint1.index)
         ))
-    }
-
-    public orientInterval(interval: IInterval, radiusFactor: number, visualStrain: number): { scale: Vector3, rotation: Quaternion } {
-        const Y_AXIS = new Vector3(0, 1, 0)
-        const unit = this.instance.unitVector(interval.index)
-        const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
-        const intervalLength = interval.alpha.location().distanceTo(interval.omega.location())
-        const strain = this.instance.floatView.strains[interval.index]
-        const half = intervalLength / 2
-        const scale = new Vector3(radiusFactor, half + half * (-strain) * visualStrain, radiusFactor)
-        return {scale, rotation}
     }
 
     public get output(): IFabricOutput {

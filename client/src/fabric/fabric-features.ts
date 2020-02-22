@@ -14,19 +14,8 @@ import { FABRIC_FEATURES } from "./fabric-engine"
 export interface IFeatureConfig {
     feature: FabricFeature
     name: string
-    defaultValue: number
     percents: number[]
 }
-
-const FEATURE_PERCENTS = [50, 75, 90, 100, 125, 150, 200]
-const PHI = (1 + Math.sqrt(5)) / 2
-const RT2 = Math.sqrt(2)
-const RT3 = Math.sqrt(3)
-const RING = Math.sqrt(2 - 2 * Math.sqrt(2 / 3))
-const T1 = 1 / 2
-const T2 = (PHI / 3 - 1 / 6) * RT3
-const T3 = PHI / 3 * RT3 - 1 + RT2 / RT3
-const CROSS = Math.sqrt(T1 * T1 + T2 * T2 + T3 * T3)
 
 export function featureConfig(feature: FabricFeature): IFeatureConfig {
     switch (feature) {
@@ -34,168 +23,150 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
             return {
                 feature,
                 name: "Gravity",
-                defaultValue: 0.0000001,
                 percents: [0, 10, 50, 100, 200, 500],
             }
         case FabricFeature.Drag:
             return {
                 feature,
                 name: "Drag",
-                defaultValue: 0.0001,
                 percents: [0, 10, 50, 100, 150, 200],
             }
         case FabricFeature.PretenstFactor:
             return {
                 feature,
                 name: "Pretenst factor",
-                defaultValue: 0.03,
                 percents: [0, 50, 90, 100, 125, 150, 200],
             }
         case FabricFeature.IterationsPerFrame:
             return {
                 feature,
                 name: "Iterations per frame",
-                defaultValue: 100,
                 percents: [10, 25, 50, 100, 200, 300, 500],
             }
         case FabricFeature.IntervalCountdown:
             return {
                 feature,
                 name: "Interval Countdown",
-                defaultValue: 1000,
                 percents: [10, 20, 30, 100, 150, 400, 1000],
             }
         case FabricFeature.RealizingCountdown:
             return {
                 feature,
                 name: "Slack to Pretenst countdown",
-                defaultValue: 30000,
-                percents: FEATURE_PERCENTS,
+                percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.SlackThreshold:
             return {
                 feature,
                 name: "Slack threshold",
-                defaultValue: 0.0001,
                 percents: [0.01, 0.1, 1, 10, 100, 1000],
             }
         case FabricFeature.ShapingPretenstFactor:
             return {
                 feature,
                 name: "Pretenst factor",
-                defaultValue: 0.1,
                 percents: [0, 1, 2, 3, 5, 10, 20, 50, 100],
             }
         case FabricFeature.ShapingStiffnessFactor:
             return {
                 feature,
                 name: "Stiffness factor",
-                defaultValue: 10,
                 percents: [100, 150, 200, 250, 300, 400, 500],
             }
         case FabricFeature.ShapingDrag:
             return {
                 feature,
                 name: "Drag",
-                defaultValue: 0.1,
                 percents: [0, 10, 50, 100, 200, 500],
             }
         case FabricFeature.MaxStrain:
             return {
                 feature,
                 name: "Maximum Strain",
-                defaultValue: 0.1,
                 percents: [1, 2, 3, 5, 8, 13, 21, 34, 55, 100],
             }
         case FabricFeature.VisualStrain:
             return {
                 feature,
                 name: "Visual Strain",
-                defaultValue: 1,
                 percents: [0, 10, 50, 100, 200, 300, 500, 1000, 10000, 100000],
             }
         case FabricFeature.PushOverPull:
             return {
                 feature,
                 name: "Compression/Tension",
-                defaultValue: 1,
                 percents: [10, 20, 30, 50, 100, 200, 300, 500, 1000],
             }
         case FabricFeature.NexusPushLength:
             return {
                 feature,
                 name: "Nexus Push",
-                defaultValue: PHI,
-                percents: FEATURE_PERCENTS,
+                percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.ColumnPushLength:
             return {
                 feature,
                 name: "Column Push",
-                defaultValue: RT2,
-                percents: FEATURE_PERCENTS,
+                percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.TriangleLength:
             return {
                 feature,
                 name: "Triangle",
-                defaultValue: 1,
-                percents: FEATURE_PERCENTS,
+                percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.RingLength:
             return {
                 feature,
                 name: "Ring",
-                defaultValue: RING,
                 percents: [10, 80, 90, 100, 110, 120, 130],
             }
         case FabricFeature.NexusCrossLength:
             return {
                 feature,
                 name: "Nexus Cross",
-                defaultValue: CROSS,
-                percents: FEATURE_PERCENTS,
+                percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.ColumnCrossLength:
             return {
                 feature,
                 name: "Column Cross",
-                defaultValue: 1,
-                percents: FEATURE_PERCENTS,
+                percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.BowMidLength:
             return {
                 feature,
                 name: "Bow Mid",
-                defaultValue: 0.4,
-                percents: FEATURE_PERCENTS,
+                percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.BowEndLength:
             return {
                 feature,
                 name: "Bow End",
-                defaultValue: 0.6,
-                percents: FEATURE_PERCENTS,
+                percents: [50, 75, 90, 100, 125, 150, 200],
             }
-        case FabricFeature.PushRadiusFactor:
+        case FabricFeature.PushRadius:
             return {
                 feature,
                 name: "Push Radius",
-                defaultValue: 4,
                 percents: [5, 25, 50, 100, 150, 200, 300],
             }
-        case FabricFeature.PullRadiusFactor:
+        case FabricFeature.PullRadius:
             return {
                 feature,
                 name: "Pull Radius",
-                defaultValue: 2,
+                percents: [5, 25, 50, 100, 150, 200, 300],
+            }
+        case FabricFeature.JointRadius:
+            return {
+                feature,
+                name: "Joint Radius",
                 percents: [5, 25, 50, 100, 150, 200, 300],
             }
         case FabricFeature.MaxStiffness:
             return {
                 feature,
                 name: "Maximum Stiffness",
-                defaultValue: 0.0005,
                 percents: [5, 25, 50, 100, 150, 200, 500],
             }
         default:
@@ -206,11 +177,11 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
 export class FloatFeature {
     private value$: BehaviorSubject<IFeatureValue>
 
-    constructor(public readonly config: IFeatureConfig, storedState$: BehaviorSubject<IStoredState>) {
+    constructor(public readonly config: IFeatureConfig, private defaultValue: number, storedState$: BehaviorSubject<IStoredState>) {
         const features = storedState$.getValue().featureValues
         const fromConfig = features[config.feature]
         const initialValue: IFeatureValue = fromConfig !== undefined ? fromConfig : {
-            numeric: config.defaultValue,
+            numeric: this.defaultValue,
             percent: 100,
         }
         this.value$ = new BehaviorSubject<IFeatureValue>(initialValue)
@@ -261,7 +232,7 @@ export class FloatFeature {
     }
 
     public set percent(percent: number) {
-        this.value$.next({numeric: this.config.defaultValue * percent / 100, percent})
+        this.value$.next({numeric: this.defaultValue * percent / 100, percent})
     }
 
     public get observable(): BehaviorSubject<IFeatureValue> {
@@ -273,8 +244,11 @@ export class FloatFeature {
     }
 }
 
-export function createFloatFeatures(storedState$: BehaviorSubject<IStoredState>): Record<FabricFeature, FloatFeature> {
+export function createFloatFeatures(storedState$: BehaviorSubject<IStoredState>, defaultValue: (feature: FabricFeature) => number):
+    Record<FabricFeature, FloatFeature> {
     const features = {} as Record<FabricFeature, FloatFeature>
-    FABRIC_FEATURES.map(featureConfig).forEach(config => features[config.feature] = new FloatFeature(config, storedState$))
+    FABRIC_FEATURES.map(featureConfig).forEach(config => {
+        features[config.feature] = new FloatFeature(config, defaultValue(config.feature), storedState$)
+    })
     return features
 }

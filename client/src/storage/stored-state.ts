@@ -17,7 +17,7 @@ export enum ControlTab {
     Strain = "Strain",
 }
 
-const VERSION = "2020-02-21"
+const VERSION = "2020-02-22"
 
 export interface IFeatureValue {
     numeric: number
@@ -89,10 +89,10 @@ export function transition(state: IStoredState, partial: Partial<IStoredState>):
     return {...state, nonce: state.nonce + 1, ...partial}
 }
 
-function initialStoredState(toConfig: (feature: FabricFeature) => IFeatureConfig): IStoredState {
+function initialStoredState(toConfig: (feature: FabricFeature) => IFeatureConfig, defaultValue: (feature: FabricFeature) => number): IStoredState {
     const DEFAULT_FEATURE_VALUES = FABRIC_FEATURES.map(toConfig)
         .reduce((record, config) => {
-            record[config.feature] = ({percent: 100, numeric: config.defaultValue})
+            record[config.feature] = ({percent: 100, numeric: defaultValue(config.feature)})
             return record
         }, {} as Record<FabricFeature, IFeatureValue>)
 
@@ -117,7 +117,7 @@ export function saveState(storedState: IStoredState): void {
     localStorage.setItem(STORED_STATE_KEY, JSON.stringify(storedState))
 }
 
-export function loadState(toConfig: (feature: FabricFeature) => IFeatureConfig): IStoredState {
+export function loadState(toConfig: (feature: FabricFeature) => IFeatureConfig, defaultValue: (feature: FabricFeature) => number): IStoredState {
     const item = localStorage.getItem(STORED_STATE_KEY)
     if (item) {
         const storedState = JSON.parse(item) as IStoredState
@@ -125,5 +125,5 @@ export function loadState(toConfig: (feature: FabricFeature) => IFeatureConfig):
             return storedState
         }
     }
-    return initialStoredState(toConfig)
+    return initialStoredState(toConfig, defaultValue)
 }

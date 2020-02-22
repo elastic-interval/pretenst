@@ -5,12 +5,8 @@
 
 import * as FileSaver from "file-saver"
 import JSZip from "jszip"
-import { Mesh, Object3D } from "three"
-import { OBJExporter } from "three/examples/jsm/exporters/OBJExporter"
 
-import { SPHERE, TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { IInterval } from "../fabric/tensegrity-types"
-import { FACE, roleMaterial } from "../view/materials"
+import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 
 export interface IOutputInterval {
     joints: string,
@@ -80,26 +76,3 @@ export function saveCSVZip(fabric: TensegrityFabric): void {
         FileSaver.saveAs(blob, `pretenst-${dateString}.zip`)
     })
 }
-
-function extractOBJBlob(fabric: TensegrityFabric, faces: boolean): Blob {
-    const object3d = new Object3D()
-    if (faces) {
-        object3d.add(new Mesh(fabric.facesGeometry, FACE))
-    } else {
-        object3d.add(...fabric.intervals.map((interval: IInterval) => {
-            const {scale, rotation} = fabric.orientInterval(interval, interval.isPush ? 1 : 0.1, 1)
-            const mesh = new Mesh(SPHERE, roleMaterial(interval.intervalRole))
-            mesh.position.copy(interval.location())
-            mesh.scale.copy(scale)
-            mesh.rotation.setFromQuaternion(rotation)
-            return mesh
-        }))
-        object3d.updateMatrixWorld(true)
-    }
-    return new Blob([new OBJExporter().parse(object3d)], {type: "text/plain"})
-}
-
-export function saveOBJFile(fabric: TensegrityFabric): void {
-    FileSaver.saveAs(extractOBJBlob(fabric, false), "pretenst.obj")
-}
-

@@ -17,6 +17,7 @@ import {
 
 export const SELECTION_COLOR = "#91934f"
 export const SCALE_LINE_COLOR = "#cace02"
+export const JOINT_COLOR = "#e83ada"
 
 const RAINBOW_GRADIENT = [
     "#ff0012",
@@ -64,6 +65,11 @@ export const FACE = new MeshPhongMaterial({
 
 export const SELECT_MATERIAL = new MeshPhongMaterial({
     color: new Color(SELECTION_COLOR),
+    lights: true,
+})
+
+export const JOINT_MATERIAL = new MeshPhongMaterial({
+    color: new Color(JOINT_COLOR),
     lights: true,
 })
 

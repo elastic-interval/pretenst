@@ -33,8 +33,9 @@ pub struct World {
     pub(crate) bow_mid_length: f32,
     pub(crate) bow_end_length: f32,
     pub(crate) push_over_pull: f32,
-    pub(crate) push_radius_factor: f32,
-    pub(crate) pull_radius_factor: f32,
+    pub(crate) push_radius: f32,
+    pub(crate) pull_radius: f32,
+    pub(crate) joint_radius: f32,
     pub(crate) max_stiffness: f32,
 }
 
@@ -67,8 +68,9 @@ impl World {
             bow_mid_length: default_fabric_feature(FabricFeature::BowMidLength),
             bow_end_length: default_fabric_feature(FabricFeature::BowEndLength),
             push_over_pull: default_fabric_feature(FabricFeature::PushOverPull),
-            push_radius_factor: default_fabric_feature(FabricFeature::PushRadiusFactor),
-            pull_radius_factor: default_fabric_feature(FabricFeature::PullRadiusFactor),
+            push_radius: default_fabric_feature(FabricFeature::PushRadius),
+            pull_radius: default_fabric_feature(FabricFeature::PullRadius),
+            joint_radius: default_fabric_feature(FabricFeature::JointRadius),
             max_stiffness: default_fabric_feature(FabricFeature::MaxStiffness),
         }
     }
@@ -109,8 +111,9 @@ impl World {
             FabricFeature::BowMidLength => &mut self.bow_mid_length,
             FabricFeature::BowEndLength => &mut self.bow_end_length,
             FabricFeature::PushOverPull => &mut self.push_over_pull,
-            FabricFeature::PushRadiusFactor => &mut self.push_radius_factor,
-            FabricFeature::PullRadiusFactor => &mut self.pull_radius_factor,
+            FabricFeature::PushRadius => &mut self.push_radius,
+            FabricFeature::PullRadius => &mut self.pull_radius,
+            FabricFeature::JointRadius => &mut self.joint_radius,
             FabricFeature::MaxStiffness => &mut self.max_stiffness,
         };
         *value_pointer = value;

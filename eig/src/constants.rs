@@ -86,8 +86,9 @@ pub enum FabricFeature {
     BowMidLength,
     BowEndLength,
     PushOverPull,
-    PushRadiusFactor,
-    PullRadiusFactor,
+    PushRadius,
+    PullRadius,
+    JointRadius,
     MaxStiffness,
 }
 
@@ -131,8 +132,9 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::BowMidLength => 0.4_f32,
         FabricFeature::BowEndLength => 0.6_f32,
         FabricFeature::PushOverPull => 1_f32,
-        FabricFeature::PushRadiusFactor => 4_f32,
-        FabricFeature::PullRadiusFactor => 2_f32,
+        FabricFeature::PushRadius => 2_f32,
+        FabricFeature::PullRadius => 0.25_f32,
+        FabricFeature::JointRadius => 1.5_f32,
         FabricFeature::MaxStiffness => 0.0005_f32,
     }
 }

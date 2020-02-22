@@ -115,9 +115,11 @@ export function ViewTab(
                         </Button>
                     ))}
                 </ButtonGroup>
-                <FeaturePanel key="pushrad" feature={floatFeatures[FabricFeature.PushRadiusFactor]}
+                <FeaturePanel key="pushrad" feature={floatFeatures[FabricFeature.PushRadius]}
                               disabled={!ellipsoids}/>
-                <FeaturePanel key="pullrad" feature={floatFeatures[FabricFeature.PullRadiusFactor]}
+                <FeaturePanel key="pullrad" feature={floatFeatures[FabricFeature.PullRadius]}
+                              disabled={!ellipsoids}/>
+                <FeaturePanel key="jointrad" feature={floatFeatures[FabricFeature.JointRadius]}
                               disabled={!ellipsoids}/>
             </Grouping>
             <Grouping>
