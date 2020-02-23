@@ -168,7 +168,7 @@ impl Fabric {
         let after_iterations: f32 = self.realizing_countdown - world.iterations_per_frame;
         if after_iterations > 0_f32 {
             self.realizing_countdown = after_iterations;
-            Stage::Busy
+            self.stage
         } else {
             self.realizing_countdown = 0_f32;
             if self.stage == Stage::Realizing {

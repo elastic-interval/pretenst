@@ -269,23 +269,22 @@ export class TensegrityFabric {
             }
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
+                this.builder.uprightOnSingleMarkedFace()
+                this.instance.refreshFloatView()
                 if (lifePhase === Stage.Growing) {
                     const afterGrowing = this.instance.fabric.finish_growing()
                     this.facePulls = this.builder.initialFacePulls
                     return afterGrowing
                 }
             }
-        } else {
-            const faces = this.facesToConnect
-            if (faces) {
-                this.facesToConnect = undefined
-                this.builder.createFacePulls(faces)
-            }
-            this.facePulls = this.builder.checkFacePulls(this.facePulls, facePull => this.removeFacePull(facePull))
-            if (this.facePulls.length === 0) {
-                this.builder.uprightOnSingleMarkedFace()
-            }
+            return Stage.Growing
         }
+        const faces = this.facesToConnect
+        if (faces) {
+            this.facesToConnect = undefined
+            this.builder.createFacePulls(faces)
+        }
+        this.facePulls = this.builder.checkFacePulls(this.facePulls, facePull => this.removeFacePull(facePull))
         return lifePhase
     }
 
