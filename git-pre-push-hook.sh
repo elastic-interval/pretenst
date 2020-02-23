@@ -2,9 +2,11 @@
 
 echo "Checking whether to deploy to production.."
 
-MASTER=$(cat - | grep refs/heads/master)
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
 
-if [ -n "$MASTER" ]; then
+echo "Branch is $BRANCH"
+
+if [ $BRANCH == "master" ]; then
 	echo "Branch is master, deploying to pretenst.com"
 else
 	echo "Not on master, not deploying"
