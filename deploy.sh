@@ -3,7 +3,7 @@
 set -x
 
 cd client || exit
-yarn build:fabric-engine
+yarn build:eig
 yarn build
 
 cd ../../pretenst-com || exit
