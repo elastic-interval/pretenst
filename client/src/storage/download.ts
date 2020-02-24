@@ -18,7 +18,8 @@ function dateString(): string {
 }
 
 export interface IJointCable {
-    index: number
+    interval: number
+    joint: number
     separation: number
     rotation: number
 }
@@ -32,6 +33,7 @@ export interface IOutputJoint {
 }
 
 export interface IOutputInterval {
+    index: number
     joints: number[]
     type: string
     strain: number
@@ -92,9 +94,7 @@ export function saveCSVZip(fabric: TensegrityFabric): void {
 export function saveJSONZip(fabric: TensegrityFabric): void {
     const output = fabric.output
     const zip = new JSZip()
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const fixedDigits = (key: string, val: any) => val.toFixed ? Number(val.toFixed(5)) : val
-    zip.file(`pretenst-${dateString()}.json`, JSON.stringify(output, fixedDigits, 2))
+    zip.file(`pretenst-${dateString()}.json`, JSON.stringify(output, undefined, 2))
     zip.generateAsync({type: "blob", mimeType: "application/zip"}).then(blob => {
         FileSaver.saveAs(blob, `pretenst-${dateString()}.zip`)
     })

@@ -329,8 +329,11 @@ export class TensegrityFabric {
                 const pushToInterval = new Quaternion().setFromUnitVectors(pushUnit, intervalPerp)
                 const separation = Math.acos(pushUnit.dot(intervalUnit)) * 180 / Math.PI
                 const rotation = pushToNear.angleTo(pushToInterval) * (nearCross.dot(intervalCross) > 0 ? 180 : -180) / Math.PI
-                const index = otherJoint(jointInterval, joint).index
-                return <IJointCable>{index, separation, rotation}
+                return <IJointCable>{
+                    interval: jointInterval.index,
+                    joint: otherJoint(jointInterval, joint).index,
+                    separation, rotation,
+                }
             })
         }
         return {
@@ -343,24 +346,16 @@ export class TensegrityFabric {
                     jointCables: gatherJointCables(joint),
                 }
             }),
-            intervals: this.intervals.map(interval => {
-                const joints = [interval.alpha.index, interval.omega.index]
-                const strain = strains[interval.index]
-                const type = interval.isPush ? "Push" : "Pull"
-                const stiffness = stiffnesses[interval.index]
-                const linearDensity = linearDensities[interval.index]
-                const role = interval.intervalRole.toFixed(0)
-                const length = idealLengths[interval.index]
-                const isPush = isPushInterval(interval.intervalRole)
-                return <IOutputInterval>{joints, type, strain, stiffness, linearDensity, isPush, role, length}
-            }).sort((a, b) => {
-                if (a.isPush && !b.isPush) {
-                    return -1
-                }
-                if (!a.isPush && b.isPush) {
-                    return 1
-                }
-                return a.stiffness - b.stiffness
+            intervals: this.intervals.map(interval => <IOutputInterval>{
+                index: interval.index,
+                joints: [interval.alpha.index, interval.omega.index],
+                type: interval.isPush ? "Push" : "Pull",
+                strain: strains[interval.index],
+                stiffness: stiffnesses[interval.index],
+                linearDensity: linearDensities[interval.index],
+                isPush: isPushInterval(interval.intervalRole),
+                role: interval.intervalRole.toFixed(0),
+                length: idealLengths[interval.index],
             }),
         }
     }
