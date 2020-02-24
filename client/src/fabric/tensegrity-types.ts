@@ -46,6 +46,16 @@ export interface IInterval {
     location: () => Vector3
 }
 
+export function otherJoint(interval: IInterval, joint: IJoint):IJoint {
+    if (interval.alpha.index === joint.index) {
+        return interval.omega
+    }
+    if (interval.omega.index === joint.index) {
+        return  interval.alpha
+    }
+    throw new Error("Other of what?")
+}
+
 export interface IFacePull {
     index: number
     alpha: IFace

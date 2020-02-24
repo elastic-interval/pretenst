@@ -42,7 +42,7 @@ export const INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
     .filter(role => role.length > 1 && IntervalRole[role] !== IntervalRole.FacePull)
     .map(role => IntervalRole[role])
 
-export function isPush(intervalRole: IntervalRole): boolean {
+export function isPushInterval(intervalRole: IntervalRole): boolean {
     return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush
 }
 

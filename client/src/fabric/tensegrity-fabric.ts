@@ -5,11 +5,11 @@
 
 import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Quaternion, Vector3 } from "three"
 
-import { IFabricOutput, IOutputInterval } from "../storage/download"
+import { IFabricOutput, IJointCable, IOutputInterval, IOutputJoint } from "../storage/download"
 
-import { isPush } from "./fabric-engine"
+import { isPushInterval } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life, stiffnessToLinearDensity } from "./life"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
@@ -22,6 +22,7 @@ import {
     IInterval,
     IJoint,
     IPercent,
+    otherJoint,
     percentOrHundred,
     percentToFactor,
     Triangle,
@@ -146,7 +147,7 @@ export class TensegrityFabric {
             alpha,
             omega,
             removed: false,
-            isPush: isPush(intervalRole),
+            isPush: isPushInterval(intervalRole),
             location: () => new Vector3().addVectors(alpha.location(), omega.location()).multiplyScalar(0.5),
         }
         this.intervals.push(interval)
@@ -296,44 +297,62 @@ export class TensegrityFabric {
     }
 
     public get output(): IFabricOutput {
-        const numberToString = (n: number) => n.toFixed(5).replace(/[.]/, ",")
         const idealLengths = this.instance.floatView.idealLengths
         const strains = this.instance.floatView.strains
         const stiffnesses = this.instance.floatView.stiffnesses
         const linearDensities = this.instance.floatView.linearDensities
+        const gatherJointCables = (joint: IJoint) => {
+            const jointIntervals = this.intervals.filter(interval => interval.alpha.index === joint.index || interval.omega.index === joint.index)
+            const push = jointIntervals.find(interval => interval.isPush)
+            if (!push) {
+                throw new Error("No push on joint")
+            }
+            const unitFromHere = (interval: IInterval) => new Vector3()
+                .subVectors(otherJoint(interval, joint).location(), joint.location()).normalize()
+            const pushUnit = unitFromHere(push)
+            jointIntervals.sort((a: IInterval, b: IInterval) => {
+                const pushToA = unitFromHere(a).dot(pushUnit)
+                const pushToB = unitFromHere(b).dot(pushUnit)
+                return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
+            })
+            jointIntervals.shift()
+            const nearUnit = unitFromHere(jointIntervals[1])
+            const projectNearOnPush = new Vector3().addScaledVector(pushUnit, nearUnit.dot(pushUnit))
+            const nearPerp = new Vector3().subVectors(nearUnit, projectNearOnPush).normalize()
+            const pushToNear = new Quaternion().setFromUnitVectors(pushUnit, nearPerp)
+            const nearCross = new Vector3().crossVectors(pushUnit, nearPerp)
+            return jointIntervals.map(jointInterval => {
+                const intervalUnit = unitFromHere(jointInterval)
+                const projectIntervalOnPush = new Vector3().addScaledVector(pushUnit, intervalUnit.dot(pushUnit))
+                const intervalPerp = new Vector3().subVectors(intervalUnit, projectIntervalOnPush).normalize()
+                const intervalCross = new Vector3().crossVectors(pushUnit, intervalUnit)
+                const pushToInterval = new Quaternion().setFromUnitVectors(pushUnit, intervalPerp)
+                const separation = Math.acos(pushUnit.dot(intervalUnit)) * 180 / Math.PI
+                const rotation = pushToNear.angleTo(pushToInterval) * (nearCross.dot(intervalCross) > 0 ? 180 : -180) / Math.PI
+                const index = otherJoint(jointInterval, joint).index
+                return <IJointCable>{index, separation, rotation}
+            })
+        }
         return {
             name: this.tenscript.name,
             joints: this.joints.map(joint => {
                 const vector = joint.location()
-                return {
-                    index: (joint.index + 1).toString(),
-                    x: numberToString(vector.x),
-                    y: numberToString(vector.z),
-                    z: numberToString(vector.y),
+                return <IOutputJoint>{
+                    index: joint.index,
+                    x: vector.x, y: vector.z, z: vector.y,
+                    jointCables: gatherJointCables(joint),
                 }
             }),
             intervals: this.intervals.map(interval => {
-                const joints = `${interval.alpha.index + 1},${interval.omega.index + 1}`
-                const strainString = numberToString(strains[interval.index])
+                const joints = [interval.alpha.index, interval.omega.index]
+                const strain = strains[interval.index]
                 const type = interval.isPush ? "Push" : "Pull"
                 const stiffness = stiffnesses[interval.index]
-                const stiffnessString = numberToString(stiffness)
                 const linearDensity = linearDensities[interval.index]
-                const linearDensityString = numberToString(linearDensity)
                 const role = interval.intervalRole.toFixed(0)
                 const length = idealLengths[interval.index]
-                return <IOutputInterval>{
-                    joints,
-                    type,
-                    strainString,
-                    stiffness,
-                    stiffnessString,
-                    linearDensity,
-                    linearDensityString,
-                    isPush: isPush(interval.intervalRole),
-                    role,
-                    length,
-                }
+                const isPush = isPushInterval(interval.intervalRole)
+                return <IOutputInterval>{joints, type, strain, stiffness, linearDensity, isPush, role, length}
             }).sort((a, b) => {
                 if (a.isPush && !b.isPush) {
                     return -1

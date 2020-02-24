@@ -12,7 +12,7 @@ import {
     FaClock,
     FaCompressArrowsAlt,
     FaDownload,
-    FaExpandArrowsAlt, FaEye,
+    FaExpandArrowsAlt, FaEye, FaFile,
     FaFileCsv,
     FaFistRaised,
     FaFutbol,
@@ -26,7 +26,7 @@ import { BehaviorSubject } from "rxjs"
 import { INTERVAL_ROLES, intervalRoleName } from "../fabric/fabric-engine"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
-import { saveCSVZip } from "../storage/download"
+import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -147,9 +147,12 @@ export function ViewTab(
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaRunning/> Take</h6>
-                <ButtonGroup vertical={true} className="w-100">
+                <ButtonGroup vertical={false} className="w-100">
                     <Button onClick={() => saveCSVZip(fabric)}>
                         <FaDownload/> Download CSV <FaFileCsv/>
+                    </Button>
+                    <Button onClick={() => saveJSONZip(fabric)}>
+                        <FaDownload/> Download JSON <FaFile/>
                     </Button>
                 </ButtonGroup>
             </Grouping>
