@@ -109,7 +109,7 @@ export class FabricInstance {
 
     public iterate(requestedStage: Stage): Stage {
         const stage = this.fabric.iterate(requestedStage, this.world)
-        this.fabric.render_to(this.view, this.world)
+        this.view.render(this.fabric, this.world)
         if (this.featuresToApply.length > 0) {
             this.featuresToApply.forEach(feature => this.world.set_float_value(feature.fabricFeature, feature.numeric))
             this.featuresToApply = []
@@ -119,7 +119,7 @@ export class FabricInstance {
     }
 
     public refreshFloatView(): void {
-        this.fabric.render_to(this.view, this.world)
+        this.view.render(this.fabric, this.world)
         this.floatView = createFloatView(this.fabric, this.view)
     }
 

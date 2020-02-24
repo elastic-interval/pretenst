@@ -4,6 +4,8 @@
  */
 
 use crate::fabric::Fabric;
+use crate::interval::Interval;
+use crate::world::World;
 use nalgebra::*;
 use wasm_bindgen::prelude::*;
 
@@ -49,21 +51,49 @@ impl View {
         }
     }
 
-    pub fn clear(&mut self) {
-        self.midpoint.coords.fill(0.0);
-        self.joint_locations.clear();
-        self.joint_velocities.clear();
-        self.line_locations.clear();
-        self.line_colors.clear();
-        self.face_midpoints.clear();
-        self.face_normals.clear();
-        self.face_vertex_locations.clear();
-        self.unit_vectors.clear();
-        self.ideal_lengths.clear();
-        self.strains.clear();
-        self.strain_nuances.clear();
-        self.stiffnesses.clear();
-        self.linear_densities.clear();
+    pub fn render(&mut self, fabric: &Fabric, world: &World) {
+        self.clear();
+        for joint in fabric.joints.iter() {
+            joint.project(self);
+        }
+        self.midpoint /= fabric.joints.len() as f32;
+        for interval in fabric.intervals.iter() {
+            let extend = interval.strain / -2_f32 * world.visual_strain;
+            interval.project_line_locations(self, &fabric.joints, &fabric.faces, extend);
+            interval.project_line_features(self)
+        }
+        for interval in fabric.intervals.iter() {
+            let slack = interval.strain.abs() < world.slack_threshold;
+            if !world.color_pushes && !world.color_pulls {
+                interval.project_role_color(self)
+            } else if world.color_pushes && world.color_pulls {
+                if slack {
+                    Interval::project_slack_color(self)
+                } else {
+                    Interval::project_line_color_nuance(self, interval.strain_nuance)
+                }
+            } else if interval.is_push() {
+                if world.color_pulls {
+                    Interval::project_attenuated_color(self)
+                } else if slack {
+                    Interval::project_slack_color(self)
+                } else {
+                    Interval::project_line_color_nuance(self, interval.strain_nuance)
+                }
+            } else {
+                // pull
+                if world.color_pushes {
+                    Interval::project_attenuated_color(self)
+                } else if slack {
+                    Interval::project_slack_color(self)
+                } else {
+                    Interval::project_line_color_nuance(self, interval.strain_nuance)
+                }
+            }
+        }
+        for face in fabric.faces.iter() {
+            face.project_features(&fabric.joints, self)
+        }
     }
 
     pub fn midpoint_x(&self) -> f32 {
@@ -128,5 +158,22 @@ impl View {
 
     pub fn copy_linear_densities_to(&self, linear_densities: &mut [f32]) {
         linear_densities.copy_from_slice(&self.linear_densities);
+    }
+
+    fn clear(&mut self) {
+        self.midpoint.coords.fill(0.0);
+        self.joint_locations.clear();
+        self.joint_velocities.clear();
+        self.line_locations.clear();
+        self.line_colors.clear();
+        self.face_midpoints.clear();
+        self.face_normals.clear();
+        self.face_vertex_locations.clear();
+        self.unit_vectors.clear();
+        self.ideal_lengths.clear();
+        self.strains.clear();
+        self.strain_nuances.clear();
+        self.stiffnesses.clear();
+        self.linear_densities.clear();
     }
 }

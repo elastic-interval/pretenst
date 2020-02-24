@@ -9,7 +9,6 @@ use crate::constants::*;
 use crate::face::Face;
 use crate::interval::Interval;
 use crate::joint::Joint;
-use crate::view::View;
 use crate::world::World;
 use nalgebra::*;
 
@@ -134,6 +133,9 @@ impl Fabric {
         for _tick in 0..(world.iterations_per_frame as usize) {
             self.tick(&world, realizing_nuance);
         }
+        for interval in self.intervals.iter_mut() {
+            interval.strain_nuance = interval.strain_nuance_in(world);
+        }
         self.age += world.iterations_per_frame as u32;
         match self.stage {
             Stage::Busy => {
@@ -239,52 +241,6 @@ impl Fabric {
         let matrix: Matrix4<f32> = Matrix4::from_vec(m.to_vec());
         for joint in &mut self.joints {
             *joint.location = *matrix.transform_point(&joint.location);
-        }
-    }
-
-    pub fn render_to(&mut self, view: &mut View, world: &World) {
-        view.clear();
-        for joint in self.joints.iter() {
-            joint.project(view);
-        }
-        view.midpoint /= self.joints.len() as f32;
-        for interval in self.intervals.iter() {
-            let extend = interval.strain / -2_f32 * world.visual_strain;
-            interval.project_line_locations(view, &self.joints, &self.faces, extend);
-            interval.project_line_features(view)
-        }
-        for interval in self.intervals.iter_mut() {
-            interval.strain_nuance = interval.strain_nuance_in(world);
-            let slack = interval.strain.abs() < world.slack_threshold;
-            if !world.color_pushes && !world.color_pulls {
-                interval.project_role_color(view)
-            } else if world.color_pushes && world.color_pulls {
-                if slack {
-                    Interval::project_slack_color(view)
-                } else {
-                    Interval::project_line_color_nuance(view, interval.strain_nuance)
-                }
-            } else if interval.is_push() {
-                if world.color_pulls {
-                    Interval::project_attenuated_color(view)
-                } else if slack {
-                    Interval::project_slack_color(view)
-                } else {
-                    Interval::project_line_color_nuance(view, interval.strain_nuance)
-                }
-            } else {
-                // pull
-                if world.color_pushes {
-                    Interval::project_attenuated_color(view)
-                } else if slack {
-                    Interval::project_slack_color(view)
-                } else {
-                    Interval::project_line_color_nuance(view, interval.strain_nuance)
-                }
-            }
-        }
-        for face in self.faces.iter() {
-            face.project_features(&self.joints, view)
         }
     }
 
