@@ -5,9 +5,9 @@
 
 import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
-import { BufferGeometry, Float32BufferAttribute, Quaternion, Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import { IFabricOutput, IJointCable, IOutputInterval, IOutputJoint } from "../storage/download"
+import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
 import { isPushInterval } from "./fabric-engine"
 import { FabricInstance } from "./fabric-instance"
@@ -16,13 +16,13 @@ import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
     factorToPercent,
+    gatherJointCables,
     IBrick,
     IFace,
     IFacePull,
     IInterval,
     IJoint,
     IPercent,
-    otherJoint,
     percentOrHundred,
     percentToFactor,
     Triangle,
@@ -301,41 +301,6 @@ export class TensegrityFabric {
         const strains = this.instance.floatView.strains
         const stiffnesses = this.instance.floatView.stiffnesses
         const linearDensities = this.instance.floatView.linearDensities
-        const gatherJointCables = (joint: IJoint) => {
-            const jointIntervals = this.intervals.filter(interval => interval.alpha.index === joint.index || interval.omega.index === joint.index)
-            const push = jointIntervals.find(interval => interval.isPush)
-            if (!push) {
-                throw new Error("No push on joint")
-            }
-            const unitFromHere = (interval: IInterval) => new Vector3()
-                .subVectors(otherJoint(interval, joint).location(), joint.location()).normalize()
-            const pushUnit = unitFromHere(push)
-            jointIntervals.sort((a: IInterval, b: IInterval) => {
-                const pushToA = unitFromHere(a).dot(pushUnit)
-                const pushToB = unitFromHere(b).dot(pushUnit)
-                return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
-            })
-            jointIntervals.shift()
-            const nearUnit = unitFromHere(jointIntervals[0])
-            const projectNearOnPush = new Vector3().addScaledVector(pushUnit, nearUnit.dot(pushUnit))
-            const nearPerp = new Vector3().subVectors(nearUnit, projectNearOnPush).normalize()
-            const pushToNear = new Quaternion().setFromUnitVectors(pushUnit, nearPerp)
-            const nearCross = new Vector3().crossVectors(pushUnit, nearPerp)
-            return jointIntervals.map(jointInterval => {
-                const intervalUnit = unitFromHere(jointInterval)
-                const projectIntervalOnPush = new Vector3().addScaledVector(pushUnit, intervalUnit.dot(pushUnit))
-                const intervalPerp = new Vector3().subVectors(intervalUnit, projectIntervalOnPush).normalize()
-                const intervalCross = new Vector3().crossVectors(pushUnit, intervalUnit)
-                const pushToInterval = new Quaternion().setFromUnitVectors(pushUnit, intervalPerp)
-                const separation = Math.acos(pushUnit.dot(intervalUnit)) * 180 / Math.PI
-                const rotation = pushToNear.angleTo(pushToInterval) * (nearCross.dot(intervalCross) > 0 ? 180 : -180) / Math.PI
-                return <IJointCable>{
-                    interval: jointInterval.index,
-                    joint: otherJoint(jointInterval, joint).index,
-                    separation, rotation,
-                }
-            })
-        }
         return {
             name: this.tenscript.name,
             joints: this.joints.map(joint => {
@@ -343,7 +308,7 @@ export class TensegrityFabric {
                 return <IOutputJoint>{
                     index: joint.index,
                     x: vector.x, y: vector.z, z: vector.y,
-                    jointCables: gatherJointCables(joint),
+                    jointCables: gatherJointCables(joint, this.intervals),
                 }
             }),
             intervals: this.intervals.map(interval => <IOutputInterval>{

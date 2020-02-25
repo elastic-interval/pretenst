@@ -4,7 +4,7 @@
  */
 
 import { IntervalRole } from "eig"
-import { Matrix4, Vector3 } from "three"
+import { Matrix4, Quaternion, Vector3 } from "three"
 
 export const PHI = 1.61803398875
 export const DEFAULT_PUSH_LENGTH = Math.sqrt(2)
@@ -46,6 +46,13 @@ export interface IInterval {
     location: () => Vector3
 }
 
+export interface IJointCable {
+    interval: number
+    joint: number
+    separation: number
+    rotation: number
+}
+
 export function otherJoint(interval: IInterval, joint: IJoint):IJoint {
     if (interval.alpha.index === joint.index) {
         return interval.omega
@@ -54,6 +61,42 @@ export function otherJoint(interval: IInterval, joint: IJoint):IJoint {
         return  interval.alpha
     }
     throw new Error("Other of what?")
+}
+
+export function gatherJointCables(joint: IJoint, intervals: IInterval[]): IJointCable[] {
+    const jointIntervals = intervals.filter(interval => interval.alpha.index === joint.index || interval.omega.index === joint.index)
+    const push = jointIntervals.find(interval => interval.isPush)
+    if (!push) {
+        throw new Error("No push on joint")
+    }
+    const unitFromHere = (interval: IInterval) => new Vector3()
+        .subVectors(otherJoint(interval, joint).location(), joint.location()).normalize()
+    const pushUnit = unitFromHere(push)
+    jointIntervals.sort((a: IInterval, b: IInterval) => {
+        const pushToA = unitFromHere(a).dot(pushUnit)
+        const pushToB = unitFromHere(b).dot(pushUnit)
+        return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
+    })
+    jointIntervals.shift()
+    const nearUnit = unitFromHere(jointIntervals[0])
+    const projectNearOnPush = new Vector3().addScaledVector(pushUnit, nearUnit.dot(pushUnit))
+    const nearPerp = new Vector3().subVectors(nearUnit, projectNearOnPush).normalize()
+    const pushToNear = new Quaternion().setFromUnitVectors(pushUnit, nearPerp)
+    const nearCross = new Vector3().crossVectors(pushUnit, nearPerp)
+    return jointIntervals.map(jointInterval => {
+        const intervalUnit = unitFromHere(jointInterval)
+        const projectIntervalOnPush = new Vector3().addScaledVector(pushUnit, intervalUnit.dot(pushUnit))
+        const intervalPerp = new Vector3().subVectors(intervalUnit, projectIntervalOnPush).normalize()
+        const intervalCross = new Vector3().crossVectors(pushUnit, intervalUnit)
+        const pushToInterval = new Quaternion().setFromUnitVectors(pushUnit, intervalPerp)
+        const separation = Math.acos(pushUnit.dot(intervalUnit)) * 180 / Math.PI
+        const rotation = pushToNear.angleTo(pushToInterval) * (nearCross.dot(intervalCross) > 0 ? 180 : -180) / Math.PI
+        return <IJointCable>{
+            interval: jointInterval.index,
+            joint: otherJoint(jointInterval, joint).index,
+            separation, rotation,
+        }
+    })
 }
 
 export interface IFacePull {
