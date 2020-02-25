@@ -200,7 +200,7 @@ export function ShapeTab(
                     </Button>
                     <Button
                         disabled={disabled()}
-                        onClick={() => fabric.builder.optimize()}>
+                        onClick={() => fabric.builder.replaceCrossedNexusCrosses()}>
                         <FaMagic/><span> Bows</span>
                     </Button>
                 </ButtonGroup>

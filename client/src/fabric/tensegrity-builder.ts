@@ -93,7 +93,7 @@ export class TensegrityBuilder {
         })
     }
 
-    public optimize(): void {
+    public replaceCrossedNexusCrosses(): void {
         const fabric = this.fabric
         const pairs: IPair[] = []
         const findPush = (jointIndex: number): IPush => {
