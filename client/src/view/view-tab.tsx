@@ -23,7 +23,7 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { INTERVAL_ROLES, intervalRoleName } from "../fabric/fabric-engine"
+import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { saveCSVZip, saveJSONZip } from "../storage/download"
@@ -98,7 +98,7 @@ export function ViewTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaCamera/> Snapshot</h6>
                 <ButtonGroup size="sm">
-                    {INTERVAL_ROLES.map(intervalRole => (
+                    {ADJUSTABLE_INTERVAL_ROLES.map(intervalRole => (
                         <Button
                             color={visibleRoles.indexOf(intervalRole) < 0 ? "secondary" : "success"}
                             key={`viz${intervalRole}`}

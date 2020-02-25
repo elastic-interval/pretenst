@@ -22,7 +22,7 @@ import {
     Vector3,
 } from "three"
 
-import { doNotClick } from "../fabric/fabric-engine"
+import { doNotClick } from "../fabric/eig-util"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"

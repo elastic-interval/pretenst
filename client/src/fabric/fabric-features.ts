@@ -9,7 +9,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { IFeatureValue, IStoredState, transition } from "../storage/stored-state"
 
-import { FABRIC_FEATURES } from "./fabric-engine"
+import { FABRIC_FEATURES } from "./eig-util"
 
 export interface IFeatureConfig {
     feature: FabricFeature

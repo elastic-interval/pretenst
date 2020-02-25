@@ -24,9 +24,9 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import {
-    INTERVAL_ROLES,
+    ADJUSTABLE_INTERVAL_ROLES,
     intervalRoleName,
-} from "../fabric/fabric-engine"
+} from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
@@ -227,7 +227,7 @@ export function ShapeTab(
                 <h6 className="w-100 text-center"><FaList/> Default Lengths</h6>
                 <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={disabled()}/>
                 <ButtonGroup className="my-2">{
-                    INTERVAL_ROLES
+                    ADJUSTABLE_INTERVAL_ROLES
                         .map(intervalRole => ({
                             intervalRole,
                             feature: floatFeatures[roleLengthFeature(intervalRole)],

@@ -14,7 +14,6 @@ import {
     VertexColors,
 } from "three"
 
-
 export const SELECTION_COLOR = "#91934f"
 export const SCALE_LINE_COLOR = "#cace02"
 export const JOINT_COLOR = "#e83ada"
@@ -87,7 +86,7 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
         case IntervalRole.ColumnPush:
             return "#2f3aca"
         case IntervalRole.Triangle:
-            return "#a29d3e"
+            return "#c9c445"
         case IntervalRole.Ring:
             return "#e83ada"
         case IntervalRole.NexusCross:
@@ -95,11 +94,11 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
         case IntervalRole.ColumnCross:
             return "#299995"
         case IntervalRole.BowMid:
-            return "#f101e9"
+            return "#f14302"
         case IntervalRole.BowEnd:
-            return "#cb01c3"
+            return "#c03b02"
         case IntervalRole.FacePull:
-            return "#bf0105"
+            return "#fe0105"
         default:
             return undefined
     }
@@ -108,6 +107,11 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
 export function roleColor(intervalRole?: IntervalRole): Color {
     return new Color(roleColorString(intervalRole))
 }
+
+// import { ALL_INTERVAL_ROLES } from "../fabric/fabric-engine"
+// console.log("ROLE_COLORS\n", `pub const ROLE_COLORS: [[f32; 3]; ${ALL_INTERVAL_ROLES.length}] = [\n${ALL_INTERVAL_ROLES.map(roleColor).map(color => (
+//     `[${(color.r).toFixed(4)}, ${(color.g).toFixed(4)}, ${(color.b).toFixed(4)}],`
+// )).join("\n")}\n];`)
 
 export function roleMaterial(intervalRole: IntervalRole): Material {
     const color = roleColor(intervalRole)

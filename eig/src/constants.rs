@@ -10,15 +10,15 @@ pub const ATTENUATED_COLOR: [f32; 3] = [0.0, 0.0, 0.0];
 pub const SLACK_COLOR: [f32; 3] = [0.0, 1.0, 0.0];
 
 pub const ROLE_COLORS: [[f32; 3]; 9] = [
-    [0.799, 0.519, 0.304],
-    [0.879, 0.295, 0.374],
-    [0.215, 0.629, 0.747],
-    [0.618, 0.126, 0.776],
-    [0.670, 0.627, 0.398],
-    [0.242, 0.879, 0.410],
-    [0.613, 0.692, 0.382],
-    [0.705, 0.709, 0.019],
-    [0.577, 0.577, 0.577],
+    [0.3961, 0.2549, 0.7059],
+    [0.1843, 0.2275, 0.7922],
+    [0.7882, 0.7686, 0.2706],
+    [0.9098, 0.2275, 0.8549],
+    [0.3490, 0.9216, 0.7961],
+    [0.1608, 0.6000, 0.5843],
+    [0.9451, 0.2627, 0.0078],
+    [0.7529, 0.2314, 0.0078],
+    [0.9961, 0.0039, 0.0196],
 ];
 
 pub const RAINBOW: [[f32; 3]; 12] = [
@@ -115,7 +115,7 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::Drag => 0.0001_f32,
         FabricFeature::PretenstFactor => 0.03_f32,
         FabricFeature::IterationsPerFrame => 100_f32,
-        FabricFeature::IntervalCountdown => 500_f32,
+        FabricFeature::IntervalCountdown => 3000_f32,
         FabricFeature::RealizingCountdown => 30000_f32,
         FabricFeature::SlackThreshold => 0.0001_f32,
         FabricFeature::ShapingPretenstFactor => 0.1_f32,
@@ -133,7 +133,7 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::BowEndLength => 0.6_f32,
         FabricFeature::PushOverPull => 1_f32,
         FabricFeature::PushRadius => 2_f32,
-        FabricFeature::PullRadius => 0.25_f32,
+        FabricFeature::PullRadius => 0.5_f32,
         FabricFeature::JointRadius => 1.5_f32,
         FabricFeature::MaxStiffness => 0.0005_f32,
     }

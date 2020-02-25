@@ -9,7 +9,7 @@ import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 
-import { isPushInterval } from "./fabric-engine"
+import { isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life, stiffnessToLinearDensity } from "./life"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
@@ -197,7 +197,7 @@ export class TensegrityFabric {
         const joints = pushEnds.map(end => brick.joints[end])
         const index = this.instance.fabric.create_face(joints[0].index, joints[1].index, joints[2].index)
         const face: IFace = {
-            index, canGrow: true, negative, removed: false,
+            index, negative, removed: false,
             brick, triangle, joints, pushes, pulls,
             location: () =>
                 joints.reduce((sum, joint) => sum.add(joint.location()), new Vector3())
@@ -273,7 +273,6 @@ export class TensegrityFabric {
                 this.builder.uprightOnSingleMarkedFace()
                 this.instance.refreshFloatView()
                 if (lifePhase === Stage.Growing) {
-                    this.builder.replaceCrossedNexusCrosses()
                     const afterGrowing = this.instance.fabric.finish_growing()
                     this.facePulls = this.builder.initialFacePulls
                     return afterGrowing

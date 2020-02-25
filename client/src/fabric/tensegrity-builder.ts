@@ -10,7 +10,9 @@ import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     averageLocation,
     averageScaleFactor,
+    brickContaining,
     createBrickPointsAt,
+    faceToOriginMatrix,
     factorToPercent,
     IBrick,
     IFace,
@@ -20,6 +22,7 @@ import {
     initialBrick,
     IPercent,
     IPushDefinition,
+    isNexus,
     percentToFactor,
     PUSH_ARRAY,
     Triangle,
@@ -200,8 +203,7 @@ export class TensegrityBuilder {
     }
 
     public uprightAtOrigin(face: IFace): void {
-        const matrix = this.faceToOrigin(face)
-        this.fabric.instance.apply(matrix)
+        this.fabric.instance.apply(faceToOriginMatrix(face))
     }
 
     public get initialFacePulls(): IFacePull[] {
@@ -310,17 +312,6 @@ export class TensegrityBuilder {
         return brick
     }
 
-    private faceToOrigin(face: IFace): Matrix4 {
-        const trianglePoints = face.joints.map(joint => joint.location())
-        const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
-        const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
-        const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
-        const y = new Vector3().crossVectors(z, x).normalize()
-        z.crossVectors(x, y).normalize()
-        const basis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-        return new Matrix4().getInverse(basis)
-    }
-
     private facesToRing(faceA: IFace, faceB: IFace): IJoint[] {
         if (faceA.negative === faceB.negative) {
             throw new Error("Polarity not opposite")
@@ -344,55 +335,46 @@ export class TensegrityBuilder {
         if (faceA.negative === faceB.negative) {
             throw new Error("Same polarity!")
         }
-        const removeAndMarkAdjacent = (face: IFace): void => {
-            const brick = face.brick
-            if (face.negative) {
-                brick.negativeAdjacent++
-            } else {
-                brick.postiveeAdjacent++
-            }
+        [faceA, faceB].forEach((face: IFace): void => {
             this.fabric.removeFace(face, true)
-        }
-        removeAndMarkAdjacent(faceA)
-        removeAndMarkAdjacent(faceB)
+            if (!face.negative) {
+                face.brick.negativeAdjacent++
+            } else {
+                face.brick.postiveeAdjacent++
+            }
+        })
         const ring = this.facesToRing(faceA, faceB)
         const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) => this.fabric.createInterval(from, to, role, connectorScale, countdown)
-        const brickIsNexus = (brick: IBrick) => brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
         for (let corner = 0; corner < ring.length; corner++) {
             const prev = ring[(corner + 5) % 6]
             const curr = ring[corner]
             const next = ring[(corner + 1) % 6]
             createInterval(curr, next, IntervalRole.Ring)
-            const crossInterval = (from: IJoint, opposite: IJoint, toFace: IFace) => {
+            const crossInterval = (from: IJoint, opposite: IJoint) => {
                 const to = this.fabric.joints[opposite.oppositeIndex]
-                toFace.brick.crosses.push(createInterval(from, to, IntervalRole.ColumnCross))
+                const toBrick = brickContaining(to, faceA.brick, faceB.brick)
+                toBrick.crosses.push(createInterval(from, to, IntervalRole.ColumnCross))
             }
             if (faceA.negative) {
-                crossInterval(prev, curr, faceA)
+                crossInterval(prev, curr)
             } else {
-                crossInterval(next, curr, faceB)
+                crossInterval(next, curr)
             }
         }
-        const adjustRoles = ({triangle, brick}: IFace): void => {
-            const scale = brick.scale
-            const adjustRole = (intervals: IInterval[], role: IntervalRole) =>
-                intervals.filter(interval => !interval.removed)
-                    .forEach(interval => this.fabric.changeIntervalRole(interval, role, scale, countdown))
-            TRIANGLE_DEFINITIONS
-                .filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_DEFINITIONS[triangle].negative)
-                .forEach(t => brick.faces[t.name].canGrow = false)
-            const triangleRing = TRIANGLE_DEFINITIONS[triangle].ring
-            if (brickIsNexus(brick)) {
+        [faceA, faceB].forEach(({triangle, brick}: IFace): void => {
+            const adjustRole = (intervals: IInterval[], role: IntervalRole) => intervals
+                .filter(interval => !interval.removed && interval.intervalRole !== role)
+                .forEach(interval => this.fabric.changeIntervalRole(interval, role, brick.scale, countdown))
+            if (isNexus(brick)) {
                 adjustRole(brick.pulls, IntervalRole.Triangle)
                 adjustRole(brick.crosses, IntervalRole.NexusCross)
+                adjustRole(brick.pushes, IntervalRole.NexusPush)
             } else {
-                adjustRole(brick.rings[triangleRing], IntervalRole.Ring)
+                adjustRole(brick.rings[TRIANGLE_DEFINITIONS[triangle].ring], IntervalRole.Ring)
+                adjustRole(brick.crosses, IntervalRole.ColumnCross)
+                adjustRole(brick.pushes, IntervalRole.ColumnPush)
             }
-            const pushRole = brickIsNexus(brick) ? IntervalRole.NexusPush : IntervalRole.ColumnPush
-            adjustRole(brick.pushes, pushRole)
-        }
-        adjustRoles(faceA)
-        adjustRoles(faceB)
+        })
     }
 }
 

@@ -5,7 +5,7 @@
 
 import { FabricFeature, IntervalRole, SurfaceCharacter } from "eig"
 
-import { FABRIC_FEATURES } from "../fabric/fabric-engine"
+import { FABRIC_FEATURES } from "../fabric/eig-util"
 import { IFeatureConfig } from "../fabric/fabric-features"
 import { addNameToCode, codeToTenscript, ITenscript } from "../fabric/tenscript"
 
@@ -17,7 +17,7 @@ export enum ControlTab {
     Strain = "Strain",
 }
 
-const VERSION = "2020-02-25"
+const VERSION = "2020-02-25x"
 
 export interface IFeatureValue {
     numeric: number

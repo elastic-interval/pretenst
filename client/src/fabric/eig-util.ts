@@ -38,8 +38,8 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
     }
 }
 
-export const INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
-    .filter(role => role.length > 1 && IntervalRole[role] !== IntervalRole.FacePull)
+export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
+    .filter(role => IntervalRole[role] !== IntervalRole.FacePull)
     .map(role => IntervalRole[role])
 
 export function isPushInterval(intervalRole: IntervalRole): boolean {

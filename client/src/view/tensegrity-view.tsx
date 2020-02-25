@@ -11,7 +11,7 @@ import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import { fabricFeatureIntervalRole, INTERVAL_ROLES } from "../fabric/fabric-engine"
+import { ADJUSTABLE_INTERVAL_ROLES, fabricFeatureIntervalRole } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
@@ -70,12 +70,12 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
         }
     }, [rootTenscript])
 
-    const [visibleRoles, setVisibleRoles] = useState(INTERVAL_ROLES)
+    const [visibleRoles, setVisibleRoles] = useState(ADJUSTABLE_INTERVAL_ROLES)
     const [rotating, updateRotating] = useState(storedState$.getValue().rotating)
     const [shapeSelection, setShapeSelection] = useState(ShapeSelection.None)
     const [fullScreen, updateFullScreen] = useState(storedState$.getValue().fullScreen)
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
-    useEffect(() => setVisibleRoles(INTERVAL_ROLES), [ellipsoids])
+    useEffect(() => setVisibleRoles(ADJUSTABLE_INTERVAL_ROLES), [ellipsoids])
     useEffect(() => {
         const subscription = storedState$.subscribe(storedState => {
             updateFullScreen(storedState.fullScreen)

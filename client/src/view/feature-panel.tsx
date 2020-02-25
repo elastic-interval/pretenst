@@ -7,7 +7,7 @@ import * as React from "react"
 import { useEffect, useState } from "react"
 import { Button, ButtonGroup } from "reactstrap"
 
-import { fabricFeatureIntervalRole } from "../fabric/fabric-engine"
+import { fabricFeatureIntervalRole } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
 
 import { roleColorString } from "./materials"

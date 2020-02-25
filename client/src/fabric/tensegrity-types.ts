@@ -110,7 +110,6 @@ export interface IFacePull {
 export interface IFace {
     index: number
     negative: boolean
-    canGrow: boolean
     brick: IBrick
     triangle: Triangle
     joints: IJoint[]
@@ -128,6 +127,17 @@ export function averageLocation(locations: Vector3[]): Vector3 {
     return locations
         .reduce((sum, location) => sum.add(location), new Vector3())
         .multiplyScalar(1 / locations.length)
+}
+
+export function faceToOriginMatrix(face: IFace): Matrix4 {
+    const trianglePoints = face.joints.map(joint => joint.location())
+    const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
+    const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
+    const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
+    const y = new Vector3().crossVectors(z, x).normalize()
+    z.crossVectors(x, y).normalize()
+    const basis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+    return new Matrix4().getInverse(basis)
 }
 
 export function getOrderedJoints(face: IFace): IJoint[] {
@@ -256,6 +266,22 @@ export interface IBrick {
     faces: IFace[]
     negativeAdjacent: number
     postiveeAdjacent: number
+}
+
+export function isNexus(brick: IBrick): boolean {
+    return brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
+}
+
+export function brickContaining(joint: IJoint, brickA: IBrick, brickB:IBrick): IBrick {
+    const chooseA = !!brickA.joints.find(brickJoint => brickJoint.index === joint.index)
+    const chooseB = !!brickB.joints.find(brickJoint => brickJoint.index === joint.index)
+    if (chooseA && !chooseB) {
+        return brickA
+    } else if (chooseB && !chooseA) {
+        return brickB
+    } else {
+        throw new Error("Neither contained joint")
+    }
 }
 
 export function initialBrick(index: number, base: Triangle, scale: IPercent): IBrick {
