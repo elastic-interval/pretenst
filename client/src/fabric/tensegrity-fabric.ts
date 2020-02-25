@@ -316,7 +316,7 @@ export class TensegrityFabric {
                 return pushToA < pushToB ? 1 : pushToA > pushToB ? -1 : 0
             })
             jointIntervals.shift()
-            const nearUnit = unitFromHere(jointIntervals[1])
+            const nearUnit = unitFromHere(jointIntervals[0])
             const projectNearOnPush = new Vector3().addScaledVector(pushUnit, nearUnit.dot(pushUnit))
             const nearPerp = new Vector3().subVectors(nearUnit, projectNearOnPush).normalize()
             const pushToNear = new Quaternion().setFromUnitVectors(pushUnit, nearPerp)
