@@ -17,7 +17,7 @@ export enum ControlTab {
     Strain = "Strain",
 }
 
-const VERSION = "2020-02-22"
+const VERSION = "2020-02-25"
 
 export interface IFeatureValue {
     numeric: number

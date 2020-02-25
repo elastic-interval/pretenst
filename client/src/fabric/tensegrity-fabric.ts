@@ -273,6 +273,7 @@ export class TensegrityFabric {
                 this.builder.uprightOnSingleMarkedFace()
                 this.instance.refreshFloatView()
                 if (lifePhase === Stage.Growing) {
+                    this.builder.optimize()
                     const afterGrowing = this.instance.fabric.finish_growing()
                     this.facePulls = this.builder.initialFacePulls
                     return afterGrowing

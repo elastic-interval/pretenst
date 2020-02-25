@@ -106,11 +106,8 @@ export class TensegrityBuilder {
             const joint: IJoint = interval.alpha.index === jointIndex ? interval.alpha : interval.omega
             return {interval, joint}
         }
-        const crossPulls = fabric.intervals.filter(interval => (
-            interval.intervalRole === IntervalRole.ColumnCross ||
-            interval.intervalRole === IntervalRole.NexusCross),
-        )
-        crossPulls.forEach((intervalA, indexA) => {
+        const crosses = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.NexusCross)
+        crosses.forEach((intervalA, indexA) => {
             const aAlpha = intervalA.alpha.index
             const aOmega = intervalA.omega.index
             const aAlphaPush = findPush(aAlpha)
@@ -119,7 +116,7 @@ export class TensegrityBuilder {
             const aOmegaLoc = intervalA.omega.location()
             const aLength = aAlphaLoc.distanceTo(aOmegaLoc)
             const aMid = new Vector3().addVectors(aAlphaLoc, aOmegaLoc).multiplyScalar(0.5)
-            crossPulls.forEach((intervalB, indexB) => {
+            crosses.forEach((intervalB, indexB) => {
                 const bAlpha = intervalB.alpha.index
                 const bOmega = intervalB.omega.index
                 if (indexA >= indexB || aAlpha === bAlpha || aAlpha === bOmega || aOmega === bAlpha || aOmega === bOmega) {
@@ -347,9 +344,20 @@ export class TensegrityBuilder {
         if (faceA.negative === faceB.negative) {
             throw new Error("Same polarity!")
         }
+        const removeAndMarkAdjacent = (face: IFace): void => {
+            const brick = face.brick
+            if (face.negative) {
+                brick.negativeAdjacent++
+            } else {
+                brick.postiveeAdjacent++
+            }
+            this.fabric.removeFace(face, true)
+        }
+        removeAndMarkAdjacent(faceA)
+        removeAndMarkAdjacent(faceB)
         const ring = this.facesToRing(faceA, faceB)
-        const brickIsNexus = (brick: IBrick) => brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
         const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) => this.fabric.createInterval(from, to, role, connectorScale, countdown)
+        const brickIsNexus = (brick: IBrick) => brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
         for (let corner = 0; corner < ring.length; corner++) {
             const prev = ring[(corner + 5) % 6]
             const curr = ring[corner]
@@ -357,8 +365,7 @@ export class TensegrityBuilder {
             createInterval(curr, next, IntervalRole.Ring)
             const crossInterval = (from: IJoint, opposite: IJoint, toFace: IFace) => {
                 const to = this.fabric.joints[opposite.oppositeIndex]
-                const role = brickIsNexus(toFace.brick) ? IntervalRole.NexusCross : IntervalRole.ColumnCross
-                createInterval(from, to, role)
+                toFace.brick.crosses.push(createInterval(from, to, IntervalRole.ColumnCross))
             }
             if (faceA.negative) {
                 crossInterval(prev, curr, faceA)
@@ -366,39 +373,26 @@ export class TensegrityBuilder {
                 crossInterval(next, curr, faceB)
             }
         }
-        const handleFace = (faceToRemove: IFace): void => {
-            const scale = faceToRemove.brick.scale
-            const triangle = faceToRemove.triangle
-            const brick = faceToRemove.brick
-            if (faceToRemove.negative) {
-                brick.negativeAdjacent++
-            } else {
-                brick.postiveeAdjacent++
-            }
+        const adjustRoles = ({triangle, brick}: IFace): void => {
+            const scale = brick.scale
+            const adjustRole = (intervals: IInterval[], role: IntervalRole) =>
+                intervals.filter(interval => !interval.removed)
+                    .forEach(interval => this.fabric.changeIntervalRole(interval, role, scale, countdown))
             TRIANGLE_DEFINITIONS
                 .filter(t => t.opposite !== triangle && t.negative !== TRIANGLE_DEFINITIONS[triangle].negative)
                 .forEach(t => brick.faces[t.name].canGrow = false)
-            this.fabric.removeFace(faceToRemove, true)
             const triangleRing = TRIANGLE_DEFINITIONS[triangle].ring
             if (brickIsNexus(brick)) {
-                brick.pulls
-                    .filter(interval => !interval.removed)
-                    .forEach(interval => this.fabric.changeIntervalRole(interval, IntervalRole.Triangle, scale, countdown))
-                brick.crosses
-                    .forEach(interval => this.fabric.changeIntervalRole(interval, IntervalRole.NexusCross, scale, countdown))
-
+                adjustRole(brick.pulls, IntervalRole.Triangle)
+                adjustRole(brick.crosses, IntervalRole.NexusCross)
             } else {
-                brick.rings[triangleRing]
-                    .filter(interval => !interval.removed)
-                    .forEach(interval => this.fabric.changeIntervalRole(interval, IntervalRole.Ring, scale, countdown))
+                adjustRole(brick.rings[triangleRing], IntervalRole.Ring)
             }
             const pushRole = brickIsNexus(brick) ? IntervalRole.NexusPush : IntervalRole.ColumnPush
-            brick.pushes
-                .filter(interval => !interval.removed)
-                .forEach(interval => this.fabric.changeIntervalRole(interval, pushRole, scale, countdown))
+            adjustRole(brick.pushes, pushRole)
         }
-        handleFace(faceA)
-        handleFace(faceB)
+        adjustRoles(faceA)
+        adjustRoles(faceB)
     }
 }
 
