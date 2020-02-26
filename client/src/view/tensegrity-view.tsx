@@ -14,7 +14,7 @@ import { BehaviorSubject } from "rxjs"
 import { ADJUSTABLE_INTERVAL_ROLES, fabricFeatureIntervalRole } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
-import { addNameToCode, BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
+import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import {
@@ -66,7 +66,7 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
     const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(storedState$.getValue()))
     useEffect(() => {
         if (location.hash.length === 0) {
-            location.hash = addNameToCode(rootTenscript.code, rootTenscript.name)
+            location.hash = rootTenscript.code
         }
     }, [rootTenscript])
 
@@ -114,7 +114,7 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
         if (!mainInstance) {
             return
         }
-        location.hash = addNameToCode(newTenscript.code, newTenscript.name)
+        location.hash = newTenscript.code
         floatFeatures[FabricFeature.ShapingPretenstFactor].percent = 100
         floatFeatures[FabricFeature.ShapingDrag].percent = 100
         floatFeatures[FabricFeature.ShapingStiffnessFactor].percent = 100

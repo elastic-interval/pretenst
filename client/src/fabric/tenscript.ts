@@ -3,15 +3,16 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { TensegrityBuilder } from "./tensegrity-builder"
 import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     IBrick,
-    IFace,
     IFaceMark,
     IPercent,
     oppositeTriangle,
     percentOrHundred,
-    Triangle, TRIANGLE_DIRECTIONS,
+    Triangle,
+    TRIANGLE_DIRECTIONS,
     TRIANGLES,
 } from "./tensegrity-types"
 
@@ -35,14 +36,11 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(a(3,b(3,c(3,d(2,MA11)),d(3,c(2,MA10))),c(3,d(3,b(2,MA13)),b(3,d(2,MA12))),d(3,b(3,c(2,MA15)),c(3,b(2,MA14)))),b(3,d(3,Mc13),c(3,Md14)),c(3,b(3,Md15),d(3,Mb10)),d(3,c(3,Mb11),b(3,Mc12))):Diamond2",
 ]
 
-function purify(code: string): string {
-    return code.replace(/[\n\r\t ]/g, "")
-}
-
 export interface ITenscript {
-    name: string,
+    name: string
     code: string
     tree: ITenscriptTree
+    markTrees: Record<number, ITenscriptTree>
     fromUrl: boolean
 }
 
@@ -57,7 +55,7 @@ export interface ITenscriptTree {
     C?: ITenscriptTree,
     D?: ITenscriptTree,
     a?: ITenscriptTree, // down
-    MA?: IFaceMark, // marks
+    MA?: IFaceMark, // marks: reference
     MB?: IFaceMark,
     MC?: IFaceMark,
     MD?: IFaceMark,
@@ -67,14 +65,20 @@ export interface ITenscriptTree {
     Md?: IFaceMark,
 }
 
-export function treeToTenscript(name: string, tree: ITenscriptTree, fromUrl: boolean): ITenscript {
+function treeToCode(tree: ITenscriptTree): string {
     const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
-    const code = JSON.stringify(tree)
+    return JSON.stringify(tree)
         .replace(/[_.:"]/g, "")
         .replace(/[{]/g, "(")
         .replace(/[}]/g, ")")
         .replace(/([ABCDabcdSM])\((\d*)\)/g, replacer)
-    return {name, tree, code, fromUrl}
+}
+
+export function treeToTenscript(name: string, mainTree: ITenscriptTree, markTrees: Record<number, ITenscriptTree>, fromUrl: boolean): ITenscript {
+    const mainCode = treeToCode(mainTree)
+    const subcode = Object.keys(markTrees).map(key => `${key}=${treeToCode(markTrees[key])}`).join(":")
+    const subtreesCode = subcode.length > 0 ? `:${subcode}` : ""
+    return {name, tree: mainTree, markTrees, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
 }
 
 function isDirection(char: string): boolean {
@@ -98,6 +102,23 @@ function toNumber(digits: string): number {
         throw new Error(`Not a number: ${digits}`)
     }
     return parseInt(digits, 10)
+}
+
+function parseCode(code: string): { name: string, mainCode: string, markCode: Record<number, string> } {
+    const parts = code.replace(/[\n\r\t]/g, "").split(":")
+    const foundName = parts.find(part => part.startsWith("'") && part.endsWith("'"))
+    const foundMain = parts.find(part => part.startsWith("(") && part.endsWith(")"))
+    const markCode: Record<number, string> = {}
+    parts.filter(part => part.match(/^\d+=.*$/)).forEach(part => {
+        const eq = part.indexOf("=")
+        const mark = Number(part.substring(0, eq))
+        markCode[mark] = part.substring(eq + 1)
+    })
+    return {
+        name: foundName ? foundName.replace(/'/g, "") : new Date().toDateString(),
+        mainCode: foundMain || "(0)",
+        markCode,
+    }
 }
 
 function matchBracket(s: string): number {
@@ -188,11 +209,14 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
             error("No code to parse")
             return undefined
         }
-        const tree = fragmentToTree(purify(code))
+        const {name, mainCode, markCode} = parseCode(code)
+        const tree = fragmentToTree(mainCode)
         if (!tree) {
             return undefined
         }
-        return treeToTenscript(getNameFromCode(code), tree, fromUrl)
+        const markTrees: Record<number, ITenscriptTree> = {}
+        Object.keys(markCode).forEach(key => markTrees[key] = fragmentToTree(markCode[key]))
+        return treeToTenscript(name, tree, markTrees, fromUrl)
     } catch (e) {
         error(e.message)
         return undefined
@@ -203,23 +227,6 @@ function noParseErrors(message: string): void {
     throw new Error(`Unable to parse: ${message}`)
 }
 
-export function addNameToCode(code: string, name: string): string {
-    const colonSplit = code.split(":")
-    if (colonSplit.length === 2) {
-        return `${colonSplit[0]}:${name.trim()}`
-    } else {
-        return `${code}:${name}`
-    }
-}
-
-export function getNameFromCode(code: string): string {
-    const colonSplit = code.split(":")
-    if (colonSplit.length === 2) {
-        return colonSplit[1]
-    }
-    return code.split("").filter(char => isDirection(char) || isDigit(char)).join("")
-}
-
 export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noParseErrors, false, script)) as ITenscript[]
 
 export interface IActiveTenscript {
@@ -228,7 +235,7 @@ export interface IActiveTenscript {
     fabric: TensegrityFabric
 }
 
-export function execute(before: IActiveTenscript[], markFace: (mark: number, face: IFace) => void): IActiveTenscript[] {
+export function execute(before: IActiveTenscript[], markTrees: Record<number, ITenscriptTree>, builder: TensegrityBuilder): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
 
     before.forEach(({brick, tree, fabric}) => {
@@ -243,7 +250,7 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
                 if (brickFace.removed) {
                     throw new Error("!! trying to use a face that was removed")
                 }
-                markFace(mark._, brickFace)
+                builder.markFace(mark._, brickFace)
             })
         }
 
@@ -265,13 +272,20 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
 
         TRIANGLES.forEach(triangle => {
             const subtree = childTree(triangle, tree)
-            if (!subtree) {
-                return
+            const mark = faceMark(triangle, tree)
+            if (subtree) {
+                const subtreeScale = percentOrHundred(subtree.S)
+                const _ = subtree._ ? subtree._ - 1 : undefined
+                const decremented = {...subtree, _}
+                active.push(grow(brick, decremented, triangle, subtreeScale))
+            } else if (mark) {
+                const markTree = markTrees[mark._]
+                if (!markTree) {
+                    throw new Error(`!! no mark tree for ${mark._}`)
+                }
+                const markTreeScale = percentOrHundred(markTree.S)
+                active.push(grow(brick, markTree, triangle, markTreeScale))
             }
-            const subtreeScale = percentOrHundred(subtree.S)
-            const _ = subtree._ ? subtree._ - 1 : undefined
-            const decremented = {...subtree, _}
-            active.push(grow(brick, decremented, triangle, subtreeScale))
         })
     })
     return active

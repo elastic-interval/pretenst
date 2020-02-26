@@ -8,11 +8,11 @@ import { BOOTSTRAP, codeToTenscript, ITenscript, treeToTenscript } from "./tensc
 describe("Code parser", () => {
     it("should encode/decode", () => {
         BOOTSTRAP.forEach((tenscript: ITenscript) => {
-            const middleman = codeToTenscript(error => console.error(error), false, tenscript.code)
-            if (!middleman) {
+            const translated = codeToTenscript(error => console.error(error), false, tenscript.code)
+            if (!translated) {
                 throw new Error()
             }
-            const codeAfter = treeToTenscript(tenscript.name, middleman.tree, false)
+            const codeAfter = treeToTenscript(tenscript.name, translated.tree, translated.markTrees, false)
             expect(codeAfter.code).toBe(tenscript.code)
         })
     })

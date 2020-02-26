@@ -37,17 +37,18 @@ export class TensegrityBuilder {
 
     private faceMarks: Record<number, IFace[]> = {}
 
-    constructor(public readonly fabric: TensegrityFabric, private numericFeature: (fabricFeature: FabricFeature) => number) {
+    constructor(
+        public readonly fabric: TensegrityFabric,
+        private numericFeature: (fabricFeature: FabricFeature) => number,
+    ) {
     }
 
-    public get markFace(): (mark: number, face: IFace) => void {
-        return (mark: number, face: IFace) => {
-            const found = this.faceMarks[mark]
-            if (found) {
-                found.push(face)
-            } else {
-                this.faceMarks[mark] = [face]
-            }
+    public markFace(mark: number, face: IFace): void {
+        const found = this.faceMarks[mark]
+        if (found) {
+            found.push(face)
+        } else {
+            this.faceMarks[mark] = [face]
         }
     }
 

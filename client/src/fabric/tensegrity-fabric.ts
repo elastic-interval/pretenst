@@ -265,7 +265,7 @@ export class TensegrityFabric {
         const activeCode = this.activeTenscript
         if (activeCode) {
             if (activeCode.length > 0) {
-                this.activeTenscript = execute(activeCode, this.builder.markFace)
+                this.activeTenscript = execute(activeCode, this.tenscript.markTrees, this.builder)
                 this.instance.fabric.centralize()
             }
             if (activeCode.length === 0) {

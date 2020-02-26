@@ -7,7 +7,7 @@ import { FabricFeature, IntervalRole, SurfaceCharacter } from "eig"
 
 import { FABRIC_FEATURES } from "../fabric/eig-util"
 import { IFeatureConfig } from "../fabric/fabric-features"
-import { addNameToCode, codeToTenscript, ITenscript } from "../fabric/tenscript"
+import { codeToTenscript, ITenscript } from "../fabric/tenscript"
 
 export enum ControlTab {
     Grow = "Grow",
@@ -40,7 +40,7 @@ export interface IStoredState {
 
 export function addRecentCode(state: IStoredState, {code, name}: ITenscript): IStoredState {
     const recentCode = {...state.recentCode}
-    recentCode[name] = addNameToCode(code, name)
+    recentCode[name] = code
     return transition(state, {recentCode})
 }
 
