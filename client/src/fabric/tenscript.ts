@@ -93,6 +93,13 @@ function isDigit(char: string): boolean {
     return "0123456789".indexOf(char) >= 0
 }
 
+function toNumber(digits: string): number {
+    if (!digits.match(/^\d+$/)) {
+        throw new Error(`Not a number: ${digits}`)
+    }
+    return parseInt(digits, 10)
+}
+
 function matchBracket(s: string): number {
     if (s.charAt(0) !== "(") {
         throw new Error(`Code must start with "(": ${s} ${s.charAt(0)}`)
@@ -112,38 +119,30 @@ function matchBracket(s: string): number {
     throw new Error(`No matching end bracket: |${s}|`)
 }
 
+function argument(maybeBracketed: string, stripBrackets: boolean): { content: string, skip: number } {
+    const commaPos = maybeBracketed.indexOf(",")
+    const commaPresent = commaPos >= 0
+    if (maybeBracketed.charAt(0) !== "(") {
+        if (commaPresent) {
+            return {content: maybeBracketed.substring(0, commaPos), skip: commaPos}
+        }
+        return {content: maybeBracketed, skip: maybeBracketed.length}
+    }
+    const finalBracket = matchBracket(maybeBracketed)
+    const content = stripBrackets ? maybeBracketed.substring(1, finalBracket) : maybeBracketed.substring(0, finalBracket + 1)
+    return {content, skip: finalBracket + 1}
+}
+
 export function codeToTenscript(error: (message: string) => void, fromUrl: boolean, code?: string): ITenscript | undefined {
 
-    function toNumber(digits: string): number {
-        if (!digits.match(/^\d+$/)) {
-            throw new Error(`Not a number: ${digits}`)
-        }
-        return parseInt(digits, 10)
-    }
-
-    function _fragmentToTree(codeFragment: string): ITenscriptTree | undefined {
-
-        function argument(maybeBracketed: string, stripBrackets: boolean): { content: string, skip: number } {
-            const commaPos = maybeBracketed.indexOf(",")
-            const commaPresent = commaPos >= 0
-            if (maybeBracketed.charAt(0) !== "(") {
-                if (commaPresent) {
-                    return {content: maybeBracketed.substring(0, commaPos), skip: commaPos}
-                }
-                return {content: maybeBracketed, skip: maybeBracketed.length}
-            }
-            const finalBracket = matchBracket(maybeBracketed)
-            const content = stripBrackets ? maybeBracketed.substring(1, finalBracket) : maybeBracketed.substring(0, finalBracket + 1)
-            return {content, skip: finalBracket + 1}
-        }
-
+    function fragmentToTree(codeFragment: string): ITenscriptTree | undefined {
         const initialCode = argument(codeFragment, true)
         const codeString = initialCode.content
         const tree: ITenscriptTree = {}
 
         function subtree(index: number): { codeTree?: ITenscriptTree, skip: number } {
             const {content, skip} = argument(codeString.substring(index), false)
-            const codeTree = _fragmentToTree(content)
+            const codeTree = fragmentToTree(content)
             return {codeTree, skip}
         }
 
@@ -189,7 +188,7 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
             error("No code to parse")
             return undefined
         }
-        const tree = _fragmentToTree(purify(code))
+        const tree = fragmentToTree(purify(code))
         if (!tree) {
             return undefined
         }
