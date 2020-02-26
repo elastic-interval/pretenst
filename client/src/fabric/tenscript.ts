@@ -4,7 +4,16 @@
  */
 
 import { TensegrityFabric } from "./tensegrity-fabric"
-import { IBrick, IFace, IFaceMark, IPercent, oppositeTriangle, percentOrHundred, Triangle } from "./tensegrity-types"
+import {
+    IBrick,
+    IFace,
+    IFaceMark,
+    IPercent,
+    oppositeTriangle,
+    percentOrHundred,
+    Triangle, TRIANGLE_DIRECTIONS,
+    TRIANGLES,
+} from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
     "(0):Zen",
@@ -68,78 +77,20 @@ export function treeToTenscript(name: string, tree: ITenscriptTree, fromUrl: boo
     return {name, tree, code, fromUrl}
 }
 
-const DIRECTIONS = "ABCDabcd"
-
 function isDirection(char: string): boolean {
-    return DIRECTIONS.indexOf(char) >= 0
+    return TRIANGLE_DIRECTIONS.indexOf(char) >= 0
 }
 
-const DIGITS = "0123456789"
+function childTree(triangle: Triangle, tree: ITenscriptTree): ITenscriptTree | undefined {
+    return tree[TRIANGLE_DIRECTIONS[triangle]]
+}
+
+function faceMark(triangle: Triangle, tree: ITenscriptTree): IFaceMark | undefined {
+    return tree[`M${TRIANGLE_DIRECTIONS[triangle]}`]
+}
 
 function isDigit(char: string): boolean {
-    return DIGITS.indexOf(char) >= 0
-}
-
-function assignSubtree(tree: ITenscriptTree, directionChar: string, child: ITenscriptTree): void {
-    switch (directionChar) {
-        case "A":
-            tree.A = child
-            break
-        case "B":
-            tree.B = child
-            break
-        case "C":
-            tree.C = child
-            break
-        case "D":
-            tree.D = child
-            break
-        case "b":
-            tree.b = child
-            break
-        case "c":
-            tree.c = child
-            break
-        case "d":
-            tree.d = child
-            break
-        case "a":
-            tree.a = child
-            break
-        default:
-            throw new Error("Unexpected direction directionChar: " + directionChar)
-    }
-}
-
-function assignMark(tree: ITenscriptTree, directionChar: string, faceMark: IFaceMark): void {
-    switch (directionChar) {
-        case "A":
-            tree.MA = faceMark
-            break
-        case "B":
-            tree.MB = faceMark
-            break
-        case "C":
-            tree.MC = faceMark
-            break
-        case "D":
-            tree.MD = faceMark
-            break
-        case "a":
-            tree.Ma = faceMark
-            break
-        case "b":
-            tree.Mb = faceMark
-            break
-        case "c":
-            tree.Mc = faceMark
-            break
-        case "d":
-            tree.Md = faceMark
-            break
-        default:
-            throw new Error("Unexpected direction directionChar: " + directionChar)
-    }
+    return "0123456789".indexOf(char) >= 0
 }
 
 function matchBracket(s: string): number {
@@ -203,7 +154,7 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
                 if (!direction.codeTree) {
                     throw new Error(`No subtree: ${codeString.substring(index)}`)
                 }
-                assignSubtree(tree, char, direction.codeTree)
+                tree[char] = direction.codeTree
                 index += direction.skip
             } else if (isDigit(char)) {
                 const forward = argument(codeString, false)
@@ -219,7 +170,7 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
                     case "M":
                         const directionChar = codeString.charAt(index + 1)
                         const markNumber = argument(codeString.substring(index + 2), true)
-                        assignMark(tree, directionChar, {_: toNumber(markNumber.content)})
+                        tree[`M${directionChar}`] = {_: toNumber(markNumber.content)}
                         index += markNumber.skip + 1
                         break
                     case ",":
@@ -284,7 +235,8 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
     before.forEach(({brick, tree, fabric}) => {
 
         function markBrick(brickToMark: IBrick, treeWithMarks: ITenscriptTree): void {
-            function maybeMark(triangle: Triangle, mark?: IFaceMark): void {
+            TRIANGLES.forEach(triangle => {
+                const mark = faceMark(triangle, treeWithMarks)
                 if (!mark) {
                     return
                 }
@@ -293,16 +245,7 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
                     throw new Error("!! trying to use a face that was removed")
                 }
                 markFace(mark._, brickFace)
-            }
-
-            maybeMark(Triangle.PPP, treeWithMarks.MA)
-            maybeMark(Triangle.NPP, treeWithMarks.Mb)
-            maybeMark(Triangle.PNP, treeWithMarks.Mc)
-            maybeMark(Triangle.PPN, treeWithMarks.Md)
-            maybeMark(Triangle.PNN, treeWithMarks.MB)
-            maybeMark(Triangle.NPN, treeWithMarks.MC)
-            maybeMark(Triangle.NNP, treeWithMarks.MD)
-            maybeMark(Triangle.NNN, treeWithMarks.Ma)
+            })
         }
 
         function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
@@ -321,24 +264,16 @@ export function execute(before: IActiveTenscript[], markFace: (mark: number, fac
             return
         }
 
-        function maybeGrow(growBrick: IBrick, triangle: Triangle, subtree?: ITenscriptTree): void {
+        TRIANGLES.forEach(triangle => {
+            const subtree = childTree(triangle, tree)
             if (!subtree) {
                 return
             }
             const subtreeScale = percentOrHundred(subtree.S)
             const _ = subtree._ ? subtree._ - 1 : undefined
             const decremented = {...subtree, _}
-            active.push(grow(growBrick, decremented, triangle, subtreeScale))
-        }
-
-        maybeGrow(brick, Triangle.PPP, tree.A)
-        maybeGrow(brick, Triangle.NPP, tree.b)
-        maybeGrow(brick, Triangle.PNP, tree.c)
-        maybeGrow(brick, Triangle.PPN, tree.d)
-        maybeGrow(brick, Triangle.PNN, tree.B)
-        maybeGrow(brick, Triangle.NPN, tree.C)
-        maybeGrow(brick, Triangle.NNP, tree.D)
-        maybeGrow(brick, Triangle.NNN, tree.a)
+            active.push(grow(brick, decremented, triangle, subtreeScale))
+        })
     })
     return active
 }

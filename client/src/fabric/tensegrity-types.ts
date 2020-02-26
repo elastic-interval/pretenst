@@ -22,6 +22,10 @@ export enum Triangle {
     NNN = 0, PNN, NPN, NNP, NPP, PNP, PPN, PPP,
 }
 
+export const TRIANGLES = [Triangle.NNN, Triangle.PNN, Triangle.NPN, Triangle.NNP, Triangle.NPP, Triangle.PNP, Triangle.PPN, Triangle.PPP]
+
+export const TRIANGLE_DIRECTIONS = "aBCDbcdA"
+
 export enum Ring {
     NN = 0, // [PushEnd.ZNO, PushEnd.XPA, PushEnd.YNO, PushEnd.ZPA, PushEnd.XNO, PushEnd.YPA],
     PN = 1, // [PushEnd.YNA, PushEnd.XNA, PushEnd.ZNO, PushEnd.YPO, PushEnd.XPO, PushEnd.ZPA],
@@ -53,12 +57,12 @@ export interface IJointCable {
     rotation: number
 }
 
-export function otherJoint(interval: IInterval, joint: IJoint):IJoint {
+export function otherJoint(interval: IInterval, joint: IJoint): IJoint {
     if (interval.alpha.index === joint.index) {
         return interval.omega
     }
     if (interval.omega.index === joint.index) {
-        return  interval.alpha
+        return interval.alpha
     }
     throw new Error("Other of what?")
 }
@@ -272,7 +276,7 @@ export function isNexus(brick: IBrick): boolean {
     return brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
 }
 
-export function brickContaining(joint: IJoint, brickA: IBrick, brickB:IBrick): IBrick {
+export function brickContaining(joint: IJoint, brickA: IBrick, brickB: IBrick): IBrick {
     const chooseA = !!brickA.joints.find(brickJoint => brickJoint.index === joint.index)
     const chooseB = !!brickB.joints.find(brickJoint => brickJoint.index === joint.index)
     if (chooseA && !chooseB) {
