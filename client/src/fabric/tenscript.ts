@@ -273,18 +273,13 @@ export function execute(before: IActiveTenscript[], markTrees: Record<number, IT
         TRIANGLES.forEach(triangle => {
             const subtree = childTree(triangle, tree)
             const mark = faceMark(triangle, tree)
+            const markTree = mark ? markTrees[mark._] : undefined
             if (subtree) {
-                const subtreeScale = percentOrHundred(subtree.S)
                 const _ = subtree._ ? subtree._ - 1 : undefined
                 const decremented = {...subtree, _}
-                active.push(grow(brick, decremented, triangle, subtreeScale))
-            } else if (mark) {
-                const markTree = markTrees[mark._]
-                if (!markTree) {
-                    throw new Error(`!! no mark tree for ${mark._}`)
-                }
-                const markTreeScale = percentOrHundred(markTree.S)
-                active.push(grow(brick, markTree, triangle, markTreeScale))
+                active.push(grow(brick, decremented, triangle, percentOrHundred(subtree.S)))
+            } else if (markTree) {
+                active.push(grow(brick, markTree, triangle, percentOrHundred(markTree.S)))
             }
         })
     })
