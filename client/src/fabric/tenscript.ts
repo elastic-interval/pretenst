@@ -3,7 +3,6 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { TensegrityBuilder } from "./tensegrity-builder"
 import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     IBrick,
@@ -34,6 +33,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(B2, C2, D2, A(2, b2, c2, d2)):'Crystal Interstitial'",
     "(a(2,b(2,c(2,d(1,MA11)),d(2,c(1,MA10))),c(2,d(2,b(1,MA13)),b(2,d(1,MA12))),d(2,b(2,c(1,MA15)),c(2,b(1,MA14)))),b(2,d(2,Mc13),c(2,Md14)),c(2,b(2,Md15),d(2,Mb10)),d(2,c(2,Mb11),b(2,Mc12))):' Diamond'",
     "(a(3,b(3,c(3,d(2,MA11)),d(3,c(2,MA10))),c(3,d(3,b(2,MA13)),b(3,d(2,MA12))),d(3,b(3,c(2,MA15)),c(3,b(2,MA14)))),b(3,d(3,Mc13),c(3,Md14)),c(3,b(3,Md15),d(3,Mb10)),d(3,c(3,Mb11),b(3,Mc12))):'Diamond2'",
+    "(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=(b2,c2,d2):'Composed'",
 ]
 
 export interface ITenscript {
@@ -91,6 +91,10 @@ function childTree(triangle: Triangle, tree: ITenscriptTree): ITenscriptTree | u
 
 function faceMark(triangle: Triangle, tree: ITenscriptTree): IFaceMark | undefined {
     return tree[`M${TRIANGLE_DIRECTIONS[triangle]}`]
+}
+
+function deleteFaceMark(triangle: Triangle, tree: ITenscriptTree):void {
+    tree[`M${TRIANGLE_DIRECTIONS[triangle]}`] = undefined
 }
 
 function isDigit(char: string): boolean {
@@ -235,7 +239,7 @@ export interface IActiveTenscript {
     fabric: TensegrityFabric
 }
 
-export function execute(before: IActiveTenscript[], markTrees: Record<number, ITenscriptTree>, builder: TensegrityBuilder): IActiveTenscript[] {
+export function execute(before: IActiveTenscript[], markTrees: Record<number, ITenscriptTree>): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
 
     before.forEach(({brick, tree, fabric}) => {
@@ -250,7 +254,7 @@ export function execute(before: IActiveTenscript[], markTrees: Record<number, IT
                 if (brickFace.removed) {
                     throw new Error("!! trying to use a face that was removed")
                 }
-                builder.markFace(mark._, brickFace)
+                brickFace.mark = mark
             })
         }
 
@@ -279,6 +283,7 @@ export function execute(before: IActiveTenscript[], markTrees: Record<number, IT
                 const decremented = {...subtree, _}
                 active.push(grow(brick, decremented, triangle, percentOrHundred(subtree.S)))
             } else if (markTree) {
+                deleteFaceMark(triangle, tree)
                 active.push(grow(brick, markTree, triangle, percentOrHundred(markTree.S)))
             }
         })

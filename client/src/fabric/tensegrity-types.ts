@@ -119,6 +119,7 @@ export interface IFace {
     joints: IJoint[]
     pushes: IInterval[]
     pulls: IInterval[]
+    mark?: IFaceMark
     removed: boolean
     location: () => Vector3
 }

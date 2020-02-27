@@ -229,6 +229,22 @@ export class TensegrityFabric {
         }
     }
 
+    public get faceMarks(): Record<number, IFace[]> {
+        const marks: Record<number, IFace[]> = {}
+        this.faces.forEach(face => {
+            if (!face.mark) {
+                return
+            }
+            const found = marks[face.mark._]
+            if (found) {
+                found.push(face)
+            } else {
+                marks[face.mark._] = [face]
+            }
+        })
+        return marks
+    }
+
     public get submergedJoints(): IJoint[] {
         return this.joints.filter(joint => joint.location().y < 0)
     }
@@ -265,16 +281,23 @@ export class TensegrityFabric {
         const activeCode = this.activeTenscript
         if (activeCode) {
             if (activeCode.length > 0) {
-                this.activeTenscript = execute(activeCode, this.tenscript.markTrees, this.builder)
+                this.activeTenscript = execute(activeCode, this.tenscript.markTrees)
                 this.instance.fabric.centralize()
             }
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
-                this.builder.uprightOnSingleMarkedFace()
+                const marks = this.faceMarks
+                const baseKey = Object.keys(marks).find(key => marks[key].length === 1)
+                if (baseKey) {
+                    this.builder.uprightAtOrigin(marks[baseKey][0])
+                }
                 this.instance.refreshFloatView()
                 if (lifePhase === Stage.Growing) {
                     const afterGrowing = this.instance.fabric.finish_growing()
-                    this.facePulls = this.builder.initialFacePulls
+                    this.facePulls = Object.keys(marks)
+                        .map(key => marks[key])
+                        .filter(list => list.length === 2 || list.length === 3)
+                        .reduce((list: IFacePull[], faceList: IFace[]) => [...list, ...this.builder.createFacePulls(faceList)], [])
                     return afterGrowing
                 }
             }

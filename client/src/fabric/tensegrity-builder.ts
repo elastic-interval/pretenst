@@ -35,21 +35,10 @@ export function scaleToFacePullLength(scaleFactor: number): number {
 
 export class TensegrityBuilder {
 
-    private faceMarks: Record<number, IFace[]> = {}
-
     constructor(
         public readonly fabric: TensegrityFabric,
         private numericFeature: (fabricFeature: FabricFeature) => number,
     ) {
-    }
-
-    public markFace(mark: number, face: IFace): void {
-        const found = this.faceMarks[mark]
-        if (found) {
-            found.push(face)
-        } else {
-            this.faceMarks[mark] = [face]
-        }
     }
 
     public createBrickAt(midpoint: Vector3, scale: IPercent): IBrick {
@@ -66,14 +55,6 @@ export class TensegrityBuilder {
         const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
         this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
         return brickB
-    }
-
-    public uprightOnSingleMarkedFace(): void {
-        const markedFace = this.faceMarkLists.find(list => list.length === 1)
-        if (!markedFace) {
-            return
-        }
-        this.uprightAtOrigin(markedFace[0])
     }
 
     public checkFacePulls(facePulls: IFacePull[], removeFacePull: (facePull: IFacePull) => void): IFacePull[] {
@@ -207,12 +188,6 @@ export class TensegrityBuilder {
         this.fabric.instance.apply(faceToOriginMatrix(face))
     }
 
-    public get initialFacePulls(): IFacePull[] {
-        return this.faceMarkLists
-            .filter(list => list.length === 2 || list.length === 3)
-            .reduce((list: IFacePull[], faceList: IFace[]) => [...list, ...this.createFacePulls(faceList)], [])
-    }
-
     public createFacePulls(faces: IFace[]): IFacePull[] {
         const centerBrickFacePulls = () => {
             const brick = this.createBrickAt(
@@ -241,10 +216,6 @@ export class TensegrityBuilder {
             default:
                 return []
         }
-    }
-
-    private get faceMarkLists(): IFace[][] {
-        return Object.keys(this.faceMarks).map(key => this.faceMarks[key])
     }
 
     private createBrickOnFace(face: IFace, scale: IPercent): IBrick {
