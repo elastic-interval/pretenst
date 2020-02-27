@@ -9,6 +9,8 @@ import JSZip from "jszip"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { IJointCable } from "../fabric/tensegrity-types"
 
+import { IStoredState } from "./stored-state"
+
 function csvNumber(n: number): string {
     return n.toFixed(5).replace(/[.]/, ",")
 }
@@ -26,6 +28,13 @@ export interface IOutputJoint {
     jointCables: IJointCable[]
 }
 
+export interface IPushEnd {
+    x: number
+    y: number
+    z: number
+    radius: number
+}
+
 export interface IOutputInterval {
     index: number
     joints: number[]
@@ -35,7 +44,11 @@ export interface IOutputInterval {
     linearDensity: number
     isPush: boolean
     role: string
+    idealLength: number
     length: number
+    radius: number
+    alpha?: IPushEnd
+    omega?: IPushEnd
 }
 
 export interface IFabricOutput {
@@ -74,8 +87,8 @@ function extractSubmergedFile(fabric: TensegrityFabric): string {
     return csvSubmerged.map(a => a.join(";")).join("\n")
 }
 
-export function saveCSVZip(fabric: TensegrityFabric): void {
-    const output = fabric.output
+export function saveCSVZip(fabric: TensegrityFabric, storedState: IStoredState): void {
+    const output = fabric.getFabricOutput(storedState)
     const zip = new JSZip()
     zip.file("joints.csv", extractJointFile(output))
     zip.file("intervals.csv", extractIntervalFile(output))
@@ -85,8 +98,8 @@ export function saveCSVZip(fabric: TensegrityFabric): void {
     })
 }
 
-export function saveJSONZip(fabric: TensegrityFabric): void {
-    const output = fabric.output
+export function saveJSONZip(fabric: TensegrityFabric, storedState: IStoredState): void {
+    const output = fabric.getFabricOutput(storedState)
     const zip = new JSZip()
     zip.file(`pretenst-${dateString()}.json`, JSON.stringify(output, undefined, 2))
     zip.generateAsync({type: "blob", mimeType: "application/zip"}).then(blob => {

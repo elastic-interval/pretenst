@@ -7,7 +7,8 @@ import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
+import { IFabricOutput, IOutputInterval, IOutputJoint, IPushEnd } from "../storage/download"
+import { IStoredState } from "../storage/stored-state"
 
 import { isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
@@ -319,7 +320,7 @@ export class TensegrityFabric {
         ))
     }
 
-    public get output(): IFabricOutput {
+    public getFabricOutput(storedState: IStoredState): IFabricOutput {
         const idealLengths = this.instance.floatView.idealLengths
         const strains = this.instance.floatView.strains
         const stiffnesses = this.instance.floatView.stiffnesses
@@ -334,16 +335,33 @@ export class TensegrityFabric {
                     jointCables: gatherJointCables(joint, this.intervals),
                 }
             }),
-            intervals: this.intervals.map(interval => <IOutputInterval>{
-                index: interval.index,
-                joints: [interval.alpha.index, interval.omega.index],
-                type: interval.isPush ? "Push" : "Pull",
-                strain: strains[interval.index],
-                stiffness: stiffnesses[interval.index],
-                linearDensity: linearDensities[interval.index],
-                isPush: isPushInterval(interval.intervalRole),
-                role: interval.intervalRole.toFixed(0),
-                length: idealLengths[interval.index],
+            intervals: this.intervals.map(interval => {
+                const radiusFeature = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
+                const radius = radiusFeature.numeric * linearDensities[interval.index]
+                const jointRadius = radius * storedState.featureValues[FabricFeature.JointRadius].numeric
+                const pushEnd = (index: number) => {
+                    const joint = this.joints[index].location()
+                    const x = joint.x
+                    const y = joint.y
+                    const z = joint.z
+                    return <IPushEnd>{x, y, z, radius: jointRadius}
+                }
+                const isPush = isPushInterval(interval.intervalRole)
+                const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
+                const length = currentLength + (interval.isPush ? -jointRadius * 2 : jointRadius * 2)
+                const alpha = !isPush ? undefined : pushEnd(interval.alpha.index)
+                const omega = !isPush ? undefined : pushEnd(interval.omega.index)
+                return <IOutputInterval>{
+                    index: interval.index,
+                    joints: [interval.alpha.index, interval.omega.index],
+                    type: interval.isPush ? "Push" : "Pull",
+                    strain: strains[interval.index],
+                    stiffness: stiffnesses[interval.index],
+                    linearDensity: linearDensities[interval.index],
+                    role: interval.intervalRole.toFixed(0),
+                    idealLength: idealLengths[interval.index],
+                    isPush, length, radius, alpha, omega,
+                }
             }),
         }
     }

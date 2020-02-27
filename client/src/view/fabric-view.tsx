@@ -212,8 +212,8 @@ function IntervalMesh({fabric, interval, storedState}: {
         }
     }
     const linearDensity = fabric.instance.floatView.linearDensities[interval.index]
-    const pushRadius = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
-    const radius = pushRadius.numeric * linearDensity
+    const radiusFeature = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
+    const radius = radiusFeature.numeric * linearDensity
     const unit = fabric.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
     const length = interval.alpha.location().distanceTo(interval.omega.location())

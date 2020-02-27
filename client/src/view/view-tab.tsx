@@ -148,10 +148,10 @@ export function ViewTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaRunning/> Take</h6>
                 <ButtonGroup vertical={false} className="w-100">
-                    <Button onClick={() => saveCSVZip(fabric)}>
+                    <Button onClick={() => saveCSVZip(fabric, storedState$.getValue())}>
                         <FaDownload/> Download CSV <FaFileCsv/>
                     </Button>
-                    <Button onClick={() => saveJSONZip(fabric)}>
+                    <Button onClick={() => saveJSONZip(fabric, storedState$.getValue())}>
                         <FaDownload/> Download JSON <FaFile/>
                     </Button>
                 </ButtonGroup>
