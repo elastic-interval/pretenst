@@ -7,10 +7,10 @@ import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
-import { IFabricOutput, IOutputInterval, IOutputJoint, IPushEnd } from "../storage/download"
+import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 import { IStoredState } from "../storage/stored-state"
 
-import { isPushInterval } from "./eig-util"
+import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life, stiffnessToLinearDensity } from "./life"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
@@ -339,18 +339,8 @@ export class TensegrityFabric {
                 const radiusFeature = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
                 const radius = radiusFeature.numeric * linearDensities[interval.index]
                 const jointRadius = radius * storedState.featureValues[FabricFeature.JointRadius].numeric
-                const pushEnd = (index: number) => {
-                    const joint = this.joints[index].location()
-                    const x = joint.x
-                    const y = joint.y
-                    const z = joint.z
-                    return <IPushEnd>{x, y, z, radius: jointRadius}
-                }
-                const isPush = isPushInterval(interval.intervalRole)
                 const currentLength = interval.alpha.location().distanceTo(interval.omega.location())
                 const length = currentLength + (interval.isPush ? -jointRadius * 2 : jointRadius * 2)
-                const alpha = !isPush ? undefined : pushEnd(interval.alpha.index)
-                const omega = !isPush ? undefined : pushEnd(interval.omega.index)
                 return <IOutputInterval>{
                     index: interval.index,
                     joints: [interval.alpha.index, interval.omega.index],
@@ -358,9 +348,10 @@ export class TensegrityFabric {
                     strain: strains[interval.index],
                     stiffness: stiffnesses[interval.index],
                     linearDensity: linearDensities[interval.index],
-                    role: interval.intervalRole.toFixed(0),
+                    role: intervalRoleName(interval.intervalRole),
                     idealLength: idealLengths[interval.index],
-                    isPush, length, radius, alpha, omega,
+                    isPush: interval.isPush,
+                    length, radius, jointRadius,
                 }
             }),
         }

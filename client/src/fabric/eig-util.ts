@@ -16,23 +16,23 @@ export const FABRIC_FEATURES: FabricFeature[] = Object.keys(FabricFeature)
 export function intervalRoleName(intervalRole: IntervalRole): string {
     switch (intervalRole) {
         case IntervalRole.NexusPush:
-            return "Nex Push"
+            return "NexPush"
         case IntervalRole.ColumnPush:
-            return "Col Push"
+            return "ColPush"
         case IntervalRole.Triangle:
             return "Tri"
         case IntervalRole.Ring:
             return "Ring"
         case IntervalRole.NexusCross:
-            return "Nex Cross"
+            return "NexCross"
         case IntervalRole.ColumnCross:
-            return "Col Cross"
+            return "ColCross"
         case IntervalRole.BowMid:
-            return "Bow Mid"
+            return "BowMid"
         case IntervalRole.BowEnd:
-            return "Bow End"
+            return "BowEnd"
         case IntervalRole.FacePull:
-            return "Face Pull"
+            return "FacePull"
         default:
             return "?"
     }

@@ -6,6 +6,8 @@
 import { IntervalRole } from "eig"
 import { Matrix4, Quaternion, Vector3 } from "three"
 
+import { intervalRoleName } from "./eig-util"
+
 export const PHI = 1.61803398875
 export const DEFAULT_PUSH_LENGTH = Math.sqrt(2)
 
@@ -52,6 +54,7 @@ export interface IInterval {
 
 export interface IJointCable {
     interval: number
+    role: string
     joint: number
     separation: number
     rotation: number
@@ -97,6 +100,7 @@ export function gatherJointCables(joint: IJoint, intervals: IInterval[]): IJoint
         const rotation = pushToNear.angleTo(pushToInterval) * (nearCross.dot(intervalCross) > 0 ? 180 : -180) / Math.PI
         return <IJointCable>{
             interval: jointInterval.index,
+            role: intervalRoleName(jointInterval.intervalRole),
             joint: otherJoint(jointInterval, joint).index,
             separation, rotation,
         }

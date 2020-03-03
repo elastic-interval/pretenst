@@ -28,13 +28,6 @@ export interface IOutputJoint {
     jointCables: IJointCable[]
 }
 
-export interface IPushEnd {
-    x: number
-    y: number
-    z: number
-    radius: number
-}
-
 export interface IOutputInterval {
     index: number
     joints: number[]
@@ -47,8 +40,7 @@ export interface IOutputInterval {
     idealLength: number
     length: number
     radius: number
-    alpha?: IPushEnd
-    omega?: IPushEnd
+    jointRadius: number
 }
 
 export interface IFabricOutput {
