@@ -138,15 +138,22 @@ export function averageLocation(locations: Vector3[]): Vector3 {
         .multiplyScalar(1 / locations.length)
 }
 
-export function faceToOriginMatrix(face: IFace): Matrix4 {
+export function faceBasis(face: IFace): Matrix4 {
     const trianglePoints = face.joints.map(joint => joint.location())
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
     const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
     const y = new Vector3().crossVectors(z, x).normalize()
     z.crossVectors(x, y).normalize()
-    const basis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-    return new Matrix4().getInverse(basis)
+    return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+}
+
+export function faceToOriginMatrix(face: IFace): Matrix4 {
+    return new Matrix4().getInverse(faceBasis(face))
+}
+
+export function faceToXYMatrix(face: IFace): Matrix4 {
+    return new Matrix4().makeRotationZ(Math.PI / 2).multiply(faceToOriginMatrix(face))
 }
 
 export function getOrderedJoints(face: IFace): IJoint[] {

@@ -8,7 +8,7 @@ use wasm_bindgen::prelude::*;
 use crate::constants::*;
 use crate::face::Face;
 use crate::interval::Interval;
-use crate::joint::Joint;
+use crate::joint::{Joint, JointName};
 use crate::world::World;
 use nalgebra::*;
 
@@ -22,6 +22,9 @@ pub struct Fabric {
     pub(crate) intervals: Vec<Interval>,
     pub(crate) faces: Vec<Face>,
     pub(crate) realizing_countdown: f32,
+    joint_middle_index: u16,
+    joint_left_index: u16,
+    joint_right_index: u16,
 }
 
 #[wasm_bindgen]
@@ -35,6 +38,9 @@ impl Fabric {
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(joint_count * 3),
             faces: Vec::with_capacity(joint_count),
+            joint_middle_index: 0,
+            joint_left_index: 0,
+            joint_right_index: 0,
         }
     }
 
@@ -72,9 +78,10 @@ impl Fabric {
         self.faces.len() as u16
     }
 
-    pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
+    pub fn create_joint(&mut self, side: Lateral, x: f32, y: f32, z: f32) -> usize {
         let index = self.joints.len();
-        self.joints.push(Joint::new(x, y, z));
+        let name = self.next_name(side);
+        self.joints.push(Joint::new(name, x, y, z));
         index
     }
 
@@ -262,24 +269,24 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping => {
                 for joint in &mut self.joints {
-                    joint.physics(world, 0_f32, world.shaping_drag, false)
+                    joint.velocity_physics(world, 0_f32, world.shaping_drag, false)
                 }
             }
             Stage::Realizing => {
                 let nuanced_gravity = world.gravity * realizing_nuance;
                 for joint in &mut self.joints {
-                    joint.physics(world, nuanced_gravity, world.drag, true)
+                    joint.velocity_physics(world, nuanced_gravity, world.drag, true)
                 }
             }
             Stage::Realized => {
                 for joint in &mut self.joints {
-                    joint.physics(world, world.gravity, world.drag, true)
+                    joint.velocity_physics(world, world.gravity, world.drag, true)
                 }
             }
             _ => {}
         }
         for joint in &mut self.joints {
-            joint.location += &joint.velocity;
+            joint.location_physics();
         }
     }
 
@@ -312,5 +319,22 @@ impl Fabric {
             }
         }
         self.set_stage(Stage::Shaping)
+    }
+
+    fn next_name(&mut self, side: Lateral) -> JointName {
+        match side {
+            Lateral::Middle => {
+                self.joint_middle_index += 1;
+                JointName::new(self.joint_middle_index, side)
+            }
+            Lateral::Left => {
+                self.joint_left_index += 1;
+                JointName::new(self.joint_left_index, side)
+            }
+            Lateral::Right => {
+                self.joint_right_index += 1;
+                JointName::new(self.joint_right_index, side)
+            }
+        }
     }
 }

@@ -2,12 +2,13 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
+use nalgebra::*;
+
 use crate::constants::*;
 use crate::face::Face;
 use crate::joint::Joint;
 use crate::view::View;
 use crate::world::World;
-use nalgebra::*;
 
 #[derive(Clone, Copy)]
 pub(crate) struct Interval {
@@ -271,6 +272,20 @@ impl Interval {
     pub fn project_attenuated_color(view: &mut View) {
         Interval::project_line_color(view, ATTENUATED_COLOR)
     }
+
+    pub fn _lateral<'a>(&self, joints: &'a Vec<Joint>) -> Lateral {
+        let alpha = self.alpha(joints);
+        let omega = self.omega(joints);
+        match alpha.name.lateral {
+            Lateral::Middle => match omega.name.lateral {
+                Lateral::Middle => Lateral::Middle,
+                Lateral::Left => Lateral::Right,
+                Lateral::Right => Lateral::Right,
+            },
+            Lateral::Left => Lateral::Right,
+            Lateral::Right => Lateral::Right,
+        }
+    }
 }
 
 #[cfg(test)]
@@ -281,8 +296,10 @@ fn interval_physics() {
     const INTERVAL_MASS: f32 = 2.1_f32;
     let world = World::new();
     let mut joints: Vec<Joint> = Vec::new();
-    joints.push(Joint::new(-1_f32, 1_f32, 0_f32));
-    joints.push(Joint::new(1_f32, 1_f32, 0_f32));
+    let name_a = JointName::new(1, Lateral::Left);
+    let name_b = JointName::new(1, Lateral::Right);
+    joints.push(Joint::new(name_a, -1_f32, 1_f32, 0_f32));
+    joints.push(Joint::new(name_b, 1_f32, 1_f32, 0_f32));
     let mut faces: Vec<Face> = Vec::new();
     let mut interval = Interval::new(
         0,
@@ -316,23 +333,24 @@ fn interval_physics() {
     assert_eq!(interval.strain, (real_length - ideal_length) / ideal_length);
     let force = interval.strain * interval.stiffness * world.shaping_stiffness_factor;
     assert_eq!(force, -0.9090911_f32);
-    let mut push: Vector3<f32> = zero();
-    push += &interval.unit * force;
+    let push: Vector3<f32> = &interval.unit * force;
     assert_eq!(push, Vector3::new(force, 0_f32, 0_f32));
-    assert_eq!(joints[0].force, push / 2_f32);
+    assert_eq!(joints[0].force, &push / 2_f32);
     assert_eq!(joints[1].interval_mass, INTERVAL_MASS);
-    assert_eq!(joints[1].force, push / -2_f32);
+    assert_eq!(joints[1].force, &push / -2_f32);
     assert_eq!(joints[1].velocity, Vector3::new(0_f32, 0_f32, 0_f32));
-    joints[0].physics(&world, 0_f32, world.shaping_drag, false);
-    joints[1].physics(&world, 0_f32, world.shaping_drag, false);
+    joints[0].velocity_physics(&world, 0_f32, world.shaping_drag, false);
+    joints[1].velocity_physics(&world, 0_f32, world.shaping_drag, false);
     assert_eq!(
         joints[1].velocity,
-        -push / 2_f32 / INTERVAL_MASS * (1_f32 - world.shaping_drag)
+        -&push / 2_f32 / INTERVAL_MASS * (1_f32 - world.shaping_drag)
     );
+    joints[0].location_physics();
+    joints[1].location_physics();
     assert_eq!(
         joints[1].location,
         Point3::new(
-            1_f32 - push.x / 2_f32 / INTERVAL_MASS * (1_f32 - world.shaping_drag),
+            1_f32 - &push.x / 2_f32 / INTERVAL_MASS * (1_f32 - world.shaping_drag),
             1_f32,
             0_f32,
         )

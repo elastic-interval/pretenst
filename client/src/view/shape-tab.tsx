@@ -187,11 +187,20 @@ export function ShapeTab(
                     <Button
                         disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
                         onClick={() => {
-                            fabric.builder.uprightAtOrigin(selectedFaces[0])
+                            fabric.builder.uprightAtOrigin(selectedFaces[0], true)
                             fabric.instance.refreshFloatView()
                             clearSelectedFaces()
                         }}>
                         <FaCompass/><span> Upright</span>
+                    </Button>
+                    <Button
+                        disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
+                        onClick={() => {
+                            fabric.builder.uprightAtOrigin(selectedFaces[0], false)
+                            fabric.instance.refreshFloatView()
+                            clearSelectedFaces()
+                        }}>
+                        <FaCompass/><span> Sideways</span>
                     </Button>
                     <Button
                         disabled={disableUnlessFaceCount(2, ShapeSelection.Faces)}

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
+import { Fabric, FabricFeature, IntervalRole, Lateral, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
@@ -96,8 +96,8 @@ export class TensegrityFabric {
         this.facesToConnect = faces
     }
 
-    public createJointIndex(location: Vector3): number {
-        return this.instance.fabric.create_joint(location.x, location.y, location.z)
+    public createLeftJoint(location: Vector3): number {
+        return this.instance.fabric.create_joint(Lateral.Left, location.x, location.y, location.z)
     }
 
     public createFacePull(alpha: IFace, omega: IFace): IFacePull {
@@ -290,7 +290,7 @@ export class TensegrityFabric {
                 const marks = this.faceMarks
                 const baseKey = Object.keys(marks).find(key => marks[key].length === 1)
                 if (baseKey) {
-                    this.builder.uprightAtOrigin(marks[baseKey][0])
+                    this.builder.uprightAtOrigin(marks[baseKey][0], parseInt(baseKey, 10) % 2 === 0)
                 }
                 this.instance.refreshFloatView()
                 if (lifePhase === Stage.Growing) {

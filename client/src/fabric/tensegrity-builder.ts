@@ -12,7 +12,7 @@ import {
     averageScaleFactor,
     brickContaining,
     createBrickPointsAt,
-    faceToOriginMatrix,
+    faceToOriginMatrix, faceToXYMatrix,
     factorToPercent,
     IBrick,
     IFace,
@@ -184,8 +184,9 @@ export class TensegrityBuilder {
         })
     }
 
-    public uprightAtOrigin(face: IFace): void {
-        this.fabric.instance.apply(faceToOriginMatrix(face))
+    public uprightAtOrigin(face: IFace, origin: boolean): void {
+        this.fabric.instance.apply(origin ? faceToOriginMatrix(face) : faceToXYMatrix(face))
+        this.fabric.instance.fabric.set_altitude(0.1)
     }
 
     public createFacePulls(faces: IFace[]): IFacePull[] {
@@ -243,7 +244,7 @@ export class TensegrityBuilder {
         const countdown = this.numericFeature(FabricFeature.IntervalCountdown)
         const brick = initialBrick(this.fabric.bricks.length, base, scale)
         this.fabric.bricks.push(brick)
-        const jointIndexes = points.map((p, idx) => this.fabric.createJointIndex(p))
+        const jointIndexes = points.map((p, idx) => this.fabric.createLeftJoint(p))
         this.fabric.instance.refreshFloatView()
         PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
             const alphaIndex = jointIndexes[idx * 2]

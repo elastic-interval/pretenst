@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-use crate::constants::SurfaceCharacter;
+use crate::constants::*;
 use crate::view::View;
 use crate::world::World;
 use nalgebra::*;
@@ -12,7 +12,20 @@ const RESURFACE: f32 = 0.01;
 const ANTIGRAVITY: f32 = -0.001;
 
 #[derive(Clone, Copy)]
+pub struct JointName {
+    pub(crate) number: u16,
+    pub(crate) lateral: Lateral,
+}
+
+impl JointName {
+    pub fn new(number: u16, lateral: Lateral) -> JointName {
+        JointName { number, lateral }
+    }
+}
+
+#[derive(Clone, Copy)]
 pub struct Joint {
+    pub(crate) name: JointName,
     pub(crate) location: Point3<f32>,
     pub(crate) force: Vector3<f32>,
     pub(crate) velocity: Vector3<f32>,
@@ -20,8 +33,9 @@ pub struct Joint {
 }
 
 impl Joint {
-    pub fn new(x: f32, y: f32, z: f32) -> Joint {
+    pub fn new(name: JointName, x: f32, y: f32, z: f32) -> Joint {
         Joint {
+            name,
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),
@@ -29,7 +43,7 @@ impl Joint {
         }
     }
 
-    pub fn physics(
+    pub fn velocity_physics(
         &mut self,
         world: &World,
         gravity_above: f32,
@@ -68,6 +82,10 @@ impl Joint {
         }
     }
 
+    pub fn location_physics(&mut self) {
+        self.location += &self.velocity
+    }
+
     pub fn project(&self, view: &mut View) {
         view.midpoint += &self.location.coords;
         view.joint_locations.push(self.location.x);
@@ -83,10 +101,13 @@ impl Joint {
 #[test]
 fn joint_physics() {
     let world = World::new();
-    let mut joint = Joint::new(0_f32, 1_f32, 0_f32);
+    let name = JointName::new(1, Lateral::Middle);
+    let mut joint = Joint::new(name, 0_f32, 1_f32, 0_f32);
     joint.force.fill(1_f32);
     joint.velocity.fill(1_f32);
-    joint.physics(&world, world.gravity, world.drag, false);
+    joint.interval_mass = 1_f32;
+    joint.velocity_physics(&world, world.gravity, world.drag, true);
+    joint.location_physics();
     let vy_after = (1_f32 - world.gravity + 1_f32) * (1_f32 - world.drag);
     assert_eq!(joint.velocity.y, vy_after);
     let vx_after = 2_f32 * (1_f32 - world.drag);
