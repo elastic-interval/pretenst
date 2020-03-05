@@ -10,20 +10,20 @@ import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, Dropdo
 import { BehaviorSubject } from "rxjs"
 
 import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { Tensegrity } from "../fabric/tensegrity"
 import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 
-export function TenscriptTab({rootTenscript, setRootTenscript, fabric, runTenscript, storedState$}: {
+export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTenscript, storedState$}: {
     rootTenscript: ITenscript,
     setRootTenscript: (tenscript: ITenscript) => void,
-    fabric?: TensegrityFabric,
+    tensegrity?: Tensegrity,
     runTenscript: (tenscript: ITenscript) => void,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const [tenscript, setTenscript] = useState<ITenscript>(fabric && !fabric.tenscript.fromUrl ? fabric.tenscript : rootTenscript)
+    const [tenscript, setTenscript] = useState<ITenscript>(tensegrity && !tensegrity.tenscript.fromUrl ? tensegrity.tenscript : rootTenscript)
     const [error, setError] = useState("")
 
     const [recentOpen, setRecentOpen] = useState(false)

@@ -13,7 +13,7 @@ import { BehaviorSubject } from "rxjs"
 import { FloatFeature } from "../fabric/fabric-features"
 import { Life } from "../fabric/life"
 import { ITenscript } from "../fabric/tenscript"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { ControlTab, IStoredState, transition } from "../storage/stored-state"
 
@@ -31,7 +31,7 @@ export function ControlTabs(
         rootTenscript, setRootTenscript,
         shapeSelection, setShapeSelection,
         selectedFaces, clearSelectedFaces, selectedIntervals,
-        fabric, setFabric, runTenscript,
+        tensegrity, setFabric, runTenscript,
         visibleRoles, setVisibleRoles,
         toFullScreen, storedState$,
     }: {
@@ -42,8 +42,8 @@ export function ControlTabs(
         clearSelectedFaces: () => void,
         selectedIntervals: IInterval[],
         runTenscript: (tenscript: ITenscript) => void,
-        fabric?: TensegrityFabric,
-        setFabric: (fabric: TensegrityFabric) => void,
+        tensegrity?: Tensegrity,
+        setFabric: (tensegrity: Tensegrity) => void,
         shapeSelection: ShapeSelection,
         setShapeSelection: (shapeSelection: ShapeSelection) => void,
         toFullScreen: () => void,
@@ -52,15 +52,15 @@ export function ControlTabs(
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
-    const [life, updateLife] = useState<Life | undefined>(fabric ? fabric.life : undefined)
+    const [life, updateLife] = useState<Life | undefined>(tensegrity ? tensegrity.life : undefined)
     useEffect(() => {
-        const sub = fabric ? fabric.life$.subscribe(updateLife) : undefined
+        const sub = tensegrity ? tensegrity.life$.subscribe(updateLife) : undefined
         return () => {
             if (sub) {
                 sub.unsubscribe()
             }
         }
-    }, [fabric])
+    }, [tensegrity])
 
     const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
     useEffect(() => {
@@ -96,16 +96,16 @@ export function ControlTabs(
                         <TenscriptTab
                             rootTenscript={rootTenscript}
                             setRootTenscript={setRootTenscript}
-                            fabric={fabric}
+                            tensegrity={tensegrity}
                             runTenscript={runTenscript}
                             storedState$={storedState$}
                         />
                     )
                 case ControlTab.Shape:
-                    return !fabric ? NO_FABRIC : (
+                    return !tensegrity ? NO_FABRIC : (
                         <ShapeTab
                             floatFeatures={floatFeatures}
-                            fabric={fabric}
+                            tensegrity={tensegrity}
                             setFabric={setFabric}
                             selectedIntervals={selectedIntervals}
                             shapeSelection={shapeSelection}
@@ -116,29 +116,29 @@ export function ControlTabs(
                         />
                     )
                 case ControlTab.Realize:
-                    return !fabric ? NO_FABRIC : (
+                    return !tensegrity ? NO_FABRIC : (
                         <RealizeTab
                             floatFeatures={floatFeatures}
-                            fabric={fabric}
+                            tensegrity={tensegrity}
                             shapeSelection={shapeSelection}
                             storedState$={storedState$}
                         />
                     )
                 case ControlTab.View:
-                    return !fabric ? NO_FABRIC : (
+                    return !tensegrity ? NO_FABRIC : (
                         <ViewTab
                             floatFeatures={floatFeatures}
-                            fabric={fabric}
+                            tensegrity={tensegrity}
                             visibleRoles={visibleRoles}
                             setVisibleRoles={setVisibleRoles}
                             storedState$={storedState$}
                         />
                     )
                 case ControlTab.Strain:
-                    return !fabric ? NO_FABRIC : (
+                    return !tensegrity ? NO_FABRIC : (
                         <StrainTab
                             floatFeatures={floatFeatures}
-                            fabric={fabric}
+                            tensegrity={tensegrity}
                             storedState$={storedState$}
                         />
                     )

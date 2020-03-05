@@ -5,7 +5,7 @@
 
 import { FabricFeature, Stage } from "eig"
 
-import { TensegrityFabric } from "./tensegrity-fabric"
+import { Tensegrity } from "./tensegrity"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
 
 export interface ITransitionPrefs {
@@ -16,14 +16,14 @@ export interface ITransitionPrefs {
 export class Life {
     private _stage: Stage
 
-    constructor(private numericFeature: (fabricFeature: FabricFeature) => number, private fabric: TensegrityFabric, stage: Stage) {
+    constructor(private numericFeature: (fabricFeature: FabricFeature) => number, private tensegrity: Tensegrity, stage: Stage) {
         this._stage = stage
     }
 
     public withStage(stage: Stage, prefs?: ITransitionPrefs): Life {
         this.transition(stage, prefs)
         this._stage = stage
-        return new Life(this.numericFeature, this.fabric, stage)
+        return new Life(this.numericFeature, this.tensegrity, stage)
     }
 
     public get stage(): Stage {
@@ -35,7 +35,7 @@ export class Life {
             case Stage.Growing:
                 switch (stage) {
                     case Stage.Shaping:
-                        this.fabric.save()
+                        this.tensegrity.save()
                         return
                 }
                 break
@@ -43,8 +43,8 @@ export class Life {
                 switch (stage) {
                     case Stage.Slack:
                         if (prefs && prefs.adoptLengths) {
-                            this.fabric.instance.fabric.adopt_lengths()
-                            this.fabric.save()
+                            this.tensegrity.instance.fabric.adopt_lengths()
+                            this.tensegrity.save()
                         }
                         return
                     case Stage.Realizing:
@@ -70,11 +70,11 @@ export class Life {
                     case Stage.Slack:
                         if (prefs) {
                             if (prefs.strainToStiffness) {
-                                new TensegrityOptimizer(this.fabric).stiffnessesFromStrains()
+                                new TensegrityOptimizer(this.tensegrity).stiffnessesFromStrains()
                                 return
                             } else if (prefs.adoptLengths) {
-                                this.fabric.instance.fabric.adopt_lengths()
-                                this.fabric.save()
+                                this.tensegrity.instance.fabric.adopt_lengths()
+                                this.tensegrity.save()
                                 return
                             }
                         }

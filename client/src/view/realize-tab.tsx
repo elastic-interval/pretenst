@@ -11,7 +11,7 @@ import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { FloatFeature } from "../fabric/fabric-features"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { Tensegrity } from "../fabric/tensegrity"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -19,9 +19,9 @@ import { FeaturePanel } from "./feature-panel"
 import { LifeStageButton, StageTransition } from "./life-stage-button"
 import { ShapeSelection } from "./shape-tab"
 
-export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}: {
+export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
-    fabric: TensegrityFabric,
+    tensegrity: Tensegrity,
     shapeSelection: ShapeSelection,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
@@ -38,11 +38,11 @@ export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}
         return () => subscriptions.forEach(s => s.unsubscribe())
     }, [])
 
-    const [life, updateLife] = useState(fabric.life)
+    const [life, updateLife] = useState(tensegrity.life)
     useEffect(() => {
-        const sub = fabric.life$.subscribe(updateLife)
+        const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()
-    }, [fabric])
+    }, [tensegrity])
 
     function disabled(): boolean {
         return ellipsoids || shapeSelection !== ShapeSelection.None || life.stage < Stage.Slack
@@ -61,12 +61,12 @@ export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}
             <Grouping>
                 <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
                 <LifeStageButton
-                    fabric={fabric}
+                    tensegrity={tensegrity}
                     stageTransition={StageTransition.SlackToRealizing}
                     disabled={disabledLifeStage()}
                 />
                 <LifeStageButton
-                    fabric={fabric}
+                    tensegrity={tensegrity}
                     stageTransition={StageTransition.CaptureRealizedToSlack}
                     disabled={disabledLifeStage()}
                 />
@@ -96,7 +96,7 @@ export function RealizeTab({floatFeatures, fabric, shapeSelection, storedState$}
             <Grouping>
                 <h6 className="w-100 text-center"><FaBalanceScale/> Compression vs Tension</h6>
                 <LifeStageButton
-                    fabric={fabric}
+                    tensegrity={tensegrity}
                     stageTransition={StageTransition.CaptureStrainForStiffness}
                     disabled={disabledLifeStage()}
                 />

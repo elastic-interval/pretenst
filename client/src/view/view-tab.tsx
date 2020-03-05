@@ -25,7 +25,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { Tensegrity } from "../fabric/tensegrity"
 import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { IStoredState, transition } from "../storage/stored-state"
 
@@ -34,11 +34,11 @@ import { FeaturePanel } from "./feature-panel"
 
 export function ViewTab(
     {
-        floatFeatures, fabric,
+        floatFeatures, tensegrity,
         visibleRoles, setVisibleRoles, storedState$,
     }: {
         floatFeatures: Record<FabricFeature, FloatFeature>,
-        fabric: TensegrityFabric,
+        tensegrity: Tensegrity,
         visibleRoles: IntervalRole[],
         setVisibleRoles: (roles: IntervalRole[]) => void,
         storedState$: BehaviorSubject<IStoredState>,
@@ -56,11 +56,11 @@ export function ViewTab(
         return () => subscription.unsubscribe()
     }, [])
 
-    const [life, updateLife] = useState(fabric.life)
+    const [life, updateLife] = useState(tensegrity.life)
     useEffect(() => {
-        const sub = fabric.life$.subscribe(updateLife)
+        const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()
-    }, [fabric])
+    }, [tensegrity])
 
     function ViewButton({pushes, pulls, children}: { pushes: boolean, pulls: boolean, children: JSX.Element }): JSX.Element {
         return (
@@ -132,15 +132,15 @@ export function ViewTab(
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>
                 <ButtonGroup className="w-100">
                     <Button disabled={life.stage !== Stage.Realized}
-                            onClick={() => fabric.instance.fabric.set_altitude(1)}>
+                            onClick={() => tensegrity.instance.fabric.set_altitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
                     <Button disabled={life.stage !== Stage.Realized}
-                            onClick={() => fabric.instance.fabric.set_altitude(10)}>
+                            onClick={() => tensegrity.instance.fabric.set_altitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>
                     <Button disabled={ellipsoids}
-                            onClick={() => fabric.instance.fabric.centralize()}>
+                            onClick={() => tensegrity.instance.fabric.centralize()}>
                         <FaCompressArrowsAlt/> Centralize
                     </Button>
                 </ButtonGroup>
@@ -148,10 +148,10 @@ export function ViewTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaRunning/> Take</h6>
                 <ButtonGroup vertical={false} className="w-100">
-                    <Button onClick={() => saveCSVZip(fabric, storedState$.getValue())}>
+                    <Button onClick={() => saveCSVZip(tensegrity, storedState$.getValue())}>
                         <FaDownload/> Download CSV <FaFileCsv/>
                     </Button>
-                    <Button onClick={() => saveJSONZip(fabric, storedState$.getValue())}>
+                    <Button onClick={() => saveJSONZip(tensegrity, storedState$.getValue())}>
                         <FaDownload/> Download JSON <FaFile/>
                     </Button>
                 </ButtonGroup>

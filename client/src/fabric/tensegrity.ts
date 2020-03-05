@@ -41,7 +41,7 @@ function scaleToStiffness(scale: IPercent): number {
     return percentToFactor(scale) / 10000
 }
 
-export class TensegrityFabric {
+export class Tensegrity {
     public life$: BehaviorSubject<Life>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
@@ -63,7 +63,7 @@ export class TensegrityFabric {
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
         const brick = new TensegrityBuilder(this).createBrickAt(new Vector3(), percentOrHundred())
         this.bricks = [brick]
-        this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
+        this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
     }
 
     public get life(): Life {
@@ -71,7 +71,6 @@ export class TensegrityFabric {
     }
 
     public save(): void {
-        console.log("Saving backup")
         this.backup = this.instance.fabric.copy()
     }
 
@@ -79,7 +78,6 @@ export class TensegrityFabric {
         if (!this.backup) {
             throw new Error("No backup")
         }
-        console.log("Restoring from backup")
         this.instance.fabric.restore(this.backup)
     }
 

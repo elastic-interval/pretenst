@@ -25,8 +25,8 @@ import { BehaviorSubject } from "rxjs"
 
 import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
+import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityBuilder } from "../fabric/tensegrity-builder"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { IStoredState, roleLengthFeature } from "../storage/stored-state"
@@ -43,13 +43,13 @@ export enum ShapeSelection {
 
 export function ShapeTab(
     {
-        floatFeatures, fabric, selectedIntervals,
+        floatFeatures, tensegrity, selectedIntervals,
         setFabric, shapeSelection, setShapeSelection,
         selectedFaces, clearSelectedFaces, storedState$,
     }: {
         floatFeatures: Record<FabricFeature, FloatFeature>,
-        fabric: TensegrityFabric,
-        setFabric: (fabric: TensegrityFabric) => void,
+        tensegrity: Tensegrity,
+        setFabric: (tensegrity: Tensegrity) => void,
         selectedIntervals: IInterval[],
         shapeSelection: ShapeSelection,
         setShapeSelection: (shapeSelection: ShapeSelection) => void,
@@ -60,7 +60,7 @@ export function ShapeTab(
 
     const [pushAndPull, setPushAndPull] = useState(false)
     useEffect(() => {
-        fabric.instance.world.set_push_and_pull(pushAndPull)
+        tensegrity.instance.world.set_push_and_pull(pushAndPull)
     }, [pushAndPull])
 
     const [ellipsoids, updateEllipsoids] = useState(storedState$.getValue().ellipsoids)
@@ -71,11 +71,11 @@ export function ShapeTab(
         return () => subscriptions.forEach(sub => sub.unsubscribe())
     }, [])
 
-    const [life, updateLife] = useState(fabric.life)
+    const [life, updateLife] = useState(tensegrity.life)
     useEffect(() => {
-        const sub = fabric.life$.subscribe(updateLife)
+        const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()
-    }, [fabric])
+    }, [tensegrity])
 
     const [lengthFeature, setLengthFeature] = useState(floatFeatures[FabricFeature.NexusPushLength])
 
@@ -92,15 +92,15 @@ export function ShapeTab(
             if (interval.isPush && !pushes || !interval.isPush && !pulls) {
                 return
             }
-            fabric.changeIntervalScale(interval, adjustment())
+            tensegrity.changeIntervalScale(interval, adjustment())
         })
     }
 
     function connect(): void {
-        fabric.connectFaces(selectedFaces)
+        tensegrity.connectFaces(selectedFaces)
         clearSelectedFaces()
         setShapeSelection(ShapeSelection.None)
-        setFabric(fabric)
+        setFabric(tensegrity)
     }
 
     function disabled(): boolean {
@@ -123,17 +123,17 @@ export function ShapeTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaArrowAltCircleRight/> Phase</h6>
                 <LifeStageButton
-                    fabric={fabric}
+                    tensegrity={tensegrity}
                     stageTransition={StageTransition.CaptureLengthsToSlack}
                     disabled={disabledLifeStage()}
                 />
                 <LifeStageButton
-                    fabric={fabric}
+                    tensegrity={tensegrity}
                     stageTransition={StageTransition.CurrentLengthsToSlack}
                     disabled={disabledLifeStage()}
                 />
                 <LifeStageButton
-                    fabric={fabric}
+                    tensegrity={tensegrity}
                     stageTransition={StageTransition.SlackToShaping}
                     disabled={disabledLifeStage()}
                 />
@@ -186,8 +186,8 @@ export function ShapeTab(
                     <Button
                         disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
                         onClick={() => {
-                            new TensegrityBuilder(fabric).uprightAtOrigin(selectedFaces[0])
-                            fabric.instance.refreshFloatView()
+                            new TensegrityBuilder(tensegrity).uprightAtOrigin(selectedFaces[0])
+                            tensegrity.instance.refreshFloatView()
                             clearSelectedFaces()
                         }}>
                         <FaCompass/><span> Upright</span>
@@ -199,8 +199,8 @@ export function ShapeTab(
                     </Button>
                     <Button
                         disabled={disabled()}
-                        onClick={() => new TensegrityOptimizer(fabric)
-                            .replaceCrossedNexusCrosses(fabric.numericFeature(FabricFeature.IntervalCountdown))
+                        onClick={() => new TensegrityOptimizer(tensegrity)
+                            .replaceCrossedNexusCrosses(tensegrity.numericFeature(FabricFeature.IntervalCountdown))
                         }>
                         <FaMagic/><span> Bows</span>
                     </Button>

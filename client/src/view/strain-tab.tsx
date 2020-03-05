@@ -13,7 +13,7 @@ import { BehaviorSubject } from "rxjs"
 import { BufferGeometry, Float32BufferAttribute, Geometry, Vector3 } from "three"
 
 import { FloatFeature } from "../fabric/fabric-features"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { Tensegrity } from "../fabric/tensegrity"
 import { IInterval } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
@@ -69,9 +69,9 @@ function needleGeometry(
     return geometry
 }
 
-export function StrainTab({floatFeatures, fabric, storedState$}: {
+export function StrainTab({floatFeatures, tensegrity, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
-    fabric: TensegrityFabric,
+    tensegrity: Tensegrity,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
     const camera = useRef()
@@ -87,11 +87,11 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
                 updateMaxStiffness(storedState.featureValues[FabricFeature.MaxStiffness].numeric)
             })
             return () => sub.unsubscribe()
-        }, [fabric])
+        }, [tensegrity])
 
         useEffect(() => {
             const timer = setInterval(() => {
-                const fabricAge = fabric.instance.fabric.age
+                const fabricAge = tensegrity.instance.fabric.age
                 if (age < fabricAge) {
                     updateAge(fabricAge) // to trigger repaint. better way?
                 }
@@ -99,7 +99,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
             return () => clearTimeout(timer)
         }, [])
 
-        const instance = fabric.instance
+        const instance = tensegrity.instance
 
         function Scale({position, intervals, floats, mid, max, middleTick}: {
             position: number,
@@ -125,7 +125,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
                 <scene>
                     <Scale
                         position={-1.5}
-                        intervals={fabric.intervals}
+                        intervals={tensegrity.intervals}
                         floats={instance.floatView.strains}
                         mid={0}
                         max={maxStrain}
@@ -133,7 +133,7 @@ export function StrainTab({floatFeatures, fabric, storedState$}: {
                     />
                     <Scale
                         position={1.5}
-                        intervals={fabric.intervals}
+                        intervals={tensegrity.intervals}
                         floats={instance.floatView.stiffnesses}
                         mid={0}
                         max={maxStiffness}

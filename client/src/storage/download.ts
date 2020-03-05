@@ -6,7 +6,7 @@
 import * as FileSaver from "file-saver"
 import JSZip from "jszip"
 
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { Tensegrity } from "../fabric/tensegrity"
 import { IJointCable } from "../fabric/tensegrity-types"
 
 import { IStoredState } from "./stored-state"
@@ -72,26 +72,26 @@ function extractIntervalFile(output: IFabricOutput): string {
     return csvIntervals.map(a => a.join(";")).join("\n")
 }
 
-function extractSubmergedFile(fabric: TensegrityFabric): string {
+function extractSubmergedFile(tensegrity: Tensegrity): string {
     const csvSubmerged: string[][] = []
     csvSubmerged.push(["joints"])
-    csvSubmerged.push([`"=""${fabric.submergedJoints.map(joint => joint.index + 1)}"""`])
+    csvSubmerged.push([`"=""${tensegrity.submergedJoints.map(joint => joint.index + 1)}"""`])
     return csvSubmerged.map(a => a.join(";")).join("\n")
 }
 
-export function saveCSVZip(fabric: TensegrityFabric, storedState: IStoredState): void {
-    const output = fabric.getFabricOutput(storedState)
+export function saveCSVZip(tensegrity: Tensegrity, storedState: IStoredState): void {
+    const output = tensegrity.getFabricOutput(storedState)
     const zip = new JSZip()
     zip.file("joints.csv", extractJointFile(output))
     zip.file("intervals.csv", extractIntervalFile(output))
-    zip.file("submerged.csv", extractSubmergedFile(fabric))
+    zip.file("submerged.csv", extractSubmergedFile(tensegrity))
     zip.generateAsync({type: "blob", mimeType: "application/zip"}).then(blob => {
         FileSaver.saveAs(blob, `pretenst-${dateString()}.zip`)
     })
 }
 
-export function saveJSONZip(fabric: TensegrityFabric, storedState: IStoredState): void {
-    const output = fabric.getFabricOutput(storedState)
+export function saveJSONZip(tensegrity: Tensegrity, storedState: IStoredState): void {
+    const output = tensegrity.getFabricOutput(storedState)
     const zip = new JSZip()
     zip.file(`pretenst-${dateString()}.json`, JSON.stringify(output, undefined, 2))
     zip.generateAsync({type: "blob", mimeType: "application/zip"}).then(blob => {

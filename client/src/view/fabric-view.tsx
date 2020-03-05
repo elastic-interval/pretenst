@@ -23,7 +23,7 @@ import {
 } from "three"
 
 import { doNotClick } from "../fabric/eig-util"
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
@@ -61,10 +61,10 @@ const ALTITUDE = 4
 const Y_AXIS = new Vector3(0, 1, 0)
 
 export function FabricView({
-                               fabric, fabricError, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
+                               tensegrity, fabricError, selectedIntervals, selectedFaces, setSelectedFaces, storedState$,
                                shapeSelection, ellipsoids, visibleRoles,
                            }: {
-    fabric: TensegrityFabric,
+    tensegrity: Tensegrity,
     fabricError: (error: string) => void,
     selectedIntervals: IInterval[],
     selectedFaces: IFace[],
@@ -84,11 +84,11 @@ export function FabricView({
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
 
-    const [life, updateLife] = useState(fabric.life)
+    const [life, updateLife] = useState(tensegrity.life)
     useEffect(() => {
-        const sub = fabric.life$.subscribe(updateLife)
+        const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()
-    }, [fabric])
+    }, [tensegrity])
 
     const [storedState, updateStoredState] = useState(storedState$.getValue())
     useEffect(() => {
@@ -118,18 +118,18 @@ export function FabricView({
 
     useRender(() => {
         try {
-            const instance = fabric.instance
+            const instance = tensegrity.instance
             const view = instance.view
             const target = new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
             const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
             orbit.current.target.add(towardsTarget)
             orbit.current.update()
             if (!ellipsoids && shapeSelection !== ShapeSelection.Faces) {
-                const nextStage = fabric.iterate()
+                const nextStage = tensegrity.iterate()
                 if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
-                    setTimeout(() => fabric.toStage(Stage.Realized, {}))
+                    setTimeout(() => tensegrity.toStage(Stage.Realized, {}))
                 } else if (nextStage !== life.stage && life.stage !== Stage.Realizing && nextStage !== Stage.Busy) {
-                    setTimeout(() => fabric.toStage(nextStage, {}))
+                    setTimeout(() => tensegrity.toStage(nextStage, {}))
                 }
             }
             setAge(instance.fabric.age)
@@ -137,7 +137,7 @@ export function FabricView({
             fabricError(e)
         }
     }, true, [
-        fabric, age, life, shapeSelection, ellipsoids,
+        tensegrity, age, life, shapeSelection, ellipsoids,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {
@@ -155,7 +155,7 @@ export function FabricView({
                 {ellipsoids ? (
                     <EllipsoidView
                         key="ellipsoid"
-                        fabric={fabric}
+                        tensegrity={tensegrity}
                         selectedIntervals={selectedIntervals}
                         storedState={storedState}
                         visibleRoles={visibleRoles}
@@ -163,7 +163,7 @@ export function FabricView({
                 ) : (
                     <LineView
                         key="lines"
-                        fabric={fabric}
+                        tensegrity={tensegrity}
                         selectedIntervals={selectedIntervals}
                         storedState={storedState}
                     />
@@ -171,12 +171,12 @@ export function FabricView({
                 {shapeSelection !== ShapeSelection.Faces ? undefined : (
                     <Faces
                         key="faces"
-                        fabric={fabric}
+                        tensegrity={tensegrity}
                         stage={life.stage}
                         selectFace={toggleFacesSelection}
                     />
                 )}
-                {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} fabric={fabric} face={face}/>)}
+                {selectedFaces.map(face => <SelectedFace key={`Face${face.index}`} tensegrity={tensegrity} face={face}/>)}
                 <SurfaceComponent/>
                 <mesh key="space" geometry={SPACE_GEOMETRY} material={spaceMaterial}/>
                 <ambientLight color={AMBIENT_COLOR} intensity={0.8}/>
@@ -186,7 +186,7 @@ export function FabricView({
     )
 }
 
-function SelectedFace({fabric, face}: { fabric: TensegrityFabric, face: IFace }): JSX.Element {
+function SelectedFace({tensegrity, face}: { tensegrity: Tensegrity, face: IFace }): JSX.Element {
     const scale = percentToFactor(face.brick.scale) / 8
     return (
         <mesh
@@ -198,23 +198,23 @@ function SelectedFace({fabric, face}: { fabric: TensegrityFabric, face: IFace })
     )
 }
 
-function IntervalMesh({fabric, interval, storedState}: {
-    fabric: TensegrityFabric,
+function IntervalMesh({tensegrity, interval, storedState}: {
+    tensegrity: Tensegrity,
     interval: IInterval,
     storedState: IStoredState,
 }): JSX.Element | null {
 
     let material = roleMaterial(interval.intervalRole)
     if (storedState.showPushes || storedState.showPulls) {
-        material = rainbowMaterial(fabric.instance.floatView.strainNuances[interval.index])
+        material = rainbowMaterial(tensegrity.instance.floatView.strainNuances[interval.index])
         if (!(storedState.showPushes && storedState.showPulls) && (storedState.showPushes && !interval.isPush || storedState.showPulls && interval.isPush)) {
             return <group/>
         }
     }
-    const linearDensity = fabric.instance.floatView.linearDensities[interval.index]
+    const linearDensity = tensegrity.instance.floatView.linearDensities[interval.index]
     const radiusFeature = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
     const radius = radiusFeature.numeric * linearDensity
-    const unit = fabric.instance.unitVector(interval.index)
+    const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(Y_AXIS, unit)
     const length = interval.alpha.location().distanceTo(interval.omega.location())
     const jointRadius = radius * storedState.featureValues[FabricFeature.JointRadius].numeric
@@ -269,8 +269,8 @@ function IntervalMesh({fabric, interval, storedState}: {
     )
 }
 
-function EllipsoidView({fabric, visibleRoles, selectedIntervals, storedState}: {
-    fabric: TensegrityFabric,
+function EllipsoidView({tensegrity, visibleRoles, selectedIntervals, storedState}: {
+    tensegrity: Tensegrity,
     visibleRoles: IntervalRole[],
     selectedIntervals: IInterval[],
     storedState: IStoredState,
@@ -280,14 +280,14 @@ function EllipsoidView({fabric, visibleRoles, selectedIntervals, storedState}: {
             {selectedIntervals.length > 0 ? selectedIntervals.map(interval => (
                 <IntervalMesh
                     key={`SI${interval.index}`}
-                    fabric={fabric}
+                    tensegrity={tensegrity}
                     interval={interval}
                     storedState={storedState}
                 />
-            )) : fabric.intervals.map(interval => (visibleRoles.indexOf(interval.intervalRole) < 0 ? undefined :
+            )) : tensegrity.intervals.map(interval => (visibleRoles.indexOf(interval.intervalRole) < 0 ? undefined :
                     <IntervalMesh
                         key={`I${interval.index}`}
-                        fabric={fabric}
+                        tensegrity={tensegrity}
                         interval={interval}
                         storedState={storedState}
                     />
@@ -296,8 +296,8 @@ function EllipsoidView({fabric, visibleRoles, selectedIntervals, storedState}: {
     )
 }
 
-function LineView({fabric, selectedIntervals, storedState}: {
-    fabric: TensegrityFabric,
+function LineView({tensegrity, selectedIntervals, storedState}: {
+    tensegrity: Tensegrity,
     selectedIntervals: IInterval[],
     storedState: IStoredState,
 }): JSX.Element {
@@ -305,13 +305,13 @@ function LineView({fabric, selectedIntervals, storedState}: {
         <group>
             <lineSegments
                 key="lines"
-                geometry={fabric.linesGeometry}
+                geometry={tensegrity.linesGeometry}
                 material={LINE_VERTEX_COLORS}
             />
             {selectedIntervals.map(interval => (
                 <IntervalMesh
                     key={`SI${interval.index}`}
-                    fabric={fabric}
+                    tensegrity={tensegrity}
                     interval={interval}
                     storedState={storedState}
                 />
@@ -320,8 +320,8 @@ function LineView({fabric, selectedIntervals, storedState}: {
     )
 }
 
-function Faces({fabric, stage, selectFace}: {
-    fabric: TensegrityFabric,
+function Faces({tensegrity, stage, selectFace}: {
+    tensegrity: Tensegrity,
     stage: Stage,
     selectFace: (face: IFace) => void,
 }): JSX.Element {
@@ -345,7 +345,7 @@ function Faces({fabric, stage, selectFace}: {
             if (faceIndex === undefined) {
                 return undefined
             }
-            return fabric.faces[faceIndex]
+            return tensegrity.faces[faceIndex]
         })
         const face = faces.reverse().pop()
         setDownEvent(undefined)
@@ -360,7 +360,7 @@ function Faces({fabric, stage, selectFace}: {
             ref={meshRef}
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
-            geometry={fabric.facesGeometry}
+            geometry={tensegrity.facesGeometry}
             material={FACE}
         />
     )

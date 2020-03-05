@@ -6,7 +6,7 @@
 import { FabricFeature, IntervalRole } from "eig"
 import { Matrix4, Vector3 } from "three"
 
-import { TensegrityFabric } from "./tensegrity-fabric"
+import { Tensegrity } from "./tensegrity"
 import {
     averageLocation,
     averageScaleFactor,
@@ -35,7 +35,8 @@ export function scaleToFacePullLength(scaleFactor: number): number {
 
 export class TensegrityBuilder {
 
-    constructor(private  fabric: TensegrityFabric) {}
+    constructor(private tensegrity: Tensegrity) {
+    }
 
     public createBrickAt(midpoint: Vector3, scale: IPercent): IBrick {
         const points = createBrickPointsAt(Triangle.PPP, scale, midpoint)
@@ -48,7 +49,7 @@ export class TensegrityBuilder {
         const scaleB = scaleA * percentToFactor(scale)
         const brickB = this.createBrickOnFace(faceA, factorToPercent(scaleB))
         const faceB = brickB.faces[brickB.base]
-        const countdown = this.fabric.numericFeature(FabricFeature.IntervalCountdown)
+        const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
         this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
         return brickB
     }
@@ -58,7 +59,7 @@ export class TensegrityBuilder {
             return facePulls
         }
         const connectFacePull = ({alpha, omega, scaleFactor}: IFacePull) => {
-            const countdown = this.fabric.numericFeature(FabricFeature.IntervalCountdown)
+            const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
             this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)
         }
         return facePulls.filter(facePull => {
@@ -75,7 +76,7 @@ export class TensegrityBuilder {
     }
 
     public uprightAtOrigin(face: IFace): void {
-        this.fabric.instance.apply(faceToOriginMatrix(face))
+        this.tensegrity.instance.apply(faceToOriginMatrix(face))
     }
 
     public createFacePulls(faces: IFace[]): IFacePull[] {
@@ -92,7 +93,7 @@ export class TensegrityBuilder {
                     return aa < bb ? a : b
                 })
                 closestFace.removed = true
-                return this.fabric.createFacePull(closestFace, face)
+                return this.tensegrity.createFacePull(closestFace, face)
             })
         }
         switch (faces.length) {
@@ -100,7 +101,7 @@ export class TensegrityBuilder {
                 if (faces[0].negative === faces[1].negative) {
                     return centerBrickFacePulls()
                 }
-                return [this.fabric.createFacePull(faces[0], faces[1])]
+                return [this.tensegrity.createFacePull(faces[0], faces[1])]
             case 3:
                 return centerBrickFacePulls()
             default:
@@ -112,7 +113,7 @@ export class TensegrityBuilder {
         const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
         const brick = face.brick
         const triangle = face.triangle
-        this.fabric.instance.refreshFloatView()
+        this.tensegrity.instance.refreshFloatView()
         const trianglePoints = brick.faces[triangle].joints.map(joint => joint.location())
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
@@ -130,47 +131,47 @@ export class TensegrityBuilder {
     }
 
     private createBrick(points: Vector3[], base: Triangle, scale: IPercent): IBrick {
-        const countdown = this.fabric.numericFeature(FabricFeature.IntervalCountdown)
-        const brick = initialBrick(this.fabric.bricks.length, base, scale)
-        this.fabric.bricks.push(brick)
-        const jointIndexes = points.map((p, idx) => this.fabric.createLeftJoint(p))
-        this.fabric.instance.refreshFloatView()
+        const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
+        const brick = initialBrick(this.tensegrity.bricks.length, base, scale)
+        this.tensegrity.bricks.push(brick)
+        const jointIndexes = points.map((p, idx) => this.tensegrity.createLeftJoint(p))
+        this.tensegrity.instance.refreshFloatView()
         PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
             const alphaIndex = jointIndexes[idx * 2]
             const omegaIndex = jointIndexes[idx * 2 + 1]
             const alpha: IJoint = {
                 index: alphaIndex,
                 oppositeIndex: omegaIndex,
-                location: () => this.fabric.instance.jointLocation(alphaIndex),
+                location: () => this.tensegrity.instance.jointLocation(alphaIndex),
             }
             const omega: IJoint = {
                 index: omegaIndex,
                 oppositeIndex: alphaIndex,
-                location: () => this.fabric.instance.jointLocation(omegaIndex),
+                location: () => this.tensegrity.instance.jointLocation(omegaIndex),
             }
-            brick.pushes.push(this.fabric.createInterval(alpha, omega, IntervalRole.NexusPush, scale, countdown))
+            brick.pushes.push(this.tensegrity.createInterval(alpha, omega, IntervalRole.NexusPush, scale, countdown))
         })
         brick.pushes.forEach(push => brick.joints.push(push.alpha, push.omega))
         const joints = brick.pushes.reduce((arr: IJoint[], push) => {
             arr.push(push.alpha, push.omega)
             return arr
         }, [])
-        this.fabric.joints.push(...joints)
+        this.tensegrity.joints.push(...joints)
         TRIANGLE_DEFINITIONS.forEach(triangle => {
             const tJoints = triangle.pushEnds.map(end => joints[end])
             for (let walk = 0; walk < 3; walk++) {
                 const alpha = tJoints[walk]
                 const omega = tJoints[(walk + 1) % 3]
-                const interval = this.fabric.createInterval(alpha, omega, IntervalRole.Triangle, scale, countdown)
+                const interval = this.tensegrity.createInterval(alpha, omega, IntervalRole.Triangle, scale, countdown)
                 brick.pulls.push(interval)
                 brick.rings[triangle.ringMember[walk]].push(interval)
             }
         })
         TRIANGLE_DEFINITIONS.forEach(triangle => {
-            const face = this.fabric.createFace(brick, triangle.name)
+            const face = this.tensegrity.createFace(brick, triangle.name)
             brick.faces.push(face)
         })
-        this.fabric.instance.refreshFloatView()
+        this.tensegrity.instance.refreshFloatView()
         return brick
     }
 
@@ -198,7 +199,7 @@ export class TensegrityBuilder {
             throw new Error("Same polarity!")
         }
         [faceA, faceB].forEach((face: IFace): void => {
-            this.fabric.removeFace(face, true)
+            this.tensegrity.removeFace(face, true)
             if (!face.negative) {
                 face.brick.negativeAdjacent++
             } else {
@@ -206,14 +207,14 @@ export class TensegrityBuilder {
             }
         })
         const ring = this.facesToRing(faceA, faceB)
-        const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) => this.fabric.createInterval(from, to, role, connectorScale, countdown)
+        const createInterval = (from: IJoint, to: IJoint, role: IntervalRole) => this.tensegrity.createInterval(from, to, role, connectorScale, countdown)
         for (let corner = 0; corner < ring.length; corner++) {
             const prev = ring[(corner + 5) % 6]
             const curr = ring[corner]
             const next = ring[(corner + 1) % 6]
             createInterval(curr, next, IntervalRole.Ring)
             const crossInterval = (from: IJoint, opposite: IJoint) => {
-                const to = this.fabric.joints[opposite.oppositeIndex]
+                const to = this.tensegrity.joints[opposite.oppositeIndex]
                 const toBrick = brickContaining(to, faceA.brick, faceB.brick)
                 toBrick.crosses.push(createInterval(from, to, IntervalRole.ColumnCross))
             }
@@ -226,7 +227,7 @@ export class TensegrityBuilder {
         [faceA, faceB].forEach(({triangle, brick}: IFace): void => {
             const adjustRole = (intervals: IInterval[], role: IntervalRole) => intervals
                 .filter(interval => !interval.removed && interval.intervalRole !== role)
-                .forEach(interval => this.fabric.changeIntervalRole(interval, role, brick.scale, countdown))
+                .forEach(interval => this.tensegrity.changeIntervalRole(interval, role, brick.scale, countdown))
             if (isNexus(brick)) {
                 adjustRole(brick.pulls, IntervalRole.Triangle)
                 adjustRole(brick.crosses, IntervalRole.NexusCross)

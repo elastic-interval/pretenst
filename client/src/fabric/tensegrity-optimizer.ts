@@ -6,19 +6,19 @@
 import { FabricFeature, IntervalRole } from "eig"
 import { Vector3 } from "three"
 
-import { TensegrityFabric } from "./tensegrity-fabric"
+import { Tensegrity } from "./tensegrity"
 import { IInterval, IJoint, IPercent } from "./tensegrity-types"
 
 export class TensegrityOptimizer {
 
-    constructor(private fabric: TensegrityFabric) {
+    constructor(private tensegrity: Tensegrity) {
     }
 
     public replaceCrossedNexusCrosses(countdown: number): void {
-        const fabric = this.fabric
+        const tensegrity = this.tensegrity
         const pairs: IPair[] = []
         const findPush = (jointIndex: number): IPush => {
-            const interval = fabric.intervals
+            const interval = tensegrity.intervals
                 .filter(i => i.isPush)
                 .find(i => i.alpha.index === jointIndex || i.omega.index === jointIndex)
             if (!interval) {
@@ -27,7 +27,7 @@ export class TensegrityOptimizer {
             const joint: IJoint = interval.alpha.index === jointIndex ? interval.alpha : interval.omega
             return {interval, joint}
         }
-        const crosses = fabric.intervals.filter(interval => interval.intervalRole === IntervalRole.NexusCross)
+        const crosses = tensegrity.intervals.filter(interval => interval.intervalRole === IntervalRole.NexusCross)
         crosses.forEach((intervalA, indexA) => {
             const aAlpha = intervalA.alpha.index
             const aOmega = intervalA.omega.index
@@ -104,36 +104,36 @@ export class TensegrityOptimizer {
             })
         })
         pairs.forEach(({scale, a, x, b, y}: IPair) => {
-            fabric.createInterval(x, y, IntervalRole.BowMid, scale, countdown)
-            const ax = fabric.findInterval(a, x)
-            const ay = fabric.findInterval(a, y)
-            const bx = fabric.findInterval(b, x)
-            const by = fabric.findInterval(b, y)
+            tensegrity.createInterval(x, y, IntervalRole.BowMid, scale, countdown)
+            const ax = tensegrity.findInterval(a, x)
+            const ay = tensegrity.findInterval(a, y)
+            const bx = tensegrity.findInterval(b, x)
+            const by = tensegrity.findInterval(b, y)
             if (!(ax && bx && ay && by)) {
                 throw new Error("Cannot find intervals during optimize")
             }
-            fabric.removeInterval(ax)
-            fabric.removeInterval(by)
-            this.fabric.changeIntervalRole(ay, IntervalRole.BowEnd, scale, countdown)
-            this.fabric.changeIntervalRole(bx, IntervalRole.BowEnd, scale, countdown)
+            tensegrity.removeInterval(ax)
+            tensegrity.removeInterval(by)
+            this.tensegrity.changeIntervalRole(ay, IntervalRole.BowEnd, scale, countdown)
+            this.tensegrity.changeIntervalRole(bx, IntervalRole.BowEnd, scale, countdown)
         })
     }
 
     public stiffnessesFromStrains(): void {
-        const pushOverPull = this.fabric.numericFeature(FabricFeature.PushOverPull)
-        const newStiffnesses = adjustedStiffness(this.fabric, pushOverPull)
-        this.fabric.restore()
-        this.fabric.instance.fabric.copy_stiffnesses(newStiffnesses)
+        const pushOverPull = this.tensegrity.numericFeature(FabricFeature.PushOverPull)
+        const newStiffnesses = adjustedStiffness(this.tensegrity, pushOverPull)
+        this.tensegrity.restore()
+        this.tensegrity.instance.fabric.copy_stiffnesses(newStiffnesses)
     }
 }
 
-function adjustedStiffness(fabric: TensegrityFabric, pushOverPull: number): Float32Array {
-    const strains: Float32Array = fabric.instance.floatView.strains
+function adjustedStiffness(tensegrity: Tensegrity, pushOverPull: number): Float32Array {
+    const strains: Float32Array = tensegrity.instance.floatView.strains
     const getAverageStrain = (toAverage: IInterval[]) => {
         const totalStrain = toAverage.reduce((sum, interval) => sum + strains[interval.index], 0)
         return totalStrain / toAverage.length
     }
-    const intervals = fabric.intervals
+    const intervals = tensegrity.intervals
     const pushes = intervals.filter(interval => interval.isPush)
     const averagePushStrain = getAverageStrain(pushes)
     const pulls = intervals.filter(interval => !interval.isPush)
@@ -145,8 +145,7 @@ function adjustedStiffness(fabric: TensegrityFabric, pushOverPull: number): Floa
         const strainFactor = normalizedStrain / averageAbsoluteStrain
         return 1 + strainFactor
     })
-    console.log("stiffness changes", changes)
-    return fabric.instance.floatView.stiffnesses.map((value, index) => value * changes[index])
+    return tensegrity.instance.floatView.stiffnesses.map((value, index) => value * changes[index])
 }
 
 interface IPair {

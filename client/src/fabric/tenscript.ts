@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Tensegrity } from "./tensegrity"
 import { TensegrityBuilder } from "./tensegrity-builder"
-import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     IBrick,
     IFaceMark,
@@ -237,13 +237,13 @@ export const BOOTSTRAP = BOOTSTRAP_TENSCRIPTS.map(script => codeToTenscript(noPa
 export interface IActiveTenscript {
     tree: ITenscriptTree
     brick: IBrick
-    fabric: TensegrityFabric
+    tensegrity: Tensegrity
 }
 
 export function execute(before: IActiveTenscript[], markTrees: Record<number, ITenscriptTree>): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
 
-    before.forEach(({brick, tree, fabric}) => {
+    before.forEach(({brick, tree, tensegrity}) => {
 
         function markBrick(brickToMark: IBrick, treeWithMarks: ITenscriptTree): void {
             TRIANGLES.forEach(triangle => {
@@ -261,11 +261,11 @@ export function execute(before: IActiveTenscript[], markTrees: Record<number, IT
 
         function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
             const connectTriangle = previous.base === Triangle.PPP ? oppositeTriangle(triangle) : triangle
-            const newBrick = new TensegrityBuilder(fabric).createConnectedBrick(previous, connectTriangle, treeScale)
+            const newBrick = new TensegrityBuilder(tensegrity).createConnectedBrick(previous, connectTriangle, treeScale)
             if (newTree._ === 0) {
                 markBrick(newBrick, newTree)
             }
-            return {tree: newTree, brick: newBrick, fabric}
+            return {tree: newTree, brick: newBrick, tensegrity}
         }
 
         const forward = tree._

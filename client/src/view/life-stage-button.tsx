@@ -20,7 +20,7 @@ import {
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
 
-import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { Tensegrity } from "../fabric/tensegrity"
 
 export enum StageTransition {
     CaptureLengthsToSlack,
@@ -31,17 +31,17 @@ export enum StageTransition {
     CaptureStrainForStiffness,
 }
 
-export function LifeStageButton({fabric, stageTransition, disabled}: {
-    fabric: TensegrityFabric,
+export function LifeStageButton({tensegrity, stageTransition, disabled}: {
+    tensegrity: Tensegrity,
     stageTransition: StageTransition,
     disabled: boolean,
 }): JSX.Element {
 
-    const [life, updateLife] = useState(fabric.life)
+    const [life, updateLife] = useState(tensegrity.life)
     useEffect(() => {
-        const sub = fabric.life$.subscribe(updateLife)
+        const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()
-    }, [fabric])
+    }, [tensegrity])
 
     function allDisabledExcept(stageAccepted: Stage): boolean {
         if (disabled || life.stage === Stage.Busy || life.stage === Stage.Realizing) {
@@ -56,7 +56,7 @@ export function LifeStageButton({fabric, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Shaping)}
-                    onClick={() => fabric.toStage(Stage.Slack, {adoptLengths: true})}
+                    onClick={() => tensegrity.toStage(Stage.Slack, {adoptLengths: true})}
                 >
                     Capture Lengths <FaCamera/> (
                     <Symbol stage={Stage.Shaping}/> ) <FaArrowRight/> ( <FaBaby/><Symbol stage={Stage.Slack}/> )
@@ -68,7 +68,7 @@ export function LifeStageButton({fabric, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Shaping)}
-                    onClick={() => fabric.toStage(Stage.Slack)}
+                    onClick={() => tensegrity.toStage(Stage.Slack)}
                 >
                     Current Lengths <Symbol stage={Stage.Shaping}/> <FaArrowRight/>
                     <Symbol stage={Stage.Slack}/> Slack
@@ -79,7 +79,7 @@ export function LifeStageButton({fabric, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Slack)}
-                    onClick={() => fabric.toStage(Stage.Realizing)}
+                    onClick={() => tensegrity.toStage(Stage.Realizing)}
                 >
                     Slack <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Realized}/> Realized
                 </Button>
@@ -90,7 +90,7 @@ export function LifeStageButton({fabric, stageTransition, disabled}: {
                     <Button
                         className="my-1 w-100"
                         disabled={allDisabledExcept(Stage.Slack)}
-                        onClick={() => fabric.toStage(Stage.Shaping)}
+                        onClick={() => tensegrity.toStage(Stage.Shaping)}
                     >
                         Slack <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Shaping}/> Shaping
                     </Button>
@@ -101,7 +101,7 @@ export function LifeStageButton({fabric, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Realized)}
-                    onClick={() => fabric.toStage(Stage.Slack, {adoptLengths: true})}
+                    onClick={() => tensegrity.toStage(Stage.Slack, {adoptLengths: true})}
                 >
                     Capture realized <FaCamera/> ( <Symbol stage={Stage.Realized}/> ) <FaArrowRight/> ( <FaBaby/>
                     <Symbol stage={Stage.Slack}/> ) New Slack
@@ -112,7 +112,7 @@ export function LifeStageButton({fabric, stageTransition, disabled}: {
                 <Button
                     className="my-1 w-100"
                     disabled={allDisabledExcept(Stage.Realized)}
-                    onClick={() => fabric.toStage(Stage.Slack, {strainToStiffness: true})}
+                    onClick={() => tensegrity.toStage(Stage.Slack, {strainToStiffness: true})}
                 >
                     Capture Strain <FaCamera/> ( <Symbol stage={Stage.Realized}/> <FaList/> ) <FaArrowRight/>
                     ( <Symbol stage={Stage.Slack}/> <FaChartBar/> ) Slack Stiffness
