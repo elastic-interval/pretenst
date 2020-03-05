@@ -35,6 +35,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "(a(2,b(2,c(2,d(1,MA11)),d(2,c(1,MA10))),c(2,d(2,b(1,MA13)),b(2,d(1,MA12))),d(2,b(2,c(1,MA15)),c(2,b(1,MA14)))),b(2,d(2,Mc13),c(2,Md14)),c(2,b(2,Md15),d(2,Mb10)),d(2,c(2,Mb11),b(2,Mc12))):' Diamond'",
     "(a(3,b(3,c(3,d(2,MA11)),d(3,c(2,MA10))),c(3,d(3,b(2,MA13)),b(3,d(2,MA12))),d(3,b(3,c(2,MA15)),c(3,b(2,MA14)))),b(3,d(3,Mc13),c(3,Md14)),c(3,b(3,Md15),d(3,Mb10)),d(3,c(3,Mb11),b(3,Mc12))):'Diamond2'",
     "(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=(b2,c2,d2):'Composed'",
+    "'Galapagotchi1':(A(3,S90),b(3,S90),a(2,S90),B(2,S90))",
 ]
 
 export interface ITenscript {
