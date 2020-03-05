@@ -23,12 +23,11 @@ import {
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
-import {
-    ADJUSTABLE_INTERVAL_ROLES,
-    intervalRoleName,
-} from "../fabric/eig-util"
+import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
+import { TensegrityBuilder } from "../fabric/tensegrity-builder"
 import { TensegrityFabric } from "../fabric/tensegrity-fabric"
+import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { IStoredState, roleLengthFeature } from "../storage/stored-state"
 
@@ -187,7 +186,7 @@ export function ShapeTab(
                     <Button
                         disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
                         onClick={() => {
-                            fabric.builder.uprightAtOrigin(selectedFaces[0])
+                            new TensegrityBuilder(fabric).uprightAtOrigin(selectedFaces[0])
                             fabric.instance.refreshFloatView()
                             clearSelectedFaces()
                         }}>
@@ -200,7 +199,9 @@ export function ShapeTab(
                     </Button>
                     <Button
                         disabled={disabled()}
-                        onClick={() => fabric.builder.replaceCrossedNexusCrosses()}>
+                        onClick={() => new TensegrityOptimizer(fabric)
+                            .replaceCrossedNexusCrosses(fabric.numericFeature(FabricFeature.IntervalCountdown))
+                        }>
                         <FaMagic/><span> Bows</span>
                     </Button>
                 </ButtonGroup>

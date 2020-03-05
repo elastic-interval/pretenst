@@ -12,7 +12,7 @@ import { IStoredState } from "../storage/stored-state"
 
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { ITransitionPrefs, Life, stiffnessToLinearDensity } from "./life"
+import { ITransitionPrefs, Life } from "./life"
 import { execute, IActiveTenscript, ITenscript } from "./tenscript"
 import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
@@ -50,7 +50,6 @@ export class TensegrityFabric {
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
     public facesToConnect: IFace[] | undefined
-    public readonly builder: TensegrityBuilder
 
     private backup?: Fabric
 
@@ -62,8 +61,7 @@ export class TensegrityFabric {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
-        this.builder = new TensegrityBuilder(this, numericFeature)
-        const brick = this.builder.createBrickAt(new Vector3(), percentOrHundred())
+        const brick = new TensegrityBuilder(this).createBrickAt(new Vector3(), percentOrHundred())
         this.bricks = [brick]
         this.activeTenscript = [{tree: this.tenscript.tree, brick, fabric: this}]
     }
@@ -103,12 +101,11 @@ export class TensegrityFabric {
     public createFacePull(alpha: IFace, omega: IFace): IFacePull {
         const actualLength = alpha.location().distanceTo(omega.location())
         const stiffness = scaleToStiffness(percentOrHundred())
-        const linearDensity = stiffnessToLinearDensity(stiffness)
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = scaleToFacePullLength(scaleFactor)
         const index = this.instance.fabric.create_interval(
             alpha.index, omega.index, IntervalRole.FacePull,
-            actualLength, restLength, stiffness, linearDensity, facePullCountdown(actualLength),
+            actualLength, restLength, stiffness, facePullCountdown(actualLength),
         )
         const facePull = {index, alpha, omega, distance: actualLength, scaleFactor, removed: false}
         this.facePulls.push(facePull)
@@ -137,10 +134,9 @@ export class TensegrityFabric {
         const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const stiffness = scaleToStiffness(scale)
-        const linearDensity = stiffnessToLinearDensity(stiffness)
         const index = this.instance.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
-            idealLength, restLength, stiffness, linearDensity, coundown)
+            idealLength, restLength, stiffness, coundown)
         const interval: IInterval = {
             index,
             intervalRole,
@@ -280,6 +276,7 @@ export class TensegrityFabric {
             return lifePhase
         }
         const activeCode = this.activeTenscript
+        const builder = () => new TensegrityBuilder(this)
         if (activeCode) {
             if (activeCode.length > 0) {
                 this.activeTenscript = execute(activeCode, this.tenscript.markTrees)
@@ -290,7 +287,7 @@ export class TensegrityFabric {
                 const marks = this.faceMarks
                 const baseKey = Object.keys(marks).find(key => marks[key].length === 1)
                 if (baseKey) {
-                    this.builder.uprightAtOrigin(marks[baseKey][0])
+                    builder().uprightAtOrigin(marks[baseKey][0])
                 }
                 this.instance.refreshFloatView()
                 if (lifePhase === Stage.Growing) {
@@ -298,7 +295,7 @@ export class TensegrityFabric {
                     this.facePulls = Object.keys(marks)
                         .map(key => marks[key])
                         .filter(list => list.length === 2 || list.length === 3)
-                        .reduce((list: IFacePull[], faceList: IFace[]) => [...list, ...this.builder.createFacePulls(faceList)], [])
+                        .reduce((list: IFacePull[], faceList: IFace[]) => [...list, ...builder().createFacePulls(faceList)], [])
                     return afterGrowing
                 }
             }
@@ -307,9 +304,11 @@ export class TensegrityFabric {
         const faces = this.facesToConnect
         if (faces) {
             this.facesToConnect = undefined
-            this.builder.createFacePulls(faces)
+            builder().createFacePulls(faces)
         }
-        this.facePulls = this.builder.checkFacePulls(this.facePulls, facePull => this.removeFacePull(facePull))
+        if (this.facePulls.length > 0) {
+            this.facePulls = builder().checkFacePulls(this.facePulls, facePull => this.removeFacePull(facePull))
+        }
         return lifePhase
     }
 

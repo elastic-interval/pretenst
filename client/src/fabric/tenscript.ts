@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { TensegrityBuilder } from "./tensegrity-builder"
 import { TensegrityFabric } from "./tensegrity-fabric"
 import {
     IBrick,
@@ -260,7 +261,7 @@ export function execute(before: IActiveTenscript[], markTrees: Record<number, IT
 
         function grow(previous: IBrick, newTree: ITenscriptTree, triangle: Triangle, treeScale: IPercent): IActiveTenscript {
             const connectTriangle = previous.base === Triangle.PPP ? oppositeTriangle(triangle) : triangle
-            const newBrick = fabric.builder.createConnectedBrick(previous, connectTriangle, treeScale)
+            const newBrick = new TensegrityBuilder(fabric).createConnectedBrick(previous, connectTriangle, treeScale)
             if (newTree._ === 0) {
                 markBrick(newBrick, newTree)
             }

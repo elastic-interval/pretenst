@@ -59,7 +59,12 @@ impl View {
         self.midpoint /= fabric.joints.len() as f32;
         for interval in fabric.intervals.iter() {
             let extend = interval.strain / -2_f32 * world.visual_strain;
-            interval.project_line_locations(self, &fabric.joints, &fabric.faces, extend);
+            let bounded = if extend < -interval.ideal_length / 2_f32 {
+                -interval.ideal_length / 2_f32
+            } else {
+                extend
+            };
+            interval.project_line_locations(self, &fabric.joints, &fabric.faces, bounded);
             interval.project_line_features(self)
         }
         for interval in fabric.intervals.iter() {

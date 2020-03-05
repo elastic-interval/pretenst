@@ -34,7 +34,6 @@ impl Interval {
         ideal_length: f32,
         rest_length: f32,
         stiffness: f32,
-        linear_density: f32,
         countdown: f32,
     ) -> Interval {
         Interval {
@@ -44,7 +43,7 @@ impl Interval {
             ideal_length,
             length_for_shape: [rest_length; SHAPE_COUNT],
             stiffness,
-            linear_density,
+            linear_density: stiffness.sqrt(),
             countdown,
             max_countdown: countdown,
             unit: zero(),
@@ -291,7 +290,6 @@ fn interval_physics() {
         IntervalRole::NexusPush,
         ACTUAL_LENGTH,
         REST_LENGTH,
-        1_f32,
         1_f32,
         100_f32,
     );
