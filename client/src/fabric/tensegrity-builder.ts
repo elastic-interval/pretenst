@@ -12,7 +12,7 @@ import {
     averageScaleFactor,
     brickContaining,
     createBrickPointsAt,
-    faceToOriginMatrix, faceToXYMatrix,
+    faceToOriginMatrix,
     factorToPercent,
     IBrick,
     IFace,
@@ -184,9 +184,8 @@ export class TensegrityBuilder {
         })
     }
 
-    public uprightAtOrigin(face: IFace, origin: boolean): void {
-        this.fabric.instance.apply(origin ? faceToOriginMatrix(face) : faceToXYMatrix(face))
-        this.fabric.instance.fabric.set_altitude(0.1)
+    public uprightAtOrigin(face: IFace): void {
+        this.fabric.instance.apply(faceToOriginMatrix(face))
     }
 
     public createFacePulls(faces: IFace[]): IFacePull[] {

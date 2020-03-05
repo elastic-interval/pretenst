@@ -290,7 +290,7 @@ export class TensegrityFabric {
                 const marks = this.faceMarks
                 const baseKey = Object.keys(marks).find(key => marks[key].length === 1)
                 if (baseKey) {
-                    this.builder.uprightAtOrigin(marks[baseKey][0], parseInt(baseKey, 10) % 2 === 0)
+                    this.builder.uprightAtOrigin(marks[baseKey][0])
                 }
                 this.instance.refreshFloatView()
                 if (lifePhase === Stage.Growing) {

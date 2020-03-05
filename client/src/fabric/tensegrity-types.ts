@@ -152,10 +152,6 @@ export function faceToOriginMatrix(face: IFace): Matrix4 {
     return new Matrix4().getInverse(faceBasis(face))
 }
 
-export function faceToXYMatrix(face: IFace): Matrix4 {
-    return new Matrix4().makeRotationZ(Math.PI / 2).multiply(faceToOriginMatrix(face))
-}
-
 export function getOrderedJoints(face: IFace): IJoint[] {
     const clone = [...face.joints]
     return [...TRIANGLE_DEFINITIONS[face.triangle].negative ? clone.reverse() : clone]

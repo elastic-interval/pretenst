@@ -187,20 +187,11 @@ export function ShapeTab(
                     <Button
                         disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
                         onClick={() => {
-                            fabric.builder.uprightAtOrigin(selectedFaces[0], true)
+                            fabric.builder.uprightAtOrigin(selectedFaces[0])
                             fabric.instance.refreshFloatView()
                             clearSelectedFaces()
                         }}>
                         <FaCompass/><span> Upright</span>
-                    </Button>
-                    <Button
-                        disabled={disableUnlessFaceCount(1, ShapeSelection.Faces)}
-                        onClick={() => {
-                            fabric.builder.uprightAtOrigin(selectedFaces[0], false)
-                            fabric.instance.refreshFloatView()
-                            clearSelectedFaces()
-                        }}>
-                        <FaCompass/><span> Sideways</span>
                     </Button>
                     <Button
                         disabled={disableUnlessFaceCount(2, ShapeSelection.Faces)}
@@ -235,7 +226,7 @@ export function ShapeTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaList/> Default Lengths</h6>
                 <FeaturePanel key={lengthFeature.title} feature={lengthFeature} disabled={disabled()}/>
-                <ButtonGroup className="my-2">{
+                <ButtonGroup className="my-2 w-100">{
                     ADJUSTABLE_INTERVAL_ROLES
                         .map(intervalRole => ({
                             intervalRole,

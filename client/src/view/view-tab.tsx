@@ -97,7 +97,7 @@ export function ViewTab(
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaCamera/> Snapshot</h6>
-                <ButtonGroup size="sm">
+                <ButtonGroup size="sm" className="w-100">
                     {ADJUSTABLE_INTERVAL_ROLES.map(intervalRole => (
                         <Button
                             color={visibleRoles.indexOf(intervalRole) < 0 ? "secondary" : "success"}
