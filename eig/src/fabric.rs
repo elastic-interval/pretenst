@@ -3,14 +3,14 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+use nalgebra::*;
 use wasm_bindgen::prelude::*;
 
 use crate::constants::*;
 use crate::face::Face;
 use crate::interval::Interval;
-use crate::joint::{Joint, JointName};
+use crate::joint::Joint;
 use crate::world::World;
-use nalgebra::*;
 
 #[wasm_bindgen]
 #[derive(Clone)]
@@ -78,10 +78,9 @@ impl Fabric {
         self.faces.len() as u16
     }
 
-    pub fn create_joint(&mut self, side: Lateral, x: f32, y: f32, z: f32) -> usize {
+    pub fn create_joint(&mut self, x: f32, y: f32, z: f32) -> usize {
         let index = self.joints.len();
-        let name = self.next_name(side);
-        self.joints.push(Joint::new(name, x, y, z));
+        self.joints.push(Joint::new(x, y, z));
         index
     }
 
@@ -319,22 +318,5 @@ impl Fabric {
             }
         }
         self.set_stage(Stage::Shaping)
-    }
-
-    fn next_name(&mut self, side: Lateral) -> JointName {
-        match side {
-            Lateral::Middle => {
-                self.joint_middle_index += 1;
-                JointName::new(self.joint_middle_index, side)
-            }
-            Lateral::Left => {
-                self.joint_left_index += 1;
-                JointName::new(self.joint_left_index, side)
-            }
-            Lateral::Right => {
-                self.joint_right_index += 1;
-                JointName::new(self.joint_right_index, side)
-            }
-        }
     }
 }

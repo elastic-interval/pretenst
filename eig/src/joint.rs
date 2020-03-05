@@ -12,20 +12,7 @@ const RESURFACE: f32 = 0.01;
 const ANTIGRAVITY: f32 = -0.001;
 
 #[derive(Clone, Copy)]
-pub struct JointName {
-    pub(crate) number: u16,
-    pub(crate) lateral: Lateral,
-}
-
-impl JointName {
-    pub fn new(number: u16, lateral: Lateral) -> JointName {
-        JointName { number, lateral }
-    }
-}
-
-#[derive(Clone, Copy)]
 pub struct Joint {
-    pub(crate) name: JointName,
     pub(crate) location: Point3<f32>,
     pub(crate) force: Vector3<f32>,
     pub(crate) velocity: Vector3<f32>,
@@ -33,9 +20,8 @@ pub struct Joint {
 }
 
 impl Joint {
-    pub fn new(name: JointName, x: f32, y: f32, z: f32) -> Joint {
+    pub fn new(x: f32, y: f32, z: f32) -> Joint {
         Joint {
-            name,
             location: Point3::new(x, y, z),
             force: zero(),
             velocity: zero(),

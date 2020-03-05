@@ -272,20 +272,6 @@ impl Interval {
     pub fn project_attenuated_color(view: &mut View) {
         Interval::project_line_color(view, ATTENUATED_COLOR)
     }
-
-    pub fn _lateral<'a>(&self, joints: &'a Vec<Joint>) -> Lateral {
-        let alpha = self.alpha(joints);
-        let omega = self.omega(joints);
-        match alpha.name.lateral {
-            Lateral::Middle => match omega.name.lateral {
-                Lateral::Middle => Lateral::Middle,
-                Lateral::Left => Lateral::Right,
-                Lateral::Right => Lateral::Right,
-            },
-            Lateral::Left => Lateral::Right,
-            Lateral::Right => Lateral::Right,
-        }
-    }
 }
 
 #[cfg(test)]
@@ -296,10 +282,8 @@ fn interval_physics() {
     const INTERVAL_MASS: f32 = 2.1_f32;
     let world = World::new();
     let mut joints: Vec<Joint> = Vec::new();
-    let name_a = JointName::new(1, Lateral::Left);
-    let name_b = JointName::new(1, Lateral::Right);
-    joints.push(Joint::new(name_a, -1_f32, 1_f32, 0_f32));
-    joints.push(Joint::new(name_b, 1_f32, 1_f32, 0_f32));
+    joints.push(Joint::new(-1_f32, 1_f32, 0_f32));
+    joints.push(Joint::new(1_f32, 1_f32, 0_f32));
     let mut faces: Vec<Face> = Vec::new();
     let mut interval = Interval::new(
         0,

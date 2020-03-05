@@ -41,15 +41,6 @@ pub const REST_SHAPE: u8 = 0;
 
 #[wasm_bindgen]
 #[repr(u8)]
-#[derive(Clone, Copy, Debug)]
-pub enum Lateral {
-    Middle,
-    Left,
-    Right,
-}
-
-#[wasm_bindgen]
-#[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd)]
 pub enum Stage {
     Busy,
