@@ -13,7 +13,7 @@ import { IStoredState } from "../storage/stored-state"
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life } from "./life"
-import { execute, IActiveTenscript, ITenscript } from "./tenscript"
+import { execute, IActiveTenscript, IMark, ITenscript } from "./tenscript"
 import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
     factorToPercent,
@@ -261,12 +261,12 @@ export class Tensegrity {
         const builder = () => new TensegrityBuilder(this)
         if (activeCode) {
             if (activeCode.length > 0) {
-                this.activeTenscript = execute(activeCode, this.tenscript.markTrees)
+                this.activeTenscript = execute(activeCode, this.tenscript.marks)
                 this.instance.fabric.centralize()
             }
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
-                faceStrategies(this.faces, new TensegrityBuilder(this)).forEach(strategy => strategy.execute())
+                faceStrategies(this.faces, this.tenscript.marks, new TensegrityBuilder(this)).forEach(strategy => strategy.execute())
                 if (lifePhase === Stage.Growing) {
                     return this.instance.fabric.finish_growing()
                 }
@@ -329,7 +329,7 @@ export class Tensegrity {
     }
 }
 
-function faceStrategies(faces: IFace[], builder: TensegrityBuilder): FaceStrategy[] {
+function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: TensegrityBuilder): FaceStrategy[] {
     const collated: Record<number, IFace[]> = {}
     faces.forEach(face => {
         if (face.mark === undefined) {
@@ -342,25 +342,28 @@ function faceStrategies(faces: IFace[], builder: TensegrityBuilder): FaceStrateg
             collated[face.mark._] = [face]
         }
     })
-    return Object.keys(collated).map(key => new FaceStrategy(collated[key], builder))
+    return Object.entries(collated).map(([key, value]) => {
+        const possibleMark = marks[key]
+        const mark = possibleMark ? possibleMark :
+            value.length === 1 ? <IMark>{action: "base-face"} : <IMark>{action: "join-faces"}
+        return new FaceStrategy(collated[key], mark, builder)
+    })
 }
 
 class FaceStrategy {
-    constructor(private faces: IFace[], private builder: TensegrityBuilder) {
+    constructor(private faces: IFace[], private mark: IMark, private builder: TensegrityBuilder) {
     }
 
     public execute(): void {
-        switch (this.faces.length) {
-            case 1:
+        switch (this.mark.action) {
+            case "subtree":
+                break
+            case "base-face":
                 this.builder.uprightAtOrigin(this.faces[0])
                 break
-            case 2:
-            case 3:
+            case "join-faces":
                 this.builder.createFacePulls(this.faces)
                 break
-            default:
-                throw new Error("Too many faces marked")
         }
     }
-
 }

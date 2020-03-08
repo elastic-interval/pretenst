@@ -17,35 +17,26 @@ import {
 } from "./tensegrity-types"
 
 const BOOTSTRAP_TENSCRIPTS = [
-    "(0):'Zen'",
-    "(1):'One'",
-    "(6):'Six'",
-    "(16,S90):'Axoneme'",
-    "(b1,a1):'Knee'",
-    "(b3,a3):'Leg'",
-    "(a1,b1,c1,d1):'Nexus'",
-    "(A2,B(3,b(2,S90),S80),C(3,c(2,S90),S80),D(3,d(2,S90),S80)):'Tripod with Knees'",
-    "(A(8, S85, MA1), a(8, S85, MA1)):'Bulge Ring'",
-    "(a1,b(3,S85,MA1),c(3,S85,MA1),d(3,S85,MA1)):'Convergence Three'",
-    "(a1,b(10,S85,MA1),c(10,S85,MA1),d(10,S85,MA1)):'Convergence Ten'",
-    "(B(7,S80,MA1),C(2,S120,MA0),D(7,S80,MA1)):'Halo by Crane'",
+    "'Zen':(0)",
+    "'One':(1)",
+    "'Six':(6)",
+    "'Axoneme':(16,S90)",
+    "'Knee':(b1,a1)",
+    "'Leg':(b3,a3)",
+    "'Nexus':(a1,b1,c1,d1)",
+    "'Tripod with Knees':(A2,B(3,b(2,S90),S80),C(3,c(2,S90),S80),D(3,d(2,S90),S80))",
+    "'Bulge Ring'(A(8, S85, MA1), a(8, S85, MA1))",
+    "'Convergence Three'(a1,b(3,S85,MA1),c(3,S85,MA1),d(3,S85,MA1))",
+    "'Convergence Ten':(a1,b(10,S85,MA1),c(10,S85,MA1),d(10,S85,MA1))",
+    "'Halo by Crane':(B(7,S80,MA1),C(2,S120,MA0),D(7,S80,MA1))",
     "(B(5,S75),C(5,S75),D(5,S75)):'Pretenst Lander'",
-    "(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0))))))):'Zig Zag Loop'",
-    "(B2, C2, D2, A(2, b2, c2, d2)):'Crystal Interstitial'",
-    "(a(2,b(2,c(2,d(1,MA11)),d(2,c(1,MA10))),c(2,d(2,b(1,MA13)),b(2,d(1,MA12))),d(2,b(2,c(1,MA15)),c(2,b(1,MA14)))),b(2,d(2,Mc13),c(2,Md14)),c(2,b(2,Md15),d(2,Mb10)),d(2,c(2,Mb11),b(2,Mc12))):' Diamond'",
-    "(a(3,b(3,c(3,d(2,MA11)),d(3,c(2,MA10))),c(3,d(3,b(2,MA13)),b(3,d(2,MA12))),d(3,b(3,c(2,MA15)),c(3,b(2,MA14)))),b(3,d(3,Mc13),c(3,Md14)),c(3,b(3,Md15),d(3,Mb10)),d(3,c(3,Mb11),b(3,Mc12))):'Diamond2'",
-    "(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=(b2,c2,d2):'Composed'",
+    "'Zig Zag Loop'(a(1,MA0),c(3,b(3,d(3,c(3,b(3,d(1,MA0)))))))",
+    "'Crystal Interstitial':(B2, C2, D2, A(2, b2, c2, d2))",
+    "'Diamond':(a(2,b(2,c(2,d(1,MA1)),d(2,c(1,MA0))),c(2,d(2,b(1,MA3)),b(2,d(1,MA2))),d(2,b(2,c(1,MA5)),c(2,b(1,MA4)))),b(2,d(2,Mc3),c(2,Md4)),c(2,b(2,Md5),d(2,Mb0)),d(2,c(2,Mb1),b(2,Mc2)))",
+    "'Composed':(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=subtree(b2,c2,d2)",
     "'Galapagotchi1':(A(3,S90),b(3,S90),a(2,S90),B(2,S90))",
     "'Galapagotchi2':(A(1,S60,c(2,S75)),b(1,S60,c(2,S85)),a(1,S60,d(2,S85)),B(1,S60,d(2,S85,MA0)))",
 ]
-
-export interface ITenscript {
-    name: string
-    code: string
-    tree: ITenscriptTree
-    markTrees: Record<number, ITenscriptTree>
-    fromUrl: boolean
-}
 
 export interface ITenscriptTree {
     _?: number, // forward steps
@@ -68,6 +59,19 @@ export interface ITenscriptTree {
     Md?: IFaceMark,
 }
 
+export interface IMark {
+    action: "subtree" | "base-face" | "join-faces"
+    tree?: ITenscriptTree
+}
+
+export interface ITenscript {
+    name: string
+    code: string
+    tree: ITenscriptTree
+    marks: Record<number, IMark>
+    fromUrl: boolean
+}
+
 function treeToCode(tree: ITenscriptTree): string {
     const replacer = (s: string, ...args: object[]) => `${args[0]}${args[1]}`
     return JSON.stringify(tree)
@@ -77,11 +81,11 @@ function treeToCode(tree: ITenscriptTree): string {
         .replace(/([ABCDabcdSM])\((\d*)\)/g, replacer)
 }
 
-export function treeToTenscript(name: string, mainTree: ITenscriptTree, markTrees: Record<number, ITenscriptTree>, fromUrl: boolean): ITenscript {
+export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: Record<number, IMark>, fromUrl: boolean): ITenscript {
     const mainCode = treeToCode(mainTree)
-    const subcode = Object.keys(markTrees).map(key => `${key}=${treeToCode(markTrees[key])}`).join(":")
+    const subcode = Object.keys(marks).map(key => `${key}=${treeToCode(marks[key])}`).join(":")
     const subtreesCode = subcode.length > 0 ? `:${subcode}` : ""
-    return {name, tree: mainTree, markTrees, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
+    return {name, tree: mainTree, marks, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
 }
 
 function isDirection(char: string): boolean {
@@ -96,7 +100,7 @@ function faceMark(triangle: Triangle, tree: ITenscriptTree): IFaceMark | undefin
     return tree[`M${TRIANGLE_DIRECTIONS[triangle]}`]
 }
 
-function deleteFaceMark(triangle: Triangle, tree: ITenscriptTree):void {
+function deleteFaceMark(triangle: Triangle, tree: ITenscriptTree): void {
     tree[`M${TRIANGLE_DIRECTIONS[triangle]}`] = undefined
 }
 
@@ -221,9 +225,20 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
         if (!tree) {
             return undefined
         }
-        const markTrees: Record<number, ITenscriptTree> = {}
-        Object.keys(markCode).forEach(key => markTrees[key] = fragmentToTree(markCode[key]))
-        return treeToTenscript(name, tree, markTrees, fromUrl)
+        const marks: Record<number, IMark> = {}
+        Object.keys(markCode).forEach(key => {
+            const c: string = markCode[key]
+            if (c.startsWith("subtree")) {
+                marks[key] = <IMark>{action: "subtree", tree: fragmentToTree(c.substring("subtree".length))}
+            } else if (c.startsWith("base-face")) {
+                marks[key] = <IMark>{action: "base-face"}
+            } else if (c.startsWith("join-faces")) {
+                marks[key] = <IMark>{action: "join-faces"}
+            } else {
+                throw new Error(`Unrecognized mark code: [${c}]`)
+            }
+        })
+        return treeToTenscript(name, tree, marks, fromUrl)
     } catch (e) {
         error(e.message)
         return undefined
@@ -242,7 +257,7 @@ export interface IActiveTenscript {
     tensegrity: Tensegrity
 }
 
-export function execute(before: IActiveTenscript[], markTrees: Record<number, ITenscriptTree>): IActiveTenscript[] {
+export function execute(before: IActiveTenscript[], marks: Record<number, IMark>): IActiveTenscript[] {
     const active: IActiveTenscript[] = []
 
     before.forEach(({brick, tree, tensegrity}) => {
@@ -279,15 +294,21 @@ export function execute(before: IActiveTenscript[], markTrees: Record<number, IT
 
         TRIANGLES.forEach(triangle => {
             const subtree = childTree(triangle, tree)
-            const mark = faceMark(triangle, tree)
-            const markTree = mark ? markTrees[mark._] : undefined
+            const triangleMark = faceMark(triangle, tree)
             if (subtree) {
                 const _ = subtree._ ? subtree._ - 1 : undefined
                 const decremented = {...subtree, _}
                 active.push(grow(brick, decremented, triangle, percentOrHundred(subtree.S)))
-            } else if (markTree) {
-                deleteFaceMark(triangle, tree)
-                active.push(grow(brick, markTree, triangle, percentOrHundred(markTree.S)))
+            } else if (triangleMark) {
+                const mark = marks[triangleMark._]
+                if (mark && mark.action === "subtree") {
+                    const markTree = mark.tree
+                    if (!markTree) {
+                        throw new Error("Missing subtree")
+                    }
+                    deleteFaceMark(triangle, tree)
+                    active.push(grow(brick, markTree, triangle, percentOrHundred(markTree.S)))
+                }
             }
         })
     })
