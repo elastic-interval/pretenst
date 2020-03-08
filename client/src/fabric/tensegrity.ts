@@ -224,22 +224,6 @@ export class Tensegrity {
         }
     }
 
-    public get faceMarks(): Record<number, IFace[]> {
-        const marks: Record<number, IFace[]> = {}
-        this.faces.forEach(face => {
-            if (!face.mark) {
-                return
-            }
-            const found = marks[face.mark._]
-            if (found) {
-                found.push(face)
-            } else {
-                marks[face.mark._] = [face]
-            }
-        })
-        return marks
-    }
-
     public get submergedJoints(): IJoint[] {
         return this.joints.filter(joint => joint.location().y < 0)
     }
@@ -282,19 +266,9 @@ export class Tensegrity {
             }
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
-                const marks = this.faceMarks
-                const baseKey = Object.keys(marks).find(key => marks[key].length === 1)
-                if (baseKey) {
-                    builder().uprightAtOrigin(marks[baseKey][0])
-                }
-                this.instance.refreshFloatView()
+                faceStrategies(this.faces, new TensegrityBuilder(this)).forEach(strategy => strategy.execute())
                 if (lifePhase === Stage.Growing) {
-                    const afterGrowing = this.instance.fabric.finish_growing()
-                    this.facePulls = Object.keys(marks)
-                        .map(key => marks[key])
-                        .filter(list => list.length === 2 || list.length === 3)
-                        .reduce((list: IFacePull[], faceList: IFace[]) => [...list, ...builder().createFacePulls(faceList)], [])
-                    return afterGrowing
+                    return this.instance.fabric.finish_growing()
                 }
             }
             return Stage.Growing
@@ -353,4 +327,40 @@ export class Tensegrity {
             }),
         }
     }
+}
+
+function faceStrategies(faces: IFace[], builder: TensegrityBuilder): FaceStrategy[] {
+    const collated: Record<number, IFace[]> = {}
+    faces.forEach(face => {
+        if (face.mark === undefined) {
+            return
+        }
+        const found = collated[face.mark._]
+        if (found) {
+            found.push(face)
+        } else {
+            collated[face.mark._] = [face]
+        }
+    })
+    return Object.keys(collated).map(key => new FaceStrategy(collated[key], builder))
+}
+
+class FaceStrategy {
+    constructor(private faces: IFace[], private builder: TensegrityBuilder) {
+    }
+
+    public execute(): void {
+        switch (this.faces.length) {
+            case 1:
+                this.builder.uprightAtOrigin(this.faces[0])
+                break
+            case 2:
+            case 3:
+                this.builder.createFacePulls(this.faces)
+                break
+            default:
+                throw new Error("Too many faces marked")
+        }
+    }
+
 }

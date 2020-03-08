@@ -77,6 +77,7 @@ export class TensegrityBuilder {
 
     public uprightAtOrigin(face: IFace): void {
         this.tensegrity.instance.apply(faceToOriginMatrix(face))
+        this.tensegrity.instance.refreshFloatView()
     }
 
     public createFacePulls(faces: IFace[]): IFacePull[] {
