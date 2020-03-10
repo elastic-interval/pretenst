@@ -114,14 +114,22 @@ export class TensegrityBuilder {
                         return []
                 }
             case MarkAction.PullFaces:
-                if (faces.length !== 2) {
-                    throw new Error("Can only pull 2 faces")
-                }
                 const pullScale = mark.scale
                 if (!pullScale) {
                     throw new Error("Missing pull scale")
                 }
-                return [this.tensegrity.createFacePull(faces[0], faces[1], pullScale)]
+                switch (faces.length) {
+                    case 2:
+                        return [this.tensegrity.createFacePull(faces[0], faces[1], pullScale)]
+                    case 3:
+                        return [
+                            this.tensegrity.createFacePull(faces[0], faces[1], pullScale),
+                            this.tensegrity.createFacePull(faces[1], faces[2], pullScale),
+                            this.tensegrity.createFacePull(faces[2], faces[0], pullScale),
+                        ]
+                    default:
+                        return []
+                }
             default:
                 return []
         }

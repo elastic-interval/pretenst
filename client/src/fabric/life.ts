@@ -44,6 +44,8 @@ export class Life {
                     case Stage.Slack:
                         if (prefs && prefs.adoptLengths) {
                             this.tensegrity.instance.fabric.adopt_lengths()
+                            const facePulls = [...this.tensegrity.facePulls]
+                            facePulls.forEach(facePull => this.tensegrity.removeFacePull(facePull))
                             this.tensegrity.save()
                         }
                         return
