@@ -119,7 +119,6 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
         floatFeatures[FabricFeature.ShapingDrag].percent = 100
         floatFeatures[FabricFeature.ShapingStiffnessFactor].percent = 100
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
-        // Object.keys(floatFeatures).map(k => floatFeatures[k]).forEach((feature: FloatFeature) => mainInstance.applyFeature(feature))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(floatFeatures, role)
         const numericFeature = (feature: FabricFeature) => storedState$.getValue().featureValues[feature].numeric
         setTensegrity(new Tensegrity(roleLength, numericFeature, mainInstance, newTenscript))

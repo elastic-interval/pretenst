@@ -59,9 +59,17 @@ export interface ITenscriptTree {
     Md?: IFaceMark,
 }
 
+export enum MarkAction {
+    Subtree,
+    BaseFace,
+    JoinFaces,
+    PullFaces,
+}
+
 export interface IMark {
-    action: "subtree" | "base-face" | "join-faces"
+    action: MarkAction
     tree?: ITenscriptTree
+    scale?: IPercent
 }
 
 export interface ITenscript {
@@ -83,8 +91,27 @@ function treeToCode(tree: ITenscriptTree): string {
 
 export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: Record<number, IMark>, fromUrl: boolean): ITenscript {
     const mainCode = treeToCode(mainTree)
-    const subcode = Object.keys(marks).map(key => `${key}=${treeToCode(marks[key])}`).join(":")
-    const subtreesCode = subcode.length > 0 ? `:${subcode}` : ""
+    const markSections: string[] = []
+    Object.keys(marks).forEach(key => {
+        const mark: IMark = marks[key]
+        switch (mark.action) {
+            case MarkAction.Subtree:
+                markSections.push(`${key}=${treeToCode(marks[key])}`)
+                break
+            case MarkAction.BaseFace:
+                break
+            case MarkAction.JoinFaces:
+                break
+            case MarkAction.PullFaces:
+                const scale = mark.scale
+                if (!scale) {
+                    throw new Error("Missing scale")
+                }
+                markSections.push(`${key}=pull-faces-${scale._}`)
+                break
+        }
+    })
+    const subtreesCode = markSections.length > 0 ? `:${markSections.join(":")}` : ""
     return {name, tree: mainTree, marks, code: `'${name}':${mainCode}${subtreesCode}`, fromUrl}
 }
 
@@ -229,11 +256,15 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
         Object.keys(markCode).forEach(key => {
             const c: string = markCode[key]
             if (c.startsWith("subtree")) {
-                marks[key] = <IMark>{action: "subtree", tree: fragmentToTree(c.substring("subtree".length))}
+                const subtree = fragmentToTree(c.substring("subtree".length))
+                marks[key] = <IMark>{action: MarkAction.Subtree, tree: subtree}
             } else if (c.startsWith("base-face")) {
-                marks[key] = <IMark>{action: "base-face"}
+                marks[key] = <IMark>{action: MarkAction.BaseFace}
             } else if (c.startsWith("join-faces")) {
-                marks[key] = <IMark>{action: "join-faces"}
+                marks[key] = <IMark>{action: MarkAction.JoinFaces}
+            } else if (c.startsWith("pull-faces-")) {
+                const scale: IPercent = {_: parseInt(c.split("-")[2], 10)}
+                marks[key] = <IMark>{action: MarkAction.PullFaces, scale}
             } else {
                 throw new Error(`Unrecognized mark code: [${c}]`)
             }
@@ -301,7 +332,7 @@ export function execute(before: IActiveTenscript[], marks: Record<number, IMark>
                 active.push(grow(brick, decremented, triangle, percentOrHundred(subtree.S)))
             } else if (triangleMark) {
                 const mark = marks[triangleMark._]
-                if (mark && mark.action === "subtree") {
+                if (mark && mark.action === MarkAction.Subtree) {
                     const markTree = mark.tree
                     if (!markTree) {
                         throw new Error("Missing subtree")

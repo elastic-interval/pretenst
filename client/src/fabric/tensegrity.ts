@@ -13,7 +13,7 @@ import { IStoredState } from "../storage/stored-state"
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life } from "./life"
-import { execute, IActiveTenscript, IMark, ITenscript } from "./tenscript"
+import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
 import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
     factorToPercent,
@@ -49,7 +49,6 @@ export class Tensegrity {
     public faces: IFace[] = []
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
-    public facesToConnect: IFace[] | undefined
 
     private backup?: Fabric
 
@@ -88,24 +87,21 @@ export class Tensegrity {
         this.life$.next(this.life.withStage(stage, prefs))
     }
 
-    public connectFaces(faces: IFace[]): void {
-        this.facesToConnect = faces
-    }
-
     public createLeftJoint(location: Vector3): number {
         return this.instance.fabric.create_joint(location.x, location.y, location.z)
     }
 
-    public createFacePull(alpha: IFace, omega: IFace): IFacePull {
-        const actualLength = alpha.location().distanceTo(omega.location())
+    public createFacePull(alpha: IFace, omega: IFace, pullScale?: IPercent): IFacePull {
+        const idealLength = alpha.location().distanceTo(omega.location())
         const stiffness = scaleToStiffness(percentOrHundred())
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
-        const restLength = scaleToFacePullLength(scaleFactor)
+        const restLength = pullScale ? percentToFactor(pullScale) * idealLength : scaleToFacePullLength(scaleFactor)
         const index = this.instance.fabric.create_interval(
             alpha.index, omega.index, IntervalRole.FacePull,
-            actualLength, restLength, stiffness, facePullCountdown(actualLength),
+            idealLength, restLength, stiffness, facePullCountdown(idealLength),
         )
-        const facePull = {index, alpha, omega, distance: actualLength, scaleFactor, removed: false}
+        const connector = !pullScale
+        const facePull: IFacePull = {index, alpha, omega, connector, scaleFactor, removed: false}
         this.facePulls.push(facePull)
         return facePull
     }
@@ -273,11 +269,6 @@ export class Tensegrity {
             }
             return Stage.Growing
         }
-        const faces = this.facesToConnect
-        if (faces) {
-            this.facesToConnect = undefined
-            builder().createFacePulls(faces)
-        }
         if (this.facePulls.length > 0) {
             this.facePulls = builder().checkFacePulls(this.facePulls, facePull => this.removeFacePull(facePull))
         }
@@ -345,7 +336,9 @@ function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: T
     return Object.entries(collated).map(([key, value]) => {
         const possibleMark = marks[key]
         const mark = possibleMark ? possibleMark :
-            value.length === 1 ? <IMark>{action: "base-face"} : <IMark>{action: "join-faces"}
+            value.length === 1 ?
+                <IMark>{action: MarkAction.BaseFace} :
+                <IMark>{action: MarkAction.JoinFaces}
         return new FaceStrategy(collated[key], mark, builder)
     })
 }
@@ -356,13 +349,14 @@ class FaceStrategy {
 
     public execute(): void {
         switch (this.mark.action) {
-            case "subtree":
+            case MarkAction.Subtree:
                 break
-            case "base-face":
+            case MarkAction.BaseFace:
                 this.builder.uprightAtOrigin(this.faces[0])
                 break
-            case "join-faces":
-                this.builder.createFacePulls(this.faces)
+            case MarkAction.JoinFaces:
+            case MarkAction.PullFaces:
+                this.builder.createFacePulls(this.faces, this.mark)
                 break
         }
     }

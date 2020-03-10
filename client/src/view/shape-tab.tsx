@@ -25,6 +25,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
+import { MarkAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityBuilder } from "../fabric/tensegrity-builder"
 import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
@@ -97,7 +98,8 @@ export function ShapeTab(
     }
 
     function connect(): void {
-        tensegrity.connectFaces(selectedFaces)
+        const pulls = new TensegrityBuilder(tensegrity).createFacePulls(selectedFaces, {action: MarkAction.JoinFaces})
+        tensegrity.facePulls.push(...pulls)
         clearSelectedFaces()
         setShapeSelection(ShapeSelection.None)
         setFabric(tensegrity)

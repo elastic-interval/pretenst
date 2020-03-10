@@ -6,6 +6,7 @@
 import { FabricFeature, IntervalRole } from "eig"
 import { Matrix4, Vector3 } from "three"
 
+import { IMark, MarkAction } from "./tenscript"
 import { Tensegrity } from "./tensegrity"
 import {
     averageLocation,
@@ -63,13 +64,15 @@ export class TensegrityBuilder {
             this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)
         }
         return facePulls.filter(facePull => {
-            const {alpha, omega, scaleFactor} = facePull
-            const distance = alpha.location().distanceTo(omega.location())
-            const closeEnough = distance <= scaleToFacePullLength(scaleFactor) * 10
-            if (closeEnough) {
-                connectFacePull(facePull)
-                removeFacePull(facePull)
-                return false
+            if (facePull.connector) {
+                const {alpha, omega, scaleFactor} = facePull
+                const distance = alpha.location().distanceTo(omega.location())
+                const closeEnough = distance <= scaleToFacePullLength(scaleFactor) * 10
+                if (closeEnough) {
+                    connectFacePull(facePull)
+                    removeFacePull(facePull)
+                    return false
+                }
             }
             return true
         })
@@ -80,7 +83,7 @@ export class TensegrityBuilder {
         this.tensegrity.instance.refreshFloatView()
     }
 
-    public createFacePulls(faces: IFace[]): IFacePull[] {
+    public createFacePulls(faces: IFace[], mark: IMark): IFacePull[] {
         const centerBrickFacePulls = () => {
             const brick = this.createBrickAt(
                 averageLocation(faces.map(face => face.location())),
@@ -97,14 +100,28 @@ export class TensegrityBuilder {
                 return this.tensegrity.createFacePull(closestFace, face)
             })
         }
-        switch (faces.length) {
-            case 2:
-                if (faces[0].negative === faces[1].negative) {
-                    return centerBrickFacePulls()
+        switch (mark.action) {
+            case MarkAction.JoinFaces:
+                switch (faces.length) {
+                    case 2:
+                        if (faces[0].negative === faces[1].negative) {
+                            return centerBrickFacePulls()
+                        }
+                        return [this.tensegrity.createFacePull(faces[0], faces[1])]
+                    case 3:
+                        return centerBrickFacePulls()
+                    default:
+                        return []
                 }
-                return [this.tensegrity.createFacePull(faces[0], faces[1])]
-            case 3:
-                return centerBrickFacePulls()
+            case MarkAction.PullFaces:
+                if (faces.length !== 2) {
+                    throw new Error("Can only pull 2 faces")
+                }
+                const pullScale = mark.scale
+                if (!pullScale) {
+                    throw new Error("Missing pull scale")
+                }
+                return [this.tensegrity.createFacePull(faces[0], faces[1], pullScale)]
             default:
                 return []
         }

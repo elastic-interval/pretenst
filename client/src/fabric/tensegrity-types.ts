@@ -111,6 +111,7 @@ export interface IFacePull {
     index: number
     alpha: IFace
     omega: IFace
+    connector: boolean
     scaleFactor: number
     removed: boolean
 }
