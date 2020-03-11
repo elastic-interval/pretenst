@@ -139,18 +139,15 @@ export function averageLocation(locations: Vector3[]): Vector3 {
         .multiplyScalar(1 / locations.length)
 }
 
-export function faceBasis(face: IFace): Matrix4 {
+export function faceToOriginMatrix(face: IFace): Matrix4 {
     const trianglePoints = face.joints.map(joint => joint.location())
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
     const x = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
     const z = new Vector3().subVectors(trianglePoints[0], midpoint).normalize()
     const y = new Vector3().crossVectors(z, x).normalize()
     z.crossVectors(x, y).normalize()
-    return new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-}
-
-export function faceToOriginMatrix(face: IFace): Matrix4 {
-    return new Matrix4().getInverse(faceBasis(face))
+    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+    return new Matrix4().getInverse(faceBasis)
 }
 
 export function getOrderedJoints(face: IFace): IJoint[] {
@@ -278,11 +275,11 @@ export interface IBrick {
     rings: IInterval[][]
     faces: IFace[]
     negativeAdjacent: number
-    postiveeAdjacent: number
+    postiveAdjacent: number
 }
 
 export function isNexus(brick: IBrick): boolean {
-    return brick.negativeAdjacent > 1 || brick.postiveeAdjacent > 1
+    return brick.negativeAdjacent > 1 || brick.postiveAdjacent > 1
 }
 
 export function brickContaining(joint: IJoint, brickA: IBrick, brickB: IBrick): IBrick {
@@ -302,7 +299,7 @@ export function initialBrick(index: number, base: Triangle, scale: IPercent): IB
         index, base, scale, joints: [],
         pushes: [], pulls: [], crosses: [],
         rings: [[], [], [], []], faces: [],
-        negativeAdjacent: 0, postiveeAdjacent: 0,
+        negativeAdjacent: 0, postiveAdjacent: 0,
     }
 }
 
@@ -326,5 +323,17 @@ export function createBrickPointsAt(base: Triangle, scale: IPercent, position: V
         .setPosition(position)
         .scale(new Vector3(scaleFactor, scaleFactor, scaleFactor))
     return points.map(p => p.applyMatrix4(fromBasis))
+}
+
+export function brickToOriginMatrix(brick: IBrick, unitVector: (index: number) => Vector3): Matrix4 {
+    const x = unitVector(brick.pushes[2].index)
+    const y = unitVector(brick.pushes[0].index)
+    const z = unitVector(brick.pushes[4].index)
+    const midpoint = brick.joints
+        .reduce((m, joint) => m.add(joint.location()), new Vector3(0, 10, 0))
+        .multiplyScalar(1.0 / 12.0)
+    const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
+    const twirl = new Matrix4().makeRotationZ(Math.PI/4)
+    return new Matrix4().getInverse(faceBasis.multiply(twirl))
 }
 

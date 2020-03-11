@@ -11,7 +11,7 @@ import { Tensegrity } from "./tensegrity"
 import {
     averageLocation,
     averageScaleFactor,
-    brickContaining,
+    brickContaining, brickToOriginMatrix,
     createBrickPointsAt,
     faceToOriginMatrix,
     factorToPercent,
@@ -45,6 +45,8 @@ export class TensegrityBuilder {
     }
 
     public createConnectedBrick(brickA: IBrick, triangle: Triangle, scale: IPercent): IBrick {
+        const violated = () => brickA.negativeAdjacent > 1 && brickA.postiveAdjacent > 1
+        const brickWasViolated = violated()
         const faceA = brickA.faces[triangle]
         const scaleA = percentToFactor(brickA.scale)
         const scaleB = scaleA * percentToFactor(scale)
@@ -52,6 +54,9 @@ export class TensegrityBuilder {
         const faceB = brickB.faces[brickB.base]
         const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
         this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
+        if (brickWasViolated !== violated()) {
+            this.brickToOrigin(brickA)
+        }
         return brickB
     }
 
@@ -78,9 +83,16 @@ export class TensegrityBuilder {
         })
     }
 
-    public uprightAtOrigin(face: IFace): void {
-        this.tensegrity.instance.apply(faceToOriginMatrix(face))
-        this.tensegrity.instance.refreshFloatView()
+    public faceToOrigin(face: IFace): void {
+        const instance = this.tensegrity.instance
+        instance.apply(faceToOriginMatrix(face))
+        instance.refreshFloatView()
+    }
+
+    public brickToOrigin(brick: IBrick): void {
+        const instance = this.tensegrity.instance
+        instance.apply(brickToOriginMatrix(brick, index => instance.unitVector(index)))
+        instance.refreshFloatView()
     }
 
     public createFacePulls(faces: IFace[], mark: IMark): IFacePull[] {
@@ -139,7 +151,6 @@ export class TensegrityBuilder {
         const negativeFace = TRIANGLE_DEFINITIONS[face.triangle].negative
         const brick = face.brick
         const triangle = face.triangle
-        this.tensegrity.instance.refreshFloatView()
         const trianglePoints = brick.faces[triangle].joints.map(joint => joint.location())
         const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
         const midSide = new Vector3().addVectors(trianglePoints[0], trianglePoints[1]).multiplyScalar(0.5)
@@ -229,7 +240,7 @@ export class TensegrityBuilder {
             if (!face.negative) {
                 face.brick.negativeAdjacent++
             } else {
-                face.brick.postiveeAdjacent++
+                face.brick.postiveAdjacent++
             }
         })
         const ring = this.facesToRing(faceA, faceB)
@@ -264,5 +275,6 @@ export class TensegrityBuilder {
                 adjustRole(brick.pushes, IntervalRole.ColumnPush)
             }
         })
+        this.tensegrity.instance.refreshFloatView()
     }
 }
