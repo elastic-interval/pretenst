@@ -120,7 +120,7 @@ impl Fabric {
     pub fn remove_face(&mut self, index: usize) {
         self.faces.remove(index);
         for interval in self.intervals.iter_mut() {
-            if interval.interval_role == IntervalRole::FacePull {
+            if interval.interval_role == IntervalRole::FaceInterval {
                 if interval.alpha_index > index {
                     interval.alpha_index -= 1;
                 }

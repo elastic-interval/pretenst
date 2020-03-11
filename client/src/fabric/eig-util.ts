@@ -31,7 +31,7 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
             return "BM"
         case IntervalRole.BowEnd:
             return "BE"
-        case IntervalRole.FacePull:
+        case IntervalRole.FaceInterval:
             return "FP"
         default:
             return "?"
@@ -39,7 +39,7 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
 }
 
 export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRole)
-    .filter(role => IntervalRole[role] !== IntervalRole.FacePull)
+    .filter(role => IntervalRole[role] !== IntervalRole.FaceInterval)
     .map(role => IntervalRole[role])
 
 export function isPushInterval(intervalRole: IntervalRole): boolean {

@@ -79,7 +79,7 @@ export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
 }
 
 export function roleDefaultFromFeatures(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
-    if (intervalRole === IntervalRole.FacePull) {
+    if (intervalRole === IntervalRole.FaceInterval) {
         throw new Error()
     }
     return featureValues[roleLengthFeature(intervalRole)].numeric

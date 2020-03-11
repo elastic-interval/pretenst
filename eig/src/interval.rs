@@ -61,7 +61,7 @@ impl Interval {
     }
 
     pub fn calculate_current_length(&mut self, joints: &Vec<Joint>, faces: &Vec<Face>) -> f32 {
-        if self.interval_role == IntervalRole::FacePull {
+        if self.interval_role == IntervalRole::FaceInterval {
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
             &faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
@@ -106,6 +106,7 @@ impl Interval {
         }
         self.strain = (real_length - ideal_length) / ideal_length;
         if !world.push_and_pull
+            && self.interval_role != IntervalRole::FaceInterval
             && (is_push && self.strain > 0_f32 || !is_push && self.strain < 0_f32)
         {
             self.strain = 0_f32;
@@ -114,7 +115,7 @@ impl Interval {
         if stage <= Stage::Slack {
             force *= world.shaping_stiffness_factor;
         }
-        if self.interval_role == IntervalRole::FacePull {
+        if self.interval_role == IntervalRole::FaceInterval {
             let force_vector: Vector3<f32> = self.unit.clone() * force;
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
@@ -212,7 +213,7 @@ impl Interval {
         faces: &'a Vec<Face>,
         extend: f32,
     ) {
-        if self.interval_role == IntervalRole::FacePull {
+        if self.interval_role == IntervalRole::FaceInterval {
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
             faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);

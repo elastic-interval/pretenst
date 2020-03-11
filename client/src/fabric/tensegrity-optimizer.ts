@@ -110,7 +110,8 @@ export class TensegrityOptimizer {
             const bx = tensegrity.findInterval(b, x)
             const by = tensegrity.findInterval(b, y)
             if (!(ax && bx && ay && by)) {
-                throw new Error("Cannot find intervals during optimize")
+                console.log("Cannot find intervals during optimize")
+                return
             }
             tensegrity.removeInterval(ax)
             tensegrity.removeInterval(by)

@@ -96,8 +96,8 @@ export function ShapeTab(
     }
 
     function connect(): void {
-        const pulls = new TensegrityBuilder(tensegrity).createFacePulls(selectedFaces, {action: MarkAction.JoinFaces})
-        tensegrity.facePulls.push(...pulls)
+        const pulls = new TensegrityBuilder(tensegrity).createFaceIntervals(selectedFaces, {action: MarkAction.JoinFaces})
+        tensegrity.faceIntervals.push(...pulls)
         clearSelectedFaces()
         setShapeSelection(ShapeSelection.None)
         setFabric(tensegrity)

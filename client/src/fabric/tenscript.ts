@@ -34,9 +34,9 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Crystal Interstitial':(B2, C2, D2, A(2, b2, c2, d2))",
     "'Diamond':(a(2,b(2,c(2,d(1,MA1)),d(2,c(1,MA0))),c(2,d(2,b(1,MA3)),b(2,d(1,MA2))),d(2,b(2,c(1,MA5)),c(2,b(1,MA4)))),b(2,d(2,Mc3),c(2,Md4)),c(2,b(2,Md5),d(2,Mb0)),d(2,c(2,Mb1),b(2,Mc2)))",
     "'Composed':(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=subtree(b2,c2,d2)",
-    "'Galapagotchi1':(A(3,S90),b(3,S90),a(2,S90),B(2,S90))",
-    "'Galapagotchi2':(A(1,S60,c(2,S75)),b(1,S60,c(2,S85)),a(1,S60,d(2,S85)),B(1,S60,d(2,S85)))",
-    "'Thick Tripod':(A1,B(3,MA1),C(3,MA1),D(3,MA1)):1=pull-faces-35",
+    "'Galapagotchi1':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-60",
+    "'Galapagotchi2':(A(2,c(2,MA0)),b(2,c(2,MA0)),a(2,d(2,MA0)),B(2,d(2,MA0))):0=face-distance-115",
+    "'Thick Tripod':(A1,B(3,MA1),C(3,MA1),D(3,MA1)):1=face-distance-35",
 ]
 
 export interface ITenscriptTree {
@@ -64,7 +64,7 @@ export enum MarkAction {
     Subtree,
     BaseFace,
     JoinFaces,
-    PullFaces,
+    FaceDistance,
 }
 
 export interface IMark {
@@ -103,12 +103,12 @@ export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: R
                 break
             case MarkAction.JoinFaces:
                 break
-            case MarkAction.PullFaces:
+            case MarkAction.FaceDistance:
                 const scale = mark.scale
                 if (!scale) {
                     throw new Error("Missing scale")
                 }
-                markSections.push(`${key}=pull-faces-${scale._}`)
+                markSections.push(`${key}=face-distance-${scale._}`)
                 break
         }
     })
@@ -263,9 +263,9 @@ export function codeToTenscript(error: (message: string) => void, fromUrl: boole
                 marks[key] = <IMark>{action: MarkAction.BaseFace}
             } else if (c.startsWith("join-faces")) {
                 marks[key] = <IMark>{action: MarkAction.JoinFaces}
-            } else if (c.startsWith("pull-faces-")) {
+            } else if (c.startsWith("face-distance-")) {
                 const scale: IPercent = {_: parseInt(c.split("-")[2], 10)}
-                marks[key] = <IMark>{action: MarkAction.PullFaces, scale}
+                marks[key] = <IMark>{action: MarkAction.FaceDistance, scale}
             } else {
                 throw new Error(`Unrecognized mark code: [${c}]`)
             }

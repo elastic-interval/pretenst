@@ -107,7 +107,7 @@ export function gatherJointCables(joint: IJoint, intervals: IInterval[]): IJoint
     })
 }
 
-export interface IFacePull {
+export interface IFaceInterval {
     index: number
     alpha: IFace
     omega: IFace

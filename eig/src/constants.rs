@@ -151,7 +151,7 @@ pub enum IntervalRole {
     ColumnCross,
     BowMid,
     BowEnd,
-    FacePull,
+    FaceInterval,
 }
 
 #[wasm_bindgen]

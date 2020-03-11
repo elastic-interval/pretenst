@@ -17,7 +17,7 @@ import {
     factorToPercent,
     IBrick,
     IFace,
-    IFacePull,
+    IFaceInterval,
     IInterval,
     IJoint,
     initialBrick,
@@ -30,7 +30,7 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
-export function scaleToFacePullLength(scaleFactor: number): number {
+export function scaleToFaceIntervalLength(scaleFactor: number): number {
     return 0.6 * scaleFactor
 }
 
@@ -60,22 +60,22 @@ export class TensegrityBuilder {
         return brickB
     }
 
-    public checkFacePulls(facePulls: IFacePull[], removeFacePull: (facePull: IFacePull) => void): IFacePull[] {
-        if (facePulls.length === 0) {
-            return facePulls
+    public checkFaceIntervals(faceIntervals: IFaceInterval[], removeInterval: (faceInterval: IFaceInterval) => void): IFaceInterval[] {
+        if (faceIntervals.length === 0) {
+            return faceIntervals
         }
-        const connectFacePull = ({alpha, omega, scaleFactor}: IFacePull) => {
+        const connectFaceInteval = ({alpha, omega, scaleFactor}: IFaceInterval) => {
             const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
             this.connectFaces(alpha, omega, factorToPercent(scaleFactor), countdown)
         }
-        return facePulls.filter(facePull => {
-            if (facePull.connector) {
-                const {alpha, omega, scaleFactor} = facePull
+        return faceIntervals.filter(faceInterval => {
+            if (faceInterval.connector) {
+                const {alpha, omega, scaleFactor} = faceInterval
                 const distance = alpha.location().distanceTo(omega.location())
-                const closeEnough = distance <= scaleToFacePullLength(scaleFactor) * 10
+                const closeEnough = distance <= scaleToFaceIntervalLength(scaleFactor) * 10
                 if (closeEnough) {
-                    connectFacePull(facePull)
-                    removeFacePull(facePull)
+                    connectFaceInteval(faceInterval)
+                    removeInterval(faceInterval)
                     return false
                 }
             }
@@ -95,8 +95,8 @@ export class TensegrityBuilder {
         instance.refreshFloatView()
     }
 
-    public createFacePulls(faces: IFace[], mark: IMark): IFacePull[] {
-        const centerBrickFacePulls = () => {
+    public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
+        const centerBrickFaceIntervals = () => {
             const brick = this.createBrickAt(
                 averageLocation(faces.map(face => face.location())),
                 factorToPercent(averageScaleFactor(faces)),
@@ -109,7 +109,7 @@ export class TensegrityBuilder {
                     return aa < bb ? a : b
                 })
                 closestFace.removed = true
-                return this.tensegrity.createFacePull(closestFace, face)
+                return this.tensegrity.createFaceInterval(closestFace, face)
             })
         }
         switch (mark.action) {
@@ -117,31 +117,29 @@ export class TensegrityBuilder {
                 switch (faces.length) {
                     case 2:
                         if (faces[0].negative === faces[1].negative) {
-                            return centerBrickFacePulls()
+                            return centerBrickFaceIntervals()
                         }
-                        return [this.tensegrity.createFacePull(faces[0], faces[1])]
+                        return [this.tensegrity.createFaceInterval(faces[0], faces[1])]
                     case 3:
-                        return centerBrickFacePulls()
+                        return centerBrickFaceIntervals()
                     default:
                         return []
                 }
-            case MarkAction.PullFaces:
+            case MarkAction.FaceDistance:
                 const pullScale = mark.scale
                 if (!pullScale) {
                     throw new Error("Missing pull scale")
                 }
-                switch (faces.length) {
-                    case 2:
-                        return [this.tensegrity.createFacePull(faces[0], faces[1], pullScale)]
-                    case 3:
-                        return [
-                            this.tensegrity.createFacePull(faces[0], faces[1], pullScale),
-                            this.tensegrity.createFacePull(faces[1], faces[2], pullScale),
-                            this.tensegrity.createFacePull(faces[2], faces[0], pullScale),
-                        ]
-                    default:
-                        return []
-                }
+                const pulls: IFaceInterval[] = []
+                faces.forEach((faceA, indexA) => {
+                    faces.forEach((faceB, indexB) => {
+                        if (indexA <= indexB) {
+                            return
+                        }
+                        pulls.push(this.tensegrity.createFaceInterval(faceA, faceB, pullScale))
+                    })
+                })
+                return pulls
             default:
                 return []
         }

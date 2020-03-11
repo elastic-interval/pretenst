@@ -14,14 +14,14 @@ import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life } from "./life"
 import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
-import { scaleToFacePullLength, TensegrityBuilder } from "./tensegrity-builder"
+import { scaleToFaceIntervalLength, TensegrityBuilder } from "./tensegrity-builder"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import {
     factorToPercent,
     gatherJointCables,
     IBrick,
     IFace,
-    IFacePull,
+    IFaceInterval,
     IInterval,
     IJoint,
     IPercent,
@@ -33,7 +33,7 @@ import {
 
 const COUNTDOWN_MAX = 65535
 
-function facePullCountdown(distance: number): number {
+function faceIntervalCountdown(distance: number): number {
     const countdown = distance * 6000
     return countdown > COUNTDOWN_MAX ? COUNTDOWN_MAX : countdown
 }
@@ -46,7 +46,7 @@ export class Tensegrity {
     public life$: BehaviorSubject<Life>
     public joints: IJoint[] = []
     public intervals: IInterval[] = []
-    public facePulls: IFacePull[] = []
+    public faceIntervals: IFaceInterval[] = []
     public faces: IFace[] = []
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
@@ -92,35 +92,35 @@ export class Tensegrity {
         return this.instance.fabric.create_joint(location.x, location.y, location.z)
     }
 
-    public createFacePull(alpha: IFace, omega: IFace, pullScale?: IPercent): IFacePull {
+    public createFaceInterval(alpha: IFace, omega: IFace, pullScale?: IPercent): IFaceInterval {
         const idealLength = alpha.location().distanceTo(omega.location())
         const stiffness = scaleToStiffness(percentOrHundred())
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
-        const restLength = pullScale ? percentToFactor(pullScale) * idealLength : scaleToFacePullLength(scaleFactor)
+        const restLength = pullScale ? percentToFactor(pullScale) * idealLength : scaleToFaceIntervalLength(scaleFactor)
         const index = this.instance.fabric.create_interval(
-            alpha.index, omega.index, IntervalRole.FacePull,
-            idealLength, restLength, stiffness, facePullCountdown(idealLength),
+            alpha.index, omega.index, IntervalRole.FaceInterval,
+            idealLength, restLength, stiffness, faceIntervalCountdown(idealLength),
         )
         const connector = !pullScale
-        const facePull: IFacePull = {index, alpha, omega, connector, scaleFactor, removed: false}
-        this.facePulls.push(facePull)
-        return facePull
+        const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
+        this.faceIntervals.push(interval)
+        return interval
     }
 
-    public removeFacePull(facePull: IFacePull): void {
-        this.facePulls = this.facePulls.filter(existing => existing.index !== facePull.index)
-        this.instance.fabric.remove_interval(facePull.index)
-        this.facePulls.forEach(existing => {
-            if (existing.index > facePull.index) {
+    public removeFaceInterval(interval: IFaceInterval): void {
+        this.faceIntervals = this.faceIntervals.filter(existing => existing.index !== interval.index)
+        this.instance.fabric.remove_interval(interval.index)
+        this.faceIntervals.forEach(existing => {
+            if (existing.index > interval.index) {
                 existing.index--
             }
         })
         this.intervals.forEach(existing => {
-            if (existing.index > facePull.index) {
+            if (existing.index > interval.index) {
                 existing.index--
             }
         })
-        facePull.removed = true
+        interval.removed = true
     }
 
     public createInterval(alpha: IJoint, omega: IJoint, intervalRole: IntervalRole, scale: IPercent, coundown: number): IInterval {
@@ -165,7 +165,7 @@ export class Tensegrity {
                 existing.index--
             }
         })
-        this.facePulls.forEach(existing => {
+        this.faceIntervals.forEach(existing => {
             if (existing.index > interval.index) {
                 existing.index--
             }
@@ -207,7 +207,7 @@ export class Tensegrity {
                 existing.index--
             }
         })
-        this.facePulls.forEach(existing => {
+        this.faceIntervals.forEach(existing => {
             if (existing.alpha.index > face.index) {
                 existing.alpha.index--
             }
@@ -245,8 +245,8 @@ export class Tensegrity {
         return geometry
     }
 
-    public startTightening(facePulls: IFacePull[]): void {
-        this.facePulls = facePulls
+    public startTightening(intervals: IFaceInterval[]): void {
+        this.faceIntervals = intervals
     }
 
     public iterate(): Stage {
@@ -271,8 +271,8 @@ export class Tensegrity {
             }
             return Stage.Growing
         }
-        if (this.facePulls.length > 0) {
-            this.facePulls = builder().checkFacePulls(this.facePulls, facePull => this.removeFacePull(facePull))
+        if (this.faceIntervals.length > 0) {
+            this.faceIntervals = builder().checkFaceIntervals(this.faceIntervals, interval => this.removeFaceInterval(interval))
         }
         return lifePhase
     }
@@ -357,8 +357,8 @@ class FaceStrategy {
                 this.builder.faceToOrigin(this.faces[0])
                 break
             case MarkAction.JoinFaces:
-            case MarkAction.PullFaces:
-                this.builder.createFacePulls(this.faces, this.mark)
+            case MarkAction.FaceDistance:
+                this.builder.createFaceIntervals(this.faces, this.mark)
                 break
         }
     }
