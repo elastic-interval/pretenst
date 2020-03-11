@@ -14,7 +14,7 @@ import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life } from "./life"
 import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
-import { scaleToFaceIntervalLength, TensegrityBuilder } from "./tensegrity-builder"
+import { scaleToFaceConnectorLength, TensegrityBuilder } from "./tensegrity-builder"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import {
     factorToPercent,
@@ -33,7 +33,7 @@ import {
 
 const COUNTDOWN_MAX = 65535
 
-function faceIntervalCountdown(distance: number): number {
+function faceConnectorCountdown(distance: number): number {
     const countdown = distance * 6000
     return countdown > COUNTDOWN_MAX ? COUNTDOWN_MAX : countdown
 }
@@ -92,19 +92,12 @@ export class Tensegrity {
         return this.instance.fabric.create_joint(location.x, location.y, location.z)
     }
 
-    public createFaceInterval(alpha: IFace, omega: IFace, pullScale?: IPercent): IFaceInterval {
-        const idealLength = alpha.location().distanceTo(omega.location())
-        const stiffness = scaleToStiffness(percentOrHundred())
-        const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
-        const restLength = pullScale ? percentToFactor(pullScale) * idealLength : scaleToFaceIntervalLength(scaleFactor)
-        const index = this.instance.fabric.create_interval(
-            alpha.index, omega.index, IntervalRole.FaceInterval,
-            idealLength, restLength, stiffness, faceIntervalCountdown(idealLength),
-        )
-        const connector = !pullScale
-        const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
-        this.faceIntervals.push(interval)
-        return interval
+    public createFaceConnector(alpha: IFace, omega: IFace): IFaceInterval {
+        return this.createFaceInterval(alpha, omega)
+    }
+
+    public createFaceDistancer(alpha: IFace, omega: IFace, pullScale: IPercent): IFaceInterval {
+        return this.createFaceInterval(alpha, omega, pullScale)
     }
 
     public removeFaceInterval(interval: IFaceInterval): void {
@@ -320,6 +313,24 @@ export class Tensegrity {
             }),
         }
     }
+
+    private createFaceInterval(alpha: IFace, omega: IFace, pullScale?: IPercent): IFaceInterval {
+        const connector = !pullScale
+        const intervalRole = connector ? IntervalRole.FaceConnector : IntervalRole.FaceDistancer
+        const idealLength = alpha.location().distanceTo(omega.location())
+        const stiffness = scaleToStiffness(percentOrHundred())
+        const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
+        const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
+        const index = this.instance.fabric.create_interval(
+            alpha.index, omega.index, intervalRole,
+            idealLength, restLength, stiffness, faceConnectorCountdown(idealLength),
+        )
+        const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
+        this.faceIntervals.push(interval)
+        return interval
+    }
+
+
 }
 
 function faceStrategies(faces: IFace[], marks: Record<number, IMark>, builder: TensegrityBuilder): FaceStrategy[] {

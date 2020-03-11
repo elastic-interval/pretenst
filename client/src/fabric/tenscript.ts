@@ -97,7 +97,11 @@ export function treeToTenscript(name: string, mainTree: ITenscriptTree, marks: R
         const mark: IMark = marks[key]
         switch (mark.action) {
             case MarkAction.Subtree:
-                markSections.push(`${key}=${treeToCode(marks[key])}`)
+                const tree = mark.tree
+                if (!tree) {
+                    throw new Error("Missing tree")
+                }
+                markSections.push(`${key}=${treeToCode(tree)}`)
                 break
             case MarkAction.BaseFace:
                 break

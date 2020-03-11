@@ -61,7 +61,9 @@ impl Interval {
     }
 
     pub fn calculate_current_length(&mut self, joints: &Vec<Joint>, faces: &Vec<Face>) -> f32 {
-        if self.interval_role == IntervalRole::FaceInterval {
+        if self.interval_role == IntervalRole::FaceConnector
+            || self.interval_role == IntervalRole::FaceDistancer
+        {
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
             &faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);
@@ -106,7 +108,7 @@ impl Interval {
         }
         self.strain = (real_length - ideal_length) / ideal_length;
         if !world.push_and_pull
-            && self.interval_role != IntervalRole::FaceInterval
+            && self.interval_role != IntervalRole::FaceDistancer
             && (is_push && self.strain > 0_f32 || !is_push && self.strain < 0_f32)
         {
             self.strain = 0_f32;
@@ -115,7 +117,9 @@ impl Interval {
         if stage <= Stage::Slack {
             force *= world.shaping_stiffness_factor;
         }
-        if self.interval_role == IntervalRole::FaceInterval {
+        if self.interval_role == IntervalRole::FaceConnector
+            || self.interval_role == IntervalRole::FaceDistancer
+        {
             let force_vector: Vector3<f32> = self.unit.clone() * force;
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
@@ -125,26 +129,28 @@ impl Interval {
                 faces[self.alpha_index].joint_mut(joints, face_joint).force += &force_vector;
                 faces[self.omega_index].joint_mut(joints, face_joint).force -= &force_vector;
             }
-            let mut total_distance = 0_f32;
-            for alpha in 0..3 {
-                for omega in 0..3 {
-                    total_distance += (&faces[self.alpha_index].joint(joints, alpha).location
-                        - &faces[self.omega_index].joint(joints, omega).location)
-                        .magnitude();
+            if self.interval_role == IntervalRole::FaceConnector {
+                let mut total_distance = 0_f32;
+                for alpha in 0..3 {
+                    for omega in 0..3 {
+                        total_distance += (&faces[self.alpha_index].joint(joints, alpha).location
+                            - &faces[self.omega_index].joint(joints, omega).location)
+                            .magnitude();
+                    }
                 }
-            }
-            let average_distance = total_distance / 9_f32;
-            for alpha in 0..3 {
-                for omega in 0..3 {
-                    let parallel_vector: Vector3<f32> =
-                        &faces[self.alpha_index].joint(joints, alpha).location
-                            - &faces[self.omega_index].joint(joints, omega).location;
-                    let distance = parallel_vector.magnitude();
-                    let parallel_force = force * 3_f32 * (average_distance - distance);
-                    faces[self.alpha_index].joint_mut(joints, alpha).force +=
-                        &parallel_vector * parallel_force / distance;
-                    faces[self.omega_index].joint_mut(joints, omega).force -=
-                        &parallel_vector * parallel_force / distance;
+                let average_distance = total_distance / 9_f32;
+                for alpha in 0..3 {
+                    for omega in 0..3 {
+                        let parallel_vector: Vector3<f32> =
+                            &faces[self.alpha_index].joint(joints, alpha).location
+                                - &faces[self.omega_index].joint(joints, omega).location;
+                        let distance = parallel_vector.magnitude();
+                        let parallel_force = force * 3_f32 * (average_distance - distance);
+                        faces[self.alpha_index].joint_mut(joints, alpha).force +=
+                            &parallel_vector * parallel_force / distance;
+                        faces[self.omega_index].joint_mut(joints, omega).force -=
+                            &parallel_vector * parallel_force / distance;
+                    }
                 }
             }
         } else {
@@ -213,7 +219,9 @@ impl Interval {
         faces: &'a Vec<Face>,
         extend: f32,
     ) {
-        if self.interval_role == IntervalRole::FaceInterval {
+        if self.interval_role == IntervalRole::FaceConnector
+            || self.interval_role == IntervalRole::FaceDistancer
+        {
             let mut alpha_midpoint: Point3<f32> = Point3::origin();
             let mut omega_midpoint: Point3<f32> = Point3::origin();
             faces[self.alpha_index].project_midpoint(joints, &mut alpha_midpoint);

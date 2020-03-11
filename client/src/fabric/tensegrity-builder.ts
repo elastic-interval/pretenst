@@ -30,7 +30,7 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
-export function scaleToFaceIntervalLength(scaleFactor: number): number {
+export function scaleToFaceConnectorLength(scaleFactor: number): number {
     return 0.6 * scaleFactor
 }
 
@@ -72,7 +72,7 @@ export class TensegrityBuilder {
             if (faceInterval.connector) {
                 const {alpha, omega, scaleFactor} = faceInterval
                 const distance = alpha.location().distanceTo(omega.location())
-                const closeEnough = distance <= scaleToFaceIntervalLength(scaleFactor) * 10
+                const closeEnough = distance <= scaleToFaceConnectorLength(scaleFactor) * 10
                 if (closeEnough) {
                     connectFaceInteval(faceInterval)
                     removeInterval(faceInterval)
@@ -109,7 +109,7 @@ export class TensegrityBuilder {
                     return aa < bb ? a : b
                 })
                 closestFace.removed = true
-                return this.tensegrity.createFaceInterval(closestFace, face)
+                return this.tensegrity.createFaceConnector(closestFace, face)
             })
         }
         switch (mark.action) {
@@ -119,7 +119,7 @@ export class TensegrityBuilder {
                         if (faces[0].negative === faces[1].negative) {
                             return centerBrickFaceIntervals()
                         }
-                        return [this.tensegrity.createFaceInterval(faces[0], faces[1])]
+                        return [this.tensegrity.createFaceConnector(faces[0], faces[1])]
                     case 3:
                         return centerBrickFaceIntervals()
                     default:
@@ -130,16 +130,16 @@ export class TensegrityBuilder {
                 if (!pullScale) {
                     throw new Error("Missing pull scale")
                 }
-                const pulls: IFaceInterval[] = []
+                const distancers: IFaceInterval[] = []
                 faces.forEach((faceA, indexA) => {
                     faces.forEach((faceB, indexB) => {
                         if (indexA <= indexB) {
                             return
                         }
-                        pulls.push(this.tensegrity.createFaceInterval(faceA, faceB, pullScale))
+                        distancers.push(this.tensegrity.createFaceDistancer(faceA, faceB, pullScale))
                     })
                 })
-                return pulls
+                return distancers
             default:
                 return []
         }
@@ -156,7 +156,7 @@ export class TensegrityBuilder {
         const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
         const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
         const z = u.sub(proj).normalize()
-        const y = new Vector3().crossVectors(z, x).normalize().multiply(new Vector3(0.1, 0.1, 0.1))
+        const y = new Vector3().crossVectors(z, x).normalize().multiplyScalar(0.2)
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
         const base = negativeFace ? Triangle.NNN : Triangle.PPP
         const points = createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it

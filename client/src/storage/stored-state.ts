@@ -17,7 +17,7 @@ export enum ControlTab {
     Strain = "Strain",
 }
 
-const VERSION = "2020-03-10"
+const VERSION = "2020-03-11a"
 
 export interface IFeatureValue {
     numeric: number
@@ -79,7 +79,7 @@ export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
 }
 
 export function roleDefaultFromFeatures(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
-    if (intervalRole === IntervalRole.FaceInterval) {
+    if (intervalRole === IntervalRole.FaceConnector || intervalRole === IntervalRole.FaceDistancer) {
         throw new Error()
     }
     return featureValues[roleLengthFeature(intervalRole)].numeric

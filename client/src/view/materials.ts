@@ -97,8 +97,10 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
             return "#f14302"
         case IntervalRole.BowEnd:
             return "#c03b02"
-        case IntervalRole.FaceInterval:
+        case IntervalRole.FaceConnector:
             return "#fe0105"
+        case IntervalRole.FaceDistancer:
+            return "#fefb07"
         default:
             return undefined
     }
