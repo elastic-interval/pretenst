@@ -35,7 +35,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Diamond':(a(2,b(2,c(2,d(1,MA1)),d(2,c(1,MA0))),c(2,d(2,b(1,MA3)),b(2,d(1,MA2))),d(2,b(2,c(1,MA5)),c(2,b(1,MA4)))),b(2,d(2,Mc3),c(2,Md4)),c(2,b(2,Md5),d(2,Mb0)),d(2,c(2,Mb1),b(2,Mc2)))",
     "'Composed':(3,b(2,MA0),c(2,MA0),d(2,MA0)):0=subtree(b2,c2,d2)",
     "'Galapagotchi1':(A(3,S90),b(3,S90),a(2,S90),B(2,S90))",
-    "'Galapagotchi2':(A(1,S60,c(2,S75)),b(1,S60,c(2,S85)),a(1,S60,d(2,S85)),B(1,S60,d(2,S85,MA0)))",
+    "'Galapagotchi2':(A(1,S60,c(2,S75)),b(1,S60,c(2,S85)),a(1,S60,d(2,S85)),B(1,S60,d(2,S85)))",
     "'Thick Tripod':(A1,B(3,MA1),C(3,MA1),D(3,MA1)):1=pull-faces-35",
 ]
 
