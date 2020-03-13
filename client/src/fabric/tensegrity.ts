@@ -15,7 +15,6 @@ import { FabricInstance } from "./fabric-instance"
 import { ITransitionPrefs, Life } from "./life"
 import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
 import { scaleToFaceConnectorLength, TensegrityBuilder } from "./tensegrity-builder"
-import { TensegrityOptimizer } from "./tensegrity-optimizer"
 import {
     factorToPercent,
     gatherJointCables,
@@ -258,7 +257,6 @@ export class Tensegrity {
                 this.activeTenscript = undefined
                 faceStrategies(this.faces, this.tenscript.marks, builder()).forEach(strategy => strategy.execute())
                 if (lifePhase === Stage.Growing) {
-                    new TensegrityOptimizer(this).replaceCrossedNexusCrosses(1000)
                     return this.instance.fabric.finish_growing()
                 }
             }

@@ -16,6 +16,7 @@ import {
     FaHandPointUp,
     FaLink,
     FaList,
+    FaMagic,
     FaTimesCircle,
     FaTools,
 } from "react-icons/all"
@@ -27,6 +28,7 @@ import { FloatFeature } from "../fabric/fabric-features"
 import { MarkAction } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { TensegrityBuilder } from "../fabric/tensegrity-builder"
+import { TensegrityOptimizer } from "../fabric/tensegrity-optimizer"
 import { IFace, IInterval } from "../fabric/tensegrity-types"
 import { IStoredState, roleLengthFeature } from "../storage/stored-state"
 
@@ -196,6 +198,13 @@ export function ShapeTab(
                         disabled={disableUnlessFaceCount(2, ShapeSelection.Faces)}
                         onClick={connect}>
                         <FaLink/><span> Connect</span>
+                    </Button>
+                    <Button
+                        disabled={disabled()}
+                        onClick={() => new TensegrityOptimizer(tensegrity)
+                            .replaceCrossedNexusCrosses(tensegrity.numericFeature(FabricFeature.IntervalCountdown))
+                        }>
+                        <FaMagic/><span> Optimize</span>
                     </Button>
                 </ButtonGroup>
             </Grouping>
