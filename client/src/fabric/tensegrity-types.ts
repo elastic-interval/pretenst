@@ -139,6 +139,21 @@ export function averageLocation(locations: Vector3[]): Vector3 {
         .multiplyScalar(1 / locations.length)
 }
 
+export function intervalsOfFaces(faces: IFace[]): IInterval[] {
+    return faces.reduce((accum, face) => {
+        const unknown = (interval: IInterval) => !accum.some(existing => interval.index === existing.index)
+        const pulls = face.pulls.filter(unknown)
+        const pushes = face.pushes.filter(unknown)
+        return [...accum, ...pushes, ...pulls]
+    }, [] as IInterval[])
+}
+
+export function facesMidpoint(faces: IFace[]): Vector3 {
+    return faces
+        .reduce((accum, face) => accum.add(face.location()), new Vector3())
+        .multiplyScalar(1 / faces.length)
+}
+
 export function faceToOriginMatrix(face: IFace): Matrix4 {
     const trianglePoints = face.joints.map(joint => joint.location())
     const midpoint = trianglePoints.reduce((mid: Vector3, p: Vector3) => mid.add(p), new Vector3()).multiplyScalar(1.0 / 3.0)
@@ -333,7 +348,7 @@ export function brickToOriginMatrix(brick: IBrick, unitVector: (index: number) =
         .reduce((m, joint) => m.add(joint.location()), new Vector3(0, 10, 0))
         .multiplyScalar(1.0 / 12.0)
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-    const twirl = new Matrix4().makeRotationZ(Math.PI/4)
+    const twirl = new Matrix4().makeRotationZ(Math.PI / 4)
     return new Matrix4().getInverse(faceBasis.multiply(twirl))
 }
 

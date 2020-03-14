@@ -30,7 +30,7 @@ export function ControlTabs(
         floatFeatures,
         rootTenscript, setRootTenscript,
         shapeSelection, setShapeSelection,
-        selectedFaces, clearSelectedFaces, selectedIntervals,
+        selectedFaces, clearSelection, selectedIntervals,
         tensegrity, setFabric, runTenscript,
         visibleRoles, setVisibleRoles,
         toFullScreen, storedState$,
@@ -39,7 +39,7 @@ export function ControlTabs(
         rootTenscript: ITenscript,
         setRootTenscript: (tenscript: ITenscript) => void,
         selectedFaces: IFace[],
-        clearSelectedFaces: () => void,
+        clearSelection: () => void,
         selectedIntervals: IInterval[],
         runTenscript: (tenscript: ITenscript) => void,
         tensegrity?: Tensegrity,
@@ -65,7 +65,7 @@ export function ControlTabs(
     const [controlTab, updateControlTab] = useState(storedState$.getValue().controlTab)
     useEffect(() => {
         if (controlTab !== ControlTab.Shape) {
-            clearSelectedFaces()
+            clearSelection()
         }
     }, [controlTab, life])
 
@@ -111,7 +111,7 @@ export function ControlTabs(
                             shapeSelection={shapeSelection}
                             setShapeSelection={setShapeSelection}
                             selectedFaces={selectedFaces}
-                            clearSelectedFaces={clearSelectedFaces}
+                            clearSelection={clearSelection}
                             storedState$={storedState$}
                         />
                     )

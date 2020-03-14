@@ -6,7 +6,7 @@
 import { FabricFeature, IntervalRole, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useState } from "react"
-import { FaArrowRight, FaCamera, FaHandPointUp, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
+import { FaArrowRight, FaCamera, FaPlay, FaSyncAlt, FaToolbox } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
@@ -16,7 +16,7 @@ import { FloatFeature } from "../fabric/fabric-features"
 import { FabricInstance } from "../fabric/fabric-instance"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
+import { IFace, IInterval, intervalsOfFaces, percentToFactor } from "../fabric/tensegrity-types"
 import {
     getRecentTenscript,
     IFeatureValue,
@@ -41,15 +41,6 @@ function getCodeToRun(state: IStoredState): ITenscript {
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
 }
 
-function selectIntervals(faces: IFace[]): IInterval[] {
-    return faces.reduce((accum, face) => {
-        const unknown = (interval: IInterval) => !accum.some(existing => interval.index === existing.index)
-        const pulls = face.pulls.filter(unknown)
-        const pushes = face.pushes.filter(unknown)
-        return [...accum, ...pushes, ...pulls]
-    }, [] as IInterval[])
-}
-
 export function TensegrityView({eig, floatFeatures, storedState$}: {
     eig: typeof import("eig"),
     floatFeatures: Record<FabricFeature, FloatFeature>,
@@ -59,9 +50,9 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
     const mainInstance = useMemo(() => new FabricInstance(eig, 100), [])
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
-    const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])
-    useEffect(() => setSelectedIntervals(selectIntervals(selectedFaces)), [selectedFaces])
+    const [selectedIntervals, setSelectedIntervals] = useState<IInterval[]>([])
+    useEffect(() => setSelectedIntervals(intervalsOfFaces(selectedFaces)), [selectedFaces])
 
     const [rootTenscript, setRootTenscript] = useState(() => getCodeToRun(storedState$.getValue()))
     useEffect(() => {
@@ -161,7 +152,10 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
                         shapeSelection={shapeSelection}
                         setShapeSelection={setShapeSelection}
                         selectedFaces={selectedFaces}
-                        clearSelectedFaces={() => setSelectedFaces([])}
+                        clearSelection={() => {
+                            setSelectedFaces([])
+                            setSelectedIntervals([])
+                        }}
                         runTenscript={runTenscript}
                         toFullScreen={() => toFullScreen(true)}
                         visibleRoles={visibleRoles}
@@ -197,13 +191,6 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
                                     <FaCamera/>
                                 </Button>
                                 <Button
-                                    color={shapeSelection === ShapeSelection.Faces ? "warning" : "secondary"}
-                                    disabled={ellipsoids && shapeSelection === ShapeSelection.None}
-                                    onClick={() => setShapeSelection(shapeSelection !== ShapeSelection.Faces ? ShapeSelection.Faces : ShapeSelection.None)}
-                                >
-                                    <span><FaHandPointUp/></span>
-                                </Button>
-                                <Button
                                     color={rotating ? "warning" : "secondary"}
                                     onClick={() => storedState$.next(transition(storedState$.getValue(), {rotating: !rotating}))}
                                 >
@@ -228,6 +215,7 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
                                         setTimeout(() => runTenscript(tenscript), 1000)
                                     }}
                                     selectedIntervals={selectedIntervals}
+                                    toggleSelectedInterval={interval => setSelectedIntervals(intervals => intervals.filter(i => i.index !== interval.index))}
                                     selectedFaces={selectedFaces}
                                     setSelectedFaces={setSelectedFaces}
                                     shapeSelection={shapeSelection}

@@ -16,7 +16,7 @@ import {
     FaHandPointUp,
     FaLink,
     FaList,
-    FaMagic,
+    FaMagic, FaSlidersH,
     FaTimesCircle,
     FaTools,
 } from "react-icons/all"
@@ -42,11 +42,18 @@ export enum ShapeSelection {
     Intervals,
 }
 
+// brick
+// triangle
+// pulls
+// choose joint
+// choose interval
+
+
 export function ShapeTab(
     {
         floatFeatures, tensegrity, selectedIntervals,
         setFabric, shapeSelection, setShapeSelection,
-        selectedFaces, clearSelectedFaces, storedState$,
+        selectedFaces, clearSelection, storedState$,
     }: {
         floatFeatures: Record<FabricFeature, FloatFeature>,
         tensegrity: Tensegrity,
@@ -55,7 +62,7 @@ export function ShapeTab(
         shapeSelection: ShapeSelection,
         setShapeSelection: (shapeSelection: ShapeSelection) => void,
         selectedFaces: IFace[],
-        clearSelectedFaces: () => void,
+        clearSelection: () => void,
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
@@ -100,7 +107,7 @@ export function ShapeTab(
     function connect(): void {
         const pulls = new TensegrityBuilder(tensegrity).createFaceIntervals(selectedFaces, {action: MarkAction.JoinFaces})
         tensegrity.faceIntervals.push(...pulls)
-        clearSelectedFaces()
+        clearSelection()
         setShapeSelection(ShapeSelection.None)
         setFabric(tensegrity)
     }
@@ -139,15 +146,29 @@ export function ShapeTab(
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
+                        color={shapeSelection === ShapeSelection.Faces ? "warning" : "secondary"}
+                        disabled={ellipsoids && shapeSelection === ShapeSelection.None}
+                        onClick={() => {
+                            clearSelection()
+                            setShapeSelection(shapeSelection !== ShapeSelection.Faces ? ShapeSelection.Faces : ShapeSelection.None)
+                        }}
+                    >
+                        <span><FaHandPointUp/> Select faces</span>
+                    </Button>
+                    <Button
                         color={shapeSelection === ShapeSelection.Intervals ? "warning" : "secondary"}
                         disabled={ellipsoids && shapeSelection === ShapeSelection.None || selectedFaces.length === 0}
                         onClick={() => {
-                            const selection = shapeSelection === ShapeSelection.Intervals ? ShapeSelection.None : ShapeSelection.Intervals
-                            setShapeSelection(selection)
+                            if (shapeSelection === ShapeSelection.Intervals) {
+                                clearSelection()
+                            }
+                            setShapeSelection(shapeSelection === ShapeSelection.Intervals ? ShapeSelection.None : ShapeSelection.Intervals)
                         }}
                     >
-                        <span><FaArrowDown/> Adjust <FaArrowUp/></span>
+                        <span><FaSlidersH/> Make length adjustments</span>
                     </Button>
+                </ButtonGroup>
+                <ButtonGroup size="sm" className="w-100 my-2">
                     <Button disabled={disableUnlessFaceCount(1, ShapeSelection.Intervals)}
                             onClick={adjustValue(true, true, true)}>
                         TC <FaArrowUp/>
@@ -176,7 +197,7 @@ export function ShapeTab(
                 <ButtonGroup size="sm" className="w-100 my-2">
                     <Button
                         disabled={selectedFaces.length === 0 || disabled() && shapeSelection !== ShapeSelection.None}
-                        onClick={() => clearSelectedFaces()}
+                        onClick={() => clearSelection()}
                     >
                         <FaTimesCircle/> Clear selection
                     </Button>
@@ -185,7 +206,7 @@ export function ShapeTab(
                         onClick={() => {
                             new TensegrityBuilder(tensegrity).faceToOrigin(selectedFaces[0])
                             tensegrity.instance.refreshFloatView()
-                            clearSelectedFaces()
+                            clearSelection()
                         }}>
                         <FaCompass/><span> Upright</span>
                     </Button>
