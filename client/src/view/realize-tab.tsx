@@ -70,6 +70,11 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
                     stageTransition={StageTransition.CaptureRealizedToSlack}
                     disabled={disabledLifeStage()}
                 />
+                <LifeStageButton
+                    tensegrity={tensegrity}
+                    stageTransition={StageTransition.SlackToShaping}
+                    disabled={disabledLifeStage()}
+                />
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaGlobe/> Environment</h6>

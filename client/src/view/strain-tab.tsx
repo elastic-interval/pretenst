@@ -145,7 +145,7 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
     }
 
     return <>
-        <Grouping height="50%">
+        <Grouping height="25em">
             <div style={{
                 position: "absolute",
                 left: "6em",

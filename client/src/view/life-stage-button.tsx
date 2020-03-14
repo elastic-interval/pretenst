@@ -7,6 +7,7 @@ import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
 import {
+    FaArrowLeft,
     FaArrowRight,
     FaBaby,
     FaCamera,
@@ -92,7 +93,7 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
                         disabled={allDisabledExcept(Stage.Slack)}
                         onClick={() => tensegrity.toStage(Stage.Shaping)}
                     >
-                        Slack <Symbol stage={Stage.Slack}/> <FaArrowRight/> <Symbol stage={Stage.Shaping}/> Shaping
+                        <Symbol stage={Stage.Shaping}/> Shaping <FaArrowLeft/> Slack <Symbol stage={Stage.Slack}/>
                     </Button>
                 </ButtonGroup>
             )

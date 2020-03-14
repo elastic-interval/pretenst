@@ -115,15 +115,6 @@ export function ControlTabs(
                             storedState$={storedState$}
                         />
                     )
-                case ControlTab.Realize:
-                    return !tensegrity ? NO_FABRIC : (
-                        <RealizeTab
-                            floatFeatures={floatFeatures}
-                            tensegrity={tensegrity}
-                            shapeSelection={shapeSelection}
-                            storedState$={storedState$}
-                        />
-                    )
                 case ControlTab.View:
                     return !tensegrity ? NO_FABRIC : (
                         <ViewTab
@@ -139,6 +130,15 @@ export function ControlTabs(
                         <StrainTab
                             floatFeatures={floatFeatures}
                             tensegrity={tensegrity}
+                            storedState$={storedState$}
+                        />
+                    )
+                case ControlTab.Realize:
+                    return !tensegrity ? NO_FABRIC : (
+                        <RealizeTab
+                            floatFeatures={floatFeatures}
+                            tensegrity={tensegrity}
+                            shapeSelection={shapeSelection}
                             storedState$={storedState$}
                         />
                     )

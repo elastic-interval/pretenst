@@ -11,13 +11,12 @@ import {
     FaCircle,
     FaClock,
     FaCompressArrowsAlt,
-    FaDownload,
-    FaExpandArrowsAlt, FaEye, FaFile,
-    FaFileCsv,
+    FaExpandArrowsAlt,
+    FaEye,
     FaFistRaised,
     FaFutbol,
     FaHandRock,
-    FaParachuteBox, FaRunning,
+    FaParachuteBox,
     FaVolleyballBall,
 } from "react-icons/all"
 import { Button, ButtonGroup } from "reactstrap"
@@ -26,7 +25,6 @@ import { BehaviorSubject } from "rxjs"
 import { ADJUSTABLE_INTERVAL_ROLES, intervalRoleName } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
 import { Tensegrity } from "../fabric/tensegrity"
-import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { IStoredState, transition } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -142,17 +140,6 @@ export function ViewTab(
                     <Button disabled={ellipsoids}
                             onClick={() => tensegrity.instance.fabric.centralize()}>
                         <FaCompressArrowsAlt/> Centralize
-                    </Button>
-                </ButtonGroup>
-            </Grouping>
-            <Grouping>
-                <h6 className="w-100 text-center"><FaRunning/> Take</h6>
-                <ButtonGroup vertical={false} className="w-100">
-                    <Button onClick={() => saveCSVZip(tensegrity, storedState$.getValue())}>
-                        <FaDownload/> Download CSV <FaFileCsv/>
-                    </Button>
-                    <Button onClick={() => saveJSONZip(tensegrity, storedState$.getValue())}>
-                        <FaDownload/> Download JSON <FaFile/>
                     </Button>
                 </ButtonGroup>
             </Grouping>

@@ -5,12 +5,26 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBox, FaBug, FaHeart, FaHiking, FaPlay, FaRegFolder, FaRegFolderOpen, FaSeedling } from "react-icons/all"
+import {
+    FaBox,
+    FaBug,
+    FaDownload,
+    FaFile,
+    FaFileCsv,
+    FaHeart,
+    FaHiking,
+    FaPlay,
+    FaRegFolder,
+    FaRegFolderOpen,
+    FaRunning,
+    FaSeedling,
+} from "react-icons/all"
 import { Button, ButtonDropdown, ButtonGroup, DropdownItem, DropdownMenu, DropdownToggle, Input } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
 
 import { BOOTSTRAP, codeToTenscript, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
+import { saveCSVZip, saveJSONZip } from "../storage/download"
 import { addRecentCode, getRecentTenscript, IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
@@ -114,6 +128,19 @@ export function TenscriptTab({rootTenscript, setRootTenscript, tensegrity, runTe
                     ))}</DropdownMenu>
                 </ButtonDropdown>
             </Grouping>
+            {!tensegrity ? undefined : (
+                <Grouping>
+                    <h6 className="w-100 text-center"><FaRunning/> Take</h6>
+                    <ButtonGroup vertical={false} className="w-100">
+                        <Button onClick={() => saveCSVZip(tensegrity, storedState$.getValue())}>
+                            <FaDownload/> Download CSV <FaFileCsv/>
+                        </Button>
+                        <Button onClick={() => saveJSONZip(tensegrity, storedState$.getValue())}>
+                            <FaDownload/> Download JSON <FaFile/>
+                        </Button>
+                    </ButtonGroup>
+                </Grouping>
+            )}
         </div>
     )
 }
@@ -159,7 +186,7 @@ function CodeArea({tenscript, setTenscript, error, setError}: {
             <Input
                 style={{
                     borderRadius: "1em",
-                    height: "20em",
+                    height: "17em",
                 }}
                 type="textarea" id="tenscript"
                 value={tenscriptCode}

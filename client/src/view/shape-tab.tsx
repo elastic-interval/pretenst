@@ -134,11 +134,6 @@ export function ShapeTab(
                     stageTransition={StageTransition.CurrentLengthsToSlack}
                     disabled={disabledLifeStage()}
                 />
-                <LifeStageButton
-                    tensegrity={tensegrity}
-                    stageTransition={StageTransition.SlackToShaping}
-                    disabled={disabledLifeStage()}
-                />
             </Grouping>
             <Grouping>
                 <h6 className="w-100 text-center"><FaHandPointUp/> Manual</h6>

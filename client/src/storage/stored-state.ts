@@ -12,12 +12,12 @@ import { codeToTenscript, ITenscript } from "../fabric/tenscript"
 export enum ControlTab {
     Grow = "Grow",
     Shape = "Shape",
-    Realize = "Realize",
     View = "View",
     Strain = "Strain",
+    Realize = "Realize",
 }
 
-const VERSION = "2020-03-12"
+const VERSION = "2020-03-14"
 
 export interface IFeatureValue {
     numeric: number
