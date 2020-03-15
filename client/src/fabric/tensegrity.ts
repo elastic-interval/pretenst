@@ -30,11 +30,8 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
-const COUNTDOWN_MAX = 65535
-
 function faceConnectorCountdown(distance: number): number {
-    const countdown = distance * 6000
-    return countdown > COUNTDOWN_MAX ? COUNTDOWN_MAX : countdown
+    return distance * 6000
 }
 
 function scaleToStiffness(scale: IPercent): number {

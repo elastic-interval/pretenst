@@ -25,6 +25,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Leg':(b3,a3)",
     "'Nexus':(a1,b1,c1,d1)",
     "'Tripod with Knees':(A2,B(3,b(2,S90),S80),C(3,c(2,S90),S80),D(3,d(2,S90),S80))",
+    "'Ring':(A(10,MA1),a(10,MA1))",
     "'Bulge Ring':(A(8, S85, MA1), a(8, S85, MA1))",
     "'Convergence Three':(a1,b(3,S85,MA1),c(3,S85,MA1),d(3,S85,MA1))",
     "'Convergence Ten':(a1,b(10,S85,MA1),c(10,S85,MA1),d(10,S85,MA1))",
@@ -38,6 +39,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Galapagotchi2':(A(2,c(2,MA0)),b(2,c(2,MA0)),a(2,d(2,MA0)),B(2,d(2,MA0))):0=face-distance-115",
     "'Galapagotchi3':(A(5,S80,Mb0),b(5,S80,Mb0),a(3,S70,Md0),B(3,Md0,S70)):0=face-distance-60",
     "'Thick Tripod':(A1,B(3,MA1),C(3,MA1),D(3,MA1)):1=face-distance-35",
+    "'Bug Big':(A(8,S90,Mb0),b(8,S90,Mb0),a(8,S90,Md0),B(8,Md0,S90)):0=face-distance-60",
 ]
 
 export interface ITenscriptTree {
