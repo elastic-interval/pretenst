@@ -40,6 +40,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Galapagotchi3':(A(5,S80,Mb0),b(5,S80,Mb0),a(3,S70,Md0),B(3,Md0,S70)):0=face-distance-60",
     "'Thick Tripod':(A1,B(3,MA1),C(3,MA1),D(3,MA1)):1=face-distance-35",
     "'Bug Big':(A(8,S90,Mb0),b(8,S90,Mb0),a(8,S90,Md0),B(8,Md0,S90)):0=face-distance-60",
+    "'Ankh':(A(3,S90,Mb0),b(3,S90,Mb0),a(5,S80,MA1),B(5,MA1,S80)):0=face-distance-30",
 ]
 
 export interface ITenscriptTree {
