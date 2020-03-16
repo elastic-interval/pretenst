@@ -143,4 +143,12 @@ export class FabricInstance {
     public unitVector(intervalIndex: number): Vector3 {
         return vectorFromArray(this.floatView.unitVectors, intervalIndex)
     }
+
+    public get forward(): Vector3 {
+        return new Vector3(1, 0, 0) // TODO
+    }
+
+    public get right(): Vector3 {
+        return new Vector3(0, 0, 1) // TODO
+    }
 }
