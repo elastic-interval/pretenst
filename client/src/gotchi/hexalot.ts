@@ -8,18 +8,20 @@ import { ICoords, IHexalot } from "./island-logic"
 import { Spot } from "./spot"
 import { Gotchi, IGotchiFactory } from "./gotchi"
 import { Vector3 } from "three"
+import { Genome } from "./genome"
 
 export class Hexalot implements IHexalot {
     public id: string
+    public genome?: Genome
     public journey?: Journey
     public childHexalots: Hexalot[] = []
     public nonce = 0
     public visited = false
 
-    constructor(public parentHexalot: Hexalot | undefined,
-                public coords: ICoords,
-                public spots: Spot[],
-                private gotchiFactory: IGotchiFactory) {
+    constructor(public readonly parentHexalot: Hexalot | undefined,
+                public readonly coords: ICoords,
+                public readonly spots: Spot[],
+                public readonly gotchiFactory: IGotchiFactory) {
         this.spots[0].centerOfHexalot = this
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentHexalots.push(this)
@@ -29,6 +31,21 @@ export class Hexalot implements IHexalot {
             parentHexalot.childHexalots.push(this)
             this.nonce = parentHexalot.nonce + 1
         }
+    }
+
+    public createNativeGotchi(): Gotchi | undefined {
+        if (!this.genome) {
+            return undefined
+        }
+        return this.gotchiFactory.createGotchi(this, this.rotation, this.genome)
+    }
+
+    public createGotchiFromGenome(rotation: number, genome: Genome): Gotchi | undefined {
+        return this.gotchiFactory.createGotchi(this, rotation, genome)
+    }
+
+    public createGotchiFromPrototype(gotchi: Gotchi, rotation: number, genome: Genome) : Gotchi | undefined {
+        return this.gotchiFactory.createGotchi(this, rotation, genome)
     }
 
     public get rotation(): number {
@@ -77,10 +94,6 @@ export class Hexalot implements IHexalot {
 
     public createRandomJourney(): Journey {
         return this.journeyOfLength(2)
-    }
-
-    public createNativeGotchi(): Gotchi {
-        return this.gotchiFactory.createGotchi(this) // + rotation + genome?
     }
 
     get centerSpot(): Spot {
