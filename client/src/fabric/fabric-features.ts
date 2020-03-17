@@ -124,7 +124,7 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
         case FabricFeature.CrossLength:
             return {
                 feature,
-                name: "Nexus Cross",
+                name: "Cross",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.BowMidLength:

@@ -14,7 +14,7 @@ export class TensegrityOptimizer {
     constructor(private tensegrity: Tensegrity) {
     }
 
-    public replaceCrossedNexusCrosses(countdown: number): void {
+    public replaceCrosses(countdown: number): void {
         const tensegrity = this.tensegrity
         const pairs: IPair[] = []
         const findPush = (jointIndex: number): IPush => {

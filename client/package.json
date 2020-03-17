@@ -46,6 +46,7 @@
     "identity-obj-proxy": "3.0.0",
     "is-wsl": "^1.1.0",
     "jest": "^24.9.0",
+    "jest-diff": "^25.1.0",
     "jest-environment-jsdom": "^24.9.0",
     "jest-resolve": "24.9.0",
     "jest-watch-typeahead": "0.4.0",

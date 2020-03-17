@@ -218,7 +218,7 @@ export function ShapeTab(
                     <Button
                         disabled={disabled()}
                         onClick={() => new TensegrityOptimizer(tensegrity)
-                            .replaceCrossedNexusCrosses(tensegrity.numericFeature(FabricFeature.IntervalCountdown))
+                            .replaceCrosses(tensegrity.numericFeature(FabricFeature.IntervalCountdown))
                         }>
                         <FaMagic/><span> Optimize</span>
                     </Button>
