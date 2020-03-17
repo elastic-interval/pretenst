@@ -388,7 +388,7 @@ export const HEXAGON_POINTS = [
 ]
 export const SURFACE_UNKNOWN_COLOR = new Color("silver")
 export const SURFACE_LAND_COLOR = new Color("#59431e")
-export const SURFACE_WATER_COLOR = new Color("#365e78")
+export const SURFACE_WATER_COLOR = new Color("#243148")
 export const SIX = 6
 export const UP = new Vector3(0, 1, 0)
 export const LAND_NORMAL_SPREAD = 0.03
