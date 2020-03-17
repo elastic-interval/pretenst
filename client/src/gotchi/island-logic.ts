@@ -393,4 +393,11 @@ export const SIX = 6
 export const UP = new Vector3(0, 1, 0)
 export const LAND_NORMAL_SPREAD = 0.03
 export const WATER_NORMAL_SPREAD = -0.02
+export const SUN_POSITION = new Vector3(0, 500, 0)
+export const POINTER_TOP = new Vector3(0, 120, 0)
+export const HEMISPHERE_COLOR = new Color("#fff1d1")
+export const ALTITUDE = 40
+export const SPACE_RADIUS = 10000
+export const SPACE_SCALE = 1
+
 

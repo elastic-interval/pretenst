@@ -11,15 +11,15 @@ import { Orbit } from "../view/orbit"
 
 import { Hexalot } from "./hexalot"
 import { Island } from "./island"
-import { INNER_HEXALOT_SPOTS, OUTER_HEXALOT_SIDE } from "./island-logic"
+import {
+    ALTITUDE,
+    HEMISPHERE_COLOR,
+    INNER_HEXALOT_SPOTS,
+    OUTER_HEXALOT_SIDE, POINTER_TOP,
+    SPACE_RADIUS, SPACE_SCALE,
+    SUN_POSITION,
+} from "./island-logic"
 import { Spot } from "./spot"
-
-const SUN_POSITION = new Vector3(0, 500, 0)
-const POINTER_TOP = new Vector3(0, 120, 0)
-const HEMISPHERE_COLOR = new Color("#fff1d1")
-const ALTITUDE = 40
-const SPACE_RADIUS = 10000
-const SPACE_SCALE = 1
 
 export function IslandComponent({island, selectedSpot, homeHexalot}: {
     island: Island,
