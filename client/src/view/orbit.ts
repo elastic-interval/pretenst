@@ -108,6 +108,9 @@ export class Orbit extends THREE.EventDispatcher {
 
     constructor(camera: THREE.PerspectiveCamera, element: HTMLElement) {
         super()
+        if (!camera) {
+            throw new Error("WTF no camera?")
+        }
         this.object = camera
         this.element = element
         this.window = window

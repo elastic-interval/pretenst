@@ -4,8 +4,10 @@
  */
 
 import * as React from "react"
-import { Canvas } from "react-three-fiber"
-import { Color, FaceColors, Geometry, LineBasicMaterial, MeshPhongMaterial, Vector3 } from "three"
+import { useThree, useUpdate } from "react-three-fiber"
+import { Color, FaceColors, Geometry, LineBasicMaterial, MeshPhongMaterial, PerspectiveCamera, Vector3 } from "three"
+
+import { Orbit } from "../view/orbit"
 
 import { Hexalot } from "./hexalot"
 import { Island } from "./island"
@@ -15,20 +17,22 @@ import { Spot } from "./spot"
 const SUN_POSITION = new Vector3(0, 600, 0)
 const POINTER_TOP = new Vector3(0, 120, 0)
 const HEMISPHERE_COLOR = new Color("white")
+const ALTITUDE = 40
+const SPACE_RADIUS = 100
+const SPACE_SCALE = 1
 
 export function IslandComponent({island, selectedSpot, homeHexalot}: {
     island: Island,
     selectedSpot?: Spot,
     homeHexalot?: Hexalot,
 }): JSX.Element {
-    // private spots: Geometry
-    // private seeds: Geometry
-    // private occupiedHangers: Geometry
-    // private vacantHangers: Geometry
-    // private homeHexalot?: Geometry
-    // private selectedSpot?: Geometry
-    // private availableSpots?: Geometry
-    // private vacantHexalots?: Geometry
+
+    const viewContainer = document.getElementById("view-container") as HTMLElement
+    const {camera} = useThree()
+    const perspective = camera as PerspectiveCamera
+    if (!perspective) {
+        throw new Error("Wheres the camera?")
+    }
 
     function spotsGeometry(): Geometry {
         const geometry = new Geometry()
@@ -94,27 +98,42 @@ export function IslandComponent({island, selectedSpot, homeHexalot}: {
         return geometry
     }
 
+    const orbit = useUpdate<Orbit>(orb => {
+        const midpoint = new Vector3(0, ALTITUDE, 0)
+        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
+        perspective.lookAt(orbit.current.target)
+        perspective.fov = 60
+        perspective.far = SPACE_RADIUS * 2
+        perspective.near = 0.001
+        orb.object = perspective
+        orb.minPolarAngle = -0.98 * Math.PI / 2
+        orb.maxPolarAngle = 0.8 * Math.PI
+        orb.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
+        orb.zoomSpeed = 0.5
+        orb.enableZoom = true
+        orb.target.set(midpoint.x, midpoint.y, midpoint.z)
+        orb.update()
+    }, [])
+
     return (
-        <Canvas key={island.name} style={{
-            backgroundColor: "black",
-            borderStyle: "solid",
-            borderColor: "#f0ad4e",
-            borderWidth: "2px",
-        }}>
-            <mesh name="Spots" geometry={spotsGeometry()} material={ISLAND}
-                // ref={(mesh: Mesh) => this.props.setMesh("Spots", mesh)}
-            />
-            {!homeHexalot ? undefined : (
-                <lineSegments key="HomeHexalot" geometry={homeHexalotGeometry()} material={HOME_HEXALOT}/>
-            )}
-            {!selectedSpot ? undefined : (
-                <lineSegments key="Pointer" geometry={selectedSpotGeometry()} material={SELECTED_POINTER}/>
-            )}
-            <lineSegments key="Available" geometry={availableSpotsGeometry()} material={AVAILABLE_HEXALOT}/>
-            <lineSegments key="Free" geometry={vacantHexalotsGeometry()} material={AVAILABLE_HEXALOT}/>
-            <pointLight distance={1000} decay={0.01} position={SUN_POSITION}/>
-            <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
-        </Canvas>
+        <group>
+            <orbit ref={orbit} args={[perspective, viewContainer]}/>
+            <scene>
+                <mesh name="Spots" geometry={spotsGeometry()} material={ISLAND}
+                    // ref={(mesh: Mesh) => this.props.setMesh("Spots", mesh)}
+                />
+                {!homeHexalot ? undefined : (
+                    <lineSegments key="HomeHexalot" geometry={homeHexalotGeometry()} material={HOME_HEXALOT}/>
+                )}
+                {!selectedSpot ? undefined : (
+                    <lineSegments key="Pointer" geometry={selectedSpotGeometry()} material={SELECTED_POINTER}/>
+                )}
+                <lineSegments key="Available" geometry={availableSpotsGeometry()} material={AVAILABLE_HEXALOT}/>
+                <lineSegments key="Free" geometry={vacantHexalotsGeometry()} material={AVAILABLE_HEXALOT}/>
+                <pointLight distance={1000} decay={0.01} position={SUN_POSITION}/>
+                <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+            </scene>
+        </group>
     )
 }
 

@@ -82,6 +82,9 @@ export function FabricView({
     const [age, setAge] = useState(0)
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
+    if (!perspective) {
+        throw new Error("Wheres the camera tenseg?")
+    }
     const spaceMaterial = useMemo(() => {
         const spaceTexture = new TextureLoader().load("space.jpg")
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})

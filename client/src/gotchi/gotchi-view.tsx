@@ -4,6 +4,7 @@
  */
 
 import * as React from "react"
+import { Canvas } from "react-three-fiber"
 
 import { IStoredState } from "../storage/stored-state"
 
@@ -24,7 +25,7 @@ export function GotchiView({eig, storedState}: {
     }
 
     const gotchiFactory: IGotchiFactory = {
-        createGotchi: (hexalot, rotation, genome) =>  {
+        createGotchi: (hexalot, rotation, genome) => {
             throw new Error("Not implemented")
         },
     }
@@ -32,13 +33,20 @@ export function GotchiView({eig, storedState}: {
     const island = new Island(islandData, gotchiFactory)
 
     return (
-            <div style={{
-                position: "absolute",
-                left: 0,
-                right: 0,
-                height: "100%",
+        <div id="view-container" style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            height: "100%",
+        }}>
+            <Canvas key={island.name} style={{
+                backgroundColor: "black",
+                borderStyle: "solid",
+                borderColor: "#f0ad4e",
+                borderWidth: "2px",
             }}>
                 <IslandComponent island={island}/>
-            </div>
+            </Canvas>
+        </div>
     )
 }
