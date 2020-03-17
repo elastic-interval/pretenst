@@ -13,7 +13,7 @@ import registerServiceWorker from "./service-worker"
 import { loadState, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
 
-const GOTCHI = true
+const GOTCHI = localStorage.getItem("gotchi") === "true"
 
 export async function startReact(eig: typeof import("eig")): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
