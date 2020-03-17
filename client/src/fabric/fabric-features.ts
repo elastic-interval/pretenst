@@ -121,16 +121,10 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 name: "Ring",
                 percents: [10, 80, 90, 100, 110, 120, 130],
             }
-        case FabricFeature.NexusCrossLength:
+        case FabricFeature.CrossLength:
             return {
                 feature,
                 name: "Nexus Cross",
-                percents: [50, 75, 90, 100, 125, 150, 200],
-            }
-        case FabricFeature.ColumnCrossLength:
-            return {
-                feature,
-                name: "Column Cross",
                 percents: [50, 75, 90, 100, 125, 150, 200],
             }
         case FabricFeature.BowMidLength:

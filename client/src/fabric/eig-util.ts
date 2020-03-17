@@ -23,10 +23,8 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
             return "TR"
         case IntervalRole.Ring:
             return "RI"
-        case IntervalRole.NexusCross:
-            return "NC"
-        case IntervalRole.ColumnCross:
-            return "CC"
+        case IntervalRole.Cross:
+            return "CR"
         case IntervalRole.BowMid:
             return "BM"
         case IntervalRole.BowEnd:
@@ -58,10 +56,8 @@ export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): Interva
             return IntervalRole.Triangle
         case FabricFeature.RingLength:
             return IntervalRole.Ring
-        case FabricFeature.NexusCrossLength:
-            return IntervalRole.NexusCross
-        case FabricFeature.ColumnCrossLength:
-            return IntervalRole.ColumnCross
+        case FabricFeature.CrossLength:
+            return IntervalRole.Cross
         case FabricFeature.BowMidLength:
             return IntervalRole.BowMid
         case FabricFeature.BowEndLength:

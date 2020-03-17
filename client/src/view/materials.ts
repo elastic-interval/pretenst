@@ -89,10 +89,8 @@ export function roleColorString(intervalRole?: IntervalRole): string | undefined
             return "#c9c445"
         case IntervalRole.Ring:
             return "#e83ada"
-        case IntervalRole.NexusCross:
+        case IntervalRole.Cross:
             return "#59ebcb"
-        case IntervalRole.ColumnCross:
-            return "#299995"
         case IntervalRole.BowMid:
             return "#f14302"
         case IntervalRole.BowEnd:

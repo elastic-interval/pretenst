@@ -251,7 +251,7 @@ export class TensegrityBuilder {
             const crossInterval = (from: IJoint, opposite: IJoint) => {
                 const to = this.tensegrity.joints[opposite.oppositeIndex]
                 const toBrick = brickContaining(to, faceA.brick, faceB.brick)
-                toBrick.crosses.push(createInterval(from, to, IntervalRole.ColumnCross))
+                toBrick.crosses.push(createInterval(from, to, IntervalRole.Triangle))
             }
             if (faceA.negative) {
                 crossInterval(prev, curr)
@@ -265,11 +265,11 @@ export class TensegrityBuilder {
                 .forEach(interval => this.tensegrity.changeIntervalRole(interval, role, brick.scale, countdown))
             if (isNexus(brick)) {
                 adjustRole(brick.pulls, IntervalRole.Triangle)
-                adjustRole(brick.crosses, IntervalRole.NexusCross)
+                adjustRole(brick.crosses, IntervalRole.Cross)
                 adjustRole(brick.pushes, IntervalRole.NexusPush)
             } else {
                 adjustRole(brick.rings[TRIANGLE_DEFINITIONS[triangle].ring], IntervalRole.Ring)
-                adjustRole(brick.crosses, IntervalRole.ColumnCross)
+                adjustRole(brick.crosses, IntervalRole.Triangle)
                 adjustRole(brick.pushes, IntervalRole.ColumnPush)
             }
         })

@@ -65,10 +65,8 @@ export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
             return FabricFeature.TriangleLength
         case IntervalRole.Ring:
             return FabricFeature.RingLength
-        case IntervalRole.NexusCross:
-            return FabricFeature.NexusCrossLength
-        case IntervalRole.ColumnCross:
-            return FabricFeature.ColumnCrossLength
+        case IntervalRole.Cross:
+            return FabricFeature.CrossLength
         case IntervalRole.BowMid:
             return FabricFeature.BowMidLength
         case IntervalRole.BowEnd:

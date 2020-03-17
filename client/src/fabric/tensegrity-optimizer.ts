@@ -27,7 +27,7 @@ export class TensegrityOptimizer {
             const joint: IJoint = interval.alpha.index === jointIndex ? interval.alpha : interval.omega
             return {interval, joint}
         }
-        const crosses = tensegrity.intervals.filter(interval => interval.intervalRole === IntervalRole.NexusCross)
+        const crosses = tensegrity.intervals.filter(interval => interval.intervalRole === IntervalRole.Cross)
         crosses.forEach((intervalA, indexA) => {
             const aAlpha = intervalA.alpha.index
             const aOmega = intervalA.omega.index
