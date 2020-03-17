@@ -14,11 +14,11 @@ import { Island } from "./island"
 import { INNER_HEXALOT_SPOTS, OUTER_HEXALOT_SIDE } from "./island-logic"
 import { Spot } from "./spot"
 
-const SUN_POSITION = new Vector3(0, 600, 0)
+const SUN_POSITION = new Vector3(0, 500, 0)
 const POINTER_TOP = new Vector3(0, 120, 0)
-const HEMISPHERE_COLOR = new Color("white")
+const HEMISPHERE_COLOR = new Color("#fff1d1")
 const ALTITUDE = 40
-const SPACE_RADIUS = 100
+const SPACE_RADIUS = 10000
 const SPACE_SCALE = 1
 
 export function IslandComponent({island, selectedSpot, homeHexalot}: {
@@ -30,9 +30,6 @@ export function IslandComponent({island, selectedSpot, homeHexalot}: {
     const viewContainer = document.getElementById("view-container") as HTMLElement
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
-    if (!perspective) {
-        throw new Error("Wheres the camera?")
-    }
 
     function spotsGeometry(): Geometry {
         const geometry = new Geometry()
@@ -99,7 +96,7 @@ export function IslandComponent({island, selectedSpot, homeHexalot}: {
     }
 
     const orbit = useUpdate<Orbit>(orb => {
-        const midpoint = new Vector3(0, ALTITUDE, 0)
+        const midpoint = new Vector3(0, 0, 0)
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
         perspective.lookAt(orbit.current.target)
         perspective.fov = 60
@@ -130,7 +127,7 @@ export function IslandComponent({island, selectedSpot, homeHexalot}: {
                 )}
                 <lineSegments key="Available" geometry={availableSpotsGeometry()} material={AVAILABLE_HEXALOT}/>
                 <lineSegments key="Free" geometry={vacantHexalotsGeometry()} material={AVAILABLE_HEXALOT}/>
-                <pointLight distance={1000} decay={0.01} position={SUN_POSITION}/>
+                <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
             </scene>
         </group>
