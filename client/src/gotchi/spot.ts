@@ -3,9 +3,10 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { HEXAGON_POINTS, ICoords, ISpot, isSpotLegal, SIX, Surface, UP } from "./island-logic"
 import { Color, Face3, Vector3 } from "three"
+
 import { Hexalot } from "./hexalot"
+import { HEXAGON_POINTS, ICoords, ISpot, isSpotLegal, SIX, Surface, UP } from "./island-logic"
 import {
     LAND_NORMAL_SPREAD,
     SCALE_X,
@@ -13,7 +14,7 @@ import {
     SURFACE_LAND_COLOR,
     SURFACE_UNKNOWN_COLOR,
     SURFACE_WATER_COLOR,
-    WATER_NORMAL_SPREAD
+    WATER_NORMAL_SPREAD,
 } from "./island-logic"
 
 export class Spot implements ISpot {

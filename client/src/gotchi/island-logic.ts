@@ -3,8 +3,9 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Hexalot } from "./hexalot"
 import { Color, Vector3 } from "three"
+
+import { Hexalot } from "./hexalot"
 
 export interface ICoords {
     x: number

@@ -4,13 +4,13 @@
  */
 
 import * as React from "react"
-import { Color, FaceColors, Geometry, LineBasicMaterial, MeshPhongMaterial, Vector3 } from "three"
 import { Canvas } from "react-three-fiber"
+import { Color, FaceColors, Geometry, LineBasicMaterial, MeshPhongMaterial, Vector3 } from "three"
 
+import { Hexalot } from "./hexalot"
+import { Island } from "./island"
 import { INNER_HEXALOT_SPOTS, OUTER_HEXALOT_SIDE } from "./island-logic"
 import { Spot } from "./spot"
-import { Island } from "./island"
-import { Hexalot } from "./hexalot"
 
 const SUN_POSITION = new Vector3(0, 600, 0)
 const POINTER_TOP = new Vector3(0, 120, 0)
@@ -19,8 +19,8 @@ const HEMISPHERE_COLOR = new Color("white")
 export function IslandComponent({island, selectedSpot, homeHexalot}: {
     island: Island,
     selectedSpot?: Spot,
-    homeHexalot?: Hexalot
-}) {
+    homeHexalot?: Hexalot,
+}): JSX.Element {
     // private spots: Geometry
     // private seeds: Geometry
     // private occupiedHangers: Geometry
@@ -95,7 +95,12 @@ export function IslandComponent({island, selectedSpot, homeHexalot}: {
     }
 
     return (
-        <Canvas key={island.name}>
+        <Canvas key={island.name} style={{
+            backgroundColor: "black",
+            borderStyle: "solid",
+            borderColor: "#f0ad4e",
+            borderWidth: "2px",
+        }}>
             <mesh name="Spots" geometry={spotsGeometry()} material={ISLAND}
                 // ref={(mesh: Mesh) => this.props.setMesh("Spots", mesh)}
             />

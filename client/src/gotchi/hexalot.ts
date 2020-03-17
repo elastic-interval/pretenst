@@ -3,12 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Journey, Leg } from "./journey"
-import { ICoords, IHexalot } from "./island-logic"
-import { Spot } from "./spot"
-import { Gotchi, IGotchiFactory } from "./gotchi"
 import { Vector3 } from "three"
+
 import { Genome } from "./genome"
+import { Gotchi, IGotchiFactory } from "./gotchi"
+import { ICoords, IHexalot } from "./island-logic"
+import { Journey, Leg } from "./journey"
+import { Spot } from "./spot"
 
 export class Hexalot implements IHexalot {
     public id: string
@@ -96,11 +97,11 @@ export class Hexalot implements IHexalot {
         return this.journeyOfLength(2)
     }
 
-    get centerSpot(): Spot {
+    public get centerSpot(): Spot {
         return this.spots[0]
     }
 
-    get center(): Vector3 {
+    public get center(): Vector3 {
         return this.centerSpot.center
     }
 
@@ -108,9 +109,7 @@ export class Hexalot implements IHexalot {
         const journeyVisits: Hexalot[] = [this]
         while (journeyVisits.length < visitCount + 1) {
             const endPoint = journeyVisits[journeyVisits.length - 1]
-            const landNeighbors = endPoint.centerSpot.adjacentHexalots.filter(adjacentHexalot => {
-                return journeyVisits.every(visit => visit.id !== adjacentHexalot.id)
-            })
+            const landNeighbors = endPoint.centerSpot.adjacentHexalots.filter(adjacentHexalot => journeyVisits.every(visit => visit.id !== adjacentHexalot.id))
             if (landNeighbors.length === 0) {
                 // todo: find one anyway if there are to few!
                 break
