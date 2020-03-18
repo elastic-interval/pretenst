@@ -182,7 +182,7 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
                 ) : (
                     <div className="h-100">
                         <TopMiddle tensegrity={tensegrity}/>
-                        <div id="bottom-middle">
+                        <div id="bottom-left">
                             <ButtonGroup>
                                 <Button
                                     color={ellipsoids ? "warning" : "secondary"}

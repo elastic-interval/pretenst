@@ -377,12 +377,12 @@ function linkFace(face: IFace, fabric: Fabric): string {
     if (!face.brick.parent) {
         return ""
     }
-    const gatherTriangles = (f: IFace, t: Triangle[]) => {
+    const ancestorTriangles = (f: IFace, t: Triangle[]) => {
         const p = f.brick.parent
         if (!p) {
             t.push(f.triangle)
         } else {
-            gatherTriangles(p, t)
+            ancestorTriangles(p, t)
             const definition = TRIANGLE_DEFINITIONS[f.triangle]
             t.push(definition.negative ? definition.opposite : f.triangle)
         }
@@ -402,7 +402,7 @@ function linkFace(face: IFace, fabric: Fabric): string {
                 throw new Error("Strange limb")
         }
     }
-    const triangles = gatherTriangles(face, [])
+    const triangles = ancestorTriangles(face, [])
     const lastIndex = triangles.length - 1
     const extremity = triangles[lastIndex] === Triangle.PPP
     const last = extremity ? "*" : triangles[lastIndex].toFixed()
@@ -418,6 +418,9 @@ function linkFace(face: IFace, fabric: Fabric): string {
         }
         setSubmergedFunctionOf(face)
     }
-    return `${limb(triangles[0])}:${lastIndex}:${last}`
+    if (extremity) {
+        return `Extremity[${limb(triangles[0])}]`
+    }
+    return `Segment[${limb(triangles[0])}:${lastIndex}]=${last}`
 }
 
