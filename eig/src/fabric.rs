@@ -133,6 +133,10 @@ impl Fabric {
         }
     }
 
+    pub fn is_face_joint_submerged(&self, face_index: usize) -> bool {
+        self.faces[face_index].is_submerged(&self.joints)
+    }
+
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
         let realizing_nuance =
             (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown;

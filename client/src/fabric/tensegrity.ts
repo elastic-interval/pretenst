@@ -254,6 +254,9 @@ export class Tensegrity {
                 this.activeTenscript = undefined
                 faceStrategies(this.faces, this.tenscript.marks, builder()).forEach(strategy => strategy.execute())
                 if (lifePhase === Stage.Growing) {
+                    this.faces
+                        .filter(face => !face.removed && face.brick.parent)
+                        .forEach(face => console.log(linkFace(face, this.instance.fabric)))
                     return this.instance.fabric.finish_growing()
                 }
             }
@@ -369,3 +372,52 @@ class FaceStrategy {
         }
     }
 }
+
+function linkFace(face: IFace, fabric: Fabric): string {
+    if (!face.brick.parent) {
+        return ""
+    }
+    const gatherTriangles = (f: IFace, t: Triangle[]) => {
+        const p = f.brick.parent
+        if (!p) {
+            t.push(f.triangle)
+        } else {
+            gatherTriangles(p, t)
+            const definition = TRIANGLE_DEFINITIONS[f.triangle]
+            t.push(definition.negative ? definition.opposite : f.triangle)
+        }
+        return t
+    }
+    const limb = (triangle: Triangle) => {
+        switch (triangle) {
+            case Triangle.NNN:
+                return 0
+            case Triangle.PNN:
+                return 1
+            case Triangle.NPP:
+                return 2
+            case Triangle.PPP:
+                return 3
+            default:
+                throw new Error("Strange limb")
+        }
+    }
+    const triangles = gatherTriangles(face, [])
+    const lastIndex = triangles.length - 1
+    const extremity = triangles[lastIndex] === Triangle.PPP
+    const last = extremity ? "*" : triangles[lastIndex].toFixed()
+    if (extremity) {
+        const submerged = () => fabric.is_face_joint_submerged(face.index)
+        const setSubmergedFunctionOf = (f: IFace) => {
+            const existingSubmerged = f.submerged
+            f.submerged = !existingSubmerged ? submerged : () => submerged() || existingSubmerged()
+            const parent = f.brick.parent
+            if (parent) {
+                setSubmergedFunctionOf(parent)
+            }
+        }
+        setSubmergedFunctionOf(face)
+    }
+    return `${limb(triangles[0])}:${lastIndex}:${last}`
+}
+

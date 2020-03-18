@@ -67,4 +67,14 @@ impl Face {
             view.face_normals.push(normal.z);
         }
     }
+
+    pub fn is_submerged(&self, joints: &Vec<Joint>) -> bool {
+        for index in 0..3 {
+            let location = &joints[self.joints[index] as usize].location;
+            if location.y < 0_f32 {
+                return true;
+            }
+        }
+        return false;
+    }
 }

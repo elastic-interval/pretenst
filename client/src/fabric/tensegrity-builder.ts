@@ -162,12 +162,12 @@ export class TensegrityBuilder {
         const points = createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it
         const movedToFace = points.map(p => p.applyMatrix4(xform))
         const baseTriangle = negativeFace ? Triangle.PPP : Triangle.NNN
-        return this.createBrick(movedToFace, baseTriangle, scale)
+        return this.createBrick(movedToFace, baseTriangle, scale, face)
     }
 
-    private createBrick(points: Vector3[], base: Triangle, scale: IPercent): IBrick {
+    private createBrick(points: Vector3[], base: Triangle, scale: IPercent, parent?: IFace): IBrick {
         const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
-        const brick = initialBrick(this.tensegrity.bricks.length, base, scale)
+        const brick = initialBrick(base, scale, parent)
         this.tensegrity.bricks.push(brick)
         const jointIndexes = points.map((p, idx) => this.tensegrity.createLeftJoint(p))
         this.tensegrity.instance.refreshFloatView()

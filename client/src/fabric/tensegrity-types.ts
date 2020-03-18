@@ -127,6 +127,7 @@ export interface IFace {
     mark?: IFaceMark
     removed: boolean
     location: () => Vector3
+    submerged?: () => boolean
 }
 
 export function averageScaleFactor(faces: IFace[]): number {
@@ -280,7 +281,7 @@ export function factorToPercent(factor: number): IPercent {
 }
 
 export interface IBrick {
-    index: number,
+    parent?: IFace,
     base: Triangle
     scale: IPercent
     joints: IJoint[]
@@ -309,9 +310,9 @@ export function brickContaining(joint: IJoint, brickA: IBrick, brickB: IBrick): 
     }
 }
 
-export function initialBrick(index: number, base: Triangle, scale: IPercent): IBrick {
+export function initialBrick(base: Triangle, scale: IPercent, parent?: IFace): IBrick {
     return {
-        index, base, scale, joints: [],
+        parent, base, scale, joints: [],
         pushes: [], pulls: [], crosses: [],
         rings: [[], [], [], []], faces: [],
         negativeAdjacent: 0, postiveAdjacent: 0,
