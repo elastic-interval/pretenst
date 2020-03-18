@@ -135,7 +135,8 @@ impl Fabric {
     }
 
     pub fn contract_face(&mut self, face_index: usize, size_nuance: f32, countdown: f32) {
-        assert!(face_index < self.faces.len(), "face index too high");
+        log_u32("face_index", face_index as u32);
+        log_u32("faces", self.faces.len() as u32);
         self.faces[face_index].contract(&mut self.intervals, size_nuance, countdown)
     }
 

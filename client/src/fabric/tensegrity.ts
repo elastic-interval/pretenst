@@ -268,7 +268,8 @@ export class Tensegrity {
         }
         if (lifePhase === Stage.Realized && Math.random() > 0.98) {
             const contractableFaces = this.faces.filter(f => !f.removed && f.brick.parent)
-            contractableFaces[Math.floor(Math.random() * contractableFaces.length)].contract(0.4, 5000)
+            const faceIndex = Math.floor(Math.random() * contractableFaces.length)
+            this.instance.fabric.contract_face(contractableFaces[faceIndex].index, 0.4, 5000)
         }
         return lifePhase
     }
