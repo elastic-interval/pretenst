@@ -36,9 +36,6 @@ pub const RAINBOW: [[f32; 3]; 12] = [
     [1.0000, 0.0000, 0.0706],
 ];
 
-pub const SHAPE_COUNT: usize = 16;
-pub const REST_SHAPE: u8 = 0;
-
 #[wasm_bindgen]
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd)]

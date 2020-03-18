@@ -128,6 +128,7 @@ export interface IFace {
     removed: boolean
     location: () => Vector3
     submerged?: () => boolean
+    contract: (sizeNuance: number, countdown: number) => void
 }
 
 export function averageScaleFactor(faces: IFace[]): number {

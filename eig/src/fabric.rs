@@ -17,7 +17,6 @@ use crate::world::World;
 pub struct Fabric {
     pub age: u32,
     pub(crate) stage: Stage,
-    pub(crate) current_shape: u8,
     pub(crate) joints: Vec<Joint>,
     pub(crate) intervals: Vec<Interval>,
     pub(crate) faces: Vec<Face>,
@@ -34,7 +33,6 @@ impl Fabric {
             age: 0,
             stage: Stage::Busy,
             realizing_countdown: 0_f32,
-            current_shape: REST_SHAPE,
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(joint_count * 3),
             faces: Vec::with_capacity(joint_count),
@@ -47,7 +45,6 @@ impl Fabric {
     pub fn clear(&mut self) {
         self.age = 0;
         self.stage = Stage::Busy;
-        self.current_shape = REST_SHAPE;
         self.joints.clear();
         self.intervals.clear();
         self.faces.clear();
@@ -137,6 +134,11 @@ impl Fabric {
         self.faces[face_index].is_submerged(&self.joints)
     }
 
+    pub fn contract_face(&mut self, face_index: usize, size_nuance: f32, countdown: f32) {
+        assert!(face_index < self.faces.len(), "face index too high");
+        self.faces[face_index].contract(&mut self.intervals, size_nuance, countdown)
+    }
+
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
         let realizing_nuance =
             (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown;
@@ -220,8 +222,8 @@ impl Fabric {
 
     pub fn adopt_lengths(&mut self) -> Stage {
         for interval in self.intervals.iter_mut() {
-            interval.ideal_length = interval.calculate_current_length(&self.joints, &self.faces);
-            interval.length_for_shape[self.current_shape as usize] = interval.ideal_length;
+            interval.length_0 = interval.calculate_current_length(&self.joints, &self.faces);
+            interval.length_1 = interval.length_0;
         }
         for joint in self.joints.iter_mut() {
             joint.force.fill(0_f32);
@@ -236,11 +238,11 @@ impl Fabric {
     }
 
     pub fn multiply_rest_length(&mut self, index: usize, factor: f32, countdown: f32) {
-        self.intervals[index].multiply_rest_length(factor, countdown, self.current_shape);
+        self.intervals[index].multiply_rest_length(factor, countdown);
     }
 
     pub fn change_rest_length(&mut self, index: usize, rest_length: f32, countdown: f32) {
-        self.intervals[index].change_rest_length(rest_length, countdown, self.current_shape);
+        self.intervals[index].change_rest_length(rest_length, countdown);
     }
 
     pub fn set_interval_role(&mut self, index: usize, interval_role: IntervalRole) {
@@ -273,7 +275,6 @@ impl Fabric {
                 &mut self.faces,
                 self.stage,
                 realizing_nuance,
-                self.current_shape,
             );
         }
         match self.stage {
@@ -304,7 +305,7 @@ impl Fabric {
         self.intervals
             .iter()
             .cloned()
-            .map(|i| i.countdown)
+            .map(|i| i.length_nuance)
             .fold(0_f32, f32::max)
     }
 
@@ -321,11 +322,8 @@ impl Fabric {
     fn slack_to_shaping(&mut self, world: &World) -> Stage {
         for interval in &mut self.intervals {
             if interval.is_push() {
-                interval.multiply_rest_length(
-                    world.shaping_pretenst_factor,
-                    world.interval_countdown,
-                    REST_SHAPE,
-                );
+                interval
+                    .multiply_rest_length(world.shaping_pretenst_factor, world.interval_countdown);
             }
         }
         self.set_stage(Stage::Shaping)

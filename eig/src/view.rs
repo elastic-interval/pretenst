@@ -59,8 +59,8 @@ impl View {
         self.midpoint /= fabric.joints.len() as f32;
         for interval in fabric.intervals.iter() {
             let extend = interval.strain / -2_f32 * world.visual_strain;
-            let bounded = if extend < -interval.ideal_length / 2_f32 {
-                -interval.ideal_length / 2_f32
+            let bounded = if extend < -interval.length_0 / 2_f32 {
+                -interval.length_0 / 2_f32
             } else {
                 extend
             };

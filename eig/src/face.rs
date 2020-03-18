@@ -2,6 +2,7 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
+use crate::interval::Interval;
 use crate::joint::Joint;
 use crate::view::View;
 use nalgebra::*;
@@ -72,6 +73,26 @@ impl Face {
         for index in 0..3 {
             let location = &joints[self.joints[index] as usize].location;
             if location.y < 0_f32 {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    pub fn contract(&self, intervals: &mut Vec<Interval>, size_nuance: f32, countdown: f32) {
+        for interval in intervals.iter_mut().filter(|i| self.contains_interval(i)) {
+            interval.contract(size_nuance, countdown)
+        }
+    }
+
+    fn contains_interval(&self, interval: &Interval) -> bool {
+        return self.contains_joint(interval.alpha_index as u16)
+            && self.contains_joint(interval.omega_index as u16);
+    }
+
+    fn contains_joint(&self, joint_index: u16) -> bool {
+        for index in 0..3 {
+            if self.joints[index] == joint_index {
                 return true;
             }
         }

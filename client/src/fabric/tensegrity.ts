@@ -183,6 +183,7 @@ export class Tensegrity {
             location: () =>
                 joints.reduce((sum, joint) => sum.add(joint.location()), new Vector3())
                     .multiplyScalar(1.0 / 3.0),
+            contract: (sizeNuance, countdown) => this.instance.fabric.contract_face(index, sizeNuance, countdown),
         }
         this.faces.push(face)
         return face
@@ -264,6 +265,10 @@ export class Tensegrity {
         }
         if (this.faceIntervals.length > 0) {
             this.faceIntervals = builder().checkFaceIntervals(this.faceIntervals, interval => this.removeFaceInterval(interval))
+        }
+        if (lifePhase === Stage.Realized && Math.random() > 0.98) {
+            const contractableFaces = this.faces.filter(f => !f.removed && f.brick.parent)
+            contractableFaces[Math.floor(Math.random() * contractableFaces.length)].contract(0.4, 5000)
         }
         return lifePhase
     }

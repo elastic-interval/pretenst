@@ -11,16 +11,17 @@ use crate::view::View;
 use crate::world::World;
 
 #[derive(Clone, Copy)]
-pub(crate) struct Interval {
+pub struct Interval {
     pub(crate) alpha_index: usize,
     pub(crate) omega_index: usize,
     pub(crate) interval_role: IntervalRole,
-    pub(crate) ideal_length: f32,
-    pub(crate) length_for_shape: [f32; SHAPE_COUNT],
+    pub(crate) length_0: f32,
+    pub(crate) length_1: f32,
+    pub(crate) length_nuance: f32,
+    pub(crate) nuance_per_tick: f32,
+    pub(crate) changing_rest_length: bool,
     pub(crate) stiffness: f32,
     pub(crate) linear_density: f32,
-    pub(crate) countdown: f32,
-    pub(crate) max_countdown: f32,
     pub(crate) unit: Vector3<f32>,
     pub(crate) strain: f32,
     pub(crate) strain_nuance: f32,
@@ -31,8 +32,8 @@ impl Interval {
         alpha_index: usize,
         omega_index: usize,
         interval_role: IntervalRole,
-        ideal_length: f32,
-        rest_length: f32,
+        length_0: f32,
+        length_1: f32,
         stiffness: f32,
         countdown: f32,
     ) -> Interval {
@@ -40,12 +41,13 @@ impl Interval {
             alpha_index,
             omega_index,
             interval_role,
-            ideal_length,
-            length_for_shape: [rest_length; SHAPE_COUNT],
+            length_0,
+            length_1,
+            length_nuance: 0_f32,
+            nuance_per_tick: 1_f32 / countdown,
+            changing_rest_length: true,
             stiffness,
             linear_density: stiffness.sqrt(),
-            countdown,
-            max_countdown: countdown,
             unit: zero(),
             strain: 0_f32,
             strain_nuance: 0_f32,
@@ -89,9 +91,8 @@ impl Interval {
         faces: &mut Vec<Face>,
         stage: Stage,
         realizing_nuance: f32,
-        shape: u8,
     ) {
-        let mut ideal_length = self.ideal_length_now(shape);
+        let mut ideal_length = self.ideal_length_now();
         let real_length = self.calculate_current_length(joints, faces);
         let is_push = self.is_push();
         if is_push {
@@ -161,11 +162,22 @@ impl Interval {
             joints[self.alpha_index].interval_mass += half_mass;
             joints[self.omega_index].interval_mass += half_mass;
         }
-        if self.countdown > 0_f32 {
-            self.countdown -= 1_f32;
-            if self.countdown <= 0_f32 {
-                self.ideal_length = self.length_for_shape[shape as usize];
-                self.countdown = 0_f32;
+        if self.nuance_per_tick != 0_f32 {
+            self.length_nuance += self.nuance_per_tick;
+            if self.length_nuance > 1_f32 {
+                if self.changing_rest_length {
+                    self.nuance_per_tick = 0_f32; // done moving
+                    self.changing_rest_length = false; // no longer extending
+                    self.length_nuance = 0_f32; // back to zero
+                    self.length_0 = self.length_1; // both the same
+                } else {
+                    self.nuance_per_tick = -self.nuance_per_tick; // back to zero
+                    self.length_nuance = 1_f32 + self.nuance_per_tick; // first step
+                }
+            }
+            if self.length_nuance <= 0_f32 {
+                self.length_nuance = 0_f32; // exactly
+                self.nuance_per_tick = 0_f32; // done moving
             }
         }
     }
@@ -186,30 +198,35 @@ impl Interval {
         }
     }
 
-    fn ideal_length_now(&mut self, shape: u8) -> f32 {
-        if self.countdown == 0_f32 {
-            self.ideal_length
-        } else {
-            let progress: f32 = (self.max_countdown - self.countdown) / self.max_countdown;
-            let shape_length = self.length_for_shape[shape as usize];
-            self.ideal_length * (1_f32 - progress) + shape_length * progress
-        }
+    fn ideal_length_now(&mut self) -> f32 {
+        self.length_0 * (1_f32 - self.length_nuance) + self.length_1 * self.length_nuance
     }
 
-    pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32, shape: u8) {
-        self.ideal_length = self.length_for_shape[shape as usize];
-        self.length_for_shape[shape as usize] = rest_length;
-        self.max_countdown = countdown;
-        self.countdown = countdown;
+    pub fn change_rest_length(&mut self, rest_length: f32, countdown: f32) {
+        self.length_0 = self.length_1;
+        self.length_1 = rest_length;
+        self.length_nuance = 0_f32;
+        self.nuance_per_tick = 1_f32 / countdown;
+        self.changing_rest_length = true;
+    }
+
+    pub fn contract(&mut self, size_nuance: f32, countdown: f32) {
+        if self.nuance_per_tick != 0_f32 {
+            // while changing? no!
+            return;
+        }
+        self.length_1 = self.length_0 * size_nuance;
+        self.length_nuance = 0_f32;
+        self.nuance_per_tick = 1_f32 / countdown;
+        self.changing_rest_length = false;
     }
 
     pub fn set_interval_role(&mut self, interval_role: IntervalRole) {
         self.interval_role = interval_role;
     }
 
-    pub fn multiply_rest_length(&mut self, factor: f32, countdown: f32, shape: u8) {
-        let rest_length = self.length_for_shape[shape as usize];
-        self.change_rest_length(rest_length * factor, countdown, shape)
+    pub fn multiply_rest_length(&mut self, factor: f32, countdown: f32) {
+        self.change_rest_length(self.length_1 * factor, countdown)
     }
 
     pub fn project_line_locations<'a>(
@@ -248,7 +265,7 @@ impl Interval {
         view.unit_vectors.push(self.unit.x);
         view.unit_vectors.push(self.unit.y);
         view.unit_vectors.push(self.unit.z);
-        view.ideal_lengths.push(self.ideal_length);
+        view.ideal_lengths.push(self.length_0);
         view.strains.push(self.strain);
         view.strain_nuances.push(self.strain_nuance);
         view.stiffnesses.push(self.stiffness);
@@ -303,22 +320,22 @@ fn interval_physics() {
         100_f32,
     );
     assert_eq!(interval.calculate_current_length(&joints, &faces), 2_f32);
-    assert_eq!(interval.ideal_length_now(0), ACTUAL_LENGTH);
-    interval.countdown = 50_f32;
+    assert_eq!(interval.ideal_length_now(), ACTUAL_LENGTH);
+    interval.extension = 50_f32;
     assert_eq!(
-        interval.ideal_length_now(0),
+        interval.ideal_length_now(),
         (REST_LENGTH + ACTUAL_LENGTH) / 2_f32
     );
-    interval.countdown = 25_f32;
+    interval.extension = 25_f32;
     assert_eq!(
-        interval.ideal_length_now(0),
+        interval.ideal_length_now(),
         (REST_LENGTH * 3_f32 + ACTUAL_LENGTH) / 4_f32
     );
-    interval.countdown = 100_f32;
-    interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32, 0);
+    interval.extension = 100_f32;
+    interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32);
     assert_eq!(interval.unit, Vector3::new(1_f32, 0_f32, 0_f32));
-    assert_eq!(interval.ideal_length, ACTUAL_LENGTH);
-    let ideal_length = interval.ideal_length * (1_f32 + world.shaping_pretenst_factor);
+    assert_eq!(interval.length_0, ACTUAL_LENGTH);
+    let ideal_length = interval.length_0 * (1_f32 + world.shaping_pretenst_factor);
     let real_length = interval.calculate_current_length(&joints, &faces);
     assert_eq!(real_length, 2_f32);
     assert_eq!(interval.strain, (real_length - ideal_length) / ideal_length);
@@ -350,7 +367,7 @@ fn interval_physics() {
         interval.calculate_current_length(&joints, &faces),
         2_f32 - force / INTERVAL_MASS * (1_f32 - world.shaping_drag)
     );
-    interval.countdown = 0.001_f32; // next step under zero
-    interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32, 0);
-    assert_eq!(interval.ideal_length, REST_LENGTH);
+    interval.extension = 0.001_f32; // next step under zero
+    interval.physics(&world, &mut joints, &mut faces, Stage::Growing, 0_f32);
+    assert_eq!(interval.length_0, REST_LENGTH);
 }
