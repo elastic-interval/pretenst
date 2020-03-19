@@ -17,18 +17,18 @@ const GOTCHI = localStorage.getItem("gotchi") === "true"
 
 export async function startReact(eig: typeof import("eig")): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
+    const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_fabric_feature))
+    storedState$.subscribe(newState => saveState(newState))
     if (GOTCHI) {
-        const storedState = loadState(featureConfig, eig.default_fabric_feature)
         ReactDOM.render(
             <GotchiView
                 eig={eig}
-                storedState={storedState}
+                floatFeatures={createFloatFeatures(storedState$, eig.default_fabric_feature)}
+                storedState$={storedState$}
             />,
             root,
         )
     } else {
-        const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_fabric_feature))
-        storedState$.subscribe(newState => saveState(newState))
         ReactDOM.render(
             <TensegrityView
                 eig={eig}

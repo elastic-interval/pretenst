@@ -15,7 +15,7 @@ export interface IGenomeData {
     genes: IGeneData[]
 }
 
-function rollTheDice(): IDie {
+export function rollTheDice(): IDie {
     return DICE[Math.floor(Math.random() * DICE.length)]
 }
 
@@ -27,13 +27,11 @@ export function fromGenomeData(genomeData: IGenomeData): Genome {
     if (!genomeData.genes) {
         return freshGenome()
     }
-    const genes = genomeData.genes.map(g => {
-        return {
-            direction: g.direction,
-            mutationCount: g.mutationCount,
-            dice: deserializeGene(g.geneString),
-        }
-    })
+    const genes = genomeData.genes.map(g => ({
+        direction: g.direction,
+        mutationCount: g.mutationCount,
+        dice: deserializeGene(g.geneString),
+    }))
     return new Genome(genes, rollTheDice)
 }
 
@@ -67,13 +65,11 @@ export class Genome {
     }
 
     public withMutatedBehavior(direction: Direction, mutations: number): Genome {
-        const genesCopy: IGene[] = this.genes.map(g => {
-            return {
-                direction: g.direction,
-                mutationCount: g.mutationCount,
-                dice: g.dice.slice(),
-            }
-        })
+        const genesCopy: IGene[] = this.genes.map(g => ({
+            direction: g.direction,
+            mutationCount: g.mutationCount,
+            dice: g.dice.slice(),
+        }))
         const geneToMutate = genesCopy.find(g => direction === g.direction)
         if (geneToMutate) {
             for (let hit = 0; hit < mutations; hit++) {
@@ -87,18 +83,16 @@ export class Genome {
 
     public get genomeData(): IGenomeData {
         return {
-            genes: this.genes.map(g => {
-                return {
-                    direction: g.direction,
-                    mutationCount: g.mutationCount,
-                    geneString: serializeGene(g.dice),
-                }
-            }),
+            genes: this.genes.map(g => ({
+                direction: g.direction,
+                mutationCount: g.mutationCount,
+                geneString: serializeGene(g.dice),
+            })),
         }
     }
 }
 
-interface IDie {
+export interface IDie {
     index: number,
     numeral: string,
     symbol: string

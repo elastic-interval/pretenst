@@ -5,24 +5,24 @@
 
 import { Vector3 } from "three"
 
-import { Genome } from "./genome"
-import { Gotchi, IGotchiFactory } from "./gotchi"
+import { Genome, rollTheDice } from "./genome"
+import { Gotchi, GotchiFactory } from "./gotchi"
 import { ICoords, IHexalot } from "./island-logic"
 import { Journey, Leg } from "./journey"
 import { Spot } from "./spot"
 
 export class Hexalot implements IHexalot {
     public id: string
-    public genome?: Genome
     public journey?: Journey
     public childHexalots: Hexalot[] = []
     public nonce = 0
     public visited = false
+    private _genome?: Genome
 
     constructor(public readonly parentHexalot: Hexalot | undefined,
                 public readonly coords: ICoords,
                 public readonly spots: Spot[],
-                public readonly gotchiFactory: IGotchiFactory) {
+                public readonly gotchiFactory: GotchiFactory) {
         this.spots[0].centerOfHexalot = this
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentHexalots.push(this)
@@ -34,19 +34,20 @@ export class Hexalot implements IHexalot {
         }
     }
 
+    public get genome(): Genome {
+        return this._genome ? this._genome : this._genome = new Genome([], rollTheDice)
+    }
+
     public createNativeGotchi(): Gotchi | undefined {
-        if (!this.genome) {
-            return undefined
-        }
-        return this.gotchiFactory.createGotchi(this, this.rotation, this.genome)
+        return this.gotchiFactory(this, 0, this.rotation, this.genome)
     }
 
-    public createGotchiFromGenome(rotation: number, genome: Genome): Gotchi | undefined {
-        return this.gotchiFactory.createGotchi(this, rotation, genome)
+    public createGotchiFromGenome(index: number, rotation: number, genome: Genome): Gotchi | undefined {
+        return this.gotchiFactory(this, index, rotation, genome)
     }
 
-    public createGotchiFromPrototype(gotchi: Gotchi, rotation: number, genome: Genome) : Gotchi | undefined {
-        return this.gotchiFactory.createGotchi(this, rotation, genome)
+    public createGotchiFromPrototype(gotchi: Gotchi, rotation: number, genome: Genome): Gotchi | undefined {
+        return this.gotchiFactory(this, gotchi.index, rotation, genome) // TODO
     }
 
     public get rotation(): number {

@@ -5,7 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { IGotchiFactory } from "./gotchi"
+import { GotchiFactory } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import {
     calculateHexalotId,
@@ -27,7 +27,7 @@ export class Island implements IIsland {
     public hexalots: Hexalot[] = []
     public vacantHexalot?: Hexalot
 
-    constructor(islandData: IIslandData, public readonly gotchiFactory: IGotchiFactory) {
+    constructor(islandData: IIslandData, public readonly gotchiFactory: GotchiFactory) {
         fillIsland(islandData, this)
         this.name = islandData.name
     }

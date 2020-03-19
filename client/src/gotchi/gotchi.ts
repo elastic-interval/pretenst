@@ -4,12 +4,15 @@
  */
 
 import { Stage } from "eig"
+import { Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
+import { Tensegrity } from "../fabric/tensegrity"
+import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
+
+import { Genome, IGenomeData } from "./genome"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
-import { Vector3 } from "three"
-import { Genome, IGenomeData } from "./genome"
 
 const MAX_VOTES = 30
 
@@ -20,26 +23,53 @@ export enum Direction {
     Right,
 }
 
-export interface IGotchiFactory {
-    createGotchi: (hexalot: Hexalot, rotation: number, genome?: Genome) => Gotchi
-}
-
 export interface IEvaluatedGotchi {
     gotchi: Gotchi
     distanceFromTarget: number
 }
 
+export interface ISensor {
+    name: string
+    limb: Limb
+    submerged?: () => boolean
+}
+
+export interface IActuator {
+    name: string
+    limb: Limb
+    distance: number
+    triangle: Triangle
+    contract?: (sizeNuance: number, countdown: number) => void
+}
+
+export enum Limb {
+    FrontLeft,
+    FrontRight,
+    BackLeft,
+    BackRight,
+}
+
+export type GotchiFactory = (hexalot: Hexalot, index: number, rotation: number, genome: Genome) => Gotchi
+
 export class Gotchi {
+    private embryo?: Tensegrity
+    private instance: FabricInstance
+    private actuators: IActuator[] = []
+    private sensors: ISensor[] = []
     private votes: Direction[] = []
     private _direction = Direction.Rest
     private _nextDirection = Direction.Rest
     private currentLeg: Leg
 
     constructor(
+        public readonly hexalot: Hexalot,
         public readonly index: number,
-        public readonly instance: FabricInstance,
+        private genome: Genome,
+        tensegrity: Tensegrity,
         leg: Leg,
-        private genome: Genome) {
+    ) {
+        this.embryo = tensegrity
+        this.instance = tensegrity.instance
         this.currentLeg = leg
     }
 
@@ -59,7 +89,6 @@ export class Gotchi {
         if (!this.genome) {
             throw new Error("Not evolving")
         }
-        console.log(`mutating ${this.index} ${Direction[this.nextDirection]} ${mutationCount} dice`)
         this.genome = this.genome.withMutatedBehavior(this.nextDirection, mutationCount)
     }
 
@@ -80,7 +109,12 @@ export class Gotchi {
     }
 
     public iterate(): void {
-        this.instance.iterate(Stage.Realized)
+        if (!this.embryo) {
+            this.instance.iterate(Stage.Realized)
+        } else if (this.embryo.iterate() === Stage.Realized) {
+            extractGotchiFaces(this.embryo, this.actuators, this.sensors)
+            this.embryo = undefined
+        }
     }
 
     public get leg(): Leg {
@@ -172,4 +206,65 @@ export class Gotchi {
         return this.currentLeg.goTo.center
     }
 
+}
+
+function extractGotchiFaces(tensegrity: Tensegrity, actutors: IActuator[], sensors: ISensor[]): void {
+    tensegrity.faces.filter(face => !face.removed && face.brick.parent).forEach(face => {
+        const ancestorTriangles = (f: IFace, t: Triangle[]) => {
+            const p = f.brick.parent
+            if (!p) {
+                t.push(f.triangle)
+            } else {
+                ancestorTriangles(p, t)
+                const definition = TRIANGLE_DEFINITIONS[f.triangle]
+                t.push(definition.negative ? definition.opposite : f.triangle)
+            }
+            return t
+        }
+        const triangles = ancestorTriangles(face, [])
+        const lastIndex = triangles.length - 1
+        const sensor = triangles[lastIndex] === Triangle.PPP
+        if (sensor) {
+            const submerged = () => tensegrity.instance.fabric.is_face_joint_submerged(face.index)
+            const setSubmergedFunctionOf = (f: IFace) => {
+                const existingSubmerged = f.submerged
+                f.submerged = !existingSubmerged ? submerged : () => submerged() || existingSubmerged()
+                const parent = f.brick.parent
+                if (parent) {
+                    setSubmergedFunctionOf(parent)
+                }
+            }
+            setSubmergedFunctionOf(face)
+        }
+        const limb = limbFromTriangle(triangles[0])
+        const distance = lastIndex
+        const triangle = triangles[lastIndex]
+        const name = sensor ? `[${limb}]` : `[${limb}]:[${lastIndex}:${triangle}]`
+        if (isSensor(face)) {
+            sensors.push({name, limb, submerged: face.submerged})
+        } else {
+            actutors.push({name, limb, distance, triangle, contract: face.contract})
+        }
+    })
+}
+
+function isSensor(face: IFace): boolean {
+    const definition = TRIANGLE_DEFINITIONS[face.triangle]
+    const triangle = definition.negative ? definition.opposite : face.triangle
+    return triangle === Triangle.PPP
+}
+
+function limbFromTriangle(triangle: Triangle): Limb {
+    switch (triangle) {
+        case Triangle.NNN:
+            return Limb.FrontLeft
+        case Triangle.PNN:
+            return Limb.FrontRight
+        case Triangle.NPP:
+            return Limb.BackLeft
+        case Triangle.PPP:
+            return Limb.BackRight
+        default:
+            throw new Error("Strange limb")
+    }
 }

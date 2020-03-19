@@ -255,9 +255,6 @@ export class Tensegrity {
                 this.activeTenscript = undefined
                 faceStrategies(this.faces, this.tenscript.marks, builder()).forEach(strategy => strategy.execute())
                 if (lifePhase === Stage.Growing) {
-                    this.faces
-                        .filter(face => !face.removed && face.brick.parent)
-                        .forEach(face => console.log(linkFace(face, this.instance.fabric)))
                     return this.instance.fabric.finish_growing()
                 }
             }
@@ -269,7 +266,7 @@ export class Tensegrity {
         if (lifePhase === Stage.Realized && Math.random() > 0.98) {
             const contractableFaces = this.faces.filter(f => !f.removed && f.brick.parent)
             const faceIndex = Math.floor(Math.random() * contractableFaces.length)
-            this.instance.fabric.contract_face(contractableFaces[faceIndex].index, 0.4, 5000)
+            this.instance.fabric.contract_face(contractableFaces[faceIndex].index, 0.4,  this.numericFeature(FabricFeature.IntervalCountdown))
         }
         return lifePhase
     }
@@ -379,54 +376,4 @@ class FaceStrategy {
     }
 }
 
-function linkFace(face: IFace, fabric: Fabric): string {
-    if (!face.brick.parent) {
-        return ""
-    }
-    const ancestorTriangles = (f: IFace, t: Triangle[]) => {
-        const p = f.brick.parent
-        if (!p) {
-            t.push(f.triangle)
-        } else {
-            ancestorTriangles(p, t)
-            const definition = TRIANGLE_DEFINITIONS[f.triangle]
-            t.push(definition.negative ? definition.opposite : f.triangle)
-        }
-        return t
-    }
-    const limb = (triangle: Triangle) => {
-        switch (triangle) {
-            case Triangle.NNN:
-                return 0
-            case Triangle.PNN:
-                return 1
-            case Triangle.NPP:
-                return 2
-            case Triangle.PPP:
-                return 3
-            default:
-                throw new Error("Strange limb")
-        }
-    }
-    const triangles = ancestorTriangles(face, [])
-    const lastIndex = triangles.length - 1
-    const extremity = triangles[lastIndex] === Triangle.PPP
-    const last = extremity ? "*" : triangles[lastIndex].toFixed()
-    if (extremity) {
-        const submerged = () => fabric.is_face_joint_submerged(face.index)
-        const setSubmergedFunctionOf = (f: IFace) => {
-            const existingSubmerged = f.submerged
-            f.submerged = !existingSubmerged ? submerged : () => submerged() || existingSubmerged()
-            const parent = f.brick.parent
-            if (parent) {
-                setSubmergedFunctionOf(parent)
-            }
-        }
-        setSubmergedFunctionOf(face)
-    }
-    if (extremity) {
-        return `Extremity[${limb(triangles[0])}]`
-    }
-    return `Segment[${limb(triangles[0])}:${lastIndex}]=${last}`
-}
 

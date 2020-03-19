@@ -5,10 +5,11 @@
 
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
+
+import { fromGenomeData, Genome } from "./genome"
 import { Direction, Gotchi, IEvaluatedGotchi } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
-import { fromGenomeData, Genome } from "./genome"
 
 export const INITIAL_JOINT_COUNT = 47
 export const MAX_POPULATION = 24
@@ -26,7 +27,7 @@ export class Evolution {
     private maxAge: number
 
     constructor(
-        readonly home: Hexalot,
+        public readonly home: Hexalot,
         private readonly prototypeGotchi?: Gotchi,
     ) {
         const rotateToLeg = this.leg
@@ -177,7 +178,7 @@ export class Evolution {
         if (this.prototypeGotchi) {
             return this.home.createGotchiFromPrototype(this.prototypeGotchi, this.rotation, genome)
         } else {
-            return this.home.createGotchiFromGenome(this.rotation, genome)
+            return this.home.createGotchiFromGenome(0, this.rotation, genome) // TODO
         }
     }
 }

@@ -201,7 +201,11 @@ function argument(maybeBracketed: string, stripBrackets: boolean): { content: st
     return {content, skip: finalBracket + 1}
 }
 
-export function codeToTenscript(error: (message: string) => void, fromUrl: boolean, code?: string): ITenscript | undefined {
+export function codeToTenscript(
+    error: (message: string) => void,
+    fromUrl: boolean,
+    code?: string,
+): ITenscript | undefined {
 
     function fragmentToTree(codeFragment: string): ITenscriptTree | undefined {
         const initialCode = argument(codeFragment, true)
