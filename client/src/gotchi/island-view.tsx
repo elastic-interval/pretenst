@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { useRender, useThree, useUpdate } from "react-three-fiber"
 import { Color, FaceColors, Geometry, LineBasicMaterial, MeshPhongMaterial, PerspectiveCamera, Vector3 } from "three"
 
@@ -26,8 +26,9 @@ import {
 } from "./island-logic"
 import { Spot } from "./spot"
 
-export function IslandView({island, selectedSpot, homeHexalot}: {
+export function IslandView({island, gotchi, selectedSpot, homeHexalot}: {
     island: Island,
+    gotchi?: Gotchi,
     selectedSpot?: Spot,
     homeHexalot?: Hexalot,
 }): JSX.Element {
@@ -37,7 +38,6 @@ export function IslandView({island, selectedSpot, homeHexalot}: {
     const perspective = camera as PerspectiveCamera
 
     const [age, setAge] = useState(0)
-    const gotchi = useMemo(() => island.hexalots[0].createNativeGotchi(), [])
 
     useRender(() => {
         try {

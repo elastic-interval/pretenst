@@ -43,10 +43,10 @@ export interface IActuator {
 }
 
 export enum Limb {
-    FrontLeft,
-    FrontRight,
-    BackLeft,
-    BackRight,
+    FrontLeft = "front-left",
+    FrontRight = "front-right",
+    BackLeft = "back-left",
+    BackRight = "back-right",
 }
 
 export type GotchiFactory = (hexalot: Hexalot, index: number, rotation: number, genome: Genome) => Gotchi
@@ -73,6 +73,13 @@ export class Gotchi {
         this.embryo = tensegrity
         this.instance = tensegrity.instance
         this.currentLeg = leg
+    }
+
+    public actuate(limb: Limb, triangle: Triangle): void {
+        console.log(`Actuator: ${limb} ${triangle}`)
+        this.actuators
+            .filter(actuator => actuator.limb === limb && actuator.triangle === triangle)
+            .forEach(actuator => this.instance.fabric.contract_face(actuator.index, 0.4, 10000))
     }
 
     public recycle(): void {
@@ -114,12 +121,6 @@ export class Gotchi {
         const embryo = this.embryo
         if (!embryo) {
             this.instance.iterate(Stage.Realized)
-            if (Math.random() > 0.98) {
-                const actuatorIndex = Math.floor(Math.random() * this.actuators.length)
-                const actuator = this.actuators[actuatorIndex]
-                console.log(`Actuator: ${actuator.limb} ${actuator.distance} ${actuator.triangle}`)
-                this.instance.fabric.contract_face(actuator.index, 0.4, 1000)
-            }
         } else {
             const stage = embryo.iterate()
             switch (stage) {
@@ -280,7 +281,6 @@ function extractGotchiFaces(tensegrity: Tensegrity, actutors: IActuator[], senso
         const triangle = triangles[lastIndex]
         const index = face.index
         const name = sensor ? `[${limb}]` : `[${limb}]:[${lastIndex}:${triangle}]`
-
         if (isSensor(face)) {
             sensors.push({index, name, limb})
         } else {
@@ -298,13 +298,13 @@ function isSensor(face: IFace): boolean {
 function limbFromTriangle(triangle: Triangle): Limb {
     switch (triangle) {
         case Triangle.NNN:
-            return Limb.FrontLeft
-        case Triangle.PNN:
-            return Limb.FrontRight
-        case Triangle.NPP:
             return Limb.BackLeft
-        case Triangle.PPP:
+        case Triangle.PNN:
             return Limb.BackRight
+        case Triangle.NPP:
+            return Limb.FrontLeft
+        case Triangle.PPP:
+            return Limb.FrontRight
         default:
             throw new Error("Strange limb")
     }

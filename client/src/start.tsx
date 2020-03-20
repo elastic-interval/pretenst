@@ -29,7 +29,7 @@ export async function startReact(eig: typeof import("eig")): Promise<void> {
     const floatFeatures = createFloatFeatures(storedState$, eig.default_fabric_feature)
     if (GOTCHI) {
         const island = createIsland(eig, floatFeatures, storedState$)
-        ReactDOM.render(<GotchiView eig={eig} island={island}/>, root)
+        ReactDOM.render(<GotchiView island={island}/>, root)
     } else {
         ReactDOM.render(
             <TensegrityView

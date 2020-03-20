@@ -4,15 +4,19 @@
  */
 
 import * as React from "react"
+import { useMemo } from "react"
 import { Canvas } from "react-three-fiber"
+import { Button, ButtonGroup } from "reactstrap"
 
+import { Limb } from "./gotchi"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
 
-export function GotchiView({eig, island}: {
-    eig: typeof import("eig"),
+export function GotchiView({island}: {
     island: Island,
 }): JSX.Element {
+
+    const gotchi = useMemo(() => island.hexalots[0].createNativeGotchi(), [])
 
     return (
         <div id="view-container" style={{
@@ -27,8 +31,27 @@ export function GotchiView({eig, island}: {
                 borderColor: "#f0ad4e",
                 borderWidth: "2px",
             }}>
-                <IslandView island={island}/>
+                <IslandView island={island} gotchi={gotchi}/>
             </Canvas>
+            <div id="bottom-middle">
+                <ButtonGroup>
+                    {Object.keys(Limb)
+                        .map(key => [1, 2, 3].map(group => (
+                            <Button
+                                key={`key-${group}`}
+                                onClick={() => {
+                                    if (!gotchi) {
+                                        return
+                                    }
+                                    console.log(`Click ${key}-${group}`)
+                                    gotchi.actuate(Limb[key], group)
+                                }}
+                            >
+                                {key}-{group}
+                            </Button>
+                        )))}
+                </ButtonGroup>
+            </div>
         </div>
     )
 }
