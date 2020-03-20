@@ -173,8 +173,8 @@ export class FloatFeature {
 
     constructor(public readonly config: IFeatureConfig, private defaultValue: number, storedState$: BehaviorSubject<IStoredState>) {
         const features = storedState$.getValue().featureValues
-        const fromConfig = features[config.feature]
-        const initialValue: IFeatureValue = fromConfig !== undefined ? fromConfig : {
+        const storedFeature = features[config.feature]
+        const initialValue: IFeatureValue = storedFeature !== undefined ? storedFeature : {
             numeric: this.defaultValue,
             percent: 100,
         }

@@ -29,16 +29,9 @@ export async function startReact(eig: typeof import("eig")): Promise<void> {
     const floatFeatures = createFloatFeatures(storedState$, eig.default_fabric_feature)
     if (GOTCHI) {
         const island = createIsland(eig, floatFeatures, storedState$)
-        ReactDOM.render(<GotchiView island={island}/>, root)
+        ReactDOM.render(<GotchiView island={island} floatFeatures={floatFeatures}/>, root)
     } else {
-        ReactDOM.render(
-            <TensegrityView
-                eig={eig}
-                floatFeatures={floatFeatures}
-                storedState$={storedState$}
-            />,
-            root,
-        )
+        ReactDOM.render(<TensegrityView eig={eig} floatFeatures={floatFeatures} storedState$={storedState$}/>, root)
     }
     registerServiceWorker()
 }
@@ -48,7 +41,7 @@ function createIsland(
     floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 ): Island {
-    const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-60"
+    const BODY = "'Gotchi':(A(8,S90,Mb0),b(8,S90,Mb0),a(8,S90,Md0),B(8,Md0,S90)):0=face-distance-60"
     const islandData: IIslandData = {
         name: "Testing",
         hexalots: "1",
