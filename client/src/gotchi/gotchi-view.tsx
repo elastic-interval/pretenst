@@ -43,7 +43,6 @@ export function GotchiView({island}: {
                                     if (!gotchi) {
                                         return
                                     }
-                                    console.log(`Click ${key}-${group}`)
                                     gotchi.actuate(Limb[key], group)
                                 }}
                             >

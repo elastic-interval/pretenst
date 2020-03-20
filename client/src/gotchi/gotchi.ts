@@ -76,7 +76,6 @@ export class Gotchi {
     }
 
     public actuate(limb: Limb, triangle: Triangle): void {
-        console.log(`Actuator: ${limb} ${triangle}`)
         this.actuators
             .filter(actuator => actuator.limb === limb && actuator.triangle === triangle)
             .forEach(actuator => this.instance.fabric.contract_face(actuator.index, 0.4, 10000))
