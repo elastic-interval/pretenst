@@ -4,7 +4,7 @@
  */
 
 import { Stage } from "eig"
-import { Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -29,17 +29,17 @@ export interface IEvaluatedGotchi {
 }
 
 export interface ISensor {
+    index: number
     name: string
     limb: Limb
-    submerged?: () => boolean
 }
 
 export interface IActuator {
+    index: number
     name: string
     limb: Limb
     distance: number
     triangle: Triangle
-    contract?: (sizeNuance: number, countdown: number) => void
 }
 
 export enum Limb {
@@ -52,14 +52,16 @@ export enum Limb {
 export type GotchiFactory = (hexalot: Hexalot, index: number, rotation: number, genome: Genome) => Gotchi
 
 export class Gotchi {
+    public readonly instance: FabricInstance
+
     private embryo?: Tensegrity
-    private instance: FabricInstance
     private actuators: IActuator[] = []
     private sensors: ISensor[] = []
     private votes: Direction[] = []
     private _direction = Direction.Rest
     private _nextDirection = Direction.Rest
     private currentLeg: Leg
+    private shapingTime = 100
 
     constructor(
         public readonly hexalot: Hexalot,
@@ -109,11 +111,40 @@ export class Gotchi {
     }
 
     public iterate(): void {
-        if (!this.embryo) {
+        const embryo = this.embryo
+        if (!embryo) {
             this.instance.iterate(Stage.Realized)
-        } else if (this.embryo.iterate() === Stage.Realized) {
-            extractGotchiFaces(this.embryo, this.actuators, this.sensors)
-            this.embryo = undefined
+            if (Math.random() > 0.98) {
+                const actuatorIndex = Math.floor(Math.random() * this.actuators.length)
+                const actuator = this.actuators[actuatorIndex]
+                console.log(`Actuator: ${actuator.limb} ${actuator.distance} ${actuator.triangle}`)
+                this.instance.fabric.contract_face(actuator.index, 0.4, 1000)
+            }
+        } else {
+            const stage = embryo.iterate()
+            switch (stage) {
+                case Stage.Shaping:
+                    if (this.shapingTime <= 0) {
+                        this.instance.fabric.adopt_lengths()
+                        const faceIntervals = [...embryo.faceIntervals]
+                        faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
+                        this.instance.iterate(Stage.Slack)
+                        this.instance.iterate(Stage.Realizing)
+                    } else {
+                        this.shapingTime--
+                        // console.log("shaping", this.shapingTime)
+                    }
+                    break
+                case Stage.Slack:
+                    console.error("slack?")
+                    break
+                case Stage.Realizing:
+                    break
+                case Stage.Realized:
+                    extractGotchiFaces(embryo, this.actuators, this.sensors)
+                    this.embryo = undefined
+                    break
+            }
         }
     }
 
@@ -150,6 +181,26 @@ export class Gotchi {
         const midpoint = new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         const distanceFromTarget = midpoint.distanceTo(this.target)
         return {gotchi: this, distanceFromTarget}
+    }
+
+    public get facesGeometry(): BufferGeometry {
+        const faceLocations = new Float32BufferAttribute(this.instance.floatView.faceLocations, 3)
+        const faceNormals = new Float32BufferAttribute(this.instance.floatView.faceNormals, 3)
+        const geometry = new BufferGeometry()
+        geometry.addAttribute("position", faceLocations)
+        geometry.addAttribute("normal", faceNormals)
+        geometry.computeBoundingSphere()
+        return geometry
+    }
+
+    public get linesGeometry(): BufferGeometry {
+        const lineLocations = new Float32BufferAttribute(this.instance.floatView.lineLocations, 3)
+        const lineColors = new Float32BufferAttribute(this.instance.floatView.lineColors, 3)
+        const geometry = new BufferGeometry()
+        geometry.addAttribute("position", lineLocations)
+        geometry.addAttribute("color", lineColors)
+        geometry.computeBoundingSphere()
+        return geometry
     }
 
     private get touchedDestination(): boolean {
@@ -224,26 +275,16 @@ function extractGotchiFaces(tensegrity: Tensegrity, actutors: IActuator[], senso
         const triangles = ancestorTriangles(face, [])
         const lastIndex = triangles.length - 1
         const sensor = triangles[lastIndex] === Triangle.PPP
-        if (sensor) {
-            const submerged = () => tensegrity.instance.fabric.is_face_joint_submerged(face.index)
-            const setSubmergedFunctionOf = (f: IFace) => {
-                const existingSubmerged = f.submerged
-                f.submerged = !existingSubmerged ? submerged : () => submerged() || existingSubmerged()
-                const parent = f.brick.parent
-                if (parent) {
-                    setSubmergedFunctionOf(parent)
-                }
-            }
-            setSubmergedFunctionOf(face)
-        }
         const limb = limbFromTriangle(triangles[0])
         const distance = lastIndex
         const triangle = triangles[lastIndex]
+        const index = face.index
         const name = sensor ? `[${limb}]` : `[${limb}]:[${lastIndex}:${triangle}]`
+
         if (isSensor(face)) {
-            sensors.push({name, limb, submerged: face.submerged})
+            sensors.push({index, name, limb})
         } else {
-            actutors.push({name, limb, distance, triangle, contract: face.contract})
+            actutors.push({index, name, limb, distance, triangle})
         }
     })
 }

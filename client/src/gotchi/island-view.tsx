@@ -4,24 +4,29 @@
  */
 
 import * as React from "react"
-import { useThree, useUpdate } from "react-three-fiber"
+import { useMemo, useState } from "react"
+import { useRender, useThree, useUpdate } from "react-three-fiber"
 import { Color, FaceColors, Geometry, LineBasicMaterial, MeshPhongMaterial, PerspectiveCamera, Vector3 } from "three"
 
+import { FACE, LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
+import { Gotchi } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import { Island } from "./island"
 import {
     ALTITUDE,
     HEMISPHERE_COLOR,
     INNER_HEXALOT_SPOTS,
-    OUTER_HEXALOT_SIDE, POINTER_TOP,
-    SPACE_RADIUS, SPACE_SCALE,
+    OUTER_HEXALOT_SIDE,
+    POINTER_TOP,
+    SPACE_RADIUS,
+    SPACE_SCALE,
     SUN_POSITION,
 } from "./island-logic"
 import { Spot } from "./spot"
 
-export function IslandComponent({island, selectedSpot, homeHexalot}: {
+export function IslandView({island, selectedSpot, homeHexalot}: {
     island: Island,
     selectedSpot?: Spot,
     homeHexalot?: Hexalot,
@@ -30,6 +35,22 @@ export function IslandComponent({island, selectedSpot, homeHexalot}: {
     const viewContainer = document.getElementById("view-container") as HTMLElement
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
+
+    const [age, setAge] = useState(0)
+    const gotchi = useMemo(() => island.hexalots[0].createNativeGotchi(), [])
+
+    useRender(() => {
+        try {
+            if (!gotchi) {
+                return
+            }
+            const instance = gotchi.instance
+            gotchi.iterate()
+            setAge(instance.fabric.age)
+        } catch (e) {
+            console.error("render", e)
+        }
+    }, true, [gotchi, age])
 
     function spotsGeometry(): Geometry {
         const geometry = new Geometry()
@@ -127,6 +148,7 @@ export function IslandComponent({island, selectedSpot, homeHexalot}: {
                 )}
                 <lineSegments key="Available" geometry={availableSpotsGeometry()} material={AVAILABLE_HEXALOT}/>
                 <lineSegments key="Free" geometry={vacantHexalotsGeometry()} material={AVAILABLE_HEXALOT}/>
+                {!gotchi ? undefined : <GotchiComponent gotchi={gotchi}/>}
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
             </scene>
@@ -139,3 +161,20 @@ const ISLAND = new MeshPhongMaterial({vertexColors: FaceColors, lights: true})
 const HOME_HEXALOT = new LineBasicMaterial({color: new Color("white")})
 const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow")})
 const AVAILABLE_HEXALOT = new LineBasicMaterial({color: new Color("green")})
+
+function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
+    return (
+        <group>
+            <lineSegments
+                key="lines"
+                geometry={gotchi.linesGeometry}
+                material={LINE_VERTEX_COLORS}
+            />
+            <mesh
+                key="faces"
+                geometry={gotchi.facesGeometry}
+                material={FACE}
+            />
+        </group>
+    )
+}
