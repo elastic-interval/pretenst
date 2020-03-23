@@ -18,8 +18,8 @@ pub struct Interval {
     pub(crate) length_0: f32,
     pub(crate) length_1: f32,
     pub(crate) length_nuance: f32,
-    pub(crate) nuance_per_tick: f32,
-    pub(crate) changing_rest_length: bool,
+    pub(crate) attack: f32,
+    pub(crate) decay: f32,
     pub(crate) stiffness: f32,
     pub(crate) linear_density: f32,
     pub(crate) unit: Vector3<f32>,
@@ -44,8 +44,8 @@ impl Interval {
             length_0,
             length_1,
             length_nuance: 0_f32,
-            nuance_per_tick: 1_f32 / countdown,
-            changing_rest_length: true,
+            attack: 1_f32 / countdown,
+            decay: 0_f32,
             stiffness,
             linear_density: stiffness.sqrt(),
             unit: zero(),
@@ -162,22 +162,22 @@ impl Interval {
             joints[self.alpha_index].interval_mass += half_mass;
             joints[self.omega_index].interval_mass += half_mass;
         }
-        if self.nuance_per_tick != 0_f32 {
-            self.length_nuance += self.nuance_per_tick;
+        if self.attack > 0_f32 {
+            self.length_nuance += self.attack;
             if self.length_nuance > 1_f32 {
-                if self.changing_rest_length {
-                    self.nuance_per_tick = 0_f32; // done moving
-                    self.changing_rest_length = false; // no longer extending
-                    self.length_nuance = 0_f32; // back to zero
-                    self.length_0 = self.length_1; // both the same
+                self.attack = 0_f32; // done attacking
+                if self.decay == 0_f32 {
+                    self.length_0 = self.length_1; // both the same now
+                    self.length_nuance = 0_f32; // reset to zero
                 } else {
-                    self.nuance_per_tick = -self.nuance_per_tick; // back to zero
-                    self.length_nuance = 1_f32 + self.nuance_per_tick; // first step
+                    self.length_nuance = 1_f32 - self.decay; // first step back
                 }
             }
+        } else if self.decay > 0_f32 {
+            self.length_nuance -= self.decay;
             if self.length_nuance <= 0_f32 {
-                self.length_nuance = 0_f32; // exactly
-                self.nuance_per_tick = 0_f32; // done moving
+                self.length_nuance = 0_f32; // exactly zero
+                self.decay = 0_f32; // done decaying
             }
         }
     }
@@ -206,19 +206,19 @@ impl Interval {
         self.length_0 = self.length_1;
         self.length_1 = rest_length;
         self.length_nuance = 0_f32;
-        self.nuance_per_tick = 1_f32 / countdown;
-        self.changing_rest_length = true;
+        self.attack = 1_f32 / countdown;
+        self.decay = 0_f32;
     }
 
-    pub fn contract(&mut self, size_nuance: f32, countdown: f32) {
-        if self.nuance_per_tick != 0_f32 {
-            // while changing? no!
+    pub fn twitch(&mut self, size_nuance: f32, attack: f32, decay: f32) {
+        if self.attack != 0_f32 {
+            // while changing? ignore!
             return;
         }
         self.length_1 = self.length_0 * size_nuance;
         self.length_nuance = 0_f32;
-        self.nuance_per_tick = 1_f32 / countdown;
-        self.changing_rest_length = false;
+        self.attack = attack;
+        self.decay = decay;
     }
 
     pub fn set_interval_role(&mut self, interval_role: IntervalRole) {

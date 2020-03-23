@@ -76,9 +76,10 @@ export class Gotchi {
     }
 
     public actuate(limb: Limb, triangle: Triangle): void {
+        const attackDecay = 1.0 / 30000
         this.actuators
             .filter(actuator => actuator.limb === limb && actuator.triangle === triangle)
-            .forEach(actuator => this.instance.fabric.contract_face(actuator.index, 0.5, 30000))
+            .forEach(actuator => this.instance.fabric.twitch_face(actuator.index, 0.5, attackDecay, attackDecay))
     }
 
     public recycle(): void {
