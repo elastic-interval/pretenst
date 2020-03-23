@@ -21,6 +21,12 @@ import { IStoredState, loadState, roleDefaultFromFeatures, saveState } from "./s
 import { TensegrityView } from "./view/tensegrity-view"
 
 const GOTCHI = localStorage.getItem("gotchi") === "true"
+const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-60"
+const ISLAND_DATA: IIslandData = {
+    name: "Testing",
+    hexalots: "1",
+    spots: "010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101",
+}
 
 export async function startReact(eig: typeof import("eig")): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
@@ -41,13 +47,6 @@ function createIsland(
     floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 ): Island {
-    const BODY = "'Gotchi':(A(8,S90,Mb0),b(8,S90,Mb0),a(8,S90,Md0),B(8,Md0,S90)):0=face-distance-60"
-    const islandData: IIslandData = {
-        name: "Testing",
-        hexalots: "1",
-        spots: "010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101",
-    }
-
     const gotchiFactory: GotchiFactory = (hexalot, index, rotation, genome) => {
         const instance = new FabricInstance(eig, 100)
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(floatFeatures, role)
@@ -62,5 +61,5 @@ function createIsland(
         // todo: rotation
         return new Gotchi(hexalot, index, genome, tensegrity, hexalot.firstLeg)
     }
-    return new Island(islandData, gotchiFactory)
+    return new Island(ISLAND_DATA, gotchiFactory)
 }

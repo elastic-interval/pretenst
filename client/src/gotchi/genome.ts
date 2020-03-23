@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Direction } from "./gotchi"
+import { Direction, Limb } from "./gotchi"
 
 export interface IGeneData {
     direction: Direction
@@ -15,17 +15,13 @@ export interface IGenomeData {
     genes: IGeneData[]
 }
 
-export function rollTheDice(): IDie {
-    return DICE[Math.floor(Math.random() * DICE.length)]
-}
-
-export function freshGenome(): Genome {
+export function emptyGenome(): Genome {
     return new Genome([], rollTheDice)
 }
 
 export function fromGenomeData(genomeData: IGenomeData): Genome {
     if (!genomeData.genes) {
-        return freshGenome()
+        return emptyGenome()
     }
     const genes = genomeData.genes.map(g => ({
         direction: g.direction,
@@ -92,7 +88,7 @@ export class Genome {
     }
 }
 
-export interface IDie {
+interface IDie {
     index: number,
     numeral: string,
     symbol: string
@@ -116,6 +112,85 @@ const DICE_MAP = ((): { [key: string]: IDie; } => {
     return map
 })()
 
+function choice(maxChoice: number, ...dice: IDie[]): number {
+    return Math.floor(diceToNuance(dice) * maxChoice)
+}
+
+export class GeneReader {
+    private cursor = 0
+
+    constructor(private gene: IGene, private roll: () => IDie) {
+    }
+
+    public readMuscleTwitch(faceCount: number): {
+        whichFace: number,
+        when: number,
+        attack: number,
+        decay: number,
+    } {
+        return {
+            whichFace: choice(faceCount, this.next(), this.next(), this.next(), this.next()),
+            when: choice(36, this.next(), this.next()),
+            attack: choice(6, this.next()),
+            decay: choice(6, this.next()),
+        }
+    }
+
+    public readGrasp(): {
+        whichLimbs: Limb[],
+        when: number,
+        howLong: number,
+    } {
+        const whichLimbs = []
+        switch (this.next().symbol) {
+            case "⚀":
+                whichLimbs.push(Limb.BackLeft)
+                whichLimbs.push(Limb.BackRight)
+                break
+            case "⚁":
+                whichLimbs.push(Limb.FrontLeft)
+                whichLimbs.push(Limb.FrontRight)
+                break
+            case "⚂":
+                whichLimbs.push(Limb.FrontRight)
+                whichLimbs.push(Limb.BackRight)
+                break
+            case "⚃":
+                whichLimbs.push(Limb.FrontLeft)
+                whichLimbs.push(Limb.BackLeft)
+                break
+            case "⚄":
+                whichLimbs.push(Limb.FrontLeft)
+                whichLimbs.push(Limb.BackRight)
+                break
+            case "⚅":
+                whichLimbs.push(Limb.FrontRight)
+                whichLimbs.push(Limb.BackLeft)
+                break
+        }
+        return {
+            whichLimbs,
+            when: choice(36, this.next(), this.next()),
+            howLong: choice(6, this.next()),
+        }
+    }
+
+    public get length(): number {
+        return this.gene.dice.length
+    }
+
+    private next(): IDie {
+        while (this.gene.dice.length < this.cursor + 1) {
+            this.gene.dice.push(this.roll())
+        }
+        return this.gene.dice[this.cursor++]
+    }
+}
+
+function rollTheDice(): IDie {
+    return DICE[Math.floor(Math.random() * DICE.length)]
+}
+
 function diceToNuance(dice: IDie[]): number {
     if (dice.length === 0) {
         throw new Error("No dice!")
@@ -131,37 +206,4 @@ function serializeGene(dice: IDie[]): string {
 
 function deserializeGene(s: string): IDie[] {
     return s.split("").map((numeral: string): IDie => DICE_MAP[numeral]).filter(die => !!die)
-}
-
-class GeneReader {
-    private cursor = 0
-
-    constructor(private gene: IGene, private roll: () => IDie) {
-    }
-
-    public chooseFrom(maxChoice: number): number {
-        const choice = (...dice: IDie[]) => Math.floor(diceToNuance(dice) * maxChoice)
-        if (maxChoice <= 6) {
-            return choice(this.next())
-        } else if (maxChoice <= 6 * 6) {
-            return choice(this.next(), this.next())
-        } else if (maxChoice <= 6 * 6 * 6) {
-            return choice(this.next(), this.next(), this.next())
-        } else if (maxChoice <= 6 * 6 * 6 * 6) {
-            return choice(this.next(), this.next(), this.next(), this.next())
-        } else {
-            return choice(this.next(), this.next(), this.next(), this.next(), this.next())
-        }
-    }
-
-    public get size(): number {
-        return this.gene.dice.length
-    }
-
-    private next(): IDie {
-        while (this.gene.dice.length < this.cursor + 1) {
-            this.gene.dice.push(this.roll())
-        }
-        return this.gene.dice[this.cursor++]
-    }
 }

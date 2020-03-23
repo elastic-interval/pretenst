@@ -5,7 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { Genome, rollTheDice } from "./genome"
+import { emptyGenome, Genome } from "./genome"
 import { Gotchi, GotchiFactory } from "./gotchi"
 import { ICoords, IHexalot } from "./island-logic"
 import { Journey, Leg } from "./journey"
@@ -35,7 +35,7 @@ export class Hexalot implements IHexalot {
     }
 
     public get genome(): Genome {
-        return this._genome ? this._genome : this._genome = new Genome([], rollTheDice)
+        return this._genome ? this._genome : this._genome = emptyGenome()
     }
 
     public createNativeGotchi(): Gotchi | undefined {
