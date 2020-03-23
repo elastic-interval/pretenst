@@ -4,6 +4,7 @@
  */
 
 import { Direction, Limb } from "./gotchi"
+import { IGrasp, ITwitch } from "./time-cycle"
 
 export interface IGeneData {
     direction: Direction
@@ -122,25 +123,16 @@ export class GeneReader {
     constructor(private gene: IGene, private roll: () => IDie) {
     }
 
-    public readMuscleTwitch(faceCount: number): {
-        whichFace: number,
-        when: number,
-        attack: number,
-        decay: number,
-    } {
+    public readMuscleTwitch(faceCount: number): ITwitch {
         return {
-            whichFace: choice(faceCount, this.next(), this.next(), this.next(), this.next()),
             when: choice(36, this.next(), this.next()),
+            whichFace: choice(faceCount, this.next(), this.next(), this.next(), this.next()),
             attack: choice(6, this.next()),
             decay: choice(6, this.next()),
         }
     }
 
-    public readGrasp(): {
-        whichLimbs: Limb[],
-        when: number,
-        howLong: number,
-    } {
+    public readGrasp(): IGrasp {
         const whichLimbs = []
         switch (this.next().symbol) {
             case "⚀":
@@ -169,8 +161,8 @@ export class GeneReader {
                 break
         }
         return {
-            whichLimbs,
             when: choice(36, this.next(), this.next()),
+            whichLimbs,
             howLong: choice(6, this.next()),
         }
     }

@@ -13,8 +13,11 @@ import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-type
 import { Genome, IGenomeData } from "./genome"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
+import { TimeCycle } from "./time-cycle"
 
 const MAX_VOTES = 30
+const GRASP_COUNT = 5
+const TWITCH_COUNT = 15
 
 export enum Direction {
     Rest,
@@ -62,6 +65,7 @@ export class Gotchi {
     private _nextDirection = Direction.Rest
     private currentLeg: Leg
     private shapingTime = 100
+    private twitchCycle: Record<string, TimeCycle> = {}
 
     constructor(
         public readonly hexalot: Hexalot,
@@ -121,6 +125,7 @@ export class Gotchi {
         const embryo = this.embryo
         if (!embryo) {
             this.instance.iterate(Stage.Realized)
+            // TODO: do direction stuff
         } else {
             const stage = embryo.iterate()
             switch (stage) {
@@ -144,6 +149,11 @@ export class Gotchi {
                 case Stage.Realized:
                     extractGotchiFaces(embryo, this.actuators, this.sensors)
                     this.embryo = undefined
+                    Object.keys(Direction).forEach(direction => {
+                        const reader = this.genome.createReader(Direction[direction])
+                        const faceCount = this.actuators.length
+                        this.twitchCycle[direction] = new TimeCycle(reader, faceCount, GRASP_COUNT, TWITCH_COUNT)
+                    })
                     break
             }
         }
