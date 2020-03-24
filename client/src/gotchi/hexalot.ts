@@ -87,6 +87,7 @@ export class Hexalot implements IHexalot {
             }
         }
         const random = this.createRandomJourney()
+        this.journey = random
         const randomFirst = random.firstLeg
         if (!randomFirst) {
             throw new Error("Unable to create first leg")
@@ -110,12 +111,11 @@ export class Hexalot implements IHexalot {
         const journeyVisits: Hexalot[] = [this]
         while (journeyVisits.length < visitCount + 1) {
             const endPoint = journeyVisits[journeyVisits.length - 1]
-            const landNeighbors = endPoint.centerSpot.adjacentHexalots.filter(adjacentHexalot => journeyVisits.every(visit => visit.id !== adjacentHexalot.id))
-            if (landNeighbors.length === 0) {
-                // todo: find one anyway if there are to few!
-                break
+            const adjacent = endPoint.centerSpot.adjacentHexalots.filter(adjacentHexalot => journeyVisits.every(visit => visit.id !== adjacentHexalot.id))
+            if (adjacent.length === 0) {
+                console.error("No adjacent")
             }
-            const randomNeighbor = landNeighbors[Math.floor(Math.random() * landNeighbors.length)]
+            const randomNeighbor = adjacent[Math.floor(Math.random() * adjacent.length)]
             journeyVisits.push(randomNeighbor)
         }
         return new Journey(journeyVisits)

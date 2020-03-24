@@ -24,8 +24,8 @@ const GOTCHI = localStorage.getItem("gotchi") === "true"
 const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-60"
 const ISLAND_DATA: IIslandData = {
     name: "Testing",
-    hexalots: "1",
-    spots: "010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101010101",
+    hexalots: "111121",
+    spots: "16c10f54db761dfe80f316d646058d888b3c0bfc559d82f2291ea0c19216bae08a8083f093e48e9b37cdb34f01a",
 }
 
 export async function startReact(eig: typeof import("eig")): Promise<void> {

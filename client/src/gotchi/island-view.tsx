@@ -6,9 +6,19 @@
 import * as React from "react"
 import { useState } from "react"
 import { useRender, useThree, useUpdate } from "react-three-fiber"
-import { Color, FaceColors, Geometry, LineBasicMaterial, MeshPhongMaterial, PerspectiveCamera, Vector3 } from "three"
+import {
+    BufferGeometry,
+    Color,
+    FaceColors,
+    Float32BufferAttribute,
+    Geometry,
+    LineBasicMaterial,
+    MeshPhongMaterial,
+    PerspectiveCamera,
+    Vector3,
+} from "three"
 
-import { FACE, LINE_VERTEX_COLORS } from "../view/materials"
+import { FACE, LINE_VERTEX_COLORS, SCALE_LINE } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
 import { Gotchi } from "./gotchi"
@@ -24,6 +34,7 @@ import {
     SPACE_SCALE,
     SUN_POSITION,
 } from "./island-logic"
+import { Journey } from "./journey"
 import { Spot } from "./spot"
 
 export function IslandView({island, gotchi, selectedSpot, homeHexalot}: {
@@ -133,13 +144,14 @@ export function IslandView({island, gotchi, selectedSpot, homeHexalot}: {
         orb.update()
     }, [])
 
+    const hexalot = island.hexalots[0]
+    const journey = hexalot ? hexalot.journey : undefined
     return (
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                <mesh name="Spots" geometry={spotsGeometry()} material={ISLAND}
-                    // ref={(mesh: Mesh) => this.props.setMesh("Spots", mesh)}
-                />
+                <mesh name="Spots" geometry={spotsGeometry()} material={ISLAND}/>
+                {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
                 {!homeHexalot ? undefined : (
                     <lineSegments key="HomeHexalot" geometry={homeHexalotGeometry()} material={HOME_HEXALOT}/>
                 )}
@@ -176,5 +188,67 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
                 material={FACE}
             />
         </group>
+    )
+}
+
+function JourneyComponent({journey}: { journey: Journey }): JSX.Element {
+
+    function geom(): BufferGeometry | undefined {
+        const arrowCount = journey.visits.length - 1
+        const geometry = new BufferGeometry()
+        const pointsPerArrow = 24
+        const positions = new Float32Array(arrowCount * pointsPerArrow)
+        const forward = new Vector3()
+        const up = new Vector3(0, 1, 0)
+        const right = new Vector3()
+        const altitude = 5
+        for (let walk = 0; walk < arrowCount; walk++) {
+            const from = new Vector3().add(journey.visits[walk].center)
+            const to = new Vector3().add(journey.visits[walk + 1].center)
+            forward.subVectors(to, from)
+            right.crossVectors(up, forward)
+            to.addScaledVector(forward, -0.1)
+            right.normalize()
+            forward.normalize().multiplyScalar(4)
+            let offset = walk * pointsPerArrow
+            // main shaft
+            positions[offset++] = from.x
+            positions[offset++] = altitude
+            positions[offset++] = from.z
+            positions[offset++] = to.x - forward.x
+            positions[offset++] = altitude
+            positions[offset++] = to.z - forward.z
+            // arrow right side
+            positions[offset++] = to.x - right.x - forward.x
+            positions[offset++] = altitude
+            positions[offset++] = to.z - right.z - forward.z
+            positions[offset++] = to.x
+            positions[offset++] = altitude
+            positions[offset++] = to.z
+            // arrow left side
+            positions[offset++] = to.x + right.x - forward.x
+            positions[offset++] = altitude
+            positions[offset++] = to.z + right.z - forward.z
+            positions[offset++] = to.x
+            positions[offset++] = altitude
+            positions[offset++] = to.z
+            // arrow perpendicular
+            positions[offset++] = to.x + right.x - forward.x
+            positions[offset++] = altitude
+            positions[offset++] = to.z + right.z - forward.z
+            positions[offset++] = to.x - right.x - forward.x
+            positions[offset++] = altitude
+            positions[offset++] = to.z - right.z - forward.z
+        }
+        geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
+        return geometry
+    }
+
+    return (
+        <lineSegments
+            key="journey"
+            geometry={geom()}
+            material={SCALE_LINE}
+        />
     )
 }

@@ -47,7 +47,7 @@ impl Joint {
             self.velocity *= 1_f32 - drag_above;
         } else if self.grasp_countdown > 0 {
             self.velocity = zero();
-            self.location.y = 0_f32;
+            self.location.y = -RESURFACE;
             self.grasp_countdown -= 1;
         } else {
             self.velocity += &self.force / self.interval_mass;

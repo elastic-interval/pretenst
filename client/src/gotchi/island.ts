@@ -8,7 +8,6 @@ import { Vector3 } from "three"
 import { GotchiFactory } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import {
-    calculateHexalotId,
     equals,
     fillIsland,
     findParentHexalot,
@@ -57,7 +56,6 @@ export class Island implements IIsland {
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
         const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory)
-        calculateHexalotId(hexalot)
         this.hexalots.push(hexalot)
         return hexalot
     }
