@@ -91,7 +91,7 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
 
         useEffect(() => {
             const timer = setInterval(() => {
-                const fabricAge = tensegrity.instance.fabric.age
+                const fabricAge = tensegrity.fabric.age
                 if (age < fabricAge) {
                     updateAge(fabricAge) // to trigger repaint. better way?
                 }

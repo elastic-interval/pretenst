@@ -62,19 +62,23 @@ export class Tensegrity {
         this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
     }
 
+    public get fabric(): Fabric {
+        return this.instance.fabric
+    }
+
     public get life(): Life {
         return this.life$.getValue()
     }
 
     public save(): void {
-        this.backup = this.instance.fabric.copy()
+        this.backup = this.fabric.copy()
     }
 
     public restore(): void {
         if (!this.backup) {
             throw new Error("No backup")
         }
-        this.instance.fabric.restore(this.backup)
+        this.fabric.restore(this.backup)
     }
 
     public toStage(stage: Stage, prefs?: ITransitionPrefs): void {
@@ -85,7 +89,7 @@ export class Tensegrity {
     }
 
     public createLeftJoint(location: Vector3): number {
-        return this.instance.fabric.create_joint(location.x, location.y, location.z)
+        return this.fabric.create_joint(location.x, location.y, location.z)
     }
 
     public createFaceConnector(alpha: IFace, omega: IFace): IFaceInterval {
@@ -98,7 +102,7 @@ export class Tensegrity {
 
     public removeFaceInterval(interval: IFaceInterval): void {
         this.faceIntervals = this.faceIntervals.filter(existing => existing.index !== interval.index)
-        this.instance.fabric.remove_interval(interval.index)
+        this.fabric.remove_interval(interval.index)
         this.faceIntervals.forEach(existing => {
             if (existing.index > interval.index) {
                 existing.index--
@@ -118,7 +122,7 @@ export class Tensegrity {
         const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
         const stiffness = scaleToStiffness(scale)
-        const index = this.instance.fabric.create_interval(
+        const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, coundown)
         const interval: IInterval = {
@@ -137,18 +141,18 @@ export class Tensegrity {
 
     public changeIntervalScale(interval: IInterval, factor: number): void {
         interval.scale = factorToPercent(percentToFactor(interval.scale) * factor)
-        this.instance.fabric.multiply_rest_length(interval.index, factor, 100)
+        this.fabric.multiply_rest_length(interval.index, factor, 100)
     }
 
     public changeIntervalRole(interval: IInterval, intervalRole: IntervalRole, scaleFactor: IPercent, countdown: number): void {
         interval.intervalRole = intervalRole
-        this.instance.fabric.set_interval_role(interval.index, intervalRole)
-        this.instance.fabric.change_rest_length(interval.index, percentToFactor(scaleFactor) * this.roleDefaultLength(intervalRole), countdown)
+        this.fabric.set_interval_role(interval.index, intervalRole)
+        this.fabric.change_rest_length(interval.index, percentToFactor(scaleFactor) * this.roleDefaultLength(intervalRole), countdown)
     }
 
     public removeInterval(interval: IInterval): void {
         this.intervals = this.intervals.filter(existing => existing.index !== interval.index)
-        this.instance.fabric.remove_interval(interval.index)
+        this.fabric.remove_interval(interval.index)
         this.intervals.forEach(existing => {
             if (existing.index > interval.index) {
                 existing.index--
@@ -176,7 +180,7 @@ export class Tensegrity {
         })
         const pulls = [0, 1, 2].map(offset => brick.pulls[triangle * 3 + offset])
         const joints = pushEnds.map(end => brick.joints[end])
-        const index = this.instance.fabric.create_face(joints[0].index, joints[1].index, joints[2].index)
+        const index = this.fabric.create_face(joints[0].index, joints[1].index, joints[2].index)
         const face: IFace = {
             index, negative, removed: false,
             brick, triangle, joints, pushes, pulls,
@@ -189,7 +193,7 @@ export class Tensegrity {
     }
 
     public removeFace(face: IFace, removeIntervals: boolean): void {
-        this.instance.fabric.remove_face(face.index)
+        this.fabric.remove_face(face.index)
         this.faces = this.faces.filter(existing => existing.index !== face.index)
         this.faces.forEach(existing => {
             if (existing.index > face.index) {
@@ -248,13 +252,13 @@ export class Tensegrity {
         if (activeCode) {
             if (activeCode.length > 0) {
                 this.activeTenscript = execute(activeCode, this.tenscript.marks)
-                this.instance.fabric.centralize()
+                this.fabric.centralize()
             }
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
                 faceStrategies(this.faces, this.tenscript.marks, builder()).forEach(strategy => strategy.execute())
                 if (lifePhase === Stage.Growing) {
-                    return this.instance.fabric.finish_growing()
+                    return this.fabric.finish_growing()
                 }
             }
             return Stage.Growing
@@ -316,7 +320,7 @@ export class Tensegrity {
         const stiffness = scaleToStiffness(percentOrHundred())
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
-        const index = this.instance.fabric.create_interval(
+        const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, faceConnectorCountdown(idealLength),
         )

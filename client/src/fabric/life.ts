@@ -43,7 +43,7 @@ export class Life {
                 switch (stage) {
                     case Stage.Slack:
                         if (prefs && prefs.adoptLengths) {
-                            this.tensegrity.instance.fabric.adopt_lengths()
+                            this.tensegrity.fabric.adopt_lengths()
                             const faceIntervals = [...this.tensegrity.faceIntervals]
                             faceIntervals.forEach(interval => this.tensegrity.removeFaceInterval(interval))
                             this.tensegrity.save()
@@ -75,7 +75,7 @@ export class Life {
                                 new TensegrityOptimizer(this.tensegrity).stiffnessesFromStrains()
                                 return
                             } else if (prefs.adoptLengths) {
-                                this.tensegrity.instance.fabric.adopt_lengths()
+                                this.tensegrity.fabric.adopt_lengths()
                                 this.tensegrity.save()
                                 return
                             }

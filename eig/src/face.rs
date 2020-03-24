@@ -79,6 +79,16 @@ impl Face {
         return false;
     }
 
+    pub fn grasp(&self, joints: &mut Vec<Joint>, countdown: u16) -> bool {
+        if !self.is_submerged(joints) {
+            return false;
+        }
+        for index in 0..3 {
+            joints[self.joints[index] as usize].grasp_countdown = countdown;
+        }
+        return false;
+    }
+
     pub fn twitch(&self, intervals: &mut Vec<Interval>, size_nuance: f32, attack: f32, decay: f32) {
         for interval in intervals.iter_mut().filter(|i| self.contains_interval(i)) {
             interval.twitch(size_nuance, attack, decay)

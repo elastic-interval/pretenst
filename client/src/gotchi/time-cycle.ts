@@ -27,11 +27,13 @@ export class TimeCycle {
         if (!slice) {
             return
         }
-        // slice.grasps.forEach(grasp => {
-        // gotchi.instance.fabric.grasp()
-        // })
+        slice.grasps.forEach(({whichLimbs, howLong}) => {
+            whichLimbs.forEach(limb => {
+                gotchi.fabric.grasp_face(gotchi.getActuator(limb).index, howLong)
+            })
+        })
         slice.twitches.forEach(({whichFace, attack, decay}) => {
-            gotchi.instance.fabric.twitch_face(whichFace, TWITCH_SIZE, attack, decay)
+            gotchi.fabric.twitch_face(whichFace, TWITCH_SIZE, attack, decay)
         })
     }
 

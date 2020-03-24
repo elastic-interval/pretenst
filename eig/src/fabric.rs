@@ -134,8 +134,23 @@ impl Fabric {
         self.faces[face_index].is_submerged(&self.joints)
     }
 
-    pub fn twitch_face(&mut self, face_index: usize, size_nuance: f32, attack: f32, decay: f32) {
-        self.faces[face_index].twitch(&mut self.intervals, size_nuance, attack, decay)
+    pub fn twitch_face(
+        &mut self,
+        face_index: usize,
+        size_nuance: f32,
+        attack_countdown: f32,
+        decay_countdown: f32,
+    ) {
+        self.faces[face_index].twitch(
+            &mut self.intervals,
+            size_nuance,
+            attack_countdown,
+            decay_countdown,
+        )
+    }
+
+    pub fn grasp_face(&mut self, face_index: usize, countdown: u16) -> bool {
+        self.faces[face_index].grasp(&mut self.joints, countdown)
     }
 
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {

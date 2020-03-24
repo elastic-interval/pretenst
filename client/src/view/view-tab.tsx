@@ -130,15 +130,15 @@ export function ViewTab(
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>
                 <ButtonGroup className="w-100">
                     <Button disabled={life.stage !== Stage.Realized}
-                            onClick={() => tensegrity.instance.fabric.set_altitude(1)}>
+                            onClick={() => tensegrity.fabric.set_altitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
                     <Button disabled={life.stage !== Stage.Realized}
-                            onClick={() => tensegrity.instance.fabric.set_altitude(10)}>
+                            onClick={() => tensegrity.fabric.set_altitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>
                     <Button disabled={ellipsoids}
-                            onClick={() => tensegrity.instance.fabric.centralize()}>
+                            onClick={() => tensegrity.fabric.centralize()}>
                         <FaCompressArrowsAlt/> Centralize
                     </Button>
                 </ButtonGroup>

@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage } from "eig"
+import { Fabric, Stage } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
@@ -79,11 +79,19 @@ export class Gotchi {
         this.currentLeg = leg
     }
 
+    public getActuator(whichLimb: Limb): IActuator {
+        const actuator = this.actuators.find(({limb}) => limb === whichLimb)
+        if (!actuator) {
+            throw new Error("No actuator found")
+        }
+        return actuator
+    }
+
     public actuate(limb: Limb, triangle: Triangle): void {
         const attackDecay = 10000
         this.actuators
             .filter(actuator => actuator.limb === limb && actuator.triangle === triangle)
-            .forEach(actuator => this.instance.fabric.twitch_face(actuator.index, 0.5, attackDecay, attackDecay))
+            .forEach(actuator => this.fabric.twitch_face(actuator.index, 0.5, attackDecay, attackDecay))
     }
 
     public recycle(): void {
@@ -106,7 +114,7 @@ export class Gotchi {
     }
 
     public get age(): number {
-        return this.instance.fabric.age
+        return this.fabric.age
     }
 
     public get direction(): Direction {
@@ -131,7 +139,7 @@ export class Gotchi {
             switch (stage) {
                 case Stage.Shaping:
                     if (this.shapingTime <= 0) {
-                        this.instance.fabric.adopt_lengths()
+                        this.fabric.adopt_lengths()
                         const faceIntervals = [...embryo.faceIntervals]
                         faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
                         this.instance.iterate(Stage.Slack)
@@ -212,6 +220,10 @@ export class Gotchi {
         geometry.addAttribute("color", lineColors)
         geometry.computeBoundingSphere()
         return geometry
+    }
+
+    public get fabric(): Fabric {
+        return this.instance.fabric
     }
 
     private get touchedDestination(): boolean {

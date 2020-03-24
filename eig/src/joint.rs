@@ -17,6 +17,7 @@ pub struct Joint {
     pub(crate) force: Vector3<f32>,
     pub(crate) velocity: Vector3<f32>,
     pub(crate) interval_mass: f32,
+    pub(crate) grasp_countdown: u16,
 }
 
 impl Joint {
@@ -26,6 +27,7 @@ impl Joint {
             force: zero(),
             velocity: zero(),
             interval_mass: 1_f32,
+            grasp_countdown: 0,
         }
     }
 
@@ -43,13 +45,17 @@ impl Joint {
             }
             self.velocity += &self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag_above;
+        } else if self.grasp_countdown > 0 {
+            self.velocity = zero();
+            self.location.y = 0_f32;
+            self.grasp_countdown -= 1;
         } else {
             self.velocity += &self.force / self.interval_mass;
             let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
             let degree_cushioned: f32 = 1_f32 - degree_submerged;
             match world.surface_character {
                 SurfaceCharacter::Frozen => {
-                    self.velocity.fill(0_f32);
+                    self.velocity = zero();
                     self.location.y = -RESURFACE;
                 }
                 SurfaceCharacter::Sticky => {
@@ -58,7 +64,7 @@ impl Joint {
                 }
                 SurfaceCharacter::Slippery => {
                     self.location.coords.fill(0_f32);
-                    self.velocity.fill(0_f32);
+                    self.velocity = zero();
                 }
                 SurfaceCharacter::Bouncy => {
                     self.velocity *= degree_cushioned;
@@ -87,8 +93,7 @@ impl Joint {
 #[test]
 fn joint_physics() {
     let world = World::new();
-    let name = JointName::new(1, Lateral::Middle);
-    let mut joint = Joint::new(name, 0_f32, 1_f32, 0_f32);
+    let mut joint = Joint::new(0_f32, 1_f32, 0_f32);
     joint.force.fill(1_f32);
     joint.velocity.fill(1_f32);
     joint.interval_mass = 1_f32;

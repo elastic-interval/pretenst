@@ -94,7 +94,7 @@ export function TensegrityView({eig, floatFeatures, storedState$}: {
                         .filter(interval => interval.intervalRole === intervalRole)
                         .forEach(interval => {
                             const scaledLength = feature.numeric * percentToFactor(interval.scale)
-                            tensegrity.instance.fabric.change_rest_length(interval.index, scaledLength, 500)
+                            tensegrity.fabric.change_rest_length(interval.index, scaledLength, 500)
                         })
                 }
             }))
