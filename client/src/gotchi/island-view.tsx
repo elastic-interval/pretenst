@@ -196,7 +196,7 @@ function JourneyComponent({journey}: { journey: Journey }): JSX.Element {
     function geom(): BufferGeometry | undefined {
         const arrowCount = journey.visits.length - 1
         const geometry = new BufferGeometry()
-        const pointsPerArrow = 24
+        const pointsPerArrow = 30
         const positions = new Float32Array(arrowCount * pointsPerArrow)
         const forward = new Vector3()
         const up = new Vector3(0, 1, 0)
@@ -211,6 +211,13 @@ function JourneyComponent({journey}: { journey: Journey }): JSX.Element {
             right.normalize()
             forward.normalize().multiplyScalar(4)
             let offset = walk * pointsPerArrow
+            // up to shaft
+            positions[offset++] = from.x
+            positions[offset++] = 0
+            positions[offset++] = from.z
+            positions[offset++] = from.x
+            positions[offset++] = altitude
+            positions[offset++] = from.z
             // main shaft
             positions[offset++] = from.x
             positions[offset++] = altitude
