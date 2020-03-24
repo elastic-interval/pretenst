@@ -136,7 +136,7 @@ export class Gotchi {
         if (!embryo) {
             this.instance.iterate(Stage.Realized)
             const nextSliceIterations = this.timeSliceIterations + 1
-            this.timeSliceIterations = nextSliceIterations >= 40 ? 0 : nextSliceIterations
+            this.timeSliceIterations = nextSliceIterations >= 5 ? 0 : nextSliceIterations
             if (this.timeSliceIterations === 0) {
                 this.twitchCycle[Direction.Forward].activate(this.timeSlice, this)
                 const nextSlice = this.timeSlice + 1
