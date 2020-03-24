@@ -6,7 +6,6 @@
 import { GeneReader } from "./genome"
 import { Gotchi, Limb } from "./gotchi"
 
-const TWITCH_SIZE = 0.5
 
 export class TimeCycle {
     private slices: Record<number, ISlice> = {}
@@ -22,18 +21,21 @@ export class TimeCycle {
         }
     }
 
-    public activate(index: number, gotchi: Gotchi): void {
-        const slice = this.slices[index]
+    public activate(timeSlice: number, gotchi: Gotchi): void {
+        const slice = this.slices[timeSlice]
         if (!slice) {
             return
         }
         slice.grasps.forEach(({whichLimbs, howLong}) => {
             whichLimbs.forEach(limb => {
-                gotchi.fabric.grasp_face(gotchi.getActuator(limb).index, howLong)
+                const whichFace = gotchi.getActuator(limb).index
+                console.log(`grasp ${whichFace}: ${howLong}`)
+                gotchi.fabric.grasp_face(whichFace, howLong)
             })
         })
         slice.twitches.forEach(({whichFace, attack, decay}) => {
-            gotchi.fabric.twitch_face(whichFace, TWITCH_SIZE, attack, decay)
+            console.log(`twitch ${whichFace}: ${attack}, ${decay}`)
+            gotchi.fabric.twitch_face(whichFace, 0.4, attack, decay)
         })
     }
 

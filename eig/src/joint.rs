@@ -9,7 +9,7 @@ use crate::world::World;
 use nalgebra::*;
 
 const RESURFACE: f32 = 0.01;
-const ANTIGRAVITY: f32 = -0.001;
+const ANTIGRAVITY: f32 = -0.0001;
 
 #[derive(Clone, Copy)]
 pub struct Joint {

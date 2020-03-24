@@ -66,6 +66,8 @@ export class Gotchi {
     private currentLeg: Leg
     private shapingTime = 100
     private twitchCycle: Record<string, TimeCycle> = {}
+    private timeSlice = 0
+    private timeSliceIterations = 0
 
     constructor(
         public readonly hexalot: Hexalot,
@@ -133,7 +135,13 @@ export class Gotchi {
         const embryo = this.embryo
         if (!embryo) {
             this.instance.iterate(Stage.Realized)
-            // TODO: do direction stuff
+            const nextSliceIterations = this.timeSliceIterations + 1
+            this.timeSliceIterations = nextSliceIterations >= 40 ? 0 : nextSliceIterations
+            if (this.timeSliceIterations === 0) {
+                this.twitchCycle[Direction.Forward].activate(this.timeSlice, this)
+                const nextSlice = this.timeSlice + 1
+                this.timeSlice = nextSlice >= 36 ? 0 : nextSlice
+            }
         } else {
             const stage = embryo.iterate()
             switch (stage) {

@@ -89,9 +89,15 @@ impl Face {
         return false;
     }
 
-    pub fn twitch(&self, intervals: &mut Vec<Interval>, size_nuance: f32, attack: f32, decay: f32) {
+    pub fn twitch(
+        &self,
+        intervals: &mut Vec<Interval>,
+        delta_size_nuance: f32,
+        attack: f32,
+        decay: f32,
+    ) {
         for interval in intervals.iter_mut().filter(|i| self.contains_interval(i)) {
-            interval.twitch(size_nuance, attack, decay)
+            interval.twitch(delta_size_nuance, attack, decay)
         }
     }
 

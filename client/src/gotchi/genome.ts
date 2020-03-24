@@ -113,8 +113,8 @@ const DICE_MAP = ((): { [key: string]: IDie; } => {
     return map
 })()
 
-function choice(maxChoice: number, ...dice: IDie[]): number {
-    return Math.floor(diceToNuance(dice) * maxChoice)
+function choice(max: number, ...dice: IDie[]): number {
+    return Math.floor(diceToNuance(dice) * max)
 }
 
 export class GeneReader {
@@ -127,8 +127,8 @@ export class GeneReader {
         return {
             when: choice(36, this.next(), this.next()),
             whichFace: choice(faceCount, this.next(), this.next(), this.next(), this.next()),
-            attack: choice(6, this.next()),
-            decay: choice(6, this.next()),
+            attack: (1 + choice(6, this.next())) * 5000,
+            decay: (1 + choice(6, this.next())) * 5000,
         }
     }
 
@@ -163,7 +163,7 @@ export class GeneReader {
         return {
             when: choice(36, this.next(), this.next()),
             whichLimbs,
-            howLong: choice(6, this.next()),
+            howLong: (1 + choice(6, this.next())) * 5000,
         }
     }
 
@@ -187,9 +187,8 @@ function diceToNuance(dice: IDie[]): number {
     if (dice.length === 0) {
         throw new Error("No dice!")
     }
-    const max = Math.pow(6, dice.length)
-    const lessThanMax = dice.reduce((sum: number, die: IDie) => sum * 6 + die.index, 0)
-    return (lessThanMax + 0.5) / max
+    const base6 = dice.reduce((sum: number, die: IDie) => sum * 6 + die.index, 0)
+    return base6 / Math.pow(6, dice.length)
 }
 
 function serializeGene(dice: IDie[]): string {

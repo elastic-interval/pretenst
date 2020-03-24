@@ -210,12 +210,12 @@ impl Interval {
         self.decay = 0_f32;
     }
 
-    pub fn twitch(&mut self, size_nuance: f32, attack_countdown: f32, decay_countdown: f32) {
-        if self.attack != 0_f32 {
+    pub fn twitch(&mut self, delta_size_nuance: f32, attack_countdown: f32, decay_countdown: f32) {
+        if self.attack != 0_f32 && self.decay != 0_f32 {
             // while changing? ignore!
             return;
         }
-        self.length_1 = self.length_0 * size_nuance;
+        self.length_1 = self.length_0 * delta_size_nuance;
         self.length_nuance = 0_f32;
         self.attack = 1_f32 / attack_countdown;
         self.decay = 1_f32 / decay_countdown;

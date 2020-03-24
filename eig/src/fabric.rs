@@ -137,13 +137,13 @@ impl Fabric {
     pub fn twitch_face(
         &mut self,
         face_index: usize,
-        size_nuance: f32,
+        delta_size_nuance: f32,
         attack_countdown: f32,
         decay_countdown: f32,
     ) {
         self.faces[face_index].twitch(
             &mut self.intervals,
-            size_nuance,
+            delta_size_nuance,
             attack_countdown,
             decay_countdown,
         )
