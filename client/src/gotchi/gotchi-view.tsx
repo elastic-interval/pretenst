@@ -5,14 +5,14 @@
 
 import { FabricFeature } from "eig"
 import * as React from "react"
-import { useEffect, useMemo } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 
 import { FloatFeature } from "../fabric/fabric-features"
 import { IFeatureValue } from "../storage/stored-state"
 
-import { Limb } from "./gotchi"
+import { Evolution } from "./evolution"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
 
@@ -22,6 +22,7 @@ export function GotchiView({island, floatFeatures}: {
 }): JSX.Element {
 
     const gotchi = useMemo(() => island.hexalots[0].createNativeGotchi(), [])
+    const [evolution, updateEvolution] = useState<Evolution | undefined>(undefined)
 
     useEffect(() => {
         const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map((feature: FloatFeature) =>
@@ -34,6 +35,11 @@ export function GotchiView({island, floatFeatures}: {
         return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
     }, [gotchi])
 
+    const onClickEvolve = () => {
+        if (gotchi) {
+            updateEvolution(new Evolution(gotchi.hexalot, gotchi))
+        }
+    }
     return (
         <div id="view-container" style={{
             position: "absolute",
@@ -47,24 +53,11 @@ export function GotchiView({island, floatFeatures}: {
                 borderColor: "#f0ad4e",
                 borderWidth: "2px",
             }}>
-                <IslandView island={island} gotchi={gotchi}/>
+                <IslandView island={island} gotchi={gotchi} evolution={evolution}/>
             </Canvas>
             <div id="bottom-middle">
                 <ButtonGroup>
-                    {Object.keys(Limb)
-                        .map(key => [1, 2, 3].map(group => (
-                            <Button
-                                key={`key-${group}`}
-                                onClick={() => {
-                                    if (!gotchi) {
-                                        return
-                                    }
-                                    gotchi.actuate(Limb[key], group)
-                                }}
-                            >
-                                {key}-{group}
-                            </Button>
-                        )))}
+                    <Button key={`evolve`} onClick={onClickEvolve}>Evolve!</Button>
                 </ButtonGroup>
             </div>
         </div>

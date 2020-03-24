@@ -21,6 +21,7 @@ import {
 import { FACE, LINE_VERTEX_COLORS, SCALE_LINE } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
+import { Evolution } from "./evolution"
 import { Gotchi } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import { Island } from "./island"
@@ -37,11 +38,12 @@ import {
 import { Journey } from "./journey"
 import { Spot } from "./spot"
 
-export function IslandView({island, gotchi, selectedSpot, homeHexalot}: {
+export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution}: {
     island: Island,
-    gotchi?: Gotchi,
     selectedSpot?: Spot,
     homeHexalot?: Hexalot,
+    gotchi?: Gotchi,
+    evolution?: Evolution,
 }): JSX.Element {
 
     const viewContainer = document.getElementById("view-container") as HTMLElement
@@ -160,7 +162,11 @@ export function IslandView({island, gotchi, selectedSpot, homeHexalot}: {
                 )}
                 <lineSegments key="Available" geometry={availableSpotsGeometry()} material={AVAILABLE_HEXALOT}/>
                 <lineSegments key="Free" geometry={vacantHexalotsGeometry()} material={AVAILABLE_HEXALOT}/>
-                {!gotchi ? undefined : <GotchiComponent gotchi={gotchi}/>}
+                {!evolution ? (
+                    !gotchi ? undefined : <GotchiComponent gotchi={gotchi}/>
+                ) : (
+                    <EvolutionComponent evolution={evolution}/>
+                )}
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
             </scene>
@@ -187,6 +193,20 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
                 geometry={gotchi.facesGeometry}
                 material={FACE}
             />
+        </group>
+    )
+}
+
+function EvolutionComponent({evolution}: { evolution: Evolution }): JSX.Element {
+    return (
+        <group>
+            {evolution.currentGotchis.getValue().map(gotchi => (
+                <lineSegments
+                    key={`evo${gotchi.index}`}
+                    geometry={evolution.linesGeometry(gotchi)}
+                    material={LINE_VERTEX_COLORS}
+                />
+            ))}
         </group>
     )
 }

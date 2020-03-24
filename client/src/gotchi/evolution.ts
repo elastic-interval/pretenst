@@ -4,7 +4,7 @@
  */
 
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
-import { Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { fromGenomeData, Genome } from "./genome"
 import { Direction, Gotchi, IEvaluatedGotchi } from "./gotchi"
@@ -92,6 +92,14 @@ export class Evolution {
         const exceptIndex = strongest.gotchi.index
         this.currentGotchis.next(this.currentGotchis.getValue().filter(gotchi => gotchi.index !== exceptIndex))
         return strongest.gotchi
+    }
+
+    public linesGeometry(gotchi: Gotchi): BufferGeometry {
+        const lineLocations = new Float32BufferAttribute(gotchi.instance.floatView.lineLocations, 3)
+        const geometry = new BufferGeometry()
+        geometry.addAttribute("position", lineLocations)
+        geometry.computeBoundingSphere()
+        return geometry
     }
 
     // Privates =============================================================
