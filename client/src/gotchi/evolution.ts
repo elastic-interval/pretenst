@@ -11,12 +11,12 @@ import { Direction, Gotchi, IEvaluatedGotchi } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
 
-export const MAX_POPULATION = 3
+export const MAX_POPULATION = 7
 const MUTATION_COUNT = 5
 const SURVIVAL_RATE = 0.66
-const MIN_LIFESPAN = 15000
-const MAX_LIFESPAN = 25000
-const INCREMENT_LIFESPAN = 1000
+const MIN_LIFESPAN = 200000
+const MAX_LIFESPAN = 300000
+const INCREMENT_LIFESPAN = 50000
 
 export class Evolution {
     public currentGotchis: BehaviorSubject<Gotchi[]> = new BehaviorSubject<Gotchi[]>([])

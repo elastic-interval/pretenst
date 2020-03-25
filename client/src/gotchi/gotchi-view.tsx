@@ -33,11 +33,11 @@ export function GotchiView({island, floatFeatures}: {
                 gotchi.instance.applyFeature(feature)
             }))
         return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
-    }, [gotchi])
+    }, [gotchi, evolution])
 
     const onClickEvolve = () => {
         if (gotchi) {
-            const evo = new Evolution(gotchi.hexalot, gotchi)
+            const evo = new Evolution(gotchi.hexalot)
             console.log("Evolving gotchis", evo.currentGotchis.getValue().length)
             updateEvolution(evo)
         }

@@ -170,7 +170,6 @@ export class Gotchi {
                         const faceCount = this.actuators.length
                         this.twitchCycle[direction] = new TimeCycle(reader, faceCount, GRASP_COUNT, TWITCH_COUNT)
                     })
-                    console.log("Genome", this.genome.toString())
                     break
             }
         }

@@ -92,6 +92,8 @@ function floatArray(copyFunction: (array: Float32Array) => void, length: () => n
     return array
 }
 
+export type InstanceFactory = () => FabricInstance
+
 export class FabricInstance {
     public fabric: Fabric
     public world: World
@@ -100,8 +102,9 @@ export class FabricInstance {
 
     private featuresToApply: FloatFeature[] = []
 
-    constructor(eig: typeof import("eig"), jointCount: number) {
-        this.world = eig.World.new()
+    constructor(eig: typeof import("eig"), jointCount: number, world: object) {
+        // @ts-ignore
+        this.world = world ? world : eig.World.new()
         this.fabric = eig.Fabric.new(jointCount)
         this.view = eig.View.on_fabric(this.fabric)
         this.floatView = createFloatView(this.fabric, this.view)
@@ -111,7 +114,10 @@ export class FabricInstance {
         const stage = this.fabric.iterate(requestedStage, this.world)
         this.view.render(this.fabric, this.world)
         if (this.featuresToApply.length > 0) {
-            this.featuresToApply.forEach(feature => this.world.set_float_value(feature.fabricFeature, feature.numeric))
+            this.featuresToApply.forEach(feature => {
+                this.world.set_float_value(feature.fabricFeature, feature.numeric)
+                console.log("Feature", feature.fabricFeature, feature.numeric)
+            })
             this.featuresToApply = []
         }
         this.floatView = createFloatView(this.fabric, this.view)

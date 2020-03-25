@@ -107,10 +107,10 @@ fn cross() -> f32 {
 #[wasm_bindgen]
 pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
     match fabric_feature {
-        FabricFeature::Gravity => 0.0000005_f32,
+        FabricFeature::Gravity => 0.0000001_f32,
         FabricFeature::Drag => 0.0001_f32,
         FabricFeature::PretenstFactor => 0.03_f32,
-        FabricFeature::IterationsPerFrame => 100_f32,
+        FabricFeature::IterationsPerFrame => 50_f32,
         FabricFeature::IntervalCountdown => 3000_f32,
         FabricFeature::RealizingCountdown => 30000_f32,
         FabricFeature::SlackThreshold => 0.0001_f32,
