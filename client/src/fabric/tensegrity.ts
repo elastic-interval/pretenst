@@ -30,10 +30,6 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
-function faceConnectorCountdown(distance: number): number {
-    return distance * 6000
-}
-
 function scaleToStiffness(scale: IPercent): number {
     return percentToFactor(scale) / 10000
 }
@@ -320,9 +316,10 @@ export class Tensegrity {
         const stiffness = scaleToStiffness(percentOrHundred())
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
+        const coundown = idealLength * this.numericFeature(FabricFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
-            idealLength, restLength, stiffness, faceConnectorCountdown(idealLength),
+            idealLength, restLength, stiffness, coundown,
         )
         const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
         this.faceIntervals.push(interval)

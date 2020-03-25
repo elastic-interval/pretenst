@@ -3,31 +3,37 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { BehaviorSubject } from "rxjs/BehaviorSubject"
 import { Vector3 } from "three"
 
-import { fromGenomeData, Genome } from "./genome"
-import { Direction, Gotchi, IEvaluatedGotchi } from "./gotchi"
+import { InstanceFactory } from "../fabric/fabric-instance"
+
+import { fromGenomeData } from "./genome"
+import { Direction, Gotchi } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
 
-export const MAX_POPULATION = 7
-const MUTATION_COUNT = 5
-const SURVIVAL_RATE = 0.66
-const MIN_LIFESPAN = 200000
-const MAX_LIFESPAN = 300000
-const INCREMENT_LIFESPAN = 50000
+export const MAX_POPULATION = 10
+const MUTATION_COUNT = 3
+const SURVIVAL_RATE = 0.5
+const MIN_LIFESPAN = 120000
+const MAX_LIFESPAN = 240000
+const INCREMENT_LIFESPAN = 10000
+
+export interface IEvolver {
+    index: number
+    gotchi: Gotchi
+    distanceFromTarget: number
+}
 
 export class Evolution {
-    public currentGotchis: BehaviorSubject<Gotchi[]> = new BehaviorSubject<Gotchi[]>([])
-    private gotchiIndex = 1
+    public evolvers: IEvolver[]
     private midpointVector = new Vector3()
-    private rebooting = false
     private rotation: number
     private maxAge: number
 
     constructor(
         public readonly home: Hexalot,
+        private instanceFactory: InstanceFactory,
         private readonly prototypeGotchi?: Gotchi,
     ) {
         const rotateToLeg = this.leg
@@ -40,7 +46,17 @@ export class Evolution {
                 this.rotation = index
             }
         })
-        this.currentGotchis.next(this.createPopulation())
+        const gotchis: Gotchi[] = []
+        while (gotchis.length < MAX_POPULATION) {
+            const instance = this.instanceFactory()
+            const gotchi = this.home.createNativeGotchi(instance, this.rotation)
+            if (!gotchi) {
+                console.error("Unable to create gotchi")
+                break
+            }
+            gotchis.push(gotchi)
+        }
+        this.evolvers = gotchis.map((gotchi, index) => <IEvolver>{index, gotchi, distanceFromTarget: 1000})
         this.maxAge = this.startAge + MIN_LIFESPAN
     }
 
@@ -57,41 +73,19 @@ export class Evolution {
     }
 
     public iterate(): void {
-        const gotchis = this.currentGotchis.getValue()
-        if (gotchis.length === 0 || this.rebooting) {
-            return
-        }
-        gotchis.forEach(gotchi => gotchi.reorient())
-        const moving = gotchis.filter(gotchi => gotchi.age < this.maxAge)
+        this.evolvers.forEach(({gotchi}) => gotchi.reorient())
+        const moving = this.evolvers.filter(({gotchi}) => gotchi.age < this.maxAge)
         if (moving.length === 0) {
             this.adjustAgeLimit()
             this.nextGenerationFromSurvival()
             return
         }
-        moving.forEach(gotchi => {
-            gotchi.iterate() // TODO: all fucked up behind > ITERATIONS_PER_TICK ? ITERATIONS_PER_TICK : behind
-            // if (appEvent === AppEvent.Cycle) {
-            //     console.log("mutate")
-            //     gotchi.mutateGenome(1)
-            // }
+        moving.forEach(({gotchi}) => {
+            if (gotchi.age % 10000 === 0) {
+                console.log("iterate", gotchi.age, this.maxAge)
+            }
+            gotchi.iterate()
         })
-    }
-
-    public recycle(): void {
-        this.currentGotchis.getValue().forEach(gotchi => gotchi.recycle())
-        if (this.prototypeGotchi) {
-            this.prototypeGotchi.recycle()
-        }
-    }
-
-    public get extractFittest(): Gotchi | undefined {
-        const strongest = this.strongest
-        if (!strongest) {
-            return undefined
-        }
-        const exceptIndex = strongest.gotchi.index
-        this.currentGotchis.next(this.currentGotchis.getValue().filter(gotchi => gotchi.index !== exceptIndex))
-        return strongest.gotchi
     }
 
     // Privates =============================================================
@@ -105,82 +99,28 @@ export class Evolution {
         console.log(`Age: [${this.startAge} to ${this.maxAge}] ${lifespan}`)
     }
 
-    private get rankedGotchis(): IEvaluatedGotchi[] {
-        let gotchis = this.currentGotchis.getValue()
-        const frozenHero = this.prototypeGotchi
-        if (frozenHero) {
-            gotchis = gotchis.filter(e => e.index !== frozenHero.index)
-        }
-        const evaluated = gotchis.map(gotchi => gotchi.evaluated)
-        return evaluated.sort((a: IEvaluatedGotchi, b: IEvaluatedGotchi) => a.distanceFromTarget - b.distanceFromTarget)
-    }
-
-    private get strongest(): IEvaluatedGotchi | undefined {
-        return this.rankedGotchis[0]
+    private rankEvolvers(): void {
+        this.evolvers.forEach(evolver => {
+            const view = evolver.gotchi.instance.view
+            const midpoint = new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+            evolver.distanceFromTarget = midpoint.distanceTo(evolver.gotchi.target)
+        })
+        this.evolvers.sort((a: IEvolver, b: IEvolver) => a.distanceFromTarget - b.distanceFromTarget)
     }
 
     private nextGenerationFromSurvival(): void {
-        this.rebooting = true
-        const ranked: IEvaluatedGotchi[] = this.rankedGotchis
-        const dead = ranked.splice(Math.ceil(ranked.length * SURVIVAL_RATE))
-        // dead.forEach(e => console.log(`Dead ${e.gotchi.index}:  ${e.distanceFromTarget}`))
-        // ranked.forEach(e => console.log(`Ranked ${e.gotchi.index}:  ${e.distanceFromTarget}`))
-        this.currentGotchis.next(ranked.map(e => e.gotchi))
-        dead.forEach(e => e.gotchi.recycle())
-        setTimeout(() => {
-            const nextGeneration: Gotchi[] = []
-            dead.map(e => e.gotchi).forEach(() => {
-                const luckyParent = ranked[Math.floor(ranked.length * Math.random())].gotchi
-                const offspring = this.createOffspring(luckyParent)
-                if (offspring) {
-                    nextGeneration.push(offspring)
-                }
-            })
-            this.currentGotchis.next([])
-            setTimeout(() => {
-                ranked.forEach(e => e.gotchi.recycle())
-                ranked.map(e => e.gotchi).forEach(gotchi => {
-                    const reborn = this.createGotchi(gotchi.leg, fromGenomeData(gotchi.genomeData))
-                    if (reborn) {
-                        nextGeneration.push(reborn)
-                    }
-                })
-                this.currentGotchis.next(nextGeneration)
-                this.rebooting = false
-            }, 500)
-        }, 500)
-    }
-
-    private createPopulation(): Gotchi[] {
-        const genome = this.home.genome
-        if (!genome) {
-            throw new Error("No genome!")
-        }
-        console.log("create population", genome.toString())
-        let mutatingGenome: Genome | undefined = fromGenomeData(genome.genomeData)
-        const gotchis: Gotchi[] = []
-        while (gotchis.length < MAX_POPULATION) {
-            const evolvingGotchi = this.createGotchi(this.leg, mutatingGenome)
-            if (!evolvingGotchi) {
-                break
+        this.rankEvolvers()
+        console.log("ranked", this.evolvers.map(({index, distanceFromTarget}) => `${index}: ${distanceFromTarget}`))
+        const survivorCount = Math.floor(this.evolvers.length * SURVIVAL_RATE)
+        this.evolvers = this.evolvers.map(({gotchi, index, distanceFromTarget}, evolverIndex) => {
+            if (evolverIndex > survivorCount) {
+                const parentIndex = Math.floor(survivorCount * Math.random())
+                const offspringGenome = fromGenomeData(this.evolvers[parentIndex].gotchi.mutatedGenome(MUTATION_COUNT))
+                console.log(`replacing ${evolverIndex} with offspring from ${parentIndex}`, offspringGenome.toString())
+                return <IEvolver>{index, gotchi: this.home.createGotchiFromGenome(gotchi.instance, offspringGenome, this.rotation), distanceFromTarget}
+            } else {
+                return <IEvolver>{index, gotchi: this.home.createNativeGotchi(gotchi.instance, this.rotation), distanceFromTarget}
             }
-            gotchis.push(evolvingGotchi)
-            mutatingGenome = mutatingGenome.withMutatedBehavior(evolvingGotchi.nextDirection, MUTATION_COUNT)
-        }
-        return gotchis
-    }
-
-    private createOffspring(parent: Gotchi): Gotchi | undefined {
-        const offspringGenome = fromGenomeData(parent.offspringGenome)
-        return this.createGotchi(parent.leg, offspringGenome)
-    }
-
-    private createGotchi(leg: Leg, genome: Genome): Gotchi | undefined {
-        this.gotchiIndex++
-        if (this.prototypeGotchi) {
-            return this.home.createGotchiFromPrototype(this.prototypeGotchi, this.gotchiIndex, this.rotation, genome)
-        } else {
-            return this.home.createGotchiFromGenome(this.gotchiIndex, this.rotation, genome)
-        }
+        })
     }
 }

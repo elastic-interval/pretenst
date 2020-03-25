@@ -102,9 +102,9 @@ export class FabricInstance {
 
     private featuresToApply: FloatFeature[] = []
 
-    constructor(eig: typeof import("eig"), jointCount: number, world: object) {
+    constructor(eig: typeof import("eig"), jointCount: number, worldInstance: object) {
         // @ts-ignore
-        this.world = world ? world : eig.World.new()
+        this.world = worldInstance
         this.fabric = eig.Fabric.new(jointCount)
         this.view = eig.View.on_fabric(this.fabric)
         this.floatView = createFloatView(this.fabric, this.view)

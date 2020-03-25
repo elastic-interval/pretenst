@@ -5,7 +5,9 @@
 
 import { Vector3 } from "three"
 
-import { emptyGenome, Genome } from "./genome"
+import { FabricInstance } from "../fabric/fabric-instance"
+
+import { emptyGenome, fromGenomeData, Genome } from "./genome"
 import { Gotchi, GotchiFactory } from "./gotchi"
 import { ICoords, IHexalot } from "./island-logic"
 import { Journey, Leg } from "./journey"
@@ -35,19 +37,18 @@ export class Hexalot implements IHexalot {
     }
 
     public get genome(): Genome {
-        return this._genome ? this._genome : this._genome = emptyGenome()
+        if (!this._genome) {
+            this._genome = emptyGenome()
+        }
+        return fromGenomeData(this._genome.genomeData)
     }
 
-    public createNativeGotchi(): Gotchi | undefined {
-        return this.gotchiFactory(this, 0, this.rotation, this.genome)
+    public createNativeGotchi(instance: FabricInstance, rotation?: number): Gotchi | undefined {
+        return this.gotchiFactory(this, instance, rotation !== undefined ? rotation : this.rotation, this.genome)
     }
 
-    public createGotchiFromGenome(index: number, rotation: number, genome: Genome): Gotchi | undefined {
-        return this.gotchiFactory(this, index, rotation, genome)
-    }
-
-    public createGotchiFromPrototype(gotchi: Gotchi, index: number, rotation: number, genome: Genome): Gotchi | undefined {
-        return this.gotchiFactory(this, index, rotation, genome)
+    public createGotchiFromGenome(instance: FabricInstance, genome: Genome, rotation?: number): Gotchi | undefined {
+        return this.gotchiFactory(this, instance, rotation !== undefined ? rotation : this.rotation, genome)
     }
 
     public get rotation(): number {

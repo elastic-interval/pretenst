@@ -10,18 +10,20 @@ import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 
 import { FloatFeature } from "../fabric/fabric-features"
+import { InstanceFactory } from "../fabric/fabric-instance"
 import { IFeatureValue } from "../storage/stored-state"
 
 import { Evolution } from "./evolution"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
 
-export function GotchiView({island, floatFeatures}: {
+export function GotchiView({island, instanceFactory, floatFeatures}: {
     island: Island,
+    instanceFactory: InstanceFactory,
     floatFeatures: Record<FabricFeature, FloatFeature>,
 }): JSX.Element {
 
-    const gotchi = useMemo(() => island.hexalots[0].createNativeGotchi(), [])
+    const gotchi = useMemo(() => island.hexalots[0].createNativeGotchi(instanceFactory()), [])
     const [evolution, updateEvolution] = useState<Evolution | undefined>(undefined)
 
     useEffect(() => {
@@ -37,8 +39,8 @@ export function GotchiView({island, floatFeatures}: {
 
     const onClickEvolve = () => {
         if (gotchi) {
-            const evo = new Evolution(gotchi.hexalot)
-            console.log("Evolving gotchis", evo.currentGotchis.getValue().length)
+            const evo = new Evolution(gotchi.hexalot, instanceFactory)
+            console.log("Evolving gotchis", evo.evolvers.length)
             updateEvolution(evo)
         }
     }

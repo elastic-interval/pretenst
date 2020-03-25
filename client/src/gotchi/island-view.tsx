@@ -180,12 +180,12 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
     return (
         <group>
             <lineSegments
-                key="lines"
+                key="gotchi-lines"
                 geometry={gotchi.linesGeometry}
                 material={LINE_VERTEX_COLORS}
             />
             <mesh
-                key="faces"
+                key="gotchi-faces"
                 geometry={gotchi.facesGeometry}
                 material={FACE}
             />
@@ -196,9 +196,9 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
 function EvolutionComponent({evolution}: { evolution: Evolution }): JSX.Element {
     return (
         <group>
-            {evolution.currentGotchis.getValue().map(gotchi => (
+            {evolution.evolvers.map(({gotchi, index}) => (
                 <lineSegments
-                    key={`evolving-gotchi-${gotchi.index}`}
+                    key={`evolving-gotchi-${index}`}
                     geometry={gotchi.linesGeometry}
                     material={LINE_VERTEX_COLORS}
                 />

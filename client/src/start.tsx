@@ -8,8 +8,8 @@ import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
 
-import { createFloatFeatures, featureConfig, FloatFeature } from "./fabric/fabric-features"
-import { FabricInstance, InstanceFactory } from "./fabric/fabric-instance"
+import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
+import { FabricInstance } from "./fabric/fabric-instance"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
 import { Gotchi, GotchiFactory } from "./gotchi/gotchi"
@@ -17,7 +17,7 @@ import { GotchiView } from "./gotchi/gotchi-view"
 import { Island } from "./gotchi/island"
 import { IIslandData } from "./gotchi/island-logic"
 import registerServiceWorker from "./service-worker"
-import { IStoredState, loadState, roleDefaultFromFeatures, saveState } from "./storage/stored-state"
+import { loadState, roleDefaultFromFeatures, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
 
 const GOTCHI = localStorage.getItem("gotchi") === "true"
@@ -35,33 +35,36 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
     const floatFeatures = createFloatFeatures(storedState$, eig.default_fabric_feature)
     const instanceFactory = () => new FabricInstance(eig, 200, world)
     if (GOTCHI) {
-        const island = createIsland(eig, instanceFactory, floatFeatures, storedState$)
-        ReactDOM.render(<GotchiView island={island} floatFeatures={floatFeatures}/>, root)
+        const gotchiFactory: GotchiFactory = (hexalot, instance, rotation, genome) => {
+            const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(floatFeatures, role)
+            const numericFeature = (feature: FabricFeature) => storedState$.getValue().featureValues[feature].numeric
+            const tenscript = codeToTenscript((error: string) => {
+                throw new Error(`Unable to compile: ${error}`)
+            }, false, BODY)
+            if (!tenscript) {
+                throw new Error("Unable to build body")
+            }
+            instance.clear()
+            const tensegrity = new Tensegrity(roleLength, numericFeature, instance, tenscript)
+            // todo: rotation
+            console.log("new gotchi, genome:", genome.toString())
+            return new Gotchi(hexalot, genome, tensegrity, hexalot.firstLeg)
+        }
+        const island = new Island(ISLAND_DATA, gotchiFactory)
+        ReactDOM.render(
+            <GotchiView
+                island={island}
+                instanceFactory={instanceFactory}
+                floatFeatures={floatFeatures}
+            />, root)
     } else {
-        ReactDOM.render(<TensegrityView eig={eig} instanceFactory={instanceFactory} floatFeatures={floatFeatures} storedState$={storedState$}/>, root)
+        ReactDOM.render(
+            <TensegrityView
+                eig={eig}
+                instanceFactory={instanceFactory}
+                floatFeatures={floatFeatures}
+                storedState$={storedState$}
+            />, root)
     }
     registerServiceWorker()
-}
-
-function createIsland(
-    eig: typeof import("eig"),
-    instanceFactory: InstanceFactory,
-    floatFeatures: Record<FabricFeature, FloatFeature>,
-    storedState$: BehaviorSubject<IStoredState>,
-): Island {
-    const gotchiFactory: GotchiFactory = (hexalot, index, rotation, genome) => {
-        const instance = instanceFactory()
-        const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(floatFeatures, role)
-        const numericFeature = (feature: FabricFeature) => storedState$.getValue().featureValues[feature].numeric
-        const tenscript = codeToTenscript((error: string) => {
-            throw new Error(`Unable to compile: ${error}`)
-        }, false, BODY)
-        if (!tenscript) {
-            throw new Error("Unable to build body")
-        }
-        const tensegrity = new Tensegrity(roleLength, numericFeature, instance, tenscript)
-        // todo: rotation
-        return new Gotchi(hexalot, index, genome, tensegrity, hexalot.firstLeg)
-    }
-    return new Island(ISLAND_DATA, gotchiFactory)
 }

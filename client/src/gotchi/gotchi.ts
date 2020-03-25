@@ -20,16 +20,13 @@ const GRASP_COUNT = 5
 const TWITCH_COUNT = 15
 
 export enum Direction {
-    Rest,
-    Forward,
-    Left,
-    Right,
+    Rest = "Rest",
+    Forward = "Forward",
+    Left = "Left",
+    Right = "Right",
 }
 
-export interface IEvaluatedGotchi {
-    gotchi: Gotchi
-    distanceFromTarget: number
-}
+export const DIRECTIONS = Object.keys(Direction).map(k => Direction[k])
 
 export interface ISensor {
     index: number
@@ -52,7 +49,7 @@ export enum Limb {
     BackRight = "back-right",
 }
 
-export type GotchiFactory = (hexalot: Hexalot, index: number, rotation: number, genome: Genome) => Gotchi
+export type GotchiFactory = (hexalot: Hexalot, instance: FabricInstance, rotation: number, genome: Genome) => Gotchi
 
 export class Gotchi {
     public readonly instance: FabricInstance
@@ -71,7 +68,6 @@ export class Gotchi {
 
     constructor(
         public readonly hexalot: Hexalot,
-        public readonly index: number,
         private genome: Genome,
         tensegrity: Tensegrity,
         leg: Leg,
@@ -104,15 +100,11 @@ export class Gotchi {
         return this.genome.genomeData
     }
 
-    public get offspringGenome(): IGenomeData {
-        return this.genome.genomeData // todo
-    }
-
-    public mutateGenome(mutationCount: number): void {
+    public mutatedGenome(mutationCount: number): IGenomeData {
         if (!this.genome) {
             throw new Error("Not evolving")
         }
-        this.genome = this.genome.withMutatedBehavior(this.nextDirection, mutationCount)
+        return this.genome.withMutations(this.nextDirection, mutationCount).genomeData
     }
 
     public get age(): number {
@@ -170,6 +162,7 @@ export class Gotchi {
                         const faceCount = this.actuators.length
                         this.twitchCycle[direction] = new TimeCycle(reader, faceCount, GRASP_COUNT, TWITCH_COUNT)
                     })
+                    console.log("Realized!", this.genome.genomeData)
                     break
             }
         }
@@ -203,13 +196,6 @@ export class Gotchi {
         }
     }
 
-    public get evaluated(): IEvaluatedGotchi {
-        const view = this.instance.view
-        const midpoint = new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
-        const distanceFromTarget = midpoint.distanceTo(this.target)
-        return {gotchi: this, distanceFromTarget}
-    }
-
     public get facesGeometry(): BufferGeometry {
         const faceLocations = new Float32BufferAttribute(this.instance.floatView.faceLocations, 3)
         const faceNormals = new Float32BufferAttribute(this.instance.floatView.faceNormals, 3)
@@ -234,6 +220,10 @@ export class Gotchi {
         return this.instance.fabric
     }
 
+    public get target(): Vector3 {
+        return this.currentLeg.goTo.center
+    }
+
     private get touchedDestination(): boolean {
         const view = this.instance.view
         const midpoint = new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
@@ -251,12 +241,10 @@ export class Gotchi {
             c[vote]++
             return c
         }, [0, 0, 0, 0, 0])
-        for (let direction = Direction.Forward; direction <= Direction.Right; direction++) {
-            if (voteCounts[direction] === MAX_VOTES && this._nextDirection !== direction) {
-                return direction
-            }
-        }
-        return latestVote
+        const found = DIRECTIONS.find(direction => (
+            voteCounts[direction] === MAX_VOTES && this._nextDirection !== direction
+        ))
+        return found ? found : latestVote
     }
 
     private get directionToTarget(): Direction {
@@ -283,11 +271,6 @@ export class Gotchi {
         toTarget.normalize()
         return toTarget
     }
-
-    private get target(): Vector3 {
-        return this.currentLeg.goTo.center
-    }
-
 }
 
 function extractGotchiFaces(tensegrity: Tensegrity, actutors: IActuator[], sensors: ISensor[]): void {

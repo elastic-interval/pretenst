@@ -61,7 +61,7 @@ export class Genome {
         }
     }
 
-    public withMutatedBehavior(direction: Direction, mutations: number): Genome {
+    public withMutations(direction: Direction, mutations: number): Genome {
         const genesCopy: IGene[] = this.genes.map(g => ({
             direction: g.direction,
             mutationCount: g.mutationCount,
@@ -73,7 +73,7 @@ export class Genome {
                 const geneNumber = Math.floor(Math.random() * geneToMutate.dice.length)
                 geneToMutate.dice[geneNumber] = this.roll()
                 geneToMutate.mutationCount++
-                console.log("mutation", direction, geneNumber, geneToMutate.dice[geneNumber].symbol)
+                console.log("mutation", geneToMutate.mutationCount, direction, geneNumber, geneToMutate.dice[geneNumber].symbol)
             }
         }
         return new Genome(genesCopy, this.roll)
@@ -90,7 +90,8 @@ export class Genome {
     }
 
     public toString(): string {
-        return this.genes.map(gene => serializeGene(gene.dice)).join("\n")
+        return this.genes.map(gene => `${gene.direction}:${gene.mutationCount}`).join(", ")
+        // return this.genes.map(gene => serializeGene(gene.dice)).join("\n")
     }
 }
 
