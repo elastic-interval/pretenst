@@ -50,20 +50,16 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
 
-    const [age, setAge] = useState(0)
+    const [trigger, setTrigger] = useState(0)
 
     useRender(() => {
-        try {
-            if (!gotchi) {
-                return
-            }
-            const instance = gotchi.instance
+        if (evolution) {
+            evolution.iterate()
+        } else if (gotchi) {
             gotchi.iterate()
-            setAge(instance.fabric.age)
-        } catch (e) {
-            console.error("render", e)
         }
-    }, true, [gotchi, age])
+        setTrigger(trigger + 1)
+    }, true, [gotchi, evolution, trigger])
 
     function spotsGeometry(): Geometry {
         const geometry = new Geometry()
@@ -202,8 +198,8 @@ function EvolutionComponent({evolution}: { evolution: Evolution }): JSX.Element 
         <group>
             {evolution.currentGotchis.getValue().map(gotchi => (
                 <lineSegments
-                    key={`evo${gotchi.index}`}
-                    geometry={evolution.linesGeometry(gotchi)}
+                    key={`evolving-gotchi-${gotchi.index}`}
+                    geometry={gotchi.linesGeometry}
                     material={LINE_VERTEX_COLORS}
                 />
             ))}

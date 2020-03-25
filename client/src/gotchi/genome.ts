@@ -73,6 +73,7 @@ export class Genome {
                 const geneNumber = Math.floor(Math.random() * geneToMutate.dice.length)
                 geneToMutate.dice[geneNumber] = this.roll()
                 geneToMutate.mutationCount++
+                console.log("mutation", direction, geneNumber, geneToMutate.dice[geneNumber].symbol)
             }
         }
         return new Genome(genesCopy, this.roll)
@@ -86,6 +87,10 @@ export class Genome {
                 geneString: serializeGene(g.dice),
             })),
         }
+    }
+
+    public toString(): string {
+        return this.genes.map(gene => serializeGene(gene.dice)).join("\n")
     }
 }
 

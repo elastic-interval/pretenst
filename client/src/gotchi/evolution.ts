@@ -4,15 +4,14 @@
  */
 
 import { BehaviorSubject } from "rxjs/BehaviorSubject"
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
+import { Vector3 } from "three"
 
 import { fromGenomeData, Genome } from "./genome"
 import { Direction, Gotchi, IEvaluatedGotchi } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
 
-export const INITIAL_JOINT_COUNT = 47
-export const MAX_POPULATION = 24
+export const MAX_POPULATION = 3
 const MUTATION_COUNT = 5
 const SURVIVAL_RATE = 0.66
 const MIN_LIFESPAN = 15000
@@ -21,6 +20,7 @@ const INCREMENT_LIFESPAN = 1000
 
 export class Evolution {
     public currentGotchis: BehaviorSubject<Gotchi[]> = new BehaviorSubject<Gotchi[]>([])
+    private gotchiIndex = 1
     private midpointVector = new Vector3()
     private rebooting = false
     private rotation: number
@@ -94,14 +94,6 @@ export class Evolution {
         return strongest.gotchi
     }
 
-    public linesGeometry(gotchi: Gotchi): BufferGeometry {
-        const lineLocations = new Float32BufferAttribute(gotchi.instance.floatView.lineLocations, 3)
-        const geometry = new BufferGeometry()
-        geometry.addAttribute("position", lineLocations)
-        geometry.computeBoundingSphere()
-        return geometry
-    }
-
     // Privates =============================================================
 
     private adjustAgeLimit(): void {
@@ -164,9 +156,10 @@ export class Evolution {
         if (!genome) {
             throw new Error("No genome!")
         }
+        console.log("create population", genome.toString())
         let mutatingGenome: Genome | undefined = fromGenomeData(genome.genomeData)
         const gotchis: Gotchi[] = []
-        while (true) {
+        while (gotchis.length < MAX_POPULATION) {
             const evolvingGotchi = this.createGotchi(this.leg, mutatingGenome)
             if (!evolvingGotchi) {
                 break
@@ -183,10 +176,11 @@ export class Evolution {
     }
 
     private createGotchi(leg: Leg, genome: Genome): Gotchi | undefined {
+        this.gotchiIndex++
         if (this.prototypeGotchi) {
-            return this.home.createGotchiFromPrototype(this.prototypeGotchi, this.rotation, genome)
+            return this.home.createGotchiFromPrototype(this.prototypeGotchi, this.gotchiIndex, this.rotation, genome)
         } else {
-            return this.home.createGotchiFromGenome(0, this.rotation, genome) // TODO
+            return this.home.createGotchiFromGenome(this.gotchiIndex, this.rotation, genome)
         }
     }
 }

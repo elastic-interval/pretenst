@@ -37,7 +37,9 @@ export function GotchiView({island, floatFeatures}: {
 
     const onClickEvolve = () => {
         if (gotchi) {
-            updateEvolution(new Evolution(gotchi.hexalot, gotchi))
+            const evo = new Evolution(gotchi.hexalot, gotchi)
+            console.log("Evolving gotchis", evo.currentGotchis.getValue().length)
+            updateEvolution(evo)
         }
     }
     return (

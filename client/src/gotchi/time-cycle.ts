@@ -29,12 +29,12 @@ export class TimeCycle {
         slice.grasps.forEach(({whichLimbs, howLong}) => {
             whichLimbs.forEach(limb => {
                 const whichFace = gotchi.getActuator(limb).index
-                console.log(`grasp ${whichFace}: ${howLong}`)
+                // console.log(`grasp ${whichFace}: ${howLong}`)
                 gotchi.fabric.grasp_face(whichFace, howLong)
             })
         })
         slice.twitches.forEach(({whichFace, attack, decay}) => {
-            console.log(`twitch ${whichFace}: ${attack}, ${decay}`)
+            // console.log(`twitch ${whichFace}: ${attack}, ${decay}`)
             gotchi.fabric.twitch_face(whichFace, 0.4, attack, decay)
         })
     }

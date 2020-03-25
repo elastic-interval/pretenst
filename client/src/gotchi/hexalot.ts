@@ -46,8 +46,8 @@ export class Hexalot implements IHexalot {
         return this.gotchiFactory(this, index, rotation, genome)
     }
 
-    public createGotchiFromPrototype(gotchi: Gotchi, rotation: number, genome: Genome): Gotchi | undefined {
-        return this.gotchiFactory(this, gotchi.index, rotation, genome) // TODO
+    public createGotchiFromPrototype(gotchi: Gotchi, index: number, rotation: number, genome: Genome): Gotchi | undefined {
+        return this.gotchiFactory(this, index, rotation, genome)
     }
 
     public get rotation(): number {
