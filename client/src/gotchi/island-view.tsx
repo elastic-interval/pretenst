@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { useRender, useThree, useUpdate } from "react-three-fiber"
 import {
     BufferGeometry,
@@ -61,7 +61,7 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
         setTrigger(trigger + 1)
     }, true, [gotchi, evolution, trigger])
 
-    function spotsGeometry(): Geometry {
+    const spots = useMemo(() => {
         const geometry = new Geometry()
         if (island) {
             island.spots.forEach((spot: Spot, index: number) => {
@@ -70,7 +70,7 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
         }
         geometry.computeBoundingSphere()
         return geometry
-    }
+    }, [])
 
     function selectedSpotGeometry(): Geometry | undefined {
         const geometry = new Geometry()
@@ -148,7 +148,7 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                <mesh name="Spots" geometry={spotsGeometry()} material={ISLAND}/>
+                <mesh name="Spots" geometry={spots} material={ISLAND}/>
                 {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
                 {!homeHexalot ? undefined : (
                     <lineSegments key="HomeHexalot" geometry={homeHexalotGeometry()} material={HOME_HEXALOT}/>

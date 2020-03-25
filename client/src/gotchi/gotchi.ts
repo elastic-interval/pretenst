@@ -16,8 +16,8 @@ import { Leg } from "./journey"
 import { TimeCycle } from "./time-cycle"
 
 const MAX_VOTES = 30
-const GRASP_COUNT = 5
-const TWITCH_COUNT = 15
+const GRASP_COUNT = 3
+const TWITCH_COUNT = 6
 
 export enum Direction {
     Rest = "Rest",
@@ -128,7 +128,7 @@ export class Gotchi {
         if (!embryo) {
             this.instance.iterate(Stage.Realized)
             const nextSliceIterations = this.timeSliceIterations + 1
-            this.timeSliceIterations = nextSliceIterations >= 5 ? 0 : nextSliceIterations
+            this.timeSliceIterations = nextSliceIterations >= 3 ? 0 : nextSliceIterations
             if (this.timeSliceIterations === 0) {
                 this.twitchCycle[Direction.Forward].activate(this.timeSlice, this)
                 const nextSlice = this.timeSlice + 1

@@ -31,7 +31,7 @@ import {
 } from "./tensegrity-types"
 
 function scaleToStiffness(scale: IPercent): number {
-    return percentToFactor(scale) / 10000
+    return percentToFactor(scale) / 100
 }
 
 export class Tensegrity {

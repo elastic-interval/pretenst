@@ -35,7 +35,7 @@ export class TimeCycle {
         })
         slice.twitches.forEach(({whichFace, attack, decay}) => {
             // console.log(`twitch ${whichFace}: ${attack}, ${decay}`)
-            gotchi.fabric.twitch_face(whichFace, 0.4, attack, decay)
+            gotchi.fabric.twitch_face(whichFace, 0.1, attack, decay)
         })
     }
 

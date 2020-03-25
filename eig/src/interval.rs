@@ -2,7 +2,12 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
+
+extern crate fast_inv_sqrt;
+
 use nalgebra::*;
+
+use fast_inv_sqrt::InvSqrt32;
 
 use crate::constants::*;
 use crate::face::Face;
@@ -76,12 +81,13 @@ impl Interval {
             let omega_location = &joints[self.omega_index].location;
             self.unit = omega_location - alpha_location;
         }
-        let magnitude = self.unit.magnitude();
-        if magnitude < 0.001_f32 {
-            return 0.001_f32;
+        let magnitude_squared = self.unit.magnitude_squared();
+        if magnitude_squared < 0.00001_f32 {
+            return 0.00001_f32;
         }
-        self.unit /= magnitude;
-        magnitude
+        let inverse_square_root = magnitude_squared.inv_sqrt32();
+        self.unit *= inverse_square_root;
+        1_f32 / inverse_square_root
     }
 
     pub fn physics(
