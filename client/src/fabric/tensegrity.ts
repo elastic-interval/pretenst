@@ -12,7 +12,7 @@ import { IStoredState } from "../storage/stored-state"
 
 import { intervalRoleName, isPushInterval } from "./eig-util"
 import { FabricInstance } from "./fabric-instance"
-import { ITransitionPrefs, Life } from "./life"
+import { ILifeTransition, Life } from "./life"
 import { execute, IActiveTenscript, IMark, ITenscript, MarkAction } from "./tenscript"
 import { scaleToFaceConnectorLength, TensegrityBuilder } from "./tensegrity-builder"
 import {
@@ -31,7 +31,8 @@ import {
 } from "./tensegrity-types"
 
 function scaleToStiffness(scale: IPercent): number {
-    return percentToFactor(scale) / 100
+    return percentToFactor(scale) / 1000
+    // return percentToFactor(scale) / 100
 }
 
 export class Tensegrity {
@@ -42,8 +43,7 @@ export class Tensegrity {
     public faces: IFace[] = []
     public bricks: IBrick[] = []
     public activeTenscript?: IActiveTenscript[]
-
-    private backup?: Fabric
+    private transitionQueue: ILifeTransition[] = []
 
     constructor(
         public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
@@ -62,26 +62,12 @@ export class Tensegrity {
         return this.instance.fabric
     }
 
-    public get life(): Life {
-        return this.life$.getValue()
-    }
-
-    public save(): void {
-        this.backup = this.fabric.copy()
-    }
-
-    public restore(): void {
-        if (!this.backup) {
-            throw new Error("No backup")
-        }
-        this.fabric.restore(this.backup)
-    }
-
-    public toStage(stage: Stage, prefs?: ITransitionPrefs): void {
-        if (stage === this.life.stage) {
+    public lifeTransition(tx: ILifeTransition): void {
+        const life = this.life$.getValue()
+        if (tx.stage === life.stage) {
             return
         }
-        this.life$.next(this.life.withStage(stage, prefs))
+        this.life$.next(life.executeTransition(tx))
     }
 
     public createLeftJoint(location: Vector3): number {
@@ -238,10 +224,18 @@ export class Tensegrity {
         this.faceIntervals = intervals
     }
 
+    public set transition(tx: ILifeTransition) {
+        this.transitionQueue.push(tx)
+    }
+
     public iterate(): Stage {
-        const lifePhase = this.instance.iterate(this.life$.getValue().stage)
-        if (lifePhase === Stage.Busy) {
-            return lifePhase
+        const tx = this.transitionQueue.shift()
+        if (tx) {
+            this.lifeTransition(tx)
+        }
+        const stage = this.instance.iterate(this.life$.getValue().stage)
+        if (stage === Stage.Busy) {
+            return stage
         }
         const activeCode = this.activeTenscript
         const builder = () => new TensegrityBuilder(this)
@@ -253,7 +247,7 @@ export class Tensegrity {
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
                 faceStrategies(this.faces, this.tenscript.marks, builder()).forEach(strategy => strategy.execute())
-                if (lifePhase === Stage.Growing) {
+                if (stage === Stage.Growing) {
                     return this.fabric.finish_growing()
                 }
             }
@@ -262,7 +256,7 @@ export class Tensegrity {
         if (this.faceIntervals.length > 0) {
             this.faceIntervals = builder().checkFaceIntervals(this.faceIntervals, interval => this.removeFaceInterval(interval))
         }
-        return lifePhase
+        return stage
     }
 
     public findInterval(joint1: IJoint, joint2: IJoint): IInterval | undefined {

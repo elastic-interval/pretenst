@@ -101,27 +101,49 @@ export class FabricInstance {
     public floatView: IFloatView
 
     private featuresToApply: FloatFeature[] = []
+    private fabricBackup?: Fabric
+    private adoptFabric: (fabric: Fabric) => void
 
     constructor(eig: typeof import("eig"), jointCount: number, worldInstance: object) {
         // @ts-ignore
         this.world = worldInstance
-        this.fabric = eig.Fabric.new(jointCount)
-        this.view = eig.View.on_fabric(this.fabric)
-        this.floatView = createFloatView(this.fabric, this.view)
+        this.adoptFabric = (fabric) => {
+            const f = this.fabric
+            if (f) {
+                f.free()
+            }
+            this.fabric = fabric
+            if (this.view) {
+                this.view.free()
+            }
+            this.view = eig.View.on_fabric(fabric)
+        }
+        this.adoptFabric(eig.Fabric.new(jointCount))
     }
 
     public iterate(requestedStage: Stage): Stage {
         const stage = this.fabric.iterate(requestedStage, this.world)
         this.view.render(this.fabric, this.world)
-        if (this.featuresToApply.length > 0) {
-            this.featuresToApply.forEach(feature => {
-                this.world.set_float_value(feature.fabricFeature, feature.numeric)
-                console.log("Feature", feature.fabricFeature, feature.numeric)
-            })
-            this.featuresToApply = []
+        const feature = this.featuresToApply.shift()
+        if (feature) {
+            this.world.set_float_value(feature.fabricFeature, feature.numeric)
         }
         this.floatView = createFloatView(this.fabric, this.view)
         return stage
+    }
+
+    public snapshot(): void {
+        this.fabricBackup = this.fabric.clone()
+        console.error("snapshot")
+    }
+
+    public restoreSnapshot(): void {
+        console.log("restoreSnapshot")
+        const backup = this.fabricBackup
+        if (!backup) {
+            throw new Error("Missing backup")
+        }
+        this.adoptFabric(backup.clone())
     }
 
     public refreshFloatView(): void {

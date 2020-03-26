@@ -123,7 +123,7 @@ export class TensegrityOptimizer {
     public stiffnessesFromStrains(): void {
         const pushOverPull = this.tensegrity.numericFeature(FabricFeature.PushOverPull)
         const newStiffnesses = adjustedStiffness(this.tensegrity, pushOverPull)
-        this.tensegrity.restore()
+        this.tensegrity.instance.restoreSnapshot()
         this.tensegrity.fabric.copy_stiffnesses(newStiffnesses)
     }
 }

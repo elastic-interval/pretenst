@@ -61,13 +61,12 @@ const ALTITUDE = 4
 const Y_AXIS = new Vector3(0, 1, 0)
 
 export function FabricView({
-                               tensegrity, fabricError,
+                               tensegrity,
                                selectedIntervals, toggleSelectedInterval,
                                selectedFaces, setSelectedFaces, storedState$,
                                shapeSelection, ellipsoids, visibleRoles,
                            }: {
     tensegrity: Tensegrity,
-    fabricError: (error: string) => void,
     selectedIntervals: IInterval[],
     toggleSelectedInterval: (interval: IInterval) => void,
     selectedFaces: IFace[],
@@ -90,9 +89,11 @@ export function FabricView({
         return new MeshPhongMaterial({map: spaceTexture, side: BackSide})
     }, [])
 
-    const [life, updateLife] = useState(tensegrity.life)
+    const [life, updateLife] = useState(tensegrity.life$.getValue())
+    const [instance, updateInstance] = useState(tensegrity.instance)
     useEffect(() => {
         const sub = tensegrity.life$.subscribe(updateLife)
+        updateInstance(tensegrity.instance)
         return () => sub.unsubscribe()
     }, [tensegrity])
 
@@ -123,28 +124,23 @@ export function FabricView({
     }, [])
 
     useRender(() => {
-        try {
-            const instance = tensegrity.instance
-            const view = instance.view
-            const target = selectedFaces.length > 0 ? facesMidpoint(selectedFaces) :
-                new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
-            const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
-            orbit.current.target.add(towardsTarget)
-            orbit.current.update()
-            if (!ellipsoids && shapeSelection !== ShapeSelection.Faces) {
-                const nextStage = tensegrity.iterate()
-                if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
-                    setTimeout(() => tensegrity.toStage(Stage.Realized, {}))
-                } else if (nextStage !== life.stage && life.stage !== Stage.Realizing && nextStage !== Stage.Busy) {
-                    setTimeout(() => tensegrity.toStage(nextStage, {}))
-                }
+        const view = instance.view
+        const target = selectedFaces.length > 0 ? facesMidpoint(selectedFaces) :
+            new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+        const towardsTarget = new Vector3().subVectors(target, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
+        orbit.current.target.add(towardsTarget)
+        orbit.current.update()
+        if (!ellipsoids && shapeSelection !== ShapeSelection.Faces) {
+            const nextStage = tensegrity.iterate()
+            if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
+                tensegrity.transition = {stage: Stage.Realized}
+            } else if (nextStage !== life.stage && life.stage !== Stage.Realizing && nextStage !== Stage.Busy) {
+                tensegrity.transition = {stage: nextStage}
             }
-            setAge(instance.fabric.age)
-        } catch (e) {
-            fabricError(e)
         }
+        setAge(instance.fabric.age)
     }, true, [
-        tensegrity, age, life, shapeSelection, ellipsoids, selectedFaces,
+        instance, age, life, shapeSelection, ellipsoids, selectedFaces,
     ])
 
     function toggleFacesSelection(faceToToggle: IFace): void {

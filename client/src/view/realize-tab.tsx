@@ -38,7 +38,7 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
         return () => subscriptions.forEach(s => s.unsubscribe())
     }, [])
 
-    const [life, updateLife] = useState(tensegrity.life)
+    const [life, updateLife] = useState(tensegrity.life$.getValue())
     useEffect(() => {
         const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()

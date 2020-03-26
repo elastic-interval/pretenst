@@ -183,7 +183,7 @@ export function TensegrityView({eig, instanceFactory, floatFeatures, storedState
                 ) : (
                     <div className="h-100">
                         <TopMiddle tensegrity={tensegrity}/>
-                        <div id="bottom-left">
+                        <div id="bottom-right">
                             <ButtonGroup>
                                 <Button
                                     color={ellipsoids ? "warning" : "secondary"}
@@ -209,12 +209,6 @@ export function TensegrityView({eig, instanceFactory, floatFeatures, storedState
                             }}>
                                 <FabricView
                                     tensegrity={tensegrity}
-                                    fabricError={error => {
-                                        console.error(error)
-                                        const tenscript = tensegrity.tenscript
-                                        setTensegrity(undefined)
-                                        setTimeout(() => runTenscript(tenscript), 1000)
-                                    }}
                                     selectedIntervals={selectedIntervals}
                                     toggleSelectedInterval={interval => setSelectedIntervals(intervals => intervals.filter(i => i.index !== interval.index))}
                                     selectedFaces={selectedFaces}
@@ -234,7 +228,7 @@ export function TensegrityView({eig, instanceFactory, floatFeatures, storedState
 }
 
 function TopMiddle({tensegrity}: { tensegrity: Tensegrity }): JSX.Element {
-    const [life, updateLife] = useState(tensegrity.life)
+    const [life, updateLife] = useState(tensegrity.life$.getValue())
     useEffect(() => {
         const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()

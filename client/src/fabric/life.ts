@@ -8,7 +8,8 @@ import { FabricFeature, Stage } from "eig"
 import { Tensegrity } from "./tensegrity"
 import { TensegrityOptimizer } from "./tensegrity-optimizer"
 
-export interface ITransitionPrefs {
+export interface ILifeTransition {
+    stage: Stage
     strainToStiffness?: boolean
     adoptLengths?: boolean
 }
@@ -20,33 +21,33 @@ export class Life {
         this._stage = stage
     }
 
-    public withStage(stage: Stage, prefs?: ITransitionPrefs): Life {
-        this.transition(stage, prefs)
-        this._stage = stage
-        return new Life(this.numericFeature, this.tensegrity, stage)
+    public executeTransition(tx: ILifeTransition): Life {
+        this.transition(tx)
+        this._stage = tx.stage
+        return new Life(this.numericFeature, this.tensegrity, tx.stage)
     }
 
     public get stage(): Stage {
         return this._stage
     }
 
-    private transition(stage: Stage, prefs?: ITransitionPrefs): void {
+    private transition({stage, adoptLengths, strainToStiffness}: ILifeTransition): void {
         switch (this._stage) {
             case Stage.Growing:
                 switch (stage) {
                     case Stage.Shaping:
-                        this.tensegrity.save()
+                        this.tensegrity.instance.snapshot()
                         return
                 }
                 break
             case Stage.Shaping:
                 switch (stage) {
                     case Stage.Slack:
-                        if (prefs && prefs.adoptLengths) {
+                        if (adoptLengths) {
                             this.tensegrity.fabric.adopt_lengths()
                             const faceIntervals = [...this.tensegrity.faceIntervals]
                             faceIntervals.forEach(interval => this.tensegrity.removeFaceInterval(interval))
-                            this.tensegrity.save()
+                            this.tensegrity.instance.snapshot()
                         }
                         return
                     case Stage.Realizing:
@@ -70,15 +71,14 @@ export class Life {
             case Stage.Realized:
                 switch (stage) {
                     case Stage.Slack:
-                        if (prefs) {
-                            if (prefs.strainToStiffness) {
-                                new TensegrityOptimizer(this.tensegrity).stiffnessesFromStrains()
-                                return
-                            } else if (prefs.adoptLengths) {
-                                this.tensegrity.fabric.adopt_lengths()
-                                this.tensegrity.save()
-                                return
-                            }
+                        if (strainToStiffness) {
+                            new TensegrityOptimizer(this.tensegrity).stiffnessesFromStrains()
+                            return
+                        }
+                        if (adoptLengths) {
+                            this.tensegrity.fabric.adopt_lengths()
+                            this.tensegrity.instance.snapshot()
+                            return
                         }
                 }
                 break

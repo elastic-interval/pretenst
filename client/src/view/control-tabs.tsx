@@ -52,7 +52,7 @@ export function ControlTabs(
         storedState$: BehaviorSubject<IStoredState>,
     }): JSX.Element {
 
-    const [life, updateLife] = useState<Life | undefined>(tensegrity ? tensegrity.life : undefined)
+    const [life, updateLife] = useState<Life | undefined>(tensegrity ? tensegrity.life$.getValue() : undefined)
     useEffect(() => {
         const sub = tensegrity ? tensegrity.life$.subscribe(updateLife) : undefined
         return () => {

@@ -50,17 +50,18 @@ impl Fabric {
         self.faces.clear();
     }
 
-    pub fn copy(&self) -> Fabric {
-        self.clone()
-    }
-
-    pub fn restore(&mut self, fabric: &Fabric) {
-        self.age = fabric.age;
-        self.stage = fabric.stage;
-        self.realizing_countdown = fabric.realizing_countdown;
-        self.joints.copy_from_slice(&fabric.joints);
-        self.intervals.copy_from_slice(&fabric.intervals);
-        self.faces.copy_from_slice(&fabric.faces);
+    pub fn clone(&self) -> Fabric {
+        Fabric {
+            age: 0,
+            stage: Stage::Busy,
+            realizing_countdown: 0_f32,
+            joints: self.joints.clone(),
+            intervals: self.intervals.clone(),
+            faces: self.faces.clone(),
+            joint_middle_index: 0,
+            joint_left_index: 0,
+            joint_right_index: 0,
+        }
     }
 
     pub fn get_joint_count(&self) -> u16 {
@@ -164,11 +165,11 @@ impl Fabric {
         }
         self.age += world.iterations_per_frame as u32;
         match self.stage {
-            Stage::Busy => {
-                if requested_stage == Stage::Growing {
-                    return self.set_stage(requested_stage);
-                }
-            }
+            Stage::Busy => match requested_stage {
+                Stage::Growing => return self.set_stage(requested_stage),
+                Stage::Realizing => return self.start_realizing(world),
+                _ => {}
+            },
             Stage::Growing => {
                 self.set_altitude(0.0);
             }
