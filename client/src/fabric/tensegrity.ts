@@ -30,10 +30,12 @@ import {
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
 
-function scaleToStiffness(scale: IPercent): number {
-    return percentToFactor(scale) / 1000
-    // return percentToFactor(scale) / 100
+function scaleToInitialStiffness(scale: IPercent): number {
+    const scaleFactor = percentToFactor(scale)
+    return Math.pow(scaleFactor , 1.4) * 0.00005
 }
+
+const FACE_INTERVAL_COUNTDOWN = 10
 
 export class Tensegrity {
     public life$: BehaviorSubject<Life>
@@ -103,7 +105,7 @@ export class Tensegrity {
         const scaleFactor = percentToFactor(scale)
         const defaultLength = this.roleDefaultLength(intervalRole)
         const restLength = scaleFactor * defaultLength
-        const stiffness = scaleToStiffness(scale)
+        const stiffness = scaleToInitialStiffness(scale)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, coundown)
@@ -307,10 +309,10 @@ export class Tensegrity {
         const connector = !pullScale
         const intervalRole = connector ? IntervalRole.FaceConnector : IntervalRole.FaceDistancer
         const idealLength = alpha.location().distanceTo(omega.location())
-        const stiffness = scaleToStiffness(percentOrHundred())
+        const stiffness = scaleToInitialStiffness(percentOrHundred())
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
-        const coundown = idealLength * this.numericFeature(FabricFeature.IntervalCountdown)
+        const coundown = idealLength * FACE_INTERVAL_COUNTDOWN * this.numericFeature(FabricFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
             idealLength, restLength, stiffness, coundown,

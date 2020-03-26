@@ -157,55 +157,14 @@ impl Fabric {
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
         let realizing_nuance =
             (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown;
-        for _tick in 0..(world.iterations_per_frame as usize) {
-            self.tick(&world, realizing_nuance);
-        }
-        for interval in self.intervals.iter_mut() {
-            interval.strain_nuance = interval.strain_nuance_in(world);
-        }
+        self.ticks(world, realizing_nuance);
+        self.set_strain_nuances(world);
         self.age += world.iterations_per_frame as u32;
-        match self.stage {
-            Stage::Busy => match requested_stage {
-                Stage::Growing => return self.set_stage(requested_stage),
-                Stage::Realizing => return self.start_realizing(world),
-                _ => {}
-            },
-            Stage::Growing => {
-                self.set_altitude(0.0);
-            }
-            Stage::Shaping => {
-                self.set_altitude(0.0);
-                match requested_stage {
-                    Stage::Realizing => return self.start_realizing(world),
-                    Stage::Slack => return self.set_stage(Stage::Slack),
-                    _ => {}
-                }
-            }
-            Stage::Slack => match requested_stage {
-                Stage::Realizing => return self.start_realizing(world),
-                Stage::Shaping => return self.slack_to_shaping(world),
-                _ => {}
-            },
-            _ => {}
+        let response_stage = self.request_stage(requested_stage, world);
+        if response_stage != Stage::Busy {
+            return response_stage;
         }
-        if self.interval_busy_max() > 0_f32 {
-            return Stage::Busy;
-        }
-        if self.realizing_countdown == 0_f32 {
-            return self.stage;
-        }
-        let after_iterations: f32 = self.realizing_countdown - world.iterations_per_frame;
-        if after_iterations > 0_f32 {
-            self.realizing_countdown = after_iterations;
-            self.stage
-        } else {
-            self.realizing_countdown = 0_f32;
-            if self.stage == Stage::Realizing {
-                self.set_stage(Stage::Realized)
-            } else {
-                self.stage
-            }
-        }
+        self.on_iterations(world)
     }
 
     pub fn centralize(&mut self) {
@@ -219,20 +178,23 @@ impl Fabric {
         }
     }
 
-    pub fn set_altitude(&mut self, altitude: f32) -> f32 {
-        let low_y = self
+    pub fn set_altitude(&mut self, altitude: f32) {
+        match self
             .joints
             .iter()
             .map(|joint| joint.location.y)
             .min_by(|a, b| a.partial_cmp(b).unwrap())
-            .unwrap();
-        for joint in &mut self.joints {
-            joint.location.y += altitude - low_y;
+        {
+            Some(low_y) => {
+                for joint in &mut self.joints {
+                    joint.location.y += altitude - low_y;
+                }
+                for joint in &mut self.joints {
+                    joint.velocity.fill(0.0);
+                }
+            }
+            None => {}
         }
-        for joint in &mut self.joints {
-            joint.velocity.fill(0.0);
-        }
-        return altitude - low_y;
     }
 
     pub fn adopt_lengths(&mut self) -> Stage {
@@ -275,6 +237,67 @@ impl Fabric {
         for (index, interval) in &mut self.intervals.iter_mut().enumerate() {
             interval.stiffness = new_stiffnesses[index];
             interval.linear_density = interval.stiffness.sqrt();
+        }
+    }
+
+    fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Stage {
+        match self.stage {
+            Stage::Busy => match requested_stage {
+                Stage::Growing => self.set_stage(requested_stage),
+                Stage::Realizing => self.start_realizing(world),
+                _ => Stage::Busy,
+            },
+            Stage::Growing => {
+                self.set_altitude(0_f32);
+                Stage::Busy
+            }
+            Stage::Shaping => {
+                self.set_altitude(0_f32);
+                match requested_stage {
+                    Stage::Realizing => self.start_realizing(world),
+                    Stage::Slack => self.set_stage(Stage::Slack),
+                    _ => Stage::Busy,
+                }
+            }
+            Stage::Slack => match requested_stage {
+                Stage::Realizing => self.start_realizing(world),
+                Stage::Shaping => self.slack_to_shaping(world),
+                _ => Stage::Busy,
+            },
+            _ => Stage::Busy,
+        }
+    }
+
+    fn set_strain_nuances(&mut self, world: &World) {
+        for interval in self.intervals.iter_mut() {
+            interval.strain_nuance = interval.strain_nuance_in(world);
+        }
+    }
+
+    fn on_iterations(&mut self, world: &World) -> Stage {
+        if self.interval_busy_max() > 0_f32 {
+            return Stage::Busy;
+        }
+        if self.realizing_countdown == 0_f32 {
+            return self.stage;
+        }
+        let after_iterations: f32 = self.realizing_countdown - world.iterations_per_frame;
+        if after_iterations > 0_f32 {
+            self.realizing_countdown = after_iterations;
+            self.stage
+        } else {
+            self.realizing_countdown = 0_f32;
+            if self.stage == Stage::Realizing {
+                self.set_stage(Stage::Realized)
+            } else {
+                self.stage
+            }
+        }
+    }
+
+    fn ticks(&mut self, world: &World, realizing_nuance: f32) {
+        for _tick in 0..(world.iterations_per_frame as usize) {
+            self.tick(&world, realizing_nuance);
         }
     }
 

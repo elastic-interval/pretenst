@@ -88,7 +88,7 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
             return () => sub.unsubscribe()
         }, [tensegrity])
 
-        const instance = tensegrity.instance
+        const floatView = tensegrity.instance.floatView
 
         function Scale({position, intervals, floats, mid, max, middleTick}: {
             position: number,
@@ -101,7 +101,7 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
             return (
                 <group position={new Vector3(position, -0.15, 0)}>
                     <lineSegments
-                        geometry={needleGeometry(intervals, instance.floatView.lineColors, floats, mid, max)}
+                        geometry={needleGeometry(intervals, floatView.lineColors, floats, mid, max)}
                         material={LINE_VERTEX_COLORS}/>
                     <lineSegments geometry={scaleGeometry(middleTick)} material={SCALE_LINE}/>
                 </group>
@@ -115,7 +115,7 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
                     <Scale
                         position={-1.5}
                         intervals={tensegrity.intervals}
-                        floats={instance.floatView.strains}
+                        floats={floatView.strains}
                         mid={0}
                         max={maxStrain}
                         middleTick={true}
@@ -123,7 +123,7 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
                     <Scale
                         position={1.5}
                         intervals={tensegrity.intervals}
-                        floats={instance.floatView.stiffnesses}
+                        floats={floatView.stiffnesses}
                         mid={0}
                         max={maxStiffness}
                         middleTick={false}
