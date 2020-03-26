@@ -13,7 +13,7 @@ import { BehaviorSubject } from "rxjs"
 
 import { ADJUSTABLE_INTERVAL_ROLES, fabricFeatureIntervalRole } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
-import { InstanceFactory } from "../fabric/fabric-instance"
+import { CreateInstance } from "../fabric/fabric-instance"
 import { BOOTSTRAP, getCodeFromUrl, ITenscript } from "../fabric/tenscript"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, IInterval, intervalsOfFaces, percentToFactor } from "../fabric/tensegrity-types"
@@ -41,14 +41,14 @@ function getCodeToRun(state: IStoredState): ITenscript {
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
 }
 
-export function TensegrityView({eig, instanceFactory, floatFeatures, storedState$}: {
+export function TensegrityView({eig, createInstance, floatFeatures, storedState$}: {
     eig: typeof import("eig"),
-    instanceFactory: InstanceFactory,
+    createInstance: CreateInstance,
     floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const mainInstance = useMemo(instanceFactory, [])
+    const mainInstance = useMemo(createInstance, [])
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])

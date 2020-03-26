@@ -49,7 +49,7 @@ export enum Limb {
     BackRight = "back-right",
 }
 
-export type GotchiFactory = (hexalot: Hexalot, instance: FabricInstance, rotation: number, genome: Genome) => Gotchi
+export type CreateGotchi = (hexalot: Hexalot, instance: FabricInstance, rotation: number, genome: Genome) => Gotchi
 
 export class Gotchi {
     public readonly instance: FabricInstance

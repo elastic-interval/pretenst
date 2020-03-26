@@ -8,7 +8,7 @@ import { Vector3 } from "three"
 import { FabricInstance } from "../fabric/fabric-instance"
 
 import { emptyGenome, fromGenomeData, Genome } from "./genome"
-import { Gotchi, GotchiFactory } from "./gotchi"
+import { CreateGotchi, Gotchi } from "./gotchi"
 import { ICoords, IHexalot } from "./island-logic"
 import { Journey, Leg } from "./journey"
 import { Spot } from "./spot"
@@ -24,7 +24,7 @@ export class Hexalot implements IHexalot {
     constructor(public readonly parentHexalot: Hexalot | undefined,
                 public readonly coords: ICoords,
                 public readonly spots: Spot[],
-                public readonly gotchiFactory: GotchiFactory) {
+                private createGotchiFunction: CreateGotchi) {
         this.spots[0].centerOfHexalot = this
         for (let neighbor = 1; neighbor <= 6; neighbor++) {
             this.spots[neighbor].adjacentHexalots.push(this)
@@ -43,12 +43,8 @@ export class Hexalot implements IHexalot {
         return fromGenomeData(this._genome.genomeData)
     }
 
-    public createNativeGotchi(instance: FabricInstance, rotation?: number): Gotchi | undefined {
-        return this.gotchiFactory(this, instance, rotation !== undefined ? rotation : this.rotation, this.genome)
-    }
-
-    public createGotchiFromGenome(instance: FabricInstance, genome: Genome, rotation?: number): Gotchi | undefined {
-        return this.gotchiFactory(this, instance, rotation !== undefined ? rotation : this.rotation, genome)
+    public createGotchi(instance: FabricInstance, genome?: Genome): Gotchi | undefined {
+        return this.createGotchiFunction(this, instance, this.rotation, genome ? genome : this.genome)
     }
 
     public get rotation(): number {

@@ -92,7 +92,7 @@ function floatArray(copyFunction: (array: Float32Array) => void, length: () => n
     return array
 }
 
-export type InstanceFactory = () => FabricInstance
+export type CreateInstance = () => FabricInstance
 
 export class FabricInstance {
     public fabric: Fabric

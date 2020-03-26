@@ -8,23 +8,23 @@ import { useMemo, useState } from "react"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 
-import { InstanceFactory } from "../fabric/fabric-instance"
+import { CreateInstance } from "../fabric/fabric-instance"
 
 import { Evolution } from "./evolution"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
 
-export function GotchiView({island, instanceFactory}: {
+export function GotchiView({island, createInstance}: {
     island: Island,
-    instanceFactory: InstanceFactory,
+    createInstance: CreateInstance,
 }): JSX.Element {
 
-    const gotchi = useMemo(() => island.hexalots[0].createNativeGotchi(instanceFactory()), [])
+    const gotchi = useMemo(() => island.hexalots[0].createGotchi(createInstance()), [])
     const [evolution, updateEvolution] = useState<Evolution | undefined>(undefined)
 
     const onClickEvolve = () => {
         if (gotchi) {
-            const evo = new Evolution(gotchi.hexalot, instanceFactory)
+            const evo = new Evolution(createInstance, gotchi)
             console.log("Evolving gotchis", evo.evolvers.length)
             updateEvolution(evo)
         }

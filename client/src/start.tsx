@@ -13,7 +13,7 @@ import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
 import { FabricInstance } from "./fabric/fabric-instance"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
-import { Gotchi, GotchiFactory } from "./gotchi/gotchi"
+import { CreateGotchi, Gotchi } from "./gotchi/gotchi"
 import { GotchiView } from "./gotchi/gotchi-view"
 import { Island } from "./gotchi/island"
 import { IIslandData } from "./gotchi/island-logic"
@@ -31,9 +31,9 @@ const ISLAND_DATA: IIslandData = {
 
 export async function startReact(eig: typeof import("eig"), world: typeof import("eig").World): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
-    const instanceFactory = () => new FabricInstance(eig, 200, world)
+    const createInstance = () => new FabricInstance(eig, 200, world)
     if (GOTCHI) {
-        const gotchiFactory: GotchiFactory = (hexalot, instance, rotation, genome) => {
+        const createGotchi: CreateGotchi = (hexalot, instance, rotation, genome) => {
             const numericFeature = (feature: FabricFeature) => {
                 const defaultValue = eig.default_fabric_feature(feature)
                 switch (feature) {
@@ -65,11 +65,11 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             console.log("new gotchi, genome:", genome.toString())
             return new Gotchi(hexalot, genome, tensegrity, hexalot.firstLeg)
         }
-        const island = new Island(ISLAND_DATA, gotchiFactory)
+        const island = new Island(ISLAND_DATA, createGotchi)
         ReactDOM.render(
             <GotchiView
                 island={island}
-                instanceFactory={instanceFactory}
+                createInstance={createInstance}
             />, root)
     } else {
         const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_fabric_feature))
@@ -78,7 +78,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
         ReactDOM.render(
             <TensegrityView
                 eig={eig}
-                instanceFactory={instanceFactory}
+                createInstance={createInstance}
                 floatFeatures={floatFeatures}
                 storedState$={storedState$}
             />, root)

@@ -5,7 +5,7 @@
 
 import { Vector3 } from "three"
 
-import { GotchiFactory } from "./gotchi"
+import { CreateGotchi } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import {
     equals,
@@ -26,7 +26,7 @@ export class Island implements IIsland {
     public hexalots: Hexalot[] = []
     public vacantHexalot?: Hexalot
 
-    constructor(islandData: IIslandData, public readonly gotchiFactory: GotchiFactory) {
+    constructor(islandData: IIslandData, public readonly createGotchi: CreateGotchi) {
         fillIsland(islandData, this)
         this.name = islandData.name
     }
@@ -55,7 +55,7 @@ export class Island implements IIsland {
             return existing
         }
         const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
-        const hexalot = new Hexalot(parent, coords, spots, this.gotchiFactory)
+        const hexalot = new Hexalot(parent, coords, spots, this.createGotchi)
         this.hexalots.push(hexalot)
         return hexalot
     }
