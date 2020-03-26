@@ -76,11 +76,11 @@ export function roleLengthFeature(intervalRole: IntervalRole): FabricFeature {
     }
 }
 
-export function roleDefaultFromFeatures(featureValues: Record<FabricFeature, IFeatureValue>, intervalRole: IntervalRole): number {
+export function roleDefaultFromFeatures(featureNumeric: (feature: FabricFeature) => number, intervalRole: IntervalRole): number {
     if (intervalRole === IntervalRole.FaceConnector || intervalRole === IntervalRole.FaceDistancer) {
         throw new Error()
     }
-    return featureValues[roleLengthFeature(intervalRole)].numeric
+    return featureNumeric(roleLengthFeature(intervalRole))
 }
 
 export function transition(state: IStoredState, partial: Partial<IStoredState>): IStoredState {

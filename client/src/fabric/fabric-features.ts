@@ -163,6 +163,18 @@ export function featureConfig(feature: FabricFeature): IFeatureConfig {
                 name: "Maximum Stiffness",
                 percents: [5, 25, 50, 100, 150, 200, 500],
             }
+        case FabricFeature.StiffnessFactor:
+            return {
+                feature,
+                name: "Stiffness Factor",
+                percents: [5, 25, 50, 100, 150, 200, 500],
+            }
+        case FabricFeature.Antigravity:
+            return {
+                feature,
+                name: "Antigravity",
+                percents: [5, 25, 50, 100, 150, 200, 500],
+            }
         default:
             throw new Error("Feature?")
     }

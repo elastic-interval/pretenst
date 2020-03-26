@@ -131,10 +131,6 @@ impl Fabric {
         }
     }
 
-    pub fn is_face_joint_submerged(&self, face_index: usize) -> bool {
-        self.faces[face_index].is_submerged(&self.joints)
-    }
-
     pub fn twitch_face(
         &mut self,
         face_index: usize,
@@ -150,8 +146,8 @@ impl Fabric {
         )
     }
 
-    pub fn grasp_face(&mut self, face_index: usize, countdown: u16) -> bool {
-        self.faces[face_index].grasp(&mut self.joints, countdown)
+    pub fn grasp_face(&mut self, face_index: usize, countdown: u16) {
+        self.faces[face_index].grasp(&mut self.joints, countdown);
     }
 
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
@@ -318,18 +314,36 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0_f32, world.shaping_drag, false)
+                    joint.velocity_physics(
+                        world,
+                        0_f32,
+                        world.shaping_drag,
+                        world.antigravity,
+                        false,
+                    )
                 }
             }
             Stage::Realizing => {
                 let nuanced_gravity = world.gravity * realizing_nuance;
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, nuanced_gravity, world.drag, true)
+                    joint.velocity_physics(
+                        world,
+                        nuanced_gravity,
+                        world.drag,
+                        world.antigravity,
+                        true,
+                    )
                 }
             }
             Stage::Realized => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, world.drag, true)
+                    joint.velocity_physics(
+                        world,
+                        world.gravity,
+                        world.drag,
+                        world.antigravity,
+                        true,
+                    )
                 }
             }
             _ => {}

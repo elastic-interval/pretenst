@@ -9,7 +9,6 @@ use crate::world::World;
 use nalgebra::*;
 
 const RESURFACE: f32 = 0.01;
-const ANTIGRAVITY: f32 = -0.001;
 
 #[derive(Clone, Copy)]
 pub struct Joint {
@@ -36,6 +35,7 @@ impl Joint {
         world: &World,
         gravity_above: f32,
         drag_above: f32,
+        antigravity: f32,
         active_surface: bool,
     ) {
         let altitude = self.location.y;
@@ -45,30 +45,32 @@ impl Joint {
             }
             self.velocity += &self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag_above;
-        } else if self.grasp_countdown > 0 {
-            self.velocity = zero();
-            self.location.y = -RESURFACE;
-            self.grasp_countdown -= 1;
         } else {
-            self.velocity += &self.force / self.interval_mass;
-            let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
-            let degree_cushioned: f32 = 1_f32 - degree_submerged;
-            match world.surface_character {
-                SurfaceCharacter::Frozen => {
-                    self.velocity = zero();
-                    self.location.y = -RESURFACE;
-                }
-                SurfaceCharacter::Sticky => {
-                    self.velocity *= degree_cushioned;
-                    self.velocity.y = degree_submerged * RESURFACE;
-                }
-                SurfaceCharacter::Slippery => {
-                    self.location.coords.fill(0_f32);
-                    self.velocity = zero();
-                }
-                SurfaceCharacter::Bouncy => {
-                    self.velocity *= degree_cushioned;
-                    self.velocity.y -= ANTIGRAVITY * degree_submerged;
+            if self.grasp_countdown > 0 {
+                self.velocity = zero();
+                self.location.y = -RESURFACE;
+                self.grasp_countdown -= 1;
+            } else {
+                self.velocity += &self.force / self.interval_mass;
+                let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
+                let degree_cushioned: f32 = 1_f32 - degree_submerged;
+                match world.surface_character {
+                    SurfaceCharacter::Frozen => {
+                        self.velocity = zero();
+                        self.location.y = -RESURFACE;
+                    }
+                    SurfaceCharacter::Sticky => {
+                        self.velocity *= degree_cushioned;
+                        self.velocity.y = degree_submerged * RESURFACE;
+                    }
+                    SurfaceCharacter::Slippery => {
+                        self.location.coords.fill(0_f32);
+                        self.velocity = zero();
+                    }
+                    SurfaceCharacter::Bouncy => {
+                        self.velocity *= degree_cushioned;
+                        self.velocity.y += antigravity * degree_submerged;
+                    }
                 }
             }
         }
@@ -97,7 +99,7 @@ fn joint_physics() {
     joint.force.fill(1_f32);
     joint.velocity.fill(1_f32);
     joint.interval_mass = 1_f32;
-    joint.velocity_physics(&world, world.gravity, world.drag, true);
+    joint.velocity_physics(&world, world.gravity, world.drag, world.antigravit, true);
     joint.location_physics();
     let vy_after = (1_f32 - world.gravity + 1_f32) * (1_f32 - world.drag);
     assert_eq!(joint.velocity.y, vy_after);

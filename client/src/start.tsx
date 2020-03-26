@@ -8,6 +8,7 @@ import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
 
+import { FABRIC_FEATURES } from "./fabric/eig-util"
 import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
 import { FabricInstance } from "./fabric/fabric-instance"
 import { codeToTenscript } from "./fabric/tenscript"
@@ -30,14 +31,28 @@ const ISLAND_DATA: IIslandData = {
 
 export async function startReact(eig: typeof import("eig"), world: typeof import("eig").World): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
-    const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_fabric_feature))
-    storedState$.subscribe(newState => saveState(newState))
-    const floatFeatures = createFloatFeatures(storedState$, eig.default_fabric_feature)
     const instanceFactory = () => new FabricInstance(eig, 200, world)
     if (GOTCHI) {
         const gotchiFactory: GotchiFactory = (hexalot, instance, rotation, genome) => {
-            const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(floatFeatures, role)
-            const numericFeature = (feature: FabricFeature) => storedState$.getValue().featureValues[feature].numeric
+            const numericFeature = (feature: FabricFeature) => {
+                const defaultValue = eig.default_fabric_feature(feature)
+                switch (feature) {
+                    case FabricFeature.Gravity:
+                        return defaultValue
+                    case FabricFeature.Drag:
+                        return defaultValue * 2
+                    case FabricFeature.ShapingStiffnessFactor:
+                        return defaultValue * 5
+                    case FabricFeature.IntervalCountdown:
+                        return defaultValue * 0.1
+                    case FabricFeature.StiffnessFactor:
+                        return defaultValue * 2
+                    default:
+                        return defaultValue
+                }
+            }
+            FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
+            const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
             const tenscript = codeToTenscript((error: string) => {
                 throw new Error(`Unable to compile: ${error}`)
             }, false, BODY)
@@ -55,9 +70,11 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             <GotchiView
                 island={island}
                 instanceFactory={instanceFactory}
-                floatFeatures={floatFeatures}
             />, root)
     } else {
+        const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_fabric_feature))
+        storedState$.subscribe(newState => saveState(newState))
+        const floatFeatures = createFloatFeatures(storedState$, eig.default_fabric_feature)
         ReactDOM.render(
             <TensegrityView
                 eig={eig}

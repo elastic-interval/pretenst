@@ -120,7 +120,7 @@ impl Interval {
         {
             self.strain = 0_f32;
         }
-        let mut force = self.strain * self.stiffness;
+        let mut force = self.strain * self.stiffness * world.stiffness_factor;
         if stage <= Stage::Slack {
             force *= world.shaping_stiffness_factor;
         }

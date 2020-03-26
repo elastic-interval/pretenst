@@ -3,39 +3,24 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature } from "eig"
 import * as React from "react"
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 
-import { FloatFeature } from "../fabric/fabric-features"
 import { InstanceFactory } from "../fabric/fabric-instance"
-import { IFeatureValue } from "../storage/stored-state"
 
 import { Evolution } from "./evolution"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
 
-export function GotchiView({island, instanceFactory, floatFeatures}: {
+export function GotchiView({island, instanceFactory}: {
     island: Island,
     instanceFactory: InstanceFactory,
-    floatFeatures: Record<FabricFeature, FloatFeature>,
 }): JSX.Element {
 
     const gotchi = useMemo(() => island.hexalots[0].createNativeGotchi(instanceFactory()), [])
     const [evolution, updateEvolution] = useState<Evolution | undefined>(undefined)
-
-    useEffect(() => {
-        const featureSubscriptions = Object.keys(floatFeatures).map(k => floatFeatures[k]).map((feature: FloatFeature) =>
-            feature.observable.subscribe((value: IFeatureValue) => {
-                if (!gotchi) {
-                    return
-                }
-                gotchi.instance.applyFeature(feature)
-            }))
-        return () => featureSubscriptions.forEach(sub => sub.unsubscribe())
-    }, [gotchi, evolution])
 
     const onClickEvolve = () => {
         if (gotchi) {

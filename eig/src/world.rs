@@ -36,6 +36,8 @@ pub struct World {
     pub(crate) pull_radius: f32,
     pub(crate) joint_radius: f32,
     pub(crate) max_stiffness: f32,
+    pub(crate) stiffness_factor: f32,
+    pub(crate) antigravity: f32,
 }
 
 #[wasm_bindgen]
@@ -70,6 +72,8 @@ impl World {
             pull_radius: default_fabric_feature(FabricFeature::PullRadius),
             joint_radius: default_fabric_feature(FabricFeature::JointRadius),
             max_stiffness: default_fabric_feature(FabricFeature::MaxStiffness),
+            stiffness_factor: default_fabric_feature(FabricFeature::StiffnessFactor),
+            antigravity: default_fabric_feature(FabricFeature::Antigravity),
         }
     }
 
@@ -112,6 +116,8 @@ impl World {
             FabricFeature::PullRadius => &mut self.pull_radius,
             FabricFeature::JointRadius => &mut self.joint_radius,
             FabricFeature::MaxStiffness => &mut self.max_stiffness,
+            FabricFeature::StiffnessFactor => &mut self.stiffness_factor,
+            FabricFeature::Antigravity => &mut self.antigravity,
         };
         *value_pointer = value;
         value

@@ -16,8 +16,8 @@ import { Leg } from "./journey"
 import { TimeCycle } from "./time-cycle"
 
 const MAX_VOTES = 30
-const GRASP_COUNT = 3
-const TWITCH_COUNT = 6
+const GRASP_COUNT = 5
+const TWITCH_COUNT = 8
 
 export enum Direction {
     Rest = "Rest",
@@ -28,13 +28,13 @@ export enum Direction {
 
 export const DIRECTIONS = Object.keys(Direction).map(k => Direction[k])
 
-export interface ISensor {
+export interface IExtremity {
     index: number
     name: string
     limb: Limb
 }
 
-export interface IActuator {
+export interface IMuscle {
     index: number
     name: string
     limb: Limb
@@ -55,8 +55,8 @@ export class Gotchi {
     public readonly instance: FabricInstance
 
     private embryo?: Tensegrity
-    private actuators: IActuator[] = []
-    private sensors: ISensor[] = []
+    private muscles: IMuscle[] = []
+    private extremities: IExtremity[] = []
     private votes: Direction[] = []
     private _direction = Direction.Rest
     private _nextDirection = Direction.Rest
@@ -77,19 +77,19 @@ export class Gotchi {
         this.currentLeg = leg
     }
 
-    public getActuator(whichLimb: Limb): IActuator {
-        const actuator = this.actuators.find(({limb}) => limb === whichLimb)
-        if (!actuator) {
-            throw new Error("No actuator found")
+    public getExtremity(whichLimb: Limb): IExtremity {
+        const extremity = this.extremities.find(({limb}) => limb === whichLimb)
+        if (!extremity) {
+            throw new Error("No extremity found")
         }
-        return actuator
+        return extremity
     }
 
     public actuate(limb: Limb, triangle: Triangle): void {
         const attackDecay = 10000
-        this.actuators
-            .filter(actuator => actuator.limb === limb && actuator.triangle === triangle)
-            .forEach(actuator => this.fabric.twitch_face(actuator.index, 0.5, attackDecay, attackDecay))
+        this.muscles
+            .filter(muscle => muscle.limb === limb && muscle.triangle === triangle)
+            .forEach(muscle => this.fabric.twitch_face(muscle.index, 0.5, attackDecay, attackDecay))
     }
 
     public recycle(): void {
@@ -155,11 +155,11 @@ export class Gotchi {
                 case Stage.Realizing:
                     break
                 case Stage.Realized:
-                    extractGotchiFaces(embryo, this.actuators, this.sensors)
+                    extractGotchiFaces(embryo, this.muscles, this.extremities)
                     this.embryo = undefined
                     Object.keys(Direction).forEach(direction => {
                         const reader = this.genome.createReader(Direction[direction])
-                        const faceCount = this.actuators.length
+                        const faceCount = this.muscles.length
                         this.twitchCycle[direction] = new TimeCycle(reader, faceCount, GRASP_COUNT, TWITCH_COUNT)
                     })
                     console.log("Realized!", this.genome.genomeData)
@@ -273,7 +273,7 @@ export class Gotchi {
     }
 }
 
-function extractGotchiFaces(tensegrity: Tensegrity, actutors: IActuator[], sensors: ISensor[]): void {
+function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {
     tensegrity.faces.filter(face => !face.removed && face.brick.parent).forEach(face => {
         const ancestorTriangles = (f: IFace, t: Triangle[]) => {
             const p = f.brick.parent
@@ -288,24 +288,24 @@ function extractGotchiFaces(tensegrity: Tensegrity, actutors: IActuator[], senso
         }
         const triangles = ancestorTriangles(face, [])
         const lastIndex = triangles.length - 1
-        const sensor = triangles[lastIndex] === Triangle.PPP
         const limb = limbFromTriangle(triangles[0])
         const distance = lastIndex
         const triangle = triangles[lastIndex]
+        const isExtremity = isTriangleExtremity(triangle)
         const index = face.index
-        const name = sensor ? `[${limb}]` : `[${limb}]:[${lastIndex}:${triangle}]`
-        if (isSensor(face)) {
-            sensors.push({index, name, limb})
+        const name = isExtremity ? `[${limb}]` : `[${limb}]:[${lastIndex}:${triangle}]`
+        if (isExtremity) {
+            extremities.push({index, name, limb})
         } else {
-            actutors.push({index, name, limb, distance, triangle})
+            muscles.push({index, name, limb, distance, triangle})
         }
     })
 }
 
-function isSensor(face: IFace): boolean {
-    const definition = TRIANGLE_DEFINITIONS[face.triangle]
-    const triangle = definition.negative ? definition.opposite : face.triangle
-    return triangle === Triangle.PPP
+function isTriangleExtremity(triangle: Triangle): boolean {
+    const definition = TRIANGLE_DEFINITIONS[triangle]
+    const normalizedTriangle = definition.negative ? definition.opposite : triangle
+    return normalizedTriangle === Triangle.PPP
 }
 
 function limbFromTriangle(triangle: Triangle): Limb {

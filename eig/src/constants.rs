@@ -86,6 +86,8 @@ pub enum FabricFeature {
     PullRadius,
     JointRadius,
     MaxStiffness,
+    StiffnessFactor,
+    Antigravity,
 }
 
 const ROOT2: f32 = 1.414213562373095_f32;
@@ -131,6 +133,8 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::PullRadius => 0.5_f32,
         FabricFeature::JointRadius => 1.5_f32,
         FabricFeature::MaxStiffness => 0.0005_f32,
+        FabricFeature::StiffnessFactor => 1_f32,
+        FabricFeature::Antigravity => 0.0001_f32,
     }
 }
 

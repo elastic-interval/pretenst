@@ -2,10 +2,12 @@
  * Copyright (c) 2020. Beautiful Code BV, Rotterdam, Netherlands
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
+use nalgebra::*;
+
+use crate::constants::*;
 use crate::interval::Interval;
 use crate::joint::Joint;
 use crate::view::View;
-use nalgebra::*;
 
 #[derive(Clone, Copy)]
 pub struct Face {
@@ -69,24 +71,10 @@ impl Face {
         }
     }
 
-    pub fn is_submerged(&self, joints: &Vec<Joint>) -> bool {
-        for index in 0..3 {
-            let location = &joints[self.joints[index] as usize].location;
-            if location.y < 0_f32 {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    pub fn grasp(&self, joints: &mut Vec<Joint>, countdown: u16) -> bool {
-        if !self.is_submerged(joints) {
-            return false;
-        }
+    pub fn grasp(&self, joints: &mut Vec<Joint>, countdown: u16) {
         for index in 0..3 {
             joints[self.joints[index] as usize].grasp_countdown = countdown;
         }
-        return false;
     }
 
     pub fn twitch(
