@@ -77,7 +77,6 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
     const camera = useRef()
 
     function ScaleView(): JSX.Element {
-        const [age, updateAge] = useState(0)
         const [maxStrain, updateMaxStrain] = useState(storedState$.getValue().featureValues[FabricFeature.MaxStrain].numeric)
         const [maxStiffness, updateMaxStiffness] = useState(storedState$.getValue().featureValues[FabricFeature.MaxStiffness].numeric)
 
@@ -88,16 +87,6 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
             })
             return () => sub.unsubscribe()
         }, [tensegrity])
-
-        useEffect(() => {
-            const timer = setInterval(() => {
-                const fabricAge = tensegrity.fabric.age
-                if (age < fabricAge) {
-                    updateAge(fabricAge) // to trigger repaint. better way?
-                }
-            }, 1000)
-            return () => clearTimeout(timer)
-        }, [])
 
         const instance = tensegrity.instance
 
