@@ -16,10 +16,9 @@ import { IslandView } from "./island-view"
 
 const EVOLUTION_PARAMETERS: IEvolutionParameters = {
     maxPopulation: 10,
-    minLifespan: 20000,
-    maxLifespan: 60000,
-    incrementLifespan: 10000,
-    mutationCount: 3,
+    minCycleCount: 3,
+    maxCycleCount: 7,
+    mutationCount: 4,
     survivalRate: 0.5,
 }
 

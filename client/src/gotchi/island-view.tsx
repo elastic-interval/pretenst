@@ -8,11 +8,9 @@ import { useMemo, useState } from "react"
 import { useRender, useThree, useUpdate } from "react-three-fiber"
 import {
     BufferGeometry,
-    Color,
     FaceColors,
     Float32BufferAttribute,
     Geometry,
-    LineBasicMaterial,
     MeshPhongMaterial,
     PerspectiveCamera,
     Vector3,
@@ -25,16 +23,7 @@ import { Evolution } from "./evolution"
 import { Gotchi } from "./gotchi"
 import { Hexalot } from "./hexalot"
 import { Island } from "./island"
-import {
-    ALTITUDE,
-    HEMISPHERE_COLOR,
-    INNER_HEXALOT_SPOTS,
-    OUTER_HEXALOT_SIDE,
-    POINTER_TOP,
-    SPACE_RADIUS,
-    SPACE_SCALE,
-    SUN_POSITION,
-} from "./island-logic"
+import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-logic"
 import { Journey } from "./journey"
 import { Spot } from "./spot"
 
@@ -72,59 +61,6 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
         return geometry
     }, [])
 
-    function selectedSpotGeometry(): Geometry | undefined {
-        const geometry = new Geometry()
-        if (selectedSpot) {
-            const center = selectedSpot.center
-            geometry.vertices = [center, new Vector3().addVectors(center, POINTER_TOP)]
-            geometry.computeBoundingSphere()
-        }
-        return geometry
-    }
-
-    function homeHexalotGeometry(): Geometry | undefined {
-        const geometry = new Geometry()
-        if (homeHexalot) {
-            homeHexalot.spots.forEach((spot: Spot, index: number) => {
-                const outerIndex = index - INNER_HEXALOT_SPOTS
-                if (outerIndex < 0) {
-                    return
-                }
-                spot.addRaisedHexagonParts(geometry.vertices, HEXALOT_OUTLINE_HEIGHT, outerIndex, OUTER_HEXALOT_SIDE)
-            })
-            homeHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
-            geometry.computeBoundingSphere()
-        }
-        return geometry
-    }
-
-    function availableSpotsGeometry(): Geometry | undefined {
-        const geometry = new Geometry()
-        const vacantHexalot = island.vacantHexalot
-        if (vacantHexalot) {
-            island.spots.filter((spot: Spot) => spot.isCandidateHexalot(vacantHexalot)).forEach((spot: Spot) => {
-                spot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
-            })
-        }
-        return geometry
-    }
-
-    function vacantHexalotsGeometry(): Geometry | undefined {
-        const geometry = new Geometry()
-        const vacantHexalot = island.vacantHexalot
-        if (vacantHexalot) {
-            vacantHexalot.centerSpot.addRaisedHexagon(geometry.vertices, HEXALOT_OUTLINE_HEIGHT)
-            vacantHexalot.spots.forEach((spot: Spot, index: number) => {
-                const outerIndex = index - INNER_HEXALOT_SPOTS
-                if (outerIndex < 0) {
-                    return
-                }
-                spot.addRaisedHexagonParts(geometry.vertices, HEXALOT_OUTLINE_HEIGHT, outerIndex, OUTER_HEXALOT_SIDE)
-            })
-        }
-        return geometry
-    }
-
     const orbit = useUpdate<Orbit>(orb => {
         const midpoint = new Vector3(0, 0, 0)
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
@@ -150,14 +86,6 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
             <scene>
                 <mesh name="Spots" geometry={spots} material={ISLAND}/>
                 {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
-                {!homeHexalot ? undefined : (
-                    <lineSegments key="HomeHexalot" geometry={homeHexalotGeometry()} material={HOME_HEXALOT}/>
-                )}
-                {!selectedSpot ? undefined : (
-                    <lineSegments key="Pointer" geometry={selectedSpotGeometry()} material={SELECTED_POINTER}/>
-                )}
-                <lineSegments key="Available" geometry={availableSpotsGeometry()} material={AVAILABLE_HEXALOT}/>
-                <lineSegments key="Free" geometry={vacantHexalotsGeometry()} material={AVAILABLE_HEXALOT}/>
                 {!evolution ? (
                     !gotchi ? undefined : <GotchiComponent gotchi={gotchi}/>
                 ) : (
@@ -170,11 +98,7 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
     )
 }
 
-const HEXALOT_OUTLINE_HEIGHT = 0.3
 const ISLAND = new MeshPhongMaterial({vertexColors: FaceColors, lights: true})
-const HOME_HEXALOT = new LineBasicMaterial({color: new Color("white")})
-const SELECTED_POINTER = new LineBasicMaterial({color: new Color("yellow")})
-const AVAILABLE_HEXALOT = new LineBasicMaterial({color: new Color("green")})
 
 function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
     return (
@@ -196,13 +120,18 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
 }
 
 function EvolutionComponent({evolution}: { evolution: Evolution }): JSX.Element {
+    // <lineSegments
+    //     key={`evolving-gotchi-${index}`}
+    //     geometry={gotchi.linesGeometry}
+    //     material={LINE_VERTEX_COLORS}
+    // />
     return (
         <group>
             {evolution.evolvers.map(({gotchi, index}) => (
-                <lineSegments
+                <mesh
                     key={`evolving-gotchi-${index}`}
-                    geometry={gotchi.linesGeometry}
-                    material={LINE_VERTEX_COLORS}
+                    geometry={gotchi.facesGeometry}
+                    material={FACE}
                 />
             ))}
         </group>

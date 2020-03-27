@@ -375,8 +375,6 @@ export const KINDA = 0.866
 export const SURFACE_SCALE = 20
 export const SCALE_X = SURFACE_SCALE * KINDA
 export const SCALE_Y = SURFACE_SCALE * 1.5
-export const INNER_HEXALOT_SPOTS = 91
-export const OUTER_HEXALOT_SIDE = 6
 
 export const HEXAGON_POINTS = [
     new Vector3(0, 0, -SURFACE_SCALE),
@@ -394,7 +392,6 @@ export const UP = new Vector3(0, 1, 0)
 export const LAND_NORMAL_SPREAD = 0.03
 export const WATER_NORMAL_SPREAD = -0.02
 export const SUN_POSITION = new Vector3(0, 500, 0)
-export const POINTER_TOP = new Vector3(0, 120, 0)
 export const HEMISPHERE_COLOR = new Color("#fff1d1")
 export const ALTITUDE = 2
 export const SPACE_RADIUS = 10000

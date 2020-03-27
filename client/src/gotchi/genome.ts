@@ -73,7 +73,6 @@ export class Genome {
                 const geneNumber = Math.floor(Math.random() * geneToMutate.dice.length)
                 geneToMutate.dice[geneNumber] = this.roll()
                 geneToMutate.mutationCount++
-                console.log("mutation", geneToMutate.mutationCount, direction, geneNumber, geneToMutate.dice[geneNumber].symbol)
             }
         }
         return new Genome(genesCopy, this.roll)

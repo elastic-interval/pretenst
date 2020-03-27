@@ -61,11 +61,12 @@ export type CreateGotchi = (hexalot: Hexalot, rotation: number, seed: IGotchiSee
 
 export class Gotchi {
     public instance: FabricInstance
+    public genome: Genome
     public muscles: IMuscle[] = []
     public extremities: IExtremity[] = []
+    public cycleCount = 0
 
     private embryo?: Tensegrity
-    private genome: Genome
     private votes: Direction[] = []
     private _direction = Direction.Rest
     private _nextDirection = Direction.Rest
@@ -73,7 +74,7 @@ export class Gotchi {
     private shapingTime = 60
     private twitchCycle: Record<string, TimeCycle> = {}
     private timeSlice = 0
-    private timeSliceIterations = 0
+    private timeCycles = 0
 
     constructor(public readonly hexalot: Hexalot, leg: Leg, seed: IGotchiSeed) {
         if (!seed.instance) {
@@ -101,10 +102,6 @@ export class Gotchi {
             throw new Error("No extremity found")
         }
         return extremity
-    }
-
-    public get genomeData(): IGenomeData {
-        return this.genome.genomeData
     }
 
     public mutatedGenome(mutationCount: number): IGenomeData {
@@ -144,28 +141,34 @@ export class Gotchi {
         const embryo = this.embryo
         if (!embryo) {
             this.instance.iterate(Stage.Realized)
-            const nextSliceIterations = this.timeSliceIterations + 1
-            this.timeSliceIterations = nextSliceIterations >= 3 ? 0 : nextSliceIterations
-            if (this.timeSliceIterations === 0) {
-                const twitchCycle = this.twitchCycle[Direction.Forward]
-                if (twitchCycle) {
-                    twitchCycle.activate(
-                        this.timeSlice,
-                        (limb: Limb, howLong: number) => {
-                            const whichFace = this.getExtremity(limb).index
-                            // console.log(`grasp ${whichFace}: ${howLong}`)
-                            this.instance.fabric.grasp_face(whichFace, howLong)
-
-                        },
-                        (face: number, attack: number, decay: number) => {
-                            // console.log(`twitch ${whichFace}: ${attack}, ${decay}`)
-                            this.instance.fabric.twitch_face(face, 0.5, attack, decay)
-                        },
-                    )
-                }
-                const nextSlice = this.timeSlice + 1
-                this.timeSlice = nextSlice >= 36 ? 0 : nextSlice
+            const twitchCycle = this.twitchCycle[this.direction]
+            if (!twitchCycle) {
+                return
             }
+            this.timeCycles++
+            if (this.timeCycles < 7) {
+                return
+            }
+            this.timeCycles = 0
+            this.timeSlice++
+            if (this.timeSlice >= 36) {
+                this.timeSlice = 0
+                this.cycleCount++
+                console.log("cycle count", this.cycleCount)
+            }
+            twitchCycle.activate(
+                this.timeSlice,
+                (limb: Limb, howLong: number) => {
+                    const whichFace = this.getExtremity(limb).index
+                    // console.log(`grasp ${whichFace}: ${howLong}`)
+                    this.instance.fabric.grasp_face(whichFace, howLong)
+
+                },
+                (face: number, attack: number, decay: number) => {
+                    // console.log(`twitch ${whichFace}: ${attack}, ${decay}`)
+                    this.instance.fabric.twitch_face(face, 0.5, attack, decay)
+                },
+            )
         } else {
             const stage = embryo.iterate()
             switch (stage) {
