@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Fabric, Stage } from "eig"
+import { Stage } from "eig"
 import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
@@ -49,32 +49,50 @@ export enum Limb {
     BackRight = "back-right",
 }
 
-export type CreateGotchi = (hexalot: Hexalot, instance: FabricInstance, rotation: number, genome: Genome) => Gotchi
+export interface IGotchiSeed {
+    instance: object
+    genome?: Genome
+    embryo?: Tensegrity
+    muscles: IMuscle[]
+    extremities: IExtremity[]
+}
+
+export type CreateGotchi = (hexalot: Hexalot, rotation: number, seed: IGotchiSeed) => Gotchi
 
 export class Gotchi {
-    public readonly instance: FabricInstance
+    public instance: FabricInstance
+    public muscles: IMuscle[] = []
+    public extremities: IExtremity[] = []
 
     private embryo?: Tensegrity
-    private muscles: IMuscle[] = []
-    private extremities: IExtremity[] = []
+    private genome: Genome
     private votes: Direction[] = []
     private _direction = Direction.Rest
     private _nextDirection = Direction.Rest
     private currentLeg: Leg
-    private shapingTime = 100
+    private shapingTime = 60
     private twitchCycle: Record<string, TimeCycle> = {}
     private timeSlice = 0
     private timeSliceIterations = 0
 
-    constructor(
-        public readonly hexalot: Hexalot,
-        private genome: Genome,
-        tensegrity: Tensegrity,
-        leg: Leg,
-    ) {
-        this.embryo = tensegrity
-        this.instance = tensegrity.instance
+    constructor(public readonly hexalot: Hexalot, leg: Leg, seed: IGotchiSeed) {
+        if (!seed.instance) {
+            throw new Error("Missing instance")
+        }
+        if (!seed.genome) {
+            throw new Error("Missing genome")
+        }
+        this.instance = seed.instance as FabricInstance
+        this.genome = seed.genome
         this.currentLeg = leg
+        this.embryo = seed.embryo
+        this.muscles = seed.muscles
+        this.extremities = seed.extremities
+        this.genomeToTwitchCycle(this.genome)
+    }
+
+    public get isMature(): boolean {
+        return !this.embryo
     }
 
     public getExtremity(whichLimb: Limb): IExtremity {
@@ -83,17 +101,6 @@ export class Gotchi {
             throw new Error("No extremity found")
         }
         return extremity
-    }
-
-    public actuate(limb: Limb, triangle: Triangle): void {
-        const attackDecay = 10000
-        this.muscles
-            .filter(muscle => muscle.limb === limb && muscle.triangle === triangle)
-            .forEach(muscle => this.fabric.twitch_face(muscle.index, 0.5, attackDecay, attackDecay))
-    }
-
-    public recycle(): void {
-        console.error("recycle?")
     }
 
     public get genomeData(): IGenomeData {
@@ -108,7 +115,7 @@ export class Gotchi {
     }
 
     public get age(): number {
-        return this.fabric.age
+        return this.instance.fabric.age
     }
 
     public get direction(): Direction {
@@ -123,6 +130,16 @@ export class Gotchi {
         this._nextDirection = direction
     }
 
+    public get leg(): Leg {
+        return this.currentLeg
+    }
+
+    public set leg(leg: Leg) {
+        this.currentLeg = leg
+        this.votes = []
+        this._nextDirection = this.voteDirection()
+    }
+
     public iterate(): void {
         const embryo = this.embryo
         if (!embryo) {
@@ -130,7 +147,22 @@ export class Gotchi {
             const nextSliceIterations = this.timeSliceIterations + 1
             this.timeSliceIterations = nextSliceIterations >= 3 ? 0 : nextSliceIterations
             if (this.timeSliceIterations === 0) {
-                this.twitchCycle[Direction.Forward].activate(this.timeSlice, this)
+                const twitchCycle = this.twitchCycle[Direction.Forward]
+                if (twitchCycle) {
+                    twitchCycle.activate(
+                        this.timeSlice,
+                        (limb: Limb, howLong: number) => {
+                            const whichFace = this.getExtremity(limb).index
+                            // console.log(`grasp ${whichFace}: ${howLong}`)
+                            this.instance.fabric.grasp_face(whichFace, howLong)
+
+                        },
+                        (face: number, attack: number, decay: number) => {
+                            // console.log(`twitch ${whichFace}: ${attack}, ${decay}`)
+                            this.instance.fabric.twitch_face(face, 0.5, attack, decay)
+                        },
+                    )
+                }
                 const nextSlice = this.timeSlice + 1
                 this.timeSlice = nextSlice >= 36 ? 0 : nextSlice
             }
@@ -139,7 +171,7 @@ export class Gotchi {
             switch (stage) {
                 case Stage.Shaping:
                     if (this.shapingTime <= 0) {
-                        this.fabric.adopt_lengths()
+                        this.instance.fabric.adopt_lengths()
                         const faceIntervals = [...embryo.faceIntervals]
                         faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
                         this.instance.iterate(Stage.Slack)
@@ -149,33 +181,13 @@ export class Gotchi {
                         // console.log("shaping", this.shapingTime)
                     }
                     break
-                case Stage.Slack:
-                    console.error("slack?")
-                    break
-                case Stage.Realizing:
-                    break
                 case Stage.Realized:
                     extractGotchiFaces(embryo, this.muscles, this.extremities)
                     this.embryo = undefined
-                    Object.keys(Direction).forEach(direction => {
-                        const reader = this.genome.createReader(Direction[direction])
-                        const faceCount = this.muscles.length
-                        this.twitchCycle[direction] = new TimeCycle(reader, faceCount, GRASP_COUNT, TWITCH_COUNT)
-                    })
-                    console.log("Realized!", this.genome.genomeData)
+                    this.genomeToTwitchCycle(this.genome)
                     break
             }
         }
-    }
-
-    public get leg(): Leg {
-        return this.currentLeg
-    }
-
-    public set leg(leg: Leg) {
-        this.currentLeg = leg
-        this.votes = []
-        this._nextDirection = this.voteDirection()
     }
 
     public reorient(): void {
@@ -216,18 +228,25 @@ export class Gotchi {
         return geometry
     }
 
-    public get fabric(): Fabric {
-        return this.instance.fabric
+    public get midpoint(): Vector3 {
+        const view = this.instance.view
+        return new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
     }
 
     public get target(): Vector3 {
         return this.currentLeg.goTo.center
     }
 
+    private genomeToTwitchCycle(genome: Genome): void {
+        Object.keys(Direction).forEach(direction => {
+            const reader = genome.createReader(Direction[direction])
+            const faceCount = this.muscles.length
+            this.twitchCycle[direction] = new TimeCycle(reader, faceCount, GRASP_COUNT, TWITCH_COUNT)
+        })
+    }
+
     private get touchedDestination(): boolean {
-        const view = this.instance.view
-        const midpoint = new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
-        return midpoint.distanceTo(this.target) < 1 // TODO: how close?
+        return this.midpoint.distanceTo(this.target) < 1 // TODO: how close?
     }
 
     private voteDirection(): Direction {

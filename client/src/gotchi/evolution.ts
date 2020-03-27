@@ -8,14 +8,16 @@ import { Vector3 } from "three"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { fromGenomeData } from "./genome"
-import { Direction, Gotchi } from "./gotchi"
+import { Gotchi } from "./gotchi"
 
-export const MAX_POPULATION = 10
-const MUTATION_COUNT = 3
-const SURVIVAL_RATE = 0.5
-const MIN_LIFESPAN = 80000
-const MAX_LIFESPAN = 160000
-const INCREMENT_LIFESPAN = 5000
+export interface IEvolutionParameters {
+    maxPopulation: number
+    minLifespan: number
+    maxLifespan: number
+    incrementLifespan: number
+    survivalRate: number
+    mutationCount: number
+}
 
 export interface IEvolver {
     index: number
@@ -25,20 +27,23 @@ export interface IEvolver {
 
 export class Evolution {
     public evolvers: IEvolver[]
-    private midpointVector = new Vector3()
     private maxAge: number
 
     constructor(
         private createInstance: CreateInstance,
         private readonly baseGotchi: Gotchi,
+        private param: IEvolutionParameters,
     ) {
-        if (baseGotchi.nextDirection !== Direction.Rest) {
-            throw new Error("Cannot create evolution from gotchi which is not resting")
+        if (!baseGotchi.isMature) {
+            throw new Error("Cannot create evolution from gotchi which is not mature")
         }
+        this.baseGotchi.instance.snapshot()
         const gotchis: Gotchi[] = []
-        while (gotchis.length < MAX_POPULATION) {
-            const instance = this.createInstance()
-            const gotchi = this.baseGotchi.hexalot.createGotchi(instance)
+        while (gotchis.length < this.param.maxPopulation) {
+            const instance = this.createInstance(this.baseGotchi.instance.fabricClone)
+            const muscles = this.baseGotchi.muscles
+            const extremities = this.baseGotchi.extremities
+            const gotchi = this.baseGotchi.hexalot.newGotchi({instance, muscles, extremities})
             if (!gotchi) {
                 console.error("Unable to create gotchi")
                 break
@@ -46,11 +51,11 @@ export class Evolution {
             gotchis.push(gotchi)
         }
         this.evolvers = gotchis.map((gotchi, index) => <IEvolver>{index, gotchi, distanceFromTarget: 1000})
-        this.maxAge = this.baseGotchi.age + MIN_LIFESPAN
+        this.maxAge = this.baseGotchi.age + this.param.minLifespan
     }
 
     public get midpoint(): Vector3 {
-        return this.midpointVector // TODO: calculate it on the fly
+        return this.evolvers.reduce((sum, evolver) => sum.add(evolver.gotchi.midpoint), new Vector3())
     }
 
     public iterate(): void {
@@ -72,11 +77,12 @@ export class Evolution {
     // Privates =============================================================
 
     private adjustAgeLimit(): void {
-        this.maxAge += INCREMENT_LIFESPAN
+        const {incrementLifespan, minLifespan, maxLifespan} = this.param
+        this.maxAge += incrementLifespan
         const startAge = this.baseGotchi.age
         const lifespan = this.maxAge - startAge
-        if (lifespan > MAX_LIFESPAN) {
-            this.maxAge = startAge + MIN_LIFESPAN // start again
+        if (lifespan > maxLifespan) {
+            this.maxAge = startAge + minLifespan // start again
         }
         console.log(`Age: [${startAge} to ${this.maxAge}] ${lifespan}`)
     }
@@ -92,18 +98,22 @@ export class Evolution {
 
     private nextGenerationFromSurvival(): void {
         this.rankEvolvers()
+        const {survivalRate, mutationCount} = this.param
         console.log("ranked", this.evolvers.map(({index, distanceFromTarget}) => `${index}: ${distanceFromTarget}`))
-        const survivorCount = Math.floor(this.evolvers.length * SURVIVAL_RATE)
-        const home = this.baseGotchi.hexalot
-        this.evolvers = this.evolvers.map(({gotchi, index, distanceFromTarget}, evolverIndex) => {
-            if (evolverIndex > survivorCount) {
-                const parentIndex = Math.floor(survivorCount * Math.random())
-                const offspringGenome = fromGenomeData(this.evolvers[parentIndex].gotchi.mutatedGenome(MUTATION_COUNT))
-                console.log(`replacing ${evolverIndex} with offspring from ${parentIndex}`, offspringGenome.toString())
-                return <IEvolver>{index, gotchi: home.createGotchi(gotchi.instance, offspringGenome), distanceFromTarget}
-            } else {
-                return <IEvolver>{index, gotchi: home.createGotchi(gotchi.instance), distanceFromTarget}
+        const survivorCount = Math.floor(this.evolvers.length * survivalRate)
+        const dead = this.evolvers.slice(survivorCount)
+        dead.forEach(evolver => {
+            const parentIndex = Math.floor(survivorCount * Math.random())
+            const genome = fromGenomeData(this.evolvers[parentIndex].gotchi.mutatedGenome(mutationCount))
+            console.log(`replacing ${evolver.index} with offspring from ${parentIndex}`, genome.toString())
+            const instance = evolver.gotchi.instance.adoptFabric(this.baseGotchi.instance.fabricClone)
+            const muscles = this.baseGotchi.muscles
+            const extremities = this.baseGotchi.extremities
+            const newGotchi = this.baseGotchi.hexalot.newGotchi({genome, instance, muscles, extremities})
+            if (!newGotchi) {
+                throw Error("Unable to create gotchi")
             }
+            evolver.gotchi = newGotchi
         })
     }
 }

@@ -13,7 +13,6 @@ use crate::joint::Joint;
 use crate::world::World;
 
 #[wasm_bindgen]
-#[derive(Clone)]
 pub struct Fabric {
     pub age: u32,
     pub(crate) stage: Stage,
@@ -52,15 +51,15 @@ impl Fabric {
 
     pub fn clone(&self) -> Fabric {
         Fabric {
-            age: 0,
-            stage: Stage::Busy,
-            realizing_countdown: 0_f32,
+            age: self.age,
+            stage: self.stage,
+            realizing_countdown: self.realizing_countdown,
             joints: self.joints.clone(),
             intervals: self.intervals.clone(),
             faces: self.faces.clone(),
-            joint_middle_index: 0,
-            joint_left_index: 0,
-            joint_right_index: 0,
+            joint_middle_index: self.joint_middle_index,
+            joint_left_index: self.joint_left_index,
+            joint_right_index: self.joint_right_index,
         }
     }
 

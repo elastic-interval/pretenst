@@ -10,24 +10,40 @@ import { Button, ButtonGroup } from "reactstrap"
 
 import { CreateInstance } from "../fabric/fabric-instance"
 
-import { Evolution } from "./evolution"
+import { Evolution, IEvolutionParameters } from "./evolution"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
+
+const EVOLUTION_PARAMETERS: IEvolutionParameters = {
+    maxPopulation: 10,
+    minLifespan: 20000,
+    maxLifespan: 60000,
+    incrementLifespan: 10000,
+    mutationCount: 3,
+    survivalRate: 0.5,
+}
 
 export function GotchiView({island, createInstance}: {
     island: Island,
     createInstance: CreateInstance,
 }): JSX.Element {
 
-    const gotchi = useMemo(() => island.hexalots[0].createGotchi(createInstance()), [])
+    const gotchi = useMemo(() => (
+        island.hexalots[0].newGotchi({instance: createInstance(), muscles: [], extremities: []})
+    ), [])
     const [evolution, updateEvolution] = useState<Evolution | undefined>(undefined)
 
     const onClickEvolve = () => {
-        if (gotchi) {
-            const evo = new Evolution(createInstance, gotchi)
-            console.log("Evolving gotchis", evo.evolvers.length)
-            updateEvolution(evo)
+        if (!gotchi) {
+            return
         }
+        if (!gotchi.isMature) {
+            console.error("immature")
+            return
+        }
+        const evo = new Evolution(createInstance, gotchi, EVOLUTION_PARAMETERS)
+        console.log("Evolving gotchis", evo.evolvers.length)
+        updateEvolution(evo)
     }
     return (
         <div id="view-container" style={{

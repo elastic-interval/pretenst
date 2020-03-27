@@ -46,13 +46,17 @@ impl Joint {
             self.velocity += &self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag_above;
         } else {
+            let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
             if self.grasp_countdown > 0 {
-                self.velocity = zero();
-                self.location.y = -RESURFACE;
                 self.grasp_countdown -= 1;
+                self.velocity = zero();
+                if self.location.y > -RESURFACE {
+                    self.location.y = -RESURFACE;
+                } else {
+                    self.velocity.y += antigravity * degree_submerged;
+                }
             } else {
                 self.velocity += &self.force / self.interval_mass;
-                let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
                 let degree_cushioned: f32 = 1_f32 - degree_submerged;
                 match world.surface_character {
                     SurfaceCharacter::Frozen => {

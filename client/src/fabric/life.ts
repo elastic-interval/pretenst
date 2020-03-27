@@ -32,11 +32,11 @@ export class Life {
     }
 
     private transition({stage, adoptLengths, strainToStiffness}: ILifeTransition): void {
+        const tensegrity = this.tensegrity
         switch (this._stage) {
             case Stage.Growing:
                 switch (stage) {
                     case Stage.Shaping:
-                        this.tensegrity.instance.snapshot()
                         return
                 }
                 break
@@ -44,10 +44,10 @@ export class Life {
                 switch (stage) {
                     case Stage.Slack:
                         if (adoptLengths) {
-                            this.tensegrity.fabric.adopt_lengths()
-                            const faceIntervals = [...this.tensegrity.faceIntervals]
-                            faceIntervals.forEach(interval => this.tensegrity.removeFaceInterval(interval))
-                            this.tensegrity.instance.snapshot()
+                            tensegrity.fabric.adopt_lengths()
+                            const faceIntervals = [...tensegrity.faceIntervals]
+                            faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
+                            tensegrity.instance.snapshot()
                         }
                         return
                     case Stage.Realizing:
@@ -72,12 +72,12 @@ export class Life {
                 switch (stage) {
                     case Stage.Slack:
                         if (strainToStiffness) {
-                            new TensegrityOptimizer(this.tensegrity).stiffnessesFromStrains()
+                            new TensegrityOptimizer(tensegrity).stiffnessesFromStrains()
                             return
                         }
                         if (adoptLengths) {
-                            this.tensegrity.fabric.adopt_lengths()
-                            this.tensegrity.instance.snapshot()
+                            tensegrity.fabric.adopt_lengths()
+                            tensegrity.instance.snapshot()
                             return
                         }
                 }

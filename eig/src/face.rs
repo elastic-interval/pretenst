@@ -4,7 +4,6 @@
  */
 use nalgebra::*;
 
-use crate::constants::*;
 use crate::interval::Interval;
 use crate::joint::Joint;
 use crate::view::View;

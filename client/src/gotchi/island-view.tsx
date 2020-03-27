@@ -184,11 +184,13 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
                 geometry={gotchi.linesGeometry}
                 material={LINE_VERTEX_COLORS}
             />
-            <mesh
-                key="gotchi-faces"
-                geometry={gotchi.facesGeometry}
-                material={FACE}
-            />
+            {!gotchi.isMature ? undefined : (
+                <mesh
+                    key="gotchi-faces"
+                    geometry={gotchi.facesGeometry}
+                    material={FACE}
+                />
+            )}
         </group>
     )
 }

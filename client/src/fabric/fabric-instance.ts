@@ -33,6 +33,107 @@ export interface IFloatView {
     linearDensities: Float32Array
 }
 
+export type CreateInstance = (existingFabric?: Fabric) => FabricInstance
+
+export class FabricInstance {
+    public fabric: Fabric
+    public world: World
+    public view: View
+    public floatView: IFloatView = createEmptyFloatView()
+    public adoptFabric: (fabric: Fabric) => FabricInstance
+
+    private featuresToApply: FloatFeature[] = []
+    private fabricBackup?: Fabric
+
+    constructor(eig: typeof import("eig"), jointCount: number, worldObject: object, fabricObject?: object) {
+        this.world = worldObject as World
+        this.adoptFabric = (fabric) => {
+            const f = this.fabric
+            if (f) {
+                f.free()
+            }
+            this.fabric = fabric
+            if (this.view) {
+                this.view.free()
+            }
+            this.view = eig.View.on_fabric(fabric)
+            return this
+        }
+        this.adoptFabric(fabricObject ? fabricObject as Fabric : eig.Fabric.new(jointCount))
+    }
+
+    public iterate(requestedStage: Stage): Stage {
+        const stage = this.fabric.iterate(requestedStage, this.world)
+        this.view.render(this.fabric, this.world)
+        const feature = this.featuresToApply.shift()
+        if (feature) {
+            this.world.set_float_value(feature.fabricFeature, feature.numeric)
+        }
+        this.floatView = createFloatView(this.fabric, this.view)
+        return stage
+    }
+
+    public get fabricClone(): Fabric {
+        return this.fabric.clone()
+    }
+
+    public snapshot(): void {
+        this.fabricBackup = this.fabricClone
+    }
+
+    public restoreSnapshot(): void {
+        console.log("restoreSnapshot")
+        const backup = this.fabricBackup
+        if (!backup) {
+            throw new Error("Missing backup")
+        }
+        this.adoptFabric(backup.clone())
+    }
+
+    public refreshFloatView(): void {
+        this.view.render(this.fabric, this.world)
+        this.floatView = createFloatView(this.fabric, this.view)
+    }
+
+    public clear(): void {
+        this.fabric.clear()
+        this.refreshFloatView()
+    }
+
+    public applyFeature(feature: FloatFeature): void {
+        this.featuresToApply.push(feature)
+    }
+
+    public jointLocation(jointIndex: number): Vector3 {
+        return vectorFromArray(this.floatView.jointLocations, jointIndex)
+    }
+
+    public apply(matrix: Matrix4): void {
+        this.fabric.apply_matrix4(new Float32Array(matrix.toArray()))
+    }
+
+    public unitVector(intervalIndex: number): Vector3 {
+        return vectorFromArray(this.floatView.unitVectors, intervalIndex)
+    }
+
+    public get forward(): Vector3 {
+        return new Vector3(1, 0, 0) // TODO
+    }
+
+    public get right(): Vector3 {
+        return new Vector3(0, 0, 1) // TODO
+    }
+}
+
+function createEmptyFloatView(): IFloatView {
+    const empty = new Float32Array(0)
+    return {
+        lineColors: empty, lineLocations: empty, faceNormals: empty, faceLocations: empty, jointLocations: empty,
+        jointVelocities: empty, unitVectors: empty, idealLengths: empty, strains: empty, strainNuances: empty,
+        stiffnesses: empty, linearDensities: empty,
+    }
+}
+
 function createFloatView(fabric: Fabric, view: View): IFloatView {
     return {
         lineColors: floatArray(
@@ -90,93 +191,4 @@ function floatArray(copyFunction: (array: Float32Array) => void, length: () => n
     const array = new Float32Array(length())
     copyFunction(array)
     return array
-}
-
-export type CreateInstance = () => FabricInstance
-
-export class FabricInstance {
-    public fabric: Fabric
-    public world: World
-    public view: View
-    public floatView: IFloatView
-
-    private featuresToApply: FloatFeature[] = []
-    private fabricBackup?: Fabric
-    private adoptFabric: (fabric: Fabric) => void
-
-    constructor(eig: typeof import("eig"), jointCount: number, worldInstance: object) {
-        // @ts-ignore
-        this.world = worldInstance
-        this.adoptFabric = (fabric) => {
-            const f = this.fabric
-            if (f) {
-                f.free()
-            }
-            this.fabric = fabric
-            if (this.view) {
-                this.view.free()
-            }
-            this.view = eig.View.on_fabric(fabric)
-        }
-        this.adoptFabric(eig.Fabric.new(jointCount))
-    }
-
-    public iterate(requestedStage: Stage): Stage {
-        const stage = this.fabric.iterate(requestedStage, this.world)
-        this.view.render(this.fabric, this.world)
-        const feature = this.featuresToApply.shift()
-        if (feature) {
-            this.world.set_float_value(feature.fabricFeature, feature.numeric)
-        }
-        this.floatView = createFloatView(this.fabric, this.view)
-        return stage
-    }
-
-    public snapshot(): void {
-        this.fabricBackup = this.fabric.clone()
-        console.error("snapshot")
-    }
-
-    public restoreSnapshot(): void {
-        console.log("restoreSnapshot")
-        const backup = this.fabricBackup
-        if (!backup) {
-            throw new Error("Missing backup")
-        }
-        this.adoptFabric(backup.clone())
-    }
-
-    public refreshFloatView(): void {
-        this.view.render(this.fabric, this.world)
-        this.floatView = createFloatView(this.fabric, this.view)
-    }
-
-    public clear(): void {
-        this.fabric.clear()
-        this.refreshFloatView()
-    }
-
-    public applyFeature(feature: FloatFeature): void {
-        this.featuresToApply.push(feature)
-    }
-
-    public jointLocation(jointIndex: number): Vector3 {
-        return vectorFromArray(this.floatView.jointLocations, jointIndex)
-    }
-
-    public apply(matrix: Matrix4): void {
-        this.fabric.apply_matrix4(new Float32Array(matrix.toArray()))
-    }
-
-    public unitVector(intervalIndex: number): Vector3 {
-        return vectorFromArray(this.floatView.unitVectors, intervalIndex)
-    }
-
-    public get forward(): Vector3 {
-        return new Vector3(1, 0, 0) // TODO
-    }
-
-    public get right(): Vector3 {
-        return new Vector3(0, 0, 1) // TODO
-    }
 }

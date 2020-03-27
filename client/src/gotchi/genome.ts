@@ -133,8 +133,8 @@ export class GeneReader {
         return {
             when: choice(36, this.next(), this.next()),
             whichFace: choice(faceCount, this.next(), this.next(), this.next(), this.next()),
-            attack: (1 + choice(6, this.next())) * 2000,
-            decay: (1 + choice(6, this.next())) * 2000,
+            attack: (2 + choice(6, this.next())) * 1500,
+            decay: (2 + choice(6, this.next())) * 1000,
         }
     }
 
@@ -169,7 +169,7 @@ export class GeneReader {
         return {
             when: choice(36, this.next(), this.next()),
             whichLimbs,
-            howLong: (1 + choice(6, this.next())) * 200,
+            howLong: (2 + choice(6, this.next())) * 200,
         }
     }
 
