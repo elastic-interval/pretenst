@@ -168,7 +168,7 @@ export class GeneReader {
         return {
             when: choice(36, this.next(), this.next()),
             whichLimbs,
-            howLong: (2 + choice(6, this.next())) * 200,
+            howLong: (2 + choice(6, this.next())) * 300,
         }
     }
 

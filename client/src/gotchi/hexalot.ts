@@ -36,9 +36,18 @@ export class Hexalot implements IHexalot {
 
     public get genome(): Genome {
         if (!this._genome) {
-            this._genome = emptyGenome()
+            const item = localStorage.getItem(this.id)
+            console.log(`Loading genome from ${this.id}`)
+            this._genome = item ? fromGenomeData(JSON.parse(item)) : emptyGenome()
         }
         return fromGenomeData(this._genome.genomeData)
+    }
+
+    public set genome(genome: Genome) {
+        this._genome = genome
+        const data = genome.genomeData
+        localStorage.setItem(this.id, JSON.stringify(data))
+        console.log(`Saving genome to ${this.id}`, data)
     }
 
     public newGotchi(seed: IGotchiSeed): Gotchi | undefined {

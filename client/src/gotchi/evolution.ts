@@ -39,11 +39,13 @@ export class Evolution {
         this.currentMaxCycles = this.param.minCycleCount
         this.baseGotchi.instance.snapshot()
         const gotchis: Gotchi[] = []
+        let genome = this.baseGotchi.hexalot.genome
         while (gotchis.length < this.param.maxPopulation) {
+            genome = genome.withMutations(this.baseGotchi.direction, param.mutationCount)
             const instance = this.createInstance(this.baseGotchi.instance.fabricClone)
             const muscles = this.baseGotchi.muscles
             const extremities = this.baseGotchi.extremities
-            const gotchi = this.baseGotchi.hexalot.newGotchi({instance, muscles, extremities})
+            const gotchi = this.baseGotchi.hexalot.newGotchi({instance, genome, muscles, extremities})
             if (!gotchi) {
                 console.error("Unable to create gotchi")
                 break
@@ -57,15 +59,19 @@ export class Evolution {
         return this.evolvers.reduce((sum, evolver) => sum.add(evolver.gotchi.midpoint), new Vector3())
     }
 
-    public iterate(): void {
-        this.evolvers.forEach(({gotchi}) => gotchi.reorient())
-        const moving = this.evolvers.filter(({gotchi}) => gotchi.cycleCount < this.currentMaxCycles)
-        if (moving.length === 0) {
-            this.adjustLimit()
+    public iterate(): number {
+        // this.evolvers.forEach(({gotchi}) => gotchi.reorient())
+        const maxCycleCount = this.evolvers.reduce((min, {gotchi}) => Math.max(min, gotchi.cycleCount), 0)
+        if (maxCycleCount >= this.currentMaxCycles) {
             this.nextGenerationFromSurvival()
-            return
+            this.adjustLimit()
         }
-        moving.forEach(({gotchi}) => gotchi.iterate())
+        this.evolvers.forEach(({gotchi}) => {
+            for (let tick=0; tick<5; tick++) {
+                gotchi.iterate()
+            }
+        })
+        return maxCycleCount
     }
 
     // Privates =============================================================
@@ -75,6 +81,8 @@ export class Evolution {
         this.currentMaxCycles++
         if (this.currentMaxCycles >= maxCycleCount) {
             this.currentMaxCycles = this.param.minCycleCount
+            this.rankEvolvers()
+            this.baseGotchi.hexalot.genome = this.evolvers[0].gotchi.genome
         }
         console.log(`Cycles:${this.currentMaxCycles}`)
     }
