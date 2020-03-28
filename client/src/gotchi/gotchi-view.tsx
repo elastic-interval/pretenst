@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useMemo, useState } from "react"
+import { useState } from "react"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 
@@ -27,9 +27,9 @@ export function GotchiView({island, createInstance}: {
     createInstance: CreateInstance,
 }): JSX.Element {
 
-    const gotchi = useMemo(() => (
+    const [gotchi, updateGotchi] = useState(() => (
         island.hexalots[0].newGotchi({instance: createInstance(), muscles: [], extremities: []})
-    ), [])
+    ))
     const [evolution, updateEvolution] = useState<Evolution | undefined>(undefined)
 
     const onClickEvolve = () => {
@@ -43,6 +43,13 @@ export function GotchiView({island, createInstance}: {
         const evo = new Evolution(createInstance, gotchi, EVOLUTION_PARAMETERS)
         console.log("Evolving gotchis", evo.evolvers.length)
         updateEvolution(evo)
+    }
+    const onClickStopEvolving = () => {
+        updateEvolution(undefined)
+        if (gotchi) {
+            const {instance, muscles, extremities} = gotchi
+            updateGotchi(gotchi.hexalot.newGotchi({instance, muscles, extremities}))
+        }
     }
     return (
         <div id="view-container" style={{
@@ -61,7 +68,8 @@ export function GotchiView({island, createInstance}: {
             </Canvas>
             <div id="bottom-middle">
                 <ButtonGroup>
-                    <Button key={`evolve`} onClick={onClickEvolve}>Evolve!</Button>
+                    <Button disabled={!!evolution} onClick={onClickEvolve}>Evolve!</Button>
+                    <Button disabled={!evolution} onClick={onClickStopEvolving}>Stop!</Button>
                 </ButtonGroup>
             </div>
         </div>

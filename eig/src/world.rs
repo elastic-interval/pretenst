@@ -38,6 +38,7 @@ pub struct World {
     pub(crate) max_stiffness: f32,
     pub(crate) stiffness_factor: f32,
     pub(crate) antigravity: f32,
+    pub(crate) grasp_ticks: f32,
 }
 
 #[wasm_bindgen]
@@ -46,8 +47,8 @@ impl World {
         World {
             surface_character: SurfaceCharacter::Bouncy,
             push_and_pull: false,
-            color_pushes: false,
-            color_pulls: false,
+            color_pushes: true,
+            color_pulls: true,
             gravity: default_fabric_feature(FabricFeature::Gravity),
             drag: default_fabric_feature(FabricFeature::Drag),
             pretenst_factor: default_fabric_feature(FabricFeature::PretenstFactor),
@@ -74,6 +75,7 @@ impl World {
             max_stiffness: default_fabric_feature(FabricFeature::MaxStiffness),
             stiffness_factor: default_fabric_feature(FabricFeature::StiffnessFactor),
             antigravity: default_fabric_feature(FabricFeature::Antigravity),
+            grasp_ticks: default_fabric_feature(FabricFeature::GraspTicks),
         }
     }
 
@@ -118,6 +120,7 @@ impl World {
             FabricFeature::MaxStiffness => &mut self.max_stiffness,
             FabricFeature::StiffnessFactor => &mut self.stiffness_factor,
             FabricFeature::Antigravity => &mut self.antigravity,
+            FabricFeature::GraspTicks => &mut self.grasp_ticks,
         };
         *value_pointer = value;
         value

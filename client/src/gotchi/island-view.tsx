@@ -21,7 +21,6 @@ import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
 import { Gotchi } from "./gotchi"
-import { Hexalot } from "./hexalot"
 import { Island } from "./island"
 import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-logic"
 import { Journey } from "./journey"
@@ -29,10 +28,8 @@ import { Spot } from "./spot"
 
 const TOWARDS_TARGET = 0.01
 
-export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution}: {
+export function IslandView({island, gotchi, evolution}: {
     island: Island,
-    selectedSpot?: Spot,
-    homeHexalot?: Hexalot,
     gotchi?: Gotchi,
     evolution?: Evolution,
 }): JSX.Element {

@@ -315,6 +315,7 @@ impl Fabric {
                         world.shaping_drag,
                         world.antigravity,
                         false,
+                        false,
                     )
                 }
             }
@@ -327,6 +328,7 @@ impl Fabric {
                         world.drag,
                         world.antigravity,
                         true,
+                        false,
                     )
                 }
             }
@@ -337,6 +339,7 @@ impl Fabric {
                         world.gravity,
                         world.drag,
                         world.antigravity,
+                        true,
                         true,
                     )
                 }

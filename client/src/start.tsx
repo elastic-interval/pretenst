@@ -36,9 +36,9 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
                 case FabricFeature.Gravity:
-                    return defaultValue
+                    return defaultValue * 3
                 case FabricFeature.Drag:
-                    return defaultValue * 5
+                    return defaultValue * 2
                 case FabricFeature.ShapingStiffnessFactor:
                     return defaultValue * 5
                 case FabricFeature.IntervalCountdown:
@@ -47,12 +47,22 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
                     return defaultValue * 2
                 case FabricFeature.RealizingCountdown:
                     return defaultValue * 0.4
+                case FabricFeature.GraspTicks:
+                    return defaultValue
+                case FabricFeature.MaxStrain:
+                    return defaultValue * 0.5
+                case FabricFeature.VisualStrain:
+                    return defaultValue * 3
+                case FabricFeature.PretenstFactor:
+                    return defaultValue * 3
+                case FabricFeature.SlackThreshold:
+                    return 0
                 default:
                     return defaultValue
             }
         }
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
-        const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-60"
+        const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-40"
         const tenscript = codeToTenscript((error: string) => {
             throw new Error(`Unable to compile: ${error}`)
         }, false, BODY)
