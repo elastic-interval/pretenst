@@ -4,19 +4,19 @@
  */
 
 import { GeneReader } from "./genome"
-import { Limb } from "./gotchi"
+import { IMuscle, Limb } from "./gotchi"
 
 
 export class TimeCycle {
     private slices: Record<number, ISlice> = {}
 
-    constructor(geneReader: GeneReader, faceCount: number, graspCount: number, twitchCount: number) {
+    constructor(geneReader: GeneReader, muscles: IMuscle[], graspCount: number, twitchCount: number) {
         while (graspCount-- > 0) {
             const grasp = geneReader.readGrasp()
             this.addGrasp(grasp.when, grasp)
         }
         while (twitchCount-- > 0) {
-            const twitch = geneReader.readMuscleTwitch(faceCount)
+            const twitch = geneReader.readMuscleTwitch(muscles.length)
             this.addTwitch(twitch.when, twitch)
         }
     }
@@ -31,7 +31,7 @@ export class TimeCycle {
             return
         }
         slice.grasps.forEach(({whichLimbs, howLong}) => whichLimbs.forEach(limb => grasp(limb, howLong)))
-        slice.twitches.forEach(({whichFace, attack, decay}) => twitch(whichFace, attack, decay))
+        slice.twitches.forEach(({whichMuscle, attack, decay}) => twitch(whichMuscle, attack, decay))
     }
 
     private addGrasp(index: number, grasp: IGrasp): void {
@@ -55,7 +55,7 @@ export class TimeCycle {
 
 export interface ITwitch {
     when: number,
-    whichFace: number,
+    whichMuscle: number,
     attack: number,
     decay: number,
 }

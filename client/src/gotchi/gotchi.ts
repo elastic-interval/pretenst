@@ -29,13 +29,13 @@ export enum Direction {
 export const DIRECTIONS = Object.keys(Direction).map(k => Direction[k])
 
 export interface IExtremity {
-    index: number
+    faceIndex: number
     name: string
     limb: Limb
 }
 
 export interface IMuscle {
-    index: number
+    faceIndex: number
     name: string
     limb: Limb
     distance: number
@@ -159,14 +159,18 @@ export class Gotchi {
             twitchCycle.activate(
                 this.timeSlice,
                 (limb: Limb, howLong: number) => {
-                    const whichFace = this.getExtremity(limb).index
-                    // console.log(`grasp ${whichFace}: ${howLong}`)
-                    this.instance.fabric.grasp_face(whichFace, howLong)
+                    const faceIndex = this.getExtremity(limb).faceIndex
+                    // console.log(`grasp ${faceIndex}: ${howLong}`)
+                    this.instance.fabric.grasp_face(faceIndex, howLong)
 
                 },
-                (face: number, attack: number, decay: number) => {
-                    // console.log(`twitch ${whichFace}: ${attack}, ${decay}`)
-                    this.instance.fabric.twitch_face(face, 0.5, attack, decay)
+                (whichMuscle: number, attack: number, decay: number) => {
+                    const muscle = this.muscles[whichMuscle]
+                    const deltaSize = 0.5
+                    this.instance.fabric.twitch_face(muscle.faceIndex, deltaSize, attack, decay)
+                    const opposite = oppositeMuscle(muscle, this.muscles)
+                    this.instance.fabric.twitch_face(opposite.faceIndex, deltaSize, attack, decay)
+                    // console.log(`twitch ${muscle.faceIndex}|${oppositeMuscle.faceIndex}: ${attack}, ${decay}`)
                 },
             )
         } else {
@@ -243,8 +247,7 @@ export class Gotchi {
     private genomeToTwitchCycle(genome: Genome): void {
         Object.keys(Direction).forEach(direction => {
             const reader = genome.createReader(Direction[direction])
-            const faceCount = this.muscles.length
-            this.twitchCycle[direction] = new TimeCycle(reader, faceCount, GRASP_COUNT, TWITCH_COUNT)
+            this.twitchCycle[direction] = new TimeCycle(reader, this.muscles, GRASP_COUNT, TWITCH_COUNT)
         })
     }
 
@@ -314,12 +317,12 @@ function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremit
         const distance = lastIndex
         const triangle = triangles[lastIndex]
         const isExtremity = isTriangleExtremity(triangle)
-        const index = face.index
+        const faceIndex = face.index
         const name = isExtremity ? `[${limb}]` : `[${limb}]:[${lastIndex}:${triangle}]`
         if (isExtremity) {
-            extremities.push({index, name, limb})
+            extremities.push({faceIndex, name, limb})
         } else {
-            muscles.push({index, name, limb, distance, triangle})
+            muscles.push({faceIndex, name, limb, distance, triangle})
         }
     })
 }
@@ -343,4 +346,29 @@ function limbFromTriangle(triangle: Triangle): Limb {
         default:
             throw new Error("Strange limb")
     }
+}
+
+function oppositeLimb(limb: Limb): Limb {
+    switch (limb) {
+        case Limb.BackRight:
+            return Limb.BackLeft
+        case Limb.BackLeft:
+            return Limb.BackRight
+        case Limb.FrontRight:
+            return Limb.FrontLeft
+        case Limb.FrontLeft:
+            return Limb.FrontRight
+        default:
+            throw new Error("Strange limb")
+    }
+}
+
+function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
+    const {limb, distance, triangle} = muscle
+    const findLimb = oppositeLimb(limb)
+    const findMuscle = muscles.find(m => m.limb === findLimb && m.distance === distance && m.triangle === triangle)
+    if (!findMuscle) {
+        throw new Error("Unable to find opposite muscle")
+    }
+    return findMuscle
 }

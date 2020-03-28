@@ -128,10 +128,10 @@ export class GeneReader {
     constructor(private gene: IGene, private roll: () => IDie) {
     }
 
-    public readMuscleTwitch(faceCount: number): ITwitch {
+    public readMuscleTwitch(muscleCount: number): ITwitch {
         return {
             when: choice(36, this.next(), this.next()),
-            whichFace: choice(faceCount, this.next(), this.next(), this.next(), this.next()),
+            whichMuscle: choice(muscleCount, this.next(), this.next(), this.next(), this.next()),
             attack: (2 + choice(6, this.next())) * 1500,
             decay: (2 + choice(6, this.next())) * 1000,
         }
