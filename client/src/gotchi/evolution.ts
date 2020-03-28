@@ -55,22 +55,22 @@ export class Evolution {
         this.evolvers = gotchis.map((gotchi, index) => <IEvolver>{index, gotchi, distanceFromTarget: 1000})
     }
 
-    public get midpoint(): Vector3 {
-        return this.evolvers.reduce((sum, evolver) => sum.add(evolver.gotchi.midpoint), new Vector3())
-    }
-
-    public iterate(): number {
+    public iterate(midpoint: Vector3): number {
         // this.evolvers.forEach(({gotchi}) => gotchi.reorient())
         const maxCycleCount = this.evolvers.reduce((min, {gotchi}) => Math.max(min, gotchi.cycleCount), 0)
         if (maxCycleCount >= this.currentMaxCycles) {
             this.nextGenerationFromSurvival()
             this.adjustLimit()
         }
+        midpoint.set(0, 0, 0)
+        const gotchiMidpoint = new Vector3()
         this.evolvers.forEach(({gotchi}) => {
-            for (let tick=0; tick<5; tick++) {
-                gotchi.iterate()
+            for (let tick = 0; tick < 5; tick++) {
+                gotchi.iterate(gotchiMidpoint)
             }
+            midpoint.add(gotchiMidpoint)
         })
+        midpoint.multiplyScalar(1.0 / this.evolvers.length)
         return maxCycleCount
     }
 

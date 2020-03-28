@@ -61,11 +61,19 @@ export class Genome {
         }
     }
 
+    public mutationCount(direction: Direction): number {
+        const gene = this.genes.find(g => direction === g.direction)
+        if (!gene) {
+            return 0
+        }
+        return gene.mutationCount
+    }
+
     public withMutations(direction: Direction, mutations: number): Genome {
         const genesCopy: IGene[] = this.genes.map(g => ({
             direction: g.direction,
             mutationCount: g.mutationCount,
-            dice: g.dice.slice(),
+            dice: g.dice.slice(), // TODO: tweet this to the world
         }))
         const geneToMutate = genesCopy.find(g => direction === g.direction)
         if (geneToMutate) {

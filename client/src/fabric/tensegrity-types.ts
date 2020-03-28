@@ -280,7 +280,7 @@ export function factorToPercent(factor: number): IPercent {
 }
 
 export interface IBrick {
-    parent?: IFace,
+    parentFace?: IFace,
     base: Triangle
     scale: IPercent
     joints: IJoint[]
@@ -311,7 +311,7 @@ export function brickContaining(joint: IJoint, brickA: IBrick, brickB: IBrick): 
 
 export function initialBrick(base: Triangle, scale: IPercent, parent?: IFace): IBrick {
     return {
-        parent, base, scale, joints: [],
+        parentFace: parent, base, scale, joints: [],
         pushes: [], pulls: [], crosses: [],
         rings: [[], [], [], []], faces: [],
         negativeAdjacent: 0, postiveAdjacent: 0,

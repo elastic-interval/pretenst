@@ -17,8 +17,8 @@ import { IslandView } from "./island-view"
 const EVOLUTION_PARAMETERS: IEvolutionParameters = {
     maxPopulation: 10,
     minCycleCount: 3,
-    maxCycleCount: 7,
-    mutationCount: 4,
+    maxCycleCount: 8,
+    mutationCount: 3,
     survivalRate: 0.5,
 }
 

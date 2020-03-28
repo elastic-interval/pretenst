@@ -16,7 +16,6 @@ import { Leg } from "./journey"
 import { TimeCycle } from "./time-cycle"
 
 const MAX_VOTES = 30
-const TWITCH_COUNT = 1
 
 export enum Direction {
     Rest = "Rest",
@@ -38,20 +37,8 @@ export interface IMuscle {
     name: string
     limb: Limb
     distance: number
+    group: Triangle
     triangle: Triangle
-}
-
-export function oppositeMuscleIndex(whichMuscle: number, muscles: IMuscle[]): number {
-    const {name, limb, distance, triangle} = muscles[whichMuscle]
-    const findLimb = oppositeLimb(limb)
-    const oppositeIndex = muscles.findIndex(m => m.limb === findLimb && m.distance === distance && m.triangle === triangle)
-    if (oppositeIndex < 0) {
-        throw new Error("Unable to find opposite muscle")
-    }
-    const oppositeName = muscles[oppositeIndex].name
-    const oppositeTriangle = muscles[oppositeIndex].triangle
-    console.log(`opposite of ${name}:${oppositeName} and ${oppositeTriangle}=${triangle}`)
-    return oppositeIndex
 }
 
 export enum Limb {
@@ -151,7 +138,9 @@ export class Gotchi {
         this._nextDirection = this.voteDirection()
     }
 
-    public iterate(): void {
+    public iterate(midpoint: Vector3): void {
+        const view = this.instance.view
+        midpoint.set(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         const embryo = this.embryo
         if (!embryo) {
             this.instance.iterate(Stage.Realized)
@@ -170,15 +159,9 @@ export class Gotchi {
                 this.cycleCount++
                 console.log("cycle count", this.cycleCount)
             }
-            twitchCycle.activate(
-                this.timeSlice,
-                (whichMuscle: number, attack: number, decay: number) => {
-                    const muscle = this.muscles[whichMuscle]
-                    const deltaSize = 0.5
-                    this.instance.fabric.twitch_face(muscle.faceIndex, deltaSize, attack, decay)
-                    // console.log(`twitch ${muscle.faceIndex}|${oppositeMuscle.faceIndex}: ${attack}, ${decay}`)
-                },
-            )
+            twitchCycle.activate(this.timeSlice, (whichMuscle: number, attack: number, decay: number) => (
+                twitch(this.instance, this.muscles[whichMuscle], attack, decay)
+            ))
         } else {
             const stage = embryo.iterate()
             switch (stage) {
@@ -241,24 +224,25 @@ export class Gotchi {
         return geometry
     }
 
-    public get midpoint(): Vector3 {
-        const view = this.instance.view
-        return new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
-    }
-
     public get target(): Vector3 {
         return this.currentLeg.goTo.center
     }
 
     private genomeToTwitchCycle(genome: Genome): void {
-        Object.keys(Direction).forEach(direction => {
-            const reader = genome.createReader(Direction[direction])
-            this.twitchCycle[direction] = new TimeCycle(reader, this.muscles, TWITCH_COUNT)
+        Object.keys(Direction).forEach(key => {
+            const direction = Direction[key]
+            const reader = genome.createReader(direction)
+            const mutationCount = genome.mutationCount(direction)
+            const twitchCount = Math.ceil(Math.log(mutationCount)) + 1
+            if (key === "Rest") {
+                console.log(`twitchCount=${twitchCount} from ${mutationCount}`)
+            }
+            this.twitchCycle[key] = new TimeCycle(reader, this.muscles, twitchCount)
         })
     }
 
     private get touchedDestination(): boolean {
-        return this.midpoint.distanceTo(this.target) < 1 // TODO: how close?
+        return false // this.midpoint.distanceTo(this.target) < 1 // TODO: how close?
     }
 
     private voteDirection(): Direction {
@@ -304,33 +288,55 @@ export class Gotchi {
     }
 }
 
+function twitch(instance: FabricInstance, muscle: IMuscle, attack: number, decay: number): void {
+    const deltaSize = 0.5
+    instance.fabric.twitch_face(muscle.faceIndex, deltaSize, attack, decay)
+    // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
+}
+
+export function oppositeMuscleIndex(whichMuscle: number, muscles: IMuscle[]): number {
+    const {name, limb, distance, triangle} = muscles[whichMuscle]
+    const oppositeTriangle = TRIANGLE_DEFINITIONS[triangle].opposite
+    const findLimb = oppositeLimb(limb)
+    const oppositeIndex = muscles.findIndex(m => m.limb === findLimb && m.distance === distance && m.triangle === oppositeTriangle)
+    if (oppositeIndex < 0) {
+        throw new Error(`Unable to find opposite muscle to ${name}`)
+    }
+    // console.log(`opposite of ${name} is ${muscles[oppositeIndex].name}`)
+    return oppositeIndex
+}
+
 function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {
-    tensegrity.faces.filter(face => !face.removed && face.brick.parent).forEach(face => {
-        const ancestorTriangles = (f: IFace, t: Triangle[]) => {
-            const p = f.brick.parent
-            if (!p) {
-                t.push(f.triangle)
-            } else {
-                ancestorTriangles(p, t)
+    tensegrity.faces
+        .filter(face => !face.removed && face.brick.parentFace)
+        .forEach(face => {
+            const gatherAncestors = (f: IFace, id: Triangle[]): Limb => {
                 const definition = TRIANGLE_DEFINITIONS[f.triangle]
-                t.push(definition.negative ? definition.opposite : f.triangle)
+                id.push(definition.negative ? definition.opposite : definition.name)
+                const parentFace = f.brick.parentFace
+                if (parentFace) {
+                    return gatherAncestors(parentFace, id)
+                } else {
+                    return limbFromTriangle(f.triangle)
+                }
             }
-            return t
-        }
-        const triangles = ancestorTriangles(face, [])
-        const lastIndex = triangles.length - 1
-        const limb = limbFromTriangle(triangles[0])
-        const distance = lastIndex
-        const triangle = triangles[lastIndex]
-        const isExtremity = isTriangleExtremity(triangle)
-        const faceIndex = face.index
-        const name = isExtremity ? `[${limb}]` : `[${limb}]:[${lastIndex}:${triangle}]`
-        if (isExtremity) {
-            extremities.push({faceIndex, name, limb})
-        } else {
-            muscles.push({faceIndex, name, limb, distance, triangle})
-        }
-    })
+            const identities: Triangle[] = []
+            const limb = gatherAncestors(face, identities)
+            const group = identities.shift()
+            const triangle = face.triangle
+            if (!group) {
+                throw new Error("no top!")
+            }
+            const distance = identities.length
+            const faceIndex = face.index
+            if (isTriangleExtremity(group)) {
+                const name = `[${limb}]`
+                extremities.push({faceIndex, name, limb})
+            } else {
+                const name = `[${limb}]:[${distance}:${Triangle[group]}]:{tri=${Triangle[triangle]}}`
+                muscles.push({faceIndex, name, limb, distance, group, triangle})
+            }
+        })
 }
 
 function isTriangleExtremity(triangle: Triangle): boolean {

@@ -27,6 +27,8 @@ import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } f
 import { Journey } from "./journey"
 import { Spot } from "./spot"
 
+const TOWARDS_TARGET = 0.01
+
 export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution}: {
     island: Island,
     selectedSpot?: Spot,
@@ -41,12 +43,16 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
 
     const [trigger, setTrigger] = useState(0)
 
+    const midpoint = new Vector3()
     useRender(() => {
         if (evolution) {
-            evolution.iterate()
+            evolution.iterate(midpoint)
         } else if (gotchi) {
-            gotchi.iterate()
+            gotchi.iterate(midpoint)
         }
+        const towardsTarget = new Vector3().subVectors(midpoint, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
+        orbit.current.target.add(towardsTarget)
+        orbit.current.update()
         setTrigger(trigger + 1)
     }, true, [gotchi, evolution, trigger])
 
@@ -62,7 +68,6 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
     }, [])
 
     const orbit = useUpdate<Orbit>(orb => {
-        const midpoint = new Vector3(0, 0, 0)
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
         perspective.lookAt(orbit.current.target)
         perspective.fov = 60
@@ -84,7 +89,7 @@ export function IslandView({island, selectedSpot, homeHexalot, gotchi, evolution
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                <mesh name="Spots" geometry={spots} material={ISLAND}/>
+                {evolution ? undefined : <mesh name="Spots" geometry={spots} material={ISLAND}/>}
                 {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
                 {!evolution ? (
                     !gotchi ? undefined : <GotchiComponent gotchi={gotchi}/>
