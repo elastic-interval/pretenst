@@ -145,10 +145,6 @@ impl Fabric {
         )
     }
 
-    pub fn grasp_face(&mut self, face_index: usize, countdown: u16) {
-        self.faces[face_index].grasp(&mut self.joints, countdown);
-    }
-
     pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
         let realizing_nuance =
             (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown;

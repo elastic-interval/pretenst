@@ -70,12 +70,6 @@ impl Face {
         }
     }
 
-    pub fn grasp(&self, joints: &mut Vec<Joint>, countdown: u16) {
-        for index in 0..3 {
-            joints[self.joints[index] as usize].grasp_countdown = countdown;
-        }
-    }
-
     pub fn twitch(
         &self,
         intervals: &mut Vec<Interval>,

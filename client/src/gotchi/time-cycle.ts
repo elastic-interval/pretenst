@@ -4,43 +4,30 @@
  */
 
 import { GeneReader } from "./genome"
-import { IMuscle, Limb } from "./gotchi"
-
+import { IMuscle, oppositeMuscleIndex } from "./gotchi"
 
 export class TimeCycle {
     private slices: Record<number, ISlice> = {}
 
-    constructor(geneReader: GeneReader, muscles: IMuscle[], graspCount: number, twitchCount: number) {
-        while (graspCount-- > 0) {
-            const grasp = geneReader.readGrasp()
-            this.addGrasp(grasp.when, grasp)
-        }
+    constructor(geneReader: GeneReader, muscles: IMuscle[], twitchCount: number) {
         while (twitchCount-- > 0) {
             const twitch = geneReader.readMuscleTwitch(muscles.length)
             this.addTwitch(twitch.when, twitch)
+            const oppositeTime = (twitch.when + 18) % 36
+            const oppositeMuscle = oppositeMuscleIndex(twitch.whichMuscle, muscles)
+            this.addTwitch(oppositeTime, {...twitch, whichMuscle: oppositeMuscle, when: oppositeTime})
         }
     }
 
     public activate(
         timeSlice: number,
-        grasp: (limb: Limb, howLong: number) => void,
         twitch: (face: number, attack: number, decay: number) => void,
     ): void {
         const slice = this.slices[timeSlice]
         if (!slice) {
             return
         }
-        slice.grasps.forEach(({whichLimbs, howLong}) => whichLimbs.forEach(limb => grasp(limb, howLong)))
         slice.twitches.forEach(({whichMuscle, attack, decay}) => twitch(whichMuscle, attack, decay))
-    }
-
-    private addGrasp(index: number, grasp: IGrasp): void {
-        const slice = this.slices[index]
-        if (slice) {
-            slice.grasps.push(grasp)
-        } else {
-            this.slices[index] = {grasps: [grasp], twitches: []}
-        }
     }
 
     private addTwitch(index: number, twitch: ITwitch): void {
@@ -48,7 +35,7 @@ export class TimeCycle {
         if (slice) {
             slice.twitches.push(twitch)
         } else {
-            this.slices[index] = {grasps: [], twitches: [twitch]}
+            this.slices[index] = {twitches: [twitch]}
         }
     }
 }
@@ -60,13 +47,6 @@ export interface ITwitch {
     decay: number,
 }
 
-export interface IGrasp {
-    when: number
-    whichLimbs: Limb[],
-    howLong: number,
-}
-
 interface ISlice {
-    grasps: IGrasp[]
     twitches: ITwitch[]
 }

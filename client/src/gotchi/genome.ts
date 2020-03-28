@@ -3,8 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Direction, Limb } from "./gotchi"
-import { IGrasp, ITwitch } from "./time-cycle"
+import { Direction } from "./gotchi"
+import { ITwitch } from "./time-cycle"
 
 export interface IGeneData {
     direction: Direction
@@ -134,41 +134,6 @@ export class GeneReader {
             whichMuscle: choice(muscleCount, this.next(), this.next(), this.next(), this.next()),
             attack: (2 + choice(6, this.next())) * 1500,
             decay: (2 + choice(6, this.next())) * 1000,
-        }
-    }
-
-    public readGrasp(): IGrasp {
-        const whichLimbs = []
-        switch (this.next().symbol) {
-            case "⚀":
-                whichLimbs.push(Limb.BackLeft)
-                whichLimbs.push(Limb.BackRight)
-                break
-            case "⚁":
-                whichLimbs.push(Limb.FrontLeft)
-                whichLimbs.push(Limb.FrontRight)
-                break
-            case "⚂":
-                whichLimbs.push(Limb.FrontRight)
-                whichLimbs.push(Limb.BackRight)
-                break
-            case "⚃":
-                whichLimbs.push(Limb.FrontLeft)
-                whichLimbs.push(Limb.BackLeft)
-                break
-            case "⚄":
-                whichLimbs.push(Limb.FrontLeft)
-                whichLimbs.push(Limb.BackRight)
-                break
-            case "⚅":
-                whichLimbs.push(Limb.FrontRight)
-                whichLimbs.push(Limb.BackLeft)
-                break
-        }
-        return {
-            when: choice(36, this.next(), this.next()),
-            whichLimbs,
-            howLong: (2 + choice(6, this.next())) * 300,
         }
     }
 

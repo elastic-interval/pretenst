@@ -16,8 +16,7 @@ import { Leg } from "./journey"
 import { TimeCycle } from "./time-cycle"
 
 const MAX_VOTES = 30
-const GRASP_COUNT = 5
-const TWITCH_COUNT = 8
+const TWITCH_COUNT = 1
 
 export enum Direction {
     Rest = "Rest",
@@ -40,6 +39,19 @@ export interface IMuscle {
     limb: Limb
     distance: number
     triangle: Triangle
+}
+
+export function oppositeMuscleIndex(whichMuscle: number, muscles: IMuscle[]): number {
+    const {name, limb, distance, triangle} = muscles[whichMuscle]
+    const findLimb = oppositeLimb(limb)
+    const oppositeIndex = muscles.findIndex(m => m.limb === findLimb && m.distance === distance && m.triangle === triangle)
+    if (oppositeIndex < 0) {
+        throw new Error("Unable to find opposite muscle")
+    }
+    const oppositeName = muscles[oppositeIndex].name
+    const oppositeTriangle = muscles[oppositeIndex].triangle
+    console.log(`opposite of ${name}:${oppositeName} and ${oppositeTriangle}=${triangle}`)
+    return oppositeIndex
 }
 
 export enum Limb {
@@ -89,7 +101,9 @@ export class Gotchi {
         this.embryo = seed.embryo
         this.muscles = seed.muscles
         this.extremities = seed.extremities
-        this.genomeToTwitchCycle(this.genome)
+        if (!this.embryo) {
+            this.genomeToTwitchCycle(this.genome)
+        }
     }
 
     public get isMature(): boolean {
@@ -158,18 +172,10 @@ export class Gotchi {
             }
             twitchCycle.activate(
                 this.timeSlice,
-                (limb: Limb, howLong: number) => {
-                    const faceIndex = this.getExtremity(limb).faceIndex
-                    // console.log(`grasp ${faceIndex}: ${howLong}`)
-                    this.instance.fabric.grasp_face(faceIndex, howLong)
-
-                },
                 (whichMuscle: number, attack: number, decay: number) => {
                     const muscle = this.muscles[whichMuscle]
                     const deltaSize = 0.5
                     this.instance.fabric.twitch_face(muscle.faceIndex, deltaSize, attack, decay)
-                    const opposite = oppositeMuscle(muscle, this.muscles)
-                    this.instance.fabric.twitch_face(opposite.faceIndex, deltaSize, attack, decay)
                     // console.log(`twitch ${muscle.faceIndex}|${oppositeMuscle.faceIndex}: ${attack}, ${decay}`)
                 },
             )
@@ -247,7 +253,7 @@ export class Gotchi {
     private genomeToTwitchCycle(genome: Genome): void {
         Object.keys(Direction).forEach(direction => {
             const reader = genome.createReader(Direction[direction])
-            this.twitchCycle[direction] = new TimeCycle(reader, this.muscles, GRASP_COUNT, TWITCH_COUNT)
+            this.twitchCycle[direction] = new TimeCycle(reader, this.muscles, TWITCH_COUNT)
         })
     }
 
@@ -361,14 +367,4 @@ function oppositeLimb(limb: Limb): Limb {
         default:
             throw new Error("Strange limb")
     }
-}
-
-function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
-    const {limb, distance, triangle} = muscle
-    const findLimb = oppositeLimb(limb)
-    const findMuscle = muscles.find(m => m.limb === findLimb && m.distance === distance && m.triangle === triangle)
-    if (!findMuscle) {
-        throw new Error("Unable to find opposite muscle")
-    }
-    return findMuscle
 }
