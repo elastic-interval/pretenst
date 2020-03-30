@@ -4,9 +4,13 @@
  */
 
 import { Fabric, Stage, View, World } from "eig"
-import { Matrix4, Vector3 } from "three"
+import { Matrix4, Quaternion, Vector3 } from "three"
 
 import { FloatFeature } from "./fabric-features"
+
+export const FORWARD = new Vector3(1, 0, 0)
+export const RIGHT = new Vector3(0, 0, 1)
+export const UP = new Vector3(0, 1, 0)
 
 const vectorFromArray = (array: Float32Array, index: number, vector?: Vector3): Vector3 => {
     const offset = index * 3
@@ -41,6 +45,9 @@ export class FabricInstance {
     public view: View
     public floatView: IFloatView = createEmptyFloatView()
     public adoptFabric: (fabric: Fabric) => FabricInstance
+    public midpoint = new Vector3(0, 0, 0)
+    public forward = new Vector3(1, 0, 0)
+    public right = new Vector3(0, 0, 1)
 
     private featuresToApply: FloatFeature[] = []
     private fabricBackup?: Fabric
@@ -65,11 +72,13 @@ export class FabricInstance {
     public iterate(requestedStage: Stage): Stage {
         const stage = this.fabric.iterate(requestedStage, this.world)
         this.view.render(this.fabric, this.world)
+        this.midpoint.set(this.view.midpoint_x(), this.view.midpoint_y(), this.view.midpoint_z())
         const feature = this.featuresToApply.shift()
         if (feature) {
             this.world.set_float_value(feature.fabricFeature, feature.numeric)
         }
         this.floatView = createFloatView(this.fabric, this.view)
+        orient(this.floatView, this.forward, this.right)
         return stage
     }
 
@@ -116,12 +125,14 @@ export class FabricInstance {
         return vectorFromArray(this.floatView.unitVectors, intervalIndex)
     }
 
-    public get forward(): Vector3 {
-        return new Vector3(1, 0, 0) // TODO
+    public get quaternion(): Quaternion {
+        return new Quaternion().setFromUnitVectors(FORWARD, this.forward)
     }
 
-    public get right(): Vector3 {
-        return new Vector3(0, 0, 1) // TODO
+    public get top(): Vector3 {
+        const topJoint = 3
+        const loc = this.floatView.jointLocations
+        return new Vector3(loc[topJoint * 3], loc[topJoint * 3 + 1], loc[topJoint * 3 + 2])
     }
 }
 
@@ -191,4 +202,21 @@ function floatArray(copyFunction: (array: Float32Array) => void, length: () => n
     const array = new Float32Array(length())
     copyFunction(array)
     return array
+}
+
+function orient(floatView: IFloatView, forward: Vector3, right: Vector3): void {
+    const locations = floatView.jointLocations
+    const fromTo = (fromJoint: number, toJoint: number, vector: Vector3) => {
+        const from = fromJoint * 3
+        const to = toJoint * 3
+        vector.set(
+            locations[to] - locations[from],
+            locations[to + 1] - locations[from + 1],
+            locations[to + 2] - locations[from + 2],
+        )
+    }
+    fromTo(2, 1, forward)
+    forward.y = 0
+    forward.normalize()
+    right.crossVectors(forward, UP).normalize()
 }

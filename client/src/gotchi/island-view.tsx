@@ -16,6 +16,7 @@ import {
     Vector3,
 } from "three"
 
+import { FORWARD, RIGHT } from "../fabric/fabric-instance"
 import { DIRECTION_LINE, FACE, LINE_VERTEX_COLORS, SCALE_LINE } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
@@ -108,23 +109,20 @@ export function IslandView({island, gotchi, direction, setDirection, evolution}:
 const ISLAND = new MeshPhongMaterial({vertexColors: FaceColors, lights: true})
 
 function directionGeometry(): Geometry {
-    const v = () => new Vector3(0, 1, 0)
-    const ARROW_LENGTH = 9
-    const ARROW_WIDTH = 0.6
+    const v = () => new Vector3(0, 0, 0)
+    const ARROW_LENGTH = 5
+    const ARROW_WIDTH = 0.15
     const ARROW_TIP_LENGTH_FACTOR = 1.3
     const ARROW_TIP_WIDTH_FACTOR = 1.5
-    const right = new Vector3(1, 0, 0)
-    const forward = new Vector3(0, 0, 1)
-    const arrowFromL = v().addScaledVector(right, -ARROW_WIDTH)
-    const arrowToLx = v().addScaledVector(right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(forward, ARROW_LENGTH)
-    const arrowFromR = v().addScaledVector(right, ARROW_WIDTH)
-    const arrowToL = v().addScaledVector(right, -ARROW_WIDTH).addScaledVector(forward, ARROW_LENGTH)
-    const arrowToR = v().addScaledVector(right, ARROW_WIDTH).addScaledVector(forward, ARROW_LENGTH)
-    const arrowToRx = v().addScaledVector(right, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(forward, ARROW_LENGTH)
-    const arrowTip = v().addScaledVector(forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
+    const origin = v()
+    const arrowToLx = v().addScaledVector(RIGHT, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(FORWARD, ARROW_LENGTH)
+    const arrowToL = v().addScaledVector(RIGHT, -ARROW_WIDTH).addScaledVector(FORWARD, ARROW_LENGTH)
+    const arrowToR = v().addScaledVector(RIGHT, ARROW_WIDTH).addScaledVector(FORWARD, ARROW_LENGTH)
+    const arrowToRx = v().addScaledVector(RIGHT, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(FORWARD, ARROW_LENGTH)
+    const arrowTip = v().addScaledVector(FORWARD, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
     const geometry = new Geometry()
     geometry.vertices = [
-        arrowFromL, arrowToL, arrowFromR, arrowToR,
+        origin, arrowToL, origin, arrowToR,
         arrowToRx, arrowTip, arrowToLx, arrowTip,
         arrowToRx, arrowToR, arrowToLx, arrowToL,
     ]
@@ -154,6 +152,8 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
                         key="direction-lines"
                         geometry={DIRECTION_GEOMETRY}
                         material={DIRECTION_LINE}
+                        quaternion={gotchi.instance.quaternion}
+                        position={gotchi.instance.top}
                     />
                 </group>
             )}

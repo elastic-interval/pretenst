@@ -274,7 +274,7 @@ export class Gotchi {
 }
 
 function twitch(instance: FabricInstance, muscle: IMuscle, attack: number, decay: number): void {
-    const deltaSize = 0.7
+    const deltaSize = 0.4
     instance.fabric.twitch_face(muscle.faceIndex, deltaSize, attack, decay)
     // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
 }
