@@ -20,7 +20,7 @@ import { FACE, LINE_VERTEX_COLORS, SCALE_LINE } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
-import { Gotchi } from "./gotchi"
+import { Direction, Gotchi } from "./gotchi"
 import { Island } from "./island"
 import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-logic"
 import { Journey } from "./journey"
@@ -28,8 +28,10 @@ import { Spot } from "./spot"
 
 const TOWARDS_TARGET = 0.01
 
-export function IslandView({island, gotchi, evolution}: {
+export function IslandView({island, gotchi, direction, setDirection, evolution}: {
     island: Island,
+    direction: Direction,
+    setDirection: (direction: Direction) => void,
     gotchi?: Gotchi,
     evolution?: Evolution,
 }): JSX.Element {
@@ -46,6 +48,9 @@ export function IslandView({island, gotchi, evolution}: {
             evolution.iterate(midpoint)
         } else if (gotchi) {
             gotchi.iterate(midpoint)
+            if (direction !== gotchi.direction) {
+                setDirection(gotchi.direction)
+            }
         }
         const towardsTarget = new Vector3().subVectors(midpoint, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)

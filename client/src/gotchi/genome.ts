@@ -3,13 +3,18 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Direction } from "./gotchi"
 import { ITwitch } from "./time-cycle"
 
+export enum GeneName {
+    Forward = "Forward",
+    Left = "Left",
+    Right = "Right",
+}
+
 export interface IGeneData {
-    direction: Direction
+    name: GeneName
     mutationCount: number
-    geneString: string,
+    geneString: string
 }
 
 export interface IGenomeData {
@@ -25,7 +30,7 @@ export function fromGenomeData(genomeData: IGenomeData): Genome {
         return emptyGenome()
     }
     const genes = genomeData.genes.map(g => ({
-        direction: g.direction,
+        name: g.name,
         mutationCount: g.mutationCount,
         dice: deserializeGene(g.geneString),
     }))
@@ -40,7 +45,7 @@ export function fromOptionalGenomeData(genomeData?: IGenomeData): Genome | undef
 }
 
 export interface IGene {
-    direction: Direction
+    name: GeneName
     mutationCount: number
     dice: IDie[]
 }
@@ -50,32 +55,32 @@ export class Genome {
     constructor(private genes: IGene[], private roll: () => IDie) {
     }
 
-    public createReader(direction: Direction): GeneReader {
-        const existingGene = this.genes.find(g => direction === g.direction)
+    public createReader(name: GeneName): GeneReader {
+        const existingGene = this.genes.find(g => name === g.name)
         if (existingGene) {
             return new GeneReader(existingGene, this.roll)
         } else {
-            const freshGene: IGene = {direction, mutationCount: 0, dice: []}
+            const freshGene: IGene = {name, mutationCount: 0, dice: []}
             this.genes.push(freshGene)
             return new GeneReader(freshGene, this.roll)
         }
     }
 
-    public mutationCount(direction: Direction): number {
-        const gene = this.genes.find(g => direction === g.direction)
+    public mutationCount(name: GeneName): number {
+        const gene = this.genes.find(g => name === g.name)
         if (!gene) {
             return 0
         }
         return gene.mutationCount
     }
 
-    public withMutations(direction: Direction, mutations: number): Genome {
+    public withMutations(name: GeneName, mutations: number): Genome {
         const genesCopy: IGene[] = this.genes.map(g => ({
-            direction: g.direction,
+            name: g.name,
             mutationCount: g.mutationCount,
             dice: g.dice.slice(), // TODO: tweet this to the world
         }))
-        const geneToMutate = genesCopy.find(g => direction === g.direction)
+        const geneToMutate = genesCopy.find(g => name === g.name)
         if (geneToMutate) {
             for (let hit = 0; hit < mutations; hit++) {
                 const geneNumber = Math.floor(Math.random() * geneToMutate.dice.length)
@@ -89,7 +94,7 @@ export class Genome {
     public get genomeData(): IGenomeData {
         return {
             genes: this.genes.map(g => ({
-                direction: g.direction,
+                name: g.name,
                 mutationCount: g.mutationCount,
                 geneString: serializeGene(g.dice),
             })),
@@ -97,7 +102,7 @@ export class Genome {
     }
 
     public toString(): string {
-        return this.genes.map(gene => `${gene.direction}:${gene.mutationCount}`).join(", ")
+        return this.genes.map(gene => `${gene.name}:${gene.mutationCount}`).join(", ")
         // return this.genes.map(gene => serializeGene(gene.dice)).join("\n")
     }
 }

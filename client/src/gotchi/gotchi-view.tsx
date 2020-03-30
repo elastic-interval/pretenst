@@ -4,13 +4,15 @@
  */
 
 import * as React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 
 import { CreateInstance } from "../fabric/fabric-instance"
+import { Grouping } from "../view/control-tabs"
 
 import { Evolution, IEvolutionParameters } from "./evolution"
+import { Direction, DIRECTIONS } from "./gotchi"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
 
@@ -27,30 +29,19 @@ export function GotchiView({island, createInstance}: {
     createInstance: CreateInstance,
 }): JSX.Element {
 
-    const [gotchi, updateGotchi] = useState(() => (
-        island.hexalots[0].newGotchi({instance: createInstance(), muscles: [], extremities: []})
+    const [gotchi, setGotchi] = useState(() => (
+        island.hexalots[0].newGotchi({
+            instance: createInstance(),
+            timeSlice: 0,
+            autopilot: false,
+            muscles: [],
+            extremities: [],
+        })
     ))
-    const [evolution, updateEvolution] = useState<Evolution | undefined>(undefined)
+    const [direction, setDirection] = useState(Direction.Rest)
+    useEffect(() => setDirection(gotchi ? gotchi.direction : Direction.Rest), [gotchi])
+    const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
 
-    const onClickEvolve = () => {
-        if (!gotchi) {
-            return
-        }
-        if (!gotchi.isMature) {
-            console.error("immature")
-            return
-        }
-        const evo = new Evolution(createInstance, gotchi, EVOLUTION_PARAMETERS)
-        console.log("Evolving gotchis", evo.evolvers.length)
-        updateEvolution(evo)
-    }
-    const onClickStopEvolving = () => {
-        updateEvolution(undefined)
-        if (gotchi) {
-            const {instance, muscles, extremities} = gotchi
-            updateGotchi(gotchi.hexalot.newGotchi({instance, muscles, extremities}))
-        }
-    }
     return (
         <div id="view-container" style={{
             position: "absolute",
@@ -64,13 +55,66 @@ export function GotchiView({island, createInstance}: {
                 borderColor: "#f0ad4e",
                 borderWidth: "2px",
             }}>
-                <IslandView island={island} gotchi={gotchi} evolution={evolution}/>
+                <IslandView
+                    island={island}
+                    gotchi={gotchi}
+                    direction={direction}
+                    setDirection={setDirection}
+                    evolution={evolution}
+                />
             </Canvas>
             <div id="bottom-middle">
-                <ButtonGroup>
-                    <Button disabled={!!evolution} onClick={onClickEvolve}>Evolve!</Button>
-                    <Button disabled={!evolution} onClick={onClickStopEvolving}>Stop!</Button>
-                </ButtonGroup>
+                <Grouping>
+                    <ButtonGroup className="mx-1">
+                        {DIRECTIONS.map(nextDirection => (
+                            <Button key={`direction-${nextDirection}`}
+                                    disabled={direction === nextDirection}
+                                    onClick={() => {
+                                        if (gotchi) {
+                                            gotchi.direction = nextDirection
+                                        }
+                                    }}
+                            >
+                                {nextDirection}
+                            </Button>
+                        ))}
+                    </ButtonGroup>
+                    <ButtonGroup className="mx-1">
+                        <Button disabled={!!evolution} onClick={() => {
+                            if (!gotchi) {
+                                return
+                            }
+                            if (!gotchi.isMature) {
+                                console.error("immature")
+                                return
+                            }
+                            if (gotchi.direction !== Direction.Rest) {
+                                console.error("not at rest")
+                                return
+                            }
+                            const evo = new Evolution(createInstance, gotchi, EVOLUTION_PARAMETERS)
+                            console.log("Evolving gotchis", evo.evolvers.length)
+                            setEvolution(evo)
+                        }}>
+                            Evolve!
+                        </Button>
+                        <Button disabled={!evolution} onClick={() => {
+                            setEvolution(undefined)
+                            if (gotchi) {
+                                const {instance, timeSlice, autopilot, muscles, extremities} = gotchi
+                                setGotchi(gotchi.hexalot.newGotchi({
+                                    instance,
+                                    timeSlice,
+                                    autopilot,
+                                    muscles,
+                                    extremities,
+                                }))
+                            }
+                        }}>
+                            Stop!
+                        </Button>
+                    </ButtonGroup>
+                </Grouping>
             </div>
         </div>
     )

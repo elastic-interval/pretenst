@@ -8,7 +8,7 @@ import { Vector3 } from "three"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { fromGenomeData } from "./genome"
-import { Gotchi, IGotchiSeed } from "./gotchi"
+import { Direction, directionGene, Gotchi, IGotchiSeed } from "./gotchi"
 
 export interface IEvolutionParameters {
     maxPopulation: number
@@ -36,16 +36,21 @@ export class Evolution {
         if (!baseGotchi.isMature) {
             throw new Error("Cannot create evolution from gotchi which is not mature")
         }
+        if (baseGotchi.direction !== Direction.Rest) {
+            throw new Error("Cannot create evolution from gotchi which is not at rest")
+        }
         this.currentMaxCycles = this.param.minCycleCount
         this.baseGotchi.instance.snapshot()
         const gotchis: Gotchi[] = []
         let genome = this.baseGotchi.hexalot.genome
         while (gotchis.length < this.param.maxPopulation) {
-            genome = genome.withMutations(this.baseGotchi.direction, param.mutationCount)
+            genome = genome.withMutations(directionGene(this.baseGotchi.direction), param.mutationCount)
             const instance = this.createInstance(this.baseGotchi.instance.fabricClone)
             const muscles = this.baseGotchi.muscles
             const extremities = this.baseGotchi.extremities
-            const gotchi = this.baseGotchi.hexalot.newGotchi({instance, genome, muscles, extremities})
+            const timeSlice = this.baseGotchi.timeSlice
+            const autopilot = true
+            const gotchi = this.baseGotchi.hexalot.newGotchi({instance, timeSlice, autopilot, genome, muscles, extremities})
             if (!gotchi) {
                 console.error("Unable to create gotchi")
                 break
@@ -103,17 +108,19 @@ export class Evolution {
         const survivorCount = Math.floor(this.evolvers.length * survivalRate)
         this.evolvers.forEach((evolver, evolverIndex) => {
             const instance = evolver.gotchi.instance.adoptFabric(this.baseGotchi.instance.fabricClone)
+            const timeSlice = evolver.gotchi.timeSlice
+            const autopilot = true
             const muscles = this.baseGotchi.muscles
             const extremities = this.baseGotchi.extremities
             if (evolverIndex < survivorCount) {
                 const genome = evolver.gotchi.genome
-                evolver.gotchi = this.newGotchi({genome, instance, muscles, extremities})
+                evolver.gotchi = this.newGotchi({genome, instance, timeSlice, autopilot, muscles, extremities})
                 return
             } else {
                 const parentIndex = Math.floor(survivorCount * Math.random())
                 const genome = fromGenomeData(this.evolvers[parentIndex].gotchi.mutatedGenome(mutationCount))
                 console.log(`replacing ${evolver.index} with offspring from ${parentIndex}`, genome.toString())
-                evolver.gotchi = this.newGotchi({genome, instance, muscles, extremities})
+                evolver.gotchi = this.newGotchi({genome, instance, timeSlice, autopilot, muscles, extremities})
             }
         })
     }

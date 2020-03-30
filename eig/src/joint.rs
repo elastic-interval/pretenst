@@ -9,7 +9,7 @@ use crate::world::World;
 use nalgebra::*;
 
 const RESURFACE: f32 = 0.01;
-const STICKY_DAMPING: f32 = 0.5;
+const STICKY_DAMPING: f32 = 0.8;
 
 #[derive(Clone, Copy)]
 pub struct Joint {

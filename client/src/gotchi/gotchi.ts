@@ -10,12 +10,10 @@ import { FabricInstance } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
 
-import { Genome, IGenomeData } from "./genome"
+import { GeneName, Genome, IGenomeData } from "./genome"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
 import { TimeCycle } from "./time-cycle"
-
-const MAX_VOTES = 30
 
 export enum Direction {
     Rest = "Rest",
@@ -24,7 +22,20 @@ export enum Direction {
     Right = "Right",
 }
 
-export const DIRECTIONS = Object.keys(Direction).map(k => Direction[k])
+export const DIRECTIONS: Direction[] = Object.keys(Direction).map(k => Direction[k])
+
+export function directionGene(direction: Direction): GeneName {
+    switch (direction) {
+        case Direction.Forward:
+            return GeneName.Forward
+        case Direction.Left:
+            return GeneName.Left
+        case Direction.Right:
+            return GeneName.Right
+        default:
+            throw new Error()
+    }
+}
 
 export interface IExtremity {
     faceIndex: number
@@ -50,6 +61,8 @@ export enum Limb {
 
 export interface IGotchiSeed {
     instance: object
+    timeSlice: number
+    autopilot: boolean
     genome?: Genome
     embryo?: Tensegrity
     muscles: IMuscle[]
@@ -60,20 +73,19 @@ export type CreateGotchi = (hexalot: Hexalot, rotation: number, seed: IGotchiSee
 
 export class Gotchi {
     public instance: FabricInstance
+    public direction = Direction.Rest
     public genome: Genome
     public muscles: IMuscle[] = []
     public extremities: IExtremity[] = []
     public cycleCount = 0
+    public timeSlice = 0
+    public timeCycles = 0
+    public autopilot = false
 
     private embryo?: Tensegrity
-    private votes: Direction[] = []
-    private _direction = Direction.Rest
-    private _nextDirection = Direction.Rest
     private currentLeg: Leg
     private shapingTime = 60
     private twitchCycle: Record<string, TimeCycle> = {}
-    private timeSlice = 0
-    private timeCycles = 0
 
     constructor(public readonly hexalot: Hexalot, leg: Leg, seed: IGotchiSeed) {
         if (!seed.instance) {
@@ -88,6 +100,8 @@ export class Gotchi {
         this.embryo = seed.embryo
         this.muscles = seed.muscles
         this.extremities = seed.extremities
+        this.timeSlice = seed.timeSlice
+        this.autopilot = seed.autopilot
         if (!this.embryo) {
             this.genomeToTwitchCycle(this.genome)
         }
@@ -109,60 +123,27 @@ export class Gotchi {
         if (!this.genome) {
             throw new Error("Not evolving")
         }
-        return this.genome.withMutations(this.nextDirection, mutationCount).genomeData
+        return this.genome.withMutations(directionGene(this.direction), mutationCount).genomeData
     }
 
     public get age(): number {
         return this.instance.fabric.age
     }
 
-    public get direction(): Direction {
-        return this._direction
-    }
-
-    public get nextDirection(): Direction {
-        return this._nextDirection
-    }
-
-    public set nextDirection(direction: Direction) {
-        this._nextDirection = direction
+    public set leg(leg: Leg) {
+        this.currentLeg = leg
+        this.reorient()
     }
 
     public get leg(): Leg {
         return this.currentLeg
     }
 
-    public set leg(leg: Leg) {
-        this.currentLeg = leg
-        this.votes = []
-        this._nextDirection = this.voteDirection()
-    }
-
     public iterate(midpoint: Vector3): void {
         const view = this.instance.view
         midpoint.set(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         const embryo = this.embryo
-        if (!embryo) {
-            this.instance.iterate(Stage.Realized)
-            const twitchCycle = this.twitchCycle[this.direction]
-            if (!twitchCycle) {
-                return
-            }
-            this.timeCycles++
-            if (this.timeCycles < 7) {
-                return
-            }
-            this.timeCycles = 0
-            this.timeSlice++
-            if (this.timeSlice >= 36) {
-                this.timeSlice = 0
-                this.cycleCount++
-                console.log("cycle count", this.cycleCount)
-            }
-            twitchCycle.activate(this.timeSlice, (whichMuscle: number, attack: number, decay: number) => (
-                twitch(this.instance, this.muscles[whichMuscle], attack, decay)
-            ))
-        } else {
+        if (embryo) {
             const stage = embryo.iterate()
             switch (stage) {
                 case Stage.Shaping:
@@ -183,23 +164,33 @@ export class Gotchi {
                     this.genomeToTwitchCycle(this.genome)
                     break
             }
-        }
-    }
-
-    public reorient(): void {
-        if (this.touchedDestination) {
-            const nextLeg = this.leg.nextLeg
-            if (nextLeg) {
-                this.leg = nextLeg
-            } else {
-                this.nextDirection = Direction.Rest
+        } else {
+            this.instance.iterate(Stage.Realized)
+            this.timeCycles++
+            if (this.timeCycles < 7) {
+                return
             }
-        }
-        if (this.nextDirection !== Direction.Rest) {
-            const direction = this.voteDirection()
-            if (this.nextDirection !== direction) {
-                // console.log(`${this.index} turned ${Direction[this.nextDirection]} to ${Direction[direction]}`)
-                this.nextDirection = direction
+            this.timeCycles = 0
+            this.timeSlice++
+            if (this.timeSlice >= 36) {
+                this.timeSlice = 0
+                this.cycleCount++
+                if (this.autopilot) {
+                    console.log("reorient cycle", this.cycleCount, this.direction)
+                    this.reorient()
+                } else {
+                    console.log("cycle ", this.cycleCount, this.direction)
+                }
+            }
+            if (this.direction !== Direction.Rest) {
+                const twitchCycle = this.twitchCycle[this.direction]
+                if (!twitchCycle) {
+                    console.error("no twitch cycle", this.direction)
+                    return
+                }
+                twitchCycle.activate(this.timeSlice, (whichMuscle: number, attack: number, decay: number) => (
+                    twitch(this.instance, this.muscles[whichMuscle], attack, decay)
+                ))
             }
         }
     }
@@ -228,38 +219,32 @@ export class Gotchi {
         return this.currentLeg.goTo.center
     }
 
+    public reorient(): void {
+        const touchedDestination = false
+        if (touchedDestination) {
+            const nextLeg = this.leg.nextLeg
+            if (nextLeg) {
+                this.leg = nextLeg
+            } else {
+                this.direction = Direction.Rest
+            }
+        } else {
+            this.direction = this.directionToTarget
+            console.log("direction to target", this.direction)
+        }
+    }
+
     private genomeToTwitchCycle(genome: Genome): void {
-        Object.keys(Direction).forEach(key => {
-            const direction = Direction[key]
-            const reader = genome.createReader(direction)
-            const mutationCount = genome.mutationCount(direction)
-            const twitchCount = Math.ceil(Math.log(mutationCount)) + 1
-            if (key === "Rest") {
+        DIRECTIONS.filter(d => d !== Direction.Rest).forEach(direction => {
+            const geneName = directionGene(direction)
+            const reader = genome.createReader(geneName)
+            const mutationCount = genome.mutationCount(geneName)
+            const twitchCount = (mutationCount === 0 ? 0 : Math.ceil(Math.log(mutationCount))) + 1
+            if (direction === Direction.Rest) {
                 console.log(`twitchCount=${twitchCount} from ${mutationCount}`)
             }
-            this.twitchCycle[key] = new TimeCycle(reader, this.muscles, twitchCount)
+            this.twitchCycle[direction] = new TimeCycle(reader, this.muscles, twitchCount)
         })
-    }
-
-    private get touchedDestination(): boolean {
-        return false // this.midpoint.distanceTo(this.target) < 1 // TODO: how close?
-    }
-
-    private voteDirection(): Direction {
-        const votes = this.votes
-        const latestVote = this.directionToTarget
-        votes.push(latestVote)
-        if (votes.length > MAX_VOTES) {
-            votes.shift()
-        }
-        const voteCounts = votes.reduce((c: number[], vote) => {
-            c[vote]++
-            return c
-        }, [0, 0, 0, 0, 0])
-        const found = DIRECTIONS.find(direction => (
-            voteCounts[direction] === MAX_VOTES && this._nextDirection !== direction
-        ))
-        return found ? found : latestVote
     }
 
     private get directionToTarget(): Direction {
