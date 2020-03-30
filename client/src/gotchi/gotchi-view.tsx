@@ -34,12 +34,13 @@ export function GotchiView({island, createInstance}: {
             instance: createInstance(),
             timeSlice: 0,
             autopilot: false,
+            direction: Direction.Rest,
             muscles: [],
             extremities: [],
         })
     ))
-    const [direction, setDirection] = useState(Direction.Rest)
-    useEffect(() => setDirection(gotchi ? gotchi.direction : Direction.Rest), [gotchi])
+    const [gotchiDirection, setGotchiDirection] = useState(Direction.Rest)
+    useEffect(() => setGotchiDirection(gotchi ? gotchi.direction : Direction.Rest), [gotchi])
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
 
     return (
@@ -58,8 +59,8 @@ export function GotchiView({island, createInstance}: {
                 <IslandView
                     island={island}
                     gotchi={gotchi}
-                    direction={direction}
-                    setDirection={setDirection}
+                    direction={gotchiDirection}
+                    setDirection={setGotchiDirection}
                     evolution={evolution}
                 />
             </Canvas>
@@ -68,7 +69,7 @@ export function GotchiView({island, createInstance}: {
                     <ButtonGroup className="mx-1">
                         {DIRECTIONS.map(nextDirection => (
                             <Button key={`direction-${nextDirection}`}
-                                    disabled={direction === nextDirection}
+                                    disabled={gotchiDirection === nextDirection}
                                     onClick={() => {
                                         if (gotchi) {
                                             gotchi.direction = nextDirection
@@ -92,6 +93,11 @@ export function GotchiView({island, createInstance}: {
                                 console.error("not at rest")
                                 return
                             }
+                            gotchi.reorient()
+                            if (gotchi.direction === Direction.Rest) {
+                                console.error("still at rest after reorient")
+                                return
+                            }
                             const evo = new Evolution(createInstance, gotchi, EVOLUTION_PARAMETERS)
                             console.log("Evolving gotchis", evo.evolvers.length)
                             setEvolution(evo)
@@ -101,11 +107,12 @@ export function GotchiView({island, createInstance}: {
                         <Button disabled={!evolution} onClick={() => {
                             setEvolution(undefined)
                             if (gotchi) {
-                                const {instance, timeSlice, autopilot, muscles, extremities} = gotchi
+                                const {instance, timeSlice, autopilot, direction, muscles, extremities} = gotchi
                                 setGotchi(gotchi.hexalot.newGotchi({
                                     instance,
                                     timeSlice,
                                     autopilot,
+                                    direction,
                                     muscles,
                                     extremities,
                                 }))

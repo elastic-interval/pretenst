@@ -4,7 +4,7 @@
  */
 
 import { Fabric, Stage, View, World } from "eig"
-import { Matrix4, Quaternion, Vector3 } from "three"
+import { Matrix4, Vector3 } from "three"
 
 import { FloatFeature } from "./fabric-features"
 
@@ -48,6 +48,7 @@ export class FabricInstance {
     public midpoint = new Vector3(0, 0, 0)
     public forward = new Vector3(1, 0, 0)
     public right = new Vector3(0, 0, 1)
+    public left = new Vector3(0, 0, -1)
 
     private featuresToApply: FloatFeature[] = []
     private fabricBackup?: Fabric
@@ -78,7 +79,7 @@ export class FabricInstance {
             this.world.set_float_value(feature.fabricFeature, feature.numeric)
         }
         this.floatView = createFloatView(this.fabric, this.view)
-        orient(this.floatView, this.forward, this.right)
+        orient(this.floatView, this.forward, this.right, this.left)
         return stage
     }
 
@@ -123,16 +124,6 @@ export class FabricInstance {
 
     public unitVector(intervalIndex: number): Vector3 {
         return vectorFromArray(this.floatView.unitVectors, intervalIndex)
-    }
-
-    public get quaternion(): Quaternion {
-        return new Quaternion().setFromUnitVectors(FORWARD, this.forward)
-    }
-
-    public get top(): Vector3 {
-        const topJoint = 3
-        const loc = this.floatView.jointLocations
-        return new Vector3(loc[topJoint * 3], loc[topJoint * 3 + 1], loc[topJoint * 3 + 2])
     }
 }
 
@@ -204,7 +195,7 @@ function floatArray(copyFunction: (array: Float32Array) => void, length: () => n
     return array
 }
 
-function orient(floatView: IFloatView, forward: Vector3, right: Vector3): void {
+function orient(floatView: IFloatView, forward: Vector3, right: Vector3, left: Vector3): void {
     const locations = floatView.jointLocations
     const fromTo = (fromJoint: number, toJoint: number, vector: Vector3) => {
         const from = fromJoint * 3
@@ -219,4 +210,5 @@ function orient(floatView: IFloatView, forward: Vector3, right: Vector3): void {
     forward.y = 0
     forward.normalize()
     right.crossVectors(forward, UP).normalize()
+    left.set(0,0,0).sub(right)
 }

@@ -4,9 +4,9 @@
  */
 
 import { Stage } from "eig"
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
+import { BufferGeometry, Float32BufferAttribute, Quaternion, Vector3 } from "three"
 
-import { FabricInstance } from "../fabric/fabric-instance"
+import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
 
@@ -33,7 +33,7 @@ export function directionGene(direction: Direction): GeneName {
         case Direction.Right:
             return GeneName.Right
         default:
-            throw new Error()
+            throw new Error(`No gene for direction ${direction}`)
     }
 }
 
@@ -63,6 +63,7 @@ export interface IGotchiSeed {
     instance: object
     timeSlice: number
     autopilot: boolean
+    direction: Direction
     genome?: Genome
     embryo?: Tensegrity
     muscles: IMuscle[]
@@ -102,6 +103,7 @@ export class Gotchi {
         this.extremities = seed.extremities
         this.timeSlice = seed.timeSlice
         this.autopilot = seed.autopilot
+        this.direction = seed.direction
         if (!this.embryo) {
             this.genomeToTwitchCycle(this.genome)
         }
@@ -176,10 +178,7 @@ export class Gotchi {
                 this.timeSlice = 0
                 this.cycleCount++
                 if (this.autopilot) {
-                    console.log("reorient cycle", this.cycleCount, this.direction)
                     this.reorient()
-                } else {
-                    console.log("cycle ", this.cycleCount, this.direction)
                 }
             }
             if (this.direction !== Direction.Rest) {
@@ -230,8 +229,37 @@ export class Gotchi {
             }
         } else {
             this.direction = this.directionToTarget
-            console.log("direction to target", this.direction)
         }
+    }
+
+    public get showDirection(): boolean {
+        return this.direction !== Direction.Rest
+    }
+
+    public get directionQuaternion(): Quaternion {
+        return this.quaternionForDirection(this.direction)
+    }
+
+    private quaternionForDirection(direction: Direction): Quaternion {
+        const towards = () => {
+            const instance = this.instance
+            switch (direction) {
+                case Direction.Rest:
+                case Direction.Forward:
+                    return instance.forward
+                case Direction.Left:
+                    return instance.left
+                case Direction.Right:
+                    return instance.right
+            }
+        }
+        return new Quaternion().setFromUnitVectors(FORWARD, towards())
+    }
+
+    public get topJointLocation(): Vector3 {
+        const topJoint = 3
+        const loc = this.instance.floatView.jointLocations
+        return new Vector3(loc[topJoint * 3], loc[topJoint * 3 + 1], loc[topJoint * 3 + 2])
     }
 
     private genomeToTwitchCycle(genome: Genome): void {

@@ -148,13 +148,15 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
                         geometry={gotchi.facesGeometry}
                         material={FACE}
                     />
-                    <lineSegments
-                        key="direction-lines"
-                        geometry={DIRECTION_GEOMETRY}
-                        material={DIRECTION_LINE}
-                        quaternion={gotchi.instance.quaternion}
-                        position={gotchi.instance.top}
-                    />
+                    {!gotchi.showDirection ? undefined : (
+                        <lineSegments
+                            key="direction-lines"
+                            geometry={DIRECTION_GEOMETRY}
+                            material={DIRECTION_LINE}
+                            quaternion={gotchi.directionQuaternion}
+                            position={gotchi.topJointLocation}
+                        />
+                    )}
                 </group>
             )}
         </group>
@@ -165,11 +167,20 @@ function EvolutionComponent({evolution}: { evolution: Evolution }): JSX.Element 
     return (
         <group>
             {evolution.evolvers.map(({gotchi, index}) => (
-                <lineSegments
-                    key={`evolving-gotchi-${index}`}
-                    geometry={gotchi.linesGeometry}
-                    material={LINE_VERTEX_COLORS}
-                />
+                <group key={`evolving-gotchi-${index}`}>
+                    <lineSegments
+                        geometry={gotchi.linesGeometry}
+                        material={LINE_VERTEX_COLORS}
+                    />
+                    {!gotchi.showDirection ? undefined : (
+                        <lineSegments
+                            geometry={DIRECTION_GEOMETRY}
+                            material={DIRECTION_LINE}
+                            quaternion={gotchi.directionQuaternion}
+                            position={gotchi.topJointLocation}
+                        />
+                    )}
+                </group>
             ))}
         </group>
     )

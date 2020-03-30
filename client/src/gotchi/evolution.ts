@@ -36,7 +36,7 @@ export class Evolution {
         if (!baseGotchi.isMature) {
             throw new Error("Cannot create evolution from gotchi which is not mature")
         }
-        if (baseGotchi.direction !== Direction.Rest) {
+        if (baseGotchi.direction === Direction.Rest) {
             throw new Error("Cannot create evolution from gotchi which is not at rest")
         }
         this.currentMaxCycles = this.param.minCycleCount
@@ -50,7 +50,8 @@ export class Evolution {
             const extremities = this.baseGotchi.extremities
             const timeSlice = this.baseGotchi.timeSlice
             const autopilot = true
-            const gotchi = this.baseGotchi.hexalot.newGotchi({instance, timeSlice, autopilot, genome, muscles, extremities})
+            const direction = baseGotchi.direction
+            const gotchi = this.baseGotchi.hexalot.newGotchi({instance, timeSlice, autopilot, direction, genome, muscles, extremities})
             if (!gotchi) {
                 console.error("Unable to create gotchi")
                 break
@@ -110,17 +111,18 @@ export class Evolution {
             const instance = evolver.gotchi.instance.adoptFabric(this.baseGotchi.instance.fabricClone)
             const timeSlice = evolver.gotchi.timeSlice
             const autopilot = true
+            const direction = this.baseGotchi.direction
             const muscles = this.baseGotchi.muscles
             const extremities = this.baseGotchi.extremities
             if (evolverIndex < survivorCount) {
                 const genome = evolver.gotchi.genome
-                evolver.gotchi = this.newGotchi({genome, instance, timeSlice, autopilot, muscles, extremities})
+                evolver.gotchi = this.newGotchi({genome, instance, timeSlice, direction, autopilot, muscles, extremities})
                 return
             } else {
                 const parentIndex = Math.floor(survivorCount * Math.random())
                 const genome = fromGenomeData(this.evolvers[parentIndex].gotchi.mutatedGenome(mutationCount))
                 console.log(`replacing ${evolver.index} with offspring from ${parentIndex}`, genome.toString())
-                evolver.gotchi = this.newGotchi({genome, instance, timeSlice, autopilot, muscles, extremities})
+                evolver.gotchi = this.newGotchi({genome, instance, timeSlice, direction, autopilot, muscles, extremities})
             }
         })
     }
