@@ -16,7 +16,7 @@ import {
     Vector3,
 } from "three"
 
-import { FACE, LINE_VERTEX_COLORS, SCALE_LINE } from "../view/materials"
+import { DIRECTION_LINE, FACE, LINE_VERTEX_COLORS, SCALE_LINE } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
@@ -107,7 +107,35 @@ export function IslandView({island, gotchi, direction, setDirection, evolution}:
 
 const ISLAND = new MeshPhongMaterial({vertexColors: FaceColors, lights: true})
 
+function directionGeometry(): Geometry {
+    const v = () => new Vector3(0, 1, 0)
+    const ARROW_LENGTH = 9
+    const ARROW_WIDTH = 0.6
+    const ARROW_TIP_LENGTH_FACTOR = 1.3
+    const ARROW_TIP_WIDTH_FACTOR = 1.5
+    const right = new Vector3(1, 0, 0)
+    const forward = new Vector3(0, 0, 1)
+    const arrowFromL = v().addScaledVector(right, -ARROW_WIDTH)
+    const arrowToLx = v().addScaledVector(right, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(forward, ARROW_LENGTH)
+    const arrowFromR = v().addScaledVector(right, ARROW_WIDTH)
+    const arrowToL = v().addScaledVector(right, -ARROW_WIDTH).addScaledVector(forward, ARROW_LENGTH)
+    const arrowToR = v().addScaledVector(right, ARROW_WIDTH).addScaledVector(forward, ARROW_LENGTH)
+    const arrowToRx = v().addScaledVector(right, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(forward, ARROW_LENGTH)
+    const arrowTip = v().addScaledVector(forward, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
+    const geometry = new Geometry()
+    geometry.vertices = [
+        arrowFromL, arrowToL, arrowFromR, arrowToR,
+        arrowToRx, arrowTip, arrowToLx, arrowTip,
+        arrowToRx, arrowToR, arrowToLx, arrowToL,
+    ]
+    geometry.computeBoundingBox()
+    return geometry
+}
+
+const DIRECTION_GEOMETRY = directionGeometry()
+
 function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
+
     return (
         <group>
             <lineSegments
@@ -116,11 +144,18 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
                 material={LINE_VERTEX_COLORS}
             />
             {!gotchi.isMature ? undefined : (
-                <mesh
-                    key="gotchi-faces"
-                    geometry={gotchi.facesGeometry}
-                    material={FACE}
-                />
+                <group>
+                    <mesh
+                        key="gotchi-faces"
+                        geometry={gotchi.facesGeometry}
+                        material={FACE}
+                    />
+                    <lineSegments
+                        key="direction-lines"
+                        geometry={DIRECTION_GEOMETRY}
+                        material={DIRECTION_LINE}
+                    />
+                </group>
             )}
         </group>
     )

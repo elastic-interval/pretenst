@@ -16,6 +16,7 @@ import {
 
 export const SELECTION_COLOR = "#91934f"
 export const SCALE_LINE_COLOR = "#cace02"
+export const DIRECTION_LINE_COLOR = "#05cec0"
 export const JOINT_COLOR = "#e83ada"
 
 const RAINBOW_GRADIENT = [
@@ -52,6 +53,10 @@ export const LINE_VERTEX_COLORS = new LineBasicMaterial({
 
 export const SCALE_LINE = new LineBasicMaterial({
     color: new Color(SCALE_LINE_COLOR),
+})
+
+export const DIRECTION_LINE = new LineBasicMaterial({
+    color: new Color(DIRECTION_LINE_COLOR),
 })
 
 export const FACE = new MeshPhongMaterial({
