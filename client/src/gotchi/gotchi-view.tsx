@@ -50,12 +50,7 @@ export function GotchiView({island, createInstance}: {
             right: 0,
             height: "100%",
         }}>
-            <Canvas key={island.name} style={{
-                backgroundColor: "black",
-                borderStyle: "solid",
-                borderColor: "#f0ad4e",
-                borderWidth: "2px",
-            }}>
+            <Canvas key={island.name} style={{backgroundColor: "black"}}>
                 <IslandView
                     island={island}
                     gotchi={gotchi}

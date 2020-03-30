@@ -267,7 +267,7 @@ export class Gotchi {
             const geneName = directionGene(direction)
             const reader = genome.createReader(geneName)
             const mutationCount = genome.mutationCount(geneName)
-            const twitchCount = (mutationCount === 0 ? 0 : Math.ceil(Math.log(mutationCount))) + 1
+            const twitchCount = (mutationCount === 0 ? 3 : Math.ceil(Math.log(mutationCount))) + 3
             if (direction === Direction.Rest) {
                 console.log(`twitchCount=${twitchCount} from ${mutationCount}`)
             }

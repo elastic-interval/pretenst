@@ -13,9 +13,9 @@ export class TimeCycle {
         while (twitchCount-- > 0) {
             const twitch = geneReader.readMuscleTwitch(muscles.length)
             this.addTwitch(twitch.when, twitch)
-            const oppositeTime = (twitch.when + 18) % 36
             const oppositeMuscle = oppositeMuscleIndex(twitch.whichMuscle, muscles)
-            this.addTwitch(oppositeTime, {...twitch, whichMuscle: oppositeMuscle, when: oppositeTime})
+            // const oppositeTime = (twitch.when + 18) % 36
+            this.addTwitch(twitch.when, {...twitch, whichMuscle: oppositeMuscle})
         }
     }
 
