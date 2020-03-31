@@ -67,12 +67,13 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
         if (!tenscript) {
             throw new Error("Unable to build body")
         }
-        const createEmbryo = (instance: FabricInstance) => {
+        const createEmbryo = (instance: FabricInstance, rotation: number) => {
             FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
+            // TODO: rotation
             return new Tensegrity(roleLength, numericFeature, instance, tenscript)
         }
         const createGotchi: CreateGotchi = (hexalot, instance, genome, rotation) => {
-            const embryo = instance.fabric.age === 0? createEmbryo(instance): undefined
+            const embryo = instance.fabric.age === 0? createEmbryo(instance, rotation): undefined
             const state: IGotchiState = freshGotchiState(hexalot, instance, genome, hexalot.firstLeg)
             return new Gotchi(state, embryo)
         }

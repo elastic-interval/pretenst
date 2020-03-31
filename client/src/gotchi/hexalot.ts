@@ -52,7 +52,7 @@ export class Hexalot implements IHexalot {
         console.log(`Saving genome to ${this.id}`, data)
     }
 
-    public newGotchi(instance: FabricInstance, genome?: Genome): Gotchi | undefined {
+    public createNewGotchi(instance: FabricInstance, genome?: Genome): Gotchi | undefined {
         if (!genome) {
             genome = this.genome
         }

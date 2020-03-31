@@ -46,7 +46,7 @@ export class Evolution {
         while (gotchis.length < this.param.maxPopulation) {
             genome = genome.withMutations(directionGene(this.baseGotchi.direction), param.mutationCount)
             const instance = this.createInstance(this.baseGotchi.fabricClone)
-            const gotchi = this.baseGotchi.hexalot.newGotchi(instance, genome)
+            const gotchi = this.baseGotchi.recycled(instance, genome)
             if (!gotchi) {
                 console.error("Unable to create gotchi")
                 break

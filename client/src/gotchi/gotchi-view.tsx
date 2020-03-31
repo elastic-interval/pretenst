@@ -29,7 +29,7 @@ export function GotchiView({island, createInstance}: {
     createInstance: CreateInstance,
 }): JSX.Element {
 
-    const [gotchi, setGotchi] = useState(() => island.hexalots[0].newGotchi(createInstance()))
+    const [gotchi, setGotchi] = useState(() => island.hexalots[0].createNewGotchi(createInstance()))
     const [gotchiDirection, setGotchiDirection] = useState(Direction.Rest)
     useEffect(() => setGotchiDirection(gotchi ? gotchi.direction : Direction.Rest), [gotchi])
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
