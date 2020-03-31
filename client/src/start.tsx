@@ -13,7 +13,7 @@ import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
-import { CreateGotchi, Gotchi } from "./gotchi/gotchi"
+import { CreateGotchi, freshGotchiState, Gotchi, IGotchiState } from "./gotchi/gotchi"
 import { GotchiView } from "./gotchi/gotchi-view"
 import { Island } from "./gotchi/island"
 import { IIslandData } from "./gotchi/island-logic"
@@ -60,7 +60,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             }
         }
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
-        const BODY = "'Gotchi':(A(4,S90,Mb0),b(4,S90,Mb0),a(4,S90,Md0),B(4,Md0,S90)):0=face-distance-50"
+        const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-40"
         const tenscript = codeToTenscript((error: string) => {
             throw new Error(`Unable to compile: ${error}`)
         }, false, BODY)
@@ -71,13 +71,10 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
             return new Tensegrity(roleLength, numericFeature, instance, tenscript)
         }
-        const createGotchi: CreateGotchi = (hexalot, rotation, seed) => {
-            const instance: FabricInstance = seed.instance ? seed.instance as FabricInstance : createInstance()
-            seed.instance = instance
-            if (instance.fabric.age === 0) {
-                seed.embryo = createEmbryo(instance)
-            }
-            return new Gotchi(hexalot, hexalot.firstLeg, seed)
+        const createGotchi: CreateGotchi = (hexalot, instance, genome, rotation) => {
+            const embryo = instance.fabric.age === 0? createEmbryo(instance): undefined
+            const state: IGotchiState = freshGotchiState(hexalot, instance, genome, hexalot.firstLeg)
+            return new Gotchi(state, embryo)
         }
         const island = new Island(ISLAND_DATA, createGotchi)
         ReactDOM.render(

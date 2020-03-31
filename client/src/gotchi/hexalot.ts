@@ -5,8 +5,10 @@
 
 import { Vector3 } from "three"
 
+import { FabricInstance } from "../fabric/fabric-instance"
+
 import { emptyGenome, fromGenomeData, Genome } from "./genome"
-import { CreateGotchi, Gotchi, IGotchiSeed } from "./gotchi"
+import { CreateGotchi, Gotchi } from "./gotchi"
 import { ICoords, IHexalot } from "./island-logic"
 import { Journey, Leg } from "./journey"
 import { Spot } from "./spot"
@@ -50,11 +52,11 @@ export class Hexalot implements IHexalot {
         console.log(`Saving genome to ${this.id}`, data)
     }
 
-    public newGotchi(seed: IGotchiSeed): Gotchi | undefined {
-        if (!seed.genome) {
-            seed.genome = this.genome
+    public newGotchi(instance: FabricInstance, genome?: Genome): Gotchi | undefined {
+        if (!genome) {
+            genome = this.genome
         }
-        return this.createGotchi(this, this.rotation, seed)
+        return this.createGotchi(this, instance, genome, this.rotation)
     }
 
     public get rotation(): number {

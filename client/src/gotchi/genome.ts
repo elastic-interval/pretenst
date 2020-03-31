@@ -3,12 +3,13 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { ITwitch } from "./time-cycle"
-
 export enum GeneName {
     Forward = "Forward",
     Left = "Left",
     Right = "Right",
+    MusclePeriod = "Attack",
+    AttackPeriod = "Attack",
+    DecayPeriod = "Decay",
 }
 
 export interface IGeneData {
@@ -18,11 +19,20 @@ export interface IGeneData {
 }
 
 export interface IGenomeData {
+    generation: number
     genes: IGeneData[]
 }
 
+export interface ITwitch {
+    when: number
+    whichMuscle: number
+    attack: number
+    decay: number
+    alternating: boolean
+}
+
 export function emptyGenome(): Genome {
-    return new Genome([], rollTheDice)
+    return new Genome(rollTheDice, [])
 }
 
 export function fromGenomeData(genomeData: IGenomeData): Genome {
@@ -34,14 +44,7 @@ export function fromGenomeData(genomeData: IGenomeData): Genome {
         mutationCount: g.mutationCount,
         dice: deserializeGene(g.geneString),
     }))
-    return new Genome(genes, rollTheDice)
-}
-
-export function fromOptionalGenomeData(genomeData?: IGenomeData): Genome | undefined {
-    if (!genomeData) {
-        return undefined
-    }
-    return fromGenomeData(genomeData)
+    return new Genome(rollTheDice, genes, genomeData.generation)
 }
 
 export interface IGene {
@@ -51,8 +54,10 @@ export interface IGene {
 }
 
 export class Genome {
+    public readonly generation: number
 
-    constructor(private genes: IGene[], private roll: () => IDie) {
+    constructor(private roll: () => IDie, private genes: IGene[], gen?: number) {
+        this.generation = gen !== undefined ? gen : 1
     }
 
     public createReader(name: GeneName): GeneReader {
@@ -88,7 +93,7 @@ export class Genome {
                 geneToMutate.mutationCount++
             }
         }
-        return new Genome(genesCopy, this.roll)
+        return new Genome(this.roll, genesCopy, this.generation + 1)
     }
 
     public get genomeData(): IGenomeData {
@@ -98,6 +103,7 @@ export class Genome {
                 mutationCount: g.mutationCount,
                 geneString: serializeGene(g.dice),
             })),
+            generation: this.generation,
         }
     }
 
@@ -108,18 +114,21 @@ export class Genome {
 }
 
 interface IDie {
-    index: number,
-    numeral: string,
+    index: number
+    numeral: string
     symbol: string
+    featureDelta: number
 }
 
+const DELTA = 1.1
+
 const DICE: IDie[] = [
-    {index: 0, numeral: "1", symbol: "⚀"},
-    {index: 1, numeral: "2", symbol: "⚁"},
-    {index: 2, numeral: "3", symbol: "⚂"},
-    {index: 3, numeral: "4", symbol: "⚃"},
-    {index: 4, numeral: "5", symbol: "⚄"},
-    {index: 5, numeral: "6", symbol: "⚅"},
+    {index: 0, numeral: "1", symbol: "⚀", featureDelta: 1 / DELTA / DELTA / DELTA},
+    {index: 1, numeral: "2", symbol: "⚁", featureDelta: 1 / DELTA / DELTA},
+    {index: 2, numeral: "3", symbol: "⚂", featureDelta: 1 / DELTA},
+    {index: 3, numeral: "4", symbol: "⚃", featureDelta: DELTA},
+    {index: 4, numeral: "5", symbol: "⚄", featureDelta: DELTA * DELTA},
+    {index: 5, numeral: "6", symbol: "⚅", featureDelta: DELTA * DELTA * DELTA},
 ]
 
 const DICE_MAP = ((): { [key: string]: IDie; } => {
@@ -141,13 +150,24 @@ export class GeneReader {
     constructor(private gene: IGene, private roll: () => IDie) {
     }
 
-    public readMuscleTwitch(muscleCount: number): ITwitch {
+    public readMuscleTwitch(muscleCount: number, attackPeriod: number, decayPeriod: number): ITwitch {
+        const whichMuscle2 = choice(muscleCount * 2, this.next(), this.next(), this.next(), this.next())
+        const alternating = whichMuscle2 % 2 === 0
+        const whichMuscle = Math.floor(whichMuscle2 / 2)
         return {
             when: choice(36, this.next(), this.next()),
-            whichMuscle: choice(muscleCount, this.next(), this.next(), this.next(), this.next()),
-            attack: (2 + choice(6, this.next())) * 1500,
-            decay: (2 + choice(6, this.next())) * 1000,
+            whichMuscle, alternating,
+            attack: (2 + choice(6, this.next())) * attackPeriod,
+            decay: (2 + choice(6, this.next())) * decayPeriod,
         }
+    }
+
+    public modifyFeature(original: number, generations: number): number {
+        let value = original
+        while (generations-- > 0) {
+            value *= this.next().featureDelta
+        }
+        return value
     }
 
     public get length(): number {

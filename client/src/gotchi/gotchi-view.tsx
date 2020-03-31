@@ -29,16 +29,7 @@ export function GotchiView({island, createInstance}: {
     createInstance: CreateInstance,
 }): JSX.Element {
 
-    const [gotchi, setGotchi] = useState(() => (
-        island.hexalots[0].newGotchi({
-            instance: createInstance(),
-            timeSlice: 0,
-            autopilot: false,
-            direction: Direction.Rest,
-            muscles: [],
-            extremities: [],
-        })
-    ))
+    const [gotchi, setGotchi] = useState(() => island.hexalots[0].newGotchi(createInstance()))
     const [gotchiDirection, setGotchiDirection] = useState(Direction.Rest)
     useEffect(() => setGotchiDirection(gotchi ? gotchi.direction : Direction.Rest), [gotchi])
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
@@ -102,15 +93,7 @@ export function GotchiView({island, createInstance}: {
                         <Button disabled={!evolution} onClick={() => {
                             setEvolution(undefined)
                             if (gotchi) {
-                                const {instance, timeSlice, autopilot, direction, muscles, extremities} = gotchi
-                                setGotchi(gotchi.hexalot.newGotchi({
-                                    instance,
-                                    timeSlice,
-                                    autopilot,
-                                    direction,
-                                    muscles,
-                                    extremities,
-                                }))
+                                setGotchi(gotchi.recycled(gotchi.instance))
                             }
                         }}>
                             Stop!
