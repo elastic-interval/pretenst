@@ -13,7 +13,7 @@ import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-type
 import { GeneName, Genome, IGenomeData } from "./genome"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
-import { TimeCycle } from "./time-cycle"
+import { Twitch, Twitcher } from "./twitcher"
 
 export enum Direction {
     Rest = "Rest",
@@ -88,18 +88,15 @@ export function freshGotchiState(hexalot: Hexalot, instance: FabricInstance, gen
 export type CreateGotchi = (hexalot: Hexalot, instance: FabricInstance, genome: Genome, rotation: number) => Gotchi
 
 export class Gotchi {
-    public cycleCount = 0
-    public timeCycles = 0
-
     private _embryo?: Tensegrity
     private shapingTime = 60
-    private twitchCycle: Record<string, TimeCycle> = {}
+    private twitcher?: Twitcher
 
     constructor(public readonly state: IGotchiState, embryo?: Tensegrity) {
         if (embryo) {
             this._embryo = embryo
         } else {
-            this.genomeToTwitchCycles(state.genome)
+            this.twitcher = new Twitcher(this.state)
         }
     }
 
@@ -120,6 +117,10 @@ export class Gotchi {
 
     public get isMature(): boolean {
         return !this._embryo
+    }
+
+    public get cycleCount(): number {
+        return this.twitcher ? this.twitcher.cycleCount : 0
     }
 
     public get hexalot(): Hexalot {
@@ -179,7 +180,8 @@ export class Gotchi {
     }
 
     public iterate(midpoint: Vector3): void {
-        const instance = this.state.instance
+        const state = this.state
+        const instance = state.instance
         const view = instance.view
         midpoint.set(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         const embryo = this._embryo
@@ -199,36 +201,16 @@ export class Gotchi {
                     }
                     break
                 case Stage.Realized:
-                    extractGotchiFaces(embryo, this.state.muscles, this.state.extremities)
+                    extractGotchiFaces(embryo, state.muscles, state.extremities)
                     this._embryo = undefined
-                    this.genomeToTwitchCycles(this.state.genome)
+                    this.twitcher = new Twitcher(state)
                     break
             }
         } else {
             instance.iterate(Stage.Realized)
-            this.timeCycles++
-            if (this.timeCycles < 7) {
-                return
-            }
-            this.timeCycles = 0
-            const state = this.state
-            state.timeSlice++
-            if (state.timeSlice >= 36) {
-                state.timeSlice = 0
-                this.cycleCount++
-                if (state.autopilot) {
-                    this.reorient()
-                }
-            }
-            if (state.direction !== Direction.Rest) {
-                const twitchCycle = this.twitchCycle[state.direction]
-                if (!twitchCycle) {
-                    console.error("no twitch cycle", state.direction)
-                    return
-                }
-                twitchCycle.activate(state.timeSlice, (whichMuscle: number, attack: number, decay: number) => (
-                    twitch(state.instance, state.muscles[whichMuscle], attack, decay)
-                ))
+            if (this.twitcher) {
+                const twitch: Twitch = (m, a, d, i) => this.twitch(m, a, d, i)
+                this.twitcher.tick(twitch, () => this.reorient())
             }
         }
     }
@@ -262,6 +244,9 @@ export class Gotchi {
     public reorient(): void {
         const touchedDestination = false
         const state = this.state
+        if (!state.autopilot) {
+            return
+        }
         if (touchedDestination) {
             const nextLeg = state.leg.nextLeg
             if (nextLeg) {
@@ -280,6 +265,14 @@ export class Gotchi {
 
     public get directionQuaternion(): Quaternion {
         return this.quaternionForDirection(this.state.direction)
+    }
+
+
+    private twitch(whichMuscle: number, attack: number, decay: number, intensity: number): void {
+        const state = this.state
+        const muscle = state.muscles[whichMuscle]
+        state.instance.fabric.twitch_face(muscle.faceIndex, attack, decay, intensity)
+        // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
     }
 
     private quaternionForDirection(direction: Direction): Quaternion {
@@ -302,19 +295,6 @@ export class Gotchi {
         const topJoint = 3
         const loc = this.state.instance.floatView.jointLocations
         return new Vector3(loc[topJoint * 3], loc[topJoint * 3 + 1], loc[topJoint * 3 + 2])
-    }
-
-    private genomeToTwitchCycles(genome: Genome): void {
-        const generaton = genome.generation
-        const musclePeriod = genome.createReader(GeneName.MusclePeriod).modifyFeature(1000, generaton)
-        const attackPeriod = genome.createReader(GeneName.AttackPeriod).modifyFeature(musclePeriod, generaton)
-        const decayPeriod = genome.createReader(GeneName.DecayPeriod).modifyFeature(musclePeriod, generaton)
-        const twitchCount = 1 + generaton
-        DIRECTIONS.filter(d => d !== Direction.Rest).forEach(direction => {
-            const geneName = directionGene(direction)
-            const reader = genome.createReader(geneName)
-            this.twitchCycle[direction] = new TimeCycle(reader, this.state.muscles, twitchCount, attackPeriod, decayPeriod)
-        })
     }
 
     private get directionToTarget(): Direction {
@@ -342,12 +322,6 @@ export class Gotchi {
         toTarget.normalize()
         return toTarget
     }
-}
-
-function twitch(instance: FabricInstance, muscle: IMuscle, attack: number, decay: number): void {
-    const deltaSize = 0.4
-    instance.fabric.twitch_face(muscle.faceIndex, deltaSize, attack, decay)
-    // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
 }
 
 export function oppositeMuscleIndex(whichMuscle: number, muscles: IMuscle[]): number {

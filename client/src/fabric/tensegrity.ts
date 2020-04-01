@@ -32,7 +32,7 @@ import {
 
 function scaleToInitialStiffness(scale: IPercent): number {
     const scaleFactor = percentToFactor(scale)
-    return Math.pow(scaleFactor , 1.4) * 0.00005
+    return Math.pow(scaleFactor, 1.4) * 0.00005
 }
 
 const FACE_INTERVAL_COUNTDOWN = 10
@@ -230,14 +230,14 @@ export class Tensegrity {
         this.transitionQueue.push(tx)
     }
 
-    public iterate(): Stage {
+    public iterate(): Stage | undefined {
         const tx = this.transitionQueue.shift()
         if (tx) {
             this.lifeTransition(tx)
         }
         const stage = this.instance.iterate(this.life$.getValue().stage)
-        if (stage === Stage.Busy) {
-            return stage
+        if (stage === undefined) {
+            return undefined
         }
         const activeCode = this.activeTenscript
         const builder = () => new TensegrityBuilder(this)

@@ -39,8 +39,8 @@ export class Hexalot implements IHexalot {
     public get genome(): Genome {
         if (!this._genome) {
             const item = localStorage.getItem(this.id)
-            console.log(`Loading genome from ${this.id}`)
             this._genome = item ? fromGenomeData(JSON.parse(item)) : emptyGenome()
+            console.log(`Loading genome from ${this.id}`, this._genome)
         }
         return fromGenomeData(this._genome.genomeData)
     }

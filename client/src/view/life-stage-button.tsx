@@ -45,7 +45,7 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
     }, [tensegrity])
 
     function allDisabledExcept(stageAccepted: Stage): boolean {
-        if (disabled || life.stage === Stage.Busy || life.stage === Stage.Realizing) {
+        if (disabled || life.stage === Stage.Realizing) {
             return true
         }
         return life.stage !== stageAccepted
@@ -124,8 +124,6 @@ export function LifeStageButton({tensegrity, stageTransition, disabled}: {
 
 function Symbol({stage}: { stage: Stage }): JSX.Element {
     switch (stage) {
-        case Stage.Busy:
-            return <FaClock/>
         case Stage.Growing:
             return <FaSeedling/>
         case Stage.Shaping:
@@ -143,8 +141,6 @@ function Symbol({stage}: { stage: Stage }): JSX.Element {
 
 // function stageName(stage: Stage): string {
 //     switch (stage) {
-//         case Stage.Busy:
-//             return "Busy"
 //         case Stage.Growing:
 //             return "Growing"
 //         case Stage.Shaping:

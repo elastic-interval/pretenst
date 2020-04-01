@@ -36,7 +36,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
                 case FabricFeature.Gravity:
-                    return defaultValue * 1.2
+                    return defaultValue * 4
                 case FabricFeature.Drag:
                     return defaultValue * 0.1
                 case FabricFeature.ShapingStiffnessFactor:
@@ -44,7 +44,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
                 case FabricFeature.IntervalCountdown:
                     return defaultValue * 0.1
                 case FabricFeature.StiffnessFactor:
-                    return defaultValue * 2
+                    return defaultValue * 4
                 case FabricFeature.RealizingCountdown:
                     return defaultValue * 0.7
                 case FabricFeature.MaxStrain:
@@ -52,7 +52,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
                 case FabricFeature.VisualStrain:
                     return defaultValue * 3
                 case FabricFeature.PretenstFactor:
-                    return defaultValue * 3
+                    return defaultValue * 10
                 case FabricFeature.SlackThreshold:
                     return 0
                 default:

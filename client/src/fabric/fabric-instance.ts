@@ -70,7 +70,7 @@ export class FabricInstance {
         this.adoptFabric(fabricObject ? fabricObject as Fabric : eig.Fabric.new(jointCount))
     }
 
-    public iterate(requestedStage: Stage): Stage {
+    public iterate(requestedStage: Stage): Stage | undefined {
         const stage = this.fabric.iterate(requestedStage, this.world)
         this.view.render(this.fabric, this.world)
         this.midpoint.set(this.view.midpoint_x(), this.view.midpoint_y(), this.view.midpoint_z())
@@ -210,5 +210,5 @@ function orient(floatView: IFloatView, forward: Vector3, right: Vector3, left: V
     forward.y = 0
     forward.normalize()
     right.crossVectors(forward, UP).normalize()
-    left.set(0,0,0).sub(right)
+    left.set(0, 0, 0).sub(right)
 }

@@ -30,7 +30,7 @@ impl Fabric {
     pub fn new(joint_count: usize) -> Fabric {
         Fabric {
             age: 0,
-            stage: Stage::Busy,
+            stage: Stage::Growing,
             realizing_countdown: 0_f32,
             joints: Vec::with_capacity(joint_count),
             intervals: Vec::with_capacity(joint_count * 3),
@@ -43,7 +43,7 @@ impl Fabric {
 
     pub fn clear(&mut self) {
         self.age = 0;
-        self.stage = Stage::Busy;
+        self.stage = Stage::Growing;
         self.joints.clear();
         self.intervals.clear();
         self.faces.clear();
@@ -133,29 +133,30 @@ impl Fabric {
     pub fn twitch_face(
         &mut self,
         face_index: usize,
-        delta_size_nuance: f32,
         attack_countdown: f32,
         decay_countdown: f32,
+        delta_size_nuance: f32,
     ) {
         self.faces[face_index].twitch(
             &mut self.intervals,
-            delta_size_nuance,
             attack_countdown,
             decay_countdown,
+            delta_size_nuance,
         )
     }
 
-    pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Stage {
+    pub fn iterate(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
         let realizing_nuance =
             (world.realizing_countdown - self.realizing_countdown) / world.realizing_countdown;
         self.ticks(world, realizing_nuance);
         self.set_strain_nuances(world);
         self.age += world.iterations_per_frame as u32;
-        let response_stage = self.request_stage(requested_stage, world);
-        if response_stage != Stage::Busy {
-            return response_stage;
-        }
-        self.on_iterations(world)
+        self.request_stage(requested_stage, world)
+            .or_else(|| self.on_iterations(world))
+        // match self.request_stage(requested_stage, world) {
+        //     None => self.on_iterations(world),
+        //     x => x,
+        // }
     }
 
     pub fn centralize(&mut self) {
@@ -231,31 +232,26 @@ impl Fabric {
         }
     }
 
-    fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Stage {
+    fn request_stage(&mut self, requested_stage: Stage, world: &World) -> Option<Stage> {
         match self.stage {
-            Stage::Busy => match requested_stage {
-                Stage::Growing => self.set_stage(requested_stage),
-                Stage::Realizing => self.start_realizing(world),
-                _ => Stage::Busy,
-            },
             Stage::Growing => {
                 self.set_altitude(0_f32);
-                Stage::Busy
+                None
             }
             Stage::Shaping => {
                 self.set_altitude(0_f32);
                 match requested_stage {
-                    Stage::Realizing => self.start_realizing(world),
-                    Stage::Slack => self.set_stage(Stage::Slack),
-                    _ => Stage::Busy,
+                    Stage::Realizing => Some(self.start_realizing(world)),
+                    Stage::Slack => Some(self.set_stage(Stage::Slack)),
+                    _ => None,
                 }
             }
             Stage::Slack => match requested_stage {
-                Stage::Realizing => self.start_realizing(world),
-                Stage::Shaping => self.slack_to_shaping(world),
-                _ => Stage::Busy,
+                Stage::Realizing => Some(self.start_realizing(world)),
+                Stage::Shaping => Some(self.slack_to_shaping(world)),
+                _ => None,
             },
-            _ => Stage::Busy,
+            _ => None,
         }
     }
 
@@ -265,23 +261,24 @@ impl Fabric {
         }
     }
 
-    fn on_iterations(&mut self, world: &World) -> Stage {
+    fn on_iterations(&mut self, world: &World) -> Option<Stage> {
         if self.interval_busy_max() > 0_f32 {
-            return Stage::Busy;
+            return None;
         }
+        let same = Some(self.stage);
         if self.realizing_countdown == 0_f32 {
-            return self.stage;
+            return same;
         }
         let after_iterations: f32 = self.realizing_countdown - world.iterations_per_frame;
         if after_iterations > 0_f32 {
             self.realizing_countdown = after_iterations;
-            self.stage
+            same
         } else {
             self.realizing_countdown = 0_f32;
             if self.stage == Stage::Realizing {
-                self.set_stage(Stage::Realized)
+                Some(self.set_stage(Stage::Realized))
             } else {
-                self.stage
+                same
             }
         }
     }

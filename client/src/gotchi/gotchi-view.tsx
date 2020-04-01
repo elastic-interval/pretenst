@@ -11,18 +11,11 @@ import { Button, ButtonGroup } from "reactstrap"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { Grouping } from "../view/control-tabs"
 
-import { Evolution, IEvolutionParameters } from "./evolution"
+import { Evolution } from "./evolution"
+import { emptyGenome } from "./genome"
 import { Direction, DIRECTIONS } from "./gotchi"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
-
-const EVOLUTION_PARAMETERS: IEvolutionParameters = {
-    maxPopulation: 10,
-    minCycleCount: 3,
-    maxCycleCount: 8,
-    mutationCount: 3,
-    survivalRate: 0.5,
-}
 
 export function GotchiView({island, createInstance}: {
     island: Island,
@@ -79,12 +72,7 @@ export function GotchiView({island, createInstance}: {
                                 console.error("not at rest")
                                 return
                             }
-                            gotchi.reorient()
-                            if (gotchi.direction === Direction.Rest) {
-                                console.error("still at rest after reorient")
-                                return
-                            }
-                            const evo = new Evolution(createInstance, gotchi, EVOLUTION_PARAMETERS)
+                            const evo = new Evolution(createInstance, gotchi)
                             console.log("Evolving gotchis", evo.evolvers.length)
                             setEvolution(evo)
                         }}>
@@ -97,6 +85,14 @@ export function GotchiView({island, createInstance}: {
                             }
                         }}>
                             Stop!
+                        </Button>
+                        <Button onClick={() => {
+                            if (gotchi) {
+                                gotchi.saveGenome(emptyGenome())
+                                setGotchi(gotchi.recycled(gotchi.instance))
+                            }
+                        }}>
+                            Delete!
                         </Button>
                     </ButtonGroup>
                 </Grouping>

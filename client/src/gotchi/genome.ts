@@ -10,7 +10,26 @@ export enum GeneName {
     MusclePeriod = "Attack",
     AttackPeriod = "Attack",
     DecayPeriod = "Decay",
+    TwitchIntensity = "TwitchIntensity",
+    TicksPerSlice = "TicksPerSlice",
 }
+
+function isModifier(name: GeneName): boolean {
+    switch (name) {
+        case GeneName.Forward:
+        case GeneName.Left:
+        case GeneName.Right:
+            return false
+        case GeneName.MusclePeriod:
+        case GeneName.AttackPeriod:
+        case GeneName.DecayPeriod:
+        case GeneName.TwitchIntensity:
+        case GeneName.TicksPerSlice:
+            return true
+    }
+}
+
+export const MODIFIER_GENES: GeneName[] = Object.keys(GeneName).filter(key => isModifier(GeneName[key])).map(k => GeneName[k])
 
 export interface IGeneData {
     name: GeneName
@@ -28,6 +47,7 @@ export interface ITwitch {
     whichMuscle: number
     attack: number
     decay: number
+    intensity: number
     alternating: boolean
 }
 
@@ -85,13 +105,16 @@ export class Genome {
             mutationCount: g.mutationCount,
             dice: g.dice.slice(), // TODO: tweet this to the world
         }))
-        const geneToMutate = genesCopy.find(g => name === g.name)
-        if (geneToMutate) {
+        const directionGene = genesCopy.find(g => name === g.name)
+        if (directionGene) {
             for (let hit = 0; hit < mutations; hit++) {
-                const geneNumber = Math.floor(Math.random() * geneToMutate.dice.length)
-                geneToMutate.dice[geneNumber] = this.roll()
-                geneToMutate.mutationCount++
+                mutateGene(() => this.roll(), directionGene)
             }
+        }
+        const modifier = MODIFIER_GENES[Math.random() * MODIFIER_GENES.length]
+        const modifierGene = genesCopy.find(g => name === modifier)
+        if (modifierGene) {
+            mutateGene(() => this.roll(), modifierGene)
         }
         return new Genome(this.roll, genesCopy, this.generation + 1)
     }
@@ -140,8 +163,18 @@ const DICE_MAP = ((): { [key: string]: IDie; } => {
     return map
 })()
 
-function choice(max: number, ...dice: IDie[]): number {
+function diceToInteger(max: number, ...dice: IDie[]): number {
     return Math.floor(diceToNuance(dice) * max)
+}
+
+function diceToFloat(max: number, ...dice: IDie[]): number {
+    return diceToNuance(dice) * max
+}
+
+function mutateGene(roll: () => IDie, gene: IGene): void {
+    const geneNumber = Math.floor(Math.random() * gene.dice.length)
+    gene.dice[geneNumber] = roll()
+    gene.mutationCount++
 }
 
 export class GeneReader {
@@ -150,21 +183,23 @@ export class GeneReader {
     constructor(private gene: IGene, private roll: () => IDie) {
     }
 
-    public readMuscleTwitch(muscleCount: number, attackPeriod: number, decayPeriod: number): ITwitch {
-        const whichMuscle2 = choice(muscleCount * 2, this.next(), this.next(), this.next(), this.next())
-        const alternating = whichMuscle2 % 2 === 0
-        const whichMuscle = Math.floor(whichMuscle2 / 2)
+    public readMuscleTwitch(muscleCount: number, attackPeriod: number, decayPeriod: number, twitchIntensity: number): ITwitch {
+        const doubleMuscle = diceToInteger(muscleCount * 2, this.next(), this.next(), this.next(), this.next())
+        const alternating = true
+        // const alternating = doubleMuscle % 2 === 0
+        const whichMuscle = Math.floor(doubleMuscle / 2)
         return {
-            when: choice(36, this.next(), this.next()),
+            when: diceToInteger(36, this.next(), this.next()),
             whichMuscle, alternating,
-            attack: (2 + choice(6, this.next())) * attackPeriod,
-            decay: (2 + choice(6, this.next())) * decayPeriod,
+            attack: (2 + diceToFloat(6, this.next())) * attackPeriod,
+            decay: (2 + diceToFloat(6, this.next())) * decayPeriod,
+            intensity: twitchIntensity,
         }
     }
 
     public modifyFeature(original: number, generations: number): number {
         let value = original
-        while (generations-- > 0) {
+        while (generations-- >= 0) {
             value *= this.next().featureDelta
         }
         return value

@@ -8,7 +8,7 @@ import { Vector3 } from "three"
 import { CreateInstance } from "../fabric/fabric-instance"
 
 import { fromGenomeData } from "./genome"
-import { Direction, directionGene, Gotchi } from "./gotchi"
+import { directionGene, Gotchi } from "./gotchi"
 
 export interface IEvolutionParameters {
     maxPopulation: number
@@ -16,6 +16,14 @@ export interface IEvolutionParameters {
     maxCycleCount: number
     survivalRate: number
     mutationCount: number
+}
+
+const PARAM: IEvolutionParameters = {
+    maxPopulation: 10,
+    minCycleCount: 3,
+    maxCycleCount: 8,
+    mutationCount: 3,
+    survivalRate: 0.5,
 }
 
 export interface IEvolver {
@@ -27,34 +35,35 @@ export interface IEvolver {
 export class Evolution {
     public evolvers: IEvolver[]
     private currentMaxCycles: number
+    private readonly baseGotchi: Gotchi
 
     constructor(
         private createInstance: CreateInstance,
-        private readonly baseGotchi: Gotchi,
-        private param: IEvolutionParameters,
+        gotchi: Gotchi,
     ) {
-        if (!baseGotchi.isMature) {
+        if (!gotchi.isMature) {
             throw new Error("Cannot create evolution from gotchi which is not mature")
         }
-        if (baseGotchi.direction === Direction.Rest) {
-            throw new Error("Cannot create evolution from gotchi which is not at rest")
-        }
-        this.currentMaxCycles = this.param.minCycleCount
+        this.baseGotchi = gotchi.recycled(createInstance(gotchi.fabricClone), gotchi.genome)
+        this.currentMaxCycles = PARAM.minCycleCount
         this.baseGotchi.snapshot()
+        this.baseGotchi.autopilot = true
+        this.baseGotchi.reorient()
         const gotchis: Gotchi[] = []
         let genome = this.baseGotchi.genome
-        while (gotchis.length < this.param.maxPopulation) {
-            genome = genome.withMutations(directionGene(this.baseGotchi.direction), param.mutationCount)
+        while (gotchis.length < PARAM.maxPopulation) {
+            genome = genome.withMutations(directionGene(this.baseGotchi.direction), PARAM.mutationCount)
             const instance = this.createInstance(this.baseGotchi.fabricClone)
-            const gotchi = this.baseGotchi.recycled(instance, genome)
-            if (!gotchi) {
+            const newborn = this.baseGotchi.recycled(instance, genome)
+            if (!newborn) {
                 console.error("Unable to create gotchi")
                 break
             }
-            gotchi.autopilot = true
-            gotchis.push(gotchi)
+            gotchis.push(newborn)
         }
-        this.evolvers = gotchis.map((gotchi, index) => <IEvolver>{index, gotchi, distanceFromTarget: 1000})
+        this.evolvers = gotchis.map((newborn, index) => <IEvolver>{
+            index, gotchi: newborn, distanceFromTarget: 1000,
+        })
     }
 
     public iterate(midpoint: Vector3): number {
@@ -78,10 +87,10 @@ export class Evolution {
     // Privates =============================================================
 
     private adjustLimit(): void {
-        const {maxCycleCount} = this.param
+        const {maxCycleCount} = PARAM
         this.currentMaxCycles++
         if (this.currentMaxCycles >= maxCycleCount) {
-            this.currentMaxCycles = this.param.minCycleCount
+            this.currentMaxCycles = PARAM.minCycleCount
             this.rankEvolvers()
             this.baseGotchi.saveGenome(this.evolvers[0].gotchi.genome)
         }
@@ -99,7 +108,7 @@ export class Evolution {
 
     private nextGenerationFromSurvival(): void {
         this.rankEvolvers()
-        const {survivalRate, mutationCount} = this.param
+        const {survivalRate, mutationCount} = PARAM
         console.log(`ranked: ${this.evolvers.map(({distanceFromTarget}) => distanceFromTarget.toFixed(1))}`)
         const survivorCount = Math.floor(this.evolvers.length * survivalRate)
         this.evolvers.forEach((evolver, evolverIndex) => {
@@ -109,7 +118,7 @@ export class Evolution {
             } else {
                 const parentIndex = Math.floor(survivorCount * Math.random())
                 const mutatedGenome = fromGenomeData(this.evolvers[parentIndex].gotchi.mutatedGenome(mutationCount))
-                console.log(`replacing ${evolver.index} with offspring from ${parentIndex}`, mutatedGenome.toString())
+                // console.log(`replacing ${evolver.index} with offspring from ${parentIndex}`, mutatedGenome.toString())
                 evolver.gotchi = evolver.gotchi.recycled(instance, mutatedGenome)
             }
         })

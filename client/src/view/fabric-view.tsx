@@ -134,7 +134,7 @@ export function FabricView({
             const nextStage = tensegrity.iterate()
             if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
                 tensegrity.transition = {stage: Stage.Realized}
-            } else if (nextStage !== life.stage && life.stage !== Stage.Realizing && nextStage !== Stage.Busy) {
+            } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Realizing) {
                 tensegrity.transition = {stage: nextStage}
             }
         }

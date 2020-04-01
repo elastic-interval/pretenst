@@ -40,7 +40,6 @@ pub const RAINBOW: [[f32; 3]; 12] = [
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd)]
 pub enum Stage {
-    Busy,
     Growing,
     Shaping,
     Slack,
@@ -116,7 +115,7 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::RealizingCountdown => 30000_f32,
         FabricFeature::SlackThreshold => 0.0001_f32,
         FabricFeature::ShapingPretenstFactor => 0.1_f32,
-        FabricFeature::ShapingStiffnessFactor => 30_f32,
+        FabricFeature::ShapingStiffnessFactor => 2_f32,
         FabricFeature::ShapingDrag => 0.2_f32,
         FabricFeature::MaxStrain => 0.1_f32,
         FabricFeature::VisualStrain => 1_f32,
