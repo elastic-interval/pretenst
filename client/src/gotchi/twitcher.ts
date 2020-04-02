@@ -18,10 +18,10 @@ interface ITwitchConfig {
 
 function readTwichConfig(genome: Genome): ITwitchConfig {
     const generation = genome.generation
-    const musclePeriod = genome.createReader(GeneName.MusclePeriod).modifyFeature(400, generation)
+    const musclePeriod = genome.createReader(GeneName.MusclePeriod).modifyFeature(500, generation)
     return <ITwitchConfig>{
-        ticksPerSlice: genome.createReader(GeneName.TicksPerSlice).modifyFeature(5, generation),
-        twitchIntensity: genome.createReader(GeneName.TwitchIntensity).modifyFeature(0.5, generation),
+        ticksPerSlice: genome.createReader(GeneName.TicksPerSlice).modifyFeature(7, generation),
+        twitchIntensity: genome.createReader(GeneName.TwitchIntensity).modifyFeature(0.7, generation),
         musclePeriod,
         attackPeriod: genome.createReader(GeneName.AttackPeriod).modifyFeature(musclePeriod, generation),
         decayPeriod: genome.createReader(GeneName.DecayPeriod).modifyFeature(musclePeriod, generation),
@@ -37,8 +37,7 @@ export class Twitcher {
     constructor(private state: IGotchiState) {
         const genome = this.state.genome
         this.config = readTwichConfig(genome)
-        const generation = genome.generation
-        const twitchCount = 1 + generation
+        const twitchCount = 1 + genome.generation
         console.log("twitch config: ", JSON.stringify(this.config, (key, val) => (
             val.toFixed ? Number(val.toFixed(2)) : val
         )))

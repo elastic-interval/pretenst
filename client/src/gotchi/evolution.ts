@@ -13,7 +13,6 @@ import { directionGene, Gotchi } from "./gotchi"
 export interface IEvolutionParameters {
     maxPopulation: number
     minCycleCount: number
-    maxCycleCount: number
     survivalRate: number
     mutationCount: number
 }
@@ -21,7 +20,6 @@ export interface IEvolutionParameters {
 const PARAM: IEvolutionParameters = {
     maxPopulation: 10,
     minCycleCount: 3,
-    maxCycleCount: 8,
     mutationCount: 3,
     survivalRate: 0.5,
 }
@@ -34,6 +32,7 @@ export interface IEvolver {
 
 export class Evolution {
     public evolvers: IEvolver[]
+    private minCycleCount: number
     private currentMaxCycles: number
     private readonly baseGotchi: Gotchi
 
@@ -45,14 +44,13 @@ export class Evolution {
             throw new Error("Cannot create evolution from gotchi which is not mature")
         }
         this.baseGotchi = gotchi.recycled(createInstance(gotchi.fabricClone), gotchi.genome)
-        this.currentMaxCycles = PARAM.minCycleCount
+        this.minCycleCount = this.currentMaxCycles = PARAM.minCycleCount
         this.baseGotchi.snapshot()
         this.baseGotchi.autopilot = true
         this.baseGotchi.reorient()
         const gotchis: Gotchi[] = []
-        let genome = this.baseGotchi.genome
         while (gotchis.length < PARAM.maxPopulation) {
-            genome = genome.withMutations(directionGene(this.baseGotchi.direction), PARAM.mutationCount)
+            const genome = this.baseGotchi.genome.withMutations(directionGene(this.baseGotchi.direction), PARAM.mutationCount)
             const instance = this.createInstance(this.baseGotchi.fabricClone)
             const newborn = this.baseGotchi.recycled(instance, genome)
             if (!newborn) {
@@ -87,10 +85,11 @@ export class Evolution {
     // Privates =============================================================
 
     private adjustLimit(): void {
-        const {maxCycleCount} = PARAM
+        const maxCycleCount = this.minCycleCount + 5
         this.currentMaxCycles++
         if (this.currentMaxCycles >= maxCycleCount) {
-            this.currentMaxCycles = PARAM.minCycleCount
+            this.minCycleCount++
+            this.currentMaxCycles = this.minCycleCount
             this.rankEvolvers()
             this.baseGotchi.saveGenome(this.evolvers[0].gotchi.genome)
         }
@@ -109,12 +108,15 @@ export class Evolution {
     private nextGenerationFromSurvival(): void {
         this.rankEvolvers()
         const {survivalRate, mutationCount} = PARAM
-        console.log(`ranked: ${this.evolvers.map(({distanceFromTarget}) => distanceFromTarget.toFixed(1))}`)
+        console.log(`ranked: ${this.evolvers.map(({distanceFromTarget, gotchi}) => {
+            const distance = distanceFromTarget.toFixed(1)
+            return `(${distance}:${gotchi.genome.generation})`
+        })}`)
         const survivorCount = Math.floor(this.evolvers.length * survivalRate)
         this.evolvers.forEach((evolver, evolverIndex) => {
             const instance = evolver.gotchi.adoptFabric(this.baseGotchi.fabricClone)
             if (evolverIndex < survivorCount) {
-                evolver.gotchi = evolver.gotchi.recycled(instance)
+                evolver.gotchi = evolver.gotchi.recycled(instance, evolver.gotchi.genome)
             } else {
                 const parentIndex = Math.floor(survivorCount * Math.random())
                 const mutatedGenome = fromGenomeData(this.evolvers[parentIndex].gotchi.mutatedGenome(mutationCount))

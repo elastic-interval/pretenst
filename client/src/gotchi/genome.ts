@@ -52,7 +52,7 @@ export interface ITwitch {
 }
 
 export function emptyGenome(): Genome {
-    return new Genome(rollTheDice, [])
+    return new Genome(rollTheDice, [], 1)
 }
 
 export function fromGenomeData(genomeData: IGenomeData): Genome {
@@ -74,10 +74,7 @@ export interface IGene {
 }
 
 export class Genome {
-    public readonly generation: number
-
-    constructor(private roll: () => IDie, private genes: IGene[], gen?: number) {
-        this.generation = gen !== undefined ? gen : 1
+    constructor(private roll: () => IDie, private genes: IGene[], public readonly generation: number) {
     }
 
     public createReader(name: GeneName): GeneReader {
@@ -116,6 +113,7 @@ export class Genome {
         if (modifierGene) {
             mutateGene(() => this.roll(), modifierGene)
         }
+        console.log(`generation ${this.generation} => ${this.generation + 1}`)
         return new Genome(this.roll, genesCopy, this.generation + 1)
     }
 
@@ -131,7 +129,7 @@ export class Genome {
     }
 
     public toString(): string {
-        return this.genes.map(gene => `${gene.name}:${gene.mutationCount}`).join(", ")
+        return this.genes.map(gene => `(${gene.name}:${gene.mutationCount})`).join(", ")
         // return this.genes.map(gene => serializeGene(gene.dice)).join("\n")
     }
 }
@@ -199,8 +197,9 @@ export class GeneReader {
 
     public modifyFeature(original: number, generations: number): number {
         let value = original
+        const weightOfNew = 0.5
         while (generations-- >= 0) {
-            value *= this.next().featureDelta
+            value = value * (weightOfNew * this.next().featureDelta + (1 - weightOfNew))
         }
         return value
     }
