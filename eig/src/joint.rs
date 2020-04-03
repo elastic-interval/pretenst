@@ -54,9 +54,13 @@ impl Joint {
                     self.location.y = -RESURFACE;
                 }
                 SurfaceCharacter::Sticky => {
-                    self.velocity.x *= STICKY_DAMPING;
-                    self.velocity.y += antigravity * degree_submerged;
-                    self.velocity.z *= STICKY_DAMPING
+                    if self.velocity.y < 0_f32 {
+                        self.velocity.x *= STICKY_DAMPING;
+                        self.velocity.y += antigravity * degree_submerged;
+                        self.velocity.z *= STICKY_DAMPING
+                    } else {
+                        self.velocity.y += antigravity * degree_submerged;
+                    }
                 }
                 SurfaceCharacter::Bouncy => {
                     self.velocity *= degree_cushioned;
@@ -89,14 +93,7 @@ fn joint_physics() {
     joint.force.fill(1_f32);
     joint.velocity.fill(1_f32);
     joint.interval_mass = 1_f32;
-    joint.velocity_physics(
-        &world,
-        world.gravity,
-        world.drag,
-        world.antigravit,
-        true,
-        true,
-    );
+    joint.velocity_physics(&world, world.gravity, world.drag, world.antigravit, true);
     joint.location_physics();
     let vy_after = (1_f32 - world.gravity + 1_f32) * (1_f32 - world.drag);
     assert_eq!(joint.velocity.y, vy_after);

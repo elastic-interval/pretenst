@@ -10,7 +10,7 @@ import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
 
-import { GeneName, Genome, IGenomeData } from "./genome"
+import { GeneName, Genome, IGeneData } from "./genome"
 import { Hexalot } from "./hexalot"
 import { Leg } from "./journey"
 import { Twitch, Twitcher } from "./twitcher"
@@ -171,19 +171,30 @@ export class Gotchi {
         return extremity
     }
 
-    public mutatedGenome(mutationCount: number): IGenomeData {
-        return this.state.genome.withMutations(directionGene(this.state.direction), mutationCount).genomeData
+    public mutatedGenes(): IGeneData[] {
+        return this.state.genome.withDirectionMutation(directionGene(this.state.direction)).genomeData
     }
 
     public get age(): number {
         return this.state.instance.fabric.age
     }
 
-    public iterate(midpoint: Vector3): void {
+    public getMidpoint(midpoint?: Vector3): Vector3 {
+        if (!midpoint) {
+            midpoint = new Vector3()
+        }
+        const view = this.state.instance.view
+        midpoint.set(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+        return midpoint
+    }
+
+    public iterate(midpoint?: Vector3): void {
         const state = this.state
         const instance = state.instance
         const view = instance.view
-        midpoint.set(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+        if (midpoint) {
+            midpoint.set(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+        }
         const embryo = this._embryo
         if (embryo) {
             const stage = embryo.iterate()
@@ -209,7 +220,7 @@ export class Gotchi {
         } else {
             instance.iterate(Stage.Realized)
             if (this.twitcher) {
-                const twitch: Twitch = (m, a, d, i) => this.twitch(m, a, d, i)
+                const twitch: Twitch = (m, a, d, n) => this.twitch(m, a, d, n)
                 this.twitcher.tick(twitch, () => this.reorient())
             }
         }

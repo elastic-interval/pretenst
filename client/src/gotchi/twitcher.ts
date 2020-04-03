@@ -6,25 +6,24 @@
 import { GeneName, GeneReader, Genome, ITwitch } from "./genome"
 import { Direction, directionGene, DIRECTIONS, IGotchiState, IMuscle, oppositeMuscleIndex } from "./gotchi"
 
-export type Twitch = (face: number, attack: number, decay: number, intensity: number) => void
+export type Twitch = (face: number, attack: number, decay: number, twitchNuance: number) => void
 
 interface ITwitchConfig {
     ticksPerSlice: number
-    twitchIntensity: number
+    twitchNuance: number
     musclePeriod: number
     attackPeriod: number
     decayPeriod: number
 }
 
 function readTwichConfig(genome: Genome): ITwitchConfig {
-    const generation = genome.generation
-    const musclePeriod = genome.createReader(GeneName.MusclePeriod).modifyFeature(500, generation)
+    const musclePeriod = genome.createReader(GeneName.MusclePeriod).modifyFeature(500)
     return <ITwitchConfig>{
-        ticksPerSlice: genome.createReader(GeneName.TicksPerSlice).modifyFeature(7, generation),
-        twitchIntensity: genome.createReader(GeneName.TwitchIntensity).modifyFeature(0.7, generation),
+        ticksPerSlice: genome.createReader(GeneName.TicksPerSlice).modifyFeature(7),
+        twitchNuance: genome.createReader(GeneName.TwitchNuance).modifyFeature(0.5),
         musclePeriod,
-        attackPeriod: genome.createReader(GeneName.AttackPeriod).modifyFeature(musclePeriod, generation),
-        decayPeriod: genome.createReader(GeneName.DecayPeriod).modifyFeature(musclePeriod, generation),
+        attackPeriod: genome.createReader(GeneName.AttackPeriod).modifyFeature(musclePeriod),
+        decayPeriod: genome.createReader(GeneName.DecayPeriod).modifyFeature(musclePeriod),
     }
 }
 
@@ -37,7 +36,7 @@ export class Twitcher {
     constructor(private state: IGotchiState) {
         const genome = this.state.genome
         this.config = readTwichConfig(genome)
-        const twitchCount = 1 + genome.generation
+        const twitchCount = genome.twitchCount
         console.log("twitch config: ", JSON.stringify(this.config, (key, val) => (
             val.toFixed ? Number(val.toFixed(2)) : val
         )))
@@ -72,8 +71,8 @@ class TwitchCycle {
 
     constructor(geneReader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], twitchCount: number) {
         while (twitchCount-- > 0) {
-            const {attackPeriod, decayPeriod, twitchIntensity} = config
-            const twitch = geneReader.readMuscleTwitch(muscles.length, attackPeriod, decayPeriod, twitchIntensity)
+            const {attackPeriod, decayPeriod, twitchNuance} = config
+            const twitch = geneReader.readMuscleTwitch(muscles.length, attackPeriod, decayPeriod, twitchNuance)
             this.addTwitch(twitch.when, twitch)
             const oppositeMuscle = oppositeMuscleIndex(twitch.whichMuscle, muscles)
             const when = twitch.alternating ? (twitch.when + 18) % 36 : twitch.when
@@ -86,7 +85,7 @@ class TwitchCycle {
         if (!slice) {
             return
         }
-        slice.forEach(({whichMuscle, attack, decay, intensity}) => twitch(whichMuscle, attack, decay, intensity))
+        slice.forEach(({whichMuscle, attack, decay, twitchNuance}) => twitch(whichMuscle, attack, decay, twitchNuance))
     }
 
     private addTwitch(index: number, twitch: ITwitch): void {

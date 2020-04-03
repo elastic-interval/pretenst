@@ -46,7 +46,8 @@ export function IslandView({island, gotchi, direction, setDirection, evolution}:
     const midpoint = new Vector3()
     useRender(() => {
         if (evolution) {
-            evolution.iterate(midpoint)
+            evolution.iterate()
+            evolution.getMidpoint(midpoint)
         } else if (gotchi) {
             gotchi.iterate(midpoint)
             if (direction !== gotchi.direction) {

@@ -3,6 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Vector3 } from "three"
+
 import { Hexalot } from "./hexalot"
 import { Island } from "./island"
 
@@ -34,7 +36,7 @@ export class Journey {
         if (this.hexalots.length < 2) {
             return undefined
         }
-        return new Leg(this, 0, this.hexalots[1])
+        return new Leg(this, 0, this.hexalots[0], this.hexalots[1])
     }
 
     public get data(): IJourneyData {
@@ -49,7 +51,11 @@ export interface IJourneyData {
 }
 
 export class Leg {
-    constructor(public readonly journey: Journey, public visited: number, public goTo: Hexalot) {
+    constructor(public readonly journey: Journey, public visited: number, public comeFrom: Hexalot, public goTo: Hexalot) {
+    }
+
+    public getMidpoint(midpoint: Vector3): void {
+        midpoint.addVectors(this.comeFrom.center, this.goTo.center).multiplyScalar(0.5)
     }
 
     public get nextLeg(): Leg | undefined {
@@ -57,8 +63,9 @@ export class Leg {
         if (nextVisit === this.journey.visits.length) {
             return undefined
         }
+        const comeFrom = this.journey.visits[this.visited]
         const goTo = this.journey.visits[nextVisit]
-        return new Leg(this.journey, nextVisit, goTo)
+        return new Leg(this.journey, nextVisit, comeFrom, goTo)
     }
 }
 

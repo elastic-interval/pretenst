@@ -10,7 +10,7 @@ export enum GeneName {
     MusclePeriod = "Attack",
     AttackPeriod = "Attack",
     DecayPeriod = "Decay",
-    TwitchIntensity = "TwitchIntensity",
+    TwitchNuance = "TwitchNuance",
     TicksPerSlice = "TicksPerSlice",
 }
 
@@ -23,23 +23,22 @@ function isModifier(name: GeneName): boolean {
         case GeneName.MusclePeriod:
         case GeneName.AttackPeriod:
         case GeneName.DecayPeriod:
-        case GeneName.TwitchIntensity:
+        case GeneName.TwitchNuance:
         case GeneName.TicksPerSlice:
             return true
     }
 }
 
-export const MODIFIER_GENES: GeneName[] = Object.keys(GeneName).filter(key => isModifier(GeneName[key])).map(k => GeneName[k])
+export const MODIFIER_NAMES: GeneName[] = Object.keys(GeneName).filter(key => isModifier(GeneName[key])).map(k => GeneName[k])
 
-export interface IGeneData {
-    name: GeneName
-    mutationCount: number
-    geneString: string
+export function randomModifierName(): GeneName {
+    return MODIFIER_NAMES[Math.floor(Math.random() * MODIFIER_NAMES.length)]
 }
 
-export interface IGenomeData {
+export interface IGeneData {
+    geneName: GeneName
     generation: number
-    genes: IGeneData[]
+    geneString: string
 }
 
 export interface ITwitch {
@@ -47,91 +46,81 @@ export interface ITwitch {
     whichMuscle: number
     attack: number
     decay: number
-    intensity: number
+    twitchNuance: number
     alternating: boolean
 }
 
 export function emptyGenome(): Genome {
-    return new Genome(rollTheDice, [], 1)
+    return new Genome(rollTheDice, [])
 }
 
-export function fromGenomeData(genomeData: IGenomeData): Genome {
-    if (!genomeData.genes) {
+export function fromGenomeData(geneData: IGeneData[]): Genome {
+    if (geneData.length === 0) {
         return emptyGenome()
     }
-    const genes = genomeData.genes.map(g => ({
-        name: g.name,
-        mutationCount: g.mutationCount,
-        dice: deserializeGene(g.geneString),
-    }))
-    return new Genome(rollTheDice, genes, genomeData.generation)
+    const genes = geneData.map(({geneName, generation, geneString}) => {
+        const dice = deserializeGene(geneString)
+        return {geneName, generation, dice}
+    })
+    return new Genome(rollTheDice, genes)
 }
 
 export interface IGene {
-    name: GeneName
-    mutationCount: number
+    geneName: GeneName
+    generation: number
     dice: IDie[]
 }
 
+function getGene(search: GeneName, genes: IGene[]): IGene {
+    const existing = genes.find(({geneName}) => search === geneName)
+    if (existing) {
+        return existing
+    }
+    const fresh: IGene = {geneName: search, generation: 1, dice: []}
+    genes.push(fresh)
+    return fresh
+}
+
 export class Genome {
-    constructor(private roll: () => IDie, private genes: IGene[], public readonly generation: number) {
+    constructor(private roll: () => IDie, private genes: IGene[]) {
     }
 
     public createReader(name: GeneName): GeneReader {
-        const existingGene = this.genes.find(g => name === g.name)
-        if (existingGene) {
-            return new GeneReader(existingGene, this.roll)
-        } else {
-            const freshGene: IGene = {name, mutationCount: 0, dice: []}
-            this.genes.push(freshGene)
-            return new GeneReader(freshGene, this.roll)
-        }
+        return new GeneReader(getGene(name, this.genes), this.roll)
     }
 
-    public mutationCount(name: GeneName): number {
-        const gene = this.genes.find(g => name === g.name)
-        if (!gene) {
-            return 0
-        }
-        return gene.mutationCount
+    public get twitchCount(): number {
+        const maxGeneration = this.genes.reduce((max, {generation}) => Math.max(max, generation), 0)
+        return maxGeneration + 1
     }
 
-    public withMutations(name: GeneName, mutations: number): Genome {
-        const genesCopy: IGene[] = this.genes.map(g => ({
-            name: g.name,
-            mutationCount: g.mutationCount,
-            dice: g.dice.slice(), // TODO: tweet this to the world
-        }))
-        const directionGene = genesCopy.find(g => name === g.name)
-        if (directionGene) {
-            for (let hit = 0; hit < mutations; hit++) {
-                mutateGene(() => this.roll(), directionGene)
-            }
-        }
-        const modifier = MODIFIER_GENES[Math.random() * MODIFIER_GENES.length]
-        const modifierGene = genesCopy.find(g => name === modifier)
-        if (modifierGene) {
-            mutateGene(() => this.roll(), modifierGene)
-        }
-        console.log(`generation ${this.generation} => ${this.generation + 1}`)
-        return new Genome(this.roll, genesCopy, this.generation + 1)
+    public withDirectionMutation(directionName: GeneName): Genome {
+        const genesCopy: IGene[] = this.genes.map(gene => {
+            const {geneName, generation} = gene
+            const dice = gene.dice.slice() // TODO: tweet this to the world
+            return {geneName, generation, dice}
+        })
+        const directionGene = getGene(directionName, genesCopy)
+        mutateGene(() => this.roll(), directionGene)
+        const modifierName = randomModifierName()
+        const modifierGene = getGene(modifierName, genesCopy)
+        mutateGene(() => this.roll(), modifierGene)
+        return new Genome(this.roll, genesCopy)
     }
 
-    public get genomeData(): IGenomeData {
-        return {
-            genes: this.genes.map(g => ({
-                name: g.name,
-                mutationCount: g.mutationCount,
-                geneString: serializeGene(g.dice),
-            })),
-            generation: this.generation,
-        }
+    public get genomeData(): IGeneData[] {
+        return this.genes.map(gene => {
+            const {geneName, generation, dice} = gene
+            const geneString = serializeGene(dice)
+            return <IGeneData>{geneName, generation, geneString}
+        })
     }
 
     public toString(): string {
-        return this.genes.map(gene => `(${gene.name}:${gene.mutationCount})`).join(", ")
+        return this.genes.map(gene => `(${gene.geneName}:${gene.generation})`).join(", ")
         // return this.genes.map(gene => serializeGene(gene.dice)).join("\n")
     }
+
 }
 
 interface IDie {
@@ -170,9 +159,13 @@ function diceToFloat(max: number, ...dice: IDie[]): number {
 }
 
 function mutateGene(roll: () => IDie, gene: IGene): void {
-    const geneNumber = Math.floor(Math.random() * gene.dice.length)
-    gene.dice[geneNumber] = roll()
-    gene.mutationCount++
+    if (gene.dice.length === 0) {
+        gene.dice.push(roll())
+    } else {
+        const woops = Math.floor(Math.random() * gene.dice.length)
+        gene.dice[woops] = roll()
+    }
+    gene.generation++
 }
 
 export class GeneReader {
@@ -181,24 +174,27 @@ export class GeneReader {
     constructor(private gene: IGene, private roll: () => IDie) {
     }
 
-    public readMuscleTwitch(muscleCount: number, attackPeriod: number, decayPeriod: number, twitchIntensity: number): ITwitch {
+    public readMuscleTwitch(muscleCount: number, attackPeriod: number, decayPeriod: number, twitchNuance: number): ITwitch {
         const doubleMuscle = diceToInteger(muscleCount * 2, this.next(), this.next(), this.next(), this.next())
-        const alternating = true
-        // const alternating = doubleMuscle % 2 === 0
+        const alternating = doubleMuscle % 2 === 0
         const whichMuscle = Math.floor(doubleMuscle / 2)
         return {
             when: diceToInteger(36, this.next(), this.next()),
             whichMuscle, alternating,
             attack: (2 + diceToFloat(6, this.next())) * attackPeriod,
             decay: (2 + diceToFloat(6, this.next())) * decayPeriod,
-            intensity: twitchIntensity,
+            twitchNuance,
         }
     }
 
-    public modifyFeature(original: number, generations: number): number {
+    public modifyFeature(original: number): number {
+        const woops = Math.random() > 0.97
+        if (woops) {
+            this.discard() // woops, dropped the dice
+        }
         let value = original
         const weightOfNew = 0.5
-        while (generations-- >= 0) {
+        for (let tick = 0; tick < this.gene.generation; tick++) {
             value = value * (weightOfNew * this.next().featureDelta + (1 - weightOfNew))
         }
         return value
@@ -213,6 +209,11 @@ export class GeneReader {
             this.gene.dice.push(this.roll())
         }
         return this.gene.dice[this.cursor++]
+    }
+
+    private discard(): void {
+        this.gene.generation = 1
+        this.gene.dice = []
     }
 }
 
