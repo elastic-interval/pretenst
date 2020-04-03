@@ -37,9 +37,9 @@ export class Twitcher {
         const genome = this.state.genome
         this.config = readTwichConfig(genome)
         const twitchCount = genome.twitchCount
-        console.log("twitch config: ", JSON.stringify(this.config, (key, val) => (
-            val.toFixed ? Number(val.toFixed(2)) : val
-        )))
+        // console.log("twitch config: ", JSON.stringify(this.config, (key, val) => (
+        //     val.toFixed ? Number(val.toFixed(2)) : val
+        // )))
         DIRECTIONS.filter(d => d !== Direction.Rest).forEach(direction => {
             const geneName = directionGene(direction)
             const reader = genome.createReader(geneName)
