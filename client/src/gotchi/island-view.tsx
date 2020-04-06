@@ -17,7 +17,7 @@ import {
 } from "three"
 
 import { FORWARD, RIGHT } from "../fabric/fabric-instance"
-import { DIRECTION_LINE, FACE, LINE_VERTEX_COLORS, SCALE_LINE } from "../view/materials"
+import { DIRECTION_LINE, FACE, JOURNEY_LINE, LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
@@ -60,17 +60,6 @@ export function IslandView({island, gotchi, direction, setDirection, evolution}:
         setTrigger(trigger + 1)
     }, true, [gotchi, evolution, trigger])
 
-    const spots = useMemo(() => {
-        const geometry = new Geometry()
-        if (island) {
-            island.spots.forEach((spot: Spot, index: number) => {
-                spot.addSurfaceGeometry("spots", index, geometry.vertices, geometry.faces)
-            })
-        }
-        geometry.computeBoundingSphere()
-        return geometry
-    }, [])
-
     const orbit = useUpdate<Orbit>(orb => {
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
         perspective.lookAt(orbit.current.target)
@@ -87,18 +76,16 @@ export function IslandView({island, gotchi, direction, setDirection, evolution}:
         orb.update()
     }, [])
 
-    const hexalot = island.hexalots[0]
-    const journey = hexalot ? hexalot.journey : undefined
     return (
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                {evolution ? undefined : <mesh name="Spots" geometry={spots} material={ISLAND}/>}
-                {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
-                {!evolution ? (
-                    !gotchi ? undefined : <GotchiComponent gotchi={gotchi}/>
+                {evolution ? (
+                    <EvolutionScene evolution={evolution}/>
                 ) : (
-                    <EvolutionComponent evolution={evolution}/>
+                    gotchi ? (
+                        <GotchiScene gotchi={gotchi} island={island}/>
+                    ) : undefined
                 )}
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
@@ -133,6 +120,31 @@ function directionGeometry(): Geometry {
 
 const DIRECTION_GEOMETRY = directionGeometry()
 
+function GotchiScene({gotchi, island}: {
+    gotchi: Gotchi,
+    island: Island,
+}): JSX.Element {
+    const hexalot = island.hexalots[0]
+    const journey = hexalot ? hexalot.journey : undefined
+    const spots = useMemo(() => {
+        const geometry = new Geometry()
+        if (island) {
+            island.spots.forEach((spot: Spot, index: number) => {
+                spot.addSurfaceGeometry("spots", index, geometry.vertices, geometry.faces)
+            })
+        }
+        geometry.computeBoundingSphere()
+        return geometry
+    }, [])
+    return (
+        <group>
+            <GotchiComponent gotchi={gotchi}/>
+            <mesh name="Spots" geometry={spots} material={ISLAND}/>
+            {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
+        </group>
+    )
+}
+
 function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
 
     return (
@@ -164,7 +176,7 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
     )
 }
 
-function EvolutionComponent({evolution}: { evolution: Evolution }): JSX.Element {
+function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
     return (
         <group>
             {evolution.evolvers.map(({gotchi, index}) => (
@@ -174,17 +186,29 @@ function EvolutionComponent({evolution}: { evolution: Evolution }): JSX.Element 
                         material={LINE_VERTEX_COLORS}
                     />
                     {!gotchi.showDirection ? undefined : (
-                        <lineSegments
-                            geometry={DIRECTION_GEOMETRY}
-                            material={DIRECTION_LINE}
-                            quaternion={gotchi.directionQuaternion}
-                            position={gotchi.topJointLocation}
-                        />
+                        <group>
+                            <lineSegments
+                                geometry={toTargetGeometry(gotchi.topJointLocation, gotchi.target)}
+                                material={JOURNEY_LINE}
+                            />
+                            <lineSegments
+                                geometry={DIRECTION_GEOMETRY}
+                                material={DIRECTION_LINE}
+                                quaternion={gotchi.directionQuaternion}
+                                position={gotchi.topJointLocation}
+                            />
+                        </group>
                     )}
                 </group>
             ))}
         </group>
     )
+}
+
+function toTargetGeometry(midpoint: Vector3, target: Vector3): Geometry {
+    const geom = new Geometry()
+    geom.vertices = [midpoint, new Vector3(target.x, midpoint.y, target.z)]
+    return geom
 }
 
 function JourneyComponent({journey}: { journey: Journey }): JSX.Element {
@@ -251,7 +275,7 @@ function JourneyComponent({journey}: { journey: Journey }): JSX.Element {
         <lineSegments
             key="journey"
             geometry={geom()}
-            material={SCALE_LINE}
+            material={JOURNEY_LINE}
         />
     )
 }

@@ -116,6 +116,10 @@ export class Genome {
         })
     }
 
+    public get generation(): number {
+        return this.genes.reduce((max, {generation}) => Math.max(max, generation), 0)
+    }
+
     public toString(): string {
         return this.genes.map(gene => `(${gene.geneName}:${gene.generation})`).join(", ")
         // return this.genes.map(gene => serializeGene(gene.dice)).join("\n")

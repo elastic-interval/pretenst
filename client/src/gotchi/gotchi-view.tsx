@@ -83,6 +83,9 @@ export function GotchiView({island, createInstance}: {
                             Evolve!
                         </Button>
                         <Button disabled={!evolution} onClick={() => {
+                            if (evolution) {
+                                setTimeout(() => evolution.free(), 1000)
+                            }
                             setEvolution(undefined)
                             if (gotchi) {
                                 setGotchi(gotchi.recycled(gotchi.instance))

@@ -282,7 +282,6 @@ export class Gotchi {
         return this.quaternionForDirection(this.state.direction)
     }
 
-
     private twitch(whichMuscle: number, attack: number, decay: number, intensity: number): void {
         const state = this.state
         const muscle = state.muscles[whichMuscle]

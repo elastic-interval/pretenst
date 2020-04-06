@@ -56,14 +56,8 @@ export class FabricInstance {
     constructor(eig: typeof import("eig"), jointCount: number, worldObject: object, fabricObject?: object) {
         this.world = worldObject as World
         this.adoptFabric = (fabric) => {
-            const f = this.fabric
-            if (f) {
-                f.free()
-            }
+            this.free()
             this.fabric = fabric
-            if (this.view) {
-                this.view.free()
-            }
             this.view = eig.View.on_fabric(fabric)
             return this
         }
@@ -124,6 +118,17 @@ export class FabricInstance {
 
     public unitVector(intervalIndex: number): Vector3 {
         return vectorFromArray(this.floatView.unitVectors, intervalIndex)
+    }
+
+    public free(): void {
+        const fabric = this.fabric
+        if (fabric) {
+            fabric.free()
+        }
+        const view = this.view
+        if (view) {
+            view.free()
+        }
     }
 }
 

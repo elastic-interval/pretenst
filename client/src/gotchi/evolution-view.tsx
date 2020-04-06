@@ -5,11 +5,10 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { Badge } from "reactstrap"
+import { FaDna, FaSkull } from "react-icons/all"
+import { Table } from "reactstrap"
 
-import { Grouping } from "../view/control-tabs"
-
-import { Evolution, ICompetitor } from "./evolution"
+import { Evolution } from "./evolution"
 
 export function EvolutionView({evolution}: {
     evolution: Evolution,
@@ -19,31 +18,37 @@ export function EvolutionView({evolution}: {
         const sub = evolution.snapshotSubject.subscribe(updateSnapshot)
         return () => sub.unsubscribe()
     }, [evolution])
+    const {minCycles, currentCycle, maxCycles, competitors} = snapshot
     return (
         <div id="top-left">
-            <Grouping>
-                <h6>{evolution.evolvers.length.toFixed(0)} Evolvers</h6>
-                {snapshot.competitors.map((evolver, index) => (
-                    <EvolverView key={`evo-view-${index}`} competitor={evolver} alive={index < snapshot.survivorCount}/>
+            <h6>{evolution.evolvers.length.toFixed(0)} Evolvers [cycles {minCycles} to {maxCycles - 1}]</h6>
+            <Table>
+                <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Distance/Cycles</th>
+                    <th>Generation</th>
+                </tr>
+                </thead>
+                <tbody>
+                {competitors.map(({name, distanceFromTarget, generation, dead, saved}, index) => (
+                    <tr key={`competitor-${index}`} style={{
+                        color: dead ? "#aba08d" : "#1d850b",
+                    }}>
+                        <td>
+                            {name} {saved ? <FaDna/> : undefined}
+                        </td>
+                        <td>
+                            {distanceFromTarget.toFixed(1)}/{currentCycle}
+                        </td>
+                        <td>
+                            {generation}&nbsp;
+                            {dead ? <FaSkull/> : undefined}
+                        </td>
+                    </tr>
                 ))}
-                <div>
-                    <Badge>min={snapshot.minCycles}</Badge>
-                    <Badge>curr={snapshot.currentCycle}</Badge>
-                    <Badge>max={snapshot.maxCycles}</Badge>
-                </div>
-            </Grouping>
-        </div>
-    )
-}
-
-function EvolverView({competitor, alive}: { competitor: ICompetitor, alive: boolean }): JSX.Element {
-    return (
-        <div style={{
-            color: alive ?
-                "#31ce13" :
-                "#c03b02",
-        }}>
-            {competitor.distanceFromTarget.toFixed(1)}
+                </tbody>
+            </Table>
         </div>
     )
 }

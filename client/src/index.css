@@ -108,7 +108,9 @@ a, a:hover {
     top: 1em;
     left: 1em;
     z-index: 100;
-    background-color: #a6c8ff;
+    background-color: white;
+    border-radius: 1em;
+    padding: 1em;
 }
 
 #top-right {
@@ -164,4 +166,10 @@ a, a:hover {
 .rst__moveHandle {
     border-top-left-radius: 1em;
     border-bottom-left-radius: 1em;
+}
+
+.table td, th {
+    font-size: small;
+    padding: 0.2em;
+    text-align: center;
 }
