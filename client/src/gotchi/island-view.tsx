@@ -81,17 +81,28 @@ export function IslandView({island, gotchi, direction, setDirection, evolution, 
         orb.update()
     }, [])
 
+    const hexalot = island.hexalots[0]
+    const journey = hexalot ? hexalot.journey : undefined
+    const spots = useMemo(() => {
+        const geometry = new Geometry()
+        if (island) {
+            island.spots.forEach((spot: Spot, index: number) => {
+                spot.addSurfaceGeometry("spots", index, geometry.vertices, geometry.faces)
+            })
+        }
+        geometry.computeBoundingSphere()
+        return geometry
+    }, [])
+
     return (
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                {evolution ? (
-                    <EvolutionScene evolution={evolution}/>
-                ) : (
-                    gotchi ? (
-                        <GotchiScene gotchi={gotchi} island={island}/>
-                    ) : undefined
+                {evolution ? <EvolutionScene evolution={evolution}/> : (
+                    gotchi ? (<GotchiComponent gotchi={gotchi}/>) : undefined
                 )}
+                <mesh name="Spots" geometry={spots} material={ISLAND}/>
+                {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
             </scene>
@@ -125,33 +136,7 @@ function directionGeometry(): Geometry {
 
 const DIRECTION_GEOMETRY = directionGeometry()
 
-function GotchiScene({gotchi, island}: {
-    gotchi: Gotchi,
-    island: Island,
-}): JSX.Element {
-    const hexalot = island.hexalots[0]
-    const journey = hexalot ? hexalot.journey : undefined
-    const spots = useMemo(() => {
-        const geometry = new Geometry()
-        if (island) {
-            island.spots.forEach((spot: Spot, index: number) => {
-                spot.addSurfaceGeometry("spots", index, geometry.vertices, geometry.faces)
-            })
-        }
-        geometry.computeBoundingSphere()
-        return geometry
-    }, [])
-    return (
-        <group>
-            <GotchiComponent gotchi={gotchi}/>
-            <mesh name="Spots" geometry={spots} material={ISLAND}/>
-            {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
-        </group>
-    )
-}
-
 function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
-
     return (
         <group>
             <lineSegments
