@@ -18,16 +18,15 @@ export function EvolutionView({evolution}: {
         const sub = evolution.snapshotSubject.subscribe(updateSnapshot)
         return () => sub.unsubscribe()
     }, [evolution])
-    const {minCycles, currentCycle, maxCycles, competitors} = snapshot
+    const {currentCycle, maxCycles, competitors} = snapshot
     return (
         <div id="top-left">
-            <h6>{evolution.evolvers.length.toFixed(0)} Evolvers [cycles {minCycles} to {maxCycles - 1}]</h6>
+            <h6>{evolution.evolvers.length.toFixed(0)} Evolvers [cycle {currentCycle}/{maxCycles - 1}]</h6>
             <Table>
                 <thead>
                 <tr>
+                    <th>Proximity</th>
                     <th>Name</th>
-                    <th>Distance/Cycles</th>
-                    <th>Generation</th>
                 </tr>
                 </thead>
                 <tbody>
@@ -35,16 +34,8 @@ export function EvolutionView({evolution}: {
                     <tr key={`competitor-${index}`} style={{
                         color: dead ? "#aba08d" : "#1d850b",
                     }}>
-                        <td>
-                            {name} {saved ? <FaDna/> : undefined}
-                        </td>
-                        <td>
-                            {distanceFromTarget.toFixed(1)}/{currentCycle}
-                        </td>
-                        <td>
-                            {generation}&nbsp;
-                            {dead ? <FaSkull/> : undefined}
-                        </td>
+                        <td>{distanceFromTarget.toFixed(1)}</td>
+                        <td>{name}({generation}) {saved ? <FaDna/> : undefined} {dead ? <FaSkull/> : undefined}</td>
                     </tr>
                 ))}
                 </tbody>

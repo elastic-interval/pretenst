@@ -19,10 +19,10 @@ export interface IEvolutionParameters {
 }
 
 const PARAM: IEvolutionParameters = {
-    maxPopulation: 10,
+    maxPopulation: 12,
     minCycleCount: 3,
     cycleExtension: 5,
-    survivalRate: 0.5,
+    survivalRate: 0.666,
 }
 
 export interface IEvolver {
@@ -43,7 +43,6 @@ export interface ICompetitor {
 }
 
 export interface IEvolutionSnapshot {
-    minCycles: number
     currentCycle: number
     maxCycles: number
     competitors: ICompetitor[]
@@ -52,6 +51,7 @@ export interface IEvolutionSnapshot {
 export class Evolution {
     public readonly snapshotSubject: BehaviorSubject<IEvolutionSnapshot>
     public evolvers: IEvolver[]
+    public finished = false
     private minCycleCount: number
     private currentMaxCycles: number
     private readonly baseGotchi: Gotchi
@@ -71,8 +71,9 @@ export class Evolution {
         this.baseGotchi.autopilot = true
         this.baseGotchi.reorient()
         const gotchis: Gotchi[] = []
+        const baseGenome = this.baseGotchi.genome
         while (gotchis.length < PARAM.maxPopulation) {
-            const genome = this.baseGotchi.genome.withDirectionMutation(directionGene(this.baseGotchi.direction))
+            const genome = gotchis.length === 0 ? baseGenome : baseGenome.withDirectionMutation(directionGene(this.baseGotchi.direction))
             const instance = this.createInstance(this.baseGotchi.fabricClone)
             const newborn = this.baseGotchi.recycled(instance, genome)
             if (!newborn) {
@@ -107,15 +108,10 @@ export class Evolution {
         // this.baseGotchi.state.leg.getMidpoint(midpoint)
     }
 
-    public free(): void {
-        this.evolvers.forEach(({gotchi}) => gotchi.instance.free())
-    }
-
     // Privates =============================================================
 
     private get snapshot(): IEvolutionSnapshot {
         return {
-            minCycles: this.minCycleCount,
             currentCycle: this.currentMaxCycles,
             maxCycles: this.minCycleCount + PARAM.cycleExtension,
             competitors: this.evolvers.map(({name, distanceFromTarget, gotchi, dead, saved}) => {
@@ -126,16 +122,20 @@ export class Evolution {
     }
 
     private adjustLimit(): void {
-        const maxCycleCount = this.minCycleCount + PARAM.cycleExtension
         this.currentMaxCycles++
-        if (this.currentMaxCycles >= maxCycleCount) {
+        if (this.currentMaxCycles >=  this.minCycleCount + PARAM.cycleExtension) {
+            this.evolvers.forEach((evolver, index) => {
+                if (index === 0) {
+                    this.baseGotchi.saveGenome(evolver.gotchi.genome)
+                    evolver.saved = evolver.gotchi.genome
+                } else {
+                    evolver.saved = undefined
+                }
+            })
             this.minCycleCount++
             this.currentMaxCycles = this.minCycleCount
-            const best = this.evolvers[0]
-            this.baseGotchi.saveGenome(best.gotchi.genome)
-            best.saved = best.gotchi.genome
             if (this.minCycleCount > PARAM.minCycleCount + PARAM.cycleExtension) {
-                this.minCycleCount = PARAM.minCycleCount
+                this.finished = true
             }
         }
     }
@@ -159,7 +159,7 @@ export class Evolution {
                 const parent = this.evolvers[Math.floor(survivorCount * Math.random())]
                 const mutatedGenome = fromGenomeData(parent.gotchi.mutatedGenes())
                 evolver.gotchi = evolver.gotchi.recycled(instance, mutatedGenome)
-                evolver.name = `${parent.name}${String.fromCharCode(65 + evolverIndex)}`
+                evolver.name = `${parent.name}${String.fromCharCode(65 + evolverIndex - survivorCount)}`
                 evolver.dead = false
             } else {
                 survivorMidpoints.push(evolver.gotchi.getMidpoint())

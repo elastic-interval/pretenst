@@ -49,7 +49,6 @@ export class Hexalot implements IHexalot {
         this._genome = genome
         const data = genome.genomeData
         localStorage.setItem(this.id, JSON.stringify(data))
-        console.log(`Saving genome to ${this.id}`, data)
     }
 
     public createNewGotchi(instance: FabricInstance, genome?: Genome): Gotchi | undefined {

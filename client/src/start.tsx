@@ -50,7 +50,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
                 case FabricFeature.MaxStrain:
                     return defaultValue * 0.5
                 case FabricFeature.VisualStrain:
-                    return defaultValue * 3
+                    return defaultValue * 2
                 case FabricFeature.PretenstFactor:
                     return defaultValue * 10
                 case FabricFeature.SlackThreshold:

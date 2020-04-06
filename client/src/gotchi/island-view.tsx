@@ -29,12 +29,13 @@ import { Spot } from "./spot"
 
 const TOWARDS_TARGET = 0.01
 
-export function IslandView({island, gotchi, direction, setDirection, evolution}: {
+export function IslandView({island, gotchi, direction, setDirection, evolution, stopEvolution}: {
     island: Island,
     direction: Direction,
     setDirection: (direction: Direction) => void,
     gotchi?: Gotchi,
     evolution?: Evolution,
+    stopEvolution: () => void,
 }): JSX.Element {
 
     const viewContainer = document.getElementById("view-container") as HTMLElement
@@ -46,6 +47,10 @@ export function IslandView({island, gotchi, direction, setDirection, evolution}:
     const midpoint = new Vector3()
     useRender(() => {
         if (evolution) {
+            if (evolution.finished) {
+                stopEvolution()
+                return
+            }
             evolution.iterate()
             evolution.getMidpoint(midpoint)
         } else if (gotchi) {

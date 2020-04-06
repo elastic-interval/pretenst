@@ -27,7 +27,7 @@ export function GotchiView({island, createInstance}: {
     const [gotchiDirection, setGotchiDirection] = useState(Direction.Rest)
     useEffect(() => setGotchiDirection(gotchi ? gotchi.direction : Direction.Rest), [gotchi])
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
-
+    const stopEvolution = () => setEvolution(undefined)
     return (
         <div id="view-container" style={{
             position: "absolute",
@@ -42,6 +42,7 @@ export function GotchiView({island, createInstance}: {
                     direction={gotchiDirection}
                     setDirection={setGotchiDirection}
                     evolution={evolution}
+                    stopEvolution={stopEvolution}
                 />
             </Canvas>
             {!evolution ? undefined : (
@@ -83,10 +84,7 @@ export function GotchiView({island, createInstance}: {
                             Evolve!
                         </Button>
                         <Button disabled={!evolution} onClick={() => {
-                            if (evolution) {
-                                setTimeout(() => evolution.free(), 1000)
-                            }
-                            setEvolution(undefined)
+                            stopEvolution()
                             if (gotchi) {
                                 setGotchi(gotchi.recycled(gotchi.instance))
                             }
