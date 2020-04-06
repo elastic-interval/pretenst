@@ -188,6 +188,10 @@ export class Gotchi {
         return midpoint
     }
 
+    public get distanceFromTarget(): number {
+        return this.getMidpoint().distanceTo(this.target)
+    }
+
     public iterate(midpoint?: Vector3): void {
         const state = this.state
         const instance = state.instance

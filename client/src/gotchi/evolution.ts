@@ -3,6 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
 import { CreateInstance } from "../fabric/fabric-instance"
@@ -30,7 +31,20 @@ export interface IEvolver {
     distanceFromTarget: number
 }
 
+export interface ICompetitor {
+    distanceFromTarget: number
+}
+
+export interface IEvolutionSnapshot {
+    survivorCount: number
+    minCycles: number
+    currentCycle: number
+    maxCycles: number
+    competitors: ICompetitor[]
+}
+
 export class Evolution {
+    public readonly snapshotSubject: BehaviorSubject<IEvolutionSnapshot>
     public evolvers: IEvolver[]
     private minCycleCount: number
     private currentMaxCycles: number
@@ -61,9 +75,11 @@ export class Evolution {
             }
             gotchis.push(newborn)
         }
+        const distanceFromTarget = this.baseGotchi.distanceFromTarget
         this.evolvers = gotchis.map((newborn, index) => <IEvolver>{
-            index, gotchi: newborn, distanceFromTarget: 1000,
+            index, gotchi: newborn, distanceFromTarget,
         })
+        this.snapshotSubject = new BehaviorSubject<IEvolutionSnapshot>(this.snapshot)
     }
 
     public iterate(): number {
@@ -87,6 +103,18 @@ export class Evolution {
 
     // Privates =============================================================
 
+    private get snapshot(): IEvolutionSnapshot {
+        return {
+            survivorCount: this.survivorCount,
+            minCycles: this.minCycleCount,
+            currentCycle: this.currentMaxCycles,
+            maxCycles: this.minCycleCount + PARAM.cycleExtension,
+            competitors: this.evolvers.map(({distanceFromTarget}) => ({
+                distanceFromTarget,
+            })),
+        }
+    }
+
     private adjustLimit(): void {
         const maxCycleCount = this.minCycleCount + PARAM.cycleExtension
         this.currentMaxCycles++
@@ -104,8 +132,7 @@ export class Evolution {
 
     private rankEvolvers(): void {
         this.evolvers.forEach(evolver => {
-            const view = evolver.gotchi.view
-            const midpoint = new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
+            const midpoint = evolver.gotchi.getMidpoint()
             evolver.distanceFromTarget = midpoint.distanceTo(evolver.gotchi.target)
         })
         this.evolvers.sort((a: IEvolver, b: IEvolver) => a.distanceFromTarget - b.distanceFromTarget)
@@ -113,10 +140,8 @@ export class Evolution {
 
     private nextGenerationFromSurvival(): void {
         this.rankEvolvers()
-        const {survivalRate} = PARAM
-        const rankList = this.evolvers.map(({distanceFromTarget}) => distanceFromTarget.toFixed(1))
-        console.log(`ranked: ${rankList}`, this.evolvers[0].gotchi.genome.toString())
-        const survivorCount = Math.floor(this.evolvers.length * survivalRate)
+        this.snapshotSubject.next(this.snapshot)
+        const survivorCount = this.survivorCount
         const survivorMidpoints: Vector3[] = []
         this.evolvers.forEach((evolver, evolverIndex) => {
             if (evolverIndex < survivorCount) {
@@ -132,8 +157,13 @@ export class Evolution {
                 evolver.gotchi = evolver.gotchi.recycled(instance, mutatedGenome)
             }
         })
-        this.midpoint.set(0,0,0)
+        this.midpoint.set(0, 0, 0)
         survivorMidpoints.forEach(m => this.midpoint.add(m))
         this.midpoint.multiplyScalar(1.0 / survivorMidpoints.length)
+    }
+
+    private get survivorCount(): number {
+        const {survivalRate} = PARAM
+        return Math.floor(this.evolvers.length * survivalRate)
     }
 }

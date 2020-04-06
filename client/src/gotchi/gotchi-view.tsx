@@ -12,6 +12,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { Grouping } from "../view/control-tabs"
 
 import { Evolution } from "./evolution"
+import { EvolutionView } from "./evolution-view"
 import { emptyGenome } from "./genome"
 import { Direction, DIRECTIONS } from "./gotchi"
 import { Island } from "./island"
@@ -43,6 +44,9 @@ export function GotchiView({island, createInstance}: {
                     evolution={evolution}
                 />
             </Canvas>
+            {!evolution ? undefined : (
+                <EvolutionView evolution={evolution}/>
+            )}
             <div id="bottom-middle">
                 <Grouping>
                     <ButtonGroup className="mx-1">

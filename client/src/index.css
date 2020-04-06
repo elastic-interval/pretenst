@@ -108,6 +108,7 @@ a, a:hover {
     top: 1em;
     left: 1em;
     z-index: 100;
+    background-color: #a6c8ff;
 }
 
 #top-right {
