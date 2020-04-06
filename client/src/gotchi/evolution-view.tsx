@@ -6,12 +6,13 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaDna, FaSkull } from "react-icons/all"
-import { Table } from "reactstrap"
+import { Button, Table } from "reactstrap"
 
 import { Evolution } from "./evolution"
 
-export function EvolutionView({evolution}: {
+export function EvolutionView({evolution, stopEvolution}: {
     evolution: Evolution,
+    stopEvolution: () => void,
 }): JSX.Element {
     const [snapshot, updateSnapshot] = useState(evolution.snapshotSubject.getValue())
     useEffect(() => {
@@ -21,7 +22,7 @@ export function EvolutionView({evolution}: {
     const {currentCycle, maxCycles, competitors} = snapshot
     return (
         <div id="top-left">
-            <h6>{evolution.evolvers.length.toFixed(0)} Evolvers [cycle {currentCycle}/{maxCycles - 1}]</h6>
+            <h6 className="w-100">{competitors.length.toString()} Evolvers [cycle {currentCycle}/{maxCycles - 1}]</h6>
             <Table>
                 <thead>
                 <tr>
@@ -40,6 +41,10 @@ export function EvolutionView({evolution}: {
                 ))}
                 </tbody>
             </Table>
+            <hr/>
+            <Button className="w-100" color="warning" onClick={stopEvolution}>
+                Abort!
+            </Button>
         </div>
     )
 }

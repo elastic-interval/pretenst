@@ -19,10 +19,10 @@ export interface IEvolutionParameters {
 }
 
 const PARAM: IEvolutionParameters = {
-    maxPopulation: 12,
+    maxPopulation: 10,
     minCycleCount: 3,
     cycleExtension: 5,
-    survivalRate: 0.666,
+    survivalRate: 0.5,
 }
 
 export interface IEvolver {
@@ -123,7 +123,7 @@ export class Evolution {
 
     private adjustLimit(): void {
         this.currentMaxCycles++
-        if (this.currentMaxCycles >=  this.minCycleCount + PARAM.cycleExtension) {
+        if (this.currentMaxCycles >= this.minCycleCount + PARAM.cycleExtension) {
             this.evolvers.forEach((evolver, index) => {
                 if (index === 0) {
                     this.baseGotchi.saveGenome(evolver.gotchi.genome)
@@ -141,18 +141,22 @@ export class Evolution {
     }
 
     private nextGenerationFromSurvival(): void {
+        const gotchiMidpoint = new Vector3()
         this.evolvers.forEach(evolver => {
-            evolver.distanceFromTarget = evolver.gotchi.getMidpoint().distanceTo(evolver.gotchi.target)
+            evolver.distanceFromTarget = evolver.gotchi.getMidpoint(gotchiMidpoint).distanceTo(evolver.gotchi.target)
         })
         this.evolvers.sort((a: IEvolver, b: IEvolver) => a.distanceFromTarget - b.distanceFromTarget)
         const survivorCount = this.survivorCount
+        this.midpoint.set(0, 0, 0)
         this.evolvers.forEach((evolver, evolverIndex) => {
             if (evolverIndex >= survivorCount) {
                 evolver.dead = true
+            } else {
+                this.midpoint.add(evolver.gotchi.getMidpoint(gotchiMidpoint))
             }
         })
+        this.midpoint.multiplyScalar(1.0 / survivorCount)
         this.snapshotSubject.next(this.snapshot)
-        const survivorMidpoints: Vector3[] = []
         this.evolvers.forEach((evolver, evolverIndex) => {
             const instance = evolver.gotchi.adoptFabric(this.baseGotchi.fabricClone)
             if (evolver.dead) {
@@ -162,17 +166,13 @@ export class Evolution {
                 evolver.name = `${parent.name}${String.fromCharCode(65 + evolverIndex - survivorCount)}`
                 evolver.dead = false
             } else {
-                survivorMidpoints.push(evolver.gotchi.getMidpoint())
                 evolver.gotchi = evolver.gotchi.recycled(instance, evolver.gotchi.genome)
             }
         })
-        this.midpoint.set(0, 0, 0)
-        survivorMidpoints.forEach(m => this.midpoint.add(m))
-        this.midpoint.multiplyScalar(1.0 / survivorMidpoints.length)
     }
 
     private get survivorCount(): number {
         const {survivalRate} = PARAM
-        return Math.floor(this.evolvers.length * survivalRate)
+        return Math.ceil(this.evolvers.length * survivalRate)
     }
 }

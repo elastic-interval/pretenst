@@ -13,7 +13,6 @@ import { Grouping } from "../view/control-tabs"
 
 import { Evolution } from "./evolution"
 import { EvolutionView } from "./evolution-view"
-import { emptyGenome } from "./genome"
 import { Direction, DIRECTIONS } from "./gotchi"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
@@ -27,7 +26,12 @@ export function GotchiView({island, createInstance}: {
     const [gotchiDirection, setGotchiDirection] = useState(Direction.Rest)
     useEffect(() => setGotchiDirection(gotchi ? gotchi.direction : Direction.Rest), [gotchi])
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
-    const stopEvolution = () => setEvolution(undefined)
+    const stopEvolution = () => {
+        setEvolution(undefined)
+        if (gotchi) {
+            setGotchi(gotchi.recycled(gotchi.instance))
+        }
+    }
     return (
         <div id="view-container" style={{
             position: "absolute",
@@ -45,63 +49,49 @@ export function GotchiView({island, createInstance}: {
                     stopEvolution={stopEvolution}
                 />
             </Canvas>
-            {!evolution ? undefined : (
-                <EvolutionView evolution={evolution}/>
-            )}
-            <div id="bottom-middle">
-                <Grouping>
-                    <ButtonGroup className="mx-1">
-                        {DIRECTIONS.map(nextDirection => (
-                            <Button key={`direction-${nextDirection}`}
-                                    disabled={gotchiDirection === nextDirection}
-                                    onClick={() => {
-                                        if (gotchi) {
-                                            gotchi.direction = nextDirection
-                                        }
-                                    }}
-                            >
-                                {nextDirection}
+            {!evolution ? (
+                <div id="bottom-middle">
+                    <Grouping>
+                        <ButtonGroup className="mx-1">
+                            {DIRECTIONS.map(nextDirection => (
+                                <Button key={`direction-${nextDirection}`}
+                                        disabled={gotchiDirection === nextDirection}
+                                        onClick={() => {
+                                            if (gotchi) {
+                                                gotchi.direction = nextDirection
+                                            }
+                                        }}
+                                >
+                                    {nextDirection}
+                                </Button>
+                            ))}
+                        </ButtonGroup>
+                        <ButtonGroup className="mx-1">
+                            <Button disabled={!!evolution} onClick={() => {
+                                if (!gotchi) {
+                                    return
+                                }
+                                if (!gotchi.isMature) {
+                                    console.error("immature")
+                                    return
+                                }
+                                if (gotchi.direction !== Direction.Rest) {
+                                    console.error("not at rest")
+                                    return
+                                }
+                                const evo = new Evolution(createInstance, gotchi)
+                                console.log("Evolving gotchis", evo.evolvers.length)
+                                setEvolution(evo)
+                            }}>
+                                Evolve!
                             </Button>
-                        ))}
-                    </ButtonGroup>
-                    <ButtonGroup className="mx-1">
-                        <Button disabled={!!evolution} onClick={() => {
-                            if (!gotchi) {
-                                return
-                            }
-                            if (!gotchi.isMature) {
-                                console.error("immature")
-                                return
-                            }
-                            if (gotchi.direction !== Direction.Rest) {
-                                console.error("not at rest")
-                                return
-                            }
-                            const evo = new Evolution(createInstance, gotchi)
-                            console.log("Evolving gotchis", evo.evolvers.length)
-                            setEvolution(evo)
-                        }}>
-                            Evolve!
-                        </Button>
-                        <Button disabled={!evolution} onClick={() => {
-                            stopEvolution()
-                            if (gotchi) {
-                                setGotchi(gotchi.recycled(gotchi.instance))
-                            }
-                        }}>
-                            Stop!
-                        </Button>
-                        <Button onClick={() => {
-                            if (gotchi) {
-                                gotchi.saveGenome(emptyGenome())
-                                setGotchi(gotchi.recycled(gotchi.instance))
-                            }
-                        }}>
-                            Delete!
-                        </Button>
-                    </ButtonGroup>
-                </Grouping>
-            </div>
+                        </ButtonGroup>
+                    </Grouping>
+                </div>
+
+            ) : (
+                <EvolutionView evolution={evolution} stopEvolution={stopEvolution}/>
+            )}
         </div>
     )
 }
