@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { useRender, useThree, useUpdate } from "react-three-fiber"
 import {
     BufferGeometry,
@@ -37,9 +37,6 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
 }): JSX.Element {
 
     const viewContainer = document.getElementById("view-container") as HTMLElement
-    const {camera} = useThree()
-    const perspective = camera as PerspectiveCamera
-
     const [trigger, setTrigger] = useState(0)
 
     const midpoint = new Vector3()
@@ -60,6 +57,8 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
         setTrigger(trigger + 1)
     }, true, [gotchi, evolution, trigger])
 
+    const {camera} = useThree()
+    const perspective = camera as PerspectiveCamera
     const orbit = useUpdate<Orbit>(orb => {
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
         perspective.lookAt(orbit.current.target)
@@ -75,6 +74,10 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
         orb.target.set(midpoint.x, midpoint.y, midpoint.z)
         orb.update()
     }, [])
+
+    useEffect(() => {
+        orbit.current.autoRotate = !!(evolution)
+    }, [evolution])
 
     const hexalot = island.hexalots[0]
     const journey = hexalot ? hexalot.journey : undefined
