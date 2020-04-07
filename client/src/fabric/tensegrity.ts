@@ -208,7 +208,6 @@ export class Tensegrity {
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", faceLocations)
         geometry.addAttribute("normal", faceNormals)
-        geometry.computeBoundingSphere()
         return geometry
     }
 
@@ -218,7 +217,6 @@ export class Tensegrity {
         const geometry = new BufferGeometry()
         geometry.addAttribute("position", lineLocations)
         geometry.addAttribute("color", lineColors)
-        geometry.computeBoundingSphere()
         return geometry
     }
 

@@ -88,7 +88,6 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
                 spot.addSurfaceGeometry("spots", index, geometry.vertices, geometry.faces)
             })
         }
-        geometry.computeBoundingSphere()
         return geometry
     }, [])
 

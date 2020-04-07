@@ -35,7 +35,6 @@ function spotsGeometry(): Geometry {
     const geometry = new Geometry()
     addSurfaceGeometry(geometry.vertices, geometry.faces)
     geometry.vertices.forEach(v => v.sub(new Vector3(0, 0.01, 0)))
-    geometry.computeBoundingSphere()
     return geometry
 }
 
