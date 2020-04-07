@@ -6,18 +6,24 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { FaDna, FaSkull, FaTimesCircle } from "react-icons/all"
-import { Button, Table } from "reactstrap"
+import { Button, ButtonGroup, Table } from "reactstrap"
 
 import { Evolution } from "./evolution"
+
+const SPEED = [1, 3, 6, 9, 12]
 
 export function EvolutionView({evolution, stopEvolution}: {
     evolution: Evolution,
     stopEvolution: () => void,
 }): JSX.Element {
     const [snapshot, updateSnapshot] = useState(evolution.snapshotSubject.getValue())
+    const [ticks, setTicks] = useState(evolution.ticksSubject.getValue())
     useEffect(() => {
-        const sub = evolution.snapshotSubject.subscribe(updateSnapshot)
-        return () => sub.unsubscribe()
+        const subs = [
+            evolution.snapshotSubject.subscribe(updateSnapshot),
+            evolution.ticksSubject.subscribe(setTicks),
+        ]
+        return () => subs.forEach(sub => sub.unsubscribe())
     }, [evolution])
     const {currentCycle, maxCycles, competitors} = snapshot
     return (
@@ -41,9 +47,18 @@ export function EvolutionView({evolution, stopEvolution}: {
                 ))}
                 </tbody>
             </Table>
-            <Button className="w-100" color="warning" onClick={stopEvolution}>
-                <FaTimesCircle/> Enough <FaTimesCircle/>
-            </Button>
+            <ButtonGroup className="w-100 small">
+                <Button size="sm" color="warning" onClick={stopEvolution}>
+                    <FaTimesCircle/>
+                </Button>
+                {SPEED.map(chosenTicks => (
+                    <Button color="success" size="sm" disabled={ticks === chosenTicks} key={`speed-${chosenTicks}`}
+                            onClick={() => evolution.ticksSubject.next(chosenTicks)}
+                    >
+                        {chosenTicks}
+                    </Button>
+                ))}
+            </ButtonGroup>
         </div>
     )
 }

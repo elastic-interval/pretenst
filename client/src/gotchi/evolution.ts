@@ -50,6 +50,7 @@ export interface IEvolutionSnapshot {
 
 export class Evolution {
     public readonly snapshotSubject: BehaviorSubject<IEvolutionSnapshot>
+    public readonly ticksSubject = new BehaviorSubject(1)
     public evolvers: IEvolver[]
     public finished = false
     private minCycleCount: number
@@ -94,8 +95,9 @@ export class Evolution {
             this.nextGenerationFromSurvival()
             this.adjustLimit()
         }
+        const ticks = this.ticksSubject.getValue()
         this.evolvers.forEach(({gotchi}) => {
-            for (let tick = 0; tick < 5; tick++) {
+            for (let tick = 0; tick < ticks; tick++) {
                 gotchi.iterate()
             }
         })
