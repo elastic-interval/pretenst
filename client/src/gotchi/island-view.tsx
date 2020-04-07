@@ -99,10 +99,9 @@ export function IslandView({island, gotchi, direction, setDirection, evolution, 
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
                 {evolution ? <EvolutionScene evolution={evolution}/> : (
-                    gotchi ? (<GotchiComponent gotchi={gotchi}/>) : undefined
+                    gotchi ? (<GotchiComponent gotchi={gotchi} journey={journey}/>) : undefined
                 )}
                 <mesh name="Spots" geometry={spots} material={ISLAND}/>
-                {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
             </scene>
@@ -136,7 +135,7 @@ function directionGeometry(): Geometry {
 
 const DIRECTION_GEOMETRY = directionGeometry()
 
-function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
+function GotchiComponent({gotchi, journey}: { gotchi: Gotchi, journey?: Journey }): JSX.Element {
     return (
         <group>
             <lineSegments
@@ -162,11 +161,13 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
                     )}
                 </group>
             )}
+            {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
         </group>
     )
 }
 
 function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
+    const midpoint = new Vector3()
     return (
         <group>
             {evolution.evolvers.map(({gotchi, index}) => (
@@ -178,7 +179,7 @@ function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
                     {!gotchi.showDirection ? undefined : (
                         <group>
                             <lineSegments
-                                geometry={toTargetGeometry(gotchi.topJointLocation, gotchi.target)}
+                                geometry={gotchiToTargetGeometry(gotchi.topJointLocation, gotchi.target)}
                                 material={JOURNEY_LINE}
                             />
                             <lineSegments
@@ -191,13 +192,28 @@ function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
                     )}
                 </group>
             ))}
+            <lineSegments
+                geometry={evolutionTargetGeometry(evolution.getMidpoint(midpoint), evolution.target)}
+                material={JOURNEY_LINE}
+            />
         </group>
     )
 }
 
-function toTargetGeometry(midpoint: Vector3, target: Vector3): Geometry {
+function gotchiToTargetGeometry(gotchiLocation: Vector3, target: Vector3): Geometry {
     const geom = new Geometry()
-    geom.vertices = [midpoint, new Vector3(target.x, midpoint.y, target.z)]
+    geom.vertices = [gotchiLocation, new Vector3(target.x, gotchiLocation.y, target.z)]
+    return geom
+}
+
+function evolutionTargetGeometry(evoMidpoint: Vector3, target: Vector3): Geometry {
+    const geom = new Geometry()
+    const height = 10
+    geom.vertices = [
+        new Vector3(evoMidpoint.x, 0, evoMidpoint.z), new Vector3(evoMidpoint.x, height, evoMidpoint.z),
+        new Vector3(target.x, 0, target.z), new Vector3(target.x, height, target.z),
+        new Vector3(evoMidpoint.x, height/2, evoMidpoint.z), new Vector3(target.x, height/2, target.z),
+    ]
     return geom
 }
 

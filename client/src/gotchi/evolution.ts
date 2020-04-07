@@ -103,9 +103,14 @@ export class Evolution {
         return maxCycleCount
     }
 
-    public getMidpoint(midpoint: Vector3): void {
+    public getMidpoint(midpoint: Vector3): Vector3 {
         midpoint.copy(this.midpoint)
         // this.baseGotchi.state.leg.getMidpoint(midpoint)
+        return midpoint
+    }
+
+    public get target(): Vector3 {
+        return this.baseGotchi.target
     }
 
     // Privates =============================================================

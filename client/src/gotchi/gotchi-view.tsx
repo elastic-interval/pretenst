@@ -79,9 +79,7 @@ export function GotchiView({island, createInstance}: {
                                     console.error("not at rest")
                                     return
                                 }
-                                const evo = new Evolution(createInstance, gotchi)
-                                console.log("Evolving gotchis", evo.evolvers.length)
-                                setEvolution(evo)
+                                setEvolution(new Evolution(createInstance, gotchi))
                             }}>
                                 Evolve!
                             </Button>
