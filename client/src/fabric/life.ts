@@ -50,7 +50,7 @@ export class Life {
                             tensegrity.instance.snapshot()
                         }
                         return
-                    case Stage.Realizing:
+                    case Stage.Pretensing:
                         return
                 }
                 break
@@ -58,17 +58,17 @@ export class Life {
                 switch (stage) {
                     case Stage.Shaping:
                         return
-                    case Stage.Realizing:
+                    case Stage.Pretensing:
                         return
                 }
                 break
-            case Stage.Realizing:
+            case Stage.Pretensing:
                 switch (stage) {
-                    case Stage.Realized:
+                    case Stage.Mature:
                         return
                 }
                 break
-            case Stage.Realized:
+            case Stage.Mature:
                 switch (stage) {
                     case Stage.Slack:
                         if (strainToStiffness) {

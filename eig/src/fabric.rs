@@ -241,13 +241,13 @@ impl Fabric {
             Stage::Shaping => {
                 self.set_altitude(0_f32);
                 match requested_stage {
-                    Stage::Realizing => Some(self.start_realizing(world)),
+                    Stage::Pretensing => Some(self.start_realizing(world)),
                     Stage::Slack => Some(self.set_stage(Stage::Slack)),
                     _ => None,
                 }
             }
             Stage::Slack => match requested_stage {
-                Stage::Realizing => Some(self.start_realizing(world)),
+                Stage::Pretensing => Some(self.start_realizing(world)),
                 Stage::Shaping => Some(self.slack_to_shaping(world)),
                 _ => None,
             },
@@ -275,8 +275,8 @@ impl Fabric {
             same
         } else {
             self.realizing_countdown = 0_f32;
-            if self.stage == Stage::Realizing {
-                Some(self.set_stage(Stage::Realized))
+            if self.stage == Stage::Pretensing {
+                Some(self.set_stage(Stage::Mature))
             } else {
                 same
             }
@@ -315,7 +315,7 @@ impl Fabric {
                     )
                 }
             }
-            Stage::Realizing => {
+            Stage::Pretensing => {
                 let nuanced_gravity = world.gravity * realizing_nuance;
                 for joint in &mut self.joints {
                     joint.velocity_physics(
@@ -327,7 +327,7 @@ impl Fabric {
                     )
                 }
             }
-            Stage::Realized => {
+            Stage::Mature => {
                 for joint in &mut self.joints {
                     joint.velocity_physics(
                         world,
@@ -360,7 +360,7 @@ impl Fabric {
 
     fn start_realizing(&mut self, world: &World) -> Stage {
         self.realizing_countdown = world.realizing_countdown;
-        self.set_stage(Stage::Realizing)
+        self.set_stage(Stage::Pretensing)
     }
 
     fn slack_to_shaping(&mut self, world: &World) -> Stage {

@@ -67,4 +67,17 @@ export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): Interva
     }
 }
 
-
+export function stageName(stage: Stage): string {
+    switch (stage) {
+        case Stage.Growing:
+            return "Growing"
+        case Stage.Shaping:
+            return "Shaping"
+        case Stage.Slack:
+            return "Slack"
+        case Stage.Pretensing:
+            return "Pretensing"
+        default:
+            return "Mature"
+    }
+}

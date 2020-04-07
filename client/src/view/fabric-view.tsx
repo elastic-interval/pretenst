@@ -132,9 +132,9 @@ export function FabricView({
         orbit.current.update()
         if (!ellipsoids && shapeSelection !== ShapeSelection.Faces) {
             const nextStage = tensegrity.iterate()
-            if (life.stage === Stage.Realizing && nextStage === Stage.Realized) {
-                tensegrity.transition = {stage: Stage.Realized}
-            } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Realizing) {
+            if (life.stage === Stage.Pretensing && nextStage === Stage.Mature) {
+                tensegrity.transition = {stage: Stage.Mature}
+            } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
                 tensegrity.transition = {stage: nextStage}
             }
         }

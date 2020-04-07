@@ -43,8 +43,8 @@ pub enum Stage {
     Growing,
     Shaping,
     Slack,
-    Realizing,
-    Realized,
+    Pretensing,
+    Mature,
 }
 
 #[wasm_bindgen]

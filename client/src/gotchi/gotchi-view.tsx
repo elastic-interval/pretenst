@@ -3,17 +3,20 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
+import { FaBaby, FaDna, FaHourglassHalf, FaRunning, FaYinYang } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 
+import { stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
-import { Grouping } from "../view/control-tabs"
+import { Life } from "../fabric/life"
 
 import { Evolution } from "./evolution"
 import { EvolutionView } from "./evolution-view"
-import { Direction, DIRECTIONS } from "./gotchi"
+import { Direction, Gotchi } from "./gotchi"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
 
@@ -23,15 +26,26 @@ export function GotchiView({island, createInstance}: {
 }): JSX.Element {
 
     const [gotchi, setGotchi] = useState(() => island.hexalots[0].createNewGotchi(createInstance()))
-    const [gotchiDirection, setGotchiDirection] = useState(Direction.Rest)
-    useEffect(() => setGotchiDirection(gotchi ? gotchi.direction : Direction.Rest), [gotchi])
+    const [gotchiActive, setGotchiActive] = useState(false)
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
+    const [life, updateLife] = useState<Life | undefined>(undefined)
+    useEffect(() => {
+        if (!gotchi || !gotchi.embryo) {
+            updateLife(undefined)
+            return
+        }
+        const sub = gotchi.embryo.life$.subscribe(updateLife)
+        return () => sub.unsubscribe()
+    }, [gotchi])
+
     const stopEvolution = () => {
         setEvolution(undefined)
+        setGotchiActive(false)
         if (gotchi) {
             setGotchi(gotchi.recycled(gotchi.instance))
         }
     }
+    const onEvolve = (toEvolve: Gotchi) => setEvolution(new Evolution(createInstance, toEvolve))
     return (
         <div id="view-container" style={{
             position: "absolute",
@@ -43,53 +57,47 @@ export function GotchiView({island, createInstance}: {
                 <IslandView
                     island={island}
                     gotchi={gotchi}
-                    direction={gotchiDirection}
-                    setDirection={setGotchiDirection}
                     evolution={evolution}
                     stopEvolution={stopEvolution}
                 />
             </Canvas>
-            {!evolution ? (
-                <div id="bottom-middle">
-                    <Grouping>
-                        <ButtonGroup className="mx-1">
-                            {DIRECTIONS.map(nextDirection => (
-                                <Button key={`direction-${nextDirection}`}
-                                        disabled={gotchiDirection === nextDirection}
-                                        onClick={() => {
-                                            if (gotchi) {
-                                                gotchi.direction = nextDirection
-                                            }
-                                        }}
-                                >
-                                    {nextDirection}
+            {
+                evolution ? (
+                    <EvolutionView evolution={evolution} stopEvolution={stopEvolution}/>
+                ) : gotchi ? (
+                    <div id="bottom-middle">
+                        {!life || life.stage === Stage.Mature ? (
+                            <ButtonGroup className="mx-1">
+                                <Button disabled={!gotchiActive} onClick={() => {
+                                    setGotchiActive(false)
+                                    gotchi.direction = Direction.Rest
+                                }}>
+                                    <FaYinYang/> Rest
                                 </Button>
-                            ))}
-                        </ButtonGroup>
-                        <ButtonGroup className="mx-1">
-                            <Button disabled={!!evolution} onClick={() => {
-                                if (!gotchi) {
-                                    return
-                                }
-                                if (!gotchi.isMature) {
-                                    console.error("immature")
-                                    return
-                                }
-                                if (gotchi.direction !== Direction.Rest) {
-                                    console.error("not at rest")
-                                    return
-                                }
-                                setEvolution(new Evolution(createInstance, gotchi))
-                            }}>
-                                Evolve!
-                            </Button>
-                        </ButtonGroup>
-                    </Grouping>
-                </div>
-
-            ) : (
-                <EvolutionView evolution={evolution} stopEvolution={stopEvolution}/>
-            )}
+                                <Button disabled={gotchiActive} onClick={() => {
+                                    setGotchiActive(true)
+                                    gotchi.autopilot = true
+                                }}>
+                                    <FaRunning/> Run
+                                </Button>
+                                <Button disabled={gotchiActive} onClick={() => {
+                                    setGotchiActive(true)
+                                    onEvolve(gotchi)
+                                }}>
+                                    <FaDna/> Evolve
+                                </Button>
+                            </ButtonGroup>
+                        ) : (
+                            <h6 style={{
+                                color: "white",
+                                backgroundColor: "#53a455",
+                                borderRadius: "1em",
+                                padding: "0.4em",
+                            }}><FaBaby/> {stageName(life.stage)} <FaHourglassHalf/></h6>
+                        )}
+                    </div>
+                ) : undefined
+            }
         </div>
     )
 }

@@ -21,7 +21,7 @@ import { DIRECTION_LINE, FACE, JOURNEY_LINE, LINE_VERTEX_COLORS } from "../view/
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
-import { Direction, Gotchi } from "./gotchi"
+import { Gotchi } from "./gotchi"
 import { Island } from "./island"
 import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-logic"
 import { Journey } from "./journey"
@@ -29,10 +29,8 @@ import { Spot } from "./spot"
 
 const TOWARDS_TARGET = 0.01
 
-export function IslandView({island, gotchi, direction, setDirection, evolution, stopEvolution}: {
+export function IslandView({island, gotchi, evolution, stopEvolution}: {
     island: Island,
-    direction: Direction,
-    setDirection: (direction: Direction) => void,
     gotchi?: Gotchi,
     evolution?: Evolution,
     stopEvolution: () => void,
@@ -55,9 +53,6 @@ export function IslandView({island, gotchi, direction, setDirection, evolution, 
             evolution.getMidpoint(midpoint)
         } else if (gotchi) {
             gotchi.iterate(midpoint)
-            if (direction !== gotchi.direction) {
-                setDirection(gotchi.direction)
-            }
         }
         const towardsTarget = new Vector3().subVectors(midpoint, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
         orbit.current.target.add(towardsTarget)
@@ -143,23 +138,23 @@ function GotchiComponent({gotchi, journey}: { gotchi: Gotchi, journey?: Journey 
                 geometry={gotchi.linesGeometry}
                 material={LINE_VERTEX_COLORS}
             />
-            {!gotchi.isMature ? undefined : (
-                <group>
-                    <mesh
-                        key="gotchi-faces"
-                        geometry={gotchi.facesGeometry}
-                        material={FACE}
-                    />
-                    {!gotchi.showDirection ? undefined : (
-                        <lineSegments
-                            key="direction-lines"
-                            geometry={DIRECTION_GEOMETRY}
-                            material={DIRECTION_LINE}
-                            quaternion={gotchi.directionQuaternion}
-                            position={gotchi.topJointLocation}
-                        />
-                    )}
-                </group>
+            {/*{!gotchi.isMature ? undefined : (*/}
+            <group>
+                <mesh
+                    key="gotchi-faces"
+                    geometry={gotchi.facesGeometry}
+                    material={FACE}
+                />
+            </group>
+            {/*)}*/}
+            {!gotchi.showDirection ? undefined : (
+                <lineSegments
+                    key="direction-lines"
+                    geometry={DIRECTION_GEOMETRY}
+                    material={DIRECTION_LINE}
+                    quaternion={gotchi.directionQuaternion}
+                    position={gotchi.topJointLocation}
+                />
             )}
             {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
         </group>
@@ -212,7 +207,7 @@ function evolutionTargetGeometry(evoMidpoint: Vector3, target: Vector3): Geometr
     geom.vertices = [
         new Vector3(evoMidpoint.x, 0, evoMidpoint.z), new Vector3(evoMidpoint.x, height, evoMidpoint.z),
         new Vector3(target.x, 0, target.z), new Vector3(target.x, height, target.z),
-        new Vector3(evoMidpoint.x, height/2, evoMidpoint.z), new Vector3(target.x, height/2, target.z),
+        new Vector3(evoMidpoint.x, height / 2, evoMidpoint.z), new Vector3(target.x, height / 2, target.z),
     ]
     return geom
 }

@@ -5,7 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaDna, FaSkull } from "react-icons/all"
+import { FaDna, FaSkull, FaTimesCircle } from "react-icons/all"
 import { Button, Table } from "reactstrap"
 
 import { Evolution } from "./evolution"
@@ -41,9 +41,8 @@ export function EvolutionView({evolution, stopEvolution}: {
                 ))}
                 </tbody>
             </Table>
-            <hr/>
             <Button className="w-100" color="warning" onClick={stopEvolution}>
-                Abort!
+                <FaTimesCircle/> Enough <FaTimesCircle/>
             </Button>
         </div>
     )

@@ -61,7 +61,7 @@ export class Evolution {
         private createInstance: CreateInstance,
         gotchi: Gotchi,
     ) {
-        if (!gotchi.isMature) {
+        if (gotchi.embryo) {
             throw new Error("Cannot create evolution from gotchi which is not mature")
         }
         this.midpoint = gotchi.getMidpoint()
@@ -69,7 +69,6 @@ export class Evolution {
         this.minCycleCount = this.currentMaxCycles = PARAM.minCycleCount
         this.baseGotchi.snapshot()
         this.baseGotchi.autopilot = true
-        this.baseGotchi.reorient()
         const gotchis: Gotchi[] = []
         const baseGenome = this.baseGotchi.genome
         while (gotchis.length < PARAM.maxPopulation) {

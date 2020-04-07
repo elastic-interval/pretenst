@@ -111,10 +111,10 @@ impl Interval {
                     ideal_length *= 1_f32 + world.shaping_pretenst_factor;
                     stiffness_factor = world.shaping_stiffness_factor;
                 }
-                Stage::Realizing => {
+                Stage::Pretensing => {
                     ideal_length *= 1_f32 + world.pretenst_factor * realizing_nuance
                 }
-                Stage::Realized => ideal_length *= 1_f32 + world.pretenst_factor,
+                Stage::Mature => ideal_length *= 1_f32 + world.pretenst_factor,
             }
         }
         self.strain = (real_length - ideal_length) / ideal_length;

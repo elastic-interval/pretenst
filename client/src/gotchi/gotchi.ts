@@ -88,14 +88,11 @@ export function freshGotchiState(hexalot: Hexalot, instance: FabricInstance, gen
 export type CreateGotchi = (hexalot: Hexalot, instance: FabricInstance, genome: Genome, rotation: number) => Gotchi
 
 export class Gotchi {
-    private _embryo?: Tensegrity
     private shapingTime = 60
     private twitcher?: Twitcher
 
-    constructor(public readonly state: IGotchiState, embryo?: Tensegrity) {
-        if (embryo) {
-            this._embryo = embryo
-        } else {
+    constructor(public readonly state: IGotchiState, public embryo?: Tensegrity) {
+        if (!embryo) {
             this.twitcher = new Twitcher(this.state)
         }
     }
@@ -113,10 +110,6 @@ export class Gotchi {
         const hexalotGenome = this.state.hexalot.genome
         const state: IGotchiState = {...this.state, instance, genome: genome ? genome : hexalotGenome}
         return new Gotchi(state)
-    }
-
-    public get isMature(): boolean {
-        return !this._embryo
     }
 
     public get cycleCount(): number {
@@ -141,6 +134,9 @@ export class Gotchi {
 
     public set autopilot(auto: boolean) {
         this.state.autopilot = auto
+        if (auto) {
+            this.reorient()
+        }
     }
 
     public get direction(): Direction {
@@ -149,6 +145,7 @@ export class Gotchi {
 
     public set direction(direction: Direction) {
         this.state.direction = direction
+        this.autopilot = false
     }
 
     public get fabricClone(): Fabric {
@@ -199,30 +196,38 @@ export class Gotchi {
         if (midpoint) {
             midpoint.set(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
         }
-        const embryo = this._embryo
+        const embryo = this.embryo
         if (embryo) {
-            const stage = embryo.iterate()
-            switch (stage) {
+            const nextStage = embryo.iterate()
+            const life = embryo.life$.getValue()
+            if (life.stage === Stage.Pretensing && nextStage === Stage.Mature) {
+                embryo.transition = {stage: Stage.Mature}
+            } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
+                embryo.transition = {stage: nextStage}
+            }
+            switch (nextStage) {
                 case Stage.Shaping:
                     if (this.shapingTime <= 0) {
                         instance.fabric.adopt_lengths()
                         const faceIntervals = [...embryo.faceIntervals]
                         faceIntervals.forEach(interval => embryo.removeFaceInterval(interval))
                         instance.iterate(Stage.Slack)
-                        instance.iterate(Stage.Realizing)
+                        instance.iterate(Stage.Pretensing)
                     } else {
                         this.shapingTime--
                         // console.log("shaping", this.shapingTime)
                     }
                     break
-                case Stage.Realized:
+                case Stage.Mature:
                     extractGotchiFaces(embryo, state.muscles, state.extremities)
-                    this._embryo = undefined
+                    embryo.transition = {stage: Stage.Mature}
+                    embryo.iterate()
+                    this.embryo = undefined
                     this.twitcher = new Twitcher(state)
                     break
             }
         } else {
-            instance.iterate(Stage.Realized)
+            instance.iterate(Stage.Mature)
             if (this.twitcher) {
                 const twitch: Twitch = (m, a, d, n) => this.twitch(m, a, d, n)
                 this.twitcher.tick(twitch, () => this.reorient())
