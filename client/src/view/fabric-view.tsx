@@ -10,6 +10,7 @@ import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } fro
 import { BehaviorSubject } from "rxjs"
 import {
     BackSide,
+    BufferAttribute,
     Color,
     CylinderGeometry,
     Euler,
@@ -44,8 +45,8 @@ declare global {
         /* eslint-disable @typescript-eslint/interface-name-prefix */
         interface IntrinsicElements {
             orbit: ReactThreeFiber.Object3DNode<Orbit, typeof Orbit>
+            bufferAttribute: ReactThreeFiber.Node<BufferAttribute, typeof BufferAttribute>
         }
-
         /* eslint-enable @typescript-eslint/interface-name-prefix */
     }
 }

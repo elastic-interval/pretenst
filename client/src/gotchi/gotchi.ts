@@ -4,7 +4,7 @@
  */
 
 import { Fabric, Stage, View } from "eig"
-import { BufferGeometry, Float32BufferAttribute, Quaternion, Vector3 } from "three"
+import { Quaternion, Vector3 } from "three"
 
 import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -233,26 +233,6 @@ export class Gotchi {
                 this.twitcher.tick(twitch, () => this.reorient())
             }
         }
-    }
-
-    public get facesGeometry(): BufferGeometry {
-        const floatView = this.state.instance.floatView
-        const faceLocations = new Float32BufferAttribute(floatView.faceLocations, 3)
-        const faceNormals = new Float32BufferAttribute(floatView.faceNormals, 3)
-        const geometry = new BufferGeometry()
-        geometry.addAttribute("position", faceLocations)
-        geometry.addAttribute("normal", faceNormals)
-        return geometry
-    }
-
-    public get linesGeometry(): BufferGeometry {
-        const floatView = this.state.instance.floatView
-        const lineLocations = new Float32BufferAttribute(floatView.lineLocations, 3)
-        const lineColors = new Float32BufferAttribute(floatView.lineColors, 3)
-        const geometry = new BufferGeometry()
-        geometry.addAttribute("position", lineLocations)
-        geometry.addAttribute("color", lineColors)
-        return geometry
     }
 
     public get target(): Vector3 {

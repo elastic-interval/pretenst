@@ -23,6 +23,9 @@ const vectorFromArray = (array: Float32Array, index: number, vector?: Vector3): 
 }
 
 export interface IFloatView {
+    jointCount: number,
+    intervalCount: number,
+    faceCount: number,
     lineColors: Float32Array
     lineLocations: Float32Array
     faceNormals: Float32Array
@@ -72,8 +75,8 @@ export class FabricInstance {
         if (feature) {
             this.world.set_float_value(feature.fabricFeature, feature.numeric)
         }
-        this.floatView = createFloatView(this.fabric, this.view)
-        orient(this.floatView, this.forward, this.right, this.left)
+        this.updateFloatView()
+        this.orient()
         return stage
     }
 
@@ -96,7 +99,7 @@ export class FabricInstance {
 
     public refreshFloatView(): void {
         this.view.render(this.fabric, this.world)
-        this.floatView = createFloatView(this.fabric, this.view)
+        this.updateFloatView()
     }
 
     public clear(): void {
@@ -130,90 +133,73 @@ export class FabricInstance {
             view.free()
         }
     }
+
+    private updateFloatView(): void {
+        const fabric = this.fabric
+        const jointCount = fabric.get_joint_count()
+        const intervalCount = fabric.get_interval_count()
+        const faceCount = fabric.get_face_count()
+        const floatView = this.floatView
+        if (floatView.jointCount !== jointCount || floatView.intervalCount !== intervalCount || floatView.faceCount !== faceCount) {
+            floatView.jointCount = jointCount
+            floatView.intervalCount = intervalCount
+            floatView.faceCount = faceCount
+            floatView.lineLocations = new Float32Array(intervalCount * 3 * 2)
+            floatView.lineColors = new Float32Array(intervalCount * 3 * 2)
+            floatView.faceLocations = new Float32Array(faceCount * 3 * 3)
+            floatView.faceNormals = new Float32Array(faceCount * 3 * 3)
+            floatView.jointLocations = new Float32Array(jointCount * 3)
+            floatView.jointVelocities = new Float32Array(jointCount * 3)
+            floatView.unitVectors = new Float32Array(intervalCount * 3)
+            floatView.idealLengths = new Float32Array(intervalCount)
+            floatView.strains = new Float32Array(intervalCount)
+            floatView.strainNuances = new Float32Array(intervalCount)
+            floatView.stiffnesses = new Float32Array(intervalCount)
+            floatView.linearDensities = new Float32Array(intervalCount)
+        }
+        const view = this.view
+        view.copy_line_colors_to(floatView.lineColors)
+        view.copy_line_locations_to(floatView.lineLocations)
+        view.copy_face_normals_to(floatView.faceNormals)
+        view.copy_face_vertex_locations_to(floatView.faceLocations)
+        view.copy_joint_locations_to(floatView.jointLocations)
+        view.copy_joint_velocities_to(floatView.jointVelocities)
+        view.copy_unit_vectors_to(floatView.unitVectors)
+        view.copy_ideal_lengths_to(floatView.idealLengths)
+        view.copy_strains_to(floatView.strains)
+        view.copy_strain_nuances_to(floatView.strainNuances)
+        view.copy_stiffnesses_to(floatView.stiffnesses)
+        view.copy_linear_densities_to(floatView.linearDensities)
+    }
+
+    private orient(): void {
+        const locations = this.floatView.jointLocations
+        const fromTo = (fromJoint: number, toJoint: number, vector: Vector3) => {
+            const from = fromJoint * 3
+            const to = toJoint * 3
+            vector.set(
+                locations[to] - locations[from],
+                locations[to + 1] - locations[from + 1],
+                locations[to + 2] - locations[from + 2],
+            )
+        }
+        fromTo(2, 1, this.forward)
+        this.forward.y = 0
+        this.forward.normalize()
+        this.right.crossVectors(this.forward, UP).normalize()
+        this.left.set(0, 0, 0).sub(this.right)
+    }
 }
 
 function createEmptyFloatView(): IFloatView {
     const empty = new Float32Array(0)
+    const jointCount = 0
+    const intervalCount = 0
+    const faceCount = 0
     return {
+        jointCount, intervalCount, faceCount,
         lineColors: empty, lineLocations: empty, faceNormals: empty, faceLocations: empty, jointLocations: empty,
         jointVelocities: empty, unitVectors: empty, idealLengths: empty, strains: empty, strainNuances: empty,
         stiffnesses: empty, linearDensities: empty,
     }
-}
-
-function createFloatView(fabric: Fabric, view: View): IFloatView {
-    return {
-        lineColors: floatArray(
-            array => view.copy_line_colors_to(array),
-            () => fabric.get_interval_count() * 3 * 2,
-        ),
-        lineLocations: floatArray(
-            array => view.copy_line_locations_to(array),
-            () => fabric.get_interval_count() * 3 * 2,
-        ),
-        faceNormals: floatArray(
-            array => view.copy_face_normals_to(array),
-            () => fabric.get_face_count() * 3 * 3,
-        ),
-        faceLocations: floatArray(
-            array => view.copy_face_vertex_locations_to(array),
-            () => fabric.get_face_count() * 3 * 3,
-        ),
-        jointLocations: floatArray(
-            array => view.copy_joint_locations_to(array),
-            () => fabric.get_joint_count() * 3,
-        ),
-        jointVelocities: floatArray(
-            array => view.copy_joint_velocities_to(array),
-            () => fabric.get_joint_count() * 3,
-        ),
-        unitVectors: floatArray(
-            array => view.copy_unit_vectors_to(array),
-            () => fabric.get_interval_count() * 3,
-        ),
-        idealLengths: floatArray(
-            array => view.copy_ideal_lengths_to(array),
-            () => fabric.get_interval_count(),
-        ),
-        strains: floatArray(
-            array => view.copy_strains_to(array),
-            () => fabric.get_interval_count(),
-        ),
-        strainNuances: floatArray(
-            array => view.copy_strain_nuances_to(array),
-            () => fabric.get_interval_count(),
-        ),
-        stiffnesses: floatArray(
-            array => view.copy_stiffnesses_to(array),
-            () => fabric.get_interval_count(),
-        ),
-        linearDensities: floatArray(
-            array => view.copy_linear_densities_to(array),
-            () => fabric.get_interval_count(),
-        ),
-    }
-}
-
-function floatArray(copyFunction: (array: Float32Array) => void, length: () => number): Float32Array {
-    const array = new Float32Array(length())
-    copyFunction(array)
-    return array
-}
-
-function orient(floatView: IFloatView, forward: Vector3, right: Vector3, left: Vector3): void {
-    const locations = floatView.jointLocations
-    const fromTo = (fromJoint: number, toJoint: number, vector: Vector3) => {
-        const from = fromJoint * 3
-        const to = toJoint * 3
-        vector.set(
-            locations[to] - locations[from],
-            locations[to + 1] - locations[from + 1],
-            locations[to + 2] - locations[from + 2],
-        )
-    }
-    fromTo(2, 1, forward)
-    forward.y = 0
-    forward.normalize()
-    right.crossVectors(forward, UP).normalize()
-    left.set(0, 0, 0).sub(right)
 }
