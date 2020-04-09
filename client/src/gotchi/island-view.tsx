@@ -29,7 +29,7 @@ import { Spot } from "./spot"
 
 const BEST_GOTCHI_DISTANCE = 8
 const BEST_EVOLUTION_DISTANCE = 16
-const TOWARDS_POSITION = 0.001
+const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
 
 export function IslandView({island, gotchi, evolution, stopEvolution}: {
@@ -71,7 +71,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const orbit = useUpdate<Orbit>(orb => {
-        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + BEST_GOTCHI_DISTANCE * 0.4)
+        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + BEST_GOTCHI_DISTANCE * 0.2)
         perspective.lookAt(orbit.current.target)
         perspective.fov = 60
         perspective.far = SPACE_RADIUS * 2
@@ -107,7 +107,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
                 {evolution ? <EvolutionScene evolution={evolution}/> : (
-                    gotchi ? (<GotchiComponent gotchi={gotchi} journey={journey}/>) : undefined
+                    gotchi ? (<GotchiScene gotchi={gotchi} journey={journey}/>) : undefined
                 )}
                 <mesh name="Spots" geometry={spots} material={ISLAND}/>
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
@@ -143,15 +143,39 @@ function directionGeometry(): Geometry {
 
 const DIRECTION_GEOMETRY = directionGeometry()
 
-function GotchiComponent({gotchi, journey}: { gotchi: Gotchi, journey?: Journey }): JSX.Element {
+function GotchiScene({gotchi, journey}: { gotchi: Gotchi, journey?: Journey }): JSX.Element {
+    return (
+        <group>
+            <GotchiComponent gotchi={gotchi}/>
+            {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
+        </group>
+    )
+}
+
+function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
+    const midpoint = new Vector3()
+    return (
+        <group>
+            {evolution.evolvers.map(({gotchi, index}) => (
+                <GotchiComponent key={`evolving-gotchi-${index}`} gotchi={gotchi}/>
+            ))}
+            <lineSegments
+                geometry={evolutionTargetGeometry(evolution.getMidpoint(midpoint), evolution.target)}
+                material={JOURNEY_LINE}
+            />
+        </group>
+    )
+}
+
+function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
+    const floatView = gotchi.state.instance.floatView
     const update = useCallback(self => {
         self.needsUpdate = true
         self.parent.computeBoundingSphere()
     }, [])
-    const floatView = gotchi.state.instance.floatView
     return (
         <group>
-            <lineSegments key="gotchi-lines" material={LINE_VERTEX_COLORS}>
+            <lineSegments material={LINE_VERTEX_COLORS}>
                 <bufferGeometry attach="geometry">
                     <bufferAttribute
                         attachObject={["attributes", "position"]}
@@ -169,7 +193,7 @@ function GotchiComponent({gotchi, journey}: { gotchi: Gotchi, journey?: Journey 
                     />
                 </bufferGeometry>
             </lineSegments>
-            <mesh key="gotchi-faces" material={FACE}>
+            <mesh material={FACE}>
                 <bufferGeometry attach="geometry">
                     <bufferAttribute
                         attachObject={["attributes", "position"]}
@@ -188,70 +212,19 @@ function GotchiComponent({gotchi, journey}: { gotchi: Gotchi, journey?: Journey 
                 </bufferGeometry>
             </mesh>
             {!gotchi.showDirection ? undefined : (
-                <lineSegments
-                    key="direction-lines"
-                    geometry={DIRECTION_GEOMETRY}
-                    material={DIRECTION_LINE}
-                    quaternion={gotchi.directionQuaternion}
-                    position={gotchi.topJointLocation}
-                />
+                <group>
+                    <lineSegments
+                        geometry={gotchiToTargetGeometry(gotchi.topJointLocation, gotchi.target)}
+                        material={JOURNEY_LINE}
+                    />
+                    <lineSegments
+                        geometry={DIRECTION_GEOMETRY}
+                        material={DIRECTION_LINE}
+                        quaternion={gotchi.directionQuaternion}
+                        position={gotchi.topJointLocation}
+                    />
+                </group>
             )}
-            {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
-        </group>
-    )
-}
-
-function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
-    const midpoint = new Vector3()
-    const update = useCallback(self => {
-        self.needsUpdate = true
-        self.parent.computeBoundingSphere()
-    }, [])
-    return (
-        <group>
-            {evolution.evolvers.map(({gotchi, index}) => {
-                const floatView = gotchi.state.instance.floatView
-                return (
-                    <group key={`evolving-gotchi-${index}`}>
-                        <lineSegments material={LINE_VERTEX_COLORS}>
-                            <bufferGeometry attach="geometry">
-                                <bufferAttribute
-                                    attachObject={["attributes", "position"]}
-                                    array={floatView.lineLocations}
-                                    count={floatView.lineLocations.length / 3}
-                                    itemSize={3}
-                                    onUpdate={update}
-                                />
-                                <bufferAttribute
-                                    attachObject={["attributes", "color"]}
-                                    array={floatView.lineColors}
-                                    count={floatView.lineColors.length / 3}
-                                    itemSize={3}
-                                    onUpdate={update}
-                                />
-                            </bufferGeometry>
-                        </lineSegments>
-                        {!gotchi.showDirection ? undefined : (
-                            <group>
-                                <lineSegments
-                                    geometry={gotchiToTargetGeometry(gotchi.topJointLocation, gotchi.target)}
-                                    material={JOURNEY_LINE}
-                                />
-                                <lineSegments
-                                    geometry={DIRECTION_GEOMETRY}
-                                    material={DIRECTION_LINE}
-                                    quaternion={gotchi.directionQuaternion}
-                                    position={gotchi.topJointLocation}
-                                />
-                            </group>
-                        )}
-                    </group>
-                )
-            })}
-            <lineSegments
-                geometry={evolutionTargetGeometry(evolution.getMidpoint(midpoint), evolution.target)}
-                material={JOURNEY_LINE}
-            />
         </group>
     )
 }
