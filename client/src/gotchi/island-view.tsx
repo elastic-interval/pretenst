@@ -27,8 +27,9 @@ import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } f
 import { Journey } from "./journey"
 import { Spot } from "./spot"
 
-const BEST_DISTANCE = 8
-const TOWARDS_POSITION = 0.01
+const BEST_GOTCHI_DISTANCE = 8
+const BEST_EVOLUTION_DISTANCE = 16
+const TOWARDS_POSITION = 0.001
 const TOWARDS_TARGET = 0.01
 
 export function IslandView({island, gotchi, evolution, stopEvolution}: {
@@ -43,6 +44,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
 
     const midpoint = new Vector3()
     useRender(() => {
+        let bestDistance = BEST_GOTCHI_DISTANCE
         if (evolution) {
             if (evolution.finished) {
                 stopEvolution()
@@ -50,6 +52,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
             }
             evolution.iterate()
             evolution.getMidpoint(midpoint)
+            bestDistance = BEST_EVOLUTION_DISTANCE
         } else if (gotchi) {
             gotchi.iterate(midpoint)
         }
@@ -57,7 +60,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
         const position = orb.object.position
         const target = orb.target
         const positionToTarget = new Vector3().subVectors(position, target)
-        const deltaDistance = BEST_DISTANCE - positionToTarget.length()
+        const deltaDistance = bestDistance - positionToTarget.length()
         position.add(positionToTarget.normalize().multiplyScalar(deltaDistance * TOWARDS_POSITION))
         const moveTarget = new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET)
         target.add(moveTarget)
