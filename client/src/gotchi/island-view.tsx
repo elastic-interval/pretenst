@@ -71,7 +71,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const orbit = useUpdate<Orbit>(orb => {
-        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + ALTITUDE * 4)
+        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + BEST_GOTCHI_DISTANCE * 0.4)
         perspective.lookAt(orbit.current.target)
         perspective.fov = 60
         perspective.far = SPACE_RADIUS * 2

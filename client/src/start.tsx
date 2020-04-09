@@ -42,7 +42,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
                 case FabricFeature.ShapingStiffnessFactor:
                     return defaultValue * 5
                 case FabricFeature.IntervalCountdown:
-                    return defaultValue * 0.1
+                    return defaultValue * 2
                 case FabricFeature.StiffnessFactor:
                     return defaultValue * 4
                 case FabricFeature.RealizingCountdown:

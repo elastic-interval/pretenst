@@ -35,8 +35,6 @@ function scaleToInitialStiffness(scale: IPercent): number {
     return Math.pow(scaleFactor, 1.4) * 0.00005
 }
 
-const FACE_INTERVAL_COUNTDOWN = 10
-
 export class Tensegrity {
     public life$: BehaviorSubject<Life>
     public joints: IJoint[] = []
@@ -242,7 +240,6 @@ export class Tensegrity {
         if (activeCode) {
             if (activeCode.length > 0) {
                 this.activeTenscript = execute(activeCode, this.tenscript.marks)
-                this.fabric.centralize()
             }
             if (activeCode.length === 0) {
                 this.activeTenscript = undefined
@@ -310,10 +307,10 @@ export class Tensegrity {
         const stiffness = scaleToInitialStiffness(percentOrHundred())
         const scaleFactor = (percentToFactor(alpha.brick.scale) + percentToFactor(omega.brick.scale)) / 2
         const restLength = !pullScale ? scaleToFaceConnectorLength(scaleFactor) : percentToFactor(pullScale) * idealLength
-        const coundown = idealLength * FACE_INTERVAL_COUNTDOWN * this.numericFeature(FabricFeature.IntervalCountdown)
+        const countdown = idealLength * this.numericFeature(FabricFeature.IntervalCountdown)
         const index = this.fabric.create_interval(
             alpha.index, omega.index, intervalRole,
-            idealLength, restLength, stiffness, coundown,
+            idealLength, restLength, stiffness, countdown,
         )
         const interval: IFaceInterval = {index, alpha, omega, connector, scaleFactor, removed: false}
         this.faceIntervals.push(interval)
