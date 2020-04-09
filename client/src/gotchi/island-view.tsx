@@ -27,6 +27,8 @@ import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } f
 import { Journey } from "./journey"
 import { Spot } from "./spot"
 
+const BEST_DISTANCE = 8
+const TOWARDS_POSITION = 0.01
 const TOWARDS_TARGET = 0.01
 
 export function IslandView({island, gotchi, evolution, stopEvolution}: {
@@ -51,9 +53,15 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
         } else if (gotchi) {
             gotchi.iterate(midpoint)
         }
-        const towardsTarget = new Vector3().subVectors(midpoint, orbit.current.target).multiplyScalar(TOWARDS_TARGET)
-        orbit.current.target.add(towardsTarget)
-        orbit.current.update()
+        const orb: Orbit = orbit.current
+        const position = orb.object.position
+        const target = orb.target
+        const positionToTarget = new Vector3().subVectors(position, target)
+        const deltaDistance = BEST_DISTANCE - positionToTarget.length()
+        position.add(positionToTarget.normalize().multiplyScalar(deltaDistance * TOWARDS_POSITION))
+        const moveTarget = new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET)
+        target.add(moveTarget)
+        orb.update()
         setTrigger(trigger + 1)
     }, true, [gotchi, evolution, trigger])
 
