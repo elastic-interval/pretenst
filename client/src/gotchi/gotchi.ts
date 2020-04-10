@@ -12,7 +12,6 @@ import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-type
 
 import { GeneName, Genome, IGeneData } from "./genome"
 import { Hexalot } from "./hexalot"
-import { Leg } from "./journey"
 import { Twitch, Twitcher } from "./twitcher"
 
 export enum Direction {
@@ -66,12 +65,13 @@ export interface IGotchiState {
     extremities: IExtremity[]
     genome: Genome
     direction: Direction
+    directions: Direction[]
     autopilot: boolean
     timeSlice: number
-    leg: Leg
+    targetHexalot: Hexalot
 }
 
-export function freshGotchiState(hexalot: Hexalot, instance: FabricInstance, genome: Genome, leg: Leg): IGotchiState {
+export function freshGotchiState(hexalot: Hexalot, instance: FabricInstance, genome: Genome): IGotchiState {
     return <IGotchiState>{
         hexalot,
         instance,
@@ -79,9 +79,10 @@ export function freshGotchiState(hexalot: Hexalot, instance: FabricInstance, gen
         extremities: [],
         genome,
         direction: Direction.Rest,
+        directions: [],
         autopilot: false,
         timeSlice: 0,
-        leg,
+        targetHexalot: hexalot.childHexalots[0],
     }
 }
 
@@ -169,7 +170,22 @@ export class Gotchi {
     }
 
     public mutatedGenes(): IGeneData[] {
-        return this.state.genome.withDirectionMutation(directionGene(this.state.direction)).genomeData
+        const counts = DIRECTIONS.map(dir => {
+            const count = this.state.directions.filter(d => d === dir).length
+            return ({dir, count})
+        })
+        counts.sort((a, b) => {
+            if (a.count > b.count) {
+                return -1
+            } else if (b.count > a.count) {
+                return 1
+            } else {
+                return 0
+            }
+        })
+        const directionMostUsed = counts[0].dir
+        console.log("mutating", directionMostUsed)
+        return this.state.genome.withDirectionMutation(directionGene(directionMostUsed)).genomeData
     }
 
     public get age(): number {
@@ -236,7 +252,7 @@ export class Gotchi {
     }
 
     public get target(): Vector3 {
-        return this.state.leg.goTo.center
+        return this.state.targetHexalot.center
     }
 
     public reorient(): void {
@@ -246,14 +262,10 @@ export class Gotchi {
             return
         }
         if (touchedDestination) {
-            const nextLeg = state.leg.nextLeg
-            if (nextLeg) {
-                state.leg = nextLeg
-            } else {
-                state.direction = Direction.Rest
-            }
+            this.direction = Direction.Rest
         } else {
             state.direction = this.directionToTarget
+            state.directions.push(state.direction)
         }
     }
 
@@ -299,14 +311,10 @@ export class Gotchi {
         const instance = this.state.instance
         const degreeForward = toTarget.dot(instance.forward)
         const degreeRight = toTarget.dot(instance.right)
-        if (degreeForward > 0) {
-            if (degreeRight > 0) {
-                return degreeForward > degreeRight ? Direction.Forward : Direction.Right
-            } else {
-                return degreeForward > -degreeRight ? Direction.Forward : Direction.Left
-            }
+        if (degreeRight > 0) {
+            return degreeForward > degreeRight ? Direction.Forward : Direction.Right
         } else {
-            return Direction.Forward // was reverse logic?
+            return degreeForward > -degreeRight ? Direction.Forward : Direction.Left
         }
     }
 

@@ -9,7 +9,6 @@ use crate::world::World;
 use nalgebra::*;
 
 const RESURFACE: f32 = 0.01;
-const STICKY_DAMPING: f32 = 0.8;
 
 #[derive(Clone, Copy)]
 pub struct Joint {
@@ -55,11 +54,13 @@ impl Joint {
                 }
                 SurfaceCharacter::Sticky => {
                     if self.velocity.y < 0_f32 {
-                        self.velocity.x *= STICKY_DAMPING;
+                        self.velocity.x = 0_f32;
                         self.velocity.y += antigravity * degree_submerged;
-                        self.velocity.z *= STICKY_DAMPING
+                        self.velocity.z = 0_f32;
                     } else {
+                        self.velocity.x *= 0.8_f32;
                         self.velocity.y += antigravity * degree_submerged;
+                        self.velocity.z *= 0.8_f32;
                     }
                 }
                 SurfaceCharacter::Bouncy => {

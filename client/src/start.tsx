@@ -36,9 +36,11 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
                 case FabricFeature.Gravity:
-                    return defaultValue * 4
+                    return defaultValue * 3
+                case FabricFeature.Antigravity:
+                    return defaultValue * 0.3
                 case FabricFeature.Drag:
-                    return defaultValue * 0.1
+                    return defaultValue * 0.7
                 case FabricFeature.ShapingStiffnessFactor:
                     return defaultValue * 5
                 case FabricFeature.IntervalCountdown:
@@ -60,7 +62,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             }
         }
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
-        const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-40"
+        const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(3,S90,Md0),B(3,Md0,S90)):0=face-distance-65"
         const tenscript = codeToTenscript((error: string) => {
             throw new Error(`Unable to compile: ${error}`)
         }, false, BODY)
@@ -74,7 +76,7 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
         }
         const createGotchi: CreateGotchi = (hexalot, instance, genome, rotation) => {
             const embryo = instance.fabric.age === 0? createEmbryo(instance, rotation): undefined
-            const state: IGotchiState = freshGotchiState(hexalot, instance, genome, hexalot.firstLeg)
+            const state: IGotchiState = freshGotchiState(hexalot, instance, genome)
             return new Gotchi(state, embryo)
         }
         const island = new Island(ISLAND_DATA, createGotchi)

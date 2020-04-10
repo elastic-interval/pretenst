@@ -6,15 +6,7 @@
 import * as React from "react"
 import { useCallback, useEffect, useMemo, useState } from "react"
 import { useRender, useThree, useUpdate } from "react-three-fiber"
-import {
-    BufferGeometry,
-    FaceColors,
-    Float32BufferAttribute,
-    Geometry,
-    MeshPhongMaterial,
-    PerspectiveCamera,
-    Vector3,
-} from "three"
+import { FaceColors, Geometry, MeshPhongMaterial, PerspectiveCamera, Vector3 } from "three"
 
 import { FORWARD, RIGHT } from "../fabric/fabric-instance"
 import { DIRECTION_LINE, FACE, JOURNEY_LINE, LINE_VERTEX_COLORS } from "../view/materials"
@@ -24,7 +16,6 @@ import { Evolution } from "./evolution"
 import { Gotchi } from "./gotchi"
 import { Island } from "./island"
 import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-logic"
-import { Journey } from "./journey"
 import { Spot } from "./spot"
 
 const BEST_GOTCHI_DISTANCE = 8
@@ -90,8 +81,6 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
         orbit.current.autoRotate = !!(evolution)
     }, [evolution])
 
-    const hexalot = island.hexalots[0]
-    const journey = hexalot ? hexalot.journey : undefined
     const spots = useMemo(() => {
         const geometry = new Geometry()
         if (island) {
@@ -102,19 +91,17 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
         return geometry
     }, [])
 
-    return (
-        <group>
-            <orbit ref={orbit} args={[perspective, viewContainer]}/>
-            <scene>
-                {evolution ? <EvolutionScene evolution={evolution}/> : (
-                    gotchi ? (<GotchiScene gotchi={gotchi} journey={journey}/>) : undefined
-                )}
-                <mesh name="Spots" geometry={spots} material={ISLAND}/>
-                <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
-                <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
-            </scene>
-        </group>
-    )
+    return <group>
+        <orbit ref={orbit} args={[perspective, viewContainer]}/>
+        <scene>
+            {evolution ? <EvolutionScene evolution={evolution}/> : (
+                gotchi ? (<GotchiComponent gotchi={gotchi}/>) : undefined
+            )}
+            <mesh name="Spots" geometry={spots} material={ISLAND}/>
+            <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
+            <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+        </scene>
+    </group>
 }
 
 const ISLAND = new MeshPhongMaterial({vertexColors: FaceColors, lights: true})
@@ -142,15 +129,6 @@ function directionGeometry(): Geometry {
 }
 
 const DIRECTION_GEOMETRY = directionGeometry()
-
-function GotchiScene({gotchi, journey}: { gotchi: Gotchi, journey?: Journey }): JSX.Element {
-    return (
-        <group>
-            <GotchiComponent gotchi={gotchi}/>
-            {journey && journey.visits.length > 0 ? <JourneyComponent journey={journey}/> : undefined}
-        </group>
-    )
-}
 
 function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
     const midpoint = new Vector3()
@@ -244,73 +222,4 @@ function evolutionTargetGeometry(evoMidpoint: Vector3, target: Vector3): Geometr
         new Vector3(evoMidpoint.x, height / 2, evoMidpoint.z), new Vector3(target.x, height / 2, target.z),
     ]
     return geom
-}
-
-function JourneyComponent({journey}: { journey: Journey }): JSX.Element {
-
-    function geom(): BufferGeometry | undefined {
-        const arrowCount = journey.visits.length - 1
-        const geometry = new BufferGeometry()
-        const pointsPerArrow = 30
-        const positions = new Float32Array(arrowCount * pointsPerArrow)
-        const forward = new Vector3()
-        const up = new Vector3(0, 1, 0)
-        const right = new Vector3()
-        const altitude = 5
-        for (let walk = 0; walk < arrowCount; walk++) {
-            const from = new Vector3().add(journey.visits[walk].center)
-            const to = new Vector3().add(journey.visits[walk + 1].center)
-            forward.subVectors(to, from)
-            right.crossVectors(up, forward)
-            to.addScaledVector(forward, -0.1)
-            right.normalize()
-            forward.normalize().multiplyScalar(4)
-            let offset = walk * pointsPerArrow
-            // up to shaft
-            positions[offset++] = from.x
-            positions[offset++] = 0
-            positions[offset++] = from.z
-            positions[offset++] = from.x
-            positions[offset++] = altitude
-            positions[offset++] = from.z
-            // main shaft
-            positions[offset++] = from.x
-            positions[offset++] = altitude
-            positions[offset++] = from.z
-            positions[offset++] = to.x - forward.x
-            positions[offset++] = altitude
-            positions[offset++] = to.z - forward.z
-            // arrow right side
-            positions[offset++] = to.x - right.x - forward.x
-            positions[offset++] = altitude
-            positions[offset++] = to.z - right.z - forward.z
-            positions[offset++] = to.x
-            positions[offset++] = altitude
-            positions[offset++] = to.z
-            // arrow left side
-            positions[offset++] = to.x + right.x - forward.x
-            positions[offset++] = altitude
-            positions[offset++] = to.z + right.z - forward.z
-            positions[offset++] = to.x
-            positions[offset++] = altitude
-            positions[offset++] = to.z
-            // arrow perpendicular
-            positions[offset++] = to.x + right.x - forward.x
-            positions[offset++] = altitude
-            positions[offset++] = to.z + right.z - forward.z
-            positions[offset++] = to.x - right.x - forward.x
-            positions[offset++] = altitude
-            positions[offset++] = to.z - right.z - forward.z
-        }
-        geometry.addAttribute("position", new Float32BufferAttribute(positions, 3))
-        return geometry
-    }
-
-    return (
-        <lineSegments
-            key="journey"
-            geometry={geom()}
-            material={JOURNEY_LINE}
-        />
-    )
 }

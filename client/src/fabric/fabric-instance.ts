@@ -102,9 +102,10 @@ export class FabricInstance {
         this.updateFloatView()
     }
 
-    public clear(): void {
+    public clear(): FabricInstance {
         this.fabric.clear()
         this.refreshFloatView()
+        return this
     }
 
     public applyFeature(feature: FloatFeature): void {

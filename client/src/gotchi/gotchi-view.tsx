@@ -86,6 +86,11 @@ export function GotchiView({island, createInstance}: {
                                 }}>
                                     <FaDna/> Evolve
                                 </Button>
+                                <Button disabled={gotchiActive} onClick={() => {
+                                    setGotchi(island.hexalots[0].createNewGotchi(createInstance()))
+                                }}>
+                                    <FaBaby/> Rebirth
+                                </Button>
                             </ButtonGroup>
                         ) : (
                             <h6 style={{

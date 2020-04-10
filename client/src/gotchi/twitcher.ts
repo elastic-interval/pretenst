@@ -8,6 +8,10 @@ import { Direction, directionGene, DIRECTIONS, IGotchiState, IMuscle, oppositeMu
 
 export type Twitch = (face: number, attack: number, decay: number, twitchNuance: number) => void
 
+const MUSCLE_PERIOD = 1000
+const TICKS_PER_SLICE = 10
+const TWITCH_NUANCE = 0.4
+
 interface ITwitchConfig {
     ticksPerSlice: number
     twitchNuance: number
@@ -17,10 +21,10 @@ interface ITwitchConfig {
 }
 
 function readTwichConfig(genome: Genome): ITwitchConfig {
-    const musclePeriod = genome.createReader(GeneName.MusclePeriod).modifyFeature(500)
+    const musclePeriod = genome.createReader(GeneName.MusclePeriod).modifyFeature(MUSCLE_PERIOD)
     return <ITwitchConfig>{
-        ticksPerSlice: genome.createReader(GeneName.TicksPerSlice).modifyFeature(7),
-        twitchNuance: genome.createReader(GeneName.TwitchNuance).modifyFeature(0.5),
+        ticksPerSlice: genome.createReader(GeneName.TicksPerSlice).modifyFeature(TICKS_PER_SLICE),
+        twitchNuance: genome.createReader(GeneName.TwitchNuance).modifyFeature(TWITCH_NUANCE),
         musclePeriod,
         attackPeriod: genome.createReader(GeneName.AttackPeriod).modifyFeature(musclePeriod),
         decayPeriod: genome.createReader(GeneName.DecayPeriod).modifyFeature(musclePeriod),

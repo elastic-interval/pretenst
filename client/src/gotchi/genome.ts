@@ -102,9 +102,11 @@ export class Genome {
         })
         const directionGene = getGene(directionName, genesCopy)
         mutateGene(() => this.roll(), directionGene)
-        const modifierName = randomModifierName()
-        const modifierGene = getGene(modifierName, genesCopy)
-        mutateGene(() => this.roll(), modifierGene)
+        if (Math.random() > 0.9) {
+            const modifierName = randomModifierName()
+            const modifierGene = getGene(modifierName, genesCopy)
+            mutateGene(() => this.roll(), modifierGene)
+        }
         return new Genome(this.roll, genesCopy)
     }
 

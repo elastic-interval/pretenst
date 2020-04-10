@@ -10,12 +10,10 @@ import { FabricInstance } from "../fabric/fabric-instance"
 import { emptyGenome, fromGenomeData, Genome } from "./genome"
 import { CreateGotchi, Gotchi } from "./gotchi"
 import { ICoords, IHexalot } from "./island-logic"
-import { Journey, Leg } from "./journey"
 import { Spot } from "./spot"
 
 export class Hexalot implements IHexalot {
     public id: string
-    public journey?: Journey
     public childHexalots: Hexalot[] = []
     public nonce = 0
     public visited = false
@@ -59,52 +57,7 @@ export class Hexalot implements IHexalot {
     }
 
     public get rotation(): number {
-        if (!this.journey || this.journey.visits.length < 2) {
-            return Math.floor(Math.random() * 6)
-        }
-        const first = this.journey.visits[1]
-        return this.centerSpot.adjacentSpots.findIndex(spot => {
-            const adjacent = spot.centerOfHexalot
-            if (!adjacent) {
-                return false
-            }
-            return adjacent.id === first.id
-        })
-    }
-
-    public adjustedJourney(hexalot: Hexalot): Journey {
-        if (!this.journey) {
-            return new Journey([this, hexalot])
-        }
-        const truncated = this.journey.withTruncatedVisit(hexalot)
-        if (truncated) {
-            return truncated
-        }
-        const extended = this.journey.withVisit(hexalot)
-        if (extended) {
-            return extended
-        }
-        return this.journey
-    }
-
-    public get firstLeg(): Leg {
-        if (this.journey) {
-            const journeyFirst = this.journey.firstLeg
-            if (journeyFirst) {
-                return journeyFirst
-            }
-        }
-        const random = this.createRandomJourney()
-        this.journey = random
-        const randomFirst = random.firstLeg
-        if (!randomFirst) {
-            throw new Error("Unable to create first leg")
-        }
-        return randomFirst
-    }
-
-    public createRandomJourney(): Journey {
-        return this.journeyOfLength(2)
+        return 1 // TODO
     }
 
     public get centerSpot(): Spot {
@@ -113,19 +66,5 @@ export class Hexalot implements IHexalot {
 
     public get center(): Vector3 {
         return this.centerSpot.center
-    }
-
-    private journeyOfLength(visitCount: number): Journey {
-        const journeyVisits: Hexalot[] = [this]
-        while (journeyVisits.length < visitCount + 1) {
-            const endPoint = journeyVisits[journeyVisits.length - 1]
-            const adjacent = endPoint.centerSpot.adjacentHexalots.filter(adjacentHexalot => journeyVisits.every(visit => visit.id !== adjacentHexalot.id))
-            if (adjacent.length === 0) {
-                console.error("No adjacent")
-            }
-            const randomNeighbor = adjacent[Math.floor(Math.random() * adjacent.length)]
-            journeyVisits.push(randomNeighbor)
-        }
-        return new Journey(journeyVisits)
     }
 }
