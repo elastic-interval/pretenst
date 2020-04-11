@@ -9,7 +9,7 @@ import { Direction, directionGene, DIRECTIONS, IGotchiState, IMuscle, oppositeMu
 export type Twitch = (face: number, attack: number, decay: number, twitchNuance: number) => void
 
 const MUSCLE_PERIOD = 600
-const TICKS_PER_SLICE = 10
+const TICKS_PER_SLICE = 5
 const TWITCH_NUANCE = 0.4
 
 interface ITwitchConfig {
