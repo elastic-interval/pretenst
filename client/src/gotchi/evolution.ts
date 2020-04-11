@@ -11,11 +11,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { fromGenomeData, Genome } from "./genome"
 import { directionGene, Gotchi } from "./gotchi"
 
-export const CYCLE_PATTERN = [
-    3, 4, 5, 6,
-    4, 5, 6, 7,
-    5, 6, 7, 8,
-]
+export const CYCLE_PATTERN = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
 
 export interface IEvolutionParameters {
     maxPopulation: number
@@ -74,7 +70,7 @@ export class Evolution {
         const gotchis: Gotchi[] = []
         const baseGenome = this.baseGotchi.genome
         while (gotchis.length < PARAM.maxPopulation) {
-            const genome = gotchis.length === 0 ? baseGenome : baseGenome.withDirectionMutation(directionGene(this.baseGotchi.direction))
+            const genome = gotchis.length === 0 ? baseGenome : baseGenome.withDirectionMutations([directionGene(this.baseGotchi.direction)])
             const instance = this.createInstance(this.baseGotchi.fabricClone)
             const newborn = this.baseGotchi.recycled(instance, genome)
             if (!newborn) {
@@ -123,7 +119,6 @@ export class Evolution {
     }
 
     private adjustLimit(): void {
-        const previousMaxCycles = CYCLE_PATTERN[this.cyclePatternIndex]
         if (this.cyclePatternIndex === CYCLE_PATTERN.length - 1) {
             this.finished = true
             this.cyclePatternIndex = 0
@@ -132,16 +127,6 @@ export class Evolution {
         }
         this.cyclePatternIndex++
         this.currentMaxCycles = CYCLE_PATTERN[this.cyclePatternIndex]
-        if (this.currentMaxCycles < previousMaxCycles) {
-            this.evolvers.forEach((evolver, index) => {
-                if (index === 0) {
-                    this.baseGotchi.saveGenome(evolver.gotchi.genome)
-                    evolver.saved = evolver.gotchi.genome
-                } else {
-                    evolver.saved = undefined
-                }
-            })
-        }
     }
 
     private nextGenerationFromSurvival(): void {
@@ -161,17 +146,17 @@ export class Evolution {
         })
         this.midpoint.multiplyScalar(1.0 / survivorCount)
         this.snapshotSubject.next(this.snapshot)
-        this.evolvers.forEach((evolver, evolverIndex) => {
+        this.evolvers.filter(({dead}) => dead).forEach((evolver, deadIndex) => {
+            const parent = this.evolvers[Math.floor(survivorCount * Math.random())]
             const instance = evolver.gotchi.adoptFabric(this.baseGotchi.fabricClone)
-            if (evolver.dead) {
-                const parent = this.evolvers[Math.floor(survivorCount * Math.random())]
-                const mutatedGenome = fromGenomeData(parent.gotchi.mutatedGenes())
-                evolver.gotchi = evolver.gotchi.recycled(instance, mutatedGenome)
-                evolver.name = `${parent.name}${String.fromCharCode(65 + evolverIndex - survivorCount)}`
-                evolver.dead = false
-            } else {
-                evolver.gotchi = evolver.gotchi.recycled(instance, evolver.gotchi.genome)
-            }
+            evolver.gotchi = evolver.gotchi.recycled(instance, fromGenomeData(parent.gotchi.mutatedGenes()))
+            evolver.name = `${parent.name}${String.fromCharCode(65 + deadIndex)}`
+            evolver.dead = false
+            evolver.gotchi.autopilot = true
+        })
+        this.evolvers.filter(({dead}) => !dead).forEach(evolver => {
+            const instance = evolver.gotchi.adoptFabric(this.baseGotchi.fabricClone)
+            evolver.gotchi = evolver.gotchi.recycled(instance, evolver.gotchi.genome)
             evolver.gotchi.autopilot = true
         })
     }

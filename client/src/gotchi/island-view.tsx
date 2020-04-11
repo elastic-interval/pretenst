@@ -13,13 +13,11 @@ import { DIRECTION_LINE, FACE, JOURNEY_LINE, LINE_VERTEX_COLORS } from "../view/
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
-import { Gotchi } from "./gotchi"
+import { Direction, Gotchi } from "./gotchi"
 import { Island } from "./island"
 import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-logic"
 import { Spot } from "./spot"
 
-const BEST_GOTCHI_DISTANCE = 8
-const BEST_EVOLUTION_DISTANCE = 16
 const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
 
@@ -35,7 +33,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
 
     const midpoint = new Vector3()
     useRender(() => {
-        let bestDistance = BEST_GOTCHI_DISTANCE
+        let bestDistance = 32
         if (evolution) {
             if (evolution.finished) {
                 stopEvolution()
@@ -43,9 +41,12 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
             }
             evolution.iterate()
             evolution.getMidpoint(midpoint)
-            bestDistance = BEST_EVOLUTION_DISTANCE
+            bestDistance = 16
         } else if (gotchi) {
             gotchi.iterate(midpoint)
+            if (gotchi.direction !== Direction.Rest) {
+                bestDistance = 8
+            }
         }
         const orb: Orbit = orbit.current
         const position = orb.object.position
@@ -62,7 +63,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const orbit = useUpdate<Orbit>(orb => {
-        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + BEST_GOTCHI_DISTANCE * 0.2)
+        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + 2)
         perspective.lookAt(orbit.current.target)
         perspective.fov = 60
         perspective.far = SPACE_RADIUS * 2

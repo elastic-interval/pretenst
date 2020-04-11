@@ -43,7 +43,7 @@ export function EvolutionView({evolution, stopEvolution}: {
                             <tr key={`competitor-${index}`} style={{
                                 color: dead ? "#aba08d" : "#1d850b",
                             }}>
-                                <td>{distanceFromTarget.toFixed(1)}</td>
+                                <td>{distanceFromTarget.toFixed(2)}</td>
                                 <td>
                                     {name}({generation})
                                     {saved ? <FaDna/> : undefined}

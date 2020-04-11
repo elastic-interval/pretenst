@@ -65,7 +65,7 @@ export interface IGotchiState {
     extremities: IExtremity[]
     genome: Genome
     direction: Direction
-    directions: Direction[]
+    directionHistory: Direction[]
     autopilot: boolean
     timeSlice: number
     targetHexalot: Hexalot
@@ -79,7 +79,7 @@ export function freshGotchiState(hexalot: Hexalot, instance: FabricInstance, gen
         extremities: [],
         genome,
         direction: Direction.Rest,
-        directions: [],
+        directionHistory: [],
         autopilot: false,
         timeSlice: 0,
         targetHexalot: hexalot.childHexalots[0],
@@ -109,7 +109,7 @@ export class Gotchi {
 
     public recycled(instance: FabricInstance, genome?: Genome): Gotchi {
         const hexalotGenome = this.state.hexalot.genome
-        const state: IGotchiState = {...this.state, instance, genome: genome ? genome : hexalotGenome}
+        const state: IGotchiState = {...this.state, instance, genome: genome ? genome : hexalotGenome, directionHistory:[]}
         return new Gotchi(state)
     }
 
@@ -171,7 +171,7 @@ export class Gotchi {
 
     public mutatedGenes(): IGeneData[] {
         const counts = DIRECTIONS.map(dir => {
-            const count = this.state.directions.filter(d => d === dir).length
+            const count = this.state.directionHistory.filter(d => d === dir).length
             return ({dir, count})
         })
         const nonzero = counts.sort((a, b) => {
@@ -183,9 +183,8 @@ export class Gotchi {
                 return 0
             }
         }).filter(count => count.count > 0)
-        const directionMostUsed = nonzero[Math.floor(Math.random() * nonzero.length)].dir
-        console.log("mutating", directionMostUsed)
-        return this.state.genome.withDirectionMutation(directionGene(directionMostUsed)).genomeData
+        const geneNames = nonzero.map(d => d.dir).map(directionGene)
+        return this.state.genome.withDirectionMutations(geneNames).genomeData
     }
 
     public get age(): number {
@@ -273,7 +272,7 @@ export class Gotchi {
             this.direction = Direction.Rest
         } else {
             state.direction = this.directionToTarget
-            state.directions.push(state.direction)
+            state.directionHistory.push(state.direction)
         }
     }
 

@@ -26,7 +26,7 @@ export function GotchiView({island, createInstance}: {
 }): JSX.Element {
 
     const [gotchi, setGotchi] = useState(() => island.hexalots[0].createNewGotchi(createInstance()))
-    const [gotchiActive, setGotchiActive] = useState(false)
+    const [active, setActive] = useState(false)
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
     const [life, updateLife] = useState<Life | undefined>(undefined)
     useEffect(() => {
@@ -40,7 +40,7 @@ export function GotchiView({island, createInstance}: {
 
     const stopEvolution = () => {
         setEvolution(undefined)
-        setGotchiActive(false)
+        setActive(false)
         if (gotchi) {
             setGotchi(gotchi.recycled(gotchi.instance))
         }
@@ -68,25 +68,25 @@ export function GotchiView({island, createInstance}: {
                     <div id="bottom-middle">
                         {!life || life.stage === Stage.Pretenst ? (
                             <ButtonGroup className="mx-1">
-                                <Button disabled={!gotchiActive} onClick={() => {
-                                    setGotchiActive(false)
+                                <Button disabled={!active} onClick={() => {
+                                    setActive(false)
                                     gotchi.direction = Direction.Rest
                                 }}>
                                     <FaYinYang/> Rest
                                 </Button>
-                                <Button disabled={gotchiActive} onClick={() => {
-                                    setGotchiActive(true)
+                                <Button disabled={active} onClick={() => {
+                                    setActive(true)
                                     gotchi.autopilot = true
                                 }}>
                                     <FaRunning/> Run
                                 </Button>
-                                <Button disabled={gotchiActive} onClick={() => {
-                                    setGotchiActive(true)
+                                <Button disabled={active} onClick={() => {
+                                    setActive(true)
                                     onEvolve(gotchi)
                                 }}>
                                     <FaDna/> Evolve
                                 </Button>
-                                <Button disabled={gotchiActive} onClick={() => {
+                                <Button disabled={active} onClick={() => {
                                     setGotchi(island.hexalots[0].createNewGotchi(createInstance()))
                                 }}>
                                     <FaBaby/> Rebirth

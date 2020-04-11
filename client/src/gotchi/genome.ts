@@ -94,15 +94,17 @@ export class Genome {
         return Math.floor(Math.sqrt(maxGeneration + 2)) + 2
     }
 
-    public withDirectionMutation(directionName: GeneName): Genome {
+    public withDirectionMutations(directionNames: GeneName[]): Genome {
         const genesCopy: IGene[] = this.genes.map(gene => {
             const {geneName, generation} = gene
             const dice = gene.dice.slice() // TODO: tweet this to the world
             return {geneName, generation, dice}
         })
-        const directionGene = getGene(directionName, genesCopy)
-        mutateGene(() => this.roll(), directionGene)
-        if (Math.random() > 0.9) {
+        directionNames.forEach(directionName => {
+            const directionGene = getGene(directionName, genesCopy)
+            mutateGene(() => this.roll(), directionGene)
+        })
+        if (Math.random() > 0.6) {
             const modifierName = randomModifierName()
             const modifierGene = getGene(modifierName, genesCopy)
             mutateGene(() => this.roll(), modifierGene)
@@ -169,7 +171,10 @@ function mutateGene(roll: () => IDie, gene: IGene): void {
         gene.dice.push(roll())
     } else {
         const woops = Math.floor(Math.random() * gene.dice.length)
-        gene.dice[woops] = roll()
+        const currentRoll = gene.dice[woops]
+        while (gene.dice[woops] === currentRoll) {
+            gene.dice[woops] = roll()
+        }
     }
     gene.generation++
 }
