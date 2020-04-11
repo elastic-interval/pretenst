@@ -64,7 +64,7 @@ export class Evolution {
         gotchi: Gotchi,
     ) {
         if (gotchi.embryo) {
-            throw new Error("Cannot create evolution from gotchi which is not mature")
+            throw new Error("Cannot create evolution from gotchi which is not pretenst")
         }
         this.midpoint = gotchi.getMidpoint()
         this.baseGotchi = gotchi.recycled(createInstance(gotchi.fabricClone), gotchi.genome)
@@ -172,8 +172,7 @@ export class Evolution {
             } else {
                 evolver.gotchi = evolver.gotchi.recycled(instance, evolver.gotchi.genome)
             }
-            evolver.gotchi.instance.refreshFloatView()
-            evolver.gotchi.reorient()
+            evolver.gotchi.autopilot = true
         })
     }
 

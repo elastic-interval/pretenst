@@ -8,7 +8,7 @@ import { Direction, directionGene, DIRECTIONS, IGotchiState, IMuscle, oppositeMu
 
 export type Twitch = (face: number, attack: number, decay: number, twitchNuance: number) => void
 
-const MUSCLE_PERIOD = 1000
+const MUSCLE_PERIOD = 600
 const TICKS_PER_SLICE = 10
 const TWITCH_NUANCE = 0.4
 
@@ -51,7 +51,7 @@ export class Twitcher {
         })
     }
 
-    public tick(twitch: Twitch, endCycle: () => void): void {
+    public tick(twitch: Twitch): boolean {
         this.ticks -= 1
         if (this.ticks < 0) {
             this.ticks = this.config.ticksPerSlice
@@ -60,13 +60,14 @@ export class Twitcher {
             if (state.timeSlice >= 36) {
                 state.timeSlice = 0
                 this.cycleCount++
-                endCycle()
+                return true
             }
             const twitchCycle = this.twitchCycles[state.direction]
             if (twitchCycle) {
                 twitchCycle.activate(state.timeSlice, twitch)
             }
         }
+        return false
     }
 }
 

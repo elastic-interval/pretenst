@@ -66,7 +66,7 @@ export function GotchiView({island, createInstance}: {
                     <EvolutionView evolution={evolution} stopEvolution={stopEvolution}/>
                 ) : gotchi ? (
                     <div id="bottom-middle">
-                        {!life || life.stage === Stage.Mature ? (
+                        {!life || life.stage === Stage.Pretenst ? (
                             <ButtonGroup className="mx-1">
                                 <Button disabled={!gotchiActive} onClick={() => {
                                     setGotchiActive(false)

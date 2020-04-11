@@ -9,6 +9,8 @@ use crate::world::World;
 use nalgebra::*;
 
 const RESURFACE: f32 = 0.01;
+const STICKY_UP_DRAG: f32 = 0.03;
+const STICKY_DOWN_DRAG: f32 = 0.3;
 
 #[derive(Clone, Copy)]
 pub struct Joint {
@@ -31,22 +33,19 @@ impl Joint {
     pub fn velocity_physics(
         &mut self,
         world: &World,
-        gravity_above: f32,
-        drag_above: f32,
-        antigravity: f32,
-        active_surface: bool,
+        gravity: f32,
+        drag: f32,
+        realizing_nuance: f32,
     ) {
         let altitude = self.location.y;
-        if !active_surface || altitude >= 0_f32 {
-            if active_surface {
-                self.velocity.y -= gravity_above;
-            }
+        if altitude >= 0_f32 {
+            self.velocity.y -= gravity;
             self.velocity += &self.force / self.interval_mass;
-            self.velocity *= 1_f32 - drag_above;
+            self.velocity *= 1_f32 - drag;
         } else {
             let degree_submerged: f32 = if -altitude < 1_f32 { -altitude } else { 0_f32 };
+            let antigravity = world.antigravity * realizing_nuance * degree_submerged;
             self.velocity += &self.force / self.interval_mass;
-            let degree_cushioned: f32 = 1_f32 - degree_submerged;
             match world.surface_character {
                 SurfaceCharacter::Frozen => {
                     self.velocity = zero();
@@ -54,18 +53,21 @@ impl Joint {
                 }
                 SurfaceCharacter::Sticky => {
                     if self.velocity.y < 0_f32 {
-                        self.velocity.x = 0_f32;
-                        self.velocity.y += antigravity * degree_submerged;
-                        self.velocity.z = 0_f32;
+                        let sticky_drag = 1_f32 - STICKY_DOWN_DRAG * realizing_nuance;
+                        self.velocity.x *= sticky_drag;
+                        self.velocity.y += antigravity;
+                        self.velocity.z *= sticky_drag;
                     } else {
-                        self.velocity.x *= 0.8_f32;
-                        self.velocity.y += antigravity * degree_submerged;
-                        self.velocity.z *= 0.8_f32;
+                        let sticky_drag = 1_f32 - STICKY_UP_DRAG * realizing_nuance;
+                        self.velocity.x *= sticky_drag;
+                        self.velocity.y += antigravity;
+                        self.velocity.z *= sticky_drag;
                     }
                 }
                 SurfaceCharacter::Bouncy => {
+                    let degree_cushioned: f32 = 1_f32 - degree_submerged;
                     self.velocity *= degree_cushioned;
-                    self.velocity.y += antigravity * degree_submerged;
+                    self.velocity.y += antigravity;
                 }
             }
         }

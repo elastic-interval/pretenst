@@ -44,7 +44,7 @@ pub enum Stage {
     Shaping,
     Slack,
     Pretensing,
-    Mature,
+    Pretenst,
 }
 
 #[wasm_bindgen]

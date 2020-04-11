@@ -67,7 +67,7 @@ export function RealizeTab({floatFeatures, tensegrity, shapeSelection, storedSta
                 />
                 <LifeStageButton
                     tensegrity={tensegrity}
-                    stageTransition={StageTransition.CaptureRealizedToSlack}
+                    stageTransition={StageTransition.CapturePretenstToSlack}
                     disabled={disabledLifeStage()}
                 />
                 <LifeStageButton

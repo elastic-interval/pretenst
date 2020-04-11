@@ -64,11 +64,11 @@ export class Life {
                 break
             case Stage.Pretensing:
                 switch (stage) {
-                    case Stage.Mature:
+                    case Stage.Pretenst:
                         return
                 }
                 break
-            case Stage.Mature:
+            case Stage.Pretenst:
                 switch (stage) {
                     case Stage.Slack:
                         if (strainToStiffness) {

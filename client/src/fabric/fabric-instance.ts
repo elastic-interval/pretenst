@@ -76,7 +76,6 @@ export class FabricInstance {
             this.world.set_float_value(feature.fabricFeature, feature.numeric)
         }
         this.updateFloatView()
-        this.orient()
         return stage
     }
 
@@ -171,10 +170,7 @@ export class FabricInstance {
         view.copy_strain_nuances_to(floatView.strainNuances)
         view.copy_stiffnesses_to(floatView.stiffnesses)
         view.copy_linear_densities_to(floatView.linearDensities)
-    }
-
-    private orient(): void {
-        const locations = this.floatView.jointLocations
+        const locations = floatView.jointLocations
         const fromTo = (fromJoint: number, toJoint: number, vector: Vector3) => {
             const from = fromJoint * 3
             const to = toJoint * 3

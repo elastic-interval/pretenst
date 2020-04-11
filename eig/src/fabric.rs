@@ -276,7 +276,7 @@ impl Fabric {
         } else {
             self.realizing_countdown = 0_f32;
             if self.stage == Stage::Pretensing {
-                Some(self.set_stage(Stage::Mature))
+                Some(self.set_stage(Stage::Pretenst))
             } else {
                 same
             }
@@ -306,36 +306,18 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(
-                        world,
-                        0_f32,
-                        world.shaping_drag,
-                        world.antigravity,
-                        false,
-                    )
+                    joint.velocity_physics(world, 0_f32, world.shaping_drag, 0_f32)
                 }
             }
             Stage::Pretensing => {
                 let nuanced_gravity = world.gravity * realizing_nuance;
                 for joint in &mut self.joints {
-                    joint.velocity_physics(
-                        world,
-                        nuanced_gravity,
-                        world.drag,
-                        world.antigravity,
-                        true,
-                    )
+                    joint.velocity_physics(world, nuanced_gravity, world.drag, realizing_nuance)
                 }
             }
-            Stage::Mature => {
+            Stage::Pretenst => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(
-                        world,
-                        world.gravity,
-                        world.drag,
-                        world.antigravity,
-                        true,
-                    )
+                    joint.velocity_physics(world, world.gravity, world.drag, 1_f32)
                 }
             }
             _ => {}

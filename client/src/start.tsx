@@ -28,6 +28,9 @@ const ISLAND_DATA: IIslandData = {
     spots: "16c10f54db761dfe80f316d646058d888b3c0bfc559d82f2291ea0c19216bae08a8083f093e48e9b37cdb34f01a",
 }
 
+const BODY = "'Gotchi':(A(2,S90,Mc0),b(2,S90,Mc0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-55"
+// const BODY = "'Gotchi':(A(3,S90,Mc0),b(3,S90,Mc0),a(3,S90,Md0),B(3,Md0,S90)):0=face-distance-55"
+
 export async function startReact(eig: typeof import("eig"), world: typeof import("eig").World): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
     const createInstance: CreateInstance = (fabric?: object) => new FabricInstance(eig, 200, world, fabric)
@@ -62,7 +65,6 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             }
         }
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
-        const BODY = "'Gotchi':(A(3,S90,Mb0),b(3,S90,Mb0),a(3,S90,Md0),B(3,Md0,S90)):0=face-distance-65"
         const tenscript = codeToTenscript((error: string) => {
             throw new Error(`Unable to compile: ${error}`)
         }, false, BODY)

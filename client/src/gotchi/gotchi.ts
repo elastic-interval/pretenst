@@ -136,7 +136,7 @@ export class Gotchi {
     public set autopilot(auto: boolean) {
         this.state.autopilot = auto
         if (auto) {
-            this.reorient()
+            this.checkDirection()
         }
     }
 
@@ -174,7 +174,7 @@ export class Gotchi {
             const count = this.state.directions.filter(d => d === dir).length
             return ({dir, count})
         })
-        counts.sort((a, b) => {
+        const nonzero = counts.sort((a, b) => {
             if (a.count > b.count) {
                 return -1
             } else if (b.count > a.count) {
@@ -182,8 +182,8 @@ export class Gotchi {
             } else {
                 return 0
             }
-        })
-        const directionMostUsed = counts[0].dir
+        }).filter(count => count.count > 0)
+        const directionMostUsed = nonzero[Math.floor(Math.random() * nonzero.length)].dir
         console.log("mutating", directionMostUsed)
         return this.state.genome.withDirectionMutation(directionGene(directionMostUsed)).genomeData
     }
@@ -216,8 +216,8 @@ export class Gotchi {
         if (embryo) {
             const nextStage = embryo.iterate()
             const life = embryo.life$.getValue()
-            if (life.stage === Stage.Pretensing && nextStage === Stage.Mature) {
-                embryo.transition = {stage: Stage.Mature}
+            if (life.stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
+                embryo.transition = {stage: Stage.Pretenst}
             } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
                 embryo.transition = {stage: nextStage}
             }
@@ -234,19 +234,22 @@ export class Gotchi {
                         // console.log("shaping", this.shapingTime)
                     }
                     break
-                case Stage.Mature:
+                case Stage.Pretenst:
                     extractGotchiFaces(embryo, state.muscles, state.extremities)
-                    embryo.transition = {stage: Stage.Mature}
+                    embryo.transition = {stage: Stage.Pretenst}
                     embryo.iterate()
                     this.embryo = undefined
                     this.twitcher = new Twitcher(state)
                     break
             }
         } else {
-            instance.iterate(Stage.Mature)
+            instance.iterate(Stage.Pretenst)
             if (this.twitcher) {
                 const twitch: Twitch = (m, a, d, n) => this.twitch(m, a, d, n)
-                this.twitcher.tick(twitch, () => this.reorient())
+                const cycleIncrement = this.twitcher.tick(twitch)
+                if (cycleIncrement && this.autopilot) {
+                    this.checkDirection()
+                }
             }
         }
     }
@@ -255,26 +258,23 @@ export class Gotchi {
         return this.state.targetHexalot.center
     }
 
-    public reorient(): void {
-        const touchedDestination = false
-        const state = this.state
-        if (!state.autopilot) {
-            return
-        }
-        if (touchedDestination) {
-            this.direction = Direction.Rest
-        } else {
-            state.direction = this.directionToTarget
-            state.directions.push(state.direction)
-        }
-    }
-
     public get showDirection(): boolean {
         return this.state.direction !== Direction.Rest
     }
 
     public get directionQuaternion(): Quaternion {
         return this.quaternionForDirection(this.state.direction)
+    }
+
+    private checkDirection(): void {
+        const state = this.state
+        const touchedDestination = this.getMidpoint().distanceTo(this.target) < 5 // TODO
+        if (touchedDestination) {
+            this.direction = Direction.Rest
+        } else {
+            state.direction = this.directionToTarget
+            state.directions.push(state.direction)
+        }
     }
 
     private twitch(whichMuscle: number, attack: number, decay: number, intensity: number): void {
@@ -309,6 +309,7 @@ export class Gotchi {
     private get directionToTarget(): Direction {
         const toTarget = this.toTarget
         const instance = this.state.instance
+        instance.refreshFloatView()
         const degreeForward = toTarget.dot(instance.forward)
         const degreeRight = toTarget.dot(instance.right)
         if (degreeRight > 0) {

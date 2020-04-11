@@ -129,11 +129,11 @@ export function ViewTab(
             <Grouping>
                 <h6 className="w-100 text-center"><FaFistRaised/> Perturb</h6>
                 <ButtonGroup className="w-100">
-                    <Button disabled={life.stage !== Stage.Mature}
+                    <Button disabled={life.stage !== Stage.Pretenst}
                             onClick={() => tensegrity.fabric.set_altitude(1)}>
                         <FaHandRock/> Nudge
                     </Button>
-                    <Button disabled={life.stage !== Stage.Mature}
+                    <Button disabled={life.stage !== Stage.Pretenst}
                             onClick={() => tensegrity.fabric.set_altitude(10)}>
                         <FaParachuteBox/> Drop
                     </Button>

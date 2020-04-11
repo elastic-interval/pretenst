@@ -114,7 +114,7 @@ impl Interval {
                 Stage::Pretensing => {
                     ideal_length *= 1_f32 + world.pretenst_factor * realizing_nuance
                 }
-                Stage::Mature => ideal_length *= 1_f32 + world.pretenst_factor,
+                Stage::Pretenst => ideal_length *= 1_f32 + world.pretenst_factor,
             }
         }
         self.strain = (real_length - ideal_length) / ideal_length;
