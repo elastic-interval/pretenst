@@ -371,26 +371,27 @@ export const ADJACENT = [
     {x: 1, y: 1}, // 6
 ]
 
-export const KINDA = 0.866
-export const SURFACE_SCALE = 20
-export const SCALE_X = SURFACE_SCALE * KINDA
+const HEXALOT_DISTANCE = 25
+
+export const SIN_60 = Math.sin(60 * Math.PI / 180)
+export const SURFACE_SCALE = HEXALOT_DISTANCE / 2 / SIN_60
+export const SCALE_X = SURFACE_SCALE * SIN_60
 export const SCALE_Y = SURFACE_SCALE * 1.5
 
 export const HEXAGON_POINTS = [
     new Vector3(0, 0, -SURFACE_SCALE),
-    new Vector3(-KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE/2),
-    new Vector3(-KINDA * SURFACE_SCALE, 0, SURFACE_SCALE/2),
+    new Vector3(-SIN_60 * SURFACE_SCALE, 0, -SURFACE_SCALE / 2),
+    new Vector3(-SIN_60 * SURFACE_SCALE, 0, SURFACE_SCALE / 2),
     new Vector3(0, 0, SURFACE_SCALE),
-    new Vector3(KINDA * SURFACE_SCALE, 0, SURFACE_SCALE/2),
-    new Vector3(KINDA * SURFACE_SCALE, 0, -SURFACE_SCALE/2),
+    new Vector3(SIN_60 * SURFACE_SCALE, 0, SURFACE_SCALE / 2),
+    new Vector3(SIN_60 * SURFACE_SCALE, 0, -SURFACE_SCALE / 2),
 ]
 export const SURFACE_UNKNOWN_COLOR = new Color("silver")
 export const SURFACE_LAND_COLOR = new Color("#59431e")
 export const SURFACE_WATER_COLOR = new Color("#243148")
 export const SIX = 6
 export const UP = new Vector3(0, 1, 0)
-export const LAND_NORMAL_SPREAD = 0.03
-export const WATER_NORMAL_SPREAD = -0.02
+export const NORMAL_SPREAD = 0.9 / HEXALOT_DISTANCE
 export const SUN_POSITION = new Vector3(0, 500, 0)
 export const HEMISPHERE_COLOR = new Color("#fff1d1")
 export const ALTITUDE = 2

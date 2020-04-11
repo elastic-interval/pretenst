@@ -24,7 +24,6 @@ export class Island implements IIsland {
     public readonly name: string
     public spots: Spot[] = []
     public hexalots: Hexalot[] = []
-    public vacantHexalot?: Hexalot
 
     constructor(islandData: IIslandData, public readonly createGotchi: CreateGotchi) {
         fillIsland(islandData, this)
