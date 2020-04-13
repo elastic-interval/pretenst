@@ -4,9 +4,9 @@
  */
 
 import * as React from "react"
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useRender, useThree, useUpdate } from "react-three-fiber"
-import { FaceColors, Geometry, MeshPhongMaterial, PerspectiveCamera, Vector3 } from "three"
+import { Geometry, PerspectiveCamera, Vector3 } from "three"
 
 import { FORWARD, RIGHT } from "../fabric/fabric-instance"
 import { DIRECTION_LINE, FACE, JOURNEY_LINE, LINE_VERTEX_COLORS } from "../view/materials"
@@ -14,9 +14,16 @@ import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
 import { Direction, Gotchi } from "./gotchi"
-import { Island } from "./island"
-import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-geometry"
-import { Patch } from "./patch"
+import { Island, PatchCharacter } from "./island"
+import {
+    ALTITUDE,
+    FAUNA_PATCH_COLOR,
+    FLORA_PATCH_COLOR,
+    HEMISPHERE_COLOR,
+    SPACE_RADIUS,
+    SPACE_SCALE,
+    SUN_POSITION,
+} from "./island-geometry"
 
 const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
@@ -82,30 +89,43 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
         orbit.current.autoRotate = !!(evolution)
     }, [evolution])
 
-    const patchesGeometry = useMemo(() => {
-        const geometry = new Geometry()
-        if (island) {
-            island.patches.forEach((patch: Patch, index: number) => {
-                patch.addSurfaceGeometry("patches", index, geometry.vertices, geometry.faces)
-            })
-        }
-        return geometry
-    }, [])
-
-    return <group>
-        <orbit ref={orbit} args={[perspective, viewContainer]}/>
-        <scene>
-            {evolution ? <EvolutionScene evolution={evolution}/> : (
-                gotchi ? (<GotchiComponent gotchi={gotchi}/>) : undefined
-            )}
-            <mesh name="patches" geometry={patchesGeometry} material={ISLAND}/>
-            <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
-            <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
-        </scene>
-    </group>
+    return (
+        <group>
+            <orbit ref={orbit} args={[perspective, viewContainer]}/>
+            <scene>
+                {evolution ? <EvolutionScene evolution={evolution}/> : (gotchi ? (
+                    <GotchiComponent gotchi={gotchi}/>) : undefined)}
+                {island.patches.map((patch, index) => {
+                    const position = patch.positionArray
+                    const normal = patch.normalArray
+                    return (
+                        <mesh key={`patch-${patch.name}`} onClick={patch.onClick}>
+                            <meshPhongMaterial
+                                attach="material"
+                                color={patch.patchCharacter === PatchCharacter.FaunaPatch ? FAUNA_PATCH_COLOR : FLORA_PATCH_COLOR}/>
+                            <bufferGeometry attach="geometry">
+                                <bufferAttribute
+                                    attachObject={["attributes", "position"]}
+                                    array={position}
+                                    count={position.length / 3}
+                                    itemSize={3}
+                                />
+                                <bufferAttribute
+                                    attachObject={["attributes", "normal"]}
+                                    array={normal}
+                                    count={normal.length / 3}
+                                    itemSize={3}
+                                />
+                            </bufferGeometry>
+                        </mesh>
+                    )
+                })}
+                <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
+                <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
+            </scene>
+        </group>
+    )
 }
-
-const ISLAND = new MeshPhongMaterial({vertexColors: FaceColors, lights: true})
 
 function directionGeometry(): Geometry {
     const v = () => new Vector3(0, 0, 0)

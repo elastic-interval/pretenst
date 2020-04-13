@@ -9,32 +9,37 @@ import { FabricInstance } from "../fabric/fabric-instance"
 
 import { emptyGenome, fromGenomeData, Genome } from "./genome"
 import { Gotchi } from "./gotchi"
-import { ICoords, Island, Surface } from "./island"
+import { ICoords, Island, PatchCharacter } from "./island"
 import {
+    FAUNA_PATCH_COLOR,
+    FLORA_PATCH_COLOR,
     HEXAGON_POINTS,
     NORMAL_SPREAD,
     SCALE_X,
     SCALE_Y,
     SIX,
-    SURFACE_LAND_COLOR,
-    SURFACE_UNKNOWN_COLOR,
-    SURFACE_WATER_COLOR,
     UP,
 } from "./island-geometry"
 
 export class Patch {
     public readonly center: Vector3
     public readonly name: string
-    public adjacent: (Patch|undefined)[] = []
+    public adjacent: (Patch | undefined)[] = []
     private _genome?: Genome
 
     constructor(
         public readonly island: Island,
         public readonly coords: ICoords,
-        public surface: Surface,
+        public patchCharacter: PatchCharacter,
     ) {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
         this.name = `(${coords.x},${coords.y})`
+    }
+
+    public get onClick(): () => void {
+        return () => {
+            console.log("clicked", this.name)
+        }
     }
 
     public get genome(): Genome {
@@ -63,41 +68,61 @@ export class Patch {
         return 1 // TODO
     }
 
-    public addSurfaceGeometry(meshKey: string, index: number, vertices: Vector3[], faces: Face3[]): void {
+    public get positionArray(): Float32Array {
+        const array = new Float32Array(SIX * 3 * 3)
+        let index = 0
+        const add = (point: Vector3) => {
+            const {x, y, z} = new Vector3().copy(this.center).addScaledVector(point, 0.99)
+            array[index++] = x
+            array[index++] = y
+            array[index++] = z
+        }
+        for (let a = 0; a < SIX; a++) {
+            const b = (a + 1) % SIX
+            add(new Vector3())
+            add(HEXAGON_POINTS[a])
+            add(HEXAGON_POINTS[b])
+        }
+        return array
+    }
+
+    public get normalArray(): Float32Array {
+        const array = new Float32Array(SIX * 3 * 3)
+        let index = 0
+        const add = ({x, y, z}: Vector3) => {
+            array[index++] = x
+            array[index++] = y
+            array[index++] = z
+        }
+        for (let a = 0; a < SIX; a++) {
+            const b = (a + 1) % SIX
+            add(UP)
+            add(new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], NORMAL_SPREAD).normalize())
+            add(new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], NORMAL_SPREAD).normalize())
+        }
+        return array
+    }
+
+    public addSurfaceGeometry(vertices: Vector3[], faces: Face3[]): void {
         vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3().copy(this.center).addScaledVector(hexPoint, 0.99)))
         vertices.push(this.center)
-        const normalSpread = this.normalSpread
         for (let a = 0; a < SIX; a++) {
-            const offset = index * (HEXAGON_POINTS.length + 1)
             const b = (a + 1) % SIX
             const vertexNormals = [
                 UP,
-                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], normalSpread).normalize(),
-                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], normalSpread).normalize(),
+                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], NORMAL_SPREAD).normalize(),
+                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], NORMAL_SPREAD).normalize(),
             ]
-            faces.push(new Face3(offset + SIX, offset + a, offset + b, vertexNormals, this.color))
+            faces.push(new Face3(SIX, a, b, vertexNormals, this.color))
         }
     }
 
     private get color(): Color {
-        switch (this.surface) {
-            case Surface.Land:
-                return SURFACE_LAND_COLOR
-            case Surface.Water:
-                return SURFACE_WATER_COLOR
+        switch (this.patchCharacter) {
+            case PatchCharacter.FaunaPatch:
+                return FAUNA_PATCH_COLOR
             default:
-                return SURFACE_UNKNOWN_COLOR
-        }
-    }
-
-    private get normalSpread(): number {
-        switch (this.surface) {
-            case Surface.Land:
-                return NORMAL_SPREAD
-            case Surface.Water:
-                return -NORMAL_SPREAD
-            default:
-                return 0
+                return FLORA_PATCH_COLOR
         }
     }
 }

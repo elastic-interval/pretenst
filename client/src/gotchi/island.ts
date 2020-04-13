@@ -18,9 +18,9 @@ export interface ICoords {
 }
 
 
-export enum Surface {
-    Land = "land",
-    Water = "water",
+export enum PatchCharacter {
+    FaunaPatch = "Fauna",
+    FloraPatch = "Flora",
 }
 
 function equals(a: ICoords, b: ICoords): boolean {
@@ -79,7 +79,7 @@ export class Island {
         if (existing) {
             return existing
         }
-        const surface = (this.next() > 0.5) ? Surface.Land : Surface.Water
+        const surface = (this.next() > 0.5) ? PatchCharacter.FaunaPatch : PatchCharacter.FloraPatch
         const patch = new Patch(this, coords, surface)
         this.patches.push(patch)
         return patch
