@@ -25,6 +25,7 @@ export class Patch {
     public readonly center: Vector3
     public readonly name: string
     public adjacent: (Patch | undefined)[] = []
+    public rotation = 2
     private _genome?: Genome
 
     constructor(
@@ -38,7 +39,8 @@ export class Patch {
 
     public get onClick(): () => void {
         return () => {
-            console.log("clicked", this.name)
+            this.rotation++
+            console.log("clicked", this.name, this.rotation)
         }
     }
 
@@ -62,10 +64,6 @@ export class Patch {
             genome = this.genome
         }
         return this.island.createNewGotchi(this, instance, genome, this.rotation)
-    }
-
-    public get rotation(): number {
-        return 1 // TODO
     }
 
     public get positionArray(): Float32Array {

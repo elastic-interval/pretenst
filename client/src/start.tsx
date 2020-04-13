@@ -7,6 +7,7 @@ import { FabricFeature, IntervalRole } from "eig"
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
+import { Vector3 } from "three"
 
 import { FABRIC_FEATURES } from "./fabric/eig-util"
 import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
@@ -65,13 +66,12 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
         if (!tenscript) {
             throw new Error("Unable to build body")
         }
-        const createEmbryo = (instance: FabricInstance, rotation: number) => {
+        const createEmbryo = (instance: FabricInstance, location: Vector3, rotation: number) => {
             FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
-            // TODO: rotation
-            return new Tensegrity(roleLength, numericFeature, instance, tenscript)
+            return new Tensegrity(location, true, rotation, roleLength, numericFeature, instance, tenscript)
         }
         const newGotchi: NewGotchi = (patch, instance, genome, rotation) => {
-            const embryo = instance.fabric.age === 0? createEmbryo(instance, rotation): undefined
+            const embryo = instance.fabric.age === 0? createEmbryo(instance, patch.center, rotation): undefined
             const state: IGotchiState = freshGotchiState(patch, instance, genome)
             return new Gotchi(state, embryo)
         }

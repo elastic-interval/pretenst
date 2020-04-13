@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole } from "eig"
+import { FabricFeature, IntervalRole, Stage } from "eig"
 import { Matrix4, Vector3 } from "three"
 
 import { IMark, MarkAction } from "./tenscript"
@@ -11,7 +11,7 @@ import { Tensegrity } from "./tensegrity"
 import {
     averageLocation,
     averageScaleFactor,
-    brickContaining, brickToOriginMatrix,
+    brickContaining,
     createBrickPointsAt,
     faceToOriginMatrix,
     factorToPercent,
@@ -26,6 +26,7 @@ import {
     isNexus,
     percentToFactor,
     PUSH_ARRAY,
+    toSymmetricalMatrix,
     Triangle,
     TRIANGLE_DEFINITIONS,
 } from "./tensegrity-types"
@@ -39,14 +40,19 @@ export class TensegrityBuilder {
     constructor(private tensegrity: Tensegrity) {
     }
 
-    public createBrickAt(midpoint: Vector3, scale: IPercent): IBrick {
+    public createBrickAt(midpoint: Vector3, symmetrical: boolean, rotation: number, scale: IPercent): IBrick {
         const points = createBrickPointsAt(Triangle.PPP, scale, midpoint)
-        return this.createBrick(points, Triangle.NNN, scale)
+        const brick = this.createBrick(points, Triangle.NNN, scale)
+        if (symmetrical) {
+            const instance = this.tensegrity.instance
+            instance.iterate(Stage.Growing)
+            instance.apply(toSymmetricalMatrix(brick, rotation, index => instance.unitVector(index)))
+            instance.refreshFloatView()
+        }
+        return brick
     }
 
     public createConnectedBrick(brickA: IBrick, triangle: Triangle, scale: IPercent): IBrick {
-        const violated = () => brickA.negativeAdjacent > 1 && brickA.postiveAdjacent > 1
-        const brickWasViolated = violated()
         const faceA = brickA.faces[triangle]
         const scaleA = percentToFactor(brickA.scale)
         const scaleB = scaleA * percentToFactor(scale)
@@ -54,9 +60,6 @@ export class TensegrityBuilder {
         const faceB = brickB.faces[brickB.base]
         const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
         this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
-        if (brickWasViolated !== violated()) {
-            this.brickToOrigin(brickA)
-        }
         return brickB
     }
 
@@ -89,17 +92,10 @@ export class TensegrityBuilder {
         instance.refreshFloatView()
     }
 
-    public brickToOrigin(brick: IBrick): void {
-        const instance = this.tensegrity.instance
-        instance.apply(brickToOriginMatrix(brick, index => instance.unitVector(index)))
-        instance.refreshFloatView()
-    }
-
     public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
         const centerBrickFaceIntervals = () => {
             const brick = this.createBrickAt(
-                averageLocation(faces.map(face => face.location())),
-                factorToPercent(averageScaleFactor(faces)),
+                averageLocation(faces.map(face => face.location())), false, 0, factorToPercent(averageScaleFactor(faces)),
             )
             return faces.map(face => {
                 const opposing = brick.faces.filter(({negative, removed}) => !removed && negative !== face.negative)

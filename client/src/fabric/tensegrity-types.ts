@@ -340,7 +340,7 @@ export function createBrickPointsAt(base: Triangle, scale: IPercent, position: V
     return points.map(p => p.applyMatrix4(fromBasis))
 }
 
-export function brickToOriginMatrix(brick: IBrick, unitVector: (index: number) => Vector3): Matrix4 {
+export function toSymmetricalMatrix(brick: IBrick, rotation: number, unitVector: (index: number) => Vector3): Matrix4 {
     const x = unitVector(brick.pushes[2].index)
     const y = unitVector(brick.pushes[0].index)
     const z = unitVector(brick.pushes[4].index)
@@ -349,6 +349,7 @@ export function brickToOriginMatrix(brick: IBrick, unitVector: (index: number) =
         .multiplyScalar(1.0 / 12.0)
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
     const twirl = new Matrix4().makeRotationZ(Math.PI / 4)
-    return new Matrix4().getInverse(faceBasis.multiply(twirl))
+    const rotate = new Matrix4().makeRotationY(rotation * Math.PI / 3)
+    return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
 }
 

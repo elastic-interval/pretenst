@@ -10,6 +10,7 @@ import { FaArrowRight, FaCamera, FaPlay, FaSyncAlt, FaToolbox } from "react-icon
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 import { BehaviorSubject } from "rxjs"
+import { Vector3 } from "three"
 
 import { ADJUSTABLE_INTERVAL_ROLES, fabricFeatureIntervalRole } from "../fabric/eig-util"
 import { FloatFeature } from "../fabric/fabric-features"
@@ -113,7 +114,7 @@ export function TensegrityView({eig, createInstance, floatFeatures, storedState$
         storedState$.next(transition(storedState$.getValue(), {ellipsoids: false}))
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(feature => floatFeatures[feature].numeric, role)
         const numericFeature = (feature: FabricFeature) => storedState$.getValue().featureValues[feature].numeric
-        setTensegrity(new Tensegrity(roleLength, numericFeature, mainInstance, newTenscript))
+        setTensegrity(new Tensegrity(new Vector3(), false, 0, roleLength, numericFeature, mainInstance, newTenscript))
     }
 
     useEffect(() => {

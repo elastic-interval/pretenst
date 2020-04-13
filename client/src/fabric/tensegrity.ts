@@ -46,6 +46,9 @@ export class Tensegrity {
     private transitionQueue: ILifeTransition[] = []
 
     constructor(
+        public readonly location: Vector3,
+        public readonly symmetrical: boolean,
+        public readonly rotation: number,
         public readonly roleDefaultLength: (intervalRole: IntervalRole) => number,
         public readonly numericFeature: (fabricFeature: FabricFeature) => number,
         public readonly instance: FabricInstance,
@@ -53,7 +56,7 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
-        const brick = new TensegrityBuilder(this).createBrickAt(new Vector3(), percentOrHundred())
+        const brick = new TensegrityBuilder(this).createBrickAt(location, symmetrical, rotation, percentOrHundred())
         this.bricks = [brick]
         this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
     }
