@@ -5,38 +5,62 @@
 
 import { Color, Face3, Vector3 } from "three"
 
-import { Hexalot } from "./hexalot"
+import { FabricInstance } from "../fabric/fabric-instance"
+
+import { emptyGenome, fromGenomeData, Genome } from "./genome"
+import { Gotchi } from "./gotchi"
+import { ICoords, Island, Surface } from "./island"
 import {
     HEXAGON_POINTS,
-    ICoords,
-    ISpot,
     NORMAL_SPREAD,
     SCALE_X,
     SCALE_Y,
     SIX,
-    Surface,
     SURFACE_LAND_COLOR,
     SURFACE_UNKNOWN_COLOR,
     SURFACE_WATER_COLOR,
     UP,
-} from "./island-logic"
+} from "./island-geometry"
 
-export class Spot implements ISpot {
-    public center: Vector3
-    public adjacentSpots: Spot[] = []
-    public memberOfHexalot: Hexalot[] = []
-    public adjacentHexalots: Hexalot[] = []
-    public centerOfHexalot?: Hexalot
-    public connected = false
-    public surface = Surface.Unknown
-    public free = false
+export class Patch {
+    public readonly center: Vector3
+    public readonly name: string
+    public adjacent: (Patch|undefined)[] = []
+    private _genome?: Genome
 
-    constructor(public coords: ICoords) {
+    constructor(
+        public readonly island: Island,
+        public readonly coords: ICoords,
+        public surface: Surface,
+    ) {
         this.center = new Vector3(coords.x * SCALE_X, 0, coords.y * SCALE_Y)
+        this.name = `(${coords.x},${coords.y})`
     }
 
-    public isMemberOfOneHexalot(id: string): boolean {
-        return this.memberOfHexalot.length === 1 && this.memberOfHexalot[0].id === id
+    public get genome(): Genome {
+        if (!this._genome) {
+            const item = localStorage.getItem(this.name)
+            this._genome = item ? fromGenomeData(JSON.parse(item)) : emptyGenome()
+            console.log(`Loading genome from ${this.name}`, this._genome)
+        }
+        return fromGenomeData(this._genome.genomeData)
+    }
+
+    public set genome(genome: Genome) {
+        this._genome = genome
+        const data = genome.genomeData
+        localStorage.setItem(this.name, JSON.stringify(data))
+    }
+
+    public createNewGotchi(instance: FabricInstance, genome?: Genome): Gotchi | undefined {
+        if (!genome) {
+            genome = this.genome
+        }
+        return this.island.createNewGotchi(this, instance, genome, this.rotation)
+    }
+
+    public get rotation(): number {
+        return 1 // TODO
     }
 
     public addSurfaceGeometry(meshKey: string, index: number, vertices: Vector3[], faces: Face3[]): void {

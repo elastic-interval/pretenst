@@ -25,13 +25,13 @@ export const UP = new Vector3(0, 1, 0)
 export const LAND_NORMAL_SPREAD = 0.03
 
 export function SurfaceComponent(): JSX.Element {
-    const spots = useMemo(() => spotsGeometry(), [])
+    const geometry = useMemo(() => patchesGeometry(), [])
     return (
-        <mesh name="Spots" geometry={spots} material={SURFACE}/>
+        <mesh name="Patches" geometry={geometry} material={SURFACE}/>
     )
 }
 
-function spotsGeometry(): Geometry {
+function patchesGeometry(): Geometry {
     const geometry = new Geometry()
     addSurfaceGeometry(geometry.vertices, geometry.faces)
     geometry.vertices.forEach(v => v.sub(new Vector3(0, 0.01, 0)))

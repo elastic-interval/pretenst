@@ -5,69 +5,88 @@
 
 import { Vector3 } from "three"
 
-import { CreateGotchi } from "./gotchi"
-import { Hexalot } from "./hexalot"
-import {
-    equals,
-    fillIsland,
-    findParentHexalot,
-    findSpot,
-    HEXALOT_SHAPE,
-    ICoords,
-    IIsland,
-    IIslandData,
-    plus,
-} from "./island-logic"
-import { Spot } from "./spot"
+import { FabricInstance } from "../fabric/fabric-instance"
 
-export class Island implements IIsland {
-    public readonly name: string
-    public spots: Spot[] = []
-    public hexalots: Hexalot[] = []
+import { Genome } from "./genome"
+import { Gotchi, NewGotchi } from "./gotchi"
+import { ADJACENT, PATCH_SURROUNDING_SHAPE } from "./island-geometry"
+import { Patch } from "./patch"
 
-    constructor(islandData: IIslandData, public readonly createGotchi: CreateGotchi) {
-        fillIsland(islandData, this)
-        this.name = islandData.name
-    }
+export interface ICoords {
+    x: number
+    y: number
+}
 
-    public findHexalot(id: string): Hexalot | undefined {
-        return this.hexalots.find(hexalot => hexalot.id === id)
-    }
 
-    public createHexalot(spot: Spot): Hexalot {
-        return this.hexalotAroundSpot(spot)
+export enum Surface {
+    Land = "land",
+    Water = "water",
+}
+
+function equals(a: ICoords, b: ICoords): boolean {
+    return a.x === b.x && a.y === b.y
+}
+
+function plus(a: ICoords, b: ICoords): ICoords {
+    return {x: a.x + b.x, y: a.y + b.y}
+}
+
+export class Island {
+    public patches: Patch[] = []
+
+    private _seed: number
+
+    constructor(private newGotchi: NewGotchi, public readonly name: string, seed: number) {
+        this._seed = seed % 2147483647
+        this.fill()
     }
 
     public get midpoint(): Vector3 {
-        return this.spots
-            .reduce((sum: Vector3, spot: Spot) => sum.add(spot.center), new Vector3())
-            .multiplyScalar(1 / this.spots.length)
+        return this.patches
+            .reduce((sum: Vector3, patch: Patch) => sum.add(patch.center), new Vector3())
+            .multiplyScalar(1 / this.patches.length)
     }
 
-    public hexalotAroundSpot(spot: Spot): Hexalot {
-        return this.getOrCreateHexalot(findParentHexalot(spot) as Hexalot, spot.coords)
+    public createNewGotchi(patch: Patch, instance: FabricInstance, genome: Genome, rotation: number): Gotchi | undefined {
+        return this.newGotchi(patch, instance, genome, rotation)
     }
 
-    public getOrCreateHexalot(parent: Hexalot | undefined, coords: ICoords): Hexalot {
-        const existing = this.hexalots.find(existingHexalot => equals(existingHexalot.coords, coords))
-        if (existing) {
-            return existing
-        }
-        const spots = HEXALOT_SHAPE.map(c => this.getOrCreateSpot(plus(c, coords)))
-        const hexalot = new Hexalot(parent, coords, spots, this.createGotchi)
-        this.hexalots.push(hexalot)
-        return hexalot
+    public findPatch(coords: ICoords): Patch | undefined {
+        return this.patches.find(p => equals(p.coords, coords))
     }
 
     // ================================================================================================
 
-    private getOrCreateSpot(coords: ICoords): Spot {
-        const existing = findSpot(this, coords)
+    private fill(): void {
+        this.createSurroundedPatch({x: 0, y: 0})
+        // todo: random walk/tree?
+        this.patches.forEach(patch => {
+            const coords = patch.coords
+            ADJACENT.forEach(({x, y}) => {
+                patch.adjacent.push(this.findPatch({x: x + coords.x, y: y + coords.y}))
+            })
+        })
+    }
+
+    private createSurroundedPatch(coords: ICoords): Patch {
+        const patch = this.getOrCreatePatch(coords)
+        PATCH_SURROUNDING_SHAPE.map(c => this.getOrCreatePatch(plus(c, coords)))
+        return patch
+    }
+
+    private getOrCreatePatch(coords: ICoords): Patch {
+        const existing = this.findPatch(coords)
         if (existing) {
-            return existing as Spot
+            return existing
         }
-        const spot = new Spot(coords)
-        this.spots.push(spot)
-        return spot
+        const surface = (this.next() > 0.5) ? Surface.Land : Surface.Water
+        const patch = new Patch(this, coords, surface)
+        this.patches.push(patch)
+        return patch
+    }
+
+    private next(): number {
+        this._seed = this._seed * 16807 % 2147483647
+        return (this._seed - 1) / 2147483646
     }
 }

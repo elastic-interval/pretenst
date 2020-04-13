@@ -13,20 +13,14 @@ import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
 import { codeToTenscript } from "./fabric/tenscript"
 import { Tensegrity } from "./fabric/tensegrity"
-import { CreateGotchi, freshGotchiState, Gotchi, IGotchiState } from "./gotchi/gotchi"
+import { freshGotchiState, Gotchi, IGotchiState, NewGotchi } from "./gotchi/gotchi"
 import { GotchiView } from "./gotchi/gotchi-view"
 import { Island } from "./gotchi/island"
-import { IIslandData } from "./gotchi/island-logic"
 import registerServiceWorker from "./service-worker"
 import { loadState, roleDefaultFromFeatures, saveState } from "./storage/stored-state"
 import { TensegrityView } from "./view/tensegrity-view"
 
 const GOTCHI = localStorage.getItem("gotchi") === "true"
-const ISLAND_DATA: IIslandData = {
-    name: "Testing",
-    hexalots: "111121",
-    spots: "16c10f54db761dfe80f316d646058d888b3c0bfc559d82f2291ea0c19216bae08a8083f093e48e9b37cdb34f01a",
-}
 
 const BODY = "'Gotchi':(A(2,S90,Mc0),b(2,S90,Mc0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-55"
 // const BODY = "'Gotchi':(A(3,S90,Mc0),b(3,S90,Mc0),a(3,S90,Md0),B(3,Md0,S90)):0=face-distance-55"
@@ -76,15 +70,16 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             // TODO: rotation
             return new Tensegrity(roleLength, numericFeature, instance, tenscript)
         }
-        const createGotchi: CreateGotchi = (hexalot, instance, genome, rotation) => {
+        const newGotchi: NewGotchi = (patch, instance, genome, rotation) => {
             const embryo = instance.fabric.age === 0? createEmbryo(instance, rotation): undefined
-            const state: IGotchiState = freshGotchiState(hexalot, instance, genome)
+            const state: IGotchiState = freshGotchiState(patch, instance, genome)
             return new Gotchi(state, embryo)
         }
-        const island = new Island(ISLAND_DATA, createGotchi)
+        const island = new Island(newGotchi, "Pretenst Island", 1001010)
         ReactDOM.render(
             <GotchiView
                 island={island}
+                homePatch={island.patches[0]}
                 createInstance={createInstance}
             />, root)
     } else {

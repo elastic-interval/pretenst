@@ -19,13 +19,14 @@ import { EvolutionView } from "./evolution-view"
 import { Direction, Gotchi } from "./gotchi"
 import { Island } from "./island"
 import { IslandView } from "./island-view"
+import { Patch } from "./patch"
 
-export function GotchiView({island, createInstance}: {
+export function GotchiView({island, homePatch, createInstance}: {
     island: Island,
+    homePatch: Patch,
     createInstance: CreateInstance,
 }): JSX.Element {
-
-    const [gotchi, setGotchi] = useState(() => island.hexalots[0].createNewGotchi(createInstance()))
+    const [gotchi, setGotchi] = useState(() => homePatch.createNewGotchi(createInstance()))
     const [active, setActive] = useState(false)
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
     const [life, updateLife] = useState<Life | undefined>(undefined)
@@ -87,7 +88,7 @@ export function GotchiView({island, createInstance}: {
                                     <FaDna/> Evolve
                                 </Button>
                                 <Button disabled={active} onClick={() => {
-                                    setGotchi(island.hexalots[0].createNewGotchi(createInstance()))
+                                    setGotchi(homePatch.createNewGotchi(createInstance()))
                                 }}>
                                     <FaBaby/> Rebirth
                                 </Button>

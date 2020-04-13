@@ -15,8 +15,8 @@ import { Orbit } from "../view/orbit"
 import { Evolution } from "./evolution"
 import { Direction, Gotchi } from "./gotchi"
 import { Island } from "./island"
-import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-logic"
-import { Spot } from "./spot"
+import { ALTITUDE, HEMISPHERE_COLOR, SPACE_RADIUS, SPACE_SCALE, SUN_POSITION } from "./island-geometry"
+import { Patch } from "./patch"
 
 const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
@@ -82,11 +82,11 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
         orbit.current.autoRotate = !!(evolution)
     }, [evolution])
 
-    const spots = useMemo(() => {
+    const patchesGeometry = useMemo(() => {
         const geometry = new Geometry()
         if (island) {
-            island.spots.forEach((spot: Spot, index: number) => {
-                spot.addSurfaceGeometry("spots", index, geometry.vertices, geometry.faces)
+            island.patches.forEach((patch: Patch, index: number) => {
+                patch.addSurfaceGeometry("patches", index, geometry.vertices, geometry.faces)
             })
         }
         return geometry
@@ -98,7 +98,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
             {evolution ? <EvolutionScene evolution={evolution}/> : (
                 gotchi ? (<GotchiComponent gotchi={gotchi}/>) : undefined
             )}
-            <mesh name="Spots" geometry={spots} material={ISLAND}/>
+            <mesh name="patches" geometry={patchesGeometry} material={ISLAND}/>
             <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
             <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
         </scene>

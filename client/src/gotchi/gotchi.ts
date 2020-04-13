@@ -11,7 +11,7 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
 
 import { GeneName, Genome, IGeneData } from "./genome"
-import { Hexalot } from "./hexalot"
+import { Patch } from "./patch"
 import { Twitch, Twitcher } from "./twitcher"
 
 export enum Direction {
@@ -59,7 +59,7 @@ export enum Limb {
 }
 
 export interface IGotchiState {
-    hexalot: Hexalot
+    patch: Patch
     instance: FabricInstance
     muscles: IMuscle[]
     extremities: IExtremity[]
@@ -68,12 +68,12 @@ export interface IGotchiState {
     directionHistory: Direction[]
     autopilot: boolean
     timeSlice: number
-    targetHexalot: Hexalot
+    targetPatch: Patch
 }
 
-export function freshGotchiState(hexalot: Hexalot, instance: FabricInstance, genome: Genome): IGotchiState {
+export function freshGotchiState(patch: Patch, instance: FabricInstance, genome: Genome): IGotchiState {
     return <IGotchiState>{
-        hexalot,
+        patch,
         instance,
         muscles: [],
         extremities: [],
@@ -82,11 +82,11 @@ export function freshGotchiState(hexalot: Hexalot, instance: FabricInstance, gen
         directionHistory: [],
         autopilot: false,
         timeSlice: 0,
-        targetHexalot: hexalot.childHexalots[0],
+        targetPatch: patch.adjacent[0], // TODO
     }
 }
 
-export type CreateGotchi = (hexalot: Hexalot, instance: FabricInstance, genome: Genome, rotation: number) => Gotchi
+export type NewGotchi = (patch: Patch, instance: FabricInstance, genome: Genome, rotation: number) => Gotchi
 
 export class Gotchi {
     private shapingTime = 60
@@ -104,12 +104,12 @@ export class Gotchi {
 
     public saveGenome(genome: Genome): void {
         this.state.genome = genome
-        this.state.hexalot.genome = genome
+        this.state.patch.genome = genome
     }
 
     public recycled(instance: FabricInstance, genome?: Genome): Gotchi {
-        const hexalotGenome = this.state.hexalot.genome
-        const state: IGotchiState = {...this.state, instance, genome: genome ? genome : hexalotGenome, directionHistory:[]}
+        const patchGenome = this.state.patch.genome
+        const state: IGotchiState = {...this.state, instance, genome: genome ? genome : patchGenome, directionHistory:[]}
         return new Gotchi(state)
     }
 
@@ -117,8 +117,8 @@ export class Gotchi {
         return this.twitcher ? this.twitcher.cycleCount : 0
     }
 
-    public get hexalot(): Hexalot {
-        return this.state.hexalot
+    public get patch(): Patch {
+        return this.state.patch
     }
 
     public get instance(): FabricInstance {
@@ -254,7 +254,7 @@ export class Gotchi {
     }
 
     public get target(): Vector3 {
-        return this.state.targetHexalot.center
+        return this.state.targetPatch.center
     }
 
     public get showDirection(): boolean {
