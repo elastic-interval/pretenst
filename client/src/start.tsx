@@ -24,6 +24,7 @@ import { TensegrityView } from "./view/tensegrity-view"
 const GOTCHI = localStorage.getItem("gotchi") === "true"
 
 const BODY = "'Gotchi':(A(2,S90,Mc0),b(2,S90,Mc0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-55"
+
 // const BODY = "'Gotchi':(A(3,S90,Mc0),b(3,S90,Mc0),a(3,S90,Md0),B(3,Md0,S90)):0=face-distance-55"
 
 export async function startReact(eig: typeof import("eig"), world: typeof import("eig").World): Promise<void> {
@@ -70,8 +71,8 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
             return new Tensegrity(location, true, rotation, roleLength, numericFeature, instance, tenscript)
         }
-        const newGotchi: NewGotchi = (patch, instance, genome, rotation) => {
-            const embryo = instance.fabric.age === 0? createEmbryo(instance, patch.center, rotation): undefined
+        const newGotchi: NewGotchi = (patch, instance, genome) => {
+            const embryo = instance.fabric.age === 0 ? createEmbryo(instance, patch.center, patch.rotation) : undefined
             const state: IGotchiState = freshGotchiState(patch, instance, genome)
             return new Gotchi(state, embryo)
         }

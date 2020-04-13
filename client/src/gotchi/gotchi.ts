@@ -82,11 +82,11 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
         directionHistory: [],
         autopilot: false,
         timeSlice: 0,
-        targetPatch: patch.adjacent[0], // TODO
+        targetPatch: patch.adjacent[patch.rotation],
     }
 }
 
-export type NewGotchi = (patch: Patch, instance: FabricInstance, genome: Genome, rotation: number) => Gotchi
+export type NewGotchi = (patch: Patch, instance: FabricInstance, genome: Genome) => Gotchi
 
 export class Gotchi {
     private shapingTime = 60

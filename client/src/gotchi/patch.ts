@@ -63,7 +63,7 @@ export class Patch {
         if (!genome) {
             genome = this.genome
         }
-        return this.island.createNewGotchi(this, instance, genome, this.rotation)
+        return this.island.createNewGotchi(this, instance, genome)
     }
 
     public get positionArray(): Float32Array {

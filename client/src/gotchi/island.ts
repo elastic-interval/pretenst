@@ -47,8 +47,8 @@ export class Island {
             .multiplyScalar(1 / this.patches.length)
     }
 
-    public createNewGotchi(patch: Patch, instance: FabricInstance, genome: Genome, rotation: number): Gotchi | undefined {
-        return this.newGotchi(patch, instance, genome, rotation)
+    public createNewGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi | undefined {
+        return this.newGotchi(patch, instance, genome)
     }
 
     public findPatch(coords: ICoords): Patch | undefined {
