@@ -42,9 +42,9 @@ pub struct World {
 
 #[wasm_bindgen]
 impl World {
-    pub fn new() -> World {
+    pub fn new(surface_character: SurfaceCharacter) -> World {
         World {
-            surface_character: SurfaceCharacter::Sticky,
+            surface_character,
             push_and_pull: false,
             color_pushes: true,
             color_pulls: true,

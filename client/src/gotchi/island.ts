@@ -42,7 +42,7 @@ export class Island {
 
     private _seed: number
 
-    constructor(private source: ISource, public readonly name: string, seed: number) {
+    constructor(public readonly source: ISource, public readonly name: string, seed: number) {
         this._seed = seed % 2147483647
         this.fill()
     }
@@ -51,14 +51,6 @@ export class Island {
         return this.patches
             .reduce((sum: Vector3, patch: Patch) => sum.add(patch.center), new Vector3())
             .multiplyScalar(1 / this.patches.length)
-    }
-
-    public createNewGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi | undefined {
-        return this.source.newGotchi(patch, instance, genome)
-    }
-
-    public createNewSatoshiTree(patch: Patch, instance: FabricInstance, tenscript: string): SatoshiTree {
-        return this.source.newSatoshiTree(patch, instance)
     }
 
     public findPatch(coords: ICoords): Patch | undefined {

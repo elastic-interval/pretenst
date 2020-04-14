@@ -14,7 +14,7 @@ import { HEXAGON_POINTS, NORMAL_SPREAD, SCALE_X, SCALE_Y, SIX, UP } from "./isla
 import { SatoshiTree } from "./satoshi-tree"
 
 export class Patch {
-    // public gotchi?: Gotchi
+    public gotchi?: Gotchi
     public satoshiTree?: SatoshiTree
     public readonly center: Vector3
     public readonly name: string
@@ -35,6 +35,9 @@ export class Patch {
         return () => {
             this.rotation++
             console.log("clicked", this.name, this.rotation)
+            if (this.satoshiTree) {
+                this.satoshiTree.removeRandomInterval()
+            }
         }
     }
 
@@ -55,9 +58,16 @@ export class Patch {
         localStorage.setItem(this.name, JSON.stringify(this.geneData))
     }
 
-    public createNewGotchi(instance: FabricInstance, mutant?: IGeneData[]): Gotchi | undefined {
-        const genome = fromGeneData(mutant || this.storedGenes)
-        return this.island.createNewGotchi(this, instance, genome)
+    public createGotchi(instance: FabricInstance): Gotchi | undefined {
+        const gotchi = this.island.source.newGotchi(this, instance, fromGeneData(this.storedGenes))
+        this.gotchi = gotchi
+        return gotchi
+    }
+
+    public createNewSatoshiTree(instance: FabricInstance): SatoshiTree {
+        const satoshiTree = this.island.source.newSatoshiTree(this, instance)
+        this.satoshiTree = satoshiTree
+        return satoshiTree
     }
 
     public get positionArray(): Float32Array {

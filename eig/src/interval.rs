@@ -101,15 +101,11 @@ impl Interval {
         let mut ideal_length = self.ideal_length_now();
         let real_length = self.calculate_current_length(joints, faces);
         let is_push = self.is_push();
-        let mut stiffness_factor = world.stiffness_factor;
         if is_push {
             match stage {
-                Stage::Slack => {
-                    stiffness_factor = world.shaping_stiffness_factor;
-                }
+                Stage::Slack => {}
                 Stage::Growing | Stage::Shaping => {
                     ideal_length *= 1_f32 + world.shaping_pretenst_factor;
-                    stiffness_factor = world.shaping_stiffness_factor;
                 }
                 Stage::Pretensing => {
                     ideal_length *= 1_f32 + world.pretenst_factor * realizing_nuance
@@ -124,7 +120,12 @@ impl Interval {
         {
             self.strain = 0_f32;
         }
-        let mut force = self.strain * self.stiffness * stiffness_factor;
+        let factor = if stage < Stage::Pretensing {
+            world.shaping_stiffness_factor
+        } else {
+            world.stiffness_factor
+        };
+        let mut force = self.strain * self.stiffness * factor;
         if stage <= Stage::Slack {
             force *= world.shaping_stiffness_factor;
         }

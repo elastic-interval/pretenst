@@ -9,7 +9,7 @@ import { useRender, useThree, useUpdate } from "react-three-fiber"
 import { Geometry, PerspectiveCamera, Vector3 } from "three"
 
 import { FORWARD, RIGHT } from "../fabric/fabric-instance"
-import { DIRECTION_LINE, FACE, JOURNEY_LINE, LINE_VERTEX_COLORS } from "../view/materials"
+import { DIRECTION_LINE, FACE, JOURNEY_LINE, LEAF, LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
@@ -24,12 +24,14 @@ import {
     SPACE_SCALE,
     SUN_POSITION,
 } from "./island-geometry"
+import { SatoshiTree } from "./satoshi-tree"
 
 const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
 
-export function IslandView({island, gotchi, evolution, stopEvolution}: {
+export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvolution}: {
     island: Island,
+    satoshiTrees: SatoshiTree[],
     gotchi?: Gotchi,
     evolution?: Evolution,
     stopEvolution: () => void,
@@ -40,7 +42,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
 
     const midpoint = new Vector3()
     useRender(() => {
-        let bestDistance = 32
+        let bestDistance
         if (evolution) {
             if (evolution.finished) {
                 stopEvolution()
@@ -51,19 +53,23 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
             bestDistance = 16
         } else if (gotchi) {
             gotchi.iterate(midpoint)
-            if (gotchi.direction !== Direction.Rest) {
+            if (gotchi.growing || gotchi.direction !== Direction.Rest) {
                 bestDistance = 8
             }
         }
         const orb: Orbit = orbit.current
-        const position = orb.object.position
         const target = orb.target
-        const positionToTarget = new Vector3().subVectors(position, target)
-        const deltaDistance = bestDistance - positionToTarget.length()
-        position.add(positionToTarget.normalize().multiplyScalar(deltaDistance * TOWARDS_POSITION))
+        if (bestDistance !== undefined) {
+            const position = orb.object.position
+            const positionToTarget = new Vector3().subVectors(position, target)
+            const deltaDistance = bestDistance - positionToTarget.length()
+            position.add(positionToTarget.normalize().multiplyScalar(deltaDistance * TOWARDS_POSITION))
+        }
         const moveTarget = new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET)
         target.add(moveTarget)
         orb.update()
+        const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
+        satoshiTrees[treeNumber].iterate()
         setTrigger(trigger + 1)
     }, true, [gotchi, evolution, trigger])
 
@@ -95,7 +101,7 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
             <scene>
                 {evolution ? <EvolutionScene evolution={evolution}/> : (gotchi ? (
                     <GotchiComponent gotchi={gotchi}/>) : undefined)}
-                {island.patches.map((patch, index) => {
+                {island.patches.map(patch => {
                     const position = patch.positionArray
                     const normal = patch.normalArray
                     return (
@@ -120,6 +126,9 @@ export function IslandView({island, gotchi, evolution, stopEvolution}: {
                         </mesh>
                     )
                 })}
+                {satoshiTrees.map(satoshiTree => (
+                    <SatoshiTreeComponent key={`tree-${satoshiTree.name}`} satoshiTree={satoshiTree}/>
+                ))}
                 <pointLight distance={1000} decay={0.1} position={SUN_POSITION}/>
                 <hemisphereLight name="Hemi" color={HEMISPHERE_COLOR}/>
             </scene>
@@ -239,8 +248,35 @@ function evolutionTargetGeometry(evoMidpoint: Vector3, target: Vector3): Geometr
     const height = 10
     geom.vertices = [
         new Vector3(evoMidpoint.x, 0, evoMidpoint.z), new Vector3(evoMidpoint.x, height, evoMidpoint.z),
-        new Vector3(target.x, 0, target.z), new Vector3(target.x, height, target.z),
         new Vector3(evoMidpoint.x, height / 2, evoMidpoint.z), new Vector3(target.x, height / 2, target.z),
     ]
     return geom
+}
+
+function SatoshiTreeComponent({satoshiTree}: { satoshiTree: SatoshiTree }): JSX.Element {
+    const floatView = satoshiTree.instance.floatView
+    const update = useCallback(self => {
+        self.needsUpdate = true
+        self.parent.computeBoundingSphere()
+    }, [])
+    return (
+        <mesh material={LEAF}>
+            <bufferGeometry attach="geometry">
+                <bufferAttribute
+                    attachObject={["attributes", "position"]}
+                    array={floatView.faceLocations}
+                    count={floatView.faceLocations.length / 3}
+                    itemSize={3}
+                    onUpdate={update}
+                />
+                <bufferAttribute
+                    attachObject={["attributes", "normal"]}
+                    array={floatView.faceNormals}
+                    count={floatView.faceNormals.length / 3}
+                    itemSize={3}
+                    onUpdate={update}
+                />
+            </bufferGeometry>
+        </mesh>
+    )
 }

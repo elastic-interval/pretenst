@@ -40,7 +40,7 @@ export interface IFloatView {
     linearDensities: Float32Array
 }
 
-export type CreateInstance = (existingFabric?: Fabric) => FabricInstance
+export type CreateInstance = (frozen: boolean, existingFabric?: Fabric) => FabricInstance
 
 export class FabricInstance {
     public fabric: Fabric

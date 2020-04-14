@@ -27,13 +27,19 @@ import { TensegrityView } from "./view/tensegrity-view"
 const GOTCHI = localStorage.getItem("gotchi") === "true"
 
 const GOTCHI_TENSCRIPT = "'Gotchi':(A(2,S90,Mc0),b(2,S90,Mc0),a(2,S90,Md0),B(2,Md0,S90)):0=face-distance-55"
-const SATOSHI_TREE_TENSCRIPT = "'Convergence Ten':(a1,b(10,S85,MA1),c(10,S85,MA1),d(10,S85,MA1))"
+const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,b(6,S85),c(6,S85),d(6,S85))"
 
-export async function startReact(eig: typeof import("eig"), world: typeof import("eig").World): Promise<void> {
+export async function startReact(
+    eig: typeof import("eig"),
+    stickyWorld: typeof import("eig").World,
+    frozenWorld: typeof import("eig").World,
+): Promise<void> {
     const root = document.getElementById("root") as HTMLElement
-    const createInstance: CreateInstance = (fabric?: object) => new FabricInstance(eig, 200, world, fabric)
+    const createInstance: CreateInstance = (frozen: boolean, fabric?: object) => (
+        new FabricInstance(eig, 200, frozen ? frozenWorld : stickyWorld, fabric)
+    )
     if (GOTCHI) {
-        const numericFeature = (feature: FabricFeature) => {
+        const gotchiNumericFeature = (feature: FabricFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
                 case FabricFeature.Gravity:
@@ -42,8 +48,6 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
                     return defaultValue * 0.3
                 case FabricFeature.Drag:
                     return defaultValue * 0.7
-                case FabricFeature.ShapingStiffnessFactor:
-                    return defaultValue * 5
                 case FabricFeature.IntervalCountdown:
                     return defaultValue * 2
                 case FabricFeature.StiffnessFactor:
@@ -62,7 +66,18 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
                     return defaultValue
             }
         }
-        const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
+        const satoshiTreeNumericFeature = (feature: FabricFeature) => {
+            const defaultValue = eig.default_fabric_feature(feature)
+            switch (feature) {
+                case FabricFeature.Antigravity:
+                    return defaultValue * 0.3
+                case FabricFeature.Drag:
+                    return defaultValue * 0.7
+                default:
+                    return defaultValue
+            }
+        }
+        const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(gotchiNumericFeature, role)
         const tenscriptError = (error: string) => {
             throw new Error(`Unable to compile: ${error}`)
         }
@@ -73,19 +88,28 @@ export async function startReact(eig: typeof import("eig"), world: typeof import
             }
             return tenscript
         }
-        const createTensegrity = (instance: FabricInstance, location: Vector3, code: string, rotation: number) => {
+        const createTensegrity = (
+            instance: FabricInstance,
+            numericFeature: (feature: FabricFeature) => number,
+            location: Vector3,
+            code: string,
+            symmetrical: boolean,
+            rotation: number,
+        ) => {
             FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
-            return new Tensegrity(location, true, rotation, roleLength, numericFeature, instance, toTenscript(code))
+            return new Tensegrity(location, symmetrical, rotation, roleLength, numericFeature, instance, toTenscript(code))
         }
         const source: ISource = {
             newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi {
-                const embryo = instance.fabric.age === 0 ? createTensegrity(instance, patch.center, GOTCHI_TENSCRIPT, patch.rotation) : undefined
+                const embryo = instance.fabric.age !== 0 ? undefined :
+                    createTensegrity(instance, gotchiNumericFeature, patch.center, GOTCHI_TENSCRIPT, true, patch.rotation)
                 const state: IGotchiState = freshGotchiState(patch, instance, genome)
                 return new Gotchi(state, embryo)
             },
             newSatoshiTree(patch: Patch, instance: FabricInstance): SatoshiTree {
-                const tensegrity = createTensegrity(instance, patch.center, SATOSHI_TREE_TENSCRIPT, 0)
-                return new SatoshiTree(tensegrity)
+                const tensegrity =
+                    createTensegrity(instance, satoshiTreeNumericFeature, patch.center, SATOSHI_TREE_TENSCRIPT, false, 0)
+                return new SatoshiTree(patch.name, tensegrity)
             },
         }
         const island = new Island(source, "Pretenst Island", 1001010)

@@ -17,7 +17,7 @@ import { Life } from "../fabric/life"
 import { Evolution } from "./evolution"
 import { EvolutionView } from "./evolution-view"
 import { Direction, Gotchi } from "./gotchi"
-import { Island } from "./island"
+import { Island, PatchCharacter } from "./island"
 import { IslandView } from "./island-view"
 import { Patch } from "./patch"
 
@@ -26,7 +26,10 @@ export function GotchiView({island, homePatch, createInstance}: {
     homePatch: Patch,
     createInstance: CreateInstance,
 }): JSX.Element {
-    const [gotchi, setGotchi] = useState(() => homePatch.createNewGotchi(createInstance()))
+    const [satoshiTrees] = useState(() => island.patches
+        .filter(patch => patch.patchCharacter === PatchCharacter.FloraPatch)
+        .map(patch => patch.createNewSatoshiTree(createInstance(true))))
+    const [gotchi, setGotchi] = useState(() => homePatch.createGotchi(createInstance(false)))
     const [active, setActive] = useState(false)
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
     const [life, updateLife] = useState<Life | undefined>(undefined)
@@ -57,6 +60,7 @@ export function GotchiView({island, homePatch, createInstance}: {
             <Canvas key={island.name} style={{backgroundColor: "black"}}>
                 <IslandView
                     island={island}
+                    satoshiTrees={satoshiTrees}
                     gotchi={gotchi}
                     evolution={evolution}
                     stopEvolution={stopEvolution}
@@ -88,7 +92,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                                     <FaDna/> Evolve
                                 </Button>
                                 <Button disabled={active} onClick={() => {
-                                    setGotchi(homePatch.createNewGotchi(createInstance()))
+                                    setGotchi(homePatch.createGotchi(createInstance(false)))
                                 }}>
                                     <FaBaby/> Rebirth
                                 </Button>

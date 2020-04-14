@@ -49,7 +49,7 @@ export function TensegrityView({eig, createInstance, floatFeatures, storedState$
     storedState$: BehaviorSubject<IStoredState>,
 }): JSX.Element {
 
-    const mainInstance = useMemo(createInstance, [])
+    const mainInstance = useMemo(() => createInstance(false), [])
 
     const [tensegrity, setTensegrity] = useState<Tensegrity | undefined>()
     const [selectedFaces, setSelectedFaces] = useState<IFace[]>([])

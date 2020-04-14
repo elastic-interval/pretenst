@@ -96,6 +96,10 @@ export class Gotchi {
         }
     }
 
+    public get growing(): boolean {
+        return !!this.embryo
+    }
+
     public snapshot(): void {
         this.state.instance.snapshot()
     }

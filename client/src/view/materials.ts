@@ -72,6 +72,12 @@ export const FACE = new MeshPhongMaterial({
     opacity: 0.2,
 })
 
+export const LEAF = new MeshPhongMaterial({
+    lights,
+    color: new Color("green"),
+    side: DoubleSide,
+})
+
 export const SELECT_MATERIAL = new MeshPhongMaterial({
     color: new Color(SELECTION_COLOR),
     lights: true,

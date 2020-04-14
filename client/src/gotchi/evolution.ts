@@ -63,7 +63,7 @@ export class Evolution {
             throw new Error("Cannot create evolution from gotchi which is not pretenst")
         }
         this.midpoint = gotchi.getMidpoint()
-        this.baseGotchi = gotchi.recycled(createInstance(gotchi.fabricClone), gotchi.genome.geneData)
+        this.baseGotchi = gotchi.recycled(createInstance(false, gotchi.fabricClone), gotchi.genome.geneData)
         this.currentMaxCycles = CYCLE_PATTERN[this.cyclePatternIndex = 0]
         this.baseGotchi.snapshot()
         this.baseGotchi.autopilot = true
@@ -71,7 +71,7 @@ export class Evolution {
         const baseGenome = this.baseGotchi.genome
         while (gotchis.length < PARAM.maxPopulation) {
             const genome = gotchis.length === 0 ? baseGenome : baseGenome.withDirectionMutations([directionGene(this.baseGotchi.direction)])
-            const instance = this.createInstance(this.baseGotchi.fabricClone)
+            const instance = this.createInstance(false, this.baseGotchi.fabricClone)
             const newborn = this.baseGotchi.recycled(instance, genome.geneData)
             if (!newborn) {
                 console.error("Unable to create gotchi")

@@ -73,8 +73,8 @@ export const HEXAGON_POINTS = [
     new Vector3(SIN_60 * SURFACE_SCALE, 0, SURFACE_SCALE / 2),
     new Vector3(SIN_60 * SURFACE_SCALE, 0, -SURFACE_SCALE / 2),
 ]
-export const FAUNA_PATCH_COLOR = new Color("#59431e")
-export const FLORA_PATCH_COLOR = new Color("#123b11")
+export const FAUNA_PATCH_COLOR = new Color("#4b4b4b")
+export const FLORA_PATCH_COLOR = new Color("#59431e")
 export const SIX = 6
 export const UP = new Vector3(0, 1, 0)
 export const NORMAL_SPREAD = 0.9 / PATCH_DISTANCE
