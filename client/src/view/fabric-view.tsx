@@ -13,6 +13,7 @@ import {
     BufferAttribute,
     Color,
     CylinderGeometry,
+    DoubleSide,
     Euler,
     MeshPhongMaterial,
     Object3D,
@@ -28,7 +29,7 @@ import { Tensegrity } from "../fabric/tensegrity"
 import { facesMidpoint, IFace, IInterval, percentToFactor } from "../fabric/tensegrity-types"
 import { IStoredState } from "../storage/stored-state"
 
-import { FACE, JOINT_MATERIAL, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
+import { JOINT_MATERIAL, LINE_VERTEX_COLORS, rainbowMaterial, roleMaterial, SELECT_MATERIAL } from "./materials"
 import { Orbit } from "./orbit"
 import { ShapeSelection } from "./shape-tab"
 import { SurfaceComponent } from "./surface-component"
@@ -47,6 +48,7 @@ declare global {
             orbit: ReactThreeFiber.Object3DNode<Orbit, typeof Orbit>
             bufferAttribute: ReactThreeFiber.Node<BufferAttribute, typeof BufferAttribute>
         }
+
         /* eslint-enable @typescript-eslint/interface-name-prefix */
     }
 }
@@ -391,8 +393,14 @@ function Faces({tensegrity, stage, selectFace}: {
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
             geometry={tensegrity.facesGeometry}
-            material={FACE}
-        />
+        >
+            <meshPhongMaterial
+                attach="material"
+                transparent={true}
+                side={DoubleSide}
+                opacity={0.3}
+                color="white"/>
+        </mesh>
     )
 }
 

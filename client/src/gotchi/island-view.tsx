@@ -6,10 +6,9 @@
 import * as React from "react"
 import { useCallback, useEffect, useState } from "react"
 import { useRender, useThree, useUpdate } from "react-three-fiber"
-import { Geometry, PerspectiveCamera, Vector3 } from "three"
+import { DoubleSide, Geometry, PerspectiveCamera, Vector3, VertexColors } from "three"
 
 import { FORWARD, RIGHT } from "../fabric/fabric-instance"
-import { DIRECTION_LINE, FACE, JOURNEY_LINE, LEAF, LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
@@ -100,7 +99,7 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
                 {evolution ? <EvolutionScene evolution={evolution}/> : (gotchi ? (
-                    <GotchiComponent gotchi={gotchi}/>) : undefined)}
+                    <GotchiComponent gotchi={gotchi} faces={true}/>) : undefined)}
                 {island.patches.map(patch => {
                     const position = patch.positionArray
                     const normal = patch.normalArray
@@ -165,17 +164,18 @@ function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
     return (
         <group>
             {evolution.evolvers.map(({gotchi, index}) => (
-                <GotchiComponent key={`evolving-gotchi-${index}`} gotchi={gotchi}/>
+                <GotchiComponent key={`evolving-gotchi-${index}`} gotchi={gotchi} faces={false}/>
             ))}
             <lineSegments
                 geometry={evolutionTargetGeometry(evolution.getMidpoint(midpoint), evolution.target)}
-                material={JOURNEY_LINE}
-            />
+            >
+                <lineBasicMaterial attach="material" color={"#cace02"}/>
+            </lineSegments>
         </group>
     )
 }
 
-function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
+function GotchiComponent({gotchi, faces}: { gotchi: Gotchi, faces: boolean }): JSX.Element {
     const floatView = gotchi.state.instance.floatView
     const update = useCallback(self => {
         self.needsUpdate = true
@@ -183,7 +183,8 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
     }, [])
     return (
         <group>
-            <lineSegments material={LINE_VERTEX_COLORS}>
+            <lineSegments>
+                <lineBasicMaterial attach="material" vertexColors={VertexColors}/>
                 <bufferGeometry attach="geometry">
                     <bufferAttribute
                         attachObject={["attributes", "position"]}
@@ -201,36 +202,44 @@ function GotchiComponent({gotchi}: { gotchi: Gotchi }): JSX.Element {
                     />
                 </bufferGeometry>
             </lineSegments>
-            <mesh material={FACE}>
-                <bufferGeometry attach="geometry">
-                    <bufferAttribute
-                        attachObject={["attributes", "position"]}
-                        array={floatView.faceLocations}
-                        count={floatView.faceLocations.length / 3}
-                        itemSize={3}
-                        onUpdate={update}
-                    />
-                    <bufferAttribute
-                        attachObject={["attributes", "normal"]}
-                        array={floatView.faceNormals}
-                        count={floatView.faceNormals.length / 3}
-                        itemSize={3}
-                        onUpdate={update}
-                    />
-                </bufferGeometry>
-            </mesh>
+            {!faces ? undefined : (
+                <mesh>
+                    <meshPhongMaterial
+                        attach="material"
+                        transparent={true}
+                        side={DoubleSide}
+                        opacity={0.6}
+                        color="white"/>
+                    <bufferGeometry attach="geometry">
+                        <bufferAttribute
+                            attachObject={["attributes", "position"]}
+                            array={floatView.faceLocations}
+                            count={floatView.faceLocations.length / 3}
+                            itemSize={3}
+                            onUpdate={update}
+                        />
+                        <bufferAttribute
+                            attachObject={["attributes", "normal"]}
+                            array={floatView.faceNormals}
+                            count={floatView.faceNormals.length / 3}
+                            itemSize={3}
+                            onUpdate={update}
+                        />
+                    </bufferGeometry>
+                </mesh>
+            )}
             {!gotchi.showDirection ? undefined : (
                 <group>
-                    <lineSegments
-                        geometry={gotchiToTargetGeometry(gotchi.topJointLocation, gotchi.target)}
-                        material={JOURNEY_LINE}
-                    />
+                    <lineSegments geometry={gotchiToTargetGeometry(gotchi.topJointLocation, gotchi.target)}>
+                        <lineBasicMaterial attach="material" color={"#cecb05"}/>
+                    </lineSegments>
                     <lineSegments
                         geometry={DIRECTION_GEOMETRY}
-                        material={DIRECTION_LINE}
                         quaternion={gotchi.directionQuaternion}
                         position={gotchi.topJointLocation}
-                    />
+                    >
+                        <lineBasicMaterial attach="material" color={"#05cec0"}/>
+                    </lineSegments>
                 </group>
             )}
         </group>
@@ -260,7 +269,8 @@ function SatoshiTreeComponent({satoshiTree}: { satoshiTree: SatoshiTree }): JSX.
         self.parent.computeBoundingSphere()
     }, [])
     return (
-        <mesh material={LEAF}>
+        <mesh>
+            <meshPhongMaterial attach="material" side={DoubleSide} color="green"/>
             <bufferGeometry attach="geometry">
                 <bufferAttribute
                     attachObject={["attributes", "position"]}

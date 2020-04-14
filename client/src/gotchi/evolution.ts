@@ -8,10 +8,9 @@ import { Vector3 } from "three"
 
 import { CreateInstance } from "../fabric/fabric-instance"
 
-import { Genome } from "./genome"
 import { directionGene, Gotchi } from "./gotchi"
 
-export const CYCLE_PATTERN = [3, 4, 5, 7, 9, 12, 15]
+export const CYCLE_PATTERN = [3, 4, 5, 6, 7, 9, 12, 15]
 
 export interface IEvolutionParameters {
     maxPopulation: number
@@ -29,7 +28,7 @@ export interface IEvolver {
     gotchi: Gotchi
     distanceFromTarget: number
     dead: boolean
-    saved?: Genome
+    saved: boolean
 }
 
 export interface ICompetitor {
@@ -37,7 +36,7 @@ export interface ICompetitor {
     generation: number,
     distanceFromTarget: number
     dead: boolean
-    saved?: Genome
+    saved: boolean
 }
 
 export interface IEvolutionSnapshot {
@@ -122,7 +121,6 @@ export class Evolution {
         if (this.cyclePatternIndex === CYCLE_PATTERN.length - 1) {
             this.finished = true
             this.cyclePatternIndex = 0
-            this.baseGotchi.genome = this.evolvers[0].gotchi.genome
             return
         }
         this.cyclePatternIndex++
@@ -135,6 +133,12 @@ export class Evolution {
             evolver.distanceFromTarget = evolver.gotchi.getMidpoint(gotchiMidpoint).distanceTo(evolver.gotchi.target)
         })
         this.evolvers.sort((a: IEvolver, b: IEvolver) => a.distanceFromTarget - b.distanceFromTarget)
+        this.evolvers.forEach((evolver, index) => {
+            evolver.saved = index === 0
+            if (evolver.saved) {
+                this.baseGotchi.genome = evolver.gotchi.genome
+            }
+        })
         const survivorCount = this.survivorCount
         this.midpoint.set(0, 0, 0)
         this.evolvers.forEach((evolver, evolverIndex) => {
