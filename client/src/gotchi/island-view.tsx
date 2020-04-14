@@ -245,10 +245,10 @@ function gotchiToTargetGeometry(gotchiLocation: Vector3, target: Vector3): Geome
 
 function evolutionTargetGeometry(evoMidpoint: Vector3, target: Vector3): Geometry {
     const geom = new Geometry()
-    const height = 10
+    const height = 6
     geom.vertices = [
         new Vector3(evoMidpoint.x, 0, evoMidpoint.z), new Vector3(evoMidpoint.x, height, evoMidpoint.z),
-        new Vector3(evoMidpoint.x, height / 2, evoMidpoint.z), new Vector3(target.x, height / 2, target.z),
+        new Vector3(evoMidpoint.x, height, evoMidpoint.z), new Vector3(target.x, height, target.z),
     ]
     return geom
 }

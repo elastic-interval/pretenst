@@ -102,13 +102,19 @@ export async function startReact(
         const source: ISource = {
             newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi {
                 const embryo = instance.fabric.age !== 0 ? undefined :
-                    createTensegrity(instance, gotchiNumericFeature, patch.center, GOTCHI_TENSCRIPT, true, patch.rotation)
+                    createTensegrity(
+                        instance, gotchiNumericFeature,
+                        patch.center, GOTCHI_TENSCRIPT, true, patch.rotation,
+                    )
                 const state: IGotchiState = freshGotchiState(patch, instance, genome)
                 return new Gotchi(state, embryo)
             },
             newSatoshiTree(patch: Patch, instance: FabricInstance): SatoshiTree {
                 const tensegrity =
-                    createTensegrity(instance, satoshiTreeNumericFeature, patch.center, SATOSHI_TREE_TENSCRIPT, false, 0)
+                    createTensegrity(
+                        instance, satoshiTreeNumericFeature,
+                        patch.center, SATOSHI_TREE_TENSCRIPT, false, 0,
+                    )
                 return new SatoshiTree(patch.name, tensegrity)
             },
         }

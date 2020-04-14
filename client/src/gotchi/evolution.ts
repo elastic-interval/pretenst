@@ -11,7 +11,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { Genome } from "./genome"
 import { directionGene, Gotchi } from "./gotchi"
 
-export const CYCLE_PATTERN = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+export const CYCLE_PATTERN = [3, 4, 5, 7, 9, 12, 15]
 
 export interface IEvolutionParameters {
     maxPopulation: number
