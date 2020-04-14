@@ -54,7 +54,7 @@ export function emptyGenome(): Genome {
     return new Genome(rollTheDice, [])
 }
 
-export function fromGenomeData(geneData: IGeneData[]): Genome {
+export function fromGeneData(geneData: IGeneData[]): Genome {
     if (geneData.length === 0) {
         return emptyGenome()
     }
@@ -112,7 +112,7 @@ export class Genome {
         return new Genome(this.roll, genesCopy)
     }
 
-    public get genomeData(): IGeneData[] {
+    public get geneData(): IGeneData[] {
         return this.genes.map(gene => {
             const {geneName, generation, dice} = gene
             const geneString = serializeGene(dice)

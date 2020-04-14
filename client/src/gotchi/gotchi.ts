@@ -10,7 +10,7 @@ import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
 
-import { GeneName, Genome, IGeneData } from "./genome"
+import { fromGeneData, GeneName, Genome, IGeneData } from "./genome"
 import { Patch } from "./patch"
 import { Twitch, Twitcher } from "./twitcher"
 
@@ -86,8 +86,6 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
     }
 }
 
-export type NewGotchi = (patch: Patch, instance: FabricInstance, genome: Genome) => Gotchi
-
 export class Gotchi {
     private shapingTime = 60
     private twitcher?: Twitcher
@@ -102,14 +100,18 @@ export class Gotchi {
         this.state.instance.snapshot()
     }
 
-    public saveGenome(genome: Genome): void {
-        this.state.genome = genome
-        this.state.patch.genome = genome
+    public get genome(): Genome {
+        return this.state.genome
     }
 
-    public recycled(instance: FabricInstance, genome?: Genome): Gotchi {
-        const patchGenome = this.state.patch.genome
-        const state: IGotchiState = {...this.state, instance, genome: genome ? genome : patchGenome, directionHistory:[]}
+    public set genome(genome: Genome) {
+        this.state.genome = genome
+        this.state.patch.storedGenes = genome.geneData
+    }
+
+    public recycled(instance: FabricInstance, mutant?: IGeneData[]): Gotchi {
+        const genome = mutant ? fromGeneData(mutant) : this.genome
+        const state: IGotchiState = {...this.state, instance, genome, directionHistory: []}
         return new Gotchi(state)
     }
 
@@ -123,10 +125,6 @@ export class Gotchi {
 
     public get instance(): FabricInstance {
         return this.state.instance
-    }
-
-    public get genome(): Genome {
-        return this.state.genome
     }
 
     public get autopilot(): boolean {
@@ -169,7 +167,7 @@ export class Gotchi {
         return extremity
     }
 
-    public mutatedGenes(): IGeneData[] {
+    public mutatedGeneData(): IGeneData[] {
         const counts = DIRECTIONS.map(dir => {
             const count = this.state.directionHistory.filter(d => d === dir).length
             return ({dir, count})
@@ -184,7 +182,7 @@ export class Gotchi {
             }
         }).filter(count => count.count > 0)
         const geneNames = nonzero.map(d => d.dir).map(directionGene)
-        return this.state.genome.withDirectionMutations(geneNames).genomeData
+        return this.state.genome.withDirectionMutations(geneNames).geneData
     }
 
     public get age(): number {

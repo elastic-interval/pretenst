@@ -3,30 +3,24 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Color, Face3, Vector3 } from "three"
+import { Vector3 } from "three"
 
 import { FabricInstance } from "../fabric/fabric-instance"
 
-import { emptyGenome, fromGenomeData, Genome } from "./genome"
+import { emptyGenome, fromGeneData, IGeneData } from "./genome"
 import { Gotchi } from "./gotchi"
 import { ICoords, Island, PatchCharacter } from "./island"
-import {
-    FAUNA_PATCH_COLOR,
-    FLORA_PATCH_COLOR,
-    HEXAGON_POINTS,
-    NORMAL_SPREAD,
-    SCALE_X,
-    SCALE_Y,
-    SIX,
-    UP,
-} from "./island-geometry"
+import { HEXAGON_POINTS, NORMAL_SPREAD, SCALE_X, SCALE_Y, SIX, UP } from "./island-geometry"
+import { SatoshiTree } from "./satoshi-tree"
 
 export class Patch {
+    // public gotchi?: Gotchi
+    public satoshiTree?: SatoshiTree
     public readonly center: Vector3
     public readonly name: string
     public adjacent: (Patch | undefined)[] = []
     public rotation = 2
-    private _genome?: Genome
+    private geneData?: IGeneData[]
 
     constructor(
         public readonly island: Island,
@@ -44,25 +38,25 @@ export class Patch {
         }
     }
 
-    public get genome(): Genome {
-        if (!this._genome) {
+    public get storedGenes(): IGeneData[] {
+        const current = this.geneData
+        if (!current) {
             const item = localStorage.getItem(this.name)
-            this._genome = item ? fromGenomeData(JSON.parse(item)) : emptyGenome()
-            console.log(`Loading genome from ${this.name}`, this._genome)
+            const geneData = item ? JSON.parse(item) : emptyGenome()
+            console.log(`Loading genome from ${this.name}`, geneData)
+            this.geneData = geneData
+            return geneData
         }
-        return fromGenomeData(this._genome.genomeData)
+        return current
     }
 
-    public set genome(genome: Genome) {
-        this._genome = genome
-        const data = genome.genomeData
-        localStorage.setItem(this.name, JSON.stringify(data))
+    public set storedGenes(geneData: IGeneData[]) {
+        this.geneData = geneData
+        localStorage.setItem(this.name, JSON.stringify(this.geneData))
     }
 
-    public createNewGotchi(instance: FabricInstance, genome?: Genome): Gotchi | undefined {
-        if (!genome) {
-            genome = this.genome
-        }
+    public createNewGotchi(instance: FabricInstance, mutant?: IGeneData[]): Gotchi | undefined {
+        const genome = fromGeneData(mutant || this.storedGenes)
         return this.island.createNewGotchi(this, instance, genome)
     }
 
@@ -99,28 +93,5 @@ export class Patch {
             add(new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], NORMAL_SPREAD).normalize())
         }
         return array
-    }
-
-    public addSurfaceGeometry(vertices: Vector3[], faces: Face3[]): void {
-        vertices.push(...HEXAGON_POINTS.map(hexPoint => new Vector3().copy(this.center).addScaledVector(hexPoint, 0.99)))
-        vertices.push(this.center)
-        for (let a = 0; a < SIX; a++) {
-            const b = (a + 1) % SIX
-            const vertexNormals = [
-                UP,
-                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[a], NORMAL_SPREAD).normalize(),
-                new Vector3().add(UP).addScaledVector(HEXAGON_POINTS[b], NORMAL_SPREAD).normalize(),
-            ]
-            faces.push(new Face3(SIX, a, b, vertexNormals, this.color))
-        }
-    }
-
-    private get color(): Color {
-        switch (this.patchCharacter) {
-            case PatchCharacter.FaunaPatch:
-                return FAUNA_PATCH_COLOR
-            default:
-                return FLORA_PATCH_COLOR
-        }
     }
 }

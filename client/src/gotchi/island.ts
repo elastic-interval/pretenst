@@ -8,9 +8,10 @@ import { Vector3 } from "three"
 import { FabricInstance } from "../fabric/fabric-instance"
 
 import { Genome } from "./genome"
-import { Gotchi, NewGotchi } from "./gotchi"
+import { Gotchi } from "./gotchi"
 import { ADJACENT, PATCH_SURROUNDING_SHAPE } from "./island-geometry"
 import { Patch } from "./patch"
+import { SatoshiTree } from "./satoshi-tree"
 
 export interface ICoords {
     x: number
@@ -21,6 +22,11 @@ export interface ICoords {
 export enum PatchCharacter {
     FaunaPatch = "Fauna",
     FloraPatch = "Flora",
+}
+
+export interface ISource {
+    newGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi
+    newSatoshiTree(patch: Patch, instance: FabricInstance): SatoshiTree
 }
 
 function equals(a: ICoords, b: ICoords): boolean {
@@ -36,7 +42,7 @@ export class Island {
 
     private _seed: number
 
-    constructor(private newGotchi: NewGotchi, public readonly name: string, seed: number) {
+    constructor(private source: ISource, public readonly name: string, seed: number) {
         this._seed = seed % 2147483647
         this.fill()
     }
@@ -48,7 +54,11 @@ export class Island {
     }
 
     public createNewGotchi(patch: Patch, instance: FabricInstance, genome: Genome): Gotchi | undefined {
-        return this.newGotchi(patch, instance, genome)
+        return this.source.newGotchi(patch, instance, genome)
+    }
+
+    public createNewSatoshiTree(patch: Patch, instance: FabricInstance, tenscript: string): SatoshiTree {
+        return this.source.newSatoshiTree(patch, instance)
     }
 
     public findPatch(coords: ICoords): Patch | undefined {
