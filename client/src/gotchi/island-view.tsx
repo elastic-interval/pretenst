@@ -28,11 +28,12 @@ import { SatoshiTree } from "./satoshi-tree"
 const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
 
-export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvolution}: {
+export function IslandView({island, satoshiTrees, gotchi, evolution, startEvolution, stopEvolution}: {
     island: Island,
     satoshiTrees: SatoshiTree[],
     gotchi?: Gotchi,
     evolution?: Evolution,
+    startEvolution: () => void,
     stopEvolution: () => void,
 }): JSX.Element {
 
@@ -70,6 +71,9 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
         const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
         satoshiTrees[treeNumber].iterate()
         updateWhyThis(whyThis + 1)
+        if (!evolution && whyThis > 1200) {
+            startEvolution()
+        }
     })
 
     const perspective = camera as PerspectiveCamera
@@ -91,8 +95,13 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
     }, [])
 
     useEffect(() => {
+        updateWhyThis(0)
         orbit.current.autoRotate = !!(evolution)
     }, [evolution])
+
+    useEffect(() => {
+        updateWhyThis(0)
+    }, [gotchi])
 
     return (
         <group>

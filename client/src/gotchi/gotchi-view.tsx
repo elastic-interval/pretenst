@@ -42,14 +42,20 @@ export function GotchiView({island, homePatch, createInstance}: {
         return () => sub.unsubscribe()
     }, [gotchi])
 
+    const onEvolve = (toEvolve: Gotchi) => setEvolution(new Evolution(createInstance, toEvolve))
+    const startEvolution = () => {
+        setActive(true)
+        if (gotchi) {
+            onEvolve(gotchi)
+        }
+    }
     const stopEvolution = () => {
         setEvolution(undefined)
         setActive(false)
         if (gotchi) {
-            setGotchi(gotchi.recycled(gotchi.instance))
+            setEvolution(undefined)
         }
     }
-    const onEvolve = (toEvolve: Gotchi) => setEvolution(new Evolution(createInstance, toEvolve))
     return (
         <div id="view-container" style={{
             position: "absolute",
@@ -63,6 +69,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                     satoshiTrees={satoshiTrees}
                     gotchi={gotchi}
                     evolution={evolution}
+                    startEvolution={startEvolution}
                     stopEvolution={stopEvolution}
                 />
             </Canvas>
