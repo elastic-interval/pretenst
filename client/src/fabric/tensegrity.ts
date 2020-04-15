@@ -56,7 +56,7 @@ export class Tensegrity {
     ) {
         this.instance.clear()
         this.life$ = new BehaviorSubject(new Life(numericFeature, this, Stage.Growing))
-        const brick = new TensegrityBuilder(this).createBrickAt(location, symmetrical, rotation, percentOrHundred())
+        const brick = new TensegrityBuilder(this).createBrickAt(location, symmetrical, percentOrHundred())
         this.bricks = [brick]
         this.activeTenscript = [{tree: this.tenscript.tree, brick, tensegrity: this}]
     }

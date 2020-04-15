@@ -87,7 +87,7 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
 }
 
 export class Gotchi {
-    private shapingTime = 200
+    private shapingTime = 50
     private twitcher?: Twitcher
 
     constructor(public readonly state: IGotchiState, public embryo?: Tensegrity) {

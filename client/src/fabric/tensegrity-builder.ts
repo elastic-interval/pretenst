@@ -3,7 +3,7 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { FabricFeature, IntervalRole, Stage } from "eig"
+import { FabricFeature, IntervalRole } from "eig"
 import { Matrix4, Vector3 } from "three"
 
 import { IMark, MarkAction } from "./tenscript"
@@ -40,16 +40,9 @@ export class TensegrityBuilder {
     constructor(private tensegrity: Tensegrity) {
     }
 
-    public createBrickAt(midpoint: Vector3, symmetrical: boolean, rotation: number, scale: IPercent): IBrick {
+    public createBrickAt(midpoint: Vector3, symmetrical: boolean, scale: IPercent): IBrick {
         const points = createBrickPointsAt(Triangle.PPP, scale, midpoint)
-        const brick = this.createBrick(points, Triangle.NNN, scale)
-        if (symmetrical) {
-            const instance = this.tensegrity.instance
-            instance.iterate(Stage.Growing)
-            instance.apply(toSymmetricalMatrix(brick, rotation, index => instance.unitVector(index)))
-            instance.refreshFloatView()
-        }
-        return brick
+        return this.createBrick(points, Triangle.NNN, scale)
     }
 
     public createConnectedBrick(brickA: IBrick, triangle: Triangle, scale: IPercent): IBrick {
@@ -64,7 +57,7 @@ export class TensegrityBuilder {
         this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
         if (brickWasViolated !== violated()) {
             const instance = this.tensegrity.instance
-            instance.apply(toSymmetricalMatrix(brickA, 0, index => instance.unitVector(index)))
+            instance.apply(toSymmetricalMatrix(brickA, this.tensegrity.rotation, index => instance.unitVector(index)))
         }
         return brickB
     }
@@ -101,7 +94,7 @@ export class TensegrityBuilder {
     public createFaceIntervals(faces: IFace[], mark: IMark): IFaceInterval[] {
         const centerBrickFaceIntervals = () => {
             const brick = this.createBrickAt(
-                averageLocation(faces.map(face => face.location())), false, 0, factorToPercent(averageScaleFactor(faces)),
+                averageLocation(faces.map(face => face.location())), false, factorToPercent(averageScaleFactor(faces)),
             )
             return faces.map(face => {
                 const opposing = brick.faces.filter(({negative, removed}) => !removed && negative !== face.negative)

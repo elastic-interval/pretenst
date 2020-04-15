@@ -49,7 +49,7 @@ export async function startReact(
                 case FabricFeature.Drag:
                     return defaultValue * 0.7
                 case FabricFeature.IntervalCountdown:
-                    return defaultValue * 2
+                    return defaultValue * 0.5
                 case FabricFeature.StiffnessFactor:
                     return defaultValue * 4
                 case FabricFeature.RealizingCountdown:
@@ -69,6 +69,8 @@ export async function startReact(
         const satoshiTreeNumericFeature = (feature: FabricFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
+                case FabricFeature.IntervalCountdown:
+                    return defaultValue * 0.1
                 case FabricFeature.Antigravity:
                     return defaultValue * 0.3
                 case FabricFeature.Drag:

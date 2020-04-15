@@ -19,7 +19,7 @@ export class Patch {
     public readonly center: Vector3
     public readonly name: string
     public adjacent: (Patch | undefined)[] = []
-    public rotation = 2
+    public rotation = 0
     private geneData?: IGeneData[]
 
     constructor(
