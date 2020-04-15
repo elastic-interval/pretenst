@@ -6,9 +6,8 @@
 import * as React from "react"
 import { useEffect, useState } from "react"
 import { useFrame, useThree, useUpdate } from "react-three-fiber"
-import { DoubleSide, Geometry, PerspectiveCamera, Vector3 } from "three"
+import { DoubleSide, PerspectiveCamera, Vector3 } from "three"
 
-import { FORWARD, RIGHT } from "../fabric/fabric-instance"
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
@@ -16,6 +15,7 @@ import { Direction, Gotchi } from "./gotchi"
 import { Island, PatchCharacter } from "./island"
 import {
     ALTITUDE,
+    ARROW_GEOMETRY,
     FAUNA_PATCH_COLOR,
     FLORA_PATCH_COLOR,
     HEMISPHERE_COLOR,
@@ -51,10 +51,7 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
             evolution.getMidpoint(midpoint)
             bestDistance = 16
         } else if (gotchi) {
-            const mature = gotchi.iterate(midpoint)
-            if (!mature) {
-                updateWhyThis(whyThis + 1)
-            }
+            gotchi.iterate(midpoint)
             if (gotchi.growing || gotchi.direction !== Direction.Rest) {
                 bestDistance = 8
             }
@@ -71,9 +68,8 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
         target.add(moveTarget)
         orb.update()
         const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
-        if (!satoshiTrees[treeNumber].iterate()) {
-            updateWhyThis(whyThis + 1)
-        }
+        satoshiTrees[treeNumber].iterate()
+        updateWhyThis(whyThis + 1)
     })
 
     const perspective = camera as PerspectiveCamera
@@ -84,8 +80,8 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
         perspective.far = SPACE_RADIUS * 2
         perspective.near = 0.001
         orb.object = perspective
-        orb.minPolarAngle = -0.98 * Math.PI / 2
-        orb.maxPolarAngle = 0.8 * Math.PI
+        orb.minPolarAngle = 0
+        orb.maxPolarAngle = Math.PI / 2
         orb.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
         orb.zoomSpeed = 0.5
         orb.enableZoom = true
@@ -102,7 +98,8 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
                 {evolution ? <EvolutionScene evolution={evolution}/> : (gotchi ? (
-                    <GotchiComponent gotchi={gotchi} faces={true}/>) : undefined)}
+                    <GotchiComponent gotchi={gotchi} faces={true}/>
+                ) : undefined)}
                 {island.patches.map(patch => {
                     const position = patch.positionArray
                     const normal = patch.normalArray
@@ -138,48 +135,45 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
     )
 }
 
-function directionGeometry(): Geometry {
-    const v = () => new Vector3(0, 0, 0)
-    const ARROW_LENGTH = 5
-    const ARROW_WIDTH = 0.15
-    const ARROW_TIP_LENGTH_FACTOR = 1.3
-    const ARROW_TIP_WIDTH_FACTOR = 1.5
-    const origin = v()
-    const arrowToLx = v().addScaledVector(RIGHT, -ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(FORWARD, ARROW_LENGTH)
-    const arrowToL = v().addScaledVector(RIGHT, -ARROW_WIDTH).addScaledVector(FORWARD, ARROW_LENGTH)
-    const arrowToR = v().addScaledVector(RIGHT, ARROW_WIDTH).addScaledVector(FORWARD, ARROW_LENGTH)
-    const arrowToRx = v().addScaledVector(RIGHT, ARROW_WIDTH * ARROW_TIP_WIDTH_FACTOR).addScaledVector(FORWARD, ARROW_LENGTH)
-    const arrowTip = v().addScaledVector(FORWARD, ARROW_LENGTH * ARROW_TIP_LENGTH_FACTOR)
-    const geometry = new Geometry()
-    geometry.vertices = [
-        origin, arrowToL, origin, arrowToR,
-        arrowToRx, arrowTip, arrowToLx, arrowTip,
-        arrowToRx, arrowToR, arrowToLx, arrowToL,
-    ]
-    geometry.computeBoundingBox()
-    return geometry
-}
-
-const DIRECTION_GEOMETRY = directionGeometry()
-
 function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
+    const height = 6
     const midpoint = new Vector3()
+    evolution.getMidpoint(midpoint)
+    const target = evolution.target
     return (
         <group>
             {evolution.evolvers.map(({gotchi, index}) => (
                 <GotchiComponent key={`evolving-gotchi-${index}`} gotchi={gotchi} faces={false}/>
             ))}
-            <lineSegments
-                geometry={evolutionTargetGeometry(evolution.getMidpoint(midpoint), evolution.target)}
-            >
+            <lineSegments>
+                <bufferGeometry attach="geometry">
+                    <bufferAttribute
+                        attachObject={["attributes", "position"]}
+                        array={new Float32Array([
+                            midpoint.x, 0, midpoint.z,
+                            midpoint.x, height, midpoint.z,
+                            midpoint.x, height, midpoint.z,
+                            target.x, height, target.z,
+                            target.x, height, target.z,
+                            target.x, 0, target.z,
+                        ])}
+                        count={6}
+                        itemSize={3}
+                        onUpdate={self => self.needsUpdate = true}
+                    />
+                </bufferGeometry>
                 <lineBasicMaterial attach="material" color={"#cace02"}/>
             </lineSegments>
         </group>
     )
 }
 
-function GotchiComponent({gotchi, faces}: { gotchi: Gotchi, faces: boolean }): JSX.Element {
-    const floatView = gotchi.state.instance.floatView
+function GotchiComponent({gotchi, faces}: {
+    gotchi: Gotchi,
+    faces: boolean,
+}): JSX.Element {
+    const {topJointLocation, target, state, showDirection} = gotchi
+    const floatView = state.instance.floatView
     return (
         <group>
             <lineSegments geometry={floatView.lineGeometry}>
@@ -195,13 +189,25 @@ function GotchiComponent({gotchi, faces}: { gotchi: Gotchi, faces: boolean }): J
                         color="white"/>
                 </mesh>
             )}
-            {!gotchi.showDirection ? undefined : (
+            {!showDirection ? undefined : (
                 <group>
-                    <lineSegments geometry={gotchiToTargetGeometry(gotchi.topJointLocation, gotchi.target)}>
+                    <lineSegments>
+                        <bufferGeometry attach="geometry">
+                            <bufferAttribute
+                                attachObject={["attributes", "position"]}
+                                array={new Float32Array([
+                                    topJointLocation.x, topJointLocation.y, topJointLocation.z,
+                                    target.x, topJointLocation.y, target.z,
+                                ])}
+                                count={2}
+                                itemSize={3}
+                                onUpdate={self => self.needsUpdate = true}
+                            />
+                        </bufferGeometry>
                         <lineBasicMaterial attach="material" color={"#cecb05"}/>
                     </lineSegments>
                     <lineSegments
-                        geometry={DIRECTION_GEOMETRY}
+                        geometry={ARROW_GEOMETRY}
                         quaternion={gotchi.directionQuaternion}
                         position={gotchi.topJointLocation}
                     >
@@ -211,22 +217,6 @@ function GotchiComponent({gotchi, faces}: { gotchi: Gotchi, faces: boolean }): J
             )}
         </group>
     )
-}
-
-function gotchiToTargetGeometry(gotchiLocation: Vector3, target: Vector3): Geometry {
-    const geom = new Geometry()
-    geom.vertices = [gotchiLocation, new Vector3(target.x, gotchiLocation.y, target.z)]
-    return geom
-}
-
-function evolutionTargetGeometry(evoMidpoint: Vector3, target: Vector3): Geometry {
-    const geom = new Geometry()
-    const height = 6
-    geom.vertices = [
-        new Vector3(evoMidpoint.x, 0, evoMidpoint.z), new Vector3(evoMidpoint.x, height, evoMidpoint.z),
-        new Vector3(evoMidpoint.x, height, evoMidpoint.z), new Vector3(target.x, height, target.z),
-    ]
-    return geom
 }
 
 function SatoshiTreeComponent({satoshiTree}: { satoshiTree: SatoshiTree }): JSX.Element {

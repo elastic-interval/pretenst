@@ -75,6 +75,8 @@ export async function startReact(
                     return defaultValue * 0.3
                 case FabricFeature.Drag:
                     return defaultValue * 0.7
+                case FabricFeature.StiffnessFactor:
+                    return defaultValue * 5
                 default:
                     return defaultValue
             }
