@@ -79,6 +79,7 @@ export function FabricView({
 }): JSX.Element {
 
     const viewContainer = document.getElementById("view-container") as HTMLElement
+    const [whyThis, updateWhyThis] = useState(0)
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     if (!perspective) {
@@ -137,6 +138,14 @@ export function FabricView({
             } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
                 tensegrity.transition = {stage: nextStage}
             }
+            switch (nextStage) {
+                case Stage.Pretensing:
+                case Stage.Pretenst:
+                    break
+                default:
+                    updateWhyThis(whyThis + 1)
+            }
+
         }
     })
 
