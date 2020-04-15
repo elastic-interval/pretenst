@@ -47,7 +47,7 @@ export class Patch {
         const current = this.geneData
         if (!current) {
             const item = localStorage.getItem(this.name)
-            const geneData = item ? JSON.parse(item) : emptyGenome()
+            const geneData = item ? JSON.parse(item) : emptyGenome().geneData
             console.log(`Loading genome from ${this.name}`, geneData)
             this.geneData = geneData
             return geneData
