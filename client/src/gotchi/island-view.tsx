@@ -82,6 +82,7 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
         orb.object = perspective
         orb.minPolarAngle = 0
         orb.maxPolarAngle = Math.PI / 2
+        orb.minDistance = 0.1
         orb.maxDistance = SPACE_RADIUS * SPACE_SCALE * 0.9
         orb.zoomSpeed = 0.5
         orb.enableZoom = true

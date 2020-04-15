@@ -34,8 +34,8 @@ export class Patch {
     public get onClick(): () => void {
         return () => {
             if (this.satoshiTree) {
-                console.log("remove", this.name)
                 this.satoshiTree.removeRandomInterval()
+                console.log("remove", this.name)
             } else {
                 this.rotation = (this.rotation + 1) % SIX
                 console.log("rotate", this.name, this.rotation)

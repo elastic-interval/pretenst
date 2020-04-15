@@ -87,10 +87,9 @@ export const SPACE_RADIUS = 10000
 export const SPACE_SCALE = 1
 
 function arrowVertices(): Vector3[] {
-    console.log("vertices")
     const v = () => new Vector3(0, 0, 0)
-    const ARROW_LENGTH = 5
-    const ARROW_WIDTH = 0.15
+    const ARROW_LENGTH = 3
+    const ARROW_WIDTH = 0.2
     const ARROW_TIP_LENGTH_FACTOR = 1.3
     const ARROW_TIP_WIDTH_FACTOR = 1.5
     const origin = v()
