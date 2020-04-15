@@ -98,22 +98,20 @@ impl Interval {
         stage: Stage,
         realizing_nuance: f32,
     ) {
-        let mut ideal_length = self.ideal_length_now();
+        let mut ideal = self.ideal_length_now();
         let real_length = self.calculate_current_length(joints, faces);
         let is_push = self.is_push();
         if is_push {
             match stage {
                 Stage::Slack => {}
                 Stage::Growing | Stage::Shaping => {
-                    ideal_length *= 1_f32 + world.shaping_pretenst_factor;
+                    ideal *= 1_f32 + world.shaping_pretenst_factor;
                 }
-                Stage::Pretensing => {
-                    ideal_length *= 1_f32 + world.pretenst_factor * realizing_nuance
-                }
-                Stage::Pretenst => ideal_length *= 1_f32 + world.pretenst_factor,
+                Stage::Pretensing => ideal *= 1_f32 + world.pretenst_factor * realizing_nuance,
+                Stage::Pretenst => ideal *= 1_f32 + world.pretenst_factor,
             }
         }
-        self.strain = (real_length - ideal_length) / ideal_length;
+        self.strain = (real_length - ideal) / ideal;
         if !world.push_and_pull
             && self.interval_role != IntervalRole::FaceDistancer
             && (is_push && self.strain > 0_f32 || !is_push && self.strain < 0_f32)
@@ -169,7 +167,7 @@ impl Interval {
             let force_vector: Vector3<f32> = self.unit.clone() * force / 2_f32;
             joints[self.alpha_index].force += &force_vector;
             joints[self.omega_index].force -= &force_vector;
-            let half_mass = ideal_length * self.linear_density / 2_f32;
+            let half_mass = ideal * self.linear_density / 2_f32;
             joints[self.alpha_index].interval_mass += half_mass;
             joints[self.omega_index].interval_mass += half_mass;
         }

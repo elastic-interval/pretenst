@@ -11,12 +11,10 @@ import {
     Material,
     MeshLambertMaterial,
     MeshPhongMaterial,
-    VertexColors,
 } from "three"
 
 export const SELECTION_COLOR = "#91934f"
 export const JOURNEY_LINE_COLOR = "#cace02"
-export const DIRECTION_LINE_COLOR = "#05cec0"
 export const JOINT_COLOR = "#e83ada"
 
 const RAINBOW_GRADIENT = [
@@ -40,15 +38,13 @@ const RAINBOW_COLORS = RAINBOW_GRADIENT.map(colorString => new Color(colorString
 //     `[${(color.r).toFixed(4)}, ${(color.g).toFixed(4)}, ${(color.b).toFixed(4)}],`
 // )).join("\n")}\n];`)
 
-const lights = true
-
 export const SURFACE = new MeshPhongMaterial({
     color: new Color("#1c1608"),
     side: DoubleSide,
 })
 
 export const LINE_VERTEX_COLORS = new LineBasicMaterial({
-    vertexColors: VertexColors,
+    vertexColors: true,
 })
 
 export const SCALE_LINE = new LineBasicMaterial({
@@ -57,15 +53,13 @@ export const SCALE_LINE = new LineBasicMaterial({
 
 export const SELECT_MATERIAL = new MeshPhongMaterial({
     color: new Color(SELECTION_COLOR),
-    lights: true,
 })
 
 export const JOINT_MATERIAL = new MeshPhongMaterial({
     color: new Color(JOINT_COLOR),
-    lights: true,
 })
 
-const RAINBOW_LAMBERT = RAINBOW_COLORS.map(color => new MeshLambertMaterial({color, lights}))
+const RAINBOW_LAMBERT = RAINBOW_COLORS.map(color => new MeshLambertMaterial({color}))
 
 export function rainbowMaterial(nuance: number): Material {
     const index = Math.floor(nuance * RAINBOW_LAMBERT.length)
@@ -108,5 +102,5 @@ export function roleColor(intervalRole?: IntervalRole): Color {
 
 export function roleMaterial(intervalRole: IntervalRole): Material {
     const color = roleColor(intervalRole)
-    return new MeshLambertMaterial({color, lights})
+    return new MeshLambertMaterial({color})
 }

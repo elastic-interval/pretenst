@@ -4,9 +4,9 @@
  */
 
 import * as React from "react"
-import { useCallback, useEffect, useState } from "react"
-import { useRender, useThree, useUpdate } from "react-three-fiber"
-import { DoubleSide, Geometry, PerspectiveCamera, Vector3, VertexColors } from "three"
+import { useEffect, useState } from "react"
+import { useFrame, useThree, useUpdate } from "react-three-fiber"
+import { DoubleSide, Geometry, PerspectiveCamera, Vector3 } from "three"
 
 import { FORWARD, RIGHT } from "../fabric/fabric-instance"
 import { Orbit } from "../view/orbit"
@@ -36,11 +36,11 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
     stopEvolution: () => void,
 }): JSX.Element {
 
+    const {camera} = useThree()
     const viewContainer = document.getElementById("view-container") as HTMLElement
-    const [trigger, setTrigger] = useState(0)
-
+    const [whyThis, updateWhyThis] = useState(0)
     const midpoint = new Vector3()
-    useRender(() => {
+    useFrame(() => {
         let bestDistance
         if (evolution) {
             if (evolution.finished) {
@@ -51,7 +51,10 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
             evolution.getMidpoint(midpoint)
             bestDistance = 16
         } else if (gotchi) {
-            gotchi.iterate(midpoint)
+            const mature = gotchi.iterate(midpoint)
+            if (!mature) {
+                updateWhyThis(whyThis + 1)
+            }
             if (gotchi.growing || gotchi.direction !== Direction.Rest) {
                 bestDistance = 8
             }
@@ -68,11 +71,11 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, stopEvoluti
         target.add(moveTarget)
         orb.update()
         const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
-        satoshiTrees[treeNumber].iterate()
-        setTrigger(trigger + 1)
-    }, true, [gotchi, evolution, trigger])
+        if (!satoshiTrees[treeNumber].iterate()) {
+            updateWhyThis(whyThis + 1)
+        }
+    })
 
-    const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const orbit = useUpdate<Orbit>(orb => {
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + 2)
@@ -177,55 +180,19 @@ function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
 
 function GotchiComponent({gotchi, faces}: { gotchi: Gotchi, faces: boolean }): JSX.Element {
     const floatView = gotchi.state.instance.floatView
-    const update = useCallback(self => {
-        self.needsUpdate = true
-        self.parent.computeBoundingSphere()
-    }, [])
     return (
         <group>
-            <lineSegments>
-                <lineBasicMaterial attach="material" vertexColors={VertexColors}/>
-                <bufferGeometry attach="geometry">
-                    <bufferAttribute
-                        attachObject={["attributes", "position"]}
-                        array={floatView.lineLocations}
-                        count={floatView.lineLocations.length / 3}
-                        itemSize={3}
-                        onUpdate={update}
-                    />
-                    <bufferAttribute
-                        attachObject={["attributes", "color"]}
-                        array={floatView.lineColors}
-                        count={floatView.lineColors.length / 3}
-                        itemSize={3}
-                        onUpdate={update}
-                    />
-                </bufferGeometry>
+            <lineSegments geometry={floatView.lineGeometry}>
+                <lineBasicMaterial attach="material" vertexColors={true}/>
             </lineSegments>
             {!faces ? undefined : (
-                <mesh>
+                <mesh geometry={floatView.faceGeometry}>
                     <meshPhongMaterial
                         attach="material"
                         transparent={true}
                         side={DoubleSide}
                         opacity={0.6}
                         color="white"/>
-                    <bufferGeometry attach="geometry">
-                        <bufferAttribute
-                            attachObject={["attributes", "position"]}
-                            array={floatView.faceLocations}
-                            count={floatView.faceLocations.length / 3}
-                            itemSize={3}
-                            onUpdate={update}
-                        />
-                        <bufferAttribute
-                            attachObject={["attributes", "normal"]}
-                            array={floatView.faceNormals}
-                            count={floatView.faceNormals.length / 3}
-                            itemSize={3}
-                            onUpdate={update}
-                        />
-                    </bufferGeometry>
                 </mesh>
             )}
             {!gotchi.showDirection ? undefined : (
@@ -264,29 +231,9 @@ function evolutionTargetGeometry(evoMidpoint: Vector3, target: Vector3): Geometr
 
 function SatoshiTreeComponent({satoshiTree}: { satoshiTree: SatoshiTree }): JSX.Element {
     const floatView = satoshiTree.instance.floatView
-    const update = useCallback(self => {
-        self.needsUpdate = true
-        self.parent.computeBoundingSphere()
-    }, [])
     return (
-        <mesh>
+        <mesh geometry={floatView.faceGeometry}>
             <meshPhongMaterial attach="material" side={DoubleSide} color="green"/>
-            <bufferGeometry attach="geometry">
-                <bufferAttribute
-                    attachObject={["attributes", "position"]}
-                    array={floatView.faceLocations}
-                    count={floatView.faceLocations.length / 3}
-                    itemSize={3}
-                    onUpdate={update}
-                />
-                <bufferAttribute
-                    attachObject={["attributes", "normal"]}
-                    array={floatView.faceNormals}
-                    count={floatView.faceNormals.length / 3}
-                    itemSize={3}
-                    onUpdate={update}
-                />
-            </bufferGeometry>
         </mesh>
     )
 }

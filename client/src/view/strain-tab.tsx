@@ -10,7 +10,7 @@ import { useEffect, useRef, useState } from "react"
 import { FaSlidersH } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
-import { BufferGeometry, Float32BufferAttribute, Geometry, Vector3 } from "three"
+import { Geometry, Vector3 } from "three"
 
 import { FloatFeature } from "../fabric/fabric-features"
 import { Tensegrity } from "../fabric/tensegrity"
@@ -19,10 +19,10 @@ import { IStoredState } from "../storage/stored-state"
 
 import { Grouping } from "./control-tabs"
 import { FeaturePanel } from "./feature-panel"
-import { LINE_VERTEX_COLORS, SCALE_LINE } from "./materials"
+import { SCALE_LINE } from "./materials"
 
 const SCALE_WIDTH = 0.7
-const NEEDLE_WIDTH = 1.4
+// const NEEDLE_WIDTH = 1.4
 const SCALE_MAX = 3.5
 
 const FEATURES = [
@@ -46,28 +46,28 @@ function scaleGeometry(middleTick: boolean): Geometry {
     return geometry
 }
 
-function needleGeometry(
-    intervals: IInterval[], lineColors: Float32Array,
-    values: Float32Array, midValue: number, maxValue: number,
-): BufferGeometry {
-    const position = new Float32Array(values.length * 2 * 3)
-    let offset = 0
-    intervals.forEach(interval => {
-        const value = values[interval.index]
-        const unboundedHeight = (value - midValue) / (maxValue - midValue)
-        const height = unboundedHeight < -1 ? -1 : unboundedHeight > 1 ? 1 : unboundedHeight
-        position[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
-        position[offset++] = height * SCALE_MAX
-        position[offset++] = 0
-        position[offset++] = SCALE_WIDTH * NEEDLE_WIDTH
-        position[offset++] = height * SCALE_MAX
-        position[offset++] = 0
-    })
-    const geometry = new BufferGeometry()
-    geometry.addAttribute("position", new Float32BufferAttribute(position, 3))
-    geometry.addAttribute("color", new Float32BufferAttribute(lineColors, 3))
-    return geometry
-}
+// function needleGeometry(
+//     intervals: IInterval[], lineColors: Float32Array,
+//     values: Float32Array, midValue: number, maxValue: number,
+// ): BufferGeometry {
+//     const position = new Float32Array(values.length * 2 * 3)
+//     let offset = 0
+//     intervals.forEach(interval => {
+//         const value = values[interval.index]
+//         const unboundedHeight = (value - midValue) / (maxValue - midValue)
+//         const height = unboundedHeight < -1 ? -1 : unboundedHeight > 1 ? 1 : unboundedHeight
+//         position[offset++] = -SCALE_WIDTH * NEEDLE_WIDTH
+//         position[offset++] = height * SCALE_MAX
+//         position[offset++] = 0
+//         position[offset++] = SCALE_WIDTH * NEEDLE_WIDTH
+//         position[offset++] = height * SCALE_MAX
+//         position[offset++] = 0
+//     })
+//     const geometry = new BufferGeometry()
+//     geometry.addAttribute("position", new Float32BufferAttribute(position, 3))
+//     geometry.addAttribute("color", new Float32BufferAttribute(lineColors, 3))
+//     return geometry
+// }
 
 export function StrainTab({floatFeatures, tensegrity, storedState$}: {
     floatFeatures: Record<FabricFeature, FloatFeature>,
@@ -100,9 +100,9 @@ export function StrainTab({floatFeatures, tensegrity, storedState$}: {
         }): JSX.Element {
             return (
                 <group position={new Vector3(position, -0.15, 0)}>
-                    <lineSegments
-                        geometry={needleGeometry(intervals, floatView.lineColors, floats, mid, max)}
-                        material={LINE_VERTEX_COLORS}/>
+                    {/*<lineSegments*/}
+                    {/*    geometry={needleGeometry(intervals, floatView.lineColors, floats, mid, max)}*/}
+                    {/*    material={LINE_VERTEX_COLORS}/>*/}
                     <lineSegments geometry={scaleGeometry(middleTick)} material={SCALE_LINE}/>
                 </group>
             )

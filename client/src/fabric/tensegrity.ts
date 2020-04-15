@@ -5,7 +5,7 @@
 
 import { Fabric, FabricFeature, IntervalRole, Stage } from "eig"
 import { BehaviorSubject } from "rxjs"
-import { BufferGeometry, Float32BufferAttribute, Vector3 } from "three"
+import { Vector3 } from "three"
 
 import { IFabricOutput, IOutputInterval, IOutputJoint } from "../storage/download"
 import { IStoredState } from "../storage/stored-state"
@@ -201,24 +201,6 @@ export class Tensegrity {
 
     public get submergedJoints(): IJoint[] {
         return this.joints.filter(joint => joint.location().y < 0)
-    }
-
-    public get facesGeometry(): BufferGeometry {
-        const faceLocations = new Float32BufferAttribute(this.instance.floatView.faceLocations, 3)
-        const faceNormals = new Float32BufferAttribute(this.instance.floatView.faceNormals, 3)
-        const geometry = new BufferGeometry()
-        geometry.addAttribute("position", faceLocations)
-        geometry.addAttribute("normal", faceNormals)
-        return geometry
-    }
-
-    public get linesGeometry(): BufferGeometry {
-        const lineLocations = new Float32BufferAttribute(this.instance.floatView.lineLocations, 3)
-        const lineColors = new Float32BufferAttribute(this.instance.floatView.lineColors, 3)
-        const geometry = new BufferGeometry()
-        geometry.addAttribute("position", lineLocations)
-        geometry.addAttribute("color", lineColors)
-        return geometry
     }
 
     public startTightening(intervals: IFaceInterval[]): void {

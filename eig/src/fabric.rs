@@ -153,10 +153,6 @@ impl Fabric {
         self.age += world.iterations_per_frame as u32;
         self.request_stage(requested_stage, world)
             .or_else(|| self.on_iterations(world))
-        // match self.request_stage(requested_stage, world) {
-        //     None => self.on_iterations(world),
-        //     x => x,
-        // }
     }
 
     pub fn centralize(&mut self) {
@@ -241,13 +237,13 @@ impl Fabric {
             Stage::Shaping => {
                 self.set_altitude(0_f32);
                 match requested_stage {
-                    Stage::Pretensing => Some(self.start_realizing(world)),
+                    Stage::Pretensing => Some(self.start_pretensing(world)),
                     Stage::Slack => Some(self.set_stage(Stage::Slack)),
                     _ => None,
                 }
             }
             Stage::Slack => match requested_stage {
-                Stage::Pretensing => Some(self.start_realizing(world)),
+                Stage::Pretensing => Some(self.start_pretensing(world)),
                 Stage::Shaping => Some(self.slack_to_shaping(world)),
                 _ => None,
             },
@@ -340,7 +336,7 @@ impl Fabric {
         stage
     }
 
-    fn start_realizing(&mut self, world: &World) -> Stage {
+    fn start_pretensing(&mut self, world: &World) -> Stage {
         self.realizing_countdown = world.realizing_countdown;
         self.set_stage(Stage::Pretensing)
     }

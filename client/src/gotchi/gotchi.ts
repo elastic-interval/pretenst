@@ -87,7 +87,7 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
 }
 
 export class Gotchi {
-    private shapingTime = 60
+    private shapingTime = 200
     private twitcher?: Twitcher
 
     constructor(public readonly state: IGotchiState, public embryo?: Tensegrity) {
@@ -206,7 +206,7 @@ export class Gotchi {
         return this.getMidpoint().distanceTo(this.target)
     }
 
-    public iterate(midpoint?: Vector3): void {
+    public iterate(midpoint?: Vector3): boolean {
         const state = this.state
         const instance = state.instance
         const view = instance.view
@@ -232,16 +232,19 @@ export class Gotchi {
                         instance.iterate(Stage.Pretensing)
                     } else {
                         this.shapingTime--
-                        // console.log("shaping", this.shapingTime)
                     }
-                    break
+                    return false
+                case Stage.Pretensing:
+                    return true
                 case Stage.Pretenst:
                     extractGotchiFaces(embryo, state.muscles, state.extremities)
                     embryo.transition = {stage: Stage.Pretenst}
                     embryo.iterate()
                     this.embryo = undefined
                     this.twitcher = new Twitcher(state)
-                    break
+                    return true
+                default:
+                    return false
             }
         } else {
             instance.iterate(Stage.Pretenst)
@@ -252,6 +255,7 @@ export class Gotchi {
                     this.checkDirection()
                 }
             }
+            return true
         }
     }
 

@@ -58,6 +58,7 @@ export class Patch {
     public set storedGenes(geneData: IGeneData[]) {
         this.geneData = geneData
         localStorage.setItem(this.name, JSON.stringify(this.geneData))
+        console.log(`Saving genome to ${this.name}`, geneData)
     }
 
     public createGotchi(instance: FabricInstance): Gotchi | undefined {

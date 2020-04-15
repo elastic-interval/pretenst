@@ -26,7 +26,7 @@ export class SatoshiTree {
         }
     }
 
-    public iterate(): void {
+    public iterate(): boolean {
         const stage = this.tensegrity.life$.getValue().stage
         const nextStage = this.tensegrity.iterate()
         if (stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
@@ -34,20 +34,27 @@ export class SatoshiTree {
         } else if (nextStage !== undefined && nextStage !== stage && stage !== Stage.Pretensing) {
             this.tensegrity.transition = {stage: nextStage}
         }
-        if (nextStage === Stage.Shaping) {
-            if (this.shapingTime <= 0) {
-                const instance = this.instance
-                instance.fabric.adopt_lengths()
-                instance.iterate(Stage.Slack)
-                instance.iterate(Stage.Pretensing)
-            } else {
-                this.shapingTime--
-                // console.log("shaping", this.shapingTime)
-            }
-        }
         if (this.deadInterval) {
             this.tensegrity.removeInterval(this.deadInterval)
             this.deadInterval = undefined
+        }
+        switch (nextStage) {
+            case Stage.Shaping:
+                if (this.shapingTime <= 0) {
+                    const instance = this.instance
+                    instance.fabric.adopt_lengths()
+                    instance.iterate(Stage.Slack)
+                    instance.iterate(Stage.Pretensing)
+                } else {
+                    this.shapingTime--
+                    // console.log("shaping", this.shapingTime)
+                }
+                return false
+            case Stage.Pretensing:
+            case Stage.Pretenst:
+                return true
+            default:
+                return false
         }
     }
 }

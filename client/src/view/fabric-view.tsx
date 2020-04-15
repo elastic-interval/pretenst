@@ -6,11 +6,10 @@
 import { FabricFeature, IntervalRole, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useMemo, useRef, useState } from "react"
-import { DomEvent, extend, ReactThreeFiber, useRender, useThree, useUpdate } from "react-three-fiber"
+import { DomEvent, extend, ReactThreeFiber, useFrame, useThree, useUpdate } from "react-three-fiber"
 import { BehaviorSubject } from "rxjs"
 import {
     BackSide,
-    BufferAttribute,
     Color,
     CylinderGeometry,
     DoubleSide,
@@ -46,7 +45,6 @@ declare global {
         /* eslint-disable @typescript-eslint/interface-name-prefix */
         interface IntrinsicElements {
             orbit: ReactThreeFiber.Object3DNode<Orbit, typeof Orbit>
-            bufferAttribute: ReactThreeFiber.Node<BufferAttribute, typeof BufferAttribute>
         }
 
         /* eslint-enable @typescript-eslint/interface-name-prefix */
@@ -81,7 +79,6 @@ export function FabricView({
 }): JSX.Element {
 
     const viewContainer = document.getElementById("view-container") as HTMLElement
-    const [age, setAge] = useState(0)
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     if (!perspective) {
@@ -126,7 +123,7 @@ export function FabricView({
         orb.update()
     }, [])
 
-    useRender(() => {
+    useFrame(() => {
         const view = instance.view
         const target = selectedFaces.length > 0 ? facesMidpoint(selectedFaces) :
             new Vector3(view.midpoint_x(), view.midpoint_y(), view.midpoint_z())
@@ -141,10 +138,7 @@ export function FabricView({
                 tensegrity.transition = {stage: nextStage}
             }
         }
-        setAge(instance.fabric.age)
-    }, true, [
-        instance, age, life, shapeSelection, ellipsoids, selectedFaces,
-    ])
+    })
 
     function toggleFacesSelection(faceToToggle: IFace): void {
         if (selectedFaces.some(selected => selected.index === faceToToggle.index)) {
@@ -336,7 +330,7 @@ function LineView({tensegrity, selectedIntervals, storedState, toggleSelectedInt
         <group>
             <lineSegments
                 key="lines"
-                geometry={tensegrity.linesGeometry}
+                geometry={tensegrity.instance.floatView.lineGeometry}
                 material={LINE_VERTEX_COLORS}
             />
             {selectedIntervals.map(interval => (
@@ -392,7 +386,7 @@ function Faces({tensegrity, stage, selectFace}: {
             ref={meshRef}
             onPointerDown={onPointerDown}
             onPointerUp={onPointerUp}
-            geometry={tensegrity.facesGeometry}
+            geometry={tensegrity.instance.floatView.faceGeometry}
         >
             <meshPhongMaterial
                 attach="material"
