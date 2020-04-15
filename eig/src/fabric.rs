@@ -177,9 +177,6 @@ impl Fabric {
                 for joint in &mut self.joints {
                     joint.location.y += altitude - low_y;
                 }
-                for joint in &mut self.joints {
-                    joint.velocity.fill(0.0);
-                }
             }
             None => {}
         }
@@ -302,21 +299,27 @@ impl Fabric {
         match self.stage {
             Stage::Growing | Stage::Shaping => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, 0_f32, world.shaping_drag, 0_f32)
+                    joint.velocity_physics(world, 0_f32, true, world.shaping_drag, 0_f32)
                 }
             }
+            Stage::Slack => {}
             Stage::Pretensing => {
                 let nuanced_gravity = world.gravity * realizing_nuance;
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, nuanced_gravity, world.drag, realizing_nuance)
+                    joint.velocity_physics(
+                        world,
+                        nuanced_gravity,
+                        false,
+                        world.drag,
+                        realizing_nuance,
+                    )
                 }
             }
             Stage::Pretenst => {
                 for joint in &mut self.joints {
-                    joint.velocity_physics(world, world.gravity, world.drag, 1_f32)
+                    joint.velocity_physics(world, world.gravity, false, world.drag, 1_f32)
                 }
             }
-            _ => {}
         }
         for joint in &mut self.joints {
             joint.location_physics();

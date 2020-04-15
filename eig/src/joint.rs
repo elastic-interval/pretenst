@@ -34,11 +34,12 @@ impl Joint {
         &mut self,
         world: &World,
         gravity: f32,
+        never_below: bool,
         drag: f32,
         realizing_nuance: f32,
     ) {
         let altitude = self.location.y;
-        if altitude >= 0_f32 {
+        if altitude >= 0_f32 || never_below {
             self.velocity.y -= gravity;
             self.velocity += &self.force / self.interval_mass;
             self.velocity *= 1_f32 - drag;

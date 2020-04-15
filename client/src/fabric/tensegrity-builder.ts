@@ -53,6 +53,8 @@ export class TensegrityBuilder {
     }
 
     public createConnectedBrick(brickA: IBrick, triangle: Triangle, scale: IPercent): IBrick {
+        const violated = () => brickA.negativeAdjacent > 1 && brickA.postiveAdjacent > 1
+        const brickWasViolated = violated()
         const faceA = brickA.faces[triangle]
         const scaleA = percentToFactor(brickA.scale)
         const scaleB = scaleA * percentToFactor(scale)
@@ -60,6 +62,10 @@ export class TensegrityBuilder {
         const faceB = brickB.faces[brickB.base]
         const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
         this.connectFaces(faceA, faceB, factorToPercent((scaleA + scaleB) / 2), countdown)
+        if (brickWasViolated !== violated()) {
+            const instance = this.tensegrity.instance
+            instance.apply(toSymmetricalMatrix(brickA, 0, index => instance.unitVector(index)))
+        }
         return brickB
     }
 
@@ -152,7 +158,7 @@ export class TensegrityBuilder {
         const u = new Vector3().subVectors(trianglePoints[1], midpoint).normalize()
         const proj = new Vector3().add(x).multiplyScalar(x.dot(u))
         const z = u.sub(proj).normalize()
-        const y = new Vector3().crossVectors(z, x).normalize().multiplyScalar(0.2)
+        const y = new Vector3().crossVectors(z, x).normalize().multiplyScalar(0.5)
         const xform = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
         const base = negativeFace ? Triangle.NNN : Triangle.PPP
         const points = createBrickPointsAt(base, scale, new Vector3(0, 0, 0)) // todo: maybe raise it

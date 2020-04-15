@@ -17,7 +17,7 @@ export enum ControlTab {
     Realize = "Realize",
 }
 
-const VERSION = "2020-03-26"
+const VERSION = "2020-04-15"
 
 export interface IFeatureValue {
     numeric: number

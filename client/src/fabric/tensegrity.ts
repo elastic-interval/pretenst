@@ -32,7 +32,7 @@ import {
 
 function scaleToInitialStiffness(scale: IPercent): number {
     const scaleFactor = percentToFactor(scale)
-    return Math.pow(scaleFactor, 1.4) * 0.00005
+    return Math.pow(scaleFactor, 0.5) * 0.00001
 }
 
 export class Tensegrity {
