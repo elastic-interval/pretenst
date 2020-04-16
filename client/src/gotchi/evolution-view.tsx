@@ -38,7 +38,6 @@ export function EvolutionView({evolution, stopEvolution}: {
                     borderWidth: "2px",
                 }}>
                     <div className="p-1 my-2 w-100 text-center">
-                        {cycle === CYCLE_PATTERN[cycleIndex] ? undefined : <span>{cycle}/</span>}
                         {CYCLE_PATTERN.map((cycles, index) => (
                             <span
                                 key={`cycle-${index}`}
@@ -50,11 +49,11 @@ export function EvolutionView({evolution, stopEvolution}: {
                                     borderStyle: "solid",
                                     borderWidth: "1px",
                                 }}
-                            >{cycles}</span>
+                            >{index === cycleIndex && cycle < CYCLE_PATTERN[cycleIndex] ? `${cycle}/${cycles}` : cycles}</span>
                         ))}
                     </div>
                     <div className="m-2">
-                        {competitors.map(({name, proximity, generation, dead, saved}, index) => (
+                        {competitors.map(({name, proximity, tosses, dead, saved}, index) => (
                             <div key={`competitor-${index}`} style={{
                                 color: dead ? "#aba08d" : "#1d850b",
                                 backgroundColor: saved ? "#3bfa19" : "#ffffff",
@@ -62,7 +61,7 @@ export function EvolutionView({evolution, stopEvolution}: {
                             }}>
                                 <strong>{index}:</strong>
                                 <span className="mx-1">{proximity.toFixed(2)}</span>
-                                <span className="mx-1">"{name}:{generation}"</span>
+                                <span className="mx-1">"{name}:{tosses}"</span>
                             </div>
                         ))}
                     </div>

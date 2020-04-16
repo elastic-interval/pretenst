@@ -49,7 +49,10 @@ export function GotchiView({island, homePatch, createInstance}: {
         return () => sub.unsubscribe()
     }, [gotchi])
 
-    const onEvolve = (toEvolve: Gotchi) => setEvolution(new Evolution(createInstance, toEvolve))
+    const onEvolve = (toEvolve: Gotchi) => {
+        toEvolve.recycled(toEvolve.instance)
+        setEvolution(new Evolution(createInstance, toEvolve))
+    }
     const startEvolution = () => {
         setHappening(Happening.Evolving)
         if (gotchi) {

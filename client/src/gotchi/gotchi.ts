@@ -114,7 +114,7 @@ export class Gotchi {
     }
 
     public recycled(instance: FabricInstance, mutant?: IGeneData[]): Gotchi {
-        const genome = mutant ? fromGeneData(mutant) : this.genome
+        const genome = fromGeneData(mutant || this.patch.storedGenes)
         const state: IGotchiState = {...this.state, instance, genome, directionHistory: []}
         return new Gotchi(state)
     }

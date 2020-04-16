@@ -37,7 +37,7 @@ export function randomModifierName(): GeneName {
 
 export interface IGeneData {
     geneName: GeneName
-    generation: number
+    tosses: number
     geneString: string
 }
 
@@ -58,16 +58,16 @@ export function fromGeneData(geneData: IGeneData[]): Genome {
     if (geneData.length === 0) {
         return emptyGenome()
     }
-    const genes = geneData.map(({geneName, generation, geneString}) => {
+    const genes = geneData.map(({geneName, tosses, geneString}) => {
         const dice = deserializeGene(geneString)
-        return {geneName, generation, dice}
+        return {geneName, tosses, dice}
     })
     return new Genome(rollTheDice, genes)
 }
 
 export interface IGene {
     geneName: GeneName
-    generation: number
+    tosses: number
     dice: IDie[]
 }
 
@@ -76,7 +76,7 @@ function getGene(search: GeneName, genes: IGene[]): IGene {
     if (existing) {
         return existing
     }
-    const fresh: IGene = {geneName: search, generation: 1, dice: []}
+    const fresh: IGene = {geneName: search, tosses: 0, dice: []}
     genes.push(fresh)
     return fresh
 }
@@ -90,42 +90,42 @@ export class Genome {
     }
 
     public get twitchCount(): number {
-        const maxGeneration = this.genes.reduce((max, {generation}) => Math.max(max, generation), 1)
-        return Math.floor(Math.pow(maxGeneration, 0.66)) + 2
+        const maxTosses = this.genes.reduce((max, {tosses}) => Math.max(max, tosses), 0)
+        return Math.floor(Math.pow(maxTosses, 0.66)) + 2
     }
 
     public withDirectionMutations(directionNames: GeneName[]): Genome {
         const genesCopy: IGene[] = this.genes.map(gene => {
-            const {geneName, generation} = gene
+            const {geneName, tosses} = gene
             const dice = gene.dice.slice() // TODO: tweet this to the world
-            return {geneName, generation, dice}
+            return {geneName, tosses, dice}
         })
         directionNames.forEach(directionName => {
             const directionGene = getGene(directionName, genesCopy)
             mutateGene(() => this.roll(), directionGene)
         })
-        if (Math.random() > 0.6) {
+        if (Math.random() > 0.9) {
             const modifierName = randomModifierName()
             const modifierGene = getGene(modifierName, genesCopy)
-            mutateGene(() => this.roll(), modifierGene)
+            modifierGene.tosses++
         }
         return new Genome(this.roll, genesCopy)
     }
 
     public get geneData(): IGeneData[] {
         return this.genes.map(gene => {
-            const {geneName, generation, dice} = gene
+            const {geneName, tosses, dice} = gene
             const geneString = serializeGene(dice)
-            return <IGeneData>{geneName, generation, geneString}
+            return <IGeneData>{geneName, tosses, geneString}
         })
     }
 
-    public get generation(): number {
-        return this.genes.reduce((max, {generation}) => max + generation, 0)
+    public get tosses(): number {
+        return this.genes.reduce((sum, {tosses}:IGene) => sum + tosses, 0)
     }
 
     public toString(): string {
-        return this.genes.map(gene => `(${gene.geneName}:${gene.generation})`).join(", ")
+        return this.genes.map(gene => `(${gene.geneName}:${gene.tosses})`).join(", ")
         // return this.genes.map(gene => serializeGene(gene.dice)).join("\n")
     }
 
@@ -176,7 +176,7 @@ function mutateGene(roll: () => IDie, gene: IGene): void {
             gene.dice[woops] = roll()
         }
     }
-    gene.generation++
+    gene.tosses++
 }
 
 export class GeneReader {
@@ -199,13 +199,12 @@ export class GeneReader {
     }
 
     public modifyFeature(original: number): number {
-        const woops = Math.random() > 0.97
-        if (woops) {
-            this.discard() // woops, dropped the dice
-        }
         let value = original
         const weightOfNew = 0.5
-        for (let tick = 0; tick < this.gene.generation; tick++) {
+        if (this.gene.tosses === 0) {
+            this.gene.tosses++
+        }
+        for (let tick = 0; tick < this.gene.tosses; tick++) {
             value = value * (weightOfNew * this.next().featureDelta + (1 - weightOfNew))
         }
         return value
@@ -220,11 +219,6 @@ export class GeneReader {
             this.gene.dice.push(this.roll())
         }
         return this.gene.dice[this.cursor++]
-    }
-
-    private discard(): void {
-        this.gene.generation = 1
-        this.gene.dice = []
     }
 }
 

@@ -10,7 +10,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 
 import { directionGene, Gotchi } from "./gotchi"
 
-export const CYCLE_PATTERN = [3, 4, 5, 6]
+export const CYCLE_PATTERN = [4, 6, 10, 15]
 
 export interface IEvolutionParameters {
     maxPopulation: number
@@ -33,7 +33,7 @@ export interface IEvolver {
 
 export interface ICompetitor {
     name: string
-    generation: number,
+    tosses: number,
     proximity: number
     dead: boolean
     saved: boolean
@@ -142,8 +142,9 @@ export class Evolution {
         const cycleIndex = this.cyclePatternIndex
         const competitors = this.evolvers.map(evolver => {
             const {name, proximity, gotchi, dead, saved} = evolver
-            const generation = gotchi.genome.generation
-            return ({name, proximity, generation, dead, saved})
+            const tosses = gotchi.genome.tosses
+            const competitor: ICompetitor = {name, proximity, tosses, dead, saved}
+            return competitor
         })
         return {cycle, cycleIndex, competitors}
     }
