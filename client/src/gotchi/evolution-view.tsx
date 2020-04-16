@@ -5,77 +5,68 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaDna, FaSkull, FaTimesCircle } from "react-icons/all"
-import { Button, Table } from "reactstrap"
 
-import { CYCLE_PATTERN, Evolution } from "./evolution"
+import { CYCLE_PATTERN, Evolution, IEvolutionSnapshot } from "./evolution"
 
 export function EvolutionView({evolution, stopEvolution}: {
     evolution: Evolution,
     stopEvolution: () => void,
 }): JSX.Element {
-    const [snapshot, updateSnapshot] = useState(evolution.snapshotSubject.getValue())
+    const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
+    const [snapshot, setSnapshot] = useState<IEvolutionSnapshot>(evolution.snapshotsSubject.getValue())
     useEffect(() => {
-        const sub = evolution.snapshotSubject.subscribe(updateSnapshot)
+        const alreadyHere = snapshots.findIndex(({cycleIndex}) => snapshot.cycleIndex === cycleIndex)
+        if (alreadyHere < 0) {
+            setSnapshots([...snapshots, snapshot])
+        } else if (alreadyHere === snapshots.length - 1) {
+            const copy = [...snapshots]
+            copy[alreadyHere] = snapshot
+            setSnapshots(copy)
+        } else {
+            setSnapshots([snapshot])
+        }
+    }, [snapshot])
+    useEffect(() => {
+        const sub = evolution.snapshotsSubject.subscribe(setSnapshot)
         return () => sub.unsubscribe()
     }, [evolution])
     return (
-        <>
-            <div id="top-left" className="text-center">
-                <h6 className="w-100">Running for {snapshot ? snapshot.nextMaxCycles : CYCLE_PATTERN[0]} cycles</h6>
-                <Button className="w-100" color="warning" onClick={stopEvolution}>
-                    Stop evolving <FaTimesCircle/>
-                </Button>
-            </div>
-            {!snapshot ? undefined : (
-                <div id="bottom-right" className="text-center">
-                    <h6 className="w-100">After {CYCLE_PATTERN[snapshot.cyclePatternIndex]} cycles:</h6>
-                    <CyclePattern cyclePatternIndex={snapshot.cyclePatternIndex}/>
-                    <Table>
-                        <thead>
-                        <tr>
-                            <th>Proximity</th>
-                            <th>History</th>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        {snapshot.competitors.map(({name, distanceFromTarget, generation, dead, saved}, index) => (
-                            <tr key={`competitor-${index}`} style={{
-                                color: dead ? "#aba08d" : "#1d850b",
-                            }}>
-                                <td>{distanceFromTarget.toFixed(2)}</td>
-                                <td>
-                                    {name}({generation})
-                                    {saved ? <FaDna/> : undefined}
-                                    {dead ? <FaSkull/> : undefined}
-                                </td>
-                            </tr>
+        <div className="text-monospace d-inline-flex">
+            {snapshots.map(({cycle, cycleIndex, competitors}) => (
+                <div key={cycleIndex} className="float-left p-1 m-1" style={{
+                    borderStyle: "solid",
+                    borderWidth: "2px",
+                }}>
+                    <div className="p-1 my-2 w-100 text-center">
+                        {cycle === CYCLE_PATTERN[cycleIndex] ? undefined : <span>{cycle}/</span>}
+                        {CYCLE_PATTERN.map((cycles, index) => (
+                            <span
+                                key={`cycle-${index}`}
+                                style={{
+                                    backgroundColor: index === cycleIndex ? "#24f00f" : "#d5d5d5",
+                                    margin: "0.1em",
+                                    padding: "0.2em",
+                                    borderRadius: "0.3em",
+                                    borderStyle: "solid",
+                                    borderWidth: "1px",
+                                }}
+                            >{cycles}</span>
                         ))}
-                        </tbody>
-                    </Table>
+                    </div>
+                    <div className="m-2">
+                        {competitors.map(({name, proximity, generation, dead, saved}, index) => (
+                            <div key={`competitor-${index}`} style={{
+                                color: dead ? "#aba08d" : "#1d850b",
+                                backgroundColor: saved ? "#3bfa19" : "#ffffff",
+                                display: "block",
+                            }}>
+                                <strong>{index}:</strong>
+                                <span className="mx-1">{proximity.toFixed(2)}</span>
+                                <span className="mx-1">"{name}:{generation}"</span>
+                            </div>
+                        ))}
+                    </div>
                 </div>
-            )}
-        </>
-    )
-}
-
-function CyclePattern({cyclePatternIndex}: { cyclePatternIndex: number }): JSX.Element {
-    return (
-        <div className="p-1">
-            {CYCLE_PATTERN.map((cycles, index) => (
-                <span
-                    key={`cycle-${index}`}
-                    style={{
-                        backgroundColor: index === cyclePatternIndex ? "#24f00f" : "#d5d5d5",
-                        width: "2em",
-                        margin: "0.1em",
-                        padding: "0.2em",
-                        borderRadius: "0.3em",
-                        borderStyle: "solid",
-                        borderWidth: "1px",
-                        fontSize: "xx-small",
-                    }}
-                >{cycles}</span>
             ))}
         </div>
     )

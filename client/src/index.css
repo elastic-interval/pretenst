@@ -136,10 +136,10 @@ a, a:hover {
     z-index: 100;
     background-color: white;
     border-radius: 1em;
-    padding: 1em;
     border-color: #9fa8b2;
     border-width: 0.3em;
     border-style: solid;
+    font-size: x-small;
 }
 
 #top-middle {
@@ -155,8 +155,6 @@ a, a:hover {
 
 #bottom-middle {
     position: absolute;
-    padding-right: 1em;
-    padding-left: 1em;
     bottom: 1em;
     left: 50%;
     transform: translate(-50%);

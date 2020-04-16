@@ -90,8 +90,8 @@ export class Genome {
     }
 
     public get twitchCount(): number {
-        const maxGeneration = this.genes.reduce((max, {generation}) => Math.max(max, generation), 0)
-        return Math.floor(Math.sqrt(maxGeneration + 2)) + 2
+        const maxGeneration = this.genes.reduce((max, {generation}) => Math.max(max, generation), 1)
+        return Math.floor(Math.pow(maxGeneration, 0.66)) + 2
     }
 
     public withDirectionMutations(directionNames: GeneName[]): Genome {
@@ -121,7 +121,7 @@ export class Genome {
     }
 
     public get generation(): number {
-        return this.genes.reduce((max, {generation}) => Math.max(max, generation), 0)
+        return this.genes.reduce((max, {generation}) => max + generation, 0)
     }
 
     public toString(): string {

@@ -12,6 +12,7 @@ import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
 import { Direction, Gotchi } from "./gotchi"
+import { Happening } from "./gotchi-view"
 import { Island, PatchCharacter } from "./island"
 import {
     ALTITUDE,
@@ -28,9 +29,10 @@ import { SatoshiTree } from "./satoshi-tree"
 const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
 
-export function IslandView({island, satoshiTrees, gotchi, evolution, startEvolution, stopEvolution}: {
+export function IslandView({island, satoshiTrees, happening, gotchi, evolution, startEvolution, stopEvolution}: {
     island: Island,
     satoshiTrees: SatoshiTree[],
+    happening: Happening,
     gotchi?: Gotchi,
     evolution?: Evolution,
     startEvolution: () => void,
@@ -41,37 +43,65 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, startEvolut
     const viewContainer = document.getElementById("view-container") as HTMLElement
     const [whyThis, updateWhyThis] = useState(0)
     const midpoint = new Vector3()
-    useFrame(() => {
-        let bestDistance
-        if (evolution) {
-            if (evolution.finished) {
-                stopEvolution()
-                return
-            }
-            evolution.iterate()
-            evolution.getMidpoint(midpoint)
-            bestDistance = 16
-        } else if (gotchi) {
-            gotchi.iterate(midpoint)
-            if (gotchi.growing || gotchi.direction !== Direction.Rest) {
-                bestDistance = 8
-            }
+
+    function developing(g: Gotchi): number {
+        g.iterate(midpoint)
+        return 10
+    }
+
+    function resting(): number {
+        return 6
+    }
+
+    function running(g: Gotchi): number {
+        g.iterate(midpoint)
+        return g.direction !== Direction.Rest ? 8 : 4
+    }
+
+    function evolving(e: Evolution): number {
+        if (e.finished) {
+            stopEvolution()
+        } else {
+            e.iterate()
+            e.getMidpoint(midpoint)
         }
-        const orb: Orbit = orbit.current
-        const target = orb.target
-        if (bestDistance !== undefined) {
-            const position = orb.object.position
-            const positionToTarget = new Vector3().subVectors(position, target)
-            const deltaDistance = bestDistance - positionToTarget.length()
+        return 16
+    }
+
+    useFrame(() => {
+        const control: Orbit = orbit.current
+        const approachDistance = (distance: number) => {
+            const position = control.object.position
+            const positionToTarget = new Vector3().subVectors(position, control.target)
+            const deltaDistance = distance - positionToTarget.length()
             position.add(positionToTarget.normalize().multiplyScalar(deltaDistance * TOWARDS_POSITION))
         }
-        const moveTarget = new Vector3().subVectors(midpoint, target).multiplyScalar(TOWARDS_TARGET)
-        target.add(moveTarget)
-        orb.update()
+        switch (happening) {
+            case Happening.Developing:
+                if (gotchi) {
+                    approachDistance(developing(gotchi))
+                }
+                break
+            case Happening.Resting:
+                approachDistance(resting())
+                break
+            case Happening.Running:
+                if (gotchi) {
+                    approachDistance(running(gotchi))
+                }
+                break
+            case Happening.Evolving:
+                if (evolution) {
+                    approachDistance(evolving(evolution))
+                }
+                break
+        }
+        control.target.add(new Vector3().subVectors(midpoint, control.target).multiplyScalar(TOWARDS_TARGET))
+        control.update()
         const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
         satoshiTrees[treeNumber].iterate()
         updateWhyThis(whyThis + 1)
-        if (!evolution && whyThis > 1200) {
+        if (happening === Happening.Resting && whyThis > 2000) {
             startEvolution()
         }
     })
@@ -96,18 +126,15 @@ export function IslandView({island, satoshiTrees, gotchi, evolution, startEvolut
 
     useEffect(() => {
         updateWhyThis(0)
-        orbit.current.autoRotate = !!(evolution)
-    }, [evolution])
-
-    useEffect(() => {
-        updateWhyThis(0)
-    }, [gotchi])
+    }, [gotchi, evolution, happening])
 
     return (
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                {evolution ? <EvolutionScene evolution={evolution}/> : (gotchi ? (
+                {(evolution && happening === Happening.Evolving) ? (
+                    <EvolutionScene evolution={evolution}/>
+                ) : (gotchi ? (
                     <GotchiComponent gotchi={gotchi} faces={true}/>
                 ) : undefined)}
                 {island.patches.map(patch => {

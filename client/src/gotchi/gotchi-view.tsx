@@ -21,6 +21,13 @@ import { Island, PatchCharacter } from "./island"
 import { IslandView } from "./island-view"
 import { Patch } from "./patch"
 
+export enum Happening {
+    Developing,
+    Resting,
+    Running,
+    Evolving,
+}
+
 export function GotchiView({island, homePatch, createInstance}: {
     island: Island,
     homePatch: Patch,
@@ -30,7 +37,7 @@ export function GotchiView({island, homePatch, createInstance}: {
         .filter(patch => patch.patchCharacter === PatchCharacter.FloraPatch)
         .map(patch => patch.createNewSatoshiTree(createInstance(true))))
     const [gotchi, setGotchi] = useState(() => homePatch.createGotchi(createInstance(false)))
-    const [active, setActive] = useState(false)
+    const [happening, setHappening] = useState(Happening.Developing)
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
     const [life, updateLife] = useState<Life | undefined>(undefined)
     useEffect(() => {
@@ -44,18 +51,87 @@ export function GotchiView({island, homePatch, createInstance}: {
 
     const onEvolve = (toEvolve: Gotchi) => setEvolution(new Evolution(createInstance, toEvolve))
     const startEvolution = () => {
-        setActive(true)
+        setHappening(Happening.Evolving)
         if (gotchi) {
             onEvolve(gotchi)
         }
     }
     const stopEvolution = () => {
-        setEvolution(undefined)
-        setActive(false)
-        if (gotchi) {
-            setEvolution(undefined)
+        setHappening(Happening.Resting)
+    }
+    const bottomMiddle = (): JSX.Element | undefined => {
+        if (!life) {
+            return undefined
+        }
+        switch (happening) {
+            case Happening.Developing:
+                if (life.stage === Stage.Pretenst) {
+                    setHappening(Happening.Resting)
+                }
+                return (
+                    <div className="py-2 px-3">
+                        <FaBaby/> {stageName(life.stage)} <FaHourglassHalf/>
+                    </div>
+                )
+            case Happening.Resting:
+                return !gotchi ? undefined : (
+                    <ButtonGroup style={{margin: undefined}}>
+                        <Button color="success" onClick={() => {
+                            setHappening(Happening.Running)
+                            gotchi.autopilot = true
+                        }}>
+                            <FaRunning/> Run
+                        </Button>
+                        <Button color="success" onClick={() => {
+                            setHappening(Happening.Evolving)
+                            onEvolve(gotchi)
+                        }}>
+                            <FaDna/> Evolve
+                        </Button>
+                        <Button color="success" onClick={() => {
+                            setGotchi(homePatch.createGotchi(createInstance(false)))
+                            setHappening(Happening.Developing)
+                        }}>
+                            <FaBaby/> Reincarnate
+                        </Button>
+                    </ButtonGroup>
+                )
+            case Happening.Running:
+                return !gotchi ? undefined : (
+                    <ButtonGroup>
+                        <Button color="success" onClick={() => {
+                            setHappening(Happening.Resting)
+                            gotchi.direction = Direction.Rest
+                        }}>
+                            <FaYinYang/> Rest
+                        </Button>
+                    </ButtonGroup>
+                )
+            case Happening.Evolving:
+                return !gotchi ? undefined : (
+                    <ButtonGroup>
+                        <Button color="success" onClick={() => {
+                            setHappening(Happening.Resting)
+                            gotchi.direction = Direction.Rest
+                        }}>
+                            <FaYinYang/> Rest
+                        </Button>
+                    </ButtonGroup>
+                )
         }
     }
+    const bottomRight = (): JSX.Element | undefined => {
+        switch (happening) {
+            case Happening.Developing:
+            case Happening.Running:
+                return undefined
+            case Happening.Resting:
+            case Happening.Evolving:
+                return evolution ? <EvolutionView evolution={evolution} stopEvolution={stopEvolution}/> : undefined
+        }
+    }
+    const bm = bottomMiddle()
+    const br = bottomRight()
     return (
         <div id="view-container" style={{
             position: "absolute",
@@ -67,54 +143,22 @@ export function GotchiView({island, homePatch, createInstance}: {
                 <IslandView
                     island={island}
                     satoshiTrees={satoshiTrees}
+                    happening={happening}
                     gotchi={gotchi}
                     evolution={evolution}
                     startEvolution={startEvolution}
                     stopEvolution={stopEvolution}
                 />
             </Canvas>
-            {
-                evolution ? (
-                    <EvolutionView evolution={evolution} stopEvolution={stopEvolution}/>
-                ) : gotchi ? (
-                    <div id="bottom-middle">
-                        {!life || life.stage === Stage.Pretenst ? (
-                            <ButtonGroup className="mx-1">
-                                <Button disabled={!active} onClick={() => {
-                                    setActive(false)
-                                    gotchi.direction = Direction.Rest
-                                }}>
-                                    <FaYinYang/> Rest
-                                </Button>
-                                <Button disabled={active} onClick={() => {
-                                    setActive(true)
-                                    gotchi.autopilot = true
-                                }}>
-                                    <FaRunning/> Run
-                                </Button>
-                                <Button disabled={active} onClick={() => {
-                                    setActive(true)
-                                    onEvolve(gotchi)
-                                }}>
-                                    <FaDna/> Evolve
-                                </Button>
-                                <Button disabled={active} onClick={() => {
-                                    setGotchi(homePatch.createGotchi(createInstance(false)))
-                                }}>
-                                    <FaBaby/> Rebirth
-                                </Button>
-                            </ButtonGroup>
-                        ) : (
-                            <h6 style={{
-                                color: "white",
-                                backgroundColor: "#53a455",
-                                borderRadius: "1em",
-                                padding: "0.4em",
-                            }}><FaBaby/> {stageName(life.stage)} <FaHourglassHalf/></h6>
-                        )}
-                    </div>
-                ) : undefined
-            }
+            {!bm ? undefined : (
+                <div id="bottom-middle" style={{
+                    backgroundColor: "white",
+                    borderRadius: "1em",
+                    borderStyle: "solid",
+                    borderWidth: "0.1em",
+                }}>{bm}</div>
+            )}
+            {!br ? undefined : <div id="bottom-right">{br}</div>}
         </div>
     )
 }
