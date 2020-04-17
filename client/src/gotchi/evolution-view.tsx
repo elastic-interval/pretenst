@@ -4,33 +4,13 @@
  */
 
 import * as React from "react"
-import { useEffect, useState } from "react"
 import { FaDna } from "react-icons/all"
 
-import { CYCLE_PATTERN, Evolution, IEvolutionSnapshot } from "./evolution"
+import { CYCLE_PATTERN, IEvolutionSnapshot, letter } from "./evolution"
 
-export function EvolutionView({evolution, stopEvolution}: {
-    evolution: Evolution,
-    stopEvolution: () => void,
+export function EvolutionView({snapshots}: {
+    snapshots: IEvolutionSnapshot[],
 }): JSX.Element {
-    const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
-    const [snapshot, setSnapshot] = useState<IEvolutionSnapshot>(evolution.snapshotsSubject.getValue())
-    useEffect(() => {
-        const alreadyHere = snapshots.findIndex(({cycleIndex}) => snapshot.cycleIndex === cycleIndex)
-        if (alreadyHere < 0) {
-            setSnapshots([...snapshots, snapshot])
-        } else if (alreadyHere === snapshots.length - 1) {
-            const copy = [...snapshots]
-            copy[alreadyHere] = snapshot
-            setSnapshots(copy)
-        } else {
-            setSnapshots([snapshot])
-        }
-    }, [snapshot])
-    useEffect(() => {
-        const sub = evolution.snapshotsSubject.subscribe(setSnapshot)
-        return () => sub.unsubscribe()
-    }, [evolution])
     return (
         <div className="text-monospace d-inline-flex">
             {snapshots.map(({cycle, cycleIndex, competitors}) => (
@@ -43,7 +23,8 @@ export function EvolutionView({evolution, stopEvolution}: {
                             <span
                                 key={`cycle-${index}`}
                                 style={{
-                                    backgroundColor: index === cycleIndex ? "#24f00f" : "#d5d5d5",
+                                    color: "black",
+                                    backgroundColor: index === cycleIndex ? "#24f00f" : "#cbc7c7",
                                     margin: "0.1em",
                                     padding: "0.2em",
                                     borderRadius: "0.3em",
@@ -63,15 +44,17 @@ export function EvolutionView({evolution, stopEvolution}: {
                             }
                             return (
                                 <div key={`competitor-${index}`} style={{
-                                    color: dead ? "#aba08d" : "#1d850b",
-                                    backgroundColor: saved ? "#affda1" : "#ffffff",
+                                    color: dead ? "#af0303" : "#2cd710",
+                                    backgroundColor: saved ? "#848383" : "#555454",
+                                    borderRadius: "0.2em",
+                                    marginBottom: "1px",
+                                    padding: "2px",
                                     display: "block",
+                                    whiteSpace: "nowrap",
                                 }}>
-                                    <strong>{index}:</strong>
-                                    <span className="mx-1">{proximity.toFixed(5)}</span>
-                                    <span className="mx-1">"{name}:{tosses}"</span>
-                                    {mutationSymbols.length === 0 ? undefined :
-                                        <span className="mx-1">{mutationSymbols}</span>}
+                                    {`${letter(index)} ${proximity.toFixed(3)} ${name}${tosses}`}
+                                    &nbsp;
+                                    {mutationSymbols}
                                 </div>
                             )
                         })}

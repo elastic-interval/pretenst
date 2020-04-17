@@ -10,7 +10,7 @@ import { FabricInstance, FORWARD } from "../fabric/fabric-instance"
 import { Tensegrity } from "../fabric/tensegrity"
 import { IFace, Triangle, TRIANGLE_DEFINITIONS } from "../fabric/tensegrity-types"
 
-import { fromGeneData, GeneName, Genome, IGeneData } from "./genome"
+import { fromGeneData, GeneName, Genome, IGeneData, randomModifierName } from "./genome"
 import { Patch } from "./patch"
 import { Twitch, Twitcher } from "./twitcher"
 
@@ -181,7 +181,8 @@ export class Gotchi {
         })
         const nonzero = counts.filter(count => count.count > 0)
         const geneNames = nonzero.map(d => d.dir).map(directionGene)
-        return this.state.genome.withDirectionMutations(geneNames).geneData
+        const modifierName = Math.random() > 0.95 ? randomModifierName() : undefined
+        return this.state.genome.withMutations(geneNames, modifierName).geneData
     }
 
     public get age(): number {

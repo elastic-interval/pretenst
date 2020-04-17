@@ -11,7 +11,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { fromGeneData } from "./genome"
 import { directionGene, Gotchi } from "./gotchi"
 
-export const CYCLE_PATTERN = [5, 6, 7, 8, 9]
+export const CYCLE_PATTERN = [5, 6, 7, 8, 9, 10]
 
 export interface IEvolutionParameters {
     maxPopulation: number
@@ -19,7 +19,7 @@ export interface IEvolutionParameters {
 }
 
 const PARAM: IEvolutionParameters = {
-    maxPopulation: 10,
+    maxPopulation: 16,
     survivalRate: 0.5,
 }
 
@@ -47,7 +47,7 @@ export interface IEvolutionSnapshot {
 }
 
 export class Evolution {
-    public readonly snapshotsSubject: BehaviorSubject<IEvolutionSnapshot>
+    public readonly snapshotsSubject = new BehaviorSubject<IEvolutionSnapshot[]>([])
     public evolvers: IEvolver[]
     public finished = false
     private cyclePatternIndex: number
@@ -78,7 +78,7 @@ export class Evolution {
             const instance = this.createInstance(false, this.baseGotchi.fabricClone)
             const geneData = survivor ?
                 genome.geneData :
-                genome.withDirectionMutations([directionGene(this.baseGotchi.direction)]).geneData
+                genome.withMutations([directionGene(this.baseGotchi.direction)]).geneData
             const newborn = this.baseGotchi.recycled(instance, geneData)
             if (!newborn) {
                 console.error("Unable to create gotchi")
@@ -90,13 +90,11 @@ export class Evolution {
         this.evolvers = gotchis.map((newborn, index) => {
             newborn.autopilot = true
             const name = index < storedGenes.length ?
-                `${index}` :
-                `${index}${letter(index - storedGenes.length)}`
+                letter(index) : `${letter(index)}${letter(index - storedGenes.length)}`
             return <IEvolver>{
                 index, name, gotchi: newborn, proximity, dead: false,
             }
         })
-        this.snapshotsSubject = new BehaviorSubject<IEvolutionSnapshot>(this.snapshot)
     }
 
     public iterate(): number {
@@ -109,14 +107,14 @@ export class Evolution {
             this.baseGotchi.patch.storedGenes = survivors.map(({gotchi}) => gotchi.genome.geneData)
             survivors.forEach(survivor => survivor.saved = true)
             this.evolvers.filter(({dead}) => dead).forEach(e => e.saved = false)
-            this.snapshotsSubject.next(this.snapshot)
+            this.takeSnapshot()
             this.nextGenerationFromSurvival()
             this.adjustLimit()
             this.cycleCount = -1
         } else if (evolverCycleCount > this.cycleCount) {
             this.cycleCount = evolverCycleCount
             this.sortEvolvers()
-            this.snapshotsSubject.next(this.snapshot)
+            this.takeSnapshot()
         }
         return evolverCycleCount
     }
@@ -149,7 +147,7 @@ export class Evolution {
         this.evolvers.sort((a: IEvolver, b: IEvolver) => a.proximity - b.proximity)
     }
 
-    private get snapshot(): IEvolutionSnapshot {
+    private takeSnapshot(): void {
         const cycle = this.cycleCount
         const cycleIndex = this.cyclePatternIndex
         const competitors = this.evolvers.map(evolver => {
@@ -158,7 +156,18 @@ export class Evolution {
             const competitor: ICompetitor = {name, proximity, tosses, dead, saved}
             return competitor
         })
-        return {cycle, cycleIndex, competitors}
+        const snapshot = {cycle, cycleIndex, competitors}
+        const snapshots = this.snapshotsSubject.getValue()
+        const alreadyHere = snapshots.findIndex(s => snapshot.cycleIndex === s.cycleIndex)
+        if (alreadyHere < 0) {
+            this.snapshotsSubject.next([...snapshots, snapshot])
+        } else if (alreadyHere === snapshots.length - 1) {
+            const copy = [...snapshots]
+            copy[alreadyHere] = snapshot
+            this.snapshotsSubject.next(copy)
+        } else {
+            this.snapshotsSubject.next([snapshot])
+        }
     }
 
     private markTheDead(): void {
@@ -202,6 +211,6 @@ export class Evolution {
     }
 }
 
-function letter(index: number): string {
+export function letter(index: number): string {
     return String.fromCharCode(65 + index)
 }

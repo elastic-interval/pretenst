@@ -96,7 +96,7 @@ export class Genome {
         return Math.floor(Math.pow(maxTosses, 0.66)) + 2
     }
 
-    public withDirectionMutations(directionNames: GeneName[]): Genome {
+    public withMutations(directionNames: GeneName[], modifierName?: GeneName): Genome {
         const genesCopy: IGene[] = this.genes.map(gene => {
             const {geneName, tosses} = gene
             const dice = gene.dice.slice() // TODO: tweet this to the world
@@ -106,8 +106,7 @@ export class Genome {
             const directionGene = getGene(directionName, genesCopy)
             mutateGene(() => this.roll(), directionGene)
         })
-        if (Math.random() > 0.7) {
-            const modifierName = randomModifierName()
+        if (modifierName) {
             const modifierGene = getGene(modifierName, genesCopy)
             modifierGene.tosses++
         }

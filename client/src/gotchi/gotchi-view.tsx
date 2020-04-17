@@ -6,7 +6,7 @@
 import { Stage } from "eig"
 import * as React from "react"
 import { useEffect, useState } from "react"
-import { FaBaby, FaDna, FaHourglassHalf, FaRunning, FaYinYang } from "react-icons/all"
+import { FaBaby, FaDna, FaEye, FaRunning, FaYinYang } from "react-icons/all"
 import { Canvas } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
 
@@ -14,7 +14,7 @@ import { stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { Life } from "../fabric/life"
 
-import { Evolution } from "./evolution"
+import { Evolution, IEvolutionSnapshot } from "./evolution"
 import { EvolutionView } from "./evolution-view"
 import { Direction, Gotchi } from "./gotchi"
 import { Island, PatchCharacter } from "./island"
@@ -38,8 +38,11 @@ export function GotchiView({island, homePatch, createInstance}: {
         .map(patch => patch.createNewSatoshiTree(createInstance(true))))
     const [gotchi, setGotchi] = useState(() => homePatch.createGotchi(createInstance(false)))
     const [happening, setHappening] = useState(Happening.Developing)
+    const [evoDetails, setEvoDetails] = useState(true)
+    const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
     const [life, updateLife] = useState<Life | undefined>(undefined)
+
     useEffect(() => {
         if (!gotchi || !gotchi.embryo) {
             updateLife(undefined)
@@ -48,6 +51,14 @@ export function GotchiView({island, homePatch, createInstance}: {
         const sub = gotchi.embryo.life$.subscribe(updateLife)
         return () => sub.unsubscribe()
     }, [gotchi])
+
+    useEffect(() => {
+        if (!evolution) {
+            return
+        }
+        const sub = evolution.snapshotsSubject.subscribe(setSnapshots)
+        return () => sub.unsubscribe()
+    }, [evolution])
 
     const onEvolve = (toEvolve: Gotchi) => {
         toEvolve.recycled(toEvolve.instance)
@@ -73,7 +84,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                 }
                 return (
                     <div className="py-2 px-3">
-                        <FaBaby/> {stageName(life.stage)} <FaHourglassHalf/>
+                        <FaBaby/> {stageName(life.stage)}
                     </div>
                 )
             case Happening.Resting:
@@ -83,19 +94,19 @@ export function GotchiView({island, homePatch, createInstance}: {
                             setHappening(Happening.Running)
                             gotchi.autopilot = true
                         }}>
-                            <FaRunning/> Run
+                            <FaRunning/>
                         </Button>
                         <Button color="success" onClick={() => {
                             setHappening(Happening.Evolving)
                             onEvolve(gotchi)
                         }}>
-                            <FaDna/> Evolve
+                            <FaDna/>
                         </Button>
                         <Button color="success" onClick={() => {
                             setGotchi(homePatch.createGotchi(createInstance(false)))
                             setHappening(Happening.Developing)
                         }}>
-                            <FaBaby/> Reincarnate
+                            <FaBaby/>
                         </Button>
                     </ButtonGroup>
                 )
@@ -114,10 +125,13 @@ export function GotchiView({island, homePatch, createInstance}: {
                 return !gotchi ? undefined : (
                     <ButtonGroup>
                         <Button color="success" onClick={() => {
-                            setHappening(Happening.Resting)
-                            gotchi.direction = Direction.Rest
+                            setGotchi(homePatch.createGotchi(createInstance(false)))
+                            setHappening(Happening.Developing)
                         }}>
-                            <FaYinYang/> Rest
+                            <FaBaby/>
+                        </Button>
+                        <Button color="info" onClick={() => setEvoDetails(!evoDetails)}>
+                            {evoDetails ? <FaEye/> : <FaDna/>}
                         </Button>
                     </ButtonGroup>
                 )
@@ -130,7 +144,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                 return undefined
             case Happening.Resting:
             case Happening.Evolving:
-                return evolution ? <EvolutionView evolution={evolution} stopEvolution={stopEvolution}/> : undefined
+                return !(snapshots.length > 0 && evoDetails) ? undefined : <EvolutionView snapshots={snapshots}/>
         }
     }
     const bm = bottomMiddle()
@@ -161,7 +175,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                     borderWidth: "0.1em",
                 }}>{bm}</div>
             )}
-            {!br ? undefined : <div id="bottom-right">{br}</div>}
+            {!br ? undefined : <div id="middle">{br}</div>}
         </div>
     )
 }

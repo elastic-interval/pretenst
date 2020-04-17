@@ -49,7 +49,8 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
         return 10
     }
 
-    function resting(): number {
+    function resting(g: Gotchi): number {
+        g.iterate(midpoint)
         return 6
     }
 
@@ -83,7 +84,9 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
                 }
                 break
             case Happening.Resting:
-                approachDistance(resting())
+                if (gotchi) {
+                    approachDistance(resting(gotchi))
+                }
                 break
             case Happening.Running:
                 if (gotchi) {
@@ -101,24 +104,11 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
         const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
         satoshiTrees[treeNumber].iterate()
         updateWhyThis(whyThis + 1)
-        if (happening === Happening.Resting && whyThis > 2000) {
+        if (happening === Happening.Resting && whyThis > 1000) {
             startEvolution()
         }
     })
 
-
-    /*
-    "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚃⚀⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
-    "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚁⚃⚀⚁⚂"}
-    "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
-evolution.ts:77 3 born from 3 copy {geneName: "Forward", tosses: 19, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚁⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
-evolution.ts:77 4 born from 4 copy {geneName: "Forward", tosses: 18, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚅⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚁⚃⚀⚁⚂"}
-evolution.ts:77 5 born from 0 mutate {geneName: "Forward", tosses: 19, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚃⚀⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
-evolution.ts:77 6 born from 1 mutate {geneName: "Forward", tosses: 17, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚁⚃⚀⚁⚂"}
-evolution.ts:77 7 born from 2 mutate {geneName: "Forward", tosses: 18, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
-evolution.ts:77 8 born from 3 mutate {geneName: "Forward", tosses: 19, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚁⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
-evolution.ts:77 9 born from 4 mutate {geneName: "Forward", tosses: 18, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚅⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚁⚃⚀⚁⚂"}
-     */
     const perspective = camera as PerspectiveCamera
     const orbit = useUpdate<Orbit>(orb => {
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + 2)
