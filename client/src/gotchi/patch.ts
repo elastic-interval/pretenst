@@ -20,7 +20,6 @@ export class Patch {
     public readonly name: string
     public adjacent: (Patch | undefined)[] = []
     public rotation = 0
-    private geneData?: IGeneData[]
 
     constructor(
         public readonly island: Island,
@@ -43,26 +42,20 @@ export class Patch {
         }
     }
 
-    public get storedGenes(): IGeneData[] {
-        const current = this.geneData
-        if (!current) {
-            const item = localStorage.getItem(this.name)
-            const geneData = item ? JSON.parse(item) : emptyGenome().geneData
-            console.log(`Loading genome from ${this.name}`, geneData)
-            this.geneData = geneData
-            return geneData
-        }
-        return current
+    public get storedGenes(): IGeneData[][] {
+        const item = localStorage.getItem(this.name)
+        const geneData = item ? JSON.parse(item) : [emptyGenome().geneData]
+        console.log(`Loading genome from ${this.name}`, geneData)
+        return geneData
     }
 
-    public set storedGenes(geneData: IGeneData[]) {
-        this.geneData = geneData
-        localStorage.setItem(this.name, JSON.stringify(this.geneData))
+    public set storedGenes(geneData: IGeneData[][]) {
+        localStorage.setItem(this.name, JSON.stringify(geneData))
         console.log(`Saving genome to ${this.name}`, geneData)
     }
 
     public createGotchi(instance: FabricInstance): Gotchi | undefined {
-        const gotchi = this.island.source.newGotchi(this, instance, fromGeneData(this.storedGenes))
+        const gotchi = this.island.source.newGotchi(this, instance, fromGeneData(this.storedGenes[0]))
         this.gotchi = gotchi
         return gotchi
     }

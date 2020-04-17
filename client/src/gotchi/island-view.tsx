@@ -106,6 +106,19 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
         }
     })
 
+
+    /*
+    "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚃⚀⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
+    "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚁⚃⚀⚁⚂"}
+    "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
+evolution.ts:77 3 born from 3 copy {geneName: "Forward", tosses: 19, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚁⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
+evolution.ts:77 4 born from 4 copy {geneName: "Forward", tosses: 18, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚅⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚁⚃⚀⚁⚂"}
+evolution.ts:77 5 born from 0 mutate {geneName: "Forward", tosses: 19, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚃⚀⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
+evolution.ts:77 6 born from 1 mutate {geneName: "Forward", tosses: 17, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚁⚃⚀⚁⚂"}
+evolution.ts:77 7 born from 2 mutate {geneName: "Forward", tosses: 18, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
+evolution.ts:77 8 born from 3 mutate {geneName: "Forward", tosses: 19, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚄⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚁⚀⚅⚄⚁⚃⚃⚃⚃⚃⚀⚁⚂"}
+evolution.ts:77 9 born from 4 mutate {geneName: "Forward", tosses: 18, geneString: "⚂⚅⚂⚅⚄⚅⚅⚀⚀⚄⚄⚀⚃⚁⚀⚃⚀⚀⚂⚅⚁⚀⚄⚅⚁⚁⚅⚁⚅⚂⚅⚀⚄⚄⚃⚂⚀⚃⚁⚅⚂⚅⚃⚀⚅⚂⚅⚃⚁⚁⚀⚀⚀⚅⚄⚁⚃⚃⚃⚁⚃⚀⚁⚂"}
+     */
     const perspective = camera as PerspectiveCamera
     const orbit = useUpdate<Orbit>(orb => {
         perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + 2)
@@ -127,6 +140,10 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     useEffect(() => {
         updateWhyThis(0)
     }, [gotchi, evolution, happening])
+
+    useEffect(() => {
+        orbit.current.autoRotate = happening === Happening.Evolving
+    }, [happening])
 
     return (
         <group>

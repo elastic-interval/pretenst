@@ -110,11 +110,10 @@ export class Gotchi {
 
     public set genome(genome: Genome) {
         this.state.genome = genome
-        this.state.patch.storedGenes = genome.geneData
     }
 
-    public recycled(instance: FabricInstance, mutant?: IGeneData[]): Gotchi {
-        const genome = fromGeneData(mutant || this.patch.storedGenes)
+    public recycled(instance: FabricInstance, geneData?: IGeneData[]): Gotchi {
+        const genome = fromGeneData(geneData ? geneData : this.patch.storedGenes[0])
         const state: IGotchiState = {...this.state, instance, genome, directionHistory: []}
         return new Gotchi(state)
     }
@@ -176,15 +175,7 @@ export class Gotchi {
             const count = this.state.directionHistory.filter(d => d === dir).length
             return ({dir, count})
         })
-        const nonzero = counts.sort((a, b) => {
-            if (a.count > b.count) {
-                return -1
-            } else if (b.count > a.count) {
-                return 1
-            } else {
-                return 0
-            }
-        }).filter(count => count.count > 0)
+        const nonzero = counts.filter(count => count.count > 0)
         const geneNames = nonzero.map(d => d.dir).map(directionGene)
         return this.state.genome.withDirectionMutations(geneNames).geneData
     }
@@ -282,10 +273,8 @@ export class Gotchi {
         }
     }
 
-    private twitch(whichMuscle: number, attack: number, decay: number, intensity: number): void {
-        const state = this.state
-        const muscle = state.muscles[whichMuscle]
-        state.instance.fabric.twitch_face(muscle.faceIndex, attack, decay, intensity)
+    private twitch(muscle: IMuscle, attack: number, decay: number, intensity: number): void {
+        this.state.instance.fabric.twitch_face(muscle.faceIndex, attack, decay, intensity)
         // console.log(`twitch ${muscle.name} ${muscle.faceIndex}: ${attack}, ${decay}`)
     }
 
@@ -335,16 +324,16 @@ export class Gotchi {
     }
 }
 
-export function oppositeMuscleIndex(whichMuscle: number, muscles: IMuscle[]): number {
-    const {name, limb, distance, triangle} = muscles[whichMuscle]
+export function oppositeMuscle(muscle: IMuscle, muscles: IMuscle[]): IMuscle {
+    const {name, limb, distance, triangle} = muscle
     const oppositeTriangle = TRIANGLE_DEFINITIONS[triangle].opposite
     const findLimb = oppositeLimb(limb)
-    const oppositeIndex = muscles.findIndex(m => m.limb === findLimb && m.distance === distance && m.triangle === oppositeTriangle)
-    if (oppositeIndex < 0) {
+    const opposite = muscles.find(m => m.limb === findLimb && m.distance === distance && m.triangle === oppositeTriangle)
+    if (!opposite) {
         throw new Error(`Unable to find opposite muscle to ${name}`)
     }
     // console.log(`opposite of ${name} is ${muscles[oppositeIndex].name}`)
-    return oppositeIndex
+    return opposite
 }
 
 function extractGotchiFaces(tensegrity: Tensegrity, muscles: IMuscle[], extremities: IExtremity[]): void {

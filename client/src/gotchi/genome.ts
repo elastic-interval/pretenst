@@ -3,6 +3,8 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
+import { IMuscle } from "./gotchi"
+
 export enum GeneName {
     Forward = "Forward",
     Left = "Left",
@@ -43,7 +45,7 @@ export interface IGeneData {
 
 export interface ITwitch {
     when: number
-    whichMuscle: number
+    muscle: IMuscle
     attack: number
     decay: number
     twitchNuance: number
@@ -104,7 +106,7 @@ export class Genome {
             const directionGene = getGene(directionName, genesCopy)
             mutateGene(() => this.roll(), directionGene)
         })
-        if (Math.random() > 0.9) {
+        if (Math.random() > 0.7) {
             const modifierName = randomModifierName()
             const modifierGene = getGene(modifierName, genesCopy)
             modifierGene.tosses++
@@ -185,13 +187,14 @@ export class GeneReader {
     constructor(private gene: IGene, private roll: () => IDie) {
     }
 
-    public readMuscleTwitch(muscleCount: number, attackPeriod: number, decayPeriod: number, twitchNuance: number): ITwitch {
-        const doubleMuscle = diceToInteger(muscleCount * 2, this.next(), this.next(), this.next(), this.next())
+    public readMuscleTwitch(muscles: IMuscle[], attackPeriod: number, decayPeriod: number, twitchNuance: number): ITwitch {
+        const doubleMuscle = diceToInteger(muscles.length * 2, this.next(), this.next(), this.next(), this.next())
         const alternating = doubleMuscle % 2 === 0
         const whichMuscle = Math.floor(doubleMuscle / 2)
+        const muscle = muscles[whichMuscle]
         return {
             when: diceToInteger(36, this.next(), this.next()),
-            whichMuscle, alternating,
+            muscle, alternating,
             attack: (2 + diceToFloat(6, this.next())) * attackPeriod,
             decay: (2 + diceToFloat(6, this.next())) * decayPeriod,
             twitchNuance,

@@ -4,9 +4,9 @@
  */
 
 import { GeneName, GeneReader, Genome, ITwitch } from "./genome"
-import { Direction, directionGene, DIRECTIONS, IGotchiState, IMuscle, oppositeMuscleIndex } from "./gotchi"
+import { Direction, directionGene, DIRECTIONS, IGotchiState, IMuscle, oppositeMuscle } from "./gotchi"
 
-export type Twitch = (face: number, attack: number, decay: number, twitchNuance: number) => void
+export type Twitch = (muscle: IMuscle, attack: number, decay: number, twitchNuance: number) => void
 
 const MUSCLE_PERIOD = 600
 const TICKS_PER_SLICE = 5
@@ -75,13 +75,20 @@ class TwitchCycle {
     private slices: Record<number, ITwitch[]> = {}
 
     constructor(geneReader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], twitchCount: number) {
+        let remainingMuscles = [...muscles]
+        const removeMuscle = (muscle: IMuscle) => {
+            remainingMuscles = remainingMuscles.filter(({faceIndex})=> muscle.faceIndex !== faceIndex)
+        }
         while (twitchCount-- > 0) {
             const {attackPeriod, decayPeriod, twitchNuance} = config
-            const twitch = geneReader.readMuscleTwitch(muscles.length, attackPeriod, decayPeriod, twitchNuance)
+            const twitch = geneReader.readMuscleTwitch(remainingMuscles, attackPeriod, decayPeriod, twitchNuance)
             this.addTwitch(twitch.when, twitch)
-            const oppositeMuscle = oppositeMuscleIndex(twitch.whichMuscle, muscles)
+            removeMuscle(twitch.muscle)
+            remainingMuscles = remainingMuscles.filter(({faceIndex})=> twitch.muscle.faceIndex !== faceIndex)
+            const muscle = oppositeMuscle(twitch.muscle, remainingMuscles)
             const when = twitch.alternating ? (twitch.when + 18) % 36 : twitch.when
-            this.addTwitch(when, {...twitch, whichMuscle: oppositeMuscle, when})
+            this.addTwitch(when, {...twitch, muscle, when})
+            removeMuscle(muscle)
         }
     }
 
@@ -90,7 +97,7 @@ class TwitchCycle {
         if (!slice) {
             return
         }
-        slice.forEach(({whichMuscle, attack, decay, twitchNuance}) => twitch(whichMuscle, attack, decay, twitchNuance))
+        slice.forEach(({muscle, attack, decay, twitchNuance}) => twitch(muscle, attack, decay, twitchNuance))
     }
 
     private addTwitch(index: number, twitch: ITwitch): void {

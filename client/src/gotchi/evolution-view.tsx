@@ -5,6 +5,7 @@
 
 import * as React from "react"
 import { useEffect, useState } from "react"
+import { FaDna } from "react-icons/all"
 
 import { CYCLE_PATTERN, Evolution, IEvolutionSnapshot } from "./evolution"
 
@@ -53,17 +54,27 @@ export function EvolutionView({evolution, stopEvolution}: {
                         ))}
                     </div>
                     <div className="m-2">
-                        {competitors.map(({name, proximity, tosses, dead, saved}, index) => (
-                            <div key={`competitor-${index}`} style={{
-                                color: dead ? "#aba08d" : "#1d850b",
-                                backgroundColor: saved ? "#3bfa19" : "#ffffff",
-                                display: "block",
-                            }}>
-                                <strong>{index}:</strong>
-                                <span className="mx-1">{proximity.toFixed(2)}</span>
-                                <span className="mx-1">"{name}:{tosses}"</span>
-                            </div>
-                        ))}
+                        {competitors.map(({name, proximity, tosses, dead, saved}, index) => {
+                            const mutationSymbols = []
+                            let nameLength = name.length - 1
+                            while (nameLength > 0) {
+                                mutationSymbols.push(<FaDna/>)
+                                nameLength--
+                            }
+                            return (
+                                <div key={`competitor-${index}`} style={{
+                                    color: dead ? "#aba08d" : "#1d850b",
+                                    backgroundColor: saved ? "#affda1" : "#ffffff",
+                                    display: "block",
+                                }}>
+                                    <strong>{index}:</strong>
+                                    <span className="mx-1">{proximity.toFixed(5)}</span>
+                                    <span className="mx-1">"{name}:{tosses}"</span>
+                                    {mutationSymbols.length === 0 ? undefined :
+                                        <span className="mx-1">{mutationSymbols}</span>}
+                                </div>
+                            )
+                        })}
                     </div>
                 </div>
             ))}
