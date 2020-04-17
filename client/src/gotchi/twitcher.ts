@@ -51,6 +51,12 @@ export class Twitcher {
         })
     }
 
+    public toString(): string {
+        const cycles = Object.keys(this.twitchCycles)
+            .map(k => this.twitchCycles[k]).map(c => c.toString()).join("\n")
+        return `Twitcher(${cycles})`
+    }
+
     public tick(twitch: Twitch): boolean {
         this.ticks -= 1
         if (this.ticks < 0) {
@@ -77,19 +83,28 @@ class TwitchCycle {
     constructor(geneReader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], twitchCount: number) {
         let remainingMuscles = [...muscles]
         const removeMuscle = (muscle: IMuscle) => {
-            remainingMuscles = remainingMuscles.filter(({faceIndex})=> muscle.faceIndex !== faceIndex)
+            remainingMuscles = remainingMuscles.filter(({faceIndex}) => muscle.faceIndex !== faceIndex)
         }
         while (twitchCount-- > 0) {
             const {attackPeriod, decayPeriod, twitchNuance} = config
             const twitch = geneReader.readMuscleTwitch(remainingMuscles, attackPeriod, decayPeriod, twitchNuance)
             this.addTwitch(twitch.when, twitch)
             removeMuscle(twitch.muscle)
-            remainingMuscles = remainingMuscles.filter(({faceIndex})=> twitch.muscle.faceIndex !== faceIndex)
             const muscle = oppositeMuscle(twitch.muscle, remainingMuscles)
             const when = twitch.alternating ? (twitch.when + 18) % 36 : twitch.when
             this.addTwitch(when, {...twitch, muscle, when})
             removeMuscle(muscle)
         }
+    }
+
+    public toString(): string {
+        const twitches = Object.keys(this.slices)
+            .map(k => this.slices[k])
+            .map((twitchArray: ITwitch[]) => twitchArray
+                .map(twitch => `${twitch.when}:${twitch.muscle.faceIndex}`)
+                .join(";"))
+            .join(",")
+        return `Cycle(${twitches})`
     }
 
     public activate(timeSlice: number, twitch: Twitch): void {

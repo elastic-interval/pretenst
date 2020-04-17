@@ -58,7 +58,7 @@ export function EvolutionView({evolution, stopEvolution}: {
                             const mutationSymbols = []
                             let nameLength = name.length - 1
                             while (nameLength > 0) {
-                                mutationSymbols.push(<FaDna/>)
+                                mutationSymbols.push(<FaDna key={`${name}-${nameLength}`}/>)
                                 nameLength--
                             }
                             return (

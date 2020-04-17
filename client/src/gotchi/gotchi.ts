@@ -96,6 +96,10 @@ export class Gotchi {
         }
     }
 
+    public get twitcherString(): string {
+        return this.twitcher ? this.twitcher.toString() : "no twitcher"
+    }
+
     public get growing(): boolean {
         return !!this.embryo
     }

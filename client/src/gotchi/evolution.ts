@@ -8,7 +8,7 @@ import { Vector3 } from "three"
 
 import { CreateInstance } from "../fabric/fabric-instance"
 
-import { fromGeneData } from "./genome"
+import { fromGeneData, GeneName } from "./genome"
 import { directionGene, Gotchi } from "./gotchi"
 
 export const CYCLE_PATTERN = [5, 6, 7, 8, 9]

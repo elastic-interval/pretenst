@@ -188,7 +188,7 @@ export class GeneReader {
     }
 
     public readMuscleTwitch(muscles: IMuscle[], attackPeriod: number, decayPeriod: number, twitchNuance: number): ITwitch {
-        const doubleMuscle = diceToInteger(muscles.length * 2, this.next(), this.next(), this.next(), this.next())
+        const doubleMuscle = diceToInteger(muscles.length * 2, this.next(), this.next(), this.next())
         const alternating = doubleMuscle % 2 === 0
         const whichMuscle = Math.floor(doubleMuscle / 2)
         const muscle = muscles[whichMuscle]
