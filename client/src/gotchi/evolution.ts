@@ -36,6 +36,7 @@ export interface ICompetitor {
     proximity: number
     dead: boolean
     saved: boolean
+    reachedTarget: boolean
 }
 
 export interface IEvolutionSnapshot {
@@ -90,11 +91,9 @@ export class Evolution {
         const proximity = this.baseGotchi.distanceFromTarget
         this.evolvers = gotchis.map((newborn, index) => {
             newborn.autopilot = true
-            const name = index < storedGenes.length ?
-                letter(index) : `${letter(index)}${letter(index - storedGenes.length)}`
-            return <IEvolver>{
-                index, name, gotchi: newborn, proximity, dead: false,
-            }
+            const saved = index < storedGenes.length
+            const name = `${letter(index)}${saved ? "" : letter(index - storedGenes.length)}`
+            return <IEvolver>{index, name, gotchi: newborn, proximity, dead: false, saved}
         })
     }
 
@@ -160,7 +159,8 @@ export class Evolution {
         const competitors = this.evolvers.map(evolver => {
             const {name, proximity, gotchi, dead, saved} = evolver
             const tosses = gotchi.genome.tosses
-            const competitor: ICompetitor = {name, proximity, tosses, dead, saved}
+            const reachedTarget = gotchi.state.reachedTarget
+            const competitor: ICompetitor = {name, proximity, tosses, dead, saved, reachedTarget}
             return competitor
         })
         const cyclePattern = this.cyclePattern

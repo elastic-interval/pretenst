@@ -11,11 +11,10 @@ import { DoubleSide, PerspectiveCamera, Vector3 } from "three"
 import { Orbit } from "../view/orbit"
 
 import { Evolution } from "./evolution"
-import { Direction, Gotchi } from "./gotchi"
+import { Gotchi } from "./gotchi"
 import { Happening } from "./gotchi-view"
 import { Island, PatchCharacter } from "./island"
 import {
-    ALTITUDE,
     ARROW_GEOMETRY,
     FAUNA_PATCH_COLOR,
     FLORA_PATCH_COLOR,
@@ -28,6 +27,8 @@ import { SatoshiTree } from "./satoshi-tree"
 
 const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
+const TARGET_HEIGHT = 3
+const TOWARDS_HEIGHT = 0.01
 
 export function IslandView({island, satoshiTrees, happening, gotchi, evolution, startEvolution, stopEvolution}: {
     island: Island,
@@ -38,25 +39,25 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     startEvolution: () => void,
     stopEvolution: () => void,
 }): JSX.Element {
-
     const {camera} = useThree()
+    const perspective = camera as PerspectiveCamera
     const viewContainer = document.getElementById("view-container") as HTMLElement
     const [whyThis, updateWhyThis] = useState(0)
     const midpoint = new Vector3()
 
     function developing(g: Gotchi): number {
         g.iterate(midpoint)
-        return 10
+        return 6
     }
 
     function resting(g: Gotchi): number {
         g.iterate(midpoint)
-        return 6
+        return 10
     }
 
     function running(g: Gotchi): number {
         g.iterate(midpoint)
-        return g.direction !== Direction.Rest ? 8 : 4
+        return 6
     }
 
     function evolving(e: Evolution): number {
@@ -66,7 +67,7 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
             e.iterate()
             e.getMidpoint(midpoint)
         }
-        return 16
+        return 15
     }
 
     useFrame(() => {
@@ -75,7 +76,9 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
             const position = control.object.position
             const positionToTarget = new Vector3().subVectors(position, control.target)
             const deltaDistance = distance - positionToTarget.length()
-            position.add(positionToTarget.normalize().multiplyScalar(deltaDistance * TOWARDS_POSITION))
+            positionToTarget.normalize()
+            position.add(positionToTarget.multiplyScalar(deltaDistance * TOWARDS_POSITION))
+            position.y += (TARGET_HEIGHT - position.y) * TOWARDS_HEIGHT
         }
         switch (happening) {
             case Happening.Developing:
@@ -109,14 +112,7 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
         }
     })
 
-    const perspective = camera as PerspectiveCamera
     const orbit = useUpdate<Orbit>(orb => {
-        perspective.position.set(midpoint.x, ALTITUDE, midpoint.z + 2)
-        perspective.lookAt(orbit.current.target)
-        perspective.fov = 60
-        perspective.far = SPACE_RADIUS * 2
-        perspective.near = 0.001
-        orb.object = perspective
         orb.minPolarAngle = 0
         orb.maxPolarAngle = Math.PI / 2
         orb.minDistance = 0.1

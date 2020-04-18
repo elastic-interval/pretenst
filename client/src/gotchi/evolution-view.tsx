@@ -35,7 +35,12 @@ export function EvolutionView({snapshots}: {
                         ))}
                     </div>
                     <div className="m-2">
-                        {competitors.map(({name, proximity, tosses, dead, saved}, index) => {
+                        {competitors.map((
+                            {
+                                name, proximity, tosses,
+                                dead, saved, reachedTarget,
+                            },
+                            index) => {
                             const mutationSymbols = []
                             let nameLength = name.length - 1
                             while (nameLength > 0) {
@@ -44,8 +49,8 @@ export function EvolutionView({snapshots}: {
                             }
                             return (
                                 <div key={`competitor-${index}`} style={{
-                                    color: dead ? "#af0303" : "#2cd710",
-                                    backgroundColor: saved ? "#848383" : "#555454",
+                                    color: dead ? "#c2c2c2" : "#2cd710",
+                                    backgroundColor: !saved ? "#555454" : reachedTarget ? "#b1b1b1" : "#848383",
                                     borderRadius: "0.2em",
                                     marginBottom: "1px",
                                     padding: "2px",

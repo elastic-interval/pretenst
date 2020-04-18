@@ -5,10 +5,11 @@
 
 import { Stage } from "eig"
 import * as React from "react"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { FaBaby, FaDna, FaEye, FaRunning, FaYinYang } from "react-icons/all"
-import { Canvas } from "react-three-fiber"
+import { Canvas, useFrame, useThree } from "react-three-fiber"
 import { Button, ButtonGroup } from "reactstrap"
+import { PerspectiveCamera } from "three"
 
 import { stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
@@ -80,10 +81,10 @@ export function GotchiView({island, homePatch, createInstance}: {
         setEvolution(new Evolution(pattern, () => setReachedTarget(true), createInstance, toEvolve))
     }
     const startEvolution = () => {
-        setHappening(Happening.Evolving)
         if (gotchi) {
             onEvolve(gotchi, cyclePattern)
         }
+        setHappening(Happening.Evolving)
     }
     const stopEvolution = () => {
         setHappening(Happening.Resting)
@@ -170,6 +171,7 @@ export function GotchiView({island, homePatch, createInstance}: {
             height: "100%",
         }}>
             <Canvas key={island.name} style={{backgroundColor: "black"}}>
+                <Camera/>
                 <IslandView
                     island={island}
                     satoshiTrees={satoshiTrees}
@@ -191,5 +193,29 @@ export function GotchiView({island, homePatch, createInstance}: {
             {!br ? undefined : <div id="middle">{br}</div>}
         </div>
     )
+}
+
+function Camera(props: object): JSX.Element {
+    const ref = useRef<PerspectiveCamera>()
+    const {setDefaultCamera} = useThree()
+    // Make the camera known to the system
+    useEffect(() => {
+        const camera = ref.current
+        if (!camera) {
+            throw new Error("No camera")
+        }
+        camera.fov = 50
+        camera.position.set(10, 10, 10)
+        setDefaultCamera(camera)
+    }, [])
+    // Update it every frame
+    useFrame(() => {
+        const camera = ref.current
+        if (!camera) {
+            throw new Error("No camera")
+        }
+        camera.updateMatrixWorld()
+    })
+    return <perspectiveCamera ref={ref} {...props} />
 }
 
