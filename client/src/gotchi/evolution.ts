@@ -11,8 +11,6 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { fromGeneData } from "./genome"
 import { directionGene, Gotchi } from "./gotchi"
 
-export const CYCLE_PATTERN = [5, 6, 7, 8, 9, 10]
-
 export interface IEvolutionParameters {
     maxPopulation: number
     survivalRate: number
@@ -41,6 +39,7 @@ export interface ICompetitor {
 }
 
 export interface IEvolutionSnapshot {
+    cyclePattern: number[]
     cycle: number
     cycleIndex: number
     competitors: ICompetitor[]
@@ -58,6 +57,8 @@ export class Evolution {
     private gotchiMidpoint = new Vector3()
 
     constructor(
+        private cyclePattern: number[],
+        private reachedTarget: () => void,
         private createInstance: CreateInstance,
         gotchi: Gotchi,
     ) {
@@ -67,7 +68,7 @@ export class Evolution {
         this.survivorMidpoint = gotchi.getMidpoint()
         const storedGenes = gotchi.patch.storedGenes
         this.baseGotchi = gotchi.recycled(createInstance(false, gotchi.fabricClone), storedGenes[0])
-        this.currentMaxCycles = CYCLE_PATTERN[this.cyclePatternIndex = 0]
+        this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex = 0]
         this.baseGotchi.snapshot()
         this.baseGotchi.autopilot = true
         const gotchis: Gotchi[] = []
@@ -99,8 +100,7 @@ export class Evolution {
 
     public iterate(): number {
         this.evolvers.forEach(({gotchi}) => gotchi.iterate())
-        const evolverCycleCount = this.evolvers.reduce((min, {gotchi}) => Math.max(min, gotchi.cycleCount), 0)
-        if (evolverCycleCount >= this.currentMaxCycles) {
+        const completeGeneration = () => {
             this.sortEvolvers()
             this.markTheDead()
             const survivors = this.evolvers.filter(({dead}) => !dead)
@@ -108,10 +108,27 @@ export class Evolution {
             survivors.forEach(survivor => survivor.saved = true)
             this.evolvers.filter(({dead}) => dead).forEach(e => e.saved = false)
             this.takeSnapshot()
+        }
+        const evolverCycleCount = this.evolvers.reduce((min, {gotchi}) => Math.max(min, gotchi.cycleCount), 0)
+        if (evolverCycleCount >= this.currentMaxCycles) {
+            completeGeneration()
             this.nextGenerationFromSurvival()
-            this.adjustLimit()
+            if (this.cyclePatternIndex === this.cyclePattern.length - 1) {
+                this.finished = true
+                this.cyclePatternIndex = 0
+            } else {
+                this.cyclePatternIndex++
+                this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex]
+            }
             this.cycleCount = -1
         } else if (evolverCycleCount > this.cycleCount) {
+            const evolversAtTarget = this.evolvers.filter(({gotchi}) => gotchi.state.reachedTarget).length
+            if (evolversAtTarget > this.survivorCount / 2) {
+                completeGeneration()
+                this.reachedTarget()
+                this.finished = true
+                return 0
+            }
             this.cycleCount = evolverCycleCount
             this.sortEvolvers()
             this.takeSnapshot()
@@ -130,16 +147,6 @@ export class Evolution {
 
     // Privates =============================================================
 
-    private adjustLimit(): void {
-        if (this.cyclePatternIndex === CYCLE_PATTERN.length - 1) {
-            this.finished = true
-            this.cyclePatternIndex = 0
-            return
-        }
-        this.cyclePatternIndex++
-        this.currentMaxCycles = CYCLE_PATTERN[this.cyclePatternIndex]
-    }
-
     private sortEvolvers(): void {
         this.evolvers.forEach(evolver => {
             evolver.proximity = evolver.gotchi.getMidpoint(this.gotchiMidpoint).distanceTo(evolver.gotchi.target)
@@ -156,7 +163,8 @@ export class Evolution {
             const competitor: ICompetitor = {name, proximity, tosses, dead, saved}
             return competitor
         })
-        const snapshot = {cycle, cycleIndex, competitors}
+        const cyclePattern = this.cyclePattern
+        const snapshot = {cycle, cyclePattern, cycleIndex, competitors}
         const snapshots = this.snapshotsSubject.getValue()
         const alreadyHere = snapshots.findIndex(s => snapshot.cycleIndex === s.cycleIndex)
         if (alreadyHere < 0) {
@@ -180,7 +188,7 @@ export class Evolution {
                 this.survivorMidpoint.add(evolver.gotchi.getMidpoint(this.gotchiMidpoint))
             }
         })
-        this.cycleCount = CYCLE_PATTERN[this.cyclePatternIndex]
+        this.cycleCount = this.cyclePattern[this.cyclePatternIndex]
         this.survivorMidpoint.multiplyScalar(1.0 / survivorCount)
     }
 

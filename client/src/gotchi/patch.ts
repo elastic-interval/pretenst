@@ -44,14 +44,12 @@ export class Patch {
 
     public get storedGenes(): IGeneData[][] {
         const item = localStorage.getItem(this.name)
-        const geneData = item ? JSON.parse(item) : [emptyGenome().geneData]
-        console.log(`Loading genome from ${this.name}`, geneData)
-        return geneData
+        return item ? JSON.parse(item) : [emptyGenome().geneData]
     }
 
     public set storedGenes(geneData: IGeneData[][]) {
         localStorage.setItem(this.name, JSON.stringify(geneData))
-        console.log(`Saving genome to ${this.name}`, geneData)
+        // console.log(`Saving genome to ${this.name}`, geneData)
     }
 
     public createGotchi(instance: FabricInstance): Gotchi | undefined {

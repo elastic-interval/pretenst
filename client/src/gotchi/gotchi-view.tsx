@@ -33,6 +33,8 @@ export function GotchiView({island, homePatch, createInstance}: {
     homePatch: Patch,
     createInstance: CreateInstance,
 }): JSX.Element {
+    const [cyclePattern, setCyclePattern] = useState<number[]>([5, 6, 7, 8, 9, 10])
+    const [reachedTarget, setReachedTarget] = useState(false)
     const [satoshiTrees] = useState(() => island.patches
         .filter(patch => patch.patchCharacter === PatchCharacter.FloraPatch)
         .map(patch => patch.createNewSatoshiTree(createInstance(true))))
@@ -60,14 +62,27 @@ export function GotchiView({island, homePatch, createInstance}: {
         return () => sub.unsubscribe()
     }, [evolution])
 
-    const onEvolve = (toEvolve: Gotchi) => {
-        toEvolve.recycled(toEvolve.instance)
-        setEvolution(new Evolution(createInstance, toEvolve))
+    useEffect(() => {
+        if (!reachedTarget || !evolution) {
+            return
+        }
+        setCyclePattern(() => {
+            const reduced = [...cyclePattern]
+            reduced.pop()
+            return reduced
+        })
+        setReachedTarget(false)
+    }, [reachedTarget, evolution, cyclePattern])
+
+    const onEvolve = (toEvolve: Gotchi, pattern: number[]) => {
+        toEvolve = toEvolve.recycled(toEvolve.instance)
+        // todo: free the previous one?
+        setEvolution(new Evolution(pattern, () => setReachedTarget(true), createInstance, toEvolve))
     }
     const startEvolution = () => {
         setHappening(Happening.Evolving)
         if (gotchi) {
-            onEvolve(gotchi)
+            onEvolve(gotchi, cyclePattern)
         }
     }
     const stopEvolution = () => {
@@ -96,10 +111,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                         }}>
                             <FaRunning/>
                         </Button>
-                        <Button color="success" onClick={() => {
-                            setHappening(Happening.Evolving)
-                            onEvolve(gotchi)
-                        }}>
+                        <Button color="success" onClick={startEvolution}>
                             <FaDna/>
                         </Button>
                         <Button color="success" onClick={() => {
@@ -141,10 +153,11 @@ export function GotchiView({island, homePatch, createInstance}: {
         switch (happening) {
             case Happening.Developing:
             case Happening.Running:
-                return undefined
             case Happening.Resting:
+                return undefined
             case Happening.Evolving:
-                return !(snapshots.length > 0 && evoDetails) ? undefined : <EvolutionView snapshots={snapshots}/>
+                return !(evolution && snapshots.length > 0 && evoDetails) ? undefined :
+                    <EvolutionView snapshots={snapshots}/>
         }
     }
     const bm = bottomMiddle()

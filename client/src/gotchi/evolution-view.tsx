@@ -6,20 +6,20 @@
 import * as React from "react"
 import { FaDna } from "react-icons/all"
 
-import { CYCLE_PATTERN, IEvolutionSnapshot, letter } from "./evolution"
+import { IEvolutionSnapshot, letter } from "./evolution"
 
 export function EvolutionView({snapshots}: {
     snapshots: IEvolutionSnapshot[],
 }): JSX.Element {
     return (
         <div className="text-monospace d-inline-flex">
-            {snapshots.map(({cycle, cycleIndex, competitors}) => (
+            {snapshots.map(({cycle, cyclePattern, cycleIndex, competitors}) => (
                 <div key={cycleIndex} className="float-left p-1 m-1" style={{
                     borderStyle: "solid",
                     borderWidth: "2px",
                 }}>
                     <div className="p-1 my-2 w-100 text-center">
-                        {CYCLE_PATTERN.map((cycles, index) => (
+                        {cyclePattern.map((cycles, index) => (
                             <span
                                 key={`cycle-${index}`}
                                 style={{
@@ -31,7 +31,7 @@ export function EvolutionView({snapshots}: {
                                     borderStyle: "solid",
                                     borderWidth: "1px",
                                 }}
-                            >{index === cycleIndex && cycle < CYCLE_PATTERN[cycleIndex] ? `${cycle}/${cycles}` : cycles}</span>
+                            >{index === cycleIndex && cycle < cyclePattern[cycleIndex] ? `${cycle}/${cycles}` : cycles}</span>
                         ))}
                     </div>
                     <div className="m-2">

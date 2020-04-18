@@ -23,6 +23,8 @@ export enum Direction {
 
 export const DIRECTIONS: Direction[] = Object.keys(Direction).map(k => Direction[k])
 
+const CLOSE_ENOUGH_TO_TARGET = 5
+
 export function directionGene(direction: Direction): GeneName {
     switch (direction) {
         case Direction.Forward:
@@ -69,6 +71,7 @@ export interface IGotchiState {
     autopilot: boolean
     timeSlice: number
     targetPatch: Patch
+    reachedTarget: boolean
 }
 
 export function freshGotchiState(patch: Patch, instance: FabricInstance, genome: Genome): IGotchiState {
@@ -83,6 +86,7 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
         autopilot: false,
         timeSlice: 0,
         targetPatch: patch.adjacent[patch.rotation],
+        reachedTarget: false,
     }
 }
 
@@ -269,8 +273,8 @@ export class Gotchi {
 
     private checkDirection(): void {
         const state = this.state
-        const touchedDestination = this.getMidpoint().distanceTo(this.target) < 5 // TODO
-        if (touchedDestination) {
+        this.state.reachedTarget = this.getMidpoint().distanceTo(this.target) < CLOSE_ENOUGH_TO_TARGET
+        if (this.state.reachedTarget) {
             this.direction = Direction.Rest
         } else {
             state.direction = this.directionToTarget
