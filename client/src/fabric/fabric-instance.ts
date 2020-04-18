@@ -180,14 +180,12 @@ export class FabricInstance {
                 const lineColor = line.color as Float32BufferAttribute
                 view.copy_line_colors_to(lineColor.array as Float32Array)
                 lineColor.needsUpdate = true
-                // floatView.lineGeometry.computeBoundingBox()
                 const facePosition = face.position as Float32BufferAttribute
                 view.copy_face_vertex_locations_to(facePosition.array as Float32Array)
                 facePosition.needsUpdate = true
                 const faceNormal = face.normal as Float32BufferAttribute
                 view.copy_face_normals_to(faceNormal.array as Float32Array)
                 faceNormal.needsUpdate = true
-                // floatView.faceGeometry.computeBoundingBox()
             }
         }
         view.copy_joint_locations_to(floatView.jointLocations)

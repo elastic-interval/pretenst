@@ -220,7 +220,7 @@ function GotchiComponent({gotchi, faces}: {
     const floatView = state.instance.floatView
     return (
         <group>
-            <lineSegments geometry={floatView.lineGeometry}>
+            <lineSegments geometry={floatView.lineGeometry} onUpdate={self => self.geometry.computeBoundingSphere()}>
                 <lineBasicMaterial attach="material" vertexColors={true}/>
             </lineSegments>
             {!faces ? undefined : (
