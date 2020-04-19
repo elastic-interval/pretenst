@@ -220,7 +220,7 @@ function GotchiComponent({gotchi, faces}: {
                 <lineBasicMaterial attach="material" vertexColors={true}/>
             </lineSegments>
             {!faces ? undefined : (
-                <mesh geometry={floatView.faceGeometry}>
+                <mesh geometry={floatView.faceGeometry} onUpdate={self => self.geometry.computeBoundingSphere()}>
                     <meshPhongMaterial
                         attach="material"
                         transparent={true}
