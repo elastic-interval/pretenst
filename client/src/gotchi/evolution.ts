@@ -126,7 +126,8 @@ export class Evolution {
                 completeGeneration()
                 this.reachedTarget()
                 this.finished = true
-                return 0
+                this.cycleCount = -1
+                return this.cycleCount
             }
             this.cycleCount = evolverCycleCount
             this.sortEvolvers()

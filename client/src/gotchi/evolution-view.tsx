@@ -4,7 +4,7 @@
  */
 
 import * as React from "react"
-import { FaDna } from "react-icons/all"
+import { FaDna, FaYinYang } from "react-icons/all"
 
 import { IEvolutionSnapshot, letter } from "./evolution"
 
@@ -47,9 +47,10 @@ export function EvolutionView({snapshots}: {
                                 mutationSymbols.push(<FaDna key={`${name}-${nameLength}`}/>)
                                 nameLength--
                             }
+                            const reachedSymbol = reachedTarget ? <FaYinYang/> : undefined
                             return (
                                 <div key={`competitor-${index}`} style={{
-                                    color: dead ? "#c2c2c2" : "#2cd710",
+                                    color: dead ? "#c2c2c2" : reachedTarget ? "#ffffff" : "#2cd710",
                                     backgroundColor: !saved ? "#555454" : reachedTarget ? "#b1b1b1" : "#848383",
                                     borderRadius: "0.2em",
                                     marginBottom: "1px",
@@ -59,7 +60,7 @@ export function EvolutionView({snapshots}: {
                                 }}>
                                     {`${letter(index)} ${proximity.toFixed(3)} ${name}${tosses}`}
                                     &nbsp;
-                                    {mutationSymbols}
+                                    {mutationSymbols}{reachedSymbol}
                                 </div>
                             )
                         })}
