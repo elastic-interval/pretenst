@@ -163,15 +163,15 @@ a, a:hover {
     color: rgba(255, 255, 178, 0.51);
     top: 50%;
     left: 50%;
-    transform: translate(-50%,-50%);
+    transform: translate(-50%, -50%);
     z-index: 100;
     background-color: #555454;
     border-radius: 1em;
     border-color: #9fa8b2;
-    border-width: 0.3em;
-    border-style: solid;
     font-size: x-small;
     opacity: 60%;
+    border-style: solid;
+    border-width: 0.1em;
 }
 
 #bottom-middle {
@@ -180,6 +180,11 @@ a, a:hover {
     left: 50%;
     transform: translate(-50%);
     z-index: 100;
+    background-color: white;
+    border-radius: 1em;
+    border-style: solid;
+    border-width: 0.1em;
+    width: 15em;
 }
 
 .rst__rowWrapper {

@@ -29,6 +29,7 @@ const TOWARDS_POSITION = 0.003
 const TOWARDS_TARGET = 0.01
 const TARGET_HEIGHT = 3
 const TOWARDS_HEIGHT = 0.01
+const SECONDS_UNTIL_EVOLUTION = 20
 
 export function IslandView({island, satoshiTrees, happening, gotchi, evolution, startEvolution, stopEvolution}: {
     island: Island,
@@ -36,13 +37,14 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     happening: Happening,
     gotchi?: Gotchi,
     evolution?: Evolution,
-    startEvolution: () => void,
+    startEvolution: (countdown: number) => void,
     stopEvolution: () => void,
 }): JSX.Element {
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
     const viewContainer = document.getElementById("view-container") as HTMLElement
-    const [whyThis, updateWhyThis] = useState(0)
+    const [happeningChanged, updateHappeningChanged] = useState(Date.now())
+    const [now, updateNow] = useState(Date.now())
     const midpoint = new Vector3()
 
     function developing(g: Gotchi): number {
@@ -106,9 +108,12 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
         control.update()
         const treeNumber = Math.floor(Math.random() * satoshiTrees.length)
         satoshiTrees[treeNumber].iterate()
-        updateWhyThis(whyThis + 1)
-        if (happening === Happening.Resting && whyThis > 1000) {
-            startEvolution()
+        const wasSeconds = Math.floor((now - happeningChanged) / 1000)
+        const time = Date.now()
+        updateNow(time)
+        const isSeconds = Math.floor((time - happeningChanged) / 1000)
+        if (happening === Happening.Resting && wasSeconds < isSeconds) {
+            startEvolution(SECONDS_UNTIL_EVOLUTION - isSeconds)
         }
     })
 
@@ -124,11 +129,9 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     }, [])
 
     useEffect(() => {
-        updateWhyThis(0)
-    }, [gotchi, evolution, happening])
-
-    useEffect(() => {
         orbit.current.autoRotate = happening === Happening.Evolving
+        updateHappeningChanged(Date.now())
+        updateNow(Date.now())
     }, [happening])
 
     return (
@@ -182,8 +185,8 @@ function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
     const target = evolution.target
     return (
         <group>
-            {evolution.evolvers.map(({gotchi, index}) => (
-                <GotchiComponent key={`evolving-gotchi-${index}`} gotchi={gotchi} faces={false}/>
+            {evolution.evolvers.map(({gotchi, state}) => (
+                <GotchiComponent key={`evolving-gotchi-${state.index}`} gotchi={gotchi} faces={false}/>
             ))}
             <lineSegments>
                 <bufferGeometry attach="geometry">

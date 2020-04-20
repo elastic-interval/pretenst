@@ -13,7 +13,7 @@ export function EvolutionView({snapshots}: {
 }): JSX.Element {
     return (
         <div className="text-monospace d-inline-flex">
-            {snapshots.map(({cycle, cyclePattern, cycleIndex, competitors}) => (
+            {snapshots.map(({cycle, cyclePattern, cycleIndex, evolverStates}) => (
                 <div key={cycleIndex} className="float-left p-1 m-1" style={{
                     borderStyle: "solid",
                     borderWidth: "2px",
@@ -35,12 +35,8 @@ export function EvolutionView({snapshots}: {
                         ))}
                     </div>
                     <div className="m-2">
-                        {competitors.map((
-                            {
-                                name, proximity, tosses,
-                                dead, saved, reachedTarget,
-                            },
-                            index) => {
+                        {evolverStates.map(state => {
+                            const {name, reachedTarget, saved, dead, index, proximity, tosses} = state
                             const mutationSymbols = []
                             let nameLength = name.length - 1
                             while (nameLength > 0) {
