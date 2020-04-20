@@ -259,6 +259,10 @@ export class Gotchi {
         }
     }
 
+    public showFrozen(): void {
+        this.instance.showFrozen()
+    }
+
     public get target(): Vector3 {
         return this.state.targetPatch.center
     }

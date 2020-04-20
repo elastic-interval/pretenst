@@ -72,9 +72,12 @@ export class FabricInstance {
         if (feature) {
             this.world.set_float_value(feature.fabricFeature, feature.numeric)
         }
-        this.view.render(this.fabric, this.world)
-        this.updateFloatView()
+        this.refreshFloatView()
         return stage
+    }
+
+    public showFrozen(): void {
+        this.updateFloatView(true)
     }
 
     public get fabricClone(): Fabric {
@@ -96,7 +99,7 @@ export class FabricInstance {
 
     public refreshFloatView(): void {
         this.view.render(this.fabric, this.world)
-        this.updateFloatView()
+        this.updateFloatView(false)
     }
 
     public clear(): FabricInstance {
@@ -132,7 +135,7 @@ export class FabricInstance {
         }
     }
 
-    private updateFloatView(): void {
+    private updateFloatView(frozen: boolean): void {
         const fabric = this.fabric
         const view = this.view
         const jointCount = fabric.get_joint_count()
@@ -151,7 +154,11 @@ export class FabricInstance {
             view.copy_line_locations_to(lineLocations)
             floatView.lineGeometry.setAttribute("position", new Float32BufferAttribute(lineLocations, 3))
             const lineColors = new Float32Array(intervalCount * 3 * 2)
-            view.copy_line_colors_to(lineColors)
+            if (frozen) {
+                lineColors.fill(1)
+            } else {
+                view.copy_line_colors_to(lineColors)
+            }
             floatView.lineGeometry.setAttribute("color", new Float32BufferAttribute(lineColors, 3))
             floatView.faceGeometry.dispose()
             floatView.faceGeometry = new BufferGeometry()
@@ -178,7 +185,12 @@ export class FabricInstance {
                 view.copy_line_locations_to(linePosition.array as Float32Array)
                 linePosition.needsUpdate = true
                 const lineColor = line.color as Float32BufferAttribute
-                view.copy_line_colors_to(lineColor.array as Float32Array)
+                const lineColorArray = lineColor.array as Float32Array
+                if (frozen) {
+                    lineColorArray.fill(1)
+                } else {
+                    view.copy_line_colors_to(lineColorArray)
+                }
                 lineColor.needsUpdate = true
                 const facePosition = face.position as Float32BufferAttribute
                 view.copy_face_vertex_locations_to(facePosition.array as Float32Array)

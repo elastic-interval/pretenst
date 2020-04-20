@@ -102,6 +102,8 @@ export class Evolution {
         this.evolvers.forEach(({gotchi, state}) => {
             if (!state.reachedTarget && gotchi.cycleCount < this.currentMaxCycles) {
                 gotchi.iterate()
+            } else {
+                gotchi.showFrozen()
             }
         })
         const completeGeneration = () => {
