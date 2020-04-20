@@ -26,7 +26,7 @@ import { TensegrityView } from "./view/tensegrity-view"
 
 const GOTCHI = localStorage.getItem("gotchi") === "true"
 
-const GOTCHI_TENSCRIPT = "'Gotchi':(A(4,S80,Mc0),b(4,S80,Mc0),a(1,Md0),B(1,Md0)):0=face-distance-55"
+const GOTCHI_TENSCRIPT = "'Gotchi':(A(4,S80,Mc0),b(4,S80,Mc0),a(2,S60,Md0),B(2,S60,Md0)):0=face-distance-55"
 const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,b(6,S85),c(6,S85),d(6,S85))"
 
 export async function startReact(
