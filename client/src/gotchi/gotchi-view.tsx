@@ -34,8 +34,7 @@ export function GotchiView({island, homePatch, createInstance}: {
     homePatch: Patch,
     createInstance: CreateInstance,
 }): JSX.Element {
-    const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
-    const [reachedTarget, setReachedTarget] = useState(false)
+    // const [cyclePattern, setCyclePattern] = useState<number[]>(EVO_PARAMETERS.cycle)
     const [satoshiTrees] = useState(() => island.patches
         .filter(patch => patch.patchCharacter === PatchCharacter.FloraPatch)
         .map(patch => patch.createNewSatoshiTree(createInstance(true))))
@@ -70,33 +69,30 @@ export function GotchiView({island, homePatch, createInstance}: {
         return () => sub.unsubscribe()
     }, [evolution])
 
-    useEffect(() => {
-        if (!reachedTarget || !evolution) {
-            return
-        }
-        setCyclePattern(() => {
-            const reduced = [...cyclePattern]
-            reduced.pop()
-            return reduced
-        })
-        setReachedTarget(false)
-    }, [reachedTarget, evolution, cyclePattern])
-
-    const onEvolve = (toEvolve: Gotchi, pattern: number[]) => {
+    const evolveWithPattern = (toEvolve: Gotchi, pattern: number[]) => {
         toEvolve = toEvolve.recycled(toEvolve.instance)
-        // todo: free the previous one?
-        setEvolution(new Evolution(pattern, () => setReachedTarget(true), createInstance, toEvolve))
+        if (evolution) {
+            setEvolution(evolution.withReducedCyclePattern)
+            // todo: free up current evolution?
+        } else {
+            setEvolution(new Evolution(pattern, createInstance, toEvolve))
+        }
         setHappening(Happening.Evolving)
     }
-    const startEvolution = (countdown: number) => {
+
+    const countdownToEvolution = (countdown: number) => {
         setEvolutionCountdown(countdown)
         if (gotchi && countdown === 0) {
-            onEvolve(gotchi, cyclePattern)
+            evolveWithPattern(gotchi, EVO_PARAMETERS.cyclePattern)
         }
     }
+
     const stopEvolution = () => {
         setHappening(Happening.Resting)
+        // todo: free up current evolution?
+        setEvolution(undefined)
     }
+
     return (
         <div id="view-container" style={{
             position: "absolute",
@@ -112,7 +108,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                     happening={happening}
                     gotchi={gotchi}
                     evolution={evolution}
-                    startEvolution={startEvolution}
+                    countdownToEvolution={countdownToEvolution}
                     stopEvolution={stopEvolution}
                 />
             </Canvas>
@@ -137,7 +133,7 @@ export function GotchiView({island, homePatch, createInstance}: {
                     toEvolving={() => {
                         setHappening(Happening.Evolving)
                         setEvolutionCountdown(-1)
-                        onEvolve(gotchi, cyclePattern)
+                        evolveWithPattern(gotchi, EVO_PARAMETERS.cyclePattern)
                     }}
                     toRebirth={() => {
                         setGotchi(homePatch.createGotchi(createInstance(false)))

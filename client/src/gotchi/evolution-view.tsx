@@ -36,7 +36,7 @@ export function EvolutionView({snapshots}: {
                     </div>
                     <div className="m-2">
                         {evolverStates.map(state => {
-                            const {name, reachedTarget, saved, dead, index, proximity, tosses} = state
+                            const {name, reachedTarget, persisted, index, proximity, tosses} = state
                             const mutationSymbols = []
                             let nameLength = name.length - 1
                             while (nameLength > 0) {
@@ -46,8 +46,8 @@ export function EvolutionView({snapshots}: {
                             const reachedSymbol = reachedTarget ? <FaYinYang/> : undefined
                             return (
                                 <div key={`competitor-${index}`} style={{
-                                    color: dead ? "#c2c2c2" : reachedTarget ? "#ffffff" : "#2cd710",
-                                    backgroundColor: !saved ? "#555454" : reachedTarget ? "#b1b1b1" : "#848383",
+                                    color: persisted ? reachedTarget ? "#ffffff" : "#2cd710" : "#c2c2c2",
+                                    backgroundColor: persisted ? reachedTarget ? "#b1b1b1" : "#848383" : "#555454",
                                     borderRadius: "0.2em",
                                     marginBottom: "1px",
                                     padding: "2px",

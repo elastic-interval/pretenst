@@ -10,7 +10,7 @@ import { DoubleSide, PerspectiveCamera, Vector3 } from "three"
 
 import { Orbit } from "../view/orbit"
 
-import { Evolution } from "./evolution"
+import { Evolution, EvolutionPhase } from "./evolution"
 import { Gotchi } from "./gotchi"
 import { Happening } from "./gotchi-view"
 import { Island, PatchCharacter } from "./island"
@@ -31,13 +31,13 @@ const TARGET_HEIGHT = 3
 const TOWARDS_HEIGHT = 0.01
 const SECONDS_UNTIL_EVOLUTION = 20
 
-export function IslandView({island, satoshiTrees, happening, gotchi, evolution, startEvolution, stopEvolution}: {
+export function IslandView({island, satoshiTrees, happening, gotchi, evolution, countdownToEvolution, stopEvolution}: {
     island: Island,
     satoshiTrees: SatoshiTree[],
     happening: Happening,
     gotchi?: Gotchi,
     evolution?: Evolution,
-    startEvolution: (countdown: number) => void,
+    countdownToEvolution: (countdown: number) => void,
     stopEvolution: () => void,
 }): JSX.Element {
     const {camera} = useThree()
@@ -63,12 +63,10 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     }
 
     function evolving(e: Evolution): number {
-        if (e.finished) {
+        if (e.iterate() === EvolutionPhase.EvolutionComplete) {
             stopEvolution()
-        } else {
-            e.iterate()
-            e.getMidpoint(midpoint)
         }
+        e.getMidpoint(midpoint)
         return 15
     }
 
@@ -113,7 +111,7 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
         updateNow(time)
         const isSeconds = Math.floor((time - happeningChanged) / 1000)
         if (happening === Happening.Resting && wasSeconds < isSeconds) {
-            startEvolution(SECONDS_UNTIL_EVOLUTION - isSeconds)
+            countdownToEvolution(SECONDS_UNTIL_EVOLUTION - isSeconds)
         }
     })
 
@@ -185,8 +183,11 @@ function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
     const target = evolution.target
     return (
         <group>
-            {evolution.evolvers.map(({gotchi, state}) => (
-                <GotchiComponent key={`evolving-gotchi-${state.index}`} gotchi={gotchi} faces={false}/>
+            {evolution.winners.map(({gotchi, state}) => (
+                <GotchiComponent key={`winner-${state.index}`} gotchi={gotchi} faces={false}/>
+            ))}
+            {evolution.candidates.map(({gotchi, state}) => (
+                <GotchiComponent key={`candidate-${state.index}`} gotchi={gotchi} faces={false}/>
             ))}
             <lineSegments>
                 <bufferGeometry attach="geometry">
