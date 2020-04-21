@@ -27,6 +27,7 @@ import { TensegrityView } from "./view/tensegrity-view"
 const GOTCHI = localStorage.getItem("gotchi") === "true"
 
 const GOTCHI_TENSCRIPT = "'Gotchi':(A(4,S80,Mc0),b(4,S80,Mc0),a(2,S60,Md0),B(2,S60,Md0)):0=face-distance-55"
+// const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0)):0=subtree(b(3, S85),c(3, S85),d(3, S85))"
 const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,b(6,S85),c(6,S85),d(6,S85))"
 
 export async function startReact(
@@ -69,16 +70,20 @@ export async function startReact(
         const satoshiTreeNumericFeature = (feature: FabricFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
+                case FabricFeature.Gravity:
+                    return defaultValue * 5
                 case FabricFeature.IntervalCountdown:
                     return defaultValue * 0.1
                 case FabricFeature.Antigravity:
                     return defaultValue * 0.3
                 case FabricFeature.Drag:
-                    return defaultValue * 0.7
+                    return 0
                 case FabricFeature.PretenstFactor:
                     return defaultValue * 5
                 case FabricFeature.StiffnessFactor:
-                    return defaultValue * 4
+                    return defaultValue * 8
+                case FabricFeature.RealizingCountdown:
+                    return defaultValue * 0.02
                 default:
                     return defaultValue
             }
