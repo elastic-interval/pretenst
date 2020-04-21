@@ -142,23 +142,24 @@ a, a:hover {
     font-size: x-small;
 }
 
-#top-middle {
+#evolution-phase {
     position: absolute;
-    color: rgba(255, 255, 178, 0.51);
+    padding: 0.5em;
+    padding-bottom: 0.3em;
+    color: white;
     top: 1em;
     left: 50%;
     transform: translate(-50%);
     z-index: 100;
-    background-color: darkgray;
+    background-color: black;
     border-radius: 1em;
     border-color: #9fa8b2;
     border-width: 0.3em;
     border-style: solid;
-    font-size: x-small;
-    opacity: 60%;
+    font-size: large;
 }
 
-#middle {
+#evolution-stats {
     position: absolute;
     color: rgba(255, 255, 178, 0.51);
     top: 50%;

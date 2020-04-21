@@ -8,12 +8,12 @@ import { FaDna, FaYinYang } from "react-icons/all"
 
 import { IEvolutionSnapshot, letter } from "./evolution"
 
-export function EvolutionView({snapshots}: {
+export function EvolutionStats({snapshots}: {
     snapshots: IEvolutionSnapshot[],
 }): JSX.Element {
     return (
         <div className="text-monospace d-inline-flex">
-            {snapshots.map(({cycle, cyclePattern, cycleIndex, evolverStates}) => (
+            {snapshots.map(({cycle, cyclePattern, cycleIndex, evolverSnapshots}) => (
                 <div key={cycleIndex} className="float-left p-1 m-1" style={{
                     borderStyle: "solid",
                     borderWidth: "2px",
@@ -35,8 +35,8 @@ export function EvolutionView({snapshots}: {
                         ))}
                     </div>
                     <div className="m-2">
-                        {evolverStates.map(state => {
-                            const {name, reachedTarget, persisted, index, proximity, tosses} = state
+                        {evolverSnapshots.map((snapshot, index) => {
+                            const {name, reachedTarget, persisted, proximity, tosses} = snapshot
                             const mutationSymbols = []
                             let nameLength = name.length - 1
                             while (nameLength > 0) {

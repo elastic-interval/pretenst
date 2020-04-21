@@ -15,8 +15,8 @@ import { stageName } from "../fabric/eig-util"
 import { CreateInstance } from "../fabric/fabric-instance"
 import { Life } from "../fabric/life"
 
-import { EVO_PARAMETERS, Evolution, IEvolutionSnapshot } from "./evolution"
-import { EvolutionView } from "./evolution-view"
+import { EVO_PARAMETERS, Evolution, EvolutionPhase, IEvolutionSnapshot } from "./evolution"
+import { EvolutionStats } from "./evolution-stats"
 import { Direction, Gotchi } from "./gotchi"
 import { Island, PatchCharacter } from "./island"
 import { IslandView } from "./island-view"
@@ -44,6 +44,7 @@ export function GotchiView({island, homePatch, createInstance}: {
     const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
     const [evolutionCountdown, setEvolutionCountdown] = useState(-1)
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
+    const [phase, setPhase] = useState(EvolutionPhase.WinnersAdvance)
     const [life, updateLife] = useState<Life | undefined>(undefined)
 
     useEffect(() => {
@@ -70,12 +71,11 @@ export function GotchiView({island, homePatch, createInstance}: {
     }, [evolution])
 
     const evolveWithPattern = (toEvolve: Gotchi, pattern: number[]) => {
-        toEvolve = toEvolve.recycled(toEvolve.instance)
         if (evolution) {
             setEvolution(evolution.withReducedCyclePattern)
             // todo: free up current evolution?
         } else {
-            setEvolution(new Evolution(pattern, createInstance, toEvolve))
+            setEvolution(new Evolution(toEvolve, createInstance, pattern))
         }
         setHappening(Happening.Evolving)
     }
@@ -108,6 +108,11 @@ export function GotchiView({island, homePatch, createInstance}: {
                     happening={happening}
                     gotchi={gotchi}
                     evolution={evolution}
+                    evolutionPhase={evolutionPhase => {
+                        if (evolutionPhase !== phase) {
+                            setPhase(evolutionPhase)
+                        }
+                    }}
                     countdownToEvolution={countdownToEvolution}
                     stopEvolution={stopEvolution}
                 />
@@ -147,12 +152,17 @@ export function GotchiView({island, homePatch, createInstance}: {
                 />
             )}
             {!evolution ? undefined : (
-                <EvolutionStats
-                    happening={happening}
-                    evolution={evolution}
-                    snapshots={snapshots}
-                    evoDetails={evoDetails}
-                />
+                <>
+                    <div id="evolution-phase">
+                        <h6>{phase}</h6>
+                    </div>
+                    <EvolutionStatsView
+                        happening={happening}
+                        evolution={evolution}
+                        snapshots={snapshots}
+                        evoDetails={evoDetails}
+                    />
+                </>
             )}
         </div>
     )
@@ -217,7 +227,7 @@ function ControlButtons({gotchi, happening, evoDetails, evolutionCountdown, toRu
     )
 }
 
-function EvolutionStats({happening, evolution, snapshots, evoDetails}: {
+function EvolutionStatsView({happening, evolution, snapshots, evoDetails}: {
     happening: Happening,
     evolution: Evolution,
     snapshots: IEvolutionSnapshot[],
@@ -230,8 +240,8 @@ function EvolutionStats({happening, evolution, snapshots, evoDetails}: {
             return <div/>
         case Happening.Evolving:
             return !(evolution && snapshots.length > 0 && evoDetails) ? <div/> : (
-                <div id="middle">
-                    <EvolutionView snapshots={snapshots}/>
+                <div id="evolution-stats">
+                    <EvolutionStats snapshots={snapshots}/>
                 </div>
             )
     }

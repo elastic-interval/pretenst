@@ -62,6 +62,7 @@ export enum Limb {
 
 export interface IGotchiState {
     patch: Patch
+    targetPatch: Patch
     instance: FabricInstance
     muscles: IMuscle[]
     extremities: IExtremity[]
@@ -70,13 +71,12 @@ export interface IGotchiState {
     directionHistory: Direction[]
     autopilot: boolean
     timeSlice: number
-    targetPatch: Patch
-    reachedTarget: boolean
 }
 
 export function freshGotchiState(patch: Patch, instance: FabricInstance, genome: Genome): IGotchiState {
     return <IGotchiState>{
         patch,
+        targetPatch: patch.adjacent[patch.rotation],
         instance,
         muscles: [],
         extremities: [],
@@ -85,7 +85,6 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
         directionHistory: [],
         autopilot: false,
         timeSlice: 0,
-        targetPatch: patch.adjacent[patch.rotation],
         reachedTarget: false,
     }
 }
@@ -250,9 +249,12 @@ export class Gotchi {
             instance.iterate(Stage.Pretenst)
             if (this.twitcher) {
                 const twitch: Twitch = (m, a, d, n) => this.twitch(m, a, d, n)
-                const cycleIncrement = this.twitcher.tick(twitch)
-                if (cycleIncrement && this.autopilot) {
-                    this.checkDirection()
+                if (this.twitcher.tick(twitch) && this.state.autopilot) {
+                    if (this.reachedTarget) {
+                        this.direction = Direction.Rest
+                    } else {
+                        this.checkDirection()
+                    }
                 }
             }
             return true
@@ -275,10 +277,13 @@ export class Gotchi {
         return this.quaternionForDirection(this.state.direction)
     }
 
-    private checkDirection(): void {
+    public get reachedTarget(): boolean {
+        return this.distanceFromTarget < CLOSE_ENOUGH_TO_TARGET
+    }
+
+    public checkDirection(): void {
         const state = this.state
-        this.state.reachedTarget = this.getMidpoint().distanceTo(this.target) < CLOSE_ENOUGH_TO_TARGET
-        if (this.state.reachedTarget) {
+        if (this.reachedTarget) {
             this.direction = Direction.Rest
         } else {
             state.direction = this.directionToTarget

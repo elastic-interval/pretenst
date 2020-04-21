@@ -31,12 +31,13 @@ const TARGET_HEIGHT = 3
 const TOWARDS_HEIGHT = 0.01
 const SECONDS_UNTIL_EVOLUTION = 20
 
-export function IslandView({island, satoshiTrees, happening, gotchi, evolution, countdownToEvolution, stopEvolution}: {
+export function IslandView({island, satoshiTrees, happening, gotchi, evolution, evolutionPhase, countdownToEvolution, stopEvolution}: {
     island: Island,
     satoshiTrees: SatoshiTree[],
     happening: Happening,
     gotchi?: Gotchi,
     evolution?: Evolution,
+    evolutionPhase: (phase: EvolutionPhase) => void,
     countdownToEvolution: (countdown: number) => void,
     stopEvolution: () => void,
 }): JSX.Element {
@@ -99,6 +100,7 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
             case Happening.Evolving:
                 if (evolution) {
                     approachDistance(evolving(evolution))
+                    evolutionPhase(evolution.phase)
                 }
                 break
         }
@@ -183,11 +185,11 @@ function EvolutionScene({evolution}: { evolution: Evolution }): JSX.Element {
     const target = evolution.target
     return (
         <group>
-            {evolution.winners.map(({gotchi, state}) => (
-                <GotchiComponent key={`winner-${state.index}`} gotchi={gotchi} faces={false}/>
+            {evolution.winners.map(({gotchi}, index) => (
+                <GotchiComponent key={`evolving-${index}`} gotchi={gotchi} faces={false}/>
             ))}
-            {evolution.candidates.map(({gotchi, state}) => (
-                <GotchiComponent key={`candidate-${state.index}`} gotchi={gotchi} faces={false}/>
+            {!evolution.challengersVisible ? undefined : evolution.challengers.map(({gotchi}, index) => (
+                <GotchiComponent key={`evolving-${index + evolution.winners.length}`} gotchi={gotchi} faces={false}/>
             ))}
             <lineSegments>
                 <bufferGeometry attach="geometry">
