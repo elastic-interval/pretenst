@@ -24,19 +24,20 @@ export const EVO_PARAMETERS: IEvolutionParameters = {
 }
 
 export enum EvolutionPhase {
-    WinnersAdvance = "Winners advance",
+    WinnersRun = "Winners run",
     ChallengersBorn = "Challengers born",
     ChallengersReborn = "Challengers reborn",
-    ChallengersAdvance = "Challengers advance",
-    WinnersPersist = "Winners persist",
+    ChallengersRun = "Challengers run",
+    WinnersStored = "Winners stored",
     EvolutionAdvance = "Evolution advance",
-    EvolutionComplete = "Evolution complete",
+    EvolutionDone = "Evolution done",
 }
 
 export interface IEvolver {
     name: string
     gotchi: Gotchi
     proximityHistory: number[]
+    persisted: boolean
 }
 
 export interface ISplit {
@@ -65,7 +66,7 @@ export class Evolution {
     public winners: IEvolver[] = []
     public challengersVisible = false
     public challengers: IEvolver[] = []
-    public phase = EvolutionPhase.WinnersAdvance
+    public phase = EvolutionPhase.WinnersRun
     private cyclePatternIndex: number
     private currentCycle: number = 0
     private currentMaxCycles: number
@@ -86,7 +87,12 @@ export class Evolution {
         while (winners.length < EVO_PARAMETERS.persistentPopulation) {
             winners.push(this.createAutoGotchi(fromGeneData(storedGenes[winners.length % storedGenes.length])))
         }
-        this.winners = winners.map((gotchi, index) => ({gotchi, name: letter(index), proximityHistory: []}))
+        this.winners = winners.map((gotchi, index) => ({
+            gotchi,
+            name: letter(index),
+            proximityHistory: [],
+            persisted: true,
+        }))
     }
 
     public get withReducedCyclePattern(): Evolution {
@@ -97,14 +103,23 @@ export class Evolution {
 
     public iterate(): EvolutionPhase {
         switch (this.phase) {
-            case EvolutionPhase.WinnersAdvance:
+            case EvolutionPhase.WinnersRun:
+                let winnerMinCycles = 0
                 let winnerMoved = false
                 this.winners.forEach(({gotchi}) => {
-                    if (gotchi.cycleCount < this.currentMaxCycles && !gotchi.reachedTarget) {
+                    const cycleCount = gotchi.cycleCount
+                    if (cycleCount > winnerMinCycles) {
+                        winnerMinCycles = cycleCount
+                    }
+                    if (cycleCount < this.currentMaxCycles && !gotchi.reachedTarget) {
                         gotchi.iterate()
                         winnerMoved = true
                     }
                 })
+                if (winnerMinCycles > this.currentCycle) {
+                    rankEvolvers(this.winners, this.currentCycle)
+                    this.currentCycle = winnerMinCycles
+                }
                 if (!winnerMoved) {
                     const allReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
                     if (allReachedTarget) {
@@ -112,6 +127,7 @@ export class Evolution {
                     }
                     this.winners.forEach(winner => winner.gotchi.showFrozen())
                     this.phase = this.challengers.length === 0 ? EvolutionPhase.ChallengersBorn : EvolutionPhase.ChallengersReborn
+                    this.currentCycle = 0
                 }
                 break
             case EvolutionPhase.ChallengersBorn:
@@ -123,9 +139,9 @@ export class Evolution {
                 this.challengers = challengers.map((challenger, index) => {
                     challenger.autopilot = true
                     const name = `${letter(index + this.winners.length)}${letter(index % this.winners.length)}`
-                    return <IEvolver>{gotchi: challenger, name, proximityHistory: []}
+                    return <IEvolver>{gotchi: challenger, name, proximityHistory: [], persisted: false}
                 })
-                this.phase = EvolutionPhase.ChallengersAdvance
+                this.phase = EvolutionPhase.ChallengersRun
                 break
             case EvolutionPhase.ChallengersReborn:
                 let parentIndex = 0
@@ -136,42 +152,44 @@ export class Evolution {
                     const gotchi = challenger.gotchi.recycled(instance, parent.gotchi.mutatedGeneData())
                     const name = `${parent.name}${letter(index)}`
                     gotchi.autopilot = true
-                    return {gotchi, name, proximityHistory: []}
+                    return {gotchi, name, proximityHistory: [], persisted: false}
                 })
-                this.phase = EvolutionPhase.ChallengersAdvance
+                this.phase = EvolutionPhase.ChallengersRun
                 break
-            case EvolutionPhase.ChallengersAdvance:
+            case EvolutionPhase.ChallengersRun:
                 this.challengersVisible = true
                 let challengerMoved = false
-                let minCycleCount = 0
+                let challengerMinCycles = 0
                 this.challengers.forEach(({gotchi, name}) => {
                     const cycleCount = gotchi.cycleCount
-                    if (cycleCount > minCycleCount) {
-                        minCycleCount = cycleCount
+                    if (cycleCount > challengerMinCycles) {
+                        challengerMinCycles = cycleCount
                     }
                     if (!gotchi.reachedTarget && cycleCount < this.currentMaxCycles) {
                         gotchi.iterate()
                         challengerMoved = true
                     }
                 })
-                if (minCycleCount > this.currentCycle) {
-                    const evolvers = [...this.winners,...this.challengers]
+                if (challengerMinCycles > this.currentCycle) {
+                    const evolvers = [...this.winners, ...this.challengers]
                     rankEvolvers(evolvers, this.currentCycle)
-                    this.broadcastSnapshot(evolvers.map(evolver => rankedToSnapshot(evolver, false, this.currentCycle)))
-                    this.currentCycle = minCycleCount
+                    this.broadcastSnapshot(evolvers.map(evolver => rankedToSnapshot(evolver, this.currentCycle)))
+                    this.currentCycle = challengerMinCycles
                 }
                 if (!challengerMoved) {
                     const allReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
                     if (allReachedTarget) {
                         throw new Error("Not done yet")
                     }
-                    this.phase = EvolutionPhase.WinnersPersist
+                    this.phase = EvolutionPhase.WinnersStored
                 }
                 break
-            case EvolutionPhase.WinnersPersist:
+            case EvolutionPhase.WinnersStored:
                 const {winners, losers} = this.splitEvolvers(this.currentCycle)
                 this.evolvingGotchi.patch.storedGenes = winners.map(({gotchi}) => gotchi.genome.geneData)
-                this.broadcastSnapshot(winners.map(evolver => rankedToSnapshot(evolver, true, this.currentCycle)))
+                winners.forEach(winner => winner.persisted = true)
+                losers.forEach(winner => winner.persisted = false)
+                this.broadcastSnapshot(winners.map(evolver => rankedToSnapshot(evolver, this.currentCycle)))
                 this.winners = winners
                 this.challengers = losers
                 this.challengersVisible = false
@@ -179,16 +197,16 @@ export class Evolution {
                 break
             case EvolutionPhase.EvolutionAdvance:
                 if (this.cyclePatternIndex === this.cyclePattern.length - 1) {
-                    this.phase = EvolutionPhase.EvolutionComplete
+                    this.phase = EvolutionPhase.EvolutionDone
                 } else {
                     this.cyclePatternIndex++
                     this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex]
                     this.currentCycle = 0
-                    this.phase = EvolutionPhase.WinnersAdvance
+                    this.phase = EvolutionPhase.WinnersRun
                     // todo: maybe they have all reached the target?
                 }
                 break
-            case EvolutionPhase.EvolutionComplete:
+            case EvolutionPhase.EvolutionDone:
                 break
         }
         return this.phase
@@ -256,10 +274,7 @@ function rankEvolvers(evolvers: IEvolver[], cycleCount: number): void {
     evolvers.sort((a, b) => a.proximityHistory[cycleCount] - b.proximityHistory[cycleCount])
 }
 
-function rankedToSnapshot({gotchi, proximityHistory}: IEvolver, persisted: boolean, cycleCount: number): IEvolverSnapshot {
-    if (proximityHistory.length === cycleCount) {
-        proximityHistory.push(gotchi.distanceFromTarget)
-    }
+function rankedToSnapshot({gotchi, proximityHistory, persisted, name}: IEvolver, cycleCount: number): IEvolverSnapshot {
     const proximityForCycle = proximityHistory[cycleCount]
     if (proximityForCycle === undefined) {
         throw new Error("Cannot snapshot")

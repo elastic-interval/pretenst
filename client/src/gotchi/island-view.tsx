@@ -64,7 +64,7 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     }
 
     function evolving(e: Evolution): number {
-        if (e.iterate() === EvolutionPhase.EvolutionComplete) {
+        if (e.iterate() === EvolutionPhase.EvolutionDone) {
             stopEvolution()
         }
         e.getMidpoint(midpoint)

@@ -44,7 +44,7 @@ export function GotchiView({island, homePatch, createInstance}: {
     const [snapshots, setSnapshots] = useState<IEvolutionSnapshot[]>([])
     const [evolutionCountdown, setEvolutionCountdown] = useState(-1)
     const [evolution, setEvolution] = useState<Evolution | undefined>(undefined)
-    const [phase, setPhase] = useState(EvolutionPhase.WinnersAdvance)
+    const [phase, setPhase] = useState(EvolutionPhase.WinnersRun)
     const [life, updateLife] = useState<Life | undefined>(undefined)
 
     useEffect(() => {
