@@ -76,6 +76,7 @@ export class Evolution {
     constructor(
         private evolvingGotchi: Gotchi,
         private createInstance: CreateInstance,
+        private useTwitches: boolean,
         private cyclePattern: number[],
     ) {
         if (evolvingGotchi.embryo) {
@@ -102,7 +103,7 @@ export class Evolution {
         if (cyclePattern.length < 3) {
             return undefined
         }
-        return new Evolution(this.evolvingGotchi, this.createInstance, cyclePattern)
+        return new Evolution(this.evolvingGotchi, this.createInstance, this.useTwitches, cyclePattern)
     }
 
     public iterate(): EvolutionPhase {
@@ -111,7 +112,7 @@ export class Evolution {
                 let winnerMinCycles = 0
                 let winnerMoved = false
                 this.winners.forEach(({gotchi}) => {
-                    const cycleCount = gotchi.cycleCount
+                    const cycleCount = gotchi.getCycleCount(this.useTwitches)
                     if (cycleCount > winnerMinCycles) {
                         winnerMinCycles = cycleCount
                     }
@@ -166,7 +167,7 @@ export class Evolution {
                 let challengerMoved = false
                 let challengerMinCycles = 0
                 this.challengers.forEach(({gotchi, name}) => {
-                    const cycleCount = gotchi.cycleCount
+                    const cycleCount = gotchi.getCycleCount(this.useTwitches)
                     if (cycleCount > challengerMinCycles) {
                         challengerMinCycles = cycleCount
                     }

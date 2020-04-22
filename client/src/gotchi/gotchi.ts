@@ -71,6 +71,7 @@ export interface IGotchiState {
     directionHistory: Direction[]
     autopilot: boolean
     timeSlice: number
+    twitchesPerCycle: number
 }
 
 export function freshGotchiState(patch: Patch, instance: FabricInstance, genome: Genome): IGotchiState {
@@ -86,6 +87,7 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
         autopilot: false,
         timeSlice: 0,
         reachedTarget: false,
+        twitchesPerCycle: 25,
     }
 }
 
@@ -125,8 +127,8 @@ export class Gotchi {
         return new Gotchi(state)
     }
 
-    public get cycleCount(): number {
-        return this.twitcher ? this.twitcher.cycleCount : 0
+    public getCycleCount(useTwitches: boolean): number {
+        return !this.twitcher ? 0 : useTwitches ? this.twitcher.twitchCount / this.state.twitchesPerCycle : this.twitcher.cycleCount
     }
 
     public get patch(): Patch {

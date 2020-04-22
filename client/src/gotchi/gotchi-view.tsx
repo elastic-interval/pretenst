@@ -75,7 +75,7 @@ export function GotchiView({island, homePatch, createInstance}: {
             setEvolution(evolution.withReducedCyclePattern)
             // todo: free up current evolution?
         } else {
-            setEvolution(new Evolution(toEvolve, createInstance, pattern))
+            setEvolution(new Evolution(toEvolve, createInstance, false, pattern))
         }
         setHappening(Happening.Evolving)
     }

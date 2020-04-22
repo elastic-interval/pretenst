@@ -91,7 +91,7 @@ export class Genome {
         return new GeneReader(getGene(name, this.genes), this.roll)
     }
 
-    public get twitchCount(): number {
+    public get totalTwitches(): number {
         const maxTosses = this.genes.reduce((max, {tosses}) => Math.max(max, tosses), 0)
         return Math.floor(Math.pow(maxTosses, 0.66)) + 2
     }

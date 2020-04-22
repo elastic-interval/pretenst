@@ -33,6 +33,7 @@ function readTwichConfig(genome: Genome): ITwitchConfig {
 
 export class Twitcher {
     public cycleCount = 0
+    public twitchCount = 0
     private config: ITwitchConfig
     private ticks: number = 0
     private twitchCycles: Record<string, TwitchCycle> = {}
@@ -40,14 +41,11 @@ export class Twitcher {
     constructor(private state: IGotchiState) {
         const genome = this.state.genome
         this.config = readTwichConfig(genome)
-        const twitchCount = genome.twitchCount
-        // console.log("twitch config: ", JSON.stringify(this.config, (key, val) => (
-        //     val.toFixed ? Number(val.toFixed(2)) : val
-        // )))
+        const totalTwitches = genome.totalTwitches
         DIRECTIONS.filter(d => d !== Direction.Rest).forEach(direction => {
             const geneName = directionGene(direction)
             const reader = genome.createReader(geneName)
-            this.twitchCycles[direction] = new TwitchCycle(reader, this.config, state.muscles, twitchCount)
+            this.twitchCycles[direction] = new TwitchCycle(reader, this.config, state.muscles, totalTwitches)
         })
     }
 
@@ -58,7 +56,7 @@ export class Twitcher {
     }
 
     public tick(twitch: Twitch): boolean {
-        this.ticks -= 1
+        this.ticks--
         if (this.ticks < 0) {
             this.ticks = this.config.ticksPerSlice
             const state = this.state
@@ -70,7 +68,7 @@ export class Twitcher {
             }
             const twitchCycle = this.twitchCycles[state.direction]
             if (twitchCycle) {
-                twitchCycle.activate(state.timeSlice, twitch)
+                this.twitchCount += twitchCycle.activate(state.timeSlice, twitch)
             }
         }
         return false
@@ -80,12 +78,12 @@ export class Twitcher {
 class TwitchCycle {
     private slices: Record<number, ITwitch[]> = {}
 
-    constructor(geneReader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], twitchCount: number) {
+    constructor(geneReader: GeneReader, config: ITwitchConfig, muscles: IMuscle[], totalTwitches: number) {
         let remainingMuscles = [...muscles]
         const removeMuscle = (muscle: IMuscle) => {
             remainingMuscles = remainingMuscles.filter(({faceIndex}) => muscle.faceIndex !== faceIndex)
         }
-        while (twitchCount-- > 0) {
+        while (totalTwitches-- > 0) {
             const {attackPeriod, decayPeriod, twitchNuance} = config
             const twitch = geneReader.readMuscleTwitch(remainingMuscles, attackPeriod, decayPeriod, twitchNuance)
             this.addTwitch(twitch.when, twitch)
@@ -107,12 +105,13 @@ class TwitchCycle {
         return `Cycle(${twitches})`
     }
 
-    public activate(timeSlice: number, twitch: Twitch): void {
+    public activate(timeSlice: number, twitch: Twitch): number {
         const slice = this.slices[timeSlice]
         if (!slice) {
-            return
+            return 0
         }
         slice.forEach(({muscle, attack, decay, twitchNuance}) => twitch(muscle, attack, decay, twitchNuance))
+        return slice.length
     }
 
     private addTwitch(index: number, twitch: ITwitch): void {
