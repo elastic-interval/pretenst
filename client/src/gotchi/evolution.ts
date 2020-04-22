@@ -197,9 +197,9 @@ export class Evolution {
                 this.phase = EvolutionPhase.EvolutionAdvance
                 break
             case EvolutionPhase.EvolutionAdvance:
-                const allReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
-                if (this.cyclePatternIndex === this.cyclePattern.length - 1 || allReachedTarget) {
-                    this.phase = EvolutionPhase.EvolutionHarder
+                if (this.cyclePatternIndex === this.cyclePattern.length - 1) {
+                    const allReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
+                    this.phase = allReachedTarget ? EvolutionPhase.EvolutionHarder : EvolutionPhase.EvolutionDone
                 } else {
                     this.cyclePatternIndex++
                     this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex]

@@ -144,8 +144,7 @@ a, a:hover {
 
 #evolution-phase {
     position: absolute;
-    padding: 0.5em;
-    padding-bottom: 0.3em;
+    padding: 0.1em;
     color: white;
     top: 1em;
     left: 50%;
@@ -154,9 +153,9 @@ a, a:hover {
     background-color: black;
     border-radius: 1em;
     border-color: #9fa8b2;
-    border-width: 0.3em;
+    border-width: 0.1em;
     border-style: solid;
-    font-size: large;
+    font-size: small;
 }
 
 #evolution-stats {

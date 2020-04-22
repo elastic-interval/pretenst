@@ -16,7 +16,7 @@ import { CreateInstance } from "../fabric/fabric-instance"
 import { Life } from "../fabric/life"
 
 import { EVO_PARAMETERS, Evolution, EvolutionPhase, IEvolutionSnapshot } from "./evolution"
-import { EvolutionStats } from "./evolution-stats"
+import { EvolutionInfo, EvolutionStats } from "./evolution-stats"
 import { Direction, Gotchi } from "./gotchi"
 import { Island, PatchCharacter } from "./island"
 import { IslandView } from "./island-view"
@@ -157,7 +157,11 @@ export function GotchiView({island, homePatch, createInstance}: {
             {!evolution ? undefined : (
                 <>
                     <div id="evolution-phase">
-                        <h6>{phase}</h6>
+                        {snapshots.length <= 0 || evoDetails ? (
+                            <strong className="p-2">{phase}</strong>
+                        ) : (
+                            <EvolutionInfo snapshot={snapshots[snapshots.length - 1]}/>
+                        )}
                     </div>
                     <EvolutionStatsView
                         happening={happening}

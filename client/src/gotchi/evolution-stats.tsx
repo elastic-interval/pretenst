@@ -13,30 +13,15 @@ export function EvolutionStats({snapshots}: {
 }): JSX.Element {
     return (
         <div className="text-monospace d-inline-flex">
-            {snapshots.map(({cycle, cyclePattern, cycleIndex, evolverSnapshots}) => (
-                <div key={cycleIndex} className="float-left p-1 m-1" style={{
+            {snapshots.map(snapshot => (
+                <div key={snapshot.cycleIndex} className="float-left p-1 m-1" style={{
                     borderStyle: "solid",
                     borderWidth: "2px",
                 }}>
-                    <div className="p-1 my-2 w-100 text-center">
-                        {cyclePattern.map((cycles, index) => (
-                            <span
-                                key={`cycle-${index}`}
-                                style={{
-                                    color: "black",
-                                    backgroundColor: index === cycleIndex ? "#24f00f" : "#cbc7c7",
-                                    margin: "0.1em",
-                                    padding: "0.2em",
-                                    borderRadius: "0.3em",
-                                    borderStyle: "solid",
-                                    borderWidth: "1px",
-                                }}
-                            >{index === cycleIndex && cycle < cyclePattern[cycleIndex] ? `${cycle}/${cycles}` : cycles}</span>
-                        ))}
-                    </div>
+                    <EvolutionInfo snapshot={snapshot}/>
                     <div className="m-2">
-                        {evolverSnapshots.map((snapshot, index) => {
-                            const {name, reachedTarget, persisted, proximity, tosses} = snapshot
+                        {snapshot.evolverSnapshots.map((evolverSnapshot, index) => {
+                            const {name, reachedTarget, persisted, proximity, tosses} = evolverSnapshot
                             const mutationSymbols = []
                             let nameLength = name.length - 1
                             while (nameLength > 0) {
@@ -62,6 +47,28 @@ export function EvolutionStats({snapshots}: {
                         })}
                     </div>
                 </div>
+            ))}
+        </div>
+    )
+}
+
+export function EvolutionInfo({snapshot}: { snapshot: IEvolutionSnapshot }): JSX.Element {
+    const {cyclePattern, cycleIndex, cycle} = snapshot
+    return (
+        <div className="p-1 my-2 w-100 text-center">
+            {cyclePattern.map((cycles, index) => (
+                <span
+                    key={`cycle-${index}`}
+                    style={{
+                        color: "black",
+                        backgroundColor: index === cycleIndex ? "#24f00f" : "#cbc7c7",
+                        margin: "0.1em",
+                        padding: "0.2em",
+                        borderRadius: "0.3em",
+                        borderStyle: "solid",
+                        borderWidth: "1px",
+                    }}
+                >{index === cycleIndex && cycle < cyclePattern[cycleIndex] ? `${cycle + 1}/${cycles}` : cycles}</span>
             ))}
         </div>
     )
