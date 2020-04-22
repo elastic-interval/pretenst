@@ -55,11 +55,11 @@ export async function startReact(
                     return defaultValue * 0.7
                 case FabricFeature.MaxStrain:
                     return defaultValue * 0.2
-                case FabricFeature.VisualStrain:
-                    return defaultValue * 3
                 case FabricFeature.StiffnessFactor:
                     return defaultValue * 10
                 case FabricFeature.PretenstFactor:
+                    return defaultValue * 2
+                case FabricFeature.IterationsPerFrame:
                     return defaultValue * 2
                 case FabricFeature.SlackThreshold:
                     return 0

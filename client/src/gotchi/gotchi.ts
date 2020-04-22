@@ -23,7 +23,7 @@ export enum Direction {
 
 export const DIRECTIONS: Direction[] = Object.keys(Direction).map(k => Direction[k])
 
-const CLOSE_ENOUGH_TO_TARGET = 5
+const CLOSE_ENOUGH_TO_TARGET = 4
 
 export function directionGene(direction: Direction): GeneName {
     switch (direction) {
@@ -87,7 +87,7 @@ export function freshGotchiState(patch: Patch, instance: FabricInstance, genome:
         autopilot: false,
         timeSlice: 0,
         reachedTarget: false,
-        twitchesPerCycle: 25,
+        twitchesPerCycle: 30,
     }
 }
 
@@ -128,7 +128,7 @@ export class Gotchi {
     }
 
     public getCycleCount(useTwitches: boolean): number {
-        return !this.twitcher ? 0 : useTwitches ? this.twitcher.twitchCount / this.state.twitchesPerCycle : this.twitcher.cycleCount
+        return !this.twitcher ? 0 : useTwitches ? Math.floor(this.twitcher.twitchCount / this.state.twitchesPerCycle) : this.twitcher.cycleCount
     }
 
     public get patch(): Patch {
