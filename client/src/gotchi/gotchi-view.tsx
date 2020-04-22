@@ -87,10 +87,13 @@ export function GotchiView({island, homePatch, createInstance}: {
         }
     }
 
-    const stopEvolution = () => {
-        setHappening(Happening.Resting)
+    const stopEvolution = (nextEvolution: Evolution) => {
         // todo: free up current evolution?
-        setEvolution(undefined)
+        setEvolution(nextEvolution)
+        if (!nextEvolution) {
+            setGotchi(homePatch.createGotchi(createInstance(false)))
+            setHappening(Happening.Developing)
+        }
     }
 
     return (

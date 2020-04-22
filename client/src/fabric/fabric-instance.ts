@@ -76,8 +76,8 @@ export class FabricInstance {
         return stage
     }
 
-    public showFrozen(): void {
-        this.updateFloatView(true)
+    public showFrozen(satisfied: boolean): void {
+        this.updateFloatView(true, satisfied)
     }
 
     public get fabricClone(): Fabric {
@@ -99,7 +99,7 @@ export class FabricInstance {
 
     public refreshFloatView(): void {
         this.view.render(this.fabric, this.world)
-        this.updateFloatView(false)
+        this.updateFloatView(false, false)
     }
 
     public clear(): FabricInstance {
@@ -135,7 +135,7 @@ export class FabricInstance {
         }
     }
 
-    private updateFloatView(frozen: boolean): void {
+    private updateFloatView(frozen: boolean, satisfied: boolean): void {
         const fabric = this.fabric
         const view = this.view
         const jointCount = fabric.get_joint_count()
@@ -155,7 +155,14 @@ export class FabricInstance {
             floatView.lineGeometry.setAttribute("position", new Float32BufferAttribute(lineLocations, 3))
             const lineColors = new Float32Array(intervalCount * 3 * 2)
             if (frozen) {
-                lineColors.fill(1)
+                if (satisfied) {
+                    lineColors.fill(0)
+                    for (let green = 1; green < lineColors.length; green += 3) {
+                        lineColors[green] = 1
+                    }
+                } else {
+                    lineColors.fill(1)
+                }
             } else {
                 view.copy_line_colors_to(lineColors)
             }
@@ -187,7 +194,14 @@ export class FabricInstance {
                 const lineColor = line.color as Float32BufferAttribute
                 const lineColorArray = lineColor.array as Float32Array
                 if (frozen) {
-                    lineColorArray.fill(1)
+                    if (satisfied) {
+                        lineColorArray.fill(0)
+                        for (let green = 1; green < lineColorArray.length; green += 3) {
+                            lineColorArray[green] = 1
+                        }
+                    } else {
+                        lineColorArray.fill(1)
+                    }
                 } else {
                     view.copy_line_colors_to(lineColorArray)
                 }

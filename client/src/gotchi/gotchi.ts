@@ -262,7 +262,7 @@ export class Gotchi {
     }
 
     public showFrozen(): void {
-        this.instance.showFrozen()
+        this.instance.showFrozen(this.reachedTarget)
     }
 
     public get target(): Vector3 {

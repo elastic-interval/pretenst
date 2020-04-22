@@ -31,6 +31,7 @@ export enum EvolutionPhase {
     WinnersStored = "Winners stored",
     EvolutionAdvance = "Evolution advance",
     EvolutionDone = "Evolution done",
+    EvolutionHarder = "Evolution harder",
 }
 
 export interface IEvolver {
@@ -95,9 +96,12 @@ export class Evolution {
         }))
     }
 
-    public get withReducedCyclePattern(): Evolution {
+    public get withReducedCyclePattern(): Evolution | undefined {
         const cyclePattern = [...this.cyclePattern]
         cyclePattern.pop()
+        if (cyclePattern.length < 3) {
+            return undefined
+        }
         return new Evolution(this.evolvingGotchi, this.createInstance, cyclePattern)
     }
 
@@ -111,7 +115,7 @@ export class Evolution {
                     if (cycleCount > winnerMinCycles) {
                         winnerMinCycles = cycleCount
                     }
-                    if (cycleCount < this.currentMaxCycles && !gotchi.reachedTarget) {
+                    if (cycleCount < this.currentMaxCycles) {
                         gotchi.iterate()
                         winnerMoved = true
                     }
@@ -121,13 +125,14 @@ export class Evolution {
                     this.currentCycle = winnerMinCycles
                 }
                 if (!winnerMoved) {
-                    const allReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
-                    if (allReachedTarget) {
-                        throw new Error("Not done yet")
+                    const allWinnersReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
+                    if (allWinnersReachedTarget) {
+                        this.phase = EvolutionPhase.EvolutionDone
+                    } else {
+                        this.winners.forEach(winner => winner.gotchi.showFrozen())
+                        this.phase = this.challengers.length === 0 ? EvolutionPhase.ChallengersBorn : EvolutionPhase.ChallengersReborn
+                        this.currentCycle = 0
                     }
-                    this.winners.forEach(winner => winner.gotchi.showFrozen())
-                    this.phase = this.challengers.length === 0 ? EvolutionPhase.ChallengersBorn : EvolutionPhase.ChallengersReborn
-                    this.currentCycle = 0
                 }
                 break
             case EvolutionPhase.ChallengersBorn:
@@ -165,7 +170,7 @@ export class Evolution {
                     if (cycleCount > challengerMinCycles) {
                         challengerMinCycles = cycleCount
                     }
-                    if (!gotchi.reachedTarget && cycleCount < this.currentMaxCycles) {
+                    if (cycleCount < this.currentMaxCycles) {
                         gotchi.iterate()
                         challengerMoved = true
                     }
@@ -177,10 +182,6 @@ export class Evolution {
                     this.currentCycle = challengerMinCycles
                 }
                 if (!challengerMoved) {
-                    const allReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
-                    if (allReachedTarget) {
-                        throw new Error("Not done yet")
-                    }
                     this.phase = EvolutionPhase.WinnersStored
                 }
                 break
@@ -196,8 +197,9 @@ export class Evolution {
                 this.phase = EvolutionPhase.EvolutionAdvance
                 break
             case EvolutionPhase.EvolutionAdvance:
-                if (this.cyclePatternIndex === this.cyclePattern.length - 1) {
-                    this.phase = EvolutionPhase.EvolutionDone
+                const allReachedTarget = !this.winners.find(({gotchi}) => !gotchi.reachedTarget)
+                if (this.cyclePatternIndex === this.cyclePattern.length - 1 || allReachedTarget) {
+                    this.phase = EvolutionPhase.EvolutionHarder
                 } else {
                     this.cyclePatternIndex++
                     this.currentMaxCycles = this.cyclePattern[this.cyclePatternIndex]
@@ -207,6 +209,8 @@ export class Evolution {
                 }
                 break
             case EvolutionPhase.EvolutionDone:
+                break
+            case EvolutionPhase.EvolutionHarder:
                 break
         }
         return this.phase

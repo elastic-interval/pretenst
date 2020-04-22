@@ -39,7 +39,7 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     evolution?: Evolution,
     evolutionPhase: (phase: EvolutionPhase) => void,
     countdownToEvolution: (countdown: number) => void,
-    stopEvolution: () => void,
+    stopEvolution: (nextEvolution?: Evolution) => void,
 }): JSX.Element {
     const {camera} = useThree()
     const perspective = camera as PerspectiveCamera
@@ -64,8 +64,15 @@ export function IslandView({island, satoshiTrees, happening, gotchi, evolution, 
     }
 
     function evolving(e: Evolution): number {
-        if (e.iterate() === EvolutionPhase.EvolutionDone) {
-            stopEvolution()
+        switch (e.iterate()) {
+            case EvolutionPhase.EvolutionDone:
+                console.log("Evolution DONE")
+                stopEvolution()
+                break
+            case EvolutionPhase.EvolutionHarder:
+                console.log("Evolution advance...")
+                stopEvolution(e.withReducedCyclePattern)
+                break
         }
         e.getMidpoint(midpoint)
         return 15
