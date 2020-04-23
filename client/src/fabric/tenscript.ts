@@ -40,6 +40,7 @@ const BOOTSTRAP_TENSCRIPTS = [
     "'Mesogotchi':(A(2,c(2,MA0)),b(2,c(2,MA0)),a(2,d(2,MA0)),B(2,d(2,MA0))):0=face-distance-115",
     "'Gorillagotchi':(A(5,S80,Mb0),b(5,S80,Mb0),a(3,S70,Md0),B(3,Md0,S70)):0=face-distance-60",
     "'Equus Lunae':(A(8,S90,Mb0),b(8,S90,Mb0),a(8,S90,Md0),B(8,Md0,S90)):0=face-distance-60",
+    "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90)):0=face-distance-20:1=face-distance-20:2=face-distance-90:3=face-distance-90",
 ]
 
 export interface ITenscriptTree {

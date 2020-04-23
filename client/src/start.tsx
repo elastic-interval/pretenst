@@ -59,8 +59,6 @@ export async function startReact(
                     return defaultValue * 10
                 case FabricFeature.PretenstFactor:
                     return defaultValue * 2
-                case FabricFeature.IterationsPerFrame:
-                    return defaultValue * 2
                 case FabricFeature.SlackThreshold:
                     return 0
                 default:
