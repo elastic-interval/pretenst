@@ -9,6 +9,7 @@ import * as ReactDOM from "react-dom"
 import { BehaviorSubject } from "rxjs"
 import { Vector3 } from "three"
 
+import { BridgeView } from "./bridge/bridge-view"
 import { FABRIC_FEATURES } from "./fabric/eig-util"
 import { createFloatFeatures, featureConfig } from "./fabric/fabric-features"
 import { CreateInstance, FabricInstance } from "./fabric/fabric-instance"
@@ -25,10 +26,22 @@ import { loadState, roleDefaultFromFeatures, saveState } from "./storage/stored-
 import { TensegrityView } from "./view/tensegrity-view"
 
 const GOTCHI = localStorage.getItem("gotchi") === "true"
+const BRIDGE = localStorage.getItem("bridge") === "true"
 
 const GOTCHI_TENSCRIPT = "'Gotchi':(A(4,S80,Mc0),b(4,S80,Mc0),a(2,S60,Md0),B(2,S60,Md0)):0=face-distance-55"
 // const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,S85,b(4,S85,MA0),c(4,S85,MA0),d(4,S85,MA0)):0=subtree(b(3, S85),c(3, S85),d(3, S85))"
 const SATOSHI_TREE_TENSCRIPT = "'Satoshi Tree':(2,b(6,S85),c(6,S85),d(6,S85))"
+
+const tenscriptError = (error: string) => {
+    throw new Error(`Unable to compile: ${error}`)
+}
+const toTenscript = (code: string) => {
+    const tenscript = codeToTenscript(tenscriptError, false, code)
+    if (!tenscript) {
+        throw new Error("Unable to build body")
+    }
+    return tenscript
+}
 
 export async function startReact(
     eig: typeof import("eig"),
@@ -87,16 +100,6 @@ export async function startReact(
             }
         }
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(gotchiNumericFeature, role)
-        const tenscriptError = (error: string) => {
-            throw new Error(`Unable to compile: ${error}`)
-        }
-        const toTenscript = (code: string) => {
-            const tenscript = codeToTenscript(tenscriptError, false, code)
-            if (!tenscript) {
-                throw new Error("Unable to build body")
-            }
-            return tenscript
-        }
         const createTensegrity = (
             instance: FabricInstance,
             numericFeature: (feature: FabricFeature) => number,
@@ -134,17 +137,30 @@ export async function startReact(
                 homePatch={island.patches[0]}
                 createInstance={createInstance}
             />, root)
+    } else if (BRIDGE) {
+        const numericFeature = (feature: FabricFeature) => {
+            const defaultValue = eig.default_fabric_feature(feature)
+            switch (feature) {
+                case FabricFeature.IterationsPerFrame:
+                    return defaultValue * 5
+                case FabricFeature.Gravity:
+                    return defaultValue * 0.1
+                default:
+                    return defaultValue
+            }
+        }
+        const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
+        const instance = createInstance(false)
+        FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
+        const code = "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90)):0=face-distance-20:1=face-distance-20:2=face-distance-90:3=face-distance-90"
+        const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, toTenscript(code))
+        ReactDOM.render(<BridgeView tensegrity={tensegrity}/>, root)
     } else {
         const storedState$ = new BehaviorSubject(loadState(featureConfig, eig.default_fabric_feature))
         storedState$.subscribe(newState => saveState(newState))
         const floatFeatures = createFloatFeatures(storedState$, eig.default_fabric_feature)
-        ReactDOM.render(
-            <TensegrityView
-                eig={eig}
-                createInstance={createInstance}
-                floatFeatures={floatFeatures}
-                storedState$={storedState$}
-            />, root)
+        ReactDOM.render(<TensegrityView createInstance={createInstance} floatFeatures={floatFeatures}
+                                        storedState$={storedState$}/>, root)
     }
     registerServiceWorker()
 }

@@ -42,8 +42,7 @@ function getCodeToRun(state: IStoredState): ITenscript {
     return recentCode.length > 0 ? recentCode[0] : BOOTSTRAP[0]
 }
 
-export function TensegrityView({eig, createInstance, floatFeatures, storedState$}: {
-    eig: typeof import("eig"),
+export function TensegrityView({createInstance, floatFeatures, storedState$}: {
     createInstance: CreateInstance,
     floatFeatures: Record<FabricFeature, FloatFeature>,
     storedState$: BehaviorSubject<IStoredState>,
