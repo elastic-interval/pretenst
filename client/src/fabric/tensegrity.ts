@@ -73,7 +73,7 @@ export class Tensegrity {
         this.life$.next(life.executeTransition(tx))
     }
 
-    public createLeftJoint(location: Vector3): number {
+    public createJoint(location: Vector3): number {
         return this.fabric.create_joint(location.x, location.y, location.z)
     }
 

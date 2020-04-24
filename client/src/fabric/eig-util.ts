@@ -29,6 +29,12 @@ export function intervalRoleName(intervalRole: IntervalRole): string {
             return "BM"
         case IntervalRole.BowEnd:
             return "BE"
+        case IntervalRole.RibbonPush:
+            return "RP"
+        case IntervalRole.RibbonShortPull:
+            return "RS"
+        case IntervalRole.RibbonLongPull:
+            return "RL"
         case IntervalRole.FaceConnector:
             return "FC"
         case IntervalRole.FaceDistancer:
@@ -43,7 +49,7 @@ export const ADJUSTABLE_INTERVAL_ROLES: IntervalRole[] = Object.keys(IntervalRol
     .map(role => IntervalRole[role])
 
 export function isPushInterval(intervalRole: IntervalRole): boolean {
-    return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush
+    return intervalRole === IntervalRole.ColumnPush || intervalRole === IntervalRole.NexusPush|| intervalRole === IntervalRole.RibbonPush
 }
 
 export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): IntervalRole | undefined {
@@ -62,6 +68,12 @@ export function fabricFeatureIntervalRole(fabricFeature: FabricFeature): Interva
             return IntervalRole.BowMid
         case FabricFeature.BowEndLength:
             return IntervalRole.BowEnd
+        case FabricFeature.RibbonPushLength:
+            return IntervalRole.RibbonPush
+        case FabricFeature.RibbonShortPullLength:
+            return IntervalRole.RibbonShortPull
+        case FabricFeature.RibbonLongPullLength:
+            return IntervalRole.RibbonLongPull
         default:
             return undefined
     }

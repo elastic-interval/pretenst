@@ -156,7 +156,7 @@ export function GotchiView({island, homePatch, createInstance}: {
             )}
             {!evolution ? undefined : (
                 <>
-                    <div id="evolution-phase">
+                    <div id="top-middle">
                         {snapshots.length <= 0 || evoDetails ? (
                             <strong className="p-2">{phase}</strong>
                         ) : (

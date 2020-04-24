@@ -141,6 +141,8 @@ export async function startReact(
         const numericFeature = (feature: FabricFeature) => {
             const defaultValue = eig.default_fabric_feature(feature)
             switch (feature) {
+                case FabricFeature.IntervalCountdown:
+                    return defaultValue * 0.3
                 case FabricFeature.IterationsPerFrame:
                     return defaultValue * 5
                 case FabricFeature.Gravity:

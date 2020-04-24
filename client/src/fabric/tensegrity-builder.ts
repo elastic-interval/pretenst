@@ -164,7 +164,7 @@ export class TensegrityBuilder {
         const countdown = this.tensegrity.numericFeature(FabricFeature.IntervalCountdown)
         const brick = initialBrick(base, scale, parent)
         this.tensegrity.bricks.push(brick)
-        const jointIndexes = points.map((p, idx) => this.tensegrity.createLeftJoint(p))
+        const jointIndexes = points.map((p, idx) => this.tensegrity.createJoint(p))
         this.tensegrity.instance.refreshFloatView()
         PUSH_ARRAY.forEach(({}: IPushDefinition, idx: number) => {
             const alphaIndex = jointIndexes[idx * 2]

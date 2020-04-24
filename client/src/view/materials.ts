@@ -41,6 +41,7 @@ const RAINBOW_COLORS = RAINBOW_GRADIENT.map(colorString => new Color(colorString
 export const SURFACE = new MeshPhongMaterial({
     color: new Color("#1c1608"),
     side: DoubleSide,
+    opacity: 0.5,
 })
 
 export const LINE_VERTEX_COLORS = new LineBasicMaterial({

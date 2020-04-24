@@ -3,54 +3,52 @@
  * Licensed under GNU GENERAL PUBLIC LICENSE Version 3.
  */
 
-import { Stage } from "eig"
+import { FabricFeature, IntervalRole, Stage } from "eig"
 import * as React from "react"
 import { useEffect, useRef, useState } from "react"
 import { Canvas, DomEvent, useFrame, useThree, useUpdate } from "react-three-fiber"
-import { Color, CylinderGeometry, Euler, PerspectiveCamera, Quaternion, SphereGeometry, Vector3 } from "three"
+import { Color, Euler, PerspectiveCamera, Quaternion, Vector3 } from "three"
 
+import { stageName } from "../fabric/eig-util"
+import { Life } from "../fabric/life"
 import { Tensegrity } from "../fabric/tensegrity"
-import { IInterval } from "../fabric/tensegrity-types"
+import { IInterval, IJoint, percentOrHundred } from "../fabric/tensegrity-types"
 import { SPACE_RADIUS, SPACE_SCALE } from "../gotchi/island-geometry"
-import { JOINT_MATERIAL } from "../view/materials"
+import { JOINT_MATERIAL, LINE_VERTEX_COLORS } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
-const SHAPING_TIME = 50
-const PUSH_RADIUS_FACTOR = 6
-const PULL_RADIUS_FACTOR = 2
-const JOINT_RADIUS_FACTOR = 1
+const SHAPING_TIME = 250
+const SLACK_TIME = 20
+const RIBBON_TIME = 100
 
 export function BridgeView({tensegrity}: {
     tensegrity: Tensegrity,
 }): JSX.Element {
-    return (
-        <div id="view-container" style={{
-            position: "absolute",
-            left: 0,
-            right: 0,
-            height: "100%",
-        }}>
-            <Canvas style={{backgroundColor: "black"}}>
-                <Camera/>
-                {!tensegrity ? <h1>No bridge</h1> : <BridgeScene tensegrity={tensegrity}/>}
-            </Canvas>
-        </div>
-    )
-}
-
-export function BridgeScene({tensegrity}: {
-    tensegrity: Tensegrity,
-}): JSX.Element {
-    const {camera} = useThree()
-    const perspective = camera as PerspectiveCamera
-    const viewContainer = document.getElementById("view-container") as HTMLElement
 
     const [life, updateLife] = useState(tensegrity.life$.getValue())
     useEffect(() => {
         const sub = tensegrity.life$.subscribe(updateLife)
         return () => sub.unsubscribe()
     }, [tensegrity])
+
+    return (
+        <div id="view-container" style={{position: "absolute", left: 0, right: 0, height: "100%"}}>
+            <div id="top-middle">
+                {stageName(life.stage)}
+            </div>
+            <Canvas style={{backgroundColor: "black"}}>
+                <Camera/>
+                {!tensegrity ? <h1>No bridge</h1> : <BridgeScene tensegrity={tensegrity} life={life}/>}
+            </Canvas>
+        </div>
+    )
+}
+
+export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: Life }): JSX.Element {
+    const {camera} = useThree()
+    const perspective = camera as PerspectiveCamera
+    const viewContainer = document.getElementById("view-container") as HTMLElement
 
     const orbit = useUpdate<Orbit>(orb => {
         orb.minPolarAngle = 0
@@ -63,8 +61,12 @@ export function BridgeScene({tensegrity}: {
         orb.update()
     }, [])
 
-    const [whyThis, updateWhyThis] = useState(0)
-    const [shapingTime, setShapingTime] = useState(0)
+    const [busyTick, setBusyTick] = useState(0)
+    const [growingTick, setGrowingTick] = useState(0)
+    const [shapingTick, setShapingTick] = useState(0)
+    const [slackTick, setSlackTick] = useState(0)
+    const [pretensingTick, setPretensingTick] = useState(0)
+    const [ribbonTick, setRibbonTick] = useState(0)
 
     useFrame(() => {
         const control: Orbit = orbit.current
@@ -73,46 +75,93 @@ export function BridgeScene({tensegrity}: {
         control.target.copy(instance.midpoint)
         control.update()
         switch (nextStage) {
+            case Stage.Growing:
+                setGrowingTick(growingTick + 1)
+                break
             case Stage.Shaping:
                 if (life.stage === Stage.Growing) {
                     tensegrity.transition = {stage: Stage.Shaping}
+                    break
                 }
-                if (shapingTime < SHAPING_TIME) {
-                    setShapingTime(shapingTime + 1)
+                if (shapingTick < SHAPING_TIME) {
+                    setShapingTick(shapingTick + 1)
+                    console.log("shaping", shapingTick)
+                    break
+                }
+                if (ribbonTick === 0) {
+                    console.log("NOW!")
+                    const point = new Vector3(0, 1, 0)
+                    const ribbonPush = tensegrity.numericFeature(FabricFeature.RibbonPushLength)
+                    point.x = -ribbonPush / 2
+                    const alphaIndex = tensegrity.createJoint(point)
+                    point.x = ribbonPush / 2
+                    const omegaIndex = tensegrity.createJoint(point)
+                    tensegrity.instance.refreshFloatView()
+                    const alpha: IJoint = {
+                        index: alphaIndex,
+                        oppositeIndex: omegaIndex,
+                        location: () => tensegrity.instance.jointLocation(alphaIndex),
+                    }
+                    const omega: IJoint = {
+                        index: omegaIndex,
+                        oppositeIndex: alphaIndex,
+                        location: () => tensegrity.instance.jointLocation(omegaIndex),
+                    }
+                    tensegrity.createInterval(alpha, omega, IntervalRole.RibbonPush, percentOrHundred(), 1000)
+                }
+                if (ribbonTick < RIBBON_TIME) {
+                    setRibbonTick(ribbonTick + 1)
+                    console.log("ribbon", ribbonTick)
                     break
                 }
                 instance.fabric.adopt_lengths()
                 const faceIntervals = [...tensegrity.faceIntervals]
                 faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
-                tensegrity.transition = {stage: Stage.Slack}
+                tensegrity.transition = {stage: Stage.Slack, adoptLengths: true}
                 break
             case Stage.Slack:
+                if (slackTick < SLACK_TIME) {
+                    setSlackTick(slackTick + 1)
+                    break
+                }
                 tensegrity.transition = {stage: Stage.Pretensing}
                 break
             case Stage.Pretensing:
+                setPretensingTick(pretensingTick + 1)
+                console.log("pretensing", pretensingTick)
                 break
             case Stage.Pretenst:
                 if (life.stage === Stage.Pretensing) {
                     tensegrity.transition = {stage: Stage.Pretenst}
                 }
                 break
+            default:
+                setBusyTick(busyTick + 1)
+                break
         }
-        updateWhyThis(whyThis + 1)
     })
-
+    const showLines = true
     return (
         <group>
             <orbit ref={orbit} args={[perspective, viewContainer]}/>
             <scene>
-                {tensegrity.intervals.map(interval => (
-                    <IntervalMesh
-                        key={`I${interval.index}`}
-                        tensegrity={tensegrity}
-                        interval={interval}
-                        radiusFactor={interval.isPush ? PUSH_RADIUS_FACTOR : PULL_RADIUS_FACTOR}
-                        jointRadiusFactor={JOINT_RADIUS_FACTOR}
+                {showLines ? (
+                    <lineSegments
+                        key="lines"
+                        geometry={tensegrity.instance.floatView.lineGeometry}
+                        material={LINE_VERTEX_COLORS}
                     />
-                ))}}
+                ) : (
+                    tensegrity.intervals.map(interval => (
+                        <IntervalMesh
+                            key={`I${interval.index}`}
+                            tensegrity={tensegrity}
+                            interval={interval}
+                            radiusFactor={tensegrity.numericFeature(interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius)}
+                            jointRadiusFactor={tensegrity.numericFeature(FabricFeature.JointRadius)}
+                        />
+                    ))
+                )}
                 <SurfaceComponent/>
                 <ambientLight color={new Color("white")} intensity={0.8}/>
                 <directionalLight color={new Color("#FFFFFF")} intensity={2}/>
@@ -120,11 +169,6 @@ export function BridgeScene({tensegrity}: {
         </group>
     )
 }
-
-const SPHERE = new SphereGeometry(1, 32, 8)
-const PULL_CYLINDER = new CylinderGeometry(1, 1, 1, 12, 1, false)
-const PUSH_CYLINDER_INNER = new CylinderGeometry(0.5, 0.5, 1, 6, 1, false)
-const PUSH_CYLINDER_OUTER = new CylinderGeometry(1, 1, 0.85, 12, 1, false)
 
 function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, onPointerDown}: {
     tensegrity: Tensegrity,
@@ -134,7 +178,6 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
     onPointerDown?: (event: DomEvent) => void,
 }): JSX.Element | null {
     const linearDensity = tensegrity.instance.floatView.linearDensities[interval.index]
-    // const radiusFeature = storedState.featureValues[interval.isPush ? FabricFeature.PushRadius : FabricFeature.PullRadius]
     const radius = radiusFactor * linearDensity
     const unit = tensegrity.instance.unitVector(interval.index)
     const rotation = new Quaternion().setFromUnitVectors(new Vector3(0, 1, 0), unit)
@@ -147,7 +190,6 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
             {interval.isPush ? (
                 <>
                     <mesh
-                        geometry={PUSH_CYLINDER_INNER}
                         position={interval.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
@@ -155,9 +197,9 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
                         onPointerDown={onPointerDown}
                     >
                         <meshLambertMaterial color="yellow" attach="material"/>
+                        <cylinderGeometry attach="geometry" args={[0.5, 0.5, 1, 6, 1]}/>
                     </mesh>
                     <mesh
-                        geometry={PUSH_CYLINDER_OUTER}
                         position={interval.location()}
                         rotation={new Euler().setFromQuaternion(rotation)}
                         scale={intervalScale}
@@ -165,27 +207,29 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
                         onPointerDown={onPointerDown}
                     >
                         <meshLambertMaterial color="green" attach="material"/>
+                        <cylinderGeometry attach="geometry" args={[1, 1, 0.85, 12, 1]}/>
                     </mesh>
                     <mesh
-                        geometry={SPHERE}
                         position={interval.alpha.location()}
                         material={JOINT_MATERIAL}
                         scale={jointScale}
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={onPointerDown}
-                    />
+                    >
+                        <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
+                    </mesh>
                     <mesh
-                        geometry={SPHERE}
                         position={interval.omega.location()}
                         material={JOINT_MATERIAL}
                         scale={jointScale}
                         matrixWorldNeedsUpdate={true}
                         onPointerDown={onPointerDown}
-                    />
+                    >
+                        <sphereGeometry attach="geometry" args={[1, 32, 8]}/>
+                    </mesh>
                 </>
             ) : (
                 <mesh
-                    geometry={PULL_CYLINDER}
                     position={interval.location()}
                     rotation={new Euler().setFromQuaternion(rotation)}
                     scale={intervalScale}
@@ -193,6 +237,7 @@ function IntervalMesh({tensegrity, interval, radiusFactor, jointRadiusFactor, on
                     onPointerDown={onPointerDown}
                 >
                     <meshLambertMaterial color="red" attach="material"/>
+                    <cylinderGeometry attach="geometry" args={[1, 1, 1, 6, 1]}/>
                 </mesh>
             )}
         </>

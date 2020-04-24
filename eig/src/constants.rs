@@ -79,6 +79,9 @@ pub enum FabricFeature {
     CrossLength,
     BowMidLength,
     BowEndLength,
+    RibbonPushLength,
+    RibbonShortPullLength,
+    RibbonLongPullLength,
     PushOverPull,
     PushRadius,
     PullRadius,
@@ -126,6 +129,9 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::CrossLength => cross(),
         FabricFeature::BowMidLength => 0.4_f32,
         FabricFeature::BowEndLength => 0.6_f32,
+        FabricFeature::RibbonPushLength => 32_f32.sqrt(),
+        FabricFeature::RibbonShortPullLength => 1_f32,
+        FabricFeature::RibbonLongPullLength => 4_f32,
         FabricFeature::PushOverPull => 1_f32,
         FabricFeature::PushRadius => 2_f32,
         FabricFeature::PullRadius => 0.5_f32,
@@ -149,6 +155,9 @@ pub enum IntervalRole {
     BowEnd,
     FaceConnector,
     FaceDistancer,
+    RibbonPush,
+    RibbonShortPull,
+    RibbonLongPull,
 }
 
 #[wasm_bindgen]
