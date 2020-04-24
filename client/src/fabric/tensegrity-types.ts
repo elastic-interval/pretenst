@@ -348,7 +348,7 @@ export function toSymmetricalMatrix(brick: IBrick, rotation: number, unitVector:
         .reduce((m, joint) => m.add(joint.location()), new Vector3())
         .multiplyScalar(1.0 / 12.0)
     const faceBasis = new Matrix4().makeBasis(x, y, z).setPosition(midpoint)
-    const twirl = new Matrix4().makeRotationZ(Math.PI / 4)
+    const twirl = new Matrix4().makeRotationZ(Math.PI * 0.275)
     const rotate = new Matrix4().makeRotationY(-rotation * Math.PI / 3)
     return new Matrix4().getInverse(faceBasis.multiply(twirl).multiply(rotate))
 }

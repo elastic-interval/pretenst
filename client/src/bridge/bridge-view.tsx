@@ -16,6 +16,7 @@ import { JOINT_MATERIAL } from "../view/materials"
 import { Orbit } from "../view/orbit"
 import { SurfaceComponent } from "../view/surface-component"
 
+const SHAPING_TIME = 50
 const PUSH_RADIUS_FACTOR = 6
 const PULL_RADIUS_FACTOR = 2
 const JOINT_RADIUS_FACTOR = 1
@@ -63,7 +64,7 @@ export function BridgeScene({tensegrity}: {
     }, [])
 
     const [whyThis, updateWhyThis] = useState(0)
-    const [shapingTime, setShapingTime] = useState(50)
+    const [shapingTime, setShapingTime] = useState(0)
 
     useFrame(() => {
         const control: Orbit = orbit.current
@@ -71,27 +72,32 @@ export function BridgeScene({tensegrity}: {
         const instance = tensegrity.instance
         control.target.copy(instance.midpoint)
         control.update()
-        if (life.stage === Stage.Pretensing && nextStage === Stage.Pretenst) {
-            tensegrity.transition = {stage: Stage.Pretenst}
-        } else if (nextStage !== undefined && nextStage !== life.stage && life.stage !== Stage.Pretensing) {
-            tensegrity.transition = {stage: nextStage}
-        }
         switch (nextStage) {
             case Stage.Shaping:
-                if (shapingTime <= 0) {
-                    instance.fabric.adopt_lengths()
-                    const faceIntervals = [...tensegrity.faceIntervals]
-                    faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
-                    instance.iterate(Stage.Slack)
-                    instance.iterate(Stage.Pretensing)
-                } else {
-                    setShapingTime(shapingTime - 1)
+                if (life.stage === Stage.Growing) {
+                    tensegrity.transition = {stage: Stage.Shaping}
+                }
+                if (shapingTime < SHAPING_TIME) {
+                    setShapingTime(shapingTime + 1)
+                    break
+                }
+                instance.fabric.adopt_lengths()
+                const faceIntervals = [...tensegrity.faceIntervals]
+                faceIntervals.forEach(interval => tensegrity.removeFaceInterval(interval))
+                tensegrity.transition = {stage: Stage.Slack}
+                break
+            case Stage.Slack:
+                tensegrity.transition = {stage: Stage.Pretensing}
+                break
+            case Stage.Pretensing:
+                break
+            case Stage.Pretenst:
+                if (life.stage === Stage.Pretensing) {
+                    tensegrity.transition = {stage: Stage.Pretenst}
                 }
                 break
-            default:
-                updateWhyThis(whyThis + 1)
-                break
         }
+        updateWhyThis(whyThis + 1)
     })
 
     return (

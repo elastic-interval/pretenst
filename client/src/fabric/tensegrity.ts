@@ -208,6 +208,9 @@ export class Tensegrity {
     }
 
     public set transition(tx: ILifeTransition) {
+        if (tx.stage === undefined) {
+            throw new Error("Undefined stage!")
+        }
         this.transitionQueue.push(tx)
     }
 

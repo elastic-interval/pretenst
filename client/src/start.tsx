@@ -145,14 +145,20 @@ export async function startReact(
                     return defaultValue * 5
                 case FabricFeature.Gravity:
                     return defaultValue * 0.1
+                case FabricFeature.PushRadius:
+                    return defaultValue * 3
+                case FabricFeature.PullRadius:
+                    return defaultValue * 2
+                case FabricFeature.JointRadius:
+                    return defaultValue * 0.8
                 default:
                     return defaultValue
             }
         }
         const roleLength = (role: IntervalRole) => roleDefaultFromFeatures(numericFeature, role)
-        const instance = createInstance(false)
+        const instance = createInstance(true)
         FABRIC_FEATURES.forEach(feature => instance.world.set_float_value(feature, numericFeature(feature)))
-        const code = "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90)):0=face-distance-20:1=face-distance-20:2=face-distance-90:3=face-distance-90"
+        const code = "'Melkvonder Ulft':(A(8,S90,Mb0,MA2),b(8,S90,Mb0,MA3),a(8,S90,Md1,MA3),B(8,Md1,MA2,S90)):0=face-distance-40:1=face-distance-40:2=face-distance-90:3=face-distance-90"
         const tensegrity = new Tensegrity(new Vector3(), true, 0, roleLength, numericFeature, instance, toTenscript(code))
         ReactDOM.render(<BridgeView tensegrity={tensegrity}/>, root)
     } else {
