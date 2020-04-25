@@ -107,6 +107,12 @@ fn cross() -> f32 {
     (CROSS1 * CROSS1 + CROSS2 * CROSS2 + CROSS3 * CROSS3).sqrt()
 }
 
+const RIBBON_WIDTH: f32 = 1.5_f32;
+
+fn ribbonPush() -> f32 {
+    (RIBBON_WIDTH * RIBBON_WIDTH * 2_f32).sqrt()
+}
+
 #[wasm_bindgen]
 pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
     match fabric_feature {
@@ -129,9 +135,9 @@ pub fn default_fabric_feature(fabric_feature: FabricFeature) -> f32 {
         FabricFeature::CrossLength => cross(),
         FabricFeature::BowMidLength => 0.4_f32,
         FabricFeature::BowEndLength => 0.6_f32,
-        FabricFeature::RibbonPushLength => 32_f32.sqrt(),
-        FabricFeature::RibbonShortPullLength => 1_f32,
-        FabricFeature::RibbonLongPullLength => 4_f32,
+        FabricFeature::RibbonPushLength => ribbonPush(),
+        FabricFeature::RibbonShortPullLength => RIBBON_WIDTH / 2_f32,
+        FabricFeature::RibbonLongPullLength => RIBBON_WIDTH,
         FabricFeature::PushOverPull => 1_f32,
         FabricFeature::PushRadius => 2_f32,
         FabricFeature::PullRadius => 0.5_f32,

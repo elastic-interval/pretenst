@@ -20,6 +20,7 @@ import { SurfaceComponent } from "../view/surface-component"
 
 const SHAPING_TIME = 250
 const SLACK_TIME = 20
+const RIBBON_HEIGHT = 1
 
 export function BridgeView({tensegrity}: {
     tensegrity: Tensegrity,
@@ -87,24 +88,7 @@ export function BridgeScene({tensegrity, life}: { tensegrity: Tensegrity, life: 
                 }
                 if (ribbonTick === 0) {
                     console.log("Ribbon!")
-                    const point = new Vector3(0, 1, 0)
-                    const ribbonLength = tensegrity.numericFeature(FabricFeature.RibbonLongPullLength)
-                    point.x = -ribbonLength / 2
-                    const alphaIndex = tensegrity.createJoint(point)
-                    point.x = ribbonLength / 2
-                    const omegaIndex = tensegrity.createJoint(point)
-                    const alpha: IJoint = {
-                        index: alphaIndex,
-                        oppositeIndex: omegaIndex,
-                        location: () => tensegrity.instance.jointLocation(alphaIndex),
-                    }
-                    const omega: IJoint = {
-                        index: omegaIndex,
-                        oppositeIndex: alphaIndex,
-                        location: () => tensegrity.instance.jointLocation(omegaIndex),
-                    }
-                    tensegrity.instance.refreshFloatView()
-                    tensegrity.createInterval(alpha, omega, IntervalRole.RibbonLongPull, percentOrHundred(), 1000)
+                    ribbon(tensegrity)
                 }
                 setRibbonTick(ribbonTick + 1)
                 // if (ribbonTick % 10 === 0) {
@@ -267,4 +251,69 @@ function Camera(props: object): JSX.Element {
         camera.updateMatrixWorld()
     })
     return <perspectiveCamera ref={ref} {...props} />
+}
+
+function ribbon(tensegrity: Tensegrity): void {
+    const joint = (x: number, left: boolean): IJoint => {
+        const z = left ? -1 : 1
+        const location = new Vector3(x, RIBBON_HEIGHT, z)
+        const jointIndex = tensegrity.createJoint(location)
+        return {
+            index: jointIndex,
+            oppositeIndex: -1,
+            location: () => tensegrity.instance.jointLocation(jointIndex),
+        }
+    }
+    const interval = (alpha: IJoint, omega: IJoint, intervalRole: IntervalRole): IInterval =>
+        tensegrity.createInterval(alpha, omega, intervalRole, percentOrHundred(), 1000)
+    const L0 = joint(0, true)
+    const R0 = joint(0, false)
+    const LF1 = joint(1, true)
+    const RF1 = joint(1, false)
+    const LB1 = joint(-1, true)
+    const RB1 = joint(-1, false)
+    const LF2 = joint(2, true)
+    const RF2 = joint(2, false)
+    const LB2 = joint(-2, true)
+    const RB2 = joint(-2, false)
+    const LF3 = joint(3, true)
+    const RF3 = joint(3, false)
+    const LB3 = joint(-3, true)
+    const RB3 = joint(-3, false)
+    tensegrity.instance.refreshFloatView()
+    interval(L0, R0, IntervalRole.RibbonLongPull)
+
+    interval(LB1, RB1, IntervalRole.RibbonLongPull)
+    interval(LB2, RB2, IntervalRole.RibbonLongPull)
+    interval(LB3, RB3, IntervalRole.RibbonLongPull)
+    interval(LF1, RF1, IntervalRole.RibbonLongPull)
+    interval(LF2, RF2, IntervalRole.RibbonLongPull)
+    interval(LF3, RF3, IntervalRole.RibbonLongPull)
+
+    interval(L0, LB1, IntervalRole.RibbonShortPull)
+    interval(LB1, LB2, IntervalRole.RibbonShortPull)
+    interval(LB2, LB3, IntervalRole.RibbonShortPull)
+    interval(L0, LF1, IntervalRole.RibbonShortPull)
+    interval(LF1, LF2, IntervalRole.RibbonShortPull)
+    interval(LF2, LF3, IntervalRole.RibbonShortPull)
+
+    interval(R0, RB1, IntervalRole.RibbonShortPull)
+    interval(RB1, RB2, IntervalRole.RibbonShortPull)
+    interval(RB2, RB3, IntervalRole.RibbonShortPull)
+    interval(R0, RF1, IntervalRole.RibbonShortPull)
+    interval(RF1, RF2, IntervalRole.RibbonShortPull)
+    interval(RF2, RF3, IntervalRole.RibbonShortPull)
+
+    interval(L0, RF2, IntervalRole.RibbonPush)
+    interval(L0, RB2, IntervalRole.RibbonPush)
+    interval(R0, LF2, IntervalRole.RibbonPush)
+    interval(R0, LB2, IntervalRole.RibbonPush)
+
+    interval(RB3, LB1, IntervalRole.RibbonPush)
+    interval(LB1, RF1, IntervalRole.RibbonPush)
+    interval(RF1, LF3, IntervalRole.RibbonPush)
+
+    interval(LB3, RB1, IntervalRole.RibbonPush)
+    interval(RB1, LF1, IntervalRole.RibbonPush)
+    interval(LF1, RF3, IntervalRole.RibbonPush)
 }
